@@ -29,7 +29,7 @@
 		"tailwindcss": "^4.0.0",
 		"typescript": "^5.0.0",
 		"typescript-eslint": "^8.20.0",
-		"vite": "^6.2.6"
+		"vite": "^7.0.0"
 	},
 	"dependencies": {
 		"@inlang/paraglide-js": "^2.0.0"
