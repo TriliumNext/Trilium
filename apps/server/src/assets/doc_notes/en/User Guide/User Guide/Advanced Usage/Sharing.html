@@ -6,8 +6,7 @@ class="image">
   <img style="aspect-ratio:1144/660;" src="Sharing_image.png" width="1144"
   height="660">
   </figure>
-  
-<h2>Features, interaction and limitations</h2>
+  <h2>Features, interaction and limitations</h2>
   <ul>
     <li>Searching by note title.</li>
     <li>Automatic dark/light mode based on the user's browser settings.</li>
@@ -70,21 +69,25 @@ class="image">
           <th><a class="reference-link" href="#root/_help_m523cpzocqaD">Saved Search</a>
           </th>
           <td>Not supported.</td>
+          <td>&nbsp;</td>
         </tr>
         <tr>
           <th><a class="reference-link" href="#root/_help_iRwzGnHPzonm">Relation Map</a>
           </th>
           <td>Not supported.</td>
+          <td>&nbsp;</td>
         </tr>
         <tr>
           <th><a class="reference-link" href="#root/_help_bdUJEHsAPYQR">Note Map</a>
           </th>
           <td>Not supported.</td>
+          <td>&nbsp;</td>
         </tr>
         <tr>
           <th><a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>
           </th>
           <td>Not supported.</td>
+          <td>&nbsp;</td>
         </tr>
         <tr>
           <th><a class="reference-link" href="#root/_help_GTwFsgaA0lCt">Book</a>
@@ -132,6 +135,7 @@ class="image">
           <th><a class="reference-link" href="#root/_help_1vHRoWCEjj0L">Web View</a>
           </th>
           <td>Not supported.</td>
+          <td>&nbsp;</td>
         </tr>
         <tr>
           <th><a class="reference-link" href="#root/_help_gBbsAeiuUxI5">Mind Map</a>
@@ -147,6 +151,7 @@ class="image">
           <th><a class="reference-link" href="#root/_help_81SGnPGMk7Xc">Geo Map</a>
           </th>
           <td>Not supported.</td>
+          <td>&nbsp;</td>
         </tr>
         <tr>
           <th><a class="reference-link" href="#root/_help_W8vYD3Q1zjCR">File</a>
@@ -184,11 +189,9 @@ class="image">
         <img src="Sharing_share-single-note.png" alt="Share Note">
       </p>
     </li>
-    <li>
-      <p><strong>Access the Shared Note</strong>: The link provided will open the
-        note in your browser. If your server is not configured with a public IP,
-        the URL will refer to <code>localhost (127.0.0.1)</code>.</p>
-    </li>
+    <li><strong>Access the Shared Note</strong>: The link provided will open the
+      note in your browser. If your server is not configured with a public IP,
+      the URL will refer to <code>localhost (127.0.0.1)</code>.</li>
   </ol>
   <h2>Sharing a Note Subtree</h2>
   <p>When you share a note, you actually share the entire subtree of notes
@@ -262,6 +265,20 @@ for (const attr of parentNote.attributes) {
     making it easier to use Trilium as a fully-fledged website. Consider combining
     this with the <code>#shareIndex</code> label, which will display a list of
     all shared notes.</p>
+  <h3>Redirect Bare Domain to Share Page</h3>
+  <p>This option can be enabled under <code>Option → Other → Share Settings</code>.
+    When activated, anonymous users accessing the bare domain will be redirected
+    to the Share page, preventing them from seeing the login option and thereby
+    improving security.
+    <br>To ensure accessibility for legitimate users, you can also enable a login
+    link on the Share page, allowing yourself to access the login screen if
+    you're redirected there.</p>
+  <h3>Setting a Custom Share Path</h3>
+  <p>This option can be enabled under <code>Option → Other → Share Settings</code>.
+    It allows you to customize the share URL prefix before the <code>noteId</code>.
+    Nested paths are supported.
+    <br>If you're using a proxy service, make sure to update its configuration
+    accordingly to reflect the new path structure.</p>
   <h2>Attribute reference</h2>
   <figure class="table">
     <table>
@@ -340,8 +357,7 @@ for (const attr of parentNote.attributes) {
       </tbody>
     </table>
   </figure>
-  
-<h2>Credits</h2>
+  <h2>Credits</h2>
   <p>Since v0.95.0, a new theme was introduced (and enabled by default) which
     greatly improves the visual aspect of the Share feature, as well as its
     functionality (such as mobile support, dark/light mode, collapsible tree,

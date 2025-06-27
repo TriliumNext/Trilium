@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="shortcut icon" href="<% if (note.hasRelation("shareFavicon")) { %>api/notes/<%= note.getRelation("shareFavicon").value %>/download<% } else { %>../favicon.ico<% } %>">
+    <link rel="shortcut icon" href="<% if (note.hasRelation("shareFavicon")) { %>api/notes/<%= note.getRelation("shareFavicon").value %>/download<% } else { %><%= relativePath %>favicon.ico<% } %>">
     <script src="<%= appPath %>/share.js" type="module"></script>
     <% if (!isDev && !note.isLabelTruthy("shareOmitDefaultCss")) { %>
         <link href="<%= assetPath %>/src/share.css" rel="stylesheet">
@@ -56,7 +56,7 @@
 </head>
 <%
 const customLogoId = subRoot.note.getRelation("shareLogo")?.value;
-const logoUrl = customLogoId ? `api/images/${customLogoId}/image.png` : `../${assetUrlFragment}/images/icon-color.svg`;
+const logoUrl = customLogoId ? `api/images/${customLogoId}/image.png` : `${relativePath}${assetUrlFragment}/images/icon-color.svg`;
 const logoWidth = subRoot.note.getLabelValue("shareLogoWidth") ?? 53;
 const logoHeight = subRoot.note.getLabelValue("shareLogoHeight") ?? 40;
 const mobileLogoHeight = logoHeight && logoWidth ? 32 / (logoWidth / logoHeight) : "";

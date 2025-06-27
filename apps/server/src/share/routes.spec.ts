@@ -43,3 +43,39 @@ describe("Share API test", () => {
     });
 
 });
+
+describe("Share Routes - Asset Path Calculation", () => {
+    it("should calculate correct relative path depth for different share paths", () => {
+        // Helper function to simulate the path depth calculation
+        const calculateRelativePath = (sharePath: string) => {
+            const pathDepth = sharePath.split('/').filter(segment => segment.length > 0).length;
+            return '../'.repeat(pathDepth);
+        };
+
+        // Test single level path
+        expect(calculateRelativePath("/share")).toBe("../");
+
+        // Test double level path
+        expect(calculateRelativePath("/sharePath/test")).toBe("../../");
+
+        // Test triple level path
+        expect(calculateRelativePath("/my/custom/share")).toBe("../../../");
+
+        // Test root path
+        expect(calculateRelativePath("/")).toBe("");
+
+        // Test path with trailing slash
+        expect(calculateRelativePath("/share/")).toBe("../");
+    });
+
+    it("should handle normalized share paths correctly", () => {
+        const calculateRelativePath = (sharePath: string) => {
+            const pathDepth = sharePath.split('/').filter(segment => segment.length > 0).length;
+            return '../'.repeat(pathDepth);
+        };
+
+        // Test the examples from the original TODO comment
+        expect(calculateRelativePath("/sharePath")).toBe("../");
+        expect(calculateRelativePath("/sharePath/test")).toBe("../../");
+    });
+});

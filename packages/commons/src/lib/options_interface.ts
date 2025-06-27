@@ -127,6 +127,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     // Share settings
     redirectBareDomain: boolean;
     showLoginInShareTheme: boolean;
+    shareSubtree: boolean;
+    sharePath: string;
 
     // AI/LLM integration options
     aiEnabled: boolean;
