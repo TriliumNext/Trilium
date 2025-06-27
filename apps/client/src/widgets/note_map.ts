@@ -324,7 +324,13 @@ export default class NoteMapWidget extends NoteContextAwareWidget {
         }
 
         const mapRootNoteId = this.getMapRootNoteId();
-        const data = await this.loadNotesAndRelations(mapRootNoteId);
+
+        const labelValues = (name: string) => this.note?.getLabels(name).map(l => l.value) ?? [];
+
+        const excludeRelations = labelValues("mapExcludeRelation");
+        const includeRelations = labelValues("mapIncludeRelation");
+
+        const data = await this.loadNotesAndRelations(mapRootNoteId, excludeRelations, includeRelations);
 
         const nodeLinkRatio = data.nodes.length / data.links.length;
         const magnifiedRatio = Math.pow(nodeLinkRatio, 1.5);
@@ -473,8 +479,10 @@ export default class NoteMapWidget extends NoteContextAwareWidget {
         ctx.restore();
     }
 
-    async loadNotesAndRelations(mapRootNoteId: string): Promise<NotesAndRelationsData> {
-        const resp = await server.post<PostNotesMapResponse>(`note-map/${mapRootNoteId}/${this.mapType}`);
+    async loadNotesAndRelations(mapRootNoteId: string, excludeRelations: string[], includeRelations: string[]): Promise<NotesAndRelationsData> {
+        const resp = await server.post<PostNotesMapResponse>(`note-map/${mapRootNoteId}/${this.mapType}`, {
+            excludeRelations, includeRelations
+        });
 
         this.calculateNodeSizes(resp);
 

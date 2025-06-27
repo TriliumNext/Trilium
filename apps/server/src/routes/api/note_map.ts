@@ -110,6 +110,11 @@ function getLinkMap(req: Request) {
     const ignoreExcludeFromNoteMap = mapRootNote.isLabelTruthy("excludeFromNoteMap");
     let unfilteredNotes;
 
+    const toSet = (data: unknown) => new Set<string>(data instanceof Array ? data : []);
+
+    const excludeRelations = toSet(req.body.excludeRelations);
+    const includeRelations = toSet(req.body.includeRelations);
+
     if (mapRootNote.type === "search") {
         // for search notes, we want to consider the direct search results only without the descendants
         unfilteredNotes = mapRootNote.getSearchResultNotes();
@@ -152,6 +157,10 @@ function getLinkMap(req: Request) {
                 }
 
                 return !parentNote.getChildNotes().find((childNote) => childNote.noteId === rel.value);
+            } else if (includeRelations.size != 0 && !includeRelations.has(rel.name)) {
+                return false;
+            } else if (excludeRelations.has(rel.name)) {
+                return false;
             } else {
                 return true;
             }
