@@ -93,11 +93,7 @@ export class TypedComponent<ChildT extends TypedComponent<ChildT>> {
 
         if (fun) {
             return this.callMethod(fun, data);
-        } else {
-            if (!this.parent) {
-                throw new Error(`Component "${this.componentId}" does not have a parent attached to propagate a command.`);
-            }
-
+        } else if (this.parent) {
             return this.parent.triggerCommand(name, data);
         }
     }

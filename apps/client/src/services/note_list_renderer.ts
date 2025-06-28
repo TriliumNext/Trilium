@@ -1,38 +1,40 @@
 import type FNote from "../entities/fnote.js";
 import CalendarView from "../widgets/view_widgets/calendar_view.js";
 import ListOrGridView from "../widgets/view_widgets/list_or_grid_view.js";
+import TableView from "../widgets/view_widgets/table_view/index.js";
 import type { ViewModeArgs } from "../widgets/view_widgets/view_mode.js";
 import type ViewMode from "../widgets/view_widgets/view_mode.js";
 
-export type ViewTypeOptions = "list" | "grid" | "calendar";
+export type ViewTypeOptions = "list" | "grid" | "calendar" | "table";
 
 export default class NoteListRenderer {
 
     private viewType: ViewTypeOptions;
-    public viewMode: ViewMode | null;
+    public viewMode: ViewMode<any> | null;
 
-    constructor($parent: JQuery<HTMLElement>, parentNote: FNote, noteIds: string[], showNotePath: boolean = false) {
-        this.viewType = this.#getViewType(parentNote);
-        const args: ViewModeArgs = {
-            $parent,
-            parentNote,
-            noteIds,
-            showNotePath
-        };
+    constructor(args: ViewModeArgs) {
+        this.viewType = this.#getViewType(args.parentNote);
 
-        if (this.viewType === "list" || this.viewType === "grid") {
-            this.viewMode = new ListOrGridView(this.viewType, args);
-        } else if (this.viewType === "calendar") {
-            this.viewMode = new CalendarView(args);
-        } else {
-            this.viewMode = null;
+        switch (this.viewType) {
+            case "list":
+            case "grid":
+                this.viewMode = new ListOrGridView(this.viewType, args);
+                break;
+            case "calendar":
+                this.viewMode = new CalendarView(args);
+                break;
+            case "table":
+                this.viewMode = new TableView(args);
+                break;
+            default:
+                this.viewMode = null;
         }
     }
 
     #getViewType(parentNote: FNote): ViewTypeOptions {
         const viewType = parentNote.getLabelValue("viewType");
 
-        if (!["list", "grid", "calendar"].includes(viewType || "")) {
+        if (!["list", "grid", "calendar", "table"].includes(viewType || "")) {
             // when not explicitly set, decide based on the note type
             return parentNote.type === "search" ? "list" : "grid";
         } else {

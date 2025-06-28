@@ -2,7 +2,7 @@ import keyboardActionService from "../services/keyboard_actions.js";
 import note_tooltip from "../services/note_tooltip.js";
 import utils from "../services/utils.js";
 
-interface ContextMenuOptions<T> {
+export interface ContextMenuOptions<T> {
     x: number;
     y: number;
     orientation?: "left";
@@ -28,6 +28,7 @@ export interface MenuCommandItem<T> {
     items?: MenuItem<T>[] | null;
     shortcut?: string;
     spellingSuggestion?: string;
+    checked?: boolean;
 }
 
 export type MenuItem<T> = MenuCommandItem<T> | MenuSeparatorItem;
@@ -146,10 +147,13 @@ class ContextMenu {
             } else {
                 const $icon = $("<span>");
 
-                if ("uiIcon" in item && item.uiIcon) {
-                    $icon.addClass(item.uiIcon);
-                } else {
-                    $icon.append("&nbsp;");
+                if ("uiIcon" in item || "checked" in item) {
+                    const icon = (item.checked ? "bx bx-check" : item.uiIcon);
+                    if (icon) {
+                        $icon.addClass(icon);
+                    } else {
+                        $icon.append("&nbsp;");
+                    }
                 }
 
                 const $link = $("<span>")

@@ -286,6 +286,9 @@ importers:
       svg-pan-zoom:
         specifier: 3.6.2
         version: 3.6.2
+      tabulator-tables:
+        specifier: 6.3.1
+        version: 6.3.1
       vanilla-js-wheel-zoom:
         specifier: 9.0.4
         version: 9.0.4
@@ -308,6 +311,9 @@ importers:
       '@types/mark.js':
         specifier: 8.11.12
         version: 8.11.12
+      '@types/tabulator-tables':
+        specifier: 6.2.6
+        version: 6.2.6
       copy-webpack-plugin:
         specifier: 13.0.0
         version: 13.0.0(webpack@5.99.9(@swc/core@1.11.29(@swc/helpers@0.5.17))(esbuild@0.25.5))
@@ -5456,6 +5462,9 @@ packages:
 
   '@types/swagger-ui@5.21.1':
     resolution: {integrity: sha512-DUmUH59eeOtvAqcWwBduH2ws0cc5i95KHsXCS4FsOfbUq/clW8TN+HqRBj7q5p9MSsSNK43RziIGItNbrAGLxg==}
+
+  '@types/tabulator-tables@6.2.6':
+    resolution: {integrity: sha512-A+2VrqDluI6hNw5dQl1Z7b8pjQfAE62+3Kj0cFfenWzj0T0ewMicPrpPINHL7ASqz9u9FTDn1Mz1Ige2tF4Wlw==}
 
   '@types/tmp@0.2.6':
     resolution: {integrity: sha512-chhaNf2oKHlRkDGt+tiKE2Z5aJ6qalm7Z9rlLdBwmOiAAf09YQvvoLXjWK4HWPF1xU/fqvMgfNfpVoBscA/tKA==}
@@ -13014,6 +13023,9 @@ packages:
     resolution: {integrity: sha512-9kY+CygyYM6j02t5YFHbNz2FN5QmYGv9zAjVp4lCDjlCw7amdckXlEt/bjMhUIfj4ThGRE4gCUH5+yGnNuPo5A==}
     engines: {node: '>=10.0.0'}
 
+  tabulator-tables@6.3.1:
+    resolution: {integrity: sha512-qFW7kfadtcaISQIibKAIy0f3eeIXUVi8242Vly1iJfMD79kfEGzfczNuPBN/80hDxHzQJXYbmJ8VipI40hQtfA==}
+
   tailwindcss@4.1.10:
     resolution: {integrity: sha512-P3nr6WkvKV/ONsTzj6Gb57sWPMX29EPNPopo7+FcpkQaNsrNpZ1pv8QmrYI2RqEKD7mlGqLnGovlcYnBK0IqUA==}
 
@@ -20303,6 +20315,8 @@ snapshots:
       '@types/serve-static': 1.15.8
 
   '@types/swagger-ui@5.21.1': {}
+
+  '@types/tabulator-tables@6.2.6': {}
 
   '@types/tmp@0.2.6': {}
 
@@ -29449,6 +29463,8 @@ snapshots:
       slice-ansi: 4.0.0
       string-width: 4.2.3
       strip-ansi: 6.0.1
+
+  tabulator-tables@6.3.1: {}
 
   tailwindcss@4.1.10: {}
 

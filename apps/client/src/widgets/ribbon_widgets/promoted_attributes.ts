@@ -117,7 +117,7 @@ export default class PromotedAttributesWidget extends NoteContextAwareWidget {
         // the order of attributes is important as well
         ownedAttributes.sort((a, b) => a.position - b.position);
 
-        if (promotedDefAttrs.length === 0) {
+        if (promotedDefAttrs.length === 0 || note.getLabelValue("viewType") === "table") {
             this.toggleInt(false);
             return;
         }

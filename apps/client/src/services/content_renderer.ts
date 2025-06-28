@@ -118,8 +118,17 @@ async function renderText(note: FNote | FAttachment, $renderedContent: JQuery<HT
 async function renderCode(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>) {
     const blob = await note.getBlob();
 
+    let content = blob?.content || "";
+    if (note.mime === "application/json") {
+        try {
+            content = JSON.stringify(JSON.parse(content), null, 4);
+        } catch (e) {
+            // Ignore JSON parsing errors.
+        }
+    }
+
     const $codeBlock = $("<code>");
-    $codeBlock.text(blob?.content || "");
+    $codeBlock.text(content);
     $renderedContent.append($("<pre>").append($codeBlock));
     await applySingleBlockSyntaxHighlight($codeBlock, normalizeMimeTypeForCKEditor(note.mime));
 }
@@ -301,7 +310,7 @@ function getRenderingType(entity: FNote | FAttachment) {
 
     if (type === "file" && mime === "application/pdf") {
         type = "pdf";
-    } else if (type === "file" && mime && CODE_MIME_TYPES.has(mime)) {
+    } else if ((type === "file" || type === "viewConfig") && mime && CODE_MIME_TYPES.has(mime)) {
         type = "code";
     } else if (type === "file" && mime && mime.startsWith("audio/")) {
         type = "audio";

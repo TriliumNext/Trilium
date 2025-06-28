@@ -6,6 +6,7 @@ import treeService from "../../services/tree.js";
 import utils from "../../services/utils.js";
 import type FNote from "../../entities/fnote.js";
 import ViewMode, { type ViewModeArgs } from "./view_mode.js";
+import type { ViewTypeOptions } from "../../services/note_list_renderer.js";
 
 const TPL = /*html*/`
 <div class="note-list">
@@ -157,26 +158,22 @@ const TPL = /*html*/`
     </div>
 </div>`;
 
-class ListOrGridView extends ViewMode {
+class ListOrGridView extends ViewMode<{}> {
     private $noteList: JQuery<HTMLElement>;
 
-    private parentNote: FNote;
     private noteIds: string[];
     private page?: number;
     private pageSize?: number;
-    private viewType?: string | null;
     private showNotePath?: boolean;
     private highlightRegex?: RegExp | null;
 
     /*
      * We're using noteIds so that it's not necessary to load all notes at once when paging
      */
-    constructor(viewType: string, args: ViewModeArgs) {
-        super(args);
+    constructor(viewType: ViewTypeOptions, args: ViewModeArgs) {
+        super(args, viewType);
         this.$noteList = $(TPL);
-        this.viewType = viewType;
 
-        this.parentNote = args.parentNote;
         const includedNoteIds = this.getIncludedNoteIds();
 
         this.noteIds = args.noteIds.filter((noteId) => !includedNoteIds.has(noteId) && noteId !== "_hidden");

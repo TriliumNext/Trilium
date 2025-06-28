@@ -26,6 +26,23 @@ export default function buildHiddenSubtreeTemplates() {
                         value: "promoted,alias=Description,single,text"
                     }
                 ]
+            },
+            {
+                id: "_template_table",
+                type: "book",
+                title: "Table",
+                icon: "bx bx-table",
+                attributes: [
+                    {
+                        name: "template",
+                        type: "label"
+                    },
+                    {
+                        name: "viewType",
+                        type: "label",
+                        value: "table"
+                    }
+                ]
             }
         ]
     };

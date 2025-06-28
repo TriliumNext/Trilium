@@ -48,7 +48,8 @@ function updateNoteAttribute(req: Request) {
         attribute = new BAttribute({
             noteId: noteId,
             name: body.name,
-            type: body.type
+            type: body.type,
+            isInheritable: body.isInheritable
         });
     }
 
