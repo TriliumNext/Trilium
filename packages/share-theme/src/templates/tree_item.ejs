@@ -1,7 +1,16 @@
 <%
 const linkClass = `type-${note.type}` + (activeNote.noteId === note.noteId ? " active" : "");
 const isExternalLink = note.hasLabel("shareExternal");
-const linkHref = isExternalLink ? note.getLabelValue("shareExternal") : `./${note.shareId}`;
+let linkHref;
+
+if (isExternalLink) {
+    linkHref = note.getLabelValue("shareExternal");
+} else if (note.shareId) {
+    linkHref = `./${note.shareId}`;
+} else {
+    linkHref = `#${note.getBestNotePath().join("/")}`;
+}
+
 const target = isExternalLink ? ` target="_blank" rel="noopener noreferrer"` : "";
 %>
 

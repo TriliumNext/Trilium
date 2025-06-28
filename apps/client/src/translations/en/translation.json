@@ -110,7 +110,8 @@
     "export_status": "Export status",
     "export_in_progress": "Export in progress: {{progressCount}}",
     "export_finished_successfully": "Export finished successfully.",
-    "format_pdf": "PDF - for printing or sharing purposes."
+    "format_pdf": "PDF - for printing or sharing purposes.",
+    "share-format": "HTML for web publishing - uses the same theme that is used shared notes, but can be published as a static website."
   },
   "help": {
     "fullDocumentation": "Help (full documentation is available <a class=\"external\" href=\"https://triliumnext.github.io/Docs/\">online</a>)",

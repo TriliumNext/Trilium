@@ -26,7 +26,7 @@ function exportBranch(req: Request, res: Response) {
     const taskContext = new TaskContext(taskId, "export");
 
     try {
-        if (type === "subtree" && (format === "html" || format === "markdown")) {
+        if (type === "subtree" && (format === "html" || format === "markdown" || format === "share")) {
             zipExportService.exportToZip(taskContext, branch, format, res);
         } else if (type === "single") {
             if (format !== "html" && format !== "markdown") {
