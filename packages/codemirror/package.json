@@ -30,7 +30,7 @@
     "@codemirror/lang-xml": "6.1.0",
     "@codemirror/legacy-modes": "6.5.1",
     "@codemirror/search": "6.5.11",
-    "@codemirror/view": "6.37.2",
+    "@codemirror/view": "6.38.0",
     "@fsegurai/codemirror-theme-abcdef": "6.2.0",
     "@fsegurai/codemirror-theme-abyss": "6.2.0",
     "@fsegurai/codemirror-theme-android-studio": "6.2.0",
