@@ -403,8 +403,8 @@ importers:
   apps/desktop-e2e:
     devDependencies:
       dotenv:
-        specifier: 16.6.0
-        version: 16.6.0
+        specifier: 16.6.1
+        version: 16.6.1
       electron:
         specifier: 36.6.0
         version: 36.6.0
@@ -778,8 +778,8 @@ importers:
   apps/server-e2e:
     devDependencies:
       dotenv:
-        specifier: 16.6.0
-        version: 16.6.0
+        specifier: 16.6.1
+        version: 16.6.1
 
   apps/website:
     dependencies:
@@ -7700,8 +7700,8 @@ packages:
     resolution: {integrity: sha512-m/C+AwOAr9/W1UOIZUo232ejMNnJAJtYQjUbHoNTBNTJSvqzzDh7vnrei3o3r3m9blf6ZoDkvcw0VmozNRFJxg==}
     engines: {node: '>=12'}
 
-  dotenv@16.6.0:
-    resolution: {integrity: sha512-Omf1L8paOy2VJhILjyhrhqwLIdstqm1BvcDPKg4NGAlkwEu9ODyrFbvk8UymUOMCT+HXo31jg1lArIrVAAhuGA==}
+  dotenv@16.6.1:
+    resolution: {integrity: sha512-uBq4egWHTcTt33a72vpSG0z3HnPuIl6NqYcTrKEg2azoEyl2hpW0zqlxysq2pK9HlDIHyHyakeYaYnSAwd8bow==}
     engines: {node: '>=12'}
 
   dotignore@0.1.2:
@@ -23150,13 +23150,13 @@ snapshots:
 
   dotenv-expand@11.0.7:
     dependencies:
-      dotenv: 16.6.0
+      dotenv: 16.6.1
 
   dotenv@16.4.7: {}
 
   dotenv@16.5.0: {}
 
-  dotenv@16.6.0: {}
+  dotenv@16.6.1: {}
 
   dotignore@0.1.2:
     dependencies:
