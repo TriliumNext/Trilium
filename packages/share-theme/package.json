@@ -26,7 +26,7 @@
     "@types/swagger-ui": "^5.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
-    "dotenv": "^16.3.1",
+    "dotenv": "^17.0.0",
     "esbuild": "^0.25.0",
     "eslint": "^9.0.0",
     "highlight.js": "^11.8.0",

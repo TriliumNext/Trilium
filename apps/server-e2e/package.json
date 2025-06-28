@@ -17,6 +17,6 @@
     }
   },
   "devDependencies": {
-    "dotenv": "16.6.0"
+    "dotenv": "17.0.0"
   }
 }

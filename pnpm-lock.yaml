@@ -403,8 +403,8 @@ importers:
   apps/desktop-e2e:
     devDependencies:
       dotenv:
-        specifier: 16.6.0
-        version: 16.6.0
+        specifier: 17.0.0
+        version: 17.0.0
       electron:
         specifier: 36.6.0
         version: 36.6.0
@@ -778,8 +778,8 @@ importers:
   apps/server-e2e:
     devDependencies:
       dotenv:
-        specifier: 16.6.0
-        version: 16.6.0
+        specifier: 17.0.0
+        version: 17.0.0
 
   apps/website:
     dependencies:
@@ -1357,8 +1357,8 @@ importers:
         specifier: ^8.0.0
         version: 8.34.0(eslint@9.28.0(jiti@2.4.2))(typescript@5.8.3)
       dotenv:
-        specifier: ^16.3.1
-        version: 16.5.0
+        specifier: ^17.0.0
+        version: 17.0.0
       esbuild:
         specifier: ^0.25.0
         version: 0.25.5
@@ -7696,12 +7696,12 @@ packages:
     resolution: {integrity: sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==}
     engines: {node: '>=12'}
 
-  dotenv@16.5.0:
-    resolution: {integrity: sha512-m/C+AwOAr9/W1UOIZUo232ejMNnJAJtYQjUbHoNTBNTJSvqzzDh7vnrei3o3r3m9blf6ZoDkvcw0VmozNRFJxg==}
-    engines: {node: '>=12'}
-
   dotenv@16.6.0:
     resolution: {integrity: sha512-Omf1L8paOy2VJhILjyhrhqwLIdstqm1BvcDPKg4NGAlkwEu9ODyrFbvk8UymUOMCT+HXo31jg1lArIrVAAhuGA==}
+    engines: {node: '>=12'}
+
+  dotenv@17.0.0:
+    resolution: {integrity: sha512-A0BJ5lrpJVSfnMMXjmeO0xUnoxqsBHWCoqqTnGwGYVdnctqXXUEhJOO7LxmgxJon9tEZFGpe0xPRX0h2v3AANQ==}
     engines: {node: '>=12'}
 
   dotignore@0.1.2:
@@ -23154,9 +23154,9 @@ snapshots:
 
   dotenv@16.4.7: {}
 
-  dotenv@16.5.0: {}
-
   dotenv@16.6.0: {}
+
+  dotenv@17.0.0: {}
 
   dotignore@0.1.2:
     dependencies:
