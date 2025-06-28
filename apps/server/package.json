@@ -83,7 +83,7 @@
     "jimp": "1.6.0",
     "js-yaml": "4.1.0",
     "jsdom": "26.1.0",
-    "marked": "15.0.12",
+    "marked": "16.0.0",
     "mime-types": "3.0.1",
     "multer": "2.0.1",
     "normalize-strings": "1.1.1",
