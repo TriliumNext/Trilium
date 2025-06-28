@@ -88,7 +88,7 @@
     "multer": "2.0.1",
     "normalize-strings": "1.1.1",
     "ollama": "0.5.16",
-    "openai": "5.8.1",
+    "openai": "5.8.2",
     "rand-token": "1.0.1",
     "safe-compare": "1.1.4",
     "sanitize-filename": "1.6.3",
