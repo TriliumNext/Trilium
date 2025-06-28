@@ -10,7 +10,7 @@
     "url": "https://github.com/TriliumNext/Notes"
   },
   "dependencies": {
-    "@eslint/js": "9.29.0",
+    "@eslint/js": "9.30.0",
     "@excalidraw/excalidraw": "0.18.0",
     "@fullcalendar/core": "6.1.17",
     "@fullcalendar/daygrid": "6.1.17",

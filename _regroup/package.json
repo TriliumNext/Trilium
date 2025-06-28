@@ -41,7 +41,7 @@
     "@types/node": "22.15.33",    
     "@types/yargs": "17.0.33",
     "@vitest/coverage-v8": "3.2.4",
-    "eslint": "9.29.0",
+    "eslint": "9.30.0",
     "eslint-plugin-simple-import-sort": "12.1.1",
     "esm": "3.2.25",
     "jsdoc": "4.0.4",
