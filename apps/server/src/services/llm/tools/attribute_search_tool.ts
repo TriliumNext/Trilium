@@ -19,26 +19,26 @@ export const attributeSearchToolDefinition: Tool = {
     type: 'function',
     function: {
         name: 'attribute_search',
-        description: 'Search for notes with specific attributes (labels or relations). Use this when you need to find notes based on their metadata rather than content. IMPORTANT: attributeType must be exactly "label" or "relation" (lowercase).',
+        description: 'Search notes by attributes (labels/relations). Finds notes with specific tags, categories, or relationships.',
         parameters: {
             type: 'object',
             properties: {
                 attributeType: {
                     type: 'string',
-                    description: 'MUST be exactly "label" or "relation" (lowercase, no other values are valid)',
+                    description: 'Type of attribute: "label" for tags/categories or "relation" for connections. Case-insensitive.',
                     enum: ['label', 'relation']
                 },
                 attributeName: {
                     type: 'string',
-                    description: 'Name of the attribute to search for (e.g., "important", "todo", "related-to")'
+                    description: 'Name of the attribute (e.g., "important", "todo", "relatedTo").'
                 },
                 attributeValue: {
                     type: 'string',
-                    description: 'Optional value of the attribute. If not provided, will find all notes with the given attribute name.'
+                    description: 'Optional value to match. Leave empty to find all notes with this attribute name.'
                 },
                 maxResults: {
                     type: 'number',
-                    description: 'Maximum number of results to return (default: 20)'
+                    description: 'Maximum number of results (default: 20).'
                 }
             },
             required: ['attributeType', 'attributeName']
@@ -57,13 +57,31 @@ export class AttributeSearchTool implements ToolHandler {
      */
     public async execute(args: { attributeType: string, attributeName: string, attributeValue?: string, maxResults?: number }): Promise<string | object> {
         try {
-            const { attributeType, attributeName, attributeValue, maxResults = 20 } = args;
+            let { attributeType, attributeName, attributeValue, maxResults = 20 } = args;
+
+            // Normalize attributeType to lowercase for case-insensitive handling
+            attributeType = attributeType?.toLowerCase();
 
             log.info(`Executing attribute_search tool - Type: "${attributeType}", Name: "${attributeName}", Value: "${attributeValue || 'any'}", MaxResults: ${maxResults}`);
 
-            // Validate attribute type
+            // Enhanced validation with helpful guidance
             if (attributeType !== 'label' && attributeType !== 'relation') {
-                return `Error: Invalid attribute type. Must be exactly "label" or "relation" (lowercase). You provided: "${attributeType}".`;
+                const suggestions: string[] = [];
+                
+                // Check for common variations and provide helpful guidance
+                if (attributeType?.includes('tag') || attributeType?.includes('category')) {
+                    suggestions.push('Use "label" for tags and categories');
+                }
+                
+                if (attributeType?.includes('link') || attributeType?.includes('connection')) {
+                    suggestions.push('Use "relation" for links and connections');
+                }
+                
+                const errorMessage = `Invalid attributeType: "${attributeType}". Use "label" for tags/categories or "relation" for connections. Examples: 
+- Find tagged notes: {"attributeType": "label", "attributeName": "important"}
+- Find related notes: {"attributeType": "relation", "attributeName": "relatedTo"}`;
+                
+                return errorMessage;
             }
 
             // Execute the search

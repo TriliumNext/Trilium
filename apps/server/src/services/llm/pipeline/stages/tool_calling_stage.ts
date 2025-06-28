@@ -483,27 +483,32 @@ export class ToolCallingStage extends BasePipelineStage<ToolExecutionInput, { re
         log.info(`Follow-up needed: ${needsFollowUp}`);
         log.info(`Reasoning: ${hasToolResults ? 'Has tool results to process' : 'No tool results'} ${hasErrors ? ', contains errors' : ''} ${hasEmptyResults ? ', contains empty results' : ''}`);
 
-        // Add a system message with hints for empty results
-        if (hasEmptyResults && needsFollowUp) {
-            log.info('Adding system message requiring the LLM to run additional tools with different parameters');
+        // Add aggressive system message for continued tool usage
+        if (needsFollowUp) {
+            log.info('Adding enhanced system message to encourage continued tool usage');
 
-            // Build a more directive message based on which tools were empty
-            const emptyToolNames = toolResultMessages
-                .filter(msg => this.isEmptyToolResult(msg.content, msg.name || ''))
-                .map(msg => msg.name);
+            let directiveMessage = '';
 
-            let directiveMessage = `YOU MUST NOT GIVE UP AFTER A SINGLE EMPTY SEARCH RESULT. `;
+            if (hasEmptyResults) {
+                directiveMessage = `IMPORTANT: No results found with your search. You MUST continue searching with different approaches:
+1. Use discover_tools to find alternative search methods
+2. Try broader search terms or synonyms
+3. Use different search tools (search_notes, keyword_search_notes, attribute_search)
+4. Search for related concepts instead of specific terms
+5. Use read_note on any noteIds you've found previously
 
-            if (emptyToolNames.includes('search_notes') || emptyToolNames.includes('keyword_search')) {
-                directiveMessage += `IMMEDIATELY RUN ANOTHER SEARCH TOOL with broader search terms, alternative keywords, or related concepts. `;
-                directiveMessage += `Try synonyms, more general terms, or related topics. `;
+CRITICAL: Continue executing tools to find information. Do NOT ask the user for guidance yet - exhaust all search options first.`;
+            } else {
+                directiveMessage = `EXCELLENT! You found ${toolResultMessages.length} results. Now you MUST continue with these actions:
+1. Use read_note with ALL noteId values to get full content
+2. After reading notes, use search_notes or keyword_search_notes to find related information
+3. Use attribute_search to find notes with similar tags/labels
+4. Use note_summarization on long notes
+5. Use content_extraction to pull specific information
+6. Use relationship tool to find connected notes
+
+REMEMBER: Execute multiple tools in sequence to gather comprehensive information. The user expects thorough analysis using 10-20+ tool calls. Continue executing tools!`;
             }
-
-            if (emptyToolNames.includes('keyword_search')) {
-                directiveMessage += `IMMEDIATELY TRY SEARCH_NOTES INSTEAD as it might find matches where keyword search failed. `;
-            }
-
-            directiveMessage += `DO NOT ask the user what to do next or if they want general information. CONTINUE SEARCHING with different parameters.`;
 
             updatedMessages.push({
                 role: 'system',
@@ -609,10 +614,13 @@ export class ToolCallingStage extends BasePipelineStage<ToolExecutionInput, { re
             }
         }
 
-        // Add a general suggestion to try search_notes as a fallback
+        // Add general recommendations including new helper tools
         if (!toolName.includes('search_notes')) {
             guidance += "RECOMMENDATION: If specific searches fail, try the 'search_notes' tool which performs semantic searches.\n";
         }
+        
+        // Encourage continued tool usage
+        guidance += "\nTry alternative tools immediately. Use discover_tools if unsure which tool to use next.";
 
         return guidance;
     }

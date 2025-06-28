@@ -34,6 +34,12 @@ export interface ToolParameter {
     type: string;
     description: string;
     enum?: string[];
+    default?: any;
+    minimum?: number;
+    maximum?: number;
+    minItems?: number;
+    maxItems?: number;
+    properties?: Record<string, ToolParameter>;
     items?: ToolParameter | {
         type: string;
         properties?: Record<string, ToolParameter>;

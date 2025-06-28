@@ -33,18 +33,18 @@ function isError(error: unknown): error is Error {
 export const readNoteToolDefinition: Tool = {
     type: 'function',
     function: {
-        name: 'read_note',
-        description: 'Read the content of a specific note by its ID',
+        name: 'read',
+        description: 'Read note content. Example: read("noteId123") → returns full content. Use noteIds from search results.',
         parameters: {
             type: 'object',
             properties: {
                 noteId: {
                     type: 'string',
-                    description: 'The system ID of the note to read (not the title). This is a unique identifier like "abc123def456" that must be used to access a specific note.'
+                    description: 'The noteId of the note to read (e.g., "abc123def456"). Get this from search results, not note titles.'
                 },
                 includeAttributes: {
                     type: 'boolean',
-                    description: 'Whether to include note attributes in the response (default: false)'
+                    description: 'Include note attributes/metadata in response (default: false).'
                 }
             },
             required: ['noteId']
@@ -71,8 +71,23 @@ export class ReadNoteTool implements ToolHandler {
             const note = becca.notes[noteId];
 
             if (!note) {
-                log.info(`Note with ID ${noteId} not found - returning error`);
-                return `Error: Note with ID ${noteId} not found`;
+                log.info(`Note with ID ${noteId} not found - returning helpful error`);
+                return {
+                    error: `Note not found: "${noteId}"`,
+                    troubleshooting: {
+                        possibleCauses: [
+                            'Invalid noteId format (should be like "abc123def456")',
+                            'Note may have been deleted or moved',
+                            'Using note title instead of noteId'
+                        ],
+                        solutions: [
+                            'Use search_notes to find the note by content or title',
+                            'Use keyword_search_notes to find notes with specific text',
+                            'Use attribute_search if you know the note has specific attributes',
+                            'Ensure you\'re using noteId from search results, not the note title'
+                        ]
+                    }
+                };
             }
 
             log.info(`Found note: "${note.title}" (Type: ${note.type})`);
@@ -84,12 +99,31 @@ export class ReadNoteTool implements ToolHandler {
 
             log.info(`Retrieved note content in ${duration}ms, content length: ${content?.length || 0} chars`);
 
-            // Prepare the response
-            const response: NoteResponse = {
+            // Prepare enhanced response with next steps
+            const response: NoteResponse & {
+                nextSteps?: {
+                    modify?: string;
+                    related?: string;
+                    organize?: string;
+                };
+                metadata?: {
+                    wordCount?: number;
+                    hasAttributes?: boolean;
+                    lastModified?: string;
+                };
+            } = {
                 noteId: note.noteId,
                 title: note.title,
                 type: note.type,
                 content: content || ''
+            };
+
+            // Add helpful metadata
+            const contentStr = typeof content === 'string' ? content : String(content || '');
+            response.metadata = {
+                wordCount: contentStr.split(/\s+/).filter(word => word.length > 0).length,
+                hasAttributes: note.getOwnedAttributes().length > 0,
+                lastModified: note.dateModified
             };
 
             // Include attributes if requested
@@ -110,6 +144,15 @@ export class ReadNoteTool implements ToolHandler {
                     });
                 }
             }
+
+            // Add next steps guidance
+            response.nextSteps = {
+                modify: `Use note_update with noteId: "${noteId}" to edit this note's content`,
+                related: `Use search_notes with related concepts to find similar notes`,
+                organize: response.metadata.hasAttributes 
+                    ? `Use attribute_manager with noteId: "${noteId}" to modify attributes`
+                    : `Use attribute_manager with noteId: "${noteId}" to add labels or relations`
+            };
 
             return response;
         } catch (error: unknown) {
