@@ -716,7 +716,7 @@ importers:
         version: 0.5.16
       openai:
         specifier: 5.8.1
-        version: 5.8.1(ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@6.0.5))(zod@3.24.4)
+        version: 5.8.1(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5))(zod@3.24.4)
       rand-token:
         specifier: 1.0.1
         version: 1.0.1
@@ -766,8 +766,8 @@ importers:
         specifier: 1.0.1
         version: 1.0.1
       ws:
-        specifier: 8.18.2
-        version: 8.18.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+        specifier: 8.18.3
+        version: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
       xml2js:
         specifier: 0.6.2
         version: 0.6.2
@@ -14057,8 +14057,8 @@ packages:
       utf-8-validate:
         optional: true
 
-  ws@8.18.2:
-    resolution: {integrity: sha512-DMricUmwGZUVr++AEAe2uiVM7UoO9MAVZMDu05UQOaUII0lp+zOzLLU4Xqh/JvTqklB1T4uELaaPBKyjE1r4fQ==}
+  ws@8.18.3:
+    resolution: {integrity: sha512-PEIGCY5tSlUt50cqyMXfCzX+oOPqN0vuGqWzbcJ2xvnkzkq46oOpz7dQaTDBdfICb4N14+GARUDw2XV2N4tvzg==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -20721,7 +20721,7 @@ snapshots:
   '@uploadcare/upload-client@6.14.1(bufferutil@4.0.9)(utf-8-validate@6.0.5)':
     dependencies:
       form-data: 4.0.2
-      ws: 8.18.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -20736,7 +20736,7 @@ snapshots:
       sirv: 3.0.1
       tinyrainbow: 2.0.0
       vitest: 3.2.0(@types/debug@4.1.12)(@types/node@22.15.33)(@vitest/browser@3.2.0)(@vitest/ui@3.2.0)(happy-dom@18.0.1)(jiti@2.4.2)(jsdom@26.1.0(bufferutil@4.0.9)(utf-8-validate@6.0.5))(less@4.1.3)(lightningcss@1.30.1)(msw@2.7.5(@types/node@22.15.33)(typescript@5.8.3))(sass-embedded@1.87.0)(sass@1.87.0)(stylus@0.64.0)(sugarss@4.0.1(postcss@8.5.3))(terser@5.39.0)(tsx@4.20.3)(yaml@2.8.0)
-      ws: 8.18.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
     optionalDependencies:
       playwright: 1.53.1
       webdriverio: 9.15.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
@@ -25685,7 +25685,7 @@ snapshots:
       whatwg-encoding: 3.1.1
       whatwg-mimetype: 4.0.0
       whatwg-url: 14.2.0
-      ws: 8.18.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - bufferutil
@@ -26835,9 +26835,9 @@ snapshots:
       is-docker: 2.2.1
       is-wsl: 2.2.0
 
-  openai@5.8.1(ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@6.0.5))(zod@3.24.4):
+  openai@5.8.1(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5))(zod@3.24.4):
     optionalDependencies:
-      ws: 8.18.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
       zod: 3.24.4
 
   openapi-types@12.1.3: {}
@@ -30399,7 +30399,7 @@ snapshots:
       '@wdio/utils': 9.15.0
       deepmerge-ts: 7.1.5
       undici: 6.21.3
-      ws: 8.18.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
     transitivePeerDependencies:
       - bare-buffer
       - bufferutil
@@ -30487,7 +30487,7 @@ snapshots:
       sockjs: 0.3.24
       spdy: 4.0.2
       webpack-dev-middleware: 7.4.2(webpack@5.99.9(@swc/core@1.11.29(@swc/helpers@0.5.17))(esbuild@0.25.5))
-      ws: 8.18.2(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
     optionalDependencies:
       webpack: 5.99.9(@swc/core@1.11.29(@swc/helpers@0.5.17))(esbuild@0.25.5)
     transitivePeerDependencies:
@@ -30715,7 +30715,7 @@ snapshots:
       bufferutil: 4.0.9
       utf-8-validate: 6.0.5
 
-  ws@8.18.2(bufferutil@4.0.9)(utf-8-validate@6.0.5):
+  ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5):
     optionalDependencies:
       bufferutil: 4.0.9
       utf-8-validate: 6.0.5
