@@ -56,7 +56,7 @@
     "jsonc-eslint-parser": "^2.1.0",
     "nx": "21.2.1",
     "react-refresh": "^0.17.0",
-    "rollup-plugin-webpack-stats": "2.0.7",
+    "rollup-plugin-webpack-stats": "2.1.0",
     "tslib": "^2.3.0",
     "tsx": "4.20.3",
     "typescript": "~5.8.0",
