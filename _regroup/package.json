@@ -36,7 +36,7 @@
   },
   "devDependencies": {    
     "@playwright/test": "1.53.1",
-    "@stylistic/eslint-plugin": "5.0.0",        
+    "@stylistic/eslint-plugin": "5.1.0",        
     "@types/express": "5.0.3",    
     "@types/node": "22.15.33",    
     "@types/yargs": "17.0.33",
