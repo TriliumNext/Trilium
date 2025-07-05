@@ -89,8 +89,20 @@ export class LLMCompletionStage extends BasePipelineStage<LLMCompletionInput, { 
             if (toolDefinitions.length > 0) {
                 updatedOptions.enableTools = true;
                 updatedOptions.tools = toolDefinitions;
-                log.info(`Adding ${toolDefinitions.length} tools to LLM request`);
+                log.info(`========== ADDING TOOLS TO LLM REQUEST ==========`);
+                log.info(`Tool count: ${toolDefinitions.length}`);
+                log.info(`Tool names: ${toolDefinitions.map(t => t.function.name).join(', ')}`);
+                log.info(`enableTools option: ${updatedOptions.enableTools}`);
+                log.info(`===============================================`);
+            } else {
+                log.error(`========== NO TOOLS AVAILABLE FOR LLM ==========`);
+                log.error(`Tool registry returned 0 definitions`);
+                log.error(`This means the LLM will NOT have access to tools`);
+                log.error(`Check tool initialization and registration`);
+                log.error(`==============================================`);
             }
+        } else {
+            log.info(`Tools explicitly disabled (enableTools: ${updatedOptions.enableTools})`);
         }
 
         // Determine which provider to use

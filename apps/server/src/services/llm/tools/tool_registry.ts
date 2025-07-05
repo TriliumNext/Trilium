@@ -153,7 +153,86 @@ export class ToolRegistry {
         // Only get definitions from valid tools
         const validTools = this.getAllTools();
         const toolDefs = validTools.map(handler => handler.definition);
+        
+        // Enhanced debugging for tool recognition issues
+        log.info(`========== TOOL REGISTRY DEBUG INFO ==========`);
+        log.info(`Total tools in registry: ${this.tools.size}`);
+        log.info(`Valid tools after validation: ${validTools.length}`);
+        log.info(`Tool definitions being sent to LLM: ${toolDefs.length}`);
+        
+        // Log each tool for debugging
+        toolDefs.forEach((def, idx) => {
+            log.info(`Tool ${idx + 1}: ${def.function.name} - ${def.function.description?.substring(0, 100) || 'No description'}...`);
+            log.info(`  Parameters: ${Object.keys(def.function.parameters?.properties || {}).join(', ') || 'none'}`);
+            log.info(`  Required: ${def.function.parameters?.required?.join(', ') || 'none'}`);
+        });
+        
+        if (toolDefs.length === 0) {
+            log.error(`CRITICAL: No tool definitions available for LLM! This will prevent tool calling.`);
+            log.error(`Registry size: ${this.tools.size}, Initialization attempted: ${this.initializationAttempted}`);
+            
+            // Try to provide debugging info about what's in the registry
+            log.error(`Raw tools in registry:`);
+            this.tools.forEach((handler, name) => {
+                log.error(`  - ${name}: ${handler ? 'exists' : 'null'}, definition: ${handler?.definition ? 'exists' : 'missing'}`);
+            });
+        }
+        
+        log.info(`==============================================`);
+        
         return toolDefs;
+    }
+
+    /**
+     * Debug method to get detailed registry status
+     */
+    public getDebugInfo(): {
+        registrySize: number;
+        validToolCount: number;
+        initializationAttempted: boolean;
+        toolDetails: Array<{
+            name: string;
+            hasDefinition: boolean;
+            hasExecute: boolean;
+            isValid: boolean;
+            error?: string;
+        }>;
+    } {
+        const toolDetails: Array<{
+            name: string;
+            hasDefinition: boolean;
+            hasExecute: boolean;
+            isValid: boolean;
+            error?: string;
+        }> = [];
+        
+        this.tools.forEach((handler, name) => {
+            let isValid = false;
+            let error: string | undefined;
+            
+            try {
+                isValid = this.validateToolHandler(handler);
+            } catch (e) {
+                error = e instanceof Error ? e.message : String(e);
+            }
+            
+            toolDetails.push({
+                name,
+                hasDefinition: !!handler?.definition,
+                hasExecute: typeof handler?.execute === 'function',
+                isValid,
+                error
+            });
+        });
+        
+        const validTools = this.getAllTools();
+        
+        return {
+            registrySize: this.tools.size,
+            validToolCount: validTools.length,
+            initializationAttempted: this.initializationAttempted,
+            toolDetails
+        };
     }
 }
 

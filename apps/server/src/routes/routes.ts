@@ -377,6 +377,9 @@ function register(app: express.Application) {
     asyncApiRoute(DEL, "/api/llm/chat/:chatNoteId", llmRoute.deleteSession);
     asyncApiRoute(PST, "/api/llm/chat/:chatNoteId/messages", llmRoute.sendMessage);
     asyncApiRoute(PST, "/api/llm/chat/:chatNoteId/messages/stream", llmRoute.streamMessage);
+    
+    // Debug endpoints
+    asyncApiRoute(GET, "/api/llm/debug/tools", llmRoute.debugTools);
 
 
 
