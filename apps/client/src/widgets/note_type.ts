@@ -1,60 +1,15 @@
-import server from "../services/server.js";
+import { Dropdown } from "bootstrap";
+import { NOTE_TYPES } from "../services/note_types.js";
+import { t } from "../services/i18n.js";
+import dialogService from "../services/dialog.js";
 import mimeTypesService from "../services/mime_types.js";
 import NoteContextAwareWidget from "./note_context_aware_widget.js";
-import dialogService from "../services/dialog.js";
-import { t } from "../services/i18n.js";
-import type FNote from "../entities/fnote.js";
-import type { NoteType } from "../entities/fnote.js";
+import server from "../services/server.js";
 import type { EventData } from "../components/app_context.js";
-import { Dropdown } from "bootstrap";
+import type { NoteType } from "../entities/fnote.js";
+import type FNote from "../entities/fnote.js";
 
-interface NoteTypeMapping {
-    type: NoteType;
-    mime?: string;
-    title: string;
-    isBeta?: boolean;
-    selectable: boolean;
-}
-
-const NOTE_TYPES: NoteTypeMapping[] = [
-    // The suggested note type ordering method: insert the item into the corresponding group,
-    // then ensure the items within the group are ordered alphabetically.
-    // Please keep the order synced with the listing found also in apps/client/src/services/note_types.ts.
-
-    // The default note type (always the first item)
-    { type: "text", mime: "text/html", title: t("note_types.text"), selectable: true },
-
-    // Text notes group
-    { type: "book", mime: "", title: t("note_types.book"), selectable: true },
-
-    // Graphic notes
-    { type: "canvas", mime: "application/json", title: t("note_types.canvas"), selectable: true },
-    { type: "mermaid", mime: "text/mermaid", title: t("note_types.mermaid-diagram"), selectable: true },
-
-    // Map notes
-    { type: "geoMap", mime: "application/json", title: t("note_types.geo-map"), isBeta: true, selectable: true },
-    { type: "mindMap", mime: "application/json", title: t("note_types.mind-map"), selectable: true },
-    { type: "relationMap", mime: "application/json", title: t("note_types.relation-map"), selectable: true },
-
-    // Misc note types
-    { type: "render", mime: "", title: t("note_types.render-note"), selectable: true },
-    { type: "webView", mime: "", title: t("note_types.web-view"), selectable: true },
-
-    // Code notes
-    { type: "code", mime: "text/plain", title: t("note_types.code"), selectable: true },
-
-    // Reserved types (cannot be created by the user)
-    { type: "contentWidget", mime: "", title: t("note_types.widget"), selectable: false },
-    { type: "doc", mime: "", title: t("note_types.doc"), selectable: false },
-    { type: "file", title: t("note_types.file"), selectable: false },
-    { type: "image", title: t("note_types.image"), selectable: false },
-    { type: "launcher", mime: "", title: t("note_types.launcher"), selectable: false },
-    { type: "noteMap", mime: "", title: t("note_types.note-map"), selectable: false },
-    { type: "search", title: t("note_types.saved-search"), selectable: false },
-    { type: "aiChat", mime: "application/json", title: t("note_types.ai-chat"), selectable: false }
-];
-
-const NOT_SELECTABLE_NOTE_TYPES = NOTE_TYPES.filter((nt) => !nt.selectable).map((nt) => nt.type);
+const NOT_SELECTABLE_NOTE_TYPES = NOTE_TYPES.filter((nt) => nt.reserved || nt.static).map((nt) => nt.type);
 
 const TPL = /*html*/`
 <div class="dropdown note-type-widget">
@@ -63,13 +18,6 @@ const TPL = /*html*/`
             max-height: 500px;
             overflow-y: auto;
             overflow-x: hidden;
-        }
-
-        .note-type-dropdown .badge {
-            margin-left: 8px;
-            background: var(--accented-background-color);
-            font-weight: normal;
-            color: var(--menu-text-color);
         }
     </style>
     <button type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="btn btn-sm dropdown-toggle select-button note-type-button">
@@ -117,10 +65,15 @@ export default class NoteTypeWidget extends NoteContextAwareWidget {
             return;
         }
 
-        for (const noteType of NOTE_TYPES.filter((nt) => nt.selectable)) {
+        for (const noteType of NOTE_TYPES.filter((nt) => !nt.reserved && !nt.static)) {
             let $typeLink: JQuery<HTMLElement>;
 
             const $title = $("<span>").text(noteType.title);
+
+            if (noteType.isNew) {
+                $title.append($(`<span class="badge new-note-type-badge">`).text(t("note_types.new-feature")));
+            }
+
             if (noteType.isBeta) {
                 $title.append($(`<span class="badge">`).text(t("note_types.beta-feature")));
             }

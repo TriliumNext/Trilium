@@ -154,13 +154,21 @@ export default class NoteTypeChooserDialog extends BasicWidget {
                 this.$noteTypeDropdown.append($('<h6 class="dropdown-header">').append(t("note_type_chooser.templates")));
             } else {
                 const commandItem = noteType as MenuCommandItem<CommandNames>;
-                this.$noteTypeDropdown.append(
-                    $('<a class="dropdown-item" tabindex="0">')
-                        .attr("data-note-type", commandItem.type || "")
-                        .attr("data-template-note-id", commandItem.templateNoteId || "")
-                        .append($("<span>").addClass(commandItem.uiIcon || ""))
-                        .append(` ${noteType.title}`)
-                );
+                const listItem = $('<a class="dropdown-item" tabindex="0">')
+                    .attr("data-note-type", commandItem.type || "")
+                    .attr("data-template-note-id", commandItem.templateNoteId || "")
+                    .append($("<span>").addClass(commandItem.uiIcon || ""))
+                    .append(` ${noteType.title}`);
+
+                if (commandItem.badges) {
+                    for (let badge of commandItem.badges) {
+                        listItem.append($(`<span class="badge">`)
+                                .addClass(badge.className || "")
+                                .text(badge.title));
+                    }
+                }
+
+                this.$noteTypeDropdown.append(listItem);
             }
         }
 

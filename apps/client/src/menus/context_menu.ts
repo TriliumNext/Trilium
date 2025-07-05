@@ -17,11 +17,17 @@ interface MenuSeparatorItem {
     title: "----";
 }
 
+export interface MenuItemBadge {
+    title: string;
+    className?: string;
+}
+
 export interface MenuCommandItem<T> {
     title: string;
     command?: T;
     type?: string;
     uiIcon?: string;
+    badges?: MenuItemBadge[];
     templateNoteId?: string;
     enabled?: boolean;
     handler?: MenuHandler<T>;
@@ -160,6 +166,18 @@ class ContextMenu {
                     .append($icon)
                     .append(" &nbsp; ") // some space between icon and text
                     .append(item.title);
+
+                if ("badges" in item && item.badges) {
+                    for (let badge of item.badges) {
+                        const badgeElement = $(`<span class="badge">`).text(badge.title);
+
+                        if (badge.className) {
+                            badgeElement.addClass(badge.className);
+                        }
+
+                        $link.append(badgeElement);
+                    }
+                }
 
                 if ("shortcut" in item && item.shortcut) {
                     $link.append($("<kbd>").text(item.shortcut));

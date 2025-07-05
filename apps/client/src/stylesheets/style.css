@@ -192,6 +192,13 @@ samp {
     font-family: var(--monospace-font-family) !important;
 }
 
+.badge {
+    --bs-badge-color: var(--muted-text-color);
+
+    margin-left: 8px;
+    background: var(--accented-background-color);
+}
+
 .input-group-text {
     background-color: var(--accented-background-color) !important;
     color: var(--muted-text-color) !important;

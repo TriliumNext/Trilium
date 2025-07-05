@@ -171,6 +171,16 @@ html body .dropdown-item[disabled] {
     opacity: var(--menu-item-disabled-opacity);
 }
 
+/* Badges */
+:root .badge {
+    --bs-badge-color: var(--badge-text-color);
+    --bs-badge-font-weight: 500;
+
+    background: var(--badge-background-color);
+    text-transform: uppercase;
+    letter-spacing: .2pt;
+}
+
 /* Menu item icon */
 .dropdown-item .bx {
     transform: translateY(var(--menu-item-icon-vert-offset));

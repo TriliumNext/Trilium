@@ -171,6 +171,9 @@
 
     --alert-bar-background: #32637b29;
 
+    --badge-background-color: #00000011;
+    --badge-text-color: var(--muted-text-color);
+
     --promoted-attribute-card-background-color: var(--card-background-color);
     --promoted-attribute-card-shadow-color: #00000033;
 

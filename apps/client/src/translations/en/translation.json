@@ -1627,7 +1627,8 @@
     "geo-map": "Geo Map",
     "beta-feature": "Beta",
     "ai-chat": "AI Chat",
-    "task-list": "Task List"
+    "task-list": "Task List",
+    "new-feature": "New"
   },
   "protect_note": {
     "toggle-on": "Protect the note",
