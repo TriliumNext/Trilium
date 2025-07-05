@@ -37,22 +37,23 @@ export default class SharedInfoWidget extends NoteContextAwareWidget {
 
     async refreshWithNote(note: FNote) {
         const syncServerHost = options.get("syncServerHost");
+        const sharePath = options.get("sharePath");
         let link;
 
         const shareId = this.getShareId(note);
 
         if (syncServerHost) {
-            link = `${syncServerHost}/share/${shareId}`;
+            link = `${syncServerHost}${sharePath}/${shareId}`;
             this.$sharedText.text(t("shared_info.shared_publicly"));
         } else {
             let host = location.host;
             if (host.endsWith("/")) {
                 // seems like IE has trailing slash
                 // https://github.com/zadam/trilium/issues/3782
-                host = host.substr(0, host.length - 1);
+                host = host.slice(0, -1);
             }
 
-            link = `${location.protocol}//${host}${location.pathname}share/${shareId}`;
+            link = `${location.protocol}//${host}${location.pathname}${sharePath.slice(1)}/${shareId}`;
             this.$sharedText.text(t("shared_info.shared_locally"));
         }
 

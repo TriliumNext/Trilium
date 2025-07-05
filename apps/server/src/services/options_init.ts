@@ -191,8 +191,10 @@ const defaultOptions: DefaultOption[] = [
     },
 
     // Share settings
+    { name: "sharePath", value: "/share", isSynced: true },
     { name: "redirectBareDomain", value: "false", isSynced: true },
     { name: "showLoginInShareTheme", value: "false", isSynced: true },
+    { name: "shareSubtree", value: "false", isSynced: true },
 
     // AI Options
     { name: "aiEnabled", value: "false", isSynced: true },

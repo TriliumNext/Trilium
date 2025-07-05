@@ -1709,9 +1709,17 @@
     "show_login_link": "在共享主题中显示登录链接",
     "show_login_link_description": "在共享页面底部添加登录链接",
     "check_share_root": "检查共享根状态",
+    "check_share_root_error": "检查共享根状态时发生意外错误，请检查日志以获取更多信息。",
+    "share_note_title": "'{{noteTitle}}'",
     "share_root_found": "共享根笔记 '{{noteTitle}}' 已准备好",
     "share_root_not_found": "未找到带有 #shareRoot 标签的笔记",
-    "share_root_not_shared": "笔记 '{{noteTitle}}' 具有 #shareRoot 标签，但未共享"
+    "share_root_not_shared": "笔记 '{{noteTitle}}' 具有 #shareRoot 标签，但未共享",
+    "share_root_multiple_found": "找到多个具有 #shareRoot 标签的共享笔记：{{- foundNoteTitles}}。将使用笔记 {{- activeNoteTitle}} 作为共享根笔记。",
+    "share_path": "共享路径",
+    "share_path_description": "共享笔记的 URL 前缀（例如 '/share' --> '/share/noteId' 或 '/custom-path' --> '/custom-path/noteId'）。支持多级嵌套（例如 '/custom-path/sub-path' --> '/custom-path/sub-path/noteId'）。刷新页面以应用更改。",
+    "share_path_placeholder": "/share 或 /custom-path",
+    "share_subtree": "共享子树",
+    "share_subtree_description": "共享整个子树，而不是仅共享笔记"
   },
   "time_selector": {
     "invalid_input": "输入的时间值不是有效数字。",
