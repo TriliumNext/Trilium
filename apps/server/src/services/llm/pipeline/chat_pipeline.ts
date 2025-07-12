@@ -8,6 +8,7 @@ import { ModelSelectionStage } from './stages/model_selection_stage.js';
 import { LLMCompletionStage } from './stages/llm_completion_stage.js';
 import { ResponseProcessingStage } from './stages/response_processing_stage.js';
 import { ToolCallingStage } from './stages/tool_calling_stage.js';
+import { ErrorRecoveryStage } from './stages/error_recovery_stage.js';
 // Traditional search is used instead of vector search
 import toolRegistry from '../tools/tool_registry.js';
 import toolInitializer from '../tools/tool_initializer.js';
@@ -29,6 +30,7 @@ export class ChatPipeline {
         llmCompletion: LLMCompletionStage;
         responseProcessing: ResponseProcessingStage;
         toolCalling: ToolCallingStage;
+        errorRecovery: ErrorRecoveryStage;
         // traditional search is used instead of vector search
     };
 
@@ -50,6 +52,7 @@ export class ChatPipeline {
             llmCompletion: new LLMCompletionStage(),
             responseProcessing: new ResponseProcessingStage(),
             toolCalling: new ToolCallingStage(),
+            errorRecovery: new ErrorRecoveryStage(),
             // traditional search is used instead of vector search
         };
 

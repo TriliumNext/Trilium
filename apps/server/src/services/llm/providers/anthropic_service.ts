@@ -102,12 +102,21 @@ export class AnthropicService extends BaseAIService {
 
             // Add tools support if provided
             if (opts.tools && opts.tools.length > 0) {
-                log.info(`Adding ${opts.tools.length} tools to Anthropic request`);
+                log.info(`========== ANTHROPIC TOOL PROCESSING ==========`);
+                log.info(`Input tools count: ${opts.tools.length}`);
+                log.info(`Input tool names: ${opts.tools.map(t => t.function?.name || 'unnamed').join(', ')}`);
 
                 // Convert OpenAI-style function tools to Anthropic format
                 const anthropicTools = this.convertToolsToAnthropicFormat(opts.tools);
 
-                requestParams.tools = anthropicTools;
+                if (anthropicTools.length > 0) {
+                    requestParams.tools = anthropicTools;
+                    log.info(`Successfully added ${anthropicTools.length} tools to Anthropic request`);
+                    log.info(`Final tool names: ${anthropicTools.map(t => t.name).join(', ')}`);
+                } else {
+                    log.error(`CRITICAL: Tool conversion failed - 0 tools converted from ${opts.tools.length} input tools`);
+                }
+                log.info(`============================================`);
 
                 // Add tool_choice parameter if specified
                 if (opts.tool_choice) {

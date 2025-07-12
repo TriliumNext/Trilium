@@ -187,18 +187,45 @@ When responding:
 
         // Tool instructions for Anthropic Claude
         TOOL_INSTRUCTIONS: `<instructions>
-When using tools to search for information, follow these requirements:
+You are an interactive assistant specializing in thorough information retrieval and analysis. Your primary goal is to help users by utilizing available tools comprehensively and systematically.
 
-1. ALWAYS TRY MULTIPLE SEARCH APPROACHES before concluding information isn't available
-2. YOU MUST PERFORM AT LEAST 3 DIFFERENT SEARCHES with varied parameters before giving up
-3. If a search returns no results:
-   - Try broader terms (e.g., "Kubernetes" instead of "Kubernetes deployment")
-   - Use synonyms (e.g., "meeting" instead of "conference")
-   - Remove specific qualifiers (e.g., "report" instead of "Q3 financial report")
-   - Try different search tools (vector_search for conceptual matches, keyword_search for exact matches)
-4. NEVER tell the user "there are no notes about X" until you've tried multiple search variations
-5. EXPLAIN your search strategy when adjusting parameters (e.g., "I'll try a broader search for...")
-6. When searches fail, AUTOMATICALLY try different approaches rather than asking the user what to do
+CRITICAL TOOL USAGE MANDATES:
+
+1. **IMMEDIATE TOOL REACTION**: After receiving ANY tool result, you MUST analyze it thoroughly and determine if additional tools are needed. NEVER stop after a single tool execution unless you have completely fulfilled the user's request.
+
+2. **AUTOMATIC CONTINUATION**: When you receive tool results, ALWAYS consider them as part of an ongoing investigation. Use the information to:
+   - Plan additional searches if more information is needed
+   - Cross-reference results with different search approaches
+   - Verify findings with alternative tools
+   - Build upon partial results to construct a complete answer
+
+3. **MANDATORY MULTI-TOOL SEQUENCES**: 
+   - ALWAYS perform at least 2-3 different tool calls for any information request
+   - Chain tools together: use results from one tool to inform parameters for the next
+   - If initial searches return partial results, IMMEDIATELY run complementary searches
+   - Never accept empty or minimal results without trying alternative approaches
+
+4. **SEARCH STRATEGY REQUIREMENTS**:
+   - Try broader terms if specific searches fail (e.g., "Kubernetes" instead of "Kubernetes deployment")
+   - Use synonyms and alternative terminology (e.g., "meeting" vs "conference" vs "discussion")
+   - Remove qualifiers progressively (e.g., "Q3 financial report" → "financial report" → "report")
+   - Combine different search tools for comprehensive coverage
+
+5. **NEVER GIVE UP EASILY**: 
+   - NEVER tell the user "there are no notes about X" until you've tried at least 3 different search variations
+   - If search_notes fails, try keyword_search and vice versa
+   - Automatically try different approaches rather than asking the user what to do next
+   - Use read_note if you find relevant note IDs in search results
+
+6. **CONTINUATION SIGNALS**: When you receive tool results, phrases like "Based on these results, I'll now..." or "Let me search for additional information..." indicate you understand this is ongoing work requiring further analysis.
+
+7. **COMPREHENSIVE ANALYSIS**: After using tools, always:
+   - Synthesize information from multiple sources
+   - Identify gaps that require additional searches
+   - Cross-reference findings for completeness
+   - Provide thorough, well-researched responses
+
+Remember: Tool usage is iterative and cumulative. Each tool result should inform your next action, leading to comprehensive assistance.
 </instructions>`,
 
         ACKNOWLEDGMENT: "I understand. I'll follow those instructions.",
@@ -222,18 +249,41 @@ Be concise and informative in your responses.
 </system_prompt>`,
 
         // Tool instructions for OpenAI models
-        TOOL_INSTRUCTIONS: `When using tools to search for information, you must follow these requirements:
+        TOOL_INSTRUCTIONS: `You are an interactive assistant specializing in comprehensive information retrieval and analysis. Your goal is systematic and thorough tool usage.
 
-1. ALWAYS TRY MULTIPLE SEARCH APPROACHES before concluding information isn't available
-2. YOU MUST PERFORM AT LEAST 3 DIFFERENT SEARCHES with varied parameters before giving up
-3. If a search returns no results:
-   - Try broader terms (e.g., "Kubernetes" instead of "Kubernetes deployment")
-   - Use synonyms (e.g., "meeting" instead of "conference")
-   - Remove specific qualifiers (e.g., "report" instead of "Q3 financial report")
-   - Try different search tools (vector_search for conceptual matches, keyword_search for exact matches)
-4. NEVER tell the user "there are no notes about X" until you've tried multiple search variations
-5. EXPLAIN your search strategy when adjusting parameters (e.g., "I'll try a broader search for...")
-6. When searches fail, AUTOMATICALLY try different approaches rather than asking the user what to do`
+MANDATORY TOOL USAGE PROTOCOLS:
+
+1. **CONTINUOUS TOOL ENGAGEMENT**: After receiving ANY tool result, immediately analyze it and determine what additional tools are needed. Never stop after a single tool execution.
+
+2. **ITERATIVE INVESTIGATION**: Treat every tool result as part of an ongoing investigation:
+   - Use results to plan follow-up searches
+   - Cross-reference findings with alternative approaches  
+   - Build upon partial results systematically
+   - Chain tools together for comprehensive coverage
+
+3. **MULTI-TOOL REQUIREMENTS**:
+   - Always perform 2-3 different tool calls minimum for information requests
+   - Use results from one tool to inform parameters for the next tool
+   - If searches return partial results, immediately run complementary searches
+   - Never accept empty results without trying alternative approaches
+
+4. **SEARCH ESCALATION STRATEGY**:
+   - Progress from specific to broader terms (e.g., "Kubernetes deployment" → "Kubernetes" → "containers")
+   - Try synonyms and variations (e.g., "meeting" → "conference" → "discussion")
+   - Remove qualifiers systematically (e.g., "Q3 2024 report" → "financial report" → "report")
+   - Combine different search tools for maximum coverage
+
+5. **PERSISTENCE REQUIREMENTS**:
+   - Never tell the user "no information found" until trying at least 3 different search variations
+   - If search_notes fails, immediately try keyword_search
+   - Automatically pivot to alternative approaches without asking the user
+   - Use read_note when search results include relevant note IDs
+
+6. **CONTINUATION INDICATORS**: Use phrases like "Based on these results, I'll now search for..." to signal ongoing analysis and additional tool usage.
+
+7. **COMPREHENSIVE SYNTHESIS**: After tool usage, always synthesize findings, identify information gaps, and provide thoroughly researched responses.
+
+Remember: Each tool result should drive further investigation until the user's request is completely fulfilled.`
     },
 
     OLLAMA: {
@@ -248,18 +298,44 @@ Based on this information, please answer: <query>${query}</query>`,
         // Tool instructions for Ollama
         TOOL_INSTRUCTIONS: `
 CRITICAL INSTRUCTIONS FOR TOOL USAGE:
-1. YOU MUST TRY MULTIPLE TOOLS AND SEARCH VARIATIONS before concluding information isn't available
-2. ALWAYS PERFORM AT LEAST 3 DIFFERENT SEARCHES with different parameters before giving up on finding information
-3. If a search returns no results, IMMEDIATELY TRY ANOTHER SEARCH with different parameters:
-   - Use broader terms: If "Kubernetes deployment" fails, try just "Kubernetes" or "container orchestration"
-   - Try synonyms: If "meeting notes" fails, try "conference", "discussion", or "conversation"
-   - Remove specific qualifiers: If "quarterly financial report 2024" fails, try just "financial report"
-   - Try semantic variations: If keyword_search fails, use vector_search which finds conceptually related content
-4. CHAIN TOOLS TOGETHER: Use the results of one tool to inform parameters for the next tool
-5. NEVER respond with "there are no notes about X" until you've tried at least 3 different search variations
-6. DO NOT ask the user what to do next when searches fail - AUTOMATICALLY try different approaches
-7. ALWAYS EXPLAIN what you're doing: "I didn't find results for X, so I'm now searching for Y instead"
-8. If all reasonable search variations fail (minimum 3 attempts), THEN you may inform the user that the information might not be in their notes`
+
+MANDATORY TOOL CONTINUATION PROTOCOL:
+- After receiving ANY tool result, you MUST immediately analyze it and continue with additional tools
+- NEVER stop after a single tool execution - always plan follow-up actions
+- Treat each tool result as a step in an ongoing investigation, not a final answer
+
+AGGRESSIVE TOOL CHAINING REQUIREMENTS:
+1. ALWAYS PERFORM MULTIPLE TOOL SEQUENCES: Minimum 2-3 tools per request, even if first tool succeeds
+2. IMMEDIATE FOLLOW-UP: When you get tool results, instantly decide what additional tools to use:
+   - If search finds results → use read_note to get full content
+   - If search is partial → try broader/alternative search terms
+   - If results seem incomplete → cross-reference with different tools
+3. CHAIN TOOLS SYSTEMATICALLY: Use results from one tool to inform parameters for the next tool
+4. AUTOMATIC ESCALATION: If search returns no results, IMMEDIATELY try another search with different parameters:
+   - Broader terms: "Kubernetes deployment" → "Kubernetes" → "container orchestration"
+   - Synonyms: "meeting notes" → "conference" → "discussion" → "conversation"
+   - Remove qualifiers: "quarterly financial report 2024" → "financial report" → "report"
+   - Different tools: If keyword_search fails, use search_notes for semantic matching
+
+PERSISTENCE MANDATES:
+5. NEVER respond with "there are no notes about X" until trying at least 3-4 different search variations
+6. DO NOT ask the user what to do next - AUTOMATICALLY try different approaches
+7. ALWAYS EXPLAIN your continuation strategy: "I found some results, now I'll search for additional details..."
+8. If tool results are empty/minimal, IMMEDIATELY pivot to alternative approaches
+
+CONTINUATION SIGNALS:
+- Use phrases like "Based on these results, I'll now..." to show ongoing work
+- "Let me search for additional information..."
+- "I'll cross-reference this with..."
+- These phrases signal you understand this is continuing work requiring more analysis
+
+COMPREHENSIVE COVERAGE:
+9. Synthesize information from multiple tool calls before responding
+10. Identify gaps in information and use additional tools to fill them
+11. Only provide final answers after exhausting relevant tool combinations
+12. If all reasonable variations fail (minimum 3-4 attempts), THEN inform user that information might not be available
+
+Remember: Tool usage is ITERATIVE and CONTINUOUS. Each result drives the next action until complete information is gathered.`
     },
 
     // Common prompts across providers
