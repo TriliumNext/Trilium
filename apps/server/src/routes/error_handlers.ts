@@ -3,6 +3,7 @@ import log from "../services/log.js";
 import NotFoundError from "../errors/not_found_error.js";
 import ForbiddenError from "../errors/forbidden_error.js";
 import HttpError from "../errors/http_error.js";
+import { CSRF_COOKIE_NAME } from "./csrf_protection.js";
 
 function register(app: Application) {
 
@@ -14,7 +15,7 @@ function register(app: Application) {
             && err.code === "EBADCSRFTOKEN";
 
         if (isCsrfTokenError) {
-            log.error(`Invalid CSRF token: ${req.headers["x-csrf-token"]}, secret: ${req.cookies["_csrf"]}`);
+            log.error(`Invalid CSRF token: ${req.headers["x-csrf-token"]}, secret: ${req.cookies[CSRF_COOKIE_NAME]}`);
             return next(new ForbiddenError("Invalid CSRF token"));
         }
 
