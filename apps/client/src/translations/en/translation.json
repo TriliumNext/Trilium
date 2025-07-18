@@ -1300,7 +1300,22 @@
     "enable_image_compression": "Enable image compression",
     "max_image_dimensions": "Max width / height of an image (image will be resized if it exceeds this setting).",
     "max_image_dimensions_unit": "pixels",
-    "jpeg_quality_description": "JPEG quality (10 - worst quality, 100 - best quality, 50 - 85 is recommended)"
+    "jpeg_quality_description": "JPEG quality (10 - worst quality, 100 - best quality, 50 - 85 is recommended)",
+    "ocr_section_title": "Optical Character Recognition (OCR)",
+    "enable_ocr": "Enable OCR for images",
+    "ocr_description": "Automatically extract text from images using OCR technology. This makes image content searchable within your notes.",
+    "ocr_auto_process": "Automatically process new images with OCR",
+    "ocr_language": "OCR Language",
+    "ocr_min_confidence": "Minimum confidence threshold",
+    "ocr_confidence_unit": "(0.0-1.0)",
+    "ocr_confidence_description": "Only extract text with confidence above this threshold. Lower values include more text but may be less accurate.",
+    "batch_ocr_title": "Process Existing Images",
+    "batch_ocr_description": "Process all existing images in your notes with OCR. This may take some time depending on the number of images.",
+    "batch_ocr_start": "Start Batch OCR Processing",
+    "batch_ocr_starting": "Starting batch OCR processing...",
+    "batch_ocr_progress": "Processing {{processed}} of {{total}} images...",
+    "batch_ocr_completed": "Batch OCR completed! Processed {{processed}} images.",
+    "batch_ocr_error": "Error during batch OCR: {{error}}"
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Attachment Erasure Timeout",

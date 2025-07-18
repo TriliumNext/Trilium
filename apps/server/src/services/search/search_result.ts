@@ -2,6 +2,8 @@
 
 import beccaService from "../../becca/becca_service.js";
 import becca from "../../becca/becca.js";
+import sql from "../sql.js";
+import options from "../options.js";
 
 class SearchResult {
     notePathArray: string[];
@@ -48,6 +50,9 @@ class SearchResult {
         this.addScoreForStrings(tokens, note.title, 2.0); // Increased to give more weight to title matches
         this.addScoreForStrings(tokens, this.notePathTitle, 0.3); // Reduced to further de-emphasize path matches
 
+        // Add OCR scoring - weight between title and content matches
+        this.addOCRScore(tokens, 1.5);
+
         if (note.isInHiddenSubtree()) {
             this.score = this.score / 3; // Increased penalty for hidden notes
         }
@@ -69,6 +74,37 @@ class SearchResult {
             }
         }
         this.score += tokenScore;
+    }
+
+    addOCRScore(tokens: string[], factor: number) {
+        try {
+            // Check if OCR is enabled
+            if (!options.getOptionBool('ocrEnabled')) {
+                return;
+            }
+
+            // Search for OCR results for this note and its attachments
+            const ocrResults = sql.getRows(`
+                SELECT extracted_text, confidence 
+                FROM ocr_results 
+                WHERE (entity_id = ? AND entity_type = 'note')
+                   OR (entity_type = 'attachment' AND entity_id IN (
+                       SELECT attachmentId FROM attachments WHERE ownerId = ?
+                   ))
+            `, [this.noteId, this.noteId]);
+
+            for (const ocrResult of ocrResults as Array<{extracted_text: string; confidence: number}>) {
+                // Calculate confidence-weighted score
+                const confidenceMultiplier = Math.max(0.5, ocrResult.confidence); // Minimum 0.5x multiplier
+                const adjustedFactor = factor * confidenceMultiplier;
+                
+                // Add score for OCR text matches
+                this.addScoreForStrings(tokens, ocrResult.extracted_text, adjustedFactor);
+            }
+        } catch (error) {
+            // Silently fail if OCR service is not available
+            console.debug('OCR scoring failed:', error);
+        }
     }
 }
 
