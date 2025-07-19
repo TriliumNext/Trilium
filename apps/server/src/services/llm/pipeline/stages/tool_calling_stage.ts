@@ -256,7 +256,14 @@ export class ToolCallingStage extends BasePipelineStage<ToolExecutionInput, { re
                             name: toolCall.function.name,
                             arguments: args
                         },
-                        type: 'start' as const
+                        type: 'start' as const,
+                        progress: {
+                            current: index + 1,
+                            total: response.tool_calls?.length || 1,
+                            status: 'initializing',
+                            message: `Starting ${toolCall.function.name} execution...`,
+                            estimatedDuration: this.getEstimatedDuration(toolCall.function.name)
+                        }
                     };
 
                     // Don't wait for this to complete, but log any errors
@@ -274,6 +281,35 @@ export class ToolCallingStage extends BasePipelineStage<ToolExecutionInput, { re
                 let result;
                 try {
                     log.info(`Starting tool execution for ${toolCall.function.name}...`);
+                    
+                    // Send progress update during execution
+                    if (streamCallback) {
+                        const progressData = {
+                            action: 'progress',
+                            tool: {
+                                name: toolCall.function.name,
+                                arguments: args
+                            },
+                            type: 'progress' as const,
+                            progress: {
+                                current: index + 1,
+                                total: response.tool_calls?.length || 1,
+                                status: 'executing',
+                                message: `Executing ${toolCall.function.name}...`,
+                                startTime: executionStart
+                            }
+                        };
+
+                        const progressResult = streamCallback('', false, {
+                            text: '',
+                            done: false,
+                            toolExecution: progressData
+                        });
+                        if (progressResult instanceof Promise) {
+                            progressResult.catch((e: Error) => log.error(`Error sending tool execution progress event: ${e.message}`));
+                        }
+                    }
+
                     result = await tool.execute(args);
                     const executionTime = Date.now() - executionStart;
                     log.info(`================ TOOL EXECUTION COMPLETED in ${executionTime}ms ================`);
@@ -296,6 +332,10 @@ export class ToolCallingStage extends BasePipelineStage<ToolExecutionInput, { re
 
                     // Emit tool completion event if streaming is enabled
                     if (streamCallback) {
+                        const resultSummary = typeof result === 'string' 
+                            ? result.substring(0, 200) + (result.length > 200 ? '...' : '')
+                            : `Object with ${Object.keys(result).length} properties`;
+
                         const toolExecutionData = {
                             action: 'complete',
                             tool: {
@@ -303,7 +343,15 @@ export class ToolCallingStage extends BasePipelineStage<ToolExecutionInput, { re
                                 arguments: {} as Record<string, unknown>
                             },
                             result: typeof result === 'string' ? result : result as Record<string, unknown>,
-                            type: 'complete' as const
+                            type: 'complete' as const,
+                            progress: {
+                                current: index + 1,
+                                total: response.tool_calls?.length || 1,
+                                status: 'completed',
+                                message: `${toolCall.function.name} completed successfully`,
+                                executionTime: executionTime,
+                                resultSummary: resultSummary
+                            }
                         };
 
                         // Don't wait for this to complete, but log any errors
@@ -352,7 +400,15 @@ export class ToolCallingStage extends BasePipelineStage<ToolExecutionInput, { re
                                 arguments: {} as Record<string, unknown>
                             },
                             error: enhancedErrorMessage, // Include guidance in the error message
-                            type: 'error' as const
+                            type: 'error' as const,
+                            progress: {
+                                current: index + 1,
+                                total: response.tool_calls?.length || 1,
+                                status: 'failed',
+                                message: `${toolCall.function.name} failed: ${errorMessage.substring(0, 100)}...`,
+                                executionTime: executionTime,
+                                errorType: execError instanceof Error ? execError.constructor.name : 'UnknownError'
+                            }
                         };
 
                         // Don't wait for this to complete, but log any errors
@@ -450,10 +506,13 @@ export class ToolCallingStage extends BasePipelineStage<ToolExecutionInput, { re
                 log.info(`Empty result detected for tool ${name}. Will add suggestion to try different parameters.`);
             }
 
-            // Add enhancement for empty results
+            // Add enhancement for empty results and continuation signals
             let enhancedContent = resultContent;
             if (isEmptyResult && !resultContent.startsWith('Error:')) {
-                enhancedContent = `${resultContent}\n\nNOTE: This tool returned no useful results with the provided parameters. Consider trying again with different parameters such as broader search terms, different filters, or alternative approaches.`;
+                enhancedContent = `${resultContent}\n\nCONTINUATION REQUIRED: This tool returned no useful results with the provided parameters. You MUST immediately try additional searches with broader terms, alternative keywords, or different tools. Do not stop here - continue your investigation.`;
+            } else if (!resultContent.startsWith('Error:')) {
+                // Add continuation signal for successful results too
+                enhancedContent = `${resultContent}\n\nCONTINUATION: Analyze these results and determine if additional tools are needed to provide a comprehensive response. Consider follow-up searches, reading specific notes, or cross-referencing with other tools.`;
             }
 
             // Add a new message for the tool result
@@ -483,27 +542,35 @@ export class ToolCallingStage extends BasePipelineStage<ToolExecutionInput, { re
         log.info(`Follow-up needed: ${needsFollowUp}`);
         log.info(`Reasoning: ${hasToolResults ? 'Has tool results to process' : 'No tool results'} ${hasErrors ? ', contains errors' : ''} ${hasEmptyResults ? ', contains empty results' : ''}`);
 
-        // Add a system message with hints for empty results
-        if (hasEmptyResults && needsFollowUp) {
-            log.info('Adding system message requiring the LLM to run additional tools with different parameters');
+        // Add system message to ensure continuation - always add this for any tool results
+        if (needsFollowUp) {
+            log.info('Adding system message to ensure LLM continues with additional tools');
 
-            // Build a more directive message based on which tools were empty
-            const emptyToolNames = toolResultMessages
-                .filter(msg => this.isEmptyToolResult(msg.content, msg.name || ''))
-                .map(msg => msg.name);
+            let directiveMessage = '';
 
-            let directiveMessage = `YOU MUST NOT GIVE UP AFTER A SINGLE EMPTY SEARCH RESULT. `;
+            // Handle empty results with aggressive re-search instructions
+            if (hasEmptyResults) {
+                directiveMessage = `CRITICAL: Empty results detected. YOU MUST NOT GIVE UP. IMMEDIATELY try alternative approaches:
+- Use broader search terms (remove specific qualifiers)
+- Try synonyms and related concepts
+- Use different search tools (if keyword_search failed, try search_notes)
+- Remove date/time constraints and try general terms
+DO NOT respond to the user until you've tried at least 2-3 additional search variations.`;
+            } else {
+                // For successful results, provide comprehensive follow-up instructions
+                directiveMessage = `TOOL ANALYSIS CONTINUATION: You have received tool results above. This is NOT the end of your investigation. You must:
 
-            if (emptyToolNames.includes('search_notes') || emptyToolNames.includes('keyword_search')) {
-                directiveMessage += `IMMEDIATELY RUN ANOTHER SEARCH TOOL with broader search terms, alternative keywords, or related concepts. `;
-                directiveMessage += `Try synonyms, more general terms, or related topics. `;
+1. Analyze the results thoroughly
+2. Determine if additional information is needed
+3. Use follow-up tools to gather comprehensive information
+4. If search results included note IDs, use read_note to get full content
+5. Cross-reference findings with alternative search approaches
+6. Continue investigation until you can provide a complete, well-researched response
+
+REMEMBER: Execute multiple tools in sequence to build comprehensive answers. The user expects thorough investigation with systematic tool usage.
+
+Continue your systematic investigation now.`;
             }
-
-            if (emptyToolNames.includes('keyword_search')) {
-                directiveMessage += `IMMEDIATELY TRY SEARCH_NOTES INSTEAD as it might find matches where keyword search failed. `;
-            }
-
-            directiveMessage += `DO NOT ask the user what to do next or if they want general information. CONTINUE SEARCHING with different parameters.`;
 
             updatedMessages.push({
                 role: 'system',
@@ -609,12 +676,35 @@ export class ToolCallingStage extends BasePipelineStage<ToolExecutionInput, { re
             }
         }
 
-        // Add a general suggestion to try search_notes as a fallback
+        // Add general recommendations including new helper tools
         if (!toolName.includes('search_notes')) {
             guidance += "RECOMMENDATION: If specific searches fail, try the 'search_notes' tool which performs semantic searches.\n";
         }
+        
+        // Encourage continued tool usage
+        guidance += "\nTry alternative tools immediately. Use discover_tools if unsure which tool to use next.";
 
         return guidance;
+    }
+
+    /**
+     * Get estimated duration for a tool execution (in milliseconds)
+     * @param toolName The name of the tool
+     * @returns Estimated duration in milliseconds
+     */
+    private getEstimatedDuration(toolName: string): number {
+        // Tool-specific duration estimates based on typical execution times
+        const estimations = {
+            'search_notes': 2000,
+            'read_note': 1000,
+            'keyword_search': 1500,
+            'attribute_search': 1200,
+            'discover_tools': 500,
+            'note_by_path': 800,
+            'template_search': 1000
+        };
+
+        return estimations[toolName as keyof typeof estimations] || 1500; // Default 1.5 seconds
     }
 
     /**
