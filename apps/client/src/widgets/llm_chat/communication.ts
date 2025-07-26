@@ -48,6 +48,9 @@ export async function checkSessionExists(noteId: string): Promise<boolean> {
  * @param onContentUpdate - Callback for content updates
  * @param onThinkingUpdate - Callback for thinking updates
  * @param onToolExecution - Callback for tool execution
+ * @param onProgressUpdate - Callback for progress updates
+ * @param onUserInteraction - Callback for user interaction requests
+ * @param onErrorRecovery - Callback for error recovery options
  * @param onComplete - Callback for completion
  * @param onError - Callback for errors
  */
@@ -57,6 +60,9 @@ export async function setupStreamingResponse(
     onContentUpdate: (content: string, isDone?: boolean) => void,
     onThinkingUpdate: (thinking: string) => void,
     onToolExecution: (toolData: any) => void,
+    onProgressUpdate: (progressData: any) => void,
+    onUserInteraction: (interactionData: any) => Promise<any>,
+    onErrorRecovery: (errorData: any) => Promise<any>,
     onComplete: () => void,
     onError: (error: Error) => void
 ): Promise<void> {
@@ -177,6 +183,28 @@ export async function setupStreamingResponse(
                 onToolExecution(message.toolExecution);
             }
 
+            // Handle progress updates
+            if (message.progressUpdate) {
+                console.log(`[${responseId}] Progress update:`, message.progressUpdate);
+                onProgressUpdate(message.progressUpdate);
+            }
+
+            // Handle user interaction requests
+            if (message.userInteraction) {
+                console.log(`[${responseId}] User interaction request:`, message.userInteraction);
+                onUserInteraction(message.userInteraction).catch(error => {
+                    console.error(`[${responseId}] Error handling user interaction:`, error);
+                });
+            }
+
+            // Handle error recovery options
+            if (message.errorRecovery) {
+                console.log(`[${responseId}] Error recovery options:`, message.errorRecovery);
+                onErrorRecovery(message.errorRecovery).catch(error => {
+                    console.error(`[${responseId}] Error handling error recovery:`, error);
+                });
+            }
+
             // Handle content updates
             if (message.content) {
                 // Simply append the new content - no complex deduplication
@@ -254,6 +282,57 @@ export async function getDirectResponse(noteId: string, messageParams: any): Pro
         return postResponse;
     } catch (error) {
         console.error('Error getting direct response:', error);
+        throw error;
+    }
+}
+
+/**
+ * Send user interaction response
+ * @param interactionId - The interaction ID
+ * @param response - The user's response
+ */
+export async function sendUserInteractionResponse(interactionId: string, response: string): Promise<void> {
+    try {
+        await server.post<any>(`llm/interactions/${interactionId}/respond`, {
+            response: response
+        });
+        console.log(`User interaction response sent: ${interactionId} -> ${response}`);
+    } catch (error) {
+        console.error('Error sending user interaction response:', error);
+        throw error;
+    }
+}
+
+/**
+ * Send error recovery choice
+ * @param sessionId - The chat session ID
+ * @param errorId - The error ID
+ * @param action - The recovery action chosen
+ * @param parameters - Optional parameters for the action
+ */
+export async function sendErrorRecoveryChoice(sessionId: string, errorId: string, action: string, parameters?: any): Promise<void> {
+    try {
+        await server.post<any>(`llm/chat/${sessionId}/error/${errorId}/recover`, {
+            action: action,
+            parameters: parameters
+        });
+        console.log(`Error recovery choice sent: ${errorId} -> ${action}`);
+    } catch (error) {
+        console.error('Error sending error recovery choice:', error);
+        throw error;
+    }
+}
+
+/**
+ * Cancel ongoing operations
+ * @param sessionId - The chat session ID
+ */
+export async function cancelChatOperations(sessionId: string): Promise<void> {
+    try {
+        await server.post<any>(`llm/chat/${sessionId}/cancel`, {});
+        console.log(`Chat operations cancelled for session: ${sessionId}`);
+    } catch (error) {
+        console.error('Error cancelling chat operations:', error);
         throw error;
     }
 }
