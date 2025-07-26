@@ -146,6 +146,12 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     codeOpenAiModel: string;
     aiSelectedProvider: string;
 
+    // OCR options
+    ocrEnabled: boolean;
+    ocrLanguage: string;
+    ocrAutoProcessImages: boolean;
+    ocrMinConfidence: string;
+
 }
 
 export type OptionNames = keyof OptionDefinitions;

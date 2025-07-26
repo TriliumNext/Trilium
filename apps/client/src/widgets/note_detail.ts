@@ -28,6 +28,7 @@ import ContentWidgetTypeWidget from "./type_widgets/content_widget.js";
 import AttachmentListTypeWidget from "./type_widgets/attachment_list.js";
 import AttachmentDetailTypeWidget from "./type_widgets/attachment_detail.js";
 import MindMapWidget from "./type_widgets/mind_map.js";
+import ReadOnlyOCRTextWidget from "./type_widgets/read_only_ocr_text.js";
 import utils from "../services/utils.js";
 import type { NoteType } from "../entities/fnote.js";
 import type TypeWidget from "./type_widgets/type_widget.js";
@@ -55,6 +56,7 @@ const typeWidgetClasses = {
     readOnlyText: ReadOnlyTextTypeWidget,
     editableCode: EditableCodeTypeWidget,
     readOnlyCode: ReadOnlyCodeTypeWidget,
+    readOnlyOCRText: ReadOnlyOCRTextWidget,
     file: FileTypeWidget,
     image: ImageTypeWidget,
     search: NoneTypeWidget,
@@ -85,6 +87,7 @@ type ExtendedNoteType =
     | "empty"
     | "readOnlyCode"
     | "readOnlyText"
+    | "readOnlyOCRText"
     | "editableText"
     | "editableCode"
     | "attachmentDetail"
@@ -223,6 +226,8 @@ export default class NoteDetailWidget extends NoteContextAwareWidget {
 
         if (viewScope?.viewMode === "source") {
             resultingType = "readOnlyCode";
+        } else if (viewScope?.viewMode === "ocr") {
+            resultingType = "readOnlyOCRText";
         } else if (viewScope && viewScope.viewMode === "attachments") {
             resultingType = viewScope.attachmentId ? "attachmentDetail" : "attachmentList";
         } else if (type === "text" && (await this.noteContext?.isReadOnly())) {

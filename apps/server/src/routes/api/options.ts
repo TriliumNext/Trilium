@@ -108,7 +108,13 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "ollamaBaseUrl",
     "ollamaDefaultModel",
     "mfaEnabled",
-    "mfaMethod"
+    "mfaMethod",
+
+    // OCR options
+    "ocrEnabled",
+    "ocrLanguage",
+    "ocrAutoProcessImages",
+    "ocrMinConfidence"
 ]);
 
 function getOptions() {

@@ -2,6 +2,8 @@
 
 import beccaService from "../../becca/becca_service.js";
 import becca from "../../becca/becca.js";
+import sql from "../sql.js";
+import options from "../options.js";
 
 class SearchResult {
     notePathArray: string[];
@@ -48,6 +50,9 @@ class SearchResult {
         this.addScoreForStrings(tokens, note.title, 2.0); // Increased to give more weight to title matches
         this.addScoreForStrings(tokens, this.notePathTitle, 0.3); // Reduced to further de-emphasize path matches
 
+        // Add OCR scoring - weight between title and content matches
+        this.addOCRScore(tokens, 1.5);
+
         if (note.isInHiddenSubtree()) {
             this.score = this.score / 3; // Increased penalty for hidden notes
         }
@@ -69,6 +74,37 @@ class SearchResult {
             }
         }
         this.score += tokenScore;
+    }
+
+    addOCRScore(tokens: string[], factor: number) {
+        try {
+            // Check if OCR is enabled
+            if (!options.getOptionBool('ocrEnabled')) {
+                return;
+            }
+
+            // Search for OCR results for this note and its attachments
+            const ocrResults = sql.getRows(`
+                SELECT b.ocr_text
+                FROM blobs b
+                WHERE b.ocr_text IS NOT NULL 
+                  AND b.ocr_text != ''
+                  AND (
+                      b.blobId = (SELECT blobId FROM notes WHERE noteId = ? AND isDeleted = 0)
+                      OR b.blobId IN (
+                          SELECT blobId FROM attachments WHERE ownerId = ? AND isDeleted = 0
+                      )
+                  )
+            `, [this.noteId, this.noteId]);
+
+            for (const ocrResult of ocrResults as Array<{ocr_text: string}>) {
+                // Add score for OCR text matches
+                this.addScoreForStrings(tokens, ocrResult.ocr_text, factor);
+            }
+        } catch (error) {
+            // Silently fail if OCR service is not available
+            console.debug('OCR scoring failed:', error);
+        }
     }
 }
 

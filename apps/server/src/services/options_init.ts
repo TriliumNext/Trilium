@@ -211,6 +211,12 @@ const defaultOptions: DefaultOption[] = [
     { name: "aiTemperature", value: "0.7", isSynced: true },
     { name: "aiSystemPrompt", value: "", isSynced: true },
     { name: "aiSelectedProvider", value: "openai", isSynced: true },
+
+    // OCR options
+    { name: "ocrEnabled", value: "false", isSynced: true },
+    { name: "ocrLanguage", value: "eng", isSynced: true },
+    { name: "ocrAutoProcessImages", value: "true", isSynced: true },
+    { name: "ocrMinConfidence", value: "0.55", isSynced: true },
 ];
 
 /**

@@ -6,6 +6,9 @@ import becca from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
 import oneTimeTimer from "./one_time_timer.js";
+import ocrService from "./ocr/ocr_service.js";
+import optionService from "./options.js";
+import log from "./log.js";
 import type BNote from "../becca/entities/bnote.js";
 import type AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
 import type { DefinitionObject } from "./promoted_attribute_definition_interface.js";
@@ -137,6 +140,25 @@ eventService.subscribe(eventService.ENTITY_CREATED, ({ entityName, entity }) => 
         }
     } else if (entityName === "notes") {
         runAttachedRelations(entity, "runOnNoteCreation", entity);
+
+        // Note: OCR processing for images is now handled in image.ts during image processing
+        // OCR processing for files remains here since they don't go through image processing
+        // Only auto-process if both OCR is enabled and auto-processing is enabled
+        if (entity.type === 'file' && ocrService.isOCREnabled() && optionService.getOptionBool("ocrAutoProcessImages")) {
+            // Check if the file MIME type is supported by any OCR processor
+            const supportedMimeTypes = ocrService.getAllSupportedMimeTypes();
+
+            if (entity.mime && supportedMimeTypes.includes(entity.mime)) {
+                // Process OCR asynchronously to avoid blocking note creation
+                ocrService.processNoteOCR(entity.noteId).then(result => {
+                    if (result) {
+                        log.info(`Automatically processed OCR for file note ${entity.noteId} with MIME type ${entity.mime}`);
+                    }
+                }).catch(error => {
+                    log.error(`Failed to automatically process OCR for file note ${entity.noteId}: ${error}`);
+                });
+            }
+        }
     }
 });
 

@@ -674,6 +674,7 @@
     "search_in_note": "Search in note",
     "note_source": "Note source",
     "note_attachments": "Note attachments",
+    "view_ocr_text": "View OCR text",
     "open_note_externally": "Open note externally",
     "open_note_externally_title": "File will be open in an external application and watched for changes. You'll then be able to upload the modified version back to Trilium.",
     "open_note_custom": "Open note custom",
@@ -1303,7 +1304,22 @@
     "enable_image_compression": "Enable image compression",
     "max_image_dimensions": "Max width / height of an image (image will be resized if it exceeds this setting).",
     "max_image_dimensions_unit": "pixels",
-    "jpeg_quality_description": "JPEG quality (10 - worst quality, 100 - best quality, 50 - 85 is recommended)"
+    "jpeg_quality_description": "JPEG quality (10 - worst quality, 100 - best quality, 50 - 85 is recommended)",
+    "ocr_section_title": "Optical Character Recognition (OCR)",
+    "enable_ocr": "Enable OCR for images",
+    "ocr_description": "Automatically extract text from images using OCR technology. This makes image content searchable within your notes.",
+    "ocr_auto_process": "Automatically process new images with OCR",
+    "ocr_language": "OCR Language",
+    "ocr_min_confidence": "Minimum confidence threshold",
+    "ocr_confidence_unit": "(0.0-1.0)",
+    "ocr_confidence_description": "Only extract text with confidence above this threshold. Lower values include more text but may be less accurate.",
+    "batch_ocr_title": "Process Existing Images",
+    "batch_ocr_description": "Process all existing images in your notes with OCR. This may take some time depending on the number of images.",
+    "batch_ocr_start": "Start Batch OCR Processing",
+    "batch_ocr_starting": "Starting batch OCR processing...",
+    "batch_ocr_progress": "Processing {{processed}} of {{total}} images...",
+    "batch_ocr_completed": "Batch OCR completed! Processed {{processed}} images.",
+    "batch_ocr_error": "Error during batch OCR: {{error}}"
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Attachment Erasure Timeout",
@@ -1987,5 +2003,19 @@
     "delete-column-confirmation": "Are you sure you want to delete this column? The corresponding attribute will be deleted in the notes under this column as well.",
     "new-item": "New item",
     "add-column": "Add Column"
+  },
+  "ocr": {
+    "extracted_text": "Extracted Text (OCR)",
+    "extracted_text_title": "Extracted Text (OCR)",
+    "loading_text": "Loading OCR text...",
+    "no_text_available": "No OCR text available",
+    "no_text_explanation": "This note has not been processed for OCR text extraction or no text was found.",
+    "failed_to_load": "Failed to load OCR text",
+    "extracted_on": "Extracted on: {{date}}",
+    "unknown_date": "Unknown",
+    "process_now": "Process OCR",
+    "processing": "Processing...",
+    "processing_started": "OCR processing has been started. Please wait a moment and refresh.",
+    "processing_failed": "Failed to start OCR processing"
   }
 }

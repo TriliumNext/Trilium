@@ -2201,3 +2201,26 @@ footer.file-footer button {
     content: "\ec24";
     transform: rotate(180deg);
 }
+
+.ocr-text-section {
+    margin: 10px 0;
+    padding: 10px;
+    background: var(--accented-background-color);
+    border-left: 3px solid var(--main-border-color);
+    text-align: left;
+}
+
+.ocr-header {
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+    color: var(--muted-text-color);
+}
+
+.ocr-content {
+    max-height: 150px;
+    overflow-y: auto;
+    font-size: 0.9em;
+    line-height: 1.4;
+    white-space: pre-wrap;
+}

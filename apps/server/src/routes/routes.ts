@@ -58,6 +58,7 @@ import ollamaRoute from "./api/ollama.js";
 import openaiRoute from "./api/openai.js";
 import anthropicRoute from "./api/anthropic.js";
 import llmRoute from "./api/llm.js";
+import ocrRoute from "./api/ocr.js";
 import systemInfoRoute from "./api/system_info.js";
 
 import etapiAuthRoutes from "../etapi/auth.js";
@@ -384,6 +385,16 @@ function register(app: express.Application) {
     asyncApiRoute(GET, "/api/llm/providers/ollama/models", ollamaRoute.listModels);
     asyncApiRoute(GET, "/api/llm/providers/openai/models", openaiRoute.listModels);
     asyncApiRoute(GET, "/api/llm/providers/anthropic/models", anthropicRoute.listModels);
+
+    // OCR API
+    asyncApiRoute(PST, "/api/ocr/process-note/:noteId", ocrRoute.processNoteOCR);
+    asyncApiRoute(PST, "/api/ocr/process-attachment/:attachmentId", ocrRoute.processAttachmentOCR);
+    asyncApiRoute(GET, "/api/ocr/search", ocrRoute.searchOCR);
+    asyncApiRoute(PST, "/api/ocr/batch-process", ocrRoute.batchProcessOCR);
+    asyncApiRoute(GET, "/api/ocr/batch-progress", ocrRoute.getBatchProgress);
+    asyncApiRoute(GET, "/api/ocr/stats", ocrRoute.getOCRStats);
+    asyncApiRoute(DEL, "/api/ocr/delete/:blobId", ocrRoute.deleteOCRResults);
+    asyncApiRoute(GET, "/api/ocr/notes/:noteId/text", ocrRoute.getNoteOCRText);
 
     // API Documentation
     apiDocsRoute(app);

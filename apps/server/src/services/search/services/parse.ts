@@ -20,6 +20,7 @@ import ValueExtractor from "../value_extractor.js";
 import { removeDiacritic } from "../../utils.js";
 import TrueExp from "../expressions/true.js";
 import IsHiddenExp from "../expressions/is_hidden.js";
+import OCRContentExpression from "../expressions/ocr_content.js";
 import type SearchContext from "../search_context.js";
 import type { TokenData, TokenStructure } from "./types.js";
 import type Expression from "../expressions/expression.js";
@@ -33,11 +34,20 @@ function getFulltext(_tokens: TokenData[], searchContext: SearchContext) {
         return null;
     }
 
+    const searchExpressions: Expression[] = [
+        new NoteFlatTextExp(tokens)
+    ];
+
     if (!searchContext.fastSearch) {
-        return new OrExp([new NoteFlatTextExp(tokens), new NoteContentFulltextExp("*=*", { tokens, flatText: true })]);
-    } else {
-        return new NoteFlatTextExp(tokens);
+        searchExpressions.push(new NoteContentFulltextExp("*=*", { tokens, flatText: true }));
+        
+        // Add OCR content search for each token
+        for (const token of tokens) {
+            searchExpressions.push(new OCRContentExpression(token));
+        }
     }
+
+    return new OrExp(searchExpressions);
 }
 
 const OPERATORS = new Set(["=", "!=", "*=*", "*=", "=*", ">", ">=", "<", "<=", "%="]);

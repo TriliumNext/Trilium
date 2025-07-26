@@ -351,7 +351,8 @@ class ListOrGridView extends ViewMode<{}> {
 
         try {
             const { $renderedContent, type } = await contentRenderer.getRenderedContent(note, {
-                trim: this.viewType === "grid" // for grid only short content is needed
+                trim: this.viewType === "grid", // for grid only short content is needed
+                showOcrText: this.parentNote.type === "search" // show OCR text only in search results
             });
 
             if (this.highlightRegex) {

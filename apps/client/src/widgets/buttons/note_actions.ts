@@ -90,6 +90,10 @@ const TPL = /*html*/`
             <span class="bx bx-code"></span> ${t("note_actions.note_source")}<kbd data-command="showNoteSource"></kbd>
         </li>
 
+        <li data-trigger-command="showNoteOCRText" class="dropdown-item show-ocr-text-button">
+            <span class="bx bx-text"></span> ${t("note_actions.view_ocr_text")}<kbd data-command="showNoteOCRText"></kbd>
+        </li>
+
 
         <div class="dropdown-divider"></div>
 
@@ -117,6 +121,7 @@ export default class NoteActionsWidget extends NoteContextAwareWidget {
     private $printActiveNoteButton!: JQuery<HTMLElement>;
     private $exportAsPdfButton!: JQuery<HTMLElement>;
     private $showSourceButton!: JQuery<HTMLElement>;
+    private $showOCRTextButton!: JQuery<HTMLElement>;
     private $showAttachmentsButton!: JQuery<HTMLElement>;
     private $renderNoteButton!: JQuery<HTMLElement>;
     private $saveRevisionButton!: JQuery<HTMLElement>;
@@ -143,6 +148,7 @@ export default class NoteActionsWidget extends NoteContextAwareWidget {
         this.$printActiveNoteButton = this.$widget.find(".print-active-note-button");
         this.$exportAsPdfButton = this.$widget.find(".export-as-pdf-button");
         this.$showSourceButton = this.$widget.find(".show-source-button");
+        this.$showOCRTextButton = this.$widget.find(".show-ocr-text-button");
         this.$showAttachmentsButton = this.$widget.find(".show-attachments-button");
         this.$renderNoteButton = this.$widget.find(".render-note-button");
         this.$saveRevisionButton = this.$widget.find(".save-revision-button");
@@ -190,6 +196,9 @@ export default class NoteActionsWidget extends NoteContextAwareWidget {
 
         this.toggleDisabled(this.$showAttachmentsButton, !isInOptions);
         this.toggleDisabled(this.$showSourceButton, ["text", "code", "relationMap", "mermaid", "canvas", "mindMap"].includes(note.type));
+        
+        // Show OCR text button for notes that could have OCR data (images and files)
+        this.toggleDisabled(this.$showOCRTextButton, ["image", "file"].includes(note.type));
 
         const canPrint = ["text", "code"].includes(note.type);
         this.toggleDisabled(this.$printActiveNoteButton, canPrint);

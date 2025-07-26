@@ -70,6 +70,7 @@ export interface BlobRow {
     blobId: string;
     content: string | Buffer;
     contentLength: number;
+    ocr_text?: string | null;
     dateModified: string;
     utcDateModified: string;
 }
