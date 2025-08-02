@@ -1,0 +1,968 @@
+/* Enhanced LLM Chat Components CSS */
+
+/* =======================
+   PROGRESS INDICATOR STYLES
+   ======================= */
+
+.llm-progress-container {
+    background: var(--main-background-color);
+    border: 1px solid var(--main-border-color);
+    border-radius: 8px;
+    margin: 10px 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.llm-progress-container.fade-in {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.llm-progress-container.fade-out {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+.llm-progress-header {
+    padding: 15px 20px 10px;
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+.llm-progress-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--main-text-color);
+    margin-bottom: 10px;
+}
+
+.llm-progress-overall {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.llm-progress-bar-container {
+    flex: 1;
+    height: 8px;
+    background: var(--accented-background-color);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.llm-progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-color), var(--accent-color-darker));
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.llm-progress-percentage {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted-text-color);
+    min-width: 40px;
+    text-align: right;
+}
+
+.llm-progress-stages {
+    padding: 15px 20px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.llm-progress-stage {
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+.llm-progress-stage:last-child {
+    margin-bottom: 0;
+}
+
+.stage-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.stage-status-icon {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stage-label {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--main-text-color);
+}
+
+.stage-timing {
+    font-size: 12px;
+    color: var(--muted-text-color);
+    min-width: 40px;
+    text-align: right;
+}
+
+.stage-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.stage-progress-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--accented-background-color);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.stage-progress-fill {
+    height: 100%;
+    background: var(--accent-color);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.stage-progress-text {
+    font-size: 12px;
+    color: var(--muted-text-color);
+    min-width: 35px;
+    text-align: right;
+}
+
+.stage-message {
+    font-size: 12px;
+    color: var(--muted-text-color);
+    margin-left: 30px;
+    font-style: italic;
+}
+
+/* Stage status styles */
+.stage-pending .stage-progress-fill {
+    background: var(--muted-text-color);
+}
+
+.stage-running .stage-progress-fill {
+    background: var(--accent-color);
+}
+
+.stage-completed .stage-progress-fill {
+    background: #28a745;
+}
+
+.stage-failed .stage-progress-fill {
+    background: #dc3545;
+}
+
+.llm-progress-footer {
+    padding: 10px 20px 15px;
+    border-top: 1px solid var(--main-border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.llm-progress-time-info {
+    display: flex;
+    gap: 20px;
+    font-size: 12px;
+    color: var(--muted-text-color);
+}
+
+.llm-progress-cancel-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.llm-progress-cancel-btn:hover {
+    background: #c82333;
+}
+
+.llm-progress-cancel-btn:disabled {
+    background: var(--muted-text-color);
+    cursor: not-allowed;
+}
+
+/* =======================
+   USER INTERACTION STYLES
+   ======================= */
+
+.llm-interaction-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.llm-interaction-overlay.show {
+    opacity: 1;
+}
+
+.llm-interaction-modal-container {
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow: auto;
+}
+
+.llm-interaction-modal {
+    background: var(--main-background-color);
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    transform: translateY(-20px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    min-width: 400px;
+    max-width: 600px;
+}
+
+.llm-interaction-modal.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.modal-header {
+    padding: 20px 20px 15px;
+    border-bottom: 1px solid var(--main-border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header.risk-high {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+}
+
+.modal-header.risk-medium {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: #212529;
+}
+
+.modal-header.risk-low {
+    background: linear-gradient(135deg, #28a745, #1e7e34);
+    color: white;
+}
+
+.modal-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 600;
+    flex: 1;
+}
+
+.risk-indicator {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.risk-label {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.tool-info {
+    margin-bottom: 15px;
+}
+
+.tool-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent-color);
+    margin-bottom: 5px;
+}
+
+.tool-description {
+    font-size: 14px;
+    color: var(--muted-text-color);
+    margin-bottom: 10px;
+}
+
+.tool-arguments {
+    background: var(--accented-background-color);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 15px;
+}
+
+.arguments-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted-text-color);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.arguments-content {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+}
+
+.argument-item {
+    margin-bottom: 5px;
+    display: flex;
+    gap: 8px;
+}
+
+.argument-key {
+    color: var(--accent-color);
+    font-weight: 600;
+    min-width: 80px;
+}
+
+.argument-value {
+    color: var(--main-text-color);
+    word-break: break-all;
+}
+
+.no-arguments {
+    color: var(--muted-text-color);
+    font-style: italic;
+}
+
+.confirmation-message,
+.choice-message,
+.input-message {
+    font-size: 14px;
+    color: var(--main-text-color);
+    line-height: 1.5;
+    margin-bottom: 15px;
+}
+
+.choice-options {
+    margin: 15px 0;
+}
+
+.choice-option {
+    background: var(--accented-background-color);
+    border: 2px solid transparent;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.choice-option:hover {
+    border-color: var(--accent-color);
+    background: var(--hover-item-background-color);
+}
+
+.option-label {
+    font-weight: 600;
+    color: var(--main-text-color);
+    margin-bottom: 4px;
+}
+
+.option-description {
+    font-size: 12px;
+    color: var(--muted-text-color);
+}
+
+.input-field {
+    margin: 15px 0;
+}
+
+.input-field input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--main-border-color);
+    border-radius: 4px;
+    font-size: 14px;
+    background: var(--main-background-color);
+    color: var(--main-text-color);
+}
+
+.input-field input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 2px rgba(var(--accent-color-rgb), 0.2);
+}
+
+.timeout-indicator {
+    background: var(--accented-background-color);
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.timeout-label {
+    font-size: 12px;
+    color: var(--muted-text-color);
+    font-weight: 500;
+}
+
+.timeout-countdown {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.countdown-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--main-border-color);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.countdown-fill {
+    height: 100%;
+    background: #ffc107;
+    border-radius: 2px;
+    transition: width 0.1s linear;
+}
+
+.countdown-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-color);
+    min-width: 30px;
+    text-align: right;
+}
+
+.modal-footer {
+    padding: 15px 20px 20px;
+    border-top: 1px solid var(--main-border-color);
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background: var(--accent-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--accent-color-darker);
+}
+
+.btn-secondary {
+    background: var(--muted-text-color);
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: var(--main-text-color);
+}
+
+.btn-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.btn-warning:hover {
+    background: #e0a800;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+/* =======================
+   ERROR RECOVERY STYLES
+   ======================= */
+
+.llm-error-recovery-container {
+    margin: 15px 0;
+}
+
+.llm-error-recovery-item {
+    background: var(--main-background-color);
+    border: 2px solid #dc3545;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.1);
+    transition: all 0.3s ease;
+}
+
+.llm-error-recovery-item.fade-out {
+    opacity: 0;
+    transform: translateX(-20px);
+}
+
+.error-header {
+    background: linear-gradient(135deg, #dc3545, #c82333);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    border-radius: 6px 6px 0 0;
+}
+
+.error-icon {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+}
+
+.error-title {
+    flex: 1;
+}
+
+.error-tool-name {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.error-attempt-info {
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.error-type-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.badge-warning {
+    background: #ffc107;
+    color: #212529;
+}
+
+.badge-danger {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.badge-info {
+    background: #17a2b8;
+    color: white;
+}
+
+.badge-secondary {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.error-body {
+    padding: 20px;
+}
+
+.error-message {
+    margin-bottom: 15px;
+}
+
+.error-message-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted-text-color);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.error-message-content {
+    background: var(--accented-background-color);
+    border-left: 4px solid #dc3545;
+    padding: 10px 12px;
+    border-radius: 0 4px 4px 0;
+    font-size: 14px;
+    color: var(--main-text-color);
+    line-height: 1.4;
+}
+
+.error-context {
+    margin-bottom: 15px;
+}
+
+.context-section {
+    margin-bottom: 12px;
+}
+
+.context-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted-text-color);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.context-content {
+    background: var(--accented-background-color);
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.param-item {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.param-key {
+    color: var(--accent-color);
+    font-weight: 600;
+    min-width: 100px;
+}
+
+.param-value {
+    color: var(--main-text-color);
+    word-break: break-all;
+}
+
+.previous-attempts-list,
+.suggestions-list {
+    margin: 0;
+    padding-left: 16px;
+}
+
+.previous-attempts-list li,
+.suggestions-list li {
+    margin-bottom: 4px;
+    color: var(--main-text-color);
+}
+
+.auto-retry-section {
+    background: linear-gradient(135deg, #ffc107, #e0a800);
+    color: #212529;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.auto-retry-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.retry-countdown {
+    font-weight: 700;
+    color: #dc3545;
+}
+
+.auto-retry-progress {
+    margin-bottom: 10px;
+}
+
+.retry-progress-bar {
+    height: 6px;
+    background: rgba(33, 37, 41, 0.2);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.retry-progress-fill {
+    height: 100%;
+    background: #dc3545;
+    border-radius: 3px;
+    transition: width 1s linear;
+}
+
+.cancel-auto-retry {
+    background: rgba(33, 37, 41, 0.8);
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.cancel-auto-retry:hover {
+    background: #212529;
+}
+
+.recovery-actions {
+    margin-top: 15px;
+}
+
+.recovery-actions-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--main-text-color);
+    margin-bottom: 10px;
+}
+
+.recovery-actions-grid {
+    display: grid;
+    gap: 8px;
+}
+
+.recovery-action {
+    background: var(--accented-background-color);
+    border: 2px solid transparent;
+    border-radius: 6px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.recovery-action:hover {
+    border-color: var(--accent-color);
+    background: var(--hover-item-background-color);
+}
+
+.action-retry:hover {
+    border-color: #28a745;
+}
+
+.action-skip:hover {
+    border-color: #6c757d;
+}
+
+.action-modify:hover {
+    border-color: #ffc107;
+}
+
+.action-abort:hover {
+    border-color: #dc3545;
+}
+
+.action-alternative:hover {
+    border-color: #17a2b8;
+}
+
+.action-icon {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent-color);
+    color: white;
+    border-radius: 50%;
+    font-size: 14px;
+}
+
+.action-retry .action-icon {
+    background: #28a745;
+}
+
+.action-skip .action-icon {
+    background: #6c757d;
+}
+
+.action-modify .action-icon {
+    background: #ffc107;
+    color: #212529;
+}
+
+.action-abort .action-icon {
+    background: #dc3545;
+}
+
+.action-alternative .action-icon {
+    background: #17a2b8;
+}
+
+.action-content {
+    flex: 1;
+}
+
+.action-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--main-text-color);
+    margin-bottom: 2px;
+}
+
+.action-description {
+    font-size: 12px;
+    color: var(--muted-text-color);
+    line-height: 1.3;
+}
+
+.action-arrow {
+    color: var(--muted-text-color);
+    opacity: 0;
+    transition: all 0.2s ease;
+}
+
+.recovery-action:hover .action-arrow {
+    opacity: 1;
+    transform: translateX(5px);
+}
+
+/* =======================
+   RESPONSIVE DESIGN
+   ======================= */
+
+@media (max-width: 768px) {
+    .llm-interaction-modal {
+        min-width: auto;
+        width: 90vw;
+        margin: 20px;
+    }
+    
+    .modal-header {
+        padding: 15px;
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .modal-body {
+        padding: 15px;
+    }
+    
+    .modal-footer {
+        padding: 15px;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .llm-progress-header,
+    .llm-progress-stages,
+    .llm-progress-footer {
+        padding-left: 15px;
+        padding-right: 15px;
+    }
+    
+    .llm-progress-footer {
+        flex-direction: column;
+        gap: 10px;
+        align-items: stretch;
+    }
+    
+    .recovery-actions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* =======================
+   DARK MODE ADJUSTMENTS
+   ======================= */
+
+@media (prefers-color-scheme: dark) {
+    .llm-interaction-overlay {
+        background: rgba(0, 0, 0, 0.7);
+    }
+    
+    .countdown-fill {
+        background: #f39c12;
+    }
+    
+    .auto-retry-section {
+        background: linear-gradient(135deg, #f39c12, #d68910);
+        color: #212529;
+    }
+}
+
+/* =======================
+   ANIMATIONS
+   ======================= */
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.stage-running .stage-status-icon i {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.llm-error-recovery-item {
+    animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200px 0;
+    }
+    100% {
+        background-position: calc(200px + 100%) 0;
+    }
+}
+
+.stage-running .stage-progress-fill {
+    background: linear-gradient(
+        90deg,
+        var(--accent-color) 0%,
+        var(--accent-color-lighter) 50%,
+        var(--accent-color) 100%
+    );
+    background-size: 200px 100%;
+    animation: shimmer 2s infinite;
+}

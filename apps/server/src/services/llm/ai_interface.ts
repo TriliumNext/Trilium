@@ -31,12 +31,24 @@ export interface ToolData {
 }
 
 export interface ToolExecutionInfo {
-    type: 'start' | 'update' | 'complete' | 'error';
+    type: 'start' | 'update' | 'complete' | 'error' | 'progress' | 'retry';
+    action?: string;
     tool: {
         name: string;
         arguments: Record<string, unknown>;
     };
     result?: string | Record<string, unknown>;
+    progress?: {
+        current: number;
+        total: number;
+        status: string;
+        message: string;
+        startTime?: number;
+        executionTime?: number;
+        resultSummary?: string;
+        errorType?: string;
+        estimatedDuration?: number;
+    };
 }
 
 /**
@@ -80,6 +92,12 @@ export interface StreamChunk {
      * Includes tool name, args, and execution status
      */
     toolExecution?: ToolExecutionInfo;
+
+    /**
+     * User interaction data (for confirmation/cancellation requests)
+     * Contains interaction ID, tool info, and response options
+     */
+    userInteraction?: Record<string, unknown>;
 }
 
 /**
@@ -211,6 +229,21 @@ export interface ChatResponse {
 
     /** Tool calls from the LLM (if tools were used and the model supports them) */
     tool_calls?: ToolCall[] | null;
+
+    /** Recovery metadata for advanced error recovery */
+    recovery_metadata?: {
+        total_attempts: number;
+        successful_recoveries: number;
+        failed_permanently: number;
+    };
+
+    /** User interaction metadata for confirmation/cancellation features */
+    interaction_metadata?: {
+        total_interactions: number;
+        confirmed: number;
+        cancelled: number;
+        timedout: number;
+    };
 }
 
 export interface AIService {

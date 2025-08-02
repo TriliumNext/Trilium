@@ -48,6 +48,9 @@ interface Message {
     chatNoteId?: string;
     content?: string;
     thinking?: string;
+    interactionId?: string;
+    response?: string;
+    timestamp?: number;
     toolExecution?: {
         action?: string;
         tool?: string;
