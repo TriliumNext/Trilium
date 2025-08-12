@@ -5,6 +5,7 @@
  */
 
 import type { Tool, ToolHandler } from './tool_interfaces.js';
+import { ParameterValidationHelpers } from './parameter_validation_helpers.js';
 import log from '../../log.js';
 import becca from '../../../becca/becca.js';
 import notes from '../../notes.js';
@@ -16,25 +17,25 @@ export const noteUpdateToolDefinition: Tool = {
     type: 'function',
     function: {
         name: 'update_note',
-        description: 'Update the content or title of an existing note',
+        description: 'Modify existing note content or title. Use noteId from search results. Examples: update_note(noteId, content="new text") → replaces content, update_note(noteId, content="addition", mode="append") → adds to end.',
         parameters: {
             type: 'object',
             properties: {
                 noteId: {
                     type: 'string',
-                    description: 'System ID of the note to update (not the title). This is a unique identifier like "abc123def456" that must be used to identify the specific note.'
+                    description: 'Which note to update. Use noteId from search results, not the note title. Example: "abc123def456"'
                 },
                 title: {
                     type: 'string',
-                    description: 'New title for the note (if you want to change it)'
+                    description: 'New name for the note. Only provide if you want to change the title. Example: "Updated Meeting Notes"'
                 },
                 content: {
                     type: 'string',
-                    description: 'New content for the note (if you want to change it)'
+                    description: 'New text for the note. Can be HTML, markdown, or plain text depending on note type. Example: "Updated content here..."'
                 },
                 mode: {
                     type: 'string',
-                    description: 'How to update content: replace (default), append, or prepend',
+                    description: 'How to add content: "replace" (default) removes old content, "append" adds to end, "prepend" adds to beginning',
                     enum: ['replace', 'append', 'prepend']
                 }
             },
@@ -55,6 +56,13 @@ export class NoteUpdateTool implements ToolHandler {
     public async execute(args: { noteId: string, title?: string, content?: string, mode?: 'replace' | 'append' | 'prepend' }): Promise<string | object> {
         try {
             const { noteId, title, content, mode = 'replace' } = args;
+
+            // Validate noteId using parameter validation helpers
+            const noteIdValidation = ParameterValidationHelpers.validateNoteId(noteId);
+            if (noteIdValidation) {
+                // Convert standardized response to legacy string format for backward compatibility
+                return `Error: ${noteIdValidation.error}`;
+            }
 
             if (!title && !content) {
                 return 'Error: At least one of title or content must be provided to update a note.';

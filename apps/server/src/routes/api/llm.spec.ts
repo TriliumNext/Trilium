@@ -43,7 +43,16 @@ vi.mock("../../services/llm/storage/chat_storage_service.js", () => ({
 
 // Mock AI service manager
 const mockAiServiceManager = {
-    getOrCreateAnyService: vi.fn()
+    getOrCreateAnyService: vi.fn().mockResolvedValue({
+        generateChatCompletion: vi.fn(),
+        isAvailable: vi.fn(() => true),
+        dispose: vi.fn()
+    }),
+    getService: vi.fn().mockResolvedValue({
+        generateChatCompletion: vi.fn(),
+        isAvailable: vi.fn(() => true),
+        dispose: vi.fn()
+    })
 };
 vi.mock("../../services/llm/ai_service_manager.js", () => ({
     default: mockAiServiceManager
@@ -62,6 +71,32 @@ vi.mock("../../services/llm/pipeline/chat_pipeline.js", () => ({
 const mockGetSelectedModelConfig = vi.fn();
 vi.mock("../../services/llm/config/configuration_helpers.js", () => ({
     getSelectedModelConfig: mockGetSelectedModelConfig
+}));
+
+// Mock configuration service
+vi.mock("../../services/llm/pipeline/configuration_service.js", () => ({
+    default: {
+        initialize: vi.fn(),
+        ensureConfigLoaded: vi.fn(),
+        getToolConfig: vi.fn(() => ({
+            maxRetries: 3,
+            timeout: 30000,
+            enableSmartProcessing: true,
+            maxToolIterations: 10
+        })),
+        getAIConfig: vi.fn(() => ({
+            provider: 'test-provider',
+            model: 'test-model'
+        })),
+        getDebugConfig: vi.fn(() => ({
+            enableMetrics: true,
+            enableLogging: true
+        })),
+        getStreamingConfig: vi.fn(() => ({
+            enableStreaming: true,
+            chunkSize: 1024
+        }))
+    }
 }));
 
 // Mock options service
@@ -548,13 +583,23 @@ describe("LLM API Tests", () => {
         it("should handle streaming with tool executions", async () => {
             mockChatPipelineExecute.mockImplementation(async (input) => {
                 const callback = input.streamCallback;
-                // Simulate tool execution
+                // Simulate tool execution with standardized response format
                 await callback('Let me calculate that', false, {});
                 await callback('', false, {
                     toolExecution: {
                         tool: 'calculator',
                         arguments: { expression: '2 + 2' },
-                        result: '4',
+                        result: {
+                            success: true,
+                            result: '4',
+                            nextSteps: {
+                                suggested: 'Calculation completed successfully'
+                            },
+                            metadata: {
+                                executionTime: 15,
+                                resourcesUsed: ['calculator']
+                            }
+                        },
                         toolCallId: 'call_123',
                         action: 'execute'
                     }
@@ -576,14 +621,24 @@ describe("LLM API Tests", () => {
             // Import ws service to access mock
             const ws = (await import("../../services/ws.js")).default;
             
-            // Verify tool execution message
+            // Verify tool execution message with standardized response format
             expect(ws.sendMessageToAllClients).toHaveBeenCalledWith({
                 type: 'llm-stream',
                 chatNoteId: testChatId,
                 toolExecution: {
                     tool: 'calculator',
                     args: { expression: '2 + 2' },
-                    result: '4',
+                    result: {
+                        success: true,
+                        result: '4',
+                        nextSteps: {
+                            suggested: 'Calculation completed successfully'
+                        },
+                        metadata: {
+                            executionTime: 15,
+                            resourcesUsed: ['calculator']
+                        }
+                    },
                     toolCallId: 'call_123',
                     action: 'execute',
                     error: undefined

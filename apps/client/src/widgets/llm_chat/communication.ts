@@ -48,6 +48,9 @@ export async function checkSessionExists(noteId: string): Promise<boolean> {
  * @param onContentUpdate - Callback for content updates
  * @param onThinkingUpdate - Callback for thinking updates
  * @param onToolExecution - Callback for tool execution
+ * @param onProgressUpdate - Callback for progress updates
+ * @param onUserInteraction - Callback for user interaction requests
+ * @param onErrorRecovery - Callback for error recovery options
  * @param onComplete - Callback for completion
  * @param onError - Callback for errors
  */
@@ -57,6 +60,9 @@ export async function setupStreamingResponse(
     onContentUpdate: (content: string, isDone?: boolean) => void,
     onThinkingUpdate: (thinking: string) => void,
     onToolExecution: (toolData: any) => void,
+    onProgressUpdate: (progressData: any) => void,
+    onUserInteraction: (interactionData: any) => Promise<any>,
+    onErrorRecovery: (errorData: any) => Promise<any>,
     onComplete: () => void,
     onError: (error: Error) => void
 ): Promise<void> {
@@ -66,9 +72,14 @@ export async function setupStreamingResponse(
         let timeoutId: number | null = null;
         let initialTimeoutId: number | null = null;
         let cleanupTimeoutId: number | null = null;
+        let heartbeatTimeoutId: number | null = null;
         let receivedAnyMessage = false;
         let eventListener: ((event: Event) => void) | null = null;
         let lastMessageTimestamp = 0;
+        
+        // Configuration for timeouts
+        const HEARTBEAT_TIMEOUT_MS = 30000; // 30 seconds between messages
+        const MAX_IDLE_TIME_MS = 60000; // 60 seconds max idle time
 
         // Create a unique identifier for this response process
         const responseId = `llm-stream-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -101,11 +112,42 @@ export async function setupStreamingResponse(
             }
         })();
 
+        // Function to reset heartbeat timeout
+        const resetHeartbeatTimeout = () => {
+            if (heartbeatTimeoutId) {
+                window.clearTimeout(heartbeatTimeoutId);
+            }
+            
+            heartbeatTimeoutId = window.setTimeout(() => {
+                const idleTime = Date.now() - lastMessageTimestamp;
+                console.warn(`[${responseId}] No message received for ${idleTime}ms`);
+                
+                if (idleTime > MAX_IDLE_TIME_MS) {
+                    console.error(`[${responseId}] Connection appears to be stalled (idle for ${idleTime}ms)`);
+                    performCleanup();
+                    reject(new Error('Connection lost: The AI service stopped responding. Please try again.'));
+                } else {
+                    // Send a warning but continue waiting
+                    console.warn(`[${responseId}] Connection may be slow, continuing to wait...`);
+                    resetHeartbeatTimeout(); // Reset for another check
+                }
+            }, HEARTBEAT_TIMEOUT_MS);
+        };
+
         // Function to safely perform cleanup
         const performCleanup = () => {
+            // Clear all timeouts
             if (cleanupTimeoutId) {
                 window.clearTimeout(cleanupTimeoutId);
                 cleanupTimeoutId = null;
+            }
+            if (heartbeatTimeoutId) {
+                window.clearTimeout(heartbeatTimeoutId);
+                heartbeatTimeoutId = null;
+            }
+            if (initialTimeoutId) {
+                window.clearTimeout(initialTimeoutId);
+                initialTimeoutId = null;
             }
 
             console.log(`[${responseId}] Performing final cleanup of event listener`);
@@ -115,13 +157,15 @@ export async function setupStreamingResponse(
         };
 
         // Set initial timeout to catch cases where no message is received at all
+        // Increased timeout and better error messaging
+        const INITIAL_TIMEOUT_MS = 15000; // 15 seconds for initial response
         initialTimeoutId = window.setTimeout(() => {
             if (!receivedAnyMessage) {
-                console.error(`[${responseId}] No initial message received within timeout`);
+                console.error(`[${responseId}] No initial message received within ${INITIAL_TIMEOUT_MS}ms timeout`);
                 performCleanup();
-                reject(new Error('No response received from server'));
+                reject(new Error('Connection timeout: The AI service is taking longer than expected to respond. Please check your connection and try again.'));
             }
-        }, 10000);
+        }, INITIAL_TIMEOUT_MS);
 
         // Create a message handler for CustomEvents
         eventListener = (event: Event) => {
@@ -155,6 +199,12 @@ export async function setupStreamingResponse(
                     window.clearTimeout(initialTimeoutId);
                     initialTimeoutId = null;
                 }
+                
+                // Start heartbeat monitoring
+                resetHeartbeatTimeout();
+            } else {
+                // Reset heartbeat on each new message
+                resetHeartbeatTimeout();
             }
 
             // Handle error
@@ -175,6 +225,28 @@ export async function setupStreamingResponse(
             if (message.toolExecution) {
                 console.log(`[${responseId}] Tool execution update:`, message.toolExecution);
                 onToolExecution(message.toolExecution);
+            }
+
+            // Handle progress updates
+            if (message.progressUpdate) {
+                console.log(`[${responseId}] Progress update:`, message.progressUpdate);
+                onProgressUpdate(message.progressUpdate);
+            }
+
+            // Handle user interaction requests
+            if (message.userInteraction) {
+                console.log(`[${responseId}] User interaction request:`, message.userInteraction);
+                onUserInteraction(message.userInteraction).catch(error => {
+                    console.error(`[${responseId}] Error handling user interaction:`, error);
+                });
+            }
+
+            // Handle error recovery options
+            if (message.errorRecovery) {
+                console.log(`[${responseId}] Error recovery options:`, message.errorRecovery);
+                onErrorRecovery(message.errorRecovery).catch(error => {
+                    console.error(`[${responseId}] Error handling error recovery:`, error);
+                });
             }
 
             // Handle content updates
@@ -254,6 +326,57 @@ export async function getDirectResponse(noteId: string, messageParams: any): Pro
         return postResponse;
     } catch (error) {
         console.error('Error getting direct response:', error);
+        throw error;
+    }
+}
+
+/**
+ * Send user interaction response
+ * @param interactionId - The interaction ID
+ * @param response - The user's response
+ */
+export async function sendUserInteractionResponse(interactionId: string, response: string): Promise<void> {
+    try {
+        await server.post<any>(`llm/interactions/${interactionId}/respond`, {
+            response: response
+        });
+        console.log(`User interaction response sent: ${interactionId} -> ${response}`);
+    } catch (error) {
+        console.error('Error sending user interaction response:', error);
+        throw error;
+    }
+}
+
+/**
+ * Send error recovery choice
+ * @param sessionId - The chat session ID
+ * @param errorId - The error ID
+ * @param action - The recovery action chosen
+ * @param parameters - Optional parameters for the action
+ */
+export async function sendErrorRecoveryChoice(sessionId: string, errorId: string, action: string, parameters?: any): Promise<void> {
+    try {
+        await server.post<any>(`llm/chat/${sessionId}/error/${errorId}/recover`, {
+            action: action,
+            parameters: parameters
+        });
+        console.log(`Error recovery choice sent: ${errorId} -> ${action}`);
+    } catch (error) {
+        console.error('Error sending error recovery choice:', error);
+        throw error;
+    }
+}
+
+/**
+ * Cancel ongoing operations
+ * @param sessionId - The chat session ID
+ */
+export async function cancelChatOperations(sessionId: string): Promise<void> {
+    try {
+        await server.post<any>(`llm/chat/${sessionId}/cancel`, {});
+        console.log(`Chat operations cancelled for session: ${sessionId}`);
+    } catch (error) {
+        console.error('Error cancelling chat operations:', error);
         throw error;
     }
 }

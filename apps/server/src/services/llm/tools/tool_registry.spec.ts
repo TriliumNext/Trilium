@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { ToolRegistry } from './tool_registry.js';
-import type { ToolHandler } from './tool_interfaces.js';
+import type { ToolHandler, StandardizedToolResponse } from './tool_interfaces.js';
+import { ToolResponseFormatter } from './tool_interfaces.js';
 
 // Mock dependencies
 vi.mock('../../log.js', () => ({
@@ -48,7 +49,7 @@ describe('ToolRegistry', () => {
     });
 
     describe('registerTool', () => {
-        it('should register a valid tool handler', () => {
+        it('should register a valid tool handler with standardized response', async () => {
             const validHandler: ToolHandler = {
                 definition: {
                     type: 'function',
@@ -64,12 +65,29 @@ describe('ToolRegistry', () => {
                         }
                     }
                 },
-                execute: vi.fn().mockResolvedValue('result')
+                execute: vi.fn().mockResolvedValue('result'),
+                executeStandardized: vi.fn().mockResolvedValue(
+                    ToolResponseFormatter.success(
+                        'test result',
+                        { suggested: 'Next action available' },
+                        { executionTime: 10, resourcesUsed: ['test'] }
+                    )
+                )
             };
 
             registry.registerTool(validHandler);
             
             expect(registry.getTool('test_tool')).toBe(validHandler);
+            
+            // Test standardized execution
+            if (validHandler.executeStandardized) {
+                const result = await validHandler.executeStandardized({ input: 'test' });
+                expect(result.success).toBe(true);
+                if (result.success) {
+                    expect(result.result).toBe('test result');
+                    expect(result.metadata.resourcesUsed).toContain('test');
+                }
+            }
         });
 
         it('should handle registration of multiple tools', () => {
@@ -345,6 +363,115 @@ describe('ToolRegistry', () => {
         });
     });
 
+    describe('enhanced tool registry features', () => {
+        it('should handle legacy tools with standardized wrapper', async () => {
+            const legacyHandler: ToolHandler = {
+                definition: {
+                    type: 'function',
+                    function: {
+                        name: 'legacy_tool',
+                        description: 'Legacy tool without standardized response',
+                        parameters: {
+                            type: 'object' as const,
+                            properties: {},
+                            required: []
+                        }
+                    }
+                },
+                execute: vi.fn().mockResolvedValue('legacy result')
+                // No executeStandardized method
+            };
+
+            registry.registerTool(legacyHandler);
+            
+            expect(registry.getTool('legacy_tool')).toBe(legacyHandler);
+            
+            // Test that legacy tools can still work
+            const result = await legacyHandler.execute({});
+            expect(result).toBe('legacy result');
+        });
+
+        it('should support tools with smart parameter processing capabilities', () => {
+            const smartToolHandler: ToolHandler = {
+                definition: {
+                    type: 'function',
+                    function: {
+                        name: 'smart_search_tool',
+                        description: 'Smart search tool with parameter processing',
+                        parameters: {
+                            type: 'object' as const,
+                            properties: {
+                                query: { type: 'string', description: 'Search query' },
+                                noteIds: { 
+                                    type: 'array', 
+                                    description: 'Note IDs or titles (fuzzy matched)',
+                                    items: { type: 'string' }
+                                },
+                                includeArchived: { 
+                                    type: 'boolean', 
+                                    description: 'Include archived notes',
+                                    default: false
+                                }
+                            },
+                            required: ['query']
+                        }
+                    }
+                },
+                execute: vi.fn(),
+                executeStandardized: vi.fn().mockResolvedValue(
+                    ToolResponseFormatter.success(
+                        { notes: [], total: 0 },
+                        { suggested: 'Search completed' },
+                        { executionTime: 25, resourcesUsed: ['search_index', 'smart_processor'] }
+                    )
+                )
+            };
+
+            registry.registerTool(smartToolHandler);
+            
+            expect(registry.getTool('smart_search_tool')).toBe(smartToolHandler);
+            
+            // Verify the tool definition includes smart processing hints
+            const toolDef = smartToolHandler.definition.function;
+            expect(toolDef.parameters.properties.noteIds?.description).toContain('fuzzy matched');
+        });
+
+        it('should maintain backward compatibility while supporting new features', () => {
+            // Register mix of old and new style tools
+            const oldTool: ToolHandler = {
+                definition: {
+                    type: 'function',
+                    function: {
+                        name: 'old_tool',
+                        description: 'Old style tool',
+                        parameters: { type: 'object' as const, properties: {}, required: [] }
+                    }
+                },
+                execute: vi.fn()
+            };
+
+            const newTool: ToolHandler = {
+                definition: {
+                    type: 'function',
+                    function: {
+                        name: 'new_tool',
+                        description: 'New style tool',
+                        parameters: { type: 'object' as const, properties: {}, required: [] }
+                    }
+                },
+                execute: vi.fn(),
+                executeStandardized: vi.fn()
+            };
+
+            registry.registerTool(oldTool);
+            registry.registerTool(newTool);
+
+            expect(registry.getAllTools()).toHaveLength(2);
+            expect(registry.getTool('old_tool')?.executeStandardized).toBeUndefined();
+            expect(registry.getTool('new_tool')?.executeStandardized).toBeDefined();
+        });
+    });
+
     describe('error handling', () => {
         it('should handle null/undefined tool handler gracefully', () => {
             // These should not crash the registry
@@ -369,13 +496,13 @@ describe('ToolRegistry', () => {
     });
 
     describe('tool validation', () => {
-        it('should accept tool with proper structure', () => {
+        it('should accept tool with proper structure and enhanced execution', async () => {
             const validHandler: ToolHandler = {
                 definition: {
                     type: 'function',
                     function: {
                         name: 'calculator',
-                        description: 'Performs calculations',
+                        description: 'Performs calculations with enhanced error handling',
                         parameters: {
                             type: 'object' as const,
                             properties: {
@@ -388,13 +515,47 @@ describe('ToolRegistry', () => {
                         }
                     }
                 },
-                execute: vi.fn().mockResolvedValue('42')
+                execute: vi.fn().mockResolvedValue('42'),
+                executeStandardized: vi.fn().mockImplementation(async (args) => {
+                    if (!args.expression) {
+                        return ToolResponseFormatter.error(
+                            'Missing required parameter: expression',
+                            {
+                                possibleCauses: ['Parameter not provided'],
+                                suggestions: ['Provide expression parameter']
+                            }
+                        );
+                    }
+                    return ToolResponseFormatter.success(
+                        '42',
+                        { suggested: 'Calculation completed successfully' },
+                        { executionTime: 5, resourcesUsed: ['calculator'] }
+                    );
+                })
             };
 
             registry.registerTool(validHandler);
             
             expect(registry.getTool('calculator')).toBe(validHandler);
             expect(registry.getAllTools()).toHaveLength(1);
+            
+            // Test enhanced execution with missing parameter
+            if (validHandler.executeStandardized) {
+                const errorResult = await validHandler.executeStandardized({});
+                expect(errorResult.success).toBe(false);
+                if (!errorResult.success) {
+                    expect(errorResult.error).toContain('Missing required parameter');
+                    expect(errorResult.help.suggestions).toContain('Provide expression parameter');
+                }
+                
+                // Test successful execution
+                const successResult = await validHandler.executeStandardized({ expression: '2+2' });
+                expect(successResult.success).toBe(true);
+                if (successResult.success) {
+                    expect(successResult.result).toBe('42');
+                    expect(successResult.metadata.executionTime).toBe(5);
+                }
+            }
         });
     });
 });

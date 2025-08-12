@@ -7,7 +7,8 @@ import { getAnthropicOptions } from './providers.js';
 import log from '../../log.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { SEARCH_CONSTANTS } from '../constants/search_constants.js';
-import type { ToolCall } from '../tools/tool_interfaces.js';
+import type { ToolCall, Tool } from '../tools/tool_interfaces.js';
+import { ToolFormatAdapter } from '../tools/tool_format_adapter.js';
 
 interface AnthropicMessage extends Omit<Message, "content"> {
     content: MessageContent[] | string;
@@ -34,6 +35,17 @@ export class AnthropicService extends BaseAIService {
         return super.isAvailable() && !!options.getOption('anthropicApiKey');
     }
 
+    /**
+     * Clean up resources when disposing
+     */
+    protected async disposeResources(): Promise<void> {
+        if (this.client) {
+            // Clear the client reference
+            this.client = null;
+            log.info('Anthropic client disposed');
+        }
+    }
+
     private getClient(apiKey: string, baseUrl: string, apiVersion?: string, betaVersion?: string): any {
         if (!this.client) {
             this.client = new Anthropic({
@@ -49,6 +61,9 @@ export class AnthropicService extends BaseAIService {
     }
 
     async generateChatCompletion(messages: Message[], opts: ChatCompletionOptions = {}): Promise<ChatResponse> {
+        // Check if service has been disposed
+        this.checkDisposed();
+        
         if (!this.isAvailable()) {
             throw new Error('Anthropic service is not available. Check API key and AI settings.');
         }
@@ -82,10 +97,12 @@ export class AnthropicService extends BaseAIService {
                 providerOptions.betaVersion
             );
 
-            // Log API key format (without revealing the actual key)
-            const apiKeyPrefix = providerOptions.apiKey?.substring(0, 7) || 'undefined';
-            const apiKeyLength = providerOptions.apiKey?.length || 0;
-            log.info(`[DEBUG] Using Anthropic API key with prefix '${apiKeyPrefix}...' and length ${apiKeyLength}`);
+            // Log API key format (without revealing the actual key) - only in debug mode
+            if (process.env.LLM_DEBUG === 'true') {
+                const apiKeyPrefix = providerOptions.apiKey?.substring(0, 7) || 'undefined';
+                const apiKeyLength = providerOptions.apiKey?.length || 0;
+                log.info(`Using Anthropic API key with prefix '${apiKeyPrefix}...' and length ${apiKeyLength}`);
+            }
 
             log.info(`Using Anthropic API with model: ${providerOptions.model}`);
 
@@ -102,12 +119,24 @@ export class AnthropicService extends BaseAIService {
 
             // Add tools support if provided
             if (opts.tools && opts.tools.length > 0) {
-                log.info(`Adding ${opts.tools.length} tools to Anthropic request`);
+                log.info(`========== ANTHROPIC TOOL PROCESSING ==========`);
+                log.info(`Input tools count: ${opts.tools.length}`);
+                log.info(`Input tool names: ${opts.tools.map((t: any) => t.function?.name || 'unnamed').join(', ')}`);
 
-                // Convert OpenAI-style function tools to Anthropic format
-                const anthropicTools = this.convertToolsToAnthropicFormat(opts.tools);
+                // Use the new ToolFormatAdapter for consistent conversion
+                const anthropicTools = ToolFormatAdapter.convertToProviderFormat(
+                    opts.tools as Tool[],
+                    'anthropic'
+                );
 
-                requestParams.tools = anthropicTools;
+                if (anthropicTools.length > 0) {
+                    requestParams.tools = anthropicTools;
+                    log.info(`Successfully added ${anthropicTools.length} tools to Anthropic request`);
+                    log.info(`Final tool names: ${anthropicTools.map((t: any) => t.name).join(', ')}`);
+                } else {
+                    log.error(`CRITICAL: Tool conversion failed - 0 tools converted from ${opts.tools.length} input tools`);
+                }
+                log.info(`============================================`);
 
                 // Add tool_choice parameter if specified
                 if (opts.tool_choice) {
@@ -135,8 +164,10 @@ export class AnthropicService extends BaseAIService {
                 // Non-streaming request
                 const response = await client.messages.create(requestParams);
 
-                // Log the complete response for debugging
-                log.info(`[DEBUG] Complete Anthropic API response: ${JSON.stringify(response, null, 2)}`);
+                // Log the complete response only in debug mode
+                if (process.env.LLM_DEBUG === 'true') {
+                    log.info(`Complete Anthropic API response: ${JSON.stringify(response, null, 2)}`);
+                }
 
                 // Get the assistant's response text from the content blocks
                 const textContent = response.content
@@ -153,24 +184,15 @@ export class AnthropicService extends BaseAIService {
                     );
 
                     if (toolBlocks.length > 0) {
-                        log.info(`[DEBUG] Found ${toolBlocks.length} tool-related blocks in response`);
+                        if (process.env.LLM_DEBUG === 'true') {
+                            log.info(`Found ${toolBlocks.length} tool-related blocks in response`);
+                        }
 
-                        toolCalls = toolBlocks.map((block: any) => {
-                            if (block.type === 'tool_use') {
-                                log.info(`[DEBUG] Processing tool_use block: ${JSON.stringify(block, null, 2)}`);
-
-                                // Convert Anthropic tool_use format to standard format expected by our app
-                                return {
-                                    id: block.id,
-                                    type: 'function', // Convert back to function type for internal use
-                                    function: {
-                                        name: block.name,
-                                        arguments: JSON.stringify(block.input || {})
-                                    }
-                                };
-                            }
-                            return null;
-                        }).filter(Boolean);
+                        // Use ToolFormatAdapter to convert from Anthropic format
+                        toolCalls = ToolFormatAdapter.convertToolCallsFromProvider(
+                            toolBlocks,
+                            'anthropic'
+                        );
 
                         log.info(`Extracted ${toolCalls?.length} tool calls from Anthropic response`);
                     }
@@ -315,21 +337,12 @@ export class AnthropicService extends BaseAIService {
                                 block => block.type === 'tool_use'
                             );
 
-                            // Convert tool use blocks to our expected format
+                            // Use ToolFormatAdapter to convert tool calls
                             if (toolUseBlocks.length > 0) {
-                                toolCalls = toolUseBlocks.map(block => {
-                                    if (block.type === 'tool_use') {
-                                        return {
-                                            id: block.id,
-                                            type: 'function',
-                                            function: {
-                                                name: block.name,
-                                                arguments: JSON.stringify(block.input || {})
-                                            }
-                                        };
-                                    }
-                                    return null;
-                                }).filter(Boolean);
+                                toolCalls = ToolFormatAdapter.convertToolCallsFromProvider(
+                                    toolUseBlocks,
+                                    'anthropic'
+                                );
 
                                 // For any active tool calls, mark them as complete
                                 for (const [toolId, toolCall] of activeToolCalls.entries()) {
@@ -516,96 +529,9 @@ export class AnthropicService extends BaseAIService {
         return anthropicMessages;
     }
 
-    /**
-     * Convert OpenAI-style function tools to Anthropic format
-     * OpenAI uses: { type: "function", function: { name, description, parameters } }
-     * Anthropic uses: { name, description, input_schema }
-     */
-    private convertToolsToAnthropicFormat(tools: any[]): any[] {
-        if (!tools || tools.length === 0) {
-            return [];
-        }
-
-        log.info(`[TOOL DEBUG] Converting ${tools.length} tools to Anthropic format`);
-
-        // Filter out invalid tools
-        const validTools = tools.filter(tool => {
-            if (!tool || typeof tool !== 'object') {
-                log.error(`Invalid tool format (not an object)`);
-                return false;
-            }
-
-            // For function tools, validate required fields
-            if (tool.type === 'function') {
-                if (!tool.function || !tool.function.name) {
-                    log.error(`Function tool missing required fields`);
-                    return false;
-                }
-            }
-
-            return true;
-        });
-
-        if (validTools.length < tools.length) {
-            log.info(`Filtered out ${tools.length - validTools.length} invalid tools`);
-        }
-
-        // Convert tools to Anthropic format
-        const convertedTools = validTools.map((tool: any) => {
-            // Convert from OpenAI format to Anthropic format
-            if (tool.type === 'function' && tool.function) {
-                log.info(`[TOOL DEBUG] Converting function tool: ${tool.function.name}`);
-
-                // Check the parameters structure
-                if (tool.function.parameters) {
-                    log.info(`[TOOL DEBUG] Parameters for ${tool.function.name}:`);
-                    log.info(`[TOOL DEBUG] - Type: ${tool.function.parameters.type}`);
-                    log.info(`[TOOL DEBUG] - Properties: ${JSON.stringify(tool.function.parameters.properties || {})}`);
-                    log.info(`[TOOL DEBUG] - Required: ${JSON.stringify(tool.function.parameters.required || [])}`);
-
-                    // Check if the required array is present and properly populated
-                    if (!tool.function.parameters.required || !Array.isArray(tool.function.parameters.required)) {
-                        log.error(`[TOOL DEBUG] WARNING: Tool ${tool.function.name} missing required array in parameters`);
-                    } else if (tool.function.parameters.required.length === 0) {
-                        log.error(`[TOOL DEBUG] WARNING: Tool ${tool.function.name} has empty required array - Anthropic may send empty inputs`);
-                    }
-                } else {
-                    log.error(`[TOOL DEBUG] WARNING: Tool ${tool.function.name} has no parameters defined`);
-                }
-
-                return {
-                    name: tool.function.name,
-                    description: tool.function.description || '',
-                    input_schema: tool.function.parameters || {}
-                };
-            }
-
-            // Handle already converted Anthropic format (from our temporary fix)
-            if (tool.type === 'custom' && tool.custom) {
-                log.info(`[TOOL DEBUG] Converting custom tool: ${tool.custom.name}`);
-                return {
-                    name: tool.custom.name,
-                    description: tool.custom.description || '',
-                    input_schema: tool.custom.parameters || {}
-                };
-            }
-
-            // If the tool is already in the correct Anthropic format
-            if (tool.name && (tool.input_schema || tool.parameters)) {
-                log.info(`[TOOL DEBUG] Tool already in Anthropic format: ${tool.name}`);
-                return {
-                    name: tool.name,
-                    description: tool.description || '',
-                    input_schema: tool.input_schema || tool.parameters
-                };
-            }
-
-            log.error(`Unhandled tool format encountered`);
-            return null;
-        }).filter(Boolean); // Filter out any null values
-
-        return convertedTools;
-    }
+    // Tool conversion is now handled by ToolFormatAdapter
+    // The old convertToolsToAnthropicFormat method has been removed in favor of the centralized adapter
+    // This ensures consistent tool format conversion across all providers
 
     /**
      * Clear cached Anthropic client to force recreation with new settings

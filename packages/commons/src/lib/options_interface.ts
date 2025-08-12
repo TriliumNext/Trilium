@@ -145,6 +145,24 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     ollamaDefaultModel: string;
     codeOpenAiModel: string;
     aiSelectedProvider: string;
+    
+    // LLM Service Configuration Options - Metrics
+    llmMetricsEnabled: boolean;
+    llmMetricsExportFormat: string;
+    llmMetricsExportEndpoint: string;
+    llmMetricsExportInterval: number;
+    llmMetricsPrometheusEnabled: boolean;
+    llmMetricsStatsdHost: string;
+    llmMetricsStatsdPort: number;
+    llmMetricsStatsdPrefix: string;
+    
+    // LLM Service Configuration Options - Provider
+    llmProviderHealthCheckEnabled: boolean;
+    llmProviderHealthCheckInterval: number;
+    llmProviderCachingEnabled: boolean;
+    llmProviderCacheTimeout: number;
+    llmProviderFallbackEnabled: boolean;
+    llmProviderFallbackList: string;
 
 }
 

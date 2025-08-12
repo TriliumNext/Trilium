@@ -1,6 +1,5 @@
 import { BaseAIService } from '../base_ai_service.js';
 import type { Message, ChatCompletionOptions, ChatResponse, StreamChunk } from '../ai_interface.js';
-import { OllamaMessageFormatter } from '../formatters/ollama_formatter.js';
 import log from '../../log.js';
 import type { ToolCall, Tool } from '../tools/tool_interfaces.js';
 import toolRegistry from '../tools/tool_registry.js';
@@ -55,12 +54,10 @@ interface OllamaRequestOptions {
 }
 
 export class OllamaService extends BaseAIService {
-    private formatter: OllamaMessageFormatter;
     private client: Ollama | null = null;
 
     constructor() {
         super('Ollama');
-        this.formatter = new OllamaMessageFormatter();
     }
 
     override isAvailable(): boolean {
@@ -147,14 +144,11 @@ export class OllamaService extends BaseAIService {
                 // Determine if tools will be used in this request
                 const willUseTools = providerOptions.enableTools !== false;
                 
-                // Use the formatter to prepare messages
-                messagesToSend = this.formatter.formatMessages(
-                    messages,
-                    systemPrompt,
-                    undefined, // context
-                    providerOptions.preserveSystemPrompt,
-                    willUseTools // Pass flag indicating if tools will be used
-                );
+                // Format messages directly (Ollama uses OpenAI format)
+                messagesToSend = [
+                    { role: 'system', content: systemPrompt },
+                    ...messages
+                ];
                 
                 log.info(`Sending to Ollama with formatted messages: ${messagesToSend.length}${willUseTools ? ' (with tool instructions)' : ''}`);
             }

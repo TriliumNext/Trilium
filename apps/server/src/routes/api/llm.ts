@@ -4,6 +4,8 @@ import options from "../../services/options.js";
 
 import restChatService from "../../services/llm/rest_chat_service.js";
 import chatStorageService from '../../services/llm/chat_storage_service.js';
+import toolRegistry from '../../services/llm/tools/tool_registry.js';
+import aiServiceManager from '../../services/llm/ai_service_manager.js';
 
 // Define basic interfaces
 interface ChatMessage {
@@ -559,13 +561,9 @@ async function handleStreamingProcess(
         const aiServiceManager = await import('../../services/llm/ai_service_manager.js');
         await aiServiceManager.default.getOrCreateAnyService();
 
-        // Use the chat pipeline directly for streaming
-        const { ChatPipeline } = await import('../../services/llm/pipeline/chat_pipeline.js');
-        const pipeline = new ChatPipeline({
-            enableStreaming: true,
-            enableMetrics: true,
-            maxToolCallIterations: 5
-        });
+        // Use the simplified chat pipeline directly for streaming
+        const simplifiedPipeline = await import('../../services/llm/pipeline/simplified_pipeline.js');
+        const pipeline = simplifiedPipeline.default;
 
         // Get selected model
         const { getSelectedModelConfig } = await import('../../services/llm/config/configuration_helpers.js');
@@ -646,6 +644,180 @@ async function handleStreamingProcess(
     }
 }
 
+/**
+ * @swagger
+ * /api/llm/interactions/{interactionId}/respond:
+ *   post:
+ *     summary: Respond to a user interaction request (confirm/cancel tool execution)
+ *     operationId: llm-interaction-respond
+ *     parameters:
+ *       - name: interactionId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the interaction to respond to
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               response:
+ *                 type: string
+ *                 enum: [confirm, cancel]
+ *                 description: User's response to the interaction
+ *     responses:
+ *       '200':
+ *         description: Response processed successfully
+ *       '404':
+ *         description: Interaction not found
+ *       '400':
+ *         description: Invalid response
+ *     security:
+ *       - session: []
+ *     tags: ["llm"]
+ */
+async function respondToInteraction(req: Request, res: Response): Promise<void> {
+    try {
+        const interactionId = req.params.interactionId;
+        const { response } = req.body;
+
+        if (!interactionId || !response) {
+            res.status(400).json({
+                success: false,
+                error: 'Missing interactionId or response'
+            });
+            return;
+        }
+
+        if (response !== 'confirm' && response !== 'cancel') {
+            res.status(400).json({
+                success: false,
+                error: 'Response must be either "confirm" or "cancel"'
+            });
+            return;
+        }
+
+        // Import the pipeline to access user interaction stage
+        // Note: In a real implementation, you'd maintain a registry of active pipelines
+        // For now, we'll send this via WebSocket to be handled by the active pipeline
+        
+        const wsService = (await import('../../services/ws.js')).default;
+        
+        // Send the user response via WebSocket to be picked up by the active pipeline
+        wsService.sendMessageToAllClients({
+            type: 'user-interaction-response',
+            interactionId,
+            response,
+            timestamp: Date.now()
+        });
+
+        res.status(200).json({
+            success: true,
+            message: `User response "${response}" recorded for interaction ${interactionId}`
+        });
+
+    } catch (error) {
+        log.error(`Error handling user interaction response: ${error}`);
+        res.status(500).json({
+            success: false,
+            error: 'Internal server error'
+        });
+    }
+}
+
+/**
+ * Debug endpoint to check tool recognition and registry status
+ */
+async function debugTools(req: Request, res: Response): Promise<void> {
+    try {
+        log.info("========== DEBUG TOOLS ENDPOINT CALLED ==========");
+        
+        // Get detailed tool registry info
+        const registryDebugInfo = toolRegistry.getDebugInfo();
+        
+        // Get AI service manager status
+        const availableProviders = aiServiceManager.getAvailableProviders();
+        const providerStatus: Record<string, any> = {};
+        
+        for (const provider of availableProviders) {
+            try {
+                const service = await aiServiceManager.getService(provider);
+                providerStatus[provider] = {
+                    available: true,
+                    type: service.constructor.name,
+                    supportsTools: 'generateChatCompletion' in service
+                };
+            } catch (error) {
+                providerStatus[provider] = {
+                    available: false,
+                    error: error instanceof Error ? error.message : String(error)
+                };
+            }
+        }
+        
+        // Get current tool definitions being sent to LLM
+        const currentToolDefinitions = toolRegistry.getAllToolDefinitions();
+        
+        // Format tool definitions for debugging
+        const toolDefinitionSummary = currentToolDefinitions.map(def => ({
+            name: def.function.name,
+            description: def.function.description || 'No description',
+            parameterCount: Object.keys(def.function.parameters?.properties || {}).length,
+            requiredParams: def.function.parameters?.required || [],
+            type: def.type || 'function'
+        }));
+        
+        const debugData = {
+            timestamp: new Date().toISOString(),
+            summary: {
+                registrySize: registryDebugInfo.registrySize,
+                validToolCount: registryDebugInfo.validToolCount,
+                definitionsForLLM: currentToolDefinitions.length,
+                availableProviders: availableProviders.length,
+                initializationAttempted: registryDebugInfo.initializationAttempted
+            },
+            toolRegistry: {
+                ...registryDebugInfo,
+                toolDefinitionSummary
+            },
+            aiServiceManager: {
+                availableProviders,
+                providerStatus
+            },
+            fullToolDefinitions: currentToolDefinitions,
+            troubleshooting: {
+                commonIssues: [
+                    "No tools in registry - check tool initialization in AIServiceManager",
+                    "Tools failing validation - check execute methods and definitions",
+                    "Provider not supporting function calling - verify model capabilities",
+                    "Tool definitions not being sent to LLM - check enableTools option"
+                ],
+                checkpoints: [
+                    `Tools registered: ${registryDebugInfo.registrySize > 0 ? '✓' : '✗'}`,
+                    `Tools valid: ${registryDebugInfo.validToolCount > 0 ? '✓' : '✗'}`,
+                    `Definitions available: ${currentToolDefinitions.length > 0 ? '✓' : '✗'}`,
+                    `Providers available: ${availableProviders.length > 0 ? '✓' : '✗'}`
+                ]
+            }
+        };
+        
+        log.info(`Debug tools response: ${JSON.stringify(debugData.summary, null, 2)}`);
+        
+        res.status(200).json(debugData);
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        log.error(`Error in debug tools endpoint: ${errorMessage}`);
+        res.status(500).json({
+            error: 'Failed to retrieve debug information',
+            message: errorMessage,
+            timestamp: new Date().toISOString()
+        });
+    }
+}
+
 export default {
     // Chat session management
     createSession,
@@ -654,5 +826,11 @@ export default {
     listSessions,
     deleteSession,
     sendMessage,
-    streamMessage
+    streamMessage,
+    
+    // User interaction
+    respondToInteraction,
+    
+    // Debug endpoints
+    debugTools
 };

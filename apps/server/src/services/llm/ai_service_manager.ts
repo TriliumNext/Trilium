@@ -8,6 +8,7 @@ import contextService from './context/services/context_service.js';
 import log from '../log.js';
 import { OllamaService } from './providers/ollama_service.js';
 import { OpenAIService } from './providers/openai_service.js';
+import { ProviderFactory, ProviderType, getProviderFactory } from './providers/provider_factory.js';
 
 // Import interfaces
 import type {
@@ -26,7 +27,6 @@ import {
     clearConfigurationCache,
     validateConfiguration
 } from './config/configuration_helpers.js';
-import type { ProviderType } from './interfaces/configuration_interfaces.js';
 
 /**
  * Interface representing relevant note context
@@ -39,18 +39,46 @@ interface NoteContext {
     score?: number;
 }
 
-export class AIServiceManager implements IAIServiceManager {
-    private currentService: AIService | null = null;
-    private currentProvider: ServiceProviders | null = null;
+// Service cache entry with TTL
+interface ServiceCacheEntry {
+    service: AIService;
+    provider: ServiceProviders;
+    createdAt: number;
+    lastUsed: number;
+}
+
+// Disposable interface for proper resource cleanup
+export interface Disposable {
+    dispose(): void | Promise<void>;
+}
+
+export class AIServiceManager implements IAIServiceManager, Disposable {
+    private serviceCache: Map<ServiceProviders, ServiceCacheEntry> = new Map();
+    private readonly SERVICE_TTL_MS = 5 * 60 * 1000; // 5 minutes TTL
+    private readonly CLEANUP_INTERVAL_MS = 60 * 1000; // Cleanup check every minute
+    private cleanupTimer: NodeJS.Timeout | null = null;
     private initialized = false;
+    private disposed = false;
+    private providerFactory: ProviderFactory | null = null;
 
     constructor() {
+        // Initialize provider factory
+        this.providerFactory = getProviderFactory({
+            enableHealthChecks: true,
+            healthCheckInterval: 60000,
+            enableFallback: true,
+            enableCaching: true,
+            cacheTimeout: this.SERVICE_TTL_MS,
+            enableMetrics: true
+        });
+
         // Initialize tools immediately
         this.initializeTools().catch(error => {
             log.error(`Error initializing LLM tools during AIServiceManager construction: ${error.message || String(error)}`);
         });
 
-        // Removed complex provider change listener - we'll read options fresh each time
+        // Start periodic cleanup of stale services
+        this.startCleanupTimer();
 
         this.initialized = true;
     }
@@ -372,88 +400,172 @@ export class AIServiceManager implements IAIServiceManager {
     }
 
     /**
-     * Clear the current provider (forces recreation on next access)
+     * Start the cleanup timer for removing stale services
      */
-    public clearCurrentProvider(): void {
-        this.currentService = null;
-        this.currentProvider = null;
-        log.info('Cleared current provider - will be recreated on next access');
+    private startCleanupTimer(): void {
+        if (this.cleanupTimer) return;
+        
+        this.cleanupTimer = setInterval(() => {
+            this.cleanupStaleServices();
+        }, this.CLEANUP_INTERVAL_MS);
     }
 
     /**
-     * Get or create the current provider instance - only one instance total
+     * Stop the cleanup timer
+     */
+    private stopCleanupTimer(): void {
+        if (this.cleanupTimer) {
+            clearInterval(this.cleanupTimer);
+            this.cleanupTimer = null;
+        }
+    }
+
+    /**
+     * Cleanup stale services that haven't been used recently
+     */
+    private cleanupStaleServices(): void {
+        if (this.disposed) return;
+
+        const now = Date.now();
+        const staleProviders: ServiceProviders[] = [];
+
+        for (const [provider, entry] of this.serviceCache.entries()) {
+            if (now - entry.lastUsed > this.SERVICE_TTL_MS) {
+                staleProviders.push(provider);
+            }
+        }
+
+        for (const provider of staleProviders) {
+            this.disposeService(provider);
+        }
+
+        if (staleProviders.length > 0) {
+            log.info(`Cleaned up ${staleProviders.length} stale service(s): ${staleProviders.join(', ')}`);
+        }
+    }
+
+    /**
+     * Dispose a specific service
+     */
+    private disposeService(provider: ServiceProviders): void {
+        const entry = this.serviceCache.get(provider);
+        if (entry) {
+            // If the service implements disposable, call dispose
+            if ('dispose' in entry.service && typeof (entry.service as any).dispose === 'function') {
+                try {
+                    (entry.service as any).dispose();
+                } catch (error) {
+                    log.error(`Error disposing ${provider} service: ${error}`);
+                }
+            }
+            this.serviceCache.delete(provider);
+            log.info(`Disposed ${provider} service`);
+        }
+    }
+
+    /**
+     * Clear all cached providers (forces recreation on next access)
+     */
+    public clearCurrentProvider(): void {
+        // Clear provider factory cache
+        if (this.providerFactory) {
+            this.providerFactory.clearCache();
+        }
+        
+        // Clear local cache
+        for (const provider of this.serviceCache.keys()) {
+            this.disposeService(provider);
+        }
+        log.info('Cleared all cached providers - will be recreated on next access');
+    }
+
+    /**
+     * Get or create a provider instance using the provider factory
      */
     private async getOrCreateChatProvider(providerName: ServiceProviders): Promise<AIService | null> {
-        // If provider type changed, clear the old one
-        if (this.currentProvider && this.currentProvider !== providerName) {
-            log.info(`Provider changed from ${this.currentProvider} to ${providerName}, clearing old service`);
-            this.currentService = null;
-            this.currentProvider = null;
+        if (this.disposed) {
+            throw new Error('AIServiceManager has been disposed');
         }
 
-        // Return existing service if it matches and is available
-        if (this.currentService && this.currentProvider === providerName && this.currentService.isAvailable()) {
-            return this.currentService;
+        if (!this.providerFactory) {
+            throw new Error('Provider factory not initialized');
         }
 
-        // Clear invalid service
-        if (this.currentService) {
-            this.currentService = null;
-            this.currentProvider = null;
-        }
-
-        // Create new service for the requested provider
         try {
-            let service: AIService | null = null;
+            // Map ServiceProviders to ProviderType
+            const providerTypeMap: Record<ServiceProviders, ProviderType> = {
+                'openai': ProviderType.OPENAI,
+                'anthropic': ProviderType.ANTHROPIC,
+                'ollama': ProviderType.OLLAMA
+            };
 
+            const providerType = providerTypeMap[providerName];
+            if (!providerType) {
+                log.error(`Unknown provider name: ${providerName}`);
+                return null;
+            }
+
+            // Check if provider is configured
             switch (providerName) {
                 case 'openai': {
                     const apiKey = options.getOption('openaiApiKey');
                     const baseUrl = options.getOption('openaiBaseUrl');
                     if (!apiKey && !baseUrl) return null;
-
-                    service = new OpenAIService();
-                    if (!service.isAvailable()) {
-                        throw new Error('OpenAI service not available');
-                    }
                     break;
                 }
-
                 case 'anthropic': {
                     const apiKey = options.getOption('anthropicApiKey');
                     if (!apiKey) return null;
-
-                    service = new AnthropicService();
-                    if (!service.isAvailable()) {
-                        throw new Error('Anthropic service not available');
-                    }
                     break;
                 }
-
                 case 'ollama': {
                     const baseUrl = options.getOption('ollamaBaseUrl');
                     if (!baseUrl) return null;
-
-                    service = new OllamaService();
-                    if (!service.isAvailable()) {
-                        throw new Error('Ollama service not available');
-                    }
                     break;
                 }
             }
 
-            if (service) {
-                // Cache the new service
-                this.currentService = service;
-                this.currentProvider = providerName;
-                log.info(`Created and cached new ${providerName} service`);
+            // Use provider factory to create the service
+            const service = await this.providerFactory.createProvider(providerType);
+            
+            if (service && service.isAvailable()) {
+                log.info(`Created ${providerName} service via provider factory`);
                 return service;
             }
+
+            throw new Error(`${providerName} service not available`);
         } catch (error: any) {
             log.error(`Failed to create ${providerName} chat provider: ${error.message || 'Unknown error'}`);
+            
+            // Provider factory handles fallback internally if configured
+            return null;
+        }
+    }
+
+    /**
+     * Dispose of all resources and cleanup
+     */
+    async dispose(): Promise<void> {
+        if (this.disposed) return;
+
+        log.info('Disposing AIServiceManager...');
+        this.disposed = true;
+
+        // Stop cleanup timer
+        this.stopCleanupTimer();
+
+        // Dispose provider factory
+        if (this.providerFactory) {
+            this.providerFactory.dispose();
+            this.providerFactory = null;
         }
 
-        return null;
+        // Dispose all cached services
+        for (const provider of this.serviceCache.keys()) {
+            this.disposeService(provider);
+        }
+
+        log.info('AIServiceManager disposed successfully');
     }
 
     /**
@@ -644,15 +756,35 @@ export class AIServiceManager implements IAIServiceManager {
     }
 
     /**
+     * Check if a service cache entry is stale
+     */
+    private isServiceStale(entry: ServiceCacheEntry): boolean {
+        const now = Date.now();
+        return now - entry.lastUsed > this.SERVICE_TTL_MS;
+    }
+
+    /**
      * Check if a specific provider is available
      */
     isProviderAvailable(provider: string): boolean {
-        // Check if this is the current provider and if it's available
-        if (this.currentProvider === provider && this.currentService) {
-            return this.currentService.isAvailable();
+        // Check health status from provider factory
+        if (this.providerFactory) {
+            const providerTypeMap: Record<string, ProviderType> = {
+                'openai': ProviderType.OPENAI,
+                'anthropic': ProviderType.ANTHROPIC,
+                'ollama': ProviderType.OLLAMA
+            };
+            
+            const providerType = providerTypeMap[provider];
+            if (providerType) {
+                const healthStatus = this.providerFactory.getHealthStatus(providerType);
+                if (healthStatus) {
+                    return healthStatus.healthy;
+                }
+            }
         }
 
-        // For other providers, check configuration
+        // Fallback to configuration check
         try {
             switch (provider) {
                 case 'openai':
@@ -673,21 +805,43 @@ export class AIServiceManager implements IAIServiceManager {
      * Get metadata about a provider
      */
     getProviderMetadata(provider: string): ProviderMetadata | null {
-        // Only return metadata if this is the current active provider
-        if (this.currentProvider === provider && this.currentService) {
-            return {
-                name: provider,
-                capabilities: {
-                    chat: true,
-                    streaming: true,
-                    functionCalling: provider === 'openai' // Only OpenAI has function calling
-                },
-                models: ['default'], // Placeholder, could be populated from the service
-                defaultModel: 'default'
+        // Get capabilities from provider factory
+        if (this.providerFactory) {
+            const providerTypeMap: Record<string, ProviderType> = {
+                'openai': ProviderType.OPENAI,
+                'anthropic': ProviderType.ANTHROPIC,
+                'ollama': ProviderType.OLLAMA
             };
+            
+            const providerType = providerTypeMap[provider];
+            if (providerType) {
+                const capabilities = this.providerFactory.getCapabilities(providerType);
+                if (capabilities) {
+                    return {
+                        name: provider,
+                        capabilities: {
+                            chat: true,
+                            streaming: capabilities.streaming,
+                            functionCalling: capabilities.functionCalling
+                        },
+                        models: ['default'], // Could be enhanced to get actual models
+                        defaultModel: 'default'
+                    };
+                }
+            }
         }
 
-        return null;
+        // Fallback
+        return {
+            name: provider,
+            capabilities: {
+                chat: true,
+                streaming: true,
+                functionCalling: provider === 'openai'
+            },
+            models: ['default'],
+            defaultModel: 'default'
+        };
     }
 
 
@@ -706,21 +860,40 @@ export class AIServiceManager implements IAIServiceManager {
 
 }
 
-// Don't create singleton immediately, use a lazy-loading pattern
+// Singleton instance (lazy-loaded) - can be disposed and recreated
 let instance: AIServiceManager | null = null;
 
 /**
- * Get the AIServiceManager instance (creates it if not already created)
+ * Get the AIServiceManager instance (creates it if not already created or disposed)
  */
 function getInstance(): AIServiceManager {
-    if (!instance) {
+    if (!instance || (instance as any).disposed) {
         instance = new AIServiceManager();
     }
     return instance;
 }
 
+/**
+ * Create a new AIServiceManager instance (for testing or isolated contexts)
+ */
+function createNewInstance(): AIServiceManager {
+    return new AIServiceManager();
+}
+
+/**
+ * Dispose the current singleton instance
+ */
+async function disposeInstance(): Promise<void> {
+    if (instance) {
+        await instance.dispose();
+        instance = null;
+    }
+}
+
 export default {
     getInstance,
+    createNewInstance,
+    disposeInstance,
     // Also export methods directly for convenience
     isAnyServiceAvailable(): boolean {
         return getInstance().isAnyServiceAvailable();

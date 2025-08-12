@@ -17,26 +17,26 @@ export const noteSummarizationToolDefinition: Tool = {
     type: 'function',
     function: {
         name: 'summarize_note',
-        description: 'Generate a concise summary of a note\'s content',
+        description: 'Create a short summary of a long note. Examples: summarize_note(noteId) → creates paragraph summary, summarize_note(noteId, format="bullets") → creates bullet points, summarize_note(noteId, focus="key decisions") → focuses on decisions.',
         parameters: {
             type: 'object',
             properties: {
                 noteId: {
                     type: 'string',
-                    description: 'System ID of the note to summarize (not the title). This is a unique identifier like "abc123def456".'
+                    description: 'Which note to summarize. Use noteId from search results. Example: "abc123def456"'
                 },
                 maxLength: {
                     type: 'number',
-                    description: 'Maximum length of the summary in characters (default: 500)'
+                    description: 'How long the summary should be in characters. Use 200-300 for brief, 500-800 for detailed. Default is 500.'
                 },
                 format: {
                     type: 'string',
-                    description: 'Format of the summary',
+                    description: 'How to format the summary: "paragraph" for flowing text, "bullets" for key points, "executive" for business-style summary',
                     enum: ['paragraph', 'bullets', 'executive']
                 },
                 focus: {
                     type: 'string',
-                    description: 'Optional focus for the summary (e.g., "technical details", "key findings")'
+                    description: 'What to emphasize in the summary. Examples: "key decisions", "technical details", "action items", "main conclusions", "important dates"'
                 }
             },
             required: ['noteId']

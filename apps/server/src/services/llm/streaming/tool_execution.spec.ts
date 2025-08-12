@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { processProviderStream, StreamProcessor } from '../providers/stream_handler.js';
 import type { ProviderStreamOptions } from '../providers/stream_handler.js';
+import type { StandardizedToolResponse } from '../tools/tool_interfaces.js';
 
 // Mock log service
 vi.mock('../../log.js', () => ({
@@ -29,7 +30,7 @@ describe('Tool Execution During Streaming Tests', () => {
     };
 
     describe('Basic Tool Call Handling', () => {
-        it('should extract and process simple tool calls', async () => {
+        it('should extract and process tool calls with standardized responses', async () => {
             const toolChunks = [
                 { message: { content: 'Let me search for that' } },
                 {
@@ -38,8 +39,8 @@ describe('Tool Execution During Streaming Tests', () => {
                             id: 'call_search_123',
                             type: 'function',
                             function: {
-                                name: 'web_search',
-                                arguments: '{"query": "weather today"}'
+                                name: 'smart_search_tool',
+                                arguments: '{"query": "weather today", "searchType": "fullText"}'
                             }
                         }]
                     }
@@ -67,8 +68,8 @@ describe('Tool Execution During Streaming Tests', () => {
                 id: 'call_search_123',
                 type: 'function',
                 function: {
-                    name: 'web_search',
-                    arguments: '{"query": "weather today"}'
+                    name: 'smart_search_tool',
+                    arguments: '{"query": "weather today", "searchType": "fullText"}'
                 }
             });
             expect(result.completeText).toBe('Let me search for thatThe weather today is sunny.');
@@ -214,27 +215,27 @@ describe('Tool Execution During Streaming Tests', () => {
     });
 
     describe('Real-world Tool Execution Scenarios', () => {
-        it('should handle calculator tool execution', async () => {
-            const calculatorScenario = [
+        it('should handle enhanced tool execution with standardized responses', async () => {
+            const enhancedToolScenario = [
                 { message: { content: 'Let me calculate that for you' } },
                 {
                     message: {
                         tool_calls: [{
                             id: 'call_calc_456',
                             function: {
-                                name: 'calculator',
-                                arguments: '{"expression": "15 * 37 + 22"}'
+                                name: 'execute_batch_tool',
+                                arguments: '{"operations": [{"tool": "calculator", "params": {"expression": "15 * 37 + 22"}}]}'
                             }
                         }]
                     }
                 },
-                { message: { content: 'The result is 577.' } },
+                { message: { content: 'The calculation completed successfully. Result: 577.' } },
                 { done: true }
             ];
 
             const mockIterator = {
                 async *[Symbol.asyncIterator]() {
-                    for (const chunk of calculatorScenario) {
+                    for (const chunk of enhancedToolScenario) {
                         yield chunk;
                     }
                 }
@@ -246,31 +247,36 @@ describe('Tool Execution During Streaming Tests', () => {
                 mockCallback
             );
 
-            expect(result.toolCalls[0].function.name).toBe('calculator');
-            expect(result.completeText).toBe('Let me calculate that for youThe result is 577.');
+            expect(result.toolCalls[0].function.name).toBe('execute_batch_tool');
+            expect(result.completeText).toBe('Let me calculate that for youThe calculation completed successfully. Result: 577.');
+            
+            // Verify enhanced tool arguments structure
+            const args = JSON.parse(result.toolCalls[0].function.arguments);
+            expect(args.operations).toHaveLength(1);
+            expect(args.operations[0].tool).toBe('calculator');
         });
 
-        it('should handle web search tool execution', async () => {
-            const searchScenario = [
-                { message: { content: 'Searching for current information...' } },
+        it('should handle smart search tool execution with enhanced features', async () => {
+            const smartSearchScenario = [
+                { message: { content: 'Searching for information with smart algorithms...' } },
                 {
                     message: {
                         tool_calls: [{
                             id: 'call_search_789',
                             function: {
-                                name: 'web_search',
-                                arguments: '{"query": "latest AI developments 2024", "num_results": 5}'
+                                name: 'smart_search_tool',
+                                arguments: '{"query": "latest AI developments", "searchType": "semantic", "maxResults": 5, "includeArchived": false}'
                             }
                         }]
                     }
                 },
-                { message: { content: 'Based on my search, here are the latest AI developments...' } },
+                { message: { content: 'Based on my smart search, here are the relevant findings...' } },
                 { done: true }
             ];
 
             const mockIterator = {
                 async *[Symbol.asyncIterator]() {
-                    for (const chunk of searchScenario) {
+                    for (const chunk of smartSearchScenario) {
                         yield chunk;
                     }
                 }
@@ -282,44 +288,46 @@ describe('Tool Execution During Streaming Tests', () => {
                 mockCallback
             );
 
-            expect(result.toolCalls[0].function.name).toBe('web_search');
+            expect(result.toolCalls[0].function.name).toBe('smart_search_tool');
             const args = JSON.parse(result.toolCalls[0].function.arguments);
-            expect(args.num_results).toBe(5);
+            expect(args.searchType).toBe('semantic');
+            expect(args.maxResults).toBe(5);
+            expect(args.includeArchived).toBe(false);
         });
 
-        it('should handle file operations tool execution', async () => {
-            const fileOpScenario = [
-                { message: { content: 'I\'ll help you analyze that file' } },
+        it('should handle note operations with enhanced tools', async () => {
+            const noteOpScenario = [
+                { message: { content: 'I\'ll help you work with that note' } },
                 {
                     message: {
                         tool_calls: [{
-                            id: 'call_file_read',
+                            id: 'call_note_read',
                             function: {
-                                name: 'read_file',
-                                arguments: '{"path": "/data/report.csv", "encoding": "utf-8"}'
+                                name: 'read_note_tool',
+                                arguments: '{"noteId": "abc123def456", "includeContent": true, "includeAttributes": true}'
                             }
                         }]
                     }
                 },
-                { message: { content: 'File contents analyzed. The report contains...' } },
+                { message: { content: 'Note content analyzed. Now creating updated version...' } },
                 {
                     message: {
                         tool_calls: [{
-                            id: 'call_file_write',
+                            id: 'call_note_update',
                             function: {
-                                name: 'write_file',
-                                arguments: '{"path": "/data/summary.txt", "content": "Analysis summary..."}'
+                                name: 'note_update_tool',
+                                arguments: '{"noteId": "abc123def456", "updates": {"content": "Updated content", "title": "Updated Title"}}'
                             }
                         }]
                     }
                 },
-                { message: { content: 'Summary saved successfully.' } },
+                { message: { content: 'Note updated successfully.' } },
                 { done: true }
             ];
 
             const mockIterator = {
                 async *[Symbol.asyncIterator]() {
-                    for (const chunk of fileOpScenario) {
+                    for (const chunk of noteOpScenario) {
                         yield chunk;
                     }
                 }
@@ -332,7 +340,13 @@ describe('Tool Execution During Streaming Tests', () => {
             );
 
             // Should have the last tool call
-            expect(result.toolCalls[0].function.name).toBe('write_file');
+            expect(result.toolCalls[0].function.name).toBe('note_update_tool');
+            
+            // Verify enhanced note operation arguments
+            const args = JSON.parse(result.toolCalls[0].function.arguments);
+            expect(args.noteId).toBe('abc123def456');
+            expect(args.updates.content).toBe('Updated content');
+            expect(args.updates.title).toBe('Updated Title');
         });
     });
 
@@ -465,25 +479,33 @@ describe('Tool Execution During Streaming Tests', () => {
         });
     });
 
-    describe('Tool Execution Error Scenarios', () => {
-        it('should handle tool execution errors in stream', async () => {
+    describe('Enhanced Tool Execution Error Scenarios', () => {
+        it('should handle standardized tool execution errors in stream', async () => {
             const toolErrorScenario = [
-                { message: { content: 'Attempting tool execution' } },
+                { message: { content: 'Attempting tool execution with smart retry' } },
                 {
                     message: {
                         tool_calls: [{
                             id: 'call_error_test',
                             function: {
-                                name: 'failing_tool',
-                                arguments: '{"param": "value"}'
+                                name: 'smart_retry_tool',
+                                arguments: '{"originalTool": "failing_operation", "maxAttempts": 3, "backoffStrategy": "exponential"}'
                             }
                         }]
                     }
                 },
                 { 
                     message: { 
-                        content: 'Tool execution failed: Permission denied',
-                        error: 'Tool execution error' 
+                        content: 'Tool execution failed after 3 attempts. Error details: Permission denied. Suggestions: Check permissions and try again.',
+                        error: 'Standardized tool execution error',
+                        errorDetails: {
+                            success: false,
+                            error: 'Permission denied',
+                            help: {
+                                possibleCauses: ['Insufficient permissions', 'Invalid file path'],
+                                suggestions: ['Verify user permissions', 'Check file exists']
+                            }
+                        }
                     } 
                 },
                 { done: true }
@@ -540,43 +562,28 @@ describe('Tool Execution During Streaming Tests', () => {
         });
     });
 
-    describe('Complex Tool Workflows', () => {
-        it('should handle multi-step tool workflow', async () => {
-            const workflowScenario = [
-                { message: { content: 'Starting multi-step analysis' } },
+    describe('Enhanced Compound Tool Workflows', () => {
+        it('should handle compound workflow tools that reduce LLM calls', async () => {
+            const compoundWorkflowScenario = [
+                { message: { content: 'Starting compound workflow operation' } },
                 {
                     message: {
                         tool_calls: [{
-                            id: 'step1',
-                            function: { name: 'data_fetch', arguments: '{"source": "api"}' }
+                            id: 'compound_workflow',
+                            function: { 
+                                name: 'find_and_update_tool', 
+                                arguments: '{"searchQuery": "project status", "updates": {"status": "completed", "completedDate": "2024-01-15"}, "createIfNotFound": false}' 
+                            }
                         }]
                     }
                 },
-                { message: { content: 'Data fetched. Processing...' } },
-                {
-                    message: {
-                        tool_calls: [{
-                            id: 'step2', 
-                            function: { name: 'data_process', arguments: '{"format": "json"}' }
-                        }]
-                    }
-                },
-                { message: { content: 'Processing complete. Generating report...' } },
-                {
-                    message: {
-                        tool_calls: [{
-                            id: 'step3',
-                            function: { name: 'report_generate', arguments: '{"type": "summary"}' }
-                        }]
-                    }
-                },
-                { message: { content: 'Workflow completed successfully.' } },
+                { message: { content: 'Compound operation completed: Found 3 notes matching criteria, updated all with new status and completion date.' } },
                 { done: true }
             ];
 
             const mockIterator = {
                 async *[Symbol.asyncIterator]() {
-                    for (const chunk of workflowScenario) {
+                    for (const chunk of compoundWorkflowScenario) {
                         yield chunk;
                     }
                 }
@@ -588,9 +595,64 @@ describe('Tool Execution During Streaming Tests', () => {
                 mockCallback
             );
 
-            // Should capture the last tool call
-            expect(result.toolCalls[0].function.name).toBe('report_generate');
-            expect(result.completeText).toContain('Workflow completed successfully');
+            // Should capture the compound tool
+            expect(result.toolCalls[0].function.name).toBe('find_and_update_tool');
+            const args = JSON.parse(result.toolCalls[0].function.arguments);
+            expect(args.searchQuery).toBe('project status');
+            expect(args.updates.status).toBe('completed');
+            expect(args.createIfNotFound).toBe(false);
+        });
+
+        it('should handle trilium-native tool workflows', async () => {
+            const triliumWorkflowScenario = [
+                { message: { content: 'Starting Trilium-specific operations' } },
+                {
+                    message: {
+                        tool_calls: [{
+                            id: 'trilium_op1',
+                            function: { 
+                                name: 'clone_note_tool', 
+                                arguments: '{"noteId": "source123", "targetParentIds": ["parent1", "parent2"], "cloneType": "full"}' 
+                            }
+                        }]
+                    }
+                },
+                { message: { content: 'Note cloned to multiple parents. Now organizing hierarchy...' } },
+                {
+                    message: {
+                        tool_calls: [{
+                            id: 'trilium_op2', 
+                            function: { 
+                                name: 'organize_hierarchy_tool', 
+                                arguments: '{"parentNoteId": "parent1", "sortBy": "title", "groupBy": "noteType", "createSubfolders": true}' 
+                            }
+                        }]
+                    }
+                },
+                { message: { content: 'Trilium-native operations completed successfully.' } },
+                { done: true }
+            ];
+
+            const mockIterator = {
+                async *[Symbol.asyncIterator]() {
+                    for (const chunk of triliumWorkflowScenario) {
+                        yield chunk;
+                    }
+                }
+            };
+
+            const result = await processProviderStream(
+                mockIterator,
+                mockOptions,
+                mockCallback
+            );
+
+            // Should capture the last tool call (Trilium-specific)
+            expect(result.toolCalls[0].function.name).toBe('organize_hierarchy_tool');
+            const args = JSON.parse(result.toolCalls[0].function.arguments);
+            expect(args.parentNoteId).toBe('parent1');
+            expect(args.sortBy).toBe('title');
+            expect(args.createSubfolders).toBe(true);
         });
 
         it('should handle parallel tool execution indication', async () => {

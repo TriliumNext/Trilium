@@ -1,20 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as configHelpers from './configuration_helpers.js';
-import configurationManager from './configuration_manager.js';
 import optionService from '../../options.js';
 import type { ProviderType, ModelIdentifier, ModelConfig } from '../interfaces/configuration_interfaces.js';
 
-// Mock dependencies - configuration manager is no longer used
-vi.mock('./configuration_manager.js', () => ({
-    default: {
-        parseModelIdentifier: vi.fn(),
-        createModelConfig: vi.fn(),
-        getAIConfig: vi.fn(),
-        validateConfig: vi.fn(),
-        clearCache: vi.fn()
-    }
-}));
-
+// Mock dependencies
 vi.mock('../../options.js', () => ({
     default: {
         getOption: vi.fn(),

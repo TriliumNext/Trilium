@@ -3,6 +3,12 @@
  */
 import log from "../../../log.js";
 import type { Message } from "../../ai_interface.js";
+import { toolPreviewManager } from "../../tools/tool_preview.js";
+import { toolFeedbackManager } from "../../tools/tool_feedback.js";
+import { toolErrorRecoveryManager } from "../../tools/tool_error_recovery.js";
+import { toolTimeoutEnforcer } from "../../tools/tool_timeout_enforcer.js";
+import { parameterCoercer } from "../../tools/parameter_coercer.js";
+import { toolExecutionMonitor } from "../../monitoring/tool_execution_monitor.js";
 
 /**
  * Handles the execution of LLM tools
@@ -12,8 +18,17 @@ export class ToolHandler {
      * Execute tool calls from the LLM response
      * @param response The LLM response containing tool calls
      * @param chatNoteId Optional chat note ID for tracking
+     * @param options Execution options
      */
-    static async executeToolCalls(response: any, chatNoteId?: string): Promise<Message[]> {
+    static async executeToolCalls(
+        response: any, 
+        chatNoteId?: string,
+        options?: {
+            requireConfirmation?: boolean;
+            onProgress?: (executionId: string, progress: any) => void;
+            onError?: (executionId: string, error: any) => void;
+        }
+    ): Promise<Message[]> {
         log.info(`========== TOOL EXECUTION FLOW ==========`);
         if (!response.tool_calls || response.tool_calls.length === 0) {
             log.info(`No tool calls to execute, returning early`);

@@ -1,0 +1,333 @@
+/**
+ * Enhanced Tool UI Styles
+ * Styles for tool preview, feedback, and error recovery UI components
+ */
+
+/* Tool Preview Styles */
+.tool-preview-container {
+    animation: slideIn 0.3s ease-out;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tool-preview-container.fade-out {
+    animation: fadeOut 0.3s ease-out;
+    opacity: 0;
+}
+
+.tool-preview-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding-bottom: 0.75rem;
+}
+
+.tool-preview-item {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.tool-preview-item:hover {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+}
+
+.tool-preview-item input[type="checkbox"] {
+    cursor: pointer;
+}
+
+.tool-preview-item .parameter-item {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+}
+
+.tool-preview-item .parameter-key {
+    font-weight: 600;
+}
+
+.tool-preview-item details summary {
+    user-select: none;
+    cursor: pointer;
+}
+
+.tool-preview-item details summary:hover {
+    text-decoration: underline;
+}
+
+.tool-preview-actions button {
+    min-width: 100px;
+}
+
+/* Tool Feedback Styles */
+.tool-execution-feedback {
+    animation: slideIn 0.3s ease-out;
+    transition: all 0.3s ease;
+}
+
+.tool-execution-feedback.fade-out {
+    animation: fadeOut 0.3s ease-out;
+    opacity: 0;
+}
+
+.tool-execution-feedback.border-success {
+    border-color: var(--bs-success) !important;
+    background-color: rgba(25, 135, 84, 0.05) !important;
+}
+
+.tool-execution-feedback.border-danger {
+    border-color: var(--bs-danger) !important;
+    background-color: rgba(220, 53, 69, 0.05) !important;
+}
+
+.tool-execution-feedback.border-warning {
+    border-color: var(--bs-warning) !important;
+    background-color: rgba(255, 193, 7, 0.05) !important;
+}
+
+.tool-execution-feedback .progress {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.tool-execution-feedback .progress-bar {
+    transition: width 0.3s ease;
+}
+
+.tool-execution-feedback .tool-steps {
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding-top: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.tool-execution-feedback .tool-step {
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    line-height: 1.4;
+}
+
+.tool-execution-feedback .tool-step.tool-step-error {
+    background-color: rgba(220, 53, 69, 0.1);
+}
+
+.tool-execution-feedback .tool-step.tool-step-warning {
+    background-color: rgba(255, 193, 7, 0.1);
+}
+
+.tool-execution-feedback .tool-step.tool-step-progress {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+.tool-execution-feedback .cancel-btn {
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.tool-execution-feedback .cancel-btn:hover {
+    opacity: 1;
+}
+
+/* Real-time Progress Indicator */
+.tool-progress-realtime {
+    position: relative;
+    overflow: hidden;
+}
+
+.tool-progress-realtime::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    animation: shimmer 2s infinite;
+}
+
+/* Tool Execution History */
+.tool-history-container {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    background-color: rgba(0, 0, 0, 0.02);
+    border-radius: 4px;
+}
+
+.tool-history-container .history-item {
+    padding: 2px 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.tool-history-container .history-item:last-child {
+    border-bottom: none;
+}
+
+/* Tool Statistics */
+.tool-stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.02);
+    border-radius: 4px;
+}
+
+.tool-stat-item {
+    text-align: center;
+}
+
+.tool-stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--bs-primary);
+}
+
+.tool-stat-label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: var(--bs-secondary);
+}
+
+/* Error Recovery UI */
+.tool-error-recovery {
+    background-color: rgba(220, 53, 69, 0.05);
+    border: 1px solid var(--bs-danger);
+    border-radius: 4px;
+    padding: 1rem;
+    margin: 0.5rem 0;
+}
+
+.tool-error-recovery .error-message {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.tool-error-recovery .error-suggestions {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0;
+}
+
+.tool-error-recovery .error-suggestions li {
+    padding: 0.25rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+.tool-error-recovery .error-suggestions li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--bs-warning);
+}
+
+.tool-recovery-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.tool-recovery-actions button {
+    font-size: 0.85rem;
+}
+
+/* Circuit Breaker Indicator */
+.circuit-breaker-status {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.circuit-breaker-status.status-closed {
+    background-color: rgba(25, 135, 84, 0.1);
+    color: var(--bs-success);
+}
+
+.circuit-breaker-status.status-open {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: var(--bs-danger);
+}
+
+.circuit-breaker-status.status-half-open {
+    background-color: rgba(255, 193, 7, 0.1);
+    color: var(--bs-warning);
+}
+
+/* Animations */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes shimmer {
+    to {
+        left: 100%;
+    }
+}
+
+/* Spinner Override for Tool Execution */
+.tool-execution-feedback .spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .tool-preview-container {
+        padding: 0.75rem;
+    }
+    
+    .tool-preview-actions {
+        flex-direction: column;
+    }
+    
+    .tool-preview-actions button {
+        width: 100%;
+    }
+    
+    .tool-stats-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .tool-preview-container,
+    .tool-execution-feedback {
+        background-color: rgba(255, 255, 255, 0.05) !important;
+        color: #e0e0e0;
+    }
+    
+    .tool-preview-item {
+        background-color: rgba(255, 255, 255, 0.03) !important;
+    }
+    
+    .tool-history-container,
+    .tool-stats-container {
+        background-color: rgba(255, 255, 255, 0.02);
+    }
+    
+    .parameter-item {
+        background-color: rgba(0, 0, 0, 0.2);
+    }
+}

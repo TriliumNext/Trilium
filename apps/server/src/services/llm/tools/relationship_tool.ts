@@ -43,30 +43,30 @@ export const relationshipToolDefinition: Tool = {
     type: 'function',
     function: {
         name: 'manage_relationships',
-        description: 'Create, list, or modify relationships between notes',
+        description: 'Connect notes with relationships or find related notes. Examples: manage_relationships("create", sourceId, targetId, "depends-on") → links two notes, manage_relationships("find_related", noteId) → finds connected notes.',
         parameters: {
             type: 'object',
             properties: {
                 action: {
                     type: 'string',
-                    description: 'Action to perform on relationships',
+                    description: 'What to do: "create" links notes, "list" shows connections, "find_related" finds connected notes, "suggest" recommends connections',
                     enum: ['create', 'list', 'find_related', 'suggest']
                 },
                 sourceNoteId: {
                     type: 'string',
-                    description: 'System ID of the source note for the relationship (not the title). This is a unique identifier like "abc123def456".'
+                    description: 'Starting note for the relationship. Use noteId from search results. Example: "abc123def456"'
                 },
                 targetNoteId: {
                     type: 'string',
-                    description: 'System ID of the target note for the relationship (not the title). This is a unique identifier like "abc123def456".'
+                    description: 'Note to connect to. Use noteId from search results. Example: "xyz789ghi012"'
                 },
                 relationName: {
                     type: 'string',
-                    description: 'Name of the relation (for create action, e.g., "references", "belongs to", "depends on")'
+                    description: 'Type of connection. Examples: "depends-on", "references", "belongs-to", "related-to", "parent-of", "part-of"'
                 },
                 limit: {
                     type: 'number',
-                    description: 'Maximum number of relationships to return (for list action)'
+                    description: 'How many relationships to show. Use 5-10 for overview, 20+ for comprehensive view.'
                 }
             },
             required: ['action', 'sourceNoteId']

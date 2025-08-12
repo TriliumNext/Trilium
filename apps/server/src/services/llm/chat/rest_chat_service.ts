@@ -6,7 +6,7 @@ import log from "../../log.js";
 import type { Request, Response } from "express";
 import type { Message, ChatCompletionOptions } from "../ai_interface.js";
 import aiServiceManager from "../ai_service_manager.js";
-import { ChatPipeline } from "../pipeline/chat_pipeline.js";
+import { ChatPipeline } from "../pipeline/pipeline_adapter.js";
 import type { ChatPipelineInput } from "../pipeline/interfaces.js";
 import options from "../../options.js";
 import { ToolHandler } from "./handlers/tool_handler.js";
