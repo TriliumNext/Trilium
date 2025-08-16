@@ -134,7 +134,11 @@ export interface TriliumConfig {
          * log files created by Trilium older than the specified amount of time will be deleted.
          */
         retentionDays: number;
-    }
+    },
+    ExternalBlobStorage: {
+        enabled: boolean;
+        thresholdBytes: number;
+    };
 }
 
 /**
@@ -144,31 +148,37 @@ export interface TriliumConfig {
 export const LOGGING_DEFAULT_RETENTION_DAYS = 90;
 
 /**
+ * Default threshold for external blob storage in bytes.
+ * 100kB by default, see performance impact here: https://www.sqlite.org/intern-v-extern-blob.html
+ */
+export const EXTERNAL_BLOB_STORAGE_DEFAULT_THRESHOLD_BYTES = 100 * 1024;
+
+/**
  * Configuration value source with precedence handling.
  * This interface defines how each configuration value is resolved from multiple sources.
  */
 interface ConfigValue<T> {
-    /** 
+    /**
      * Standard environment variable name following TRILIUM_[SECTION]_[KEY] pattern.
      * This is the primary way to override configuration via environment.
      */
     standardEnvVar?: string;
-    /** 
+    /**
      * Alternative environment variable names for additional flexibility.
      * These provide shorter or more intuitive names for common settings.
      */
     aliasEnvVars?: string[];
-    /** 
+    /**
      * Function to retrieve the value from the parsed INI configuration.
      * Returns undefined if the value is not set in config.ini.
      */
     iniGetter: () => IniConfigValue | IniConfigSection;
-    /** 
+    /**
      * Default value used when no environment variable or INI value is found.
      * This ensures every configuration has a sensible default.
      */
     defaultValue: T;
-    /** 
+    /**
      * Optional transformer function to convert string values to the correct type.
      * Common transformers handle boolean and integer conversions.
      */
@@ -177,18 +187,18 @@ interface ConfigValue<T> {
 
 /**
  * Core configuration resolution function.
- * 
+ *
  * Resolves configuration values using a clear precedence order:
  * 1. Standard environment variable (highest priority) - Follows TRILIUM_[SECTION]_[KEY] pattern
  * 2. Alias environment variables - Alternative names for convenience and compatibility
  * 3. INI config file value - User-defined settings in config.ini
  * 4. Default value (lowest priority) - Fallback to ensure valid configuration
- * 
+ *
  * This precedence allows for flexible configuration management:
  * - Environment variables for container/cloud deployments
  * - config.ini for traditional installations
  * - Defaults ensure the application always has valid settings
- * 
+ *
  * @param config - Configuration value definition with sources and transformers
  * @returns The resolved configuration value with appropriate type
  */
@@ -223,7 +233,7 @@ function getConfigValue<T>(config: ConfigValue<T>): T {
  * Helper function to safely access INI config sections.
  * The ini parser can return either a section object or a primitive value,
  * so we need to check the type before accessing nested properties.
- * 
+ *
  * @param sectionName - The name of the INI section to access
  * @returns The section object or undefined if not found or not an object
  */
@@ -237,15 +247,15 @@ function getIniSection(sectionName: string): IniConfigSection | undefined {
 
 /**
  * Transform a value to boolean, handling various input formats.
- * 
+ *
  * This function provides flexible boolean parsing to handle different
  * configuration sources (environment variables, INI files, etc.):
  * - String "true"/"false" (case-insensitive)
- * - String "1"/"0" 
+ * - String "1"/"0"
  * - Numeric 1/0
  * - Actual boolean values
  * - Any other value defaults to false
- * 
+ *
  * @param value - The value to transform (string, number, boolean, etc.)
  * @returns The boolean value or false as default
  */
@@ -253,28 +263,28 @@ function transformBoolean(value: unknown): boolean {
     // First try the standard envToBoolean function which handles "true"/"false" strings
     const result = envToBoolean(String(value));
     if (result !== undefined) return result;
-    
+
     // Handle numeric boolean values (both string and number types)
     if (value === "1" || value === 1) return true;
     if (value === "0" || value === 0) return false;
-    
+
     // Default to false for any other value
     return false;
 }
 
 /**
  * Complete configuration mapping that defines how each setting is resolved.
- * 
+ *
  * This mapping structure:
  * 1. Mirrors the INI file sections for consistency
  * 2. Defines multiple sources for each configuration value
  * 3. Provides type transformers where needed
  * 4. Maintains compatibility with various environment variable formats
- * 
+ *
  * Environment Variable Patterns:
  * - Standard: TRILIUM_[SECTION]_[KEY] (e.g., TRILIUM_GENERAL_INSTANCENAME)
  * - Aliases: Shorter alternatives (e.g., TRILIUM_OAUTH_BASE_URL)
- * 
+ *
  * Both patterns are equally valid and can be used based on preference.
  * The standard pattern provides consistency, while aliases offer convenience.
  */
@@ -450,18 +460,32 @@ const configMapping = {
             defaultValue: LOGGING_DEFAULT_RETENTION_DAYS,
             transformer: (value: unknown) => stringToInt(String(value)) ?? LOGGING_DEFAULT_RETENTION_DAYS
         }
+    },
+    ExternalBlobStorage: {
+        enabled: {
+            standardEnvVar: 'TRILIUM_EXTERNAL_BLOB_STORAGE_ENABLED',
+            iniGetter: () => getIniSection("ExternalBlobStorage")?.enabled,
+            defaultValue: false,
+            transformer: transformBoolean
+        },
+        thresholdBytes: {
+            standardEnvVar: 'TRILIUM_EXTERNAL_BLOB_STORAGE_THRESHOLD',
+            iniGetter: () => getIniSection("ExternalBlobStorage")?.thresholdBytes,
+            defaultValue: EXTERNAL_BLOB_STORAGE_DEFAULT_THRESHOLD_BYTES,
+            transformer: (value: unknown) => stringToInt(String(value)) ?? EXTERNAL_BLOB_STORAGE_DEFAULT_THRESHOLD_BYTES
+        }
     }
 };
 
 /**
  * Build the final configuration object by resolving all values through the mapping.
- * 
+ *
  * This creates the runtime configuration used throughout the application by:
  * 1. Iterating through each section and key in the mapping
  * 2. Calling getConfigValue() to resolve each setting with proper precedence
  * 3. Applying type transformers where needed (booleans, integers)
  * 4. Returning a fully typed TriliumConfig object
- * 
+ *
  * The resulting config object is immutable at runtime and represents
  * the complete application configuration.
  */
@@ -502,6 +526,10 @@ const config: TriliumConfig = {
     },
     Logging: {
         retentionDays: getConfigValue(configMapping.Logging.retentionDays)
+    },
+    ExternalBlobStorage: {
+        enabled: getConfigValue(configMapping.ExternalBlobStorage.enabled),
+        thresholdBytes: getConfigValue(configMapping.ExternalBlobStorage.thresholdBytes)
     }
 };
 
@@ -509,26 +537,26 @@ const config: TriliumConfig = {
  * =====================================================================
  * ENVIRONMENT VARIABLE REFERENCE
  * =====================================================================
- * 
+ *
  * Trilium supports flexible environment variable configuration with multiple
  * naming patterns. Both formats below are equally valid and can be used
  * based on your preference.
- * 
+ *
  * CONFIGURATION PRECEDENCE:
  * 1. Environment variables (highest priority)
  * 2. config.ini file values
  * 3. Default values (lowest priority)
- * 
+ *
  * FULL FORMAT VARIABLES (following TRILIUM_[SECTION]_[KEY] pattern):
  * ====================================================================
- * 
+ *
  * General Section:
  * - TRILIUM_GENERAL_INSTANCENAME         : Custom instance identifier
  * - TRILIUM_GENERAL_NOAUTHENTICATION     : Disable auth (true/false)
  * - TRILIUM_GENERAL_NOBACKUP             : Disable backups (true/false)
  * - TRILIUM_GENERAL_NODESKTOPICON        : No desktop icon (true/false)
  * - TRILIUM_GENERAL_READONLY             : Read-only mode (true/false)
- * 
+ *
  * Network Section:
  * - TRILIUM_NETWORK_HOST                 : Bind address (e.g., "0.0.0.0")
  * - TRILIUM_NETWORK_PORT                 : Server port (e.g., "8080")
@@ -539,15 +567,15 @@ const config: TriliumConfig = {
  * - TRILIUM_NETWORK_CORSALLOWORIGIN      : CORS allowed origins
  * - TRILIUM_NETWORK_CORSALLOWMETHODS     : CORS allowed HTTP methods
  * - TRILIUM_NETWORK_CORSALLOWHEADERS     : CORS allowed headers
- * 
+ *
  * Session Section:
  * - TRILIUM_SESSION_COOKIEMAXAGE         : Cookie lifetime in seconds
- * 
+ *
  * Sync Section:
  * - TRILIUM_SYNC_SYNCSERVERHOST          : Sync server URL
  * - TRILIUM_SYNC_SYNCSERVERTIMEOUT       : Sync timeout in milliseconds
  * - TRILIUM_SYNC_SYNCPROXY               : Proxy URL for sync
- * 
+ *
  * Multi-Factor Authentication Section:
  * - TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL       : OAuth base URL
  * - TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID      : OAuth client ID
@@ -555,23 +583,23 @@ const config: TriliumConfig = {
  * - TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL : OAuth issuer URL
  * - TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME    : OAuth provider name
  * - TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON    : OAuth provider icon
- * 
+ *
  * Logging Section:
  * - TRILIUM_LOGGING_RETENTIONDAYS        : Log retention period in days
- * 
+ *
  * SHORTER ALTERNATIVE VARIABLES (equally valid, for convenience):
  * ================================================================
- * 
+ *
  * Network CORS (with underscores):
  * - TRILIUM_NETWORK_CORS_ALLOW_ORIGIN    : Same as TRILIUM_NETWORK_CORSALLOWORIGIN
  * - TRILIUM_NETWORK_CORS_ALLOW_METHODS   : Same as TRILIUM_NETWORK_CORSALLOWMETHODS
  * - TRILIUM_NETWORK_CORS_ALLOW_HEADERS   : Same as TRILIUM_NETWORK_CORSALLOWHEADERS
- * 
+ *
  * Sync (with SERVER prefix):
  * - TRILIUM_SYNC_SERVER_HOST             : Same as TRILIUM_SYNC_SYNCSERVERHOST
  * - TRILIUM_SYNC_SERVER_TIMEOUT          : Same as TRILIUM_SYNC_SYNCSERVERTIMEOUT
  * - TRILIUM_SYNC_SERVER_PROXY            : Same as TRILIUM_SYNC_SYNCPROXY
- * 
+ *
  * OAuth (simplified without section name):
  * - TRILIUM_OAUTH_BASE_URL               : Same as TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL
  * - TRILIUM_OAUTH_CLIENT_ID              : Same as TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID
@@ -579,14 +607,14 @@ const config: TriliumConfig = {
  * - TRILIUM_OAUTH_ISSUER_BASE_URL        : Same as TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL
  * - TRILIUM_OAUTH_ISSUER_NAME            : Same as TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME
  * - TRILIUM_OAUTH_ISSUER_ICON            : Same as TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON
- * 
+ *
  * Logging (with underscore):
  * - TRILIUM_LOGGING_RETENTION_DAYS       : Same as TRILIUM_LOGGING_RETENTIONDAYS
- * 
+ *
  * BOOLEAN VALUES:
  * - Accept: "true", "false", "1", "0", 1, 0
  * - Default to false for invalid values
- * 
+ *
  * EXAMPLES:
  * export TRILIUM_NETWORK_PORT="8080"                      # Using full format
  * export TRILIUM_OAUTH_CLIENT_ID="my-client-id"           # Using shorter alternative
@@ -597,20 +625,20 @@ const config: TriliumConfig = {
 /**
  * The exported configuration object used throughout the Trilium application.
  * This object is resolved once at startup and remains immutable during runtime.
- * 
+ *
  * To override any setting:
  * 1. Set an environment variable (see documentation above)
  * 2. Edit config.ini in your data directory
  * 3. Defaults will be used if neither is provided
- * 
+ *
  * @example
  * // Accessing configuration in other modules:
  * import config from './services/config.js';
- * 
+ *
  * if (config.General.noAuthentication) {
  *     // Skip authentication checks
  * }
- * 
+ *
  * const server = https.createServer({
  *     cert: fs.readFileSync(config.Network.certPath),
  *     key: fs.readFileSync(config.Network.keyPath)
