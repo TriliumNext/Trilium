@@ -49,11 +49,39 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
             // Check if any note has the #shareRoot label
             const shareRootNotes = attributes.getNotesWithLabel("shareRoot");
             if (shareRootNotes.length === 0) {
+                // should this be a translation string?
                 res.status(404).json({ message: "Share root not found. Please set up a note with #shareRoot label first." });
                 return;
             }
+
+            // Get the configured share path
+            const sharePath = options.getOption("sharePath") || '/share';
+
+            // Check if we're already at the share path to prevent redirect loops
+            if (req.path === sharePath || req.path.startsWith(`${sharePath}/`)) {
+                log.info(`checkAuth: Already at share path, skipping redirect. Path: ${req.path}, SharePath: ${sharePath}`);
+                next();
+                return;
+            }
+
+            // Redirect to the share path
+            log.info(`checkAuth: Redirecting to share path. From: ${req.path}, To: ${sharePath}`);
+            res.redirect(`${sharePath}/`);
+        } else {
+            res.redirect("login");
         }
-        res.redirect(hasRedirectBareDomain ? "share" : "login");
+    } else {
+        next();
+    }
+}
+
+
+/**
+ * Middleware for API authentication - works for both sync and normal API
+ */
+function checkApiAuth(req: Request, res: Response, next: NextFunction) {
+    if (!req.session.loggedIn && !noAuthentication) {
+        reject(req, res, "Logged in session not found");
     } else {
         next();
     }
@@ -73,15 +101,6 @@ export function refreshAuth() {
 //  currently, we're doing that for file upload because handling form data seems to be difficult
 function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction) {
     if (!req.session.loggedIn && !isElectron && !noAuthentication) {
-        console.warn(`Missing session with ID '${req.sessionID}'.`);
-        reject(req, res, "Logged in session not found");
-    } else {
-        next();
-    }
-}
-
-function checkApiAuth(req: Request, res: Response, next: NextFunction) {
-    if (!req.session.loggedIn && !noAuthentication) {
         console.warn(`Missing session with ID '${req.sessionID}'.`);
         reject(req, res, "Logged in session not found");
     } else {
