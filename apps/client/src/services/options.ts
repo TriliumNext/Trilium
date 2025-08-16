@@ -1,7 +1,7 @@
 import server from "./server.js";
 import { isShare } from "./utils.js";
 
-type OptionValue = number | string;
+export type OptionValue = number | string;
 
 class Options {
     initializedPromise: Promise<void>;

@@ -5,7 +5,7 @@ const SVG_MIME = "image/svg+xml";
 
 export const isShare = !window.glob;
 
-function reloadFrontendApp(reason?: string) {
+export function reloadFrontendApp(reason?: string) {
     if (reason) {
         logInfo(`Frontend app reload: ${reason}`);
     }
@@ -13,7 +13,7 @@ function reloadFrontendApp(reason?: string) {
     window.location.reload();
 }
 
-function restartDesktopApp() {
+export function restartDesktopApp() {
     if (!isElectron()) {
         reloadFrontendApp();
         return;
@@ -144,7 +144,7 @@ function now() {
 /**
  * Returns `true` if the client is currently running under Electron, or `false` if running in a web browser.
  */
-function isElectron() {
+export function isElectron() {
     return !!(window && window.process && window.process.type);
 }
 
@@ -218,7 +218,7 @@ function randomString(len: number) {
     return text;
 }
 
-function isMobile() {
+export function isMobile() {
     return (
         window.glob?.device === "mobile" ||
         // window.glob.device is not available in setup
@@ -306,7 +306,7 @@ function copySelectionToClipboard() {
     }
 }
 
-function dynamicRequire(moduleName: string) {
+export function dynamicRequire(moduleName: string) {
     if (typeof __non_webpack_require__ !== "undefined") {
         return __non_webpack_require__(moduleName);
     } else {
@@ -374,32 +374,35 @@ async function openInAppHelp($button: JQuery<HTMLElement>) {
 
     const inAppHelpPage = $button.attr("data-in-app-help");
     if (inAppHelpPage) {
-        // Dynamic import to avoid import issues in tests.
-        const appContext = (await import("../components/app_context.js")).default;
-        const activeContext = appContext.tabManager.getActiveContext();
-        if (!activeContext) {
-            return;
-        }
-        const subContexts = activeContext.getSubContexts();
-        const targetNote = `_help_${inAppHelpPage}`;
-        const helpSubcontext = subContexts.find((s) => s.viewScope?.viewMode === "contextual-help");
-        const viewScope: ViewScope = {
-            viewMode: "contextual-help",
-        };
-        if (!helpSubcontext) {
-            // The help is not already open, open a new split with it.
-            const { ntxId } = subContexts[subContexts.length - 1];
-            appContext.triggerCommand("openNewNoteSplit", {
-                ntxId,
-                notePath: targetNote,
-                hoistedNoteId: "_help",
-                viewScope
-            })
-        } else {
-            // There is already a help window open, make sure it opens on the right note.
-            helpSubcontext.setNote(targetNote, { viewScope });
-        }
+        openInAppHelpFromUrl(inAppHelpPage);
+    }
+}
+
+export async function openInAppHelpFromUrl(inAppHelpPage: string) {
+    // Dynamic import to avoid import issues in tests.
+    const appContext = (await import("../components/app_context.js")).default;
+    const activeContext = appContext.tabManager.getActiveContext();
+    if (!activeContext) {
         return;
+    }
+    const subContexts = activeContext.getSubContexts();
+    const targetNote = `_help_${inAppHelpPage}`;
+    const helpSubcontext = subContexts.find((s) => s.viewScope?.viewMode === "contextual-help");
+    const viewScope: ViewScope = {
+        viewMode: "contextual-help",
+    };
+    if (!helpSubcontext) {
+        // The help is not already open, open a new split with it.
+        const { ntxId } = subContexts[subContexts.length - 1];
+        appContext.triggerCommand("openNewNoteSplit", {
+            ntxId,
+            notePath: targetNote,
+            hoistedNoteId: "_help",
+            viewScope
+        })
+    } else {
+        // There is already a help window open, make sure it opens on the right note.
+        helpSubcontext.setNote(targetNote, { viewScope });
     }
 }
 

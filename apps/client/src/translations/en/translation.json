@@ -2000,5 +2000,12 @@
     "background_effects_title": "Background effects are now stable",
     "background_effects_message": "On Windows devices, background effects are now fully stable. The background effects adds a touch of color to the user interface by blurring the background behind it. This technique is also used in other applications such as Windows Explorer.",
     "background_effects_button": "Enable background effects"
+  },
+  "settings": {
+    "related_settings": "Related settings"
+  },
+  "settings_appearance": {
+    "related_code_blocks": "Color scheme for code blocks in text notes",
+    "related_code_notes": "Color scheme for code notes"
   }
 }

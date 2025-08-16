@@ -9,11 +9,11 @@ import syncMutexService from "./sync_mutex.js";
 import cls from "./cls.js";
 import sql from "./sql.js";
 import path from "path";
-import type { OptionNames } from "@triliumnext/commons";
+import type { DatabaseBackup, OptionNames } from "@triliumnext/commons";
 
 type BackupType = "daily" | "weekly" | "monthly";
 
-function getExistingBackups() {
+function getExistingBackups(): DatabaseBackup[] {
     if (!fs.existsSync(dataDir.BACKUP_DIR)) {
         return [];
     }
@@ -74,7 +74,7 @@ function periodBackup(optionName: "lastDailyBackupDate" | "lastWeeklyBackupDate"
 async function backupNow(name: string) {
     // we don't want to back up DB in the middle of sync with potentially inconsistent DB state
     return await syncMutexService.doExclusively(async () => {
-        const backupFile = `${dataDir.BACKUP_DIR}/backup-${name}.db`;
+        const backupFile = path.resolve(`${dataDir.BACKUP_DIR}/backup-${name}.db`);
 
         if (!fs.existsSync(dataDir.BACKUP_DIR)) {
             fs.mkdirSync(dataDir.BACKUP_DIR, 0o700);

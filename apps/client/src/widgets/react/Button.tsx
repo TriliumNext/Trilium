@@ -14,11 +14,11 @@ interface ButtonProps {
     onClick?: () => void;
     primary?: boolean;
     disabled?: boolean;
-    small?: boolean;
+    size?: "normal" | "small" | "micro";
     style?: CSSProperties;
 }
 
-const Button = memo(({ buttonRef: _buttonRef, className, text, onClick, keyboardShortcut, icon, primary, disabled, small, style }: ButtonProps) => {
+const Button = memo(({ buttonRef: _buttonRef, className, text, onClick, keyboardShortcut, icon, primary, disabled, size, style }: ButtonProps) => {
     // Memoize classes array to prevent recreation
     const classes = useMemo(() => {
         const classList: string[] = ["btn"];
@@ -30,11 +30,13 @@ const Button = memo(({ buttonRef: _buttonRef, className, text, onClick, keyboard
         if (className) {
             classList.push(className);
         }
-        if (small) {
+        if (size === "small") {
             classList.push("btn-sm");
+        } else if (size === "micro") {
+            classList.push("btn-micro");
         }
         return classList.join(" ");
-    }, [primary, className, small]);
+    }, [primary, className, size]);
 
     const buttonRef = _buttonRef ?? useRef<HTMLButtonElement>(null);
     

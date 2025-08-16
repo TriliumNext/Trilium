@@ -1,5 +1,13 @@
 import { AttributeRow, NoteType } from "./rows.js";
 
+type Response = {
+    success: true,
+    message?: string;
+} | {
+    success: false;
+    message: string;
+}
+
 export interface AppInfo {
     appVersion: string;
     dbVersion: number;
@@ -61,3 +69,43 @@ export interface RecentChangeRow {
 export interface BulkActionAffectedNotes {
     affectedNoteCount: number;
 }
+
+export interface DatabaseCheckIntegrityResponse {
+    results: {
+        integrity_check: string;
+    }[];
+}
+
+export interface DatabaseAnonymizeResponse {
+    success: boolean;
+    anonymizedFilePath: string;
+}
+
+export interface AnonymizedDbResponse {
+    filePath: string;
+    fileName: string;
+}
+
+export type SyncTestResponse = Response;
+
+export interface EtapiToken {
+    name: string;
+    utcDateCreated: string;
+    etapiTokenId?: string;
+}
+
+export interface PostTokensResponse {
+    authToken: string;
+}
+
+export interface BackupDatabaseNowResponse {
+    backupFile: string;
+}
+
+export interface DatabaseBackup {
+    fileName: string;
+    filePath: string;
+    mtime: Date;
+}
+
+export type ChangePasswordResponse = Response;

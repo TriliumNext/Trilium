@@ -28,5 +28,5 @@ export function renderReactWidget(parentComponent: Component, el: JSX.Element) {
             {el}
         </ParentComponent.Provider>
     ), renderContainer);
-    return $(renderContainer.firstChild as HTMLElement);
+    return $(renderContainer.children) as JQuery<HTMLElement>;
 }

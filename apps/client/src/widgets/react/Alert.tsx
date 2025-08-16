@@ -1,7 +1,7 @@
 import { ComponentChildren } from "preact";
 
 interface AlertProps {
-    type: "info" | "danger";
+    type: "info" | "danger" | "warning";
     title?: string;
     children: ComponentChildren;
 }

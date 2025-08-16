@@ -5,6 +5,7 @@ import dateUtils from "./date_utils.js";
 import Database from "better-sqlite3";
 import sql from "./sql.js";
 import path from "path";
+import { AnonymizedDbResponse, DatabaseAnonymizeResponse } from "@triliumnext/commons";
 
 function getFullAnonymizationScript() {
     // we want to delete all non-builtin attributes because they can contain sensitive names and values
@@ -73,7 +74,7 @@ async function createAnonymizedCopy(type: "full" | "light") {
     return {
         success: true,
         anonymizedFilePath: anonymizedFile
-    };
+    } satisfies DatabaseAnonymizeResponse;
 }
 
 function getExistingAnonymizedDatabases() {
@@ -87,7 +88,7 @@ function getExistingAnonymizedDatabases() {
         .map((fileName) => ({
             fileName: fileName,
             filePath: path.resolve(dataDir.ANONYMIZED_DB_DIR, fileName)
-        }));
+        })) satisfies AnonymizedDbResponse[];
 }
 
 export default {

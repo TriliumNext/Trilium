@@ -3,8 +3,9 @@
 import passwordService from "../../services/encryption/password.js";
 import ValidationError from "../../errors/validation_error.js";
 import type { Request } from "express";
+import { ChangePasswordResponse } from "@triliumnext/commons";
 
-function changePassword(req: Request) {
+function changePassword(req: Request): ChangePasswordResponse {
     if (passwordService.isPasswordSet()) {
         return passwordService.changePassword(req.body.current_password, req.body.new_password);
     } else {

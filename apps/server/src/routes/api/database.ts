@@ -9,6 +9,7 @@ import type { Request } from "express";
 import ValidationError from "../../errors/validation_error.js";
 import sql_init from "../../services/sql_init.js";
 import becca_loader from "../../becca/becca_loader.js";
+import { BackupDatabaseNowResponse, DatabaseCheckIntegrityResponse } from "@triliumnext/commons";
 
 function getExistingBackups() {
     return backupService.getExistingBackups();
@@ -17,7 +18,7 @@ function getExistingBackups() {
 async function backupDatabase() {
     return {
         backupFile: await backupService.backupNow("now")
-    };
+    } satisfies BackupDatabaseNowResponse;
 }
 
 function vacuumDatabase() {
@@ -48,13 +49,13 @@ async function anonymize(req: Request) {
 }
 
 function checkIntegrity() {
-    const results = sql.getRows("PRAGMA integrity_check");
+    const results = sql.getRows<{ integrity_check: string }>("PRAGMA integrity_check");
 
     log.info(`Integrity check result: ${JSON.stringify(results)}`);
 
     return {
         results
-    };
+    } satisfies DatabaseCheckIntegrityResponse;
 }
 
 export default {

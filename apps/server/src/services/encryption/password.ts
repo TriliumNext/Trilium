@@ -3,12 +3,13 @@ import optionService from "../options.js";
 import myScryptService from "./my_scrypt.js";
 import { randomSecureToken, toBase64 } from "../utils.js";
 import passwordEncryptionService from "./password_encryption.js";
+import { ChangePasswordResponse } from "@triliumnext/commons";
 
 function isPasswordSet() {
     return !!sql.getValue("SELECT value FROM options WHERE name = 'passwordVerificationHash'");
 }
 
-function changePassword(currentPassword: string, newPassword: string) {
+function changePassword(currentPassword: string, newPassword: string): ChangePasswordResponse {
     if (!isPasswordSet()) {
         throw new Error("Password has not been set yet, so it cannot be changed. Use 'setPassword' instead.");
     }
@@ -41,7 +42,7 @@ function changePassword(currentPassword: string, newPassword: string) {
     };
 }
 
-function setPassword(password: string) {
+function setPassword(password: string): ChangePasswordResponse {
     if (isPasswordSet()) {
         throw new Error("Password is set already. Either change it or perform 'reset password' first.");
     }

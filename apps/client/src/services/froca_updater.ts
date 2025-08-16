@@ -35,8 +35,10 @@ async function processEntityChanges(entityChanges: EntityChange[]) {
                 loadResults.addOption(attributeEntity.name);
             } else if (ec.entityName === "attachments") {
                 processAttachment(loadResults, ec);
-            } else if (ec.entityName === "blobs" || ec.entityName === "etapi_tokens") {
+            } else if (ec.entityName === "blobs") {
                 // NOOP - these entities are handled at the backend level and don't require frontend processing
+            } else if (ec.entityName === "etapi_tokens") {
+                loadResults.hasEtapiTokenChanges = true;
             } else {
                 throw new Error(`Unknown entityName '${ec.entityName}'`);
             }
@@ -77,9 +79,7 @@ async function processEntityChanges(entityChanges: EntityChange[]) {
             noteAttributeCache.invalidate();
         }
 
-        // TODO: Remove after porting the file
-        // @ts-ignore
-        const appContext = (await import("../components/app_context.js")).default as any;
+        const appContext = (await import("../components/app_context.js")).default;
         await appContext.triggerEvent("entitiesReloaded", { loadResults });
     }
 }

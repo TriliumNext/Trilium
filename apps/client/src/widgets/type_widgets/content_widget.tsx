@@ -1,8 +1,4 @@
 import TypeWidget from "./type_widget.js";
-import ElectronIntegrationOptions from "./options/appearance/electron_integration.js";
-import ThemeOptions from "./options/appearance/theme.js";
-import FontsOptions from "./options/appearance/fonts.js";
-import MaxContentWidthOptions from "./options/appearance/max_content_width.js";
 import KeyboardShortcutsOptions from "./options/shortcuts.js";
 import HeadingStyleOptions from "./options/text_notes/heading_style.js";
 import TableOfContentsOptions from "./options/text_notes/table_of_contents.js";
@@ -12,13 +8,6 @@ import DateTimeFormatOptions from "./options/text_notes/date_time_format.js";
 import CodeEditorOptions from "./options/code_notes/code_editor.js";
 import CodeAutoReadOnlySizeOptions from "./options/code_notes/code_auto_read_only_size.js";
 import CodeMimeTypesOptions from "./options/code_notes/code_mime_types.js";
-import ImageOptions from "./options/images/images.js";
-import SpellcheckOptions from "./options/spellcheck.js";
-import PasswordOptions from "./options/password/password.js";
-import ProtectedSessionTimeoutOptions from "./options/password/protected_session_timeout.js";
-import EtapiOptions from "./options/etapi.js";
-import BackupOptions from "./options/backup.js";
-import SyncOptions from "./options/sync.js";
 import SearchEngineOptions from "./options/other/search_engine.js";
 import TrayOptions from "./options/other/tray.js";
 import NoteErasureTimeoutOptions from "./options/other/note_erasure_timeout.js";
@@ -26,15 +15,9 @@ import RevisionsSnapshotIntervalOptions from "./options/other/revisions_snapshot
 import RevisionSnapshotsLimitOptions from "./options/other/revision_snapshots_limit.js";
 import NetworkConnectionsOptions from "./options/other/network_connections.js";
 import HtmlImportTagsOptions from "./options/other/html_import_tags.js";
-import AdvancedSyncOptions from "./options/advanced/sync.js";
-import DatabaseIntegrityCheckOptions from "./options/advanced/database_integrity_check.js";
-import VacuumDatabaseOptions from "./options/advanced/vacuum_database.js";
-import DatabaseAnonymizationOptions from "./options/advanced/database_anonymization.js";
 import BackendLogWidget from "./content/backend_log.js";
 import AttachmentErasureTimeoutOptions from "./options/other/attachment_erasure_timeout.js";
-import RibbonOptions from "./options/appearance/ribbon.js";
 import MultiFactorAuthenticationOptions from './options/multi_factor_authentication.js';
-import LocalizationOptions from "./options/i18n/i18n.js";
 import CodeBlockOptions from "./options/text_notes/code_block.js";
 import EditorOptions from "./options/text_notes/editor.js";
 import ShareSettingsOptions from "./options/other/share_settings.js";
@@ -42,11 +25,21 @@ import AiSettingsOptions from "./options/ai_settings.js";
 import type FNote from "../../entities/fnote.js";
 import type NoteContextAwareWidget from "../note_context_aware_widget.js";
 import { t } from "../../services/i18n.js";
-import LanguageOptions from "./options/i18n/language.js";
 import type BasicWidget from "../basic_widget.js";
 import CodeTheme from "./options/code_notes/code_theme.js";
-import RelatedSettings from "./options/appearance/related_settings.js";
 import EditorFeaturesOptions from "./options/text_notes/features.js";
+import type { JSX } from "preact/jsx-runtime";
+import AppearanceSettings from "./options/appearance.jsx";
+import { renderReactWidget } from "../react/ReactBasicWidget.jsx";
+import ImageSettings from "./options/images.jsx";
+import AdvancedSettings from "./options/advanced.jsx";
+import InternationalizationOptions from "./options/i18n.jsx";
+import SyncOptions from "./options/sync.jsx";
+import EtapiSettings from "./options/etapi.js";
+import BackupSettings from "./options/backup.js";
+import SpellcheckSettings from "./options/spellcheck.js";
+import PasswordSettings from "./options/password.jsx";
+import ShortcutSettings from "./options/shortcuts.js";
 
 const TPL = /*html*/`<div class="note-detail-content-widget note-detail-printable">
     <style>
@@ -73,17 +66,9 @@ const TPL = /*html*/`<div class="note-detail-content-widget note-detail-printabl
 
 export type OptionPages = "_optionsAppearance" | "_optionsShortcuts" | "_optionsTextNotes" | "_optionsCodeNotes" | "_optionsImages" | "_optionsSpellcheck" | "_optionsPassword" | "_optionsMFA" | "_optionsEtapi" | "_optionsBackup" | "_optionsSync" | "_optionsAi" | "_optionsOther" | "_optionsLocalization" | "_optionsAdvanced";
 
-const CONTENT_WIDGETS: Record<OptionPages | "_backendLog", (typeof NoteContextAwareWidget)[]> = {
-    _optionsAppearance: [
-        ThemeOptions,
-        FontsOptions,
-        ElectronIntegrationOptions,
-        MaxContentWidthOptions,
-        RibbonOptions
-    ],
-    _optionsShortcuts: [
-        KeyboardShortcutsOptions
-    ],
+const CONTENT_WIDGETS: Record<OptionPages | "_backendLog", ((typeof NoteContextAwareWidget)[] | JSX.Element)> = {
+    _optionsAppearance: <AppearanceSettings />,
+    _optionsShortcuts: <ShortcutSettings />,
     _optionsTextNotes: [
         EditorOptions,
         EditorFeaturesOptions,
@@ -100,26 +85,13 @@ const CONTENT_WIDGETS: Record<OptionPages | "_backendLog", (typeof NoteContextAw
         CodeMimeTypesOptions,
         CodeAutoReadOnlySizeOptions
     ],
-    _optionsImages: [
-        ImageOptions
-    ],
-    _optionsSpellcheck: [
-        SpellcheckOptions
-    ],
-    _optionsPassword: [
-        PasswordOptions,
-        ProtectedSessionTimeoutOptions
-    ],
+    _optionsImages: <ImageSettings />,
+    _optionsSpellcheck: <SpellcheckSettings />,
+    _optionsPassword: <PasswordSettings />,
     _optionsMFA: [MultiFactorAuthenticationOptions],
-    _optionsEtapi: [
-        EtapiOptions
-    ],
-    _optionsBackup: [
-        BackupOptions
-    ],
-    _optionsSync: [
-        SyncOptions
-    ],
+    _optionsEtapi: <EtapiSettings />,
+    _optionsBackup: <BackupSettings />,
+    _optionsSync: <SyncOptions />,
     _optionsAi: [AiSettingsOptions],
     _optionsOther: [
         SearchEngineOptions,
@@ -132,16 +104,8 @@ const CONTENT_WIDGETS: Record<OptionPages | "_backendLog", (typeof NoteContextAw
         ShareSettingsOptions,
         NetworkConnectionsOptions
     ],
-    _optionsLocalization: [
-        LocalizationOptions,
-        LanguageOptions
-    ],
-    _optionsAdvanced: [
-        AdvancedSyncOptions,
-        DatabaseIntegrityCheckOptions,
-        DatabaseAnonymizationOptions,
-        VacuumDatabaseOptions
-    ],
+    _optionsLocalization: <InternationalizationOptions />,
+    _optionsAdvanced: <AdvancedSettings />,
     _backendLog: [
         BackendLogWidget
     ]
@@ -172,13 +136,17 @@ export default class ContentWidgetTypeWidget extends TypeWidget {
         this.$content.empty();
         this.children = [];
 
-        const contentWidgets = [
-            ...((CONTENT_WIDGETS as Record<string, typeof NoteContextAwareWidget[]>)[note.noteId]),
-            RelatedSettings
-        ];
+        const contentWidgets = (CONTENT_WIDGETS as Record<string, (typeof NoteContextAwareWidget[] | JSX.Element)>)[note.noteId];
         this.$content.toggleClass("options", note.noteId.startsWith("_options"));
 
-        if (contentWidgets) {
+        // Unknown widget.
+        if (!contentWidgets) {
+            this.$content.append(t("content_widget.unknown_widget", { id: note.noteId }));
+            return;
+        }
+
+        // Legacy widget.
+        if (Array.isArray(contentWidgets)) {
             for (const clazz of contentWidgets) {
                 const widget = new clazz();
 
@@ -191,9 +159,11 @@ export default class ContentWidgetTypeWidget extends TypeWidget {
                 this.widget = widget;
                 await widget.refresh();
             }
-        } else {
-            this.$content.append(t("content_widget.unknown_widget", { id: note.noteId }));
+            return;
         }
+
+        // React widget.
+        this.$content.append(renderReactWidget(this, contentWidgets));
     }
 
 }

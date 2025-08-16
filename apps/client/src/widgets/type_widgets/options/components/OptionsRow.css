@@ -1,0 +1,23 @@
+.option-row {
+    border-bottom: 1px solid var(--main-border-color);
+    display: flex;
+    align-items: center;
+    padding: 0.5em 0;
+}
+
+.option-row > label {
+    width: 40%;
+    margin-bottom: 0 !important;
+}
+
+.option-row > select {
+    width: 60%;
+}
+
+.option-row:last-of-type {
+    border-bottom: unset;
+}
+
+.option-row.centered {
+    justify-content: center;
+}

@@ -1,4 +1,4 @@
-import type { AttachmentRow } from "@triliumnext/commons";
+import type { AttachmentRow, EtapiTokenRow } from "@triliumnext/commons";
 import type { AttributeType } from "../entities/fattribute.js";
 import type { EntityChange } from "../server_types.js";
 
@@ -53,6 +53,7 @@ type EntityRowMappings = {
     options: OptionRow;
     revisions: RevisionRow;
     note_reordering: NoteReorderingRow;
+    etapi_tokens: EtapiTokenRow;
 };
 
 export type EntityRowNames = keyof EntityRowMappings;
@@ -68,6 +69,7 @@ export default class LoadResults {
     private contentNoteIdToComponentId: ContentNoteIdToComponentIdRow[];
     private optionNames: string[];
     private attachmentRows: AttachmentRow[];
+    public hasEtapiTokenChanges: boolean = false;
 
     constructor(entityChanges: EntityChange[]) {
         const entities: Record<string, Record<string, any>> = {};
@@ -215,7 +217,8 @@ export default class LoadResults {
             this.revisionRows.length === 0 &&
             this.contentNoteIdToComponentId.length === 0 &&
             this.optionNames.length === 0 &&
-            this.attachmentRows.length === 0
+            this.attachmentRows.length === 0 &&
+            !this.hasEtapiTokenChanges
         );
     }
 
