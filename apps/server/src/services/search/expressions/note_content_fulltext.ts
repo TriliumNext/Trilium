@@ -11,6 +11,7 @@ import protectedSessionService from "../../protected_session.js";
 import striptags from "striptags";
 import { normalize } from "../../utils.js";
 import sql from "../../sql.js";
+import blobStorageService from "../../blob-storage.js";
 
 const ALLOWED_OPERATORS = new Set(["=", "!=", "*=*", "*=", "=*", "%="]);
 
@@ -30,7 +31,7 @@ interface ConstructorOpts {
     flatText?: boolean;
 }
 
-type SearchRow = Pick<NoteRow, "noteId" | "type" | "mime" | "content" | "isProtected">;
+type SearchRow = Pick<NoteRow, "noteId" | "type" | "mime" | "content" | "isProtected"> & { contentLocation: string };
 
 class NoteContentFulltextExp extends Expression {
     private operator: string;
@@ -57,7 +58,7 @@ class NoteContentFulltextExp extends Expression {
         const resultNoteSet = new NoteSet();
 
         for (const row of sql.iterateRows<SearchRow>(`
-                SELECT noteId, type, mime, content, isProtected
+                SELECT noteId, type, mime, content, isProtected, contentLocation
                 FROM notes JOIN blobs USING (blobId)
                 WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap') AND isDeleted = 0`)) {
             this.findInText(row, inputNoteSet, resultNoteSet);
@@ -66,47 +67,49 @@ class NoteContentFulltextExp extends Expression {
         return resultNoteSet;
     }
 
-    findInText({ noteId, isProtected, content, type, mime }: SearchRow, inputNoteSet: NoteSet, resultNoteSet: NoteSet) {
+    findInText({ noteId, isProtected, content, type, mime, contentLocation }: SearchRow, inputNoteSet: NoteSet, resultNoteSet: NoteSet) {
         if (!inputNoteSet.hasNoteId(noteId) || !(noteId in becca.notes)) {
             return;
         }
 
+        let rawContent: string | Buffer | null = blobStorageService.getContent({ content: content ?? null, contentLocation });
+
         if (isProtected) {
-            if (!protectedSessionService.isProtectedSessionAvailable() || !content || typeof content !== "string") {
+            if (!protectedSessionService.isProtectedSessionAvailable() || !rawContent || typeof rawContent !== "string") {
                 return;
             }
 
             try {
-                content = protectedSessionService.decryptString(content) || undefined;
+                rawContent = protectedSessionService.decrypt(rawContent);
             } catch (e) {
                 log.info(`Cannot decrypt content of note ${noteId}`);
                 return;
             }
         }
 
-        if (!content) {
+        if (!rawContent) {
             return;
         }
 
-        content = this.preprocessContent(content, type, mime);
+        rawContent = this.preprocessContent(rawContent, type, mime);
 
         if (this.tokens.length === 1) {
             const [token] = this.tokens;
 
             if (
-                (this.operator === "=" && token === content) ||
-                (this.operator === "!=" && token !== content) ||
-                (this.operator === "*=" && content.endsWith(token)) ||
-                (this.operator === "=*" && content.startsWith(token)) ||
-                (this.operator === "*=*" && content.includes(token)) ||
-                (this.operator === "%=" && getRegex(token).test(content))
+                (this.operator === "=" && token === rawContent) ||
+                (this.operator === "!=" && token !== rawContent) ||
+                (this.operator === "*=" && rawContent.endsWith(token)) ||
+                (this.operator === "=*" && rawContent.startsWith(token)) ||
+                (this.operator === "*=*" && rawContent.includes(token)) ||
+                (this.operator === "%=" && getRegex(token).test(rawContent))
             ) {
                 resultNoteSet.add(becca.notes[noteId]);
             }
         } else {
             const nonMatchingToken = this.tokens.find(
                 (token) =>
-                    !content?.includes(token) &&
+                    !rawContent?.includes(token) &&
                     // in case of default fulltext search, we should consider both title, attrs and content
                     // so e.g. "hello world" should match when "hello" is in title and "world" in content
                     (!this.flatText || !becca.notes[noteId].getFlatText().includes(token))
@@ -117,7 +120,7 @@ class NoteContentFulltextExp extends Expression {
             }
         }
 
-        return content;
+        return rawContent;
     }
 
     preprocessContent(content: string | Buffer, type: string, mime: string) {

@@ -125,7 +125,7 @@ function loadNeededInfoFromDatabase() {
         SELECT
             noteId,
             blobId,
-            LENGTH(content) AS length
+            contentLength AS length
         FROM notes
              JOIN blobs USING(blobId)
         WHERE notes.isDeleted = 0`);
@@ -151,7 +151,7 @@ function loadNeededInfoFromDatabase() {
         SELECT
             ownerId AS noteId,
             attachments.blobId,
-            LENGTH(content) AS length
+            contentLength AS length
         FROM attachments
             JOIN notes ON attachments.ownerId = notes.noteId
             JOIN blobs ON attachments.blobId = blobs.blobId
@@ -186,7 +186,7 @@ function loadNeededInfoFromDatabase() {
             SELECT
                 noteId,
                 revisions.blobId,
-                LENGTH(content) AS length,
+                contentLength AS length,
                 1 AS isNoteRevision
             FROM notes
                 JOIN revisions USING(noteId)
@@ -196,7 +196,7 @@ function loadNeededInfoFromDatabase() {
             SELECT
                 noteId,
                 revisions.blobId,
-                LENGTH(content) AS length,
+                contentLength AS length,
                 0 AS isNoteRevision -- it's attachment not counting towards revision count
             FROM notes
                 JOIN revisions USING(noteId)

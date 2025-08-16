@@ -146,7 +146,7 @@ function fillEntityChanges(entityName: string, entityPrimaryKey: string, conditi
             };
 
             if (entityName === "blobs") {
-                const blob = sql.getRow<Blob>("SELECT blobId, content, utcDateModified FROM blobs WHERE blobId = ?", [entityId]);
+                const blob = sql.getRow<Blob>("SELECT blobId, content, contentLocation, contentLength, utcDateModified FROM blobs WHERE blobId = ?", [entityId]);
                 ec.hash = blobService.calculateContentHash(blob);
                 ec.utcDateChanged = blob.utcDateModified;
                 ec.isSynced = true; // blobs are always synced

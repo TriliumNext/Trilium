@@ -1,5 +1,7 @@
 export interface Blob {
     blobId: string;
-    content: string | Buffer;
+    content: string | Buffer | null;
+    contentLocation: string;
+    contentLength: number;
     utcDateModified: string;
 }

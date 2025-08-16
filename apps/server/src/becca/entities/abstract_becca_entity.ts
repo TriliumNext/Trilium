@@ -9,8 +9,11 @@ import cls from "../../services/cls.js";
 import log from "../../services/log.js";
 import protectedSessionService from "../../services/protected_session.js";
 import blobService from "../../services/blob.js";
+import blobStorageService from "../../services/blob-storage.js";
+import type { Blob } from "../../services/blob-interface.js";
 import type { default as Becca, ConstructorData } from "../becca-interface.js";
 import becca from "../becca.js";
+import type { BlobContentLocation } from "@triliumnext/commons";
 
 interface ContentOpts {
     forceSave?: boolean;
@@ -195,6 +198,16 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
             return;
         }
 
+        const row = sql.getRow<{ contentLocation: string }>("SELECT contentLocation FROM blobs WHERE blobId = ?", [oldBlobId]);
+        if (row?.contentLocation.startsWith('file://')) {
+            try {
+                const filePath = row.contentLocation.replace('file://', '');
+                blobStorageService.deleteExternal(filePath);
+            } catch (error) {
+                log.error(`Failed to delete external content file ${row.contentLocation}: ${error}`);
+            }
+        }
+
         sql.execute("DELETE FROM blobs WHERE blobId = ?", [oldBlobId]);
         // blobs are not marked as erased in entity_changes, they are just purged completely
         // this is because technically every keystroke can create a new blob, and there would be just too many
@@ -225,9 +238,28 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
             return newBlobId;
         }
 
+        // Check if we should store this blob externally
+        const shouldStoreExternally = blobStorageService.shouldStoreExternally(content);
+
+        let contentLocation: BlobContentLocation = 'internal';
+
+        if (shouldStoreExternally) {
+            try {
+                const filePath = blobStorageService.saveExternal(newBlobId, content);
+                contentLocation = `file://${filePath}` as BlobContentLocation;
+            } catch (error) {
+                log.error(`Failed to store blob ${newBlobId} externally, falling back to internal storage: ${error}`);
+                contentLocation = 'internal';
+            }
+        }
+
+        const contentLength = blobService.getContentLength(content);
+
         const pojo = {
             blobId: newBlobId,
-            content: content,
+            content: contentLocation === 'internal' ? content : null,
+            contentLocation,
+            contentLength,
             dateModified: dateUtils.localNowDateTime(),
             utcDateModified: dateUtils.utcNowDateTime()
         };
@@ -259,14 +291,16 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
     }
 
     protected _getContent(): string | Buffer {
-        const row = sql.getRow<{ content: string | Buffer }>(/*sql*/`SELECT content FROM blobs WHERE blobId = ?`, [this.blobId]);
+        const row = sql.getRow<{ content: string | Buffer, contentLocation: string }>(/*sql*/`SELECT content, contentLocation FROM blobs WHERE blobId = ?`, [this.blobId]);
 
         if (!row) {
             const constructorData = this.constructor as unknown as ConstructorData<T>;
             throw new Error(`Cannot find content for ${constructorData.primaryKeyName} '${(this as any)[constructorData.primaryKeyName]}', blobId '${this.blobId}'`);
         }
 
-        return blobService.processContent(row.content, this.isProtected || false, this.hasStringContent());
+        const content = blobStorageService.getContent(row);
+
+        return blobService.processContent(content, this.isProtected || false, this.hasStringContent());
     }
 
     /**

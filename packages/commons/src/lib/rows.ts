@@ -66,10 +66,13 @@ export interface EtapiTokenRow {
     isDeleted?: boolean;
 }
 
+export type BlobContentLocation = 'internal' | `file://${string}`;
+
 export interface BlobRow {
     blobId: string;
     content: string | Buffer;
     contentLength: number;
+    contentLocation: BlobContentLocation;
     dateModified: string;
     utcDateModified: string;
 }

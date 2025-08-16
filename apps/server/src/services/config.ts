@@ -50,6 +50,10 @@ export interface TriliumConfig {
         oauthIssuerName: string;
         oauthIssuerIcon: string;
     };
+    ExternalBlobStorage: {
+        enabled: boolean;
+        thresholdBytes: number;
+    };
 }
 
 //prettier-ignore
@@ -136,6 +140,18 @@ const config: TriliumConfig = {
 
         oauthIssuerIcon:
             process.env.TRILIUM_OAUTH_ISSUER_ICON || iniConfig?.MultiFactorAuthentication?.oauthIssuerIcon || ""
+    },
+
+    ExternalBlobStorage: {
+        enabled:
+            envToBoolean(process.env.TRILIUM_EXTERNAL_BLOB_STORAGE) || iniConfig?.ExternalBlobStorage?.enabled || false,
+
+        thresholdBytes:
+            // defaults to 100kB if not set, see performance impact here: https://www.sqlite.org/intern-v-extern-blob.html
+            parseInt(
+                process.env.TRILIUM_EXTERNAL_BLOB_THRESHOLD ??  iniConfig?.ExternalBlobStorage?.thresholdBytes ?? 100 * 1024,
+                10
+            )
     }
 };
 

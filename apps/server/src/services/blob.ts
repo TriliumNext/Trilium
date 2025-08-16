@@ -50,12 +50,27 @@ function processContent(content: Buffer | string | null, isProtected: boolean, i
     }
 }
 
-function calculateContentHash({ blobId, content }: Blob) {
-    return hash(`${blobId}|${content.toString()}`);
+function calculateContentHash({ blobId, content, contentLocation }: Blob) {
+    return contentLocation !== 'internal'
+        ? hash(`${blobId}|${contentLocation}`)
+        : hash(`${blobId}|${content?.toString() || ''}`);
+}
+
+function getContentLength(content: Buffer | string | null) {
+    if (content === null) {
+        return 0;
+    }
+
+    if (Buffer.isBuffer(content)) {
+        return content.length;
+    }
+
+    return Buffer.byteLength(content, "utf8");
 }
 
 export default {
     getBlobPojo,
     processContent,
-    calculateContentHash
+    calculateContentHash,
+    getContentLength
 };

@@ -4,7 +4,7 @@ import packageJson from "../../package.json" with { type: "json" };
 import dataDir from "./data_dir.js";
 import { AppInfo } from "@triliumnext/commons";
 
-const APP_DB_VERSION = 233;
+const APP_DB_VERSION = 234;
 const SYNC_VERSION = 36;
 const CLIPPER_PROTOCOL_VERSION = "1.0";
 

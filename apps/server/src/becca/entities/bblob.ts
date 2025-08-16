@@ -1,5 +1,5 @@
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
-import type { BlobRow } from "@triliumnext/commons";
+import type { BlobRow, BlobContentLocation } from "@triliumnext/commons";
 
 // TODO: Why this does not extend the abstract becca?
 class BBlob extends AbstractBeccaEntity<BBlob> {
@@ -10,11 +10,12 @@ class BBlob extends AbstractBeccaEntity<BBlob> {
         return "blobId";
     }
     static get hashedProperties() {
-        return ["blobId", "content"];
+        return ["blobId", "content", "contentLocation"];
     }
 
     content!: string | Buffer;
     contentLength!: number;
+    contentLocation!: BlobContentLocation;
 
     constructor(row: BlobRow) {
         super();
@@ -25,6 +26,7 @@ class BBlob extends AbstractBeccaEntity<BBlob> {
         this.blobId = row.blobId;
         this.content = row.content;
         this.contentLength = row.contentLength;
+        this.contentLocation = row.contentLocation;
         this.dateModified = row.dateModified;
         this.utcDateModified = row.utcDateModified;
     }
@@ -34,6 +36,7 @@ class BBlob extends AbstractBeccaEntity<BBlob> {
             blobId: this.blobId,
             content: this.content || null,
             contentLength: this.contentLength,
+            contentLocation: this.contentLocation,
             dateModified: this.dateModified,
             utcDateModified: this.utcDateModified
         };

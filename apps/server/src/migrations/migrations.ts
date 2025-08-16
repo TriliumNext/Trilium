@@ -6,6 +6,19 @@
 
 // Migrations should be kept in descending order, so the latest migration is first.
 const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Add external blob storage support
+    {
+        version: 234,
+        sql: /*sql*/`
+            -- Add contentLocation column
+            ALTER TABLE blobs ADD contentLocation TEXT DEFAULT 'internal';
+            UPDATE blobs SET contentLocation = 'internal' WHERE contentLocation IS NULL;
+
+            -- Add contentLength column
+            ALTER TABLE blobs ADD contentLength INTEGER;
+            UPDATE blobs SET contentLength = CASE WHEN content IS NULL THEN 0 ELSE LENGTH(content) END WHERE contentLength IS NULL;
+        `,
+    },
     // Migrate geo map to collection
     {
         version: 233,

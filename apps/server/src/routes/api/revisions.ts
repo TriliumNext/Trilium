@@ -35,7 +35,7 @@ function getRevisions(req: Request) {
     return becca.getRevisionsFromQuery(
         `
         SELECT revisions.*,
-                LENGTH(blobs.content) AS contentLength
+                blobs.contentLength AS contentLength
         FROM revisions
         JOIN blobs ON revisions.blobId = blobs.blobId
         WHERE revisions.noteId = ?
