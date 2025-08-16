@@ -7,7 +7,7 @@ function getNoteSize(req: Request) {
 
     const blobSizes = sql.getMap<string, number>(
         `
-        SELECT blobs.blobId, LENGTH(content)
+        SELECT blobs.blobId, blobs.contentLength
         FROM blobs
         LEFT JOIN notes ON notes.blobId = blobs.blobId AND notes.noteId = ? AND notes.isDeleted = 0
         LEFT JOIN attachments ON attachments.blobId = blobs.blobId AND attachments.ownerId = ? AND attachments.isDeleted = 0
@@ -33,7 +33,7 @@ function getSubtreeSize(req: Request) {
     sql.fillParamList(subTreeNoteIds);
 
     const blobSizes = sql.getMap<string, number>(`
-        SELECT blobs.blobId, LENGTH(content)
+        SELECT blobs.blobId, blobs.contentLength
         FROM param_list
         JOIN notes ON notes.noteId = param_list.paramId AND notes.isDeleted = 0
         LEFT JOIN attachments ON attachments.ownerId = param_list.paramId AND attachments.isDeleted = 0

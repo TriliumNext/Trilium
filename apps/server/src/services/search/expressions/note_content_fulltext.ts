@@ -19,6 +19,7 @@ import {
     fuzzyMatchWord,
     FUZZY_SEARCH_CONFIG 
 } from "../utils/text_utils.js";
+import blobStorageService from "../../blob-storage.js";
 
 const ALLOWED_OPERATORS = new Set(["=", "!=", "*=*", "*=", "=*", "%=", "~=", "~*"]);
 
@@ -41,7 +42,7 @@ interface ConstructorOpts {
     flatText?: boolean;
 }
 
-type SearchRow = Pick<NoteRow, "noteId" | "type" | "mime" | "content" | "isProtected">;
+type SearchRow = Pick<NoteRow, "noteId" | "type" | "mime" | "content" | "isProtected"> & { contentLocation: string };
 
 class NoteContentFulltextExp extends Expression {
     private operator: string;
@@ -78,10 +79,10 @@ class NoteContentFulltextExp extends Expression {
         const resultNoteSet = new NoteSet();
 
         for (const row of sql.iterateRows<SearchRow>(`
-                SELECT noteId, type, mime, content, isProtected
+                SELECT noteId, type, mime, content, isProtected, contentLocation
                 FROM notes JOIN blobs USING (blobId)
-                WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap') 
-                  AND isDeleted = 0 
+                WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap')
+                  AND isDeleted = 0
                   AND LENGTH(content) < ${MAX_SEARCH_CONTENT_SIZE}`)) {
             this.findInText(row, inputNoteSet, resultNoteSet);
         }
@@ -89,62 +90,64 @@ class NoteContentFulltextExp extends Expression {
         return resultNoteSet;
     }
 
-    findInText({ noteId, isProtected, content, type, mime }: SearchRow, inputNoteSet: NoteSet, resultNoteSet: NoteSet) {
+    findInText({ noteId, isProtected, content, type, mime, contentLocation }: SearchRow, inputNoteSet: NoteSet, resultNoteSet: NoteSet) {
         if (!inputNoteSet.hasNoteId(noteId) || !(noteId in becca.notes)) {
             return;
         }
 
+        let rawContent: string | Buffer | null = blobStorageService.getContent({ content: content ?? null, contentLocation });
+
         if (isProtected) {
-            if (!protectedSessionService.isProtectedSessionAvailable() || !content || typeof content !== "string") {
+            if (!protectedSessionService.isProtectedSessionAvailable() || !rawContent || typeof rawContent !== "string") {
                 return;
             }
 
             try {
-                content = protectedSessionService.decryptString(content) || undefined;
+                rawContent = protectedSessionService.decryptString(rawContent);
             } catch (e) {
                 log.info(`Cannot decrypt content of note ${noteId}`);
                 return;
             }
         }
 
-        if (!content) {
+        if (!rawContent) {
             return;
         }
 
-        content = this.preprocessContent(content, type, mime);
-        
+        rawContent = this.preprocessContent(rawContent, type, mime);
+
         // Apply content size validation and preprocessing
-        const processedContent = validateAndPreprocessContent(content, noteId);
+        const processedContent = validateAndPreprocessContent(rawContent, noteId);
         if (!processedContent) {
             return; // Content too large or invalid
         }
-        content = processedContent;
+        rawContent = processedContent;
 
         if (this.tokens.length === 1) {
             const [token] = this.tokens;
 
             if (
-                (this.operator === "=" && token === content) ||
-                (this.operator === "!=" && token !== content) ||
-                (this.operator === "*=" && content.endsWith(token)) ||
-                (this.operator === "=*" && content.startsWith(token)) ||
-                (this.operator === "*=*" && content.includes(token)) ||
-                (this.operator === "%=" && getRegex(token).test(content)) ||
-                (this.operator === "~=" && this.matchesWithFuzzy(content, noteId)) ||
-                (this.operator === "~*" && this.fuzzyMatchToken(normalizeSearchText(token), normalizeSearchText(content)))
+                (this.operator === "=" && token === rawContent) ||
+                (this.operator === "!=" && token !== rawContent) ||
+                (this.operator === "*=" && rawContent.endsWith(token)) ||
+                (this.operator === "=*" && rawContent.startsWith(token)) ||
+                (this.operator === "*=*" && rawContent.includes(token)) ||
+                (this.operator === "%=" && getRegex(token).test(rawContent)) ||
+                (this.operator === "~=" && this.matchesWithFuzzy(rawContent, noteId)) ||
+                (this.operator === "~*" && this.fuzzyMatchToken(normalizeSearchText(token), normalizeSearchText(rawContent)))
             ) {
                 resultNoteSet.add(becca.notes[noteId]);
             }
         } else {
             // Multi-token matching with fuzzy support and phrase proximity
             if (this.operator === "~=" || this.operator === "~*") {
-                if (this.matchesWithFuzzy(content, noteId)) {
+                if (this.matchesWithFuzzy(rawContent, noteId)) {
                     resultNoteSet.add(becca.notes[noteId]);
                 }
             } else {
                 const nonMatchingToken = this.tokens.find(
                     (token) =>
-                        !this.tokenMatchesContent(token, content, noteId)
+                        !this.tokenMatchesContent(token, rawContent, noteId)
                 );
 
                 if (!nonMatchingToken) {
@@ -153,7 +156,7 @@ class NoteContentFulltextExp extends Expression {
             }
         }
 
-        return content;
+        return rawContent;
     }
 
     preprocessContent(content: string | Buffer, type: string, mime: string) {
