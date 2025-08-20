@@ -1869,9 +1869,17 @@
     "show_login_link": "Show Login link in Share theme",
     "show_login_link_description": "Add a login link to the Share page footer",
     "check_share_root": "Check Share Root Status",
+    "check_share_root_error": "An unexpected error happened while checking the Share Root Status, please check the logs for more information.",
+    "share_note_title": "'{{noteTitle}}'",
     "share_root_found": "Share root note '{{noteTitle}}' is ready",
     "share_root_not_found": "No note with #shareRoot label found",
-    "share_root_not_shared": "Note '{{noteTitle}}' has #shareRoot label but is not shared"
+    "share_root_not_shared": "Note '{{noteTitle}}' has #shareRoot label but is not Shared",
+    "share_root_multiple_found": "Found multiple shared notes with a #shareRoot label: {{- foundNoteTitles}}. The note {{- activeNoteTitle}} will be used as shared root note.",
+    "share_path": "Share path",
+    "share_path_description": "The url prefix for shared notes (e.g. '/share' --> '/share/noteId' or '/custom-path' --> '/custom-path/noteId'). Multiple levels of nesting are supported (e.g. '/custom-path/sub-path' --> '/custom-path/sub-path/noteId'). Refresh the page to apply the changes.",
+    "share_path_placeholder": "/share or /custom-path",
+    "share_subtree": "Share subtree",
+    "share_subtree_description": "Share the entire subtree, not just the note"
   },
   "time_selector": {
     "invalid_input": "The entered time value is not a valid number.",
