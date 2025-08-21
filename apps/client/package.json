@@ -70,7 +70,7 @@
     "copy-webpack-plugin": "13.0.1",
     "happy-dom": "18.0.1",
     "script-loader": "0.7.2",
-    "vite-plugin-static-copy": "3.1.1"
+    "vite-plugin-static-copy": "3.1.2"
   },
   "nx": {
     "name": "client",
