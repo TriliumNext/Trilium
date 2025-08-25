@@ -848,7 +848,7 @@
     "debug": "debug",
     "debug_description": "Debug imprimera des informations supplémentaires dans la console pour faciliter le débogage des requêtes complexes",
     "action": "action",
-    "search_button": "Recherche <kbd>Entrée</kbd>",
+    "search_button": "Recherche",
     "search_execute": "Rechercher et exécuter des actions",
     "save_to_note": "Enregistrer dans la note",
     "search_parameters": "Paramètres de recherche",

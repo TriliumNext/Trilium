@@ -18,7 +18,7 @@ import type FNote from "../entities/fnote.js";
 import toast from "./toast.js";
 import { BulkAction } from "@triliumnext/commons";
 
-const ACTION_GROUPS = [
+export const ACTION_GROUPS = [
     {
         title: t("bulk_actions.labels"),
         actions: [AddLabelBulkAction, UpdateLabelValueBulkAction, RenameLabelBulkAction, DeleteLabelBulkAction]

@@ -1,4 +1,4 @@
-import type { InputHTMLAttributes, RefObject } from "preact/compat";
+import { useEffect, type InputHTMLAttributes, type RefObject } from "preact/compat";
 
 interface FormTextBoxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange" | "onBlur" | "value"> {
     id?: string;
@@ -8,7 +8,7 @@ interface FormTextBoxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "
     inputRef?: RefObject<HTMLInputElement>;
 }
 
-export default function FormTextBox({ inputRef, className, type, currentValue, onChange, onBlur,...rest}: FormTextBoxProps) {
+export default function FormTextBox({ inputRef, className, type, currentValue, onChange, onBlur, autoFocus, ...rest}: FormTextBoxProps) {
     if (type === "number" && currentValue) {
         const { min, max } = rest;
         const currentValueNum = parseInt(currentValue, 10);
@@ -18,6 +18,12 @@ export default function FormTextBox({ inputRef, className, type, currentValue, o
             currentValue = String(max);
         }
     }
+
+    useEffect(() => {
+        if (autoFocus) {
+            inputRef?.current?.focus();
+        }
+    }, []);
 
     return (
         <input

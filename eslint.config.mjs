@@ -1,10 +1,19 @@
 import nx from "@nx/eslint-plugin";
+import reactHooks from "eslint-plugin-react-hooks";
 
 export default [
     ...nx.configs["flat/base"],
     ...nx.configs["flat/typescript"],
     ...nx.configs["flat/javascript"],
-    {      "ignores": [
+    {
+        files: ['**/*.{ts,tsx}'],
+        plugins: { 'react-hooks': reactHooks },
+        rules: {
+            'react-hooks/rules-of-hooks': 'error',
+        }
+    },
+    {
+      "ignores": [
         "**/dist",
         "**/vite.config.*.timestamp*",
         "**/vitest.config.*.timestamp*"
@@ -12,10 +21,7 @@ export default [
     },
     {
         files: [
-            "**/*.ts",
             "**/*.tsx",
-            "**/*.js",
-            "**/*.jsx"
         ],
         rules: {
             "@nx/enforce-module-boundaries": [

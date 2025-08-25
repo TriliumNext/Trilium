@@ -35,7 +35,7 @@ function download(url: string) {
     }
 }
 
-function downloadFileNote(noteId: string) {
+export function downloadFileNote(noteId: string) {
     const url = `${getFileUrl("notes", noteId)}?${Date.now()}`; // don't use cache
 
     download(url);
@@ -163,7 +163,7 @@ async function openExternally(type: string, entityId: string, mime: string) {
     }
 }
 
-const openNoteExternally = async (noteId: string, mime: string) => await openExternally("notes", noteId, mime);
+export const openNoteExternally = async (noteId: string, mime: string) => await openExternally("notes", noteId, mime);
 const openAttachmentExternally = async (attachmentId: string, mime: string) => await openExternally("attachments", attachmentId, mime);
 
 function getHost() {

@@ -848,7 +848,7 @@
     "debug": "调试",
     "debug_description": "调试将打印额外的调试信息到控制台，以帮助调试复杂查询",
     "action": "操作",
-    "search_button": "搜索 <kbd>回车</kbd>",
+    "search_button": "搜索",
     "search_execute": "搜索并执行操作",
     "save_to_note": "保存到笔记",
     "search_parameters": "搜索参数",

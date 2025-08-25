@@ -2,7 +2,6 @@ import { useRef, useState, useEffect } from "preact/hooks";
 import { t } from "../../services/i18n.js";
 import FormCheckbox from "../react/FormCheckbox.js";
 import Modal from "../react/Modal.js";
-import ReactBasicWidget from "../react/ReactBasicWidget.js";
 import type { DeleteNotesPreview } from "@triliumnext/commons";
 import server from "../../services/server.js";
 import froca from "../../services/froca.js";
@@ -10,7 +9,7 @@ import FNote from "../../entities/fnote.js";
 import link from "../../services/link.js";
 import Button from "../react/Button.jsx";
 import Alert from "../react/Alert.jsx";
-import useTriliumEvent from "../react/hooks.jsx";
+import { useTriliumEvent } from "../react/hooks.jsx";
 
 export interface ResolveOptions {
     proceed: boolean;
@@ -30,7 +29,7 @@ interface BrokenRelationData {
     source: string;
 }
 
-function DeleteNotesDialogComponent() {
+export default function DeleteNotesDialog() {
     const [ opts, setOpts ] = useState<ShowDeleteNotesDialogOpts>({});
     const [ deleteAllClones, setDeleteAllClones ] = useState(false);
     const [ eraseNotes, setEraseNotes ] = useState(!!opts.forceDeleteAllClones);
@@ -140,7 +139,7 @@ function BrokenRelations({ brokenRelations }: { brokenRelations: DeleteNotesPrev
         const noteIds = brokenRelations
             .map(relation => relation.noteId)
             .filter(noteId => noteId) as string[];
-        froca.getNotes(noteIds).then(async (notes) => {
+        froca.getNotes(noteIds).then(async () => {
             const notesWithBrokenRelations: BrokenRelationData[] = [];
             for (const attr of brokenRelations) {
                 notesWithBrokenRelations.push({
@@ -170,12 +169,4 @@ function BrokenRelations({ brokenRelations }: { brokenRelations: DeleteNotesPrev
     } else {
         return <></>;
     }
-}
-
-export default class DeleteNotesDialog extends ReactBasicWidget {
-
-    get component() {
-        return <DeleteNotesDialogComponent />;
-    }    
-
 }

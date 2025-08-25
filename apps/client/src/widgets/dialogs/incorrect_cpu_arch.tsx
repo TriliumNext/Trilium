@@ -3,11 +3,10 @@ import { t } from "../../services/i18n.js";
 import utils from "../../services/utils.js";
 import Button from "../react/Button.js";
 import Modal from "../react/Modal.js";
-import ReactBasicWidget from "../react/ReactBasicWidget.js";
 import { useState } from "preact/hooks";
-import useTriliumEvent from "../react/hooks.jsx";
+import { useTriliumEvent } from "../react/hooks.jsx";
 
-function IncorrectCpuArchDialogComponent() {
+export default function IncorrectCpuArchDialogComponent() {
     const [ shown, setShown ] = useState(false);
     const downloadButtonRef = useRef<HTMLButtonElement>(null);
     useTriliumEvent("showCpuArchWarning", () => setShown(true));
@@ -43,12 +42,4 @@ function IncorrectCpuArchDialogComponent() {
             <p>{t("cpu_arch_warning.recommendation")}</p>
         </Modal>
     )
-}
-
-export default class IncorrectCpuArchDialog extends ReactBasicWidget {
- 
-    get component() {
-        return <IncorrectCpuArchDialogComponent />
-    }
-
 }

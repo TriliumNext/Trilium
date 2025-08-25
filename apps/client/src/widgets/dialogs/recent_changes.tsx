@@ -6,7 +6,6 @@ import server from "../../services/server";
 import toast from "../../services/toast";
 import Button from "../react/Button";
 import Modal from "../react/Modal";
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import hoisted_note from "../../services/hoisted_note";
 import type { RecentChangeRow } from "@triliumnext/commons";
 import froca from "../../services/froca";
@@ -14,39 +13,32 @@ import { formatDateTime } from "../../utils/formatters";
 import link from "../../services/link";
 import RawHtml from "../react/RawHtml";
 import ws from "../../services/ws";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
 
-function RecentChangesDialogComponent() {
+export default function RecentChangesDialog() {
     const [ ancestorNoteId, setAncestorNoteId ] = useState<string>();
-    const [ groupedByDate, setGroupedByDate ] = useState<Map<String, RecentChangeRow[]>>();
-    const [ needsRefresh, setNeedsRefresh ] = useState(false);
+    const [ groupedByDate, setGroupedByDate ] = useState<Map<string, RecentChangeRow[]>>();
+    const [ refreshCounter, setRefreshCounter ] = useState(0);
     const [ shown, setShown ] = useState(false);
 
-    useTriliumEvent("showRecentChanges", ({ ancestorNoteId }) => {
-        setNeedsRefresh(true);
+    useTriliumEvent("showRecentChanges", ({ ancestorNoteId }) => {        
         setAncestorNoteId(ancestorNoteId ?? hoisted_note.getHoistedNoteId());
         setShown(true);
     });
 
-    if (!groupedByDate || needsRefresh) {
-        useEffect(() => {
-            if (needsRefresh) {
-                setNeedsRefresh(false);   
-            }
+    useEffect(() => {
+        server.get<RecentChangeRow[]>(`recent-changes/${ancestorNoteId}`)
+            .then(async (recentChanges) => {
+                // preload all notes into cache
+                await froca.getNotes(
+                    recentChanges.map((r) => r.noteId),
+                    true
+                );
 
-            server.get<RecentChangeRow[]>(`recent-changes/${ancestorNoteId}`)
-                .then(async (recentChanges) => {
-                    // preload all notes into cache
-                    await froca.getNotes(
-                        recentChanges.map((r) => r.noteId),
-                        true
-                    );
-
-                    const groupedByDate = groupByDate(recentChanges);
-                    setGroupedByDate(groupedByDate);
-                });
-        })
-    }
+                const groupedByDate = groupByDate(recentChanges);
+                setGroupedByDate(groupedByDate);
+            });
+    }, [ shown, refreshCounter ])
 
     return (
         <Modal
@@ -61,7 +53,7 @@ function RecentChangesDialogComponent() {
                     style={{ padding: "0 10px" }}
                     onClick={() => {
                         server.post("notes/erase-deleted-notes-now").then(() => {
-                            setNeedsRefresh(true);
+                            setRefreshCounter(refreshCounter + 1);
                             toast.showMessage(t("recent_changes.deleted_notes_message"));
                         });
                     }}
@@ -79,7 +71,7 @@ function RecentChangesDialogComponent() {
     )
 }
 
-function RecentChangesTimeline({ groupedByDate, setShown }: { groupedByDate: Map<String, RecentChangeRow[]>, setShown: Dispatch<StateUpdater<boolean>> }) {
+function RecentChangesTimeline({ groupedByDate, setShown }: { groupedByDate: Map<string, RecentChangeRow[]>, setShown: Dispatch<StateUpdater<boolean>> }) {
     return (
         <>
             { Array.from(groupedByDate.entries()).map(([dateDay, dayChanges]) => {
@@ -114,10 +106,6 @@ function RecentChangesTimeline({ groupedByDate, setShown }: { groupedByDate: Map
 }
 
 function NoteLink({ notePath, title }: { notePath: string, title: string }) {
-    if (!notePath || !title) {
-        return null;
-    }
-
     const [ noteLink, setNoteLink ] = useState<JQuery<HTMLElement> | null>(null);
     useEffect(() => {
         link.createLink(notePath, {
@@ -156,25 +144,19 @@ function DeletedNoteLink({ change, setShown }: { change: RecentChangeRow, setSho
     );
 }
 
-export default class RecentChangesDialog extends ReactBasicWidget {
-
-    get component() {
-        return <RecentChangesDialogComponent />
-    }
-
-}
-
 function groupByDate(rows: RecentChangeRow[]) {
-    const groupedByDate = new Map<String, RecentChangeRow[]>();
+    const groupedByDate = new Map<string, RecentChangeRow[]>();
 
     for (const row of rows) {
         const dateDay = row.date.substr(0, 10);
 
-        if (!groupedByDate.has(dateDay)) {
-            groupedByDate.set(dateDay, []);
+        let dateDayArray = groupedByDate.get(dateDay);
+        if (!dateDayArray) {
+            dateDayArray = [];
+            groupedByDate.set(dateDay, dateDayArray);
         }
 
-        groupedByDate.get(dateDay)!.push(row);
+        dateDayArray.push(row);
     }
 
     return groupedByDate;

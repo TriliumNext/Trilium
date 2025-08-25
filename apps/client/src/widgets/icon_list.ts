@@ -1,6 +1,6 @@
 // taken from the HTML source of https://boxicons.com/
 
-interface Category {
+export interface Category {
     name: string;
     id: number;
 }

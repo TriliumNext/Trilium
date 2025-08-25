@@ -1106,7 +1106,7 @@
     "limit_description": "Limitează numărul de rezultate",
     "order_by": "ordonează după",
     "save_to_note": "Salvează în notiță",
-    "search_button": "Căutare <kbd>Enter</kbd>",
+    "search_button": "Căutare",
     "search_execute": "Caută și execută acțiunile",
     "search_note_saved": "Notița de căutare a fost salvată în {{- notePathTitle}}",
     "search_parameters": "Parametrii de căutare",

@@ -1,4 +1,4 @@
-import { AttributeRow, NoteType } from "./rows.js";
+import { AttachmentRow, AttributeRow, NoteType } from "./rows.js";
 
 type Response = {
     success: true,
@@ -154,4 +154,55 @@ export interface OpenAiOrAnthropicModelResponse {
         name: string;
         type: string;
     }>;
+}
+
+export type ToggleInParentResponse = {
+    success: true;
+} | {
+    success: false;
+    message: string;
+}
+
+export type EditedNotesResponse = {
+    noteId: string;
+    isDeleted: boolean;
+    title?: string;
+    notePath?: string[] | null;
+}[];
+
+export interface MetadataResponse {
+    dateCreated: string | undefined;
+    utcDateCreated: string;
+    dateModified: string | undefined;
+    utcDateModified: string | undefined;
+}
+
+export interface NoteSizeResponse {
+    noteSize: number;
+}
+
+export interface SubtreeSizeResponse {
+    subTreeNoteCount: number;
+    subTreeSize: number;
+}
+
+export interface SimilarNote {
+    score: number;
+    notePath: string[];
+    noteId: string;
+}
+
+export type SimilarNoteResponse = (SimilarNote[] | undefined);
+
+export type SaveSearchNoteResponse = CloneResponse;
+
+export interface CloneResponse {
+    success: boolean;
+    message?: string;
+    branchId?: string;
+    notePath?: string;
+}
+
+export interface ConvertToAttachmentResponse {
+    attachment: AttachmentRow;
 }

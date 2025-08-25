@@ -1006,7 +1006,7 @@
     "limit_description": "Limitar número de resultados",
     "debug": "depurar",
     "action": "ação",
-    "search_button": "Pesquisar <kbd>enter</kbd>",
+    "search_button": "Pesquisar",
     "search_execute": "Pesquisar & Executar ações",
     "save_to_note": "Salvar para nota",
     "search_parameters": "Parâmetros de Pesquisa",

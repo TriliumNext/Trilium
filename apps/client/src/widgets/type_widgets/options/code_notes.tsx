@@ -6,7 +6,7 @@ import FormGroup from "../../react/FormGroup";
 import FormSelect from "../../react/FormSelect";
 import { useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
 import OptionsSection from "./components/OptionsSection";
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef } from "preact/hooks";
 import codeNoteSample from "./samples/code_note.txt?raw";
 import { DEFAULT_PREFIX } from "../abstract_code_type_widget";
 import { MimeType } from "@triliumnext/commons";
@@ -133,7 +133,10 @@ function CodeMimeTypes() {
         const result: Record<string, MimeType[]> = {};
         ungroupedMimeTypes.sort((a, b) => a.title.localeCompare(b.title));
 
-        result[""] = [ plainTextMimeType! ];
+        if (plainTextMimeType) {
+            result[""] = [ plainTextMimeType ];
+        }
+        
         for (const mimeType of ungroupedMimeTypes) {
             const initial = mimeType.title.charAt(0).toUpperCase();
             if (!result[initial]) {

@@ -10,6 +10,7 @@ import SearchContext from "./search/search_context.js";
 import { LBTPL_NOTE_LAUNCHER, LBTPL_CUSTOM_WIDGET, LBTPL_SPACER, LBTPL_SCRIPT } from "./hidden_subtree.js";
 import { t } from "i18next";
 import { BNote } from "./backend_script_entrypoint.js";
+import { SaveSearchNoteResponse } from "@triliumnext/commons";
 
 function getInboxNote(date: string) {
     const workspaceNote = hoistedNoteService.getWorkspaceNote();
@@ -119,7 +120,7 @@ function saveSearchNote(searchNoteId: string) {
         }
     }
 
-    return result;
+    return result satisfies SaveSearchNoteResponse;
 }
 
 function getMonthlyParentNoteId(rootNoteId: string, prefix: string) {

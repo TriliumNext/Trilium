@@ -6,7 +6,7 @@ import type { LibraryItem } from "@excalidraw/excalidraw/types";
 import type { Theme } from "@excalidraw/excalidraw/element/types";
 import type Canvas from "./canvas_el.js";
 import { CanvasContent } from "./canvas_el.js";
-import { renderReactWidget } from "../react/ReactBasicWidget.jsx";
+import { renderReactWidget } from "../react/react_utils.jsx";
 
 const TPL = /*html*/`
     <div class="canvas-widget note-detail-canvas note-detail-printable note-detail">

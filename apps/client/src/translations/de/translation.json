@@ -845,7 +845,7 @@
     "debug": "debuggen",
     "debug_description": "Debug gibt zusätzliche Debuginformationen in die Konsole aus, um das Debuggen komplexer Abfragen zu erleichtern",
     "action": "Aktion",
-    "search_button": "Suchen <kbd>Eingabetaste</kbd>",
+    "search_button": "Suchen",
     "search_execute": "Aktionen suchen und ausführen",
     "save_to_note": "Als Notiz speichern",
     "search_parameters": "Suchparameter",

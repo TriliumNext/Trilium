@@ -43,8 +43,6 @@ export default class RootCommandExecutor extends Component {
         const noteContext = await appContext.tabManager.openTabWithNoteWithHoisting(searchNote.noteId, {
             activate: true
         });
-
-        appContext.triggerCommand("focusOnSearchDefinition", { ntxId: noteContext.ntxId });
     }
 
     async searchInSubtreeCommand({ notePath }: CommandListenerData<"searchInSubtree">) {

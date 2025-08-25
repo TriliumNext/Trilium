@@ -185,7 +185,7 @@
     "debug": "デバッグ",
     "debug_description": "デバッグは複雑なクエリのデバッグを支援するために、追加のデバッグ情報をコンソールに出力します",
     "action": "アクション",
-    "search_button": "検索 <kbd>Enter</kbd>",
+    "search_button": "検索",
     "search_execute": "検索とアクションの実行",
     "save_to_note": "ノートに保存",
     "search_parameters": "検索パラメータ",

@@ -8,7 +8,6 @@ import server from "../../services/server";
 import toast from "../../services/toast";
 import Button from "../react/Button";
 import Modal from "../react/Modal";
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import FormList, { FormListItem } from "../react/FormList";
 import utils from "../../services/utils";
 import { Dispatch, StateUpdater, useEffect, useRef, useState } from "preact/hooks";
@@ -18,9 +17,9 @@ import type { CSSProperties } from "preact/compat";
 import open from "../../services/open";
 import ActionButton from "../react/ActionButton";
 import options from "../../services/options";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
 
-function RevisionsDialogComponent() {
+export default function RevisionsDialog() {
     const [ note, setNote ] = useState<FNote>();
     const [ revisions, setRevisions ] = useState<RevisionItem[]>();
     const [ currentRevision, setCurrentRevision ] = useState<RevisionItem>();
@@ -202,17 +201,9 @@ function RevisionContent({ revisionItem, fullRevision }: { revisionItem?: Revisi
         return <></>;
     }
 
-
     switch (revisionItem.type) {
-        case "text": {
-            const contentRef = useRef<HTMLDivElement>(null);
-            useEffect(() => {
-                if (contentRef.current?.querySelector("span.math-tex")) {
-                    renderMathInElement(contentRef.current, { trust: true });
-                }
-            });
-            return <div ref={contentRef} className="ck-content" dangerouslySetInnerHTML={{ __html: content as string }}></div>
-        }
+        case "text":
+            return <RevisionContentText content={content} />
         case "code":
             return <pre style={CODE_STYLE}>{content}</pre>;
         case "image":            
@@ -264,6 +255,16 @@ function RevisionContent({ revisionItem, fullRevision }: { revisionItem?: Revisi
     }
 }
 
+function RevisionContentText({ content }: { content: string | Buffer<ArrayBufferLike> | undefined }) {
+    const contentRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        if (contentRef.current?.querySelector("span.math-tex")) {
+            renderMathInElement(contentRef.current, { trust: true });
+        }
+    }, [content]);
+    return <div ref={contentRef} className="ck-content" dangerouslySetInnerHTML={{ __html: content as string }}></div>
+}
+
 function RevisionFooter({ note }: { note?: FNote }) {
     if (!note) {
         return <></>;
@@ -289,14 +290,6 @@ function RevisionFooter({ note }: { note?: FNote }) {
             onClick={() => appContext.tabManager.openContextWithNote("_optionsOther", { activate: true })}
         />
     </>;
-}
-
-export default class RevisionsDialog extends ReactBasicWidget  {
-
-    get component() {
-        return <RevisionsDialogComponent />
-    }
-
 }
 
 async function getNote(noteId?: string | null) {

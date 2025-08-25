@@ -960,7 +960,7 @@
     "debug": "debug",
     "debug_description": "Debug виведе додаткову інформацію для налагодження в консоль, щоб допомогти у налагодженні складних запитів",
     "action": "дія",
-    "search_button": "Пошук <kbd>enter</kbd>",
+    "search_button": "Пошук",
     "search_execute": "Пошук & Виконання дій",
     "save_to_note": "Зберегти до нотатки",
     "search_parameters": "Параметри пошуку",

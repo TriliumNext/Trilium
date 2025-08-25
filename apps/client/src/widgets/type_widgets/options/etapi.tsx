@@ -10,7 +10,7 @@ import toast from "../../../services/toast";
 import dialog from "../../../services/dialog";
 import { formatDateTime } from "../../../utils/formatters";
 import ActionButton from "../../react/ActionButton";
-import useTriliumEvent from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks";
 
 type RenameTokenCallback = (tokenId: string, oldName: string) => Promise<void>;
 type DeleteTokenCallback = (tokenId: string, name: string ) => Promise<void>;
@@ -77,10 +77,6 @@ export default function EtapiSettings() {
 }
 
 function TokenList({ tokens }: { tokens: EtapiToken[] }) {
-    if (!tokens.length) {
-        return <div>{t("etapi.no_tokens_yet")}</div>;
-    }    
-    
     const renameCallback = useCallback<RenameTokenCallback>(async (tokenId: string, oldName: string) => {
         const tokenName = await dialog.prompt({
             title: t("etapi.rename_token_title"),
@@ -104,37 +100,45 @@ function TokenList({ tokens }: { tokens: EtapiToken[] }) {
     }, []);
 
     return (
-        <div style={{ overflow: "auto", height: "500px"}}>
-            <table className="table table-stripped">
-                <thead>
-                    <tr>
-                        <th>{t("etapi.token_name")}</th>
-                        <th>{t("etapi.created")}</th>
-                        <th>{t("etapi.actions")}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {tokens.map(({ etapiTokenId, name, utcDateCreated}) => (
+        tokens.length ? (
+            <div style={{ overflow: "auto", height: "500px"}}>
+                <table className="table table-stripped">
+                    <thead>
                         <tr>
-                            <td>{name}</td>
-                            <td>{formatDateTime(utcDateCreated)}</td>
-                            <td>
-                                <ActionButton
-                                    icon="bx bx-edit-alt"
-                                    text={t("etapi.rename_token")}
-                                    onClick={() => renameCallback(etapiTokenId!, name)}
-                                />
-
-                                <ActionButton
-                                    icon="bx bx-trash"
-                                    text={t("etapi.delete_token")}
-                                    onClick={() => deleteCallback(etapiTokenId!, name)}
-                                />
-                            </td>
+                            <th>{t("etapi.token_name")}</th>
+                            <th>{t("etapi.created")}</th>
+                            <th>{t("etapi.actions")}</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    )
+                    </thead>
+                    <tbody>
+                        {tokens.map(({ etapiTokenId, name, utcDateCreated}) => (
+                            <tr>
+                                <td>{name}</td>
+                                <td>{formatDateTime(utcDateCreated)}</td>
+                                <td>
+                                    {etapiTokenId && (
+                                        <>
+                                            <ActionButton
+                                                icon="bx bx-edit-alt"
+                                                text={t("etapi.rename_token")}
+                                                onClick={() => renameCallback(etapiTokenId, name)}
+                                            />
+            
+                                            <ActionButton
+                                                icon="bx bx-trash"
+                                                text={t("etapi.delete_token")}
+                                                onClick={() => deleteCallback(etapiTokenId, name)}
+                                            />
+                                        </>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        ) : (
+            <div>{t("etapi.no_tokens_yet")}</div>
+        )
+    );
 }

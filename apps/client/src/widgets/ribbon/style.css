@@ -1,0 +1,475 @@
+.ribbon-container {
+    margin-bottom: 5px;
+}
+
+.ribbon-top-row {
+    display: flex;
+    min-height: 36px;
+}
+
+.ribbon-tab-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    margin-left: 10px;
+    flex-grow: 1;
+    flex-flow: row wrap;
+}
+
+.ribbon-tab-title {
+    color: var(--muted-text-color);
+    border-bottom: 1px solid var(--main-border-color);
+    min-width: 24px;
+    flex-basis: 24px;
+    max-width: max-content;
+    flex-grow: 10;
+    user-select: none;
+}
+
+.ribbon-tab-title .bx {
+    font-size: 150%;
+    position: relative;
+    top: 3px;
+}
+
+.ribbon-tab-title.active {
+    color: var(--main-text-color);
+    border-bottom: 3px solid var(--main-text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ribbon-tab-title:hover {
+    cursor: pointer;
+}
+
+.ribbon-tab-title:hover {
+    color: var(--main-text-color);
+}
+
+.ribbon-tab-title:first-of-type {
+    padding-left: 10px;
+}
+
+.ribbon-tab-spacer {
+    flex-basis: 0;
+    min-width: 0;
+    max-width: 35px;
+    flex-grow: 1;
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+.ribbon-tab-spacer:last-of-type {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    max-width: 10000px;
+}
+
+.ribbon-button-container {
+    display: flex;
+    border-bottom: 1px solid var(--main-border-color);
+    margin-right: 5px;
+}
+
+.ribbon-button-container > * {
+    position: relative;
+    top: -3px;
+    margin-left: 10px;
+}
+
+.ribbon-body {
+    border-bottom: 1px solid var(--main-border-color);
+    margin-left: 10px;
+    margin-right: 5px; /* needs to have this value so that the bottom border is the same width as the top one */
+}
+
+.ribbon-body.active {
+    display: block;
+}
+
+.ribbon-tab-title.active .ribbon-tab-title-label {
+    display: inline;
+}
+
+/* #region Basic Properties */
+
+.basic-properties-widget {
+    padding: 0px 12px 6px 12px;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+}
+
+.basic-properties-widget > * {
+    margin-top: 9px;
+    margin-bottom: 2px;
+}
+
+.basic-properties-widget > * > :last-child {
+    margin-right: 30px;
+}
+
+.note-type-container,
+.editability-select-container,
+.note-language-container {
+    display: flex;
+    align-items: center;
+}
+
+.note-type-dropdown {
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.editability-dropdown {
+    width: 300px;
+}
+
+/* #endregion */
+
+/* #region Formatting Toolbar */
+
+.classic-toolbar-widget {
+    --ck-color-toolbar-background: transparent;
+    --ck-color-button-default-background: transparent;
+    --ck-color-button-default-disabled-background: transparent;
+    min-height: 39px;
+}
+
+.classic-toolbar-widget .ck.ck-toolbar {
+    border: none;
+}
+
+.classic-toolbar-widget .ck.ck-button.ck-disabled {
+    opacity: 0.3;
+}
+
+/* #endregion */
+
+/* #region Script Tab */
+.script-runner-widget {
+    padding: 12px;
+    color: var(--muted-text-color);
+}
+
+.execute-description {
+    margin-bottom: 10px;
+}
+/* #endregion */
+
+/* #region Note info */
+.note-info-widget {
+    padding: 12px;
+}
+
+.note-info-widget-table {
+    max-width: 100%;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.note-info-widget-table td, .note-info-widget-table th {
+    padding: 5px;
+}
+
+.note-info-mime {
+    max-width: 13em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+/* #endregion */
+
+/* #region Similar Notes */
+.similar-notes-wrapper {
+    max-height: 200px;
+    overflow: auto;
+    padding: 12px;
+}
+
+.similar-notes-wrapper a {
+    display: inline-block;
+    border: 1px dotted var(--main-border-color);
+    border-radius: 20px;
+    background-color: var(--accented-background-color);
+    padding: 0 10px 0 10px;
+    margin: 0 3px 0 3px;
+    max-width: 10em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+/* #endregion */
+
+/* #region File Properties */
+.file-table {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.file-table th, .file-table td {
+    padding: 5px;
+    overflow-wrap: anywhere;
+}
+
+.file-buttons {
+    padding: 10px;
+    display: flex;
+    justify-content: space-evenly;
+}
+/* #endregion */
+
+/* #region Note paths */
+.note-paths-widget {
+    padding: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.note-path-list {
+    margin-top: 10px;
+}
+
+.note-path-list .path-current a {
+    font-weight: bold;
+}
+
+.note-path-list .path-archived a {
+    color: var(--muted-text-color) !important;
+}
+
+.note-path-list .path-search a {
+    font-style: italic;
+}
+/* #endregion */
+
+/* #region Note map */
+.note-map-ribbon-widget {
+    position: relative;
+}
+
+.note-map-ribbon-widget .note-map-container {
+    height: 100%;
+}
+
+.note-map-ribbon-widget .open-full-button, .note-map-ribbon-widget .collapse-button {
+    position: absolute;
+    right: 5px;
+    bottom: 5px;
+    z-index: 1000;
+}
+
+.style-resolver {
+    color: var(--muted-text-color);
+    display: none;
+}
+/* #endregion */
+
+/* #region Attribute editor */
+.attribute-list-editor {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    padding: 0 0 0 5px !important;
+    margin: 0 !important;
+    max-height: 100px;
+    overflow: auto;
+    transition: opacity .1s linear;
+}
+
+.attribute-list-editor.ck-content .mention {
+    color: var(--muted-text-color) !important;
+    background: transparent !important;
+}
+
+.save-attributes-button {
+    color: var(--muted-text-color);
+    position: absolute;
+    bottom: 14px;
+    right: 25px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-size: 130%;
+}
+
+.add-new-attribute-button {
+    color: var(--muted-text-color);
+    position: absolute;
+    bottom: 13px;
+    right: 0;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-size: 130%;
+}
+
+.add-new-attribute-button:hover, .save-attributes-button:hover {
+    border: 1px solid var(--button-border-color);
+    border-radius: var(--button-border-radius);
+    background: var(--button-background-color);
+    color: var(--button-text-color);
+}
+
+.attribute-errors {
+    color: red;
+    padding: 5px 50px 0px 5px; /* large right padding to avoid buttons */
+}
+/* #endregion */
+
+/* #region Owned Attributes */
+.attribute-list {
+    margin-left: 7px;
+    margin-right: 7px;
+    margin-top: 5px;
+    margin-bottom: 2px;
+    position: relative;
+}
+
+.attribute-list-editor p {
+    margin: 0 !important;
+}
+
+.attribute-list .attr-detail,
+.inherited-attributes-widget .attr-detail {
+    contain: none;
+}
+
+/* #endregion */
+
+/* #region Inherited attributes */
+.inherited-attributes-widget {
+    position: relative;
+}
+
+.inherited-attributes-container {
+    color: var(--muted-text-color);
+    max-height: 200px;
+    overflow: auto;
+    padding: 14px 12px 13px 12px;
+}
+/* #endregion */
+
+/* #region Book properties */
+.book-properties-widget {
+    padding: 12px 12px 6px 12px;
+    display: flex;
+}
+
+.book-properties-widget > * {
+    margin-right: 15px;
+}
+
+.book-properties-container {
+    display: flex;
+    align-items: center;
+}
+
+.book-properties-container > div {
+    margin-right: 15px;
+}
+
+.book-properties-container > .type-number > label {
+    display: flex;
+    align-items: baseline;
+}
+
+.book-properties-container input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+.book-properties-container label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-overflow: clip;
+    white-space: nowrap;
+}
+/* #endregion */
+
+/* #region Search definition */
+.search-setting-table {
+    margin-top: 0;
+    margin-bottom: 7px;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 10px;
+}
+
+.search-setting-table div {
+    white-space: nowrap;
+}
+
+.search-setting-table .title-column {
+    /* minimal width so that table remains static sized and most space remains for middle column with settings */
+    width: 50px;
+    white-space: nowrap;
+}
+
+.search-setting-table .button-column {
+    /* minimal width so that table remains static sized and most space remains for middle column with settings */
+    width: 50px;
+    white-space: nowrap;
+    text-align: right;
+    vertical-align: middle;
+}
+
+.search-setting-table .button-column .dropdown {
+    display: inline-block !important;
+}
+
+.search-setting-table .button-column .dropdown-menu {
+    white-space: normal;
+}
+
+.search-setting-table .button-column > * {
+    vertical-align: middle;
+}
+
+.attribute-list hr {
+    height: 1px;
+    border-color: var(--main-border-color);
+    position: relative;
+    top: 4px;
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.search-definition-widget input:invalid {
+    border: 3px solid red;
+}
+
+.add-search-option button {
+    margin: 3px;
+}
+
+.dropdown-header {
+    background-color: var(--accented-background-color);
+}
+/* #endregion */
+
+/* #region Note actions */
+.note-actions {
+    width: 35px;
+    height: 35px;
+}
+
+.note-actions .dropdown-menu {
+    min-width: 15em;
+}
+
+.note-actions .dropdown-item .bx {
+    position: relative;
+    top: 3px;
+    font-size: 120%;
+    margin-right: 5px;
+}
+
+.note-actions .dropdown-item[disabled], .note-actions .dropdown-item[disabled]:hover {
+    color: var(--muted-text-color) !important;
+    background-color: transparent !important;
+    pointer-events: none; /* makes it unclickable */
+}
+/* #endregion */

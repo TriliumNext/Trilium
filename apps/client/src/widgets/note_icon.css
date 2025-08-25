@@ -1,0 +1,59 @@
+.note-icon-widget {
+    padding-top: 3px;
+    padding-left: 7px;
+    margin-right: 0;
+    width: 50px;
+    height: 50px;
+}
+
+.note-icon-widget button.note-icon {
+    font-size: 180%;
+    background-color: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    padding: 6px;
+    color: var(--main-text-color);
+}
+
+.note-icon-widget button.note-icon:hover {
+    border: 1px solid var(--main-border-color);
+}
+
+.note-icon-widget .dropdown-menu {
+    border-radius: 10px;
+    border-width: 2px;
+    box-shadow: 10px 10px 93px -25px black;
+    padding: 10px 15px 10px 15px !important;
+}
+
+.note-icon-widget .filter-row {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-right: 20px;
+    display: flex;
+    align-items: baseline;
+}
+
+.note-icon-widget .filter-row span {
+    display: block;
+    padding-left: 15px;
+    padding-right: 15px;
+    font-weight: bold;
+}
+
+.note-icon-widget .icon-list {
+    height: 500px;
+    overflow: auto;
+}
+
+.note-icon-widget .icon-list span {
+    display: inline-block;
+    padding: 10px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    font-size: 180%;
+}
+
+.note-icon-widget .icon-list span:hover {
+    border: 1px solid var(--main-border-color);
+}

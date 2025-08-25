@@ -1,0 +1,25 @@
+.note-title-widget {
+    flex-grow: 1000;
+    height: 100%;
+}
+
+.note-title-widget input.note-title {
+    font-size: 110%;
+    border: 0;
+    margin: 2px 0px;
+    min-width: 5em;
+    width: 100%;
+    padding: 1px 12px;
+}
+
+.note-title-widget input.note-title.protected {
+    text-shadow: 4px 4px 4px var(--muted-text-color);
+}
+
+body.mobile .note-title-widget input.note-title {
+    padding: 0;
+}
+
+body.desktop .note-title-widget input.note-title {
+    font-size: 180%;
+}

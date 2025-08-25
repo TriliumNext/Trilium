@@ -4,14 +4,13 @@ import tree from "../../services/tree";
 import Button from "../react/Button";
 import FormRadioGroup from "../react/FormRadioGroup";
 import Modal from "../react/Modal";
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import "./export.css";
 import ws from "../../services/ws";
 import toastService, { ToastOptions } from "../../services/toast";
 import utils from "../../services/utils";
 import open from "../../services/open";
 import froca from "../../services/froca";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
 
 interface ExportDialogProps {
     branchId?: string | null;
@@ -19,7 +18,7 @@ interface ExportDialogProps {
     defaultType?: "subtree" | "single";
 }
 
-function ExportDialogComponent() {
+export default function ExportDialog() {
     const [ opts, setOpts ] = useState<ExportDialogProps>();
     const [ exportType, setExportType ] = useState<string>(opts?.defaultType ?? "subtree");
     const [ subtreeFormat, setSubtreeFormat ] = useState("html");
@@ -123,14 +122,6 @@ function ExportDialogComponent() {
 
         </Modal>
     );
-}
-
-export default class ExportDialog extends ReactBasicWidget {
-
-    get component() {
-        return <ExportDialogComponent />
-    }    
-
 }
 
 function exportBranch(branchId: string, type: string, format: string, version: string) {

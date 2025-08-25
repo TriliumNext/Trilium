@@ -1,4 +1,3 @@
-import ReactBasicWidget from "../react/ReactBasicWidget.js";
 import Modal from "../react/Modal.jsx";
 import { t } from "../../services/i18n.js";
 import { ComponentChildren } from "preact";
@@ -6,9 +5,9 @@ import { CommandNames } from "../../components/app_context.js";
 import RawHtml from "../react/RawHtml.jsx";
 import { useEffect, useState } from "preact/hooks";
 import keyboard_actions from "../../services/keyboard_actions.js";
-import useTriliumEvent from "../react/hooks.jsx";
+import { useTriliumEvent } from "../react/hooks.jsx";
 
-function HelpDialogComponent() {
+export default function HelpDialog() {
     const [ shown, setShown ] = useState(false);
     useTriliumEvent("showCheatsheet", () => setShown(true));
 
@@ -160,12 +159,4 @@ function Card({ title, children }: { title: string, children: ComponentChildren 
             </div>
         </div>
     )
-}
-
-export default class HelpDialog extends ReactBasicWidget {
-    
-    get component() {
-        return <HelpDialogComponent />;
-    }
-
 }

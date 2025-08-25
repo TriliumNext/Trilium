@@ -1,4 +1,3 @@
-import SpacedUpdate from "../../../services/spaced_update.js";
 import AbstractBulkAction, { ActionDefinition } from "../abstract_bulk_action.js";
 import { t } from "../../../services/i18n.js";
 import BulkAction from "../BulkAction.jsx";

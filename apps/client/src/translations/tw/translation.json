@@ -845,7 +845,7 @@
     "debug": "除錯",
     "debug_description": "除錯將顯示額外的除錯資訊至控制台，以幫助除錯複雜查詢",
     "action": "操作",
-    "search_button": "搜尋 <kbd>Enter</kbd>",
+    "search_button": "搜尋",
     "search_execute": "搜尋並執行操作",
     "save_to_note": "儲存至筆記",
     "search_parameters": "搜尋參數",

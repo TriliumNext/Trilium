@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from "preact/hooks";
 import server from "../../../services/server";
 import options from "../../../services/options";
 import dialog from "../../../services/dialog";
-import useTriliumEvent from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks";
 
 export default function ShortcutSettings() {
     const [ keyboardShortcuts, setKeyboardShortcuts ] = useState<KeyboardShortcut[]>([]);    

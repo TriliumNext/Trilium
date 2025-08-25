@@ -7,11 +7,10 @@ import FormFileUpload from "../react/FormFileUpload";
 import FormGroup, { FormMultiGroup } from "../react/FormGroup";
 import Modal from "../react/Modal";
 import RawHtml from "../react/RawHtml";
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import importService, { UploadFilesOptions } from "../../services/import";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
 
-function ImportDialogComponent() {
+export default function ImportDialog() {
     const [ parentNoteId, setParentNoteId ] = useState<string>();
     const [ noteTitle, setNoteTitle ] = useState<string>();
     const [ files, setFiles ] = useState<FileList | null>(null);
@@ -87,14 +86,6 @@ function ImportDialogComponent() {
             </FormMultiGroup>
         </Modal>
     );
-}
-
-export default class ImportDialog extends ReactBasicWidget {
-
-    get component() {
-        return <ImportDialogComponent />
-    }    
-
 }
 
 function boolToString(value: boolean) {

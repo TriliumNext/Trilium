@@ -1,6 +1,4 @@
-import SpacedUpdate from "../../../services/spaced_update.js";
 import AbstractBulkAction, { ActionDefinition } from "../abstract_bulk_action.js";
-import noteAutocompleteService from "../../../services/note_autocomplete.js";
 import { t } from "../../../services/i18n.js";
 import BulkAction, { BulkActionText } from "../BulkAction.jsx";
 import NoteAutocomplete from "../../react/NoteAutocomplete.jsx";

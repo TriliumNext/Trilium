@@ -3,7 +3,7 @@ import { getAvailableLocales, t } from "../../../services/i18n";
 import FormSelect from "../../react/FormSelect";
 import OptionsRow from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
-import { useTriliumOption, useTriliumOptionInt, useTriliumOptionJson } from "../../react/hooks";
+import { useTriliumOption, useTriliumOptionJson } from "../../react/hooks";
 import type { Locale } from "@triliumnext/commons";
 import { isElectron, restartDesktopApp } from "../../../services/utils";
 import FormRadioGroup, { FormInlineRadioGroup } from "../../react/FormRadioGroup";

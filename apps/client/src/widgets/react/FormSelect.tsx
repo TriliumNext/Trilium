@@ -20,16 +20,18 @@ interface ValueConfig<T, Q> {
 
 interface FormSelectProps<T, Q> extends ValueConfig<T, Q> {
     id?: string;
+    name?: string;
     onChange: OnChangeListener;
     style?: CSSProperties;
+    className?: string;
 }
 
 /**
  * Combobox component that takes in any object array as data. Each item of the array is rendered as an item, and the key and values are obtained by looking into the object by a specified key.
  */
-export default function FormSelect<T>({ id, onChange, style, ...restProps }: FormSelectProps<T, T>) {
+export default function FormSelect<T>({ name, id, onChange, style, className, ...restProps }: FormSelectProps<T, T>) {
     return (
-        <FormSelectBody id={id} onChange={onChange} style={style}>
+        <FormSelectBody name={name} id={id} onChange={onChange} style={style} className={className}>
             <FormSelectGroup {...restProps} />
         </FormSelectBody>
     );
@@ -38,27 +40,35 @@ export default function FormSelect<T>({ id, onChange, style, ...restProps }: For
 /**
  * Similar to {@link FormSelect}, but the top-level elements are actually groups.
  */
-export function FormSelectWithGroups<T>({ id, values, keyProperty, titleProperty, currentValue, onChange }: FormSelectProps<T, FormSelectGroup<T>>) {
+export function FormSelectWithGroups<T>({ name, id, values, keyProperty, titleProperty, currentValue, onChange, ...restProps }: FormSelectProps<T, FormSelectGroup<T> | T>) {
     return (
-        <FormSelectBody id={id} onChange={onChange}>
-            {values.map(({ title, items }) => {
-                return (
-                    <optgroup label={title}>
-                        <FormSelectGroup values={items} keyProperty={keyProperty} titleProperty={titleProperty} currentValue={currentValue} />
-                    </optgroup>
-                );
+        <FormSelectBody name={name} id={id} onChange={onChange} {...restProps}>
+            {values.map((item) => {
+                if (!item) return <></>;
+                if (typeof item === "object" && "items" in item) {
+                    return (
+                        <optgroup label={item.title}>
+                            <FormSelectGroup values={item.items} keyProperty={keyProperty} titleProperty={titleProperty} currentValue={currentValue} />
+                        </optgroup>
+                    );
+                } else {
+                    return (
+                        <FormSelectGroup values={[ item ]} keyProperty={keyProperty} titleProperty={titleProperty} currentValue={currentValue} />
+                    )
+                }
             })}
         </FormSelectBody>
     )
 }
 
-function FormSelectBody({ id, children, onChange, style }: { id?: string, children: ComponentChildren, onChange: OnChangeListener, style?: CSSProperties }) {
+function FormSelectBody({ id, name, children, onChange, style, className }: { id?: string, name?: string, children: ComponentChildren, onChange: OnChangeListener, style?: CSSProperties, className?: string }) {
     return (
         <select
             id={id}
-            class="form-select"
+            name={name}
             onChange={e => onChange((e.target as HTMLInputElement).value)}
             style={style}
+            className={`form-select ${className ?? ""}`}
         >
             {children}
         </select>
@@ -69,10 +79,10 @@ function FormSelectGroup<T>({ values, keyProperty, titleProperty, currentValue }
     return values.map(item => {
         return (
             <option
-                value={item[keyProperty] as any}
+                value={item[keyProperty] as string | number}
                 selected={item[keyProperty] === currentValue}
             >
-                {item[titleProperty ?? keyProperty] ?? item[keyProperty] as any}
+                {item[titleProperty ?? keyProperty] ?? item[keyProperty] as string | number}
             </option>
         );
     });

@@ -2,10 +2,9 @@ import TypeWidget from "./type_widget.js";
 import type FNote from "../../entities/fnote.js";
 import type NoteContextAwareWidget from "../note_context_aware_widget.js";
 import { t } from "../../services/i18n.js";
-import type BasicWidget from "../basic_widget.js";
 import type { JSX } from "preact/jsx-runtime";
 import AppearanceSettings from "./options/appearance.jsx";
-import { disposeReactWidget, renderReactWidget, renderReactWidgetAtElement } from "../react/ReactBasicWidget.jsx";
+import { disposeReactWidget, renderReactWidgetAtElement } from "../react/react_utils.jsx";
 import ImageSettings from "./options/images.jsx";
 import AdvancedSettings from "./options/advanced.jsx";
 import InternationalizationOptions from "./options/i18n.jsx";
@@ -21,6 +20,7 @@ import OtherSettings from "./options/other.jsx";
 import BackendLogWidget from "./content/backend_log.js";
 import MultiFactorAuthenticationSettings from "./options/multi_factor_authentication.js";
 import AiSettings from "./options/ai_settings.jsx";
+import { unmountComponentAtNode } from "preact/compat";
 
 const TPL = /*html*/`<div class="note-detail-content-widget note-detail-printable">
     <style>
@@ -76,7 +76,6 @@ const CONTENT_WIDGETS: Record<OptionPages | "_backendLog", ((typeof NoteContextA
  */
 export default class ContentWidgetTypeWidget extends TypeWidget {
     private $content!: JQuery<HTMLElement>;
-    private widget?: BasicWidget;
 
     static getType() {
         return "contentWidget";
@@ -90,6 +89,7 @@ export default class ContentWidgetTypeWidget extends TypeWidget {
     }
 
     async doRefresh(note: FNote) {
+        unmountComponentAtNode(this.$content[0]);
         this.$content.empty();
         this.children = [];
 
@@ -113,7 +113,6 @@ export default class ContentWidgetTypeWidget extends TypeWidget {
                 this.child(widget);
 
                 this.$content.append(widget.render());
-                this.widget = widget;
                 await widget.refresh();
             }
             return;

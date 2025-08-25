@@ -4,15 +4,14 @@ import { t } from "../../services/i18n.js";
 import server from "../../services/server.js";
 import toast from "../../services/toast.js";
 import Modal from "../react/Modal.jsx";
-import ReactBasicWidget from "../react/ReactBasicWidget.js";
 import froca from "../../services/froca.js";
 import tree from "../../services/tree.js";
 import Button from "../react/Button.jsx";
 import FormGroup from "../react/FormGroup.js";
-import useTriliumEvent from "../react/hooks.jsx";
+import { useTriliumEvent } from "../react/hooks.jsx";
 import FBranch from "../../entities/fbranch.js";
 
-function BranchPrefixDialogComponent() {
+export default function BranchPrefixDialog() {
     const [ shown, setShown ] = useState(false);
     const [ branch, setBranch ] = useState<FBranch>();
     const [ prefix, setPrefix ] = useState(branch?.prefix ?? "");
@@ -73,14 +72,6 @@ function BranchPrefixDialogComponent() {
             </FormGroup>
         </Modal>
     );
-}
-
-export default class BranchPrefixDialog extends ReactBasicWidget {
-
-    get component() {
-        return <BranchPrefixDialogComponent />;
-    }
-
 }
 
 async function savePrefix(branchId: string, prefix: string) {

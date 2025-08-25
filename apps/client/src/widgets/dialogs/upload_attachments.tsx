@@ -5,13 +5,12 @@ import FormCheckbox from "../react/FormCheckbox";
 import FormFileUpload from "../react/FormFileUpload";
 import FormGroup from "../react/FormGroup";
 import Modal from "../react/Modal";
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import options from "../../services/options";
 import importService from "../../services/import.js";
 import tree from "../../services/tree";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
 
-function UploadAttachmentsDialogComponent() {
+export default function UploadAttachmentsDialog() {
     const [ parentNoteId, setParentNoteId ] = useState<string>();
     const [ files, setFiles ] = useState<FileList | null>(null);
     const [ shrinkImages, setShrinkImages ] = useState(options.is("compressImages"));
@@ -24,12 +23,12 @@ function UploadAttachmentsDialogComponent() {
         setShown(true);
     });
 
-    if (parentNoteId) {
-        useEffect(() => {
-            tree.getNoteTitle(parentNoteId).then((noteTitle) =>
-                setDescription(t("upload_attachments.files_will_be_uploaded", { noteTitle })));
-        }, [parentNoteId]);
-    }
+    useEffect(() => {
+        if (!parentNoteId) return;
+
+        tree.getNoteTitle(parentNoteId).then((noteTitle) =>
+            setDescription(t("upload_attachments.files_will_be_uploaded", { noteTitle })));
+    }, [parentNoteId]);
 
     return (
         <Modal
@@ -63,12 +62,4 @@ function UploadAttachmentsDialogComponent() {
             </FormGroup>
         </Modal>
     );
-}
-
-export default class UploadAttachmentsDialog extends ReactBasicWidget {
-
-    get component() {
-        return <UploadAttachmentsDialogComponent />;
-    }
-
 }

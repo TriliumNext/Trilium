@@ -1,7 +1,11 @@
+import { isValidElement, VNode } from "preact";
 import Component, { TypedComponent } from "../components/component.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import toastService from "../services/toast.js";
+import { renderReactWidget } from "./react/react_utils.jsx";
+import { EventNames, EventData } from "../components/app_context.js";
+import { Handler } from "leaflet";
 
 export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedComponent<T> {
     protected attrs: Record<string, string>;
@@ -22,10 +26,13 @@ export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedCompon
         this.childPositionCounter = 10;
     }
 
-    child(...components: T[]) {
-        if (!components) {
+    child(..._components: (T | VNode)[]) {
+        if (!_components) {
             return this;
         }
+
+        // Convert any React components to legacy wrapped components.
+        const components = wrapReactWidgets(_components);
 
         super.child(...components);
 
@@ -258,3 +265,30 @@ export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedCompon
  * For information on using widgets, see the tutorial {@tutorial widget_basics}.
  */
 export default class BasicWidget extends TypedBasicWidget<Component> {}
+
+export function wrapReactWidgets<T extends TypedComponent<any>>(components: (T | VNode)[]) {
+    const wrappedResult: T[] = [];
+    for (const component of components) {
+        if (isValidElement(component)) {
+            wrappedResult.push(new ReactWrappedWidget(component) as unknown as T);
+        } else {
+            wrappedResult.push(component);
+        }
+    }
+    return wrappedResult;
+}
+
+export class ReactWrappedWidget extends BasicWidget {
+
+    private el: VNode;
+
+    constructor(el: VNode) {
+        super();
+        this.el = el;
+    }
+
+    doRender() {
+        this.$widget = renderReactWidget(this, this.el);
+    }
+
+}

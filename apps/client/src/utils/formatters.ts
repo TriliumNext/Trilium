@@ -3,7 +3,11 @@ type DateTimeStyle = "full" | "long" | "medium" | "short" | "none" | undefined;
 /**
  * Formats the given date and time to a string based on the current locale.
  */
-export function formatDateTime(date: string | Date | number, dateStyle: DateTimeStyle = "medium", timeStyle: DateTimeStyle = "medium") {
+export function formatDateTime(date: string | Date | number | null | undefined, dateStyle: DateTimeStyle = "medium", timeStyle: DateTimeStyle = "medium") {
+    if (!date) {
+        return "";
+    }
+
     const locale = navigator.language;
 
     let parsedDate;

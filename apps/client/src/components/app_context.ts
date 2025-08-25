@@ -40,7 +40,7 @@ interface RootWidget extends Component {
     render: () => JQuery<HTMLElement>;
 }
 
-interface BeforeUploadListener extends Component {
+export interface BeforeUploadListener extends Component {
     beforeUnloadEvent(): boolean;
 }
 
@@ -85,7 +85,6 @@ export type CommandMappings = {
     focusTree: CommandData;
     focusOnTitle: CommandData;
     focusOnDetail: CommandData;
-    focusOnSearchDefinition: Required<CommandData>;
     searchNotes: CommandData & {
         searchString?: string;
         ancestorNoteId?: string | null;
@@ -323,6 +322,7 @@ export type CommandMappings = {
     printActiveNote: CommandData;
     exportAsPdf: CommandData;
     openNoteExternally: CommandData;
+    openNoteCustom: CommandData;
     renderActiveNote: CommandData;
     unhoist: CommandData;
     reloadFrontendApp: CommandData;
@@ -526,7 +526,7 @@ export type FilteredCommandNames<T extends CommandData> = keyof Pick<CommandMapp
 export class AppContext extends Component {
     isMainWindow: boolean;
     components: Component[];
-    beforeUnloadListeners: WeakRef<BeforeUploadListener>[];
+    beforeUnloadListeners: (WeakRef<BeforeUploadListener> | (() => boolean))[];
     tabManager!: TabManager;
     layout?: Layout;
     noteTreeWidget?: NoteTreeWidget;
@@ -649,13 +649,17 @@ export class AppContext extends Component {
         return $(el).closest(".component").prop("component");
     }
 
-    addBeforeUnloadListener(obj: BeforeUploadListener) {
+    addBeforeUnloadListener(obj: BeforeUploadListener | (() => boolean)) {
         if (typeof WeakRef !== "function") {
             // older browsers don't support WeakRef
             return;
         }
 
-        this.beforeUnloadListeners.push(new WeakRef<BeforeUploadListener>(obj));
+        if (typeof obj === "object") {
+            this.beforeUnloadListeners.push(new WeakRef<BeforeUploadListener>(obj));
+        } else {
+            this.beforeUnloadListeners.push(obj);
+        }
     }
 }
 
@@ -665,25 +669,29 @@ const appContext = new AppContext(window.glob.isMainWindow);
 $(window).on("beforeunload", () => {
     let allSaved = true;
 
-    appContext.beforeUnloadListeners = appContext.beforeUnloadListeners.filter((wr) => !!wr.deref());
+    appContext.beforeUnloadListeners = appContext.beforeUnloadListeners.filter((wr) => typeof wr === "function" || !!wr.deref());
 
-    for (const weakRef of appContext.beforeUnloadListeners) {
-        const component = weakRef.deref();
+    for (const listener of appContext.beforeUnloadListeners) {
+        if (typeof listener === "object") {
+            const component = listener.deref();
 
-        if (!component) {
-            continue;
-        }
+            if (!component) {
+                continue;
+            }
 
-        if (!component.beforeUnloadEvent()) {
-            console.log(`Component ${component.componentId} is not finished saving its state.`);
-
-            toast.showMessage(t("app_context.please_wait_for_save"), 10000);
-
-            allSaved = false;
+            if (!component.beforeUnloadEvent()) {
+                console.log(`Component ${component.componentId} is not finished saving its state.`);
+                allSaved = false;
+            }
+        } else {
+            if (!listener()) {
+                allSaved = false;
+            }
         }
     }
 
     if (!allSaved) {
+        toast.showMessage(t("app_context.please_wait_for_save"), 10000);
         return "some string";
     }
 });

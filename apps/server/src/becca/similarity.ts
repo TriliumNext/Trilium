@@ -4,6 +4,7 @@ import beccaService from "./becca_service.js";
 import dateUtils from "../services/date_utils.js";
 import { JSDOM } from "jsdom";
 import type BNote from "./entities/bnote.js";
+import { SimilarNote } from "@triliumnext/commons";
 
 const DEBUG = false;
 
@@ -34,12 +35,6 @@ interface DateLimits {
     minExcludedDate: string;
     maxExcludedDate: string;
     maxDate: string;
-}
-
-export interface SimilarNote {
-    score: number;
-    notePath: string[];
-    noteId: string;
 }
 
 function filterUrlValue(value: string) {

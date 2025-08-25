@@ -6,7 +6,7 @@ import FormCheckbox from "../../react/FormCheckbox"
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks"
 import { FormInlineRadioGroup } from "../../react/FormRadioGroup"
 import Admonition from "../../react/Admonition"
-import { useCallback, useEffect, useMemo, useState } from "preact/hooks"
+import { useCallback, useEffect, useState } from "preact/hooks"
 import { OAuthStatus, TOTPGenerate, TOTPRecoveryKeysResponse, TOTPStatus } from "@triliumnext/commons"
 import server from "../../../services/server"
 import Button from "../../react/Button"
@@ -206,7 +206,7 @@ function OAuthSettings() {
     const [ status, setStatus ] = useState<OAuthStatus>();
 
     useEffect(() => {
-        server.get<OAuthStatus>("oauth/status").then((result) => setStatus);
+        server.get<OAuthStatus>("oauth/status").then(setStatus);
     });
 
     return (

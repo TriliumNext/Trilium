@@ -12,7 +12,7 @@ import type { Request, Response } from "express";
 import type BRevision from "../../becca/entities/brevision.js";
 import type BNote from "../../becca/entities/bnote.js";
 import type { NotePojo } from "../../becca/becca-interface.js";
-import { RevisionItem, RevisionPojo, RevisionRow } from "@triliumnext/commons";
+import { EditedNotesResponse, RevisionItem, RevisionPojo, RevisionRow } from "@triliumnext/commons";
 
 interface NotePath {
     noteId: string;
@@ -184,7 +184,7 @@ function getEditedNotesOnDate(req: Request) {
         notePojo.notePath = notePath ? notePath.notePath : null;
 
         return notePojo;
-    });
+    }) satisfies EditedNotesResponse;
 }
 
 function getNotePathData(note: BNote): NotePath | undefined {

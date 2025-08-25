@@ -8,6 +8,7 @@ interface FormGroupProps {
     label?: string;
     title?: string;
     className?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     children: VNode<any>;
     description?: string | ComponentChildren;
     disabled?: boolean;
@@ -25,7 +26,7 @@ export default function FormGroup({ name, label, title, className, children, des
 
             {childWithId}
 
-            {description && <small className="form-text">{description}</small>}
+            {description && <div><small className="form-text">{description}</small></div>}
         </div>
     );
 }

@@ -1,6 +1,7 @@
 import sql from "../../services/sql.js";
 import becca from "../../becca/becca.js";
 import type { Request } from "express";
+import { NoteSizeResponse, SubtreeSizeResponse } from "@triliumnext/commons";
 
 function getNoteSize(req: Request) {
     const { noteId } = req.params;
@@ -22,7 +23,7 @@ function getNoteSize(req: Request) {
 
     return {
         noteSize
-    };
+    } satisfies NoteSizeResponse;
 }
 
 function getSubtreeSize(req: Request) {
@@ -45,7 +46,7 @@ function getSubtreeSize(req: Request) {
     return {
         subTreeSize,
         subTreeNoteCount: subTreeNoteIds.length
-    };
+    } satisfies SubtreeSizeResponse;
 }
 
 export default {

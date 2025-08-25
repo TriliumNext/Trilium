@@ -1,4 +1,3 @@
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import Modal from "../react/Modal";
 import { t } from "../../services/i18n";
 import FormGroup from "../react/FormGroup";
@@ -10,7 +9,7 @@ import { MenuCommandItem, MenuItem } from "../../menus/context_menu";
 import { TreeCommandNames } from "../../menus/tree_context_menu";
 import { Suggestion } from "../../services/note_autocomplete";
 import Badge from "../react/Badge";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
 
 export interface ChooseNoteTypeResponse {
     success: boolean;
@@ -26,7 +25,7 @@ const SEPARATOR_TITLE_REPLACEMENTS = [
     t("note_type_chooser.templates")
 ];
 
-function NoteTypeChooserDialogComponent() {
+export default function NoteTypeChooserDialogComponent() {
     const [ callback, setCallback ] = useState<ChooseNoteTypeCallback>();
     const [ shown, setShown ] = useState(false);
     const [ parentNote, setParentNote ] = useState<Suggestion | null>(); 
@@ -37,25 +36,23 @@ function NoteTypeChooserDialogComponent() {
         setShown(true);
     });
 
-    if (!noteTypes.length) {
-        useEffect(() => {
-            note_types.getNoteTypeItems().then(noteTypes => {
-                let index = -1;
+    useEffect(() => {
+        note_types.getNoteTypeItems().then(noteTypes => {
+            let index = -1;
 
-                setNoteTypes((noteTypes ?? []).map((item, _index) => {
-                    if (item.title === "----") {
-                        index++;
-                        return {
-                            title: SEPARATOR_TITLE_REPLACEMENTS[index],
-                            enabled: false
-                        }
+            setNoteTypes((noteTypes ?? []).map((item) => {
+                if (item.title === "----") {
+                    index++;
+                    return {
+                        title: SEPARATOR_TITLE_REPLACEMENTS[index],
+                        enabled: false
                     }
+                }
 
-                    return item;
-                }));
-            });
+                return item;
+            }));
         });
-    }
+    }, []);
 
     function onNoteTypeSelected(value: string) {
         const [ noteType, templateNoteId ] = value.split(",");
@@ -119,12 +116,4 @@ function NoteTypeChooserDialogComponent() {
             </FormGroup>
         </Modal>
     );
-}
-
-export default class NoteTypeChooserDialog extends ReactBasicWidget {
-
-    get component() {
-        return <NoteTypeChooserDialogComponent />
-    }    
-
 }

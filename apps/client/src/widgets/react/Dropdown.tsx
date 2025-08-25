@@ -1,16 +1,28 @@
 import { Dropdown as BootstrapDropdown } from "bootstrap";
 import { ComponentChildren } from "preact";
-import { useEffect, useRef } from "preact/hooks";
+import { CSSProperties } from "preact/compat";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { useUniqueName } from "./hooks";
 
-interface DropdownProps {
+export interface DropdownProps {
     className?: string;
+    buttonClassName?: string;
     isStatic?: boolean;
     children: ComponentChildren;
+    title?: string;
+    dropdownContainerStyle?: CSSProperties;
+    dropdownContainerClassName?: string;
+    hideToggleArrow?: boolean;
+    noSelectButtonStyle?: boolean;
+    disabled?: boolean;
+    text?: ComponentChildren;
 }
 
-export default function Dropdown({ className, isStatic, children }: DropdownProps) {
+export default function Dropdown({ className, buttonClassName, isStatic, children, title, text, dropdownContainerStyle, dropdownContainerClassName, hideToggleArrow, disabled, noSelectButtonStyle }: DropdownProps) {
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
+
+    const [ shown, setShown ] = useState(false);
 
     useEffect(() => {
         if (!triggerRef.current) return;
@@ -19,33 +31,54 @@ export default function Dropdown({ className, isStatic, children }: DropdownProp
         return () => dropdown.dispose();
     }, []); // Add dependency array
 
+    const onShown = useCallback(() => {
+        setShown(true);
+    }, [])
+
+    const onHidden = useCallback(() => {
+        setShown(false);
+    }, []);
+
     useEffect(() => {
         if (!dropdownRef.current) return;
         
-        const handleHide = () => {
-            // Remove console.log from production code
-        };
-        
         const $dropdown = $(dropdownRef.current);
-        $dropdown.on("hide.bs.dropdown", handleHide);
+        $dropdown.on("show.bs.dropdown", onShown);
+        $dropdown.on("hide.bs.dropdown", onHidden);
         
         // Add proper cleanup
         return () => {
-            $dropdown.off("hide.bs.dropdown", handleHide);
+            $dropdown.off("show.bs.dropdown", onShown);
+            $dropdown.off("hide.bs.dropdown", onHidden);
         };
     }, []); // Add dependency array
 
+    const ariaId = useUniqueName("button");
+
     return (
-        <div ref={dropdownRef} class="dropdown" style={{ display: "flex" }}>
+        <div ref={dropdownRef} class={`dropdown ${className ?? ""}`} style={{ display: "flex" }}>
             <button
+                className={`btn ${!noSelectButtonStyle ? "select-button" : ""} ${buttonClassName ?? ""} ${!hideToggleArrow ? "dropdown-toggle" : ""}`}
                 ref={triggerRef}
                 type="button"
-                style={{ display: "none" }}
                 data-bs-toggle="dropdown"
-                data-bs-display={ isStatic ? "static" : undefined } />
+                data-bs-display={ isStatic ? "static" : undefined }
+                aria-haspopup="true"
+                aria-expanded="false"
+                title={title}
+                id={ariaId}
+                disabled={disabled}
+            >
+                {text}
+                <span className="caret"></span>
+            </button>
 
-            <div class={`dropdown-menu ${className ?? ""} ${isStatic ? "static" : undefined}`}>
-                {children}
+            <div
+                class={`dropdown-menu ${isStatic ? "static" : ""} ${dropdownContainerClassName ?? ""} tn-dropdown-list`}
+                style={dropdownContainerStyle}
+                aria-labelledby={ariaId}
+            >
+                {shown && children}
             </div>
         </div>
     )

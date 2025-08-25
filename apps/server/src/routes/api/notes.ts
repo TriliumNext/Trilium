@@ -12,7 +12,7 @@ import ValidationError from "../../errors/validation_error.js";
 import blobService from "../../services/blob.js";
 import type { Request } from "express";
 import type BBranch from "../../becca/entities/bbranch.js";
-import type { AttributeRow, DeleteNotesPreview } from "@triliumnext/commons";
+import type { AttributeRow, DeleteNotesPreview, MetadataResponse } from "@triliumnext/commons";
 
 /**
  * @swagger
@@ -101,7 +101,7 @@ function getNoteMetadata(req: Request) {
         utcDateCreated: note.utcDateCreated,
         dateModified: note.dateModified,
         utcDateModified: note.utcDateModified
-    };
+    } satisfies MetadataResponse;
 }
 
 function createNote(req: Request) {

@@ -3,11 +3,10 @@ import { t } from "../../services/i18n";
 import Button from "../react/Button";
 import FormTextBox from "../react/FormTextBox";
 import Modal from "../react/Modal";
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import protected_session from "../../services/protected_session";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
 
-function ProtectedSessionPasswordDialogComponent() {
+export default function ProtectedSessionPasswordDialog() {
     const [ shown, setShown ] = useState(false);
     const [ password, setPassword ] = useState("");
     const inputRef = useRef<HTMLInputElement>(null);
@@ -37,12 +36,4 @@ function ProtectedSessionPasswordDialogComponent() {
             />
         </Modal>
     )
-}
-
-export default class ProtectedSessionPasswordDialog extends ReactBasicWidget {
-
-    get component() {
-        return <ProtectedSessionPasswordDialogComponent />;
-    }
-
 }

@@ -4,7 +4,7 @@ import server from "../../../services/server";
 import toast from "../../../services/toast";
 import Button from "../../react/Button";
 import FormCheckbox from "../../react/FormCheckbox";
-import FormGroup, { FormMultiGroup } from "../../react/FormGroup";
+import { FormMultiGroup } from "../../react/FormGroup";
 import FormText from "../../react/FormText";
 import { useTriliumOptionBool } from "../../react/hooks";
 import OptionsSection from "./components/OptionsSection";

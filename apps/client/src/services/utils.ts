@@ -148,7 +148,7 @@ export function isElectron() {
     return !!(window && window.process && window.process.type);
 }
 
-function isMac() {
+export function isMac() {
     return navigator.platform.indexOf("Mac") > -1;
 }
 
@@ -185,7 +185,11 @@ export function escapeQuotes(value: string) {
     return value.replaceAll('"', "&quot;");
 }
 
-function formatSize(size: number) {
+export function formatSize(size: number | null | undefined) {
+    if (size === null || size === undefined) {
+        return "";
+    }
+
     size = Math.max(Math.round(size / 1024), 1);
 
     if (size < 1024) {
@@ -292,7 +296,7 @@ function isHtmlEmpty(html: string) {
     );
 }
 
-async function clearBrowserCache() {
+export async function clearBrowserCache() {
     if (isElectron()) {
         const win = dynamicRequire("@electron/remote").getCurrentWindow();
         await win.webContents.session.clearCache();
@@ -740,7 +744,7 @@ function isUpdateAvailable(latestVersion: string | null | undefined, currentVers
     return compareVersions(latestVersion, currentVersion) > 0;
 }
 
-function isLaunchBarConfig(noteId: string) {
+export function isLaunchBarConfig(noteId: string) {
     return ["_lbRoot", "_lbAvailableLaunchers", "_lbVisibleLaunchers", "_lbMobileRoot", "_lbMobileAvailableLaunchers", "_lbMobileVisibleLaunchers"].includes(noteId);
 }
 
@@ -786,6 +790,38 @@ export function arrayEqual<T>(a: T[], b: T[]) {
     }
 
     return true;
+}
+
+type Indexed<T extends object> = T & { index: number };
+
+/**
+ * Given an object array, alters every object in the array to have an index field assigned to it.
+ *
+ * @param items the objects to be numbered.
+ * @returns the same object for convenience, with the type changed to indicate the new index field.
+ */
+export function numberObjectsInPlace<T extends object>(items: T[]): Indexed<T>[] {
+    let index = 0;
+    for (const item of items) {
+        (item as Indexed<T>).index = index++;
+    }
+    return items as Indexed<T>[];
+}
+
+export function mapToKeyValueArray<K extends string | number | symbol, V>(map: Record<K, V>) {
+    const values: { key: K, value: V }[] = [];
+    for (const [ key, value ] of Object.entries(map)) {
+        values.push({ key: key as K, value: value as V });
+    }
+    return values;
+}
+
+export function getErrorMessage(e: unknown) {
+    if (e && typeof e === "object" && "message" in e && typeof e.message === "string") {
+        return e.message;
+    } else {
+        return "Unknown error";
+    }
 }
 
 export default {

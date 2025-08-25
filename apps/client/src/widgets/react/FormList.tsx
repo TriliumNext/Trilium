@@ -2,6 +2,8 @@ import { Dropdown as BootstrapDropdown } from "bootstrap";
 import { ComponentChildren } from "preact";
 import Icon from "./Icon";
 import { useEffect, useMemo, useRef, type CSSProperties } from "preact/compat";
+import "./FormList.css";
+import { CommandNames } from "../../components/app_context";
 
 interface FormListOpts {
     children: ComponentChildren;
@@ -63,23 +65,50 @@ export default function FormList({ children, onSelect, style, fullHeight }: Form
     );
 }
 
+export interface FormListBadge {
+    className?: string;
+    text: string;
+}
+
 interface FormListItemOpts {
     children: ComponentChildren;
     icon?: string;
     value?: string;
     title?: string;
     active?: boolean;
+    badges?: FormListBadge[];
+    disabled?: boolean;
+    checked?: boolean | null;
+    selected?: boolean;
+    onClick?: (e: MouseEvent) => void;
+    triggerCommand?: CommandNames;
+    description?: string;
+    className?: string;
+    rtl?: boolean;
 }
 
-export function FormListItem({ children, icon, value, title, active }: FormListItemOpts) {
+export function FormListItem({ children, icon, value, title, active, badges, disabled, checked, onClick, description, selected, rtl, triggerCommand }: FormListItemOpts) {
+    if (checked) {
+        icon = "bx bx-check";
+    }
+
     return (
         <a
-            class={`dropdown-item ${active ? "active" : ""}`}
+            class={`dropdown-item ${active ? "active" : ""} ${disabled ? "disabled" : ""} ${selected ? "selected" : ""}`}
             data-value={value} title={title}
             tabIndex={0}
+            onClick={onClick}
+            data-trigger-command={triggerCommand}
+            dir={rtl ? "rtl" : undefined}
         >
             <Icon icon={icon} />&nbsp;
-            {children}
+            <div>
+                {children}
+                {badges && badges.map(({ className, text }) => (
+                    <span className={`badge ${className ?? ""}`}>{text}</span>
+                ))}
+                {description && <div className="description">{description}</div>}
+            </div>
         </a>
     );
 }
@@ -94,4 +123,8 @@ export function FormListHeader({ text }: FormListHeaderOpts) {
             <h6 className="dropdown-header">{text}</h6>
         </li>
     )
+}
+
+export function FormDropdownDivider() {
+    return <div className="dropdown-divider" />;
 }

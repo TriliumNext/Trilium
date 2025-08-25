@@ -7,7 +7,6 @@ import ToggleSidebarButtonWidget from "../widgets/mobile_widgets/toggle_sidebar_
 import MobileDetailMenuWidget from "../widgets/mobile_widgets/mobile_detail_menu.js";
 import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
-import FilePropertiesWidget from "../widgets/ribbon_widgets/file_properties.js";
 import FloatingButtons from "../widgets/floating_buttons/floating_buttons.js";
 import EditButton from "../widgets/floating_buttons/edit_button.js";
 import RelationMapButtons from "../widgets/floating_buttons/relation_map_buttons.js";
@@ -19,12 +18,12 @@ import GlobalMenuWidget from "../widgets/buttons/global_menu.js";
 import LauncherContainer from "../widgets/containers/launcher_container.js";
 import RootContainer from "../widgets/containers/root_container.js";
 import SharedInfoWidget from "../widgets/shared_info.js";
-import PromotedAttributesWidget from "../widgets/ribbon_widgets/promoted_attributes.js";
+import PromotedAttributesWidget from "../widgets/promoted_attributes.js";
 import SidebarContainer from "../widgets/mobile_widgets/sidebar_container.js";
 import type AppContext from "../components/app_context.js";
 import TabRowWidget from "../widgets/tab_row.js";
 import RefreshButton from "../widgets/floating_buttons/refresh_button.js";
-import MobileEditorToolbar from "../widgets/ribbon_widgets/mobile_editor_toolbar.js";
+import MobileEditorToolbar from "../widgets/type_widgets/ckeditor/mobile_editor_toolbar.js";
 import { applyModals } from "./layout_commons.js";
 import CloseZenButton from "../widgets/close_zen_button.js";
 
@@ -144,7 +143,7 @@ export default class MobileLayout {
                                     .css("font-size", "larger")
                                     .css("align-items", "center")
                                     .child(new ToggleSidebarButtonWidget().contentSized())
-                                    .child(new NoteTitleWidget().contentSized().css("position", "relative").css("padding-left", "0.5em"))
+                                    .child(NoteTitleWidget().contentSized().css("position", "relative").css("padding-left", "0.5em"))
                                     .child(new MobileDetailMenuWidget(true).contentSized())
                             )
                             .child(new SharedInfoWidget())

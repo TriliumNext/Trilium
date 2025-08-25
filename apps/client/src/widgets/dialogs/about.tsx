@@ -1,4 +1,3 @@
-import ReactBasicWidget from "../react/ReactBasicWidget.js";
 import Modal from "../react/Modal.js";
 import { t } from "../../services/i18n.js";
 import { formatDateTime } from "../../utils/formatters.js";
@@ -8,11 +7,11 @@ import openService from "../../services/open.js";
 import { useState } from "preact/hooks";
 import type { CSSProperties } from "preact/compat";
 import type { AppInfo } from "@triliumnext/commons";
-import useTriliumEvent from "../react/hooks.jsx";
+import { useTriliumEvent } from "../react/hooks.jsx";
 
-function AboutDialogComponent() {
-    let [appInfo, setAppInfo] = useState<AppInfo | null>(null);
-    let [shown, setShown] = useState(false);
+export default function AboutDialog() {
+    const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
+    const [shown, setShown] = useState(false);
     const forceWordBreak: CSSProperties = { wordBreak: "break-all" };
 
     useTriliumEvent("openAboutDialog", () => setShown(true));
@@ -81,12 +80,4 @@ function DirectoryLink({ directory, style }: { directory: string, style?: CSSPro
     } else {
         return <span style={style}>{directory}</span>;
     }
-}
-
-export default class AboutDialog extends ReactBasicWidget {
-
-    get component() {
-        return <AboutDialogComponent />;
-    }
-
 }

@@ -4,15 +4,14 @@ import FormGroup from "../react/FormGroup";
 import FormRadioGroup from "../react/FormRadioGroup";
 import Modal from "../react/Modal";
 import NoteAutocomplete from "../react/NoteAutocomplete";
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import Button from "../react/Button";
 import { Suggestion, triggerRecentNotes } from "../../services/note_autocomplete";
 import tree from "../../services/tree";
 import froca from "../../services/froca";
 import EditableTextTypeWidget from "../type_widgets/editable_text";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
 
-function IncludeNoteDialogComponent() {
+export default function IncludeNoteDialog() {
     const [textTypeWidget, setTextTypeWidget] = useState<EditableTextTypeWidget>();
     const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
     const [boxSize, setBoxSize] = useState("medium");
@@ -68,14 +67,6 @@ function IncludeNoteDialogComponent() {
             </FormGroup>
         </Modal>
     )
-}
-
-export default class IncludeNoteDialog extends ReactBasicWidget {
-
-    get component() {
-        return <IncludeNoteDialogComponent />;
-    }    
-
 }
 
 async function includeNote(notePath: string, textTypeWidget: EditableTextTypeWidget) {
