@@ -171,7 +171,7 @@ export default class Becca {
         opts.includeContentLength = !!opts.includeContentLength;
 
         const query = opts.includeContentLength
-            ? /*sql*/`SELECT attachments.*, LENGTH(blobs.content) AS contentLength
+            ? /*sql*/`SELECT attachments.*, blobs.contentLength AS contentLength
                 FROM attachments
                 JOIN blobs USING (blobId)
                 WHERE attachmentId = ? AND isDeleted = 0`
@@ -197,7 +197,7 @@ export default class Becca {
             return null;
         }
 
-        const row = sql.getRow<BlobRow | null>("SELECT *, LENGTH(content) AS contentLength FROM blobs WHERE blobId = ?", [entity.blobId]);
+        const row = sql.getRow<BlobRow | null>("SELECT * FROM blobs WHERE blobId = ?", [entity.blobId]);
         return row ? new BBlob(row) : null;
     }
 

@@ -55,10 +55,17 @@ export interface TriliumConfig {
          * The number of days to keep the log files around. When rotating the logs, log files created by Trilium older than the specified amount of time will be deleted.
          */
         retentionDays: number;
-    }
+    },
+    ExternalBlobStorage: {
+        enabled: boolean;
+        thresholdBytes: number;
+    };
 }
 
 export const LOGGING_DEFAULT_RETENTION_DAYS = 90;
+
+// 100kB by default, see performance impact here: https://www.sqlite.org/intern-v-extern-blob.html
+export const EXTERNAL_BLOB_STORAGE_DEFAULT_THRESHOLD_BYTES = 100 * 1024;
 
 //prettier-ignore
 const config: TriliumConfig = {
@@ -145,12 +152,20 @@ const config: TriliumConfig = {
         oauthIssuerIcon:
             process.env.TRILIUM_OAUTH_ISSUER_ICON || iniConfig?.MultiFactorAuthentication?.oauthIssuerIcon || ""
     },
-
     Logging: {
         retentionDays:
             stringToInt(process.env.TRILIUM_LOGGING_RETENTION_DAYS) ??
             stringToInt(iniConfig?.Logging?.retentionDays) ??
             LOGGING_DEFAULT_RETENTION_DAYS
+    },
+    ExternalBlobStorage: {
+        enabled:
+            envToBoolean(process.env.TRILIUM_EXTERNAL_BLOB_STORAGE) || iniConfig?.ExternalBlobStorage?.enabled || false,
+
+        thresholdBytes:
+            stringToInt(process.env.TRILIUM_EXTERNAL_BLOB_THRESHOLD) ??
+            stringToInt(iniConfig?.ExternalBlobStorage?.thresholdBytes) ??
+            EXTERNAL_BLOB_STORAGE_DEFAULT_THRESHOLD_BYTES
     }
 };
 

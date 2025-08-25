@@ -9,8 +9,11 @@ import cls from "../../services/cls.js";
 import log from "../../services/log.js";
 import protectedSessionService from "../../services/protected_session.js";
 import blobService from "../../services/blob.js";
+import blobStorageService from "../../services/blob-storage.js";
+import type { Blob } from "../../services/blob-interface.js";
 import type { default as Becca, ConstructorData } from "../becca-interface.js";
 import becca from "../becca.js";
+import type { BlobContentLocation, BlobRow } from "@triliumnext/commons";
 
 interface ContentOpts {
     forceSave?: boolean;
@@ -195,6 +198,21 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
             return;
         }
 
+        try {
+            const row = sql.getRow<{ contentLocation: string }>("SELECT contentLocation FROM blobs WHERE blobId = ?", [oldBlobId]);
+            if (row?.contentLocation.startsWith('file://')) {
+                const filePath = row.contentLocation.replace('file://', '');
+                blobStorageService.deleteExternal(filePath);
+            }
+        } catch (error) {
+            // contentLocation column might not be present when applying older migrations
+            if (error instanceof Error && error.name === 'SqliteError' && error.message.includes("no such column: contentLocation")) {
+                // ignore
+            } else {
+                log.error(`Failed to delete external content file for ${oldBlobId}: ${error}`);
+            }
+        }
+
         sql.execute("DELETE FROM blobs WHERE blobId = ?", [oldBlobId]);
         // blobs are not marked as erased in entity_changes, they are just purged completely
         // this is because technically every keystroke can create a new blob, and there would be just too many
@@ -225,14 +243,41 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
             return newBlobId;
         }
 
-        const pojo = {
+        // Check if we should store this blob externally
+        const shouldStoreExternally = blobStorageService.shouldStoreExternally(content);
+        let contentLocation: BlobContentLocation = 'internal';
+        if (shouldStoreExternally) {
+            try {
+                const filePath = blobStorageService.saveExternal(newBlobId, content);
+                contentLocation = `file://${filePath}` as BlobContentLocation;
+            } catch (error) {
+                log.error(`Failed to store blob ${newBlobId} externally, falling back to internal storage: ${error}`);
+                contentLocation = 'internal';
+            }
+        }
+
+        const contentLength = blobService.getContentLength(content);
+
+        const pojo: BlobRow = {
             blobId: newBlobId,
-            content: content,
+            content: contentLocation === 'internal' ? content : null,
+            contentLocation,
+            contentLength,
             dateModified: dateUtils.localNowDateTime(),
             utcDateModified: dateUtils.utcNowDateTime()
         };
 
-        sql.upsert("blobs", "blobId", pojo);
+        // external content columns might not be present when applying older migrations
+        const hasExternalContentColumns = sql.getValue("SELECT 1 FROM pragma_table_info('blobs') WHERE name = 'contentLocation'");
+        const pojoToSave = hasExternalContentColumns
+            ? pojo
+            : {
+                blobId: pojo.blobId,
+                content,
+                dateModified: pojo.dateModified,
+                utcDateModified: pojo.utcDateModified
+            };
+        sql.upsert("blobs", "blobId", pojoToSave);
 
         // we can't reuse blobId as an entity_changes hash, because this one has to be calculatable without having
         // access to the decrypted content
@@ -259,14 +304,26 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
     }
 
     protected _getContent(): string | Buffer {
-        const row = sql.getRow<{ content: string | Buffer }>(/*sql*/`SELECT content FROM blobs WHERE blobId = ?`, [this.blobId]);
+        let row: { content: string | Buffer, contentLocation: string };
+        try {
+            row = sql.getRow<{ content: string | Buffer, contentLocation: string }>(/*sql*/`SELECT content, contentLocation FROM blobs WHERE blobId = ?`, [this.blobId]);
+        } catch (error) {
+            // contentLocation column might not be present when applying older migrations
+            if (error instanceof Error && error.name === 'SqliteError' && error.message.includes("no such column: contentLocation")) {
+                row = sql.getRow<{ content: string | Buffer, contentLocation: string }>(/*sql*/`SELECT content, 'internal' as contentLocation FROM blobs WHERE blobId = ?`, [this.blobId]);
+            } else {
+                throw error;
+            }
+        }
 
         if (!row) {
             const constructorData = this.constructor as unknown as ConstructorData<T>;
             throw new Error(`Cannot find content for ${constructorData.primaryKeyName} '${(this as any)[constructorData.primaryKeyName]}', blobId '${this.blobId}'`);
         }
 
-        return blobService.processContent(row.content, this.isProtected || false, this.hasStringContent());
+        const content = blobStorageService.getContent(row);
+
+        return blobService.processContent(content, this.isProtected || false, this.hasStringContent());
     }
 
     /**
