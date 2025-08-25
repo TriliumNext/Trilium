@@ -1,6 +1,6 @@
 {
     "formatVersion": 2,
-    "appVersion": "0.97.2",
+    "appVersion": "0.98.0",
     "files": [
         {
             "isClone": false,
@@ -21,13 +21,510 @@
             "children": [
                 {
                     "isClone": false,
+                    "noteId": "YNX9NN659vF2",
+                    "notePath": [
+                        "jdjRLhLV3TtI",
+                        "YNX9NN659vF2"
+                    ],
+                    "title": "Architecture",
+                    "notePosition": 80,
+                    "prefix": null,
+                    "isExpanded": false,
+                    "type": "text",
+                    "mime": "text/html",
+                    "attributes": [],
+                    "format": "markdown",
+                    "attachments": [],
+                    "dirFileName": "Architecture",
+                    "children": [
+                        {
+                            "isClone": false,
+                            "noteId": "yfKVWBgPMQj4",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "YNX9NN659vF2",
+                                "yfKVWBgPMQj4"
+                            ],
+                            "title": "API-Architecture",
+                            "notePosition": 10,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "1HpEf2wiYVmV",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "9GSipWxTZ81I",
+                                    "isInheritable": false,
+                                    "position": 10
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "API-Architecture.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "9GSipWxTZ81I",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "YNX9NN659vF2",
+                                "9GSipWxTZ81I"
+                            ],
+                            "title": "Entity-System",
+                            "notePosition": 20,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "1HpEf2wiYVmV",
+                                    "isInheritable": false,
+                                    "position": 10
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Entity-System.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "QR0jtNmTvYqx",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "YNX9NN659vF2",
+                                "QR0jtNmTvYqx"
+                            ],
+                            "title": "Monorepo-Structure",
+                            "notePosition": 30,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [],
+                            "format": "markdown",
+                            "dataFileName": "Monorepo-Structure.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "KQT5Xda5Czcl",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "YNX9NN659vF2",
+                                "KQT5Xda5Czcl"
+                            ],
+                            "title": "README",
+                            "notePosition": 40,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "1HpEf2wiYVmV",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "9GSipWxTZ81I",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "NZV7rSwYe0dV",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "yfKVWBgPMQj4",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "QR0jtNmTvYqx",
+                                    "isInheritable": false,
+                                    "position": 10
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "README.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "1HpEf2wiYVmV",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "YNX9NN659vF2",
+                                "1HpEf2wiYVmV"
+                            ],
+                            "title": "Three-Layer-Cache-System",
+                            "notePosition": 50,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "9GSipWxTZ81I",
+                                    "isInheritable": false,
+                                    "position": 10
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Three-Layer-Cache-System.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "NZV7rSwYe0dV",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "YNX9NN659vF2",
+                                "NZV7rSwYe0dV"
+                            ],
+                            "title": "Widget-Based-UI-Architecture",
+                            "notePosition": 60,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [],
+                            "format": "markdown",
+                            "dataFileName": "Widget-Based-UI-Architecture.md",
+                            "attachments": []
+                        }
+                    ]
+                },
+                {
+                    "isClone": false,
+                    "noteId": "TfoaMQkD75JI",
+                    "notePath": [
+                        "jdjRLhLV3TtI",
+                        "TfoaMQkD75JI"
+                    ],
+                    "title": "API Documentation",
+                    "notePosition": 90,
+                    "prefix": null,
+                    "isExpanded": false,
+                    "type": "text",
+                    "mime": "text/html",
+                    "attributes": [],
+                    "format": "markdown",
+                    "attachments": [],
+                    "dirFileName": "API Documentation",
+                    "children": [
+                        {
+                            "isClone": false,
+                            "noteId": "tvrq35NqaWce",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "TfoaMQkD75JI",
+                                "tvrq35NqaWce"
+                            ],
+                            "title": "API Client Libraries",
+                            "notePosition": 10,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "oB5PbEHAzG9t",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "eDWmn0B42ALV",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "RqCs8jiZGB1g",
+                                    "isInheritable": false,
+                                    "position": 10
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "API Client Libraries.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "oB5PbEHAzG9t",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "TfoaMQkD75JI",
+                                "oB5PbEHAzG9t"
+                            ],
+                            "title": "ETAPI Complete Guide",
+                            "notePosition": 20,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [],
+                            "format": "markdown",
+                            "dataFileName": "ETAPI Complete Guide.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "4sxya4t9P8AA",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "TfoaMQkD75JI",
+                                "4sxya4t9P8AA"
+                            ],
+                            "title": "Internal API Reference",
+                            "notePosition": 30,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "oB5PbEHAzG9t",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "RqCs8jiZGB1g",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "eDWmn0B42ALV",
+                                    "isInheritable": false,
+                                    "position": 10
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Internal API Reference.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "RqCs8jiZGB1g",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "TfoaMQkD75JI",
+                                "RqCs8jiZGB1g"
+                            ],
+                            "title": "Script API Cookbook",
+                            "notePosition": 40,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [],
+                            "format": "markdown",
+                            "dataFileName": "Script API Cookbook.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "eDWmn0B42ALV",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "TfoaMQkD75JI",
+                                "eDWmn0B42ALV"
+                            ],
+                            "title": "WebSocket API",
+                            "notePosition": 50,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "4sxya4t9P8AA",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "oB5PbEHAzG9t",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "tvrq35NqaWce",
+                                    "isInheritable": false,
+                                    "position": 10
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "WebSocket API.md",
+                            "attachments": []
+                        }
+                    ]
+                },
+                {
+                    "isClone": false,
+                    "noteId": "bPMgREWrBYg4",
+                    "notePath": [
+                        "jdjRLhLV3TtI",
+                        "bPMgREWrBYg4"
+                    ],
+                    "title": "Plugin Development",
+                    "notePosition": 100,
+                    "prefix": null,
+                    "isExpanded": false,
+                    "type": "text",
+                    "mime": "text/html",
+                    "attributes": [],
+                    "format": "markdown",
+                    "attachments": [],
+                    "dirFileName": "Plugin Development",
+                    "children": [
+                        {
+                            "isClone": false,
+                            "noteId": "bZEM5pnOzTVt",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "bPMgREWrBYg4",
+                                "bZEM5pnOzTVt"
+                            ],
+                            "title": "Backend Script Development",
+                            "notePosition": 10,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [],
+                            "format": "markdown",
+                            "dataFileName": "Backend Script Development.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "fI5sL6zd3n9K",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "bPMgREWrBYg4",
+                                "fI5sL6zd3n9K"
+                            ],
+                            "title": "Custom Note Type Development",
+                            "notePosition": 20,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [],
+                            "format": "markdown",
+                            "dataFileName": "Custom Note Type Development.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "gRXGO3vGuey9",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "bPMgREWrBYg4",
+                                "gRXGO3vGuey9"
+                            ],
+                            "title": "Custom Widget Development Guide",
+                            "notePosition": 30,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [],
+                            "format": "markdown",
+                            "dataFileName": "Custom Widget Development Guid.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "3ZeRzd0e7Btc",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "bPMgREWrBYg4",
+                                "3ZeRzd0e7Btc"
+                            ],
+                            "title": "Frontend Script Development",
+                            "notePosition": 40,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [],
+                            "format": "markdown",
+                            "dataFileName": "Frontend Script Development.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "dZnOJuAVLKxt",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "bPMgREWrBYg4",
+                                "dZnOJuAVLKxt"
+                            ],
+                            "title": "Theme Development Guide",
+                            "notePosition": 50,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [],
+                            "format": "markdown",
+                            "dataFileName": "Theme Development Guide.md",
+                            "attachments": []
+                        }
+                    ]
+                },
+                {
+                    "isClone": false,
                     "noteId": "T2W7WCZrYZBU",
                     "notePath": [
                         "jdjRLhLV3TtI",
                         "T2W7WCZrYZBU"
                     ],
                     "title": "Environment Setup",
-                    "notePosition": 50,
+                    "notePosition": 130,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -53,7 +550,7 @@
                         "cxfTSHIUQtt2"
                     ],
                     "title": "Project Structure",
-                    "notePosition": 190,
+                    "notePosition": 270,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -139,7 +636,7 @@
                         "YjerxU7Aii8X"
                     ],
                     "title": "Troubleshooting",
-                    "notePosition": 200,
+                    "notePosition": 280,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -186,7 +683,7 @@
                         "wbVIolLKDhe2"
                     ],
                     "title": "Development and architecture",
-                    "notePosition": 220,
+                    "notePosition": 300,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1728,7 +2225,7 @@
                         "VHhyVRYK43gI"
                     ],
                     "title": "Building and deployment",
-                    "notePosition": 230,
+                    "notePosition": 310,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -1767,7 +2264,7 @@
                         "ibAPHul7Efvr"
                     ],
                     "title": "Old documentation",
-                    "notePosition": 260,
+                    "notePosition": 340,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",

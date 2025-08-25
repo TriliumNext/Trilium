@@ -1,0 +1,145 @@
+<h2>Advanced Search Expressions</h2>
+<p>This guide covers complex search expressions that combine multiple criteria,
+  use advanced operators, and leverage Trilium's relationship system for
+  sophisticated queries.</p>
+<h2>Complex Query Construction</h2>
+<h3>Boolean Logic with Parentheses</h3>
+<p>Use parentheses to group expressions and control evaluation order:</p><pre><code class="language-text-x-trilium-auto">(#book OR #article) AND #author=Tolkien</code></pre>
+<p>Finds notes that are either books or articles, written by Tolkien.</p><pre><code class="language-text-x-trilium-auto">#project AND (#status=active OR #status=pending)</code></pre>
+<p>Finds active or pending projects.</p><pre><code class="language-text-x-trilium-auto">meeting AND (#priority=high OR #urgent) AND note.dateCreated &gt;= TODAY-7</code></pre>
+<p>Finds recent high-priority or urgent meetings.</p>
+<h3>Negation Patterns</h3>
+<p>Use <code>NOT</code> or the <code>not()</code> function to exclude certain
+  criteria:</p><pre><code class="language-text-x-trilium-auto">#book AND not(#genre=fiction)</code></pre>
+<p>Finds non-fiction books.</p><pre><code class="language-text-x-trilium-auto">project AND not(note.isArchived=true)</code></pre>
+<p>Finds non-archived notes containing "project".</p><pre><code class="language-text-x-trilium-auto">#!completed</code></pre>
+<p>Short syntax for notes without the "completed" label.</p>
+<h3>Mixed Search Types</h3>
+<p>Combine full-text, attribute, and property searches:</p><pre><code class="language-text-x-trilium-auto">development #category=work note.type=text note.dateModified &gt;= TODAY-30</code></pre>
+<p>Finds text notes about development, categorized as work, modified in the
+  last 30 days.</p>
+<h2>Advanced Attribute Searches</h2>
+<h3>Fuzzy Attribute Matching</h3>
+<p>When fuzzy attribute search is enabled, you can use partial matches:</p><pre><code class="language-text-x-trilium-auto">#lang</code></pre>
+<p>Matches labels like "language", "languages", "programming-lang", etc.</p><pre><code class="language-text-x-trilium-auto">#category=prog</code></pre>
+<p>Matches categories like "programming", "progress", "program", etc.</p>
+<h3>Multiple Attribute Conditions</h3><pre><code class="language-text-x-trilium-auto">#book #author=Tolkien #publicationYear&gt;=1950 #publicationYear&lt;1960</code></pre>
+<p>Finds Tolkien's books published in the 1950s.</p><pre><code class="language-text-x-trilium-auto">#task #priority=high #status!=completed</code></pre>
+<p>Finds high-priority incomplete tasks.</p>
+<h3>Complex Label Value Patterns</h3>
+<p>Use various operators for sophisticated label matching:</p><pre><code class="language-text-x-trilium-auto">#isbn %= '978-[0-9-]+' </code></pre>
+<p>Finds notes with ISBN labels matching the pattern (regex).</p><pre><code class="language-text-x-trilium-auto">#email *=* @company.com</code></pre>
+<p>Finds notes with email labels containing "@company.com".</p><pre><code class="language-text-x-trilium-auto">#version &gt;= 2.0</code></pre>
+<p>Finds notes with version labels of 2.0 or higher (numeric comparison).</p>
+<h2>Relationship Traversal</h2>
+<h3>Basic Relation Queries</h3><pre><code class="language-text-x-trilium-auto">~author.title *=* Tolkien</code></pre>
+<p>Finds notes with an "author" relation to notes containing "Tolkien" in
+  the title.</p><pre><code class="language-text-x-trilium-auto">~project.labels.status = active</code></pre>
+<p>Finds notes related to projects with active status.</p>
+<h3>Multi-Level Relationships</h3><pre><code class="language-text-x-trilium-auto">~author.relations.publisher.title = "Penguin Books"</code></pre>
+<p>Finds notes authored by someone published by Penguin Books.</p><pre><code class="language-text-x-trilium-auto">~project.children.title *=* documentation</code></pre>
+<p>Finds notes related to projects that have child notes about documentation.</p>
+<h3>Relationship Direction</h3><pre><code class="language-text-x-trilium-auto">note.children.title = "Chapter 1"</code></pre>
+<p>Finds parent notes that have a child titled "Chapter 1".</p><pre><code class="language-text-x-trilium-auto">note.parents.labels.category = book</code></pre>
+<p>Finds notes whose parents are categorized as books.</p><pre><code class="language-text-x-trilium-auto">note.ancestors.title = "Literature"</code></pre>
+<p>Finds notes with "Literature" anywhere in their ancestor chain.</p>
+<h2>Property-Based Searches</h2>
+<h3>Note Metadata Queries</h3><pre><code class="language-text-x-trilium-auto">note.type=code note.mime=text/javascript note.dateCreated &gt;= MONTH</code></pre>
+<p>Finds JavaScript code notes created this month.</p><pre><code class="language-text-x-trilium-auto">note.isProtected=true note.contentSize &gt; 1000</code></pre>
+<p>Finds large protected notes.</p><pre><code class="language-text-x-trilium-auto">note.childrenCount &gt;= 10 note.type=text</code></pre>
+<p>Finds text notes with many children.</p>
+<h3>Advanced Property Combinations</h3><pre><code class="language-text-x-trilium-auto">note.parentCount &gt; 1 #template</code></pre>
+<p>Finds template notes that are cloned in multiple places.</p><pre><code class="language-text-x-trilium-auto">note.attributeCount &gt; 5 note.type=text note.contentSize &lt; 500</code></pre>
+<p>Finds small text notes with many attributes (heavily tagged short notes).</p><pre><code class="language-text-x-trilium-auto">note.revisionCount &gt; 10 note.dateModified &gt;= TODAY-7</code></pre>
+<p>Finds frequently edited notes modified recently.</p>
+<h2>Date and Time Expressions</h2>
+<h3>Relative Date Calculations</h3><pre><code class="language-text-x-trilium-auto">#dueDate &lt;= TODAY+7 #dueDate &gt;= TODAY</code></pre>
+<p>Finds tasks due in the next week.</p><pre><code class="language-text-x-trilium-auto">note.dateCreated &gt;= MONTH-2 note.dateCreated &lt; MONTH</code></pre>
+<p>Finds notes created in the past two months.</p><pre><code class="language-text-x-trilium-auto">#eventDate = YEAR note.dateCreated &gt;= YEAR-1</code></pre>
+<p>Finds events scheduled for this year that were planned last year.</p>
+<h3>Complex Date Logic</h3><pre><code class="language-text-x-trilium-auto">(#startDate &lt;= TODAY AND #endDate &gt;= TODAY) OR #status=ongoing</code></pre>
+<p>Finds current events or ongoing items.</p><pre><code class="language-text-x-trilium-auto">#reminderDate &lt;= NOW+3600 #reminderDate &gt; NOW</code></pre>
+<p>Finds reminders due in the next hour (using seconds offset).</p>
+<h2>Fuzzy Search Techniques</h2>
+<h3>Fuzzy Exact Matching</h3><pre><code class="language-text-x-trilium-auto">#title ~= managment</code></pre>
+<p>Finds notes with titles like "management" even with typos.</p><pre><code class="language-text-x-trilium-auto">~category.title ~= progaming</code></pre>
+<p>Finds notes related to categories like "programming" with misspellings.</p>
+<h3>Fuzzy Contains Matching</h3><pre><code class="language-text-x-trilium-auto">note.content ~* algoritm</code></pre>
+<p>Finds notes containing words like "algorithm" with spelling variations.</p><pre><code class="language-text-x-trilium-auto">#description ~* recieve</code></pre>
+<p>Finds notes with descriptions containing "receive" despite the common
+  misspelling.</p>
+<h3>Progressive Fuzzy Strategy</h3>
+<p>By default, Trilium uses exact matching first, then fuzzy as fallback:</p><pre><code class="language-text-x-trilium-auto">development project</code></pre>
+<p>First finds exact matches for "development" and "project", then adds fuzzy
+  matches if needed.</p>
+<p>To force fuzzy behavior:</p><pre><code class="language-text-x-trilium-auto">#title ~= development #category ~= projet</code></pre>
+<h2>Ordering and Limiting</h2>
+<h3>Multiple Sort Criteria</h3><pre><code class="language-text-x-trilium-auto">#book orderBy #publicationYear desc, note.title asc limit 20</code></pre>
+<p>Orders books by publication year (newest first), then by title alphabetically,
+  limited to 20 results.</p><pre><code class="language-text-x-trilium-auto">#task orderBy #priority desc, #dueDate asc</code></pre>
+<p>Orders tasks by priority (high first), then by due date (earliest first).</p>
+<h3>Dynamic Ordering</h3><pre><code class="language-text-x-trilium-auto">#meeting note.dateCreated &gt;= TODAY-30 orderBy note.dateModified desc</code></pre>
+<p>Finds recent meetings ordered by last modification.</p><pre><code class="language-text-x-trilium-auto">#project #status=active orderBy note.childrenCount desc limit 10</code></pre>
+<p>Finds the 10 most complex active projects (by number of sub-notes).</p>
+<h2>Performance Optimization Patterns</h2>
+<h3>Efficient Query Structure</h3>
+<p>Start with the most selective criteria:</p><pre><code class="language-text-x-trilium-auto">#book #author=Tolkien note.dateCreated &gt;= 1950-01-01</code></pre>
+<p>Better than:</p><pre><code class="language-text-x-trilium-auto">note.dateCreated &gt;= 1950-01-01 #book #author=Tolkien</code></pre>
+<h3>Fast Search for Large Datasets</h3><pre><code class="language-text-x-trilium-auto">#category=project #status=active</code></pre>
+<p>With fast search enabled, this searches only attributes, not content.</p>
+<h3>Limiting Expensive Operations</h3><pre><code class="language-text-x-trilium-auto">note.content *=* "complex search term" limit 50</code></pre>
+<p>Limits content search to prevent performance issues.</p>
+<h2>Error Handling and Debugging</h2>
+<h3>Syntax Validation</h3>
+<p>Invalid syntax produces helpful error messages:</p><pre><code class="language-text-x-trilium-auto">#book AND OR #author=Tolkien</code></pre>
+<p>Error: "Mixed usage of AND/OR - always use parentheses to group AND/OR
+  expressions."</p>
+<h3>Debug Mode</h3>
+<p>Enable debug mode to see how queries are parsed:</p><pre><code class="language-text-x-trilium-auto">#book #author=Tolkien</code></pre>
+<p>With debug enabled, shows the internal expression tree structure.</p>
+<h3>Common Pitfalls</h3>
+<ul>
+  <li>Unescaped special characters: Use quotes or backslashes</li>
+  <li>Missing parentheses in complex boolean expressions</li>
+  <li>Incorrect property names: Use <code>note.title</code> not <code>title</code>
+  </li>
+  <li>Case sensitivity assumptions: All searches are case-insensitive</li>
+</ul>
+<h2>Expression Shortcuts</h2>
+<h3>Label Shortcuts</h3>
+<p>Full syntax:</p><pre><code class="language-text-x-trilium-auto">note.labels.category = book</code></pre>
+<p>Shortcut:</p><pre><code class="language-text-x-trilium-auto">#category = book</code></pre>
+<h3>Relation Shortcuts</h3>
+<p>Full syntax:</p><pre><code class="language-text-x-trilium-auto">note.relations.author.title *=* Tolkien</code></pre>
+<p>Shortcut:</p><pre><code class="language-text-x-trilium-auto">~author.title *=* Tolkien</code></pre>
+<h3>Property Shortcuts</h3>
+<p>Some properties have convenient shortcuts:</p><pre><code class="language-text-x-trilium-auto">note.text *=* content</code></pre>
+<p>Searches both title and content for "content".</p>
+<h2>Real-World Complex Examples</h2>
+<h3>Project Management</h3><pre><code class="language-text-x-trilium-auto">(#project OR #task) AND #status!=completed AND 
+(#priority=high OR #dueDate &lt;= TODAY+7) AND 
+not(note.isArchived=true) 
+orderBy #priority desc, #dueDate asc</code></pre>
+<h3>Research Organization</h3><pre><code class="language-text-x-trilium-auto">(#paper OR #article OR #book) AND 
+~author.title *=* smith AND 
+#topic *=* "machine learning" AND 
+note.dateCreated &gt;= YEAR-2 
+orderBy #citationCount desc limit 25</code></pre>
+<h3>Content Management</h3><pre><code class="language-text-x-trilium-auto">note.type=text AND note.contentSize &gt; 5000 AND 
+#category=documentation AND note.childrenCount &gt;= 3 AND 
+note.dateModified &gt;= MONTH-1 
+orderBy note.dateModified desc</code></pre>
+<h3>Knowledge Base Maintenance</h3><pre><code class="language-text-x-trilium-auto">note.attributeCount = 0 AND note.childrenCount = 0 AND 
+note.parentCount = 1 AND note.contentSize &lt; 100 AND 
+note.dateModified &lt; TODAY-90</code></pre>
+<p>Finds potential cleanup candidates: small, untagged, isolated notes not
+  modified in 90 days.</p>
+<h2>Next Steps</h2>
+<ul>
+  <li><a href="#root/_help_yAFfA1SAYlr7">Search Examples and Use Cases</a> -
+    Practical applications</li>
+  <li><a href="#root/_help_UUBStSxWzjgA">Saved Searches</a> - Creating reusable
+    search configurations</li>
+  <li><a href="#root/_help_ttFz520bcNLf">Technical Search Details</a> - Implementation
+    details and performance tuning</li>
+</ul>

@@ -1,6 +1,6 @@
 {
     "formatVersion": 2,
-    "appVersion": "0.97.2",
+    "appVersion": "0.98.0",
     "files": [
         {
             "isClone": false,
@@ -28,7 +28,7 @@
                         "BOCnjTMBCoxW"
                     ],
                     "title": "Feature Highlights",
-                    "notePosition": 10,
+                    "notePosition": 70,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -166,7 +166,7 @@
                         "Otzi9La2YAUX"
                     ],
                     "title": "Installation & Setup",
-                    "notePosition": 20,
+                    "notePosition": 90,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -890,6 +890,488 @@
                         },
                         {
                             "isClone": false,
+                            "noteId": "YXZ2zPDYrWbn",
+                            "notePath": [
+                                "pOsGYCXsbNQG",
+                                "Otzi9La2YAUX",
+                                "YXZ2zPDYrWbn"
+                            ],
+                            "title": "Security",
+                            "notePosition": 30,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [],
+                            "format": "markdown",
+                            "attachments": [],
+                            "dirFileName": "Security",
+                            "children": [
+                                {
+                                    "isClone": false,
+                                    "noteId": "im3dphtmpQ46",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "Otzi9La2YAUX",
+                                        "YXZ2zPDYrWbn",
+                                        "im3dphtmpQ46"
+                                    ],
+                                    "title": "Protected Notes and Encryption",
+                                    "notePosition": 20,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/markdown",
+                                    "attributes": [],
+                                    "format": "markdown",
+                                    "dataFileName": "Protected Notes and Encryption.md",
+                                    "attachments": []
+                                }
+                            ]
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "U9HWXPbFIRW3",
+                            "notePath": [
+                                "pOsGYCXsbNQG",
+                                "Otzi9La2YAUX",
+                                "U9HWXPbFIRW3"
+                            ],
+                            "title": "Server Installation",
+                            "notePosition": 40,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "FNVzcT2FwEjq",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "Q5jqLlwsnIBb",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "baqzSqQefEpE",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "9ErAobCLD1jl",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "6YVZgQtfkxkS",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "CpWc4lepON8y",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "Eu2zkbyE2QPK",
+                                    "isInheritable": false,
+                                    "position": 10
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "1_Server Installation.md",
+                            "attachments": [],
+                            "dirFileName": "1_Server Installation",
+                            "children": [
+                                {
+                                    "isClone": false,
+                                    "noteId": "2L6zxH5z1QMw",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "Otzi9La2YAUX",
+                                        "U9HWXPbFIRW3",
+                                        "2L6zxH5z1QMw"
+                                    ],
+                                    "title": "1. Installing the server",
+                                    "notePosition": 10,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [],
+                                    "format": "markdown",
+                                    "attachments": [],
+                                    "dirFileName": "1. Installing the server",
+                                    "children": [
+                                        {
+                                            "isClone": false,
+                                            "noteId": "baqzSqQefEpE",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "Otzi9La2YAUX",
+                                                "U9HWXPbFIRW3",
+                                                "2L6zxH5z1QMw",
+                                                "baqzSqQefEpE"
+                                            ],
+                                            "title": "Manually",
+                                            "notePosition": 10,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/markdown",
+                                            "attributes": [
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "FNVzcT2FwEjq",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "Q5jqLlwsnIBb",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "1G2n2zCStCir",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "Manually.md",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "Ycyax5BCWgUb",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "Otzi9La2YAUX",
+                                                "U9HWXPbFIRW3",
+                                                "2L6zxH5z1QMw",
+                                                "Ycyax5BCWgUb"
+                                            ],
+                                            "title": "Multiple server instances",
+                                            "notePosition": 20,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/markdown",
+                                            "attributes": [
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "baqzSqQefEpE",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "Q5jqLlwsnIBb",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "FNVzcT2FwEjq",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "6YVZgQtfkxkS",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "Multiple server instances.md",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "6YVZgQtfkxkS",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "Otzi9La2YAUX",
+                                                "U9HWXPbFIRW3",
+                                                "2L6zxH5z1QMw",
+                                                "6YVZgQtfkxkS"
+                                            ],
+                                            "title": "On NixOS",
+                                            "notePosition": 30,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/markdown",
+                                            "attributes": [],
+                                            "format": "markdown",
+                                            "dataFileName": "On NixOS.md",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "Q5jqLlwsnIBb",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "Otzi9La2YAUX",
+                                                "U9HWXPbFIRW3",
+                                                "2L6zxH5z1QMw",
+                                                "Q5jqLlwsnIBb"
+                                            ],
+                                            "title": "Packaged version for Linux",
+                                            "notePosition": 40,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/markdown",
+                                            "attributes": [
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "U9HWXPbFIRW3",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "1G2n2zCStCir",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "Packaged version for Linux.md",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "FNVzcT2FwEjq",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "Otzi9La2YAUX",
+                                                "U9HWXPbFIRW3",
+                                                "2L6zxH5z1QMw",
+                                                "FNVzcT2FwEjq"
+                                            ],
+                                            "title": "Using Docker",
+                                            "notePosition": 50,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/markdown",
+                                            "attributes": [
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "vFhVZ4ZRNxLY",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "Eu2zkbyE2QPK",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "Using Docker.md",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "9ErAobCLD1jl",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "Otzi9La2YAUX",
+                                                "U9HWXPbFIRW3",
+                                                "2L6zxH5z1QMw",
+                                                "9ErAobCLD1jl"
+                                            ],
+                                            "title": "Using Kubernetes",
+                                            "notePosition": 60,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/markdown",
+                                            "attributes": [],
+                                            "format": "markdown",
+                                            "dataFileName": "Using Kubernetes.md",
+                                            "attachments": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "pIaUHjns1S3p",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "Otzi9La2YAUX",
+                                        "U9HWXPbFIRW3",
+                                        "pIaUHjns1S3p"
+                                    ],
+                                    "title": "2. Reverse proxy",
+                                    "notePosition": 20,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [],
+                                    "format": "markdown",
+                                    "attachments": [],
+                                    "dirFileName": "2. Reverse proxy",
+                                    "children": [
+                                        {
+                                            "isClone": false,
+                                            "noteId": "Eu2zkbyE2QPK",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "Otzi9La2YAUX",
+                                                "U9HWXPbFIRW3",
+                                                "pIaUHjns1S3p",
+                                                "Eu2zkbyE2QPK"
+                                            ],
+                                            "title": "Apache",
+                                            "notePosition": 10,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/markdown",
+                                            "attributes": [],
+                                            "format": "markdown",
+                                            "dataFileName": "Apache.md",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "vFhVZ4ZRNxLY",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "Otzi9La2YAUX",
+                                                "U9HWXPbFIRW3",
+                                                "pIaUHjns1S3p",
+                                                "vFhVZ4ZRNxLY"
+                                            ],
+                                            "title": "Nginx",
+                                            "notePosition": 20,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/markdown",
+                                            "attributes": [],
+                                            "format": "markdown",
+                                            "dataFileName": "Nginx.md",
+                                            "attachments": []
+                                        }
+                                    ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "CpWc4lepON8y",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "Otzi9La2YAUX",
+                                        "U9HWXPbFIRW3",
+                                        "CpWc4lepON8y"
+                                    ],
+                                    "title": "Authentication",
+                                    "notePosition": 30,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/markdown",
+                                    "attributes": [
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "iYzJELZlnPVk",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Authentication.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "iYzJELZlnPVk",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "Otzi9La2YAUX",
+                                        "U9HWXPbFIRW3",
+                                        "iYzJELZlnPVk"
+                                    ],
+                                    "title": "Multi-Factor Authentication",
+                                    "notePosition": 40,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/markdown",
+                                    "attributes": [],
+                                    "format": "markdown",
+                                    "dataFileName": "Multi-Factor Authentication.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "1G2n2zCStCir",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "Otzi9La2YAUX",
+                                        "U9HWXPbFIRW3",
+                                        "1G2n2zCStCir"
+                                    ],
+                                    "title": "TLS Configuration",
+                                    "notePosition": 50,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/markdown",
+                                    "attributes": [
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "U9HWXPbFIRW3",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "TLS Configuration.md",
+                                    "attachments": []
+                                }
+                            ]
+                        },
+                        {
+                            "isClone": false,
                             "noteId": "cbkrhQjrkKrh",
                             "notePath": [
                                 "pOsGYCXsbNQG",
@@ -897,7 +1379,7 @@
                                 "cbkrhQjrkKrh"
                             ],
                             "title": "Synchronization",
-                            "notePosition": 30,
+                            "notePosition": 50,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -985,7 +1467,7 @@
                                 "RDslemsQ6gCp"
                             ],
                             "title": "Mobile Frontend",
-                            "notePosition": 40,
+                            "notePosition": 60,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -1057,7 +1539,7 @@
                                 "MtPxeAWVAzMg"
                             ],
                             "title": "Web Clipper",
-                            "notePosition": 50,
+                            "notePosition": 70,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -1114,7 +1596,7 @@
                                 "n1lujUxCwipy"
                             ],
                             "title": "Upgrading TriliumNext",
-                            "notePosition": 60,
+                            "notePosition": 80,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -1169,7 +1651,7 @@
                                 "ODY7qQn5m2FT"
                             ],
                             "title": "Backup",
-                            "notePosition": 70,
+                            "notePosition": 90,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -1224,7 +1706,7 @@
                                 "tAassRL4RSQL"
                             ],
                             "title": "Data directory",
-                            "notePosition": 80,
+                            "notePosition": 100,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -1282,7 +1764,7 @@
                         "gh7bpGYxajRS"
                     ],
                     "title": "Basic Concepts and Features",
-                    "notePosition": 40,
+                    "notePosition": 110,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -4743,7 +5225,7 @@
                         "s3YCWHBfmYuM"
                     ],
                     "title": "Quick Start",
-                    "notePosition": 60,
+                    "notePosition": 140,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -4804,7 +5286,7 @@
                         "i6dbnitykE5D"
                     ],
                     "title": "FAQ",
-                    "notePosition": 70,
+                    "notePosition": 150,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -4900,7 +5382,7 @@
                         "KSZ04uQ2D1St"
                     ],
                     "title": "Note Types",
-                    "notePosition": 130,
+                    "notePosition": 210,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -8986,7 +9468,7 @@
                         "BgmBlOIl72jZ"
                     ],
                     "title": "Troubleshooting",
-                    "notePosition": 250,
+                    "notePosition": 330,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -9340,7 +9822,7 @@
                         "pKK96zzmvBGf"
                     ],
                     "title": "Theme development",
-                    "notePosition": 260,
+                    "notePosition": 340,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -9543,7 +10025,7 @@
                         "tC7s2alapj8V"
                     ],
                     "title": "Advanced Usage",
-                    "notePosition": 320,
+                    "notePosition": 400,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
@@ -9563,6 +10045,307 @@
                     "children": [
                         {
                             "isClone": false,
+                            "noteId": "ZuNbtBacBZ6Z",
+                            "notePath": [
+                                "pOsGYCXsbNQG",
+                                "tC7s2alapj8V",
+                                "ZuNbtBacBZ6Z"
+                            ],
+                            "title": "Search",
+                            "notePosition": 10,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [],
+                            "format": "markdown",
+                            "attachments": [],
+                            "dirFileName": "Search",
+                            "children": [
+                                {
+                                    "isClone": false,
+                                    "noteId": "ey9TMFyD8SHR",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "tC7s2alapj8V",
+                                        "ZuNbtBacBZ6Z",
+                                        "ey9TMFyD8SHR"
+                                    ],
+                                    "title": "Advanced-Search-Expressions",
+                                    "notePosition": 10,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/markdown",
+                                    "attributes": [
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "UUBStSxWzjgA",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "ttFz520bcNLf",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "yAFfA1SAYlr7",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Advanced-Search-Expressions.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "6SpIgsGqzwNI",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "tC7s2alapj8V",
+                                        "ZuNbtBacBZ6Z",
+                                        "6SpIgsGqzwNI"
+                                    ],
+                                    "title": "README",
+                                    "notePosition": 20,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/markdown",
+                                    "attributes": [
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "WcwMZ2tDZmXK",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "ey9TMFyD8SHR",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "yAFfA1SAYlr7",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "UUBStSxWzjgA",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "ttFz520bcNLf",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "README.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "UUBStSxWzjgA",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "tC7s2alapj8V",
+                                        "ZuNbtBacBZ6Z",
+                                        "UUBStSxWzjgA"
+                                    ],
+                                    "title": "Saved-Searches",
+                                    "notePosition": 30,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/markdown",
+                                    "attributes": [
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "ttFz520bcNLf",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "yAFfA1SAYlr7",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "ey9TMFyD8SHR",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Saved-Searches.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "yAFfA1SAYlr7",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "tC7s2alapj8V",
+                                        "ZuNbtBacBZ6Z",
+                                        "yAFfA1SAYlr7"
+                                    ],
+                                    "title": "Search-Examples-and-Use-Cases",
+                                    "notePosition": 40,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/markdown",
+                                    "attributes": [
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "UUBStSxWzjgA",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "ttFz520bcNLf",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "WcwMZ2tDZmXK",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Search-Examples-and-Use-Cases.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "WcwMZ2tDZmXK",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "tC7s2alapj8V",
+                                        "ZuNbtBacBZ6Z",
+                                        "WcwMZ2tDZmXK"
+                                    ],
+                                    "title": "Search-Fundamentals",
+                                    "notePosition": 50,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/markdown",
+                                    "attributes": [
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "ey9TMFyD8SHR",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "UUBStSxWzjgA",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "ttFz520bcNLf",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "yAFfA1SAYlr7",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Search-Fundamentals.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "ttFz520bcNLf",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "tC7s2alapj8V",
+                                        "ZuNbtBacBZ6Z",
+                                        "ttFz520bcNLf"
+                                    ],
+                                    "title": "Technical-Search-Details",
+                                    "notePosition": 60,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/markdown",
+                                    "attributes": [
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "WcwMZ2tDZmXK",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "ey9TMFyD8SHR",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "yAFfA1SAYlr7",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "UUBStSxWzjgA",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Technical-Search-Details.md",
+                                    "attachments": []
+                                }
+                            ]
+                        },
+                        {
+                            "isClone": false,
                             "noteId": "zEY4DaJG4YT5",
                             "notePath": [
                                 "pOsGYCXsbNQG",
@@ -9570,7 +10353,7 @@
                                 "zEY4DaJG4YT5"
                             ],
                             "title": "Attributes",
-                            "notePosition": 10,
+                            "notePosition": 20,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10102,7 +10885,7 @@
                                 "KC1HB96bqqHX"
                             ],
                             "title": "Templates",
-                            "notePosition": 30,
+                            "notePosition": 40,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10209,7 +10992,7 @@
                                 "BCkXAVs63Ttv"
                             ],
                             "title": "Note Map (Link map, Tree map)",
-                            "notePosition": 40,
+                            "notePosition": 60,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10281,7 +11064,7 @@
                                 "R9pX4DGra2Vt"
                             ],
                             "title": "Sharing",
-                            "notePosition": 60,
+                            "notePosition": 80,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10499,7 +11282,7 @@
                                 "5668rwcirq1t"
                             ],
                             "title": "Advanced Showcases",
-                            "notePosition": 80,
+                            "notePosition": 100,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10879,7 +11662,7 @@
                                 "J5Ex1ZrMbyJ6"
                             ],
                             "title": "Custom Request Handler",
-                            "notePosition": 90,
+                            "notePosition": 110,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10941,7 +11724,7 @@
                                 "d3fAXQ2diepH"
                             ],
                             "title": "Custom Resource Providers",
-                            "notePosition": 100,
+                            "notePosition": 120,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -10960,7 +11743,7 @@
                                 "pgxEVkzLl1OP"
                             ],
                             "title": "ETAPI (REST API)",
-                            "notePosition": 110,
+                            "notePosition": 130,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -11017,7 +11800,7 @@
                                 "47ZrP6FNuoG8"
                             ],
                             "title": "Default Note Title",
-                            "notePosition": 140,
+                            "notePosition": 170,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -11065,7 +11848,7 @@
                                 "wX4HbRucYSDD"
                             ],
                             "title": "Database",
-                            "notePosition": 160,
+                            "notePosition": 190,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -11316,7 +12099,7 @@
                                 "Gzjqa934BdH4"
                             ],
                             "title": "Configuration (config.ini or environment variables)",
-                            "notePosition": 170,
+                            "notePosition": 200,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -11394,7 +12177,7 @@
                                 "ivYnonVFBxbQ"
                             ],
                             "title": "Bulk Actions",
-                            "notePosition": 180,
+                            "notePosition": 210,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -11472,7 +12255,7 @@
                                 "4FahAwuGTAwC"
                             ],
                             "title": "Note source",
-                            "notePosition": 190,
+                            "notePosition": 220,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -11585,7 +12368,7 @@
                                 "1YeN2MzFUluU"
                             ],
                             "title": "Technologies used",
-                            "notePosition": 200,
+                            "notePosition": 230,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -11769,7 +12552,7 @@
                                 "m1lbrzyKDaRB"
                             ],
                             "title": "Note ID",
-                            "notePosition": 210,
+                            "notePosition": 240,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -11803,7 +12586,7 @@
                                 "0vTSyvhPTAOz"
                             ],
                             "title": "Internal API",
-                            "notePosition": 220,
+                            "notePosition": 250,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -11851,7 +12634,7 @@
                                 "2mUhVmZK8RF3"
                             ],
                             "title": "Hidden Notes",
-                            "notePosition": 230,
+                            "notePosition": 260,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -11999,7 +12782,7 @@
                                 "uYF7pmepw27K"
                             ],
                             "title": "Metrics",
-                            "notePosition": 240,
+                            "notePosition": 270,
                             "prefix": null,
                             "isExpanded": false,
                             "type": "text",
@@ -12081,7 +12864,7 @@
                         "LMAv4Uy3Wk6J"
                     ],
                     "title": "AI",
-                    "notePosition": 330,
+                    "notePosition": 420,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "book",
@@ -12444,7 +13227,7 @@
                         "CdNpE2pqjmI6"
                     ],
                     "title": "Scripting",
-                    "notePosition": 340,
+                    "notePosition": 430,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",
