@@ -5,6 +5,7 @@ import log from "./log.js";
 import dateUtils from "./date_utils.js";
 import keyboardActions from "./keyboard_actions.js";
 import { SANITIZER_DEFAULT_ALLOWED_TAGS, type KeyboardShortcutWithRequiredActionName, type OptionMap, type OptionNames } from "@triliumnext/commons";
+import { getDefaultPluginConfiguration } from "@triliumnext/ckeditor5";
 
 function initDocumentOptions() {
     optionService.createOption("documentId", randomSecureToken(16), false);
@@ -184,6 +185,9 @@ const defaultOptions: DefaultOption[] = [
     { name: "textNoteEditorMultilineToolbar", value: "false", isSynced: true },
     { name: "textNoteEmojiCompletionEnabled", value: "true", isSynced: true },
     { name: "textNoteCompletionEnabled", value: "true", isSynced: true },
+    
+    // CKEditor plugin configuration
+    { name: "ckeditorEnabledPlugins", value: getDefaultPluginConfiguration, isSynced: true },
 
     // HTML import configuration
     { name: "layoutOrientation", value: "vertical", isSynced: false },

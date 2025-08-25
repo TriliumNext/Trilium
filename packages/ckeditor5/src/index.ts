@@ -4,7 +4,7 @@ import { COMMON_PLUGINS, CORE_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js
 import { BalloonEditor, DecoupledEditor, FindAndReplaceEditing, FindCommand } from "ckeditor5";
 import "./translation_overrides.js";
 export { EditorWatchdog } from "ckeditor5";
-export { PREMIUM_PLUGINS } from "./plugins.js";
+export { PREMIUM_PLUGINS, PLUGIN_REGISTRY, getPluginMetadata, getPluginsByCategory, getConfigurablePlugins, getDefaultPluginConfiguration } from "./plugins.js";
 export type { EditorConfig, MentionFeed, MentionFeedObjectItem, ModelNode, ModelPosition, ModelElement, WatchdogConfig } from "ckeditor5";
 export type { TemplateDefinition } from "ckeditor5-premium-features";
 export { default as buildExtraCommands } from "./extra_slash_commands.js";

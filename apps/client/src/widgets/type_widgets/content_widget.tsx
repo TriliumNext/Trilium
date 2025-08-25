@@ -17,6 +17,7 @@ import PasswordSettings from "./options/password.jsx";
 import ShortcutSettings from "./options/shortcuts.js";
 import TextNoteSettings from "./options/text_notes.jsx";
 import CodeNoteSettings from "./options/code_notes.jsx";
+import CKEditorPluginSettings from "./options/ckeditor_plugins.jsx";
 import OtherSettings from "./options/other.jsx";
 import BackendLogWidget from "./content/backend_log.js";
 import MultiFactorAuthenticationSettings from "./options/multi_factor_authentication.js";
@@ -45,13 +46,14 @@ const TPL = /*html*/`<div class="note-detail-content-widget note-detail-printabl
     <div class="note-detail-content-widget-content"></div>
 </div>`;
 
-export type OptionPages = "_optionsAppearance" | "_optionsShortcuts" | "_optionsTextNotes" | "_optionsCodeNotes" | "_optionsImages" | "_optionsSpellcheck" | "_optionsPassword" | "_optionsMFA" | "_optionsEtapi" | "_optionsBackup" | "_optionsSync" | "_optionsAi" | "_optionsOther" | "_optionsLocalization" | "_optionsAdvanced";
+export type OptionPages = "_optionsAppearance" | "_optionsShortcuts" | "_optionsTextNotes" | "_optionsCodeNotes" | "_optionsCKEditorPlugins" | "_optionsImages" | "_optionsSpellcheck" | "_optionsPassword" | "_optionsMFA" | "_optionsEtapi" | "_optionsBackup" | "_optionsSync" | "_optionsAi" | "_optionsOther" | "_optionsLocalization" | "_optionsAdvanced";
 
 const CONTENT_WIDGETS: Record<OptionPages | "_backendLog", ((typeof NoteContextAwareWidget)[] | JSX.Element)> = {
     _optionsAppearance: <AppearanceSettings />,
     _optionsShortcuts: <ShortcutSettings />,
     _optionsTextNotes: <TextNoteSettings />,
     _optionsCodeNotes: <CodeNoteSettings />,
+    _optionsCKEditorPlugins: <CKEditorPluginSettings />,
     _optionsImages: <ImageSettings />,
     _optionsSpellcheck: <SpellcheckSettings />,
     _optionsPassword: <PasswordSettings />,
