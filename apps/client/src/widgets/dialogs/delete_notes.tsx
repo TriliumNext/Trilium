@@ -114,10 +114,10 @@ function DeletedNotes({ noteIdsToBeDeleted }: { noteIdsToBeDeleted: DeleteNotesP
 
     if (noteIdsToBeDeleted.length) {
         return (
-            <div className="delete-notes-list-wrapper">
+            <div className="delete-notes-list-wrapper" style={{paddingTop: "16px"}}>
                 <h4>{t("delete_notes.notes_to_be_deleted", { notesCount: noteIdsToBeDeleted.length })}</h4>
     
-                <ul className="delete-notes-list" style={{ maxHeight: "200px", overflow: "auto" }}>
+                <ul className="delete-notes-list" style={{ maxHeight: "200px", overflow: "auto"}}>
                     {noteLinks.map((link, index) => (
                         <li key={index} dangerouslySetInnerHTML={{ __html: link }} />
                     ))}
