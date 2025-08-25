@@ -22,9 +22,14 @@ const TPL = /*html*/`
         font-size: 180%;
         background-color: transparent;
         border: 1px solid transparent;
-        cursor: pointer;
         padding: 6px;
-        color: var(--main-text-color);
+        cursor: pointer;
+        color: var(--muted-text-color);
+    }
+        
+    .note-icon-widget button.note-icon:disabled {
+        cursor: default;
+        opacity: .75;
     }
 
     .note-icon-widget button.note-icon:hover {
