@@ -30,7 +30,7 @@ const TPL = /*html*/`
         border: 0 !important;
         outline: 0 !important;
         box-shadow: none !important;
-        padding: 0 0 0 5px !important;
+        padding: 0 100px 0 5px !important;
         margin: 0 !important;
         max-height: 100px;
         overflow: auto;
@@ -42,43 +42,28 @@ const TPL = /*html*/`
         background: transparent !important;
     }
 
-    .save-attributes-button {
-        color: var(--muted-text-color);
+    .attribute-editor-buttons {
+        display: flex;
         position: absolute;
-        bottom: 14px;
-        right: 25px;
-        cursor: pointer;
-        border: 1px solid transparent;
-        font-size: 130%;
-    }
-
-    .add-new-attribute-button {
-        color: var(--muted-text-color);
-        position: absolute;
-        bottom: 13px;
+        top: 0;
         right: 0;
-        cursor: pointer;
-        border: 1px solid transparent;
-        font-size: 130%;
-    }
-
-    .add-new-attribute-button:hover, .save-attributes-button:hover {
-        border: 1px solid var(--button-border-color);
-        border-radius: var(--button-border-radius);
-        background: var(--button-background-color);
-        color: var(--button-text-color);
+        bottom: 0;
+        align-items: center;
+        gap: 10px;
     }
 
     .attribute-errors {
         color: red;
-        padding: 5px 50px 0px 5px; /* large right padding to avoid buttons */
+        padding: 5px 100px 0px 5px; /* large right padding to avoid buttons */
     }
     </style>
 
     <div class="attribute-list-editor" tabindex="200"></div>
 
-    <div class="bx bx-save save-attributes-button tn-tool-button" title="${escapeQuotes(t("attribute_editor.save_attributes"))}"></div>
-    <div class="bx bx-plus add-new-attribute-button tn-tool-button" title="${escapeQuotes(t("attribute_editor.add_a_new_attribute"))}"></div>
+    <div class="attribute-editor-buttons">
+        <button class="bx bx-save save-attributes-button btn icon-action tn-tool-button" title="${escapeQuotes(t("attribute_editor.save_attributes"))}"></button>
+        <button class="bx bx-plus add-new-attribute-button btn icon-action tn-tool-button" title="${escapeQuotes(t("attribute_editor.add_a_new_attribute"))}"></button>
+    </div>
 
     <div class="attribute-errors" style="display: none;"></div>
 </div>
