@@ -10,7 +10,7 @@ import protectedSessionService from "../services/protected_session.js";
 import packageJson from "../../package.json" with { type: "json" };
 import assetPath from "../services/asset_path.js";
 import appPath from "../services/app_path.js";
-import { generateToken as generateCsrfToken } from "./csrf_protection.js";
+import { generateCsrfToken } from "./csrf_protection.js";
 
 import type { Request, Response } from "express";
 import type BNote from "../becca/entities/bnote.js";
@@ -19,9 +19,10 @@ function index(req: Request, res: Response) {
     const options = optionService.getOptionMap();
     const view = getView(req);
 
-    //'overwrite' set to false (default) => the existing token will be re-used and validated
-    //'validateOnReuse' set to false => if validation fails, generate a new token instead of throwing an error
-    const csrfToken = generateCsrfToken(req, res, false, false);
+    const csrfToken = generateCsrfToken(req, res, {
+        overwrite: false,
+        validateOnReuse: false      // if validation fails, generate a new token instead of throwing an error
+    });
     log.info(`CSRF token generation: ${csrfToken ? "Successful" : "Failed"}`);
 
     // We force the page to not be cached since on mobile the CSRF token can be
