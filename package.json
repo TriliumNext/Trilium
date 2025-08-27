@@ -54,7 +54,7 @@
     "jiti": "2.5.1",
     "jsdom": "~26.1.0",
     "jsonc-eslint-parser": "^2.1.0",
-    "nx": "21.3.11",
+    "nx": "999.9.9",
     "react-refresh": "^0.17.0",
     "rollup-plugin-webpack-stats": "2.1.4",
     "tslib": "^2.3.0",
