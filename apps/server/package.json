@@ -54,7 +54,7 @@
     "cls-hooked": "4.2.2",
     "compression": "1.8.1",
     "cookie-parser": "1.4.7",
-    "csrf-csrf": "3.2.2",
+    "csrf-csrf": "4.0.2",
     "dayjs": "1.11.13",
     "debounce": "2.2.0",
     "debug": "4.4.1",

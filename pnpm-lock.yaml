@@ -630,8 +630,8 @@ importers:
         specifier: 1.4.7
         version: 1.4.7
       csrf-csrf:
-        specifier: 3.2.2
-        version: 3.2.2
+        specifier: 4.0.2
+        version: 4.0.2
       dayjs:
         specifier: 1.11.13
         version: 1.11.13
@@ -7590,8 +7590,8 @@ packages:
     resolution: {integrity: sha512-n63i0lZ0rvQ6FXiGQ+/JFCKAUyPFhLQYJIqKaa+tSJtfKeULF/IDNDAbdnSIxgS4NTuw2b0+lj8LzfITuq+ZxQ==}
     engines: {node: '>=12.10'}
 
-  csrf-csrf@3.2.2:
-    resolution: {integrity: sha512-E3TgLWX1e+jqigDva+nFItfqa59UZ+gLR56DVNyL/xawBGwQr8o3U4/o1gP9FZmIWLnWCiIl5ni85MghMCNRfg==}
+  csrf-csrf@4.0.2:
+    resolution: {integrity: sha512-jWI4uDjZn1EedVSa6WhiL6L6M5XmSemXLgCDGwrdPLtkCThSDDTj4ewokTTqrW8JZYcfJ3oY4LFCtXgQ2XAg5Q==}
 
   css-declaration-sorter@6.4.1:
     resolution: {integrity: sha512-rtdthzxKuyq6IzqX6jEcIzQF/YqccluefyCYheovBOLhFT/drQA9zj/UbRAa9J7C0o6EG6u3E6g+vKkay7/k3g==}
@@ -24198,7 +24198,7 @@ snapshots:
 
   cross-zip@4.0.1: {}
 
-  csrf-csrf@3.2.2:
+  csrf-csrf@4.0.2:
     dependencies:
       http-errors: 2.0.0
 
