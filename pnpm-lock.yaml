@@ -223,8 +223,8 @@ importers:
         specifier: 2.1.4
         version: 2.1.4
       dayjs:
-        specifier: 1.11.13
-        version: 1.11.13
+        specifier: 1.11.15
+        version: 1.11.15
       dayjs-plugin-utc:
         specifier: 0.1.2
         version: 0.1.2
@@ -633,8 +633,8 @@ importers:
         specifier: 3.2.2
         version: 3.2.2
       dayjs:
-        specifier: 1.11.13
-        version: 1.11.13
+        specifier: 1.11.15
+        version: 1.11.15
       debounce:
         specifier: 2.2.0
         version: 2.2.0
@@ -7971,8 +7971,8 @@ packages:
   dayjs-plugin-utc@0.1.2:
     resolution: {integrity: sha512-ExERH5o3oo6jFOdkvMP3gytTCQ9Ksi5PtylclJWghr7k7m3o2U5QrwtdiJkOxLOH4ghr0EKhpqGefzGz1VvVJg==}
 
-  dayjs@1.11.13:
-    resolution: {integrity: sha512-oaMBel6gjolK862uaPQOVTA7q3TZhuSvuMQAAglQDOWYO9A91IrAOUJEyKVlqJlHE0vq5p5UXxzdPfMH/x6xNg==}
+  dayjs@1.11.15:
+    resolution: {integrity: sha512-MC+DfnSWiM9APs7fpiurHGCoeIx0Gdl6QZBy+5lu8MbYKN5FZEXqOgrundfibdfhGZ15o9hzmZ2xJjZnbvgKXQ==}
 
   de-indent@1.0.2:
     resolution: {integrity: sha512-e/1zu3xH5MQryN2zdVaF0OrdNLUbvWxzMbi+iNA6Bky7l1RoP8a2fIbRocyHclXt/arDrrR6lL3TqFD9pMQTsg==}
@@ -17002,6 +17002,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 46.0.2
       '@ckeditor/ckeditor5-watchdog': 46.0.2
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-dev-build-tools@43.1.0(@swc/helpers@0.5.17)(tslib@2.8.1)(typescript@5.9.2)':
     dependencies:
@@ -17166,6 +17168,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 46.0.2
       ckeditor5: 46.0.2(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-editor-classic@46.0.2':
     dependencies:
@@ -17175,6 +17179,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 46.0.2
       ckeditor5: 46.0.2(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-editor-decoupled@46.0.2':
     dependencies:
@@ -17777,6 +17783,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 46.0.2
       '@ckeditor/ckeditor5-utils': 46.0.2
       ckeditor5: 46.0.2(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-special-characters@46.0.2':
     dependencies:
@@ -23729,8 +23737,6 @@ snapshots:
   ckeditor5-collaboration@46.0.2:
     dependencies:
       '@ckeditor/ckeditor5-collaboration-core': 46.0.2
-    transitivePeerDependencies:
-      - supports-color
 
   ckeditor5-premium-features@46.0.2(bufferutil@4.0.9)(ckeditor5@46.0.2(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41))(utf-8-validate@6.0.5):
     dependencies:
@@ -24736,7 +24742,7 @@ snapshots:
 
   dayjs-plugin-utc@0.1.2: {}
 
-  dayjs@1.11.13: {}
+  dayjs@1.11.15: {}
 
   de-indent@1.0.2: {}
 
@@ -28364,7 +28370,7 @@ snapshots:
       d3: 7.9.0
       d3-sankey: 0.12.3
       dagre-d3-es: 7.0.11
-      dayjs: 1.11.13
+      dayjs: 1.11.15
       dompurify: 3.2.5
       katex: 0.16.22
       khroma: 2.1.0

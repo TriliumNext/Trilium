@@ -55,7 +55,7 @@
     "compression": "1.8.1",
     "cookie-parser": "1.4.7",
     "csrf-csrf": "3.2.2",
-    "dayjs": "1.11.13",
+    "dayjs": "1.11.15",
     "debounce": "2.2.0",
     "debug": "4.4.1",
     "ejs": "3.1.10",
