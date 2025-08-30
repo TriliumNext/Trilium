@@ -1,0 +1,25 @@
+.note-list-widget {
+    min-height: 0;
+    overflow: auto;
+    contain: none !important;
+}
+
+.note-list-widget .note-list {
+    padding: 10px;
+}
+
+.note-list-widget.full-height,
+.note-list-widget.full-height .note-list-widget-content {
+    height: 100%;
+}
+
+.note-list-widget video {
+    height: 100%;
+}
+
+/* #region Pagination */
+.note-list-pager span.current-page {
+    text-decoration: underline;
+    font-weight: bold;
+}
+/* #endregion */

@@ -1,6 +1,5 @@
 import { useContext, useMemo } from "preact/hooks";
 import { t } from "../../services/i18n";
-import { ViewTypeOptions } from "../../services/note_list_renderer";
 import FormSelect, { FormSelectWithGroups } from "../react/FormSelect";
 import { TabContext } from "./ribbon-interface";
 import { mapToKeyValueArray } from "../../services/utils";
@@ -12,6 +11,7 @@ import FNote from "../../entities/fnote";
 import FormCheckbox from "../react/FormCheckbox";
 import FormTextBox from "../react/FormTextBox";
 import { ComponentChildren } from "preact";
+import { ViewTypeOptions } from "../collections/interface";
 
 const VIEW_TYPE_MAPPINGS: Record<ViewTypeOptions, string> = {
   grid: t("book_properties.grid"),

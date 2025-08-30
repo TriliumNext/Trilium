@@ -1,4 +1,4 @@
-import type { CSSProperties } from "preact/compat";
+import type { CSSProperties, RefObject } from "preact/compat";
 
 type HTMLElementLike = string | HTMLElement | JQuery<HTMLElement>;
 
@@ -9,12 +9,12 @@ interface RawHtmlProps {
     onClick?: (e: MouseEvent) => void;
 }
 
-export default function RawHtml(props: RawHtmlProps) {
-    return <span {...getProps(props)} />;
+export default function RawHtml({containerRef, ...props}: RawHtmlProps & { containerRef?: RefObject<HTMLSpanElement>}) {
+    return <span ref={containerRef} {...getProps(props)} />;
 }
 
-export function RawHtmlBlock(props: RawHtmlProps) {
-    return <div {...getProps(props)} />
+export function RawHtmlBlock({containerRef, ...props}: RawHtmlProps & { containerRef?: RefObject<HTMLDivElement>}) {
+    return <div ref={containerRef} {...getProps(props)} />
 }
 
 function getProps({ className, html, style, onClick }: RawHtmlProps) {

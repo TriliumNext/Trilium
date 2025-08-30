@@ -4,7 +4,7 @@ import { ParentComponent } from "./react_utils";
 import SpacedUpdate from "../../services/spaced_update";
 import { KeyboardActionNames, OptionNames } from "@triliumnext/commons";
 import options, { type OptionValue } from "../../services/options";
-import utils, { reloadFrontendApp } from "../../services/utils";
+import utils, { escapeRegExp, reloadFrontendApp } from "../../services/utils";
 import NoteContext from "../../components/note_context";
 import BasicWidget, { ReactWrappedWidget } from "../basic_widget";
 import FNote from "../../entities/fnote";
@@ -15,6 +15,7 @@ import { RefObject, VNode } from "preact";
 import { Tooltip } from "bootstrap";
 import { CSSProperties } from "preact/compat";
 import keyboard_actions from "../../services/keyboard_actions";
+import Mark from "mark.js";
 
 export function useTriliumEvent<T extends EventNames>(eventName: T, handler: (data: EventData<T>) => void) {
     const parentComponent = useContext(ParentComponent);
@@ -27,7 +28,7 @@ export function useTriliumEvent<T extends EventNames>(eventName: T, handler: (da
 
 export function useTriliumEvents<T extends EventNames>(eventNames: T[], handler: (data: EventData<T>, eventName: T) => void) {
     const parentComponent = useContext(ParentComponent);
-    
+
     useLayoutEffect(() => {
         const handlers: ({ eventName: T, callback: (data: EventData<T>) => void })[] = [];
         for (const eventName of eventNames) {
@@ -35,11 +36,11 @@ export function useTriliumEvents<T extends EventNames>(eventNames: T[], handler:
                 handler(data, eventName);
             }})
         }
-    
+
         for (const { eventName, callback } of handlers) {
             parentComponent?.registerHandler(eventName, callback);
         }
-    
+
         return (() => {
             for (const { eventName, callback } of handlers) {
                 parentComponent?.removeHandler(eventName, callback);
@@ -76,10 +77,10 @@ export function useSpacedUpdate(callback: () => void | Promise<void>, interval =
 
 /**
  * Allows a React component to read and write a Trilium option, while also watching for external changes.
- * 
+ *
  * Conceptually, `useTriliumOption` works just like `useState`, but the value is also automatically updated if
  * the option is changed somewhere else in the client.
- * 
+ *
  * @param name the name of the option to listen for.
  * @param needsRefresh whether to reload the frontend whenever the value is changed.
  * @returns an array where the first value is the current option value and the second value is the setter.
@@ -115,7 +116,7 @@ export function useTriliumOption(name: OptionNames, needsRefresh?: boolean): [st
 
 /**
  * Similar to {@link useTriliumOption}, but the value is converted to and from a boolean instead of a string.
- * 
+ *
  * @param name the name of the option to listen for.
  * @param needsRefresh whether to reload the frontend whenever the value is changed.
  * @returns an array where the first value is the current option value and the second value is the setter.
@@ -131,7 +132,7 @@ export function useTriliumOptionBool(name: OptionNames, needsRefresh?: boolean):
 
 /**
  * Similar to {@link useTriliumOption}, but the value is converted to and from a int instead of a string.
- * 
+ *
  * @param name the name of the option to listen for.
  * @param needsRefresh whether to reload the frontend whenever the value is changed.
  * @returns an array where the first value is the current option value and the second value is the setter.
@@ -147,7 +148,7 @@ export function useTriliumOptionInt(name: OptionNames): [number, (newValue: numb
 
 /**
  * Similar to {@link useTriliumOption}, but the object value is parsed to and from a JSON instead of a string.
- * 
+ *
  * @param name the name of the option to listen for.
  * @returns an array where the first value is the current option value and the second value is the setter.
  */
@@ -161,8 +162,8 @@ export function useTriliumOptionJson<T>(name: OptionNames): [ T, (newValue: T) =
 }
 
 /**
- * Similar to {@link useTriliumOption}, but operates with multiple options at once. 
- * 
+ * Similar to {@link useTriliumOption}, but operates with multiple options at once.
+ *
  * @param names the name of the option to listen for.
  * @returns an array where the first value is a map where the keys are the option names and the values, and the second value is the setter which takes in the same type of map and saves them all at once.
  */
@@ -182,10 +183,10 @@ export function useTriliumOptions<T extends OptionNames>(...names: T[]) {
 
 /**
  * Generates a unique name via a random alphanumeric string of a fixed length.
- * 
+ *
  * <p>
  * Generally used to assign names to inputs that are unique, especially useful for widgets inside tabs.
- * 
+ *
  * @param prefix a prefix to add to the unique name.
  * @returns a name with the given prefix and a random alpanumeric string appended to it.
  */
@@ -196,7 +197,7 @@ export function useUniqueName(prefix?: string) {
 export function useNoteContext() {
     const [ noteContext, setNoteContext ] = useState<NoteContext>();
     const [ notePath, setNotePath ] = useState<string | null | undefined>();
-    const [ note, setNote ] = useState<FNote | null | undefined>(); 
+    const [ note, setNote ] = useState<FNote | null | undefined>();
     const [ refreshCounter, setRefreshCounter ] = useState(0);
 
     useEffect(() => {
@@ -205,7 +206,7 @@ export function useNoteContext() {
 
     useTriliumEvents([ "setNoteContext", "activeContextChanged", "noteSwitchedAndActivated", "noteSwitched" ], ({ noteContext }) => {
         setNoteContext(noteContext);
-        setNotePath(noteContext.notePath);        
+        setNotePath(noteContext.notePath);
     });
     useTriliumEvent("frocaReloaded", () => {
         setNote(noteContext?.note);
@@ -235,7 +236,7 @@ export function useNoteContext() {
 
 /**
  * Allows a React component to listen to obtain a property of a {@link FNote} while also automatically watching for changes, either via the user changing to a different note or the property being changed externally.
- * 
+ *
  * @param note the {@link FNote} whose property to obtain.
  * @param property a property of a {@link FNote} to obtain the value from (e.g. `title`, `isProtected`).
  * @param componentId optionally, constricts the refresh of the value if an update occurs externally via the component ID of a legacy widget. This can be used to avoid external data replacing fresher, user-inputted data.
@@ -287,7 +288,7 @@ export function useNoteRelation(note: FNote | undefined | null, relationName: st
 
 /**
  * Allows a React component to read or write a note's label while also reacting to changes in value.
- * 
+ *
  * @param note the note whose label to read/write.
  * @param labelName the name of the label to read/write.
  * @returns an array where the first element is the getter and the second element is the setter. The setter has a special behaviour for convenience: if the value is undefined, the label is created without a value (e.g. a tag), if the value is null then the label is removed.
@@ -299,7 +300,11 @@ export function useNoteLabel(note: FNote | undefined | null, labelName: string):
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         for (const attr of loadResults.getAttributeRows()) {
             if (attr.type === "label" && attr.name === labelName && attributes.isAffecting(attr, note)) {
-                setLabelValue(attr.value ?? null);
+                if (!attr.isDeleted) {
+                    setLabelValue(attr.value);
+                } else {
+                    setLabelValue(null);
+                }
             }
         }
     });
@@ -352,9 +357,9 @@ export function useNoteLabelBoolean(note: FNote | undefined | null, labelName: s
 
 export function useNoteBlob(note: FNote | null | undefined): [ FBlob | null | undefined ] {
     const [ blob, setBlob ] = useState<FBlob | null>();
-    
+
     function refresh() {
-        note?.getBlob().then(setBlob);        
+        note?.getBlob().then(setBlob);
     }
 
     useEffect(refresh, [ note?.noteId ]);
@@ -388,7 +393,7 @@ export function useLegacyWidget<T extends BasicWidget>(widgetFactory: () => T, {
         if (noteContext && widget instanceof NoteContextAwareWidget) {
             widget.setNoteContextEvent({ noteContext });
         }
-        
+
         const renderedWidget = widget.render();
         return [ widget, renderedWidget ];
     }, []);
@@ -415,7 +420,7 @@ export function useLegacyWidget<T extends BasicWidget>(widgetFactory: () => T, {
 
 /**
  * Attaches a {@link ResizeObserver} to the given ref and reads the bounding client rect whenever it changes.
- * 
+ *
  * @param ref a ref to a {@link HTMLElement} to determine the size and observe the changes in size.
  * @returns the size of the element, reacting to changes.
  */
@@ -445,7 +450,7 @@ export function useElementSize(ref: RefObject<HTMLElement>) {
 
 /**
  * Obtains the inner width and height of the window, as well as reacts to changes in size.
- * 
+ *
  * @returns the width and height of the window.
  */
 export function useWindowSize() {
@@ -453,7 +458,7 @@ export function useWindowSize() {
         windowWidth: window.innerWidth,
         windowHeight: window.innerHeight
     });
-    
+
     useEffect(() => {
         function onResize() {
             setSize({
@@ -499,7 +504,7 @@ export function useTooltip(elRef: RefObject<HTMLElement>, config: Partial<Toolti
 
 /**
  * Similar to {@link useTooltip}, but doesn't expose methods to imperatively hide or show the tooltip.
- * 
+ *
  * @param elRef the element to bind the tooltip to.
  * @param config optionally, the tooltip configuration.
  */
@@ -547,4 +552,27 @@ export function useSyncedRef<T>(externalRef?: RefObject<T>, initialValue: T | nu
     }, [ ref, externalRef ]);
 
     return ref;
+}
+
+export function useImperativeSearchHighlighlighting(highlightedTokens: string[] | null | undefined) {
+    const mark = useRef<Mark>();
+    const highlightRegex = useMemo(() => {
+        if (!highlightedTokens?.length) return null;
+        const regex = highlightedTokens.map((token) => escapeRegExp(token)).join("|");
+        return new RegExp(regex, "gi")
+    }, [ highlightedTokens ]);
+
+    return (el: HTMLElement | null | undefined) => {
+        if (!el || !highlightRegex) return;
+
+        if (!mark.current) {
+            mark.current = new Mark(el);
+        }
+
+        mark.current.unmark();
+        mark.current.markRegExp(highlightRegex, {
+            element: "span",
+            className: "ck-find-result"
+        });
+    };
 }

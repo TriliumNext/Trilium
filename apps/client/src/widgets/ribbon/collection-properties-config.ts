@@ -1,9 +1,9 @@
 import { t } from "i18next";
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
-import { ViewTypeOptions } from "../../services/note_list_renderer"
 import NoteContextAwareWidget from "../note_context_aware_widget";
 import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, type MapLayer } from "../view_widgets/geo_view/map_layer";
+import { ViewTypeOptions } from "../collections/interface";
 
 interface BookConfig {
     properties: BookProperty[];

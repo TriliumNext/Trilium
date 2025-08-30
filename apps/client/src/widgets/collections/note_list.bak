@@ -1,0 +1,76 @@
+import NoteContextAwareWidget from "../note_context_aware_widget.js";
+import NoteListRenderer from "./note_list_renderer.ts.bak/index.js";
+import type FNote from "../../entities/fnote.js";
+import type { CommandListener, CommandListenerData, CommandMappings, CommandNames, EventData, EventNames } from "../../components/app_context.js";
+import type ViewMode from "../view_widgets/view_mode.js";
+
+export default class NoteListWidget extends NoteContextAwareWidget {
+
+    private $content!: JQuery<HTMLElement>;
+    private noteIdRefreshed?: string;
+    private shownNoteId?: string | null;
+    private viewMode?: ViewMode<any> | null;
+
+    async refreshNoteListEvent({ noteId }: EventData<"refreshNoteList">) {
+        if (this.isNote(noteId) && this.note) {
+            await this.renderNoteList(this.note);
+        }
+    }
+
+    /**
+     * We have this event so that we evaluate intersection only after note detail is loaded.
+     * If it's evaluated before note detail, then it's clearly intersected (visible) although after note detail load
+     * it is not intersected (visible) anymore.
+     */
+    noteDetailRefreshedEvent({ ntxId }: EventData<"noteDetailRefreshed">) {
+        if (!this.isNoteContext(ntxId)) {
+            return;
+        }
+
+        this.noteIdRefreshed = this.noteId;
+
+        setTimeout(() => this.checkRenderStatus(), 100);
+    }
+
+    notesReloadedEvent({ noteIds }: EventData<"notesReloaded">) {
+        if (this.noteId && noteIds.includes(this.noteId)) {
+            this.refresh();
+        }
+    }
+
+    entitiesReloadedEvent(e: EventData<"entitiesReloaded">) {
+        if (e.loadResults.getAttributeRows().find((attr) => attr.noteId === this.noteId && attr.name && ["viewType", "expanded", "pageSize"].includes(attr.name))) {
+            this.refresh();
+            this.checkRenderStatus();
+        }
+    }
+
+    buildTouchBarCommand(data: CommandListenerData<"buildTouchBar">) {
+        if (this.viewMode && "buildTouchBarCommand" in this.viewMode) {
+            return (this.viewMode as CommandListener<"buildTouchBar">).buildTouchBarCommand(data);
+        }
+    }
+
+    triggerCommand<K extends CommandNames>(name: K, data?: CommandMappings[K]): Promise<unknown> | undefined | null {
+        // Pass the commands to the view mode, which is not actually attached to the hierarchy.
+        if (this.viewMode?.triggerCommand(name, data)) {
+            return;
+        }
+
+        return super.triggerCommand(name, data);
+    }
+
+    handleEventInChildren<T extends EventNames>(name: T, data: EventData<T>): Promise<unknown[] | unknown> | null {
+        super.handleEventInChildren(name, data);
+
+        if (this.viewMode) {
+            const ret = this.viewMode.handleEvent(name, data);
+            if (ret) {
+                return ret;
+            }
+        }
+
+        return null;
+    }
+
+}

@@ -1,6 +1,6 @@
 import type FNote from "../../entities/fnote";
-import type { ViewTypeOptions } from "../../services/note_list_renderer";
 import server from "../../services/server";
+import { ViewTypeOptions } from "../collections/interface";
 
 const ATTACHMENT_ROLE = "viewConfig";
 

@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { t } from "../services/i18n";
 import Alert from "./react/Alert";
-import { useNoteContext, useNoteProperty, useTriliumEvent } from "./react/hooks";
+import { useNoteContext,  useTriliumEvent } from "./react/hooks";
 import "./search_result.css";
-import NoteListRenderer from "../services/note_list_renderer";
+import NoteList from "./collections/NoteList";
+// import NoteListRenderer from "../services/note_list_renderer";
 
-enum SearchResultState {    
+enum SearchResultState {
     NO_RESULTS,
     NOT_EXECUTED,
     GOT_RESULTS
@@ -14,26 +15,18 @@ enum SearchResultState {
 export default function SearchResult() {
     const { note, ntxId } = useNoteContext();
     const [ state, setState ] = useState<SearchResultState>();
-    const searchContainerRef = useRef<HTMLDivElement>(null);
+    const [ highlightedTokens, setHighlightedTokens ] = useState<string[]>();
 
     function refresh() {
-        searchContainerRef.current?.replaceChildren();
-
         if (note?.type !== "search") {
             setState(undefined);
         } else if (!note?.searchResultsLoaded) {
             setState(SearchResultState.NOT_EXECUTED);
         } else if (note.getChildNoteIds().length === 0) {
             setState(SearchResultState.NO_RESULTS);
-        } else if (searchContainerRef.current) {
+        } else {
             setState(SearchResultState.GOT_RESULTS);
-
-            const noteListRenderer = new NoteListRenderer({
-                $parent: $(searchContainerRef.current),
-                parentNote: note,
-                showNotePath: true
-            });
-            noteListRenderer.renderList();
+            setHighlightedTokens(note.highlightedTokens);
         }
     }
 
@@ -59,7 +52,9 @@ export default function SearchResult() {
                 <Alert type="info" className="search-no-results">{t("search_result.no_notes_found")}</Alert>
             )}
 
-            <div ref={searchContainerRef} className="search-result-widget-content" />
+            {state === SearchResultState.GOT_RESULTS && (
+                <NoteList note={note} highlightedTokens={highlightedTokens} />
+            )}
         </div>
     );
 }

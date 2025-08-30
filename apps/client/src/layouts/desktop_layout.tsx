@@ -5,7 +5,6 @@ import NoteTreeWidget from "../widgets/note_tree.js";
 import NoteTitleWidget from "../widgets/note_title.jsx";
 import NoteDetailWidget from "../widgets/note_detail.js";
 import PromotedAttributesWidget from "../widgets/promoted_attributes.js";
-import NoteListWidget from "../widgets/note_list.js";
 import NoteIconWidget from "../widgets/note_icon.jsx";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import RootContainer from "../widgets/containers/root_container.js";
@@ -42,6 +41,7 @@ import LeftPaneToggle from "../widgets/buttons/left_pane_toggle.js";
 import ApiLog from "../widgets/api_log.jsx";
 import CloseZenModeButton from "../widgets/close_zen_button.jsx";
 import SharedInfo from "../widgets/shared_info.jsx";
+import NoteList from "../widgets/collections/NoteList.jsx";
 
 export default class DesktopLayout {
 
@@ -138,7 +138,7 @@ export default class DesktopLayout {
                                                                 .child(new PromotedAttributesWidget())
                                                                 .child(<SqlTableSchemas />)
                                                                 .child(new NoteDetailWidget())
-                                                                .child(new NoteListWidget(false))
+                                                                .child(<NoteList />)
                                                                 .child(<SearchResult />)
                                                                 .child(<SqlResults />)
                                                                 .child(<ScrollPadding />)

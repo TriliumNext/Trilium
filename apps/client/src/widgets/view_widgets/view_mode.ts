@@ -2,7 +2,7 @@ import type { EventData } from "../../components/app_context.js";
 import appContext from "../../components/app_context.js";
 import Component from "../../components/component.js";
 import type FNote from "../../entities/fnote.js";
-import type { ViewTypeOptions } from "../../services/note_list_renderer.js";
+import { ViewTypeOptions } from "../collections/interface.js";
 import ViewModeStorage from "./view_mode_storage.js";
 
 export interface ViewModeArgs {
@@ -48,10 +48,6 @@ export default abstract class ViewMode<T extends object> extends Component {
     }
 
     async entitiesReloadedEvent(e: EventData<"entitiesReloaded">) {
-        if (e.loadResults.getBranchRows().some(branch => branch.parentNoteId === this.parentNote.noteId || this.noteIds.includes(branch.parentNoteId ?? ""))) {
-            this.#refreshNoteIds();
-        }
-
         if (await this.onEntitiesReloaded(e)) {
             appContext.triggerEvent("refreshNoteList", { noteId: this.parentNote.noteId });
         }
@@ -68,16 +64,6 @@ export default abstract class ViewMode<T extends object> extends Component {
 
         this._viewStorage = new ViewModeStorage<T>(this.parentNote, this.viewType);
         return this._viewStorage;
-    }
-
-    async #refreshNoteIds() {
-        let noteIds: string[];
-        if (this.viewType === "list" || this.viewType === "grid") {
-            noteIds = this.args.parentNote.getChildNoteIds();
-        } else {
-            noteIds = await this.args.parentNote.getSubtreeNoteIds();
-        }
-        this.noteIds = noteIds;
     }
 
 }
