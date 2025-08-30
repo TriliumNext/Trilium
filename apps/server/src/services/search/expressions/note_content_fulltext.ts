@@ -119,7 +119,75 @@ class NoteContentFulltextExp extends Expression {
             return; // Content too large or invalid
         }
         content = processedContent;
+        
+        // Check note size and determine search strategy
+        const contentSize = content.length;
+        const isExtremeNote = contentSize > FUZZY_SEARCH_CONFIG.EXTREME_NOTE_SIZE_THRESHOLD;
+        const isLargeNote = contentSize > FUZZY_SEARCH_CONFIG.LARGE_NOTE_SIZE_THRESHOLD;
+        const isFuzzyOperator = this.operator === "~=" || this.operator === "~*";
+        
+        // For extremely large notes (>5MB), only search title regardless of operator
+        if (isExtremeNote) {
+            const note = becca.notes[noteId];
+            const title = note.title || "";
+            
+            log.info(`Note ${noteId} is ${(contentSize / (1024 * 1024)).toFixed(1)}MB - searching title only due to extreme size`);
+            
+            // For fuzzy operators, use fuzzy matching on title
+            // For other operators, use exact/wildcard matching on title
+            const normalizedTitle = normalizeSearchText(title);
+            let titleMatches = false;
+            
+            if (isFuzzyOperator) {
+                titleMatches = this.tokens.some(token => 
+                    this.fuzzyMatchToken(normalizeSearchText(token), normalizedTitle)
+                );
+            } else {
+                // Apply the operator to title matching
+                titleMatches = this.tokens.every(token => {
+                    const normalizedToken = normalizeSearchText(token);
+                    if (this.operator === "*=*") return normalizedTitle.includes(normalizedToken);
+                    if (this.operator === "=") return normalizedTitle === normalizedToken;
+                    if (this.operator === "!=") return normalizedTitle !== normalizedToken;
+                    if (this.operator === "*=") return normalizedTitle.endsWith(normalizedToken);
+                    if (this.operator === "=*") return normalizedTitle.startsWith(normalizedToken);
+                    return false;
+                });
+            }
+            
+            if (titleMatches) {
+                resultNoteSet.add(becca.notes[noteId]);
+            }
+            
+            return content;
+        }
+        
+        // For large notes (250KB-5MB) with fuzzy operators, use optimized strategy
+        if (isLargeNote && isFuzzyOperator) {
+            const note = becca.notes[noteId];
+            const title = note.title || "";
+            
+            log.info(`Note ${noteId} is ${(contentSize / 1024).toFixed(1)}KB - using optimized search (fuzzy on title, exact on content)`);
+            
+            // Perform fuzzy search on title
+            const titleMatches = this.fuzzyMatchToken(normalizeSearchText(this.tokens[0]), normalizeSearchText(title));
+            
+            // Perform exact match on content for all tokens
+            const contentMatches = this.tokens.every(token => {
+                const normalizedToken = normalizeSearchText(token);
+                const normalizedContent = normalizeSearchText(content);
+                return normalizedContent.includes(normalizedToken);
+            });
+            
+            // Add to results if either title matches with fuzzy or content matches exactly
+            if (titleMatches || contentMatches) {
+                resultNoteSet.add(becca.notes[noteId]);
+            }
+            
+            return content;
+        }
 
+        // Standard search logic for non-large notes or non-fuzzy operators
         if (this.tokens.length === 1) {
             const [token] = this.tokens;
 
@@ -248,11 +316,6 @@ class NoteContentFulltextExp extends Expression {
         if (words.length > FUZZY_SEARCH_CONFIG.ABSOLUTE_MAX_WORD_COUNT) {
             console.error(`Phrase matching skipped due to extreme word count that could cause system instability: ${words.length} words`);
             return false;
-        }
-        
-        // Warn about large word counts but still attempt matching
-        if (words.length > FUZZY_SEARCH_CONFIG.PERFORMANCE_WARNING_WORDS) {
-            console.info(`Large word count for phrase matching: ${words.length} words - may take longer but will attempt full matching`);
         }
         
         // Find positions of each token
