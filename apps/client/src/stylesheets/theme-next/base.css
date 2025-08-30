@@ -329,6 +329,8 @@ body.mobile .dropdown-menu .dropdown-item.submenu-open .dropdown-toggle::after {
 
 #toast-container .toast .toast-body {
     flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /*

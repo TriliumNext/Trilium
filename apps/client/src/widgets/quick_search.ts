@@ -15,13 +15,15 @@ const TPL = /*html*/`
         padding: 10px 10px 10px 0px;
         height: 50px;
     }
-
+    
     .quick-search button, .quick-search input {
         border: 0;
         font-size: 100% !important;
     }
-
+        
     .quick-search .dropdown-menu {
+        --quick-search-item-delimiter-color: var(--dropdown-border-color);
+
         max-height: 80vh;
         min-width: 400px;
         max-width: 720px;
@@ -38,14 +40,14 @@ const TPL = /*html*/`
         position: relative;
     }
     
-    .quick-search .dropdown-item:not(:last-child)::after {
+    .quick-search .dropdown-item + .dropdown-item::after {
         content: '';
         position: absolute;
         left: 0;
-        bottom: 0;
+        top: 0;
         width: 100%;
         height: 1px;
-        background: var(--dropdown-border-color);
+        border-bottom: 1px solid var(--quick-search-item-delimiter-color);
     }
     
     .quick-search .dropdown-item:last-child::after {
@@ -92,6 +94,8 @@ const TPL = /*html*/`
         background-color: var(--accented-background-color);
         color: var(--main-text-color);
         font-size: .85em;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     /* Search result highlighting */
@@ -104,6 +108,10 @@ const TPL = /*html*/`
 
     .quick-search .dropdown-divider {
         margin: 0;
+    }
+
+    .quick-search .bx-loader {
+        margin-inline-end: 4px;
     }
 
   </style>
@@ -220,7 +228,11 @@ export default class QuickSearchWidget extends BasicWidget {
         this.isLoadingMore = false;
 
         this.$dropdownMenu.empty();
-        this.$dropdownMenu.append(`<span class="dropdown-item disabled"><span class="bx bx-loader bx-spin"></span>${t("quick-search.searching")}</span>`);
+        this.$dropdownMenu.append(`
+            <span class="dropdown-item disabled">
+                <span class="bx bx-loader bx-spin"></span>
+                ${t("quick-search.searching")}
+            </span>`);
 
         const { searchResultNoteIds, searchResults, error } = await server.get<QuickSearchResponse>(`quick-search/${encodeURIComponent(searchString)}`);
 
