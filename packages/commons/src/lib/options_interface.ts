@@ -150,6 +150,9 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     codeOpenAiModel: string;
     aiSelectedProvider: string;
     seenCallToActions: string;
+    
+    // CKEditor plugin options
+    ckeditorEnabledPlugins: string;
 }
 
 export type OptionNames = keyof OptionDefinitions;

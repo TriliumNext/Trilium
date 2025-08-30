@@ -59,6 +59,7 @@ import openaiRoute from "./api/openai.js";
 import anthropicRoute from "./api/anthropic.js";
 import llmRoute from "./api/llm.js";
 import systemInfoRoute from "./api/system_info.js";
+import ckeditorPluginsRoute from "./api/ckeditor_plugins.js";
 
 import etapiAuthRoutes from "../etapi/auth.js";
 import etapiAppInfoRoutes from "../etapi/app_info.js";
@@ -220,6 +221,15 @@ function register(app: express.Application) {
     apiRoute(PUT, "/api/options", optionsApiRoute.updateOptions);
     apiRoute(GET, "/api/options/user-themes", optionsApiRoute.getUserThemes);
     apiRoute(GET, "/api/options/locales", optionsApiRoute.getSupportedLocales);
+    
+    // CKEditor plugins management
+    apiRoute(GET, "/api/ckeditor-plugins/registry", ckeditorPluginsRoute.getPluginRegistry);
+    apiRoute(GET, "/api/ckeditor-plugins/config", ckeditorPluginsRoute.getUserPluginConfig);
+    apiRoute(PUT, "/api/ckeditor-plugins/config", ckeditorPluginsRoute.updateUserPluginConfig);
+    apiRoute(GET, "/api/ckeditor-plugins/query", ckeditorPluginsRoute.queryPlugins);
+    apiRoute(PST, "/api/ckeditor-plugins/validate", ckeditorPluginsRoute.validatePluginConfiguration);
+    apiRoute(PST, "/api/ckeditor-plugins/reset", ckeditorPluginsRoute.resetPluginConfigToDefaults);
+    apiRoute(GET, "/api/ckeditor-plugins/stats", ckeditorPluginsRoute.getPluginStats);
 
     apiRoute(PST, "/api/password/change", passwordApiRoute.changePassword);
     apiRoute(PST, "/api/password/reset", passwordApiRoute.resetPassword);

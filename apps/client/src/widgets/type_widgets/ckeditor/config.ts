@@ -13,6 +13,7 @@ import noteAutocompleteService, { type Suggestion } from "../../../services/note
 import mimeTypesService from "../../../services/mime_types.js";
 import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
 import { buildToolbarConfig } from "./toolbar.js";
+import ckeditorPluginConfigService from "../../../services/ckeditor_plugin_config.js";
 
 export const OPEN_SOURCE_LICENSE_KEY = "GPL";
 
@@ -164,7 +165,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         },
         // This value must be kept in sync with the language defined in webpack.config.js.
         language: "en",
-        removePlugins: getDisabledPlugins()
+        removePlugins: await getDisabledPlugins()
     };
 
     // Set up content language.
@@ -203,9 +204,11 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         ];
     }
 
+    const toolbarConfig = await buildToolbarConfig(opts.isClassicEditor);
+    
     return {
         ...config,
-        ...buildToolbarConfig(opts.isClassicEditor)
+        ...toolbarConfig
     };
 }
 
@@ -237,9 +240,18 @@ function getLicenseKey() {
     return premiumLicenseKey;
 }
 
-function getDisabledPlugins() {
+async function getDisabledPlugins() {
     let disabledPlugins: string[] = [];
 
+    // Check user's plugin configuration
+    try {
+        const userDisabledPlugins = await ckeditorPluginConfigService.getDisabledPlugins();
+        disabledPlugins.push(...userDisabledPlugins);
+    } catch (error) {
+        console.warn("Failed to load user plugin configuration, using defaults:", error);
+    }
+
+    // Legacy emoji setting override
     if (options.get("textNoteEmojiCompletionEnabled") !== "true") {
         disabledPlugins.push("EmojiMention");
     }
