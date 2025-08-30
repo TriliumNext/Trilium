@@ -100,8 +100,81 @@ export default async function buildApp() {
     app.use(sessionParser);
     app.use(favicon(path.join(assetsDir, "icon.ico")));
 
-    if (openID.isOpenIDEnabled())
+    if (openID.isOpenIDEnabled()) {
+        // Always log OAuth initialization for better debugging
+        log.info('OAuth: Initializing OAuth authentication middleware');
+        
+        // Check for potential reverse proxy configuration issues
+        const baseUrl = config.MultiFactorAuthentication.oauthBaseUrl;
+        const trustProxy = app.get('trust proxy');
+        
+        log.info(`OAuth: Configuration check - baseURL=${baseUrl}, trustProxy=${trustProxy}`);
+        
+        // Log potential issue if OAuth is configured with HTTPS but trust proxy is not set
+        if (baseUrl.startsWith('https://') && !trustProxy) {
+            log.info('OAuth: baseURL uses HTTPS but trustedReverseProxy is not configured.');
+            log.info('OAuth: If you are behind a reverse proxy, this MAY cause authentication failures.');
+            log.info('OAuth: The OAuth library might generate HTTP redirect_uris instead of HTTPS.');
+            log.info('OAuth: If authentication fails with redirect_uri errors, try setting:');
+            log.info('OAuth:   In config.ini:  trustedReverseProxy=true');
+            log.info('OAuth:   Or environment:  TRILIUM_NETWORK_TRUSTEDREVERSEPROXY=true');
+            log.info('OAuth: Note: This is only needed if running behind a reverse proxy.');
+        }
+        
+        // Test OAuth connectivity on startup for non-Google providers
+        const issuerUrl = config.MultiFactorAuthentication.oauthIssuerBaseUrl;
+        const isCustomProvider = issuerUrl && 
+                                issuerUrl !== "" && 
+                                issuerUrl !== "https://accounts.google.com";
+        
+        if (isCustomProvider) {
+            // For non-Google providers, verify connectivity
+            openID.testOAuthConnectivity().then(result => {
+                if (result.success) {
+                    log.info('OAuth: Provider connectivity verified successfully');
+                } else {
+                    log.error(`OAuth: Provider connectivity check failed: ${result.error}`);
+                    log.error('OAuth: Authentication may not work. Please verify:');
+                    log.error('  1. The OAuth provider URL is correct');
+                    log.error('  2. Network connectivity between Trilium and the OAuth provider');
+                    log.error('  3. Any firewall or proxy settings');
+                }
+            }).catch(err => {
+                log.error(`OAuth: Connectivity test error: ${err.message || err}`);
+            });
+        }
+        
+        // Register OAuth middleware
         app.use(auth(openID.generateOAuthConfig()));
+        
+        // Add OAuth error logging middleware AFTER auth middleware
+        app.use(openID.oauthErrorLogger);
+        
+        // Add diagnostic middleware for authentication initiation
+        app.use('/authenticate', (req, res, next) => {
+            log.info(`OAuth authenticate diagnostic: protocol=${req.protocol}, secure=${req.secure}, host=${req.get('host')}`);
+            log.info(`OAuth authenticate: baseURL from req = ${req.protocol}://${req.get('host')}`);
+            log.info(`OAuth authenticate: headers - x-forwarded-proto=${req.headers['x-forwarded-proto']}, x-forwarded-host=${req.headers['x-forwarded-host']}`);
+            // The actual redirect_uri will be logged by express-openid-connect
+            next();
+        });
+        
+        // Add diagnostic middleware to log what protocol Express thinks it's using for callbacks
+        app.use('/callback', (req, res, next) => {
+            log.info(`OAuth callback diagnostic: protocol=${req.protocol}, secure=${req.secure}, originalUrl=${req.originalUrl}`);
+            log.info(`OAuth callback headers: x-forwarded-proto=${req.headers['x-forwarded-proto']}, x-forwarded-for=${req.headers['x-forwarded-for']}, host=${req.headers['host']}`);
+            
+            // Log if there's a mismatch between expected and actual protocol
+            const expectedProtocol = baseUrl.startsWith('https://') ? 'https' : 'http';
+            if (req.protocol !== expectedProtocol) {
+                log.error(`OAuth callback: PROTOCOL MISMATCH DETECTED!`);
+                log.error(`OAuth callback: Expected ${expectedProtocol} (from baseURL) but got ${req.protocol}`);
+                log.error(`OAuth callback: This indicates trustedReverseProxy may need to be set.`);
+            }
+            
+            next();
+        });
+    }
 
     await assets.register(app);
     routes.register(app);
