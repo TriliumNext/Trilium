@@ -1,0 +1,486 @@
+<h2>Technical Search Details</h2>
+<p>This guide provides technical information about Trilium's search implementation,
+  performance characteristics, and optimization strategies for power users
+  and administrators.</p>
+<h2>Search Architecture Overview</h2>
+<h3>Three-Layer Search System</h3>
+<p>Trilium's search operates across three cache layers:</p>
+<ol>
+  <li><strong>Becca (Backend Cache)</strong>: Server-side entity cache containing
+    notes, attributes, and relationships</li>
+  <li><strong>Froca (Frontend Cache)</strong>: Client-side mirror providing
+    fast UI updates</li>
+  <li><strong>Database Layer</strong>: SQLite database with FTS (Full-Text Search)
+    support</li>
+</ol>
+<h3>Search Processing Pipeline</h3>
+<ol>
+  <li><strong>Lexical Analysis</strong>: Query parsing and tokenization</li>
+  <li><strong>Expression Building</strong>: Converting tokens to executable
+    expressions</li>
+  <li><strong>Progressive Execution</strong>: Exact search followed by optional
+    fuzzy search</li>
+  <li><strong>Result Scoring</strong>: Relevance calculation and ranking</li>
+  <li><strong>Result Presentation</strong>: Formatting and highlighting</li>
+</ol>
+<h2>Query Processing Details</h2>
+<h3>Lexical Analysis (Lex)</h3>
+<p>The lexer breaks down search queries into components:</p><pre><code class="language-application-javascript-env-backend">// Input: 'project #status=active note.dateCreated &gt;= TODAY-7'
+// Output:
+{
+  fulltextTokens: ['project'],
+  expressionTokens: ['#status', '=', 'active', 'note', '.', 'dateCreated', '&gt;=', 'TODAY-7']
+}</code></pre>
+<h4>Token Types</h4>
+<ul>
+  <li><strong>Fulltext Tokens</strong>: Regular search terms</li>
+  <li><strong>Expression Tokens</strong>: Attributes, operators, and property
+    references</li>
+  <li><strong>Quoted Strings</strong>: Exact phrase matches</li>
+  <li><strong>Escaped Characters</strong>: Literal special characters</li>
+</ul>
+<h3>Expression Building (Parse)</h3>
+<p>Tokens are converted into executable expression trees:</p><pre><code class="language-application-javascript-env-backend">// Expression tree for: #book AND #author=Tolkien
+AndExp([
+  AttributeExistsExp('label', 'book'),
+  LabelComparisonExp('label', 'author', equals('tolkien'))
+])</code></pre>
+<h4>Expression Types</h4>
+<ul>
+  <li><code>AndExp</code>, <code>OrExp</code>, <code>NotExp</code>: Boolean logic</li>
+  <li><code>AttributeExistsExp</code>: Label/relation existence</li>
+  <li><code>LabelComparisonExp</code>: Label value comparison</li>
+  <li><code>RelationWhereExp</code>: Relation target queries</li>
+  <li><code>PropertyComparisonExp</code>: Note property filtering</li>
+  <li><code>NoteContentFulltextExp</code>: Content search</li>
+  <li><code>OrderByAndLimitExp</code>: Result ordering and limiting</li>
+</ul>
+<h3>Progressive Search Strategy</h3>
+<h4>Phase 1: Exact Search</h4><pre><code class="language-application-javascript-env-backend">// Fast exact matching
+const exactResults = performSearch(expression, searchContext, false);</code></pre>
+<p>Characteristics:</p>
+<ul>
+  <li>Substring matching for text</li>
+  <li>Exact attribute matching</li>
+  <li>Property-based filtering</li>
+  <li>Handles 90%+ of searches</li>
+  <li>Sub-second response time</li>
+</ul>
+<h4>Phase 2: Fuzzy Fallback</h4><pre><code class="language-application-javascript-env-backend">// Activated when exact results &lt; 5 high-quality matches
+if (highQualityResults.length &lt; 5) {
+  const fuzzyResults = performSearch(expression, searchContext, true);
+  return mergeExactAndFuzzyResults(exactResults, fuzzyResults);
+}</code></pre>
+<p>Characteristics:</p>
+<ul>
+  <li>Edit distance calculations</li>
+  <li>Phrase proximity matching</li>
+  <li>Typo tolerance</li>
+  <li>Performance safeguards</li>
+  <li>Exact matches always rank first</li>
+</ul>
+<h2>Performance Characteristics</h2>
+<h3>Search Limits and Thresholds</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Parameter</th>
+      <th>Value</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>MAX_SEARCH_CONTENT_SIZE</code>
+      </td>
+      <td>2MB</td>
+      <td>Database-level content filtering</td>
+    </tr>
+    <tr>
+      <td><code>MIN_FUZZY_TOKEN_LENGTH</code>
+      </td>
+      <td>3 chars</td>
+      <td>Minimum length for fuzzy matching</td>
+    </tr>
+    <tr>
+      <td><code>MAX_EDIT_DISTANCE</code>
+      </td>
+      <td>2 chars</td>
+      <td>Maximum character changes for fuzzy</td>
+    </tr>
+    <tr>
+      <td><code>MAX_PHRASE_PROXIMITY</code>
+      </td>
+      <td>10 words</td>
+      <td>Maximum distance for phrase matching</td>
+    </tr>
+    <tr>
+      <td><code>RESULT_SUFFICIENCY_THRESHOLD</code>
+      </td>
+      <td>5 results</td>
+      <td>Threshold for fuzzy activation</td>
+    </tr>
+    <tr>
+      <td><code>ABSOLUTE_MAX_CONTENT_SIZE</code>
+      </td>
+      <td>100MB</td>
+      <td>Hard limit to prevent system crash</td>
+    </tr>
+    <tr>
+      <td><code>ABSOLUTE_MAX_WORD_COUNT</code>
+      </td>
+      <td>2M words</td>
+      <td>Hard limit for word processing</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>Performance Optimization</h3>
+<h4>Database-Level Optimizations</h4><pre><code class="language-text-x-mariadb">-- Content size filtering at database level
+SELECT noteId, type, mime, content, isProtected
+FROM notes JOIN blobs USING (blobId)
+WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap') 
+  AND isDeleted = 0 
+  AND LENGTH(content) &lt; 2097152  -- 2MB limit</code></pre>
+<h4>Memory Management</h4>
+<ul>
+  <li>Single-array edit distance calculation</li>
+  <li>Early termination for distant matches</li>
+  <li>Progressive content processing</li>
+  <li>Cached regular expressions</li>
+</ul>
+<h4>Search Context Optimization</h4><pre><code class="language-application-javascript-env-backend">// Efficient search context configuration
+const searchContext = new SearchContext({
+  fastSearch: true,           // Skip content search
+  limit: 50,                 // Reasonable result limit
+  orderBy: 'dateCreated',    // Use indexed property
+  includeArchivedNotes: false // Reduce search space
+});</code></pre>
+<h2>Fuzzy Search Implementation</h2>
+<h3>Edit Distance Algorithm</h3>
+<p>Trilium uses an optimized Levenshtein distance calculation:</p><pre><code class="language-application-javascript-env-backend">// Optimized single-array implementation
+function calculateOptimizedEditDistance(str1, str2, maxDistance) {
+  // Early termination checks
+  if (Math.abs(str1.length - str2.length) &gt; maxDistance) {
+    return maxDistance + 1;
+  }
+  
+  // Single array optimization
+  let previousRow = Array.from({ length: str2.length + 1 }, (_, i) =&gt; i);
+  let currentRow = new Array(str2.length + 1);
+  
+  for (let i = 1; i &lt;= str1.length; i++) {
+    currentRow[0] = i;
+    let minInRow = i;
+    
+    for (let j = 1; j &lt;= str2.length; j++) {
+      const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      currentRow[j] = Math.min(
+        previousRow[j] + 1,        // deletion
+        currentRow[j - 1] + 1,     // insertion
+        previousRow[j - 1] + cost  // substitution
+      );
+      minInRow = Math.min(minInRow, currentRow[j]);
+    }
+    
+    // Early termination if row minimum exceeds threshold
+    if (minInRow &gt; maxDistance) return maxDistance + 1;
+    
+    [previousRow, currentRow] = [currentRow, previousRow];
+  }
+  
+  return previousRow[str2.length];
+}</code></pre>
+<h3>Phrase Proximity Matching</h3>
+<p>For multi-token fuzzy searches:</p><pre><code class="language-application-javascript-env-backend">// Check if tokens appear within reasonable proximity
+function hasProximityMatch(tokenPositions, maxDistance = 10) {
+  // For 2 tokens, simple distance check
+  if (tokenPositions.length === 2) {
+    const [pos1, pos2] = tokenPositions;
+    return pos1.some(p1 =&gt; pos2.some(p2 =&gt; Math.abs(p1 - p2) &lt;= maxDistance));
+  }
+  
+  // For multiple tokens, find sequence within range
+  const findSequence = (remaining, currentPos) =&gt; {
+    if (remaining.length === 0) return true;
+    const [nextPositions, ...rest] = remaining;
+    return nextPositions.some(pos =&gt; 
+      Math.abs(pos - currentPos) &lt;= maxDistance &amp;&amp; 
+      findSequence(rest, pos)
+    );
+  };
+  
+  const [firstPositions, ...rest] = tokenPositions;
+  return firstPositions.some(startPos =&gt; findSequence(rest, startPos));
+}</code></pre>
+<h2>Indexing and Storage</h2>
+<h3>Database Schema Optimization</h3><pre><code class="language-text-x-mariadb">-- Relevant indexes for search performance
+CREATE INDEX idx_notes_type ON notes(type);
+CREATE INDEX idx_notes_isDeleted ON notes(isDeleted);
+CREATE INDEX idx_notes_dateCreated ON notes(dateCreated);
+CREATE INDEX idx_notes_dateModified ON notes(dateModified);
+CREATE INDEX idx_attributes_name ON attributes(name);
+CREATE INDEX idx_attributes_type ON attributes(type);
+CREATE INDEX idx_attributes_value ON attributes(value);</code></pre>
+<h3>Content Processing</h3>
+<p>Notes are processed differently based on type:</p><pre><code class="language-application-javascript-env-backend">// Content preprocessing by note type
+function preprocessContent(content, type, mime) {
+  content = normalize(content.toString());
+  
+  if (type === "text" &amp;&amp; mime === "text/html") {
+    content = stripTags(content);
+    content = content.replace(/&amp;nbsp;/g, " ");
+  } else if (type === "mindMap" &amp;&amp; mime === "application/json") {
+    content = processMindmapContent(content);
+  } else if (type === "canvas" &amp;&amp; mime === "application/json") {
+    const canvasData = JSON.parse(content);
+    const textElements = canvasData.elements
+      .filter(el =&gt; el.type === "text" &amp;&amp; el.text)
+      .map(el =&gt; el.text);
+    content = normalize(textElements.join(" "));
+  }
+  
+  return content.trim();
+}</code></pre>
+<h2>Search Result Processing</h2>
+<h3>Scoring Algorithm</h3>
+<p>Results are scored based on multiple factors:</p><pre><code class="language-application-javascript-env-backend">function computeScore(fulltextQuery, highlightedTokens, enableFuzzyMatching) {
+  let score = 0;
+  
+  // Title matches get higher score
+  if (this.noteTitle.toLowerCase().includes(fulltextQuery.toLowerCase())) {
+    score += 10;
+  }
+  
+  // Path matches (hierarchical context)
+  const pathMatch = this.notePathArray.some(pathNote =&gt; 
+    pathNote.title.toLowerCase().includes(fulltextQuery.toLowerCase())
+  );
+  if (pathMatch) score += 5;
+  
+  // Attribute matches
+  score += this.attributeMatches * 3;
+  
+  // Content snippet quality
+  if (this.contentSnippet &amp;&amp; this.contentSnippet.length &gt; 0) {
+    score += 2;
+  }
+  
+  // Fuzzy match penalty
+  if (enableFuzzyMatching &amp;&amp; this.isFuzzyMatch) {
+    score *= 0.8; // 20% penalty for fuzzy matches
+  }
+  
+  return score;
+}</code></pre>
+<h3>Result Merging</h3>
+<p>Exact and fuzzy results are carefully merged:</p><pre><code class="language-application-javascript-env-backend">function mergeExactAndFuzzyResults(exactResults, fuzzyResults) {
+  // Deduplicate - exact results take precedence
+  const exactNoteIds = new Set(exactResults.map(r =&gt; r.noteId));
+  const additionalFuzzyResults = fuzzyResults.filter(r =&gt; 
+    !exactNoteIds.has(r.noteId)
+  );
+  
+  // Sort within each category
+  exactResults.sort(byScoreAndDepth);
+  additionalFuzzyResults.sort(byScoreAndDepth);
+  
+  // CRITICAL: Exact matches always come first
+  return [...exactResults, ...additionalFuzzyResults];
+}</code></pre>
+<h2>Performance Monitoring</h2>
+<h3>Search Metrics</h3>
+<p>Monitor these performance indicators:</p><pre><code class="language-application-javascript-env-backend">// Performance tracking
+const searchMetrics = {
+  totalQueries: 0,
+  exactSearchTime: 0,
+  fuzzySearchTime: 0,
+  resultCount: 0,
+  cacheHitRate: 0,
+  slowQueries: [] // queries taking &gt; 1 second
+};</code></pre>
+<h3>Memory Usage</h3>
+<p>Track memory consumption:</p><pre><code class="language-application-javascript-env-backend">// Memory monitoring
+const memoryMetrics = {
+  searchCacheSize: 0,
+  activeSearchContexts: 0,
+  largeContentNotes: 0, // notes &gt; 1MB
+  indexSize: 0
+};</code></pre>
+<h3>Query Complexity Analysis</h3>
+<p>Identify expensive queries:</p><pre><code class="language-application-javascript-env-backend">// Query complexity factors
+const complexityFactors = {
+  tokenCount: query.split(' ').length,
+  hasRegex: query.includes('%='),
+  hasFuzzy: query.includes('~=') || query.includes('~*'),
+  hasRelationTraversal: query.includes('.relations.'),
+  hasNestedProperties: (query.match(/\./g) || []).length &gt; 2,
+  hasOrderBy: query.includes('orderBy'),
+  estimatedResultSize: 'unknown'
+};</code></pre>
+<h2>Troubleshooting Performance Issues</h2>
+<h3>Common Performance Problems</h3>
+<h4>Slow Full-Text Search</h4><pre><code class="language-application-javascript-env-backend">// Diagnosis
+- Check note content sizes
+- Verify content type filtering
+- Monitor regex usage
+- Review fuzzy search activation
+
+// Solutions
+- Enable fast search for attribute-only queries
+- Add content size limits
+- Optimize regex patterns
+- Tune fuzzy search thresholds</code></pre>
+<h4>Memory Issues</h4><pre><code class="language-application-javascript-env-backend">// Diagnosis
+- Monitor result set sizes
+- Check for large content processing
+- Review search context caching
+- Identify memory leaks
+
+// Solutions
+- Add result limits
+- Implement progressive loading
+- Clear unused search contexts
+- Optimize content preprocessing</code></pre>
+<h4>High CPU Usage</h4><pre><code class="language-application-javascript-env-backend">// Diagnosis
+- Profile fuzzy search operations
+- Check edit distance calculations
+- Monitor regex compilation
+- Review phrase proximity matching
+
+// Solutions
+- Increase minimum fuzzy token length
+- Reduce maximum edit distance
+- Cache compiled regexes
+- Limit phrase proximity distance</code></pre>
+<h3>Debugging Tools</h3>
+<h4>Debug Mode</h4>
+<p>Enable search debugging:</p><pre><code class="language-application-javascript-env-backend">// Search context with debugging
+const searchContext = new SearchContext({
+  debug: true // Logs expression parsing and execution
+});</code></pre>
+<p>Output includes:</p>
+<ul>
+  <li>Token parsing results</li>
+  <li>Expression tree structure</li>
+  <li>Execution timing</li>
+  <li>Result scoring details</li>
+</ul>
+<h4>Performance Profiling</h4><pre><code class="language-application-javascript-env-backend">// Manual performance measurement
+const startTime = Date.now();
+const results = searchService.findResultsWithQuery(query, searchContext);
+const endTime = Date.now();
+console.log(`Search took ${endTime - startTime}ms for ${results.length} results`);</code></pre>
+<h4>Query Analysis</h4><pre><code class="language-application-javascript-env-backend">// Analyze query complexity
+function analyzeQuery(query) {
+  return {
+    tokenCount: query.split(/\s+/).length,
+    hasAttributes: /#|\~/.test(query),
+    hasProperties: /note\./.test(query),
+    hasRegex: /%=/.test(query),
+    hasFuzzy: /~[=*]/.test(query),
+    complexity: calculateComplexityScore(query)
+  };
+}</code></pre>
+<h2>Configuration and Tuning</h2>
+<h3>Server Configuration</h3>
+<p>Relevant settings in <code>config.ini</code>:</p><pre><code class="language-text-x-toml"># Search-related settings
+[Search]
+maxContentSize=2097152          # 2MB content limit
+minFuzzyTokenLength=3          # Minimum chars for fuzzy
+maxEditDistance=2              # Edit distance limit
+resultSufficiencyThreshold=5   # Fuzzy activation threshold
+enableProgressiveSearch=true   # Enable progressive strategy
+cacheSearchResults=true        # Cache frequent searches
+
+# Performance settings
+[Performance]
+searchTimeoutMs=30000         # 30 second search timeout
+maxSearchResults=1000         # Hard limit on results
+enableSearchProfiling=false   # Performance logging</code></pre>
+<h3>Runtime Tuning</h3>
+<p>Adjust search behavior programmatically:</p><pre><code class="language-application-javascript-env-backend">// Dynamic configuration
+const searchConfig = {
+  maxContentSize: 1024 * 1024,  // 1MB for faster processing
+  enableFuzzySearch: false,      // Exact only for speed
+  resultLimit: 50,               // Smaller result sets
+  useIndexedPropertiesOnly: true // Skip expensive calculations
+};</code></pre>
+<h2>Best Practices for Performance</h2>
+<h3>Query Design</h3>
+<ol>
+  <li><strong>Start Specific</strong>: Use selective criteria first</li>
+  <li><strong>Limit Results</strong>: Always set reasonable limits</li>
+  <li><strong>Use Indexes</strong>: Prefer indexed properties for ordering</li>
+  <li><strong>Avoid Regex</strong>: Use simple operators when possible</li>
+  <li><strong>Cache Common Queries</strong>: Save frequently used searches</li>
+</ol>
+<h3>System Administration</h3>
+<ol>
+  <li><strong>Monitor Performance</strong>: Track slow queries and memory usage</li>
+  <li><strong>Regular Maintenance</strong>: Clean up unused notes and attributes</li>
+  <li><strong>Index Optimization</strong>: Ensure database indexes are current</li>
+  <li><strong>Content Management</strong>: Archive or compress large content</li>
+</ol>
+<h3>Development Guidelines</h3>
+<ol>
+  <li><strong>Test Performance</strong>: Benchmark complex queries</li>
+  <li><strong>Profile Regularly</strong>: Identify performance regressions</li>
+  <li><strong>Optimize Incrementally</strong>: Make small, measured improvements</li>
+  <li><strong>Document Complexity</strong>: Note expensive operations</li>
+</ol>
+<h2>Advanced Configuration</h2>
+<h3>Custom Search Extensions</h3>
+<p>Extend search functionality with custom expressions:</p><pre><code class="language-application-javascript-env-backend">// Custom expression example
+class CustomDateRangeExp extends Expression {
+  constructor(dateField, startDate, endDate) {
+    super();
+    this.dateField = dateField;
+    this.startDate = startDate;
+    this.endDate = endDate;
+  }
+  
+  execute(inputNoteSet, executionContext, searchContext) {
+    // Custom logic for date range filtering
+    // with optimized performance characteristics
+  }
+}</code></pre>
+<h3>Search Result Caching</h3>
+<p>Implement result caching for frequent queries:</p><pre><code class="language-application-javascript-env-backend">// Simple LRU cache for search results
+class SearchResultCache {
+  constructor(maxSize = 100) {
+    this.cache = new Map();
+    this.maxSize = maxSize;
+  }
+  
+  get(queryKey) {
+    if (this.cache.has(queryKey)) {
+      // Move to end (most recently used)
+      const value = this.cache.get(queryKey);
+      this.cache.delete(queryKey);
+      this.cache.set(queryKey, value);
+      return value;
+    }
+    return null;
+  }
+  
+  set(queryKey, results) {
+    if (this.cache.size &gt;= this.maxSize) {
+      // Remove least recently used
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+    this.cache.set(queryKey, results);
+  }
+}</code></pre>
+<h2>Next Steps</h2>
+<ul>
+  <li><a href="#root/_help_WcwMZ2tDZmXK">Search Fundamentals</a> - Basic concepts
+    and syntax</li>
+  <li><a href="#root/_help_ey9TMFyD8SHR">Advanced Search Expressions</a> - Complex
+    query construction</li>
+  <li><a href="#root/_help_yAFfA1SAYlr7">Search Examples and Use Cases</a> -
+    Practical applications</li>
+  <li><a href="#root/_help_UUBStSxWzjgA">Saved Searches</a> - Creating dynamic
+    collections</li>
+</ul>

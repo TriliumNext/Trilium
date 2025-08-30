@@ -1,0 +1,152 @@
+<h2>Search Examples and Use Cases</h2>
+<p>This guide provides practical examples of how to use Trilium's search
+  capabilities for common organizational patterns and workflows.</p>
+<h2>Personal Knowledge Management</h2>
+<h3>Research and Learning</h3>
+<p>Track your learning progress and find related materials:</p><pre><code class="language-text-x-trilium-auto">#topic=javascript #status=learning</code></pre>
+<p>Find all JavaScript materials you're currently learning.</p><pre><code class="language-text-x-trilium-auto">#course #completed=false note.dateCreated &gt;= MONTH-1</code></pre>
+<p>Find courses started in the last month that aren't completed.</p><pre><code class="language-text-x-trilium-auto">#book #topic *=* programming #rating &gt;= 4</code></pre>
+<p>Find highly-rated programming books.</p><pre><code class="language-text-x-trilium-auto">#paper ~author.title *=* "Andrew Ng" #field=machine-learning</code></pre>
+<p>Find machine learning papers by Andrew Ng.</p>
+<h3>Meeting and Event Management</h3>
+<p>Organize meetings, notes, and follow-ups:</p><pre><code class="language-text-x-trilium-auto">#meeting note.dateCreated &gt;= TODAY-7 #attendee *=* smith</code></pre>
+<p>Find this week's meetings with Smith.</p><pre><code class="language-text-x-trilium-auto">#meeting #actionItems #status!=completed</code></pre>
+<p>Find meetings with outstanding action items.</p><pre><code class="language-text-x-trilium-auto">#event #date &gt;= TODAY #date &lt;= TODAY+30</code></pre>
+<p>Find upcoming events in the next 30 days.</p><pre><code class="language-text-x-trilium-auto">#meeting #project=alpha note.dateCreated &gt;= MONTH</code></pre>
+<p>Find this month's meetings about project alpha.</p>
+<h3>Note Organization and Cleanup</h3>
+<p>Maintain and organize your note structure:</p><pre><code class="language-text-x-trilium-auto">note.childrenCount = 0 note.parentCount = 1 note.contentSize &lt; 50 note.dateModified &lt; TODAY-180</code></pre>
+<p>Find small, isolated notes not modified in 6 months (cleanup candidates).</p><pre><code class="language-text-x-trilium-auto">note.attributeCount = 0 note.type=text note.contentSize &gt; 1000</code></pre>
+<p>Find large text notes without any labels (might need categorization).</p><pre><code class="language-text-x-trilium-auto">#draft note.dateCreated &lt; TODAY-30</code></pre>
+<p>Find old draft notes that might need attention.</p><pre><code class="language-text-x-trilium-auto">note.parentCount &gt; 3 note.type=text</code></pre>
+<p>Find notes that are heavily cloned (might indicate important content).</p>
+<h2>Project Management</h2>
+<h3>Task Tracking</h3>
+<p>Manage tasks and project progress:</p><pre><code class="language-text-x-trilium-auto">#task #priority=high #status!=completed #assignee=me</code></pre>
+<p>Find your high-priority incomplete tasks.</p><pre><code class="language-text-x-trilium-auto">#task #dueDate &lt;= TODAY+3 #dueDate &gt;= TODAY #status!=completed</code></pre>
+<p>Find tasks due in the next 3 days.</p><pre><code class="language-text-x-trilium-auto">#project=website #task #status=blocked</code></pre>
+<p>Find blocked tasks in the website project.</p><pre><code class="language-text-x-trilium-auto">#task #estimatedHours &gt; 0 #actualHours &gt; 0 orderBy note.dateModified desc</code></pre>
+<p>Find tasks with time tracking data, sorted by recent updates.</p>
+<h3>Project Oversight</h3>
+<p>Monitor project health and progress:</p><pre><code class="language-text-x-trilium-auto">#project #status=active note.children.labels.status = blocked</code></pre>
+<p>Find active projects with blocked tasks.</p><pre><code class="language-text-x-trilium-auto">#project #startDate &lt;= TODAY-90 #status!=completed</code></pre>
+<p>Find projects that started over 90 days ago but aren't completed.</p><pre><code class="language-text-x-trilium-auto">#milestone #targetDate &lt;= TODAY #status!=achieved</code></pre>
+<p>Find overdue milestones.</p><pre><code class="language-text-x-trilium-auto">#project orderBy note.childrenCount desc limit 10</code></pre>
+<p>Find the 10 largest projects by number of sub-notes.</p>
+<h3>Resource Planning</h3>
+<p>Track resources and dependencies:</p><pre><code class="language-text-x-trilium-auto">#resource #type=person #availability &lt; 50</code></pre>
+<p>Find people with low availability.</p><pre><code class="language-text-x-trilium-auto">#dependency #status=pending #project=mobile-app</code></pre>
+<p>Find pending dependencies for the mobile app project.</p><pre><code class="language-text-x-trilium-auto">#budget #project #spent &gt; #allocated</code></pre>
+<p>Find projects over budget.</p>
+<h2>Content Creation and Writing</h2>
+<h3>Writing Projects</h3>
+<p>Manage articles, books, and documentation:</p><pre><code class="language-text-x-trilium-auto">#article #status=draft #wordCount &gt;= 1000</code></pre>
+<p>Find substantial draft articles.</p><pre><code class="language-text-x-trilium-auto">#chapter #book=novel #status=outline</code></pre>
+<p>Find novel chapters still in outline stage.</p><pre><code class="language-text-x-trilium-auto">#blog-post #published=false #topic=technology</code></pre>
+<p>Find unpublished technology blog posts.</p><pre><code class="language-text-x-trilium-auto">#documentation #lastReviewed &lt; TODAY-90 #product=api</code></pre>
+<p>Find API documentation not reviewed in 90 days.</p>
+<h3>Editorial Workflow</h3>
+<p>Track editing and publication status:</p><pre><code class="language-text-x-trilium-auto">#article #editor=jane #status=review</code></pre>
+<p>Find articles assigned to Jane for review.</p><pre><code class="language-text-x-trilium-auto">#manuscript #submissionDate &gt;= TODAY-30 #status=pending</code></pre>
+<p>Find manuscripts submitted in the last 30 days still pending.</p><pre><code class="language-text-x-trilium-auto">#publication #acceptanceDate &gt;= YEAR #status=accepted</code></pre>
+<p>Find accepted publications this year.</p>
+<h3>Content Research</h3>
+<p>Organize research materials and sources:</p><pre><code class="language-text-x-trilium-auto">#source #reliability &gt;= 8 #topic *=* climate</code></pre>
+<p>Find reliable sources about climate topics.</p><pre><code class="language-text-x-trilium-auto">#quote #author *=* Einstein #verified=true</code></pre>
+<p>Find verified Einstein quotes.</p><pre><code class="language-text-x-trilium-auto">#citation #used=false #relevance=high</code></pre>
+<p>Find high-relevance citations not yet used.</p>
+<h2>Business and Professional Use</h2>
+<h3>Client Management</h3>
+<p>Track client relationships and projects:</p><pre><code class="language-text-x-trilium-auto">#client=acme #project #status=active</code></pre>
+<p>Find active projects for ACME client.</p><pre><code class="language-text-x-trilium-auto">#meeting #client #date &gt;= MONTH #followUp=required</code></pre>
+<p>Find client meetings this month requiring follow-up.</p><pre><code class="language-text-x-trilium-auto">#contract #renewalDate &lt;= TODAY+60 #renewalDate &gt;= TODAY</code></pre>
+<p>Find contracts expiring in the next 60 days.</p><pre><code class="language-text-x-trilium-auto">#invoice #status=unpaid #dueDate &lt; TODAY</code></pre>
+<p>Find overdue unpaid invoices.</p>
+<h3>Process Documentation</h3>
+<p>Maintain procedures and workflows:</p><pre><code class="language-text-x-trilium-auto">#procedure #department=engineering #lastUpdated &lt; TODAY-365</code></pre>
+<p>Find engineering procedures not updated in a year.</p><pre><code class="language-text-x-trilium-auto">#workflow #status=active #automation=possible</code></pre>
+<p>Find active workflows that could be automated.</p><pre><code class="language-text-x-trilium-auto">#checklist #process=onboarding #role=developer</code></pre>
+<p>Find onboarding checklists for developers.</p>
+<h3>Compliance and Auditing</h3>
+<p>Track compliance requirements and audits:</p><pre><code class="language-text-x-trilium-auto">#compliance #standard=sox #nextReview &lt;= TODAY+30</code></pre>
+<p>Find SOX compliance items due for review soon.</p><pre><code class="language-text-x-trilium-auto">#audit #finding #severity=high #status!=resolved</code></pre>
+<p>Find unresolved high-severity audit findings.</p><pre><code class="language-text-x-trilium-auto">#policy #department=hr #effectiveDate &gt;= YEAR</code></pre>
+<p>Find HR policies that became effective this year.</p>
+<h2>Academic and Educational Use</h2>
+<h3>Course Management</h3>
+<p>Organize courses and educational content:</p><pre><code class="language-text-x-trilium-auto">#course #semester=fall-2024 #assignment #dueDate &gt;= TODAY</code></pre>
+<p>Find upcoming assignments for fall 2024 courses.</p><pre><code class="language-text-x-trilium-auto">#lecture #course=physics #topic *=* quantum</code></pre>
+<p>Find physics lectures about quantum topics.</p><pre><code class="language-text-x-trilium-auto">#student #grade &lt; 70 #course=mathematics</code></pre>
+<p>Find students struggling in mathematics.</p><pre><code class="language-text-x-trilium-auto">#syllabus #course #lastUpdated &lt; TODAY-180</code></pre>
+<p>Find syllabi not updated in 6 months.</p>
+<h3>Research Management</h3>
+<p>Track research projects and publications:</p><pre><code class="language-text-x-trilium-auto">#experiment #status=running #endDate &lt;= TODAY+7</code></pre>
+<p>Find experiments ending in the next week.</p><pre><code class="language-text-x-trilium-auto">#dataset #size &gt; 1000000 #cleaned=true #public=false</code></pre>
+<p>Find large, cleaned, private datasets.</p><pre><code class="language-text-x-trilium-auto">#hypothesis #tested=false #priority=high</code></pre>
+<p>Find high-priority untested hypotheses.</p><pre><code class="language-text-x-trilium-auto">#collaboration #institution *=* stanford #status=active</code></pre>
+<p>Find active collaborations with Stanford.</p>
+<h3>Grant and Funding</h3>
+<p>Manage funding applications and requirements:</p><pre><code class="language-text-x-trilium-auto">#grant #deadline &lt;= TODAY+30 #deadline &gt;= TODAY #status=in-progress</code></pre>
+<p>Find grant applications due in the next 30 days.</p><pre><code class="language-text-x-trilium-auto">#funding #amount &gt;= 100000 #status=awarded #startDate &gt;= YEAR</code></pre>
+<p>Find large grants awarded this year.</p><pre><code class="language-text-x-trilium-auto">#report #funding #dueDate &lt;= TODAY+14 #status!=submitted</code></pre>
+<p>Find funding reports due in 2 weeks.</p>
+<h2>Technical Documentation</h2>
+<h3>Code and Development</h3>
+<p>Track code-related notes and documentation:</p><pre><code class="language-text-x-trilium-auto">#bug #severity=critical #status!=fixed #product=webapp</code></pre>
+<p>Find critical unfixed bugs in the web app.</p><pre><code class="language-text-x-trilium-auto">#feature #version=2.0 #status=implemented #tested=false</code></pre>
+<p>Find version 2.0 features that are implemented but not tested.</p><pre><code class="language-text-x-trilium-auto">#api #endpoint #deprecated=true #removalDate &lt;= TODAY+90</code></pre>
+<p>Find deprecated API endpoints scheduled for removal soon.</p><pre><code class="language-text-x-trilium-auto">#architecture #component=database #lastReviewed &lt; TODAY-180</code></pre>
+<p>Find database architecture documentation not reviewed in 6 months.</p>
+<h3>System Administration</h3>
+<p>Manage infrastructure and operations:</p><pre><code class="language-text-x-trilium-auto">#server #status=maintenance #scheduledDate &gt;= TODAY #scheduledDate &lt;= TODAY+7</code></pre>
+<p>Find servers scheduled for maintenance this week.</p><pre><code class="language-text-x-trilium-auto">#backup #status=failed #date &gt;= TODAY-7</code></pre>
+<p>Find backup failures in the last week.</p><pre><code class="language-text-x-trilium-auto">#security #vulnerability #severity=high #patched=false</code></pre>
+<p>Find unpatched high-severity vulnerabilities.</p><pre><code class="language-text-x-trilium-auto">#monitoring #alert #frequency &gt; 10 #period=week</code></pre>
+<p>Find alerts triggering more than 10 times per week.</p>
+<h2>Data Analysis and Reporting</h2>
+<h3>Performance Tracking</h3>
+<p>Monitor metrics and KPIs:</p><pre><code class="language-text-x-trilium-auto">#metric #kpi=true #trend=declining #period=month</code></pre>
+<p>Find declining monthly KPIs.</p><pre><code class="language-text-x-trilium-auto">#report #frequency=weekly #lastGenerated &lt; TODAY-10</code></pre>
+<p>Find weekly reports that haven't been generated in 10 days.</p><pre><code class="language-text-x-trilium-auto">#dashboard #stakeholder=executive #lastUpdated &lt; TODAY-7</code></pre>
+<p>Find executive dashboards not updated this week.</p>
+<h3>Trend Analysis</h3>
+<p>Track patterns and changes over time:</p><pre><code class="language-text-x-trilium-auto">#data #source=sales #period=quarter #analyzed=false</code></pre>
+<p>Find unanalyzed quarterly sales data.</p><pre><code class="language-text-x-trilium-auto">#trend #direction=up #significance=high #period=month</code></pre>
+<p>Find significant positive monthly trends.</p><pre><code class="language-text-x-trilium-auto">#forecast #accuracy &lt; 80 #model=linear #period=quarter</code></pre>
+<p>Find inaccurate quarterly linear forecasts.</p>
+<h2>Search Strategy Tips</h2>
+<h3>Building Effective Queries</h3>
+<ol>
+  <li><strong>Start Specific</strong>: Begin with the most selective criteria</li>
+  <li><strong>Add Gradually</strong>: Build complexity incrementally</li>
+  <li><strong>Test Components</strong>: Verify each part of complex queries</li>
+  <li><strong>Use Shortcuts</strong>: Leverage <code>#</code> and <code>~</code> shortcuts
+    for efficiency</li>
+</ol>
+<h3>Performance Optimization</h3>
+<ol>
+  <li><strong>Use Fast Search</strong>: For large databases, enable fast search
+    when content isn't needed</li>
+  <li><strong>Limit Results</strong>: Add limits to prevent overwhelming result
+    sets</li>
+  <li><strong>Order Strategically</strong>: Put the most useful results first</li>
+  <li><strong>Cache Common Queries</strong>: Save frequently used searches</li>
+</ol>
+<h3>Maintenance Patterns</h3>
+<p>Regular queries for note maintenance:</p><pre><code class="language-text-x-trilium-auto"># Weekly cleanup check
+note.attributeCount = 0 note.type=text note.contentSize &lt; 100 note.dateModified &lt; TODAY-30
+
+# Monthly project review  
+#project #status=active note.dateModified &lt; TODAY-30
+
+# Quarterly archive review
+note.isArchived=false note.dateModified &lt; TODAY-90 note.childrenCount = 0</code></pre>
+<h2>Next Steps</h2>
+<ul>
+  <li><a href="#root/_help_UUBStSxWzjgA">Saved Searches</a> - Convert these examples
+    into reusable saved searches</li>
+  <li><a href="#root/_help_ttFz520bcNLf">Technical Search Details</a> - Understanding
+    performance and implementation</li>
+  <li><a href="#root/_help_WcwMZ2tDZmXK">Search Fundamentals</a> - Review basic
+    concepts and syntax</li>
+</ul>

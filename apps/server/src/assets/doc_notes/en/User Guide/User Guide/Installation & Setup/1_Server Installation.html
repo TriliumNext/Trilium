@@ -1,0 +1,61 @@
+<p>Running Trilium on a server lets you access your notes from any device
+  through a web browser and enables synchronization between multiple Trilium
+  instances. This guide covers the different ways to install and configure
+  Trilium on your server.</p>
+<h2>Choose Your Installation Method</h2>
+<p>The easiest way to get started is with Docker, which works on most systems
+  and architectures. If you prefer not to manage your own server, PikaPods
+  offers managed hosting.</p>
+<p><strong>Recommended approaches:</strong>
+</p>
+<ul>
+  <li><a href="#root/_help_FNVzcT2FwEjq">Docker Installation</a> - Works on AMD64
+    and ARM architectures</li>
+  <li><a href="https://www.pikapods.com/pods?run=trilium-next">PikaPods managed hosting</a> -
+    No server management required</li>
+  <li><a href="#root/_help_Q5jqLlwsnIBb">Packaged Server Installation</a> - Native
+    Linux packages</li>
+</ul>
+<p><strong>Advanced options:</strong>
+</p>
+<ul>
+  <li><a href="#root/_help_baqzSqQefEpE">Manual Installation</a> - Full control
+    over the setup</li>
+  <li><a href="#root/_help_9ErAobCLD1jl">Kubernetes</a> - For container orchestration</li>
+  <li><a href="#root/_help_6YVZgQtfkxkS">NixOS Module</a> - Declarative configuration</li>
+</ul>
+<p>All server installations include both desktop and mobile web interfaces.</p>
+<h2>Configuration</h2>
+<p>Trilium stores its configuration in a <code>config.ini</code> file located
+  in the <a href="#root/_help_dvbMBRXYMM2G">data directory</a>. To customize
+  your installation, copy the sample configuration file and modify it:</p><pre><code class="language-text-x-sh">cp config-sample.ini config.ini</code></pre>
+<p>You can also use environment variables instead of the config file. This
+  is particularly useful for Docker deployments. See the <a href="#root/_help_SneMubD5wTR6">configuration guide</a> for
+  all available options.</p>
+<h3>Changing the Data Directory</h3>
+<p>To store Trilium's data (database, config, backups) in a custom location,
+  set the <code>TRILIUM_DATA_DIR</code> environment variable:</p><pre><code class="language-text-x-sh">export TRILIUM_DATA_DIR=/path/to/your/trilium-data</code></pre>
+<h3>Upload Size Limits</h3>
+<p>By default, Trilium limits file uploads to 250MB. You can adjust this
+  limit based on your needs:</p><pre><code class="language-text-x-sh"># Increase limit to 450MB
+export MAX_ALLOWED_FILE_SIZE_MB=450
+
+# Remove limit entirely (use with caution)
+export TRILIUM_NO_UPLOAD_LIMIT=true</code></pre>
+<h3>Disabling Authentication</h3>
+<p>See&nbsp;<a class="reference-link" href="#root/_help_CpWc4lepON8y">Authentication</a>.</p>
+<h2>Reverse Proxy Setup</h2>
+<p>If you want to access Trilium through a domain name or alongside other
+  web services, you'll need to configure a reverse proxy. Here's a basic
+  nginx configuration:</p><pre><code class="language-text-x-nginx-conf">location /trilium/ {
+    proxy_pass http://127.0.0.1:8080/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
+    proxy_set_header Host $host;
+    proxy_cache_bypass $http_upgrade;
+}
+
+# Allow larger file uploads (in server block)
+client_max_body_size 0;  # 0 = unlimited</code></pre>
+<p>For Apache configuration, see the <a href="#root/_help_Eu2zkbyE2QPK">Apache proxy setup</a> guide.</p>

@@ -1,0 +1,158 @@
+<h2>Trilium Search Documentation</h2>
+<p>Welcome to the comprehensive guide for Trilium's powerful search capabilities.
+  This documentation covers everything from basic text searches to advanced
+  query expressions and performance optimization.</p>
+<h2>Quick Start</h2>
+<p>New to Trilium search? Start here:</p>
+<ul>
+  <li><strong><a href="#root/_help_WcwMZ2tDZmXK">Search Fundamentals</a></strong> -
+    Basic concepts, syntax, and operators</li>
+</ul>
+<h2>Documentation Sections</h2>
+<h3>Core Search Features</h3>
+<ul>
+  <li><strong><a href="#root/_help_WcwMZ2tDZmXK">Search Fundamentals</a></strong> -
+    Basic search syntax, operators, and concepts</li>
+  <li><strong><a href="#root/_help_ey9TMFyD8SHR">Advanced Search Expressions</a></strong> -
+    Complex queries, boolean logic, and relationship traversal</li>
+</ul>
+<h3>Practical Applications</h3>
+<ul>
+  <li><strong><a href="#root/_help_yAFfA1SAYlr7">Search Examples and Use Cases</a></strong> -
+    Real-world examples for common workflows</li>
+  <li><strong><a href="#root/_help_UUBStSxWzjgA">Saved Searches</a></strong> -
+    Creating dynamic collections and dashboards</li>
+</ul>
+<h3>Technical Reference</h3>
+<ul>
+  <li><strong><a href="#root/_help_ttFz520bcNLf">Technical Search Details</a></strong> -
+    Performance, implementation, and optimization</li>
+</ul>
+<h2>Key Search Capabilities</h2>
+<h3>Full-Text Search</h3>
+<ul>
+  <li>Search note titles and content</li>
+  <li>Exact phrase matching with quotes</li>
+  <li>Case-insensitive with diacritic normalization</li>
+  <li>Support for multiple note types (text, code, mermaid, canvas)</li>
+</ul>
+<h3>Attribute-Based Search</h3>
+<ul>
+  <li>Label searches: <code>#tag</code>, <code>#category=book</code>
+  </li>
+  <li>Relation searches: <code>~author</code>, <code>~author.title=Tolkien</code>
+  </li>
+  <li>Complex attribute combinations</li>
+  <li>Fuzzy attribute matching</li>
+</ul>
+<h3>Property Search</h3>
+<ul>
+  <li>Note metadata: <code>note.type=text</code>, <code>note.dateCreated &gt;= TODAY-7</code>
+  </li>
+  <li>Hierarchical queries: <code>note.parents.title=Books</code>
+  </li>
+  <li>Relationship traversal: <code>note.children.labels.status=active</code>
+  </li>
+</ul>
+<h3>Advanced Features</h3>
+<ul>
+  <li><strong>Progressive Search</strong>: Exact matching first, fuzzy fallback
+    when needed</li>
+  <li><strong>Fuzzy Search</strong>: Typo tolerance and spelling variations</li>
+  <li><strong>Boolean Logic</strong>: Complex AND/OR/NOT combinations</li>
+  <li><strong>Date Arithmetic</strong>: Dynamic date calculations (TODAY-30,
+    YEAR+1)</li>
+  <li><strong>Regular Expressions</strong>: Pattern matching with <code>%=</code> operator</li>
+  <li><strong>Ordering and Limiting</strong>: Custom sort orders and result
+    limits</li>
+</ul>
+<h2>Search Operators Quick Reference</h2>
+<h3>Text Operators</h3>
+<ul>
+  <li><code>=</code> - Exact match</li>
+  <li><code>!=</code> - Not equal</li>
+  <li><code>*=*</code> - Contains</li>
+  <li><code>=*</code> - Starts with</li>
+  <li><code>*=</code> - Ends with</li>
+  <li><code>%=</code> - Regular expression</li>
+  <li><code>~=</code> - Fuzzy exact match</li>
+  <li><code>~*</code> - Fuzzy contains match</li>
+</ul>
+<h3>Numeric Operators</h3>
+<ul>
+  <li><code>=</code>, <code>!=</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>&lt;</code>, <code>&lt;=</code>
+  </li>
+</ul>
+<h3>Boolean Operators</h3>
+<ul>
+  <li><code>AND</code>, <code>OR</code>, <code>NOT</code>
+  </li>
+</ul>
+<h3>Special Syntax</h3>
+<ul>
+  <li><code>#labelName</code> - Label exists</li>
+  <li><code>#labelName=value</code> - Label equals value</li>
+  <li><code>~relationName</code> - Relation exists</li>
+  <li><code>~relationName.property</code> - Relation target property</li>
+  <li><code>note.property</code> - Note property access</li>
+  <li><code>"exact phrase"</code> - Quoted phrase search</li>
+</ul>
+<h2>Common Search Patterns</h2>
+<h3>Simple Searches</h3><pre><code class="language-text-x-trilium-auto">hello world          # Find notes containing both words
+"project management" # Find exact phrase
+#task               # Find notes with "task" label
+~author             # Find notes with "author" relation</code></pre>
+<h3>Attribute Searches</h3><pre><code class="language-text-x-trilium-auto">#book #author=Tolkien           # Books by Tolkien
+#task #priority=high #status!=completed  # High-priority incomplete tasks
+~project.title *=* alpha        # Notes related to projects with "alpha" in title</code></pre>
+<h3>Date-Based Searches</h3><pre><code class="language-text-x-trilium-auto">note.dateCreated &gt;= TODAY-7     # Notes created in last week
+#dueDate &lt;= TODAY+30            # Items due in next 30 days
+#eventDate = YEAR               # Events scheduled for this year</code></pre>
+<h3>Complex Queries</h3><pre><code class="language-text-x-trilium-auto">(#book OR #article) AND #topic=programming AND note.dateModified &gt;= MONTH
+#project AND (#status=active OR #status=pending) AND not(note.isArchived=true)</code></pre>
+<h2>Getting Started Checklist</h2>
+<ol>
+  <li><strong>Learn Basic Syntax</strong> - Start with simple text and tag searches</li>
+  <li><strong>Understand Operators</strong> - Master the core operators (<code>=</code>, <code>*=*</code>,
+    etc.)</li>
+  <li><strong>Practice Attributes</strong> - Use <code>#</code> for labels and <code>~</code> for
+    relations</li>
+  <li><strong>Try Boolean Logic</strong> - Combine searches with AND/OR/NOT</li>
+  <li><strong>Explore Properties</strong> - Use <code>note.</code> prefix for metadata
+    searches</li>
+  <li><strong>Create Saved Searches</strong> - Turn useful queries into dynamic
+    collections</li>
+  <li><strong>Optimize Performance</strong> - Learn about fast search and limits</li>
+</ol>
+<h2>Performance Tips</h2>
+<ul>
+  <li><strong>Use Fast Search</strong> for attribute-only queries</li>
+  <li><strong>Set Reasonable Limits</strong> to prevent large result sets</li>
+  <li><strong>Start Specific</strong> with the most selective criteria first</li>
+  <li><strong>Leverage Attributes</strong> instead of content search when possible</li>
+  <li><strong>Cache Common Queries</strong> as saved searches</li>
+</ul>
+<h2>Need Help?</h2>
+<ul>
+  <li><strong>Examples</strong>: Check <a href="#root/_help_yAFfA1SAYlr7">Search Examples and Use Cases</a> for
+    practical patterns</li>
+  <li><strong>Complex Queries</strong>: See <a href="#root/_help_ey9TMFyD8SHR">Advanced Search Expressions</a> for
+    sophisticated techniques</li>
+  <li><strong>Performance Issues</strong>: Review <a href="#root/_help_ttFz520bcNLf">Technical Search Details</a> for
+    optimization</li>
+  <li><strong>Dynamic Collections</strong>: Learn about <a href="#root/_help_UUBStSxWzjgA">Saved Searches</a> for
+    automated organization</li>
+</ul>
+<h2>Search Workflow Integration</h2>
+<p>Trilium's search integrates seamlessly with your note-taking workflow:</p>
+<ul>
+  <li><strong>Quick Search</strong> (Ctrl+S) for instant access</li>
+  <li><strong>Saved Searches</strong> for dynamic organization</li>
+  <li><strong>Search from Subtree</strong> for focused queries</li>
+  <li><strong>Auto-complete</strong> suggestions in search dialogs</li>
+  <li><strong>URL-triggered searches</strong> for bookmarkable queries</li>
+</ul>
+<p>Start with the fundamentals and gradually explore advanced features as
+  your needs grow. Trilium's search system is designed to scale from simple
+  text queries to sophisticated knowledge management systems.</p>
+<p>Happy searching! 🔍</p>

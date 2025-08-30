@@ -1,0 +1,153 @@
+<h2>Search Fundamentals</h2>
+<p>Trilium's search system is a powerful tool for finding and organizing
+  notes. It supports multiple search modes, from simple text queries to complex
+  expressions using attributes, relationships, and note properties.</p>
+<h2>Search Types Overview</h2>
+<p>Trilium provides three main search approaches:</p>
+<ol>
+  <li><strong>Full-text Search</strong> - Searches within note titles and content</li>
+  <li><strong>Attribute Search</strong> - Searches based on labels and relations
+    attached to notes</li>
+  <li><strong>Property Search</strong> - Searches based on note metadata (type,
+    creation date, etc.)</li>
+</ol>
+<p>These can be combined in powerful ways to create precise queries.</p>
+<h2>Basic Search Syntax</h2>
+<h3>Simple Text Search</h3><pre><code class="language-text-x-trilium-auto">hello world</code></pre>
+<p>Finds notes containing both "hello" and "world" anywhere in the title
+  or content.</p>
+<h3>Quoted Text Search</h3><pre><code class="language-text-x-trilium-auto">"hello world"</code></pre>
+<p>Finds notes containing the exact phrase "hello world".</p>
+<h3>Attribute Search</h3><pre><code class="language-text-x-trilium-auto">#tag</code></pre>
+<p>Finds notes with the label "tag".</p><pre><code class="language-text-x-trilium-auto">#category=book</code></pre>
+<p>Finds notes with label "category" set to "book".</p>
+<h3>Relation Search</h3><pre><code class="language-text-x-trilium-auto">~author</code></pre>
+<p>Finds notes with a relation named "author".</p><pre><code class="language-text-x-trilium-auto">~author.title=Tolkien</code></pre>
+<p>Finds notes with an "author" relation pointing to a note titled "Tolkien".</p>
+<h2>Search Operators</h2>
+<h3>Text Operators</h3>
+<ul>
+  <li><code>=</code> - Exact match</li>
+  <li><code>!=</code> - Not equal</li>
+  <li><code>*=*</code> - Contains (substring)</li>
+  <li><code>=*</code> - Starts with</li>
+  <li><code>*=</code> - Ends with</li>
+  <li><code>%=</code> - Regular expression match</li>
+  <li><code>~=</code> - Fuzzy exact match</li>
+  <li><code>~*</code> - Fuzzy contains match</li>
+</ul>
+<h3>Numeric Operators</h3>
+<ul>
+  <li><code>=</code> - Equal</li>
+  <li><code>!=</code> - Not equal</li>
+  <li><code>&gt;</code> - Greater than</li>
+  <li><code>&gt;=</code> - Greater than or equal</li>
+  <li><code>&lt;</code> - Less than</li>
+  <li><code>&lt;=</code> - Less than or equal</li>
+</ul>
+<h3>Boolean Operators</h3>
+<ul>
+  <li><code>AND</code> - Both conditions must be true</li>
+  <li><code>OR</code> - Either condition must be true</li>
+  <li><code>NOT</code> or <code>not()</code> - Condition must be false</li>
+</ul>
+<h2>Search Context and Scope</h2>
+<h3>Search Scope</h3>
+<p>By default, search covers:</p>
+<ul>
+  <li>Note titles</li>
+  <li>Note content (for text-based note types)</li>
+  <li>Label names and values</li>
+  <li>Relation names</li>
+  <li>Note properties</li>
+</ul>
+<h3>Fast Search Mode</h3>
+<p>When enabled, fast search:</p>
+<ul>
+  <li>Searches only titles and attributes</li>
+  <li>Skips note content</li>
+  <li>Provides faster results for large databases</li>
+</ul>
+<h3>Archived Notes</h3>
+<ul>
+  <li>Excluded by default</li>
+  <li>Can be included with "Include archived" option</li>
+</ul>
+<h2>Case Sensitivity and Normalization</h2>
+<ul>
+  <li>All searches are case-insensitive</li>
+  <li>Diacritics are normalized ("café" matches "cafe")</li>
+  <li>Unicode characters are properly handled</li>
+</ul>
+<h2>Performance Considerations</h2>
+<h3>Content Size Limits</h3>
+<ul>
+  <li>Note content is limited to 10MB for search processing</li>
+  <li>Larger notes are still searchable by title and attributes</li>
+</ul>
+<h3>Progressive Search Strategy</h3>
+<ol>
+  <li><strong>Exact Search Phase</strong>: Fast exact matching (handles 90%+
+    of searches)</li>
+  <li><strong>Fuzzy Search Phase</strong>: Activated when exact search returns
+    fewer than 5 high-quality results</li>
+  <li><strong>Result Ordering</strong>: Exact matches always appear before fuzzy
+    matches</li>
+</ol>
+<h3>Search Optimization Tips</h3>
+<ul>
+  <li>Use specific terms rather than very common words</li>
+  <li>Combine full-text with attribute searches for precision</li>
+  <li>Use fast search for large databases when content search isn't needed</li>
+  <li>Limit results when dealing with very large result sets</li>
+</ul>
+<h2>Special Characters and Escaping</h2>
+<h3>Reserved Characters</h3>
+<p>These characters have special meaning in search queries:</p>
+<ul>
+  <li><code>#</code> - Label indicator</li>
+  <li><code>~</code> - Relation indicator</li>
+  <li><code>()</code> - Grouping</li>
+  <li><code>"</code>  <code>'</code>  <code>`</code> - Quotes for exact phrases</li>
+</ul>
+<h3>Escaping Special Characters</h3>
+<p>Use backslash to search for literal special characters:</p><pre><code class="language-text-x-trilium-auto">\#hashtag</code></pre>
+<p>Searches for the literal text "#hashtag" instead of a label.</p>
+<p>Use quotes to include special characters in phrases:</p><pre><code class="language-text-x-trilium-auto">"note.txt file"</code></pre>
+<p>Searches for the exact phrase including the dot.</p>
+<h2>Date and Time Values</h2>
+<h3>Special Date Keywords</h3>
+<ul>
+  <li><code>TODAY</code> - Current date</li>
+  <li><code>NOW</code> - Current date and time</li>
+  <li><code>MONTH</code> - Current month</li>
+  <li><code>YEAR</code> - Current year</li>
+</ul>
+<h3>Date Arithmetic</h3><pre><code class="language-text-x-trilium-auto">#dateCreated &gt;= TODAY-30</code></pre>
+<p>Finds notes created in the last 30 days.</p><pre><code class="language-text-x-trilium-auto">#eventDate = YEAR+1</code></pre>
+<p>Finds notes with eventDate set to next year.</p>
+<h2>Search Results and Scoring</h2>
+<h3>Result Ranking</h3>
+<p>Results are ordered by:</p>
+<ol>
+  <li>Relevance score (based on term frequency and position)</li>
+  <li>Note depth (closer to root ranks higher)</li>
+  <li>Alphabetical order for ties</li>
+</ol>
+<h3>Progressive Search Behavior</h3>
+<ul>
+  <li>Exact matches always rank before fuzzy matches</li>
+  <li>High-quality exact matches prevent fuzzy search activation</li>
+  <li>Fuzzy matches help find content with typos or variations</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+  <li><a href="#root/_help_ey9TMFyD8SHR">Advanced Search Expressions</a> - Complex
+    queries and combinations</li>
+  <li><a href="#root/_help_yAFfA1SAYlr7">Search Examples and Use Cases</a> -
+    Practical applications</li>
+  <li><a href="#root/_help_UUBStSxWzjgA">Saved Searches</a> - Creating dynamic
+    collections</li>
+  <li><a href="#root/_help_ttFz520bcNLf">Technical Search Details</a> - Under-the-hood
+    implementation</li>
+</ul>
