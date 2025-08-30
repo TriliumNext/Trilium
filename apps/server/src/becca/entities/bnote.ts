@@ -1108,7 +1108,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         // given that we're always fetching attachments only for a specific note, we might just do it always
 
         const query = opts.includeContentLength
-            ? /*sql*/`SELECT attachments.*, LENGTH(blobs.content) AS contentLength
+            ? /*sql*/`SELECT attachments.*, blobs.contentLength AS contentLength
                 FROM attachments
                 JOIN blobs USING (blobId)
                 WHERE ownerId = ? AND isDeleted = 0
@@ -1122,7 +1122,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         opts.includeContentLength = !!opts.includeContentLength;
 
         const query = opts.includeContentLength
-            ? /*sql*/`SELECT attachments.*, LENGTH(blobs.content) AS contentLength
+            ? /*sql*/`SELECT attachments.*, blobs.contentLength AS contentLength
                 FROM attachments
                 JOIN blobs USING (blobId)
                 WHERE ownerId = ? AND attachmentId = ? AND isDeleted = 0`
