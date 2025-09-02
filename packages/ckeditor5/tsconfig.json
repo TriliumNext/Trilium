@@ -4,19 +4,22 @@
   "include": [],
   "references": [
     {
-      "path": "../ckeditor5-footnotes"
-    },
-    {
-      "path": "../ckeditor5-math"
-    },
-    {
-      "path": "../ckeditor5-admonition"
+      "path": "../commons"
     },
     {
       "path": "../ckeditor5-mermaid"
     },
     {
+      "path": "../ckeditor5-math"
+    },
+    {
       "path": "../ckeditor5-keyboard-marker"
+    },
+    {
+      "path": "../ckeditor5-footnotes"
+    },
+    {
+      "path": "../ckeditor5-admonition"
     },
     {
       "path": "./tsconfig.lib.json"

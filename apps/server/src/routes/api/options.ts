@@ -97,6 +97,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "showLoginInShareTheme",
     "splitEditorOrientation",
     "seenCallToActions",
+    "ckeditorEnabledPlugins",
 
     // AI/LLM integration options
     "aiEnabled",
