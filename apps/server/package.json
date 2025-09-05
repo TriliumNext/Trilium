@@ -28,7 +28,7 @@
     "better-sqlite3": "12.2.0"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "0.60.0",
+    "@anthropic-ai/sdk": "0.61.0",
     "@braintree/sanitize-url": "7.1.1",
     "@electron/remote": "2.1.3",
     "@preact/preset-vite": "2.10.2",
