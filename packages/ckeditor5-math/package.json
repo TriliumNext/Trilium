@@ -71,6 +71,6 @@
     ]
   },
   "dependencies": {
-    "@ckeditor/ckeditor5-icons": "46.0.2"
+    "@ckeditor/ckeditor5-icons": "46.0.3"
   }
 }
