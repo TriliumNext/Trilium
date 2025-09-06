@@ -219,21 +219,22 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         this.$tree = this.$widget.find(".tree");
         this.$treeActions = this.$widget.find(".tree-actions");
 
-        this.$tree.on("mousedown", ".unhoist-button", () => hoistedNoteService.unhoist());
-        this.$tree.on("mousedown", ".refresh-search-button", (e) => this.refreshSearch(e));
-        this.$tree.on("mousedown", ".add-note-button", (e) => {
-            const node = $.ui.fancytree.getNode(e as unknown as Event);
-            const parentNotePath = treeService.getNotePath(node);
+        this.$tree.on("mousedown", (e: JQuery.MouseDownEvent) => {
+            const target = e.target as HTMLElement;
+            if (e.button !== 0) return;
 
-            noteCreateService.createNote(parentNotePath, {
-                isProtected: node.data.isProtected
-            });
-        });
-
-        this.$tree.on("mousedown", ".enter-workspace-button", (e) => {
-            const node = $.ui.fancytree.getNode(e as unknown as Event);
-
-            this.triggerCommand("hoistNote", { noteId: node.data.noteId });
+            if (target.classList.contains("unhoist-button")) {
+                hoistedNoteService.unhoist();
+            } else if (target.classList.contains("refresh-search-button")) {
+                this.refreshSearch(e);
+            } else if (target.classList.contains("add-note-button")) {
+                const node = $.ui.fancytree.getNode(e as unknown as Event);
+                const parentNotePath = treeService.getNotePath(node);
+                noteCreateService.createNote(parentNotePath, { isProtected: node.data.isProtected });
+            } else if (target.classList.contains("enter-workspace-button")) {
+                const node = $.ui.fancytree.getNode(e as unknown as Event);
+                this.triggerCommand("hoistNote", { noteId: node.data.noteId });
+            }
         });
 
         // fancytree doesn't support middle click, so this is a way to support it
