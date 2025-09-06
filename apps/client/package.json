@@ -39,7 +39,7 @@
     "dayjs-plugin-utc": "0.1.2",
     "debounce": "2.2.0",
     "draggabilly": "3.0.0",
-    "force-graph": "1.50.1",
+    "force-graph": "1.51.0",
     "globals": "16.3.0",
     "i18next": "25.4.2",
     "i18next-http-backend": "3.0.2",
