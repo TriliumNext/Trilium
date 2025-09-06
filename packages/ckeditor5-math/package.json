@@ -32,7 +32,7 @@
     "@typescript-eslint/parser": "^8.0.0",
     "@vitest/browser": "^3.0.5",
     "@vitest/coverage-istanbul": "^3.0.5",
-    "ckeditor5": "46.0.2",
+    "ckeditor5": "46.0.3",
     "eslint": "^9.0.0",
     "eslint-config-ckeditor5": ">=9.1.0",
     "http-server": "^14.1.0",
@@ -46,7 +46,7 @@
     "webdriverio": "^9.0.7"
   },
   "peerDependencies": {
-    "ckeditor5": "46.0.2"
+    "ckeditor5": "46.0.3"
   },
   "scripts": {
     "build": "node ./scripts/build-dist.mjs",
