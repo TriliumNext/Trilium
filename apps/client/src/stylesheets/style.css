@@ -1243,6 +1243,10 @@ a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href
     cursor: row-resize;
 }
 
+.hidden-ext.note-split + .gutter {
+    display: none;
+}
+
 #context-menu-cover.show {
     position: fixed;
     top: 0;
@@ -1772,7 +1776,6 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 }
 
 .note-split {
-    flex-basis: 0; /* so that each split has same width */
     margin-left: auto;
     margin-right: auto;
 }

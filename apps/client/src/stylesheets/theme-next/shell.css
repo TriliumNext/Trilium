@@ -89,7 +89,7 @@ body.background-effects.zen #root-widget {
  * Gutter
  */
 
- .gutter {
+.gutter {
     background: var(--gutter-color) !important;
     transition: background 150ms ease-out;
 }
@@ -1175,16 +1175,17 @@ body.layout-vertical .tab-row-widget-is-sorting .note-tab.note-tab-is-dragging .
     /* will-change: opacity; -- causes some weird artifacts to the note menu in split view */
 }
 
+.split-note-container-widget > .gutter {
+    background: var(--root-background) !important;
+    transition: background 150ms ease-out;
+}
+
 /*
  * Ribbon & note header
  */
 
 .ribbon-container {
     margin-bottom: 0 !important;
-}
-
-.note-split:not(.hidden-ext) + .note-split:not(.hidden-ext) {
-    border-left: 4px solid var(--root-background);
 }
 
 @keyframes note-entrance {

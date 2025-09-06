@@ -10,6 +10,10 @@ let leftInstance: ReturnType<typeof Split> | null;
 let rightPaneWidth: number;
 let rightInstance: ReturnType<typeof Split> | null;
 
+const noteSplitMap = new Map<string[], ReturnType<typeof Split> | undefined>(); // key: a group of ntxIds, value: the corresponding Split instance
+const noteSplitRafMap = new Map<string[], number>();
+let splitNoteContainer: HTMLElement | undefined;
+
 function setupLeftPaneResizer(leftPaneVisible: boolean) {
     if (leftInstance) {
         leftInstance.destroy();
@@ -83,7 +87,86 @@ function setupRightPaneResizer() {
     }
 }
 
+function findKeyByNtxId(ntxId: string): string[] | undefined {
+    // Find the corresponding key in noteSplitMap based on ntxId
+    for (const key of noteSplitMap.keys()) {
+        if (key.includes(ntxId)) return key;
+    }
+    return undefined;
+}
+
+function setupNoteSplitResizer(ntxIds: string[]) {
+    let targetNtxIds: string[] | undefined;
+    for (const ntxId of ntxIds) {
+        targetNtxIds = findKeyByNtxId(ntxId);
+        if (targetNtxIds) break; 
+    }
+
+    if (targetNtxIds) {
+        noteSplitMap.get(targetNtxIds)?.destroy();
+        for (const id of ntxIds) {
+            if (!targetNtxIds.includes(id)) {
+                targetNtxIds.push(id)
+            };
+        }
+    } else {
+        targetNtxIds = [...ntxIds];
+    }
+    noteSplitMap.set(targetNtxIds, undefined);
+    createSplitInstance(targetNtxIds);
+}
+
+
+function delNoteSplitResizer(ntxIds: string[]) {
+    let targetNtxIds = findKeyByNtxId(ntxIds[0]);
+    if (!targetNtxIds) {
+        return;
+    }
+
+    noteSplitMap.get(targetNtxIds)?.destroy();
+    noteSplitMap.delete(targetNtxIds);
+    targetNtxIds = targetNtxIds.filter(id => !ntxIds.includes(id));
+
+    if (targetNtxIds.length >= 2) {
+        noteSplitMap.set(targetNtxIds, undefined);
+        createSplitInstance(targetNtxIds);
+    }
+}
+
+function moveNoteSplitResizer(ntxId: string) {
+    const targetNtxIds = findKeyByNtxId(ntxId);
+    if (!targetNtxIds) {
+        return;
+    }
+    noteSplitMap.get(targetNtxIds)?.destroy();
+    noteSplitMap.set(targetNtxIds, undefined);
+    createSplitInstance(targetNtxIds);
+}
+
+function createSplitInstance(targetNtxIds: string[]) {
+    const prevRafId = noteSplitRafMap.get(targetNtxIds);
+    if (prevRafId) {
+        cancelAnimationFrame(prevRafId);
+    }
+
+    const rafId = requestAnimationFrame(() => {
+        splitNoteContainer = splitNoteContainer ?? $("#center-pane").find(".split-note-container-widget")[0];
+        const splitPanels = [...splitNoteContainer.querySelectorAll<HTMLElement>(':scope > .note-split')]
+            .filter(el => targetNtxIds.includes(el.getAttribute('data-ntx-id') ?? ""));
+        const splitInstance = Split(splitPanels, {
+            gutterSize: DEFAULT_GUTTER_SIZE,
+            minSize: 150,
+        });
+        noteSplitMap.set(targetNtxIds, splitInstance);
+        noteSplitRafMap.delete(targetNtxIds);
+    });
+    noteSplitRafMap.set(targetNtxIds, rafId);
+}
+
 export default {
     setupLeftPaneResizer,
-    setupRightPaneResizer
+    setupRightPaneResizer,
+    setupNoteSplitResizer,
+    delNoteSplitResizer,
+    moveNoteSplitResizer
 };

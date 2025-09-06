@@ -3,7 +3,7 @@ import appContext, { type CommandData, type CommandListenerData, type EventData,
 import type BasicWidget from "../basic_widget.js";
 import type NoteContext from "../../components/note_context.js";
 import Component from "../../components/component.js";
-
+import splitService from "../../services/resizer.js";
 interface NoteContextEvent {
     noteContext: NoteContext;
 }
@@ -52,6 +52,10 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         await widget.handleEvent("setNoteContext", { noteContext });
 
         this.child(widget);
+
+        if (noteContext.mainNtxId && noteContext.ntxId) {
+            splitService.setupNoteSplitResizer([noteContext.mainNtxId,noteContext.ntxId]);
+        }
     }
 
     async openNewNoteSplitEvent({ ntxId, notePath, hoistedNoteId, viewScope }: EventData<"openNewNoteSplit">) {
@@ -95,9 +99,9 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         }
     }
 
-    closeThisNoteSplitCommand({ ntxId }: CommandListenerData<"closeThisNoteSplit">) {
+    async closeThisNoteSplitCommand({ ntxId }: CommandListenerData<"closeThisNoteSplit">) {
         if (ntxId) {
-            appContext.tabManager.removeNoteContext(ntxId);
+            await appContext.tabManager.removeNoteContext(ntxId);
         }
     }
 
@@ -137,6 +141,8 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
 
         // activate context that now contains the original note
         await appContext.tabManager.activateNoteContext(isMovingLeft ? ntxIds[leftIndex + 1] : ntxIds[leftIndex]);
+
+        splitService.moveNoteSplitResizer(ntxIds[leftIndex]);
     }
 
     activeContextChangedEvent() {
@@ -157,6 +163,8 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
             recursiveCleanup(widget);
             delete this.widgets[ntxId];
         }
+
+        splitService.delNoteSplitResizer(ntxIds);
     }
 
     contextsReopenedEvent({ ntxId, afterNtxId }: EventData<"contextsReopened">) {
