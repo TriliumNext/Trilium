@@ -1118,7 +1118,9 @@
     "title": "Performance",
     "enable-motion": "Enable transitions and animations",
     "enable-shadows": "Enable shadows",
-    "enable-backdrop-effects": "Enable background effects for menus, popups and panels"
+    "enable-backdrop-effects": "Enable background effects for menus, popups and panels",
+    "enable-smooth-scroll": "Enable smooth scrolling",
+    "app-restart-required": "(a restart of the application is required for the change to take effect)"
   },
   "ai_llm": {
     "not_started": "Not started",

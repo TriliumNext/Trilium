@@ -65,6 +65,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "monthlyBackupEnabled",
     "motionEnabled",
     "shadowsEnabled",
+    "smoothScrollEnabled",
     "backdropEffectsEnabled",
     "maxContentWidth",
     "compressImages",

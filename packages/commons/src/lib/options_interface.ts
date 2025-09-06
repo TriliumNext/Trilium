@@ -96,6 +96,7 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     motionEnabled: boolean;
     shadowsEnabled: boolean;
     backdropEffectsEnabled: boolean;
+    smoothScrollEnabled: boolean;
     codeNoteTheme: string;
 
     initialized: boolean;

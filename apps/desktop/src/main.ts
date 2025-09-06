@@ -25,6 +25,12 @@ async function main() {
     // needed for excalidraw export https://github.com/zadam/trilium/issues/4271
     electron.app.commandLine.appendSwitch("enable-experimental-web-platform-features");
     electron.app.commandLine.appendSwitch("lang", options.getOptionOrNull("formattingLocale") ?? "en");
+    
+    // Disable smooth scroll if the option is set
+    const smoothScrollEnabled = options.getOptionOrNull("smoothScrollEnabled");
+    if (smoothScrollEnabled === "false") {
+        electron.app.commandLine.appendSwitch("disable-smooth-scrolling");
+    }
 
     // Electron 36 crashes with "Using GTK 2/3 and GTK 4 in the same process is not supported" on some distributions.
     // See https://github.com/electron/electron/issues/46538 for more info.

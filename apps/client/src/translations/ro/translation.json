@@ -2013,7 +2013,9 @@
     "title": "Setări de performanță",
     "enable-motion": "Activează tranzițiile și animațiile",
     "enable-shadows": "Activează umbrirea elementelor",
-    "enable-backdrop-effects": "Activează efectele de fundal pentru meniuri, popup-uri și panouri"
+    "enable-backdrop-effects": "Activează efectele de fundal pentru meniuri, popup-uri și panouri",
+    "enable-smooth-scroll": "Activează derularea lină",
+    "app-restart-required": "(este necesară repornirea aplicației pentru ca modificarea să aibă efect)"
   },
   "settings": {
     "related_settings": "Setări similare"

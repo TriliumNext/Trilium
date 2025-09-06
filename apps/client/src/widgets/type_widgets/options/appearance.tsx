@@ -266,9 +266,20 @@ function Performance() {
             label={t("ui-performance.enable-backdrop-effects")}
             currentValue={backdropEffectsEnabled} onChange={setBackdropEffectsEnabled}
         />
+
+        {isElectron() && <SmoothScrollEnabledOption />}
+
     </OptionsSection>
 }
 
+function SmoothScrollEnabledOption() {
+    const [ smoothScrollEnabled, setSmoothScrollEnabled ] = useTriliumOptionBool("smoothScrollEnabled");
+
+    return <FormCheckbox
+        label={`${t("ui-performance.enable-smooth-scroll")} ${t("ui-performance.app-restart-required")}`}
+        currentValue={smoothScrollEnabled} onChange={setSmoothScrollEnabled}
+    />
+}
 
 function MaxContentWidth() {
     const [ maxContentWidth, setMaxContentWidth ] = useTriliumOption("maxContentWidth");
