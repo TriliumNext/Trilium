@@ -2376,3 +2376,12 @@ footer.webview-footer button {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.revision-diff-added {
+    background: rgba(100, 200, 100, 0.5);
+}
+
+.revision-diff-removed {
+    background: rgba(255, 100, 100, 0.5);
+    text-decoration: line-through;
+}
