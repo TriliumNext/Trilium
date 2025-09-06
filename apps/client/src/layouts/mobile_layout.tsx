@@ -22,6 +22,7 @@ import FloatingButtons from "../widgets/FloatingButtons.jsx";
 import { MOBILE_FLOATING_BUTTONS } from "../widgets/FloatingButtonsDefinitions.jsx";
 import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button.jsx";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
+import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
 
 const MOBILE_CSS = `
@@ -131,30 +132,33 @@ export default class MobileLayout {
                             .child(new FlexContainer("column").filling().id("mobile-sidebar-wrapper").child(new QuickSearchWidget()).child(new NoteTreeWidget().cssBlock(FANCYTREE_CSS)))
                     )
                     .child(
-                        new ScreenContainer("detail", "column")
+                        new ScreenContainer("detail", "row")
                             .id("detail-container")
                             .class("d-sm-flex d-md-flex d-lg-flex d-xl-flex col-12 col-sm-7 col-md-8 col-lg-9")
                             .child(
-                                new FlexContainer("row")
-                                    .contentSized()
-                                    .css("font-size", "larger")
-                                    .css("align-items", "center")
-                                    .child(<ToggleSidebarButton />)
-                                    .child(<NoteTitleWidget />)
-                                    .child(<MobileDetailMenu />)
+                                new NoteWrapperWidget()
+                                    .child(
+                                        new FlexContainer("row")
+                                            .contentSized()
+                                            .css("font-size", "larger")
+                                            .css("align-items", "center")
+                                            .child(<ToggleSidebarButton />)
+                                            .child(<NoteTitleWidget />)
+                                            .child(<MobileDetailMenu />)
+                                    )
+                                    .child(<SharedInfoWidget />)
+                                    .child(<FloatingButtons items={MOBILE_FLOATING_BUTTONS} />)
+                                    .child(new PromotedAttributesWidget())
+                                    .child(
+                                        new ScrollingContainer()
+                                            .filling()
+                                            .contentSized()
+                                            .child(new NoteDetailWidget())
+                                            .child(new NoteListWidget(false))
+                                            .child(<FilePropertiesWrapper />)
+                                    )
+                                    .child(<MobileEditorToolbar />)
                             )
-                            .child(<SharedInfoWidget />)
-                            .child(<FloatingButtons items={MOBILE_FLOATING_BUTTONS} />)
-                            .child(new PromotedAttributesWidget())
-                            .child(
-                                new ScrollingContainer()
-                                    .filling()
-                                    .contentSized()
-                                    .child(new NoteDetailWidget())
-                                    .child(new NoteListWidget(false))
-                                    .child(<FilePropertiesWrapper />)
-                            )
-                            .child(<MobileEditorToolbar />)
                     )
             )
             .child(
