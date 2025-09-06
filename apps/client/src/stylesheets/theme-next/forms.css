@@ -96,6 +96,11 @@ button.btn.btn-success kbd {
     color: var(--icon-button-color);
 }
 
+:root .btn-group .icon-action:last-child {
+    border-top-left-radius: unset !important;
+    border-bottom-left-radius: unset !important;
+}
+
 .btn-group .tn-tool-button + .tn-tool-button {
     margin-left: 4px !important;
 }

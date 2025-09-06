@@ -587,7 +587,18 @@
     "september": "September",
     "october": "October",
     "november": "November",
-    "december": "December"
+    "december": "December",
+    "week": "Week",
+    "week_previous": "Previous week",
+    "week_next": "Next week",
+    "month": "Month",
+    "month_previous": "Previous month",
+    "month_next": "Next month",
+    "year": "Year",
+    "year_previous": "Previous year",
+    "year_next": "Next year",
+    "list": "List",
+    "today": "Today"
   },
   "close_pane_button": {
     "close_this_pane": "Close this pane"
@@ -2024,5 +2035,12 @@
   },
   "units": {
     "percentage": "%"
+  },
+  "pagination": {
+    "page_title": "Page of {{startIndex}} - {{endIndex}}",
+    "total_notes": "{{count}} notes"
+  },
+  "collections": {
+    "rendering_error": "Unable to show content due to an error."
   }
 }

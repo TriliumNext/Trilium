@@ -23,11 +23,11 @@ export default class TouchBarComponent extends Component {
         this.$widget = $("<div>");
 
         $(window).on("focusin", async (e) => {
-            const $target = $(e.target);
+            const focusedEl = e.target as unknown as HTMLElement;
+            const $target = $(focusedEl);
 
             this.$activeModal = $target.closest(".modal-dialog");
-            const parentComponentEl = $target.closest(".component");
-            this.lastFocusedComponent = appContext.getComponentByEl(parentComponentEl[0]);
+            this.lastFocusedComponent = appContext.getComponentByEl(focusedEl);
             this.#refreshTouchBar();
         });
     }

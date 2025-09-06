@@ -3,7 +3,7 @@ import appContext, { type CommandMappings } from "../../../components/app_contex
 import contextMenu, { type MenuItem } from "../../../menus/context_menu.js";
 import linkContextMenu from "../../../menus/link_context_menu.js";
 import { t } from "../../../services/i18n.js";
-import { createNewNote } from "./editing.js";
+import { createNewNote } from "./api.js";
 import { copyTextWithToast } from "../../../services/clipboard_ext.js";
 import link from "../../../services/link.js";
 

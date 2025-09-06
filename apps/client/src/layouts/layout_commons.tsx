@@ -27,10 +27,10 @@ import FlexContainer from "../widgets/containers/flex_container.js";
 import NoteIconWidget from "../widgets/note_icon";
 import PromotedAttributesWidget from "../widgets/promoted_attributes.js";
 import NoteDetailWidget from "../widgets/note_detail.js";
-import NoteListWidget from "../widgets/note_list.js";
 import CallToActionDialog from "../widgets/dialogs/call_to_action.jsx";
 import NoteTitleWidget from "../widgets/note_title.jsx";
 import { PopupEditorFormattingToolbar } from "../widgets/ribbon/FormattingToolbar.js";
+import NoteList from "../widgets/collections/NoteList.jsx";
 
 export function applyModals(rootContainer: RootContainer) {
     rootContainer
@@ -66,6 +66,6 @@ export function applyModals(rootContainer: RootContainer) {
                 .child(<PopupEditorFormattingToolbar />)
                 .child(new PromotedAttributesWidget())
                 .child(new NoteDetailWidget())
-                .child(new NoteListWidget(true)))
+                .child(<NoteList displayOnlyCollections />))
         .child(<CallToActionDialog />);
 }

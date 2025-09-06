@@ -1,0 +1,45 @@
+import type FNote from "../../entities/fnote.js";
+import BoardView from "../view_widgets/board_view/index.js";
+import CalendarView from "../view_widgets/calendar_view.js";
+import GeoView from "../view_widgets/geo_view/index.js";
+import ListOrGridView from "../view_widgets/list_or_grid_view.js";
+import TableView from "../view_widgets/table_view/index.js";
+import type ViewMode from "../view_widgets/view_mode.js";
+
+export default class NoteListRenderer {
+
+    private viewType: ViewTypeOptions;
+    private args: ArgsWithoutNoteId;
+    public viewMode?: ViewMode<any>;
+
+    constructor(args: ArgsWithoutNoteId) {
+        this.args = args;
+        this.viewType = this.#getViewType(args.parentNote);
+    }
+
+    async renderList() {
+        const args = this.args;
+        const viewMode = this.#buildViewMode(args);
+        this.viewMode = viewMode;
+        await viewMode.beforeRender();
+        return await viewMode.renderList();
+    }
+
+    #buildViewMode(args: ViewModeArgs) {
+        switch (this.viewType) {
+            case "calendar":
+                return new CalendarView(args);
+            case "table":
+                return new TableView(args);
+            case "geoMap":
+                return new GeoView(args);
+            case "board":
+                return new BoardView(args);
+            case "list":
+            case "grid":
+            default:
+                return new ListOrGridView(this.viewType, args);
+        }
+    }
+
+}

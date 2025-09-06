@@ -10,13 +10,14 @@ export default function SqlResults() {
     const [ results, setResults ] = useState<SqlExecuteResults>();
 
     useTriliumEvent("sqlQueryResults", ({ ntxId: eventNtxId, results }) => {
-        if (eventNtxId !== ntxId) return;        
+        if (eventNtxId !== ntxId) return;
         setResults(results);
     })
 
+    const isEnabled = note?.mime === "text/x-sqlite;schema=trilium";
     return (
-        <div className="sql-result-widget">
-            {note?.mime === "text/x-sqlite;schema=trilium" && (
+        <div className={`sql-result-widget ${!isEnabled ? "hidden-ext" : ""}`}>
+            {isEnabled && (
                 results?.length === 1 && Array.isArray(results[0]) && results[0].length === 0 ? (
                     <Alert type="info">
                         {t("sql_result.no_rows")}
@@ -26,9 +27,9 @@ export default function SqlResults() {
                         {results?.map(rows => {
                             // inserts, updates
                             if (typeof rows === "object" && !Array.isArray(rows)) {
-                                return <pre>{JSON.stringify(rows, null, "\t")}</pre>                    
+                                return <pre>{JSON.stringify(rows, null, "\t")}</pre>
                             }
-        
+
                             // selects
                             return <SqlResultTable rows={rows} />
                         })}

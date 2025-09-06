@@ -60,7 +60,7 @@ async function confirmDeleteNoteBoxWithNote(title: string) {
     return new Promise<ConfirmDialogResult | undefined>((res) => appContext.triggerCommand("showConfirmDeleteNoteBoxWithNoteDialog", { title, callback: res }));
 }
 
-async function prompt(props: PromptDialogOptions) {
+export async function prompt(props: PromptDialogOptions) {
     return new Promise<string | null>((res) => appContext.triggerCommand("showPromptDialog", { ...props, callback: res }));
 }
 

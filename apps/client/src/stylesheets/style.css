@@ -293,6 +293,11 @@ button.close:hover {
     pointer-events: none;
 }
 
+.icon-action.btn {
+    padding: 0 8px;
+    min-width: unset !important;
+}
+
 .ui-widget-content a:not(.ui-tabs-anchor) {
     color: #337ab7 !important;
 }

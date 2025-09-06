@@ -6,7 +6,7 @@ import { ParentComponent } from "./react/react_utils";
 import { EventData, EventNames } from "../components/app_context";
 import { type FloatingButtonsList, type FloatingButtonContext } from "./FloatingButtonsDefinitions";
 import ActionButton from "./react/ActionButton";
-import { ViewTypeOptions } from "../services/note_list_renderer";
+import { ViewTypeOptions } from "./collections/interface";
 
 interface FloatingButtonsProps {
     items: FloatingButtonsList;

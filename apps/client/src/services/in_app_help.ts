@@ -1,6 +1,6 @@
 import { NoteType } from "@triliumnext/commons";
-import { ViewTypeOptions } from "./note_list_renderer";
 import FNote from "../entities/fnote";
+import { ViewTypeOptions } from "../widgets/collections/interface";
 
 export const byNoteType: Record<Exclude<NoteType, "book">, string | null> = {
     canvas: null,

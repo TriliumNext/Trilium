@@ -1,4 +1,4 @@
-import type { RefObject } from "preact";
+import type { ComponentChildren, RefObject } from "preact";
 import type { CSSProperties } from "preact/compat";
 import { useMemo } from "preact/hooks";
 import { memo } from "preact/compat";
@@ -71,5 +71,13 @@ const Button = memo(({ name, buttonRef, className, text, onClick, keyboardShortc
         </button>
     );
 });
+
+export function ButtonGroup({ children }: { children: ComponentChildren }) {
+    return (
+        <div className="btn-group" role="group">
+            {children}
+        </div>
+    )
+}
 
 export default Button;
