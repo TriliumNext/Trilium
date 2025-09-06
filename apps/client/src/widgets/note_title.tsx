@@ -8,6 +8,7 @@ import "./note_title.css";
 import { isLaunchBarConfig } from "../services/utils";
 import appContext from "../components/app_context";
 import branches from "../services/branches";
+import { isIMEComposing } from "../services/shortcuts";
 
 export default function NoteTitleWidget() {
     const { note, noteId, componentId, viewScope, noteContext, parentComponent } = useNoteContext();    
@@ -78,6 +79,12 @@ export default function NoteTitleWidget() {
                     spacedUpdate.scheduleUpdate();
                 }}
                 onKeyDown={(e) => {
+                    // Skip processing if IME is composing to prevent interference
+                    // with text input in CJK languages
+                    if (isIMEComposing(e)) {
+                        return;
+                    }
+                    
                     // Focus on the note content when pressing enter.
                     if (e.key === "Enter") {
                         e.preventDefault();

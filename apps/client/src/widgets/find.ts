@@ -8,6 +8,7 @@ import NoteContextAwareWidget from "./note_context_aware_widget.js";
 import attributeService from "../services/attributes.js";
 import FindInText from "./find_in_text.js";
 import FindInCode from "./find_in_code.js";
+import { isIMEComposing } from "../services/shortcuts.js";
 import FindInHtml from "./find_in_html.js";
 import type { EventData } from "../components/app_context.js";
 
@@ -162,6 +163,11 @@ export default class FindWidget extends NoteContextAwareWidget {
         this.$replaceButton.on("click", () => this.replace());
 
         this.$input.on("keydown", async (e) => {
+            // Skip processing during IME composition
+            if (isIMEComposing(e.originalEvent as KeyboardEvent)) {
+                return;
+            }
+            
             if ((e.metaKey || e.ctrlKey) && (e.key === "F" || e.key === "f")) {
                 // If ctrl+f is pressed when the findbox is shown, select the
                 // whole input to find

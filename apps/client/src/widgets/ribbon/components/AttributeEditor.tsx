@@ -13,6 +13,7 @@ import attribute_parser, { Attribute } from "../../../services/attribute_parser"
 import ActionButton from "../../react/ActionButton";
 import { escapeQuotes, getErrorMessage } from "../../../services/utils";
 import link from "../../../services/link";
+import { isIMEComposing } from "../../../services/shortcuts";
 import froca from "../../../services/froca";
 import contextMenu from "../../../menus/context_menu";
 import type { CommandData, FilteredCommandNames } from "../../../components/app_context";
@@ -287,6 +288,11 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                 ref={wrapperRef}
                 style="position: relative; padding-top: 10px; padding-bottom: 10px"
                 onKeyDown={(e) => {
+                    // Skip processing during IME composition
+                    if (isIMEComposing(e)) {
+                        return;
+                    }
+                    
                     if (e.key === "Enter") {
                         // allow autocomplete to fill the result textarea
                         setTimeout(() => save(), 100);

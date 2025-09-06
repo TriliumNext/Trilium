@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import shortcuts, { keyMatches, matchesShortcut } from "./shortcuts.js";
+import shortcuts, { keyMatches, matchesShortcut, isIMEComposing } from "./shortcuts.js";
 
 // Mock utils module
 vi.mock("./utils.js", () => ({
@@ -318,6 +318,38 @@ describe("shortcuts", () => {
 
             expect(handler).not.toHaveBeenCalled();
             expect(event.preventDefault).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('isIMEComposing', () => {
+        it('should return true when event.isComposing is true', () => {
+            const event = { isComposing: true, keyCode: 65 } as KeyboardEvent;
+            expect(isIMEComposing(event)).toBe(true);
+        });
+
+        it('should return true when keyCode is 229', () => {
+            const event = { isComposing: false, keyCode: 229 } as KeyboardEvent;
+            expect(isIMEComposing(event)).toBe(true);
+        });
+
+        it('should return true when both isComposing is true and keyCode is 229', () => {
+            const event = { isComposing: true, keyCode: 229 } as KeyboardEvent;
+            expect(isIMEComposing(event)).toBe(true);
+        });
+
+        it('should return false for normal keys', () => {
+            const event = { isComposing: false, keyCode: 65 } as KeyboardEvent;
+            expect(isIMEComposing(event)).toBe(false);
+        });
+
+        it('should return false when isComposing is undefined and keyCode is not 229', () => {
+            const event = { keyCode: 13 } as KeyboardEvent;
+            expect(isIMEComposing(event)).toBe(false);
+        });
+
+        it('should handle null/undefined events gracefully', () => {
+            expect(isIMEComposing(null as any)).toBe(false);
+            expect(isIMEComposing(undefined as any)).toBe(false);
         });
     });
 });

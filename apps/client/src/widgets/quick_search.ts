@@ -4,7 +4,7 @@ import linkService from "../services/link.js";
 import froca from "../services/froca.js";
 import utils from "../services/utils.js";
 import appContext from "../components/app_context.js";
-import shortcutService from "../services/shortcuts.js";
+import shortcutService, { isIMEComposing } from "../services/shortcuts.js";
 import { t } from "../services/i18n.js";
 import { Dropdown, Tooltip } from "bootstrap";
 
@@ -180,6 +180,14 @@ export default class QuickSearchWidget extends BasicWidget {
 
         if (utils.isMobile()) {
             this.$searchString.keydown((e) => {
+                // Skip processing if IME is composing to prevent interference
+                // with text input in CJK languages
+                // Note: jQuery wraps the native event, so we access originalEvent
+                const originalEvent = e.originalEvent as KeyboardEvent;
+                if (originalEvent && isIMEComposing(originalEvent)) {
+                    return;
+                }
+                
                 if (e.which === 13) {
                     if (this.$dropdownMenu.is(":visible")) {
                         this.search(); // just update already visible dropdown

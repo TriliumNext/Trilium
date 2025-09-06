@@ -40,6 +40,24 @@ for (let i = 1; i <= 19; i++) {
     keyMap[`f${i}`] = [`F${i}`];
 }
 
+/**
+ * Check if IME (Input Method Editor) is composing
+ * This is used to prevent keyboard shortcuts from firing during IME composition
+ * @param e - The keyboard event to check
+ * @returns true if IME is currently composing, false otherwise
+ */
+export function isIMEComposing(e: KeyboardEvent): boolean {
+    // Handle null/undefined events gracefully
+    if (!e) {
+        return false;
+    }
+    
+    // Standard check for composition state
+    // e.isComposing is true when IME is actively composing
+    // e.keyCode === 229 is a fallback for older browsers where 229 indicates IME processing
+    return e.isComposing || e.keyCode === 229;
+}
+
 function removeGlobalShortcut(namespace: string) {
     bindGlobalShortcut("", null, namespace);
 }
@@ -68,6 +86,13 @@ function bindElShortcut($el: JQuery<ElementType | Element>, keyboardShortcut: st
                 }
 
                 const e = evt as KeyboardEvent;
+                
+                // Skip processing if IME is composing to prevent shortcuts from
+                // interfering with text input in CJK languages
+                if (isIMEComposing(e)) {
+                    return;
+                }
+                
                 if (matchesShortcut(e, keyboardShortcut)) {
                     e.preventDefault();
                     e.stopPropagation();
