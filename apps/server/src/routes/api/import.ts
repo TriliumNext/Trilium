@@ -98,6 +98,9 @@ async function importNotesToBranch(req: Request) {
     // import has deactivated note events so becca is not updated, instead we force it to reload
     beccaLoader.load();
 
+    // FTS indexing is now handled directly during note creation when entity events are disabled
+    // This ensures all imported notes are immediately searchable without needing a separate sync step
+
     return note.getPojo();
 }
 

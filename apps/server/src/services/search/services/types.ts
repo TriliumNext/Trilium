@@ -21,4 +21,6 @@ export interface SearchParams {
     limit?: number | null;
     debug?: boolean;
     fuzzyAttributeSearch?: boolean;
+    /** Force a specific search backend for testing/comparison */
+    forceBackend?: "typescript" | "sqlite";
 }

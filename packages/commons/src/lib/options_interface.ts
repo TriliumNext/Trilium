@@ -132,6 +132,14 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     redirectBareDomain: boolean;
     showLoginInShareTheme: boolean;
 
+    // Search settings
+    searchBackend: string;
+    searchSqliteEnabled: boolean;
+    searchSqlitePerformanceLogging: boolean;
+    searchSqliteMaxMemory: number;
+    searchSqliteBatchSize: number;
+    searchSqliteAutoRebuild: boolean;
+
     // AI/LLM integration options
     aiEnabled: boolean;
     aiProvider: string;

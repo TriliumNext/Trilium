@@ -146,9 +146,218 @@ CREATE INDEX IDX_notes_blobId on notes (blobId);
 CREATE INDEX IDX_revisions_blobId on revisions (blobId);
 CREATE INDEX IDX_attachments_blobId on attachments (blobId);
 
+-- Strategic Performance Indexes from migration 234
+-- NOTES TABLE INDEXES
+CREATE INDEX IDX_notes_search_composite 
+ON notes (isDeleted, type, mime, dateModified DESC);
+
+CREATE INDEX IDX_notes_metadata_covering 
+ON notes (noteId, isDeleted, type, mime, title, dateModified, isProtected);
+
+CREATE INDEX IDX_notes_protected_deleted 
+ON notes (isProtected, isDeleted) 
+WHERE isProtected = 1;
+
+-- BRANCHES TABLE INDEXES  
+CREATE INDEX IDX_branches_tree_traversal 
+ON branches (parentNoteId, isDeleted, notePosition);
+
+CREATE INDEX IDX_branches_covering 
+ON branches (noteId, parentNoteId, isDeleted, notePosition, prefix);
+
+CREATE INDEX IDX_branches_note_parents 
+ON branches (noteId, isDeleted) 
+WHERE isDeleted = 0;
+
+-- ATTRIBUTES TABLE INDEXES
+CREATE INDEX IDX_attributes_search_composite 
+ON attributes (name, value, isDeleted);
+
+CREATE INDEX IDX_attributes_covering 
+ON attributes (noteId, name, value, type, isDeleted, position);
+
+CREATE INDEX IDX_attributes_inheritable 
+ON attributes (isInheritable, isDeleted) 
+WHERE isInheritable = 1 AND isDeleted = 0;
+
+CREATE INDEX IDX_attributes_labels 
+ON attributes (type, name, value) 
+WHERE type = 'label' AND isDeleted = 0;
+
+CREATE INDEX IDX_attributes_relations 
+ON attributes (type, name, value) 
+WHERE type = 'relation' AND isDeleted = 0;
+
+-- BLOBS TABLE INDEXES
+CREATE INDEX IDX_blobs_content_size 
+ON blobs (blobId, LENGTH(content));
+
+-- ATTACHMENTS TABLE INDEXES
+CREATE INDEX IDX_attachments_composite 
+ON attachments (ownerId, role, isDeleted, position);
+
+-- REVISIONS TABLE INDEXES
+CREATE INDEX IDX_revisions_note_date 
+ON revisions (noteId, utcDateCreated DESC);
+
+-- ENTITY_CHANGES TABLE INDEXES
+CREATE INDEX IDX_entity_changes_sync 
+ON entity_changes (isSynced, utcDateChanged);
+
+CREATE INDEX IDX_entity_changes_component 
+ON entity_changes (componentId, utcDateChanged DESC);
+
+-- RECENT_NOTES TABLE INDEXES
+CREATE INDEX IDX_recent_notes_date 
+ON recent_notes (utcDateCreated DESC);
+
 
 CREATE TABLE IF NOT EXISTS sessions (
     id TEXT PRIMARY KEY,
     data TEXT,
     expires INTEGER
 );
+
+-- FTS5 Full-Text Search Support
+-- Create FTS5 virtual table for full-text searching
+CREATE VIRTUAL TABLE notes_fts USING fts5(
+    noteId UNINDEXED,
+    title,
+    content,
+    tokenize = 'porter unicode61'
+);
+
+-- Triggers to keep FTS table synchronized with notes
+-- IMPORTANT: These triggers must handle all SQL operations including:
+-- - Regular INSERT/UPDATE/DELETE
+-- - INSERT OR REPLACE
+-- - INSERT ... ON CONFLICT ... DO UPDATE (upsert)
+-- - Cases where notes are created before blobs (import scenarios)
+
+-- Trigger for INSERT operations on notes
+-- Handles: INSERT, INSERT OR REPLACE, INSERT OR IGNORE, and the INSERT part of upsert
+CREATE TRIGGER notes_fts_insert 
+AFTER INSERT ON notes
+WHEN NEW.type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap') 
+    AND NEW.isDeleted = 0
+    AND NEW.isProtected = 0
+BEGIN
+    -- First delete any existing FTS entry (in case of INSERT OR REPLACE)
+    DELETE FROM notes_fts WHERE noteId = NEW.noteId;
+    
+    -- Then insert the new entry, using LEFT JOIN to handle missing blobs
+    INSERT INTO notes_fts (noteId, title, content)
+    SELECT 
+        NEW.noteId,
+        NEW.title,
+        COALESCE(b.content, '')  -- Use empty string if blob doesn't exist yet
+    FROM (SELECT NEW.noteId) AS note_select
+    LEFT JOIN blobs b ON b.blobId = NEW.blobId;
+END;
+
+-- Trigger for UPDATE operations on notes table
+-- Handles: Regular UPDATE and the UPDATE part of upsert (ON CONFLICT DO UPDATE)
+-- Fires for ANY update to searchable notes to ensure FTS stays in sync
+CREATE TRIGGER notes_fts_update 
+AFTER UPDATE ON notes
+WHEN NEW.type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap')
+    -- Fire on any change, not just specific columns, to handle all upsert scenarios
+BEGIN
+    -- Always delete the old entry
+    DELETE FROM notes_fts WHERE noteId = NEW.noteId;
+    
+    -- Insert new entry if note is not deleted and not protected
+    INSERT INTO notes_fts (noteId, title, content)
+    SELECT 
+        NEW.noteId,
+        NEW.title,
+        COALESCE(b.content, '')  -- Use empty string if blob doesn't exist yet
+    FROM (SELECT NEW.noteId) AS note_select
+    LEFT JOIN blobs b ON b.blobId = NEW.blobId
+    WHERE NEW.isDeleted = 0
+        AND NEW.isProtected = 0;
+END;
+
+-- Trigger for UPDATE operations on blobs
+-- Handles: Regular UPDATE and the UPDATE part of upsert (ON CONFLICT DO UPDATE)
+-- IMPORTANT: Uses INSERT OR REPLACE for efficiency with deduplicated blobs
+CREATE TRIGGER notes_fts_blob_update 
+AFTER UPDATE ON blobs
+BEGIN
+    -- Use INSERT OR REPLACE for atomic update of all notes sharing this blob
+    -- This is more efficient than DELETE + INSERT when many notes share the same blob
+    INSERT OR REPLACE INTO notes_fts (noteId, title, content)
+    SELECT 
+        n.noteId,
+        n.title,
+        NEW.content
+    FROM notes n
+    WHERE n.blobId = NEW.blobId
+        AND n.type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap')
+        AND n.isDeleted = 0
+        AND n.isProtected = 0;
+END;
+
+-- Trigger for DELETE operations
+CREATE TRIGGER notes_fts_delete 
+AFTER DELETE ON notes
+BEGIN
+    DELETE FROM notes_fts WHERE noteId = OLD.noteId;
+END;
+
+-- Trigger for soft delete (isDeleted = 1)
+CREATE TRIGGER notes_fts_soft_delete 
+AFTER UPDATE ON notes
+WHEN OLD.isDeleted = 0 AND NEW.isDeleted = 1
+BEGIN
+    DELETE FROM notes_fts WHERE noteId = NEW.noteId;
+END;
+
+-- Trigger for notes becoming protected
+-- Remove from FTS when a note becomes protected
+CREATE TRIGGER notes_fts_protect 
+AFTER UPDATE ON notes
+WHEN OLD.isProtected = 0 AND NEW.isProtected = 1
+BEGIN
+    DELETE FROM notes_fts WHERE noteId = NEW.noteId;
+END;
+
+-- Trigger for notes becoming unprotected
+-- Add to FTS when a note becomes unprotected (if eligible)
+CREATE TRIGGER notes_fts_unprotect 
+AFTER UPDATE ON notes
+WHEN OLD.isProtected = 1 AND NEW.isProtected = 0
+    AND NEW.type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap')
+    AND NEW.isDeleted = 0
+BEGIN
+    DELETE FROM notes_fts WHERE noteId = NEW.noteId;
+    
+    INSERT INTO notes_fts (noteId, title, content)
+    SELECT 
+        NEW.noteId,
+        NEW.title,
+        COALESCE(b.content, '')
+    FROM (SELECT NEW.noteId) AS note_select
+    LEFT JOIN blobs b ON b.blobId = NEW.blobId;
+END;
+
+-- Trigger for INSERT operations on blobs
+-- Handles: INSERT, INSERT OR REPLACE, and the INSERT part of upsert
+-- Updates all notes that reference this blob (common during import and deduplication)
+CREATE TRIGGER notes_fts_blob_insert 
+AFTER INSERT ON blobs
+BEGIN
+    -- Use INSERT OR REPLACE to handle both new and existing FTS entries
+    -- This is crucial for blob deduplication where multiple notes may already
+    -- exist that reference this blob before the blob itself is created
+    INSERT OR REPLACE INTO notes_fts (noteId, title, content)
+    SELECT 
+        n.noteId,
+        n.title,
+        NEW.content
+    FROM notes n
+    WHERE n.blobId = NEW.blobId
+        AND n.type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap')
+        AND n.isDeleted = 0
+        AND n.isProtected = 0;
+END;

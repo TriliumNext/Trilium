@@ -214,6 +214,14 @@ const defaultOptions: DefaultOption[] = [
     { name: "aiSystemPrompt", value: "", isSynced: true },
     { name: "aiSelectedProvider", value: "openai", isSynced: true },
 
+    // Search configuration
+    { name: "searchBackend", value: "typescript", isSynced: false }, // "typescript" or "sqlite"
+    { name: "searchSqliteEnabled", value: "false", isSynced: false },
+    { name: "searchSqlitePerformanceLogging", value: "false", isSynced: false },
+    { name: "searchSqliteMaxMemory", value: "67108864", isSynced: false }, // 64MB default
+    { name: "searchSqliteBatchSize", value: "100", isSynced: false },
+    { name: "searchSqliteAutoRebuild", value: "true", isSynced: false },
+
     { name: "seenCallToActions", value: "[]", isSynced: true }
 ];
 
