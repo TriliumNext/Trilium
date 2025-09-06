@@ -12,7 +12,7 @@
     "@triliumnext/ckeditor5-math": "workspace:*",
     "@triliumnext/ckeditor5-mermaid": "workspace:*",
     "ckeditor5": "46.0.2",
-    "ckeditor5-premium-features": "46.0.2"
+    "ckeditor5-premium-features": "46.0.3"
   },
   "devDependencies": {
     "@smithy/middleware-retry": "4.1.20",
