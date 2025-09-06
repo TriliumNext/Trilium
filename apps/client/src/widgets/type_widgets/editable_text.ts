@@ -13,6 +13,7 @@ import { buildConfig, BuildEditorOptions, OPEN_SOURCE_LICENSE_KEY } from "./cked
 import type FNote from "../../entities/fnote.js";
 import { PopupEditor, ClassicEditor, EditorWatchdog, type CKTextEditor, type MentionFeed, type WatchdogConfig, EditorConfig } from "@triliumnext/ckeditor5";
 import { updateTemplateCache } from "./ckeditor/snippets.js";
+import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
 
 const TPL = /*html*/`
 <div class="note-detail-editable-text note-detail-printable">
@@ -238,12 +239,26 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
         const blob = await note.getBlob();
 
         await this.spacedUpdate.allowUpdateWithoutChange(async () => {
-            const data = blob?.content || "";
-            const newContentLanguage = this.note?.getLabelValue("language");
-            if (this.contentLanguage !== newContentLanguage) {
-                await this.reinitializeWithData(data);
-            } else {
-                this.watchdog.editor?.setData(data);
+            let data = blob?.content || "";
+            
+            try {
+                // Escape generic type syntax that could be mistaken for HTML tags
+                data = this.escapeGenericTypeSyntax(data);
+                
+                const newContentLanguage = this.note?.getLabelValue("language");
+                if (this.contentLanguage !== newContentLanguage) {
+                    await this.reinitializeWithData(data);
+                } else {
+                    this.watchdog.editor?.setData(data);
+                }
+            } catch (error) {
+                logError(`Failed to set editor data for note ${note.noteId}: ${error}`);
+                // Try to set the data without escaping as a fallback
+                try {
+                    this.watchdog.editor?.setData(blob?.content || "");
+                } catch (fallbackError) {
+                    logError(`Fallback also failed: ${fallbackError}`);
+                }
             }
         });
     }
@@ -254,7 +269,10 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
             return;
         }
 
-        const content = this.watchdog.editor?.getData() ?? "";
+        let content = this.watchdog.editor?.getData() ?? "";
+        
+        // Unescape any generic type syntax we escaped earlier
+        content = this.unescapeGenericTypeSyntax(content);
 
         // if content is only tags/whitespace (typically <p>&nbsp;</p>), then just make it empty,
         // this is important when setting a new note to code
@@ -487,9 +505,23 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
             return;
         }
 
-        this.watchdog.destroy();
-        await this.createEditor();
-        this.watchdog.editor?.setData(data);
+        try {
+            this.watchdog.destroy();
+            await this.createEditor();
+            // Data should already be escaped when this is called from doRefresh
+            // but we ensure it's escaped in case this is called from elsewhere
+            const escapedData = data.includes('&lt;') ? data : this.escapeGenericTypeSyntax(data);
+            this.watchdog.editor?.setData(escapedData);
+        } catch (error) {
+            logError(`Failed to reinitialize editor with data: ${error}`);
+            // Try to create editor without data and set it later
+            try {
+                await this.createEditor();
+                this.watchdog.editor?.setData("");
+            } catch (fallbackError) {
+                logError(`Failed to create empty editor: ${fallbackError}`);
+            }
+        }
     }
 
     async reinitialize() {
@@ -527,6 +559,109 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
         } else {
             return $("body").find(".classic-toolbar-widget");
         }
+    }
+
+    /**
+     * Escapes generic type syntax (e.g., <String, Type>) that could be mistaken for HTML tags.
+     * This prevents CKEditor from trying to parse them as DOM elements.
+     */
+    private escapeGenericTypeSyntax(content: string): string {
+        if (!content) return content;
+        
+        try {
+            // Count replacements for debugging
+            let replacementCount = 0;
+            
+            // Get the allowed HTML tags from user settings, with fallback to default list
+            let allowedTags;
+            try {
+                const allowedHtmlTagsOption = options.get("allowedHtmlTags");
+                allowedTags = allowedHtmlTagsOption ? JSON.parse(allowedHtmlTagsOption) : SANITIZER_DEFAULT_ALLOWED_TAGS;
+            } catch (e) {
+                // Fallback to default list if option doesn't exist or is invalid JSON
+                allowedTags = SANITIZER_DEFAULT_ALLOWED_TAGS;
+            }
+            
+            // Convert to lowercase for case-insensitive comparison
+            const htmlTags = new Set(
+                allowedTags.map((tag: string) => tag.toLowerCase())
+            );
+            
+            // Add custom Trilium element that must be preserved
+            htmlTags.add('includenote');
+            
+            // More comprehensive escaping strategy:
+            // We'll use a different approach - parse through the content and identify
+            // what looks like HTML vs what looks like generic type syntax
+            
+            // First pass: Protect actual HTML tags by temporarily replacing them
+            const htmlProtectionMap = new Map<string, string>();
+            let protectionCounter = 0;
+            
+            // Protect complete HTML tags (opening, closing, and self-closing)
+            content = content.replace(/<\/?([a-zA-Z][a-zA-Z0-9-]*)(?:\s+[^>]*)?\/?>|<!--[\s\S]*?-->/g, (match, tagName) => {
+                // Check if this is a comment
+                if (match.startsWith('<!--')) {
+                    const placeholder = `__HTML_PROTECTED_${protectionCounter++}__`;
+                    htmlProtectionMap.set(placeholder, match);
+                    return placeholder;
+                }
+                
+                // Extract just the tag name (first word after < or </)
+                const actualTagName = tagName?.toLowerCase();
+                
+                // Only protect if it's a known HTML tag
+                if (actualTagName && htmlTags.has(actualTagName)) {
+                    const placeholder = `__HTML_PROTECTED_${protectionCounter++}__`;
+                    htmlProtectionMap.set(placeholder, match);
+                    return placeholder;
+                }
+                
+                // Not a known HTML tag, leave it for escaping
+                return match;
+            });
+            
+            // Second pass: Now escape all remaining angle brackets that weren't protected
+            // These are likely generic type syntax or other non-HTML patterns
+            content = content.replace(/</g, () => {
+                replacementCount++;
+                return '&lt;';
+            });
+            content = content.replace(/>/g, () => {
+                replacementCount++;
+                return '&gt;';
+            });
+            
+            // Third pass: Restore the protected HTML tags
+            htmlProtectionMap.forEach((originalHtml, placeholder) => {
+                content = content.replace(placeholder, originalHtml);
+            });
+            
+            if (replacementCount > 0) {
+                logInfo(`Escaped ${replacementCount} potential generic type patterns in note content`);
+            }
+            
+            return content;
+        } catch (error) {
+            logError(`Failed to escape generic type syntax: ${error}`);
+            return content; // Return original content if escaping fails
+        }
+    }
+    
+    /**
+     * Unescapes generic type syntax that was previously escaped.
+     * This restores the original content when saving.
+     */
+    private unescapeGenericTypeSyntax(content: string): string {
+        if (!content) return content;
+        
+        // Simply replace all &lt; with < and &gt; with >
+        // This is the correct behavior because CKEditor expects raw HTML
+        // Any entities that should display as literal text need to be double-escaped
+        content = content.replace(/&lt;/g, '<');
+        content = content.replace(/&gt;/g, '>');
+        
+        return content;
     }
 
     buildTouchBarCommand(data: CommandListenerData<"buildTouchBar">) {
