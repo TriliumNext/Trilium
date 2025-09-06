@@ -15,7 +15,7 @@
     "circular-deps": "dpdm -T src/**/*.ts --tree=false --warning=false --skip-dynamic-imports=circular"
   },
   "dependencies": {
-    "@eslint/js": "9.34.0",
+    "@eslint/js": "9.35.0",
     "@excalidraw/excalidraw": "0.18.0",
     "@fullcalendar/core": "6.1.19",
     "@fullcalendar/daygrid": "6.1.19",
