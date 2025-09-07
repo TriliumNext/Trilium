@@ -352,14 +352,7 @@ async function exportToZip(taskContext: TaskContext, branch: BBranch, format: "h
 
             return content.length < 100_000 ? html.prettyPrint(content, { indent_size: 2 }) : content;
         } else if (noteMeta.format === "markdown" && typeof content === "string") {
-            let markdownContent = mdService.toMarkdown(content);
-
-            if (markdownContent.trim().length > 0 && !markdownContent.startsWith("# ")) {
-                markdownContent = `# ${title}\r
-${markdownContent}`;
-            }
-
-            return markdownContent;
+            return mdService.toMarkdown(content);
         } else {
             return content;
         }
