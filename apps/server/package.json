@@ -81,7 +81,7 @@
     "debounce": "2.2.0",
     "debug": "4.4.1",
     "ejs": "3.1.10",
-    "electron": "37.4.0",
+    "electron": "38.0.0",
     "electron-debug": "4.1.0",
     "electron-window-state": "5.0.3",
     "escape-html": "1.0.3",
