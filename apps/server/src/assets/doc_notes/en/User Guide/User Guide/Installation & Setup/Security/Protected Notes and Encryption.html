@@ -1,0 +1,276 @@
+<p>Trilium provides robust encryption capabilities through its Protected
+  Notes system, ensuring your sensitive information remains secure even if
+  your database is compromised.</p>
+<h2>Overview</h2>
+<p>Protected notes in Trilium use <strong>AES-128-CBC encryption</strong> with
+  scrypt-based key derivation to protect sensitive content. The encryption
+  is designed to be:</p>
+<ul>
+  <li><strong>Secure</strong>: Uses industry-standard AES encryption with strong
+    key derivation</li>
+  <li><strong>Selective</strong>: Only notes marked as protected are encrypted</li>
+  <li><strong>Session-based</strong>: Decrypted content remains accessible during
+    a protected session</li>
+  <li><strong>Zero-knowledge</strong>: The server never stores unencrypted protected
+    content</li>
+</ul>
+<h2>How Encryption Works</h2>
+<h3>Encryption Algorithm</h3>
+<ul>
+  <li><strong>Cipher</strong>: AES-128-CBC (Advanced Encryption Standard in
+    Cipher Block Chaining mode)</li>
+  <li><strong>Key Derivation</strong>: Scrypt with configurable parameters (N=16384,
+    r=8, p=1)</li>
+  <li><strong>Initialization Vector</strong>: 16-byte random IV generated for
+    each encryption operation</li>
+  <li><strong>Integrity Protection</strong>: SHA-1 digest (first 4 bytes) prepended
+    to plaintext for tamper detection</li>
+</ul>
+<h3>Key Management</h3>
+<ol>
+  <li><strong>Master Password</strong>: User-provided password used for key
+    derivation</li>
+  <li><strong>Data Key</strong>: 32-byte random key generated during setup,
+    encrypted with password-derived key</li>
+  <li><strong>Password-Derived Key</strong>: Generated using scrypt from master
+    password and salt</li>
+  <li><strong>Session Key</strong>: Data key loaded into memory during protected
+    session</li>
+</ol>
+<h3>Encryption Process</h3><pre><code class="language-text-x-trilium-auto">1. Generate random 16-byte IV
+2. Compute SHA-1 digest of plaintext (use first 4 bytes)
+3. Prepend digest to plaintext
+4. Encrypt (digest + plaintext) using AES-128-CBC
+5. Prepend IV to encrypted data
+6. Encode result as Base64</code></pre>
+<h3>Decryption Process</h3><pre><code class="language-text-x-trilium-auto">1. Decode Base64 ciphertext
+2. Extract IV (first 16 bytes) and encrypted data
+3. Decrypt using AES-128-CBC with data key and IV
+4. Extract digest (first 4 bytes) and plaintext
+5. Verify integrity by comparing computed vs. stored digest
+6. Return plaintext if verification succeeds</code></pre>
+<h2>Setting Up Protected Notes</h2>
+<h3>Initial Setup</h3>
+<ol>
+  <li><strong>Set Master Password</strong>: Configure a strong password during
+    initial setup</li>
+  <li><strong>Create Protected Note</strong>: Right-click a note and select
+    "Toggle Protected Status"</li>
+  <li><strong>Enter Protected Session</strong>: Click the shield icon or use
+    Ctrl+Shift+P</li>
+</ol>
+<h3>Password Requirements</h3>
+<ul>
+  <li><strong>Minimum Length</strong>: 8 characters (recommended: 12+ characters)</li>
+  <li><strong>Complexity</strong>: Use a mix of uppercase, lowercase, numbers,
+    and symbols</li>
+  <li><strong>Uniqueness</strong>: Don't reuse passwords from other services</li>
+  <li><strong>Storage</strong>: Consider using a password manager for complex
+    passwords</li>
+</ul>
+<h3>Best Practices</h3>
+<ol>
+  <li><strong>Strong Passwords</strong>: Use passphrases or generated passwords</li>
+  <li><strong>Regular Changes</strong>: Update passwords periodically</li>
+  <li><strong>Secure Storage</strong>: Store password recovery information securely</li>
+  <li><strong>Backup Strategy</strong>: Ensure encrypted backups are properly
+    secured</li>
+</ol>
+<h2>Protected Sessions</h2>
+<h3>Session Management</h3>
+<ul>
+  <li><strong>Automatic Timeout</strong>: Sessions expire after configurable
+    timeout (default: 10 minutes)</li>
+  <li><strong>Manual Control</strong>: Explicitly enter/exit protected sessions</li>
+  <li><strong>Activity Tracking</strong>: Session timeout resets with each protected
+    note access</li>
+  <li><strong>Multi-client</strong>: Each client maintains its own protected
+    session</li>
+</ul>
+<h3>Session Lifecycle</h3>
+<ol>
+  <li><strong>Enter Session</strong>: User enters master password</li>
+  <li><strong>Key Derivation</strong>: System derives data key from password</li>
+  <li><strong>Session Active</strong>: Protected content accessible in plaintext</li>
+  <li><strong>Timeout/Logout</strong>: Data key removed from memory</li>
+  <li><strong>Protection Restored</strong>: Content returns to encrypted state</li>
+</ol>
+<h3>Configuration Options</h3>
+<p>Access via Options → Protected Session:</p>
+<ul>
+  <li><strong>Session Timeout</strong>: Duration before automatic logout (seconds)</li>
+  <li><strong>Password Verification</strong>: Enable/disable password strength
+    requirements</li>
+  <li><strong>Recovery Options</strong>: Configure password recovery mechanisms</li>
+</ul>
+<h2>Performance Considerations</h2>
+<h3>Encryption Overhead</h3>
+<ul>
+  <li><strong>CPU Impact</strong>: Scrypt key derivation is intentionally CPU-intensive</li>
+  <li><strong>Memory Usage</strong>: Minimal additional memory for encrypted
+    content</li>
+  <li><strong>Storage Size</strong>: Encrypted content is slightly larger due
+    to Base64 encoding</li>
+  <li><strong>Network Transfer</strong>: Encrypted notes transfer as Base64
+    strings</li>
+</ul>
+<h3>Optimization Tips</h3>
+<ol>
+  <li><strong>Selective Protection</strong>: Only encrypt truly sensitive notes</li>
+  <li><strong>Session Management</strong>: Keep sessions active during intensive
+    work</li>
+  <li><strong>Hardware Acceleration</strong>: Modern CPUs provide AES acceleration</li>
+  <li><strong>Batch Operations</strong>: Group protected note operations when
+    possible</li>
+</ol>
+<h2>Security Considerations</h2>
+<h3>Threat Model</h3>
+<p><strong>Protected Against</strong>:</p>
+<ul>
+  <li>Database theft or unauthorized access</li>
+  <li>Network interception (data at rest)</li>
+  <li>Server-side data breaches</li>
+  <li>Backup file compromise</li>
+</ul>
+<p><strong>Not Protected Against</strong>:</p>
+<ul>
+  <li>Keyloggers or screen capture malware</li>
+  <li>Physical access to unlocked device</li>
+  <li>Memory dumps during active session</li>
+  <li>Social engineering attacks</li>
+</ul>
+<h3>Limitations</h3>
+<ol>
+  <li><strong>Note Titles</strong>: Currently encrypted, may leak structural
+    information</li>
+  <li><strong>Metadata</strong>: Creation dates, modification times remain unencrypted</li>
+  <li><strong>Search Indexing</strong>: Protected notes excluded from full-text
+    search</li>
+  <li><strong>Sync Conflicts</strong>: May be harder to resolve for protected
+    content</li>
+</ol>
+<h2>Troubleshooting</h2>
+<h3>Common Issues</h3>
+<h4>"Could not decrypt string" Error</h4>
+<p><strong>Causes</strong>:</p>
+<ul>
+  <li>Incorrect password entered</li>
+  <li>Corrupted encrypted data</li>
+  <li>Database migration issues</li>
+</ul>
+<p><strong>Solutions</strong>:</p>
+<ol>
+  <li>Verify password spelling and case sensitivity</li>
+  <li>Check for active protected session</li>
+  <li>Restart application and retry</li>
+  <li>Restore from backup if corruption suspected</li>
+</ol>
+<h4>Protected Session Won't Start</h4>
+<p><strong>Causes</strong>:</p>
+<ul>
+  <li>Password verification hash mismatch</li>
+  <li>Missing encryption salt</li>
+  <li>Database schema issues</li>
+</ul>
+<p><strong>Solutions</strong>:</p>
+<ol>
+  <li>Check error logs for specific error messages</li>
+  <li>Verify database integrity</li>
+  <li>Restore from known good backup</li>
+  <li>Contact support with error details</li>
+</ol>
+<h4>Performance Issues</h4>
+<p><strong>Symptoms</strong>:</p>
+<ul>
+  <li>Slow password verification</li>
+  <li>Long delays entering protected session</li>
+  <li>High CPU usage during encryption</li>
+</ul>
+<p><strong>Solutions</strong>:</p>
+<ol>
+  <li>Reduce scrypt parameters (advanced users only)</li>
+  <li>Limit number of protected notes</li>
+  <li>Upgrade hardware (more RAM/faster CPU)</li>
+  <li>Close other resource-intensive applications</li>
+</ol>
+<h3>Recovery Procedures</h3>
+<h4>Password Recovery</h4>
+<p>If you forget your master password:</p>
+<ol>
+  <li><strong>No Built-in Recovery</strong>: Trilium cannot recover forgotten
+    passwords</li>
+  <li><strong>Backup Restoration</strong>: Restore from backup with known password</li>
+  <li><strong>Data Export</strong>: Export unprotected content before password
+    change</li>
+  <li><strong>Complete Reset</strong>: Last resort - lose all protected content</li>
+</ol>
+<h4>Data Recovery</h4>
+<p>For corrupted protected notes:</p>
+<ol>
+  <li><strong>Verify Backup</strong>: Check if backups contain uncorrupted data</li>
+  <li><strong>Export/Import</strong>: Try exporting and re-importing the note</li>
+  <li><strong>Database Repair</strong>: Use database repair tools if available</li>
+  <li><strong>Professional Help</strong>: Contact data recovery services for
+    critical data</li>
+</ol>
+<h2>Advanced Configuration</h2>
+<h3>Custom Encryption Parameters</h3>
+<p><strong>Warning</strong>: Modifying encryption parameters requires advanced
+  knowledge and may break compatibility.</p>
+<p>For expert users, encryption parameters can be modified in the source
+  code:</p><pre><code class="language-application-typescript">// In my_scrypt.ts
+const scryptParams = {
+    N: 16384,  // CPU/memory cost parameter
+    r: 8,      // Block size parameter  
+    p: 1       // Parallelization parameter
+};</code></pre>
+<h3>Integration with External Tools</h3>
+<p>Protected notes can be accessed programmatically:</p><pre><code class="language-application-javascript-env-backend">// Backend script example
+const protectedNote = api.getNote('noteId');
+if (protectedNote.isProtected) {
+    // Content will be encrypted unless in protected session
+    const content = protectedNote.getContent();
+}</code></pre>
+<h2>Compliance and Auditing</h2>
+<h3>Encryption Standards</h3>
+<ul>
+  <li><strong>Algorithm</strong>: AES-128-CBC (FIPS 140-2 approved)</li>
+  <li><strong>Key Derivation</strong>: Scrypt (RFC 7914)</li>
+  <li><strong>Random Generation</strong>: Node.js crypto.randomBytes() (OS entropy)</li>
+</ul>
+<h3>Audit Trail</h3>
+<ul>
+  <li>Protected session entry/exit events logged</li>
+  <li>Encryption/decryption operations tracked</li>
+  <li>Password verification attempts recorded</li>
+  <li>Key derivation operations monitored</li>
+</ul>
+<h3>Compliance Considerations</h3>
+<ul>
+  <li><strong>GDPR</strong>: Encryption provides data protection safeguards</li>
+  <li><strong>HIPAA</strong>: AES encryption meets security requirements</li>
+  <li><strong>SOX</strong>: Audit trails support compliance requirements</li>
+  <li><strong>PCI DSS</strong>: Strong encryption protects sensitive data</li>
+</ul>
+<h2>Migration and Backup</h2>
+<h3>Backup Strategies</h3>
+<ol>
+  <li><strong>Encrypted Backups</strong>: Regular backups preserve encrypted
+    state</li>
+  <li><strong>Unencrypted Exports</strong>: Export protected content during
+    session</li>
+  <li><strong>Key Management</strong>: Securely store password recovery information</li>
+  <li><strong>Testing</strong>: Regularly test backup restoration procedures</li>
+</ol>
+<h3>Migration Procedures</h3>
+<p>When moving to new installation:</p>
+<ol>
+  <li><strong>Export Data</strong>: Export all notes including protected content</li>
+  <li><strong>Backup Database</strong>: Create complete database backup</li>
+  <li><strong>Transfer Files</strong>: Move exported files to new installation</li>
+  <li><strong>Import Data</strong>: Import using same master password</li>
+  <li><strong>Verify</strong>: Confirm all protected content accessible</li>
+</ol>
+<p>Remember: The security of protected notes ultimately depends on choosing
+  a strong master password and following security best practices for your
+  overall system.</p>

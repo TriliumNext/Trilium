@@ -1,0 +1,293 @@
+<h2>Saved Searches</h2>
+<p>Saved searches in Trilium allow you to create dynamic collections of notes
+  that automatically update based on search criteria. They appear as special
+  notes in your tree and provide a powerful way to organize and access related
+  content.</p>
+<h2>Understanding Saved Searches</h2>
+<p>A saved search is a special note type that:</p>
+<ul>
+  <li>Stores search criteria and configuration</li>
+  <li>Dynamically displays matching notes as children</li>
+  <li>Updates automatically when notes change</li>
+  <li>Can be bookmarked and accessed like any other note</li>
+  <li>Supports all search features including ordering and limits</li>
+</ul>
+<h2>Creating Saved Searches</h2>
+<h3>From Search Dialog</h3>
+<ol>
+  <li>Open the search dialog (Ctrl+S or search icon)</li>
+  <li>Configure your search criteria and options</li>
+  <li>Click "Save to note" button</li>
+  <li>Choose a name and location for the saved search</li>
+</ol>
+<h3>Manual Creation</h3>
+<ol>
+  <li>Create a new note and set its type to "Saved Search"</li>
+  <li>Configure the search using labels:
+    <ul>
+      <li><code>#searchString</code> - The search query</li>
+      <li><code>#fastSearch</code> - Enable fast search mode</li>
+      <li><code>#includeArchivedNotes</code> - Include archived notes</li>
+      <li><code>#orderBy</code> - Sort field</li>
+      <li><code>#orderDirection</code> - "asc" or "desc"</li>
+      <li><code>#limit</code> - Maximum number of results</li>
+    </ul>
+  </li>
+</ol>
+<h3>Using Search Scripts</h3>
+<p>For complex logic, create a JavaScript note and link it:</p>
+<ul>
+  <li><code>~searchScript</code> - Relation pointing to a backend script note</li>
+</ul>
+<h2>Basic Saved Search Examples</h2>
+<h3>Simple Text Search</h3><pre><code class="language-text-x-trilium-auto">#searchString=project management</code></pre>
+<p>Finds all notes containing "project management".</p>
+<h3>Tag-Based Collection</h3><pre><code class="language-text-x-trilium-auto">#searchString=#book #author=Tolkien
+#orderBy=publicationYear
+#orderDirection=desc</code></pre>
+<p>Creates a collection of Tolkien's books ordered by publication year.</p>
+<h3>Task Dashboard</h3><pre><code class="language-text-x-trilium-auto">#searchString=#task #status!=completed #assignee=me
+#orderBy=priority
+#orderDirection=desc
+#limit=20</code></pre>
+<p>Shows your top 20 incomplete tasks by priority.</p>
+<h3>Recent Activity</h3><pre><code class="language-text-x-trilium-auto">#searchString=note.dateModified &gt;= TODAY-7
+#orderBy=dateModified
+#orderDirection=desc
+#limit=50</code></pre>
+<p>Shows the 50 most recently modified notes from the last week.</p>
+<h2>Advanced Saved Search Patterns</h2>
+<h3>Dynamic Date-Based Collections</h3>
+<h4>This Week's Content</h4><pre><code class="language-text-x-trilium-auto">#searchString=note.dateCreated &gt;= TODAY-7 note.dateCreated &lt; TODAY
+#orderBy=dateCreated
+#orderDirection=desc</code></pre>
+<h4>Monthly Review Collection</h4><pre><code class="language-text-x-trilium-auto">#searchString=#reviewed=false note.dateCreated &gt;= MONTH note.dateCreated &lt; MONTH+1
+#orderBy=dateCreated</code></pre>
+<h4>Upcoming Deadlines</h4><pre><code class="language-text-x-trilium-auto">#searchString=#dueDate &gt;= TODAY #dueDate &lt;= TODAY+14 #status!=completed
+#orderBy=dueDate
+#orderDirection=asc</code></pre>
+<h3>Project-Specific Collections</h3>
+<h4>Project Dashboard</h4><pre><code class="language-text-x-trilium-auto">#searchString=#project=alpha (#task OR #milestone OR #document)
+#orderBy=priority
+#orderDirection=desc</code></pre>
+<h4>Project Health Monitor</h4><pre><code class="language-text-x-trilium-auto">#searchString=#project=alpha #status=blocked OR (#dueDate &lt; TODAY #status!=completed)
+#orderBy=dueDate
+#orderDirection=asc</code></pre>
+<h3>Content Type Collections</h3>
+<h4>Documentation Hub</h4><pre><code class="language-text-x-trilium-auto">#searchString=(#documentation OR #guide OR #manual) #product=api
+#orderBy=dateModified
+#orderDirection=desc</code></pre>
+<h4>Learning Path</h4><pre><code class="language-text-x-trilium-auto">#searchString=#course #level=beginner #topic=programming
+#orderBy=difficulty
+#orderDirection=asc</code></pre>
+<h2>Search Script Examples</h2>
+<p>For complex logic that can't be expressed in search strings, use JavaScript:</p>
+<h3>Custom Business Logic</h3><pre><code class="language-application-javascript-env-backend">// Find notes that need attention based on complex criteria
+const api = require('api');
+
+const cutoffDate = new Date();
+cutoffDate.setDate(cutoffDate.getDate() - 30);
+
+const results = [];
+
+// Find high-priority tasks overdue by more than a week
+const overdueTasks = api.searchForNotes(`
+    #task #priority=high #dueDate &lt; TODAY-7 #status!=completed
+`);
+
+// Find projects with no recent activity
+const staleProjets = api.searchForNotes(`
+    #project #status=active note.dateModified &lt; TODAY-30
+`);
+
+// Find notes with many attributes but no content
+const overlabeledNotes = api.searchForNotes(`
+    note.attributeCount &gt; 5 note.contentSize &lt; 100
+`);
+
+return [...overdueTasks, ...staleProjects, ...overlabeledNotes]
+    .map(note =&gt; note.noteId);</code></pre>
+<h3>Dynamic Tag-Based Grouping</h3><pre><code class="language-application-javascript-env-backend">// Group notes by quarter based on creation date
+const api = require('api');
+
+const currentYear = new Date().getFullYear();
+const results = [];
+
+for (let quarter = 1; quarter &lt;= 4; quarter++) {
+    const startMonth = (quarter - 1) * 3 + 1;
+    const endMonth = quarter * 3;
+    
+    const quarterNotes = api.searchForNotes(`
+        note.dateCreated &gt;= "${currentYear}-${String(startMonth).padStart(2, '0')}-01"
+        note.dateCreated &lt; "${currentYear}-${String(endMonth + 1).padStart(2, '0')}-01"
+        #project
+    `);
+    
+    results.push(...quarterNotes.map(note =&gt; note.noteId));
+}
+
+return results;</code></pre>
+<h3>Conditional Search Logic</h3><pre><code class="language-application-javascript-env-backend">// Smart dashboard that changes based on day of week
+const api = require('api');
+
+const today = new Date();
+const dayOfWeek = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+
+let searchQuery;
+
+if (dayOfWeek === 1) { // Monday - weekly planning
+    searchQuery = '#task #status=planned #week=' + getWeekNumber(today);
+} else if (dayOfWeek === 5) { // Friday - weekly review
+    searchQuery = '#task #completed=true #week=' + getWeekNumber(today);
+} else { // Regular days - focus on today's work
+    searchQuery = '#task #dueDate=TODAY #status!=completed';
+}
+
+const notes = api.searchForNotes(searchQuery);
+return notes.map(note =&gt; note.noteId);
+
+function getWeekNumber(date) {
+    const firstDay = new Date(date.getFullYear(), 0, 1);
+    const pastDays = Math.floor((date - firstDay) / 86400000);
+    return Math.ceil((pastDays + firstDay.getDay() + 1) / 7);
+}</code></pre>
+<h2>Performance Optimization</h2>
+<h3>Fast Search for Large Collections</h3>
+<p>For collections that don't need content search:</p><pre><code class="language-text-x-trilium-auto">#searchString=#category=reference #type=article
+#fastSearch=true
+#limit=100</code></pre>
+<h3>Efficient Ordering</h3>
+<p>Use indexed properties for better performance:</p><pre><code class="language-text-x-trilium-auto">#orderBy=dateCreated
+#orderBy=title
+#orderBy=noteId</code></pre>
+<p>Avoid complex calculated orderings in large collections.</p>
+<h3>Result Limiting</h3>
+<p>Always set reasonable limits for large collections:</p><pre><code class="language-text-x-trilium-auto">#limit=50</code></pre>
+<p>For very large result sets, consider breaking into multiple saved searches.</p>
+<h2>Saved Search Organization</h2>
+<h3>Hierarchical Organization</h3>
+<p>Create a folder structure for saved searches:</p><pre><code class="language-text-x-trilium-auto">📁 Searches
+├── 📁 Projects
+│   ├── 🔍 Active Projects
+│   ├── 🔍 Overdue Tasks  
+│   └── 🔍 Project Archive
+├── 📁 Content
+│   ├── 🔍 Recent Drafts
+│   ├── 🔍 Published Articles
+│   └── 🔍 Review Queue
+└── 📁 Maintenance
+    ├── 🔍 Untagged Notes
+    ├── 🔍 Cleanup Candidates
+    └── 🔍 Orphaned Notes</code></pre>
+<h3>Search Naming Conventions</h3>
+<p>Use clear, descriptive names:</p>
+<ul>
+  <li>"Active High-Priority Tasks"</li>
+  <li>"This Month's Meeting Notes"</li>
+  <li>"Unprocessed Inbox Items"</li>
+  <li>"Literature Review Papers"</li>
+</ul>
+<h3>Search Labels</h3>
+<p>Tag saved searches for organization:</p><pre><code class="language-text-x-trilium-auto">#searchType=dashboard
+#searchType=maintenance  
+#searchType=archive
+#frequency=daily
+#frequency=weekly</code></pre>
+<h2>Dashboard Creation</h2>
+<h3>Personal Dashboard</h3>
+<p>Combine multiple saved searches in a parent note:</p><pre><code class="language-text-x-trilium-auto">📋 My Dashboard
+├── 🔍 Today's Tasks
+├── 🔍 Urgent Items
+├── 🔍 Recent Notes
+├── 🔍 Upcoming Deadlines
+└── 🔍 Weekly Review Items</code></pre>
+<h3>Project Dashboard</h3><pre><code class="language-text-x-trilium-auto">📋 Project Alpha Dashboard  
+├── 🔍 Active Tasks
+├── 🔍 Blocked Items
+├── 🔍 Recent Updates
+├── 🔍 Milestones
+└── 🔍 Team Notes</code></pre>
+<h3>Content Dashboard</h3><pre><code class="language-text-x-trilium-auto">📋 Content Management
+├── 🔍 Draft Articles
+├── 🔍 Review Queue
+├── 🔍 Published This Month
+├── 🔍 High-Engagement Posts
+└── 🔍 Content Ideas</code></pre>
+<h2>Maintenance and Updates</h2>
+<h3>Regular Review</h3>
+<p>Periodically review saved searches for:</p>
+<ul>
+  <li>Outdated search criteria</li>
+  <li>Performance issues</li>
+  <li>Unused collections</li>
+  <li>Scope creep</li>
+</ul>
+<h3>Search Evolution</h3>
+<p>As your note-taking evolves, update searches:</p>
+<ul>
+  <li>Add new tags to existing searches</li>
+  <li>Refine criteria based on usage patterns</li>
+  <li>Split large collections into smaller ones</li>
+  <li>Merge rarely-used collections</li>
+</ul>
+<h3>Performance Monitoring</h3>
+<p>Watch for performance issues:</p>
+<ul>
+  <li>Slow-loading saved searches</li>
+  <li>Memory usage with large result sets</li>
+  <li>Search timeout errors</li>
+</ul>
+<h2>Troubleshooting</h2>
+<h3>Common Issues</h3>
+<h4>Empty Results</h4>
+<ul>
+  <li>Check search syntax</li>
+  <li>Verify tag spellings</li>
+  <li>Ensure notes have required attributes</li>
+  <li>Test search components individually</li>
+</ul>
+<h4>Performance Problems</h4>
+<ul>
+  <li>Add <code>#fastSearch=true</code> for attribute-only searches</li>
+  <li>Reduce result limits</li>
+  <li>Simplify complex criteria</li>
+  <li>Use indexed properties for ordering</li>
+</ul>
+<h4>Unexpected Results</h4>
+<ul>
+  <li>Enable debug mode to see query parsing</li>
+  <li>Test search in search dialog first</li>
+  <li>Check for case sensitivity issues</li>
+  <li>Verify date formats and ranges</li>
+</ul>
+<h3>Best Practices</h3>
+<h4>Search Design</h4>
+<ul>
+  <li>Start simple and add complexity gradually</li>
+  <li>Test searches thoroughly before saving</li>
+  <li>Document complex search logic</li>
+  <li>Use meaningful names and descriptions</li>
+</ul>
+<h4>Performance</h4>
+<ul>
+  <li>Set appropriate limits</li>
+  <li>Use fast search when possible</li>
+  <li>Avoid overly complex expressions</li>
+  <li>Monitor search execution time</li>
+</ul>
+<h4>Organization</h4>
+<ul>
+  <li>Group related searches</li>
+  <li>Use consistent naming conventions</li>
+  <li>Archive unused searches</li>
+  <li>Regular cleanup and maintenance</li>
+</ul>
+<h2>Next Steps</h2>
+<ul>
+  <li><a href="#root/_help_ttFz520bcNLf">Technical Search Details</a> - Understanding
+    search performance and implementation</li>
+  <li><a href="#root/_help_yAFfA1SAYlr7">Search Examples and Use Cases</a> -
+    More practical examples</li>
+  <li><a href="#root/_help_ey9TMFyD8SHR">Advanced Search Expressions</a> - Complex
+    query construction</li>
+</ul>
