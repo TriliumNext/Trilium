@@ -14,15 +14,13 @@ export const FUZZY_SEARCH_CONFIG = {
     MAX_EDIT_DISTANCE: 2,
     // Maximum proximity distance for phrase matching (in words)
     MAX_PHRASE_PROXIMITY: 10,
+    // Large note threshold - above this, use optimized search strategy (fuzzy on title only)
+    LARGE_NOTE_SIZE_THRESHOLD: 250000, // 250KB - switch to title-only fuzzy for performance
+    // Extreme note threshold - above this, skip content search entirely
+    EXTREME_NOTE_SIZE_THRESHOLD: 5 * 1024 * 1024, // 5MB - title search only
     // Absolute hard limits for extreme cases - only to prevent system crashes
     ABSOLUTE_MAX_CONTENT_SIZE: 100 * 1024 * 1024, // 100MB - extreme upper limit to prevent OOM
     ABSOLUTE_MAX_WORD_COUNT: 2000000, // 2M words - extreme upper limit for word processing
-    // Performance warning thresholds - inform user but still attempt search
-    PERFORMANCE_WARNING_SIZE: 5 * 1024 * 1024, // 5MB - warn about potential performance impact
-    PERFORMANCE_WARNING_WORDS: 100000, // 100K words - warn about word count impact
-    // Progressive processing thresholds for very large content
-    PROGRESSIVE_PROCESSING_SIZE: 10 * 1024 * 1024, // 10MB - use progressive processing
-    PROGRESSIVE_PROCESSING_WORDS: 500000, // 500K words - use progressive processing
     // Performance thresholds
     EARLY_TERMINATION_THRESHOLD: 3,
 } as const;
@@ -204,7 +202,8 @@ export function validateFuzzySearchTokens(tokens: string[], operator: string): {
 
 /**
  * Validates and preprocesses content for search operations.
- * Philosophy: Try to search everything! Only block truly extreme cases that could crash the system.
+ * Only blocks truly extreme cases that could crash the system.
+ * Large notes (>50K words) are handled with optimized search strategy instead.
  * 
  * @param content The content to validate and preprocess
  * @param noteId The note ID (for logging purposes)
@@ -222,12 +221,7 @@ export function validateAndPreprocessContent(content: string, noteId?: string): 
         return content.substring(0, FUZZY_SEARCH_CONFIG.ABSOLUTE_MAX_CONTENT_SIZE);
     }
 
-    // Warn about very large content but still process it
-    if (content.length > FUZZY_SEARCH_CONFIG.PERFORMANCE_WARNING_SIZE) {
-        console.info(`Large content for note ${noteId || 'unknown'}: ${content.length} bytes - processing may take time but will attempt full search`);
-    }
-
-    // For word count, be even more permissive - only block truly extreme cases
+    // For word count, only block truly extreme cases
     const wordCount = content.split(/\s+/).length;
     if (wordCount > FUZZY_SEARCH_CONFIG.ABSOLUTE_MAX_WORD_COUNT) {
         console.error(`Word count exceeds absolute system limit for note ${noteId || 'unknown'}: ${wordCount} words - this could cause system instability`);
@@ -235,15 +229,8 @@ export function validateAndPreprocessContent(content: string, noteId?: string): 
         return content.split(/\s+/).slice(0, FUZZY_SEARCH_CONFIG.ABSOLUTE_MAX_WORD_COUNT).join(' ');
     }
 
-    // Warn about high word counts but still process them
-    if (wordCount > FUZZY_SEARCH_CONFIG.PERFORMANCE_WARNING_WORDS) {
-        console.info(`High word count for note ${noteId || 'unknown'}: ${wordCount} words - phrase matching may take time but will attempt full search`);
-    }
-
-    // Progressive processing warning for very large content
-    if (content.length > FUZZY_SEARCH_CONFIG.PROGRESSIVE_PROCESSING_SIZE || wordCount > FUZZY_SEARCH_CONFIG.PROGRESSIVE_PROCESSING_WORDS) {
-        console.info(`Very large content for note ${noteId || 'unknown'} - using progressive processing to maintain responsiveness`);
-    }
+    // Notes above LARGE_NOTE_SIZE_THRESHOLD (250KB) will use optimized search strategy
+    // (handled in note_content_fulltext.ts)
 
     return content;
 }
