@@ -567,8 +567,8 @@ importers:
         specifier: 0.5.0
         version: 0.5.0
       axios:
-        specifier: 1.11.0
-        version: 1.11.0(debug@4.4.1)
+        specifier: 1.12.0
+        version: 1.12.0(debug@4.4.1)
       bindings:
         specifier: 1.5.0
         version: 1.5.0
@@ -1668,8 +1668,8 @@ packages:
   '@braintree/sanitize-url@7.1.1':
     resolution: {integrity: sha512-i1L7noDNxtFyL5DmZafWy1wRVhGehQmzZaz1HiN5e7iylJMSZR7ekOV7NsIqa5qBldlLrsKv4HbgFUVlQrz8Mw==}
 
-  '@bufbuild/protobuf@2.7.0':
-    resolution: {integrity: sha512-qn6tAIZEw5i/wiESBF4nQxZkl86aY4KoO0IkUa2Lh+rya64oTOdJQFlZuMwI1Qz9VBJQrQC4QlSA2DNek5gCOA==}
+  '@bufbuild/protobuf@2.8.0':
+    resolution: {integrity: sha512-r1/0w5C9dkbcdjyxY8ZHsC5AOWg4Pnzhm2zu7LO4UHSounp2tMm6Y+oioV9zlGbLveE7YaWRDUk48WLxRDgoqg==}
 
   '@bundled-es-modules/cookie@2.0.1':
     resolution: {integrity: sha512-8o+5fRPLNbjbdGRRmJj3h6Hh1AQJf2dk3qQ/5ZFb+PXkRNiSoMGGUKlsgLfrxneb72axVJyIYji64E2+nNfYyw==}
@@ -3226,8 +3226,8 @@ packages:
     resolution: {integrity: sha512-wK+5pLK5XFmgtH3aQ2YVvA3HohS3xqV/OxuVOdNx9Wpnz7VE/fnC+e1A7ln6LFYeck7gOJ/dsZV6OLplOtAJ2w==}
     engines: {node: '>=18'}
 
-  '@napi-rs/wasm-runtime@1.0.3':
-    resolution: {integrity: sha512-rZxtMsLwjdXkMUGC3WwsPwLNVqVqnTJT6MNIB6e+5fhMcSCPP0AOsNWuMQ5mdCq6HNjs/ZeWAEchpqeprqBD2Q==}
+  '@napi-rs/wasm-runtime@1.0.5':
+    resolution: {integrity: sha512-TBr9Cf9onSAS2LQ2+QHx6XcC6h9+RIzJgbqG3++9TUZSH204AwEy5jg3BTQ0VATsyoGj4ee49tN/y6rvaOOtcg==}
 
   '@noble/hashes@1.8.0':
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
@@ -4693,8 +4693,8 @@ packages:
   '@tweenjs/tween.js@25.0.0':
     resolution: {integrity: sha512-XKLA6syeBUaPzx4j3qwMqzzq+V4uo72BnlbOjmuljLrRqdsd3qnzvZZoxvMHZ23ndsRS4aufU6JOZYpCbU6T1A==}
 
-  '@tybys/wasm-util@0.10.0':
-    resolution: {integrity: sha512-VyyPYFlOMNylG45GoAe0xDoLwWuowvf92F9kySqzYh8vmYm7D2u4iUJKa1tOUpS70Ku13ASrOkS4ScXFsTaCNQ==}
+  '@tybys/wasm-util@0.10.1':
+    resolution: {integrity: sha512-9tTaPJLSiejZKx+Bmog4uSubteqTvFrVrURwkmHixBo0G4seD0zUxp98E1DzUBJxLQ3NPwXrGKDiVjwx/DpPsg==}
 
   '@types/appdmg@0.5.5':
     resolution: {integrity: sha512-G+n6DgZTZFOteITE30LnWj+HRVIGr7wMlAiLWOO02uJFWVEitaPU9JVXm9wJokkgshBawb2O1OykdcsmkkZfgg==}
@@ -5842,8 +5842,8 @@ packages:
     resolution: {integrity: sha512-zJAaP9zxTcvTHRlejau3ZOY4V7SRpiByf3/dxx2uyKxxor19tpmpV2QRsTKikckwhaPmr2dVpxxMr7jOCYVp5g==}
     engines: {node: '>=6.0.0'}
 
-  axios@1.11.0:
-    resolution: {integrity: sha512-1Lx3WLFQWm3ooKDYZD1eXmoGO9fxYQjrycfHFC8P0sCfQVXyROp0p9PFWBehewBOdCwHc+f/b8I0fMto5eSfwA==}
+  axios@1.12.0:
+    resolution: {integrity: sha512-oXTDccv8PcfjZmPGlWsPSwtOJCZ/b6W5jAMCNcfwJbCzDckwG0jrYJFaWH1yvivfCXjVzV/SPDEhMB3Q+DSurg==}
 
   axobject-query@4.1.0:
     resolution: {integrity: sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ==}
@@ -7891,8 +7891,8 @@ packages:
   fmix@0.1.0:
     resolution: {integrity: sha512-Y6hyofImk9JdzU8k5INtTXX1cu8LDlePWDFU5sftm9H+zKCr5SGrVjdhkvsim646cw5zD0nADj8oHyXMZmCZ9w==}
 
-  follow-redirects@1.15.9:
-    resolution: {integrity: sha512-gew4GsXizNgdoRyqmyfMHyAmXsZDk6mHkSxZFCzW9gwlbtOW44CDtYavM+y+72qD/Vq2l550kMF52DT8fOLJqQ==}
+  follow-redirects@1.15.11:
+    resolution: {integrity: sha512-deG2P0JfjrTxl50XGCDyfI97ZGVCxIpfKYmfyrQ54n5FO/0gfIES8C/Psl6kWVDolizcaaxZJnTS0QSMxvnsBQ==}
     engines: {node: '>=4.0'}
     peerDependencies:
       debug: '*'
@@ -14654,7 +14654,7 @@ snapshots:
 
   '@braintree/sanitize-url@7.1.1': {}
 
-  '@bufbuild/protobuf@2.7.0':
+  '@bufbuild/protobuf@2.8.0':
     optional: true
 
   '@bundled-es-modules/cookie@2.0.1':
@@ -15588,6 +15588,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 46.1.0
       '@ckeditor/ckeditor5-utils': 46.1.0
       ckeditor5: 46.1.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-restricted-editing@46.1.0':
     dependencies:
@@ -17570,11 +17572,11 @@ snapshots:
       strict-event-emitter: 0.5.1
     optional: true
 
-  '@napi-rs/wasm-runtime@1.0.3':
+  '@napi-rs/wasm-runtime@1.0.5':
     dependencies:
       '@emnapi/core': 1.5.0
       '@emnapi/runtime': 1.5.0
-      '@tybys/wasm-util': 0.10.0
+      '@tybys/wasm-util': 0.10.1
     optional: true
 
   '@noble/hashes@1.8.0': {}
@@ -18176,7 +18178,7 @@ snapshots:
 
   '@rolldown/binding-wasm32-wasi@1.0.0-beta.29':
     dependencies:
-      '@napi-rs/wasm-runtime': 1.0.3
+      '@napi-rs/wasm-runtime': 1.0.5
     optional: true
 
   '@rolldown/binding-win32-arm64-msvc@1.0.0-beta.29':
@@ -19047,7 +19049,7 @@ snapshots:
 
   '@tweenjs/tween.js@25.0.0': {}
 
-  '@tybys/wasm-util@0.10.0':
+  '@tybys/wasm-util@0.10.1':
     dependencies:
       tslib: 2.8.1
     optional: true
@@ -20479,9 +20481,9 @@ snapshots:
 
   await-to-js@3.0.0: {}
 
-  axios@1.11.0(debug@4.4.1):
+  axios@1.12.0(debug@4.4.1):
     dependencies:
-      follow-redirects: 1.15.9(debug@4.4.1)
+      follow-redirects: 1.15.11(debug@4.4.1)
       form-data: 4.0.4
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
@@ -20972,6 +20974,8 @@ snapshots:
   ckeditor5-collaboration@46.1.0:
     dependencies:
       '@ckeditor/ckeditor5-collaboration-core': 46.1.0
+    transitivePeerDependencies:
+      - supports-color
 
   ckeditor5-premium-features@46.1.0(bufferutil@4.0.9)(ckeditor5@46.1.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41))(utf-8-validate@6.0.5):
     dependencies:
@@ -23143,7 +23147,7 @@ snapshots:
       imul: 1.0.1
     optional: true
 
-  follow-redirects@1.15.9(debug@4.4.1):
+  follow-redirects@1.15.11(debug@4.4.1):
     optionalDependencies:
       debug: 4.4.1(supports-color@6.0.0)
 
@@ -23885,7 +23889,7 @@ snapshots:
   http-proxy@1.18.1:
     dependencies:
       eventemitter3: 4.0.7
-      follow-redirects: 1.15.9(debug@4.4.1)
+      follow-redirects: 1.15.11(debug@4.4.1)
       requires-port: 1.0.0
     transitivePeerDependencies:
       - debug
@@ -27966,7 +27970,7 @@ snapshots:
 
   sass-embedded@1.91.0:
     dependencies:
-      '@bufbuild/protobuf': 2.7.0
+      '@bufbuild/protobuf': 2.8.0
       buffer-builder: 0.2.0
       colorjs.io: 0.5.2
       immutable: 5.1.3
