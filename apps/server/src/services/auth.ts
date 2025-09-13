@@ -26,20 +26,8 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
     if (isElectron || noAuthentication) {
         next();
         return;
-    } else if (currentTotpStatus !== lastAuthState.totpEnabled || currentSsoStatus !== lastAuthState.ssoEnabled) {
-        req.session.destroy((err) => {
-            if (err) console.error('Error destroying session:', err);
-            res.redirect('login');
-        });
-        return;
-    } else if (currentSsoStatus) {
-        if (req.oidc?.isAuthenticated() && req.session.loggedIn) {
-            next();
-            return;
-        }
-        res.redirect('login');
-        return;
     } else if (!req.session.loggedIn && !noAuthentication) {
+        // check redirectBareDomain option first
 
         // cannot use options.getOptionBool currently => it will throw an error on new installations
         // TriliumNextTODO: look into potentially creating an getOptionBoolOrNull instead
@@ -54,6 +42,19 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
             }
         }
         res.redirect(hasRedirectBareDomain ? "share" : "login");
+    } else if (currentTotpStatus !== lastAuthState.totpEnabled || currentSsoStatus !== lastAuthState.ssoEnabled) {
+        req.session.destroy((err) => {
+            if (err) console.error('Error destroying session:', err);
+            res.redirect('login');
+        });
+        return;
+    } else if (currentSsoStatus) {
+        if (req.oidc?.isAuthenticated() && req.session.loggedIn) {
+            next();
+            return;
+        }
+        res.redirect('login');
+        return;
     } else {
         next();
     }
