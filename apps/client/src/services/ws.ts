@@ -6,9 +6,10 @@ import frocaUpdater from "./froca_updater.js";
 import appContext from "../components/app_context.js";
 import { t } from "./i18n.js";
 import type { EntityChange } from "../server_types.js";
+import { WebSocketMessage } from "@triliumnext/commons";
 
-type MessageHandler = (message: any) => void;
-const messageHandlers: MessageHandler[] = [];
+type MessageHandler = (message: WebSocketMessage) => void;
+let messageHandlers: MessageHandler[] = [];
 
 let ws: WebSocket;
 let lastAcceptedEntityChangeId = window.glob.maxEntityChangeIdAtLoad;
@@ -47,8 +48,12 @@ function logInfo(message: string) {
 window.logError = logError;
 window.logInfo = logInfo;
 
-function subscribeToMessages(messageHandler: MessageHandler) {
+export function subscribeToMessages(messageHandler: MessageHandler) {
     messageHandlers.push(messageHandler);
+}
+
+export function unsubscribeToMessage(messageHandler: MessageHandler) {
+    messageHandlers = messageHandlers.filter(handler => handler !== messageHandler);
 }
 
 // used to serialize frontend update operations

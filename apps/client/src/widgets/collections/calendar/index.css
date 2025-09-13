@@ -1,0 +1,76 @@
+.calendar-view {
+    overflow: hidden;
+    position: relative;
+    height: 100%;
+    user-select: none;
+    padding: 10px;
+}
+
+.calendar-view a {
+    color: unset;
+}
+
+.search-result-widget-content .calendar-view {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.calendar-container {
+    height: 100%;
+    --fc-page-bg-color: var(--main-background-color);
+    --fc-border-color: var(--main-border-color);
+    --fc-neutral-bg-color: var(--launcher-pane-background-color);
+    --fc-list-event-hover-bg-color: var(--left-pane-item-hover-background);
+}
+
+.calendar-container .fc-list-sticky .fc-list-day > * {
+    z-index: 50;
+}
+
+.calendar-container a.fc-event {
+    text-decoration: none;
+}
+
+.calendar-container a.fc-event.archived {
+    opacity: 0.5;
+}
+
+.calendar-container .fc-button {
+    padding: 0.2em 0.5em;
+}
+
+.calendar-container .promoted-attribute {
+    font-size: 0.85em;
+    opacity: 0.85;
+    overflow: hidden;
+}
+
+/* #region Header */
+.calendar-view .calendar-header {
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.calendar-view .calendar-header .btn {
+    min-width: unset !important;
+}
+
+.calendar-view .calendar-header > .title {
+    flex-grow: 1;
+    font-size: 1.3rem;
+    font-weight: normal;
+}
+
+body.desktop:not(.zen) .calendar-view .calendar-header {
+    padding-right: 5em;
+}
+
+.search-result-widget-content .calendar-view .calendar-header {
+    padding-right: unset !important;
+}
+/* #endregion */

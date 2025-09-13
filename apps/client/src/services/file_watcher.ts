@@ -1,16 +1,8 @@
 import ws from "./ws.js";
 import appContext from "../components/app_context.js";
+import { OpenedFileUpdateStatus } from "@triliumnext/commons";
 
-// TODO: Deduplicate
-interface Message {
-    type: string;
-    entityType: string;
-    entityId: string;
-    lastModifiedMs: number;
-    filePath: string;
-}
-
-const fileModificationStatus: Record<string, Record<string, Message>> = {
+const fileModificationStatus: Record<string, Record<string, OpenedFileUpdateStatus>> = {
     notes: {},
     attachments: {}
 };
@@ -39,7 +31,7 @@ function ignoreModification(entityType: string, entityId: string) {
     delete fileModificationStatus[entityType][entityId];
 }
 
-ws.subscribeToMessages(async (message: Message) => {
+ws.subscribeToMessages(async message => {
     if (message.type !== "openedFileUpdated") {
         return;
     }

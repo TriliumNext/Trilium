@@ -12,7 +12,7 @@ import toast from "../../services/toast";
 
 export default function ImagePropertiesTab({ note, ntxId }: TabContext) {
     const [ originalFileName ] = useNoteLabel(note, "originalFileName");
-    const [ blob ] = useNoteBlob(note);    
+    const blob = useNoteBlob(note);
 
     const parentComponent = useContext(ParentComponent);
 
@@ -25,12 +25,12 @@ export default function ImagePropertiesTab({ note, ntxId }: TabContext) {
                             <strong>{t("image_properties.original_file_name")}:</strong>{" "}
                             <span>{originalFileName ?? "?"}</span>
                         </span>
-                
+
                         <span>
                             <strong>{t("image_properties.file_type")}:</strong>{" "}
                             <span>{note.mime}</span>
                         </span>
-                
+
                         <span>
                             <strong>{t("image_properties.file_size")}:</strong>{" "}
                             <span>{formatSize(blob?.contentLength)}</span>
@@ -48,7 +48,7 @@ export default function ImagePropertiesTab({ note, ntxId }: TabContext) {
                         <Button
                             text={t("image_properties.open")}
                             icon="bx bx-link-external"
-                            onClick={() => openNoteExternally(note.noteId, note.mime)}  
+                            onClick={() => openNoteExternally(note.noteId, note.mime)}
                         />
 
                         <Button

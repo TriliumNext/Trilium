@@ -23,7 +23,7 @@ function exportBranch(req: Request, res: Response) {
         return;
     }
 
-    const taskContext = new TaskContext(taskId, "export");
+    const taskContext = new TaskContext(taskId, "export", null);
 
     try {
         if (type === "subtree" && (format === "html" || format === "markdown")) {

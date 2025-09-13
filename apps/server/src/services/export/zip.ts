@@ -40,7 +40,7 @@ export interface AdvancedExportOptions {
     customRewriteLinks?: (originalRewriteLinks: RewriteLinksFn, getNoteTargetUrl: (targetNoteId: string, sourceMeta: NoteMeta) => string | null) => RewriteLinksFn;
 }
 
-async function exportToZip(taskContext: TaskContext, branch: BBranch, format: "html" | "markdown", res: Response | fs.WriteStream, setHeaders = true, zipExportOptions?: AdvancedExportOptions) {
+async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, format: "html" | "markdown", res: Response | fs.WriteStream, setHeaders = true, zipExportOptions?: AdvancedExportOptions) {
     if (!["html", "markdown"].includes(format)) {
         throw new ValidationError(`Only 'html' and 'markdown' allowed as export format, '${format}' given`);
     }
@@ -611,7 +611,7 @@ ${markdownContent}`;
 
         archive.pipe(res);
         await archive.finalize();
-        taskContext.taskSucceeded();
+        taskContext.taskSucceeded(null);
     } catch (e: unknown) {
         const message = `Export failed with error: ${e instanceof Error ? e.message : String(e)}`;
         log.error(message);
@@ -627,7 +627,7 @@ ${markdownContent}`;
 
 async function exportToZipFile(noteId: string, format: "markdown" | "html", zipFilePath: string, zipExportOptions?: AdvancedExportOptions) {
     const fileOutputStream = fs.createWriteStream(zipFilePath);
-    const taskContext = new TaskContext("no-progress-reporting");
+    const taskContext = new TaskContext("no-progress-reporting", "export", null);
 
     const note = becca.getNote(noteId);
 

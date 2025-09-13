@@ -28,7 +28,7 @@ interface OpmlOutline {
     outline: OpmlOutline[];
 }
 
-async function importOpml(taskContext: TaskContext, fileBuffer: string | Buffer, parentNote: BNote) {
+async function importOpml(taskContext: TaskContext<"importNotes">, fileBuffer: string | Buffer, parentNote: BNote) {
     const xml = await new Promise<OpmlXml>(function (resolve, reject) {
         parseString(fileBuffer, function (err: any, result: OpmlXml) {
             if (err) {

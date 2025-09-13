@@ -122,7 +122,7 @@ async function createInitialDatabase(skipDemoDb?: boolean) {
 
     log.info("Importing demo content ...");
 
-    const dummyTaskContext = new TaskContext("no-progress-reporting", "import", false);
+    const dummyTaskContext = new TaskContext("no-progress-reporting", "importNotes", null);
 
     if (demoFile) {
         await zipImportService.importZip(dummyTaskContext, demoFile, rootNote);

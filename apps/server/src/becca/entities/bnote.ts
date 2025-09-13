@@ -1512,7 +1512,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
      *
      * @param deleteId - optional delete identified
      */
-    deleteNote(deleteId: string | null = null, taskContext: TaskContext | null = null) {
+    deleteNote(deleteId: string | null = null, taskContext: TaskContext<"deleteNotes"> | null = null) {
         if (this.isDeleted) {
             return;
         }
@@ -1522,7 +1522,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         }
 
         if (!taskContext) {
-            taskContext = new TaskContext("no-progress-reporting");
+            taskContext = new TaskContext("no-progress-reporting", "deleteNotes", null);
         }
 
         // needs to be run before branches and attributes are deleted and thus attached relations disappear

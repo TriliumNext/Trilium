@@ -108,7 +108,7 @@ function register(router: Router) {
             return res.sendStatus(204);
         }
 
-        note.deleteNote(null, new TaskContext("no-progress-reporting"));
+        note.deleteNote(null, new TaskContext("no-progress-reporting", "deleteNotes", null));
 
         res.sendStatus(204);
     });
@@ -153,7 +153,7 @@ function register(router: Router) {
             throw new eu.EtapiError(400, "UNRECOGNIZED_EXPORT_FORMAT", `Unrecognized export format '${format}', supported values are 'html' (default) or 'markdown'.`);
         }
 
-        const taskContext = new TaskContext("no-progress-reporting");
+        const taskContext = new TaskContext("no-progress-reporting", "export", null);
 
         // technically a branch is being exported (includes prefix), but it's such a minor difference yet usability pain
         // (e.g. branchIds are not seen in UI), that we export "note export" instead.
@@ -164,7 +164,7 @@ function register(router: Router) {
 
     eu.route(router, "post", "/etapi/notes/:noteId/import", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
-        const taskContext = new TaskContext("no-progress-reporting");
+        const taskContext = new TaskContext("no-progress-reporting", "importNotes", null);
 
         zipImportService.importZip(taskContext, req.body, note).then((importedNote) => {
             res.status(201).json({

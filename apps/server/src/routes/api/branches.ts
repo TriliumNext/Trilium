@@ -236,7 +236,7 @@ function deleteBranch(req: Request) {
     const eraseNotes = req.query.eraseNotes === "true";
     const branch = becca.getBranchOrThrow(req.params.branchId);
 
-    const taskContext = TaskContext.getInstance(req.query.taskId as string, "deleteNotes");
+    const taskContext = TaskContext.getInstance(req.query.taskId as string, "deleteNotes", null);
 
     const deleteId = utils.randomString(10);
     let noteDeleted;
@@ -251,7 +251,7 @@ function deleteBranch(req: Request) {
     }
 
     if (last) {
-        taskContext.taskSucceeded();
+        taskContext.taskSucceeded(null);
     }
 
     return {

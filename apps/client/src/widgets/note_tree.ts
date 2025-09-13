@@ -195,6 +195,8 @@ export interface DragData {
     title: string;
 }
 
+export const TREE_CLIPBOARD_TYPE = "application/x-fancytree-node";
+
 export default class NoteTreeWidget extends NoteContextAwareWidget {
     private $tree!: JQuery<HTMLElement>;
     private $treeActions!: JQuery<HTMLElement>;

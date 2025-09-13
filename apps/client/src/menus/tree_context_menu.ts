@@ -13,6 +13,8 @@ import type NoteTreeWidget from "../widgets/note_tree.js";
 import type FAttachment from "../entities/fattachment.js";
 import type { SelectMenuItemEventListener } from "../components/events.js";
 import utils from "../services/utils.js";
+import attributes from "../services/attributes.js";
+import { executeBulkActions } from "../services/bulk_action.js";
 
 // TODO: Deduplicate once client/server is well split.
 interface ConvertToAttachmentResponse {
@@ -61,6 +63,11 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
         // the only exception is when the only selected note is the one that was right-clicked, then
         // it's clear what the user meant to do.
         const selNodes = this.treeWidget.getSelectedNodes();
+        const selectedNotes = await froca.getNotes(selNodes.map(node => node.data.noteId));
+        if (note && !selectedNotes.includes(note)) selectedNotes.push(note);
+        const isArchived = selectedNotes.every(note => note.isArchived);
+        const canToggleArchived = !selectedNotes.some(note => note.isArchived !== isArchived);
+
         const noSelectedNotes = selNodes.length === 0 || (selNodes.length === 1 && selNodes[0] === this.node);
 
         const notSearch = note?.type !== "search";
@@ -189,6 +196,34 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                 enabled: parentNotSearch && isNotRoot && !isHoisted && notOptionsOrHelp
             },
 
+            {
+                title: !isArchived ? t("tree-context-menu.archive") : t("tree-context-menu.unarchive"),
+                uiIcon: !isArchived ? "bx bx-archive" : "bx bx-archive-out",
+                enabled: canToggleArchived,
+                handler: () => {
+                    if (!selectedNotes.length) return;
+
+                    if (selectedNotes.length == 1) {
+                        const note = selectedNotes[0];
+                        if (!isArchived) {
+                            attributes.addLabel(note.noteId, "archived");
+                        } else {
+                            attributes.removeOwnedLabelByName(note, "archived");
+                        }
+                    } else {
+                        const noteIds = selectedNotes.map(note => note.noteId);
+                        if (!isArchived) {
+                            executeBulkActions(noteIds, [{
+                                name: "addLabel", labelName: "archived"
+                            }]);
+                        } else {
+                            executeBulkActions(noteIds, [{
+                                name: "deleteLabel", labelName: "archived"
+                            }]);
+                        }
+                    }
+                }
+            },
             {
                 title: `${t("tree-context-menu.delete")} <kbd data-command="deleteNotes"></kbd>`,
                 command: "deleteNotes",

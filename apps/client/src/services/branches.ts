@@ -210,7 +210,7 @@ function makeToast(id: string, message: string): ToastOptions {
 }
 
 ws.subscribeToMessages(async (message) => {
-    if (message.taskType !== "deleteNotes") {
+    if (!("taskType" in message) || message.taskType !== "deleteNotes") {
         return;
     }
 
@@ -228,7 +228,7 @@ ws.subscribeToMessages(async (message) => {
 });
 
 ws.subscribeToMessages(async (message) => {
-    if (message.taskType !== "undeleteNotes") {
+    if (!("taskType" in message) || message.taskType !== "undeleteNotes") {
         return;
     }
 

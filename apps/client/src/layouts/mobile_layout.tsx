@@ -5,7 +5,6 @@ import QuickSearchWidget from "../widgets/quick_search.js";
 import NoteTreeWidget from "../widgets/note_tree.js";
 import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
-import NoteListWidget from "../widgets/note_list.js";
 import GlobalMenuWidget from "../widgets/buttons/global_menu.js";
 import LauncherContainer from "../widgets/containers/launcher_container.js";
 import RootContainer from "../widgets/containers/root_container.js";
@@ -24,6 +23,7 @@ import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button
 import CloseZenModeButton from "../widgets/close_zen_button.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
+import NoteList from "../widgets/collections/NoteList.jsx";
 
 const MOBILE_CSS = `
 <style>
@@ -154,7 +154,7 @@ export default class MobileLayout {
                                             .filling()
                                             .contentSized()
                                             .child(new NoteDetailWidget())
-                                            .child(new NoteListWidget(false))
+                                            .child(<NoteList />)
                                             .child(<FilePropertiesWrapper />)
                                     )
                                     .child(<MobileEditorToolbar />)

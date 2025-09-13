@@ -116,7 +116,7 @@ function importAttachmentsToNote(req: Request) {
     }
 
     const parentNote = becca.getNoteOrThrow(parentNoteId);
-    const taskContext = TaskContext.getInstance(taskId, "importAttachment", options);
+    const taskContext = TaskContext.getInstance(taskId, "importNotes", options);
 
     // unlike in note import, we let the events run, because a huge number of attachments is not likely
 

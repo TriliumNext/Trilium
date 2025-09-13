@@ -12,7 +12,7 @@ import FNote from "../../entities/fnote";
 export default function FilePropertiesTab({ note }: { note?: FNote | null }) {
     const [ originalFileName ] = useNoteLabel(note, "originalFileName");
     const canAccessProtectedNote = !note?.isProtected || protected_session_holder.isProtectedSessionAvailable();
-    const [ blob ] = useNoteBlob(note);    
+    const blob = useNoteBlob(note);
 
     return (
         <div className="file-properties-widget">
@@ -52,7 +52,7 @@ export default function FilePropertiesTab({ note }: { note?: FNote | null }) {
                                 <FormFileUploadButton
                                     icon="bx bx-folder-open"
                                     text={t("file_properties.upload_new_revision")}
-                                    disabled={!canAccessProtectedNote}                                    
+                                    disabled={!canAccessProtectedNote}
                                     onChange={(fileToUpload) => {
                                         if (!fileToUpload) {
                                             return;

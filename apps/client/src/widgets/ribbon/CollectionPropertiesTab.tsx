@@ -1,6 +1,5 @@
 import { useContext, useMemo } from "preact/hooks";
 import { t } from "../../services/i18n";
-import { ViewTypeOptions } from "../../services/note_list_renderer";
 import FormSelect, { FormSelectWithGroups } from "../react/FormSelect";
 import { TabContext } from "./ribbon-interface";
 import { mapToKeyValueArray } from "../../services/utils";
@@ -12,6 +11,7 @@ import FNote from "../../entities/fnote";
 import FormCheckbox from "../react/FormCheckbox";
 import FormTextBox from "../react/FormTextBox";
 import { ComponentChildren } from "preact";
+import { ViewTypeOptions } from "../collections/interface";
 
 const VIEW_TYPE_MAPPINGS: Record<ViewTypeOptions, string> = {
   grid: t("book_properties.grid"),
@@ -24,7 +24,7 @@ const VIEW_TYPE_MAPPINGS: Record<ViewTypeOptions, string> = {
 
 export default function CollectionPropertiesTab({ note }: TabContext) {
   const [ viewType, setViewType ] = useNoteLabel(note, "viewType");
-  const viewTypeWithDefault = viewType ?? "grid";
+  const viewTypeWithDefault = (viewType ?? "grid") as ViewTypeOptions;
   const properties = bookPropertiesConfig[viewTypeWithDefault].properties;
 
   return (
@@ -32,7 +32,7 @@ export default function CollectionPropertiesTab({ note }: TabContext) {
       {note && (
         <>
           <CollectionTypeSwitcher viewType={viewTypeWithDefault} setViewType={setViewType} />
-          <BookProperties note={note} properties={properties} />
+          <BookProperties viewType={viewTypeWithDefault} note={note} properties={properties} />
         </>
       )}
     </div>
@@ -54,15 +54,25 @@ function CollectionTypeSwitcher({ viewType, setViewType }: { viewType: string, s
   )
 }
 
-function BookProperties({ note, properties }: { note: FNote, properties: BookProperty[] }) {
+function BookProperties({ viewType, note, properties }: { viewType: ViewTypeOptions, note: FNote, properties: BookProperty[] }) {
   return (
-    <div className="book-properties-container">
+    <>
       {properties.map(property => (
         <div className={`type-${property}`}>
           {mapPropertyView({ note, property })}
         </div>
       ))}
-    </div>
+
+      {viewType !== "list" && viewType !== "grid" && (
+        <CheckboxPropertyView
+            note={note} property={{
+                bindToLabel: "includeArchived",
+                label: t("book_properties.include_archived_notes"),
+                type: "checkbox"
+            }}
+        />
+      )}
+    </>
   )
 }
 
@@ -130,7 +140,7 @@ function ComboBoxPropertyView({ note, property }: { note: FNote, property: Combo
             <FormSelectWithGroups
                 values={property.options}
                 keyProperty="value" titleProperty="label"
-                currentValue={value ?? ""} onChange={setValue}
+                currentValue={value ?? property.defaultValue} onChange={setValue}
             />
         </LabelledEntry>
     )

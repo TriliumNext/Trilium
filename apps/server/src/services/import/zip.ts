@@ -30,7 +30,7 @@ interface ImportZipOpts {
     preserveIds?: boolean;
 }
 
-async function importZip(taskContext: TaskContext, fileBuffer: Buffer, importRootNote: BNote, opts?: ImportZipOpts): Promise<BNote> {
+async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Buffer, importRootNote: BNote, opts?: ImportZipOpts): Promise<BNote> {
     /** maps from original noteId (in ZIP file) to newly generated noteId */
     const noteIdMap: Record<string, string> = {};
     /** type maps from original attachmentId (in ZIP file) to newly generated attachmentId */
@@ -174,7 +174,7 @@ async function importZip(taskContext: TaskContext, fileBuffer: Buffer, importRoo
         return noteId;
     }
 
-    function detectFileTypeAndMime(taskContext: TaskContext, filePath: string) {
+    function detectFileTypeAndMime(taskContext: TaskContext<"importNotes">, filePath: string) {
         const mime = mimeService.getMime(filePath) || "application/octet-stream";
         const type = mimeService.getType(taskContext.data || {}, mime);
 

@@ -5,7 +5,7 @@ import optionService from "./options.js";
 import dateUtils from "./date_utils.js";
 import sqlInit from "./sql_init.js";
 import cls from "./cls.js";
-import type { EntityChange } from "./entity_changes_interface.js";
+import type { EntityChange } from "@triliumnext/commons";
 
 function eraseNotes(noteIdsToErase: string[]) {
     if (noteIdsToErase.length === 0) {

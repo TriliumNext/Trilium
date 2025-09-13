@@ -1,0 +1,71 @@
+.table-view {
+    overflow: hidden;
+    position: relative;
+    height: 100%;
+    user-select: none;
+    padding: 0 5px 0 10px;
+}
+
+.table-view-container {
+    height: 100%;
+}
+
+.search-result-widget-content .table-view {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.tabulator-cell .autocomplete {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    outline: none !important;
+}
+
+.tabulator .tabulator-header {
+    border-top: unset;
+    border-bottom-width: 1px;
+}
+
+.tabulator .tabulator-header .tabulator-frozen.tabulator-frozen-left,
+.tabulator-row .tabulator-cell.tabulator-frozen.tabulator-frozen-left {
+    border-right-width: 1px;
+}
+
+.tabulator .tabulator-row.archived {
+    opacity: 0.5;
+}
+
+.tabulator .tabulator-footer {
+    background-color: unset;
+    padding: 5px 0;
+}
+
+.tabulator .tabulator-footer .tabulator-footer-contents {
+    justify-content: left;
+    gap: 0.5em;
+}
+
+.tabulator button.tree-expand,
+.tabulator button.tree-collapse {
+    display: inline-block;
+    appearance: none;
+    border: 0;
+    background: transparent;
+    width: 1.5em;
+    position: relative;
+    vertical-align: middle;
+}
+
+.tabulator button.tree-expand span,
+.tabulator button.tree-collapse span {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font-size: 1.5em;
+    transform: translateY(-50%);
+}

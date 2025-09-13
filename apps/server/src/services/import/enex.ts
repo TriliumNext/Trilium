@@ -55,7 +55,7 @@ interface Note {
 let note: Partial<Note> = {};
 let resource: Resource;
 
-function importEnex(taskContext: TaskContext, file: File, parentNote: BNote): Promise<BNote> {
+function importEnex(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote): Promise<BNote> {
     const saxStream = sax.createStream(true);
 
     const rootNoteTitle = file.originalname.toLowerCase().endsWith(".enex") ? file.originalname.substr(0, file.originalname.length - 5) : file.originalname;

@@ -116,7 +116,7 @@ export type CommandMappings = {
     openedFileUpdated: CommandData & {
         entityType: string;
         entityId: string;
-        lastModifiedMs: number;
+        lastModifiedMs?: number;
         filePath: string;
     };
     focusAndSelectTitle: CommandData & {
@@ -650,7 +650,7 @@ export class AppContext extends Component {
     }
 
     getComponentByEl(el: HTMLElement) {
-        return $(el).closest(".component").prop("component");
+        return $(el).closest("[data-component-id]").prop("component");
     }
 
     addBeforeUnloadListener(obj: BeforeUploadListener | (() => boolean)) {

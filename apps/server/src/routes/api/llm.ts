@@ -1,18 +1,9 @@
 import type { Request, Response } from "express";
 import log from "../../services/log.js";
-import options from "../../services/options.js";
 
 import restChatService from "../../services/llm/rest_chat_service.js";
 import chatStorageService from '../../services/llm/chat_storage_service.js';
-
-// Define basic interfaces
-interface ChatMessage {
-    role: 'user' | 'assistant' | 'system';
-    content: string;
-    timestamp?: Date;
-}
-
-
+import { WebSocketMessage } from "@triliumnext/commons";
 
 /**
  * @swagger
@@ -419,7 +410,7 @@ async function sendMessage(req: Request, res: Response) {
  */
 async function streamMessage(req: Request, res: Response) {
     log.info("=== Starting streamMessage ===");
-    
+
     try {
         const chatNoteId = req.params.chatNoteId;
         const { content, useAdvancedContext, showThinking, mentions } = req.body;
@@ -434,7 +425,7 @@ async function streamMessage(req: Request, res: Response) {
             (res as any).triliumResponseHandled = true;
             return;
         }
-        
+
         // Send immediate success response
         res.status(200).json({
             success: true,
@@ -442,12 +433,12 @@ async function streamMessage(req: Request, res: Response) {
         });
         // Mark response as handled to prevent further processing
         (res as any).triliumResponseHandled = true;
-        
+
         // Start background streaming process after sending response
         handleStreamingProcess(chatNoteId, content, useAdvancedContext, showThinking, mentions)
             .catch(error => {
                 log.error(`Background streaming error: ${error.message}`);
-                
+
                 // Send error via WebSocket since HTTP response was already sent
                 import('../../services/ws.js').then(wsModule => {
                     wsModule.default.sendMessageToAllClients({
@@ -460,11 +451,11 @@ async function streamMessage(req: Request, res: Response) {
                     log.error(`Could not send WebSocket error: ${wsError}`);
                 });
             });
-            
+
     } catch (error) {
         // Handle any synchronous errors
         log.error(`Synchronous error in streamMessage: ${error}`);
-        
+
         if (!res.headersSent) {
             res.status(500).json({
                 success: false,
@@ -481,21 +472,21 @@ async function streamMessage(req: Request, res: Response) {
  * This is separate from the HTTP request/response cycle
  */
 async function handleStreamingProcess(
-    chatNoteId: string, 
-    content: string, 
-    useAdvancedContext: boolean, 
-    showThinking: boolean, 
+    chatNoteId: string,
+    content: string,
+    useAdvancedContext: boolean,
+    showThinking: boolean,
     mentions: any[]
 ) {
     log.info("=== Starting background streaming process ===");
-    
+
     // Get or create chat directly from storage
     let chat = await chatStorageService.getChat(chatNoteId);
     if (!chat) {
         chat = await chatStorageService.createChat('New Chat');
         log.info(`Created new chat with ID: ${chat.id} for stream request`);
     }
-    
+
     // Add the user message to the chat immediately
     chat.messages.push({
         role: 'user',
@@ -544,9 +535,9 @@ async function handleStreamingProcess(
         thinking: showThinking ? 'Initializing streaming LLM response...' : undefined
     });
 
-    // Instead of calling the complex handleSendMessage service, 
+    // Instead of calling the complex handleSendMessage service,
     // let's implement streaming directly to avoid response conflicts
-    
+
     try {
         // Check if AI is enabled
         const optionsModule = await import('../../services/options.js');
@@ -570,7 +561,7 @@ async function handleStreamingProcess(
         // Get selected model
         const { getSelectedModelConfig } = await import('../../services/llm/config/configuration_helpers.js');
         const modelConfig = await getSelectedModelConfig();
-        
+
         if (!modelConfig) {
             throw new Error("No valid AI model configuration found");
         }
@@ -590,7 +581,7 @@ async function handleStreamingProcess(
                 chatNoteId: chatNoteId
             },
             streamCallback: (data, done, rawChunk) => {
-                const message = {
+                const message: WebSocketMessage = {
                     type: 'llm-stream' as const,
                     chatNoteId: chatNoteId,
                     done: done
@@ -634,7 +625,7 @@ async function handleStreamingProcess(
 
         // Execute the pipeline
         await pipeline.execute(pipelineInput);
-        
+
     } catch (error: any) {
         log.error(`Error in direct streaming: ${error.message}`);
         wsService.sendMessageToAllClients({

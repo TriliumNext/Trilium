@@ -7,12 +7,15 @@ import utils from "../services/utils.js";
  */
 export function setupHorizontalScrollViaWheel($container: JQuery<HTMLElement>) {
     $container.on("wheel", (event) => {
-        const wheelEvent = event.originalEvent as WheelEvent;
-        if (utils.isCtrlKey(event) || event.altKey || event.shiftKey) {
-            return;
-        }
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        event.currentTarget.scrollLeft += wheelEvent.deltaY + wheelEvent.deltaX;
+        onWheelHorizontalScroll(event.originalEvent as WheelEvent);
     });
+}
+
+export function onWheelHorizontalScroll(event: WheelEvent) {
+    if (!event.currentTarget || utils.isCtrlKey(event) || event.altKey || event.shiftKey) {
+        return;
+    }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    (event.currentTarget as HTMLElement).scrollLeft += event.deltaY + event.deltaX;
 }

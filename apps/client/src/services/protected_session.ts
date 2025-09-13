@@ -107,11 +107,11 @@ function makeToast(message: Message, title: string, text: string): ToastOptions 
 }
 
 ws.subscribeToMessages(async (message) => {
-    if (message.taskType !== "protectNotes") {
+    if (!("taskType" in message) || message.taskType !== "protectNotes") {
         return;
     }
 
-    const isProtecting = message.data.protect;
+    const isProtecting = message.data?.protect;
     const title = isProtecting ? t("protected_session.protecting-title") : t("protected_session.unprotecting-title");
 
     if (message.type === "taskError") {

@@ -140,7 +140,7 @@ ws.subscribeToMessages(async (message) => {
         };
     }
 
-    if (message.taskType !== "export") {
+    if (!("taskType" in message) || message.taskType !== "export") {
         return;
     }
 

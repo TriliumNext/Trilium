@@ -4,6 +4,7 @@ import ws from "./ws.js";
 import utils from "./utils.js";
 import appContext from "../components/app_context.js";
 import { t } from "./i18n.js";
+import { WebSocketMessage } from "@triliumnext/commons";
 
 type BooleanLike = boolean | "true" | "false";
 
@@ -66,7 +67,7 @@ function makeToast(id: string, message: string): ToastOptions {
 }
 
 ws.subscribeToMessages(async (message) => {
-    if (message.taskType !== "importNotes") {
+    if (!("taskType" in message) || message.taskType !== "importNotes") {
         return;
     }
 
@@ -87,8 +88,8 @@ ws.subscribeToMessages(async (message) => {
     }
 });
 
-ws.subscribeToMessages(async (message) => {
-    if (message.taskType !== "importAttachments") {
+ws.subscribeToMessages(async (message: WebSocketMessage) => {
+    if (!("taskType" in message) || message.taskType !== "importAttachments") {
         return;
     }
 

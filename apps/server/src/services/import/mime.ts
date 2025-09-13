@@ -2,8 +2,7 @@
 
 import mimeTypes from "mime-types";
 import path from "path";
-import type { TaskData } from "../task_context_interface.js";
-import type { NoteType } from "@triliumnext/commons";
+import type { NoteType, TaskData } from "@triliumnext/commons";
 
 const CODE_MIME_TYPES = new Set([
     "application/json",
@@ -92,14 +91,14 @@ function getMime(fileName: string) {
     return mimeFromExt || mimeTypes.lookup(fileNameLc);
 }
 
-function getType(options: TaskData, mime: string): NoteType {
+function getType(options: TaskData<"importNotes">, mime: string): NoteType {
     const mimeLc = mime?.toLowerCase();
 
     switch (true) {
-        case options.textImportedAsText && ["text/html", "text/markdown", "text/x-markdown", "text/mdx"].includes(mimeLc):
+        case options?.textImportedAsText && ["text/html", "text/markdown", "text/x-markdown", "text/mdx"].includes(mimeLc):
             return "text";
 
-        case options.codeImportedAsCode && CODE_MIME_TYPES.has(mimeLc):
+        case options?.codeImportedAsCode && CODE_MIME_TYPES.has(mimeLc):
             return "code";
 
         case mime.startsWith("image/"):

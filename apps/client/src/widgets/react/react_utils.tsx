@@ -24,11 +24,11 @@ export function refToJQuerySelector<T extends HTMLElement>(ref: RefObject<T> | n
  * @param el the JSX element to render.
  * @returns the rendered wrapped DOM element.
  */
-export function renderReactWidget(parentComponent: Component, el: JSX.Element) {
+export function renderReactWidget(parentComponent: Component | null, el: JSX.Element) {
     return renderReactWidgetAtElement(parentComponent, el, new DocumentFragment()).children();
 }
 
-export function renderReactWidgetAtElement(parentComponent: Component, el: JSX.Element, container: Element | DocumentFragment) {
+export function renderReactWidgetAtElement(parentComponent: Component | null, el: JSX.Element, container: Element | DocumentFragment) {
     render((
         <ParentComponent.Provider value={parentComponent}>
             {el}

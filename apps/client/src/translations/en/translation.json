@@ -592,7 +592,18 @@
     "september": "September",
     "october": "October",
     "november": "November",
-    "december": "December"
+    "december": "December",
+    "week": "Week",
+    "week_previous": "Previous week",
+    "week_next": "Next week",
+    "month": "Month",
+    "month_previous": "Previous month",
+    "month_next": "Next month",
+    "year": "Year",
+    "year_previous": "Previous year",
+    "year_next": "Next year",
+    "list": "List",
+    "today": "Today"
   },
   "close_pane_button": {
     "close_this_pane": "Close this pane"
@@ -753,7 +764,8 @@
     "calendar": "Calendar",
     "table": "Table",
     "geo-map": "Geo Map",
-    "board": "Board"
+    "board": "Board",
+    "include_archived_notes": "Show archived notes"
   },
   "edited_notes": {
     "no_edited_notes_found": "No edited notes on this day yet...",
@@ -954,7 +966,9 @@
     "no_attachments": "This note has no attachments."
   },
   "book": {
-    "no_children_help": "This collection doesn't have any child notes so there's nothing to display. See <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> for details."
+    "no_children_help": "This collection doesn't have any child notes so there's nothing to display. See <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> for details.",
+    "drag_locked_title": "Locked for editing",
+    "drag_locked_message": "Dragging not allowed since the collection is locked for editing."
   },
   "editable_code": {
     "placeholder": "Type the content of your code note here..."
@@ -1580,6 +1594,8 @@
     "open-in-a-new-split": "Open in a new split",
     "insert-note-after": "Insert note after",
     "insert-child-note": "Insert child note",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
     "delete": "Delete",
     "search-in-subtree": "Search in subtree",
     "hoist-note": "Hoist note",
@@ -1982,14 +1998,21 @@
     "delete_row": "Delete row"
   },
   "board_view": {
-    "delete-note": "Delete Note",
+    "delete-note": "Delete note...",
+    "remove-from-board": "Remove from board",
+    "archive-note": "Archive note",
+    "unarchive-note": "Unarchive note",
     "move-to": "Move to",
     "insert-above": "Insert above",
     "insert-below": "Insert below",
     "delete-column": "Delete column",
     "delete-column-confirmation": "Are you sure you want to delete this column? The corresponding attribute will be deleted in the notes under this column as well.",
     "new-item": "New item",
-    "add-column": "Add Column"
+    "new-item-placeholder": "Enter note title...",
+    "add-column": "Add Column",
+    "add-column-placeholder": "Enter column name...",
+    "edit-note-title": "Click to edit note title",
+    "edit-column-title": "Click to edit column title"
   },
   "command_palette": {
     "tree-action-name": "Tree: {{name}}",
@@ -2031,5 +2054,12 @@
   },
   "units": {
     "percentage": "%"
+  },
+  "pagination": {
+    "page_title": "Page of {{startIndex}} - {{endIndex}}",
+    "total_notes": "{{count}} notes"
+  },
+  "collections": {
+    "rendering_error": "Unable to show content due to an error."
   }
 }

@@ -179,6 +179,13 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.note-info-id {
+    font-variant: none;
+    font-family: var(--monospace-font-family);
+    font-size: 0.8em;
+    vertical-align: middle !important;
+}
 /* #endregion */
 
 /* #region Similar Notes */
@@ -336,31 +343,26 @@
 .book-properties-widget {
     padding: 12px 12px 6px 12px;
     display: flex;
-}
-
-.book-properties-widget > * {
-    margin-right: 15px;
-}
-
-.book-properties-container {
-    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    overflow: hidden;
     align-items: center;
 }
 
-.book-properties-container > div {
-    margin-right: 15px;
+.book-properties-widget > * {
+    flex-shrink: 0;
 }
 
-.book-properties-container > .type-number > label {
+.book-properties-widget > .type-number > label {
     display: flex;
     align-items: baseline;
 }
 
-.book-properties-container input[type="checkbox"] {
+.book-properties-widget input[type="checkbox"] {
     margin-right: 5px;
 }
 
-.book-properties-container label {
+.book-properties-widget label {
     display: flex;
     justify-content: center;
     align-items: center;

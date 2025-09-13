@@ -4,18 +4,15 @@
  */
 import log from "../../log.js";
 import type { Request, Response } from "express";
-import type { Message, ChatCompletionOptions } from "../ai_interface.js";
+import type { Message } from "../ai_interface.js";
 import aiServiceManager from "../ai_service_manager.js";
 import { ChatPipeline } from "../pipeline/chat_pipeline.js";
 import type { ChatPipelineInput } from "../pipeline/interfaces.js";
 import options from "../../options.js";
 import { ToolHandler } from "./handlers/tool_handler.js";
-import type { LLMStreamMessage } from "../interfaces/chat_ws_messages.js";
 import chatStorageService from '../chat_storage_service.js';
-import {
-    isAIEnabled,
-    getSelectedModelConfig,
-} from '../config/configuration_helpers.js';
+import { getSelectedModelConfig } from '../config/configuration_helpers.js';
+import { WebSocketMessage } from "@triliumnext/commons";
 
 /**
  * Simplified service to handle chat API interactions
@@ -79,7 +76,7 @@ class RestChatService {
                 throw new Error("Database is not initialized");
             }
 
-            // Get or create AI service - will throw meaningful error if not possible  
+            // Get or create AI service - will throw meaningful error if not possible
             await aiServiceManager.getOrCreateAnyService();
 
             // Load or create chat directly from storage
@@ -204,7 +201,7 @@ class RestChatService {
         accumulatedContentRef: { value: string },
         chat: { id: string; messages: Message[]; title: string }
     ) {
-        const message: LLMStreamMessage = {
+        const message: WebSocketMessage = {
             type: 'llm-stream',
             chatNoteId: chatNoteId,
             done: done
@@ -237,7 +234,7 @@ class RestChatService {
 
         // Send WebSocket message
         wsService.sendMessageToAllClients(message);
-        
+
         // When streaming is complete, save the accumulated content to the chat note
         if (done) {
             try {
@@ -248,7 +245,7 @@ class RestChatService {
                         role: 'assistant',
                         content: accumulatedContentRef.value
                     });
-                    
+
                     // Save the updated chat back to storage
                     await chatStorageService.updateChat(chat.id, chat.messages, chat.title);
                     log.info(`Saved streaming assistant response: ${accumulatedContentRef.value.length} characters`);
@@ -257,7 +254,7 @@ class RestChatService {
                 // Log error but don't break the response flow
                 log.error(`Error saving streaming response: ${error}`);
             }
-            
+
             // Note: For WebSocket-only streaming, we don't end the HTTP response here
             // since it was already handled by the calling endpoint
         }

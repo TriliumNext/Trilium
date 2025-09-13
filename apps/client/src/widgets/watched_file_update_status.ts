@@ -73,13 +73,13 @@ export default class WatchedFileUpdateStatusWidget extends NoteContextAwareWidge
 
     async refreshWithNote(note: FNote) {
         const { entityType, entityId } = this.getEntity();
-        if (!entityType || !entityId) {
-            return;
-        }
+        if (!entityType || !entityId) return;
         const status = fileWatcher.getFileModificationStatus(entityType, entityId);
 
         this.$filePath.text(status.filePath);
-        this.$fileLastModified.text(dayjs.unix(status.lastModifiedMs / 1000).format("HH:mm:ss"));
+        if (status.lastModifiedMs) {
+            this.$fileLastModified.text(dayjs.unix(status.lastModifiedMs / 1000).format("HH:mm:ss"));
+        }
     }
 
     getEntity() {

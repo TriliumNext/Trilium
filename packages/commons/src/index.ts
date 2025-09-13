@@ -8,3 +8,4 @@ export * from "./lib/mime_type.js";
 export * from "./lib/bulk_actions.js";
 export * from "./lib/server_api.js";
 export * from "./lib/shared_constants.js";
+export * from "./lib/ws_api.js";

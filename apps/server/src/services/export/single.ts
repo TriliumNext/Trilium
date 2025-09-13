@@ -10,7 +10,7 @@ import type BBranch from "../../becca/entities/bbranch.js";
 import type { Response } from "express";
 import type BNote from "../../becca/entities/bnote.js";
 
-function exportSingleNote(taskContext: TaskContext, branch: BBranch, format: "html" | "markdown", res: Response) {
+function exportSingleNote(taskContext: TaskContext<"export">, branch: BBranch, format: "html" | "markdown", res: Response) {
     const note = branch.getNote();
 
     if (note.type === "image" || note.type === "file") {
@@ -30,7 +30,7 @@ function exportSingleNote(taskContext: TaskContext, branch: BBranch, format: "ht
     res.send(payload);
 
     taskContext.increaseProgressCount();
-    taskContext.taskSucceeded();
+    taskContext.taskSucceeded(null);
 }
 
 export function mapByNoteType(note: BNote, content: string | Buffer<ArrayBufferLike>, format: "html" | "markdown") {
