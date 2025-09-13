@@ -149,6 +149,18 @@ export function isElectron() {
     return !!(window && window.process && window.process.type);
 }
 
+/**
+ * Returns `true` if the client is running as a PWA, otherwise `false`.
+ */
+export function isPWA() {
+    return (
+        window.matchMedia('(display-mode: standalone)').matches
+        || window.matchMedia('(display-mode: window-controls-overlay)').matches
+        || window.navigator.standalone
+        || window.navigator.windowControlsOverlay
+    );
+}
+
 export function isMac() {
     return navigator.platform.indexOf("Mac") > -1;
 }
@@ -891,6 +903,7 @@ export default {
     localNowDateTime,
     now,
     isElectron,
+    isPWA,
     isMac,
     isCtrlKey,
     assertArguments,

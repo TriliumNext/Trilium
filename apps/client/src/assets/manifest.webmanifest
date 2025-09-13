@@ -7,6 +7,9 @@
     "display": "standalone",
     "scope": "/",
     "start_url": "/",
+    "display_override": [
+        "window-controls-overlay"
+    ],
     "icons": [
         {
             "src": "icon.png",

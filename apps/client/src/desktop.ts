@@ -45,6 +45,10 @@ if (utils.isElectron()) {
     electronContextMenu.setupContextMenu();
 }
 
+if (utils.isPWA()) {
+    initPWATopbarColor();
+}
+
 function initOnElectron() {
     const electron: typeof Electron = utils.dynamicRequire("electron");
     electron.ipcRenderer.on("globalShortcut", async (event, actionName) => appContext.triggerCommand(actionName));
@@ -112,4 +116,21 @@ function initDarkOrLightMode(style: CSSStyleDeclaration) {
 
     const { nativeTheme } = utils.dynamicRequire("@electron/remote") as typeof ElectronRemote;
     nativeTheme.themeSource = themeSource;
+}
+
+function initPWATopbarColor() {
+    const tracker = $("#background-color-tracker");
+
+    if (tracker.length) {
+        const applyThemeColor = () => {
+            let meta = $("meta[name='theme-color']");
+            if (!meta.length) {
+                meta = $(`<meta name="theme-color">`).appendTo($("head"));
+            }
+            meta.attr("content", tracker.css("color"));
+        };
+
+        tracker.on("transitionend", applyThemeColor);
+        applyThemeColor();
+    }
 }
