@@ -200,7 +200,7 @@ function fillInAdditionalProperties(entityChange: EntityChange) {
 
         if (!entityChange.entity) {
             entityChange.entity = sql.getRow(
-                /*sql*/`SELECT attachments.*, LENGTH(blobs.content) AS contentLength
+                /*sql*/`SELECT attachments.*, blobs.contentLength AS contentLength
                                                     FROM attachments
                                                     JOIN blobs USING (blobId)
                                                     WHERE attachmentId = ?`,
