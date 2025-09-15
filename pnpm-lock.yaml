@@ -8,6 +8,7 @@ overrides:
   mermaid: 11.11.0
   preact: 10.27.2
   roughjs: 4.6.6
+  node-abi: 4.14.0
   '@types/express-serve-static-core': 5.0.7
   flat@<5.0.1: '>=5.0.1'
   debug@>=3.2.0 <3.2.7: '>=3.2.7'
@@ -324,7 +325,7 @@ importers:
     dependencies:
       '@electron/remote':
         specifier: 2.1.3
-        version: 2.1.3(electron@37.5.0)
+        version: 2.1.3(electron@38.1.0)
       better-sqlite3:
         specifier: ^12.0.0
         version: 12.2.0
@@ -381,8 +382,8 @@ importers:
         specifier: 13.0.1
         version: 13.0.1(webpack@5.100.2(esbuild@0.25.9))
       electron:
-        specifier: 37.5.0
-        version: 37.5.0
+        specifier: 38.1.0
+        version: 38.1.0
       prebuild-install:
         specifier: ^7.1.1
         version: 7.1.3
@@ -437,8 +438,8 @@ importers:
         specifier: 13.0.1
         version: 13.0.1(webpack@5.100.2(esbuild@0.25.9))
       electron:
-        specifier: 37.5.0
-        version: 37.5.0
+        specifier: 38.1.0
+        version: 38.1.0
       fs-extra:
         specifier: 11.3.1
         version: 11.3.1
@@ -457,7 +458,7 @@ importers:
         version: 7.1.1
       '@electron/remote':
         specifier: 2.1.3
-        version: 2.1.3(electron@37.5.0)
+        version: 2.1.3(electron@38.1.0)
       '@preact/preset-vite':
         specifier: 2.10.2
         version: 2.10.2(@babel/core@7.28.0)(preact@10.27.2)(vite@7.1.5(@types/node@24.3.0)(jiti@2.5.1)(less@4.1.3)(lightningcss@1.30.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1))
@@ -609,8 +610,8 @@ importers:
         specifier: 3.1.10
         version: 3.1.10
       electron:
-        specifier: 37.5.0
-        version: 37.5.0
+        specifier: 38.1.0
+        version: 38.1.0
       electron-debug:
         specifier: 4.1.0
         version: 4.1.0
@@ -7342,8 +7343,8 @@ packages:
     resolution: {integrity: sha512-bO3y10YikuUwUuDUQRM4KfwNkKhnpVO7IPdbsrejwN9/AABJzzTQ4GeHwyzNSrVO+tEH3/Np255a3sVZpZDjvg==}
     engines: {node: '>=8.0.0'}
 
-  electron@37.5.0:
-    resolution: {integrity: sha512-wOLJoa+XLS+KioTygttvadJ9252utQ3APJuVc72BK6QWH9dof8T/Y+On8cba7V/wtlPaPgyxmI8A0VhPngqqlw==}
+  electron@38.1.0:
+    resolution: {integrity: sha512-ypA8GF8RU4HD5pA1sa0/2U8k+92EPP2c7pX+3XbgB760F7OmqrFXtYkOilVw6HfV4+lk88XxqigmsUKTACQYoQ==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
@@ -10042,12 +10043,8 @@ packages:
   nice-try@1.0.5:
     resolution: {integrity: sha512-1nh45deeb5olNY7eX82BkPO7SSxR5SSYJiPTrTdFUVYwAl8CKMA5N9PjTYkHiRjisVcxcQ1HXdLhx2qxxJzLNQ==}
 
-  node-abi@3.75.0:
-    resolution: {integrity: sha512-OhYaY5sDsIka7H7AtijtI9jwGYLyl29eQn/W623DiN/MIv5sUqc4g7BIDThX+gb7di9f6xK02nkp8sdfFWZLTg==}
-    engines: {node: '>=10'}
-
-  node-abi@4.9.0:
-    resolution: {integrity: sha512-0isb3h+AXUblx5Iv0mnYy2WsErH+dk2e9iXJXdKAtS076Q5hP+scQhp6P4tvDeVlOBlG3ROKvkpQHtbORllq2A==}
+  node-abi@4.14.0:
+    resolution: {integrity: sha512-E4n91K4Nk1Rch2KzD+edU2bfZTP4W42GypAUDXU4vu1A+4u9PvUNDkGI0dXbsy8ZeF3WGj0SD/uHxnXD/sW+3w==}
     engines: {node: '>=22.12.0'}
 
   node-addon-api@7.1.1:
@@ -15104,6 +15101,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 46.1.0
       ckeditor5: 46.1.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-editor-multi-root@46.1.0':
     dependencies:
@@ -15126,6 +15125,8 @@ snapshots:
       '@ckeditor/ckeditor5-table': 46.1.0
       '@ckeditor/ckeditor5-utils': 46.1.0
       ckeditor5: 46.1.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-emoji@46.1.0':
     dependencies:
@@ -15182,8 +15183,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 46.1.0
       '@ckeditor/ckeditor5-utils': 46.1.0
       ckeditor5: 46.1.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-export-word@46.1.0':
     dependencies:
@@ -15330,8 +15329,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 46.1.0
       '@ckeditor/ckeditor5-utils': 46.1.0
       ckeditor5: 46.1.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-indent@46.1.0':
     dependencies:
@@ -15468,8 +15465,6 @@ snapshots:
       '@ckeditor/ckeditor5-widget': 46.1.0
       ckeditor5: 46.1.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-minimap@46.1.0':
     dependencies:
@@ -16383,7 +16378,7 @@ snapshots:
       detect-libc: 2.0.4
       fs-extra: 10.1.0
       got: 11.8.6
-      node-abi: 3.75.0
+      node-abi: 4.14.0
       node-api-version: 0.2.1
       ora: 5.4.1
       read-binary-file-arch: 1.0.6
@@ -16402,7 +16397,7 @@ snapshots:
       detect-libc: 2.0.4
       got: 11.8.6
       graceful-fs: 4.2.11
-      node-abi: 4.9.0
+      node-abi: 4.14.0
       node-api-version: 0.2.1
       node-gyp: 11.2.0
       ora: 5.4.1
@@ -16413,9 +16408,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@electron/remote@2.1.3(electron@37.5.0)':
+  '@electron/remote@2.1.3(electron@38.1.0)':
     dependencies:
-      electron: 37.5.0
+      electron: 38.1.0
 
   '@electron/universal@2.0.2':
     dependencies:
@@ -19454,6 +19449,7 @@ snapshots:
   '@types/node@24.3.0':
     dependencies:
       undici-types: 7.10.0
+    optional: true
 
   '@types/parse-json@4.0.2': {}
 
@@ -22378,7 +22374,7 @@ snapshots:
       - supports-color
     optional: true
 
-  electron@37.5.0:
+  electron@38.1.0:
     dependencies:
       '@electron/get': 2.0.3
       '@types/node': 22.18.1
@@ -24370,7 +24366,7 @@ snapshots:
 
   jest-worker@27.5.1:
     dependencies:
-      '@types/node': 24.3.0
+      '@types/node': 22.18.1
       merge-stream: 2.0.0
       supports-color: 8.1.1
 
@@ -25765,13 +25761,9 @@ snapshots:
 
   nice-try@1.0.5: {}
 
-  node-abi@3.75.0:
+  node-abi@4.14.0:
     dependencies:
       semver: 7.7.2
-
-  node-abi@4.9.0:
-    dependencies:
-      semver: 7.7.1
 
   node-addon-api@7.1.1: {}
 
@@ -27191,7 +27183,7 @@ snapshots:
       minimist: 1.2.8
       mkdirp-classic: 0.5.3
       napi-build-utils: 2.0.0
-      node-abi: 3.75.0
+      node-abi: 4.14.0
       pump: 3.0.2
       rc: 1.2.8
       simple-get: 4.0.1
@@ -29491,7 +29483,8 @@ snapshots:
 
   undici-types@6.21.0: {}
 
-  undici-types@7.10.0: {}
+  undici-types@7.10.0:
+    optional: true
 
   undici@6.21.3: {}
 
