@@ -1687,7 +1687,7 @@
     "unprotecting-title": "Статус снятия защиты",
     "protecting-finished-successfully": "Защита успешно завершена.",
     "unprotecting-finished-successfully": "Снятие защиты успешно завершено.",
-    "start_session_button": "Начать защищенный сеанс <kbd>enter</kbd>",
+    "start_session_button": "Начать защищенный сеанс",
     "protecting-in-progress": "Защита в процессе: {{count}}",
     "unprotecting-in-progress-count": "Снятие защиты в процессе: {{count}}",
     "started": "Защищенный сеанс запущен.",

@@ -5,7 +5,7 @@ import keyboard_actions from "../../services/keyboard_actions";
 
 export interface ActionButtonProps {
     text: string;
-    titlePosition?: "bottom" | "left";
+    titlePosition?: "top" | "right" | "bottom" | "left";
     icon: string;
     className?: string;
     onClick?: (e: MouseEvent) => void;

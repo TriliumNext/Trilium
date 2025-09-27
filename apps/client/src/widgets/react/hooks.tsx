@@ -1,6 +1,6 @@
-import { Inputs, MutableRef, useCallback, useContext, useDebugValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
-import { CommandListenerData, EventData, EventNames } from "../../components/app_context";
-import { ParentComponent } from "./react_utils";
+import { MutableRef, useCallback, useContext, useDebugValue, useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import { EventData, EventNames } from "../../components/app_context";
+import { ParentComponent, refToJQuerySelector } from "./react_utils";
 import SpacedUpdate from "../../services/spaced_update";
 import { FilterLabelsByType, KeyboardActionNames, OptionNames, RelationNames } from "@triliumnext/commons";
 import options, { type OptionValue } from "../../services/options";
@@ -19,6 +19,10 @@ import Mark from "mark.js";
 import { DragData } from "../note_tree";
 import Component from "../../components/component";
 import toast, { ToastOptions } from "../../services/toast";
+import protected_session_holder from "../../services/protected_session_holder";
+import server from "../../services/server";
+import { removeIndividualBinding } from "../../services/shortcuts";
+import { ViewScope } from "../../services/link";
 
 export function useTriliumEvent<T extends EventNames>(eventName: T, handler: (data: EventData<T>) => void) {
     const parentComponent = useContext(ParentComponent);
@@ -71,6 +75,46 @@ export function useSpacedUpdate(callback: () => void | Promise<void>, interval =
     }, [interval]);
 
     return spacedUpdateRef.current;
+}
+
+export function useEditorSpacedUpdate({ note, getData, onContentChange, dataSaved, updateInterval }: {
+    note: FNote,
+    getData: () => Promise<object | undefined> | object | undefined,
+    onContentChange: (newContent: string) => void,
+    dataSaved?: () => void,
+    updateInterval?: number;
+}) {
+    const parentComponent = useContext(ParentComponent);
+    const blob = useNoteBlob(note, parentComponent?.componentId);
+
+    const callback = useMemo(() => {
+        return async () => {
+            const data = await getData();
+
+            // for read only notes
+            if (data === undefined) return;
+
+            protected_session_holder.touchProtectedSessionIfNecessary(note);
+            await server.put(`notes/${note.noteId}/data`, data, parentComponent?.componentId);
+
+            dataSaved?.();
+        }
+    }, [ note, getData, dataSaved ])
+    const spacedUpdate = useSpacedUpdate(callback);
+
+    // React to note/blob changes.
+    useEffect(() => {
+        if (!blob) return;
+        spacedUpdate.allowUpdateWithoutChange(() => onContentChange(blob.content));
+    }, [ blob ]);
+
+    // React to update interval changes.
+    useEffect(() => {
+        if (!updateInterval) return;
+        spacedUpdate.setUpdateInterval(updateInterval);
+    }, [ updateInterval ]);
+
+    return spacedUpdate;
 }
 
 /**
@@ -196,6 +240,7 @@ export function useNoteContext() {
     const [ noteContext, setNoteContext ] = useState<NoteContext>();
     const [ notePath, setNotePath ] = useState<string | null | undefined>();
     const [ note, setNote ] = useState<FNote | null | undefined>();
+    const [ , setViewScope ] = useState<ViewScope>();
     const [ refreshCounter, setRefreshCounter ] = useState(0);
 
     useEffect(() => {
@@ -205,6 +250,7 @@ export function useNoteContext() {
     useTriliumEvents([ "setNoteContext", "activeContextChanged", "noteSwitchedAndActivated", "noteSwitched" ], ({ noteContext }) => {
         setNoteContext(noteContext);
         setNotePath(noteContext.notePath);
+        setViewScope(noteContext.viewScope);
     });
     useTriliumEvent("frocaReloaded", () => {
         setNote(noteContext?.note);
@@ -370,7 +416,7 @@ export function useNoteLabelInt(note: FNote | undefined | null, labelName: Filte
     ]
 }
 
-export function useNoteBlob(note: FNote | null | undefined): FBlob | null | undefined {
+export function useNoteBlob(note: FNote | null | undefined, componentId?: string): FBlob | null | undefined {
     const [ blob, setBlob ] = useState<FBlob | null>();
 
     function refresh() {
@@ -389,6 +435,10 @@ export function useNoteBlob(note: FNote | null | undefined): FBlob | null | unde
 
         // Check if a revision occurred.
         if (loadResults.hasRevisionForNote(note.noteId)) {
+            refresh();
+        }
+
+        if (loadResults.isNoteContentReloaded(note.noteId, componentId)) {
             refresh();
         }
     });
@@ -664,26 +714,6 @@ export function useNoteTreeDrag(containerRef: MutableRef<HTMLElement | null | un
     }, [ containerRef, callback ]);
 }
 
-export function useTouchBar(
-    factory: (context: CommandListenerData<"buildTouchBar"> & { parentComponent: Component | null }) => void,
-    inputs: Inputs
-) {
-    const parentComponent = useContext(ParentComponent);
-
-    useLegacyImperativeHandlers({
-        buildTouchBarCommand(context: CommandListenerData<"buildTouchBar">) {
-            return factory({
-                ...context,
-                parentComponent
-            });
-        }
-    });
-
-    useEffect(() => {
-        parentComponent?.triggerCommand("refreshTouchBar");
-    }, inputs);
-}
-
 export function useResizeObserver(ref: RefObject<HTMLElement>, callback: () => void) {
     const resizeObserver = useRef<ResizeObserver>(null);
     useEffect(() => {
@@ -697,4 +727,18 @@ export function useResizeObserver(ref: RefObject<HTMLElement>, callback: () => v
 
         return () => observer.disconnect();
     }, [ callback, ref ]);
+}
+
+export function useKeyboardShortcuts(scope: "code-detail" | "text-detail", containerRef: RefObject<HTMLElement>, parentComponent: Component | undefined) {
+    useEffect(() => {
+        if (!parentComponent) return;
+        const $container = refToJQuerySelector(containerRef);
+        const bindingPromise = keyboard_actions.setupActionsForElement(scope, $container, parentComponent);
+        return async () => {
+            const bindings = await bindingPromise;
+            for (const binding of bindings) {
+                removeIndividualBinding(binding);
+            }
+        }
+    }, []);
 }

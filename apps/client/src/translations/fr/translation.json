@@ -967,7 +967,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "L'affichage de la note protégée nécessite la saisie de votre mot de passe :",
-    "start_session_button": "Démarrer une session protégée <kbd>Entrée</kbd>",
+    "start_session_button": "Démarrer une session protégée",
     "started": "La session protégée a démarré.",
     "wrong_password": "Mot de passe incorrect.",
     "protecting-finished-successfully": "La protection de la note s'est terminée avec succès.",

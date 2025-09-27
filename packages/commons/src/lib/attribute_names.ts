@@ -29,7 +29,6 @@ type Labels = {
     status: string;
     pageSize: number;
     geolocation: string;
-    readOnly: boolean;
     expanded: boolean;
     "calendar:hideWeekends": boolean;
     "calendar:weekNumbers": boolean;
@@ -39,6 +38,10 @@ type Labels = {
     "board:groupBy": string;
     maxNestingDepth: number;
     includeArchived: boolean;
+
+    // Note-type specific
+    webViewSrc: string;
+    readOnly: boolean;
 }
 
 /**

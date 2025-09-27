@@ -18,15 +18,18 @@ export default function FormFileUpload({ inputRef, name, onChange, multiple, hid
                 name={name}
                 type="file"
                 class="form-control-file"
-                multiple={multiple}                
-                onChange={e => onChange((e.target as HTMLInputElement).files)} />
+                multiple={multiple}
+                onChange={e => {
+                    onChange((e.target as HTMLInputElement).files);
+                    e.currentTarget.value = "";
+                }} />
         </label>
     )
 }
 
 /**
  * Combination of a button with a hidden file upload field.
- * 
+ *
  * @param param the change listener for the file upload and the properties for the button.
  */
 export function FormFileUploadButton({ onChange, ...buttonProps }: Omit<ButtonProps, "onClick"> & Pick<FormFileUploadProps, "onChange">) {
@@ -39,7 +42,7 @@ export function FormFileUploadButton({ onChange, ...buttonProps }: Omit<ButtonPr
                 onClick={() => inputRef.current?.click()}
             />
             <FormFileUpload
-                inputRef={inputRef} 
+                inputRef={inputRef}
                 hidden
                 onChange={onChange}
             />

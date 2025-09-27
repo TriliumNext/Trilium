@@ -979,7 +979,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "Afișarea notițelor protejate necesită introducerea parolei:",
-    "start_session_button": "Deschide sesiunea protejată <kbd>enter</kbd>",
+    "start_session_button": "Deschide sesiunea protejată",
     "started": "Sesiunea protejată este activă.",
     "wrong_password": "Parolă greșită.",
     "protecting-finished-successfully": "Protejarea a avut succes.",

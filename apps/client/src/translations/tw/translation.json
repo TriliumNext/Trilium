@@ -984,7 +984,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "顯示受保護的筆記需要輸入您的密碼：",
-    "start_session_button": "開始受保護的作業階段 <kbd>Enter</kbd>",
+    "start_session_button": "開始受保護的作業階段",
     "started": "已啟動受保護的作業階段。",
     "wrong_password": "密碼錯誤。",
     "protecting-finished-successfully": "已成功完成保護操作。",

@@ -1219,7 +1219,7 @@
     "unprotecting-in-progress-count": "Remoções de proteção em andamento: {{count}}",
     "protecting-title": "Estado da proteção",
     "unprotecting-title": "Estado da remoção de proteção",
-    "start_session_button": "Iniciar sessão protegida <kbd>enter</kbd>"
+    "start_session_button": "Iniciar sessão protegida"
   },
   "relation_map": {
     "open_in_new_tab": "Abrir em nova aba",

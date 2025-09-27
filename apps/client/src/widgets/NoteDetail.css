@@ -1,0 +1,13 @@
+.component.note-detail {
+    font-family: var(--detail-font-family);
+    font-size: var(--detail-font-size);
+    contain: none;
+}
+
+.note-detail.full-height {
+    height: 100%;
+}
+
+.note-detail > * {
+    contain: none;
+}

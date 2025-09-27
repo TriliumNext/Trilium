@@ -207,6 +207,11 @@ export interface ConvertToAttachmentResponse {
     attachment: AttachmentRow;
 }
 
+export interface ConvertAttachmentToNoteResponse {
+    note: NoteRow;
+    branch: BranchRow;
+}
+
 export type SaveSqlConsoleResponse = CloneResponse;
 
 export interface BacklinkCountResponse {

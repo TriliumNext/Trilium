@@ -3,7 +3,7 @@ import { ViewModeProps } from "../interface";
 import Calendar from "./calendar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import "./index.css";
-import { useNoteLabel, useNoteLabelBoolean, useResizeObserver, useSpacedUpdate, useTouchBar, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
+import { useNoteLabel, useNoteLabelBoolean, useResizeObserver, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
 import { LOCALE_IDS } from "@triliumnext/commons";
 import { Calendar as FullCalendar } from "@fullcalendar/core";
 import { parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";

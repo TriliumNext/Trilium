@@ -23,7 +23,7 @@ import { ViewTypeOptions } from "./collections/interface";
 
 export interface FloatingButtonContext {
     parentComponent: Component;
-    note: FNote;    
+    note: FNote;
     noteContext: NoteContext;
     isDefaultViewMode: boolean;
     isReadOnly: boolean;
@@ -65,11 +65,11 @@ export const MOBILE_FLOATING_BUTTONS: FloatingButtonsList = [
     EditButton,
     RelationMapButtons,
     ExportImageButtons,
-    Backlinks    
+    Backlinks
 ]
 
 function RefreshBackendLogButton({ note, parentComponent, noteContext, isDefaultViewMode }: FloatingButtonContext) {
-    const isEnabled = note.noteId === "_backendLog" && isDefaultViewMode;
+    const isEnabled = (note.noteId === "_backendLog" || note.type === "render") && isDefaultViewMode;
     return isEnabled && <FloatingButton
         text={t("backend_log.refresh")}
         icon="bx bx-refresh"
@@ -84,14 +84,14 @@ function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: F
 
     return isEnabled && <FloatingButton
         text={upcomingOrientation === "vertical" ? t("switch_layout_button.title_vertical") : t("switch_layout_button.title_horizontal")}
-        icon={upcomingOrientation === "vertical" ? "bx bxs-dock-bottom" : "bx bxs-dock-left"}        
+        icon={upcomingOrientation === "vertical" ? "bx bxs-dock-bottom" : "bx bxs-dock-left"}
         onClick={() => setSplitEditorOrientation(upcomingOrientation)}
     />
 }
 
 function ToggleReadOnlyButton({ note, viewType, isDefaultViewMode }: FloatingButtonContext) {
-    const [ isReadOnly, setReadOnly ] = useNoteLabelBoolean(note, "readOnly");    
-    const isEnabled = (note.type === "mermaid" || viewType === "geoMap")
+    const [ isReadOnly, setReadOnly ] = useNoteLabelBoolean(note, "readOnly");
+    const isEnabled = ([ "mermaid", "mindMap", "canvas" ].includes(note.type) || viewType === "geoMap")
             && note.isContentAvailable() && isDefaultViewMode;
 
     return isEnabled && <FloatingButton
@@ -264,7 +264,7 @@ function GeoMapButtons({ triggerEvent, viewType, isReadOnly }: FloatingButtonCon
 
 function CopyImageReferenceButton({ note, isDefaultViewMode }: FloatingButtonContext) {
     const hiddenImageCopyRef = useRef<HTMLDivElement>(null);
-    const isEnabled = ["mermaid", "canvas", "mindMap"].includes(note?.type ?? "")
+    const isEnabled = ["mermaid", "canvas", "mindMap", "image"].includes(note?.type ?? "")
             && note?.isContentAvailable() && isDefaultViewMode;
 
     return isEnabled && (
@@ -325,7 +325,7 @@ function Backlinks({ note, isDefaultViewMode }: FloatingButtonContext) {
     let [ backlinkCount, setBacklinkCount ] = useState(0);
     let [ popupOpen, setPopupOpen ] = useState(false);
     const backlinksContainerRef = useRef<HTMLDivElement>(null);
-    
+
     useEffect(() => {
         if (!isDefaultViewMode) return;
 
@@ -338,7 +338,7 @@ function Backlinks({ note, isDefaultViewMode }: FloatingButtonContext) {
     const { windowHeight } = useWindowSize();
     useLayoutEffect(() => {
         const el = backlinksContainerRef.current;
-        if (popupOpen && el) {            
+        if (popupOpen && el) {
             const box = el.getBoundingClientRect();
             const maxHeight = windowHeight - box.top - 10;
             el.style.maxHeight = `${maxHeight}px`;
@@ -374,7 +374,7 @@ function BacklinksList({ noteId }: { noteId: string }) {
                     .filter(bl => "noteId" in bl)
                     .map((bl) => bl.noteId);
             await froca.getNotes(noteIds);
-            setBacklinks(backlinks);       
+            setBacklinks(backlinks);
         });
     }, [ noteId ]);
 

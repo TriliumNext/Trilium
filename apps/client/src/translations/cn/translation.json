@@ -987,7 +987,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "显示受保护的笔记需要输入您的密码：",
-    "start_session_button": "开始受保护的会话 <kbd>Enter</kbd>",
+    "start_session_button": "开始受保护的会话",
     "started": "受保护的会话已启动。",
     "wrong_password": "密码错误。",
     "protecting-finished-successfully": "保护操作已成功完成。",

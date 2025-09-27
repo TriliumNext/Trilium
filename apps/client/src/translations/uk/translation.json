@@ -1090,7 +1090,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "Для відображення захищеної нотатки потрібно ввести пароль:",
-    "start_session_button": "Розпочати захищений сеанс <kbd>enter</kbd>",
+    "start_session_button": "Розпочати захищений сеанс",
     "started": "Захищений сеанс розпочато.",
     "wrong_password": "Неправильний пароль.",
     "protecting-finished-successfully": "Захист успішно завершено.",

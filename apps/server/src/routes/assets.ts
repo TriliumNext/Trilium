@@ -21,17 +21,19 @@ async function register(app: express.Application) {
 
     if (process.env.NODE_ENV === "development") {
         const { createServer: createViteServer } = await import("vite");
+        const clientDir = path.join(srcRoot, "../client");
         const vite = await createViteServer({
             server: { middlewareMode: true },
             appType: "custom",
             cacheDir: path.join(srcRoot, "../../.cache/vite"),
             base: `/${assetUrlFragment}/`,
-            root: path.join(srcRoot, "../client")
+            root: clientDir
         });
         app.use(`/${assetUrlFragment}/`, (req, res, next) => {
             req.url = `/${assetUrlFragment}` + req.url;
             vite.middlewares(req, res, next);
         });
+        app.use(`/node_modules/@excalidraw/excalidraw/dist/prod`, persistentCacheStatic(path.join(srcRoot, "../../node_modules/@excalidraw/excalidraw/dist/prod")));
     } else {
         const publicDir = path.join(resourceDir, "public");
         if (!existsSync(publicDir)) {

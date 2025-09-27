@@ -3,7 +3,7 @@ import utils from "./utils.js";
 type ElementType = HTMLElement | Document;
 type Handler = (e: KeyboardEvent) => void;
 
-interface ShortcutBinding {
+export interface ShortcutBinding {
     element: HTMLElement | Document;
     shortcut: string;
     handler: Handler;
@@ -51,7 +51,7 @@ export function isIMEComposing(e: KeyboardEvent): boolean {
     if (!e) {
         return false;
     }
-    
+
     // Standard check for composition state
     // e.isComposing is true when IME is actively composing
     // e.keyCode === 229 is a fallback for older browsers where 229 indicates IME processing
@@ -86,13 +86,13 @@ function bindElShortcut($el: JQuery<ElementType | Element>, keyboardShortcut: st
                 }
 
                 const e = evt as KeyboardEvent;
-                
+
                 // Skip processing if IME is composing to prevent shortcuts from
                 // interfering with text input in CJK languages
                 if (isIMEComposing(e)) {
                     return;
                 }
-                
+
                 if (matchesShortcut(e, keyboardShortcut)) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -117,8 +117,18 @@ function bindElShortcut($el: JQuery<ElementType | Element>, keyboardShortcut: st
                 activeBindings.set(key, []);
             }
             activeBindings.get(key)!.push(binding);
+            return binding;
         }
     }
+}
+
+export function removeIndividualBinding(binding: ShortcutBinding) {
+    const key = binding.namespace ?? "global";
+    const activeBindingsInNamespace = activeBindings.get(key);
+    if (activeBindingsInNamespace) {
+        activeBindings.set(key, activeBindingsInNamespace.filter(aBinding => aBinding.handler === binding.handler));
+    }
+    binding.element.removeEventListener("keydown", binding.listener);
 }
 
 function removeNamespaceBindings(namespace: string) {

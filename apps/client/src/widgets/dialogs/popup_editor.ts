@@ -3,7 +3,7 @@ import NoteContext from "../../components/note_context.js";
 import { openDialog } from "../../services/dialog.js";
 import BasicWidget from "../basic_widget.js";
 import Container from "../containers/container.js";
-import TypeWidget from "../type_widgets/type_widget.js";
+import TypeWidget from "../type_widgets_old/type_widget.js";
 
 const TPL = /*html*/`\
 <div class="popup-editor-dialog modal fade mx-auto" tabindex="-1" role="dialog">

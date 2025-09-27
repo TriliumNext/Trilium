@@ -126,7 +126,7 @@ function downloadRevision(noteId: string, revisionId: string) {
 /**
  * @param url - should be without initial slash!!!
  */
-function getUrlForDownload(url: string) {
+export function getUrlForDownload(url: string) {
     if (utils.isElectron()) {
         // electron needs absolute URL, so we extract current host, port, protocol
         return `${getHost()}/${url}`;
