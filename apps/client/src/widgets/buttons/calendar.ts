@@ -18,7 +18,7 @@ dayjs.extend(isSameOrAfter);
 
 const MONTHS = [
     t("calendar.january"),
-    t("calendar.febuary"),
+    t("calendar.february"),
     t("calendar.march"),
     t("calendar.april"),
     t("calendar.may"),
