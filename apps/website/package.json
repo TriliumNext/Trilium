@@ -1,37 +1,25 @@
 {
-	"name": "website",
 	"private": true,
-	"version": "0.0.1",
+	"name": "@triliumnext/website",
 	"type": "module",
 	"scripts": {
-		"dev": "vite dev",
+		"dev": "vite",
 		"build": "vite build",
-		"preview": "vite preview",
-		"prepare": "svelte-kit sync || echo ''",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"lint": "eslint ."
-	},
-	"devDependencies": {
-		"@eslint/compat": "^1.2.5",
-		"@eslint/js": "^9.18.0",
-		"@sveltejs/adapter-auto": "^6.0.0",
-		"@sveltejs/kit": "^2.16.0",
-		"@sveltejs/vite-plugin-svelte": "^6.0.0",
-		"@tailwindcss/typography": "^0.5.15",
-		"@tailwindcss/vite": "^4.0.0",
-		"eslint": "^9.18.0",
-		"eslint-plugin-svelte": "^3.0.0",
-		"globals": "^16.0.0",
-		"mdsvex": "^0.12.3",
-		"svelte": "^5.0.0",
-		"svelte-check": "^4.0.0",
-		"tailwindcss": "^4.0.0",
-		"typescript": "^5.0.0",
-		"typescript-eslint": "^8.20.0",
-		"vite": "^7.0.0"
+		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@inlang/paraglide-js": "^2.0.0"
+		"preact": "^10.26.9",
+		"preact-iso": "^2.10.0",
+		"preact-render-to-string": "^6.6.1"
+	},
+	"devDependencies": {
+		"@preact/preset-vite": "^2.10.2",
+		"eslint": "^9.36.0",
+		"eslint-config-preact": "^2.0.0",
+		"typescript": "^5.9.2",
+		"vite": "^7.0.4"
+	},
+	"eslintConfig": {
+		"extends": "preact"
 	}
 }

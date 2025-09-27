@@ -1,24 +1,17 @@
-import tailwindcss from '@tailwindcss/vite';
-import { paraglideVitePlugin } from '@inlang/paraglide-js';
-import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig } from 'vite';
+import preact from '@preact/preset-vite';
 
-export default () => {
-    // See https://github.com/nrwl/nx/issues/28978.
-    const cwd = process.cwd();
-    process.chdir(__dirname); // Temporarily change the working directory
-
-    const config = defineConfig({
-        plugins: [
-            tailwindcss(),
-            sveltekit(),
-            paraglideVitePlugin({
-                project: './project.inlang',
-                outdir: './src/lib/paraglide'
-            })
-        ] as Plugin[]
-    });
-
-    process.chdir(cwd); // Restore the original working directory
-    return config;
-};
+// https://vitejs.dev/config/
+export default defineConfig({
+	plugins: [
+		preact({
+			prerender: {
+				enabled: true,
+				renderTarget: '#app',
+				additionalPrerenderRoutes: ['/404'],
+				previewMiddlewareEnabled: true,
+				previewMiddlewareFallback: '/404',
+			},
+		}),
+	],
+});

@@ -1,0 +1,9 @@
+section.section-404 {
+    text-align: center;
+    background: var(--background-color);
+
+    h2 {
+        color: var(--brand-3);
+        margin: 1em;
+    }
+}

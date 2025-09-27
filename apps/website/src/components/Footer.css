@@ -1,0 +1,35 @@
+footer {
+    margin: 0;
+    padding: 2em 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.3);
+    color: var(--muted-color);
+    font-size: 0.8em;
+
+    .content-wrapper {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-direction: column-reverse;
+        gap: 2em;
+
+        @media (min-width: 720px) {
+            flex-direction: row;
+        }
+    }
+}
+
+.social-buttons {
+    display: flex;
+    gap: 1em;
+
+    a.social-button {
+        color: var(--muted-color);
+        transition: color 250ms ease-in-out, opacity 250ms ease-in-out;
+        opacity: 0.7;
+
+        &:hover {
+            color: var(--brand-1);
+            opacity: 1;
+        }
+    }
+}

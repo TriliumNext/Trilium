@@ -1,0 +1,17 @@
+.download-button {
+    &.big {
+        padding: 1em 2em;
+        margin: 1em 0;
+    }
+    
+    .platform {
+        font-size: 0.75em;
+        opacity: 0.75;
+    }
+}
+
+@media (min-width: 720px) {
+    .download-button {
+        display: inline-block !important;
+    }
+}

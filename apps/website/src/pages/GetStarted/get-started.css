@@ -1,0 +1,123 @@
+.download-card {
+    padding: 1em;
+}
+
+.download-server .download-card:first-of-type {
+    grid-column: 1 / 4;
+}
+
+.download-card {
+    h3 {
+        color: var(--accent-color);
+        font-size: 1.5em;
+        position: relative;
+
+        a.more-info {
+            margin-left: 0.5em;
+            right: 0;
+
+            .bx {
+                vertical-align: sub;
+            }
+        }
+    }
+
+    .card-content-inner {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    a:not(.button) {
+        color: var(--accent-color);
+    }
+
+    .quick-start {
+        background-color: #ececec;
+        padding: 0.75em;
+        border-radius: 6px;
+
+        @media (prefers-color-scheme: dark) {
+            background-color: black;
+        }
+
+        code {
+            text-wrap: wrap;
+            color: var(--muted-color);
+        }
+    }
+}
+
+.download-options {
+    justify-content: flex-end;
+    align-items: stretch;
+    flex-grow: 1;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+
+    .recommended-options {
+        align-self: stretch;
+        display: flex;
+        gap: 1em;
+
+        a.recommended {
+            display: block;
+            background: var(--accent-color);
+            color: var(--brand-foreground-color);
+            border-radius: calc(infinity * 1px);
+            margin: 1em 0;
+            flex-grow: 1;
+        }
+    }
+
+    .other-options {
+        display: flex;
+        gap: 0.5em 1em;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
+
+.download-desktop {
+    .download-card:first-of-type { --accent-color: var(--brand-1); }
+    .download-card:nth-of-type(2) { --accent-color: var(--brand-2); }
+    .download-card:last-of-type { --accent-color: var(--brand-3); }
+}
+
+.download-server .download-card {
+    --accent-color: var(--foreground-color);
+    --brand-foreground-color: var(--background-color);
+}
+
+.architecture-switch {
+    display: flex;
+    gap: 1em;
+    justify-content: center;
+    align-items: center;
+    margin: 1em 0;
+
+    a {
+        display: inline-block;
+        background: var(--card-background-color);
+        padding: 0.25em 0.5em;
+        text-decoration: none;
+        text-align: center;
+        min-width: 3em;
+        color: inherit;
+
+        &.active {
+            background-color: var(--brand-1);
+            color: var(--brand-foreground-color);
+        }
+
+        &:hover {
+            text-decoration: none;
+        }
+    }
+
+    .toggle-wrapper {
+        border-radius: calc(infinity * 1px);
+        overflow: hidden;
+    }
+}
