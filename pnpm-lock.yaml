@@ -254,8 +254,8 @@ importers:
         specifier: 10.27.2
         version: 10.27.2
       react-i18next:
-        specifier: 15.7.3
-        version: 15.7.3(i18next@25.5.2(typescript@5.9.2))(react-dom@19.1.0(react@16.14.0))(react@16.14.0)(typescript@5.9.2)
+        specifier: 15.7.4
+        version: 15.7.4(i18next@25.5.2(typescript@5.9.2))(react-dom@19.1.0(react@16.14.0))(react@16.14.0)(typescript@5.9.2)
       split.js:
         specifier: 1.6.5
         version: 1.6.5
@@ -11684,10 +11684,10 @@ packages:
     peerDependencies:
       react: ^19.1.0
 
-  react-i18next@15.7.3:
-    resolution: {integrity: sha512-AANws4tOE+QSq/IeMF/ncoHlMNZaVLxpa5uUGW1wjike68elVYr0018L9xYoqBr1OFO7G7boDPrbn0HpMCJxTw==}
+  react-i18next@15.7.4:
+    resolution: {integrity: sha512-nyU8iKNrI5uDJch0z9+Y5XEr34b0wkyYj3Rp+tfbahxtlswxSCjcUL9H0nqXo9IR3/t5Y5PKIA3fx3MfUyR9Xw==}
     peerDependencies:
-      i18next: '>= 25.4.1'
+      i18next: '>= 23.4.0'
       react: '>= 16.8.0'
       react-dom: '*'
       react-native: '*'
@@ -14962,8 +14962,6 @@ snapshots:
       '@ckeditor/ckeditor5-core': 46.1.1
       '@ckeditor/ckeditor5-utils': 46.1.1
       ckeditor5: 46.1.1(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-code-block@46.1.1(patch_hash=2361d8caad7d6b5bddacc3a3b4aa37dbfba260b1c1b22a450413a79c1bb1ce95)':
     dependencies:
@@ -15711,6 +15709,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 46.1.1
       '@ckeditor/ckeditor5-utils': 46.1.1
       ckeditor5: 46.1.1(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-restricted-editing@46.1.1':
     dependencies:
@@ -17994,7 +17994,7 @@ snapshots:
 
   '@radix-ui/primitive@1.0.0':
     dependencies:
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.4
 
   '@radix-ui/primitive@1.1.1': {}
 
@@ -18030,7 +18030,7 @@ snapshots:
 
   '@radix-ui/react-context@1.0.0(react@16.14.0)':
     dependencies:
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.4
       react: 16.14.0
 
   '@radix-ui/react-context@1.1.1(@types/react@19.1.7)(react@16.14.0)':
@@ -18041,7 +18041,7 @@ snapshots:
 
   '@radix-ui/react-direction@1.0.0(react@16.14.0)':
     dependencies:
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.4
       react: 16.14.0
 
   '@radix-ui/react-dismissable-layer@1.1.5(@types/react-dom@19.1.6(@types/react@19.1.7))(@types/react@19.1.7)(react-dom@19.1.0(react@16.14.0))(react@16.14.0)':
@@ -18076,7 +18076,7 @@ snapshots:
 
   '@radix-ui/react-id@1.0.0(react@16.14.0)':
     dependencies:
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.4
       '@radix-ui/react-use-layout-effect': 1.0.0(react@16.14.0)
       react: 16.14.0
 
@@ -18140,7 +18140,7 @@ snapshots:
 
   '@radix-ui/react-presence@1.0.0(react-dom@19.1.0(react@16.14.0))(react@16.14.0)':
     dependencies:
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.4
       '@radix-ui/react-compose-refs': 1.0.0(react@16.14.0)
       '@radix-ui/react-use-layout-effect': 1.0.0(react@16.14.0)
       react: 16.14.0
@@ -18158,7 +18158,7 @@ snapshots:
 
   '@radix-ui/react-primitive@1.0.1(react-dom@19.1.0(react@16.14.0))(react@16.14.0)':
     dependencies:
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.4
       '@radix-ui/react-slot': 1.0.1(react@16.14.0)
       react: 16.14.0
       react-dom: 19.1.0(react@16.14.0)
@@ -18174,7 +18174,7 @@ snapshots:
 
   '@radix-ui/react-roving-focus@1.0.2(react-dom@19.1.0(react@16.14.0))(react@16.14.0)':
     dependencies:
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.4
       '@radix-ui/primitive': 1.0.0
       '@radix-ui/react-collection': 1.0.1(react-dom@19.1.0(react@16.14.0))(react@16.14.0)
       '@radix-ui/react-compose-refs': 1.0.0(react@16.14.0)
@@ -18227,7 +18227,7 @@ snapshots:
 
   '@radix-ui/react-use-controllable-state@1.0.0(react@16.14.0)':
     dependencies:
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.4
       '@radix-ui/react-use-callback-ref': 1.0.0(react@16.14.0)
       react: 16.14.0
 
@@ -19189,7 +19189,7 @@ snapshots:
   '@testing-library/dom@10.4.0':
     dependencies:
       '@babel/code-frame': 7.27.1
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.4
       '@types/aria-query': 5.0.4
       aria-query: 5.3.0
       chalk: 4.1.2
@@ -21133,6 +21133,8 @@ snapshots:
   ckeditor5-collaboration@46.1.1:
     dependencies:
       '@ckeditor/ckeditor5-collaboration-core': 46.1.1
+    transitivePeerDependencies:
+      - supports-color
 
   ckeditor5-premium-features@46.1.1(bufferutil@4.0.9)(ckeditor5@46.1.1(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41))(utf-8-validate@6.0.5):
     dependencies:
@@ -23905,7 +23907,7 @@ snapshots:
 
   history@4.10.1:
     dependencies:
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.4
       loose-envify: 1.4.0
       resolve-pathname: 3.0.0
       tiny-invariant: 1.3.3
@@ -27595,9 +27597,9 @@ snapshots:
       react: 16.14.0
       scheduler: 0.26.0
 
-  react-i18next@15.7.3(i18next@25.5.2(typescript@5.9.2))(react-dom@19.1.0(react@16.14.0))(react@16.14.0)(typescript@5.9.2):
+  react-i18next@15.7.4(i18next@25.5.2(typescript@5.9.2))(react-dom@19.1.0(react@16.14.0))(react@16.14.0)(typescript@5.9.2):
     dependencies:
-      '@babel/runtime': 7.27.6
+      '@babel/runtime': 7.28.4
       html-parse-stringify: 3.0.1
       i18next: 25.5.2(typescript@5.9.2)
       react: 16.14.0
