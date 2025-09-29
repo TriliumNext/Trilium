@@ -53,7 +53,7 @@
     "eslint-plugin-react-hooks": "5.2.0",
     "happy-dom": "~19.0.0",
     "jiti": "2.6.0",
-    "jsdom": "~26.1.0",
+    "jsdom": "~27.0.0",
     "jsonc-eslint-parser": "^2.1.0",
     "react-refresh": "^0.17.0",
     "rollup-plugin-webpack-stats": "2.1.5",
