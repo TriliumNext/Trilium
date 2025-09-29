@@ -1,6 +1,6 @@
 async function sendMessage(message) {
     try {
-        return await browser.runtime.sendMessage(message);
+        return await chrome.runtime.sendMessage(message);
     }
     catch (e) {
         console.log("Calling browser runtime failed:", e);
@@ -15,7 +15,7 @@ const $saveWholeScreenShotButton = $("#save-whole-screenshot-button");
 const $saveWholePageButton = $("#save-whole-page-button");
 const $saveTabsButton = $("#save-tabs-button");
 
-$showOptionsButton.on("click", () => browser.runtime.openOptionsPage());
+$showOptionsButton.on("click", () => chrome.runtime.openOptionsPage());
 
 $saveCroppedScreenShotButton.on("click", () => {
     sendMessage({name: 'save-cropped-screenshot'});
@@ -115,7 +115,7 @@ const $connectionStatus = $("#connection-status");
 const $needsConnection = $(".needs-connection");
 const $alreadyVisited = $("#already-visited");
 
-browser.runtime.onMessage.addListener(request => {
+chrome.runtime.onMessage.addListener(request => {
     if (request.name === 'trilium-search-status') {
         const {triliumSearch} = request;
 
@@ -146,7 +146,7 @@ browser.runtime.onMessage.addListener(request => {
         if (isConnected) {
             $needsConnection.removeAttr("disabled");
             $needsConnection.removeAttr("title");
-            browser.runtime.sendMessage({name: "trigger-trilium-search-note-url"});
+            chrome.runtime.sendMessage({name: "trigger-trilium-search-note-url"});
         }
         else {
             $needsConnection.attr("disabled", "disabled");
@@ -164,7 +164,7 @@ browser.runtime.onMessage.addListener(request => {
         }else{
             $alreadyVisited.html('');
         }
-        
+
 
     }
 });
@@ -172,9 +172,9 @@ browser.runtime.onMessage.addListener(request => {
 const $checkConnectionButton = $("#check-connection-button");
 
 $checkConnectionButton.on("click", () => {
-    browser.runtime.sendMessage({
+    chrome.runtime.sendMessage({
         name: "trigger-trilium-search"
     })
 });
 
-$(() => browser.runtime.sendMessage({name: "send-trilium-search-status"}));
+$(() => chrome.runtime.sendMessage({name: "send-trilium-search-status"}));

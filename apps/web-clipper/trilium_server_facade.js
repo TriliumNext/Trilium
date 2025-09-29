@@ -1,7 +1,7 @@
 const PROTOCOL_VERSION_MAJOR = 1;
 
 function isDevEnv() {
-	const manifest = browser.runtime.getManifest();
+	const manifest = chrome.runtime.getManifest();
 
 	return manifest.name.endsWith('(dev)');
 }
@@ -16,7 +16,7 @@ class TriliumServerFacade {
 
 	async sendTriliumSearchStatusToPopup() {
 		try {
-			await browser.runtime.sendMessage({
+			await chrome.runtime.sendMessage({
 				name: "trilium-search-status",
 				triliumSearch: this.triliumSearch
 			});
@@ -25,7 +25,7 @@ class TriliumServerFacade {
 	}
 	async sendTriliumSearchNoteToPopup(){
 		try{
-			await browser.runtime.sendMessage({
+			await chrome.runtime.sendMessage({
 				name: "trilium-previously-visited",
 				searchNote: this.triliumSearchNote
 			})
@@ -95,8 +95,8 @@ class TriliumServerFacade {
 			// continue
 		}
 
-		const {triliumServerUrl} = await browser.storage.sync.get("triliumServerUrl");
-		const {authToken} = await browser.storage.sync.get("authToken");
+		const {triliumServerUrl} = await chrome.storage.sync.get("triliumServerUrl");
+		const {authToken} = await chrome.storage.sync.get("authToken");
 
 		if (triliumServerUrl && authToken) {
 			try {
@@ -162,7 +162,7 @@ class TriliumServerFacade {
 	}
 
 	async getPort() {
-		const {triliumDesktopPort} = await browser.storage.sync.get("triliumDesktopPort");
+		const {triliumDesktopPort} = await chrome.storage.sync.get("triliumDesktopPort");
 
 		if (triliumDesktopPort) {
 			return parseInt(triliumDesktopPort);
@@ -217,9 +217,10 @@ class TriliumServerFacade {
 		const absoff = Math.abs(off);
 		return (new Date(date.getTime() - off * 60 * 1000).toISOString().substr(0,23).replace("T",  " ") +
 			(off > 0 ? '-' : '+') +
-			(absoff / 60).toFixed(0).padStart(2,'0') + ':' +
-			(absoff % 60).toString().padStart(2,'0'));
+		(absoff / 60).toFixed(0).padStart(2,'0') + ':' +
+		(absoff % 60).toString().padStart(2,'0'));
 	}
 }
 
-window.triliumServerFacade = new TriliumServerFacade();
+export const triliumServerFacade = new TriliumServerFacade();
+export { TriliumServerFacade };
