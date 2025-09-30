@@ -25,7 +25,7 @@
     "@ckeditor/ckeditor5-dev-build-tools": "43.1.0",
     "@ckeditor/ckeditor5-inspector": ">=4.1.0",
     "@ckeditor/ckeditor5-package-tools": "^4.0.0",
-    "@typescript-eslint/eslint-plugin": "~8.44.0",
+    "@typescript-eslint/eslint-plugin": "~8.45.0",
     "@typescript-eslint/parser": "^8.0.0",
     "@vitest/browser": "^3.0.5",
     "@vitest/coverage-istanbul": "^3.0.5",

@@ -29,7 +29,7 @@
     "node-html-parser": "7.0.1"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "0.64.0",
+    "@anthropic-ai/sdk": "0.65.0",
     "@braintree/sanitize-url": "7.1.1",
     "@electron/remote": "2.1.3",
     "@preact/preset-vite": "2.10.2",
