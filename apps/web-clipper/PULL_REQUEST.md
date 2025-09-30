@@ -7,11 +7,13 @@ This pull request upgrades the Trilium Web Clipper Chrome extension from Manifes
 ## ✨ **Key Improvements**
 
 ### **🚀 Performance Enhancements**
+
 - **Faster page saving** - Optimized async operations eliminate blocking
 - **Smart content script injection** - Only injects when needed, reducing overhead
 - **Efficient error handling** - Clean fallback mechanisms
 
-### **👤 Better User Experience**  
+### **👤 Better User Experience**
+
 - **Progressive status notifications** - Real-time feedback with emojis:
   - 📄 "Page capture started..."
   - 🖼️ "Processing X image(s)..."  
@@ -23,6 +25,7 @@ This pull request upgrades the Trilium Web Clipper Chrome extension from Manifes
 ## 🔧 **Technical Changes**
 
 ### **Manifest V3 Compliance**
+
 - Updated `manifest_version` from 2 to 3
 - Converted `browser_action` → `action`
 - Updated `background` scripts → `service_worker` with ES modules
@@ -31,12 +34,14 @@ This pull request upgrades the Trilium Web Clipper Chrome extension from Manifes
 - Updated `content_security_policy` to V3 format
 
 ### **API Modernization**
+
 - Replaced all `browser.*` calls with `chrome.*` APIs
 - Updated `browser.tabs.executeScript` → `chrome.scripting.executeScript`
 - Converted to ES module architecture
 - Added proper async message handling
 
 ### **Architecture Improvements**
+
 - **Service Worker Background Script** - Modern persistent background
 - **Dynamic Content Script Injection** - Better performance and reliability
 - **ES Module System** - Cleaner imports/exports throughout
@@ -45,34 +50,40 @@ This pull request upgrades the Trilium Web Clipper Chrome extension from Manifes
 ## 📁 **Files Modified**
 
 ### Core Extension Files
+
 - `manifest.json` - Complete V3 conversion
 - `background.js` - New ES module service worker
 - `content.js` - Chrome APIs + enhanced messaging
 - `utils.js` - ES module exports
 - `trilium_server_facade.js` - Chrome APIs + ES exports
 
-### UI Scripts  
+### UI Scripts
+
 - `popup/popup.js` - Chrome API updates
 - `options/options.js` - Chrome API updates
 
 ### Backup Files Created
+
 - `background-v2.js` - Original V2 background (preserved)
 
 ## 🧪 **Testing Completed**
 
 ### ✅ **Core Functionality**
+
 - Extension loads without errors
 - All save operations work (selection, page, screenshots, images, links)
 - Context menus and keyboard shortcuts functional
 - Popup and options pages working
 
-### ✅ **Integration Testing**  
+### ✅ **Integration Testing**
+
 - Trilium Desktop connection verified
 - Trilium Server connection verified
 - Toast notifications with clickable links working
 - Note opening in Trilium verified
 
 ### ✅ **Performance Testing**
+
 - Faster save operations confirmed
 - Clean error-free console logs
 - Progressive status updates working
@@ -80,11 +91,13 @@ This pull request upgrades the Trilium Web Clipper Chrome extension from Manifes
 ## 🔄 **Migration Path**
 
 ### **Backward Compatibility**
+
 - All existing functionality preserved
 - No breaking changes to user experience  
 - Original V2 code backed up as `background-v2.js`
 
 ### **Future Readiness**
+
 - Compatible with Chrome Manifest V3 requirements
 - Prepared for Manifest V2 deprecation (June 2024)
 - Modern extension architecture
