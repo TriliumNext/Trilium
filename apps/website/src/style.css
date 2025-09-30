@@ -15,7 +15,7 @@
     :root {
         --foreground-color: #fff;
         --background-color: #0a0e14;
-        --muted-color: #cacaca;
+        --muted-color: #c5c5c5;
         --header-background-color: rgba(0, 0, 0, 0.75);
         --card-background-color: #ffffff12;
         --card-box-shadow: 0 0 12px rgba(0, 0, 0, 0.15);

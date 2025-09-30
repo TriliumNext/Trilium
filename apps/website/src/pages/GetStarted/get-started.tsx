@@ -1,7 +1,7 @@
-import { useState } from "preact/hooks";
+import { useLayoutEffect, useState } from "preact/hooks";
 import Card from "../../components/Card.js";
 import Section from "../../components/Section.js";
-import { App, Architecture, buildDownloadUrl, downloadMatrix, DownloadMatrixEntry, getArchitecture, Platform } from "../../download-helper.js";
+import { App, Architecture, buildDownloadUrl, downloadMatrix, DownloadMatrixEntry, getArchitecture, getPlatform, Platform } from "../../download-helper.js";
 import { usePageTitle } from "../../hooks.js";
 import Button, { Link } from "../../components/Button.js";
 import Icon from "../../components/Icon.js";
@@ -10,8 +10,15 @@ import "./get-started.css";
 import packageJson from "../../../../../package.json" with { type: "json" };
 
 export default function DownloadPage() {
-    const [ currentArch, setCurrentArch ] = useState(getArchitecture() ?? "x64");
-    usePageTitle("Download");
+    const [ currentArch, setCurrentArch ] = useState<Architecture>("x64");
+    const [ userPlatform, setUserPlatform ] = useState<Platform>();
+
+    useLayoutEffect(() => {
+        getArchitecture().then((arch) => setCurrentArch(arch ?? "x64"));
+        setUserPlatform(getPlatform() ?? "windows");
+    }, []);
+
+    usePageTitle("Get started");
 
     return (
         <>
@@ -31,7 +38,10 @@ export default function DownloadPage() {
                 </div>
 
                 <div className="grid-3-cols download-desktop">
-                    {Object.entries(downloadMatrix.desktop).map(entry => <DownloadCard app="desktop" arch={currentArch} entry={entry} />)}
+                    {reorderPlatforms(Object.entries(downloadMatrix.desktop), userPlatform ?? "")
+                        .map(entry => (
+                        <DownloadCard app="desktop" arch={currentArch} entry={entry} isRecommended={userPlatform === entry[0]} />
+                    ))}
                 </div>
 
                 <div class="download-footer">
@@ -41,14 +51,21 @@ export default function DownloadPage() {
 
             <Section title="Set up a server for access on multiple devices">
                 <div className="grid-2-cols download-server">
-                    {Object.entries(downloadMatrix.server).map(entry => <DownloadCard app="server" arch={currentArch} entry={entry} />)}
+                    {Object.entries(downloadMatrix.server).map(entry => (
+                        <DownloadCard app="server" arch={currentArch} entry={entry} />
+                    ))}
                 </div>
             </Section>
         </>
     )
 }
 
-export function DownloadCard({ app, arch, entry: [ platform, entry ] }: { app: App, arch: Architecture, entry: [string, DownloadMatrixEntry] }) {
+export function DownloadCard({ app, arch, entry: [ platform, entry ], isRecommended }: {
+    app: App,
+    arch: Architecture,
+    entry: [string, DownloadMatrixEntry],
+    isRecommended?: boolean;
+}) {
     function unwrapText(text: string | Record<Architecture, string>) {
         return (typeof text === "string" ? text : text[arch]);
     }
@@ -58,20 +75,26 @@ export function DownloadCard({ app, arch, entry: [ platform, entry ] }: { app: A
     const restDownloads = allDownloads.filter(download => !download[1].recommended);
 
     return (
-        <Card title={<>
-            {unwrapText(entry.title)}
-            {entry.helpUrl && (
-                <Link
-                    className="more-info"
-                    href={entry.helpUrl}
-                    openExternally
-                >
-                    <Icon svg={helpIcon} />
-                </Link>
-            )}
-        </>} className="download-card">
+        <Card
+            title={
+                <>
+                    {unwrapText(entry.title)}
+                    {entry.helpUrl && (
+                        <Link
+                            className="more-info"
+                            href={entry.helpUrl}
+                            openExternally
+                        >
+                            <Icon svg={helpIcon} />
+                        </Link>
+                    )}
+                    </>
+            }
+            className={`download-card ${platform} ${isRecommended ? "recommended" : ""}`}
+        >
             {unwrapText(entry.description)}
 
+            {entry.quickStartTitle && <p class="quick-start-title">{entry.quickStartTitle}</p>}
             {entry.quickStartCode && (
                 <pre className="quick-start">
                     <code>{entry.quickStartCode}</code>
@@ -103,4 +126,14 @@ export function DownloadCard({ app, arch, entry: [ platform, entry ] }: { app: A
             </div>
         </Card>
     )
+}
+
+function reorderPlatforms(entries: [string, DownloadMatrixEntry][], platformToCenter: Platform | "") {
+    const entryToCenter = entries.find(x => x[0] === platformToCenter);
+    if (!entryToCenter) return entries;
+
+    const others = entries.filter(x => x !== entryToCenter);
+    const mid = Math.floor(others.length / 2);
+    others.splice(mid, 0, entryToCenter);
+    return others;
 }

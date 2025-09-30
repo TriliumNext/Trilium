@@ -19,6 +19,7 @@ export interface DownloadMatrixEntry {
     description: Record<Architecture, string> | string;
     downloads: Record<string, DownloadInfo>;
     helpUrl?: string;
+    quickStartTitle?: string;
     quickStartCode?: string;
 }
 
@@ -43,6 +44,7 @@ export const downloadMatrix: DownloadMatrix = {
                 x64: "Compatible with Intel or AMD devices running Windows 10 and 11.",
                 arm64: "Compatible with ARM devices (e.g. with Qualcomm Snapdragon).",
             },
+            quickStartTitle: "To install via Winget:",
             quickStartCode: "winget install TriliumNext.Notes",
             downloads: {
                 exe: {
@@ -55,10 +57,6 @@ export const downloadMatrix: DownloadMatrix = {
                 scoop: {
                     name: "Scoop",
                     url: "https://scoop.sh/#/apps?q=trilium&id=7c08bc3c105b9ee5c00dd4245efdea0f091b8a5c"
-                },
-                winget: {
-                    name: "Winget",
-                    url: "https://github.com/microsoft/winget-pkgs/tree/master/manifests/t/TriliumNext/Notes/"
                 }
             }
         },
@@ -71,14 +69,15 @@ export const downloadMatrix: DownloadMatrix = {
                 x64: "For most Linux distributions, compatible with x86_64 architecture.",
                 arm64: "For ARM-based Linux distributions, compatible with aarch64 architecture.",
             },
+            quickStartTitle: "Select an appropriate package format, depending on your distribution:",
             downloads: {
                 deb: {
                     recommended: true,
-                    name: "Download .deb"
+                    name: ".deb"
                 },
                 rpm: {
                     recommended: true,
-                    name: "Download .rpm"
+                    name: ".rpm"
                 },
                 flatpak: {
                     name: ".flatpak"
@@ -105,6 +104,7 @@ export const downloadMatrix: DownloadMatrix = {
                 x64: "For Intel-based Macs running macOS Big Sur or later.",
                 arm64: "For Apple Silicon Macs such as those with M1 and M2 chips.",
             },
+            quickStartTitle: "To install via Homebrew:",
             quickStartCode: "brew install --cask trilium-notes",
             downloads: {
                 dmg: {
@@ -188,8 +188,13 @@ export function buildDownloadUrl(app: App, platform: Platform, format: string, a
     }
 }
 
-export function getArchitecture(): Architecture | null {
+export async function getArchitecture(): Promise<Architecture | null> {
     if (typeof window === "undefined") return null;
+
+    if (navigator.userAgentData) {
+        const { architecture } = await navigator.userAgentData.getHighEntropyValues(["architecture"]);
+        return architecture?.startsWith("arm") ? "arm64" : "x64";
+    }
 
     const userAgent = navigator.userAgent.toLowerCase();
     if (userAgent.includes('arm64') || userAgent.includes('aarch64')) {
@@ -212,10 +217,10 @@ export function getPlatform(): Platform | null {
     }
 }
 
-export function getRecommendedDownload(): RecommendedDownload | null {
+export async function getRecommendedDownload(): Promise<RecommendedDownload | null> {
     if (typeof window === "undefined") return null;
 
-    const architecture = getArchitecture();
+    const architecture = await getArchitecture();
     const platform = getPlatform();
     if (!platform || !architecture) return null;
 

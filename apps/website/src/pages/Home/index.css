@@ -47,7 +47,8 @@ section.hero-section {
     }
 
     .title-section {
-        flex-basis: 40%;
+        flex-basis: 30%;
+        flex-shrink: 0;
         color: var(--muted-color);
 
         h1 {
@@ -55,6 +56,10 @@ section.hero-section {
             font-weight: 100;
             color: var(--foreground-color);
         }
+    }
+
+    .screenshot-container {
+        flex-grow: 1;
     }
 
     .screenshot {

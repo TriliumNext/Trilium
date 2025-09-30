@@ -6,7 +6,7 @@
     grid-column: 1 / 4;
 }
 
-.download-card {
+.download-card {    
     h3 {
         color: var(--accent-color);
         font-size: 1.5em;
@@ -32,10 +32,17 @@
         color: var(--accent-color);
     }
 
+    .quick-start-title {
+        margin-bottom: 0;
+        font-size: 0.9em;
+        color: var(--muted-color);
+    }
+
     .quick-start {
         background-color: #ececec;
         padding: 0.75em;
         border-radius: 6px;
+        margin-top: 0.5em;
 
         @media (prefers-color-scheme: dark) {
             background-color: black;
@@ -49,7 +56,7 @@
 }
 
 .download-options {
-    justify-content: flex-end;
+    justify-content: center;
     align-items: stretch;
     flex-grow: 1;
     align-items: center;
@@ -80,9 +87,19 @@
 }
 
 .download-desktop {
-    .download-card:first-of-type { --accent-color: var(--brand-1); }
-    .download-card:nth-of-type(2) { --accent-color: var(--brand-2); }
-    .download-card:last-of-type { --accent-color: var(--brand-3); }
+    .download-card {
+        @media (min-width: 720px) {
+            transform: scale(0.9);
+        
+            &.recommended {
+                transform: scale(1);
+            }
+        }
+
+        &.windows { --accent-color: var(--brand-1); }
+        &.linux { --accent-color: var(--brand-2); }
+        &.macos { --accent-color: var(--brand-3); }
+    }
 
     .download-footer {
         text-align: center;

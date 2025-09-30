@@ -5,7 +5,7 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "vite build",
-		"preview": "vite preview"
+		"preview": "pnpm build && vite preview"
 	},
 	"dependencies": {
 		"preact": "^10.26.9",
@@ -17,6 +17,7 @@
 		"eslint": "^9.36.0",
 		"eslint-config-preact": "^2.0.0",
 		"typescript": "^5.9.2",
+		"user-agent-data-types": "0.4.2",
 		"vite": "^7.0.4"
 	},
 	"eslintConfig": {

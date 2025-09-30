@@ -60,6 +60,7 @@ function HeroSection() {
                 setScreenshotUrl(`/screenshot_desktop_mac_${colorScheme}.webp`);
                 break;
             case "linux":
+                setScreenshotUrl(`/screenshot_desktop_linux_${colorScheme}.webp`);
                 break;
             case "windows":
             default:
@@ -76,7 +77,6 @@ function HeroSection() {
 
                 <div className="download-wrapper">
                     <DownloadButton big />
-                    <a class="more-download-options desktop-only" href="./get-started/">More platforms & server setup</a>
                     <Button href="./get-started/" className="mobile-only" text="Get started" />
                     <div className="additional-options">
                         <Button iconSvg={gitHubIcon} outline text="GitHub" href="https://github.com/TriliumNext/Trilium/" openExternally />
@@ -86,7 +86,9 @@ function HeroSection() {
 
             </div>
 
-            {screenshotUrl && <img class="screenshot" src={screenshotUrl} alt="Screenshot of the Trilium Notes desktop application" />}
+            <div className="screenshot-container">
+                {screenshotUrl && <img class="screenshot" src={screenshotUrl} alt="Screenshot of the Trilium Notes desktop application" />}
+            </div>
         </Section>
     )
 }
