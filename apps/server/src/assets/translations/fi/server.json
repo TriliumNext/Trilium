@@ -9,6 +9,9 @@
     "back-in-note-history": "Palaa edelliseen muistiinpanoon",
     "forward-in-note-history": "Siirry seuraavaan muistiinpanoon",
     "open-jump-to-note-dialog": "Avaa \"Siirry muistiinpanoon\" -dialogi",
-    "scroll-to-active-note": "Näytä aktiivinen muistiinpano puunäkymässä"
+    "scroll-to-active-note": "Näytä aktiivinen muistiinpano puunäkymässä",
+    "move-note-down": "Siirrä muistiinpanoa alaspäin",
+    "move-note-up-in-hierarchy": "Siirrä muistiinpanoa hierarkiassa ylöspäin",
+    "move-note-down-in-hierarchy": "Siirrä muistiinpanoa hierarkiassa alaspäin"
   }
 }

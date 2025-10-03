@@ -41,7 +41,7 @@
     "draggabilly": "3.0.0",
     "force-graph": "1.51.0",
     "globals": "16.4.0",
-    "i18next": "25.5.2",
+    "i18next": "25.5.3",
     "i18next-http-backend": "3.0.2",
     "jquery": "3.7.1",
     "jquery.fancytree": "2.38.5",
@@ -53,7 +53,7 @@
     "mark.js": "8.11.1",
     "marked": "16.3.0",
     "mermaid": "11.12.0",
-    "mind-elixir": "5.2.1",
+    "mind-elixir": "5.3.1",
     "normalize.css": "8.0.1",
     "panzoom": "9.4.3",
     "preact": "10.27.2",
@@ -75,6 +75,6 @@
     "copy-webpack-plugin": "13.0.1",
     "happy-dom": "19.0.2",
     "script-loader": "0.7.2",
-    "vite-plugin-static-copy": "3.1.2"
+    "vite-plugin-static-copy": "3.1.3"
   }
 }

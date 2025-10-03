@@ -1,7 +1,7 @@
 import TypeWidget from "./type_widget.js";
 import appContext, { type EventData } from "../../components/app_context.js";
 import froca from "../../services/froca.js";
-import linkService from "../../services/link.js";
+import linkService, { type ViewScope } from "../../services/link.js";
 import contentRenderer from "../../services/content_renderer.js";
 import utils from "../../services/utils.js";
 import options from "../../services/options.js";
@@ -44,14 +44,14 @@ export default class AbstractTextTypeWidget extends TypeWidget {
     async openImageInNewTab($img: JQuery<HTMLElement>, activate: boolean = false) {
         const parsedImage = await this.parseFromImage($img);
 
-        if (parsedImage) {
+        if (parsedImage?.noteId) {
             appContext.tabManager.openTabWithNoteWithHoisting(parsedImage.noteId, { activate, viewScope: parsedImage.viewScope });
         } else {
             window.open($img.prop("src"), "_blank");
         }
     }
 
-    async parseFromImage($img: JQuery<HTMLElement>) {
+    async parseFromImage($img: JQuery<HTMLElement>): Promise<{ noteId?: string, viewScope: ViewScope } | null> {
         const imgSrc = $img.prop("src");
 
         const imageNoteMatch = imgSrc.match(/\/api\/images\/([A-Za-z0-9_]+)\//);

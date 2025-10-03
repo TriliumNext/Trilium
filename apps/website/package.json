@@ -8,17 +8,17 @@
 		"preview": "pnpm build && vite preview"
 	},
 	"dependencies": {
-		"preact": "^10.26.9",
-		"preact-iso": "^2.10.0",
-		"preact-render-to-string": "^6.6.1"
+		"preact": "10.27.2",
+		"preact-iso": "2.11.0",
+		"preact-render-to-string": "6.6.2"
 	},
 	"devDependencies": {
-		"@preact/preset-vite": "^2.10.2",
-		"eslint": "^9.36.0",
-		"eslint-config-preact": "^2.0.0",
-		"typescript": "^5.9.2",
+		"@preact/preset-vite": "2.10.2",
+		"eslint": "9.36.0",
+		"eslint-config-preact": "2.0.0",
+		"typescript": "5.9.3",
 		"user-agent-data-types": "0.4.2",
-		"vite": "^7.0.4"
+		"vite": "7.1.7"
 	},
 	"eslintConfig": {
 		"extends": "preact"

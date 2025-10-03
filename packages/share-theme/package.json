@@ -22,14 +22,14 @@
   ],
   "license": "Apache-2.0",
   "devDependencies": {
-    "@digitak/esrun": "^3.2.24",
-    "@types/swagger-ui": "^5.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "dotenv": "^17.0.0",
-    "esbuild": "^0.25.0",
-    "eslint": "^9.0.0",
-    "highlight.js": "^11.8.0",
-    "typescript": "^5.2.2"
+    "@digitak/esrun": "3.2.26",
+    "@types/swagger-ui": "5.21.1",
+    "@typescript-eslint/eslint-plugin": "8.45.0",
+    "@typescript-eslint/parser": "8.45.0",
+    "dotenv": "17.2.3",
+    "esbuild": "0.25.10",
+    "eslint": "9.36.0",
+    "highlight.js": "11.11.1",
+    "typescript": "5.9.3"
   }
 }

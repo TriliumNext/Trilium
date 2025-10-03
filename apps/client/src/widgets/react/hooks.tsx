@@ -19,6 +19,7 @@ import Mark from "mark.js";
 import { DragData } from "../note_tree";
 import Component from "../../components/component";
 import toast, { ToastOptions } from "../../services/toast";
+import { ViewMode } from "../../services/link";
 
 export function useTriliumEvent<T extends EventNames>(eventName: T, handler: (data: EventData<T>) => void) {
     const parentComponent = useContext(ParentComponent);
@@ -196,6 +197,7 @@ export function useNoteContext() {
     const [ noteContext, setNoteContext ] = useState<NoteContext>();
     const [ notePath, setNotePath ] = useState<string | null | undefined>();
     const [ note, setNote ] = useState<FNote | null | undefined>();
+    const [ , setViewMode ] = useState<ViewMode>();
     const [ refreshCounter, setRefreshCounter ] = useState(0);
 
     useEffect(() => {
@@ -205,6 +207,7 @@ export function useNoteContext() {
     useTriliumEvents([ "setNoteContext", "activeContextChanged", "noteSwitchedAndActivated", "noteSwitched" ], ({ noteContext }) => {
         setNoteContext(noteContext);
         setNotePath(noteContext.notePath);
+        setViewMode(noteContext.viewScope?.viewMode);
     });
     useTriliumEvent("frocaReloaded", () => {
         setNote(noteContext?.note);

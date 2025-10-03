@@ -376,5 +376,12 @@
     "reset-zoom-level": "Réinitilaliser le zoom",
     "copy-without-formatting": "Copier sans mise en forme",
     "force-save-revision": "Forcer la sauvegarde de la révision"
+  },
+  "sql_init": {
+    "db_not_initialized_desktop": "Base de données non initialisée, merci de suivre les instructions à l'écran.",
+    "db_not_initialized_server": "Base de données non initialisée, veuillez visitez - http://[your-server-host]:{{port}} pour consulter les instructions d'initialisation de Trilium."
+  },
+  "desktop": {
+    "instance_already_running": "Une instance est déjà en cours d'execution, ouverture de cette instance à la place."
   }
 }

@@ -51,7 +51,7 @@ export function isIMEComposing(e: KeyboardEvent): boolean {
     if (!e) {
         return false;
     }
-    
+
     // Standard check for composition state
     // e.isComposing is true when IME is actively composing
     // e.keyCode === 229 is a fallback for older browsers where 229 indicates IME processing
@@ -86,13 +86,13 @@ function bindElShortcut($el: JQuery<ElementType | Element>, keyboardShortcut: st
                 }
 
                 const e = evt as KeyboardEvent;
-                
+
                 // Skip processing if IME is composing to prevent shortcuts from
                 // interfering with text input in CJK languages
                 if (isIMEComposing(e)) {
                     return;
                 }
-                
+
                 if (matchesShortcut(e, keyboardShortcut)) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -161,6 +161,12 @@ export function matchesShortcut(e: KeyboardEvent, shortcut: string): boolean {
     const expectedAlt = modifiers.includes('alt');
     const expectedShift = modifiers.includes('shift');
     const expectedMeta = modifiers.includes('meta') || modifiers.includes('cmd') || modifiers.includes('command');
+
+    // Refuse key combinations that don't include modifiers because they interfere with the normal usage of the application.
+    // Function keys are an exception.
+    if (!(expectedCtrl || expectedAlt || expectedShift || expectedMeta) && !/f\d+/.test(key)) {
+        return false;
+    }
 
     return e.ctrlKey === expectedCtrl &&
            e.altKey === expectedAlt &&

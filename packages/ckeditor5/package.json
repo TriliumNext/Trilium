@@ -11,11 +11,11 @@
     "@triliumnext/ckeditor5-keyboard-marker": "workspace:*",
     "@triliumnext/ckeditor5-math": "workspace:*",
     "@triliumnext/ckeditor5-mermaid": "workspace:*",
-    "ckeditor5": "46.1.1",
-    "ckeditor5-premium-features": "46.1.1"
+    "ckeditor5": "47.0.0",
+    "ckeditor5-premium-features": "47.0.0"
   },
   "devDependencies": {
-    "@smithy/middleware-retry": "4.3.1",
+    "@smithy/middleware-retry": "4.4.0",
     "@types/jquery": "3.5.33"
   }
 }

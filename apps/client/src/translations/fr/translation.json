@@ -587,7 +587,18 @@
     "october": "Octobre",
     "november": "Novembre",
     "december": "Décembre",
-    "cannot_find_week_note": "Impossible de trouver la note de la semaine"
+    "cannot_find_week_note": "Impossible de trouver la note de la semaine",
+    "week": "Semaine",
+    "week_previous": "Semaine précédente",
+    "week_next": "Semaine suivante",
+    "month": "Mois",
+    "month_previous": "Mois précédent",
+    "month_next": "Mois suivant",
+    "year": "Année",
+    "year_previous": "Année précédente",
+    "year_next": "Année suivante",
+    "list": "Liste",
+    "today": "Aujourd'hui"
   },
   "close_pane_button": {
     "close_this_pane": "Fermer ce volet"
@@ -732,7 +743,8 @@
     "note_type": "Type de note",
     "editable": "Modifiable",
     "basic_properties": "Propriétés de base",
-    "language": "Langage"
+    "language": "Langage",
+    "configure_code_notes": "Configurer les notes de code..."
   },
   "book_properties": {
     "view_type": "Type d'affichage",
@@ -747,7 +759,8 @@
     "book_properties": "Propriétés de la collection",
     "table": "Tableau",
     "geo-map": "Carte géographique",
-    "board": "Tableau de bord"
+    "board": "Tableau de bord",
+    "include_archived_notes": "Afficher les notes archivées"
   },
   "edited_notes": {
     "no_edited_notes_found": "Aucune note modifiée ce jour-là...",
@@ -948,7 +961,9 @@
     "no_attachments": "Cette note ne contient aucune pièce jointe."
   },
   "book": {
-    "no_children_help": "Cette note de type Livre n'a aucune note enfant, donc il n'y a rien à afficher. Consultez le <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> pour plus de détails."
+    "no_children_help": "Cette note de type Livre n'a aucune note enfant, donc il n'y a rien à afficher. Consultez le <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> pour plus de détails.",
+    "drag_locked_title": "Edition verrouillée",
+    "drag_locked_message": "Le glisser-déposer n'est pas autorisé car l'édition de cette collection est verrouillé."
   },
   "editable_code": {
     "placeholder": "Saisir le contenu de votre note de code ici..."
@@ -1690,6 +1705,72 @@
     "anthropic_configuration": "Configuration Anthropic",
     "voyage_configuration": "Configuration IA Voyage",
     "voyage_url_description": "Défaut: https://api.voyageai.com/v1",
-    "ollama_configuration": "Configuration Ollama"
+    "ollama_configuration": "Configuration Ollama",
+    "total_notes": "Notes totales",
+    "progress": "Progrès",
+    "queued_notes": "Notes dans la file d'attente",
+    "refresh_stats": "Rafraîchir les statistiques",
+    "enable_ai_features": "Activer les fonctionnalités IA/LLM",
+    "enable_ai_description": "Activer les fonctionnalités IA telles que le résumé des notes, la génération de contenu et autres fonctionnalités LLM",
+    "openai_tab": "OpenAI",
+    "anthropic_tab": "Anthropic",
+    "voyage_tab": "Voyage AI",
+    "ollama_tab": "Ollama",
+    "enable_ai": "Activer les fonctionnalités IA/LLM",
+    "enable_ai_desc": "Activer les fonctionnalités IA telles que le résumé des notes, la génération de contenu et autres fonctionnalités LLM",
+    "provider_configuration": "Configuration du fournisseur IA",
+    "provider_precedence_description": "Liste de fournisseurs séparés par virgule, par ordre de préférence (ex. 'openai,anthopic,ollama')",
+    "temperature": "Température",
+    "temperature_description": "Contrôle de l'aléatoirité dans les réponses (0 = déterministe, 2 = hasard maximum)",
+    "system_prompt": "Prompt système",
+    "system_prompt_description": "Prompt système par défaut pour toutes les intéractions IA",
+    "openai_configuration": "Configuration OpenAI",
+    "openai_settings": "Options OpenAI",
+    "api_key": "Clef API",
+    "url": "URL de base",
+    "model": "Modèle",
+    "openai_api_key_description": "Votre clef API OpenAI pour accéder à leurs services IA",
+    "anthropic_api_key_description": "Votre clef API Anthropic pour accéder aux modèles Claude",
+    "default_model": "Modèle par défaut",
+    "openai_model_description": "Exemples : gpt-4o, gpt-4-turbo, gpt-3.5-turbo",
+    "base_url": "URL de base",
+    "openai_url_description": "Défaut : https://api.openai.com/v1",
+    "anthropic_settings": "Réglages Anthropic",
+    "enable_ollama": "Activer Ollama",
+    "enable_ollama_description": "Activer Ollama comme modèle d'IA local",
+    "ollama_url": "URL Ollama",
+    "ollama_model": "Modèle Ollama",
+    "refresh_models": "Rafraîchir les modèles",
+    "refreshing_models": "Mise à jour...",
+    "enable_automatic_indexing": "Activer l'indexage automatique",
+    "rebuild_index": "Rafraîchir l'index",
+    "rebuild_index_error": "Erreur dans le démarrage du rafraichissement de l'index. Veuillez consulter les logs pour plus de détails.",
+    "note_title": "Titre de la note",
+    "error": "Erreur",
+    "last_attempt": "Dernier essai",
+    "actions": "Actions",
+    "retry": "Réessayer",
+    "partial": "Complété à {{ percentage }}%",
+    "retry_queued": "Note ajoutée à la file d'attente",
+    "retry_failed": "Echec de l'ajout de la note à la file d'attente",
+    "max_notes_per_llm_query": "Notes maximum par requête",
+    "max_notes_per_llm_query_description": "Nombre maximum de notes similaires à inclure dans le contexte IA",
+    "active_providers": "Fournisseurs actifs",
+    "disabled_providers": "Fournisseurs désactivés",
+    "remove_provider": "Retirer le fournisseur de la recherche",
+    "similarity_threshold": "Seuil de similarité",
+    "similarity_threshold_description": "Seuil de similarité minimum (0-1) pour que inclure les notes dans le contexte d'une requête IA",
+    "reprocess_index": "Rafraîchir l'index de recherche",
+    "reprocessing_index": "Mise à jour...",
+    "reprocess_index_started": "L'optimisation de l'indice de recherche à commencer en arrière-plan",
+    "reprocess_index_error": "Erreur dans le rafraichissement de l'indice de recherche"
+  },
+  "ui-performance": {
+    "title": "Performance",
+    "enable-motion": "Activer les transitions et animations",
+    "enable-shadows": "Activer les ombres",
+    "enable-backdrop-effects": "Activer les effets d'arrière plan pour les menus, popups et panneaux",
+    "enable-smooth-scroll": "Active le défilement fluide",
+    "app-restart-required": "(redémarrer l'application pour appliquer les changements)"
   }
 }

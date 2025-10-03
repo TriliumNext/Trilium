@@ -5,6 +5,7 @@ import { getOpenAIOptions } from './providers.js';
 import OpenAI from 'openai';
 import { PROVIDER_PROMPTS } from '../constants/llm_prompt_constants.js';
 import log from '../../log.js';
+import { ChatCompletionMessageFunctionToolCall } from 'openai/resources/index.mjs';
 
 export class OpenAIService extends BaseAIService {
     private openai: OpenAI | null = null;
@@ -42,10 +43,10 @@ export class OpenAIService extends BaseAIService {
 
         // Get base system prompt
         let systemPrompt = this.getSystemPrompt(providerOptions.systemPrompt || options.getOption('aiSystemPrompt'));
-        
+
         // Check if tools are enabled for this request
         const willUseTools = providerOptions.enableTools && providerOptions.tools && providerOptions.tools.length > 0;
-        
+
         // Add tool instructions to system prompt if tools are enabled
         if (willUseTools && PROVIDER_PROMPTS.OPENAI.TOOL_INSTRUCTIONS) {
             log.info('Adding tool instructions to system prompt for OpenAI');
@@ -101,7 +102,7 @@ export class OpenAIService extends BaseAIService {
                 log.info('OpenAI API Stream Started');
 
                 // Create a closure to hold accumulated tool calls
-                const accumulatedToolCalls: OpenAI.Chat.ChatCompletionMessageToolCall[] = [];
+                const accumulatedToolCalls: OpenAI.Chat.ChatCompletionMessageFunctionToolCall[] = [];
 
                 // Return a response with the stream handler
                 const response: ChatResponse = {
@@ -201,7 +202,7 @@ export class OpenAIService extends BaseAIService {
                                     completeText = content;
 
                                     // Check if there are tool calls in the non-stream response
-                                    const toolCalls = stream.choices[0]?.message?.tool_calls;
+                                    const toolCalls = stream.choices[0]?.message?.tool_calls as ChatCompletionMessageFunctionToolCall[];
                                     if (toolCalls) {
                                         response.tool_calls = toolCalls;
                                         console.log('OpenAI API Tool Calls in Non-iterable Response:', JSON.stringify(toolCalls, null, 2));
@@ -251,7 +252,7 @@ export class OpenAIService extends BaseAIService {
                         completionTokens: completion.usage?.completion_tokens,
                         totalTokens: completion.usage?.total_tokens
                     },
-                    tool_calls: completion.choices[0].message.tool_calls
+                    tool_calls: completion.choices[0].message.tool_calls as ChatCompletionMessageFunctionToolCall[]
                 };
             }
         } catch (error) {

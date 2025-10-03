@@ -21,6 +21,7 @@ import dayjs from "dayjs";
 import type NoteContext from "../components/note_context.js";
 import type NoteDetailWidget from "../widgets/note_detail.js";
 import type Component from "../components/component.js";
+import { formatLogMessage } from "@triliumnext/commons";
 
 /**
  * A whole number
@@ -455,7 +456,7 @@ export interface Api {
     /**
      * Log given message to the log pane in UI
      */
-    log(message: string): void;
+    log(message: string | object): void;
 }
 
 /**
@@ -696,7 +697,7 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
     this.log = (message) => {
         const { noteId } = this.startNote;
 
-        message = `${utils.now()}: ${message}`;
+        message = `${utils.now()}: ${formatLogMessage(message)}`;
 
         console.log(`Script ${noteId}: ${message}`);
 

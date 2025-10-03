@@ -1587,7 +1587,9 @@
   "ws": {
     "consistency-checks-failed": "Au fost identificate erori de consistență! Vedeți mai multe detalii în loguri.",
     "encountered-error": "A fost întâmpinată o eroare: „{{message}}”. Vedeți în loguri pentru mai multe detalii.",
-    "sync-check-failed": "Verificările de sincronizare au eșuat!"
+    "sync-check-failed": "Verificările de sincronizare au eșuat!",
+    "lost-websocket-connection-title": "S-a pierdut conexiunea la server",
+    "lost-websocket-connection-message": "Verificați configurația reverse proxy-ului (e.g. nginx sau Apache) astfel încât să permită comunicarea prin WebSocket."
   },
   "hoisted_note": {
     "confirm_unhoisting": "Notița dorită „{{requestedNote}}” este în afara ierarhiei notiței focalizate „{{hoistedNote}}”. Doriți defocalizarea pentru a accesa notița?"
@@ -1668,7 +1670,7 @@
   },
   "electron_integration": {
     "background-effects": "Activează efectele de fundal (doar pentru Windows 11)",
-    "background-effects-description": "Efectul Mica adaugă un fundal estompat și elegant ferestrelor aplicațiilor, creând profunzime și un aspect modern.",
+    "background-effects-description": "Efectul Mica adaugă un fundal estompat și elegant ferestrelor aplicațiilor, creând profunzime și un aspect modern. Opțiunea „Bară de titlu nativă” trebuie să fie dezactivată.",
     "desktop-application": "Aplicația desktop",
     "native-title-bar": "Bară de titlu nativă",
     "native-title-bar-description": "Pentru Windows și macOS, dezactivarea bării de titlu native face aplicația să pară mai compactă. Pe Linux, păstrarea bării integrează mai bine aplicația cu restul sistemului de operare.",
@@ -1956,7 +1958,11 @@
   "editorfeatures": {
     "title": "Funcții",
     "emoji_completion_enabled": "Activează auto-completarea pentru emoji-uri",
-    "note_completion_enabled": "Activează auto-completarea pentru notițe"
+    "note_completion_enabled": "Activează auto-completarea pentru notițe",
+    "emoji_completion_description": "Dacă această funcție este pornită, emoji-urile pot fi inserate rapid prin tastarea caracterului „:”, urmat de denumirea emoji-ului.",
+    "note_completion_description": "Dacă această funcție este pornită, se pot crea ușor legături către notițe prin tastarea „@”, urmată de titlul notiței dorite.",
+    "slash_commands_enabled": "Activează comenzi rapide prin tasta slash",
+    "slash_commands_description": "Dacă această funcție este pornită, se poate folosi tasta „/” pentru a rula rapid comenzi de editare precum inserarea de întreruperi de pagină sau titluri."
   },
   "table_view": {
     "new-row": "Rând nou",

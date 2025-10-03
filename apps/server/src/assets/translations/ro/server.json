@@ -428,5 +428,8 @@
   "sql_init": {
     "db_not_initialized_desktop": "Baza de date nu este inițializată, urmați instrucțiunile de pe ecran.",
     "db_not_initialized_server": "Baza de date nu este inițializată, vizitați pagina de inițializare la http://[your-server-host]:{{port}}, ce conține instrucțiuni despre inițializarea aplicației."
+  },
+  "desktop": {
+    "instance_already_running": "Se focalizează o instanță a aplicației deja existentă."
   }
 }

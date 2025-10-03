@@ -136,7 +136,7 @@ ws.subscribeToMessages(async (message) => {
             id: id,
             title: t("export.export_status"),
             message: message,
-            icon: "arrow-square-up-right"
+            icon: "export"
         };
     }
 

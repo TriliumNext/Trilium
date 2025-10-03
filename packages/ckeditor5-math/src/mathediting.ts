@@ -59,12 +59,12 @@ export default class MathEditing extends Plugin {
 			allowWhere: '$text',
 			isInline: true,
 			isObject: true,
-			allowAttributes: [ 'equation', 'type', 'display' ]
+			allowAttributes: [ 'equation', 'type', 'display', 'fontSize', 'fontColor', 'fontBackgroundColor' ]
 		} );
 
 		schema.register( 'mathtex-display', {
 			inheritAllFrom: '$blockObject',
-			allowAttributes: [ 'equation', 'type', 'display' ]
+			allowAttributes: [ 'equation', 'type', 'display', 'fontSize', 'fontColor' ]
 		} );
 	}
 

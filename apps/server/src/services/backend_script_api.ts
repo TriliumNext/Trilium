@@ -23,6 +23,7 @@ import exportService from "./export/zip.js";
 import syncMutex from "./sync_mutex.js";
 import backupService from "./backup.js";
 import optionsService from "./options.js";
+import { formatLogMessage } from "@triliumnext/commons";
 import type BNote from "../becca/entities/bnote.js";
 import type AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
 import type BBranch from "../becca/entities/bbranch.js";
@@ -221,7 +222,7 @@ export interface Api {
     /**
      * Log given message to trilium logs and log pane in UI
      */
-    log(message: string): void;
+    log(message: string | object): void;
 
     /**
      * Returns root note of the calendar.
@@ -556,7 +557,8 @@ function BackendScriptApi(this: Api, currentNote: BNote, apiParams: ApiParams) {
     this.logMessages = {};
     this.logSpacedUpdates = {};
 
-    this.log = (message) => {
+    this.log = (rawMessage) => {
+        const message = formatLogMessage(rawMessage);
         log.info(message);
 
         if (!this.startNote) {

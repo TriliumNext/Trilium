@@ -31,7 +31,7 @@
     "link_title_mirrors": "il titolo del collegamento rispecchia il titolo della nota corrente",
     "link_title_arbitrary": "il titolo del collegamento può essere modificato arbitrariamente",
     "link_title": "Titolo del collegamento",
-    "button_add_link": "Aggiungi il collegamento <kbd>invio</kbd>",
+    "button_add_link": "Aggiungi il collegamento",
     "help_on_links": "Aiuto sui collegamenti"
   },
   "branch_prefix": {

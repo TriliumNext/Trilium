@@ -147,7 +147,7 @@
     "paste-markdown-into-text": "Incolla il Markdown dagli appunti nella nota di testo",
     "cut-into-note": "Taglia la selezione dalla nota corrente e crea una sotto nota col testo selezionato",
     "add-include-note-to-text": "Apre la finestra di dialogo per includere una nota",
-    "edit-readonly-note": "Modifica una nota di sola lettura",
+    "edit-readonly-note": "Modifica una nota in sola lettura",
     "attributes-labels-and-relations": "Attributi (etichette e relazioni)",
     "add-new-label": "Crea una nuova etichetta",
     "create-new-relation": "Crea una nuova relazione",
