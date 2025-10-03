@@ -166,16 +166,34 @@ Please view the [documentation guide](https://github.com/TriliumNext/Trilium/blo
 
 ## 👏 Shoutouts
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - best WYSIWYG editor on the market, very interactive and listening team
-* [FancyTree](https://github.com/mar10/fancytree) - very feature rich tree library without real competition. Trilium Notes would not be the same without it.
-* [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with support for huge amount of languages
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - visual connectivity library without competition. Used in [relation maps](https://triliumnext.github.io/Docs/Wiki/relation-map.html) and [link maps](https://triliumnext.github.io/Docs/Wiki/note-map.html#link-map)
+* [zadam](https://github.com/zadam) for the original concept and implementation of the application.
+* [Larsa](https://github.com/LarsaSara) for designing the application icon.
+* [nriver](https://github.com/nriver) for his work on internationalization.
+* [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
+* [antoniotejada](https://github.com/nriver) for the original syntax highlight widget.
+* [Dosu](https://dosu.dev/) for providing us with the automated responses to GitHub issues and discussions.
+* [Tabler Icons](https://tabler.io/icons) for the system tray icons.
+
+Trilium would not be possible without the technologies behind it:
+
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind text notes. We are grateful for being offered a set of the premium features.
+* [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with support for huge amount of languages.
+* [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite whiteboard used in Canvas notes.
+* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - providing the mind map functionality.
+* [Leaflet](https://github.com/Leaflet/Leaflet) - for rendering geographical maps.
+* [Tabulator](https://github.com/olifolkerd/tabulator) - for the interactive table used in collections.
+* [FancyTree](https://github.com/mar10/fancytree) - feature-rich tree library without real competition. 
+* [jsPlumb](https://github.com/jsplumb/jsplumb) - visual connectivity library. Used in [relation maps](https://triliumnext.github.io/Docs/Wiki/relation-map.html) and [link maps](https://triliumnext.github.io/Docs/Wiki/note-map.html#link-map)
 
 ## 🤝 Support
 
-Support for the TriliumNext organization will be possible in the near future. For now, you can:
-- Support continued development on TriliumNext by supporting our developers: [eliandoran](https://github.com/sponsors/eliandoran) (See the [repository insights]([developers]([url](https://github.com/TriliumNext/trilium/graphs/contributors))) for a full list)
-- Show a token of gratitude to the original Trilium developer ([zadam](https://github.com/sponsors/zadam)) via [PayPal](https://paypal.me/za4am) or Bitcoin (bitcoin:bc1qv3svjn40v89mnkre5vyvs2xw6y8phaltl385d2).
+Trilium is built and maintained with [hundreds of hours of work](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Your support keeps it open-source, improves features, and covers costs such as hosting.
+
+Consider supporting the main developer ([eliandoran](https://github.com/eliandoran)) of the application via:
+
+- [GitHub Sponsors](https://github.com/sponsors/eliandoran)
+- [PayPal](https://paypal.me/eliandoran)
+- [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
 
 
 ## 🔑 License

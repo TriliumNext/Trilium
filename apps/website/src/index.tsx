@@ -1,17 +1,17 @@
-import { LocationProvider, Router, Route, hydrate, prerender as ssr } from 'preact-iso';
-
+import './style.css';
+import { FALLBACK_STARGAZERS_COUNT, getRepoStargazersCount } from './github-utils.js';
 import { Header } from './components/Header.jsx';
 import { Home } from './pages/Home/index.jsx';
+import { LocationProvider, Router, Route, hydrate, prerender as ssr } from 'preact-iso';
 import { NotFound } from './pages/_404.jsx';
-import './style.css';
 import Footer from './components/Footer.js';
 import GetStarted from './pages/GetStarted/get-started.js';
 import SupportUs from './pages/SupportUs/SupportUs.js';
 
-export function App() {
+export function App(props: {repoStargazersCount: number}) {
 	return (
 		<LocationProvider>
-			<Header />
+			<Header repoStargazersCount={props.repoStargazersCount} />
 			<main>
 				<Router>
 					<Route path="/" component={Home} />
@@ -26,9 +26,15 @@ export function App() {
 }
 
 if (typeof window !== 'undefined') {
-	hydrate(<App />, document.getElementById('app')!);
+	hydrate(<App repoStargazersCount={FALLBACK_STARGAZERS_COUNT} />, document.getElementById('app')!);
 }
 
 export async function prerender(data) {
-	return await ssr(<App {...data} />);
+	// Fetch the stargazer count of the Trilium's GitHub repo on prerender to pass
+	// it to the App component for SSR.
+	// This ensures the GitHub API is not called on every page load in the client.
+	const stargazersCount = await getRepoStargazersCount();
+
+	return await ssr(<App repoStargazersCount={stargazersCount} {...data} />);
 }
+

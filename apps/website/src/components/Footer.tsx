@@ -55,7 +55,7 @@ export function SocialButtons({ className, withText }: { className?: string, wit
     )
 }
 
-function SocialButton({ name, iconSvg, url, withText }: { name: string, iconSvg: string, url: string, withText?: boolean }) {
+export function SocialButton({ name, iconSvg, url, withText, counter }: { name: string, iconSvg: string, url: string, withText?: boolean, counter?: string | undefined }) {
     return (
         <Link
             className="social-button"
@@ -63,7 +63,9 @@ function SocialButton({ name, iconSvg, url, withText }: { name: string, iconSvg:
             title={!withText ? name : undefined}
         >
             <Icon svg={iconSvg} />
+            {counter && <span class="counter">{counter}</span>}             
             {withText && name}
         </Link>
     )
 }
+

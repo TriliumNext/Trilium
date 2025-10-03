@@ -1,3 +1,8 @@
+@font-face {
+    font-family: "Inter";
+    src: url(./assets/fonts/Inter/Inter-VariableFont_opsz,wght.ttf);
+}
+
 :root {
     --background-color: #fff;
     --foreground-color: black;
@@ -26,7 +31,7 @@ html,
 body {
     margin: 0;
     line-height: 1.5;
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
     min-height: 100vh;
 }
 
@@ -37,7 +42,6 @@ main {
 }
 
 body {
-    font-family: sans-serif;
     background: var(--background-color);
     color: var(--foreground-color);
 }
@@ -69,7 +73,7 @@ section {
 
     h2 {
         text-align: center;
-        font-weight: 100;
+        font-weight: 300;
         margin-top: 0;
         margin-bottom: 1em;
     }

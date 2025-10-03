@@ -90,6 +90,7 @@ export default function AppearanceSettings() {
             {isElectron() && <ElectronIntegration /> }
             <Performance />
             <MaxContentWidth />
+            <RibbonOptions />
             <RelatedSettings items={[
                 {
                     title: t("settings_appearance.related_code_blocks"),
@@ -302,6 +303,19 @@ function MaxContentWidth() {
             <p>
                 {t("max_content_width.apply_changes_description")} <Button text={t("max_content_width.reload_button")} size="micro" onClick={reloadFrontendApp} />
             </p>
+        </OptionsSection>
+    )
+}
+
+function RibbonOptions() {
+    const [ editedNotesOpenInRibbon, setEditedNotesOpenInRibbon ] = useTriliumOptionBool("editedNotesOpenInRibbon");
+
+    return (
+        <OptionsSection title={t('ribbon.widgets')}>
+            <FormCheckbox
+                label={t('ribbon.edited_notes_message')}
+                currentValue={editedNotesOpenInRibbon} onChange={setEditedNotesOpenInRibbon}
+            />
         </OptionsSection>
     )
 }

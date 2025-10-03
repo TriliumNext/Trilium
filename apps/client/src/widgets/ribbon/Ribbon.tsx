@@ -51,6 +51,7 @@ const TAB_CONFIGURATION = numberObjectsInPlace<TabConfiguration>([
         show: ({ note }) => note?.type === "text" && options.get("textNoteEditorType") === "ckeditor-classic",
         toggleCommand: "toggleRibbonTabClassicEditor",
         content: FormattingToolbar,
+        activate: true,
         stayInDom: true
     },
     {

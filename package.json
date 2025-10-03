@@ -61,7 +61,7 @@
     "typescript": "~5.9.0",
     "typescript-eslint": "8.45.0",
     "upath": "2.0.1",
-    "vite": "7.1.7",
+    "vite": "7.1.9",
     "vite-plugin-dts": "~4.5.0",
     "vitest": "3.2.4"
   },
@@ -79,7 +79,7 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@10.17.1",
+  "packageManager": "pnpm@10.18.0",
   "pnpm": {
     "patchedDependencies": {
       "@ckeditor/ckeditor5-mention": "patches/@ckeditor__ckeditor5-mention.patch",

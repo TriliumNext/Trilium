@@ -53,7 +53,7 @@ section.hero-section {
 
         h1 {
             line-height: 1.1;
-            font-weight: 100;
+            font-weight: 300;
             color: var(--foreground-color);
         }
     }

@@ -45,14 +45,4 @@ export default class ReadOnlyCodeTypeWidget extends AbstractCodeTypeWidget {
             readOnly: true
         };
     }
-
-    async executeWithContentElementEvent({ resolve, ntxId }: EventData<"executeWithContentElement">) {
-        if (!this.isNoteContext(ntxId)) {
-            return;
-        }
-
-        await this.initialized;
-
-        resolve(this.$editor);
-    }
 }

@@ -1,12 +1,13 @@
 import "./Header.css";
+import { Link } from "./Button.js";
+import { SocialButtons, SocialButton } from "./Footer.js";
+import { useEffect, useMemo, useState } from "preact/hooks";
 import { useLocation } from 'preact-iso';
 import DownloadButton from './DownloadButton.js';
-import { Link } from "./Button.js";
+import githubIcon from "../assets/boxicons/bx-github.svg?raw";
 import Icon from "./Icon.js";
 import logoPath from "../assets/icon-color.svg";
 import menuIcon from "../assets/boxicons/bx-menu.svg?raw";
-import { useState } from "preact/hooks";
-import { SocialButtons } from "./Footer.js";
 
 interface HeaderLink {
     url: string;
@@ -20,7 +21,7 @@ const HEADER_LINKS: HeaderLink[] = [
     { url: "/support-us/", text: "Support us" }
 ]
 
-export function Header() {
+export function Header(props: {repoStargazersCount: number}) {
 	const { url } = useLocation();
     const [ mobileMenuShown, setMobileMenuShown ] = useState(false);
 
@@ -60,6 +61,16 @@ export function Header() {
                 </nav>
 
                 <DownloadButton />
+                
+                <div class="desktop-only">
+                    <SocialButton
+                        name="GitHub"
+                        iconSvg={githubIcon}
+                        counter={(props.repoStargazersCount / 1000).toFixed(1) + "K+"}
+                        url="https://github.com/TriliumNext/Trilium"
+                    />
+                </div>
+
             </div>
 		</header>
 	);

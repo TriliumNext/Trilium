@@ -36,9 +36,18 @@ const keyMap: { [key: string]: string[] } = {
 };
 
 // Function keys
+const functionKeyCodes: string[] = [];
 for (let i = 1; i <= 19; i++) {
-    keyMap[`f${i}`] = [`F${i}`];
+    const keyCode = `F${i}`;
+    functionKeyCodes.push(keyCode);
+    keyMap[`f${i}`] = [ keyCode ];
 }
+
+const KEYCODES_WITH_NO_MODIFIER = new Set([
+    "Delete",
+    "Enter",
+    ...functionKeyCodes
+]);
 
 /**
  * Check if IME (Input Method Editor) is composing
@@ -163,8 +172,8 @@ export function matchesShortcut(e: KeyboardEvent, shortcut: string): boolean {
     const expectedMeta = modifiers.includes('meta') || modifiers.includes('cmd') || modifiers.includes('command');
 
     // Refuse key combinations that don't include modifiers because they interfere with the normal usage of the application.
-    // Function keys are an exception.
-    if (!(expectedCtrl || expectedAlt || expectedShift || expectedMeta) && !/f\d+/.test(key)) {
+    // Some keys such as function keys are an exception.
+    if (!(expectedCtrl || expectedAlt || expectedShift || expectedMeta) && !KEYCODES_WITH_NO_MODIFIER.has(e.code)) {
         return false;
     }
 
