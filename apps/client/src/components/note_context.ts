@@ -9,7 +9,7 @@ import hoistedNoteService from "../services/hoisted_note.js";
 import options from "../services/options.js";
 import type { ViewScope } from "../services/link.js";
 import type FNote from "../entities/fnote.js";
-import type TypeWidget from "../widgets/type_widgets/type_widget.js";
+import type TypeWidget from "../widgets/type_widgets_old/type_widget.js";
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
 import { closeActiveDialog } from "../services/dialog.js";

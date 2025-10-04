@@ -1,0 +1,250 @@
+import { t } from "../services/i18n.js";
+import NoteContextAwareWidget from "./note_context_aware_widget.js";
+import protectedSessionHolder from "../services/protected_session_holder.js";
+import SpacedUpdate from "../services/spaced_update.js";
+import server from "../services/server.js";
+import appContext, { type CommandListenerData, type EventData } from "../components/app_context.js";
+import keyboardActionsService from "../services/keyboard_actions.js";
+import noteCreateService from "../services/note_create.js";
+import attributeService from "../services/attributes.js";
+
+import EmptyTypeWidget from "./type_widgets/empty.js";
+import EditableTextTypeWidget from "./type_widgets/editable_text.js";
+import EditableCodeTypeWidget from "./type_widgets/editable_code.js";
+import FileTypeWidget from "./type_widgets/file.js";
+import ImageTypeWidget from "./type_widgets/image.js";
+import RenderTypeWidget from "./type_widgets/render.js";
+import RelationMapTypeWidget from "./type_widgets/relation_map.js";
+import CanvasTypeWidget from "./type_widgets/canvas.js";
+import ProtectedSessionTypeWidget from "./type_widgets/protected_session.js";
+import BookTypeWidget from "./type_widgets/book.js";
+import ReadOnlyTextTypeWidget from "./type_widgets/read_only_text.js";
+import ReadOnlyCodeTypeWidget from "./type_widgets/read_only_code.js";
+import NoneTypeWidget from "./type_widgets/none.js";
+import NoteMapTypeWidget from "./type_widgets/note_map.js";
+import WebViewTypeWidget from "./type_widgets/web_view.js";
+import DocTypeWidget from "./type_widgets/doc.js";
+import ContentWidgetTypeWidget from "./type_widgets/content_widget.js";
+import AttachmentListTypeWidget from "./type_widgets/attachment_list.js";
+import AttachmentDetailTypeWidget from "./type_widgets/attachment_detail.js";
+import MindMapWidget from "./type_widgets/mind_map.js";
+import utils from "../services/utils.js";
+import type { NoteType } from "../entities/fnote.js";
+import type TypeWidget from "./type_widgets/type_widget.js";
+import { MermaidTypeWidget } from "./type_widgets/mermaid.js";
+import AiChatTypeWidget from "./type_widgets/ai_chat.js";
+
+const typeWidgetClasses = {
+    empty: EmptyTypeWidget,
+    editableText: EditableTextTypeWidget,
+    readOnlyText: ReadOnlyTextTypeWidget,
+    editableCode: EditableCodeTypeWidget,
+    readOnlyCode: ReadOnlyCodeTypeWidget,
+    file: FileTypeWidget,
+    image: ImageTypeWidget,
+    search: NoneTypeWidget,
+    render: RenderTypeWidget,
+    relationMap: RelationMapTypeWidget,
+    canvas: CanvasTypeWidget,
+    protectedSession: ProtectedSessionTypeWidget,
+    book: BookTypeWidget,
+    noteMap: NoteMapTypeWidget,
+    webView: WebViewTypeWidget,
+    doc: DocTypeWidget,
+    contentWidget: ContentWidgetTypeWidget,
+    attachmentDetail: AttachmentDetailTypeWidget,
+    attachmentList: AttachmentListTypeWidget,
+    mindMap: MindMapWidget,
+    aiChat: AiChatTypeWidget,
+
+    // Split type editors
+    mermaid: MermaidTypeWidget
+};
+
+
+export default class NoteDetailWidget extends NoteContextAwareWidget {
+
+    private typeWidgets: Record<string, TypeWidget>;
+    private spacedUpdate: SpacedUpdate;
+    private type?: ExtendedNoteType;
+    private mime?: string;
+
+    constructor() {
+        super();
+
+        this.typeWidgets = {};
+
+        appContext.addBeforeUnloadListener(this);
+    }
+
+    isEnabled() {
+        return true;
+    }
+
+    async refresh() {
+        this.type = await this.getWidgetType();
+        this.mime = this.note?.mime;
+
+        if (!(this.type in this.typeWidgets)) {
+            const clazz = typeWidgetClasses[this.type];
+
+            if (!clazz) {
+                throw new Error(`Cannot find type widget for type '${this.type}'`);
+            }
+
+            const typeWidget = (this.typeWidgets[this.type] = new clazz());
+            typeWidget.spacedUpdate = this.spacedUpdate;
+            typeWidget.setParent(this);
+
+            if (this.noteContext) {
+                typeWidget.setNoteContextEvent({ noteContext: this.noteContext });
+            }
+            const $renderedWidget = typeWidget.render();
+            keyboardActionsService.updateDisplayedShortcuts($renderedWidget);
+
+            this.$widget.append($renderedWidget);
+
+            if (this.noteContext) {
+                await typeWidget.handleEvent("setNoteContext", { noteContext: this.noteContext });
+            }
+
+            // this is happening in update(), so note has been already set, and we need to reflect this
+            if (this.noteContext) {
+                await typeWidget.handleEvent("noteSwitched", {
+                    noteContext: this.noteContext,
+                    notePath: this.noteContext.notePath
+                });
+            }
+
+            this.child(typeWidget);
+        }
+
+        this.checkFullHeight();
+
+        if (utils.isMobile()) {
+            const hasFixedTree = this.noteContext?.hoistedNoteId === "_lbMobileRoot";
+            $("body").toggleClass("force-fixed-tree", hasFixedTree);
+        }
+    }
+
+    /**
+     * sets full height of container that contains note content for a subset of note-types
+     */
+    getTypeWidget() {
+        if (!this.type || !this.typeWidgets[this.type]) {
+            throw new Error(t(`note_detail.could_not_find_typewidget`, { type: this.type }));
+        }
+
+        return this.typeWidgets[this.type];
+    }
+
+    async beforeNoteSwitchEvent({ noteContext }: EventData<"beforeNoteSwitch">) {
+        if (this.isNoteContext(noteContext.ntxId)) {
+            await this.spacedUpdate.updateNowIfNecessary();
+        }
+    }
+
+    async beforeNoteContextRemoveEvent({ ntxIds }: EventData<"beforeNoteContextRemove">) {
+        if (this.isNoteContext(ntxIds)) {
+            await this.spacedUpdate.updateNowIfNecessary();
+        }
+    }
+
+    async runActiveNoteCommand(params: CommandListenerData<"runActiveNote">) {
+        if (this.isNoteContext(params.ntxId)) {
+            // make sure that script is saved before running it #4028
+            await this.spacedUpdate.updateNowIfNecessary();
+        }
+
+        return await this.parent?.triggerCommand("runActiveNote", params);
+    }
+
+    async printActiveNoteEvent() {
+        if (!this.noteContext?.isActive()) {
+            return;
+        }
+
+        // Trigger in timeout to dismiss the menu while printing.
+        setTimeout(window.print, 0);
+    }
+
+    async exportAsPdfEvent() {
+        if (!this.noteContext?.isActive() || !this.note) {
+            return;
+        }
+
+        const { ipcRenderer } = utils.dynamicRequire("electron");
+        ipcRenderer.send("export-as-pdf", {
+            title: this.note.title,
+            pageSize: this.note.getAttributeValue("label", "printPageSize") ?? "Letter",
+            landscape: this.note.hasAttribute("label", "printLandscape")
+        });
+    }
+
+    hoistedNoteChangedEvent({ ntxId }: EventData<"hoistedNoteChanged">) {
+        if (this.isNoteContext(ntxId)) {
+            this.refresh();
+        }
+    }
+    
+    beforeUnloadEvent() {
+        return this.spacedUpdate.isAllSavedAndTriggerUpdate();
+    }
+
+    readOnlyTemporarilyDisabledEvent({ noteContext }: EventData<"readOnlyTemporarilyDisabled">) {
+        if (this.isNoteContext(noteContext.ntxId)) {
+            this.refresh();
+        }
+    }
+
+    async executeInActiveNoteDetailWidgetEvent({ callback }: EventData<"executeInActiveNoteDetailWidget">) {
+        if (!this.isActiveNoteContext()) {
+            return;
+        }
+
+        await this.initialized;
+
+        callback(this);
+    }
+
+    async cutIntoNoteCommand() {
+        const note = appContext.tabManager.getActiveContextNote();
+
+        if (!note) {
+            return;
+        }
+
+        // without await as this otherwise causes deadlock through component mutex
+        const parentNotePath = appContext.tabManager.getActiveContextNotePath();
+        if (this.noteContext && parentNotePath) {
+            noteCreateService.createNote(parentNotePath, {
+                isProtected: note.isProtected,
+                saveSelection: true,
+                textEditor: await this.noteContext.getTextEditor()
+            });
+        }
+    }
+
+    // used by cutToNote in CKEditor build
+    async saveNoteDetailNowCommand() {
+        await this.spacedUpdate.updateNowIfNecessary();
+    }
+
+    renderActiveNoteEvent() {
+        if (this.noteContext?.isActive()) {
+            this.refresh();
+        }
+    }
+
+    async executeWithTypeWidgetEvent({ resolve, ntxId }: EventData<"executeWithTypeWidget">) {
+        if (!this.isNoteContext(ntxId)) {
+            return;
+        }
+
+        await this.initialized;
+
+        await this.getWidgetType();
+
+        resolve(this.getTypeWidget());
+    }
+}

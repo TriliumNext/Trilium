@@ -21,8 +21,8 @@ import type LoadResults from "../services/load_results.js";
 import type { Attribute } from "../services/attribute_parser.js";
 import type NoteTreeWidget from "../widgets/note_tree.js";
 import type { default as NoteContext, GetTextEditorCallback } from "./note_context.js";
-import type TypeWidget from "../widgets/type_widgets/type_widget.js";
-import type EditableTextTypeWidget from "../widgets/type_widgets/editable_text.js";
+import type TypeWidget from "../widgets/type_widgets_old/type_widget.js";
+import type EditableTextTypeWidget from "../widgets/type_widgets_old/editable_text.js";
 import type { NativeImage, TouchBar } from "electron";
 import TouchBarComponent from "./touch_bar.js";
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
@@ -33,6 +33,8 @@ import { ColumnComponent } from "tabulator-tables";
 import { ChooseNoteTypeCallback } from "../widgets/dialogs/note_type_chooser.jsx";
 import type RootContainer from "../widgets/containers/root_container.js";
 import { SqlExecuteResults } from "@triliumnext/commons";
+import { AddLinkOpts } from "../widgets/dialogs/add_link.jsx";
+import { IncludeNoteOpts } from "../widgets/dialogs/include_note.jsx";
 
 interface Layout {
     getRootWidget: (appContext: AppContext) => RootContainer;
@@ -222,8 +224,8 @@ export type CommandMappings = {
     showPasswordNotSet: CommandData;
     showProtectedSessionPasswordDialog: CommandData;
     showUploadAttachmentsDialog: CommandData & { noteId: string };
-    showIncludeNoteDialog: CommandData & { textTypeWidget: EditableTextTypeWidget };
-    showAddLinkDialog: CommandData & { textTypeWidget: EditableTextTypeWidget, text: string };
+    showIncludeNoteDialog: CommandData & IncludeNoteOpts;
+    showAddLinkDialog: CommandData & AddLinkOpts;
     closeProtectedSessionPasswordDialog: CommandData;
     copyImageReferenceToClipboard: CommandData;
     copyImageToClipboard: CommandData;

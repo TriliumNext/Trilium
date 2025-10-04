@@ -1,1 +1,5 @@
-{}
+{
+  "protected_session": {
+    "start_session_button": "Iniciar sessão protegida"
+  }
+}

@@ -169,7 +169,7 @@ const entityMap: Record<string, string> = {
     "=": "&#x3D;"
 };
 
-function escapeHtml(str: string) {
+export function escapeHtml(str: string) {
     return str.replace(/[&<>"'`=\/]/g, (s) => entityMap[s]);
 }
 
@@ -867,6 +867,29 @@ export function getErrorMessage(e: unknown) {
     } else {
         return "Unknown error";
     }
+}
+
+// TODO: Deduplicate with server
+export interface DeferredPromise<T> extends Promise<T> {
+    resolve: (value: T | PromiseLike<T>) => void;
+    reject: (reason?: any) => void;
+}
+
+// TODO: Deduplicate with server
+export function deferred<T>(): DeferredPromise<T> {
+    return (() => {
+        let resolve!: (value: T | PromiseLike<T>) => void;
+        let reject!: (reason?: any) => void;
+
+        let promise = new Promise<T>((res, rej) => {
+            resolve = res;
+            reject = rej;
+        }) as DeferredPromise<T>;
+
+        promise.resolve = resolve;
+        promise.reject = reject;
+        return promise as DeferredPromise<T>;
+    })();
 }
 
 export default {
