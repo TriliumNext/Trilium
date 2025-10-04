@@ -1,10 +1,12 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "Trilium Web Clipper (dev)",
   "version": "1.0.1",
   "description": "Save web clippings to Trilium Notes.",
   "homepage_url": "https://github.com/zadam/trilium-web-clipper",
-  "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "icons": {
     "32": "icons/32.png",
     "48": "icons/48.png",
@@ -13,37 +15,30 @@
   "permissions": [
     "activeTab",
     "tabs",
-    "http://*/",
-    "https://*/",
-    "<all_urls>",
     "storage",
-    "contextMenus"
+    "contextMenus",
+    "scripting"
   ],
-  "browser_action": {
+  "host_permissions": [
+    "http://*/",
+    "https://*/"
+  ],
+  "action": {
     "default_icon": "icons/32.png",
     "default_title": "Trilium Web Clipper",
     "default_popup": "popup/popup.html"
   },
-  "content_scripts": [
+  "content_scripts": [],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "web_accessible_resources": [
     {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "lib/browser-polyfill.js",
-        "utils.js",
-        "content.js"
-      ]
+      "resources": ["lib/*", "utils.js", "trilium_server_facade.js", "content.js"],
+      "matches": ["<all_urls>"]
     }
   ],
-  "background": {
-    "scripts": [
-      "lib/browser-polyfill.js",
-      "utils.js",
-      "trilium_server_facade.js",
-      "background.js"
-    ]
-  },
   "options_ui": {
     "page": "options/options.html"
   },
