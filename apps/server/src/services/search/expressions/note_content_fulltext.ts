@@ -19,6 +19,7 @@ import {
     fuzzyMatchWord,
     FUZZY_SEARCH_CONFIG 
 } from "../utils/text_utils.js";
+import ftsSearchService, { FTSError, FTSNotAvailableError, FTSQueryError } from "../fts_search.js";
 
 const ALLOWED_OPERATORS = new Set(["=", "!=", "*=*", "*=", "=*", "%=", "~=", "~*"]);
 
@@ -77,6 +78,138 @@ class NoteContentFulltextExp extends Expression {
 
         const resultNoteSet = new NoteSet();
 
+        // Try to use FTS5 if available for better performance
+        if (ftsSearchService.checkFTS5Availability() && this.canUseFTS5()) {
+            try {
+                // Performance comparison logging for FTS5 vs traditional search
+                const searchQuery = this.tokens.join(" ");
+                const isQuickSearch = searchContext.fastSearch === false; // quick-search sets fastSearch to false
+                if (isQuickSearch) {
+                    log.info(`[QUICK-SEARCH-COMPARISON] Starting comparison for query: "${searchQuery}" with operator: ${this.operator}`);
+                }
+                
+                // Check if we need to search protected notes
+                const searchProtected = protectedSessionService.isProtectedSessionAvailable();
+                
+                // Time FTS5 search
+                const ftsStartTime = Date.now();
+                const noteIdSet = inputNoteSet.getNoteIds();
+                const ftsResults = ftsSearchService.searchSync(
+                    this.tokens,
+                    this.operator,
+                    noteIdSet.size > 0 ? noteIdSet : undefined,
+                    {
+                        includeSnippets: false,
+                        searchProtected: false // FTS5 doesn't index protected notes
+                    }
+                );
+                const ftsEndTime = Date.now();
+                const ftsTime = ftsEndTime - ftsStartTime;
+
+                // Add FTS results to note set
+                for (const result of ftsResults) {
+                    if (becca.notes[result.noteId]) {
+                        resultNoteSet.add(becca.notes[result.noteId]);
+                    }
+                }
+                
+                // For quick-search, also run traditional search for comparison
+                if (isQuickSearch) {
+                    const traditionalStartTime = Date.now();
+                    const traditionalNoteSet = new NoteSet();
+                    
+                    // Run traditional search (use the fallback method)
+                    const traditionalResults = this.executeWithFallback(inputNoteSet, traditionalNoteSet, searchContext);
+                    
+                    const traditionalEndTime = Date.now();
+                    const traditionalTime = traditionalEndTime - traditionalStartTime;
+                    
+                    // Log performance comparison
+                    const speedup = traditionalTime > 0 ? (traditionalTime / ftsTime).toFixed(2) : "N/A";
+                    log.info(`[QUICK-SEARCH-COMPARISON] ===== Results for query: "${searchQuery}" =====`);
+                    log.info(`[QUICK-SEARCH-COMPARISON] FTS5 search: ${ftsTime}ms, found ${ftsResults.length} results`);
+                    log.info(`[QUICK-SEARCH-COMPARISON] Traditional search: ${traditionalTime}ms, found ${traditionalResults.notes.length} results`);
+                    log.info(`[QUICK-SEARCH-COMPARISON] FTS5 is ${speedup}x faster (saved ${traditionalTime - ftsTime}ms)`);
+                    
+                    // Check if results match
+                    const ftsNoteIds = new Set(ftsResults.map(r => r.noteId));
+                    const traditionalNoteIds = new Set(traditionalResults.notes.map(n => n.noteId));
+                    const matchingResults = ftsNoteIds.size === traditionalNoteIds.size && 
+                                          Array.from(ftsNoteIds).every(id => traditionalNoteIds.has(id));
+                    
+                    if (!matchingResults) {
+                        log.info(`[QUICK-SEARCH-COMPARISON] Results differ! FTS5: ${ftsNoteIds.size} notes, Traditional: ${traditionalNoteIds.size} notes`);
+                        
+                        // Find differences
+                        const onlyInFTS = Array.from(ftsNoteIds).filter(id => !traditionalNoteIds.has(id));
+                        const onlyInTraditional = Array.from(traditionalNoteIds).filter(id => !ftsNoteIds.has(id));
+                        
+                        if (onlyInFTS.length > 0) {
+                            log.info(`[QUICK-SEARCH-COMPARISON] Only in FTS5: ${onlyInFTS.slice(0, 5).join(", ")}${onlyInFTS.length > 5 ? "..." : ""}`);
+                        }
+                        if (onlyInTraditional.length > 0) {
+                            log.info(`[QUICK-SEARCH-COMPARISON] Only in Traditional: ${onlyInTraditional.slice(0, 5).join(", ")}${onlyInTraditional.length > 5 ? "..." : ""}`);
+                        }
+                    } else {
+                        log.info(`[QUICK-SEARCH-COMPARISON] Results match perfectly! ✓`);
+                    }
+                    log.info(`[QUICK-SEARCH-COMPARISON] ========================================`);
+                }
+                
+                // If we need to search protected notes, use the separate method
+                if (searchProtected) {
+                    const protectedResults = ftsSearchService.searchProtectedNotesSync(
+                        this.tokens,
+                        this.operator,
+                        noteIdSet.size > 0 ? noteIdSet : undefined,
+                        {
+                            includeSnippets: false
+                        }
+                    );
+                    
+                    // Add protected note results
+                    for (const result of protectedResults) {
+                        if (becca.notes[result.noteId]) {
+                            resultNoteSet.add(becca.notes[result.noteId]);
+                        }
+                    }
+                }
+
+                // Handle special cases that FTS5 doesn't support well
+                if (this.operator === "%=" || this.flatText) {
+                    // Fall back to original implementation for regex and flat text searches
+                    return this.executeWithFallback(inputNoteSet, resultNoteSet, searchContext);
+                }
+
+                return resultNoteSet;
+            } catch (error) {
+                // Handle structured errors from FTS service
+                if (error instanceof FTSError) {
+                    if (error instanceof FTSNotAvailableError) {
+                        log.info("FTS5 not available, using standard search");
+                    } else if (error instanceof FTSQueryError) {
+                        log.error(`FTS5 query error: ${error.message}`);
+                        searchContext.addError(`Search optimization failed: ${error.message}`);
+                    } else {
+                        log.error(`FTS5 error: ${error}`);
+                    }
+                    
+                    // Use fallback for recoverable errors
+                    if (error.recoverable) {
+                        log.info("Using fallback search implementation");
+                    } else {
+                        // For non-recoverable errors, return empty result
+                        searchContext.addError(`Search failed: ${error.message}`);
+                        return resultNoteSet;
+                    }
+                } else {
+                    log.error(`Unexpected error in FTS5 search: ${error}`);
+                }
+                // Fall back to original implementation
+            }
+        }
+
+        // Original implementation for fallback or when FTS5 is not available
         for (const row of sql.iterateRows<SearchRow>(`
                 SELECT noteId, type, mime, content, isProtected
                 FROM notes JOIN blobs USING (blobId)
@@ -86,6 +219,39 @@ class NoteContentFulltextExp extends Expression {
             this.findInText(row, inputNoteSet, resultNoteSet);
         }
 
+        return resultNoteSet;
+    }
+
+    /**
+     * Determines if the current search can use FTS5
+     */
+    private canUseFTS5(): boolean {
+        // FTS5 doesn't support regex searches well
+        if (this.operator === "%=") {
+            return false;
+        }
+        
+        // For now, we'll use FTS5 for most text searches
+        // but keep the original implementation for complex cases
+        return true;
+    }
+
+    /**
+     * Executes search with fallback for special cases
+     */
+    private executeWithFallback(inputNoteSet: NoteSet, resultNoteSet: NoteSet, searchContext: SearchContext): NoteSet {
+        // Keep existing results from FTS5 and add additional results from fallback
+        for (const row of sql.iterateRows<SearchRow>(`
+                SELECT noteId, type, mime, content, isProtected
+                FROM notes JOIN blobs USING (blobId)
+                WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap') 
+                  AND isDeleted = 0 
+                  AND LENGTH(content) < ${MAX_SEARCH_CONTENT_SIZE}`)) {
+            if (this.operator === "%=" || this.flatText) {
+                // Only process for special cases
+                this.findInText(row, inputNoteSet, resultNoteSet);
+            }
+        }
         return resultNoteSet;
     }
 
