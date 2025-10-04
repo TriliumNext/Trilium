@@ -302,18 +302,18 @@ muncă](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Sprijinu
 dvs. permite să-l menținem open-source, să îmbunătățim funcționalitățile și să
 acoperim costuri suplimentare precum găzduirea.
 
-Consider supporting the main developer
-([eliandoran](https://github.com/eliandoran)) of the application via:
+Considerați sprijinirea dezvoltatorului principal al aplicației
+([eliandoran](https://github.com/eliandoran)) prin intermediul:
 
-- [GitHub Sponsors](https://github.com/sponsors/eliandoran)
+- [Sponsori GitHub](https://github.com/sponsors/eliandoran)
 - [PayPal](https://paypal.me/eliandoran)
 - [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
 
-## 🔑 License
+## 🔑 Licență
 
-Copyright 2017-2025 zadam, Elian Doran, and other contributors
+Copyright 2017-2025 zadam, Elian Doran și alți contribuitori
 
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU Affero General Public License as published by the Free
-Software Foundation, either version 3 of the License, or (at your option) any
-later version.
+Acest program este liber: se poate redistribui și se poate modifica sub termenii
+licenței GNU Affero General Public License publicată de către Free Software
+Foundation, fie versiunea 3 a licenței sau (în funcție de preferință) orice
+versiune ulterioară.
