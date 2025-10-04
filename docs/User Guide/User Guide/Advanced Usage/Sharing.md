@@ -67,6 +67,23 @@ The default design should be a good starting point, but you can customize it usi
 
 You can inject custom JavaScript into the shared note using the `~shareJs` relation. This allows you to access note attributes or traverse the note tree using the `fetchNote()` API, which retrieves note data based on its ID.
 
+### Adding custom HTML
+
+You can inject custom HTML snippets into specific locations of the shared page using the `~shareHtml` relation. The HTML note should contain the raw HTML content you want to inject, and you can control where it appears by adding the `#shareHtmlLocation` label to the HTML snippet note itself.
+
+The `#shareHtmlLocation` label accepts values in the format `location:position`:
+- **Locations**: `head`, `body`, `content`
+- **Positions**: `start`, `end`
+
+For example:
+- `#shareHtmlLocation=head:start` - Injects HTML at the beginning of the `<head>` section
+- `#shareHtmlLocation=head:end` - Injects HTML at the end of the `<head>` section (default)
+- `#shareHtmlLocation=body:start` - Injects HTML at the beginning of the `<body>` section
+- `#shareHtmlLocation=content:start` - Injects HTML at the beginning of the content area
+- `#shareHtmlLocation=content:end` - Injects HTML at the end of the content area
+
+If no location is specified, the HTML will be injected at `content:end` by default.
+
 Example:
 
 ```javascript
@@ -106,7 +123,7 @@ To do so, create a shared text note and apply the `shareIndex` label. When viewe
 
 ## Attribute reference
 
-<table><thead><tr><th>Attribute</th><th>Description</th></tr></thead><tbody><tr><td><code>shareHiddenFromTree</code></td><td>this note is hidden from left navigation tree, but still accessible with its URL</td></tr><tr><td><code>shareExternalLink</code></td><td>note will act as a link to an external website in the share tree</td></tr><tr><td><code>shareAlias</code></td><td>define an alias using which the note will be available under <code>https://your_trilium_host/share/[your_alias]</code></td></tr><tr><td><code>shareOmitDefaultCss</code></td><td>default share page CSS will be omitted. Use when you make extensive styling changes.</td></tr><tr><td><code>shareRoot</code></td><td>marks note which is served on /share root.</td></tr><tr><td><code>shareDescription</code></td><td>define text to be added to the HTML meta tag for description</td></tr><tr><td><code>shareRaw</code></td><td>Note will be served in its raw format, without HTML wrapper. See also&nbsp;<a class="reference-link" href="Sharing/Serving%20directly%20the%20content%20o.md">Serving directly the content of a note</a>&nbsp;for an alternative method without setting an attribute.</td></tr><tr><td><code>shareDisallowRobotIndexing</code></td><td><p>Indicates to web crawlers that the page should not be indexed of this note by:</p><ul><li data-list-item-id="e6baa9f60bf59d085fd31aa2cce07a0e7">Setting the <code>X-Robots-Tag: noindex</code> HTTP header.</li><li data-list-item-id="ec0d067db136ef9794e4f1033405880b7">Setting the <code>noindex, follow</code> meta tag.</li></ul></td></tr><tr><td><code>shareCredentials</code></td><td>require credentials to access this shared note. Value is expected to be in format <code>username:password</code>. Don't forget to make this inheritable to apply to child-notes/images.</td></tr><tr><td><code>shareIndex</code></td><td>Note with this label will list all roots of shared notes.</td></tr></tbody></table>
+<table><thead><tr><th>Attribute</th><th>Description</th></tr></thead><tbody><tr><td><code>shareHiddenFromTree</code></td><td>this note is hidden from left navigation tree, but still accessible with its URL</td></tr><tr><td><code>shareExternalLink</code></td><td>note will act as a link to an external website in the share tree</td></tr><tr><td><code>shareAlias</code></td><td>define an alias using which the note will be available under <code>https://your_trilium_host/share/[your_alias]</code></td></tr><tr><td><code>shareOmitDefaultCss</code></td><td>default share page CSS will be omitted. Use when you make extensive styling changes.</td></tr><tr><td><code>shareRoot</code></td><td>marks note which is served on /share root.</td></tr><tr><td><code>shareDescription</code></td><td>define text to be added to the HTML meta tag for description</td></tr><tr><td><code>shareRaw</code></td><td>Note will be served in its raw format, without HTML wrapper. See also&nbsp;<a class="reference-link" href="Sharing/Serving%20directly%20the%20content%20o.md">Serving directly the content of a note</a>&nbsp;for an alternative method without setting an attribute.</td></tr><tr><td><code>shareDisallowRobotIndexing</code></td><td><p>Indicates to web crawlers that the page should not be indexed of this note by:</p><ul><li data-list-item-id="e6baa9f60bf59d085fd31aa2cce07a0e7">Setting the <code>X-Robots-Tag: noindex</code> HTTP header.</li><li data-list-item-id="ec0d067db136ef9794e4f1033405880b7">Setting the <code>noindex, follow</code> meta tag.</li></ul></td></tr><tr><td><code>shareCredentials</code></td><td>require credentials to access this shared note. Value is expected to be in format <code>username:password</code>. Don't forget to make this inheritable to apply to child-notes/images.</td></tr><tr><td><code>shareIndex</code></td><td>Note with this label will list all roots of shared notes.</td></tr><tr><td><code>shareHtmlLocation</code></td><td>defines where custom HTML injected via <code>~shareHtml</code> relation should be placed. Applied to the HTML snippet note itself. Format: <code>location:position</code> where location is <code>head</code>, <code>body</code>, or <code>content</code> and position is <code>start</code> or <code>end</code>. Defaults to <code>content:end</code>.</td></tr></tbody></table>
 
 ## Credits
 
