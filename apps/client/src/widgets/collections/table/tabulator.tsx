@@ -14,9 +14,12 @@ interface TableProps<T> extends Omit<Options, "data" | "footerElement" | "index"
     events?: Partial<EventCallBackMethods>;
     index: keyof T;
     footerElement?: string | HTMLElement | JSX.Element;
+    preserveTreeState?: boolean;
+    expandedRowsRef?: RefObject<Set<string>>;
+    isDataRefreshingRef?: RefObject<boolean>;
 }
 
-export default function Tabulator<T>({ className, columns, data, modules, tabulatorRef: externalTabulatorRef, footerElement, events, index, ...restProps }: TableProps<T>) {
+export default function Tabulator<T>({ className, columns, data, modules, tabulatorRef: externalTabulatorRef, footerElement, events, index, preserveTreeState, expandedRowsRef, isDataRefreshingRef, ...restProps }: TableProps<T>) {
     const parentComponent = useContext(ParentComponent);
     const containerRef = useRef<HTMLDivElement>(null);
     const tabulatorRef = useRef<VanillaTabulator>(null);
@@ -62,8 +65,39 @@ export default function Tabulator<T>({ className, columns, data, modules, tabula
         }
     }, Object.values(events ?? {}));
 
-    // Change in data.
-    useEffect(() => { tabulatorRef.current?.setData(data) }, [ data ]);
+    const treeStateTimeoutRef = useRef<number>();
+    
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (treeStateTimeoutRef.current) {
+                clearTimeout(treeStateTimeoutRef.current);
+            }
+        };
+    }, []);
+    
+    // Change in data - with tree state preservation
+    useEffect(() => {
+        const tabulator = tabulatorRef.current;
+        if (!tabulator || !data) return;
+
+        console.log('Data update triggered, preserveTreeState:', preserveTreeState, 'dataTree option:', tabulator.options?.dataTree);
+
+        if (preserveTreeState && tabulator.options && "dataTree" in tabulator.options && tabulator.options.dataTree && expandedRowsRef) {
+            console.log('Tree state preservation using dataTreeStartExpanded approach');
+            
+            // Clear any existing timeout to prevent overlapping updates
+            if (treeStateTimeoutRef.current) {
+                clearTimeout(treeStateTimeoutRef.current);
+            }
+            
+            // Simply update data - expansion state will be handled by dataTreeStartExpanded function
+            tabulator.setData(data);
+        } else {
+            tabulator.setData(data);
+        }
+    }, [ data, preserveTreeState, index ]);
+    
     useEffect(() => { columns && tabulatorRef.current?.setColumns(columns)}, [ data]);
 
     return (
