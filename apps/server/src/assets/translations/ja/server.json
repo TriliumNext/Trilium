@@ -347,7 +347,7 @@
   },
   "notes": {
     "new-note": "新しいノート",
-    "duplicate-note-suffix": "(重複)",
+    "duplicate-note-suffix": "(複製)",
     "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
   },
   "backend_log": {

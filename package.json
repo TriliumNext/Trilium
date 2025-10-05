@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/source",
-  "version": "0.99.0",
+  "version": "0.99.1",
   "description": "Build your personal knowledge base with Trilium Notes",
   "directories": {
     "doc": "docs"
@@ -47,10 +47,10 @@
     "cross-env": "10.1.0",
     "dpdm": "3.14.0",
     "esbuild": "0.25.10",
-    "eslint": "9.36.0",
+    "eslint": "9.37.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-playwright": "2.2.2",
-    "eslint-plugin-react-hooks": "6.1.0",
+    "eslint-plugin-react-hooks": "6.1.1",
     "happy-dom": "~19.0.0",
     "jiti": "2.6.1",
     "jsonc-eslint-parser": "2.4.1",

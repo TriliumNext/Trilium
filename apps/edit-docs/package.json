@@ -12,7 +12,7 @@
     "@triliumnext/desktop": "workspace:*",
     "@types/fs-extra": "11.0.4",
     "copy-webpack-plugin": "13.0.1",
-    "electron": "38.2.0",
+    "electron": "38.2.1",
     "fs-extra": "11.3.2"
   },
   "scripts": {

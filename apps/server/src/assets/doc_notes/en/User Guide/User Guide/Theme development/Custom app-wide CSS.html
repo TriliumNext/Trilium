@@ -1,38 +1,37 @@
 <p>It is possible to provide a CSS file to be used regardless of the theme
   set by the user.</p>
-<figure class="table">
-  <table>
-    <thead>
-      <tr>
-        <th>&nbsp;</th>
-        <th>&nbsp;</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td>
-          <img src="Custom app-wide CSS_image.png">
-        </td>
-        <td>Start by creating a new note and changing the note type to CSS</td>
-      </tr>
-      <tr>
-        <td>
-          <img src="2_Custom app-wide CSS_image.png">
-        </td>
-        <td>In the ribbon, press the “Owned Attributes” section and type <code>#appCss</code>.</td>
-      </tr>
-      <tr>
-        <td>
-          <img src="3_Custom app-wide CSS_image.png">
-        </td>
-        <td>Type the desired CSS.&nbsp;
-          <br>
-          <br>Generally it's a good idea to append <code>!important</code> for the styles
-          that are being changed, in order to prevent other</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        <img src="Custom app-wide CSS_image.png">
+      </td>
+      <td>Start by creating a new note and changing the note type to CSS</td>
+    </tr>
+    <tr>
+      <td>
+        <img src="2_Custom app-wide CSS_image.png">
+      </td>
+      <td>In the ribbon, press the “Owned Attributes” section and type <code>#appCss</code>.</td>
+    </tr>
+    <tr>
+      <td>
+        <img src="3_Custom app-wide CSS_image.png">
+      </td>
+      <td>Type the desired CSS.&nbsp;
+        <br>
+        <br>Generally it's a good idea to append <code>!important</code> for the styles
+        that are being changed, in order to prevent other</td>
+    </tr>
+  </tbody>
+</table>
+
 <h2>Seeing the changes</h2>
 <p>Adding a new <em>app CSS note</em> or modifying an existing one does not
   immediately apply changes. To see the changes, press Ctrl+Shift+R to refresh
@@ -49,17 +48,16 @@
     }
 }</code></pre>
 <h3>Per-workspace styles</h3>
-<p>When using&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/wArbEsdSae6g/_help_9sRHySam5fXb">Workspaces</a>,
+<p>When using&nbsp;<a class="reference-link" href="#root/_help_9sRHySam5fXb">Workspaces</a>,
   it can be helpful to create a visual distinction between notes in different
   workspaces.</p>
 <p>To do so:</p>
 <ol>
-  <li data-list-item-id="ebe7118e85ce0b3102e4333aef27c637d">In the note with <code>#workspace</code>, add an inheritable attribute <code>#cssClass(inheritable)</code> with
+  <li>In the note with <code>#workspace</code>, add an inheritable attribute <code>#cssClass(inheritable)</code> with
     a value that uniquely identifies the workspace (say <code>my-workspace</code>).</li>
-  <li
-  data-list-item-id="e690ba825e168c5ec987f98c15f9b7a99">Anywhere in the note structure, create a CSS note with <code>#appCss</code>.</li>
+  <li>Anywhere in the note structure, create a CSS note with <code>#appCss</code>.</li>
 </ol>
-<h4>Change the color of the icons in the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_oPVyFC7WL2Lp">Note Tree</a></h4><pre><code class="language-text-x-trilium-auto">.fancytree-node.my-workspace.fancytree-custom-icon {
+<h4>Change the color of the icons in the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a></h4><pre><code class="language-text-x-trilium-auto">.fancytree-node.my-workspace.fancytree-custom-icon {
     color: #ff0000;
 }</code></pre>
 <h4>Change the color of the note title and the icon</h4>
@@ -73,8 +71,8 @@
   width="641" height="630">
 </figure>
 <ol>
-  <li data-list-item-id="e9796dcbe19c3b9d39839533989b9e104">Insert an image in any note and take the URL of the image.</li>
-  <li data-list-item-id="e8da975b80585c42193516ee5d8d8a56c">Use the following CSS, adjusting the <code>background-image</code> and <code>width</code> and <code>height</code> to
+  <li>Insert an image in any note and take the URL of the image.</li>
+  <li>Use the following CSS, adjusting the <code>background-image</code> and <code>width</code> and <code>height</code> to
     the desired values.</li>
 </ol><pre><code class="language-text-x-trilium-auto">.note-split.my-workspace .scrolling-container:after {
     position: fixed;

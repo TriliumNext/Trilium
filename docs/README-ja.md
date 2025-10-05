@@ -1,6 +1,6 @@
 # Trilium Notes
 
-[English](../README.md) | [Chinese](./README-ZH_CN.md) | [Russian](./README.ru.md) | [Japanese](./README.ja.md) | [Italian](./README.it.md) | [Spanish](./README.es.md)
+[English](../README.md) | [Chinese](./README-ZH_CN.md) | [Russian](./README-ru.md) | [Japanese](./README-ja.md) | [Italian](./README-it.md) | [Spanish](./README-es.md)
 
 Trilium Notes は、大規模な個人知識ベースの構築に焦点を当てた、階層型ノートアプリケーションです。概要は[スクリーンショット](https://triliumnext.github.io/Docs/Wiki/screenshot-tour)をご覧ください：
 

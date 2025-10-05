@@ -52,9 +52,11 @@ section.hero-section {
         color: var(--muted-color);
 
         h1 {
+            background-image: linear-gradient(150deg, var(--brand-1), var(--brand-3));
+            background-clip: text;
+            color: transparent;
             line-height: 1.1;
-            font-weight: 300;
-            color: var(--foreground-color);
+            font-weight: 400;
         }
     }
 
@@ -81,6 +83,7 @@ section.hero-section {
 
     .more-download-options {
         display: inline-block;
+        margin-top: 1em;
         color: var(--brand-1);
         font-size: 0.8em;
         text-align: center;

@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/desktop",
-  "version": "0.99.0",
+  "version": "0.99.1",
   "description": "Build your personal knowledge base with Trilium Notes",
   "private": true,
   "main": "src/main.ts",
@@ -34,7 +34,7 @@
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/server": "workspace:*",
     "copy-webpack-plugin": "13.0.1",
-    "electron": "38.2.0",
+    "electron": "38.2.1",
     "@electron-forge/cli": "7.9.0",
     "@electron-forge/maker-deb": "7.9.0",
     "@electron-forge/maker-dmg": "7.9.0",

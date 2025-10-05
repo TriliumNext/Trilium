@@ -218,8 +218,8 @@ function SaveToNoteButton({ note }: FloatingButtonContext) {
     />
 }
 
-function RelationMapButtons({ note, triggerEvent }: FloatingButtonContext) {
-    const isEnabled = (note.type === "relationMap");
+function RelationMapButtons({ note, isDefaultViewMode, triggerEvent }: FloatingButtonContext) {
+    const isEnabled = (note.type === "relationMap" && isDefaultViewMode);
     return isEnabled && (
         <>
             <FloatingButton

@@ -38,6 +38,7 @@
     "activate-next-tab": "우측 탭 활성화",
     "activate-previous-tab": "좌측 탭 활성화",
     "open-new-window": "새 비어있는 창 열기",
-    "toggle-tray": "시스템 트레이에서 애플리케이션 보여주기/숨기기"
+    "toggle-tray": "시스템 트레이에서 애플리케이션 보여주기/숨기기",
+    "tabs-and-windows": "탭 & 창"
   }
 }

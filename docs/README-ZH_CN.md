@@ -5,7 +5,7 @@
 ![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/triliumnext/notes/total)  
 [![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp) [![Translation status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
-[英文](../README.md) | [简体中文](./README-ZH_CN.md) | [正体中文](./README-ZH_TW.md) | [俄文](./README.ru.md) | [日文](./README.ja.md) | [意大利文](./README.it.md) | [西班牙文](./README.es.md)
+[英文](../README.md) | [简体中文](./README-ZH_CN.md) | [正体中文](./README-ZH_TW.md) | [俄文](./README-ru.md) | [日文](./README-ja.md) | [意大利文](./README-it.md) | [西班牙文](./README-es.md)
 
 Trilium Notes 是一款免费且开源、跨平台的阶层式笔记应用程序，专注于建立大型个人知识库。
 

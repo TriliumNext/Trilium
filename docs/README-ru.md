@@ -1,6 +1,6 @@
 # Trilium Notes
 
-[English](../README.md) | [Chinese](./README-ZH_CN.md) | [Russian](./README.ru.md) | [Japanese](./README.ja.md) | [Italian](./README.it.md) | [Spanish](./README.es.md)
+[English](../README.md) | [Chinese](./README-ZH_CN.md) | [Russian](./README-ru.md) | [Japanese](./README-ja.md) | [Italian](./README-it.md) | [Spanish](./README-es.md)
 
 Trilium Notes – это приложение для заметок с иерархической структурой, ориентированное на создание больших персональных баз знаний. Для быстрого ознакомления посмотрите [скриншот-тур](https://triliumnext.github.io/Docs/Wiki/screenshot-tour):
 

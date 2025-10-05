@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/client",
-  "version": "0.99.0",
+  "version": "0.99.1",
   "description": "JQuery-based client for TriliumNext, used for both web and desktop (via Electron)",
   "private": true,
   "license": "AGPL-3.0-only",
@@ -15,7 +15,7 @@
     "circular-deps": "dpdm -T src/**/*.ts --tree=false --warning=false --skip-dynamic-imports=circular"
   },
   "dependencies": {
-    "@eslint/js": "9.36.0",
+    "@eslint/js": "9.37.0",
     "@excalidraw/excalidraw": "0.18.0",
     "@fullcalendar/core": "6.1.19",
     "@fullcalendar/daygrid": "6.1.19",
@@ -46,14 +46,14 @@
     "jquery": "3.7.1",
     "jquery.fancytree": "2.38.5",
     "jsplumb": "2.15.6",
-    "katex": "0.16.22",
+    "katex": "0.16.23",
     "knockout": "3.5.1",
     "leaflet": "1.9.4",
     "leaflet-gpx": "2.2.0",
     "mark.js": "8.11.1",
     "marked": "16.3.0",
     "mermaid": "11.12.0",
-    "mind-elixir": "5.3.1",
+    "mind-elixir": "5.1.1",
     "normalize.css": "8.0.1",
     "panzoom": "9.4.3",
     "preact": "10.27.2",

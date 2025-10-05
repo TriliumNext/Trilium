@@ -1,6 +1,6 @@
 # Trilium Notes
 
-[English](../README.md) | [Chinese](./README-ZH_CN.md) | [Russian](./README.ru.md) | [Japanese](./README.ja.md) | [Italian](./README.it.md) | [Spanish](./README.es.md)
+[English](../README.md) | [Chinese](./README-ZH_CN.md) | [Russian](./README-ru.md) | [Japanese](./README-ja.md) | [Italian](./README-it.md) | [Spanish](./README-es.md)
 
 Trilium Notes es una aplicación de toma de notas jerárquicas multi-plataforma y de código libre con un enfoque en la construcción de grandes bases de conocimiento personal.
 

@@ -29,9 +29,25 @@
     "note": "노트",
     "search_note": "이름으로 노트 검색하기",
     "help_on_links": "링크 관련 도움말",
-    "link_title_mirrors": "링크 제목은 노트의 현재 제목을 반영합니다"
+    "link_title_mirrors": "링크 제목은 노트의 현재 제목을 반영합니다",
+    "link_title_arbitrary": "링크 제목은 임의로 변경될 수 있습니다",
+    "link_title": "링크 제목",
+    "button_add_link": "링크 추가"
   },
   "branch_prefix": {
-    "save": "저장"
+    "save": "저장",
+    "edit_branch_prefix": "브랜치 접두사 편집",
+    "help_on_tree_prefix": "트리 접두사에 대한 도움말",
+    "prefix": "접두사: ",
+    "branch_prefix_saved": "브랜치 접두사가 저장되었습니다."
+  },
+  "bulk_actions": {
+    "bulk_actions": "대량 작업",
+    "affected_notes": "영향을 받은 노트들",
+    "include_descendants": "선택한 노트의 자손 포함",
+    "available_actions": "가능한 액션들",
+    "chosen_actions": "선택한 액션들",
+    "execute_bulk_actions": "대량 액션들 실행",
+    "bulk_actions_executed": "대량 액션들이 성공적으로 실행되었습니다."
   }
 }

@@ -50,6 +50,6 @@
     "codemirror-lang-elixir": "4.0.0",
     "codemirror-lang-hcl": "0.1.0",
     "codemirror-lang-mermaid": "0.5.0",
-    "eslint-linter-browserify": "9.36.0"
+    "eslint-linter-browserify": "9.37.0"
   }
 }

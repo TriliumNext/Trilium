@@ -53,6 +53,20 @@ header {
     }
 }
 
+.repository-button a {
+    display: flex;
+    color: currentColor;
+
+    &:hover {
+        color: var(--brand-1);
+        text-decoration: none;
+    }
+
+    .counter {
+        margin-inline-start: 4px;
+    }
+}
+
 @media (max-width: 719px) {
     :root {
         --header-height: 60px;

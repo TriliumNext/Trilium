@@ -60,9 +60,7 @@ export function Header(props: {repoStargazersCount: number}) {
                     <SocialButtons className="mobile-only" withText />
                 </nav>
 
-                <DownloadButton />
-                
-                <div class="desktop-only">
+                <div class="desktop-only repository-button">
                     <SocialButton
                         name="GitHub"
                         iconSvg={githubIcon}
@@ -70,6 +68,8 @@ export function Header(props: {repoStargazersCount: number}) {
                         url="https://github.com/TriliumNext/Trilium"
                     />
                 </div>
+
+                <DownloadButton />
 
             </div>
 		</header>
