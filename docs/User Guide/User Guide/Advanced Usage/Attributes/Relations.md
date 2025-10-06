@@ -50,5 +50,6 @@ These relations are supported and used internally by Trilium.
 | `widget_relation` | target of this relation will be executed and rendered as a widget in the sidebar |
 | `shareCss` | CSS note which will be injected into the share page. CSS note must be in the shared sub-tree as well. Consider using `share_hidden_from_tree` and `share_omit_default_css` as well. |
 | `shareJs` | JavaScript note which will be injected into the share page. JS note must be in the shared sub-tree as well. Consider using `share_hidden_from_tree`. |
+| `shareHtml` | HTML note which will be injected into the share page at locations specified by the `shareHtmlLocation` label. HTML note must be in the shared sub-tree as well. Consider using `share_hidden_from_tree`. |
 | `shareTemplate` | Embedded JavaScript note that will be used as the template for displaying the shared note. Falls back to the default template. Consider using `share_hidden_from_tree`. |
 | `shareFavicon` | Favicon note to be set in the shared page. Typically you want to set it to share root and make it inheritable. Favicon note must be in the shared sub-tree as well. Consider using `share_hidden_from_tree`. |

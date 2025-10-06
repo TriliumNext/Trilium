@@ -50,6 +50,12 @@ export default function Column({
         openColumnContextMenu(api, e, column);
     }, [ api, column ]);
 
+    const handleTitleKeyDown = useCallback((e: KeyboardEvent) => {
+        if (e.key === "F2") {
+            setColumnNameToEdit?.(column);
+        }
+    }, [ column ]);
+
     /** Allow using mouse wheel to scroll inside card, while also maintaining column horizontal scrolling. */
     const handleScroll = useCallback((event: JSX.TargetedWheelEvent<HTMLDivElement>) => {
         const el = event.currentTarget;
@@ -82,7 +88,6 @@ export default function Column({
             onDragOver={isAnyColumnDragging ? handleColumnDragOver : handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            onWheel={handleScroll}
             style={{
                 display: !isVisible ? "none" : undefined
             }}
@@ -93,6 +98,8 @@ export default function Column({
                 onDragStart={handleColumnDragStart}
                 onDragEnd={handleColumnDragEnd}
                 onContextMenu={handleContextMenu}
+                onKeyDown={handleTitleKeyDown}
+                tabIndex={300}
             >
                 {!isEditing ? (
                     <>
@@ -112,33 +119,35 @@ export default function Column({
                 )}
             </h3>
 
-            {(columnItems ?? []).map(({ note, branch }, index) => {
-                const showIndicatorBefore = dropPosition?.column === column &&
-                                          dropPosition.index === index &&
-                                          draggedCard?.noteId !== note.noteId;
+            <div className="board-column-content" onWheel={handleScroll}>
+                {(columnItems ?? []).map(({ note, branch }, index) => {
+                    const showIndicatorBefore = dropPosition?.column === column &&
+                                            dropPosition.index === index &&
+                                            draggedCard?.noteId !== note.noteId;
 
-                return (
-                    <>
-                        {showIndicatorBefore && (
-                            <div className="board-drop-placeholder show" />
-                        )}
-                        <Card
-                            key={note.noteId}
-                            api={api}
-                            note={note}
-                            branch={branch}
-                            column={column}
-                            index={index}
-                            isDragging={draggedCard?.noteId === note.noteId}
-                        />
-                    </>
-                );
-            })}
-            {dropPosition?.column === column && dropPosition.index === (columnItems?.length ?? 0) && (
-                <div className="board-drop-placeholder show" />
-            )}
+                    return (
+                        <>
+                            {showIndicatorBefore && (
+                                <div className="board-drop-placeholder show" />
+                            )}
+                            <Card
+                                key={note.noteId}
+                                api={api}
+                                note={note}
+                                branch={branch}
+                                column={column}
+                                index={index}
+                                isDragging={draggedCard?.noteId === note.noteId}
+                            />
+                        </>
+                    );
+                })}
+                {dropPosition?.column === column && dropPosition.index === (columnItems?.length ?? 0) && (
+                    <div className="board-drop-placeholder show" />
+                )}
 
-            <AddNewItem api={api} column={column} />
+                <AddNewItem api={api} column={column} />
+            </div>
         </div>
     )
 }
@@ -146,11 +155,18 @@ export default function Column({
 function AddNewItem({ column, api }: { column: string, api: BoardApi }) {
     const [ isCreatingNewItem, setIsCreatingNewItem ] = useState(false);
     const addItemCallback = useCallback(() => setIsCreatingNewItem(true), []);
+    const handleKeyDown = useCallback((e: KeyboardEvent) => {
+        if (!isCreatingNewItem && e.key === "Enter") {
+            setIsCreatingNewItem(true);
+        }
+    }, []);
 
     return (
         <div
             className={`board-new-item ${isCreatingNewItem ? "editing" : ""}`}
             onClick={addItemCallback}
+            onKeyDown={handleKeyDown}
+            tabIndex={300}
         >
             {!isCreatingNewItem ? (
                 <>

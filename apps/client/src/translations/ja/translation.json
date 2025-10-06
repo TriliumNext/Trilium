@@ -550,7 +550,7 @@
     "beta-feature": "Beta",
     "ai-chat": "AI チャット",
     "task-list": "タスクリスト",
-    "new-feature": "新しい",
+    "new-feature": "New",
     "collections": "コレクション"
   },
   "edited_notes": {
@@ -767,7 +767,7 @@
     "placeholder": "ノート名で検索",
     "label": "祖先",
     "depth_label": "深さ",
-    "depth_doesnt_matter": "関係ない",
+    "depth_doesnt_matter": "関係なし",
     "depth_eq": "ちょうど {{count}} つ下の階層",
     "direct_children": "直接の子",
     "depth_gt": "{{count}} より下の階層",
@@ -830,7 +830,7 @@
     "max_width_label": "最大コンテンツ幅",
     "max_width_unit": "ピクセル",
     "apply_changes_description": "コンテンツ幅の変更を適用するには、クリックしてください",
-    "reload_description": "外観オプションからの変更"
+    "reload_description": "外観設定から変更"
   },
   "theme": {
     "title": "アプリのテーマ",
@@ -899,14 +899,14 @@
     "bg_color": "背景色付きテキスト",
     "visibility_title": "ハイライトリスト表示",
     "visibility_description": "#hideHighlightWidget ラベルを追加することで、ノートごとにハイライトウィジェットを非表示にできます。",
-    "shortcut_info": "オプション -> ショートカット（'右ペイン切り替え'）で、右ペイン（ハイライトを含む）を素早く切り替えるキーボードショートカットを設定できます。"
+    "shortcut_info": "設定 -> ショートカット（右ペイン切り替え）で、右ペイン（ハイライトを含む）を素早く切り替えるキーボードショートカットを設定できます。"
   },
   "table_of_contents": {
     "title": "目次",
     "description": "ノートに定義された数以上の見出しがある場合、テキストノートに目次が表示されます。この数はカスタマイズできます:",
     "unit": "見出し",
-    "disable_info": "このオプションに非常に大きな数値を設定することで、目次を効果的に無効にすることもできる。",
-    "shortcut_info": "オプション -> ショートカット（'右ペイン切り替え'）で、右ペイン（目次を含む）を素早く切り替えるキーボードショートカットを設定できます。"
+    "disable_info": "このオプションに非常に大きな数値を設定することで、目次を効果的に無効にすることもできます。",
+    "shortcut_info": "設定 -> ショートカット（右ペイン切り替え）で、右ペイン（目次を含む）を素早く切り替えるキーボードショートカットを設定できます。"
   },
   "toc": {
     "table_of_contents": "目次",
@@ -1073,7 +1073,7 @@
     "read_only": "エディターは読み取り専用モードです。テキストとコードノートのみ機能します。",
     "auto_read_only_disabled": "テキスト/コードノートは、サイズが大きすぎる場合、自動的に読み取りモードに設定されます。このラベルをノートに追加することで、ノートごとにこの動作を無効にすることができます",
     "app_css": "Trilium アプリケーションに読み込まれ、Trilium の外観を変更するために使用できる CSS ノートをマークします。",
-    "app_theme": "Trilium のフルテーマである CSS ノートをマークし、Trilium オプションで利用できるようにします。",
+    "app_theme": "Trilium のフルテーマである CSS ノートをマークし、Trilium の設定で利用できるようにします。",
     "app_theme_base": "「next」、「next-light」、または「next-dark」に設定すると、従来のテーマではなく、対応する TriliumNext テーマ (auto、light、または dark) がカスタム テーマのベースとして使用されます。",
     "css_class": "このラベルの値は、ツリー内の特定のノートを表すノードにCSSクラスとして追加されます。これは高度なテーマ設定に役立ちます。テンプレートノートで使用できます。",
     "icon_class": "このラベルの値は、ツリー上のアイコンにCSSクラスとして追加され、ツリー内のノートを視覚的に区別するのに役立ちます。例えば、bx bx-home のように、アイコンは boxicons から取得されます。テンプレートノートで使用できます。",
@@ -1275,7 +1275,7 @@
     "editor_type": {
       "label": "書式設定ツールバー",
       "floating": {
-        "description": "編集ツールがカーソル付近に表示されます;",
+        "description": "編集ツールがカーソル付近に表示されます。",
         "title": "フローティング"
       },
       "fixed": {

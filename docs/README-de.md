@@ -9,25 +9,25 @@ releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
 [![Translation
 status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
-[English](./README.md) | [Chinese (Simplified)](./docs/README-ZH_CN.md) |
-[Chinese (Traditional)](./docs/README-ZH_TW.md) | [Russian](./docs/README-ru.md)
-| [Japanese](./docs/README-ja.md) | [Italian](./docs/README-it.md) |
-[Spanish](./docs/README-es.md)
+[Englisch](./README.md) | [Chinesisch (Vereinfacht)](./docs/README-ZH_CN.md) |
+[Chinesisch (Traditionell)](./docs/README-ZH_TW.md) |
+[Russisch](./docs/README-ru.md) | [Japanisch](./docs/README-ja.md) |
+[Italienisch](./docs/README-it.md) | [Spanisch](./docs/README-es.md)
 
-Trilium Notes – это приложение для заметок с иерархической структурой,
-ориентированное на создание больших персональных баз знаний.
+Trilium Notes is a free and open-source, cross-platform hierarchical note taking
+application with focus on building large personal knowledge bases.
 
-Для быстрого ознакомления посмотрите
-[скриншот-тур](https://triliumnext.github.io/Docs/Wiki/screenshot-tour)
+See [screenshots](https://triliumnext.github.io/Docs/Wiki/screenshot-tour) for
+quick overview:
 
 <a href="https://triliumnext.github.io/Docs/Wiki/screenshot-tour"><img src="./docs/app.png" alt="Trilium Screenshot" width="1000"></a>
 
-## 📚 Документация
+## 📚 Dokumentation
 
 **Visit our comprehensive documentation at
 [docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 
-Our documentation is available in multiple formats:
+Unsere Dokumentation ist verfügbar in mehreren Formaten:
 - **Online Documentation**: Browse the full documentation at
   [docs.triliumnotes.org](https://docs.triliumnotes.org/)
 - **In-App Help**: Press `F1` within Trilium to access the same documentation
@@ -48,63 +48,61 @@ Our documentation is available in multiple formats:
 - [Patterns of Personal Knowledge
   Base](https://triliumnext.github.io/Docs/Wiki/patterns-of-personal-knowledge)
 
-## 🎁 Возможности
+## 🎁 Features
 
-* Заметки можно расположить в виде дерева произвольной глубины. Отдельную
-  заметку можно разместить в нескольких местах дерева (см.
-  [клонирование](https://triliumnext.github.io/Docs/Wiki/cloning-notes))
-* Продвинутый визуальный редактор (WYSIWYG) позволяет работать с таблицами,
-  изображениями, [формулами](https://triliumnext.github.io/Docs/Wiki/text-notes)
-  и разметкой markdown, имеет
-  [автоформатирование](https://triliumnext.github.io/Docs/Wiki/text-notes#autoformat)
-* Редактирование [заметок с исходным
-  кодом](https://triliumnext.github.io/Docs/Wiki/code-notes), включая подсветку
-  синтаксиса
-* Быстрая и простая [навигация между
-  заметками](https://triliumnext.github.io/Docs/Wiki/note-navigation),
-  полнотекстовый поиск и [выделение
-  заметок](https://triliumnext.github.io/Docs/Wiki/note-hoisting) в отдельный
-  блок
-* Бесшовное [версионирование
-  заметки](https://triliumnext.github.io/Docs/Wiki/note-revisions)
-* Специальные [атрибуты](https://triliumnext.github.io/Docs/Wiki/attributes)
-  позволяют гибко организовать структуру, используются для поиска и продвинутого
-  [скриптинга](https://triliumnext.github.io/Docs/Wiki/scripts)
+* Notes can be arranged into arbitrarily deep tree. Single note can be placed
+  into multiple places in the tree (see
+  [cloning](https://triliumnext.github.io/Docs/Wiki/cloning-notes))
+* Rich WYSIWYG note editor including e.g. tables, images and
+  [math](https://triliumnext.github.io/Docs/Wiki/text-notes) with markdown
+  [autoformat](https://triliumnext.github.io/Docs/Wiki/text-notes#autoformat)
+* Support for editing [notes with source
+  code](https://triliumnext.github.io/Docs/Wiki/code-notes), including syntax
+  highlighting
+* Fast and easy [navigation between
+  notes](https://triliumnext.github.io/Docs/Wiki/note-navigation), full text
+  search and [note
+  hoisting](https://triliumnext.github.io/Docs/Wiki/note-hoisting)
+* Seamless [note
+  versioning](https://triliumnext.github.io/Docs/Wiki/note-revisions)
+* Note [attributes](https://triliumnext.github.io/Docs/Wiki/attributes) can be
+  used for note organization, querying and advanced
+  [scripting](https://triliumnext.github.io/Docs/Wiki/scripts)
 * UI available in English, German, Spanish, French, Romanian, and Chinese
   (simplified and traditional)
 * Direct [OpenID and TOTP
   integration](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Server%20Installation/Multi-Factor%20Authentication.md)
   for more secure login
-* [Синхронизация](https://triliumnext.github.io/Docs/Wiki/synchronization)
-  заметок со своим сервером
+* [Synchronization](https://triliumnext.github.io/Docs/Wiki/synchronization)
+  with self-hosted sync server
   * there's a [3rd party service for hosting synchronisation
     server](https://trilium.cc/paid-hosting)
 * [Sharing](https://triliumnext.github.io/Docs/Wiki/sharing) (publishing) notes
   to public internet
-* Надёжное [шифрование](https://triliumnext.github.io/Docs/Wiki/protected-notes)
-  с детализацией по каждой заметке
+* Strong [note
+  encryption](https://triliumnext.github.io/Docs/Wiki/protected-notes) with
+  per-note granularity
 * Sketching diagrams, based on [Excalidraw](https://excalidraw.com/) (note type
   "canvas")
-* [Карты связей](https://triliumnext.github.io/Docs/Wiki/relation-map) и [карты
-  ссылок](https://triliumnext.github.io/Docs/Wiki/link-map) для визуализации их
-  взяимосвязей
+* [Relation maps](https://triliumnext.github.io/Docs/Wiki/relation-map) and
+  [link maps](https://triliumnext.github.io/Docs/Wiki/link-map) for visualizing
+  notes and their relations
 * Mind maps, based on [Mind Elixir](https://docs.mind-elixir.com/)
 * [Geo maps](./docs/User%20Guide/User%20Guide/Note%20Types/Geo%20Map.md) with
   location pins and GPX tracks
-* [Скрипты](https://triliumnext.github.io/Docs/Wiki/scripts) - см. [продвинутые
-  примеры](https://triliumnext.github.io/Docs/Wiki/advanced-showcases)
+* [Scripting](https://triliumnext.github.io/Docs/Wiki/scripts) - see [Advanced
+  showcases](https://triliumnext.github.io/Docs/Wiki/advanced-showcases)
 * [REST API](https://triliumnext.github.io/Docs/Wiki/etapi) for automation
-* Хорошо масштабируется, как по удобству использования, так и по
-  производительности до 100000 заметок
-* Оптимизированный [мобильный
-  фронтенд](https://triliumnext.github.io/Docs/Wiki/mobile-frontend) смартфонов
-  и планшетов
-* [Темная тема](https://triliumnext.github.io/Docs/Wiki/themes)
-* Импорт и экпорт
-  [Evernote](https://triliumnext.github.io/Docs/Wiki/evernote-import) и данных в
-  [markdown](https://triliumnext.github.io/Docs/Wiki/markdown) формате
-* [Web Clipper](https://triliumnext.github.io/Docs/Wiki/web-clipper) для
-  удобного сохранения веб-контента
+* Scales well in both usability and performance upwards of 100 000 notes
+* Touch optimized [mobile
+  frontend](https://triliumnext.github.io/Docs/Wiki/mobile-frontend) for
+  smartphones and tablets
+* Built-in [dark theme](https://triliumnext.github.io/Docs/Wiki/themes), support
+  for user themes
+* [Evernote](https://triliumnext.github.io/Docs/Wiki/evernote-import) and
+  [Markdown import & export](https://triliumnext.github.io/Docs/Wiki/markdown)
+* [Web Clipper](https://triliumnext.github.io/Docs/Wiki/web-clipper) for easy
+  saving of web content
 * Customizable UI (sidebar buttons, user-defined widgets, ...)
 * [Metrics](./docs/User%20Guide/User%20Guide/Advanced%20Usage/Metrics.md), along
   with a [Grafana
@@ -123,7 +121,7 @@ The original Trilium developer ([Zadam](https://github.com/zadam)) has
 graciously given the Trilium repository to the community project which resides
 at https://github.com/TriliumNext
 
-### ⬆️Migrating from Zadam/Trilium?
+### Migration von Zadam/Trilium?
 
 There are no special migration steps to migrate from a zadam/Trilium instance to
 a TriliumNext/Trilium instance. Simply [install
@@ -151,9 +149,9 @@ features, suggestions, or issues you may have!
 - [Github Issues](https://github.com/TriliumNext/Trilium/issues) (For bug
   reports and feature requests.)
 
-## 🏗 Сборки
+## 🏗 Installation
 
-### Windows / macOS
+### Windows / MacOS
 
 Download the binary release for your platform from the [latest release
 page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the package
@@ -203,7 +201,7 @@ To install TriliumNext on your own server (including via Docker from
 installation docs](https://triliumnext.github.io/Docs/Wiki/server-installation).
 
 
-## 💻 Участвуйте в разработке
+## 💻 Contribute
 
 ### Translations
 
@@ -212,8 +210,8 @@ If you are a native speaker, help us translate Trilium by heading over to our
 
 Here's the language coverage we have so far:
 
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
+[![Status der
+Übersetzung](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
 
 ### Code
 
@@ -257,7 +255,7 @@ guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/D
 for details. If you have more questions, feel free to reach out via the links
 described in the "Discuss with us" section above.
 
-## 👏 Благодарности
+## 👏 Shoutouts
 
 * [zadam](https://github.com/zadam) for the original concept and implementation
   of the application.
@@ -305,11 +303,11 @@ Consider supporting the main developer
 - [PayPal](https://paypal.me/eliandoran)
 - [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
 
-## 🔑 Лицензия
+## 🔑 License
 
 Copyright 2017-2025 zadam, Elian Doran, and other contributors
 
-Эта программа является бесплатным программным обеспечением: вы можете
-распространять и/или изменять ее в соответствии с условиями GNU Affero General
-Public License, опубликованной Free Software Foundation, либо версии 3 Лицензии,
-либо (по вашему выбору) любой более поздней версии.
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
