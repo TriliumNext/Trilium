@@ -1,4 +1,4 @@
-# Trilium Notes
+# Trillium Notes
 
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
 ![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
