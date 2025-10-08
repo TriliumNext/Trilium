@@ -252,71 +252,118 @@ function findResultsWithExpression(expression: Expression, searchContext: Search
 
     // Phase 1: Try exact matches first (without fuzzy matching)
     const exactResults = performSearch(expression, searchContext, false);
-    
+
     // Check if we have sufficient high-quality results
     const minResultThreshold = 5;
     const minScoreForQuality = 10; // Minimum score to consider a result "high quality"
-    
+
     const highQualityResults = exactResults.filter(result => result.score >= minScoreForQuality);
-    
+
     // If we have enough high-quality exact matches, return them
     if (highQualityResults.length >= minResultThreshold) {
         return exactResults;
     }
-    
+
     // Phase 2: Add fuzzy matching as fallback when exact matches are insufficient
     const fuzzyResults = performSearch(expression, searchContext, true);
-    
+
     // Merge results, ensuring exact matches always rank higher than fuzzy matches
     return mergeExactAndFuzzyResults(exactResults, fuzzyResults);
 }
 
-function performSearch(expression: Expression, searchContext: SearchContext, enableFuzzyMatching: boolean): SearchResult[] {
+function performSearch(
+    expression: Expression,
+    searchContext: SearchContext,
+    enableFuzzyMatching: boolean
+): SearchResult[] {
     const allNoteSet = becca.getAllNoteSet();
 
     const noteIdToNotePath: Record<string, string[]> = {};
-    const executionContext = {
-        noteIdToNotePath
-    };
+    const executionContext = { noteIdToNotePath };
 
-    // Store original fuzzy setting and temporarily override it
+    // Preserve and temporarily override fuzzy setting
     const originalFuzzyMatching = searchContext.enableFuzzyMatching;
     searchContext.enableFuzzyMatching = enableFuzzyMatching;
 
-    const noteSet = expression.execute(allNoteSet, executionContext, searchContext);
-
-    const searchResults = noteSet.notes.map((note) => {
-        const notePathArray = executionContext.noteIdToNotePath[note.noteId] || note.getBestNotePath();
-
-        if (!notePathArray) {
-            throw new Error(`Can't find note path for note ${JSON.stringify(note.getPojo())}`);
-        }
-
-        return new SearchResult(notePathArray);
-    });
-
-    for (const res of searchResults) {
-        res.computeScore(searchContext.fulltextQuery, searchContext.highlightedTokens, enableFuzzyMatching);
+    // If ancestorNoteId is provided, limit search to that subtree
+    let noteSet = expression.execute(allNoteSet, executionContext, searchContext);
+    if (searchContext.ancestorNoteId && becca.notes[searchContext.ancestorNoteId]) {
+        const ancestor = becca.notes[searchContext.ancestorNoteId];
+        const allowedNoteIds = new Set(ancestor.getSubtreeNoteIds({
+            includeArchived: searchContext.includeArchivedNotes ?? true,
+            includeHidden: searchContext.includeHiddenNotes ?? false
+        }));
+        noteSet.notes = noteSet.notes.filter(n => allowedNoteIds.has(n.noteId));
     }
 
-    // Restore original fuzzy setting
+    // Main filtering
+    const searchResults = noteSet.notes
+        .filter(note => {
+            if (!searchContext.includeArchivedNotes && note.isArchived) return false;
+            if (!searchContext.includeHiddenNotes && note.isInHiddenSubtree()) return false;
+            return true;
+        })
+        .map(note => {
+            const notePathArray =
+                executionContext.noteIdToNotePath[note.noteId] || note.getBestNotePath();
+
+            if (!notePathArray) {
+                throw new Error(
+                    `Can't find note path for note ${JSON.stringify(note.getPojo())}`
+                );
+            }
+
+            return new SearchResult(notePathArray);
+        });
+
+    // Compute scores
+    for (const res of searchResults) {
+        res.computeScore(
+            searchContext.fulltextQuery,
+            searchContext.highlightedTokens,
+            enableFuzzyMatching
+        );
+
+        // Optional fine-tuning: disable fuzzy for title if fuzzyAttributeSearch only
+        if (!enableFuzzyMatching && searchContext.fuzzyAttributeSearch) {
+            // Re-score attributes only, skip fuzzy on title
+            res.computeScore(
+                searchContext.fulltextQuery,
+                searchContext.highlightedTokens,
+                true // fuzzy for attributes
+            );
+        }
+
+        // If ignoring internal attributes, reduce their weight
+        if (searchContext.ignoreInternalAttributes) {
+            const note = becca.notes[res.noteId];
+            const internalAttrs = note.getAttributes()?.filter(a => a.name.startsWith("_")) || [];
+            if (internalAttrs.length > 0) {
+                const penalty = 1 + internalAttrs.length * 0.05;
+                res.score = res.score / penalty;
+            }
+        }
+    }
+
+    // Restore fuzzy flag
     searchContext.enableFuzzyMatching = originalFuzzyMatching;
 
+    // Optional fast-search mode (e.g. autocomplete)
+    if (searchContext.fastSearch) {
+        // Skip fuzzy rescoring & heavy sorting logic
+        return searchResults
+            .filter(r => r.score > 0)
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 50);
+    }
+
+    // Normal sorting
     if (!noteSet.sorted) {
         searchResults.sort((a, b) => {
-            if (a.score > b.score) {
-                return -1;
-            } else if (a.score < b.score) {
-                return 1;
-            }
-
-            // if score does not decide then sort results by depth of the note.
-            // This is based on the assumption that more important results are closer to the note root.
-            if (a.notePathArray.length === b.notePathArray.length) {
-                return a.notePathTitle < b.notePathTitle ? -1 : 1;
-            }
-
-            return a.notePathArray.length < b.notePathArray.length ? -1 : 1;
+            if (a.score !== b.score) return b.score - a.score;
+            if (a.notePathArray.length !== b.notePathArray.length)
+                return a.notePathArray.length - b.notePathArray.length;
+            return a.notePathTitle.localeCompare(b.notePathTitle);
         });
     }
 
@@ -326,10 +373,10 @@ function performSearch(expression: Expression, searchContext: SearchContext, ena
 function mergeExactAndFuzzyResults(exactResults: SearchResult[], fuzzyResults: SearchResult[]): SearchResult[] {
     // Create a map of exact result note IDs for deduplication
     const exactNoteIds = new Set(exactResults.map(result => result.noteId));
-    
+
     // Add fuzzy results that aren't already in exact results
     const additionalFuzzyResults = fuzzyResults.filter(result => !exactNoteIds.has(result.noteId));
-    
+
     // Sort exact results by score (best exact matches first)
     exactResults.sort((a, b) => {
         if (a.score > b.score) {
@@ -345,7 +392,7 @@ function mergeExactAndFuzzyResults(exactResults: SearchResult[], fuzzyResults: S
 
         return a.notePathArray.length < b.notePathArray.length ? -1 : 1;
     });
-    
+
     // Sort fuzzy results by score (best fuzzy matches first)
     additionalFuzzyResults.sort((a, b) => {
         if (a.score > b.score) {
@@ -361,7 +408,7 @@ function mergeExactAndFuzzyResults(exactResults: SearchResult[], fuzzyResults: S
 
         return a.notePathArray.length < b.notePathArray.length ? -1 : 1;
     });
-    
+
     // CRITICAL: Always put exact matches before fuzzy matches, regardless of scores
     return [...exactResults, ...additionalFuzzyResults];
 }
@@ -417,10 +464,10 @@ function findResultsWithQuery(query: string, searchContext: SearchContext): Sear
     }
 
     // If the query starts with '#', it's a pure expression query.
-    // Don't use progressive search for these as they may have complex 
+    // Don't use progressive search for these as they may have complex
     // ordering or other logic that shouldn't be interfered with.
     const isPureExpressionQuery = query.trim().startsWith('#');
-    
+
     if (isPureExpressionQuery) {
         // For pure expression queries, use standard search without progressive phases
         return performSearch(expression, searchContext, searchContext.enableFuzzyMatching);
@@ -448,7 +495,7 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
 
     try {
         let content = note.getContent();
-        
+
         if (!content || typeof content !== "string") {
             return "";
         }
@@ -489,7 +536,7 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
         for (const token of searchTokens) {
             const normalizedToken = normalizeString(token.toLowerCase());
             const matchIndex = normalizedContent.indexOf(normalizedToken);
-            
+
             if (matchIndex !== -1) {
                 // Center the snippet around the match
                 snippetStart = Math.max(0, matchIndex - maxLength / 2);
@@ -500,7 +547,7 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
 
         // Extract snippet
         let snippet = content.substring(snippetStart, snippetStart + maxLength);
-        
+
         // If snippet contains linebreaks, limit to max 4 lines and override character limit
         const lines = snippet.split('\n');
         if (lines.length > 4) {
@@ -523,7 +570,7 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
                 }
                 snippet = "..." + snippet;
             }
-            
+
             if (snippetStart + maxLength < content.length) {
                 const lastSpace = snippet.search(/\s[^\s]*$/);
                 if (lastSpace > snippet.length - 20 && lastSpace > 0) {
@@ -554,19 +601,19 @@ function extractAttributeSnippet(noteId: string, searchTokens: string[], maxLeng
         }
 
         let matchingAttributes: Array<{name: string, value: string, type: string}> = [];
-        
+
         // Look for attributes that match the search tokens
         for (const attr of attributes) {
             const attrName = attr.name?.toLowerCase() || "";
             const attrValue = attr.value?.toLowerCase() || "";
             const attrType = attr.type || "";
-            
+
             // Check if any search token matches the attribute name or value
             const hasMatch = searchTokens.some(token => {
                 const normalizedToken = normalizeString(token.toLowerCase());
                 return attrName.includes(normalizedToken) || attrValue.includes(normalizedToken);
             });
-            
+
             if (hasMatch) {
                 matchingAttributes.push({
                     name: attr.name || "",
@@ -592,20 +639,20 @@ function extractAttributeSnippet(noteId: string, searchTokens: string[], maxLeng
                 const targetTitle = targetNote ? targetNote.title : attr.value;
                 line = `~${attr.name}="${targetTitle}"`;
             }
-            
+
             if (line) {
                 lines.push(line);
             }
         }
 
         let snippet = lines.join('\n');
-        
+
         // Apply length limit while preserving line structure
         if (snippet.length > maxLength) {
             // Try to truncate at word boundaries but keep lines intact
             const truncated = snippet.substring(0, maxLength);
             const lastNewline = truncated.lastIndexOf('\n');
-            
+
             if (lastNewline > maxLength / 2) {
                 // If we can keep most content by truncating to last complete line
                 snippet = truncated.substring(0, lastNewline);
@@ -679,7 +726,7 @@ function highlightSearchResults(searchResults: SearchResult[], highlightedTokens
 
     for (const result of searchResults) {
         result.highlightedNotePathTitle = result.notePathTitle.replace(/[<{}]/g, "");
-        
+
         // Initialize highlighted content snippet
         if (result.contentSnippet) {
             // Escape HTML but preserve newlines for later conversion to <br>
@@ -687,7 +734,7 @@ function highlightSearchResults(searchResults: SearchResult[], highlightedTokens
             // Remove any stray < { } that might interfere with our highlighting markers
             result.highlightedContentSnippet = result.highlightedContentSnippet.replace(/[<{}]/g, "");
         }
-        
+
         // Initialize highlighted attribute snippet
         if (result.attributeSnippet) {
             // Escape HTML but preserve newlines for later conversion to <br>
@@ -748,14 +795,14 @@ function highlightSearchResults(searchResults: SearchResult[], highlightedTokens
         if (result.highlightedNotePathTitle) {
             result.highlightedNotePathTitle = result.highlightedNotePathTitle.replace(/{/g, "<b>").replace(/}/g, "</b>");
         }
-        
+
         if (result.highlightedContentSnippet) {
             // Replace highlighting markers with HTML tags
             result.highlightedContentSnippet = result.highlightedContentSnippet.replace(/{/g, "<b>").replace(/}/g, "</b>");
             // Convert newlines to <br> tags for HTML display
             result.highlightedContentSnippet = result.highlightedContentSnippet.replace(/\n/g, "<br>");
         }
-        
+
         if (result.highlightedAttributeSnippet) {
             // Replace highlighting markers with HTML tags
             result.highlightedAttributeSnippet = result.highlightedAttributeSnippet.replace(/{/g, "<b>").replace(/}/g, "</b>");
