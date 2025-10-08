@@ -1,34 +1,6 @@
-// Utility functions (inline to avoid module dependency issues)
-function randomString(len) {
-    let text = "";
-    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+// Utility functions will be loaded from utils.js
 
-    for (let i = 0; i < len; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-
-    return text;
-}
-
-function getBaseUrl() {
-    let output = getPageLocationOrigin() + location.pathname;
-
-    if (output[output.length - 1] !== '/') {
-        output = output.split('/');
-        output.pop();
-        output = output.join('/');
-    }
-
-    return output;
-}
-
-function getPageLocationOrigin() {
-    // location.origin normally returns the protocol + domain + port (eg. https://example.com:8080)
-    // but for file:// protocol this is browser dependant and in particular Firefox returns "null" in this case.
-    return location.protocol === 'file:' ? 'file://' : location.origin;
-}
-
-function absoluteUrl(url) {
+async function absoluteUrl(url) {
 	if (!url) {
 		return url;
 	}
@@ -37,6 +9,9 @@ function absoluteUrl(url) {
 	if (['http', 'https', 'file'].indexOf(protocol) >= 0) {
 		return url;
 	}
+
+	// Ensure utils.js is loaded
+	await requireLib('/utils.js');
 
 	if (url.indexOf('//') === 0) {
 		return location.protocol + url;
@@ -223,15 +198,21 @@ function getRectangleArea() {
 	});
 }
 
-function makeLinksAbsolute(container) {
+async function makeLinksAbsolute(container) {
+	// Ensure utils.js is loaded first
+	await requireLib('/utils.js');
+	
 	for (const link of container.getElementsByTagName('a')) {
 		if (link.href) {
-			link.href = absoluteUrl(link.href);
+			link.href = await absoluteUrl(link.href);
 		}
 	}
 }
 
-function getImages(container) {
+async function getImages(container) {
+	// Ensure utils.js is loaded first
+	await requireLib('/utils.js');
+	
 	const images = [];
 
 	for (const img of container.getElementsByTagName('img')) {
@@ -348,6 +329,9 @@ async function prepareMessageResponse(message) {
 		return { success: true }; // Return a response
 	}
 	else if (message.name === "trilium-save-selection") {
+		// Ensure utils.js is loaded first
+		await requireLib('/utils.js');
+		
 		const container = document.createElement('div');
 
 		const selection = window.getSelection();
@@ -358,9 +342,9 @@ async function prepareMessageResponse(message) {
 			container.appendChild(range.cloneContents());
 		}
 
-		makeLinksAbsolute(container);
+		await makeLinksAbsolute(container);
 
-		const images = getImages(container);
+		const images = await getImages(container);
 
 		return {
 			title: pageTitle(),
@@ -377,12 +361,13 @@ async function prepareMessageResponse(message) {
 		await requireLib("/lib/JSDOMParser.js");
 		await requireLib("/lib/Readability.js");
 		await requireLib("/lib/Readability-readerable.js");
+		await requireLib("/utils.js");
 
 		const {title, body} = getReadableDocument();
 
-		makeLinksAbsolute(body);
+		await makeLinksAbsolute(body);
 
-		const images = getImages(body);
+		const images = await getImages(body);
 
         var labels = {};
 		const dates = getDocumentDates();
