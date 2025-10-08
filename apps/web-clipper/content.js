@@ -201,7 +201,7 @@ function getRectangleArea() {
 async function makeLinksAbsolute(container) {
 	// Ensure utils.js is loaded first
 	await requireLib('/utils.js');
-	
+
 	for (const link of container.getElementsByTagName('a')) {
 		if (link.href) {
 			link.href = await absoluteUrl(link.href);
@@ -212,7 +212,7 @@ async function makeLinksAbsolute(container) {
 async function getImages(container) {
 	// Ensure utils.js is loaded first
 	await requireLib('/utils.js');
-	
+
 	const images = [];
 
 	for (const img of container.getElementsByTagName('img')) {
@@ -331,7 +331,7 @@ async function prepareMessageResponse(message) {
 	else if (message.name === "trilium-save-selection") {
 		// Ensure utils.js is loaded first
 		await requireLib('/utils.js');
-		
+
 		const container = document.createElement('div');
 
 		const selection = window.getSelection();
