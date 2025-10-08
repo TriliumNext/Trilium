@@ -59,8 +59,8 @@ function ListNoteCard({ note, parentNote, expand, highlightedTokens }: { note: F
     const [ isExpanded, setExpanded ] = useState(expand);
     const notePath = getNotePath(parentNote, note);
 
-    // Reset expand state if switching to another note.
-    useEffect(() => setExpanded(expand), [ note ]);
+    // Reset expand state if switching to another note, or if user manually toggled expansion state.
+    useEffect(() => setExpanded(expand), [ note, expand ]);
 
     return (
         <div

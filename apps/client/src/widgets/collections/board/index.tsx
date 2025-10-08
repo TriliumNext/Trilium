@@ -227,10 +227,12 @@ export function TitleEditor({ currentValue, placeholder, save, dismiss, multilin
     isNewItem?: boolean;
 }) {
     const inputRef = useRef<any>(null);
+    const focusElRef = useRef<Element>(null);
     const dismissOnNextRefreshRef = useRef(false);
     const shouldDismiss = useRef(false);
 
     useEffect(() => {
+        focusElRef.current = document.activeElement;
         inputRef.current?.focus();
         inputRef.current?.select();
     }, [ inputRef ]);
@@ -254,8 +256,11 @@ export function TitleEditor({ currentValue, placeholder, save, dismiss, multilin
             onKeyDown={(e: TargetedKeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
                 if (e.key === "Enter" || e.key === "Escape") {
                     e.preventDefault();
+                    e.stopPropagation();
                     shouldDismiss.current = (e.key === "Escape");
-                    e.currentTarget.blur();
+                    if (focusElRef.current instanceof HTMLElement) {
+                        focusElRef.current.focus();
+                    }
                 }
             }}
             onBlur={(newValue) => {

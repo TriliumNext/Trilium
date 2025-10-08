@@ -24,10 +24,13 @@
   border: 2px solid transparent;
   border-radius: 8px;
   padding: 0.5em;
+  padding-bottom: 0;
   background-color: var(--accented-background-color);
   transition: border-color 0.2s ease;
   overflow-y: auto;
   max-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .board-view-container .board-column.drag-over {
@@ -37,7 +40,7 @@
 
 .board-view-container .board-column h3 {
   font-size: 1em;
-  margin-bottom: 0.75em;
+  margin: 0;
   padding: 0.5em 0.5em 0.5em 0.5em;
   border-bottom: 1px solid var(--main-border-color);
   cursor: grab;
@@ -98,6 +101,12 @@
   cursor: pointer;
 }
 
+.board-view-container .board-column > .board-column-content {
+  flex-grow: 1;
+  overflow: scroll;
+  padding-bottom: 0.5em;
+}
+
 .board-view-container .board-column h3:hover .edit-icon,
 .board-view-container .board-note:hover .edit-icon {
   opacity: 1;
@@ -119,6 +128,11 @@
   overflow-wrap: break-word;
   overflow: hidden;
   font-size: var(--card-font-size);
+}
+
+.board-view-container :focus {
+  outline: 3px solid var(--input-focus-outline-color);
+  outline-offset: 0;
 }
 
 .board-view-container .board-note {
