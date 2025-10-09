@@ -34,6 +34,9 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
     value!: string;
     isInheritable!: boolean;
 
+    _normalizedKey?: string;
+    _normalizedValue?: string;
+
     constructor(row?: AttributeRow) {
         super();
 
@@ -58,6 +61,9 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
         this.value = value || "";
         this.isInheritable = !!isInheritable;
         this.utcDateModified = utcDateModified;
+
+        this._normalizedKey = undefined;
+        this._normalizedValue = undefined;
 
         return this;
     }
@@ -172,6 +178,8 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
         }
 
         this.name = sanitizeAttributeName(this.name);
+        this._normalizedKey = undefined;
+        this._normalizedValue = undefined;
 
         if (!this.value) {
             // null value isn't allowed

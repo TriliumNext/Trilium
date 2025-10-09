@@ -54,7 +54,7 @@ function quickSearch(req: Request) {
 
     // Use the same highlighting logic as autocomplete for consistency
     const searchResults = searchService.searchNotesForAutocomplete(searchString, false);
-    
+
     // Extract note IDs for backward compatibility
     const resultNoteIds = searchResults.map((result) => result.notePath.split("/").pop()).filter(Boolean) as string[];
 

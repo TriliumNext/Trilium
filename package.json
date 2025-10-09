@@ -120,5 +120,8 @@
       "macos-alias",
       "utf-8-validate"
     ]
+  },
+  "dependencies": {
+    "fuzzysort": "3.1.0"
   }
 }

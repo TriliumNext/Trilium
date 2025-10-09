@@ -36,6 +36,10 @@ patchedDependencies:
 importers:
 
   .:
+    dependencies:
+      fuzzysort:
+        specifier: 3.1.0
+        version: 3.1.0
     devDependencies:
       '@electron/rebuild':
         specifier: 4.0.1
@@ -20684,7 +20688,11 @@ snapshots:
 
   ckeditor5-collaboration@47.0.0:
     dependencies:
+<<<<<<< HEAD
       '@ckeditor/ckeditor5-collaboration-core': 47.0.0
+=======
+      '@ckeditor/ckeditor5-collaboration-core': 46.1.0
+>>>>>>> 7b1139e9f (feat(search): improve search speed using caches and improved fuzzyfinding)
     transitivePeerDependencies:
       - supports-color
 

@@ -89,6 +89,10 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return ["noteId", "title", "isProtected", "type", "mime", "blobId"];
     }
 
+    private _normalizedTitle?: string;
+    /** Cached trigrams for the note title */
+    private _titleTrigrams?: Set<string>;
+
     noteId!: string;
     title!: string;
     type!: NoteType;
@@ -148,6 +152,9 @@ class BNote extends AbstractBeccaEntity<BNote> {
         this.utcDateCreated = utcDateCreated || dateUtils.utcNowDateTime();
         this.utcDateModified = utcDateModified;
         this.isBeingDeleted = false;
+
+        this._normalizedTitle = undefined;
+        this._titleTrigrams = undefined;
 
         // ------ Derived attributes ------
 
@@ -816,6 +823,9 @@ class BNote extends AbstractBeccaEntity<BNote> {
         this.__attributeCache = null;
         this.__inheritableAttributeCache = null;
         this.__ancestorCache = null;
+
+        this._normalizedTitle = undefined;
+        this._titleTrigrams = undefined;
     }
 
     invalidateSubTree(path: string[] = []) {
