@@ -30,6 +30,8 @@ export interface Suggestion {
     notePathTitle?: string;
     notePath?: string;
     highlightedNotePathTitle?: string;
+    highlightedNoteId?: string;
+    highlightedContentSnippet?: string;
     action?: string | "create-note" | "search-notes" | "external-link" | "command";
     parentNoteId?: string;
     icon?: string;
@@ -343,6 +345,12 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                         html += `<span class="icon ${iconClass}"></span>`;
                         html += `<span class="text">`;
                         html += `<span class="search-result-title">${suggestion.highlightedNotePathTitle}</span>`;
+
+                        // Highlighted noteId (if present)
+                        if (suggestion.highlightedNoteId) {
+                            html += `<div class="search-result-id">${suggestion.highlightedNoteId}</div>`;
+                        }
+                        html += `</div>`; // close .note-header
 
                         // Add attribute snippet inline if available
                         if (suggestion.highlightedAttributeSnippet) {

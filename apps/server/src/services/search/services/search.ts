@@ -696,6 +696,8 @@ function searchNotesForAutocomplete(query: string, fastSearch: boolean = true) {
     return trimmed.map((result) => {
         const { title, icon } = beccaService.getNoteTitleAndIcon(result.noteId);
         return {
+            noteId: result.noteId, // ✅ raw noteId
+            highlightedNoteId: result.highlightedNoteId, // ✅ bold-highlighted version
             notePath: result.notePath,
             noteTitle: title,
             notePathTitle: result.notePathTitle,
@@ -715,32 +717,24 @@ function searchNotesForAutocomplete(query: string, fastSearch: boolean = true) {
 function highlightSearchResults(searchResults: SearchResult[], highlightedTokens: string[], ignoreInternalAttributes = false) {
     highlightedTokens = Array.from(new Set(highlightedTokens));
 
-    // we remove < signs because they can cause trouble in matching and overwriting existing highlighted chunks
-    // which would make the resulting HTML string invalid.
-    // { and } are used for marking <b> and </b> tag (to avoid matches on single 'b' character)
-    // < and > are used for marking <small> and </small>
-    highlightedTokens = highlightedTokens.map((token) => token.replace("/[<\{\}]/g", "")).filter((token) => !!token?.trim());
+    // Clean invalid characters that can break highlighting
+    highlightedTokens = highlightedTokens
+        .map((token) => token.replace(/[<{}]/g, ""))
+        .filter((token) => !!token?.trim());
 
-    // sort by the longest, so we first highlight the longest matches
+    // Sort by longest first to avoid partial overlaps
     highlightedTokens.sort((a, b) => (a.length > b.length ? -1 : 1));
 
     for (const result of searchResults) {
         result.highlightedNotePathTitle = result.notePathTitle.replace(/[<{}]/g, "");
 
-        // Initialize highlighted content snippet
+        // Escape and clean snippets
         if (result.contentSnippet) {
-            // Escape HTML but preserve newlines for later conversion to <br>
-            result.highlightedContentSnippet = escapeHtml(result.contentSnippet);
-            // Remove any stray < { } that might interfere with our highlighting markers
-            result.highlightedContentSnippet = result.highlightedContentSnippet.replace(/[<{}]/g, "");
+            result.highlightedContentSnippet = escapeHtml(result.contentSnippet).replace(/[<{}]/g, "");
         }
 
-        // Initialize highlighted attribute snippet
         if (result.attributeSnippet) {
-            // Escape HTML but preserve newlines for later conversion to <br>
-            result.highlightedAttributeSnippet = escapeHtml(result.attributeSnippet);
-            // Remove any stray < { } that might interfere with our highlighting markers
-            result.highlightedAttributeSnippet = result.highlightedAttributeSnippet.replace(/[<{}]/g, "");
+            result.highlightedAttributeSnippet = escapeHtml(result.attributeSnippet).replace(/[<{}]/g, "");
         }
     }
 
@@ -749,13 +743,9 @@ function highlightSearchResults(searchResults: SearchResult[], highlightedTokens
     }
 
     for (const token of highlightedTokens) {
-        if (!token) {
-            // Avoid empty tokens, which might cause an infinite loop.
-            continue;
-        }
+        if (!token) continue; // skip empty tokens
 
         for (const result of searchResults) {
-            // Reset token
             const tokenRegex = new RegExp(escapeRegExp(token), "gi");
             let match;
 
@@ -764,8 +754,7 @@ function highlightSearchResults(searchResults: SearchResult[], highlightedTokens
                 const titleRegex = new RegExp(escapeRegExp(token), "gi");
                 while ((match = titleRegex.exec(normalizeString(result.highlightedNotePathTitle))) !== null) {
                     result.highlightedNotePathTitle = wrapText(result.highlightedNotePathTitle, match.index, token.length, "{", "}");
-                    // 2 characters are added, so we need to adjust the index
-                    titleRegex.lastIndex += 2;
+                    titleRegex.lastIndex += 2; // adjust for added markers
                 }
             }
 
@@ -774,7 +763,6 @@ function highlightSearchResults(searchResults: SearchResult[], highlightedTokens
                 const contentRegex = new RegExp(escapeRegExp(token), "gi");
                 while ((match = contentRegex.exec(normalizeString(result.highlightedContentSnippet))) !== null) {
                     result.highlightedContentSnippet = wrapText(result.highlightedContentSnippet, match.index, token.length, "{", "}");
-                    // 2 characters are added, so we need to adjust the index
                     contentRegex.lastIndex += 2;
                 }
             }
@@ -784,9 +772,13 @@ function highlightSearchResults(searchResults: SearchResult[], highlightedTokens
                 const attributeRegex = new RegExp(escapeRegExp(token), "gi");
                 while ((match = attributeRegex.exec(normalizeString(result.highlightedAttributeSnippet))) !== null) {
                     result.highlightedAttributeSnippet = wrapText(result.highlightedAttributeSnippet, match.index, token.length, "{", "}");
-                    // 2 characters are added, so we need to adjust the index
                     attributeRegex.lastIndex += 2;
                 }
+            }
+
+            // ✅ NEW: highlight noteId on exact match
+            if (token.toLowerCase() === result.noteId.toLowerCase()) {
+                result.highlightedNoteId = `<b>${escapeHtml(result.noteId)}</b>`;
             }
         }
     }
@@ -797,17 +789,25 @@ function highlightSearchResults(searchResults: SearchResult[], highlightedTokens
         }
 
         if (result.highlightedContentSnippet) {
-            // Replace highlighting markers with HTML tags
-            result.highlightedContentSnippet = result.highlightedContentSnippet.replace(/{/g, "<b>").replace(/}/g, "</b>");
-            // Convert newlines to <br> tags for HTML display
-            result.highlightedContentSnippet = result.highlightedContentSnippet.replace(/\n/g, "<br>");
+            result.highlightedContentSnippet = result.highlightedContentSnippet
+                .replace(/{/g, "<b>")
+                .replace(/}/g, "</b>")
+                .replace(/\n/g, "<br>");
         }
 
         if (result.highlightedAttributeSnippet) {
-            // Replace highlighting markers with HTML tags
-            result.highlightedAttributeSnippet = result.highlightedAttributeSnippet.replace(/{/g, "<b>").replace(/}/g, "</b>");
-            // Convert newlines to <br> tags for HTML display
-            result.highlightedAttributeSnippet = result.highlightedAttributeSnippet.replace(/\n/g, "<br>");
+            result.highlightedAttributeSnippet = result.highlightedAttributeSnippet
+                .replace(/{/g, "<b>")
+                .replace(/}/g, "</b>")
+                .replace(/\n/g, "<br>");
+        }
+
+        // We only want to highlight note ID when it is a full match to avoid
+        // distraction
+        if (!result.highlightedNoteId ||
+                result.highlightedNoteId === escapeHtml(result.noteId)
+        ) {
+            delete result.highlightedNoteId;
         }
     }
 }
