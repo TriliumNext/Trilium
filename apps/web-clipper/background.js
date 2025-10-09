@@ -527,10 +527,16 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
         return await chrome.tabs.remove(request.tabIds)
     }
     else if (request.name === 'load-script') {
-        return await chrome.scripting.executeScript({
-            target: { tabId: sender.tab?.id },
-            files: [request.file]
-        });
+        try {
+            await chrome.scripting.executeScript({
+                target: { tabId: sender.tab?.id },
+                files: [request.file]
+            });
+            return { success: true };
+        } catch (error) {
+            console.error('Failed to load script:', request.file, error);
+            return { success: false, error: error.message };
+        }
     }
     else if (request.name === 'save-cropped-screenshot') {
         const activeTab = await getActiveTab();

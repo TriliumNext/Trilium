@@ -329,63 +329,87 @@ async function prepareMessageResponse(message) {
 		return { success: true }; // Return a response
 	}
 	else if (message.name === "trilium-save-selection") {
-		// Ensure utils.js is loaded first
-		await requireLib('/utils.js');
+		try {
+			// Ensure utils.js is loaded first
+			await requireLib('/utils.js');
 
-		const container = document.createElement('div');
+			const container = document.createElement('div');
 
-		const selection = window.getSelection();
+			const selection = window.getSelection();
 
-		for (let i = 0; i < selection.rangeCount; i++) {
-			const range = selection.getRangeAt(i);
+			for (let i = 0; i < selection.rangeCount; i++) {
+				const range = selection.getRangeAt(i);
 
-			container.appendChild(range.cloneContents());
+				container.appendChild(range.cloneContents());
+			}
+
+			await makeLinksAbsolute(container);
+
+			const images = await getImages(container);
+
+			return {
+				title: pageTitle(),
+				content: container.innerHTML,
+				images: images,
+				pageUrl: getPageLocationOrigin() + location.pathname + location.search + location.hash
+			};
+		} catch (error) {
+			console.error('Error in trilium-save-selection handler:', error);
+			// Return a fallback response
+			return {
+				title: document.title || 'Selection',
+				content: window.getSelection().toString() || 'Error capturing selection',
+				images: [],
+				pageUrl: window.location.href
+			};
 		}
-
-		await makeLinksAbsolute(container);
-
-		const images = await getImages(container);
-
-		return {
-			title: pageTitle(),
-			content: container.innerHTML,
-			images: images,
-			pageUrl: getPageLocationOrigin() + location.pathname + location.search + location.hash
-		};
 
 	}
 	else if (message.name === 'trilium-get-rectangle-for-screenshot') {
 		return getRectangleArea();
 	}
 	else if (message.name === "trilium-save-page") {
-		await requireLib("/lib/JSDOMParser.js");
-		await requireLib("/lib/Readability.js");
-		await requireLib("/lib/Readability-readerable.js");
-		await requireLib("/utils.js");
+		try {
+			await requireLib("/lib/JSDOMParser.js");
+			await requireLib("/lib/Readability.js");
+			await requireLib("/lib/Readability-readerable.js");
+			await requireLib("/utils.js");
 
-		const {title, body} = getReadableDocument();
+			const {title, body} = getReadableDocument();
 
-		await makeLinksAbsolute(body);
+			await makeLinksAbsolute(body);
 
-		const images = await getImages(body);
+			const images = await getImages(body);
 
-        var labels = {};
-		const dates = getDocumentDates();
-		if (dates.publishedDate) {
-			labels['publishedDate'] = dates.publishedDate.toISOString().substring(0, 10);
+			var labels = {};
+			const dates = getDocumentDates();
+			if (dates.publishedDate) {
+				labels['publishedDate'] = dates.publishedDate.toISOString().substring(0, 10);
+			}
+			if (dates.modifiedDate) {
+				labels['modifiedDate'] = dates.publishedDate.toISOString().substring(0, 10);
+			}
+
+			return {
+				title: title,
+				content: body.innerHTML,
+				images: images,
+				pageUrl: getPageLocationOrigin() + location.pathname + location.search,
+				clipType: 'page',
+				labels: labels
+			};
+		} catch (error) {
+			console.error('Error in trilium-save-page handler:', error);
+			// Return a fallback response to prevent channel closure
+			return {
+				title: document.title || 'Unknown Title',
+				content: '<p>Error processing page content: ' + error.message + '</p>',
+				images: [],
+				pageUrl: window.location.href,
+				clipType: 'page',
+				labels: {}
+			};
 		}
-		if (dates.modifiedDate) {
-			labels['modifiedDate'] = dates.publishedDate.toISOString().substring(0, 10);
-		}
-
-		return {
-			title: title,
-			content: body.innerHTML,
-			images: images,
-			pageUrl: getPageLocationOrigin() + location.pathname + location.search,
-			clipType: 'page',
-			labels: labels
-		};
 	}
 	else {
 		throw new Error('Unknown command: ' + JSON.stringify(message));
@@ -393,7 +417,12 @@ async function prepareMessageResponse(message) {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    prepareMessageResponse(message).then(sendResponse);
+    prepareMessageResponse(message)
+        .then(sendResponse)
+        .catch(error => {
+            console.error('Error in prepareMessageResponse:', error);
+            sendResponse({error: error.message});
+        });
     return true; // Important: indicates async response
 });
 
@@ -401,8 +430,16 @@ const loadedLibs = [];
 
 async function requireLib(libPath) {
 	if (!loadedLibs.includes(libPath)) {
-		loadedLibs.push(libPath);
-
-		await chrome.runtime.sendMessage({name: 'load-script', file: libPath});
+		try {
+			const response = await chrome.runtime.sendMessage({name: 'load-script', file: libPath});
+			if (response && response.success) {
+				loadedLibs.push(libPath);
+			} else {
+				throw new Error(`Failed to load ${libPath}: ${response?.error || 'Unknown error'}`);
+			}
+		} catch (error) {
+			console.error('Error loading library:', libPath, error);
+			throw error;
+		}
 	}
 }
