@@ -16,7 +16,8 @@ vi.mock("../../services/ws.js", () => ({
     default: {
         sendMessageToAllClients: vi.fn(),
         sendTransactionEntityChangesToAllClients: vi.fn(),
-        setLastSyncedPush: vi.fn()
+        setLastSyncedPush: vi.fn(),
+        syncFailed() {}
     }
 }));
 
@@ -81,7 +82,7 @@ async function loginWithSession(app: Application) {
         .post("/login")
         .send({ password: "demo1234" })
         .expect(302);
-    
+
     const setCookieHeader = response.headers["set-cookie"][0];
     expect(setCookieHeader).toBeTruthy();
     return setCookieHeader;
@@ -91,14 +92,14 @@ async function loginWithSession(app: Application) {
 async function getCsrfToken(app: Application, sessionCookie: string) {
     const response = await supertest(app)
         .get("/")
-        
+
         .expect(200);
-    
+
     const csrfTokenMatch = response.text.match(/csrfToken: '([^']+)'/);
     if (csrfTokenMatch) {
         return csrfTokenMatch[1];
     }
-    
+
     throw new Error("CSRF token not found in response");
 }
 
@@ -154,7 +155,7 @@ describe("LLM API Tests", () => {
 
             expect(response.body).toHaveProperty('sessions');
             expect(Array.isArray(response.body.sessions)).toBe(true);
-            
+
             if (response.body.sessions.length > 0) {
                 expect(response.body.sessions[0]).toMatchObject({
                     id: expect.any(String),
@@ -171,18 +172,18 @@ describe("LLM API Tests", () => {
                 // Create a chat first if we don't have one
                 const createResponse = await supertest(app)
                     .post("/api/llm/chat")
-                    
+
                     .send({
                         title: "Test Retrieval Chat"
                     })
                     .expect(200);
-                
+
                 createdChatId = createResponse.body.id;
             }
 
             const response = await supertest(app)
                 .get(`/api/llm/chat/${createdChatId}`)
-                
+
                 .expect(200);
 
             expect(response.body).toMatchObject({
@@ -202,7 +203,7 @@ describe("LLM API Tests", () => {
                         title: "Test Update Chat"
                     })
                     .expect(200);
-                
+
                 createdChatId = createResponse.body.id;
             }
 
@@ -224,7 +225,7 @@ describe("LLM API Tests", () => {
         it("should return 404 for non-existent chat session", async () => {
             await supertest(app)
                 .get("/api/llm/chat/nonexistent-chat-id")
-                
+
                 .expect(404);
         });
     });
@@ -240,7 +241,7 @@ describe("LLM API Tests", () => {
                     title: "Message Test Chat"
                 })
                 .expect(200);
-            
+
             testChatId = createResponse.body.id;
         });
 
@@ -260,10 +261,10 @@ describe("LLM API Tests", () => {
             // The response depends on whether AI is actually configured
             // We should get either a successful response or an error about AI not being configured
             expect([200, 400, 500]).toContain(response.status);
-            
+
             // All responses should have some body
             expect(response.body).toBeDefined();
-            
+
             // Either success with response or error
             if (response.body.response) {
                 expect(response.body).toMatchObject({
@@ -310,10 +311,10 @@ describe("LLM API Tests", () => {
         beforeEach(async () => {
             // Reset all mocks
             vi.clearAllMocks();
-            
+
             // Import options service to access mock
             const options = (await import("../../services/options.js")).default;
-            
+
             // Setup default mock behaviors
             (options.getOptionBool as any).mockReturnValue(true); // AI enabled
             mockAiServiceManager.getOrCreateAnyService.mockResolvedValue({});
@@ -321,7 +322,7 @@ describe("LLM API Tests", () => {
                 model: 'test-model',
                 provider: 'test-provider'
             });
-            
+
             // Create a fresh chat for each test
             const mockChat = {
                 id: 'streaming-test-chat',
@@ -331,15 +332,15 @@ describe("LLM API Tests", () => {
             };
             mockChatStorage.createChat.mockResolvedValue(mockChat);
             mockChatStorage.getChat.mockResolvedValue(mockChat);
-            
+
             const createResponse = await supertest(app)
                 .post("/api/llm/chat")
-                
+
                 .send({
                     title: "Streaming Test Chat"
                 })
                 .expect(200);
-            
+
             testChatId = createResponse.body.id;
         });
 
@@ -358,7 +359,7 @@ describe("LLM API Tests", () => {
 
             const response = await supertest(app)
                 .post(`/api/llm/chat/${testChatId}/messages/stream`)
-                
+
                 .send({
                     content: "Tell me a short story",
                     useAdvancedContext: false,
@@ -372,17 +373,17 @@ describe("LLM API Tests", () => {
                 success: true,
                 message: "Streaming initiated successfully"
             });
-            
+
             // Import ws service to access mock
             const ws = (await import("../../services/ws.js")).default;
-            
+
             // Verify WebSocket messages were sent
             expect(ws.sendMessageToAllClients).toHaveBeenCalledWith({
                 type: 'llm-stream',
                 chatNoteId: testChatId,
                 thinking: undefined
             });
-            
+
             // Verify streaming chunks were sent
             expect(ws.sendMessageToAllClients).toHaveBeenCalledWith({
                 type: 'llm-stream',
@@ -390,7 +391,7 @@ describe("LLM API Tests", () => {
                 content: 'Hello',
                 done: false
             });
-            
+
             expect(ws.sendMessageToAllClients).toHaveBeenCalledWith({
                 type: 'llm-stream',
                 chatNoteId: testChatId,
@@ -402,7 +403,7 @@ describe("LLM API Tests", () => {
         it("should handle empty content for streaming", async () => {
             const response = await supertest(app)
                 .post(`/api/llm/chat/${testChatId}/messages/stream`)
-                
+
                 .send({
                     content: "",
                     useAdvancedContext: false,
@@ -419,7 +420,7 @@ describe("LLM API Tests", () => {
         it("should handle whitespace-only content for streaming", async () => {
             const response = await supertest(app)
                 .post(`/api/llm/chat/${testChatId}/messages/stream`)
-                
+
                 .send({
                     content: "   \n\t   ",
                     useAdvancedContext: false,
@@ -436,7 +437,7 @@ describe("LLM API Tests", () => {
         it("should handle invalid chat ID for streaming", async () => {
             const response = await supertest(app)
                 .post("/api/llm/chat/invalid-chat-id/messages/stream")
-                
+
                 .send({
                     content: "Hello",
                     useAdvancedContext: false,
@@ -467,7 +468,7 @@ describe("LLM API Tests", () => {
                 // Verify mention content is included
                 expect(input.query).toContain('Tell me about this note');
                 expect(input.query).toContain('Root note content for testing');
-                
+
                 const callback = input.streamCallback;
                 await callback('The root note contains', false, {});
                 await callback(' important information.', true, {});
@@ -475,7 +476,7 @@ describe("LLM API Tests", () => {
 
             const response = await supertest(app)
                 .post(`/api/llm/chat/${testChatId}/messages/stream`)
-                
+
                 .send({
                     content: "Tell me about this note",
                     useAdvancedContext: true,
@@ -493,10 +494,10 @@ describe("LLM API Tests", () => {
                 success: true,
                 message: "Streaming initiated successfully"
             });
-            
+
             // Import ws service to access mock
             const ws = (await import("../../services/ws.js")).default;
-            
+
             // Verify thinking message was sent
             expect(ws.sendMessageToAllClients).toHaveBeenCalledWith({
                 type: 'llm-stream',
@@ -517,7 +518,7 @@ describe("LLM API Tests", () => {
 
             const response = await supertest(app)
                 .post(`/api/llm/chat/${testChatId}/messages/stream`)
-                
+
                 .send({
                     content: "What is the meaning of life?",
                     useAdvancedContext: false,
@@ -525,10 +526,10 @@ describe("LLM API Tests", () => {
                 });
 
             expect(response.status).toBe(200);
-            
+
             // Import ws service to access mock
             const ws = (await import("../../services/ws.js")).default;
-            
+
             // Verify thinking messages
             expect(ws.sendMessageToAllClients).toHaveBeenCalledWith({
                 type: 'llm-stream',
@@ -536,7 +537,7 @@ describe("LLM API Tests", () => {
                 thinking: 'Analyzing the question...',
                 done: false
             });
-            
+
             expect(ws.sendMessageToAllClients).toHaveBeenCalledWith({
                 type: 'llm-stream',
                 chatNoteId: testChatId,
@@ -564,7 +565,7 @@ describe("LLM API Tests", () => {
 
             const response = await supertest(app)
                 .post(`/api/llm/chat/${testChatId}/messages/stream`)
-                
+
                 .send({
                     content: "What is 2 + 2?",
                     useAdvancedContext: false,
@@ -572,10 +573,10 @@ describe("LLM API Tests", () => {
                 });
 
             expect(response.status).toBe(200);
-            
+
             // Import ws service to access mock
             const ws = (await import("../../services/ws.js")).default;
-            
+
             // Verify tool execution message
             expect(ws.sendMessageToAllClients).toHaveBeenCalledWith({
                 type: 'llm-stream',
@@ -597,7 +598,7 @@ describe("LLM API Tests", () => {
 
             const response = await supertest(app)
                 .post(`/api/llm/chat/${testChatId}/messages/stream`)
-                
+
                 .send({
                     content: "This will fail",
                     useAdvancedContext: false,
@@ -605,10 +606,10 @@ describe("LLM API Tests", () => {
                 });
 
             expect(response.status).toBe(200); // Still returns 200
-            
+
             // Import ws service to access mock
             const ws = (await import("../../services/ws.js")).default;
-            
+
             // Verify error message was sent via WebSocket
             expect(ws.sendMessageToAllClients).toHaveBeenCalledWith({
                 type: 'llm-stream',
@@ -625,7 +626,7 @@ describe("LLM API Tests", () => {
 
             const response = await supertest(app)
                 .post(`/api/llm/chat/${testChatId}/messages/stream`)
-                
+
                 .send({
                     content: "Hello AI",
                     useAdvancedContext: false,
@@ -633,10 +634,10 @@ describe("LLM API Tests", () => {
                 });
 
             expect(response.status).toBe(200);
-            
+
             // Import ws service to access mock
             const ws = (await import("../../services/ws.js")).default;
-            
+
             // Verify error message about AI being disabled
             expect(ws.sendMessageToAllClients).toHaveBeenCalledWith({
                 type: 'llm-stream',
@@ -655,7 +656,7 @@ describe("LLM API Tests", () => {
 
             await supertest(app)
                 .post(`/api/llm/chat/${testChatId}/messages/stream`)
-                
+
                 .send({
                     content: "Save this response",
                     useAdvancedContext: false,
@@ -680,10 +681,10 @@ describe("LLM API Tests", () => {
             });
 
             // Send multiple requests rapidly
-            const promises = Array.from({ length: 3 }, (_, i) => 
+            const promises = Array.from({ length: 3 }, (_, i) =>
                 supertest(app)
                     .post(`/api/llm/chat/${testChatId}/messages/stream`)
-                    
+
                     .send({
                         content: `Request ${i + 1}`,
                         useAdvancedContext: false,
@@ -692,7 +693,7 @@ describe("LLM API Tests", () => {
             );
 
             const responses = await Promise.all(promises);
-            
+
             // All should succeed
             responses.forEach(response => {
                 expect(response.status).toBe(200);
@@ -716,7 +717,7 @@ describe("LLM API Tests", () => {
 
             const response = await supertest(app)
                 .post(`/api/llm/chat/${testChatId}/messages/stream`)
-                
+
                 .send({
                     content: "Generate large response",
                     useAdvancedContext: false,
@@ -724,10 +725,10 @@ describe("LLM API Tests", () => {
                 });
 
             expect(response.status).toBe(200);
-            
+
             // Import ws service to access mock
             const ws = (await import("../../services/ws.js")).default;
-            
+
             // Verify multiple chunks were sent
             const streamCalls = (ws.sendMessageToAllClients as any).mock.calls.filter(
                 call => call[0].type === 'llm-stream' && call[0].content
@@ -741,7 +742,7 @@ describe("LLM API Tests", () => {
             const response = await supertest(app)
                 .post("/api/llm/chat")
                 .set('Content-Type', 'application/json')
-                
+
                 .send('{ invalid json }');
 
             expect([400, 500]).toContain(response.status);
@@ -750,7 +751,7 @@ describe("LLM API Tests", () => {
         it("should handle missing required fields", async () => {
             const response = await supertest(app)
                 .post("/api/llm/chat")
-                
+
                 .send({
                     // Missing required fields
                 });
@@ -762,7 +763,7 @@ describe("LLM API Tests", () => {
         it("should handle invalid parameter types", async () => {
             const response = await supertest(app)
                 .post("/api/llm/chat")
-                
+
                 .send({
                     title: "Test Chat",
                     temperature: "invalid", // Should be number

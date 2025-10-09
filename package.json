@@ -37,7 +37,7 @@
   "private": true,
   "devDependencies": {
     "@electron/rebuild": "4.0.1",
-    "@playwright/test": "1.55.1",
+    "@playwright/test": "1.56.0",
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.3",
     "@types/node": "22.18.8",
@@ -59,7 +59,7 @@
     "tslib": "2.8.1",
     "tsx": "4.20.6",
     "typescript": "~5.9.0",
-    "typescript-eslint": "8.45.0",
+    "typescript-eslint": "8.46.0",
     "upath": "2.0.1",
     "vite": "7.1.9",
     "vite-plugin-dts": "~4.5.0",
@@ -79,7 +79,7 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@10.18.0",
+  "packageManager": "pnpm@10.18.1",
   "pnpm": {
     "patchedDependencies": {
       "@ckeditor/ckeditor5-mention": "patches/@ckeditor__ckeditor5-mention.patch",
@@ -90,7 +90,7 @@
       "mermaid": "11.12.0",
       "preact": "10.27.2",
       "roughjs": "4.6.6",
-      "@types/express-serve-static-core": "5.0.7",
+      "@types/express-serve-static-core": "5.1.0",
       "flat@<5.0.1": ">=5.0.1",
       "debug@>=3.2.0 <3.2.7": ">=3.2.7",
       "nanoid@<3.3.8": ">=3.3.8",

@@ -263,7 +263,8 @@ legăturile descrise în secțiunea „Discutați cu noi” de mai sus.
 
 * [zadam](https://github.com/zadam) pentru conceptul și implementarea originală
   a aplicației.
-* [Larsa](https://github.com/LarsaSara) pentru pictograma aplicației.
+* [Sarah Hussein](https://github.com/Sarah-Hussein) for designing the
+  application icon.
 * [nriver](https://github.com/nriver) pentru sistemul de internaționalizare.
 * [Thomas Frei](https://github.com/thfrei) pentru munca sa originală pentru
   notițele de tip schiță.

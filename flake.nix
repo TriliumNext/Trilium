@@ -200,7 +200,7 @@
           # '/build/source/apps/desktop/node_modules/better-sqlite3/build/node_gyp_bins'
           preBuildCommands = ''
             export npm_config_nodedir=${electron.headers}
-            pnpm postinstall || true
+            pnpm postinstall
           '';
           buildTask = "desktop:build";
           mainProgram = "trilium";

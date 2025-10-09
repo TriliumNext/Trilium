@@ -71,6 +71,7 @@ export const LOCALE_MAPPINGS: Record<LOCALE_IDS, (() => Promise<{ default: Local
     ro: () => import("@fullcalendar/core/locales/ro"),
     ru: () => import("@fullcalendar/core/locales/ru"),
     ja: () => import("@fullcalendar/core/locales/ja"),
+    pt: () => import("@fullcalendar/core/locales/pt"),
     "pt_br": () => import("@fullcalendar/core/locales/pt-br"),
     uk: () => import("@fullcalendar/core/locales/uk"),
     en: null

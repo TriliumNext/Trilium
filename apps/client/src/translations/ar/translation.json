@@ -1,5 +1,31 @@
 {
   "about": {
-    "title": "حول تريليوم للملاحظات"
+    "title": "حول تريليوم للملاحظات",
+    "homepage": "الصفحة الرئيسية:",
+    "app_version": "نسخة التطبيق:",
+    "sync_version": "اصدار المزامنه:",
+    "build_date": "تاريخ الانشاء:",
+    "build_revision": "مراجعة الاصدار:",
+    "data_directory": "مجلد البيانات:"
+  },
+  "toast": {
+    "critical-error": {
+      "title": "خطأ فادح"
+    }
+  },
+  "add_link": {
+    "add_link": "أضافة رابط",
+    "note": "ملاحظة",
+    "search_note": "البحث عن الملاحظة بالاسم",
+    "link_title": "عنوان الرابط",
+    "button_add_link": "اضافة رابط"
+  },
+  "branch_prefix": {
+    "edit_branch_prefix": "تعديل بادئة الفرع",
+    "prefix": "البادئة: ",
+    "save": "حفظ"
+  },
+  "bulk_actions": {
+    "bulk_actions": "اجراءات جماعية"
   }
 }

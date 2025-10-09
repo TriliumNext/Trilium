@@ -261,7 +261,8 @@ described in the "Discuss with us" section above.
 
 * [zadam](https://github.com/zadam) for the original concept and implementation
   of the application.
-* [Larsa](https://github.com/LarsaSara) for designing the application icon.
+* [Sarah Hussein](https://github.com/Sarah-Hussein) for designing the
+  application icon.
 * [nriver](https://github.com/nriver) for his work on internationalization.
 * [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
 * [antoniotejada](https://github.com/nriver) for the original syntax highlight
@@ -307,7 +308,7 @@ Consider supporting the main developer
 
 ## 🔑 Лицензия
 
-Copyright 2017-2025 zadam, Elian Doran, and other contributors
+Copyright 2017-2025 zadam, Elian Doran и другие авторы
 
 Эта программа является бесплатным программным обеспечением: вы можете
 распространять и/или изменять ее в соответствии с условиями GNU Affero General

@@ -11,6 +11,9 @@ on:
     paths:
       - "apps/website/**"
 
+  release:
+    types: [ released ]
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest

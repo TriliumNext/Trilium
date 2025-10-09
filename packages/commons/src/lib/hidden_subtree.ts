@@ -49,4 +49,9 @@ export interface HiddenSubtreeItem {
      * the user moves it around.
      */
     enforceBranches?: boolean;
+    /**
+     * If set to true, then the attributes of this note will be checked. Any owned attribute that does not match the
+     * definitions will be removed.
+     */
+    enforceAttributes?: boolean;
 }

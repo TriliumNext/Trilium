@@ -1,6 +1,7 @@
 import utils from "../services/utils.js";
 import BNote from "../becca/entities/bnote.js";
 import BAttribute from "../becca/entities/battribute.js";
+import BBranch from "../becca/entities/bbranch.js";
 
 type AttributeDefinitions = { [key in `#${string}`]: string; };
 type RelationDefinitions = { [key in `~${string}`]: string; };
@@ -9,6 +10,7 @@ interface NoteDefinition extends AttributeDefinitions, RelationDefinitions {
     id?: string | undefined;
     title?: string;
     content?: string;
+    children?: NoteDefinition[];
 }
 
 /**
@@ -49,6 +51,18 @@ export function buildNote(noteDef: NoteDefinition) {
     // Handle content.
     if (noteDef.content) {
         note.getContent = () => noteDef.content!;
+    }
+
+    // Handle children
+    if (noteDef.children) {
+        for (const childDef of noteDef.children) {
+            const childNote = buildNote(childDef);
+            new BBranch({
+                noteId: childNote.noteId,
+                parentNoteId: note.noteId,
+                branchId: `${note.noteId}_${childNote.noteId}`
+            });
+        }
     }
 
     // Handle labels and relations.

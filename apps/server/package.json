@@ -110,7 +110,7 @@
     "multer": "2.0.2",
     "normalize-strings": "1.1.1",
     "ollama": "0.6.0",
-    "openai": "6.1.0",
+    "openai": "6.2.0",
     "rand-token": "1.0.1",
     "safe-compare": "1.1.4",
     "sanitize-filename": "1.6.3",

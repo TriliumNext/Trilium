@@ -1,6 +1,6 @@
 {
 	"formatVersion": 2,
-	"appVersion": "0.98.1",
+	"appVersion": "0.99.1",
 	"files": [
 		{
 			"isClone": false,
@@ -60,6 +60,13 @@
 							"value": "dayGridMonth",
 							"isInheritable": false,
 							"position": 40
+						},
+						{
+							"type": "relation",
+							"name": "dateTemplate",
+							"value": "bRQvb9VCkc3t",
+							"isInheritable": false,
+							"position": 50
 						}
 					],
 					"dataFileName": "Journal.dat",
@@ -75,7 +82,7 @@
 					"title": "Trilium Demo",
 					"notePosition": 20,
 					"prefix": null,
-					"isExpanded": true,
+					"isExpanded": false,
 					"type": "text",
 					"mime": "text/html",
 					"attributes": [
@@ -6031,6 +6038,68 @@
 									"attachments": []
 								}
 							]
+						}
+					]
+				},
+				{
+					"isClone": false,
+					"noteId": "fhNlr1V1o3d8",
+					"notePath": [
+						"root",
+						"fhNlr1V1o3d8"
+					],
+					"title": "Miscellaneous",
+					"notePosition": 30,
+					"prefix": null,
+					"isExpanded": false,
+					"type": "text",
+					"mime": "text/html",
+					"attributes": [
+						{
+							"type": "label",
+							"name": "iconClass",
+							"value": "bx bx-dots-horizontal-rounded",
+							"isInheritable": false,
+							"position": 10
+						}
+					],
+					"format": "html",
+					"attachments": [],
+					"dirFileName": "Miscellaneous",
+					"children": [
+						{
+							"isClone": false,
+							"noteId": "bRQvb9VCkc3t",
+							"notePath": [
+								"root",
+								"fhNlr1V1o3d8",
+								"bRQvb9VCkc3t"
+							],
+							"title": "Day Note Template",
+							"notePosition": 10,
+							"prefix": null,
+							"isExpanded": false,
+							"type": "text",
+							"mime": "text/html",
+							"attributes": [
+								{
+									"type": "label",
+									"name": "iconClass",
+									"value": "bx bx-notepad",
+									"isInheritable": false,
+									"position": 10
+								},
+								{
+									"type": "label",
+									"name": "excludeFromNoteMap",
+									"value": "",
+									"isInheritable": false,
+									"position": 20
+								}
+							],
+							"format": "html",
+							"dataFileName": "Day Note Template.html",
+							"attachments": []
 						}
 					]
 				}

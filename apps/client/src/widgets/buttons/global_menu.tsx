@@ -58,7 +58,7 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
             <KeyboardActionMenuItem command="showHelp" icon="bx bx-help-circle" text={t("global_menu.show_help")} />
             <KeyboardActionMenuItem command="showCheatsheet" icon="bx bxs-keyboard" text={t("global_menu.show-cheatsheet")} />
             <MenuItem command="openAboutDialog" icon="bx bx-info-circle" text={t("global_menu.about")} />
-            {isUpdateAvailable && <MenuItem command={() => window.open("https://github.com/TriliumNext/Trilium/releases/latest")} icon="bx bx-sync" text={`Version ${latestVersion} is available, click to download.`} /> }
+            {isUpdateAvailable && <MenuItem command={() => window.open("https://github.com/TriliumNext/Trilium/releases/latest")} icon="bx bx-sync" text={t("global_menu.update_available", { latestVersion })} /> }
             {!isElectron() && <BrowserOnlyOptions />}
         </Dropdown>
     )

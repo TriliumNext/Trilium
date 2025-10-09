@@ -40,8 +40,8 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
         // we want to keep the hidden subtree always last, otherwise there will be problems with e.g., keyboard navigation
         // over tree when it's in the middle
         notePosition: 999_999_999,
+        enforceAttributes: true,
         attributes: [
-            { type: "label", name: "excludeFromNoteMap", isInheritable: true },
             { type: "label", name: "docName", value: "hidden" }
         ],
         children: [
@@ -438,6 +438,15 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
         if (item.isExpanded !== undefined && branch.isExpanded !== item.isExpanded) {
             branch.isExpanded = item.isExpanded;
             branch.save();
+        }
+    }
+
+    // Enforce attribute structure if needed.
+    if (item.enforceAttributes) {
+        for (const attribute of note.getAttributes()) {
+            if (!attrs.some(a => a.name === attribute.name)) {
+                attribute.markAsDeleted();
+            }
         }
     }
 

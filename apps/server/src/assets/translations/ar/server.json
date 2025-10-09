@@ -1,1 +1,23 @@
-{}
+{
+  "keyboard_actions": {
+    "open-jump-to-note-dialog": "فتح مربع الحوار \"الانتقال الى الملاحظة\"",
+    "open-command-palette": "فتح لوحة الاوامر",
+    "quick-search": "تفعيل شريط البحث السريع",
+    "collapse-tree": "طي جميع الملاحظات",
+    "collapse-subtree": "طي الفروع التابعة للملاحظة الحالية",
+    "sort-child-notes": "فرز الملاحظات الفرعية",
+    "creating-and-moving-notes": "انشاء الملاحظات ونقلها",
+    "create-note-after": "انشاء ملاحظة بعد الملاحظة الحالية",
+    "create-note-into": "انشاء ملاحظة فرعية تابعة للملاحظة الحالية",
+    "delete-note": "حذف ملاحظة",
+    "move-note-up": "نقل الملاحظة للاعلى",
+    "move-note-down": "نثل الملاحظة للاسفل",
+    "clone-notes-to": "استنساخ الملاحظات المحددة",
+    "move-notes-to": "نقل الملاحظات للمحددة",
+    "note-clipboard": "حافظة الملاحظات",
+    "copy-notes-to-clipboard": "نسخ الملاحظات المحددة الى الحافظة",
+    "paste-notes-from-clipboard": "لصق الملاحظا من الحافظة الى الملاحظة الحالية",
+    "cut-notes-to-clipboard": "قص الملاحظات المحددة الى الحافظة",
+    "select-all-notes-in-parent": "تحديد جميع الملاحظات من مستوى الملاحظة الحالي"
+  }
+}

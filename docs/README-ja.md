@@ -215,7 +215,8 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 ## 👏 シャウトアウト
 
 * [zadam](https://github.com/zadam) アプリケーションのオリジナルのコンセプトと実装に対して感謝します。
-* [Larsa](https://github.com/LarsaSara) アプリケーションアイコンをデザイン。
+* [Sarah Hussein](https://github.com/Sarah-Hussein) for designing the
+  application icon.
 * [nriver](https://github.com/nriver) 国際化への取り組み。
 * [Thomas Frei](https://github.com/thfrei) Canvasへのオリジナルな取り組み。
 * [antoniotejada](https://github.com/nriver) オリジナルの構文ハイライトウィジェット。

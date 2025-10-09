@@ -7,7 +7,7 @@ import hidden_subtree from "./hidden_subtree.js";
 import { LOCALES, type Locale, type LOCALE_IDS } from "@triliumnext/commons";
 import dayjs, { Dayjs } from "dayjs";
 
-const DAYJS_LOADER: Record<LOCALE_IDS, () => Promise<typeof import("dayjs/locale/en.js")>> = {
+export const DAYJS_LOADER: Record<LOCALE_IDS, () => Promise<typeof import("dayjs/locale/en.js")>> = {
     "ar": () => import("dayjs/locale/ar.js"),
     "cn": () => import("dayjs/locale/zh-cn.js"),
     "de": () => import("dayjs/locale/de.js"),
@@ -19,6 +19,7 @@ const DAYJS_LOADER: Record<LOCALE_IDS, () => Promise<typeof import("dayjs/locale
     "ja": () => import("dayjs/locale/ja.js"),
     "ku": () => import("dayjs/locale/ku.js"),
     "pt_br": () => import("dayjs/locale/pt-br.js"),
+    "pt": () => import("dayjs/locale/pt.js"),
     "ro": () => import("dayjs/locale/ro.js"),
     "ru": () => import("dayjs/locale/ru.js"),
     "tw": () => import("dayjs/locale/zh-tw.js"),

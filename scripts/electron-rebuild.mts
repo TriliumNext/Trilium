@@ -23,7 +23,7 @@ function copyNativeDependencies(projectRoot: string) {
     cpSync(sourcePath, destPath, { recursive: true, dereference: true });
 }
 
-function rebuildNativeDependencies(projectRoot: string) {
+async function rebuildNativeDependencies(projectRoot: string) {
     const electronVersion = determineElectronVersion(projectRoot);
 
     if (!electronVersion) {
@@ -35,7 +35,7 @@ function rebuildNativeDependencies(projectRoot: string) {
     console.log(`Rebuilding ${projectRoot} with ${electronVersion} for ${targetArch}...`);
 
     const resolvedPath = resolve(projectRoot);
-    rebuild({
+    await rebuild({
         projectRootPath: resolvedPath,
         buildPath: resolvedPath,
         electronVersion,
@@ -64,5 +64,5 @@ function determineElectronVersion(projectRoot: string) {
 
 for (const projectRoot of [ "apps/desktop", "apps/edit-docs" ]) {
     copyNativeDependencies(projectRoot);
-    rebuildNativeDependencies(projectRoot);
+    await rebuildNativeDependencies(projectRoot);
 }
