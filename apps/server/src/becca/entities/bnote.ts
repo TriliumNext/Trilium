@@ -89,9 +89,9 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return ["noteId", "title", "isProtected", "type", "mime", "blobId"];
     }
 
-    private _normalizedTitle?: string;
+    _normalizedTitle?: string;
     /** Cached trigrams for the note title */
-    private _titleTrigrams?: Set<string>;
+    _titleTrigrams?: Set<string>;
 
     noteId!: string;
     title!: string;

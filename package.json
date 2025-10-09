@@ -122,6 +122,7 @@
     ]
   },
   "dependencies": {
+    "bloom-filters": "3.0.4",
     "fuzzysort": "3.1.0"
   }
 }

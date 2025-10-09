@@ -4,7 +4,7 @@ import normalizeString from "normalize-strings";
 import lex from "./lex.js";
 import handleParens from "./handle_parens.js";
 import parse from "./parse.js";
-import SearchResult from "../search_result.js";
+import SearchResult, { rankSearchResults } from "../search_result.js";
 import SearchContext from "../search_context.js";
 import becca from "../../../becca/becca.js";
 import beccaService from "../../../becca/becca_service.js";
@@ -19,6 +19,33 @@ import sql from "../../sql.js";
 import scriptService from "../../script.js";
 import striptags from "striptags";
 import protectedSessionService from "../../protected_session.js";
+
+import NoteSet from "../note_set.js";
+
+type CacheValue = { query: string; results: SearchResult[]; searchContext: SearchContext };
+
+class SearchCache {
+  private map = new Map<string, CacheValue>();
+  constructor(private maxSize = 100) {}
+
+  set(key: string, value: CacheValue) {
+    this.map.set(key, value);
+    if (this.map.size > this.maxSize) {
+      const oldest = this.map.keys().next().value;
+      if (oldest) this.map.delete(oldest);
+    }
+  }
+
+  get(key: string): CacheValue | undefined {
+    return this.map.get(key);
+  }
+
+  clear() {
+    this.map.clear();
+  }
+}
+
+const searchCache = new SearchCache(100);
 
 export interface SearchNoteResult {
     searchResultNoteIds: string[];
@@ -56,7 +83,7 @@ function searchFromNote(note: BNote): SearchNoteResult {
             fuzzyAttributeSearch: false
         });
 
-        searchResultNoteIds = findResultsWithQuery(searchString, searchContext).map((sr) => sr.noteId);
+        searchResultNoteIds = findResultsWithQueryIncremental(searchString, searchContext).map((sr) => sr.noteId);
 
         highlightedTokens = searchContext.highlightedTokens;
         error = searchContext.getError();
@@ -297,36 +324,34 @@ function performSearch(
     }
 
     // Main filtering
-    const searchResults = noteSet.notes
-        .filter(note => {
-            if (!searchContext.includeArchivedNotes && note.isArchived) return false;
-            if (!searchContext.includeHiddenNotes && note.isInHiddenSubtree()) return false;
-            return true;
-        })
-        .map(note => {
-            const notePathArray =
-                executionContext.noteIdToNotePath[note.noteId] || note.getBestNotePath();
+    const filteredNotes = noteSet.notes.filter(note => {
+        if (!searchContext.includeArchivedNotes && note.isArchived) return false;
+        if (!searchContext.includeHiddenNotes && note.isInHiddenSubtree()) return false;
+        return true;
+    });
 
-            if (!notePathArray) {
-                throw new Error(
-                    `Can't find note path for note ${JSON.stringify(note.getPojo())}`
-                );
-            }
+    // ✅ replaced per-note computeScore loop with rankSearchResults
+    const notePaths = filteredNotes.map(note => {
+        const notePathArray =
+            executionContext.noteIdToNotePath[note.noteId] || note.getBestNotePath();
+        if (!notePathArray) {
+            throw new Error(
+                `Can't find note path for note ${JSON.stringify(note.getPojo())}`
+            );
+        }
+        return notePathArray;
+    });
 
-            return new SearchResult(notePathArray);
-        });
+    const searchResults = rankSearchResults(
+        notePaths,
+        searchContext.fulltextQuery,
+        searchContext.highlightedTokens,
+        enableFuzzyMatching
+    );
 
-    // Compute scores
+    // Preserve fine-tuning logic
     for (const res of searchResults) {
-        res.computeScore(
-            searchContext.fulltextQuery,
-            searchContext.highlightedTokens,
-            enableFuzzyMatching
-        );
-
-        // Optional fine-tuning: disable fuzzy for title if fuzzyAttributeSearch only
         if (!enableFuzzyMatching && searchContext.fuzzyAttributeSearch) {
-            // Re-score attributes only, skip fuzzy on title
             res.computeScore(
                 searchContext.fulltextQuery,
                 searchContext.highlightedTokens,
@@ -334,7 +359,6 @@ function performSearch(
             );
         }
 
-        // If ignoring internal attributes, reduce their weight
         if (searchContext.ignoreInternalAttributes) {
             const note = becca.notes[res.noteId];
             const internalAttrs = note.getAttributes()?.filter(a => a.name.startsWith("_")) || [];
@@ -350,7 +374,6 @@ function performSearch(
 
     // Optional fast-search mode (e.g. autocomplete)
     if (searchContext.fastSearch) {
-        // Skip fuzzy rescoring & heavy sorting logic
         return searchResults
             .filter(r => r.score > 0)
             .sort((a, b) => b.score - a.score)
@@ -474,6 +497,82 @@ function findResultsWithQuery(query: string, searchContext: SearchContext): Sear
     }
 
     return findResultsWithExpression(expression, searchContext);
+}
+
+function findResultsWithQueryIncremental(
+    query: string,
+    searchContext: SearchContext
+): SearchResult[] {
+    query = query || "";
+    const lowerQuery = query.toLowerCase();
+    searchContext.originalQuery = query;
+
+    // Immediate cache hit
+    const cachedHit = searchCache.get(lowerQuery);
+    if (cachedHit) {
+        return cachedHit.results;
+    }
+
+    // Find the longest cached prefix
+    let prefix: string | undefined;
+    for (const key of (searchCache as any).map.keys()) {
+        if (lowerQuery.startsWith(key)) {
+            if (!prefix || key.length > prefix.length) {
+                prefix = key;
+            }
+        }
+    }
+
+    const expression = parseQueryToExpression(query, searchContext);
+    if (!expression) {
+        searchCache.set(lowerQuery, { query, results: [], searchContext });
+        return [];
+    }
+
+    const isPureExpressionQuery = query.trim().startsWith("#");
+    let results: SearchResult[];
+
+    if (isPureExpressionQuery) {
+        // Expression queries — use normal full search
+        results = performSearch(expression, searchContext, searchContext.enableFuzzyMatching);
+    }
+    // First character or no cached prefix → full expression search
+    else if (!prefix) {
+        results = findResultsWithExpression(expression, searchContext);
+    }
+    // Later keystrokes: reuse cached prefix results
+    else {
+        const cachedPrefix = searchCache.get(prefix);
+        if (cachedPrefix) {
+            const candidateNotes = cachedPrefix.results
+            .map(r => becca.notes[r.noteId])
+            .filter(Boolean);
+            const candidateSet = new NoteSet(candidateNotes);
+
+            const execCtx = { noteIdToNotePath: {} };
+            const noteSet = expression.execute(candidateSet, execCtx, searchContext);
+
+            results = noteSet.notes.map(note => {
+                const path = execCtx.noteIdToNotePath[note.noteId] || note.getBestNotePath();
+                return new SearchResult(path);
+            });
+
+            results.sort((a, b) => a.notePathTitle.localeCompare(b.notePathTitle));
+        } else {
+            results = findResultsWithExpression(expression, searchContext);
+        }
+    }
+
+    // Cache results and prune supersets
+    searchCache.set(lowerQuery, { query, results, searchContext });
+
+    for (const k of (searchCache as any).map.keys()) {
+        if (k.length > lowerQuery.length && k.startsWith(lowerQuery)) {
+            (searchCache as any).map.delete(k);
+        }
+    }
+
+    return results;
 }
 
 function findFirstNoteWithQuery(query: string, searchContext: SearchContext): BNote | null {
@@ -696,8 +795,8 @@ function searchNotesForAutocomplete(query: string, fastSearch: boolean = true) {
     return trimmed.map((result) => {
         const { title, icon } = beccaService.getNoteTitleAndIcon(result.noteId);
         return {
-            noteId: result.noteId, // ✅ raw noteId
-            highlightedNoteId: result.highlightedNoteId, // ✅ bold-highlighted version
+            noteId: result.noteId,
+            highlightedNoteId: result.highlightedNoteId,
             notePath: result.notePath,
             noteTitle: title,
             notePathTitle: result.notePathTitle,
@@ -816,6 +915,7 @@ export default {
     searchFromNote,
     searchNotesForAutocomplete,
     findResultsWithQuery,
+    findResultsWithQueryIncremental, // ✅ new export
     findFirstNoteWithQuery,
     searchNotes
 };

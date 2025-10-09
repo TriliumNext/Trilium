@@ -10,7 +10,6 @@ import { Dropdown, Tooltip } from "bootstrap";
 
 const TPL = /*html*/`
 <div class="quick-search input-group input-group-sm">
-<<<<<<< HEAD
   <style>
     .quick-search {
         padding: 10px 10px 10px 0px;
@@ -117,8 +116,6 @@ const TPL = /*html*/`
 
   </style>
 
-=======
->>>>>>> 77073717c (feat(jump-to and quicksearch): add search for noteid)
   <div class="input-group-prepend">
     <button class="btn btn-outline-secondary search-button" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         <span class="bx bx-search"></span>
