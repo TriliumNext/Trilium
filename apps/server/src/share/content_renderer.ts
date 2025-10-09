@@ -32,7 +32,7 @@ export function getContent(note: SNote) {
     };
 
     if (note.type === "text") {
-        renderText(result, note);
+        renderText(result, note, relativePath);
     } else if (note.type === "code") {
         renderCode(result);
     } else if (note.type === "mermaid") {
@@ -106,10 +106,10 @@ function renderText(result: Result, note: SNote) {
 
         if (result.content.includes(`<span class="math-tex">`)) {
             result.header += `
-<script src="../${assetPath}/node_modules/katex/dist/katex.min.js"></script>
-<link rel="stylesheet" href="../${assetPath}/node_modules/katex/dist/katex.min.css">
-<script src="../${assetPath}/node_modules/katex/dist/contrib/auto-render.min.js"></script>
-<script src="../${assetPath}/node_modules/katex/dist/contrib/mhchem.min.js"></script>
+<script src="${relativePath}${assetPath}/node_modules/katex/dist/katex.min.js"></script>
+<link rel="stylesheet" href="${relativePath}${assetPath}/node_modules/katex/dist/katex.min.css">
+<script src="${relativePath}${assetPath}/node_modules/katex/dist/contrib/auto-render.min.js"></script>
+<script src="${relativePath}${assetPath}/node_modules/katex/dist/contrib/mhchem.min.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     renderMathInElement(document.getElementById('content'));

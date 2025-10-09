@@ -97,6 +97,8 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "allowedHtmlTags",
     "redirectBareDomain",
     "showLoginInShareTheme",
+    "shareSubtree",
+    "sharePath",
     "splitEditorOrientation",
     "seenCallToActions",
 

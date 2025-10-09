@@ -81,7 +81,7 @@
 </head>
 <%
 const customLogoId = subRoot.note.getRelation("shareLogo")?.value;
-const logoUrl = customLogoId ? `api/images/${customLogoId}/image.png` : `../${assetUrlFragment}/images/icon-color.svg`;
+const logoUrl = customLogoId ? `api/images/${customLogoId}/image.png` : `${relativePath}${assetUrlFragment}/images/icon-color.svg`;
 const logoWidth = subRoot.note.getLabelValue("shareLogoWidth") ?? 53;
 const logoHeight = subRoot.note.getLabelValue("shareLogoHeight") ?? 40;
 const mobileLogoHeight = logoHeight && logoWidth ? 32 / (logoWidth / logoHeight) : "";
