@@ -56,6 +56,7 @@ class SearchResult {
     highlightedContentSnippet?: string;
     attributeSnippet?: string;
     highlightedAttributeSnippet?: string;
+    highlightedNoteId?: string; // ✅ <-- Add this line
     private fuzzyScore: number;
 
     constructor(notePathArray: string[]) {
