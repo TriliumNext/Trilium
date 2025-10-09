@@ -146,7 +146,7 @@ chrome.runtime.onMessage.addListener(request => {
         if (isConnected) {
             $needsConnection.removeAttr("disabled");
             $needsConnection.removeAttr("title");
-            chrome.runtime.sendMessage({name: "trigger-trilium-search-note-url"});
+            sendMessage({name: "trigger-trilium-search-note-url"});
         }
         else {
             $needsConnection.attr("disabled", "disabled");
@@ -172,9 +172,9 @@ chrome.runtime.onMessage.addListener(request => {
 const $checkConnectionButton = $("#check-connection-button");
 
 $checkConnectionButton.on("click", () => {
-    chrome.runtime.sendMessage({
+    sendMessage({
         name: "trigger-trilium-search"
     })
 });
 
-$(() => chrome.runtime.sendMessage({name: "send-trilium-search-status"}));
+$(() => sendMessage({name: "send-trilium-search-status"}));

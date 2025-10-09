@@ -65,62 +65,60 @@ class TriliumServerFacade {
 		}
 	}
 
+	async fetchTriliumHandshake(url, headers = {}) {
+		const resp = await fetch(url, { headers });
+		const text = await resp.text();
+
+		console.log("Received response:", text);
+
+		const json = JSON.parse(text);
+
+		if (json.appName !== 'trilium') {
+			throw new Error('Not a Trilium server response');
+		}
+
+		return json;
+	}
+
 	async triggerSearchForTrilium() {
 		this.setTriliumSearch({ status: 'searching' });
 
+		// Try desktop connection first
 		try {
 			const port = await this.getPort();
-
 			console.debug('Trying port ' + port);
 
-			const resp = await fetch(`http://127.0.0.1:${port}/api/clipper/handshake`);
+			const json = await this.fetchTriliumHandshake(`http://127.0.0.1:${port}/api/clipper/handshake`);
 
-			const text = await resp.text();
+			this.setTriliumSearchWithVersionCheck(json, {
+				status: 'found-desktop',
+				port: port,
+				url: 'http://127.0.0.1:' + port
+			});
 
-			console.log("Received response:", text);
-
-			const json = JSON.parse(text);
-
-			if (json.appName === 'trilium') {
-				this.setTriliumSearchWithVersionCheck(json, {
-					status: 'found-desktop',
-					port: port,
-					url: 'http://127.0.0.1:' + port
-				});
-
-				return;
-			}
+			return;
 		}
 		catch (error) {
-			// continue
+			// continue to server connection attempt
 		}
 
 		const {triliumServerUrl} = await chrome.storage.sync.get("triliumServerUrl");
 		const {authToken} = await chrome.storage.sync.get("authToken");
 
+		// Try server connection
 		if (triliumServerUrl && authToken) {
 			try {
-				const resp = await fetch(triliumServerUrl + '/api/clipper/handshake', {
-					headers: {
-						Authorization: authToken
-					}
+				const json = await this.fetchTriliumHandshake(triliumServerUrl + '/api/clipper/handshake', {
+					Authorization: authToken
 				});
 
-				const text = await resp.text();
+				this.setTriliumSearchWithVersionCheck(json, {
+					status: 'found-server',
+					url: triliumServerUrl,
+					token: authToken
+				});
 
-				console.log("Received response:", text);
-
-				const json = JSON.parse(text);
-
-				if (json.appName === 'trilium') {
-					this.setTriliumSearchWithVersionCheck(json, {
-						status: 'found-server',
-						url: triliumServerUrl,
-						token: authToken
-					});
-
-					return;
-				}
+				return;
 			}
 			catch (e) {
 				console.log("Request to the configured server instance failed with:", e);
