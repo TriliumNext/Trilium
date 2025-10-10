@@ -165,6 +165,7 @@ export default class Entrypoints extends Component {
             return;
         }
         const { ntxId, note } = noteContext;
+        console.log("Run active note");
 
         // ctrl+enter is also used elsewhere, so make sure we're running only when appropriate
         if (!note || note.type !== "code") {

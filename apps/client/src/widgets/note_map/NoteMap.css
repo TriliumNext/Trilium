@@ -1,0 +1,57 @@
+.note-detail-note-map {
+            height: 100%;
+    overflow: hidden;
+}
+
+/* Style Ui Element to Drag Nodes */
+.fixnodes-type-switcher {
+    display: flex;
+    align-items: center;
+    z-index: 10; /* should be below dropdown (note actions) */
+    border-radius: .2rem;
+}
+
+/* Start of styling the slider */
+.fixnodes-type-switcher input[type="range"] {
+
+    /* removing default appearance */
+    -webkit-appearance: none;
+    appearance: none;
+    margin-inline-start: 15px;
+    width: 150px;
+}
+
+/* Changing slider tracker */
+.fixnodes-type-switcher input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    background-color: var(--main-border-color);
+    border-radius: 4px;
+}
+
+/* Changing Slider Thumb */
+.fixnodes-type-switcher input[type="range"]::-webkit-slider-thumb {
+    /* removing default appearance */
+    -webkit-appearance: none;
+    appearance: none;
+    /* creating a custom design */
+    height: 15px;
+    width: 15px;
+    margin-top:-5px;
+    background-color: var(--accented-background-color);
+    border: 1px solid var(--main-text-color);
+    border-radius: 50%;
+}
+
+.fixnodes-type-switcher input[type="range"]::-moz-range-track {
+    background-color: var(--main-border-color);
+    border-radius: 4px;
+}
+
+.fixnodes-type-switcher input[type="range"]::-moz-range-thumb {
+    background-color: var(--accented-background-color);
+    border-color: var(--main-text-color);
+    height: 10px;
+    width: 10px;
+}
+
+/* End of styling the slider */
