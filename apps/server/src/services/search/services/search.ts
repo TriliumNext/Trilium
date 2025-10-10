@@ -324,34 +324,36 @@ function performSearch(
     }
 
     // Main filtering
-    const filteredNotes = noteSet.notes.filter(note => {
-        if (!searchContext.includeArchivedNotes && note.isArchived) return false;
-        if (!searchContext.includeHiddenNotes && note.isInHiddenSubtree()) return false;
-        return true;
-    });
+    const searchResults = noteSet.notes
+        .filter(note => {
+            if (!searchContext.includeArchivedNotes && note.isArchived) return false;
+            if (!searchContext.includeHiddenNotes && note.isInHiddenSubtree()) return false;
+            return true;
+        })
+        .map(note => {
+            const notePathArray =
+                executionContext.noteIdToNotePath[note.noteId] || note.getBestNotePath();
 
-    // ✅ replaced per-note computeScore loop with rankSearchResults
-    const notePaths = filteredNotes.map(note => {
-        const notePathArray =
-            executionContext.noteIdToNotePath[note.noteId] || note.getBestNotePath();
-        if (!notePathArray) {
-            throw new Error(
-                `Can't find note path for note ${JSON.stringify(note.getPojo())}`
-            );
-        }
-        return notePathArray;
-    });
+            if (!notePathArray) {
+                throw new Error(
+                    `Can't find note path for note ${JSON.stringify(note.getPojo())}`
+                );
+            }
 
-    const searchResults = rankSearchResults(
-        notePaths,
-        searchContext.fulltextQuery,
-        searchContext.highlightedTokens,
-        enableFuzzyMatching
-    );
+            return new SearchResult(notePathArray);
+        });
 
-    // Preserve fine-tuning logic
+    // Compute scores
     for (const res of searchResults) {
+        res.computeScore(
+            searchContext.fulltextQuery,
+            searchContext.highlightedTokens,
+            enableFuzzyMatching
+        );
+
+        // Optional fine-tuning: disable fuzzy for title if fuzzyAttributeSearch only
         if (!enableFuzzyMatching && searchContext.fuzzyAttributeSearch) {
+            // Re-score attributes only, skip fuzzy on title
             res.computeScore(
                 searchContext.fulltextQuery,
                 searchContext.highlightedTokens,
@@ -359,6 +361,7 @@ function performSearch(
             );
         }
 
+        // If ignoring internal attributes, reduce their weight
         if (searchContext.ignoreInternalAttributes) {
             const note = becca.notes[res.noteId];
             const internalAttrs = note.getAttributes()?.filter(a => a.name.startsWith("_")) || [];
@@ -374,6 +377,7 @@ function performSearch(
 
     // Optional fast-search mode (e.g. autocomplete)
     if (searchContext.fastSearch) {
+        // Skip fuzzy rescoring & heavy sorting logic
         return searchResults
             .filter(r => r.score > 0)
             .sort((a, b) => b.score - a.score)
@@ -549,15 +553,32 @@ function findResultsWithQueryIncremental(
             .filter(Boolean);
             const candidateSet = new NoteSet(candidateNotes);
 
-            const execCtx = { noteIdToNotePath: {} };
-            const noteSet = expression.execute(candidateSet, execCtx, searchContext);
+            const executionContext = { noteIdToNotePath: {} };
+            const noteSet = expression.execute(candidateSet, executionContext, searchContext);
 
-            results = noteSet.notes.map(note => {
-                const path = execCtx.noteIdToNotePath[note.noteId] || note.getBestNotePath();
-                return new SearchResult(path);
+            const filteredNotes = noteSet.notes.filter(note => {
+                if (!searchContext.includeArchivedNotes && note.isArchived) return false;
+                if (!searchContext.includeHiddenNotes && note.isInHiddenSubtree()) return false;
+                return true;
             });
 
-            results.sort((a, b) => a.notePathTitle.localeCompare(b.notePathTitle));
+            const notePaths = filteredNotes.map(note => {
+                const notePathArray =
+                    executionContext.noteIdToNotePath[note.noteId] ||
+                        becca.notes[note.noteId]?.getBestNotePath() ||
+                        note.getBestNotePath();
+                if (!notePathArray) {
+                    throw new Error(`Can't find note path for note ${note.noteId}`);
+                }
+                return notePathArray;
+            });
+
+            results = rankSearchResults(
+                notePaths,
+                searchContext.fulltextQuery,
+                searchContext.highlightedTokens,
+                searchContext.enableFuzzyMatching
+            );
         } else {
             results = findResultsWithExpression(expression, searchContext);
         }
@@ -915,7 +936,7 @@ export default {
     searchFromNote,
     searchNotesForAutocomplete,
     findResultsWithQuery,
-    findResultsWithQueryIncremental, // ✅ new export
+    findResultsWithQueryIncremental,
     findFirstNoteWithQuery,
     searchNotes
 };
