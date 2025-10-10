@@ -6,8 +6,7 @@ import log from "../../log.js";
 import type { Request, Response } from "express";
 import type { Message } from "../ai_interface.js";
 import aiServiceManager from "../ai_service_manager.js";
-import { ChatPipeline } from "../pipeline/chat_pipeline.js";
-import type { ChatPipelineInput } from "../pipeline/interfaces.js";
+import pipelineV2, { type PipelineV2Input } from "../pipeline/pipeline_v2.js";
 import options from "../../options.js";
 import { ToolHandler } from "./handlers/tool_handler.js";
 import chatStorageService from '../chat_storage_service.js';
@@ -113,13 +112,6 @@ class RestChatService {
             // Initialize tools
             await ToolHandler.ensureToolsInitialized();
 
-            // Create and use the chat pipeline
-            const pipeline = new ChatPipeline({
-                enableStreaming: req.method === 'GET',
-                enableMetrics: true,
-                maxToolCallIterations: 5
-            });
-
             // Get user's preferred model
             const preferredModel = await this.getPreferredModel();
 
@@ -128,7 +120,8 @@ class RestChatService {
                 systemPrompt: chat.messages.find(m => m.role === 'system')?.content,
                 model: preferredModel,
                 stream: !!(req.method === 'GET' || req.query.format === 'stream' || req.query.stream === 'true'),
-                chatNoteId: chatNoteId
+                chatNoteId: chatNoteId,
+                enableTools: true
             };
 
             log.info(`Pipeline options: ${JSON.stringify({ useAdvancedContext: pipelineOptions.useAdvancedContext, stream: pipelineOptions.stream })}`);
@@ -137,14 +130,13 @@ class RestChatService {
             const wsService = await import('../../ws.js');
             const accumulatedContentRef = { value: '' };
 
-            const pipelineInput: ChatPipelineInput = {
+            const pipelineInput: PipelineV2Input = {
                 messages: chat.messages.map(msg => ({
                     role: msg.role as 'user' | 'assistant' | 'system',
                     content: msg.content
                 })),
                 query: content || '',
                 noteId: undefined, // TODO: Add context note support if needed
-                showThinking: showThinking,
                 options: pipelineOptions,
                 streamCallback: req.method === 'GET' ? (data, done, rawChunk) => {
                     this.handleStreamCallback(data, done, rawChunk, wsService.default, chatNoteId, res, accumulatedContentRef, chat);
@@ -152,7 +144,7 @@ class RestChatService {
             };
 
             // Execute the pipeline
-            const response = await pipeline.execute(pipelineInput);
+            const response = await pipelineV2.execute(pipelineInput);
 
             if (req.method === 'POST') {
                 // Add assistant response to chat
