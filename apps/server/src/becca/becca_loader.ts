@@ -71,6 +71,8 @@ function load() {
     }
 
     becca.loaded = true;
+
+    log.info(`Becca (note cache) load took ${Date.now() - start}ms`);
 }
 
 function reload(reason: string) {
