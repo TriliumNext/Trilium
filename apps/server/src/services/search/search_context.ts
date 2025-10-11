@@ -24,6 +24,10 @@ class SearchContext {
     fulltextQuery: string;
     dbLoadNeeded: boolean;
     error: string | null;
+    /** Determines which backend to use for fulltext search */
+    searchBackend: "typescript" | "sqlite";
+    /** Whether SQLite search is enabled (cached from options) */
+    sqliteSearchEnabled: boolean;
 
     constructor(params: SearchParams = {}) {
         this.fastSearch = !!params.fastSearch;
@@ -54,6 +58,43 @@ class SearchContext {
         // and some extra data needs to be loaded before executing
         this.dbLoadNeeded = false;
         this.error = null;
+        
+        // Determine search backend
+        this.sqliteSearchEnabled = this.checkSqliteEnabled();
+        this.searchBackend = this.determineSearchBackend(params);
+    }
+
+    private checkSqliteEnabled(): boolean {
+        try {
+            // Import dynamically to avoid circular dependencies
+            const optionService = require("../options.js").default;
+            // Default to true if the option doesn't exist
+            const enabled = optionService.getOptionOrNull("searchSqliteEnabled");
+            return enabled === null ? true : enabled === "true";
+        } catch {
+            return true; // Default to enabled
+        }
+    }
+
+    private determineSearchBackend(params: SearchParams): "typescript" | "sqlite" {
+        // Allow override via params for testing
+        if (params.forceBackend) {
+            return params.forceBackend;
+        }
+
+        // Check if SQLite is enabled
+        if (!this.sqliteSearchEnabled) {
+            return "typescript";
+        }
+
+        try {
+            const optionService = require("../options.js").default;
+            const backend = optionService.getOptionOrNull("searchBackend");
+            // Default to sqlite if option doesn't exist
+            return backend === "typescript" ? "typescript" : "sqlite";
+        } catch {
+            return "sqlite"; // Default to SQLite for better performance
+        }
     }
 
     addError(error: string) {

@@ -40,6 +40,7 @@ import scriptRoute from "./api/script.js";
 import senderRoute from "./api/sender.js";
 import filesRoute from "./api/files.js";
 import searchRoute from "./api/search.js";
+import searchAdminRoute from "./api/search_admin.js";
 import bulkActionRoute from "./api/bulk_action.js";
 import specialNotesRoute from "./api/special_notes.js";
 import noteMapRoute from "./api/note_map.js";
@@ -259,6 +260,9 @@ function register(app: express.Application) {
     apiRoute(PST, "/api/search-related", searchRoute.getRelatedNotes);
     apiRoute(GET, "/api/search/:searchString", searchRoute.search);
     apiRoute(GET, "/api/search-templates", searchRoute.searchTemplates);
+
+    // Search administration routes
+    app.use(searchAdminRoute);
 
     apiRoute(PST, "/api/bulk-action/execute", bulkActionRoute.execute);
     apiRoute(PST, "/api/bulk-action/affected-notes", bulkActionRoute.getAffectedNoteCount);
