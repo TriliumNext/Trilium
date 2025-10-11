@@ -77,16 +77,84 @@ class NoteContentFulltextExp extends Expression {
 
         const resultNoteSet = new NoteSet();
 
+        // Search through notes with content
         for (const row of sql.iterateRows<SearchRow>(`
                 SELECT noteId, type, mime, content, isProtected
                 FROM notes JOIN blobs USING (blobId)
-                WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap') 
-                  AND isDeleted = 0 
+                WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap')
+                  AND isDeleted = 0
                   AND LENGTH(content) < ${MAX_SEARCH_CONTENT_SIZE}`)) {
             this.findInText(row, inputNoteSet, resultNoteSet);
         }
 
+        // For exact match with flatText, also search notes WITHOUT content (they may have matching attributes)
+        if (this.flatText && (this.operator === "=" || this.operator === "!=")) {
+            for (const noteId of inputNoteSet.noteIdSet) {
+                // Skip if already found or doesn't exist
+                if (resultNoteSet.hasNoteId(noteId) || !(noteId in becca.notes)) {
+                    continue;
+                }
+
+                const note = becca.notes[noteId];
+                const flatText = note.getFlatText();
+
+                // For flatText, only check attribute values (format: #name=value or ~name=value)
+                // Don't match against noteId, type, mime, or title which are also in flatText
+                let matches = false;
+                const phrase = this.tokens.join(" ");
+                const normalizedPhrase = normalizeSearchText(phrase);
+                const normalizedFlatText = normalizeSearchText(flatText);
+
+                // Check if =phrase appears in flatText (indicates attribute value match)
+                matches = normalizedFlatText.includes(`=${normalizedPhrase}`);
+
+                if ((this.operator === "=" && matches) || (this.operator === "!=" && !matches)) {
+                    resultNoteSet.add(note);
+                }
+            }
+        }
+
         return resultNoteSet;
+    }
+
+    /**
+     * Checks if content contains the exact word (with word boundaries)
+     * This is case-insensitive since content and token are already normalized
+     */
+    private containsExactWord(token: string, content: string): boolean {
+        // Normalize both for case-insensitive comparison
+        const normalizedToken = normalizeSearchText(token);
+        const normalizedContent = normalizeSearchText(content);
+
+        // Split content into words and check for exact match
+        const words = normalizedContent.split(/\s+/);
+        return words.some(word => word === normalizedToken);
+    }
+
+    /**
+     * Checks if content contains the exact phrase (consecutive words in order)
+     * This is case-insensitive since content and tokens are already normalized
+     */
+    private containsExactPhrase(tokens: string[], content: string, checkFlatTextAttributes: boolean = false): boolean {
+        const normalizedTokens = tokens.map(t => normalizeSearchText(t));
+        const normalizedContent = normalizeSearchText(content);
+
+        // Join tokens with single space to form the phrase
+        const phrase = normalizedTokens.join(" ");
+
+        // Check if the phrase appears as a substring (consecutive words)
+        if (normalizedContent.includes(phrase)) {
+            return true;
+        }
+
+        // For flatText, also check if the phrase appears in attribute values
+        // Attributes in flatText appear as "#name=value" or "~name=value"
+        // So we need to check for "=phrase" to match attribute values
+        if (checkFlatTextAttributes && normalizedContent.includes(`=${phrase}`)) {
+            return true;
+        }
+
+        return false;
     }
 
     findInText({ noteId, isProtected, content, type, mime }: SearchRow, inputNoteSet: NoteSet, resultNoteSet: NoteSet) {
@@ -112,7 +180,7 @@ class NoteContentFulltextExp extends Expression {
         }
 
         content = this.preprocessContent(content, type, mime);
-        
+
         // Apply content size validation and preprocessing
         const processedContent = validateAndPreprocessContent(content, noteId);
         if (!processedContent) {
@@ -123,9 +191,25 @@ class NoteContentFulltextExp extends Expression {
         if (this.tokens.length === 1) {
             const [token] = this.tokens;
 
+            let matches = false;
+            if (this.operator === "=") {
+                matches = this.containsExactWord(token, content);
+                // Also check flatText if enabled (includes attributes)
+                if (!matches && this.flatText) {
+                    const flatText = becca.notes[noteId].getFlatText();
+                    matches = this.containsExactPhrase([token], flatText, true);
+                }
+            } else if (this.operator === "!=") {
+                matches = !this.containsExactWord(token, content);
+                // For negation, check flatText too
+                if (matches && this.flatText) {
+                    const flatText = becca.notes[noteId].getFlatText();
+                    matches = !this.containsExactPhrase([token], flatText, true);
+                }
+            }
+
             if (
-                (this.operator === "=" && token === content) ||
-                (this.operator === "!=" && token !== content) ||
+                matches ||
                 (this.operator === "*=" && content.endsWith(token)) ||
                 (this.operator === "=*" && content.startsWith(token)) ||
                 (this.operator === "*=*" && content.includes(token)) ||
@@ -138,10 +222,26 @@ class NoteContentFulltextExp extends Expression {
         } else {
             // Multi-token matching with fuzzy support and phrase proximity
             if (this.operator === "~=" || this.operator === "~*") {
+                // Fuzzy phrase matching
                 if (this.matchesWithFuzzy(content, noteId)) {
                     resultNoteSet.add(becca.notes[noteId]);
                 }
+            } else if (this.operator === "=" || this.operator === "!=") {
+                // Exact phrase matching for = and !=
+                let matches = this.containsExactPhrase(this.tokens, content, false);
+
+                // Also check flatText if enabled (includes attributes)
+                if (!matches && this.flatText) {
+                    const flatText = becca.notes[noteId].getFlatText();
+                    matches = this.containsExactPhrase(this.tokens, flatText, true);
+                }
+
+                if ((this.operator === "=" && matches) ||
+                    (this.operator === "!=" && !matches)) {
+                    resultNoteSet.add(becca.notes[noteId]);
+                }
             } else {
+                // Other operators: check all tokens present (any order)
                 const nonMatchingToken = this.tokens.find(
                     (token) =>
                         !this.tokenMatchesContent(token, content, noteId)
