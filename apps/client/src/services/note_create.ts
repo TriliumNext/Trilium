@@ -40,35 +40,6 @@ interface DuplicateResponse {
 }
 
 /**
- * Creates a new note inside the user's Inbox.
- *
- * @param {CreateNoteOpts} [options] - Optional settings such as title, type, template, or content.
- * @returns {Promise<{ note: FNote | null; branch: FBranch | undefined }>}
- * Resolves with the created note and its branch, or `{ note: null, branch: undefined }` if the inbox is missing.
- */
-async function createNoteIntoInbox(
-    options: CreateNoteOpts = {}
-): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
-    const inboxNote = await dateNoteService.getInboxNote();
-    if (!inboxNote) {
-        console.warn("Missing inbox note.");
-        // always return a defined object
-        return { note: null, branch: undefined };
-    }
-
-    if (options.isProtected === undefined) {
-        options.isProtected =
-            inboxNote.isProtected && protectedSessionHolder.isProtectedSessionAvailable();
-    }
-
-    const result = await createNoteIntoPath(inboxNote.noteId, {
-        ...options,
-        target: "into",
-    });
-
-    return result;
-}
-/**
  * Core function that creates a new note under the specified parent note path.
  *
  * @param {string | undefined} parentNotePath - The parent note path where the new note will be created.
@@ -147,6 +118,36 @@ async function createNoteIntoPath(
         note: noteEntity,
         branch: branchEntity
     };
+}
+
+/**
+ * Creates a new note inside the user's Inbox.
+ *
+ * @param {CreateNoteOpts} [options] - Optional settings such as title, type, template, or content.
+ * @returns {Promise<{ note: FNote | null; branch: FBranch | undefined }>}
+ * Resolves with the created note and its branch, or `{ note: null, branch: undefined }` if the inbox is missing.
+ */
+async function createNoteIntoInbox(
+    options: CreateNoteOpts = {}
+): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
+    const inboxNote = await dateNoteService.getInboxNote();
+    if (!inboxNote) {
+        console.warn("Missing inbox note.");
+        // always return a defined object
+        return { note: null, branch: undefined };
+    }
+
+    if (options.isProtected === undefined) {
+        options.isProtected =
+            inboxNote.isProtected && protectedSessionHolder.isProtectedSessionAvailable();
+    }
+
+    const result = await createNoteIntoPath(inboxNote.noteId, {
+        ...options,
+        target: "into",
+    });
+
+    return result;
 }
 
 async function chooseNoteType() {
