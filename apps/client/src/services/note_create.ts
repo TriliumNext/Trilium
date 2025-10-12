@@ -10,6 +10,8 @@ import type FNote from "../entities/fnote.js";
 import type FBranch from "../entities/fbranch.js";
 import type { ChooseNoteTypeResponse } from "../widgets/dialogs/note_type_chooser.js";
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import dateNoteService from "../services/date_notes.js";
+import { CreateChildrenResponse } from "@triliumnext/commons";
 
 export interface CreateNoteOpts {
     isProtected?: boolean;
@@ -37,7 +39,47 @@ interface DuplicateResponse {
     note: FNote;
 }
 
-async function createNote(parentNotePath: string | undefined, options: CreateNoteOpts = {}) {
+/**
+ * Creates a new note inside the user's Inbox.
+ *
+ * @param {CreateNoteOpts} [options] - Optional settings such as title, type, template, or content.
+ * @returns {Promise<{ note: FNote | null; branch: FBranch | undefined }>}
+ * Resolves with the created note and its branch, or `{ note: null, branch: undefined }` if the inbox is missing.
+ */
+async function createNoteIntoInbox(
+    options: CreateNoteOpts = {}
+): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
+    const inboxNote = await dateNoteService.getInboxNote();
+    if (!inboxNote) {
+        console.warn("Missing inbox note.");
+        // always return a defined object
+        return { note: null, branch: undefined };
+    }
+
+    if (options.isProtected === undefined) {
+        options.isProtected =
+            inboxNote.isProtected && protectedSessionHolder.isProtectedSessionAvailable();
+    }
+
+    const result = await createNoteIntoPath(inboxNote.noteId, {
+        ...options,
+        target: "into",
+    });
+
+    return result;
+}
+/**
+ * Core function that creates a new note under the specified parent note path.
+ *
+ * @param {string | undefined} parentNotePath - The parent note path where the new note will be created.
+ * @param {CreateNoteOpts} [options] - Options controlling note creation (title, content, type, template, focus, etc.).
+ * @returns {Promise<{ note: FNote | null; branch: FBranch | undefined }>}
+ * Resolves with the created note and branch entities.
+ */
+async function createNoteIntoPath(
+    parentNotePath: string | undefined,
+    options: CreateNoteOpts = {}
+): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
     options = Object.assign(
         {
             activate: true,
@@ -113,7 +155,7 @@ async function chooseNoteType() {
     });
 }
 
-async function createNoteWithTypePrompt(parentNotePath: string, options: CreateNoteOpts = {}) {
+async function createNoteIntoPathWithTypePrompt(parentNotePath: string, options: CreateNoteOpts = {}) {
     const { success, noteType, templateNoteId, notePath } = await chooseNoteType();
 
     if (!success) {
@@ -123,7 +165,7 @@ async function createNoteWithTypePrompt(parentNotePath: string, options: CreateN
     options.type = noteType;
     options.templateNoteId = templateNoteId;
 
-    return await createNote(notePath || parentNotePath, options);
+    return await createNoteIntoPath(notePath || parentNotePath, options);
 }
 
 /* If the first element is heading, parse it out and use it as a new heading. */
@@ -158,8 +200,9 @@ async function duplicateSubtree(noteId: string, parentNotePath: string) {
 }
 
 export default {
-    createNote,
-    createNoteWithTypePrompt,
+    createNoteIntoInbox,
+    createNoteIntoPath,
+    createNoteIntoPathWithTypePrompt,
     duplicateSubtree,
     chooseNoteType
 };

@@ -130,7 +130,7 @@
   },
   "note_autocomplete": {
     "search-for": "Cerca \"{{term}}\"",
-    "create-note": "Crea e collega la nota figlia \"{{term}}\"",
+    "create-note-into-path": "Crea e collega la nota figlia \"{{term}}\"",
     "insert-external-link": "Inserisci il collegamento esterno a \"{{term}}\"",
     "clear-text-field": "Pulisci il campo di testo",
     "show-recent-notes": "Mostra le note recenti",

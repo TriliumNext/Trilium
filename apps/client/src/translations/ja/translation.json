@@ -1924,7 +1924,10 @@
   },
   "note_autocomplete": {
     "search-for": "「{{term}}」を検索",
-    "create-note": "子ノート「{{term}}」を作成してリンクする",
+    "create-note-into-path": "子ノート「{{term}}」を作成してリンクする",
+    "create-note-into-inbox": "受信トレイにノート「{{term}}」を作成する",
+    "create-and-link-note-into-path": "子ノート「{{term}}」を作成してリンクする",
+    "create-and-link-note-into-inbox": "受信トレイにノート「{{term}}」を作成してリンクする",
     "insert-external-link": "「{{term}}」への外部リンクを挿入",
     "clear-text-field": "テキストフィールドを消去",
     "show-recent-notes": "最近のノートを表示",

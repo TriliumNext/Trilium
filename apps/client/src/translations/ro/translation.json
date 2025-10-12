@@ -1662,7 +1662,7 @@
   },
   "note_autocomplete": {
     "clear-text-field": "Șterge conținutul casetei",
-    "create-note": "Crează și inserează legătură către „{{term}}”",
+    "create-note-into-path": "Crează și inserează legătură către „{{term}}”",
     "full-text-search": "Căutare în întregimea textului",
     "insert-external-link": "Inserează legătură extern către „{{term}}”",
     "search-for": "Caută „{{term}}”",

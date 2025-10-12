@@ -1757,7 +1757,7 @@
   },
   "note_autocomplete": {
     "search-for": "Buscar por \"{{term}}\"",
-    "create-note": "Criar conectar nota filha \"{{term}}\"",
+    "create-note-into-path": "Criar conectar nota filha \"{{term}}\"",
     "insert-external-link": "Inserir link externo para \"{{term}}\"",
     "clear-text-field": "Limpar campo de texto",
     "show-recent-notes": "Exibir notas recentes",

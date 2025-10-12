@@ -1679,7 +1679,10 @@
   },
   "note_autocomplete": {
     "search-for": "Suche nach \"{{term}}\"",
-    "create-note": "Erstelle und verlinke Unternotiz \"{{term}}\"",
+    "create-note-into-path": "Erstelle und verlinke Unternotiz \"{{term}}\"",
+    "create-note-into-inbox": "Erstelle Notiz im Posteingang \"{{term}}\"",
+    "create-and-link-note-into-path": "Erstelle und verlinke Unternotiz \"{{term}}\"",
+    "create-and-link-note-into-inbox": "Erstelle und verlinke Notiz im Posteingang \"{{term}}\"",
     "insert-external-link": "Einfügen von Externen Link zu \"{{term}}\"",
     "clear-text-field": "Textfeldinhalt löschen",
     "show-recent-notes": "Aktuelle Notizen anzeigen",

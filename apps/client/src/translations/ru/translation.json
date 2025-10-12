@@ -664,7 +664,7 @@
     "search-for": "Поиск \"{{term}}\"",
     "clear-text-field": "Очистить текстовое поле",
     "insert-external-link": "Вставить внешнюю ссылку \"{{term}}\"",
-    "create-note": "Создать и связать дочернюю заметку \"{{term}}\""
+    "create-note-into-path": "Создать и связать дочернюю заметку \"{{term}}\""
   },
   "electron_integration": {
     "zoom-factor": "Коэффициент масштабирования",
