@@ -3,7 +3,7 @@ import server from "../../services/server.js";
 import froca from "../../services/froca.js";
 import linkService from "../../services/link.js";
 import attributeAutocompleteService from "../../services/attribute_autocomplete.js";
-import noteAutocompleteService from "../../services/note_autocomplete.js";
+import noteAutocompleteService, { CreateMode } from "../../services/note_autocomplete.js";
 import promotedAttributeDefinitionParser from "../../services/promoted_attribute_definition_parser.js";
 import NoteContextAwareWidget from "../note_context_aware_widget.js";
 import SpacedUpdate from "../../services/spaced_update.js";
@@ -429,7 +429,7 @@ export default class AttributeDetailWidget extends NoteContextAwareWidget {
         this.$rowTargetNote = this.$widget.find(".attr-row-target-note");
         this.$inputTargetNote = this.$widget.find(".attr-input-target-note");
 
-        noteAutocompleteService.initNoteAutocomplete(this.$inputTargetNote, { allowCreatingNotes: true }).on("autocomplete:noteselected", (event, suggestion, dataset) => {
+        noteAutocompleteService.initNoteAutocomplete(this.$inputTargetNote, { createMode: CreateMode.CreateAndLink }).on("autocomplete:noteselected", (event, suggestion, dataset) => {
             if (!suggestion.notePath) {
                 return false;
             }

@@ -5,6 +5,23 @@ import froca from "./froca.js";
 import { t } from "./i18n.js";
 import commandRegistry from "./command_registry.js";
 import type { MentionFeedObjectItem } from "@triliumnext/ckeditor5";
+import { MentionAction } from "@triliumnext/ckeditor5/src/augmentation.js";
+
+/**
+ * Extends CKEditor's MentionFeedObjectItem with extra fields used by Trilium.
+ * These additional props (like action, notePath, name, etc.) carry note
+ * metadata and legacy compatibility info needed for custom autocomplete
+ * and link insertion behavior beyond CKEditor’s base mention support.
+ */
+type ExtendedMentionFeedObjectItem = MentionFeedObjectItem & {
+    action?: string;
+    noteTitle?: string;
+    name?: string;
+    link?: string;
+    notePath?: string;
+    parentNoteId?: string;
+    highlightedNotePathTitle?: string;
+};
 
 // this key needs to have this value, so it's hit by the tooltip
 const SELECTED_NOTE_PATH_KEY = "data-note-path";
@@ -23,14 +40,39 @@ function getSearchDelay(notesCount: number): number {
 }
 let searchDelay = getSearchDelay(notesCount);
 
-// TODO: Deduplicate with server.
+// String values ensure stable, human-readable identifiers across serialization (JSON, CKEditor, logs).
+export enum SuggestionAction {
+    // These values intentionally mirror MentionAction string values 1:1.
+    // This overlap ensures that when a suggestion triggers a note creation callback,
+    // the receiving features (e.g. note creation handlers, CKEditor mentions) can interpret
+    // the action type consistently
+    CreateNoteIntoInbox = MentionAction.CreateNoteIntoInbox,
+    CreateNoteIntoPath = MentionAction.CreateNoteIntoPath,
+    CreateAndLinkNoteIntoInbox = MentionAction.CreateAndLinkNoteIntoInbox,
+    CreateAndLinkNoteIntoPath = MentionAction.CreateAndLinkNoteIntoPath,
+
+    SearchNotes = "search-notes",
+    ExternalLink = "external-link",
+    Command = "command",
+}
+
+export enum CreateMode {
+    None = "none",
+    CreateOnly = "create-only",
+    CreateAndLink = "create-and-link"
+}
+
+// NOTE: Previously marked for deduplication with a server-side type,
+// but review on 2025-10-12 (using `rg Suggestion`) found no corresponding
+// server implementation.
+// This interface appears to be client-only.
 export interface Suggestion {
     noteTitle?: string;
     externalLink?: string;
     notePathTitle?: string;
     notePath?: string;
     highlightedNotePathTitle?: string;
-    action?: string | "create-note" | "search-notes" | "external-link" | "command";
+    action?: SuggestionAction;
     parentNoteId?: string;
     icon?: string;
     commandId?: string;
@@ -43,7 +85,7 @@ export interface Suggestion {
 export interface Options {
     container?: HTMLElement | null;
     fastSearch?: boolean;
-    allowCreatingNotes?: boolean;
+    createMode?: CreateMode;
     allowJumpToSearchNotes?: boolean;
     allowExternalLinks?: boolean;
     /** If set, hides the right-side button corresponding to go to selected note. */
@@ -54,110 +96,160 @@ export interface Options {
     isCommandPalette?: boolean;
 }
 
-async function autocompleteSourceForCKEditor(queryText: string) {
-    return await new Promise<MentionFeedObjectItem[]>((res, rej) => {
+async function autocompleteSourceForCKEditor(
+    queryText: string,
+    createMode: CreateMode
+): Promise<MentionFeedObjectItem[]> {
+    // Wrap the callback-based autocompleteSource in a Promise for async/await
+    const rows = await new Promise<Suggestion[]>((resolve) => {
         autocompleteSource(
             queryText,
-            (rows) => {
-                res(
-                    rows.map((row) => {
-                        return {
-                            action: row.action,
-                            noteTitle: row.noteTitle,
-                            id: `@${row.notePathTitle}`,
-                            name: row.notePathTitle || "",
-                            link: `#${row.notePath}`,
-                            notePath: row.notePath,
-                            highlightedNotePathTitle: row.highlightedNotePathTitle
-                        };
-                    })
-                );
-            },
+            (suggestions) => resolve(suggestions),
             {
-                allowCreatingNotes: true
+                createMode,
             }
         );
     });
+
+    // Map internal suggestions to CKEditor mention feed items
+    return rows.map((row): ExtendedMentionFeedObjectItem => ({
+        action: row.action?.toString(),
+        noteTitle: row.noteTitle,
+        id: `@${row.notePathTitle}`,
+        name: row.notePathTitle || "",
+        link: `#${row.notePath}`,
+        notePath: row.notePath,
+        parentNoteId: row.parentNoteId,
+        highlightedNotePathTitle: row.highlightedNotePathTitle
+    }));
 }
 
-async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void, options: Options = {}) {
+async function autocompleteSource(
+    term: string,
+    callback: (rows: Suggestion[]) => void,
+    options: Options = {}
+) {
     // Check if we're in command mode
     if (options.isCommandPalette && term.startsWith(">")) {
         const commandQuery = term.substring(1).trim();
 
         // Get commands (all if no query, filtered if query provided)
-        const commands = commandQuery.length === 0
-            ? commandRegistry.getAllCommands()
-            : commandRegistry.searchCommands(commandQuery);
+        const commands =
+            commandQuery.length === 0
+                ? commandRegistry.getAllCommands()
+                : commandRegistry.searchCommands(commandQuery);
 
         // Convert commands to suggestions
-        const commandSuggestions: Suggestion[] = commands.map(cmd => ({
-            action: "command",
+        const commandSuggestions: Suggestion[] = commands.map((cmd) => ({
+            action: SuggestionAction.Command,
             commandId: cmd.id,
             noteTitle: cmd.name,
             notePathTitle: `>${cmd.name}`,
             highlightedNotePathTitle: cmd.name,
             commandDescription: cmd.description,
             commandShortcut: cmd.shortcut,
-            icon: cmd.icon
+            icon: cmd.icon,
         }));
 
-        cb(commandSuggestions);
+        callback(commandSuggestions);
         return;
     }
 
-    const fastSearch = options.fastSearch === false ? false : true;
-    if (fastSearch === false) {
-        if (term.trim().length === 0) {
-            return;
-        }
-        cb([
+    const fastSearch = options.fastSearch !== false;
+    const trimmedTerm = term.trim();
+    const activeNoteId = appContext.tabManager.getActiveContextNoteId();
+
+    if (!fastSearch && trimmedTerm.length === 0) return;
+
+    if (!fastSearch) {
+        callback([
             {
-                noteTitle: term,
-                highlightedNotePathTitle: t("quick-search.searching")
-            }
+                noteTitle: trimmedTerm,
+                highlightedNotePathTitle: t("quick-search.searching"),
+            },
         ]);
     }
 
-    const activeNoteId = appContext.tabManager.getActiveContextNoteId();
-    const length = term.trim().length;
-
-    let results = await server.get<Suggestion[]>(`autocomplete?query=${encodeURIComponent(term)}&activeNoteId=${activeNoteId}&fastSearch=${fastSearch}`);
+    let results = await server.get<Suggestion[]>(
+        `autocomplete?query=${encodeURIComponent(trimmedTerm)}&activeNoteId=${activeNoteId}&fastSearch=${fastSearch}`
+    );
 
     options.fastSearch = true;
 
-    if (length >= 1 && options.allowCreatingNotes) {
-        results = [
-            {
-                action: "create-note",
-                noteTitle: term,
-                parentNoteId: activeNoteId || "root",
-                highlightedNotePathTitle: t("note_autocomplete.create-note", { term })
-            } as Suggestion
-        ].concat(results);
-    }
-
-    if (length >= 1 && options.allowJumpToSearchNotes) {
-        results = results.concat([
-            {
-                action: "search-notes",
-                noteTitle: term,
-                highlightedNotePathTitle: `${t("note_autocomplete.search-for", { term })} <kbd style='color: var(--muted-text-color); background-color: transparent; float: right;'>Ctrl+Enter</kbd>`
+    // --- Create Note suggestions ---
+    if (trimmedTerm.length >= 1) {
+        switch (options.createMode) {
+            case CreateMode.CreateOnly: {
+                results = [
+                    {
+                        action: SuggestionAction.CreateNoteIntoInbox,
+                        noteTitle: trimmedTerm,
+                        parentNoteId: "inbox",
+                        highlightedNotePathTitle: t("note_autocomplete.create-note-into-inbox", { term: trimmedTerm }),
+                    },
+                    {
+                        action: SuggestionAction.CreateNoteIntoPath,
+                        noteTitle: trimmedTerm,
+                        parentNoteId: activeNoteId || "root",
+                        highlightedNotePathTitle: t("note_autocomplete.create-note-into-path", { term: trimmedTerm }),
+                    },
+                    ...results,
+                ];
+                break;
             }
-        ]);
+
+            case CreateMode.CreateAndLink: {
+                results = [
+                    {
+                        action: SuggestionAction.CreateAndLinkNoteIntoInbox,
+                        noteTitle: trimmedTerm,
+                        parentNoteId: "inbox",
+                        highlightedNotePathTitle: t("note_autocomplete.create-and-link-note-into-inbox", { term: trimmedTerm }),
+                    },
+                    {
+                        action: SuggestionAction.CreateAndLinkNoteIntoPath,
+                        noteTitle: trimmedTerm,
+                        parentNoteId: activeNoteId || "root",
+                        highlightedNotePathTitle: t("note_autocomplete.create-and-link-note-into-path", { term: trimmedTerm }),
+                    },
+                    ...results,
+                ];
+                break;
+            }
+
+            default:
+                // CreateMode.None or undefined → no creation suggestions
+                break;
+        }
     }
 
-    if (term.match(/^[a-z]+:\/\/.+/i) && options.allowExternalLinks) {
+    // --- Jump to Search Notes ---
+    if (trimmedTerm.length >= 1 && options.allowJumpToSearchNotes) {
+        results = [
+            ...results,
+            {
+                action: SuggestionAction.SearchNotes,
+                noteTitle: trimmedTerm,
+                highlightedNotePathTitle: `${t("note_autocomplete.search-for", {
+                    term: trimmedTerm,
+                })} <kbd style='color: var(--muted-text-color); background-color: transparent; float: right;'>Ctrl+Enter</kbd>`,
+            },
+        ];
+    }
+
+    // --- External Link suggestion ---
+    if (/^[a-z]+:\/\/.+/i.test(trimmedTerm) && options.allowExternalLinks) {
         results = [
             {
-                action: "external-link",
-                externalLink: term,
-                highlightedNotePathTitle: t("note_autocomplete.insert-external-link", { term })
-            } as Suggestion
-        ].concat(results);
+                action: SuggestionAction.ExternalLink,
+                externalLink: trimmedTerm,
+                highlightedNotePathTitle: t("note_autocomplete.insert-external-link", { term: trimmedTerm }),
+            },
+            ...results,
+        ];
     }
 
-    cb(results);
+    callback(results);
 }
 
 function clearText($el: JQuery<HTMLElement>) {
@@ -196,6 +288,64 @@ function fullTextSearch($el: JQuery<HTMLElement>, options: Options) {
     $el.setSelectedNotePath("");
     searchDelay = 0;
     $el.autocomplete("val", searchString);
+}
+
+function renderCommandSuggestion(s: Suggestion): string {
+    const icon = s.icon || "bx bx-terminal";
+    const shortcut = s.commandShortcut
+        ? `<kbd class="command-shortcut">${s.commandShortcut}</kbd>`
+        : "";
+
+    return `
+        <div class="command-suggestion">
+            <span class="command-icon ${icon}"></span>
+            <div class="command-content">
+                <div class="command-name">${s.highlightedNotePathTitle}</div>
+                ${s.commandDescription ? `<div class="command-description">${s.commandDescription}</div>` : ""}
+            </div>
+            ${shortcut}
+        </div>
+    `;
+}
+
+function renderNoteSuggestion(s: Suggestion): string {
+    const actionClass =
+        s.action === SuggestionAction.SearchNotes ? "search-notes-action" : "";
+
+    const iconClass = (() => {
+        switch (s.action) {
+            case SuggestionAction.SearchNotes:
+                return "bx bx-search";
+            case SuggestionAction.CreateAndLinkNoteIntoInbox:
+            case SuggestionAction.CreateNoteIntoInbox:
+                return "bx bx-plus";
+            case SuggestionAction.CreateAndLinkNoteIntoPath:
+            case SuggestionAction.CreateNoteIntoPath:
+                return "bx bx-plus";
+            case SuggestionAction.ExternalLink:
+                return "bx bx-link-external";
+            default:
+                return s.icon ?? "bx bx-note";
+        }
+    })();
+
+    return `
+        <div class="note-suggestion ${actionClass}" style="display:inline-flex; align-items:center;">
+            <span class="icon ${iconClass}" style="display:inline-block; vertical-align:middle; line-height:1; margin-right:0.4em;"></span>
+            <span class="text" style="display:inline-block; vertical-align:middle;">
+                <span class="search-result-title">${s.highlightedNotePathTitle}</span>
+                ${s.highlightedAttributeSnippet
+                    ? `<span class="search-result-attributes">${s.highlightedAttributeSnippet}</span>`
+                    : ""}
+            </span>
+        </div>
+    `;
+}
+
+function renderSuggestion(suggestion: Suggestion): string {
+    return suggestion.action === SuggestionAction.Command
+        ? renderCommandSuggestion(suggestion)
+        : renderNoteSuggestion(suggestion);
 }
 
 function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
@@ -283,24 +433,21 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
     $el.autocomplete(
         {
             ...autocompleteOptions,
-            appendTo: document.querySelector("body"),
+            appendTo: document.body,
             hint: false,
             autoselect: true,
-            // openOnFocus has to be false, otherwise re-focus (after return from note type chooser dialog) forces
-            // re-querying of the autocomplete source which then changes the currently selected suggestion
             openOnFocus: false,
             minLength: 0,
-            tabAutocomplete: false
+            tabAutocomplete: false,
         },
         [
             {
-                source: (term, cb) => {
+                source: (term, callback) => {
                     clearTimeout(debounceTimeoutId);
                     debounceTimeoutId = setTimeout(() => {
-                        if (isComposingInput) {
-                            return;
+                        if (!isComposingInput) {
+                            autocompleteSource(term, callback, options);
                         }
-                        autocompleteSource(term, cb, options);
                     }, searchDelay);
 
                     if (searchDelay === 0) {
@@ -308,109 +455,124 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                     }
                 },
                 displayKey: "notePathTitle",
-                templates: {
-                    suggestion: (suggestion) => {
-                        if (suggestion.action === "command") {
-                            let html = `<div class="command-suggestion">`;
-                            html += `<span class="command-icon ${suggestion.icon || "bx bx-terminal"}"></span>`;
-                            html += `<div class="command-content">`;
-                            html += `<div class="command-name">${suggestion.highlightedNotePathTitle}</div>`;
-                            if (suggestion.commandDescription) {
-                                html += `<div class="command-description">${suggestion.commandDescription}</div>`;
-                            }
-                            html += `</div>`;
-                            if (suggestion.commandShortcut) {
-                                html += `<kbd class="command-shortcut">${suggestion.commandShortcut}</kbd>`;
-                            }
-                            html += '</div>';
-                            return html;
-                        }
-                        // Add special class for search-notes action
-                        const actionClass = suggestion.action === "search-notes" ? "search-notes-action" : "";
-
-                        // Choose appropriate icon based on action
-                        let iconClass = suggestion.icon ?? "bx bx-note";
-                        if (suggestion.action === "search-notes") {
-                            iconClass = "bx bx-search";
-                        } else if (suggestion.action === "create-note") {
-                            iconClass = "bx bx-plus";
-                        } else if (suggestion.action === "external-link") {
-                            iconClass = "bx bx-link-external";
-                        }
-
-                        // Simplified HTML structure without nested divs
-                        let html = `<div class="note-suggestion ${actionClass}">`;
-                        html += `<span class="icon ${iconClass}"></span>`;
-                        html += `<span class="text">`;
-                        html += `<span class="search-result-title">${suggestion.highlightedNotePathTitle}</span>`;
-
-                        // Add attribute snippet inline if available
-                        if (suggestion.highlightedAttributeSnippet) {
-                            html += `<span class="search-result-attributes">${suggestion.highlightedAttributeSnippet}</span>`;
-                        }
-
-                        html += `</span>`;
-                        html += `</div>`;
-                        return html;
-                    }
-                },
-                // we can't cache identical searches because notes can be created / renamed, new recent notes can be added
-                cache: false
-            }
+                templates: { suggestion: renderSuggestion },
+                cache: false,
+            },
         ]
     );
 
     // TODO: Types fail due to "autocomplete:selected" not being registered in type definitions.
     ($el as any).on("autocomplete:selected", async (event: Event, suggestion: Suggestion) => {
-        if (suggestion.action === "command") {
-            $el.autocomplete("close");
-            $el.trigger("autocomplete:commandselected", [suggestion]);
-            return;
-        }
-
-        if (suggestion.action === "external-link") {
-            $el.setSelectedNotePath(null);
-            $el.setSelectedExternalLink(suggestion.externalLink);
-
-            $el.autocomplete("val", suggestion.externalLink);
-
-            $el.autocomplete("close");
-
-            $el.trigger("autocomplete:externallinkselected", [suggestion]);
-
-            return;
-        }
-
-        if (suggestion.action === "create-note") {
-            const { success, noteType, templateNoteId, notePath } = await noteCreateService.chooseNoteType();
-            if (!success) {
-                return;
+        switch (suggestion.action) {
+            case SuggestionAction.Command: {
+                $el.autocomplete("close");
+                $el.trigger("autocomplete:commandselected", [suggestion]);
+                break;
             }
-            const { note } = await noteCreateService.createNote( notePath || suggestion.parentNoteId, {
-                title: suggestion.noteTitle,
-                activate: false,
-                type: noteType,
-                templateNoteId: templateNoteId
-            });
 
-            const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
-            suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
+            case SuggestionAction.ExternalLink: {
+                $el.setSelectedNotePath(null);
+                $el.setSelectedExternalLink(suggestion.externalLink);
+                $el.autocomplete("val", suggestion.externalLink);
+                $el.autocomplete("close");
+                $el.trigger("autocomplete:externallinkselected", [suggestion]);
+                break;
+            }
+
+            // --- CREATE NOTE INTO INBOX ---
+            case SuggestionAction.CreateNoteIntoInbox: {
+                const { success, noteType, templateNoteId } = await noteCreateService.chooseNoteType();
+                if (!success) return;
+
+                const { note } = await noteCreateService.createNoteIntoInbox({
+                    title: suggestion.noteTitle,
+                    activate: true,
+                    type: noteType,
+                    templateNoteId,
+                });
+
+                const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
+                suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
+
+                $el.trigger("autocomplete:noteselected", [suggestion]);
+                $el.autocomplete("close");
+                break;
+            }
+
+            // --- CREATE AND LINK NOTE INTO INBOX ---
+            case SuggestionAction.CreateAndLinkNoteIntoInbox: {
+                const { success, noteType, templateNoteId } = await noteCreateService.chooseNoteType();
+                if (!success) return;
+
+                const { note } = await noteCreateService.createNoteIntoInbox({
+                    title: suggestion.noteTitle,
+                    activate: false,
+                    type: noteType,
+                    templateNoteId,
+                });
+
+                const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
+                suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
+
+                $el.trigger("autocomplete:noteselected", [suggestion]);
+                $el.autocomplete("close");
+                break;
+            }
+
+            // --- CREATE NOTE INTO PATH ---
+            case SuggestionAction.CreateNoteIntoPath: {
+                const { success, noteType, templateNoteId, notePath } = await noteCreateService.chooseNoteType();
+                if (!success) return;
+
+                const { note } = await noteCreateService.createNoteIntoPath(notePath || suggestion.parentNoteId, {
+                    title: suggestion.noteTitle,
+                    activate: true,
+                    type: noteType,
+                    templateNoteId,
+                });
+
+                const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
+                suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
+
+                $el.trigger("autocomplete:noteselected", [suggestion]);
+                $el.autocomplete("close");
+                break;
+            }
+
+            // --- CREATE AND LINK NOTE INTO PATH ---
+            case SuggestionAction.CreateAndLinkNoteIntoPath: {
+                const { success, noteType, templateNoteId, notePath } = await noteCreateService.chooseNoteType();
+                if (!success) return;
+
+                const { note } = await noteCreateService.createNoteIntoPath(notePath || suggestion.parentNoteId, {
+                    title: suggestion.noteTitle,
+                    activate: false,
+                    type: noteType,
+                    templateNoteId,
+                });
+
+                const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
+                suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
+
+                $el.trigger("autocomplete:noteselected", [suggestion]);
+                $el.autocomplete("close");
+                break;
+            }
+
+            case SuggestionAction.SearchNotes: {
+                const searchString = suggestion.noteTitle;
+                appContext.triggerCommand("searchNotes", { searchString });
+                break;
+            }
+
+            default: {
+                $el.setSelectedNotePath(suggestion.notePath);
+                $el.setSelectedExternalLink(null);
+                $el.autocomplete("val", suggestion.noteTitle);
+                $el.autocomplete("close");
+                $el.trigger("autocomplete:noteselected", [suggestion]);
+            }
         }
-
-        if (suggestion.action === "search-notes") {
-            const searchString = suggestion.noteTitle;
-            appContext.triggerCommand("searchNotes", { searchString });
-            return;
-        }
-
-        $el.setSelectedNotePath(suggestion.notePath);
-        $el.setSelectedExternalLink(null);
-
-        $el.autocomplete("val", suggestion.noteTitle);
-
-        $el.autocomplete("close");
-
-        $el.trigger("autocomplete:noteselected", [suggestion]);
     });
 
     $el.on("autocomplete:closed", () => {

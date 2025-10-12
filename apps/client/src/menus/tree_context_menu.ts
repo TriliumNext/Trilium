@@ -283,7 +283,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
             const parentNotePath = treeService.getNotePath(this.node.getParent());
             const isProtected = treeService.getParentProtectedStatus(this.node);
 
-            noteCreateService.createNote(parentNotePath, {
+            noteCreateService.createNoteIntoPath(parentNotePath, {
                 target: "after",
                 targetBranchId: this.node.data.branchId,
                 type: type,
@@ -293,7 +293,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
         } else if (command === "insertChildNote") {
             const parentNotePath = treeService.getNotePath(this.node);
 
-            noteCreateService.createNote(parentNotePath, {
+            noteCreateService.createNoteIntoPath(parentNotePath, {
                 type: type,
                 isProtected: this.node.data.isProtected,
                 templateNoteId: templateNoteId

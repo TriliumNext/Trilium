@@ -1897,7 +1897,10 @@
   },
   "note_autocomplete": {
     "search-for": "Search for \"{{term}}\"",
-    "create-note": "Create and link child note \"{{term}}\"",
+    "create-note-into-path": "Create child note \"{{term}}\"",
+    "create-note-into-inbox": "Create in Inbox note \"{{term}}\"",
+    "create-and-link-note-into-path": "Create and link child note \"{{term}}\"",
+    "create-and-link-note-into-inbox": "Create in Inbox and link note \"{{term}}\"",
     "insert-external-link": "Insert external link to \"{{term}}\"",
     "clear-text-field": "Clear text field",
     "show-recent-notes": "Show recent notes",

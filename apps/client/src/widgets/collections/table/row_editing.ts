@@ -19,7 +19,7 @@ export default function useRowTableEditing(api: RefObject<Tabulator>, attributeD
                     activate: false,
                     ...customOpts
                 }
-                note_create.createNote(notePath, opts).then(({ branch }) => {
+                note_create.createNoteIntoPath(notePath, opts).then(({ branch }) => {
                     if (branch) {
                         setTimeout(() => {
                             if (!api.current) return;

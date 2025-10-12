@@ -39,7 +39,7 @@ export default class BoardApi {
             const parentNotePath = this.parentNote.noteId;
 
             // Create a new note as a child of the parent note
-            const { note: newNote, branch: newBranch } = await note_create.createNote(parentNotePath, {
+            const { note: newNote, branch: newBranch } = await note_create.createNoteIntoPath(parentNotePath, {
                 activate: false,
                 title
             });
@@ -140,7 +140,7 @@ export default class BoardApi {
             column: string,
             relativeToBranchId: string,
             direction: "before" | "after") {
-        const { note, branch } = await note_create.createNote(this.parentNote.noteId, {
+        const { note, branch } = await note_create.createNoteIntoPath(this.parentNote.noteId, {
             activate: false,
             targetBranchId: relativeToBranchId,
             target: direction,
