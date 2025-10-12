@@ -5,7 +5,7 @@ import froca from "./froca.js";
 import { t } from "./i18n.js";
 import commandRegistry from "./command_registry.js";
 import type { MentionFeedObjectItem } from "@triliumnext/ckeditor5";
-import { MentionAction } from "@triliumnext/ckeditor5/src/augmentation.js";
+import { CreateNoteAction } from "@triliumnext/commons"
 
 /**
  * Extends CKEditor's MentionFeedObjectItem with extra fields used by Trilium.
@@ -42,14 +42,14 @@ let searchDelay = getSearchDelay(notesCount);
 
 // String values ensure stable, human-readable identifiers across serialization (JSON, CKEditor, logs).
 export enum SuggestionAction {
-    // These values intentionally mirror MentionAction string values 1:1.
+    // These values intentionally mirror CreateNoteAction string values 1:1.
     // This overlap ensures that when a suggestion triggers a note creation callback,
     // the receiving features (e.g. note creation handlers, CKEditor mentions) can interpret
     // the action type consistently
-    CreateNoteIntoInbox = MentionAction.CreateNoteIntoInbox,
-    CreateNoteIntoPath = MentionAction.CreateNoteIntoPath,
-    CreateAndLinkNoteIntoInbox = MentionAction.CreateAndLinkNoteIntoInbox,
-    CreateAndLinkNoteIntoPath = MentionAction.CreateAndLinkNoteIntoPath,
+    CreateNoteIntoInbox = CreateNoteAction.CreateNoteIntoInbox,
+    CreateNoteIntoPath = CreateNoteAction.CreateNoteIntoPath,
+    CreateAndLinkNoteIntoInbox = CreateNoteAction.CreateAndLinkNoteIntoInbox,
+    CreateAndLinkNoteIntoPath = CreateNoteAction.CreateAndLinkNoteIntoPath,
 
     SearchNotes = "search-notes",
     ExternalLink = "external-link",
