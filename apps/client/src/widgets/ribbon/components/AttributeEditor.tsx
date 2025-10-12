@@ -34,7 +34,7 @@ const HELP_TEXT = `
 const mentionSetup: MentionFeed[] = [
     {
         marker: "@",
-        feed: (queryText) => note_autocomplete.autocompleteSourceForCKEditor(queryText),
+        feed: (queryText) => note_autocomplete.autocompleteSourceForCKEditor(queryText, CreateMode.CreateAndLink),
         itemRenderer: (_item) => {
             const item = _item as Suggestion;
             const itemElement = document.createElement("button");
@@ -249,17 +249,40 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
 
             $el.text(title);
         },
-        createNoteForReferenceLink: async (title: string) => {
-            let result;
-            if (notePath) {
-                result = await note_create.createNoteWithTypePrompt(notePath, {
-                    activate: false,
-                    title
-                });
+        createNoteFromCkEditor: async (
+            title: string,
+            parentNotePath: string | undefined,
+            action: MentionAction
+        ): Promise<string> => {
+            if (!parentNotePath) {
+                console.warn("Missing parentNotePath in createNoteFromCkEditor()");
+                return "";
             }
 
-            return result?.note?.getBestNotePathString();
+            switch (action) {
+                case MentionAction.CreateNoteIntoInbox:
+                case MentionAction.CreateAndLinkNoteIntoInbox: {
+                    const { note } = await note_create.createNoteIntoInbox({
+                        title,
+                        activate: false
+                    });
+                    return note?.getBestNotePathString() ?? "";
+                }
+
+                case MentionAction.CreateNoteIntoPath:
+                case MentionAction.CreateAndLinkNoteIntoPath: {
+                    const resp = await note_create.createNoteIntoPathWithTypePrompt(parentNotePath, {
+                        title,
+                        activate: false
+                    });
+                    return resp?.note?.getBestNotePathString() ?? "";
+                }
+
+                default:
+                    console.warn("Unknown MentionAction:", action);
+                    return "";
         }
+            }
     }), [ notePath ]));
 
     // Keyboard shortcuts

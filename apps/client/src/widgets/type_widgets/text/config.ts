@@ -180,7 +180,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             feeds: [
                 {
                     marker: "@",
-                    feed: (queryText: string) => noteAutocompleteService.autocompleteSourceForCKEditor(queryText),
+                    feed: (queryText: string) => noteAutocompleteService.autocompleteSourceForCKEditor(queryText, CreateMode.CreateAndLink),
                     itemRenderer: (item) => {
                         const itemElement = document.createElement("button");
 
