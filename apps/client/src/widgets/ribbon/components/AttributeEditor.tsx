@@ -2,7 +2,7 @@ import { MutableRef, useEffect, useImperativeHandle, useMemo, useRef, useState }
 import { AttributeEditor as CKEditorAttributeEditor, MentionFeed, ModelElement, ModelNode, ModelPosition } from "@triliumnext/ckeditor5";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
-import note_autocomplete, { CreateMode, Suggestion } from "../../../services/note_autocomplete";
+import note_autocomplete, { CreateMode, Suggestion } from "../../../services/note_autocomplete.js";
 import CKEditor, { CKEditorApi } from "../../react/CKEditor";
 import { useLegacyImperativeHandlers, useLegacyWidget, useTooltip, useTriliumEvent, useTriliumOption } from "../../react/hooks";
 import FAttribute from "../../../entities/fattribute";
