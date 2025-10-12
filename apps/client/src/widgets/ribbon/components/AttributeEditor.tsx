@@ -20,7 +20,7 @@ import type { CommandData, FilteredCommandNames } from "../../../components/app_
 import { AttributeType } from "@triliumnext/commons";
 import attributes from "../../../services/attributes";
 import note_create from "../../../services/note_create";
-import { MentionAction } from "@triliumnext/ckeditor5/src/augmentation.js";
+import { CreateNoteAction } from "@triliumnext/commons";
 
 type AttributeCommandNames = FilteredCommandNames<CommandData>;
 
@@ -256,7 +256,7 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
         createNoteFromCkEditor: async (
             title: string,
             parentNotePath: string | undefined,
-            action: MentionAction
+            action: CreateNoteAction
         ): Promise<string> => {
             if (!parentNotePath) {
                 console.warn("Missing parentNotePath in createNoteFromCkEditor()");
@@ -264,8 +264,8 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
             }
 
             switch (action) {
-                case MentionAction.CreateNoteIntoInbox:
-                case MentionAction.CreateAndLinkNoteIntoInbox: {
+                case CreateNoteAction.CreateNoteIntoInbox:
+                case CreateNoteAction.CreateAndLinkNoteIntoInbox: {
                     const { note } = await note_create.createNoteIntoInbox({
                         title,
                         activate: false
@@ -273,8 +273,8 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                     return note?.getBestNotePathString() ?? "";
                 }
 
-                case MentionAction.CreateNoteIntoPath:
-                case MentionAction.CreateAndLinkNoteIntoPath: {
+                case CreateNoteAction.CreateNoteIntoPath:
+                case CreateNoteAction.CreateAndLinkNoteIntoPath: {
                     const resp = await note_create.createNoteIntoPathWithTypePrompt(parentNotePath, {
                         title,
                         activate: false
@@ -283,7 +283,7 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                 }
 
                 default:
-                    console.warn("Unknown MentionAction:", action);
+                    console.warn("Unknown CreateNoteAction:", action);
                     return "";
         }
             }
