@@ -1,5 +1,5 @@
 import { Command, Mention, Plugin, ModelRange, type ModelSelectable } from "ckeditor5";
-import { MentionAction } from "../augmentation";
+import { type CreateNoteAction } from "@triliumnext/commons"
 
 /**
  * Overrides the actions taken by the Mentions plugin (triggered by `@` in the text editor, or `~` & `#` in the attribute editor):
@@ -37,7 +37,7 @@ interface MentionOpts {
 
 interface MentionAttribute {
 	id: string;
-	action?: MentionAction;
+	action?: CreateNoteAction;
 	noteTitle: string;
 	notePath: string;
 	parentNoteId?: string;
@@ -59,10 +59,10 @@ class CustomMentionCommand extends Command {
 			});
 		}
 	    else if (
-	        mention.action === MentionAction.CreateNoteIntoInbox ||
-	            mention.action === MentionAction.CreateNoteIntoPath ||
-	            mention.action === MentionAction.CreateAndLinkNoteIntoInbox ||
-	            mention.action === MentionAction.CreateAndLinkNoteIntoPath
+	        mention.action === CreateNoteAction.CreateNoteIntoInbox ||
+	            mention.action === CreateNoteAction.CreateNoteIntoPath ||
+	            mention.action === CreateNoteAction.CreateAndLinkNoteIntoInbox ||
+	            mention.action === CreateNoteAction.CreateAndLinkNoteIntoPath
 	    ) {
 	        const editorEl = this.editor.editing.view.getDomRoot();
 	        const component = glob.getComponentByEl<EditorComponent>(editorEl);

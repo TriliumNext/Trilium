@@ -1,12 +1,5 @@
 import "ckeditor5";
-import { CKTextEditor } from "src";
-
-export enum MentionAction {
-    CreateNoteIntoInbox = "create-note-into-inbox",
-    CreateNoteIntoPath = "create-note-into-path",
-    CreateAndLinkNoteIntoInbox = "create-and-link-note-into-inbox",
-    CreateAndLinkNoteIntoPath = "create-and-link-note-into-path"
-}
+import { type CreateNoteAction } from "@triliumnext/commons"
 
 declare global {
     interface Component {
@@ -16,7 +9,7 @@ declare global {
     interface EditorComponent extends Component {
         loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string): Promise<void>;
         // Must Return Note Path
-        createNoteFromCkEditor(title: string, parentNotePath: string | undefined, action: MentionAction): Promise<string>;
+        createNoteFromCkEditor(title: string, parentNotePath: string | undefined, action: CreateNoteAction): Promise<string>;
         loadIncludedNote(noteId: string, $el: JQuery<HTMLElement>): void;
     }
 
