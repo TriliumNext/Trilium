@@ -13,7 +13,7 @@ import { buildConfig, BuildEditorOptions, OPEN_SOURCE_LICENSE_KEY } from "./cked
 import type FNote from "../../entities/fnote.js";
 import { PopupEditor, ClassicEditor, EditorWatchdog, type CKTextEditor, type MentionFeed, type WatchdogConfig, EditorConfig } from "@triliumnext/ckeditor5";
 import { updateTemplateCache } from "./ckeditor/snippets.js";
-import { MentionAction } from "@triliumnext/ckeditor5/src/augmentation.js";
+import { CreateNoteAction } from "@triliumnext/commons";
 import note_create from "../../services/note_create.js";
 
 export type BoxSize = "small" | "medium" | "full";
@@ -496,12 +496,12 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
     async createNoteFromCkEditor (
         title: string,
         parentNotePath: string | undefined,
-        action: MentionAction
+        action: CreateNoteAction
     ): Promise<string> {
         try {
             switch (action) {
                 // --- Create note INTO inbox ---
-                case MentionAction.CreateNoteIntoInbox: {
+                case CreateNoteAction.CreateNoteIntoInbox: {
                     const { success, noteType, templateNoteId } = await note_create.chooseNoteType();
                     if (!success) return "";
 
@@ -516,7 +516,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                 }
 
                 // --- Create note INTO current path ---
-                case MentionAction.CreateNoteIntoPath: {
+                case CreateNoteAction.CreateNoteIntoPath: {
                     const { success, noteType, templateNoteId, notePath } = await note_create.chooseNoteType();
                     if (!success) return "";
 
@@ -531,7 +531,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                 }
 
                 // --- Create & link note INTO inbox ---
-                case MentionAction.CreateAndLinkNoteIntoInbox: {
+                case CreateNoteAction.CreateAndLinkNoteIntoInbox: {
                     const { success, noteType, templateNoteId } = await note_create.chooseNoteType();
                     if (!success) return "";
 
@@ -546,7 +546,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                 }
 
                 // --- Create & link note INTO current path ---
-                case MentionAction.CreateAndLinkNoteIntoPath: {
+                case CreateNoteAction.CreateAndLinkNoteIntoPath: {
                     const { success, noteType, templateNoteId, notePath } = await note_create.chooseNoteType();
                     if (!success) return "";
 
@@ -561,7 +561,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                 }
 
                 default:
-                    console.warn("Unknown MentionAction:", action);
+                    console.warn("Unknown CreateNoteAction:", action);
                     return "";
             }
         } catch (err) {
