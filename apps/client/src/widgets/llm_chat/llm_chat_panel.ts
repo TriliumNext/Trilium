@@ -5,7 +5,7 @@ import BasicWidget from "../basic_widget.js";
 import toastService from "../../services/toast.js";
 import appContext from "../../components/app_context.js";
 import server from "../../services/server.js";
-import noteAutocompleteService from "../../services/note_autocomplete.js";
+import noteAutocompleteService, { CreateMode } from "../../services/note_autocomplete.js";
 
 import { TPL, addMessageToChat, showSources, hideSources, showLoadingIndicator, hideLoadingIndicator } from "./ui.js";
 import { formatMarkdown } from "./utils.js";
@@ -163,7 +163,7 @@ export default class LlmChatPanel extends BasicWidget {
         const mentionSetup: MentionFeed[] = [
             {
                 marker: "@",
-                feed: (queryText: string) => noteAutocompleteService.autocompleteSourceForCKEditor(queryText),
+                feed: (queryText: string) => noteAutocompleteService.autocompleteSourceForCKEditor(queryText, CreateMode.CreateAndLink),
                 itemRenderer: (item) => {
                     const suggestion = item as Suggestion;
                     const itemElement = document.createElement("button");

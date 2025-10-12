@@ -7,7 +7,7 @@ import emojiDefinitionsUrl from "@triliumnext/ckeditor5/src/emoji_definitions/en
 import { copyTextWithToast } from "../../../services/clipboard_ext.js";
 import { t } from "../../../services/i18n.js";
 import { getMermaidConfig } from "../../../services/mermaid.js";
-import noteAutocompleteService, { type Suggestion } from "../../../services/note_autocomplete.js";
+import noteAutocompleteService, { CreateMode, type Suggestion } from "../../../services/note_autocomplete.js";
 import mimeTypesService from "../../../services/mime_types.js";
 import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
 import { buildToolbarConfig } from "./toolbar.js";
@@ -181,7 +181,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             feeds: [
                 {
                     marker: "@",
-                    feed: (queryText: string) => noteAutocompleteService.autocompleteSourceForCKEditor(queryText),
+                    feed: (queryText: string) => noteAutocompleteService.autocompleteSourceForCKEditor(queryText, CreateMode.CreateAndLink),
                     itemRenderer: (item) => {
                         const itemElement = document.createElement("button");
 

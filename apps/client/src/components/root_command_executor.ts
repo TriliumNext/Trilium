@@ -240,7 +240,7 @@ export default class RootCommandExecutor extends Component {
             // Create a new AI Chat note at the root level
             const rootNoteId = "root";
 
-            const result = await noteCreateService.createNote(rootNoteId, {
+            const result = await noteCreateService.createNoteIntoPath(rootNoteId, {
                 title: "New AI Chat",
                 type: "aiChat",
                 content: JSON.stringify({
