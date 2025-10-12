@@ -7,7 +7,7 @@ import branches from "../../../services/branches";
 import { executeBulkActions } from "../../../services/bulk_action";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
-import note_create from "../../../services/note_create";
+import note_create from "../../../services/note_create.js";
 import server from "../../../services/server";
 import { ColumnMap } from "./data";
 
