@@ -13,6 +13,8 @@ import { buildConfig, BuildEditorOptions, OPEN_SOURCE_LICENSE_KEY } from "./cked
 import type FNote from "../../entities/fnote.js";
 import { PopupEditor, ClassicEditor, EditorWatchdog, type CKTextEditor, type MentionFeed, type WatchdogConfig, EditorConfig } from "@triliumnext/ckeditor5";
 import { updateTemplateCache } from "./ckeditor/snippets.js";
+import { MentionAction } from "@triliumnext/ckeditor5/src/augmentation.js";
+import note_create from "../../services/note_create.js";
 
 export type BoxSize = "small" | "medium" | "full";
 
@@ -463,21 +465,81 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
         });
     }
 
-    async createNoteForReferenceLink(title: string) {
-        if (!this.notePath) {
-            return;
+    async createNoteFromCkEditor (
+        title: string,
+        parentNotePath: string | undefined,
+        action: MentionAction
+    ): Promise<string> {
+        try {
+            switch (action) {
+                // --- Create note INTO inbox ---
+                case MentionAction.CreateNoteIntoInbox: {
+                    const { success, noteType, templateNoteId } = await note_create.chooseNoteType();
+                    if (!success) return "";
+
+                    const { note } = await note_create.createNoteIntoInbox({
+                        title,
+                        activate: true,
+                        type: noteType,
+                        templateNoteId,
+                    });
+
+                    return note?.getBestNotePathString() ?? "";
+                }
+
+                // --- Create note INTO current path ---
+                case MentionAction.CreateNoteIntoPath: {
+                    const { success, noteType, templateNoteId, notePath } = await note_create.chooseNoteType();
+                    if (!success) return "";
+
+                    const { note } = await note_create.createNoteIntoPath(notePath || parentNotePath, {
+                        title,
+                        activate: true,
+                        type: noteType,
+                        templateNoteId,
+                    });
+
+                    return note?.getBestNotePathString() ?? "";
+                }
+
+                // --- Create & link note INTO inbox ---
+                case MentionAction.CreateAndLinkNoteIntoInbox: {
+                    const { success, noteType, templateNoteId } = await note_create.chooseNoteType();
+                    if (!success) return "";
+
+                    const { note } = await note_create.createNoteIntoInbox({
+                        title,
+                        activate: false,
+                        type: noteType,
+                        templateNoteId,
+                    });
+
+                    return note?.getBestNotePathString() ?? "";
+                }
+
+                // --- Create & link note INTO current path ---
+                case MentionAction.CreateAndLinkNoteIntoPath: {
+                    const { success, noteType, templateNoteId, notePath } = await note_create.chooseNoteType();
+                    if (!success) return "";
+
+                    const { note } = await note_create.createNoteIntoPath(notePath || parentNotePath, {
+                        title,
+                        activate: false,
+                        type: noteType,
+                        templateNoteId,
+                    });
+
+                    return note?.getBestNotePathString() ?? "";
+                }
+
+                default:
+                    console.warn("Unknown MentionAction:", action);
+                    return "";
+            }
+        } catch (err) {
+            console.error("Error while creating note from CKEditor:", err);
+            return "";
         }
-
-        const resp = await noteCreateService.createNoteWithTypePrompt(this.notePath, {
-            activate: false,
-            title: title
-        });
-
-        if (!resp || !resp.note) {
-            return;
-        }
-
-        return resp.note.getBestNotePathString();
     }
 
     async refreshIncludedNoteEvent({ noteId }: EventData<"refreshIncludedNote">) {

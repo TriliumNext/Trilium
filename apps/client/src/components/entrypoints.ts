@@ -11,6 +11,7 @@ import froca from "../services/froca.js";
 import linkService from "../services/link.js";
 import { t } from "../services/i18n.js";
 import { CreateChildrenResponse, SqlExecuteResponse } from "@triliumnext/commons";
+import noteCreateService from "../services/note_create";
 
 export default class Entrypoints extends Component {
     constructor() {
@@ -24,23 +25,7 @@ export default class Entrypoints extends Component {
     }
 
     async createNoteIntoInboxCommand() {
-        const inboxNote = await dateNoteService.getInboxNote();
-        if (!inboxNote) {
-            console.warn("Missing inbox note.");
-            return;
-        }
-
-        const { note } = await server.post<CreateChildrenResponse>(`notes/${inboxNote.noteId}/children?target=into`, {
-            content: "",
-            type: "text",
-            isProtected: inboxNote.isProtected && protectedSessionHolder.isProtectedSessionAvailable()
-        });
-
-        await ws.waitForMaxKnownEntityChangeId();
-
-        await appContext.tabManager.openTabWithNoteWithHoisting(note.noteId, { activate: true });
-
-        appContext.triggerEvent("focusAndSelectTitle", { isNewNote: true });
+        await noteCreateService.createNoteIntoInbox();
     }
 
     async toggleNoteHoistingCommand({ noteId = appContext.tabManager.getActiveContextNoteId() }) {
