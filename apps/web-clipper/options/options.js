@@ -56,7 +56,7 @@ async function saveTriliumServerSetup(e) {
 
         $triliumServerPassword.val('');
 
-        chrome.storage.sync.set({
+        browser.storage.sync.set({
             triliumServerUrl: $triliumServerUrl.val(),
             authToken: json.token
         });
@@ -73,7 +73,7 @@ const $resetTriliumServerSetupLink = $("#reset-trilium-server-setup");
 $resetTriliumServerSetupLink.on("click", e => {
     e.preventDefault();
 
-    chrome.storage.sync.set({
+    browser.storage.sync.set({
         triliumServerUrl: '',
         authToken: ''
     });
@@ -97,7 +97,7 @@ $triilumDesktopSetupForm.on("submit", e => {
         return;
     }
 
-    chrome.storage.sync.set({
+    browser.storage.sync.set({
         triliumDesktopPort: port
     });
 
@@ -105,8 +105,8 @@ $triilumDesktopSetupForm.on("submit", e => {
 });
 
 async function restoreOptions() {
-    const {triliumServerUrl} = await chrome.storage.sync.get("triliumServerUrl");
-    const {authToken} = await chrome.storage.sync.get("authToken");
+    const {triliumServerUrl} = await browser.storage.sync.get("triliumServerUrl");
+    const {authToken} = await browser.storage.sync.get("authToken");
 
     $errorMessage.hide();
     $successMessage.hide();
@@ -127,7 +127,7 @@ async function restoreOptions() {
         $triliumServerConfiguredDiv.hide();
     }
 
-    const {triliumDesktopPort} = await chrome.storage.sync.get("triliumDesktopPort");
+    const {triliumDesktopPort} = await browser.storage.sync.get("triliumDesktopPort");
 
     $triliumDesktopPort.val(triliumDesktopPort);
 }

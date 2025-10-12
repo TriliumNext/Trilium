@@ -1,33 +1,3 @@
-// Utility functions (inline to avoid module dependency issues)
-function randomString(len) {
-    let text = "";
-    const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
-    for (let i = 0; i < len; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
-    }
-
-    return text;
-}
-
-function getBaseUrl() {
-    let output = getPageLocationOrigin() + location.pathname;
-
-    if (output[output.length - 1] !== '/') {
-        output = output.split('/');
-        output.pop();
-        output = output.join('/');
-    }
-
-    return output;
-}
-
-function getPageLocationOrigin() {
-    // location.origin normally returns the protocol + domain + port (eg. https://example.com:8080)
-    // but for file:// protocol this is browser dependant and in particular Firefox returns "null" in this case.
-    return location.protocol === 'file:' ? 'file://' : location.origin;
-}
-
 function absoluteUrl(url) {
 	if (!url) {
 		return url;
@@ -75,19 +45,19 @@ function getReadableDocument() {
 function getDocumentDates() {
 	var dates = {
 		publishedDate: null,
-		modifiedDate: null,
+		modifiedDate: null,  
 	};
-
+	
 	const articlePublishedTime = document.querySelector("meta[property='article:published_time']");
 	if (articlePublishedTime && articlePublishedTime.getAttribute('content')) {
 		dates.publishedDate = new Date(articlePublishedTime.getAttribute('content'));
 	}
-
+	
 	const articleModifiedTime = document.querySelector("meta[property='article:modified_time']");
 	if (articleModifiedTime && articleModifiedTime.getAttribute('content')) {
 		dates.modifiedDate = new Date(articleModifiedTime.getAttribute('content'));
 	}
-
+	
 	// TODO: if we didn't get dates from meta, then try to get them from JSON-LD
 
 	return dates;
@@ -265,7 +235,7 @@ function createLink(clickAction, text, color = "lightskyblue") {
 	link.style.color = color;
 	link.appendChild(document.createTextNode(text));
 	link.addEventListener("click", () => {
-		chrome.runtime.sendMessage(null, clickAction)
+		browser.runtime.sendMessage(null, clickAction)
 	});
 
 	return link
@@ -274,10 +244,7 @@ function createLink(clickAction, text, color = "lightskyblue") {
 async function prepareMessageResponse(message) {
 	console.info('Message: ' + message.name);
 
-	if (message.name === "ping") {
-		return { success: true };
-	}
-	else if (message.name === "toast") {
+	if (message.name === "toast") {
 		let messageText;
 
 		if (message.noteId) {
@@ -310,42 +277,6 @@ async function prepareMessageResponse(message) {
 				duration: 7000
 			}
 		});
-
-		return { success: true }; // Return a response
-	}
-	else if (message.name === "status-toast") {
-		await requireLib('/lib/toast.js');
-
-		// Hide any existing status toast
-		if (window.triliumStatusToast && window.triliumStatusToast.hide) {
-			window.triliumStatusToast.hide();
-		}
-
-		// Store reference to the status toast so we can replace it
-		window.triliumStatusToast = showToast(message.message, {
-			settings: {
-				duration: message.isProgress ? 60000 : 5000 // Long duration for progress, shorter for errors
-			}
-		});
-
-		return { success: true }; // Return a response
-	}
-	else if (message.name === "update-status-toast") {
-		await requireLib('/lib/toast.js');
-
-		// Hide the previous status toast
-		if (window.triliumStatusToast && window.triliumStatusToast.hide) {
-			window.triliumStatusToast.hide();
-		}
-
-		// Show new toast with updated message
-		window.triliumStatusToast = showToast(message.message, {
-			settings: {
-				duration: message.isProgress ? 60000 : 5000
-			}
-		});
-
-		return { success: true }; // Return a response
 	}
 	else if (message.name === "trilium-save-selection") {
 		const container = document.createElement('div');
@@ -407,10 +338,7 @@ async function prepareMessageResponse(message) {
 	}
 }
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    prepareMessageResponse(message).then(sendResponse);
-    return true; // Important: indicates async response
-});
+browser.runtime.onMessage.addListener(prepareMessageResponse);
 
 const loadedLibs = [];
 
@@ -418,6 +346,6 @@ async function requireLib(libPath) {
 	if (!loadedLibs.includes(libPath)) {
 		loadedLibs.push(libPath);
 
-		await chrome.runtime.sendMessage({name: 'load-script', file: libPath});
+		await browser.runtime.sendMessage({name: 'load-script', file: libPath});
 	}
 }
