@@ -51,7 +51,7 @@
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-playwright": "2.2.2",
     "eslint-plugin-react-hooks": "7.0.0",
-    "happy-dom": "~20.0.0",
+    "happy-dom": "~20.0.2",
     "jiti": "2.6.1",
     "jsonc-eslint-parser": "2.4.1",
     "react-refresh": "0.18.0",

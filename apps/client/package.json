@@ -73,7 +73,7 @@
     "@types/mark.js": "8.11.12",
     "@types/tabulator-tables": "6.2.11",
     "copy-webpack-plugin": "13.0.1",
-    "happy-dom": "20.0.1",
+    "happy-dom": "20.0.2",
     "script-loader": "0.7.2",
     "vite-plugin-static-copy": "3.1.4"
   }
