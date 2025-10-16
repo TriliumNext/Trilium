@@ -11,7 +11,7 @@ import RightPanelWidget from "../widgets/right_panel_widget.js";
 import ws from "./ws.js";
 import appContext from "../components/app_context.js";
 import NoteContextAwareWidget from "../widgets/note_context_aware_widget.js";
-import BasicWidget from "../widgets/basic_widget.js";
+import BasicWidget, { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import SpacedUpdate from "./spaced_update.js";
 import shortcutService from "./shortcuts.js";
 import dialogService from "./dialog.js";
@@ -19,7 +19,6 @@ import type FNote from "../entities/fnote.js";
 import { t } from "./i18n.js";
 import dayjs from "dayjs";
 import type NoteContext from "../components/note_context.js";
-import type NoteDetailWidget from "../widgets/note_detail.js";
 import type Component from "../components/component.js";
 import { formatLogMessage } from "@triliumnext/commons";
 
@@ -317,7 +316,7 @@ export interface Api {
      * Get access to the widget handling note detail. Methods like `getWidgetType()` and `getTypeWidget()` to get to the
      * implementation of actual widget type.
      */
-    getActiveNoteDetailWidget(): Promise<NoteDetailWidget>;
+    getActiveNoteDetailWidget(): Promise<ReactWrappedWidget>;
     /**
      * @returns returns a note path of active note or null if there isn't active note
      */

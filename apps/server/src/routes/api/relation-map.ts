@@ -1,22 +1,12 @@
 import type { Request } from "express";
 import becca from "../../becca/becca.js";
 import sql from "../../services/sql.js";
-
-interface ResponseData {
-    noteTitles: Record<string, string>;
-    relations: {
-        attributeId: string;
-        sourceNoteId: string;
-        targetNoteId: string;
-        name: string;
-    }[];
-    inverseRelations: Record<string, string>;
-}
+import { RelationMapPostResponse } from "@triliumnext/commons";
 
 function getRelationMap(req: Request) {
     const { relationMapNoteId, noteIds } = req.body;
 
-    const resp: ResponseData = {
+    const resp: RelationMapPostResponse = {
         // noteId => title
         noteTitles: {},
         relations: [],

@@ -1,7 +1,7 @@
 import Map from "./map";
 import "./index.css";
 import { ViewModeProps } from "../interface";
-import { useNoteBlob, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useNoteTreeDrag, useSpacedUpdate, useTouchBar, useTriliumEvent } from "../../react/hooks";
+import { useNoteBlob, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useNoteTreeDrag, useSpacedUpdate, useTriliumEvent } from "../../react/hooks";
 import { DEFAULT_MAP_LAYER_NAME } from "./map_layer";
 import { divIcon, GPXOptions, LatLng, LeafletMouseEvent } from "leaflet";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";

@@ -8,7 +8,7 @@ import { useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "..
 import OptionsSection from "./components/OptionsSection";
 import { useEffect, useMemo, useRef } from "preact/hooks";
 import codeNoteSample from "./samples/code_note.txt?raw";
-import { DEFAULT_PREFIX } from "../abstract_code_type_widget";
+import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import { MimeType } from "@triliumnext/commons";
 import mime_types from "../../../services/mime_types";
 import CheckboxList from "./components/CheckboxList";
@@ -58,7 +58,7 @@ function Appearance() {
         <OptionsSection title={t("code_theme.title")}>
             <div className="row" style={{ marginBottom: "15px" }}>
                 <FormGroup name="color-scheme" label={t("code_theme.color-scheme")} className="col-md-6" style={{ marginBottom: 0 }}>
-                    <FormSelect 
+                    <FormSelect
                         values={themes}
                         keyProperty="id" titleProperty="name"
                         currentValue={codeNoteTheme} onChange={setCodeNoteTheme}
@@ -148,7 +148,7 @@ export function CodeMimeTypesList() {
             plainTextMimeType.enabled = true;
             plainTextMimeType.disabled = true;
         }
-        
+
         for (const mimeType of ungroupedMimeTypes) {
             const initial = mimeType.title.charAt(0).toUpperCase();
             if (!result[initial]) {
@@ -157,7 +157,7 @@ export function CodeMimeTypesList() {
             result[initial].push(mimeType);
         }
         return result;
-    }, [ codeNotesMimeTypes ]);  
+    }, [ codeNotesMimeTypes ]);
 
     return (
         <ul class="options-mime-types">

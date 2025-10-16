@@ -4,7 +4,7 @@ import Calendar from "./calendar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import "./index.css";
 import { useNoteLabel, useNoteLabelBoolean, useResizeObserver, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
-import { DISPLAYABLE_LOCALE_IDS, LOCALE_IDS } from "@triliumnext/commons";
+import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { Calendar as FullCalendar } from "@fullcalendar/core";
 import { parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
 import dialog from "../../../services/dialog";

@@ -82,6 +82,8 @@ interface FormListItemOpts {
     active?: boolean;
     badges?: FormListBadge[];
     disabled?: boolean;
+    /** Will indicate the reason why the item is disabled via an icon, when hovered over it. */
+    disabledTooltip?: string;
     checked?: boolean | null;
     selected?: boolean;
     container?: boolean;
@@ -119,21 +121,24 @@ export function FormListItem({ className, icon, value, title, active, disabled, 
             <Icon icon={icon} />&nbsp;
             {description ? (
                 <div>
-                    <FormListContent description={description} {...contentProps} />
+                    <FormListContent description={description} disabled={disabled} {...contentProps} />
                 </div>
             ) : (
-                <FormListContent description={description} {...contentProps} />
+                <FormListContent description={description} disabled={disabled} {...contentProps} />
             )}
         </li>
     );
 }
 
-function FormListContent({ children, badges, description }: Pick<FormListItemOpts, "children" | "badges" | "description">) {
+function FormListContent({ children, badges, description, disabled, disabledTooltip }: Pick<FormListItemOpts, "children" | "badges" | "description" | "disabled" | "disabledTooltip">) {
     return <>
         {children}
         {badges && badges.map(({ className, text }) => (
             <span className={`badge ${className ?? ""}`}>{text}</span>
         ))}
+        {disabled && disabledTooltip && (
+            <span class="bx bx-info-circle disabled-tooltip" title={disabledTooltip} />
+        )}
         {description && <div className="description">{description}</div>}
     </>;
 }
