@@ -183,7 +183,7 @@ export function createUploadMiddleware(): RequestHandler {
 
     if (!process.env.TRILIUM_NO_UPLOAD_LIMIT) {
         multerOptions.limits = {
-            fileSize: MAX_ALLOWED_FILE_SIZE_MB * 1024 * 1024
+            fileSize: MAX_ALLOWED_FILE_SIZE_MB * 1024 * 1024 * 1024
         };
     }
 
