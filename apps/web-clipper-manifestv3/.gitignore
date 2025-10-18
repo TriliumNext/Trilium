@@ -130,6 +130,7 @@ tests/
 /reference/github/PR-QUICK-START.md
 /reference/github/PR-DESCRIPTION.md
 .gitmessage
+/reference/github/
 
 # Copilot configuration (development only)
 .github/copilot-instructions.md
