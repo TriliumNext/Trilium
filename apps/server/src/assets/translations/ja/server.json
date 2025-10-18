@@ -22,7 +22,7 @@
     "move-notes-to": "選択したノートを移動",
     "copy-notes-to-clipboard": "選択したノートをクリップボードにコピー",
     "paste-notes-from-clipboard": "クリップボードからアクティブなノートにノートを貼り付け",
-    "cut-notes-to-clipboard": "選択したノートをクリップボードにカット",
+    "cut-notes-to-clipboard": "選択したノートをクリップボードに切り取り",
     "select-all-notes-in-parent": "現在のノートレベルと同じノートをすべて選択する",
     "add-note-above-to-the-selection": "上のノートを選択範囲に追加",
     "add-note-below-to-selection": "下のノートを選択範囲に追加",
@@ -101,9 +101,9 @@
     "toggle-book-properties": "コレクションプロパティ切り替え",
     "toggle-zen-mode": "禅モード（集中した編集のための最小限のUI）を有効/無効にする",
     "add-include-note-to-text": "ノートを埋め込むダイアログを開く",
-    "toggle-promoted-attributes": "プロモートされた属性をトグルする",
+    "toggle-promoted-attributes": "プロモート属性切り替え",
     "force-save-revision": "アクティブノートの新しいノートリヴィジョンを強制する",
-    "toggle-classic-editor-toolbar": "固定ツールバーを持ったエディターのフォーマットタブをトグルする"
+    "toggle-classic-editor-toolbar": "固定ツールバーエディターの書式設定タブ切り替え"
   },
   "keyboard_action_names": {
     "back-in-note-history": "ノートの履歴を戻る",
@@ -128,7 +128,7 @@
     "move-notes-to": "ノートを移動",
     "copy-notes-to-clipboard": "ノートをクリップボードにコピー",
     "paste-notes-from-clipboard": "クリップボードからノートを貼り付け",
-    "cut-notes-to-clipboard": "ノートをクリップボードにカット",
+    "cut-notes-to-clipboard": "ノートをクリップボードに切り取り",
     "select-all-notes-in-parent": "親ノート内のすべてのノートを選択",
     "add-note-above-to-selection": "選択範囲に上のノートを追加",
     "add-note-below-to-selection": "選択範囲に下のノートを追加",
@@ -200,7 +200,7 @@
     "force-save-revision": "強制保存リビジョン",
     "add-include-note-to-text": "埋め込みノートを追加",
     "toggle-ribbon-tab-classic-editor": "リボンタブのクラシックエディターに切り替える",
-    "toggle-ribbon-tab-promoted-attributes": "リボンタブのプロモート属性を切り替える"
+    "toggle-ribbon-tab-promoted-attributes": "リボンタブ切り替え：プロモート属性"
   },
   "login": {
     "title": "ログイン",
@@ -415,7 +415,8 @@
     "presentation": "プレゼンテーション",
     "presentation_slide": "プレゼンテーションスライド",
     "presentation_slide_first": "最初のスライド",
-    "presentation_slide_second": "2番目のスライド"
+    "presentation_slide_second": "2番目のスライド",
+    "background": "背景"
   },
   "share_404": {
     "title": "該当なし",
