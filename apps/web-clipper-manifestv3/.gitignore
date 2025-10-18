@@ -121,3 +121,27 @@ tests/
 *.test.ts
 *.spec.js
 *.spec.ts
+
+# ============================================
+# PR Preparation Files (Keep Private)
+# ============================================
+/reference/github/PR-PREPARATION-CHECKLIST.md
+/reference/github/PR-NOTES.md
+/reference/github/PR-QUICK-START.md
+/reference/github/PR-DESCRIPTION.md
+.gitmessage
+
+# Copilot configuration (development only)
+.github/copilot-instructions.md
+
+# Development documentation (not for end users)
+/reference/context-aware_prompting_templates.md
+/reference/copilot_task_templates.md
+/reference/end_of_session.md
+/reference/optimized_copilot_workflow_guide.md
+
+# Reference materials (reduce repo size)
+reference/chrome_extension_docs/
+reference/Mozilla_Readability_docs/
+reference/cure53_DOMPurify_docs/
+reference/cheerio_docs/
