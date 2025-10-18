@@ -38,11 +38,14 @@ function getFulltext(_tokens: TokenData[], searchContext: SearchContext, leading
 
     if (!searchContext.fastSearch) {
         // For exact match with "=", we need different behavior
-        if (leadingOperator === "=" && tokens.length === 1) {
-            // Exact match on title OR exact match on content
+        if (leadingOperator === "=" && tokens.length >= 1) {
+            // Exact match on title OR exact match on content OR exact match in flat text (includes attributes)
+            // For multi-word, join tokens with space to form exact phrase
+            const titleSearchValue = tokens.join(" ");
             return new OrExp([
-                new PropertyComparisonExp(searchContext, "title", "=", tokens[0]),
-                new NoteContentFulltextExp("=", { tokens, flatText: false })
+                new PropertyComparisonExp(searchContext, "title", "=", titleSearchValue),
+                new NoteContentFulltextExp("=", { tokens, flatText: false }),
+                new NoteContentFulltextExp("=", { tokens, flatText: true })
             ]);
         }
         return new OrExp([new NoteFlatTextExp(tokens), new NoteContentFulltextExp(operator, { tokens, flatText: true })]);
