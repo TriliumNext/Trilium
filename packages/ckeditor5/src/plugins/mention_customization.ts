@@ -1,5 +1,5 @@
 import { Command, Mention, Plugin, ModelRange, type ModelSelectable } from "ckeditor5";
-import { type CreateNoteAction } from "@triliumnext/commons"
+import { CreateNoteAction } from "@triliumnext/commons"
 
 /**
  * Overrides the actions taken by the Mentions plugin (triggered by `@` in the text editor, or `~` & `#` in the attribute editor):
