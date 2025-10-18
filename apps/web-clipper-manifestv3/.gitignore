@@ -104,7 +104,8 @@ web-ext-artifacts/
 *.pem
 
 # Development documentation (exclude from PR)
-reference/
+reference/dev_notes/
+reference/NotebookLM/
 .dev/
 development/
 docs/ARCHIVE/
