@@ -38,7 +38,6 @@
 | Screenshot cropping | ❌ | Rect stored, not applied | `background/index.ts:504-560` |
 | Date metadata extraction | ❌ | Not implemented | - |
 | Codeblock formatting preservation | ❌ | Not implemented | - |
-| Meta Note popup option | ❌ | Not implemented | - |
 
 ### Priority Issues:
 
@@ -154,6 +153,7 @@
 | Date metadata | ❌ | publishedDate, modifiedDate | LOW |
 | Interactive toasts | ⚠️ | No "Open in Trilium" button | LOW |
 | Save tabs feature | ❌ | Bulk save all tabs | MED |
+| Meta Note Popup option | ❌ | Not implemented | MED |
 
 ---
 
