@@ -136,15 +136,6 @@ await chrome.scripting.executeScript({
 3. Verify no console errors
 4. Update `FEATURE-PARITY-CHECKLIST.md`
 
-## Current Development Focus
-
-**Phase**: Screenshot Features (see FEATURE-PARITY-CHECKLIST.md)
-**Next Priority**: Screenshot cropping implementation
-**Key Files**: 
-- `src/background/index.ts` (capture handlers)
-- `src/content/` (selection UI)
-- `src/shared/` (utilities)
-
 ## What NOT to Include in Suggestions
 
 ❌ Long explanations of basic TypeScript concepts  
