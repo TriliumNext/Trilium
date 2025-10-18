@@ -90,6 +90,10 @@ const config: ForgeConfig = {
                     base: "org.electronjs.Electron2.BaseApp",
                     baseVersion: "24.08",
                     baseFlatpakref: "https://flathub.org/repo/flathub.flatpakrepo",
+                    finishArgs: [
+                        "--socket=fallback-x11",
+                        "--socket=wayland"
+                    ],
                     modules: [
                         {
                             name: "zypak",

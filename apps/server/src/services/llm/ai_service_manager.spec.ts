@@ -12,7 +12,11 @@ import type { AIService, ChatCompletionOptions, Message } from './ai_interface.j
 vi.mock('../options.js', () => ({
     default: {
         getOption: vi.fn(),
-        getOptionBool: vi.fn()
+        getOptionBool: vi.fn(),
+        getOptionInt: vi.fn(name => {
+            if (name === "protectedSessionTimeout") return Number.MAX_SAFE_INTEGER;
+            return 0;
+        })
     }
 }));
 
@@ -110,26 +114,26 @@ describe('AIServiceManager', () => {
     describe('getSelectedProviderAsync', () => {
         it('should return the selected provider', async () => {
             vi.mocked(configHelpers.getSelectedProvider).mockResolvedValueOnce('openai');
-            
+
             const result = await manager.getSelectedProviderAsync();
-            
+
             expect(result).toBe('openai');
             expect(configHelpers.getSelectedProvider).toHaveBeenCalled();
         });
 
         it('should return null if no provider is selected', async () => {
             vi.mocked(configHelpers.getSelectedProvider).mockResolvedValueOnce(null);
-            
+
             const result = await manager.getSelectedProviderAsync();
-            
+
             expect(result).toBeNull();
         });
 
         it('should handle errors and return null', async () => {
             vi.mocked(configHelpers.getSelectedProvider).mockRejectedValueOnce(new Error('Config error'));
-            
+
             const result = await manager.getSelectedProviderAsync();
-            
+
             expect(result).toBeNull();
         });
     });
@@ -141,9 +145,9 @@ describe('AIServiceManager', () => {
                 errors: [],
                 warnings: []
             });
-            
+
             const result = await manager.validateConfiguration();
-            
+
             expect(result).toBeNull();
         });
 
@@ -153,9 +157,9 @@ describe('AIServiceManager', () => {
                 errors: ['Missing API key', 'Invalid model'],
                 warnings: []
             });
-            
+
             const result = await manager.validateConfiguration();
-            
+
             expect(result).toContain('There are issues with your AI configuration');
             expect(result).toContain('Missing API key');
             expect(result).toContain('Invalid model');
@@ -167,9 +171,9 @@ describe('AIServiceManager', () => {
                 errors: [],
                 warnings: ['Model not optimal']
             });
-            
+
             const result = await manager.validateConfiguration();
-            
+
             expect(result).toBeNull();
         });
     });
@@ -178,21 +182,21 @@ describe('AIServiceManager', () => {
         it('should create and return the selected provider service', async () => {
             vi.mocked(configHelpers.getSelectedProvider).mockResolvedValueOnce('openai');
             vi.mocked(options.getOption).mockReturnValueOnce('test-api-key');
-            
+
             const mockService = {
                 isAvailable: vi.fn().mockReturnValue(true),
                 generateChatCompletion: vi.fn()
             };
             vi.mocked(OpenAIService).mockImplementationOnce(() => mockService as any);
-            
+
             const result = await manager.getOrCreateAnyService();
-            
+
             expect(result).toBe(mockService);
         });
 
         it('should throw error if no provider is selected', async () => {
             vi.mocked(configHelpers.getSelectedProvider).mockResolvedValueOnce(null);
-            
+
             await expect(manager.getOrCreateAnyService()).rejects.toThrow(
                 'No AI provider is selected'
             );
@@ -201,7 +205,7 @@ describe('AIServiceManager', () => {
         it('should throw error if selected provider is not available', async () => {
             vi.mocked(configHelpers.getSelectedProvider).mockResolvedValueOnce('openai');
             vi.mocked(options.getOption).mockReturnValueOnce(''); // No API key
-            
+
             await expect(manager.getOrCreateAnyService()).rejects.toThrow(
                 'Selected AI provider (openai) is not available'
             );
@@ -211,17 +215,17 @@ describe('AIServiceManager', () => {
     describe('isAnyServiceAvailable', () => {
         it('should return true if any provider is available', () => {
             vi.mocked(options.getOption).mockReturnValueOnce('test-api-key');
-            
+
             const result = manager.isAnyServiceAvailable();
-            
+
             expect(result).toBe(true);
         });
 
         it('should return false if no providers are available', () => {
             vi.mocked(options.getOption).mockReturnValue('');
-            
+
             const result = manager.isAnyServiceAvailable();
-            
+
             expect(result).toBe(false);
         });
     });
@@ -232,18 +236,18 @@ describe('AIServiceManager', () => {
                 .mockReturnValueOnce('openai-key')
                 .mockReturnValueOnce('anthropic-key')
                 .mockReturnValueOnce(''); // No Ollama URL
-            
+
             const result = manager.getAvailableProviders();
-            
+
             expect(result).toEqual(['openai', 'anthropic']);
         });
 
         it('should include already created services', () => {
             // Mock that OpenAI has API key configured
             vi.mocked(options.getOption).mockReturnValueOnce('test-api-key');
-            
+
             const result = manager.getAvailableProviders();
-            
+
             expect(result).toContain('openai');
         });
     });
@@ -255,23 +259,23 @@ describe('AIServiceManager', () => {
 
         it('should generate completion with selected provider', async () => {
             vi.mocked(configHelpers.getSelectedProvider).mockResolvedValueOnce('openai');
-            
+
             // Mock the getAvailableProviders to include openai
             vi.mocked(options.getOption)
                 .mockReturnValueOnce('test-api-key') // for availability check
                 .mockReturnValueOnce('') // for anthropic
                 .mockReturnValueOnce('') // for ollama
                 .mockReturnValueOnce('test-api-key'); // for service creation
-            
+
             const mockResponse = { content: 'Hello response' };
             const mockService = {
                 isAvailable: vi.fn().mockReturnValue(true),
                 generateChatCompletion: vi.fn().mockResolvedValueOnce(mockResponse)
             };
             vi.mocked(OpenAIService).mockImplementationOnce(() => mockService as any);
-            
+
             const result = await manager.generateChatCompletion(messages);
-            
+
             expect(result).toBe(mockResponse);
             expect(mockService.generateChatCompletion).toHaveBeenCalledWith(messages, {});
         });
@@ -283,28 +287,28 @@ describe('AIServiceManager', () => {
                 modelId: 'gpt-4',
                 fullIdentifier: 'openai:gpt-4'
             });
-            
+
             // Mock the getAvailableProviders to include openai
             vi.mocked(options.getOption)
                 .mockReturnValueOnce('test-api-key') // for availability check
                 .mockReturnValueOnce('') // for anthropic
                 .mockReturnValueOnce('') // for ollama
                 .mockReturnValueOnce('test-api-key'); // for service creation
-            
+
             const mockResponse = { content: 'Hello response' };
             const mockService = {
                 isAvailable: vi.fn().mockReturnValue(true),
                 generateChatCompletion: vi.fn().mockResolvedValueOnce(mockResponse)
             };
             vi.mocked(OpenAIService).mockImplementationOnce(() => mockService as any);
-            
-            const result = await manager.generateChatCompletion(messages, { 
-                model: 'openai:gpt-4' 
+
+            const result = await manager.generateChatCompletion(messages, {
+                model: 'openai:gpt-4'
             });
-            
+
             expect(result).toBe(mockResponse);
             expect(mockService.generateChatCompletion).toHaveBeenCalledWith(
-                messages, 
+                messages,
                 { model: 'gpt-4' }
             );
         });
@@ -317,7 +321,7 @@ describe('AIServiceManager', () => {
 
         it('should throw error if no provider selected', async () => {
             vi.mocked(configHelpers.getSelectedProvider).mockResolvedValueOnce(null);
-            
+
             await expect(manager.generateChatCompletion(messages)).rejects.toThrow(
                 'No AI provider is selected'
             );
@@ -330,13 +334,13 @@ describe('AIServiceManager', () => {
                 modelId: 'claude-3',
                 fullIdentifier: 'anthropic:claude-3'
             });
-            
+
             // Mock that openai is available
             vi.mocked(options.getOption)
                 .mockReturnValueOnce('test-api-key') // for availability check
                 .mockReturnValueOnce('') // for anthropic
                 .mockReturnValueOnce(''); // for ollama
-            
+
             await expect(
                 manager.generateChatCompletion(messages, { model: 'anthropic:claude-3' })
             ).rejects.toThrow(
@@ -348,9 +352,9 @@ describe('AIServiceManager', () => {
     describe('getAIEnabledAsync', () => {
         it('should return AI enabled status', async () => {
             vi.mocked(configHelpers.isAIEnabled).mockResolvedValueOnce(true);
-            
+
             const result = await manager.getAIEnabledAsync();
-            
+
             expect(result).toBe(true);
             expect(configHelpers.isAIEnabled).toHaveBeenCalled();
         });
@@ -359,9 +363,9 @@ describe('AIServiceManager', () => {
     describe('getAIEnabled', () => {
         it('should return AI enabled status synchronously', () => {
             vi.mocked(options.getOptionBool).mockReturnValueOnce(true);
-            
+
             const result = manager.getAIEnabled();
-            
+
             expect(result).toBe(true);
             expect(options.getOptionBool).toHaveBeenCalledWith('aiEnabled');
         });
@@ -370,17 +374,17 @@ describe('AIServiceManager', () => {
     describe('initialize', () => {
         it('should initialize if AI is enabled', async () => {
             vi.mocked(configHelpers.isAIEnabled).mockResolvedValueOnce(true);
-            
+
             await manager.initialize();
-            
+
             expect(configHelpers.isAIEnabled).toHaveBeenCalled();
         });
 
         it('should not initialize if AI is disabled', async () => {
             vi.mocked(configHelpers.isAIEnabled).mockResolvedValueOnce(false);
-            
+
             await manager.initialize();
-            
+
             expect(configHelpers.isAIEnabled).toHaveBeenCalled();
         });
     });
@@ -388,36 +392,36 @@ describe('AIServiceManager', () => {
     describe('getService', () => {
         it('should return service for specified provider', async () => {
             vi.mocked(options.getOption).mockReturnValueOnce('test-api-key');
-            
+
             const mockService = {
                 isAvailable: vi.fn().mockReturnValue(true),
                 generateChatCompletion: vi.fn()
             };
             vi.mocked(OpenAIService).mockImplementationOnce(() => mockService as any);
-            
+
             const result = await manager.getService('openai');
-            
+
             expect(result).toBe(mockService);
         });
 
         it('should return selected provider service if no provider specified', async () => {
             vi.mocked(configHelpers.getSelectedProvider).mockResolvedValueOnce('anthropic');
             vi.mocked(options.getOption).mockReturnValueOnce('test-api-key');
-            
+
             const mockService = {
                 isAvailable: vi.fn().mockReturnValue(true),
                 generateChatCompletion: vi.fn()
             };
             vi.mocked(AnthropicService).mockImplementationOnce(() => mockService as any);
-            
+
             const result = await manager.getService();
-            
+
             expect(result).toBe(mockService);
         });
 
         it('should throw error if specified provider not available', async () => {
             vi.mocked(options.getOption).mockReturnValueOnce(''); // No API key
-            
+
             await expect(manager.getService('openai')).rejects.toThrow(
                 'Specified provider openai is not available'
             );
@@ -427,17 +431,17 @@ describe('AIServiceManager', () => {
     describe('getSelectedProvider', () => {
         it('should return selected provider synchronously', () => {
             vi.mocked(options.getOption).mockReturnValueOnce('anthropic');
-            
+
             const result = manager.getSelectedProvider();
-            
+
             expect(result).toBe('anthropic');
         });
 
         it('should return default provider if none selected', () => {
             vi.mocked(options.getOption).mockReturnValueOnce('');
-            
+
             const result = manager.getSelectedProvider();
-            
+
             expect(result).toBe('openai');
         });
     });
@@ -446,18 +450,18 @@ describe('AIServiceManager', () => {
         it('should return true if provider service is available', () => {
             // Mock that OpenAI has API key configured
             vi.mocked(options.getOption).mockReturnValueOnce('test-api-key');
-            
+
             const result = manager.isProviderAvailable('openai');
-            
+
             expect(result).toBe(true);
         });
 
         it('should return false if provider service not created', () => {
             // Mock that OpenAI has no API key configured
             vi.mocked(options.getOption).mockReturnValueOnce('');
-            
+
             const result = manager.isProviderAvailable('openai');
-            
+
             expect(result).toBe(false);
         });
     });
@@ -467,13 +471,13 @@ describe('AIServiceManager', () => {
             // Since getProviderMetadata only returns metadata for the current active provider,
             // and we don't have a current provider set, it should return null
             const result = manager.getProviderMetadata('openai');
-            
+
             expect(result).toBeNull();
         });
 
         it('should return null for non-existing provider', () => {
             const result = manager.getProviderMetadata('openai');
-            
+
             expect(result).toBeNull();
         });
     });

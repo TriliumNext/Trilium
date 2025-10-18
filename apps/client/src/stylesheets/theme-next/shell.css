@@ -18,7 +18,7 @@
 
 body {
     --native-titlebar-darwin-x-offset: 10;
-    --native-titlebar-darwin-y-offset: 17 !important;
+    --native-titlebar-darwin-y-offset: 12 !important;
 }
 
 body.layout-horizontal {
@@ -69,7 +69,7 @@ body.background-effects.platform-win32.layout-vertical #vertical-main-container 
 
 /* Add a border to the vertical launch bar if collapsed. */
 body.layout-vertical #horizontal-main-container.left-pane-hidden #launcher-pane.vertical {
-    border-right: 2px solid var(--left-pane-collapsed-border-color);
+    border-inline-end: 2px solid var(--left-pane-collapsed-border-color);
 }
 
 body.background-effects.zen #root-widget {
@@ -100,7 +100,7 @@ body.layout-horizontal > .horizontal {
     align-items: center;
 }
 
-#launcher-container {
+body[dir=ltr] #launcher-container {
     scrollbar-gutter: stable both-edges;
 }
 
@@ -279,14 +279,11 @@ body.layout-horizontal > .horizontal {
     animation: sync-status-pulse 1s ease-in-out alternate-reverse infinite;
 }
 
-#launcher-pane .global-menu-button {
-    --hover-item-background-color: transparent;
-}
+#launcher-pane button.global-menu-button {
+    --update-badge-x-offset: 3%;
+    --update-badge-y-offset: -12%;
 
-#launcher-pane.horizontal .global-menu-button .global-menu-button-update-available {
-    right: -23px;
-    bottom: -22px;
-    transform: scale(0.85);
+    --hover-item-background-color: transparent;
 }
 
 .tooltip .tooltip-arrow {
@@ -400,9 +397,9 @@ body.layout-horizontal > .horizontal {
     content: "";
     position: absolute;
     top: var(--vertical-margin);
-    right: var(--horiz-margin);
+    inset-inline-end: var(--horiz-margin);
     bottom: var(--vertical-margin);
-    left: var(--horiz-margin);
+    inset-inline-start: var(--horiz-margin);
     border-radius: 6px;
     background: var(--calendar-day-highlight-background);
     z-index: -1;
@@ -450,7 +447,7 @@ div.bookmark-folder-widget .note-link:hover {
 }
 
 div.bookmark-folder-widget .note-link a {
-    padding-left: 8px;
+    padding-inline-start: 8px;
     color: var(--menu-text-color);
     cursor: default;
 }
@@ -471,8 +468,8 @@ div.bookmark-folder-widget .note-link .bx {
 
 div.quick-search {
     --padding-top: 8px;
-    --padding-left: 8px;
-    --padding-right: 8px;
+    --padding-inline-start: 8px;
+    --padding-inline-end: 8px;
     --padding-bottom: 8px;
 
     position: relative;
@@ -480,7 +477,7 @@ div.quick-search {
     align-items: center;
     height: unset;
     contain: unset;
-    padding: var(--padding-top) var(--padding-right) var(--padding-bottom) var(--padding-left);
+    padding: var(--padding-top) var(--padding-inline-end) var(--padding-bottom) var(--padding-inline-start);
 }
 
 div.quick-search,
@@ -496,9 +493,9 @@ div.quick-search::before {
     position: absolute;
     content: "";
     top: var(--padding-top);
-    left: var(--padding-left);
+    inset-inline-start: var(--padding-inline-start);
     bottom: var(--padding-bottom);
-    right: var(--padding-right);
+    inset-inline-end: var(--padding-inline-end);
     z-index: 0;
     border: 2px solid transparent;
     border-radius: 6px;
@@ -520,7 +517,7 @@ div.quick-search:focus-within:before {
 }
 
 div.quick-search input {
-    padding-left: 15px !important;
+    padding-inline-start: 15px !important;
     box-shadow: unset !important;
     background: transparent !important;
 }
@@ -539,7 +536,7 @@ div.quick-search .search-button {
     justify-content: center;
     width: 25px;
     height: 25px;
-    margin-right: 8px;
+    margin-inline-end: 8px;
     border-radius: 50%;
     padding: 0;
     color: var(--quick-search-color) !important;
@@ -631,18 +628,18 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
 }
 
 #left-pane .ui-fancytree ul {
-    padding-left: 10px;
+    padding-inline-start: 10px;
 }
 
 /* The root element of the tree */
 #left-pane .fancytree-container > li:first-child > span {
-    padding-left: 12px;
+    padding-inline-start: 12px;
 }
 
 #left-pane span.fancytree-node.fancytree-active {
     position: relative;
     background: transparent !important;
-    color: var(--left-pane-item-selected-color) !important;
+    color: var(--custom-color, var(--left-pane-item-selected-color));
 }
 
 @keyframes left-pane-item-select {
@@ -658,9 +655,9 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
     position: absolute;
     content: "";
     top: var(--left-pane-item-selected-shadow-size);
-    left: var(--left-pane-item-selected-shadow-size);
+    inset-inline-start: var(--left-pane-item-selected-shadow-size);
     bottom: var(--left-pane-item-selected-shadow-size);
-    right: var(--left-pane-item-selected-shadow-size);
+    inset-inline-end: var(--left-pane-item-selected-shadow-size);
     background: var(--left-pane-item-selected-background) !important;
     box-shadow: var(--left-pane-item-selected-shadow);
     border-radius: 6px;
@@ -676,13 +673,17 @@ body.layout-vertical.background-effects div.quick-search .dropdown-menu {
 #left-pane span.fancytree-node.protected > span.fancytree-custom-icon:after {
     position: absolute;
     bottom: 0;
-    right: 0;
+    inset-inline-end: 0;
     font-size: 14px;
     content: "\eb4a";
     font-family: "boxicons";
     transform: translateX(25%);
     background: var(--left-pane-background-color);
     border-radius: 50%;
+}
+
+body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-icon:after {
+    transform: translateX(-25%);
 }
 
 body.mobile .fancytree-expander::before,
@@ -699,7 +700,7 @@ body.mobile .fancytree-node > span {
     body.mobile:not(.force-fixed-tree) #mobile-sidebar-wrapper {
         border-top-right-radius: 12px;
         border-bottom-right-radius: 12px;
-        border-right: 1px solid var(--subtle-border-color);
+        border-inline-end: 1px solid var(--subtle-border-color);
     }
 }
 
@@ -717,9 +718,6 @@ body.mobile .fancytree-node > span {
     margin-top: 0; /* Use this to align the icon with the tree view item's caption */
 }
 
-#left-pane span .fancytree-title {
-    margin-top: -5px;
-}
 
 #left-pane span.fancytree-active .fancytree-title {
     font-weight: normal;
@@ -734,7 +732,7 @@ body.mobile .fancytree-node > span {
 }
 
 #left-pane .tree-item-button {
-    margin-right: 6px;
+    margin-inline-end: 6px;
     border: unset;
     border-radius: 50%;
     background: var(--left-pane-item-action-button-background);
@@ -768,12 +766,12 @@ body.mobile .fancytree-node > span {
 /* Toolbar container (collapsed state) */
 #left-pane .tree-actions {
     max-width: var(--tree-actions-toolbar-collapsed-width);
-    right: var(--tree-actions-toolbar-horizontal-margin);
+    inset-inline-end: var(--tree-actions-toolbar-horizontal-margin);
     bottom: var(--tree-actions-toolbar-vertical-margin);
     overflow: hidden;
     border: 1px solid transparent;
     padding: var(--tree-actions-toolbar-padding-size);
-    padding-right: var(--tree-actions-toolbar-collapsed-width);
+    padding-inline-end: var(--tree-actions-toolbar-collapsed-width);
     background: transparent;
     transition:
         max-width 400ms ease-out,
@@ -817,7 +815,7 @@ body.mobile .fancytree-node > span {
     justify-content: center;
     align-items: center;
     top: 50%;
-    right: calc((var(--tree-actions-toolbar-collapsed-width) - var(--tree-actions-toolbar-expand-button-size)) / 2);
+    inset-inline-end: calc((var(--tree-actions-toolbar-collapsed-width) - var(--tree-actions-toolbar-expand-button-size)) / 2);
     width: var(--tree-actions-toolbar-expand-button-size);
     height: var(--tree-actions-toolbar-expand-button-size);
     box-shadow: 2px 2px 6px var(--left-pane-background-color);
@@ -906,8 +904,8 @@ body.electron.background-effects.layout-horizontal .tab-row-container .toggle-bu
     content: "";
     position: absolute;
     bottom: 0;
-    left: -10px;
-    right: -10px;
+    inset-inline-start: -10px;
+    inset-inline-end: -10px;
     top: 32px;
     height: 1px;
     border-bottom: 1px solid var(--launcher-pane-horiz-border-color);
@@ -918,13 +916,13 @@ body.electron.background-effects.layout-horizontal .tab-row-container .tab-scrol
     position: relative;
 }
 
-body.electron.background-effects.layout-horizontal .tab-row-container .tab-scroll-button-left:after,
-body.electron.background-effects.layout-horizontal .tab-row-container .tab-scroll-button-right:after {
+body.electron.background-effects.layout-horizontal .tab-row-container .tab-scroll-button-inset-inline-start:after,
+body.electron.background-effects.layout-horizontal .tab-row-container .tab-scroll-button-inset-inline-end:after {
     content: "";
     position: absolute;
     bottom: 0;
-    left: 0px;
-    right: 0px;
+    inset-inline-start: 0px;
+    inset-inline-end: 0px;
     height: 1px;
     border-bottom: 1px solid var(--launcher-pane-horiz-border-color);
 }
@@ -933,9 +931,9 @@ body.electron.background-effects.layout-horizontal .tab-row-container .note-tab[
     content: "";
     position: absolute;
     bottom: 0;
-    left: -32768px;
+    inset-inline-start: -32768px;
     top: var(--tab-height);
-    right: calc(100% - 1px);
+    inset-inline-end: calc(100% - 1px);
     height: 1px;
     border-bottom: 1px solid var(--launcher-pane-horiz-border-color);
 }
@@ -944,9 +942,9 @@ body.electron.background-effects.layout-horizontal .tab-row-container .note-tab[
     content: "";
     position: absolute;
     bottom: 0;
-    left: 100%;
+    inset-inline-start: 100%;
     top: var(--tab-height);
-    right: 0;
+    inset-inline-end: 0;
     width: 100vw;
     height: 1px;
     border-bottom: 1px solid var(--launcher-pane-horiz-border-color);
@@ -956,9 +954,9 @@ body.electron.background-effects.layout-horizontal .tab-row-container .note-new-
     content: "";
     position: absolute;
     bottom: 0;
-    left: -4px;
+    inset-inline-start: -4px;
     top: calc(var(--tab-height), -1);
-    right: 0;
+    inset-inline-end: 0;
     width: 100vw;
     height: 1px;
     border-bottom: 1px solid var(--launcher-pane-horiz-border-color);
@@ -1045,18 +1043,18 @@ body.layout-horizontal .tab-row-widget .note-tab .note-tab-wrapper {
     content: "";
     position: absolute;
     top: 0;
-    left: 0;
-    right: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
     height: 3px;
     background-color: var(--workspace-tab-background-color);
 }
 
-.tab-row-widget .note-tab:nth-child(1) {
+body:not([dir=rtl]) .tab-row-widget .note-tab:nth-child(1) {
     transform: translate3d(var(--tab-first-item-horiz-offset), 0, 0);
 }
 
 :root .tab-row-widget .note-tab .note-tab-icon {
-    padding-right: 5px; /* The gap between the icon and the title */
+    padding-inline-end: 5px; /* The gap between the icon and the title */
 }
 
 .tab-row-widget .note-tab[active] .note-tab-icon {
@@ -1101,7 +1099,7 @@ body.layout-vertical .tab-row-widget-is-sorting .note-tab.note-tab-is-dragging .
 
 .tab-row-widget .note-new-tab {
     position: relative;
-    margin-left: 3px;
+    margin-inline-start: 3px;
     color: transparent; /* Prevent the original "+" from being displayed */
 }
 
@@ -1114,7 +1112,7 @@ body.layout-vertical .tab-row-widget-is-sorting .note-tab.note-tab-is-dragging .
     position: absolute;
     content: "";
     top: calc((var(--tab-height) - var(--new-tab-button-size)) / 2);
-    left: calc((var(--tab-height) - var(--new-tab-button-size)) / 2);
+    inset-inline-start: calc((var(--tab-height) - var(--new-tab-button-size)) / 2);
     width: var(--new-tab-button-size);
     height: var(--new-tab-button-size);
     background: var(--new-tab-button-background);
@@ -1139,7 +1137,7 @@ body.layout-vertical .tab-row-widget-is-sorting .note-tab.note-tab-is-dragging .
     display: flex;
     position: absolute;
     content: "\ebc0";
-    left: 0;
+    inset-inline-start: 0;
     top: 0;
     width: 100%;
     height: 100%;
@@ -1221,23 +1219,23 @@ body.mobile .note-title {
 }
 
 .title-row > *:first-child {
-    margin-right: 0;
+    margin-inline-end: 0;
 }
 
 .title-row > *:nth-child(2) {
-    margin-left: 0;
+    margin-inline-start: 0;
 }
 
 .title-row {
     /* Aligns the "Create new split" button with the note menu button (the three dots button) */
-    padding-right: 3px;
+    padding-inline-end: 3px;
 }
 
 .note-title-widget input {
     --input-background-color: transparent;
 
     border-radius: 8px;
-    padding-left: 12px;
+    padding-inline-start: 12px;
 }
 
 /* The "Change note icon" button */
@@ -1312,7 +1310,7 @@ body.mobile .note-title {
 /* The promoted attributes section */
 div.promoted-attributes-container {
     display: flex;
-    margin-right: 10%;
+    margin-inline-end: 10%;
     padding: 6px 0;
     gap: 8px;
     align-items: stretch;
@@ -1326,8 +1324,8 @@ div.promoted-attributes-container input {
 
 /* A promoted attribute card */
 div.promoted-attribute-cell {
-    --pa-card-padding-left: 16px;
-    --pa-card-padding-right: 2px;
+    --pa-card-padding-inline-start: 16px;
+    --pa-card-padding-inline-end: 2px;
     --input-background-color: transparent;
 
     box-shadow: 1px 1px 2px var(--promoted-attribute-card-shadow-color);
@@ -1335,7 +1333,7 @@ div.promoted-attribute-cell {
     display: inline-flex;
     margin: 0;
     border-radius: 8px;
-    padding: 2px var(--pa-card-padding-right) 2px var(--pa-card-padding-left);
+    padding: 2px var(--pa-card-padding-inline-end) 2px var(--pa-card-padding-inline-start);
     background: var(--promoted-attribute-card-background-color);
     overflow-y: visible;
 }
@@ -1350,7 +1348,7 @@ div.promoted-attribute-cell {
 /* A promoted attribute card (boolean attribute) */
 div.promoted-attribute-cell:has(input[type="checkbox"]):not(:has(.multiplicity > span)) {
     /* Checbox attribute, without multiplicity */
-    padding-right: var(--pa-card-padding-left);
+    padding-inline-end: var(--pa-card-padding-inline-start);
 }
 
 div.promoted-attribute-cell > * {
@@ -1400,15 +1398,15 @@ div.promoted-attribute-cell .tn-checkbox {
 /* Relocate the checkbox before the label */
 div.promoted-attribute-cell.promoted-attribute-label-boolean > div:first-of-type {
     order: -1;
-    margin-right: 1.5em;
+    margin-inline-end: 1.5em;
 }
 
 /* The element containing the "new attribute" and "remove this attribute button" */
 div.promoted-attribute-cell .multiplicity:has(span) {
     --icon-button-size: 24px;
 
-    margin-left: 8px;
-    margin-right: calc(var(--pa-card-padding-left) - var(--pa-card-padding-right));
+    margin-inline-start: 8px;
+    margin-inline-end: calc(var(--pa-card-padding-inline-start) - var(--pa-card-padding-inline-end));
     font-size: 0; /* Prevent whitespaces creating a gap between buttons */
     display: flex;
 }
@@ -1434,6 +1432,10 @@ div#center-pane .floating-buttons-children {
     border-radius: 6px;
     transition: transform 250ms ease-out,
                 opacity 250ms ease-out;
+}
+
+body[dir=rtl] div#center-pane .floating-buttons-children {
+    transform-origin: left;
 }
 
  /* Floating buttons container (collapsed) */
@@ -1547,7 +1549,7 @@ div.floating-buttons-children .close-floating-buttons {
 }
 
 div.floating-buttons-children .close-floating-buttons {
-    margin-left: 0 !important;
+    margin-inline-start: 0 !important;
     background: var(--floating-button-hide-button-background);
     color: var(--floating-button-hide-button-color);
 }
@@ -1637,12 +1639,12 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
 }
 
 .find-replace-widget .form-check {
-    padding-left: 0;
+    padding-inline-start: 0;
     white-space: nowrap;
 }
 
 .find-replace-widget .form-check .form-check-input {
-    margin-left: 0;
+    margin-inline-start: 0;
 }
 
 /* Narrow version */
@@ -1662,13 +1664,13 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
 
     .find-widget-box,
     .replace-widget-box {
-        padding-right: 3em !important;
+        padding-inline-end: 3em !important;
     }
 
     .find-widget-close-button {
         position: absolute;
         top: .85em;
-        right: .5em;
+        inset-inline-end: .5em;
     }
 
     .find-widget-box > * {
@@ -1700,7 +1702,7 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
     }
 
     .replace-widget-box > * {
-        margin-right: unset !important;
+        margin-inline-end: unset !important;
     }
 
     div.replace-widget-box button.btn.btn-sm {
@@ -1743,7 +1745,7 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
 #right-pane .toc li,
 #right-pane .highlights-list li {
     padding-top: 2px;
-    padding-right: 8px;
+    padding-inline-end: 8px;
     padding-bottom: 2px;
     border-radius: 4px;
     text-align: unset;
@@ -1782,10 +1784,6 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
     --border-radius-lg: 6px;
 }
 
-.excalidraw .Island {
-    backdrop-filter: var(--dropdown-backdrop-filter);
-}
-
 .excalidraw .Island.App-toolbar {
     --island-bg-color: var(--floating-button-background-color);
     --shadow-island: 1px 1px 1px var(--floating-button-shadow-color);
@@ -1806,8 +1804,8 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
 }
 
 .excalidraw .dropdown-menu .dropdown-menu-container > div:not([class]):not(:last-child) {
-    margin-left: calc(var(--padding) * var(--space-factor) * -1) !important;
-    margin-right: calc(var(--padding) * var(--space-factor) * -1) !important;
+    margin-inline-start: calc(var(--padding) * var(--space-factor) * -1) !important;
+    margin-inline-end: calc(var(--padding) * var(--space-factor) * -1) !important;
 }
 
 .excalidraw .dropdown-menu:before {

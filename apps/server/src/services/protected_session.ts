@@ -1,9 +1,6 @@
 "use strict";
 
-import log from "./log.js";
 import dataEncryptionService from "./encryption/data_encryption.js";
-import options from "./options.js";
-import ws from "./ws.js";
 
 let dataKey: Buffer | null = null;
 
@@ -15,11 +12,11 @@ function getDataKey() {
     return dataKey;
 }
 
-function resetDataKey() {
+export function resetDataKey() {
     dataKey = null;
 }
 
-function isProtectedSessionAvailable() {
+export function isProtectedSessionAvailable() {
     return !!dataKey;
 }
 
@@ -57,15 +54,8 @@ function touchProtectedSession() {
     }
 }
 
-function checkProtectedSessionExpiration() {
-    const protectedSessionTimeout = options.getOptionInt("protectedSessionTimeout");
-    if (isProtectedSessionAvailable() && lastProtectedSessionOperationDate && Date.now() - lastProtectedSessionOperationDate > protectedSessionTimeout * 1000) {
-        resetDataKey();
-
-        log.info("Expiring protected session");
-
-        ws.reloadFrontend("leaving protected session");
-    }
+export function getLastProtectedSessionOperationDate() {
+    return lastProtectedSessionOperationDate;
 }
 
 export default {
@@ -75,6 +65,5 @@ export default {
     encrypt,
     decrypt,
     decryptString,
-    touchProtectedSession,
-    checkProtectedSessionExpiration
+    touchProtectedSession
 };

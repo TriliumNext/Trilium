@@ -10,8 +10,14 @@
     margin-bottom: 0 !important;
 }
 
-.option-row > select {
+.option-row > select,
+.option-row > .dropdown {
     width: 60%;
+}
+
+.option-row > .dropdown button {
+    width: 100%;
+    text-align: start;
 }
 
 .option-row:last-of-type {

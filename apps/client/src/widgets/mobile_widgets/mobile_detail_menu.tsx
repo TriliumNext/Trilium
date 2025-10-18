@@ -25,7 +25,7 @@ export default function MobileDetailMenu() {
                         { title: t("mobile_detail_menu.insert_child_note"), command: "insertChildNote", uiIcon: "bx bx-plus", enabled: note?.type !== "search" },
                         { title: t("mobile_detail_menu.delete_this_note"), command: "delete", uiIcon: "bx bx-trash", enabled: note?.noteId !== "root" },
                         { kind: "separator" },
-                        { title: "Note revisions", command: "showRevisions", uiIcon: "bx bx-history" }
+                        { title: t("mobile_detail_menu.note_revisions"), command: "showRevisions", uiIcon: "bx bx-history" }
                     ],
                     selectMenuItemHandler: async ({ command }) => {
                         if (command === "insertChildNote") {

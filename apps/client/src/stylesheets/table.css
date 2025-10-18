@@ -67,13 +67,13 @@
 }
 
 .tabulator div.tabulator-header .tabulator-frozen.tabulator-frozen-left {
-    margin-left: var(--cell-editing-border-width);
+    margin-inline-start: var(--cell-editing-border-width);
 }
 
 .tabulator div.tabulator-header .tabulator-col,
 .tabulator div.tabulator-header .tabulator-frozen.tabulator-frozen-left {
     background: var(--col-header-background-color);
-    border-right: var(--col-header-separator-border);
+    border-inline-end: var(--col-header-separator-border);
 }
 
 /* Table body */
@@ -90,8 +90,8 @@
 }
 
 .tabulator-row .tabulator-cell input {
-    padding-left: var(--cell-horiz-padding-size) !important;
-    padding-right: var(--cell-horiz-padding-size) !important;
+    padding-inline-start: var(--cell-horiz-padding-size) !important;
+    padding-inline-end: var(--cell-horiz-padding-size) !important;
 }
 
 .tabulator-row {
@@ -117,12 +117,12 @@
 /* Cell */
 
 .tabulator-row .tabulator-cell.tabulator-frozen.tabulator-frozen-left {
-    margin-right: var(--cell-editing-border-width);
+    margin-inline-end: var(--cell-editing-border-width);
 }
 
 .tabulator-row .tabulator-cell.tabulator-frozen.tabulator-frozen-left,
 .tabulator-row .tabulator-cell {
-    border-right-color: transparent;
+    border-inline-end-color: transparent;
 }
 
 .tabulator-row .tabulator-cell:not(.tabulator-editable) {
@@ -156,14 +156,14 @@
 /* Align items without children/expander to the ones with. */
 .tabulator-cell[tabulator-field="title"] > span:first-child,         /* 1st level */
 .tabulator-cell[tabulator-field="title"] > div:first-child + span {  /* sub-level */
-    padding-left: 21px;
+    padding-inline-start: 21px;
 }
 
 /* Checkbox cells */
 
 .tabulator .tabulator-cell:has(svg),
 .tabulator .tabulator-cell:has(input[type="checkbox"]) {
-    padding-left: 8px;
+    padding-inline-start: 8px;
     display: inline-flex;
     flex-direction: column;
     justify-content: center;

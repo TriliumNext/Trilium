@@ -354,7 +354,7 @@
     "calendar_root": "marca la nota que debe usarse como raíz para las notas del día. Sólo uno debe estar marcado como tal.",
     "archived": "las notas con esta etiqueta no serán visibles de forma predeterminada en los resultados de búsqueda (tampoco en los cuadros de diálogo Saltar a, Agregar vínculo, etc.).",
     "exclude_from_export": "las notas (con su subárbol) no se incluirán en ninguna exportación de notas",
-    "run": "define en qué eventos debe ejecutarse el script. Los valores posibles son:\n<ul>\n<li>frontendStartup - cuando el frontend de Trilium inicia (o es recargado), pero no en dispositivos móviles. </li>\n<li>backendStartup - cuando el backend de Trilium se inicia </li>\n<li>hourly - se ejecuta una vez cada hora. Puede usar etiqueta adicional <code>runAtHour</code> para especificar a la hora. </li>\n<li>daily - ejecutar una vez al día </li>\n</ul>",
+    "run": "define en qué eventos debe ejecutarse el script. Los valores posibles son:\n<ul>\n<li>frontendStartup - cuando Trilium frontend se inicia (o se actualiza), pero no en móvil.</li>\n<li>mobileStartup - cuando Trilium frontend se inicia (o se actualiza), en móvil.</li>\n<li>backendStartup - cuando Trilium backend se inicia</li>\n<li>hourly - se ejecuta una vez por hora. Se puede usar la etiqueta adicional <code>runAtHour</code> para especificar a qué hora.</li>\n<li>daily - se ejecuta una vez al día</li>\n</ul>",
     "run_on_instance": "Definir en qué instancia de Trilium se debe ejecutar esto. Predeterminado para todas las instancias.",
     "run_at_hour": "¿A qué hora debería funcionar? Debe usarse junto con <code>#run=hourly</code>. Se puede definir varias veces para varias ejecuciones durante el día.",
     "disable_inclusion": "los scripts con esta etiqueta no se incluirán en la ejecución del script principal.",
@@ -384,7 +384,7 @@
     "inbox": "ubicación predeterminada de la bandeja de entrada para nuevas notas - cuando crea una nota usando el botón \"nueva nota\" en la barra lateral, las notas serán creadas como subnotas de la nota marcada con la etiqueta <code>#inbox</code>.",
     "workspace_inbox": "ubicación predeterminada de la bandeja de entrada para nuevas notas cuando se anclan a algún antecesor de esta nota del espacio de trabajo",
     "sql_console_home": "ubicación predeterminada de las notas de la consola SQL",
-    "bookmark_folder": "la nota con esta etiqueta aparecerá en los marcadores como carpeta (permitiendo el acceso a sus elementos hijos).",
+    "bookmark_folder": "la nota con esta etiqueta aparecerá en los marcadores como carpeta (permitiendo el acceso a sus elementos hijos)",
     "share_hidden_from_tree": "esta nota está oculta en el árbol de navegación izquierdo, pero aún se puede acceder a ella con su URL",
     "share_external_link": "la nota actuará como un enlace a un sitio web externo en el árbol compartido",
     "share_alias": "define un alias que al usar la nota va a estar disponible en https://your_trilium_host/share/[tu_alias]",
@@ -646,7 +646,9 @@
     "about": "Acerca de Trilium Notes",
     "logout": "Cerrar sesión",
     "show-cheatsheet": "Mostrar hoja de trucos",
-    "toggle-zen-mode": "Modo Zen"
+    "toggle-zen-mode": "Modo Zen",
+    "new-version-available": "Nueva actualización disponible",
+    "download-update": "Obtener versión {{latestVersion}}"
   },
   "zen_mode": {
     "button_exit": "Salir del modo Zen"
@@ -736,7 +738,8 @@
     "insert_child_note": "Insertar subnota",
     "delete_this_note": "Eliminar esta nota",
     "error_cannot_get_branch_id": "No se puede obtener el branchID del notePath '{{notePath}}'",
-    "error_unrecognized_command": "Comando no reconocido {{command}}"
+    "error_unrecognized_command": "Comando no reconocido {{command}}",
+    "note_revisions": "Revisiones de notas"
   },
   "note_icon": {
     "change_note_icon": "Cambiar icono de nota",
@@ -765,7 +768,8 @@
     "table": "Tabla",
     "geo-map": "Mapa Geo",
     "board": "Tablero",
-    "include_archived_notes": "Mostrar notas archivadas"
+    "include_archived_notes": "Mostrar notas archivadas",
+    "presentation": "Presentación"
   },
   "edited_notes": {
     "no_edited_notes_found": "Aún no hay notas editadas en este día...",
@@ -1010,7 +1014,7 @@
     "start_dragging_relations": "Empiece a arrastrar relaciones desde aquí y suéltelas en otra nota.",
     "note_not_found": "¡Nota {{noteId}} no encontrada!",
     "cannot_match_transform": "No se puede coincidir con la transformación: {{transform}}",
-    "note_already_in_diagram": "Note \"{{title}}\" is already in the diagram.",
+    "note_already_in_diagram": "La nota \"{{title}}\" ya está en el diagrama.",
     "enter_title_of_new_note": "Ingrese el título de la nueva nota",
     "default_new_note_title": "nueva nota",
     "click_on_canvas_to_place_new_note": "Haga clic en el lienzo para colocar una nueva nota"
@@ -1252,8 +1256,9 @@
     "indexing_stopped": "Indexado detenido",
     "indexing_in_progress": "Indexado en progreso...",
     "last_indexed": "Último indexado",
-    "n_notes_queued": "{{ count }} nota agregada a la cola para indexado",
-    "n_notes_queued_plural": "{{ count }} notas agregadas a la cola para indexado",
+    "n_notes_queued_0": "{{ count }} nota agregada a la cola para indexar",
+    "n_notes_queued_1": "{{ count }} notas agregadas a la cola para indexar",
+    "n_notes_queued_2": "",
     "note_chat": "Chat de nota",
     "notes_indexed": "{{ count }} nota indexada",
     "notes_indexed_plural": "{{ count }} notas indexadas",
@@ -1414,7 +1419,13 @@
     "min-days-in-first-week": "Días mínimos en la primer semana",
     "first-week-info": "Primer semana que contiene al primer jueves del año está basado en el estándar<a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a>.",
     "first-week-warning": "Cambiar las opciones de primer semana puede causar duplicados con las Notas Semanales existentes y las Notas Semanales existentes no serán actualizadas respectivamente.",
-    "formatting-locale": "Fecha y formato de número"
+    "formatting-locale": "Fecha y formato de número",
+    "tuesday": "Martes",
+    "wednesday": "Miércoles",
+    "thursday": "Jueves",
+    "friday": "Viernes",
+    "saturday": "Sábado",
+    "formatting-locale-auto": "Basado en el idioma de la aplicación"
   },
   "backup": {
     "automatic_backup": "Copia de seguridad automática",
@@ -1507,7 +1518,7 @@
     "recovery_keys_used": "Usado: {{date}}",
     "recovery_keys_unused": "El código de recuperación {{index}} está sin usar",
     "oauth_title": "OAuth/OpenID",
-    "oauth_description": "OpenID es una forma estandarizada de permitirle iniciar sesión en sitios web utilizando una cuenta de otro servicio, como Google, para verificar su identidad. Siga estas <a href = \"https://developers.google.com/identity/openid-connect/openid-connect\">instrucciones</a> para configurar un servicio OpenID a través de Google.",
+    "oauth_description": "OpenID es un método estandarizado que permite iniciar sesión en sitios web usando una cuenta de otro servicio, como Google, para verificar tu identidad. El emisor predeterminado es Google, pero se puede cambiar a cualquier otro proveedor de OpenID. Consulta <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">aquí</a> para más información. Sigue estas <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instrucciones</a> para configurar un servicio OpenID a través de Google.",
     "oauth_description_warning": "Para habilitar OAuth/OpenID, necesita establecer la URL base de OAuth/OpenID, ID de cliente y secreto de cliente en el archivo config.ini y reiniciar la aplicación. Si desea establecerlas desde variables de ambiente, por favor establezca TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID y TRILIUM_OAUTH_CLIENT_SECRET.",
     "oauth_missing_vars": "Ajustes faltantes: {{-variables}}",
     "oauth_user_account": "Cuenta de usuario: ",
@@ -1617,8 +1628,8 @@
     "unarchive": "Desarchivar"
   },
   "shared_info": {
-    "shared_publicly": "Esta nota está compartida públicamente en {{- link}}",
-    "shared_locally": "Esta nota está compartida localmente en {{- link}}",
+    "shared_publicly": "Esta nota está compartida públicamente en {{- link}}.",
+    "shared_locally": "Esta nota está compartida localmente en {{- link}}.",
     "help_link": "Para obtener ayuda visite <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>."
   },
   "note_types": {
@@ -1980,7 +1991,8 @@
     "new-item-placeholder": "Ingresar título de la nota...",
     "add-column-placeholder": "Ingresar título de la columna...",
     "edit-note-title": "Haga clic para editar el título de la nota",
-    "edit-column-title": "Haga clic para editar el título de la columna"
+    "edit-column-title": "Haga clic para editar el título de la columna",
+    "remove-from-board": "Eliminar del tablero"
   },
   "content_renderer": {
     "open_externally": "Abrir externamente"
@@ -2035,7 +2047,7 @@
   },
   "call_to_action": {
     "next_theme_title": "Prueba el nuevo tema de Trilium",
-    "next_theme_message": "Estas usando actualmente el tema heredado,  ¿Te gustaría probar el nuevo tema?",
+    "next_theme_message": "Estás usando actualmente el tema heredado. ¿Te gustaría probar el nuevo tema?",
     "next_theme_button": "Prueba el nuevo tema",
     "background_effects_title": "Los efectos de fondo son ahora estables",
     "background_effects_message": "En los dispositivos Windows, los efectos de fondo ya son totalmente estables. Los efectos de fondo añaden un toque de color a la interfaz de usuario difuminando el fondo que hay detrás. Esta técnica también se utiliza en otras aplicaciones como el Explorador de Windows.",
@@ -2063,5 +2075,13 @@
   "pagination": {
     "total_notes": "{{count}} notas",
     "page_title": "Página de {{startIndex}} - {{endIndex}}"
+  },
+  "presentation_view": {
+    "edit-slide": "Editar este slide",
+    "start-presentation": "Iniciar presentación",
+    "slide-overview": "Alternar vista general de los slides"
+  },
+  "collections": {
+    "rendering_error": "No se puede mostrar contenido debido a un error."
   }
 }

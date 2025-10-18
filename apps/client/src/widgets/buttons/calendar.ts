@@ -8,13 +8,15 @@ import options from "../../services/options.js";
 import { Dropdown } from "bootstrap";
 import type { EventData } from "../../components/app_context.js";
 import dayjs, { Dayjs } from "dayjs";
+import isoWeek from "dayjs/plugin/isoWeek.js";
 import utc from "dayjs/plugin/utc.js";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter.js";
 import "../../stylesheets/calendar.css";
-import type { AttributeRow } from "@triliumnext/commons";
+import type { AttributeRow, OptionDefinitions } from "@triliumnext/commons";
 
 dayjs.extend(utc);
 dayjs.extend(isSameOrAfter);
+dayjs.extend(isoWeek);
 
 const MONTHS = [
     t("calendar.january"),
@@ -69,7 +71,15 @@ const DROPDOWN_TPL = `
     <div class="calendar-body" data-calendar-area="month"></div>
 </div>`;
 
-const DAYS_OF_WEEK = [t("calendar.sun"), t("calendar.mon"), t("calendar.tue"), t("calendar.wed"), t("calendar.thu"), t("calendar.fri"), t("calendar.sat")];
+const DAYS_OF_WEEK = [
+    t("calendar.sun"),
+    t("calendar.mon"),
+    t("calendar.tue"),
+    t("calendar.wed"),
+    t("calendar.thu"),
+    t("calendar.fri"),
+    t("calendar.sat")
+];
 
 interface DateNotesForMonth {
     [date: string]: string;
@@ -90,7 +100,8 @@ export default class CalendarWidget extends RightDropdownButtonWidget {
     private $nextYear!: JQuery<HTMLElement>;
     private $previousYear!: JQuery<HTMLElement>;
     private monthDropdown!: Dropdown;
-    private firstDayOfWeek!: number;
+    // stored in ISO 1–7
+    private firstDayOfWeekISO!: number;
     private weekCalculationOptions!: WeekCalculationOptions;
     private activeDate: Dayjs | null = null;
     private todaysDate!: Dayjs;
@@ -126,6 +137,7 @@ export default class CalendarWidget extends RightDropdownButtonWidget {
                 this.createMonth();
             }
         });
+
         this.$next = this.$dropdownContent.find('[data-calendar-toggle="next"]');
         this.$next.on("click", () => {
             this.date = this.date.add(1, 'month');
@@ -144,23 +156,24 @@ export default class CalendarWidget extends RightDropdownButtonWidget {
             this.date = this.date.year(parseInt(target.value));
             this.createMonth();
         });
+
         this.$nextYear = this.$dropdownContent.find('[data-calendar-toggle="nextYear"]');
         this.$nextYear.on("click", () => {
             this.date = this.date.add(1, 'year');
             this.createMonth();
         });
+
         this.$previousYear = this.$dropdownContent.find('[data-calendar-toggle="previousYear"]');
         this.$previousYear.on("click", () => {
             this.date = this.date.subtract(1, 'year');
             this.createMonth();
         });
 
+        // Date click
         this.$dropdownContent.on("click", ".calendar-date", async (ev) => {
             const date = $(ev.target).closest(".calendar-date").attr("data-calendar-date");
-
             if (date) {
                 const note = await dateNoteService.getDayNote(date);
-
                 if (note) {
                     appContext.tabManager.getActiveContext()?.setNote(note.noteId);
                     this.dropdown?.hide();
@@ -168,10 +181,10 @@ export default class CalendarWidget extends RightDropdownButtonWidget {
                     toastService.showError(t("calendar.cannot_find_day_note"));
                 }
             }
-
             ev.stopPropagation();
         });
 
+        // Week click
         this.$dropdownContent.on("click", ".calendar-week-number", async (ev) => {
             if (!this.weekNoteEnable) {
                 return;
@@ -218,23 +231,17 @@ export default class CalendarWidget extends RightDropdownButtonWidget {
             return;
         }
         const noteAttributes = await server.get<AttributeRow[]>(`notes/${noteId}/attributes`);
-
-        for (const attribute of noteAttributes) {
-            if (attribute.name === 'enableWeekNote') {
-                this.weekNoteEnable = true;
-                return
-            }
-        }
-        this.weekNoteEnable = false;
+        this.weekNoteEnable = noteAttributes.some(a => a.name === 'enableWeekNote');
     }
 
+    // Store firstDayOfWeek as ISO (1–7)
     manageFirstDayOfWeek() {
-        this.firstDayOfWeek = options.getInt("firstDayOfWeek") || 0;
+        const rawFirstDayOfWeek = options.getInt("firstDayOfWeek") || 0;
+        this.firstDayOfWeekISO = rawFirstDayOfWeek === 0 ? 7 : rawFirstDayOfWeek;
 
-        // Generate the list of days of the week taking into consideration the user's selected first day of week.
         let localeDaysOfWeek = [...DAYS_OF_WEEK];
-        const daysToBeAddedAtEnd = localeDaysOfWeek.splice(0, this.firstDayOfWeek);
-        localeDaysOfWeek = ['', ...localeDaysOfWeek, ...daysToBeAddedAtEnd];
+        const shifted = localeDaysOfWeek.splice(0, rawFirstDayOfWeek);
+        localeDaysOfWeek = ['', ...localeDaysOfWeek, ...shifted];
         this.$weekHeader.html(localeDaysOfWeek.map((el) => `<span>${el}</span>`).join(''));
     }
 
@@ -245,72 +252,15 @@ export default class CalendarWidget extends RightDropdownButtonWidget {
         };
     }
 
+    getWeekStartDate(date: Dayjs): Dayjs {
+        const currentISO = date.isoWeekday();
+        const diff = (currentISO - this.firstDayOfWeekISO + 7) % 7;
+        return date.clone().subtract(diff, "day").startOf("day");
+    }
+
     getWeekNumber(date: Dayjs): number {
-        const year = date.year();
-        const dayOfWeek = (day: number) => (day - this.firstDayOfWeek + 7) % 7;
-
-        // Get first day of the year and adjust to first week start
-        const jan1 = date.clone().year(year).month(0).date(1);
-        const jan1Weekday = jan1.day();
-        const dayOffset = dayOfWeek(jan1Weekday);
-        let firstWeekStart = jan1.clone().subtract(dayOffset, 'day');
-
-        // Adjust based on week rule
-        switch (this.weekCalculationOptions.firstWeekType) {
-            case 1: { // ISO 8601: first week contains Thursday
-                const thursday = firstWeekStart.clone().add(3, 'day'); // Monday + 3 = Thursday
-                if (thursday.year() < year) {
-                    firstWeekStart = firstWeekStart.add(7, 'day');
-                }
-                break;
-            }
-            case 2: { // minDaysInFirstWeek rule
-                const daysInFirstWeek = 7 - dayOffset;
-                if (daysInFirstWeek < this.weekCalculationOptions.minDaysInFirstWeek) {
-                    firstWeekStart = firstWeekStart.add(7, 'day');
-                }
-                break;
-            }
-            // default case 0: week containing Jan 1 → already handled
-        }
-
-        const diffDays = date.startOf('day').diff(firstWeekStart.startOf('day'), 'day');
-        const weekNumber = Math.floor(diffDays / 7) + 1;
-
-        // Handle case when date is before first week start → belongs to last week of previous year
-        if (weekNumber <= 0) {
-            return this.getWeekNumber(date.subtract(1, 'day'));
-        }
-
-        // Handle case when date belongs to first week of next year
-        const nextYear = year + 1;
-        const jan1Next = date.clone().year(nextYear).month(0).date(1);
-        const jan1WeekdayNext = jan1Next.day();
-        const offsetNext = dayOfWeek(jan1WeekdayNext);
-        let nextYearWeekStart = jan1Next.clone().subtract(offsetNext, 'day');
-
-        switch (this.weekCalculationOptions.firstWeekType) {
-            case 1: {
-                const thursday = nextYearWeekStart.clone().add(3, 'day');
-                if (thursday.year() < nextYear) {
-                    nextYearWeekStart = nextYearWeekStart.add(7, 'day');
-                }
-                break;
-            }
-            case 2: {
-                const daysInFirstWeek = 7 - offsetNext;
-                if (daysInFirstWeek < this.weekCalculationOptions.minDaysInFirstWeek) {
-                    nextYearWeekStart = nextYearWeekStart.add(7, 'day');
-                }
-                break;
-            }
-        }
-
-        if (date.isSameOrAfter(nextYearWeekStart)) {
-            return 1;
-        }
-
-        return weekNumber;
+        const weekStart = this.getWeekStartDate(date);
+        return weekStart.isoWeek();
     }
 
     async dropdownShown() {
@@ -320,32 +270,25 @@ export default class CalendarWidget extends RightDropdownButtonWidget {
     }
 
     init(activeDate: string | null) {
-        // attaching time fixes local timezone handling
         this.activeDate = activeDate ? dayjs(`${activeDate}T12:00:00`) : null;
         this.todaysDate = dayjs();
         this.date = dayjs(this.activeDate || this.todaysDate).startOf('month');
-
         this.createMonth();
     }
 
     createDay(dateNotesForMonth: DateNotesForMonth, num: number) {
-        const $newDay = $("<a>").addClass("calendar-date").attr("data-calendar-date", this.date.local().format('YYYY-MM-DD'));
+        const $newDay = $("<a>")
+            .addClass("calendar-date")
+            .attr("data-calendar-date", this.date.local().format('YYYY-MM-DD'));
         const $date = $("<span>").html(String(num));
-
         const dateNoteId = dateNotesForMonth[this.date.local().format('YYYY-MM-DD')];
 
         if (dateNoteId) {
-            $newDay.addClass("calendar-date-exists");
-            $newDay.attr("data-href", `#root/${dateNoteId}`);
+            $newDay.addClass("calendar-date-exists").attr("data-href", `#root/${dateNoteId}`);
         }
 
-        if (this.date.isSame(this.activeDate, 'day')) {
-            $newDay.addClass("calendar-date-active");
-        }
-
-        if (this.date.isSame(this.todaysDate, 'day')) {
-            $newDay.addClass("calendar-date-today");
-        }
+        if (this.date.isSame(this.activeDate, 'day')) $newDay.addClass("calendar-date-active");
+        if (this.date.isSame(this.todaysDate, 'day')) $newDay.addClass("calendar-date-today");
 
         $newDay.append($date);
         return $newDay;
@@ -353,29 +296,26 @@ export default class CalendarWidget extends RightDropdownButtonWidget {
 
     createWeekNumber(weekNumber: number) {
         const weekNoteId = this.date.local().format('YYYY-') + 'W' + String(weekNumber).padStart(2, '0');
-
         let $newWeekNumber;
+
         if (this.weekNoteEnable) {
-            // Utilize the hover effect of calendar-date
             $newWeekNumber = $("<a>").addClass("calendar-date");
-
             if (this.weekNotes.includes(weekNoteId)) {
-                $newWeekNumber.addClass("calendar-date-exists");
-                $newWeekNumber.attr("data-href", `#root/${weekNoteId}`);
+                $newWeekNumber.addClass("calendar-date-exists").attr("data-href", `#root/${weekNoteId}`);
             }
-
         } else {
             $newWeekNumber = $("<span>").addClass("calendar-week-number-disabled");
         }
+
         $newWeekNumber.addClass("calendar-week-number").attr("data-calendar-week-number", weekNoteId);
         $newWeekNumber.append($("<span>").html(String(weekNumber)));
-
         return $newWeekNumber;
     }
 
-    private getPrevMonthDays(firstDayOfWeek: number): { weekNumber: number, dates: Dayjs[] } {
+    // Use isoWeekday() consistently
+    private getPrevMonthDays(firstDayISO: number): { weekNumber: number, dates: Dayjs[] } {
         const prevMonthLastDay = this.date.subtract(1, 'month').endOf('month');
-        const daysToAdd = (firstDayOfWeek - this.firstDayOfWeek + 7) % 7;
+        const daysToAdd = (firstDayISO - this.firstDayOfWeekISO + 7) % 7;
         const dates: Dayjs[] = [];
 
         const firstDay = this.date.startOf('month');
@@ -389,18 +329,16 @@ export default class CalendarWidget extends RightDropdownButtonWidget {
         return { weekNumber, dates };
     }
 
-    private getNextMonthDays(lastDayOfWeek: number): Dayjs[] {
+    private getNextMonthDays(lastDayISO: number): Dayjs[] {
         const nextMonthFirstDay = this.date.add(1, 'month').startOf('month');
         const dates: Dayjs[] = [];
 
-        const lastDayOfUserWeek = (this.firstDayOfWeek + 6) % 7;
-        const daysToAdd = (lastDayOfUserWeek - lastDayOfWeek + 7) % 7;
+        const lastDayOfUserWeek = ((this.firstDayOfWeekISO + 6 - 1) % 7) + 1; // ISO wrap
+        const daysToAdd = (lastDayOfUserWeek - lastDayISO + 7) % 7;
 
-        // Get dates from next month
         for (let i = 0; i < daysToAdd; i++) {
             dates.push(nextMonthFirstDay.add(i, 'day'));
         }
-
         return dates;
     }
 
@@ -411,12 +349,11 @@ export default class CalendarWidget extends RightDropdownButtonWidget {
         this.$month.empty();
 
         const firstDay = this.date.startOf('month');
-        const firstDayOfWeek = firstDay.day();
+        const firstDayISO = firstDay.isoWeekday();
 
-        // Add dates from previous month
-        if (firstDayOfWeek !== this.firstDayOfWeek) {
-            const { weekNumber, dates } = this.getPrevMonthDays(firstDayOfWeek);
-
+        // Previous month filler
+        if (firstDayISO !== this.firstDayOfWeekISO) {
+            const { weekNumber, dates } = this.getPrevMonthDays(firstDayISO);
             const prevMonth = this.date.subtract(1, 'month').format('YYYY-MM');
             const dateNotesForPrevMonth: DateNotesForMonth = await server.get(`special-notes/notes-for-month/${prevMonth}`);
 
@@ -435,18 +372,16 @@ export default class CalendarWidget extends RightDropdownButtonWidget {
 
         const currentMonth = this.date.month();
 
+        // Main month
         while (this.date.month() === currentMonth) {
             const weekNumber = this.getWeekNumber(this.date);
-
-            // Add week number if it's first day of week
-            if (this.date.day() === this.firstDayOfWeek) {
+            if (this.date.isoWeekday() === this.firstDayOfWeekISO) {
                 const $weekNumber = this.createWeekNumber(weekNumber);
                 this.$month.append($weekNumber);
             }
 
             const $day = this.createDay(dateNotesForMonth, this.date.date());
             this.$month.append($day);
-
             this.date = this.date.add(1, 'day');
         }
         // while loop trips over and day is at 30/31, bring it back
@@ -454,11 +389,11 @@ export default class CalendarWidget extends RightDropdownButtonWidget {
 
         // Add dates from next month
         const lastDayOfMonth = this.date.endOf('month');
-        const lastDayOfWeek = lastDayOfMonth.day();
-        const lastDayOfUserWeek = (this.firstDayOfWeek + 6) % 7;
-        if (lastDayOfWeek !== lastDayOfUserWeek) {
-            const dates = this.getNextMonthDays(lastDayOfWeek);
+        const lastDayISO = lastDayOfMonth.isoWeekday();
+        const lastDayOfUserWeek = ((this.firstDayOfWeekISO + 6 - 1) % 7) + 1;
 
+        if (lastDayISO !== lastDayOfUserWeek) {
+            const dates = this.getNextMonthDays(lastDayISO);
             const nextMonth = this.date.add(1, 'month').format('YYYY-MM');
             const dateNotesForNextMonth: DateNotesForMonth = await server.get(`special-notes/notes-for-month/${nextMonth}`);
 
@@ -477,9 +412,12 @@ export default class CalendarWidget extends RightDropdownButtonWidget {
     }
 
     async entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
-        if (!loadResults.getOptionNames().includes("firstDayOfWeek") &&
-            !loadResults.getOptionNames().includes("firstWeekOfYear") &&
-            !loadResults.getOptionNames().includes("minDaysInFirstWeek")) {
+        const WEEK_OPTIONS: (keyof OptionDefinitions)[] = [
+            "firstDayOfWeek",
+            "firstWeekOfYear",
+            "minDaysInFirstWeek",
+        ];
+        if (!WEEK_OPTIONS.some(opt => loadResults.getOptionNames().includes(opt))) {
             return;
         }
 

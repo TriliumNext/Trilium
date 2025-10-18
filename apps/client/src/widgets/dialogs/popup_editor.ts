@@ -46,8 +46,8 @@ const TPL = /*html*/`\
         .modal.popup-editor-dialog .classic-toolbar-widget {
             position: sticky;
             top: 0;
-            left: 0;
-            right: 0;
+            inset-inline-start: 0;
+            inset-inline-end: 0;
             background: var(--modal-background-color);
             z-index: 998;
         }

@@ -57,7 +57,7 @@
 .note-book-header .note-icon {
     font-size: 100%;
     display: inline-block;
-    padding-right: 7px;
+    padding-inline-end: 7px;
     position: relative;
 }
 

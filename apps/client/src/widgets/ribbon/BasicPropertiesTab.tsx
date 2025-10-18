@@ -5,7 +5,7 @@ import { FormDropdownDivider, FormListBadge, FormListItem } from "../react/FormL
 import { getAvailableLocales, t } from "../../services/i18n";
 import { useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumOption } from "../react/hooks";
 import mime_types from "../../services/mime_types";
-import { Locale, NoteType, ToggleInParentResponse } from "@triliumnext/commons";
+import { Locale, LOCALES, NoteType, ToggleInParentResponse } from "@triliumnext/commons";
 import server from "../../services/server";
 import dialog from "../../services/dialog";
 import FormToggle from "../react/FormToggle";
@@ -20,6 +20,7 @@ import { TabContext } from "./ribbon-interface";
 import Modal from "../react/Modal";
 import { CodeMimeTypesList } from "../type_widgets/options/code_notes";
 import { ContentLanguagesList } from "../type_widgets/options/i18n";
+import { LocaleSelector } from "../type_widgets/options/components/LocaleSelector";
 
 export default function BasicPropertiesTab({ note }: TabContext) {
     return (
@@ -290,70 +291,33 @@ function NoteLanguageSwitch({ note }: { note?: FNote | null }) {
         id: "",
         name: t("note_language.not_set")
     };
-
     const [ currentNoteLanguage, setCurrentNoteLanguage ] = useNoteLabel(note, "language");
     const [ modalShown, setModalShown ] = useState(false);
-
     const locales = useMemo(() => {
         const enabledLanguages = JSON.parse(languages ?? "[]") as string[];
         const filteredLanguages = getAvailableLocales().filter((l) => typeof l !== "object" || enabledLanguages.includes(l.id));
-        const leftToRightLanguages = filteredLanguages.filter((l) => !l.rtl);
-        const rightToLeftLanguages = filteredLanguages.filter((l) => l.rtl);
-
-        let locales: ("---" | Locale)[] = [
-            DEFAULT_LOCALE
-        ];
-
-        if (leftToRightLanguages.length > 0) {
-            locales = [
-                ...locales,
-                "---",
-                ...leftToRightLanguages
-            ];
-        }
-
-        if (rightToLeftLanguages.length > 0) {
-            locales = [
-                ...locales,
-                "---",
-                ...rightToLeftLanguages
-            ];
-        }
-
-        // This will separate the list of languages from the "Configure languages" button.
-        // If there is at least one language.
-        locales.push("---");
-        return locales;
+        return filteredLanguages;
     }, [ languages ]);
-
-    const currentLocale = useMemo(() => {
-        return locales.find(locale => typeof locale === "object" && locale.id === currentNoteLanguage) as Locale | undefined;
-    }, [ currentNoteLanguage ]);
 
     return (
         <div className="note-language-container">
             <span>{t("basic_properties.language")}:</span>
             &nbsp;
-            <Dropdown text={currentLocale?.name ?? DEFAULT_LOCALE.name}>
-                {locales.map(locale => {
-                    if (typeof locale === "object") {
-                        const checked = locale.id === (currentNoteLanguage ?? "");
-                        return <FormListItem
-                            rtl={locale.rtl}
-                            checked={checked}
-                            onClick={() => setCurrentNoteLanguage(locale.id || null)}
-                        >{locale.name}</FormListItem>
-                    } else {
-                        return <FormDropdownDivider />
-                    }
-                })}
+            <LocaleSelector
+                locales={locales}
+                defaultLocale={DEFAULT_LOCALE}
+                currentValue={currentNoteLanguage ?? ""} onChange={setCurrentNoteLanguage}
+                extraChildren={(
+                    <FormListItem
+                        onClick={() => setModalShown(true)}
+                        icon="bx bx-cog"
+                    >{t("note_language.configure-languages")}</FormListItem>
+                )}
+            >
 
-                <FormListItem
-                    onClick={() => setModalShown(true)}
-                >{t("note_language.configure-languages")}</FormListItem>
-            </Dropdown>
+            </LocaleSelector>
 
-            <HelpButton helpPage="B0lcI9xz1r8K" style={{ marginLeft: "4px" }} />
+            <HelpButton helpPage="B0lcI9xz1r8K" style={{ marginInlineStart: "4px" }} />
 
             <Modal
                 className="content-languages-modal"
@@ -364,7 +328,7 @@ function NoteLanguageSwitch({ note }: { note?: FNote | null }) {
                 <ContentLanguagesList />
             </Modal>
         </div>
-    )
+    );
 }
 
 function findTypeTitle(type?: NoteType, mime?: string | null) {

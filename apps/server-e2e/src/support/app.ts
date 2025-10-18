@@ -9,6 +9,10 @@ interface GotoOpts {
 
 const BASE_URL = "http://127.0.0.1:8082";
 
+interface DropdownLocator extends Locator {
+    selectOptionByText: (text: string) => Promise<void>;
+}
+
 export default class App {
     readonly page: Page;
     readonly context: BrowserContext;
@@ -157,4 +161,14 @@ export default class App {
             })
         ).toBeOK();
     }
+
+    dropdown(_locator: Locator): DropdownLocator {
+        let locator = _locator as DropdownLocator;
+        locator.selectOptionByText = async (text: string) => {
+            await locator.locator(".dropdown-toggle").click();
+            await locator.locator(".dropdown-item", { hasText: text }).click();
+        };
+        return locator;
+    }
+
 }

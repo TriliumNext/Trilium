@@ -18,7 +18,7 @@
 .switch-widget .switch-button {
     display: block;
     position: relative;
-    margin-left: 8px;
+    margin-inline-start: 8px;
     width: var(--switch-track-width);
     height: var(--switch-track-height);
     border-radius: 24px;
@@ -40,7 +40,7 @@
     content: "";
     position: absolute;
     top: 0;
-    left: 0;
+    inset-inline-start: 0;
     width: var(--switch-thumb-width);
     height: var(--switch-thumb-height);
     background-color: var(--switch-off-thumb-background);
@@ -48,6 +48,10 @@
     transform: translate(var(--x), var(--y));
     transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1),
                 background 200ms ease-out;
+}
+
+body[dir=rtl] .switch-widget .switch-button:after {
+    --x: calc(var(--y) * -1);
 }
 
 .switch-widget .switch-button.on:after {
@@ -58,12 +62,16 @@
                 background 100ms ease-in;
 }
 
+body[dir=rtl] .switch-widget .switch-button.on:after {
+    --x: calc((var(--switch-track-width) - var(--switch-thumb-width) - var(--y)) * -1);
+}
+
 
 .switch-widget .switch-button input[type="checkbox"] {
     /* A hidden check box for accesibility purposes */
     position: absolute;
     top: 0;
-    left: 0;
+    inset-inline-start: 0;
     width: 100%;
     height: 100%;
     opacity: 0;
@@ -86,7 +94,7 @@
 
 .switch-widget .switch-help-button {
     border: 0;
-    margin-left: 4px;
+    margin-inline-start: 4px;
     background: none;
     cursor: pointer;
     font-size: 1.1em;

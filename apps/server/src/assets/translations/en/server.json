@@ -423,7 +423,12 @@
     "board_note_third": "Third note",
     "board_status_todo": "To Do",
     "board_status_progress": "In Progress",
-    "board_status_done": "Done"
+    "board_status_done": "Done",
+    "presentation": "Presentation",
+    "presentation_slide": "Presentation slide",
+    "presentation_slide_first": "First slide",
+    "presentation_slide_second": "Second slide",
+    "background": "Background"
   },
   "sql_init": {
     "db_not_initialized_desktop": "DB not initialized, please follow on-screen instructions.",

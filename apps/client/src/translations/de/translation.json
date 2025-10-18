@@ -733,7 +733,8 @@
     "insert_child_note": "Untergeordnete Notiz einfügen",
     "delete_this_note": "Diese Notiz löschen",
     "error_cannot_get_branch_id": "BranchId für notePath „{{notePath}}“ kann nicht abgerufen werden",
-    "error_unrecognized_command": "Unbekannter Befehl {{command}}"
+    "error_unrecognized_command": "Unbekannter Befehl {{command}}",
+    "note_revisions": "Notiz Revisionen"
   },
   "note_icon": {
     "change_note_icon": "Notiz-Icon ändern",
@@ -1255,7 +1256,13 @@
     "min-days-in-first-week": "Mindestanzahl an Tagen in erster Woche",
     "first-week-info": "Die erste Woche, die den ersten Donnerstag des Jahres enthält, basiert auf dem Standard <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a>.",
     "first-week-warning": "Das Ändern der Optionen für die erste Woche kann zu Duplikaten mit bestehenden Wochen-Notizen führen. Bestehende Wochen-Notizen werden nicht entsprechend aktualisiert.",
-    "formatting-locale": "Datums- und Zahlenformat"
+    "formatting-locale": "Datums- und Zahlenformat",
+    "tuesday": "Dienstag",
+    "wednesday": "Mittwoch",
+    "thursday": "Donnerstag",
+    "friday": "Freitag",
+    "saturday": "Samstag",
+    "formatting-locale-auto": "Basierend auf die Anwendungssprache"
   },
   "backup": {
     "automatic_backup": "Automatische Sicherung",

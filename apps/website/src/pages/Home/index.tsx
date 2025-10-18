@@ -31,6 +31,8 @@ import boardIcon from "../../assets/boxicons/bx-columns-3.svg?raw";
 import geomapIcon from "../../assets/boxicons/bx-map.svg?raw";
 import { getPlatform } from '../../download-helper.js';
 import { useEffect, useState } from 'preact/hooks';
+import { t } from '../../i18n.js';
+import { Trans } from 'react-i18next';
 
 export function Home() {
     usePageTitle("");
@@ -72,22 +74,22 @@ function HeroSection() {
     return (
         <Section className="hero-section">
             <div class="title-section">
-                <h1>Organize your thoughts. Build your personal knowledge base.</h1>
-                <p>Trilium is an open-source solution for note-taking and organizing a personal knowledge base. Use it locally on your desktop, or sync it with your self-hosted server to keep your notes everywhere you go.</p>
+                <h1>{t("hero_section.title")}</h1>
+                <p>{t("hero_section.subtitle")}</p>
 
                 <div className="download-wrapper">
                     <DownloadButton big />
-                    <Button href="./get-started/" className="mobile-only" text="Get started" />
+                    <Button href="./get-started/" className="mobile-only" text={t("hero_section.get_started")} />
                     <div className="additional-options">
-                        <Button iconSvg={gitHubIcon} outline text="GitHub" href="https://github.com/TriliumNext/Trilium/" openExternally />
-                        <Button iconSvg={dockerIcon} outline text="Docker Hub" href="https://hub.docker.com/r/triliumnext/trilium" openExternally />
+                        <Button iconSvg={gitHubIcon} outline text={t("hero_section.github")} href="https://github.com/TriliumNext/Trilium/" openExternally />
+                        <Button iconSvg={dockerIcon} outline text={t("hero_section.dockerhub")} href="https://hub.docker.com/r/triliumnext/trilium" openExternally />
                     </div>
                 </div>
 
             </div>
 
             <div className="screenshot-container">
-                {screenshotUrl && <img class="screenshot" src={screenshotUrl} alt="Screenshot of the Trilium Notes desktop application" />}
+                {screenshotUrl && <img class="screenshot" src={screenshotUrl} alt={t("hero_section.screenshot_alt")} />}
             </div>
         </Section>
     )
@@ -96,11 +98,11 @@ function HeroSection() {
 function OrganizationBenefitsSection() {
     return (
         <>
-            <Section className="benefits" title="Organization">
+            <Section className="benefits" title={t("organization_benefits.title")}>
                 <div className="benefits-container grid-3-cols">
-                    <Card iconSvg={noteStructureIcon} title="Note structure" moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes/index.html">Notes can be arranged hierarchically. There's no need for folders, since each note can contain sub-notes. A single note can be added in multiple places in the hierarchy.</Card>
-                    <Card iconSvg={attributesIcon} title="Note labels and relationships" moreInfoUrl="https://docs.triliumnotes.org/User Guide/User Guide/Advanced Usage/Attributes/index.html">Use <em>relations</em> between notes or add <em>labels</em> for easy categorization. Use promoted attributes to enter structured information which can be used in tables, boards.</Card>
-                    <Card iconSvg={hoistingIcon} title="Workspaces and hoisting" moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Navigation/Note%20Hoisting.html">Easily separate your personal and work notes by grouping them under a workspace, which focuses your note tree to only show a specific set of notes.</Card>
+                    <Card iconSvg={noteStructureIcon} title={t("organization_benefits.note_structure_title")} moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes/index.html">{t("organization_benefits.note_structure_description")}</Card>
+                    <Card iconSvg={attributesIcon} title={t("organization_benefits.attributes_title")} moreInfoUrl="https://docs.triliumnotes.org/User Guide/User Guide/Advanced Usage/Attributes/index.html">{t("organization_benefits.attributes_description")}</Card>
+                    <Card iconSvg={hoistingIcon} title={t("organization_benefits.hoisting_title")} moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Navigation/Note%20Hoisting.html">{t("organization_benefits.hoisting_description")}</Card>
                 </div>
             </Section>
         </>
@@ -110,14 +112,14 @@ function OrganizationBenefitsSection() {
 function ProductivityBenefitsSection() {
     return (
         <>
-            <Section className="benefits accented" title="Productivity and safety">
+            <Section className="benefits accented" title={t("productivity_benefits.title")}>
                 <div className="benefits-container grid-3-cols">
-                    <Card iconSvg={revisionsIcon} title="Note revisions" moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes/Note%20Revisions.html">Notes are periodically saved in the background and revisions can be used for review or to undo accidental changes. Revisions can also be created on-demand.</Card>
-                    <Card iconSvg={syncIcon} title="Synchronization" moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Installation%20%26%20Setup/Synchronization.html">Use a self-hosted or cloud instance to easily synchronize your notes across multiple devices, and to access it from your mobile phone using a PWA.</Card>
-                    <Card iconSvg={protectedNotesIcon} title="Protected notes" moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes/Protected%20Notes.html">Protect sensitive personal information by encrypting the notes and locking them behind a password-protected session.</Card>
-                    <Card iconSvg={jumpToIcon} title="Quick search and commands" moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Navigation/Jump%20to.html">Jump quickly to notes or UI commands across the hierarchy by searching for their title, with fuzzy matching to account for typos or slight differences.</Card>
-                    <Card iconSvg={searchIcon} title="Powerful search" moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Navigation/Search.html">Or search for text inside notes and narrow down the search by filtering by the parent note, or by depth.</Card>
-                    <Card iconSvg={webClipperIcon} title="Web clipper" moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Installation%20%26%20Setup/Web%20Clipper.html">Grab web pages (or screenshots) and place them directly into Trilium using the web clipper browser extension.</Card>
+                    <Card iconSvg={revisionsIcon} title={t("productivity_benefits.revisions_title")} moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes/Note%20Revisions.html">{t("productivity_benefits.revisions_content")}</Card>
+                    <Card iconSvg={syncIcon} title={t("productivity_benefits.sync_title")} moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Installation%20%26%20Setup/Synchronization.html">{t("productivity_benefits.sync_content")}</Card>
+                    <Card iconSvg={protectedNotesIcon} title={t("productivity_benefits.protected_notes_title")} moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes/Protected%20Notes.html">{t("productivity_benefits.protected_notes_content")}</Card>
+                    <Card iconSvg={jumpToIcon} title={t("productivity_benefits.jump_to_title")} moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Navigation/Jump%20to.html">{t("productivity_benefits.jump_to_content")}</Card>
+                    <Card iconSvg={searchIcon} title={t("productivity_benefits.search_title")} moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Navigation/Search.html">{t("productivity_benefits.search_content")}</Card>
+                    <Card iconSvg={webClipperIcon} title={t("productivity_benefits.web_clipper_title")} moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Installation%20%26%20Setup/Web%20Clipper.html">{t("productivity_benefits.web_clipper_content")}</Card>
                 </div>
             </Section>
         </>
@@ -129,55 +131,59 @@ function NoteTypesSection() {
         <Section className="note-types" title="Multiple ways to represent your information">
             <ListWithScreenshot horizontal items={[
                 {
-                    title: "Text notes",
+                    title: t("note_types.text_title"),
                     imageUrl: "/type_text.webp",
                     iconSvg: textNoteIcon,
                     moreInfo: "https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Text/index.html",
-                    description: "The notes are edited using a visual (WYSIWYG) editor, with support for tables, images, math expressions, code blocks with syntax highlighting. Quickly format the text using Markdown-like syntax or using slash commands."
+                    description: t("note_types.text_description")
                 },
                 {
-                    title: "Code notes",
+                    title: t("note_types.code_title"),
                     imageUrl: "/type_code.webp",
                     iconSvg: codeIcon,
                     moreInfo: "https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Code.html",
-                    description: "Large samples of source code or scripts use a dedicated editor, with syntax highlighting for many programming languages and with various color themes."
+                    description: t("note_types.code_description")
                 },
                 {
-                    title: "File notes",
+                    title: t("note_types.file_title"),
                     imageUrl: "/type_file.webp",
                     iconSvg: fileIcon,
                     moreInfo: "https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/File.html",
-                    description: "Embed multimedia files such as PDFs, images, videos with an in-application preview."
+                    description: t("note_types.file_description")
                 },
                 {
-                    title: "Canvas",
+                    title: t("note_types.canvas_title"),
                     imageUrl: "/type_canvas.webp",
                     iconSvg: canvasIcon,
                     moreInfo: "https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Canvas.html",
-                    description: "Arrange shapes, images and text across an infinite canvas, using the same technology behind excalidraw.com. Ideal for diagrams, sketches and visual planning."
+                    description: t("note_types.canvas_description")
                 },
                 {
-                    title: "Mermaid diagrams",
+                    title: t("note_types.mermaid_title"),
                     imageUrl: "/type_mermaid.webp",
                     iconSvg: mermaidIcon,
                     moreInfo: "https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Mermaid%20Diagrams/index.html",
-                    description: "Create diagrams such as flowcharts, class & sequence diagrams, Gantt charts and many more, using the Mermaid syntax."
+                    description: t("note_types.mermaid_description")
                 },
                 {
-                    title: "Mindmap",
+                    title: t("note_types.mindmap_title"),
                     imageUrl: "/type_mindmap.webp",
                     iconSvg: mindmapIcon,
                     moreInfo: "https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Mind%20Map.html",
-                    description: "Organize your thoughts visually or do a brainstorming session."
+                    description: t("note_types.mindmap_description")
                 }
             ]} />
             <p>
-                and others:{" "}
-                <Link href="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Note%20Map.html" openExternally>note map</Link>,{" "}
-                <Link href="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Relation%20Map.html" openExternally>relation map</Link>,{" "}
-                <Link href="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Saved%20Search.html" openExternally>saved searches</Link>,{" "}
-                <Link href="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Render%20Note.html" openExternally>render note</Link>,{" "}
-                <Link href="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Web%20View.html" openExternally>web views</Link>.
+                <Trans
+                    i18nKey="note_types.others_list"
+                    components={[
+                        <Link href="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Note%20Map.html" openExternally />,
+                        <Link href="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Relation%20Map.html" openExternally />,
+                        <Link href="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Saved%20Search.html" openExternally />,
+                        <Link href="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Render%20Note.html" openExternally />,
+                        <Link href="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Web%20View.html" openExternally />
+                    ]}
+                />
             </p>
         </Section>
     );
@@ -186,12 +192,12 @@ function NoteTypesSection() {
 function ExtensibilityBenefitsSection() {
     return (
         <>
-            <Section className="benefits accented" title="Sharing & extensibility">
+            <Section className="benefits accented" title={t("extensibility_benefits.title")}>
                 <div className="benefits-container grid-4-cols">
-                    <Card iconSvg={importExportIcon} title="Import/export" moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/index.html">Easily interact with other applications using Markdown, ENEX, OML formats.</Card>
-                    <Card iconSvg={shareIcon} title="Share notes on the web" moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Advanced%20Usage/Sharing/Serving%20directly%20the%20content%20o.html">If you have a server, it can be used to share a subset of your notes with other people.</Card>
-                    <Card iconSvg={codeIcon} title="Advanced scripting" moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Scripting/Custom%20Widgets/index.html">Build your own integrations within Trilium with custom widgets, or server-side logic.</Card>
-                    <Card iconSvg={restApiIcon} title="REST API" moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Advanced%20Usage/ETAPI%20%28REST%20API%29/index.html">Interact with Trilium programatically using its builtin REST API.</Card>
+                    <Card iconSvg={importExportIcon} title={t("extensibility_benefits.import_export_title")} moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Import%20%26%20Export/Markdown/index.html">{t("extensibility_benefits.import_export_description")}</Card>
+                    <Card iconSvg={shareIcon} title={t("extensibility_benefits.share_title")} moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Advanced%20Usage/Sharing/Serving%20directly%20the%20content%20o.html">{t("extensibility_benefits.share_description")}</Card>
+                    <Card iconSvg={codeIcon} title={t("extensibility_benefits.scripting_title")} moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Scripting/Custom%20Widgets/index.html">{t("extensibility_benefits.scripting_description")}</Card>
+                    <Card iconSvg={restApiIcon} title={t("extensibility_benefits.api_title")} moreInfoUrl="https://docs.triliumnotes.org/User%20Guide/User%20Guide/Advanced%20Usage/ETAPI%20%28REST%20API%29/index.html">{t("extensibility_benefits.api_description")}</Card>
                 </div>
             </Section>
         </>
@@ -203,31 +209,32 @@ function CollectionsSection() {
         <Section className="collections" title="Collections">
             <ListWithScreenshot items={[
                 {
-                    title: "Calendar",
+                    title: t("collections.calendar_title"),
                     imageUrl: "/collection_calendar.webp",
                     iconSvg: calendarIcon,
                     moreInfo: "https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Collections/Calendar%20View.html",
-                    description: "Organize your personal or professional events using a calendar, with support for all-day and multi-day events. See your events at a glance with the week, month and year views. Easy interaction to add or drag events."
+                    description: t("collections.calendar_description")
                 },
                 {
-                    title: "Table",
+                    title: t("collections.table_title"),
                     iconSvg: tableIcon,
                     imageUrl: "/collection_table.webp",
                     moreInfo: "https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Collections/Table%20View.html",
-                    description: "Display and edit information about notes in a tabular structure, with various column types such as text, number, check boxes, date & time, links and colors and support for relations. Optionally, display the notes within a tree hierarchy inside the table." },
+                    description: t("collections.table_description")
+                },
                 {
-                    title: "Board",
+                    title: t("collections.board_title"),
                     iconSvg: boardIcon,
                     imageUrl: "/collection_board.webp",
                     moreInfo: "https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Collections/Board%20View.html",
-                    description: "Organize your tasks or project status into a Kanban board with an easy way to create new items and columns and simply changing their status by dragging across the board."
+                    description: t("collections.board_description")
                 },
                 {
-                    title: "Geomap",
+                    title: t("collections.geomap_title"),
                     iconSvg: geomapIcon,
                     imageUrl: "/collection_geomap.webp",
                     moreInfo: "https://docs.triliumnotes.org/User%20Guide/User%20Guide/Note%20Types/Collections/Geo%20Map%20View.html",
-                    description: "Plan your vacations or mark your points of interest directly on a geographical map using customizable markers. Display recorded GPX tracks to track itineraries."
+                    description: t("collections.geomap_description")
                 }
             ]} />
         </Section>
@@ -262,7 +269,7 @@ function ListWithScreenshot({ items, horizontal, cardExtra }: {
             <div className="details">
                 {selectedItem && (
                     <>
-                        <img src={selectedItem.imageUrl} alt="Screenshot of the feature being selected" loading="lazy" />
+                        <img src={selectedItem.imageUrl} alt={t("components.list_with_screenshot_alt")} loading="lazy" />
                     </>
                 )}
             </div>
@@ -272,14 +279,14 @@ function ListWithScreenshot({ items, horizontal, cardExtra }: {
 
 function FaqSection() {
     return (
-        <Section className="faq" title="Frequently Asked Questions">
+        <Section className="faq" title={t("faq.title")}>
             <div class="grid-2-cols">
-                <FaqItem question="Is there a mobile application?">Currently there is no official mobile application. However, if you have a server instance you can access it using a web browser and even install it as a PWA. For Android, there is an unofficial application called TriliumDroid that even works offline (same as a desktop client).</FaqItem>
-                <FaqItem question="Where is the data stored?">All your notes will be stored in an SQLite database in an application folder. The reasoning why Trilium uses a database instead of plain text files is both performance and some features would be much more difficult to implement such as clones (same note in multiple places in the tree). To find the application folder, simply go to the About window.</FaqItem>
-                <FaqItem question="Do I need a server to use Trilium?">No, the server allows access via a web browser and manages the synchronization if you have multiple devices. To get started, it's enough to download the desktop application and start using it.</FaqItem>
-                <FaqItem question="How well does the application scale with a large amount of notes?">Depending on usage, the application should be able to handle at least 100.000 notes without an issue. Do note that the sync process can sometimes fail if uploading many large files (&gt; 1 GB per file) since Trilium is meant more as a knowledge base application rather than a file store (like NextCloud, for example).</FaqItem>
-                <FaqItem question="Can I share my database over a network drive?">No, it's generally not a good idea to share a SQLite database over a network drive. Although sometimes it might work, there are chances that the database will get corrupted due to imperfect file locks over a network.</FaqItem>
-                <FaqItem question="How is my data protected?">By default, notes are not encrypted and can be read directly from the database. Once a note is marked as encrypted, the note is encrypted using AES-128-CBC.</FaqItem>
+                <FaqItem question={t("faq.mobile_question")}>{t("faq.mobile_answer")}</FaqItem>
+                <FaqItem question={t("faq.database_question")}>{t("faq.database_answer")}</FaqItem>
+                <FaqItem question={t("faq.server_question")}>{t("faq.server_answer")}</FaqItem>
+                <FaqItem question={t("faq.scaling_question")}>{t("faq.scaling_answer")}</FaqItem>
+                <FaqItem question={t("faq.network_share_question")}>{t("faq.network_share_answer")}</FaqItem>
+                <FaqItem question={t("faq.security_question")}>{t("faq.security_answer")}</FaqItem>
             </div>
         </Section>
     );
@@ -295,11 +302,11 @@ function FaqItem({ question, children }: { question: string; children: Component
 
 function FinalCta() {
     return (
-        <Section className="final-cta accented" title="Ready to get started with Trilium Notes?">
-            <p>Build your personal knowledge base with powerful features and full privacy.</p>
+        <Section className="final-cta accented" title={t("final_cta.title")}>
+            <p>{t("final_cta.description")}</p>
 
             <div class="buttons">
-                <Button href="./get-started/" text="Get started" />
+                <Button href="./get-started/" text={t("final_cta.get_started")} />
             </div>
         </Section>
     )

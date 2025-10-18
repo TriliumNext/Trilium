@@ -62,7 +62,7 @@ button.btn.btn-secondary span.bx,
 button.btn.btn-sm span.bx,
 button.btn.btn-success span.bx {
     color: var(--cmd-button-icon-color);
-    padding-right: 0.35em;
+    padding-inline-end: 0.35em;
     font-size: 1.2em;
 }
 
@@ -71,7 +71,7 @@ button.btn.btn-primary kbd,
 button.btn.btn-secondary kbd,
 button.btn.btn-sm kbd,
 button.btn.btn-success kbd {
-    margin-left: 0.5em;
+    margin-inline-start: 0.5em;
     background: var(--cmd-button-keyboard-shortcut-background);
     color: var(--cmd-button-keyboard-shortcut-color);
     font-size: 0.6em;
@@ -102,7 +102,7 @@ button.btn.btn-success kbd {
 }
 
 .btn-group .tn-tool-button + .tn-tool-button {
-    margin-left: 4px !important;
+    margin-inline-start: 4px !important;
 }
 
 /* The "x" icon button */
@@ -237,7 +237,7 @@ input::selection,
     outline-offset: 6px;
     background: var(--input-background-color);
     border-radius: 6px;
-    padding-right: 8px;
+    padding-inline-end: 8px;
     color: var(--quick-search-color);
     flex-wrap: nowrap;
 }
@@ -357,11 +357,18 @@ select.form-control,
 
     outline: 3px solid transparent;
     outline-offset: 6px;
-    padding-right: calc(15px + 1.5rem);
-    background: var(--input-background-color) var(--dropdown-arrow);
+    padding-inline-end: calc(15px + 1.5rem);
+    background: var(--input-background-color) var(--dropdown-arrow);;
     color: var(--input-text-color);
     border: unset;
     border-radius: 0.375rem;
+}
+
+body[dir=rtl] select,
+body[dir=rtl] select.form-select,
+body[dir=rtl] select.form-control,
+body[dir=rtl] .select-button.dropdown-toggle.btn {
+    background-position: left 0.75rem center;
 }
 
 select:hover,
@@ -444,7 +451,7 @@ optgroup {
     content: "\eae1";
     width: 2em;
     height: 100%;
-    right: 0;
+    inset-inline-end: 0;
     top: 0;
     font-size: 1.2em;
     font-family: boxicons;
@@ -462,7 +469,7 @@ optgroup {
         --box-label-gap: 0.5em;
 
         position: relative;
-        padding-left: calc(var(--box-size) + var(--box-label-gap)) !important;
+        padding-inline-start: calc(var(--box-size) + var(--box-label-gap)) !important;
         user-select: none;
     }
 
@@ -471,7 +478,7 @@ optgroup {
     label.tn-checkbox > input[type="checkbox"] {
         position: absolute;
         top: 0;
-        left: 0;
+        inset-inline-start: 0;
         width: var(--box-size);
         height: 100%;
         margin: unset;
@@ -485,7 +492,7 @@ optgroup {
         content: "";
         position: absolute;
         top: 50%;
-        left: 0;
+        inset-inline-start: 0;
         translate: 0 -50%;
         width: var(--box-size);
         height: var(--box-size);

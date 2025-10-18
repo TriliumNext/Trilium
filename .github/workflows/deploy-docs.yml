@@ -55,7 +55,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: '3.14'
           cache: 'pip'
           cache-dependency-path: 'requirements-docs.txt'
 
@@ -72,7 +72,7 @@ jobs:
 
       # Setup Node.js with pnpm
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           cache: 'pnpm'
@@ -118,6 +118,7 @@ jobs:
 
       - name: Deploy
         uses: ./.github/actions/deploy-to-cloudflare-pages
+        if: github.repository == ${{ vars.REPO_MAIN }}
         with:
           project_name: "trilium-docs"
           comment_body: "📚 Documentation preview is ready"

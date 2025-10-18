@@ -41,7 +41,7 @@ const TPL = /*html*/`
     }
 
     body.mobile .note-detail-readonly-text {
-        padding-left: 10px;
+        padding-inline-start: 10px;
     }
 
     .note-detail-readonly-text p:first-child, .note-detail-readonly-text::before {
@@ -56,7 +56,7 @@ const TPL = /*html*/`
     .edit-text-note-button {
         position: absolute;
         top: 5px;
-        right: 10px;
+        inset-inline-end: 10px;
         font-size: 150%;
         padding: 5px;
         cursor: pointer;

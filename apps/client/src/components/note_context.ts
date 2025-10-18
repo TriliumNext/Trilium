@@ -438,4 +438,22 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
     }
 }
 
+export function openInCurrentNoteContext(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent | React.PointerEvent<HTMLCanvasElement> | null, notePath: string, viewScope?: ViewScope) {
+    const ntxId = $(evt?.target as Element)
+        .closest("[data-ntx-id]")
+        .attr("data-ntx-id");
+
+    const noteContext = ntxId ? appContext.tabManager.getNoteContextById(ntxId) : appContext.tabManager.getActiveContext();
+
+    if (noteContext) {
+        noteContext.setNote(notePath, { viewScope }).then(() => {
+            if (noteContext !== appContext.tabManager.getActiveContext()) {
+                appContext.tabManager.activateNoteContext(noteContext.ntxId);
+            }
+        });
+    } else {
+        appContext.tabManager.openContextWithNote(notePath, { viewScope, activate: true });
+    }
+}
+
 export default NoteContext;

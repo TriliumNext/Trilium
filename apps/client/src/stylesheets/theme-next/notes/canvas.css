@@ -1,0 +1,261 @@
+:root .excalidraw {
+    --ui-font: var(--main-font-family);
+
+
+    /* Button hover background color */
+    --button-hover-bg: var(--hover-item-background-color);
+    --color-surface-high: var(--hover-item-background-color);
+
+
+    --button-active-border: transparent;
+    --color-brand-active: transparent;
+
+    --color-surface-mid: transparent;
+    --color-surface-low: transparent;
+
+    /* Slider colors */
+    --color-slider-track: var(--menu-item-delimiter-color);
+    --color-slider-thumb: var(--muted-text-color);
+
+    /* Selected button icon fill color */
+    --color-on-primary-container: var(--ck-editor-toolbar-button-on-color);
+    --color-primary: var(--ck-editor-toolbar-button-on-color);
+
+    /* Selected button icon background color */
+    --color-surface-primary-container: var(--ck-editor-toolbar-button-on-background);
+    --color-primary-light: var(--ck-editor-toolbar-button-on-background);
+
+    --island-bg-color: var(--floating-button-background-color);
+
+}
+
+/* Dark theme tweaks */
+
+:root body .excalidraw.theme--dark {
+    --color-surface-high: transparent;
+    --color-brand-hover: transparent;
+}
+
+:root .excalidraw.theme--dark.excalidraw .App-mobile-menu,
+:root .excalidraw.theme--dark.excalidraw .App-menu__left {
+    --button-hover-bg: var(--hover-item-background-color);
+}
+
+:root .excalidraw.theme--dark.excalidraw .dropdown-menu-button:hover {
+    --background: var(--hover-item-background-color);
+}
+
+/* Backdrop blur pseudo-element */
+.Island:not(.App-menu__left)::before,
+.excalidraw .picker::before,
+:root .App-menu__left > .panelColumn > fieldset::before,
+:root .App-menu__left > .panelColumn > label::before,
+:root .App-menu__left > .panelColumn > div:has(> *)::before {
+    display: block;
+    position: absolute;
+    content: "";
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    backdrop-filter: blur(10px) saturate(6);
+    z-index: -1;
+}
+
+/* Note's root */
+
+:root .type-canvas {
+    --floating-buttons-vert-offset: 20px;
+}
+
+
+/* Context menus */
+
+/* Context menu - outer wrapper */
+:root .excalidraw .popover {
+    --padding: 0;
+
+    max-width: unset;
+    overflow: hidden;
+    font-family: var(--main-font-family);
+}
+
+/* Context menu - inner wrapper */
+:root .excalidraw .popover > .context-menu {
+    margin: 0;
+    padding: 8px !important;
+    overflow-y: auto;
+    overflow-x: hidden;
+    height: 100%;
+    border: none;
+    padding: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+/* Context menu item */
+:root .excalidraw .context-menu .context-menu-item {
+    --menu-item-start-padding: 22px;
+
+    border: 1px solid transparent;
+}
+
+/* Context menu item icon */
+:root .excalidraw .dropdown-menu-item__icon {
+    color: var(--menu-item-icon-color);
+}
+
+/* Context menu item label */
+:root .excalidraw .context-menu-item__label,
+:root .excalidraw .context-menu-item.dangerous .context-menu-item__label {
+    color: var(--menu-text-color);
+}
+
+:root .excalidraw .context-menu-item:hover .context-menu-item__label {
+    color: var(--hover-item-text-color);
+}
+
+/* Context menu item keyboard shortcut */
+:root .excalidraw .context-menu-item__shortcut {
+    padding: 0;
+    opacity: 1;
+}
+
+/* Context menu separator */
+.excalidraw .context-menu .context-menu-item-separator {
+    margin: 8px 0;
+    opacity: 1;
+}
+
+/* Main menu */
+
+/* Hide separators - no longer needed as the menu group headers feature a delimiter line */
+.excalidraw .Island.dropdown-menu-container>div:not(:has(>*)) {
+    display: none;
+}
+
+/* Menu group header */
+.excalidraw .dropdown-menu-container .dropdown-menu-group-title,
+.excalidraw .Island.dropdown-menu-container div[data-testid="canvas-background-label"] {
+    margin: 0 !important;
+}
+
+/* Header */
+
+.excalidraw .App-menu.App-menu_top {
+    align-items: center;
+}
+
+.excalidraw .App-menu.App-menu_top .App-menu_top__left {
+    /* Fixes a layout glitch with the header when the options panel is visbile */
+    --gap: 0 !important;
+}
+
+/* The parent element of the "Library" button  */
+.excalidraw .App-menu.App-menu_top > div:nth-child(3) {
+    flex-direction: row-reverse;
+}
+
+/* Panels */
+
+.excalidraw .zoom-actions,
+.undo-redo-buttons {
+    box-shadow: 1px 1px 1px var(--floating-button-shadow-color);
+    backdrop-filter: blur(10px) saturate(6);
+}
+
+:root .excalidraw .main-menu-trigger,
+:root .excalidraw .sidebar-trigger,
+:root .excalidraw .help-icon  {
+    box-shadow: none;
+}
+
+/* Selected color outline */
+:root .excalidraw .color-picker__button.active .color-picker__button-outline {
+    box-shadow: 0 0 0 2px var(--input-focus-outline-color);
+}
+
+:root .excalidraw .buttonList label.active {
+    border-color: transparent;
+}
+
+/* Options panel */
+
+.excalidraw .Island.App-menu__left {
+    box-shadow: none;
+    background: transparent;
+    backdrop-filter: none;
+    width: 13.2em;
+}
+
+body[dir=ltr] .excalidraw .Island.App-menu__left {
+    right: 0;
+}
+
+body[dir=rtl] .excalidraw .Island.App-menu__left {
+    left: 0;
+}
+
+:root .App-menu__left > .panelColumn {
+    row-gap: 5px;
+}
+
+/* Options panel card */
+:root .App-menu__left > .panelColumn > fieldset,
+:root .App-menu__left > .panelColumn > label,
+:root .App-menu__left > .panelColumn > div:has(> *) {
+    position: relative;
+    margin: 0;
+    border-radius: 4px;
+    box-shadow: 1px 1px 1px var(--floating-button-shadow-color);
+    background: var(--floating-button-background-color);
+    padding: 8px 12px;
+
+    /* backdrop: blur() creates a new stacking context that prevents some popovers like the
+     * arrowheads picker from being positioned correctly. To workaround this, the backdrop blur
+     * effect is applyed using a pseudo-element instead. */
+}
+
+/* Options panel card title */
+:root .App-menu__left fieldset > legend,
+:root .App-menu__left div > h3,
+:root .App-menu__left > .panelColumn > label {
+    text-transform: uppercase;
+    font-size: .65rem;
+    letter-spacing: 1pt;
+    color: var(--muted-text-color);
+}
+
+/* Options panel button bar */
+:root .excalidraw .App-menu__left .buttonList {
+    padding: 0;
+}
+
+/* Picker */
+body[dir=ltr] .excalidraw .App-menu__left .buttonList .picker {
+    translate: -80% 0;
+}
+
+/* Properties panel */
+
+body[dir=ltr] .excalidraw .exc-stats {
+    left: 0;
+}
+
+body[dir=rtl] .excalidraw .exc-stats {
+    right: 0;
+}
+
+/* Sidebar */
+
+.split-note-container-widget > .component.type-canvas:has(.excalidraw-container > .Island.default-sidebar) > .floating-buttons {
+    /* Hide the floating buttons when the sidebar is open */
+    display: none;
+}
+
+/* Pickers */
+
+.excalidraw .picker {
+    position: relative;
+}

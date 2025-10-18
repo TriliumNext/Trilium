@@ -1,19 +1,24 @@
 # Nginx
-Configure Nginx proxy and HTTPS. The operating system here is Ubuntu 18.04.
+Configure Nginx proxy and HTTPS. The operating system here is Ubuntu.
 
-1.  Download Nginx and remove Apache2
-    
-    ```
-    sudo apt-get install nginx
-    sudo apt-get remove apache2
-    ```
-2.  Create configure file
+## Installing Nginx
+
+Download Nginx and remove Apache2
+
+```
+sudo apt-get install nginx
+sudo apt-get remove apache2
+```
+
+## Build the configuration file
+
+1.  First, create the configuration file:
     
     ```
     cd /etc/nginx/conf.d
     vim default.conf
     ```
-3.  Fill the file with the context shown below, part of the setting show be changed. Then you can enjoy your web with HTTPS forced and proxy.
+2.  Fill the file with the context shown below, part of the setting show be changed. Then you can enjoy your web with HTTPS forced and proxy.
     
     ```
     # This part configures, where your Trilium server is running
@@ -54,23 +59,29 @@ Configure Nginx proxy and HTTPS. The operating system here is Ubuntu 18.04.
         return 301 https://$server_name$request_uri;
     }
     ```
-4.  Alternatively if you want to serve the instance under a different path (useful e.g. if you want to serve multiple instances), update the location block like so:
-    
-    *   update the location with your desired path (make sure to not leave a trailing slash "/", if your `proxy_pass` does not end on a slash as well)
-    *   add the `proxy_cookie_path` directive with the same path: this allows you to stay logged in at multiple instances at the same time.
-    
-    ```
-        location /trilium/instance-one {
-            rewrite /trilium/instance-one/(.*) /$1  break;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_set_header Upgrade $http_upgrade;
-            proxy_set_header Connection "upgrade";
-            proxy_pass http://trilium;
-            proxy_cookie_path / /trilium/instance-one
-            proxy_read_timeout 90;
-        }
-    
-    ```
+
+## Serving under a different path
+
+Alternatively if you want to serve the instance under a different path (useful e.g. if you want to serve multiple instances), update the location block like so:
+
+*   update the location with your desired path (make sure to not leave a trailing slash "/", if your `proxy_pass` does not end on a slash as well)
+*   add the `proxy_cookie_path` directive with the same path: this allows you to stay logged in at multiple instances at the same time.
+
+```
+    location /trilium/instance-one {
+        rewrite /trilium/instance-one/(.*) /$1  break;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_pass http://trilium;
+        proxy_cookie_path / /trilium/instance-one
+        proxy_read_timeout 90;
+    }
+```
+
+## Configuring the trusted proxy
+
+After setting up a reverse proxy, make sure to configure the <a class="reference-link" href="Trusted%20proxy.md">Trusted proxy</a>.

@@ -26,7 +26,7 @@ export interface PromptDialogOptions {
     readOnly?: boolean;
 }
 
-export default function PromptDialog() {    
+export default function PromptDialog() {
     const modalRef = useRef<HTMLDivElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const labelRef = useRef<HTMLLabelElement>(null);
@@ -35,7 +35,7 @@ export default function PromptDialog() {
     const [ value, setValue ] = useState("");
     const [ shown, setShown ] = useState(false);
     const submitValue = useRef<string>(null);
-    
+
     useTriliumEvent("showPromptDialog", (newOpts) => {
         opts.current = newOpts;
         setValue(newOpts.defaultValue ?? "");
@@ -48,7 +48,7 @@ export default function PromptDialog() {
             title={opts.current?.title ?? t("prompt.title")}
             size="lg"
             zIndex={2000}
-            modalRef={modalRef} formRef={formRef}            
+            modalRef={modalRef} formRef={formRef}
             onShown={() => {
                 opts.current?.shown?.({
                     $dialog: refToJQuerySelector(modalRef),
@@ -57,6 +57,7 @@ export default function PromptDialog() {
                     $form: refToJQuerySelector(formRef)
                 });
                 answerRef.current?.focus();
+                answerRef.current?.select();
             }}
             onSubmit={() => {
                 submitValue.current = value;

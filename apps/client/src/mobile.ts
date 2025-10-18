@@ -1,7 +1,6 @@
 import appContext from "./components/app_context.js";
 import noteAutocompleteService from "./services/note_autocomplete.js";
 import glob from "./services/glob.js";
-import "bootstrap/dist/css/bootstrap.min.css";
 import "boxicons/css/boxicons.min.css";
 import "autocomplete.js/index_jquery.js";
 

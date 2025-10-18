@@ -27,7 +27,8 @@ export const byBookType: Record<ViewTypeOptions, string | null> = {
     calendar: "xWbu3jpNWapp",
     table: "2FvYrpmOXm29",
     geoMap: "81SGnPGMk7Xc",
-    board: "CtBQqbwXDx1w"
+    board: "CtBQqbwXDx1w",
+    presentation: null
 };
 
 export function getHelpUrlForNote(note: FNote | null | undefined) {

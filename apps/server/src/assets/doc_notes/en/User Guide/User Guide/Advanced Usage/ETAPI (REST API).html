@@ -47,3 +47,8 @@ curl "$SERVER/etapi/notes/$NOTE_ID/content" -H "Authorization: $TOKEN" </code></
     Trilium instance.</li>
   <li><code>NOTE_ID</code> with an existing note ID to download.</li>
 </ul>
+<p>As another example, to obtain a .zip export of a note and place it in
+  a directory called <code>out</code>, simply replace the last statement in
+  the script with:</p><pre><code class="language-text-x-trilium-auto">curl -H "Authorization: $TOKEN" \
+	-X GET "$SERVER/etapi/notes/$NOTE_ID/export" \
+    --output "out/$NOTE_ID.zip"</code></pre>

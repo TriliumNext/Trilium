@@ -1,3 +1,4 @@
+import { handleRightToLeftPlacement } from "../../services/utils.js";
 import BasicWidget from "../basic_widget.js";
 import { Tooltip, Dropdown } from "bootstrap";
 type PopoverPlacement = Tooltip.PopoverPlacement;
@@ -48,8 +49,8 @@ export default class RightDropdownButtonWidget extends BasicWidget {
 
         this.$tooltip = this.$widget.find(".tooltip-trigger").attr("title", this.title);
         this.tooltip = new Tooltip(this.$tooltip[0], {
-            placement: this.settings.titlePlacement,
-            fallbackPlacements: [this.settings.titlePlacement]
+            placement: handleRightToLeftPlacement(this.settings.titlePlacement),
+            fallbackPlacements: [ handleRightToLeftPlacement(this.settings.titlePlacement) ]
         });
 
         this.$widget

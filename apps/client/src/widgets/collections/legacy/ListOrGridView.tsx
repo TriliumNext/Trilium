@@ -59,8 +59,8 @@ function ListNoteCard({ note, parentNote, expand, highlightedTokens }: { note: F
     const [ isExpanded, setExpanded ] = useState(expand);
     const notePath = getNotePath(parentNote, note);
 
-    // Reset expand state if switching to another note.
-    useEffect(() => setExpanded(expand), [ note ]);
+    // Reset expand state if switching to another note, or if user manually toggled expansion state.
+    useEffect(() => setExpanded(expand), [ note, expand ]);
 
     return (
         <div
@@ -79,7 +79,7 @@ function ListNoteCard({ note, parentNote, expand, highlightedTokens }: { note: F
             </h5>
 
             {isExpanded && <>
-                <NoteContent note={note} highlightedTokens={highlightedTokens} />
+                <NoteContent note={note} highlightedTokens={highlightedTokens} noChildrenList />
                 <NoteChildren note={note} parentNote={parentNote} highlightedTokens={highlightedTokens} />
             </>}
         </div>
@@ -110,7 +110,11 @@ function GridNoteCard({ note, parentNote, highlightedTokens }: { note: FNote, pa
                 <span ref={titleRef} className="note-book-title">{noteTitle}</span>
                 <NoteAttributes note={note} />
             </h5>
-            <NoteContent note={note} trim highlightedTokens={highlightedTokens} />
+            <NoteContent
+                note={note}
+                trim
+                highlightedTokens={highlightedTokens}
+            />
         </div>
     )
 }
@@ -126,12 +130,15 @@ function NoteAttributes({ note }: { note: FNote }) {
     return <span className="note-list-attributes" ref={ref} />
 }
 
-function NoteContent({ note, trim, highlightedTokens }: { note: FNote, trim?: boolean, highlightedTokens }) {
+function NoteContent({ note, trim, noChildrenList, highlightedTokens }: { note: FNote, trim?: boolean, noChildrenList?: boolean, highlightedTokens: string[] | null | undefined }) {
     const contentRef = useRef<HTMLDivElement>(null);
     const highlightSearch = useImperativeSearchHighlighlighting(highlightedTokens);
 
     useEffect(() => {
-        content_renderer.getRenderedContent(note, { trim })
+        content_renderer.getRenderedContent(note, {
+            trim,
+            noChildrenList
+        })
             .then(({ $renderedContent, type }) => {
                 if (!contentRef.current) return;
                 contentRef.current.replaceChildren(...$renderedContent);

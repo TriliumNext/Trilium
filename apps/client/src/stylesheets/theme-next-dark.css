@@ -160,6 +160,9 @@
     --launcher-pane-horiz-background-color-bgfx: #ffffff17; /* When background effects enabled */
     --launcher-pane-horiz-border-color-bgfx: #00000080; /* When background effects enabled */
 
+    --global-menu-update-available-badge-background-color: #7dbe61;
+    --global-menu-update-available-badge-color: black;
+
     --protected-session-active-icon-color: #8edd8e;
     --sync-status-error-pulse-color: #f47871;
 
@@ -264,6 +267,10 @@
 /*
  * Dark color scheme tweaks
  */
+
+#left-pane span.fancytree-node {
+    --custom-color: var(--dark-theme-custom-color);
+}
 
 body ::-webkit-calendar-picker-indicator {
     filter: invert(1);

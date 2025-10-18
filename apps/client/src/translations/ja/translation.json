@@ -67,7 +67,9 @@
     "switch_to_mobile_version": "モバイル版に切り替え",
     "switch_to_desktop_version": "デスクトップ版に切り替え",
     "configure_launchbar": "ランチャーバーの設定",
-    "show_shared_notes_subtree": "共有ノートのサブツリーを表示"
+    "show_shared_notes_subtree": "共有ノートのサブツリーを表示",
+    "new-version-available": "新しいアップデートが利用可能",
+    "download-update": "{{latestVersion}} をバージョンを入手"
   },
   "left_pane_toggle": {
     "show_panel": "パネルを表示",
@@ -162,7 +164,13 @@
     "min-days-in-first-week": "最初の週の最低日数",
     "first-week-info": "最初の週は、その年の最初の木曜日を含む週を指し、<a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a>規格に基づいています。",
     "first-week-warning": "最初の週のオプションを変更すると、既存のウィークノートと重複する可能性があり、既存のウィークノートはそれに応じて更新されません。",
-    "formatting-locale": "日付と数値のフォーマット"
+    "formatting-locale": "日付と数値のフォーマット",
+    "formatting-locale-auto": "アプリケーションの言語に基づいて",
+    "tuesday": "火曜日",
+    "wednesday": "水曜日",
+    "thursday": "木曜日",
+    "friday": "金曜日",
+    "saturday": "土曜日"
   },
   "tab_row": {
     "close_tab": "タブを閉じる",
@@ -251,12 +259,12 @@
   "help": {
     "title": "チートシート",
     "noteNavigation": "ノートナビゲーション",
-    "collapseExpand": "ノードの格納/展開",
+    "collapseExpand": "ノードを折りたたむ / 展開",
     "goBackForwards": "履歴を戻る／進む",
     "scrollToActiveNote": "アクティブノートまでスクロール",
     "jumpToParentNote": "親ノートへ移動",
-    "collapseWholeTree": "すべてのノートツリーを格納",
-    "collapseSubTree": "サブツリーを格納",
+    "collapseWholeTree": "すべてのノートツリーを折りたたむ",
+    "collapseSubTree": "サブツリーを折りたたむ",
     "tabShortcuts": "タブショートカット",
     "newTabNoteLink": "ノートのリンクをクリックすると、新しいタブで開く",
     "newTabWithActivationNoteLink": "ノートのリンクをクリックすると、新しいタブで開き、アクティブにします",
@@ -515,9 +523,9 @@
   "book_properties": {
     "grid": "グリッド",
     "list": "リスト",
-    "collapse_all_notes": "すべてのノートを格納",
+    "collapse_all_notes": "すべてのノートを折りたたむ",
     "expand_all_children": "すべての子を展開",
-    "collapse": "格納",
+    "collapse": "折りたたむ",
     "expand": "展開",
     "book_properties": "コレクションプロパティ",
     "invalid_view_type": "無効なビュータイプ '{{type}}'",
@@ -526,7 +534,8 @@
     "table": "テーブル",
     "geo-map": "ジオマップ",
     "board": "ボード",
-    "include_archived_notes": "アーカイブされたノートを表示"
+    "include_archived_notes": "アーカイブされたノートを表示",
+    "presentation": "プレゼンテーション"
   },
   "note_types": {
     "geo-map": "ジオマップ",
@@ -550,7 +559,7 @@
     "beta-feature": "Beta",
     "ai-chat": "AI チャット",
     "task-list": "タスクリスト",
-    "new-feature": "新しい",
+    "new-feature": "New",
     "collections": "コレクション"
   },
   "edited_notes": {
@@ -767,7 +776,7 @@
     "placeholder": "ノート名で検索",
     "label": "祖先",
     "depth_label": "深さ",
-    "depth_doesnt_matter": "関係ない",
+    "depth_doesnt_matter": "関係なし",
     "depth_eq": "ちょうど {{count}} つ下の階層",
     "direct_children": "直接の子",
     "depth_gt": "{{count}} より下の階層",
@@ -830,7 +839,7 @@
     "max_width_label": "最大コンテンツ幅",
     "max_width_unit": "ピクセル",
     "apply_changes_description": "コンテンツ幅の変更を適用するには、クリックしてください",
-    "reload_description": "外観オプションからの変更"
+    "reload_description": "外観設定から変更"
   },
   "theme": {
     "title": "アプリのテーマ",
@@ -899,14 +908,14 @@
     "bg_color": "背景色付きテキスト",
     "visibility_title": "ハイライトリスト表示",
     "visibility_description": "#hideHighlightWidget ラベルを追加することで、ノートごとにハイライトウィジェットを非表示にできます。",
-    "shortcut_info": "オプション -> ショートカット（'右ペイン切り替え'）で、右ペイン（ハイライトを含む）を素早く切り替えるキーボードショートカットを設定できます。"
+    "shortcut_info": "設定 -> ショートカット（右ペイン切り替え）で、右ペイン（ハイライトを含む）を素早く切り替えるキーボードショートカットを設定できます。"
   },
   "table_of_contents": {
     "title": "目次",
     "description": "ノートに定義された数以上の見出しがある場合、テキストノートに目次が表示されます。この数はカスタマイズできます:",
     "unit": "見出し",
-    "disable_info": "このオプションに非常に大きな数値を設定することで、目次を効果的に無効にすることもできる。",
-    "shortcut_info": "オプション -> ショートカット（'右ペイン切り替え'）で、右ペイン（目次を含む）を素早く切り替えるキーボードショートカットを設定できます。"
+    "disable_info": "このオプションに非常に大きな数値を設定することで、目次を効果的に無効にすることもできます。",
+    "shortcut_info": "設定 -> ショートカット（右ペイン切り替え）で、右ペイン（目次を含む）を素早く切り替えるキーボードショートカットを設定できます。"
   },
   "toc": {
     "table_of_contents": "目次",
@@ -1073,7 +1082,7 @@
     "read_only": "エディターは読み取り専用モードです。テキストとコードノートのみ機能します。",
     "auto_read_only_disabled": "テキスト/コードノートは、サイズが大きすぎる場合、自動的に読み取りモードに設定されます。このラベルをノートに追加することで、ノートごとにこの動作を無効にすることができます",
     "app_css": "Trilium アプリケーションに読み込まれ、Trilium の外観を変更するために使用できる CSS ノートをマークします。",
-    "app_theme": "Trilium のフルテーマである CSS ノートをマークし、Trilium オプションで利用できるようにします。",
+    "app_theme": "Trilium のフルテーマである CSS ノートをマークし、Trilium の設定で利用できるようにします。",
     "app_theme_base": "「next」、「next-light」、または「next-dark」に設定すると、従来のテーマではなく、対応する TriliumNext テーマ (auto、light、または dark) がカスタム テーマのベースとして使用されます。",
     "css_class": "このラベルの値は、ツリー内の特定のノートを表すノードにCSSクラスとして追加されます。これは高度なテーマ設定に役立ちます。テンプレートノートで使用できます。",
     "icon_class": "このラベルの値は、ツリー上のアイコンにCSSクラスとして追加され、ツリー内のノートを視覚的に区別するのに役立ちます。例えば、bx bx-home のように、アイコンは boxicons から取得されます。テンプレートノートで使用できます。",
@@ -1275,7 +1284,7 @@
     "editor_type": {
       "label": "書式設定ツールバー",
       "floating": {
-        "description": "編集ツールがカーソル付近に表示されます;",
+        "description": "編集ツールがカーソル付近に表示されます。",
         "title": "フローティング"
       },
       "fixed": {
@@ -1290,7 +1299,7 @@
     "cut": "カット",
     "copy": "コピー",
     "copy-link": "リンクをコピー",
-    "paste": "ペースト",
+    "paste": "貼り付け",
     "paste-as-plain-text": "プレーンテキストで貼り付け",
     "search_online": "{{searchEngine}} で \"{{term}}\" を検索"
   },
@@ -1582,7 +1591,8 @@
     "delete_this_note": "このノートを削除",
     "error_unrecognized_command": "認識されないコマンド {{command}}",
     "insert_child_note": "子ノートを挿入",
-    "error_cannot_get_branch_id": "ノートパス 「{{notePath}} のbranchIdを取得できません"
+    "error_cannot_get_branch_id": "ノートパス 「{{notePath}} のbranchIdを取得できません",
+    "note_revisions": "ノートの変更履歴"
   },
   "inherited_attribute_list": {
     "title": "継承属性",
@@ -2065,5 +2075,10 @@
     "role_and_size": "ロール: {{role}},サイズ: {{size}}",
     "link_copied": "添付ファイルのリンクをクリップボードにコピーしました。",
     "unrecognized_role": "添付ファイルのロール「{{role}}」は認識されません。"
+  },
+  "presentation_view": {
+    "edit-slide": "このスライドを編集",
+    "start-presentation": "プレゼンテーションを開始",
+    "slide-overview": "スライドの概要を切り替え"
   }
 }

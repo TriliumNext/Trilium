@@ -4,6 +4,7 @@
 @import url(./pages.css);
 @import url(./ribbon.css);
 @import url(./notes/text.css);
+@import url(./notes/canvas.css);
 @import url(./notes/collections/table.css);
 
 @font-face {
@@ -81,6 +82,20 @@
 
     /* Theme capabilities */
     --tab-note-icons: true;
+
+    /* To ensure that a tree item's custom color remains sufficiently contrasted and readable,
+     * the color is adjusted based on the current color scheme (light or dark). The lightness
+     * component of the color represented in the CIELAB color space, will be
+     * constrained to a certain percentage defined below.
+     * 
+     * Note: the tree background may vary when background effects are enabled, so it is recommended
+     * to maintain a higher contrast margin than on the usual note tree solid background. */
+
+    /* The maximum perceptual lightness for the custom color in the light theme (%): */
+    --tree-item-light-theme-max-color-lightness: 60;
+    
+    /* The minimum perceptual lightness for the custom color in the dark theme (%): */
+    --tree-item-dark-theme-min-color-lightness: 60;
 }
 
 body.backdrop-effects-disabled {
@@ -96,9 +111,10 @@ body.backdrop-effects-disabled {
  * supported when this class is used.
  */
 
- .dropdown-menu:not(.static) {
+ .dropdown-menu:not(.static),
+ :root .excalidraw .popover {
     border-radius: var(--dropdown-border-radius);
-    padding: var(--menu-padding-size) !important;
+    padding: var(--padding, var(--menu-padding-size)) !important;
     font-size: 0.9rem !important;
 }
 
@@ -114,14 +130,15 @@ body.mobile .dropdown-menu .dropdown-menu {
 }
 
 body.desktop .dropdown-menu::before,
-:root .ck.ck-dropdown__panel::before {
+:root .ck.ck-dropdown__panel::before,
+:root .excalidraw .popover::before {
     content: "";
     backdrop-filter: var(--dropdown-backdrop-filter);
     border-radius: var(--dropdown-border-radius);
     position: absolute;
     top: 0;
-    left: 0;
-    right: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
     bottom: 0;
     z-index: -1;
 }
@@ -148,9 +165,17 @@ body.desktop .dropdown-submenu .dropdown-menu {
 }
 
 .dropdown-item,
-body.mobile .dropdown-submenu .dropdown-toggle {
-    padding: 2px 2px 2px 8px !important;
-    padding-inline-end: 22px !important;
+body.mobile .dropdown-submenu .dropdown-toggle,
+.excalidraw .context-menu .context-menu-item {
+    --menu-item-start-padding: 8px;
+    --menu-item-end-padding: 22px;
+    --menu-item-vertical-padding: 2px;
+    
+    padding-top: var(--menu-item-vertical-padding) !important;
+    padding-bottom: var(--menu-item-vertical-padding) !important;
+    padding-inline-start: var(--menu-item-start-padding) !important;
+    padding-inline-end: var(--menu-item-end-padding) !important;
+
     /* Note: the right padding should also accommodate the submenu arrow. */
     border-radius: 6px;
     cursor: default !important;
@@ -202,7 +227,8 @@ html body .dropdown-item[disabled] {
 }
 
 /* Menu item keyboard shortcut */
-.dropdown-item kbd {
+.dropdown-item kbd,
+.excalidraw .context-menu-item__shortcut {
     font-family: unset !important;
     font-size: unset !important;
     color: var(--menu-item-keyboard-shortcut-color) !important;
@@ -211,21 +237,23 @@ html body .dropdown-item[disabled] {
 
 .dropdown-item span.keyboard-shortcut {
     color: var(--menu-item-keyboard-shortcut-color) !important;
-    margin-left: 16px;
+    margin-inline-start: 16px;
 }
 
-.dropdown-divider {
+.dropdown-divider,
+.excalidraw .context-menu hr {
     position: relative;
     border-color: transparent !important;
     overflow: visible;
 }
 
-.dropdown-divider::after {
+.dropdown-divider::after,
+.excalidraw .context-menu hr::before {
     position: absolute;
     content: "";
     top: -1px;
-    left: calc(0px - var(--menu-padding-size));
-    right: calc(0px - var(--menu-padding-size));
+    inset-inline-start: calc(0px - var(--menu-padding-size));
+    inset-inline-end: calc(0px - var(--menu-padding-size));
     border-top: 1px solid var(--menu-item-delimiter-color);
 }
 
@@ -237,7 +265,7 @@ html body .dropdown-item[disabled] {
     align-items: center;
     justify-content: center;
     top: 0;
-    right: 0;
+    inset-inline-end: 0;
     margin: unset !important;
     border: unset !important;
     padding: 0 4px;
@@ -246,10 +274,16 @@ html body .dropdown-item[disabled] {
     color: var(--menu-item-arrow-color) !important;
 }
 
+body[dir=rtl] .dropdown-menu:not([data-popper-placement="bottom-start"]) .dropdown-toggle::after {
+    content: "\ea4d" !important;
+}
+
 /* Menu item group heading */
 
 /* The heading body */
-.dropdown-menu h6 {
+.dropdown-menu h6,
+.excalidraw .dropdown-menu-container .dropdown-menu-group-title,
+.excalidraw .dropdown-menu-container div[data-testid="canvas-background-label"] {
     position: relative;
     background: transparent;
     padding: 1em 8px 14px 8px;
@@ -260,12 +294,14 @@ html body .dropdown-item[disabled] {
 }
 
 /* The delimiter line */
-.dropdown-menu h6::before {
+.dropdown-menu h6::before,
+.excalidraw .dropdown-menu-container .dropdown-menu-group-title::before,
+.excalidraw .dropdown-menu-container div[data-testid="canvas-background-label"]::before {
     content: "";
     position: absolute;
     bottom: 8px;
-    left: calc(0px - var(--menu-padding-size));
-    right: calc(0px - var(--menu-padding-size));
+    inset-inline-start: calc(0px - var(--menu-padding-size));
+    inset-inline-end: calc(0px - var(--menu-padding-size));
     border-top: 1px solid var(--menu-item-delimiter-color);
 }
 
@@ -357,13 +393,13 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
 }
 
 #toast-container .toast:not(.no-title) .bx {
-    margin-right: 0.5em;
+    margin-inline-end: 0.5em;
     font-size: 1.1em;
     opacity: 0.85;
 }
 
 #toast-container .toast.no-title .bx {
-    margin-right: 0;
+    margin-inline-end: 0;
     font-size: 1.3em;
 }
 

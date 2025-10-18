@@ -24,10 +24,10 @@
   "devDependencies": {
     "@digitak/esrun": "3.2.26",
     "@types/swagger-ui": "5.21.1",
-    "@typescript-eslint/eslint-plugin": "8.45.0",
-    "@typescript-eslint/parser": "8.45.0",
+    "@typescript-eslint/eslint-plugin": "8.46.1",
+    "@typescript-eslint/parser": "8.46.1",
     "dotenv": "17.2.3",
-    "esbuild": "0.25.10",
+    "esbuild": "0.25.11",
     "eslint": "9.37.0",
     "highlight.js": "11.11.1",
     "typescript": "5.9.3"

@@ -5,15 +5,9 @@ Mobile frontend is limited in features compared to full desktop frontend. See be
 
 Note that this is not an Android/iOS app, this is just mobile friendly web page served on the [server edition](Server%20Installation.md).
 
-## Screenshots
+## Testing via the desktop application
 
-### Mobile phone
-
-![](Mobile%20Frontend_mobile-sma.png)
-
-### Tablet
-
-![](Mobile%20Frontend_mobile-tab.png)
+If you are running Trilium without a dedicated [server installation](Server%20Installation.md), you can still test the mobile application using the desktop application. For more information, see <a class="reference-link" href="Desktop%20Installation/Using%20the%20desktop%20application%20.md">Using the desktop application as a server</a>. To access it go to `http://<ip>:37840/login?mobile` .
 
 ## Limitations
 

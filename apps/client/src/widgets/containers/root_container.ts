@@ -3,6 +3,7 @@ import FlexContainer from "./flex_container.js";
 import options from "../../services/options.js";
 import type BasicWidget from "../basic_widget.js";
 import utils from "../../services/utils.js";
+import { LOCALES } from "@triliumnext/commons";
 
 /**
  * The root container is the top-most widget/container, from which the entire layout derives.
@@ -32,6 +33,7 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
         this.#setMotion(options.is("motionEnabled"));
         this.#setShadows(options.is("shadowsEnabled"));
         this.#setBackdropEffects(options.is("backdropEffectsEnabled"));
+        this.#setLocaleAndDirection(options.get("locale"));
 
         return super.render();
     }
@@ -67,6 +69,12 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
 
     #setBackdropEffects(enabled: boolean) {
         document.body.classList.toggle("backdrop-effects-disabled", !enabled);
+    }
+
+    #setLocaleAndDirection(locale: string) {
+        const correspondingLocale = LOCALES.find(l => l.id === locale);
+        document.body.lang = locale;
+        document.body.dir = correspondingLocale?.rtl ? "rtl" : "ltr";
     }
 }
 

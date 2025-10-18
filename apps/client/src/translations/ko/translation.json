@@ -49,5 +49,11 @@
     "chosen_actions": "선택한 액션들",
     "execute_bulk_actions": "대량 액션들 실행",
     "bulk_actions_executed": "대량 액션들이 성공적으로 실행되었습니다."
+  },
+  "i18n": {
+    "saturday": "토요일",
+    "sunday": "일요일",
+    "first-week-of-the-year": "일년의 첫째 주",
+    "first-week-contains-first-day": "첫 번째 주에는 올해의 첫날이 포함됩니다"
   }
 }

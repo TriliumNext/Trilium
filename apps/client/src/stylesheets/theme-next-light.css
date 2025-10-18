@@ -127,7 +127,7 @@
     --left-pane-item-selected-color: black;
     --left-pane-item-selected-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
     --left-pane-item-action-button-background: rgba(0, 0, 0, 0.11);
-    --left-pane-item-action-button-color: inherit;
+    --left-pane-item-action-button-color: var(--left-pane-text-color);
     --left-pane-item-action-button-hover-background: white;
     --left-pane-item-action-button-hover-shadow: 2px 2px 3px rgba(0, 0, 0, 0.15);
     --left-pane-item-selected-action-button-hover-shadow: 2px 2px 10px rgba(0, 0, 0, 0.25);
@@ -152,6 +152,9 @@
     --launcher-pane-horiz-button-focus-outline-color: var(--input-focus-outline-color);
     --launcher-pane-horiz-background-color-bgfx: #ffffffb3; /* When background effects enabled */
     --launcher-pane-horiz-border-color-bgfx: #00000026; /* When background effects enabled */
+
+    --global-menu-update-available-badge-background-color: #4fa450;
+    --global-menu-update-available-badge-color: white;
 
     --protected-session-active-icon-color: #16b516;
     --sync-status-error-pulse-color: #ff5528;

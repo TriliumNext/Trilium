@@ -4,6 +4,7 @@ import Button from "./Button.js";
 import downloadIcon from "../assets/boxicons/bx-arrow-in-down-square-half.svg?raw";
 import packageJson from "../../../../package.json" with { type: "json" };
 import { useEffect, useState } from "preact/hooks";
+import { t } from "../i18n.js";
 
 interface DownloadButtonProps {
     big?: boolean;
@@ -24,10 +25,10 @@ export default function DownloadButton({ big }: DownloadButtonProps) {
                     href={recommendedDownload.url}
                     iconSvg={downloadIcon}
                     text={<>
-                            Download now{" "}
+                            {t("download_now.text")}
                             {big
-                            ? <span class="platform">v{packageJson.version} for {recommendedDownload.name}</span>
-                            : <span class="platform">for {recommendedDownload.name}</span>
+                            ? <span class="platform">{t("download_now.platform_big", { version: packageJson.version, platform: recommendedDownload.name })}</span>
+                            : <span class="platform">{t("download_now.platform_small", { platform: recommendedDownload.name })}</span>
                             }
                     </>}
                 />
@@ -37,17 +38,17 @@ export default function DownloadButton({ big }: DownloadButtonProps) {
                     href="/get-started/"
                     iconSvg={downloadIcon}
                     text={<>
-                            Download now{" "}
+                            {t("download_now.text")}
                             {big
-                            ? <span class="platform">v{packageJson.version} for Linux</span>
-                            : <span class="platform">for Linux</span>
+                            ? <span class="platform">{t("download_now.linux_big", { version: packageJson.version })}</span>
+                            : <span class="platform">{t("download_now.linux_small")}</span>
                             }
                     </>}
                 />
             )}
 
             {big && (
-                <a class="more-download-options desktop-only" href="./get-started/">More platforms & server setup</a>
+                <a class="more-download-options desktop-only" href="./get-started/">{t("download_now.more_platforms")}</a>
             )}
         </>
     )

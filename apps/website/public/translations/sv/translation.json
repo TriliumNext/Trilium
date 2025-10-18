@@ -1,0 +1,7 @@
+{
+    "get-started": {
+        "title": "Kom igång",
+        "desktop_title": "Ladda ner skrivbordsprogrammet (v{{version}})",
+        "architecture": "Arkitektur:"
+    }
+}

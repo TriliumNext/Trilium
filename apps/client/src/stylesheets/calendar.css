@@ -60,7 +60,7 @@
     appearance: none;
     text-align: center;
     border: 0;
-    border-left: unset;
+    border-inline-start: unset;
     background-color: var(--menu-background-color);
     font-weight: bold;
     outline: 0;
@@ -102,7 +102,7 @@
     content: '';
     position: absolute;
     top: 0;
-    right: 0;
+    inset-inline-end: 0;
     bottom: 0;
     width: 1px;
     background-color: var(--main-border-color);

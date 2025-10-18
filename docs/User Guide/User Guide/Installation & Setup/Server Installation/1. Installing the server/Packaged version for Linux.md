@@ -178,4 +178,4 @@ If you get an error like this, you need to either upgrade your glibc (typically 
 
 ## TLS
 
-Don't forget to [configure TLS](../TLS%20Configuration.md), which is required for secure usage!
+Don't forget to [configure TLS](../HTTPS%20\(TLS\).md), which is required for secure usage!

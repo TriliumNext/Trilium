@@ -36,14 +36,14 @@
 .geo-map-container .leaflet-div-icon .icon-shadow {
   position: absolute;
   top: 0;
-  left: 0;
+  inset-inline-start: 0;
   z-index: -1;
 }
 
 .geo-map-container .leaflet-div-icon .bx {
   position: absolute;
   top: 3px;
-  left: 2px;
+  inset-inline-start: 2px;
   background-color: white;
   color: black;
   padding: 2px;
@@ -55,7 +55,7 @@
   display: block;
   position: absolute;
   top: 100%;
-  left: 50%;
+  inset-inline-start: 50%;
   transform: translateX(-50%);
   font-size: 0.75rem;
   height: 1rem;
@@ -66,6 +66,10 @@
   text-shadow: -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 1px 1px 0 white;
   white-space: no-wrap;
   overflow: hidden;
+}
+
+body[dir=rtl] .geo-map-container .leaflet-div-icon .title-label {
+  transform: translateX(50%);
 }
 
 .geo-map-container .leaflet-div-icon .archived {

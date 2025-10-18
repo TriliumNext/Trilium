@@ -1,3 +1,5 @@
+import options from "../services/options";
+
 type DateTimeStyle = "full" | "long" | "medium" | "short" | "none" | undefined;
 
 /**
@@ -8,7 +10,7 @@ export function formatDateTime(date: string | Date | number | null | undefined, 
         return "";
     }
 
-    const locale = navigator.language;
+    const locale = options.get("formattingLocale") || options.get("locale") || navigator.language;
 
     let parsedDate;
     if (typeof date === "string" || typeof date === "number") {
@@ -24,7 +26,7 @@ export function formatDateTime(date: string | Date | number | null | undefined, 
 
     if (timeStyle !== "none" && dateStyle !== "none") {
         // Format the date and time
-        const formatter = new Intl.DateTimeFormat(navigator.language, { dateStyle, timeStyle });
+        const formatter = new Intl.DateTimeFormat(locale, { dateStyle, timeStyle });
         return formatter.format(parsedDate);
     } else if (timeStyle === "none" && dateStyle !== "none") {
         // Format only the date

@@ -35,7 +35,7 @@ const DROPDOWN_TPL = `
         }
 
         .bookmark-folder-widget li .note-link {
-            padding-left: 35px;
+            padding-inline-start: 35px;
         }
     </style>
 

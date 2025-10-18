@@ -30,7 +30,7 @@ const TPL = /*html*/`
         }
 
         .attachment-details {
-            margin-left: 10px;
+            margin-inline-start: 10px;
         }
 
         .attachment-content-wrapper {

@@ -1,1 +1,6 @@
-{}
+{
+  "keyboard_actions": {
+    "back-in-note-history": "Geçmişteki önceki nota git",
+    "forward-in-note-history": "Geçmişteki sonraki nota git"
+  }
+}

@@ -1,4 +1,3 @@
-import "bootstrap/dist/css/bootstrap.min.css";
 import "./stylesheets/auth.css";
 
 // @TriliumNextTODO: is this even needed anymore?

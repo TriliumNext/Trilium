@@ -12,26 +12,26 @@
 
 #root-widget.virtual-keyboard-opened .classic-toolbar-outer-container.ios {
     position: absolute;
-    left: 0;
-    right: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
     bottom: 0;
 }
 
 .classic-toolbar-widget {
     position: absolute;
     bottom: 0;
-    left: 0;
-    right: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
     height: 38px;
     overflow: scroll;
     display: flex;
     align-items: flex-end;
     user-select: none;
+    scrollbar-width: 0 !important;
 }
 
-.classic-toolbar-widget::-webkit-scrollbar {
+.classic-toolbar-widget::-webkit-scrollbar:horizontal {
     height: 0 !important;
-    width: 0 !important;
 }
 
 .classic-toolbar-widget.dropdown-active {

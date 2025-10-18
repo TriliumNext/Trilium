@@ -63,7 +63,7 @@ const TPL = /*html*/`\
         /* Horizontal layout */
 
         .note-detail-split.split-horizontal > .note-detail-split-preview-col {
-            border-left: 1px solid var(--main-border-color);
+            border-inline-start: 1px solid var(--main-border-color);
         }
 
         .note-detail-split.split-horizontal > .note-detail-split-editor-col,

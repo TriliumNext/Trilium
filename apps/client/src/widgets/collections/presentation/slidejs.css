@@ -1,0 +1,29 @@
+figure img {
+    aspect-ratio: unset !important;
+    height: auto !important;
+}
+
+span.katex-html {
+    display: none !important;
+}
+
+p:has(span.text-tiny),
+p:has(span.text-small),
+p:has(span.text-big),
+p:has(span.text-huge) {
+    line-height: unset !important;
+}
+
+span.text-tiny { font-size: 0.5em; }
+span.text-small { font-size: 0.75em; }
+span.text-big { font-size: 1.5em; }
+span.text-huge { font-size: 2em; }
+
+footer.file-footer {
+    display: none !important;
+}
+
+.reveal video {
+    max-width: unset;
+    max-height: unset;
+}

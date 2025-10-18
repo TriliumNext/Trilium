@@ -289,7 +289,8 @@
     "table": "Tabel",
     "geo-map": "Hartă geografică",
     "board": "Tablă Kanban",
-    "include_archived_notes": "Afișează notițele arhivate"
+    "include_archived_notes": "Afișează notițele arhivate",
+    "presentation": "Prezentare"
   },
   "bookmark_switch": {
     "bookmark": "Semn de carte",
@@ -611,7 +612,9 @@
     "zoom_in": "Mărește",
     "zoom_out": "Micșorează",
     "show-cheatsheet": "Afișează ghidul rapid",
-    "toggle-zen-mode": "Mod zen"
+    "toggle-zen-mode": "Mod zen",
+    "new-version-available": "Actualizare nouă disponibilă",
+    "download-update": "Obțineți versiunea {{latestVersion}}"
   },
   "heading_style": {
     "markdown": "Stil Markdown",
@@ -701,7 +704,13 @@
     "first-week-has-minimum-days": "Prima săptămână are numărul minim de zile",
     "min-days-in-first-week": "Numărul minim de zile pentru prima săptămână",
     "first-week-info": "Opțiunea de prima săptămână conține prima zi de joi din an este bazată pe standardul <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a>.",
-    "first-week-warning": "Schimbarea opțiunii primei săptămâni poate cauza duplicate cu notițele săptămânale existente deoarece acestea nu vor fi actualizate retroactiv."
+    "first-week-warning": "Schimbarea opțiunii primei săptămâni poate cauza duplicate cu notițele săptămânale existente deoarece acestea nu vor fi actualizate retroactiv.",
+    "tuesday": "Marți",
+    "wednesday": "Miercuri",
+    "thursday": "Joi",
+    "friday": "Vineri",
+    "saturday": "Sâmbătă",
+    "formatting-locale-auto": "În funcție de limba aplicației"
   },
   "image_properties": {
     "copy_reference_to_clipboard": "Copiază referință în clipboard",
@@ -803,7 +812,8 @@
     "delete_this_note": "Șterge această notiță",
     "error_cannot_get_branch_id": "Nu s-a putut obține branchId-ul pentru calea „{{notePath}}”",
     "error_unrecognized_command": "Comandă nerecunoscută „{{command}}”",
-    "insert_child_note": "Inserează subnotiță"
+    "insert_child_note": "Inserează subnotiță",
+    "note_revisions": "Revizuiri ale notițelor"
   },
   "move_note": {
     "clone_note_new_parent": "clonează notița la noul părinte dacă notița are mai multe clone/ramuri (când nu este clar care ramură trebuie ștearsă)",
@@ -2069,5 +2079,10 @@
   },
   "collections": {
     "rendering_error": "Nu a putut fi afișat conținutul din cauza unei erori."
+  },
+  "presentation_view": {
+    "edit-slide": "Editați acest slide",
+    "start-presentation": "Începeți prezentarea",
+    "slide-overview": "Afișați o imagine de ansamblu a slide-urilor"
   }
 }

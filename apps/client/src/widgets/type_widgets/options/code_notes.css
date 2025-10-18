@@ -2,7 +2,7 @@
 .options-mime-types {
     list-style-type: none;
     column-width: 250px;
-    padding-left: 0;
+    padding-inline-start: 0;
 }
 
 .options-mime-types > section {
@@ -11,6 +11,6 @@
 }
 
 .options-mime-types ul {
-    padding-left: 0;
+    padding-inline-start: 0;
 }
 /* #endregion */

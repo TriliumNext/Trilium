@@ -646,7 +646,9 @@
     "about": "关于 TriliumNext 笔记",
     "logout": "登出",
     "show-cheatsheet": "显示快捷帮助",
-    "toggle-zen-mode": "禅模式"
+    "toggle-zen-mode": "禅模式",
+    "new-version-available": "新更新可用",
+    "download-update": "取得版本 {{latestVersion}}"
   },
   "zen_mode": {
     "button_exit": "退出禅模式"
@@ -736,7 +738,8 @@
     "insert_child_note": "插入子笔记",
     "delete_this_note": "删除此笔记",
     "error_cannot_get_branch_id": "无法获取 notePath '{{notePath}}' 的 branchId",
-    "error_unrecognized_command": "无法识别的命令 {{command}}"
+    "error_unrecognized_command": "无法识别的命令 {{command}}",
+    "note_revisions": "笔记历史版本"
   },
   "note_icon": {
     "change_note_icon": "更改笔记图标",
@@ -749,7 +752,7 @@
     "editable": "可编辑",
     "basic_properties": "基本属性",
     "language": "语言",
-    "configure_code_notes": "配置代码注释..."
+    "configure_code_notes": "配置代码笔记…"
   },
   "book_properties": {
     "view_type": "视图类型",
@@ -765,7 +768,8 @@
     "table": "表格",
     "geo-map": "地理地图",
     "board": "看板",
-    "include_archived_notes": "展示归档笔记"
+    "include_archived_notes": "展示归档笔记",
+    "presentation": "演示"
   },
   "edited_notes": {
     "no_edited_notes_found": "今天还没有编辑过的笔记...",
@@ -1258,7 +1262,13 @@
     "min-days-in-first-week": "第一周的最小天数",
     "first-week-info": "第一周包含一年的第一个周四，基于 <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a> 标准。",
     "first-week-warning": "更改第一周选项可能会导致与现有周笔记重复，已创建的周笔记将不会相应更新。",
-    "formatting-locale": "日期和数字格式"
+    "formatting-locale": "日期和数字格式",
+    "tuesday": "周二",
+    "wednesday": "周三",
+    "thursday": "周四",
+    "friday": "周五",
+    "saturday": "周六",
+    "formatting-locale-auto": "依应用的语言设置"
   },
   "backup": {
     "automatic_backup": "自动备份",
@@ -2065,5 +2075,10 @@
   },
   "collections": {
     "rendering_error": "出现错误无法显示内容。"
+  },
+  "presentation_view": {
+    "edit-slide": "编辑此幻灯片",
+    "start-presentation": "开始演示",
+    "slide-overview": "切换幻灯片概览"
   }
 }

@@ -1,0 +1,192 @@
+{
+    "get-started": {
+        "title": "はじめる",
+        "desktop_title": "デスクトップアプリケーションをダウンロード (v{{version}})",
+        "architecture": "アーキテクチャ:",
+        "older_releases": "以前のリリースを見る",
+        "server_title": "複数のデバイスからアクセスできるようにサーバーを設定する"
+    },
+    "hero_section": {
+        "title": "思考を整理し、自分だけの知識ベースを構築しましょう。",
+        "subtitle": "Triliumは、ノート作成と個人のナレッジベースの整理に役立つオープンソースソリューションです。デスクトップでローカルで使用することも、セルフホストサーバーと同期してどこにいてもノートを保存することもできます。",
+        "get_started": "はじめる",
+        "github": "GitHub",
+        "dockerhub": "Docker Hub",
+        "screenshot_alt": "Trilium Notes デスクトップアプリケーションのスクリーンショット"
+    },
+    "organization_benefits": {
+        "title": "組織",
+        "note_structure_title": "ノートの構造",
+        "note_structure_description": "ノートは階層的に整理できます。各ノートにサブノートを作成できるため、フォルダは必要ありません。1つのノートを階層内の複数の場所に追加できます。",
+        "attributes_title": "ノートのラベルとリレーション",
+        "attributes_description": "ノート間のリレーションシップを使用したり、ラベルを追加したりすることで、簡単に分類できます。プロモート属性を使用して、表やボードで使用できる構造化された情報を入力できます。",
+        "hoisting_title": "ワークスペースとホイスト",
+        "hoisting_description": "ワークスペースの下にグループ化することで、個人用ノートと仕事用ノートを簡単に区別できます。これにより、ノートツリーに特定のノートセットのみが表示されるようになります。"
+    },
+    "productivity_benefits": {
+        "title": "生産性と安全性",
+        "revisions_title": "ノートの変更履歴",
+        "revisions_content": "ノートは定期的にバックグラウンドで保存され、変更履歴は確認や誤って変更してしまった部分を元に戻すために使用できます。また、変更履歴はいつでも作成することができます。",
+        "sync_title": "同期",
+        "sync_content": "セルフホスト型またはクラウド インスタンスを使用すると、複数のデバイス間でノートを簡単に同期し、PWA を使用してモバイルからアクセスできます。",
+        "protected_notes_title": "保護されたノート",
+        "protected_notes_content": "ノートを暗号化し、パスワードで保護されたセッションでロックすることで、機密性の高い個人情報を保護します。",
+        "jump_to_title": "クイック検索とコマンド",
+        "jump_to_content": "あいまい一致によりタイプミスやわずかな違いを考慮しながらタイトルを検索することで、階層全体のノートや UI コマンドにすばやくジャンプできます。",
+        "search_title": "強力な検索",
+        "search_content": "ノート内のテキストを検索し、親ノートや階層の深度でフィルタリングして検索を絞り込むこともできます。",
+        "web_clipper_title": "Web クリッパー",
+        "web_clipper_content": "Web クリッパー ブラウザ拡張機能を使用して、Web ページ (またはスクリーンショット) を取得し、Trilium に直接配置します。"
+    },
+    "note_types": {
+        "text_title": "テキストノート",
+        "text_description": "ノートはビジュアル（WYSIWYG）エディタで編集できます。表、画像、数式、構文ハイライト付きのコードブロックなど、様々な編集機能を備えています。Markdownのような構文やスラッシュコマンドを使って、テキストを素早くフォーマットできます。",
+        "code_title": "Code ノート",
+        "code_description": "ソースコードやスクリプトの大きなサンプルでは、多くのプログラミング言語の構文強調表示とさまざまなカラー テーマを備えた専用のエディターが使用できます。",
+        "file_title": "ファイルノート",
+        "file_description": "PDF、画像、ビデオなどのマルチメディア ファイルをアプリケーション内にプレビュー表示で埋め込みます。",
+        "canvas_title": "キャンバス",
+        "canvas_description": "excalidraw.comと同じ技術を使って、無限のキャンバスに図形、画像、テキストを配置できます。図表、スケッチ、ビジュアルプランニングに最適です。",
+        "mermaid_title": "Mermaid ダイアグラム",
+        "mermaid_description": "Mermaid 構文を使用して、フローチャート、クラス図、シーケンス図、ガント チャートなどの図を作成します。",
+        "mindmap_title": "マインドマップ",
+        "mindmap_description": "考えを視覚的に整理したり、ブレインストーミング セッションを行ったりします。",
+        "others_list": "その他: <0>ノートマップ</0>、<1>リレーションマップ</1>、<2>保存された検索</2>、<3>レンダリングノート</3>、<4>Web ビュー</4>。"
+    },
+    "extensibility_benefits": {
+        "title": "共有と拡張性",
+        "import_export_title": "インポート / エクスポート",
+        "import_export_description": "Markdown、ENEX、OML 形式を使用して他のアプリケーションと簡単に連携できます。",
+        "share_title": "ウェブ上でノートを共有",
+        "share_description": "サーバーをお持ちの場合は、それを使用してノートの一部を他の人と共有することができます。",
+        "scripting_title": "高度なスクリプト",
+        "scripting_description": "カスタムウィジェットまたはサーバー側のロジックを使用して、Trilium 内で独自の統合機能を構築できます。",
+        "api_title": "REST API",
+        "api_description": "組み込みの REST API を使用して、プログラムで Trilium と対話します。"
+    },
+    "collections": {
+        "calendar_title": "カレンダー",
+        "calendar_description": "カレンダーを使って、個人的な予定や仕事上の予定を管理しましょう。終日イベントと複数日イベントに対応しています。週、月、年表示でイベントを一目で確認できます。イベントの追加やドラッグ操作で簡単に行えます。",
+        "table_title": "テーブル",
+        "table_description": "ノートに関する情報を表形式で表示・編集できます。テキスト、数値、チェックボックス、日時、リンク、色など、様々な列タイプに対応し、リレーションもサポートしています。オプションで、ノートを表内のツリー階層に表示することもできます。",
+        "board_title": "ボード",
+        "board_description": "新しい項目や列を簡単に作成し、ボード上でドラッグするだけでステータスを変更できるカンバン ボードで、タスクやプロジェクトのステータスを整理できます。",
+        "geomap_title": "ジオマップ",
+        "geomap_description": "カスタマイズ可能なマーカーを使って、休暇を計画したり、興味のある場所を地図上に直接マークしたりできます。記録されたGPXトラックを表示して、旅程を追跡できます。"
+    },
+    "faq": {
+        "title": "よくある質問",
+        "mobile_question": "モバイルアプリケーションはありますか？",
+        "mobile_answer": "現在、公式モバイルアプリケーションはありません。ただし、サーバーインスタンスをお持ちの場合は、Web ブラウザからアクセスでき、PWAとしてインストールすることもできます。Android 向けには、オフラインでも動作する TriliumDroid という非公式アプリケーションがあります（デスクトップクライアントと同様です）。",
+        "database_question": "データはどこに保存されますか？",
+        "database_answer": "すべてのノートはアプリケーションフォルダ内の SQLite データベースに保存されます。Trilium がプレーンテキストファイルではなくデータベースを使用する理由は、パフォーマンスと、クローン（ツリー内の複数の場所に同じノートが存在する状態）などの一部の機能の実装がはるかに困難になるからです。アプリケーションフォルダを見つけるには、「About」ウィンドウを開いてください。",
+        "server_question": "Trilium を使用するにはサーバーが必要ですか？",
+        "server_answer": "いいえ、サーバーは Web ブラウザ経由でアクセスを許可し、複数のデバイスがある場合の同期を管理します。使いはじめるには、デスクトップアプリケーションをダウンロードして使いはじめるだけで十分です。",
+        "scaling_question": "アプリケーションは大量のノートに対してどの程度拡張できますか？",
+        "scaling_answer": "使用状況にもよりますが、アプリケーションは少なくとも10万件のノートを問題なく処理できるはずです。ただし、Trilium はファイルストア（例えば NextCloud）ではなく、ナレッジベースアプリケーションとして設計されているため、大容量ファイル（1 ファイルあたり 1GB）を多数アップロードすると同期プロセスが失敗する場合があることにご注意ください。",
+        "network_share_question": "データベースをネットワークドライブ経由で共有できますか？",
+        "network_share_answer": "いいえ、一般的に SQLite データベースをネットワークドライブ経由で共有するのはお勧めできません。場合によっては動作することもありますが、ネットワーク経由のファイルロックが不完全であるため、データベースが破損する可能性がありえます。",
+        "security_question": "データはどのように保護されますか？",
+        "security_answer": "デフォルトではノートは暗号化されておらず、データベースから直接読み取ることができます。ノートが暗号化済みとしてマークされると、AES-128-CBC を使用して暗号化されます。"
+    },
+    "final_cta": {
+        "title": "Trilium Notes を使いはじめる準備はできましたか？",
+        "description": "強力な機能と完全なプライバシーを備えた個人の知識ベースを構築します。",
+        "get_started": "はじめる"
+    },
+    "components": {
+        "link_learn_more": "さらに詳しく...",
+        "list_with_screenshot_alt": "選択中の機能のスクリーンショット"
+    },
+    "download_now": {
+        "text": "今すぐダウンロード ",
+        "platform_big": "v{{version}} for {{platform}}",
+        "platform_small": "for {{platform}}",
+        "linux_big": "v{{version}} for Linux",
+        "linux_small": "for Linux",
+        "more_platforms": "より多くのプラットフォームとサーバー設定"
+    },
+    "footer": {
+        "copyright_and_the": " および ",
+        "copyright_community": "コミュニティ"
+    },
+    "social_buttons": {
+        "github": "GitHub",
+        "github_discussions": "GitHubディスカッション",
+        "matrix": "Matrix",
+        "reddit": "Reddit"
+    },
+    "support_us": {
+        "title": "私たちをサポートしてください",
+        "financial_donations_title": "資金援助",
+        "financial_donations_description": "Trilium は <Link>数百時間もの作業</Link> をかけて構築・維持されています。皆様のご支援により、オープンソースとしての維持、機能の向上、ホスティングなどの費用を賄うことができます。",
+        "financial_donations_cta": "次の方法で、アプリケーションの主な開発者 (<Link>eliandoran</Link>) をサポートすることを検討してください:",
+        "github_sponsors": "GitHub Sponsors",
+        "paypal": "PayPal",
+        "buy_me_a_coffee": "Buy Me A Coffee"
+    },
+    "contribute": {
+        "title": "その他の貢献方法",
+        "way_translate": "<Link>Weblate</Link> を使用して、アプリケーションを母国語に翻訳してください。",
+        "way_community": "<Discussions>GitHub Discussions</Discussions> または <Matrix>Matrix</Matrix> でコミュニティと交流しましょう。",
+        "way_reports": "<Link>GitHub issues</Link> でバグを報告してください。",
+        "way_document": "ドキュメントの不足している点をお知らせいただくか、ガイド、FAQ、チュートリアルを投稿して、ドキュメントを改善してください。",
+        "way_market": "広めましょう: Trilium Notes を友達やブログ、ソーシャルメディアで共有しましょう。"
+    },
+    "404": {
+        "title": "404: Not Found",
+        "description": "お探しのページは見つかりませんでした。削除されたか、URLが間違っている可能性があります。"
+    },
+    "download_helper_desktop_windows": {
+        "title_x64": "Windows 64-bit",
+        "title_arm64": "Windows on ARM",
+        "description_x64": "Windows 10 および 11 を実行している Intel または AMD デバイスと互換性があります。",
+        "description_arm64": "ARM デバイス (例 Qualcomm Snapdragon など) と互換性があります。",
+        "quick_start": "Winget 経由でインストールするには:",
+        "download_exe": "インストーラーをダウンロード (.exe)",
+        "download_zip": "ポータブル (.zip)",
+        "download_scoop": "Scoop"
+    },
+    "download_helper_desktop_linux": {
+        "title_x64": "Linux 64-bit",
+        "title_arm64": "Linux on ARM",
+        "description_x64": "ほとんどの Linux ディストリビューションでは、x86_64 アーキテクチャと互換性があります。",
+        "description_arm64": "ARM ベースの Linux ディストリビューションの場合、aarch64 アーキテクチャと互換性があります。",
+        "quick_start": "ディストリビューションに応じて適切なパッケージ形式を選択してください:",
+        "download_deb": ".deb",
+        "download_rpm": ".rpm",
+        "download_flatpak": ".flatpak",
+        "download_zip": "ポータブル (.zip)",
+        "download_nixpkgs": "nixpkgs",
+        "download_aur": "AUR"
+    },
+    "download_helper_desktop_macos": {
+        "title_x64": "Intel 向け macOS",
+        "title_arm64": "Apple Silicon 向け macOS",
+        "description_x64": "macOS Big Sur 以降を実行している Intel ベースの Mac 向け。",
+        "description_arm64": "M1 および M2 チップを搭載した Apple Silicon Mac 向け。",
+        "quick_start": "Homebrew 経由でインストールするには:",
+        "download_dmg": "インストーラーをダウンロード (.dmg)",
+        "download_homebrew_cask": "Homebrew Cask",
+        "download_zip": "ポータブル (.zip)"
+    },
+    "download_helper_server_docker": {
+        "title": "Docker を使用したセルフホスト",
+        "description": "Docker コンテナを使用して、Windows、Linux、または macOS に簡単に展開できます。",
+        "download_dockerhub": "Docker Hub",
+        "download_ghcr": "ghcr.io"
+    },
+    "download_helper_server_linux": {
+        "title": "Linux でセルフホスト",
+        "description": "ほとんどのディストリビューションと互換性のある Trilium Notes を独自のサーバー、または VPS に展開できます。",
+        "download_tar_x64": "x64 (.tar.xz)",
+        "download_tar_arm64": "ARM (.tar.xz)",
+        "download_nixos": "NixOS モジュール"
+    },
+    "download_helper_server_hosted": {
+        "title": "有料ホスティング",
+        "description": "Trilium Notesは、アクセスと管理を容易にする有料サービス PikaPods でホストされています。Trilium チームとは直接関係ありません。",
+        "download_pikapod": "PikaPods にセットアップする",
+        "download_triliumcc": "または、trilium.cc を参照してください"
+    }
+}

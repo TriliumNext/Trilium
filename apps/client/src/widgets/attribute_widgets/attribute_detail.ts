@@ -36,7 +36,7 @@ const TPL = /*html*/`
         }
 
         .related-notes-list {
-            padding-left: 20px;
+            padding-inline-start: 20px;
             margin-top: 10px;
             margin-bottom: 10px;
         }
@@ -46,7 +46,7 @@ const TPL = /*html*/`
         }
 
         .attr-edit-table th {
-            text-align: left;
+            text-align: start;
         }
 
         .attr-edit-table td input[not(type="checkbox")] {
@@ -150,7 +150,7 @@ const TPL = /*html*/`
             <th title="${t("attribute_detail.precision_title")}">${t("attribute_detail.precision")}</th>
             <td>
                 <div class="input-group">
-                    <input type="number" class="form-control attr-input-number-precision" style="text-align: right">
+                    <input type="number" class="form-control attr-input-number-precision" style="text-align: end">
                     <span class="input-group-text">${t("attribute_detail.digits")}</span>
                 </div>
             </td>
@@ -176,7 +176,7 @@ const TPL = /*html*/`
 
     <div class="attr-save-delete-button-container">
         <button class="btn btn-primary btn-sm attr-save-changes-and-close-button"
-            style="flex-grow: 1; margin-right: 20px">
+            style="flex-grow: 1; margin-inline-end: 20px">
             ${t("attribute_detail.save_and_close")}</button>
 
         <button class="btn btn-secondary btn-sm attr-delete-button">

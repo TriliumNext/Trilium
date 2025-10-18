@@ -1,11 +1,11 @@
-<p>Configure Nginx proxy and HTTPS. The operating system here is Ubuntu 18.04.</p>
+<p>Configure Nginx proxy and HTTPS. The operating system here is Ubuntu.</p>
+<h2>Installing Nginx</h2>
+<p>Download Nginx and remove Apache2</p><pre><code class="language-text-x-trilium-auto">sudo apt-get install nginx
+sudo apt-get remove apache2</code></pre>
+<h2>Build the configuration file</h2>
 <ol>
   <li>
-    <p>Download Nginx and remove Apache2</p><pre><code class="language-text-x-trilium-auto">sudo apt-get install nginx
-sudo apt-get remove apache2</code></pre>
-  </li>
-  <li>
-    <p>Create configure file</p><pre><code class="language-text-x-trilium-auto">cd /etc/nginx/conf.d
+    <p>First, create the configuration file:</p><pre><code class="language-text-x-trilium-auto">cd /etc/nginx/conf.d
 vim default.conf</code></pre>
   </li>
   <li>
@@ -48,16 +48,17 @@ server {
     return 301 https://$server_name$request_uri;
 }</code></pre>
   </li>
-  <li>
-    <p>Alternatively if you want to serve the instance under a different path
-      (useful e.g. if you want to serve multiple instances), update the location
-      block like so:</p>
-    <ul>
-      <li>update the location with your desired path (make sure to not leave a trailing
-        slash "/", if your <code>proxy_pass</code> does not end on a slash as well)</li>
-      <li>add the <code>proxy_cookie_path</code> directive with the same path: this
-        allows you to stay logged in at multiple instances at the same time.</li>
-    </ul><pre><code class="language-text-x-trilium-auto">    location /trilium/instance-one {
+</ol>
+<h2>Serving under a different path</h2>
+<p>Alternatively if you want to serve the instance under a different path
+  (useful e.g. if you want to serve multiple instances), update the location
+  block like so:</p>
+<ul>
+  <li>update the location with your desired path (make sure to not leave a trailing
+    slash "/", if your <code>proxy_pass</code> does not end on a slash as well)</li>
+  <li>add the <code>proxy_cookie_path</code> directive with the same path: this
+    allows you to stay logged in at multiple instances at the same time.</li>
+</ul><pre><code class="language-text-x-trilium-auto">    location /trilium/instance-one {
         rewrite /trilium/instance-one/(.*) /$1  break;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -68,7 +69,7 @@ server {
         proxy_pass http://trilium;
         proxy_cookie_path / /trilium/instance-one
         proxy_read_timeout 90;
-    }
-</code></pre>
-  </li>
-</ol>
+    }</code></pre>
+<h2>Configuring the trusted proxy</h2>
+<p>After setting up a reverse proxy, make sure to configure the&nbsp;<a class="reference-link"
+  href="#root/_help_LLzSMXACKhUs">Trusted proxy</a>.</p>

@@ -4,7 +4,7 @@
 
 .bulk-actions-dialog .bulk-available-action-list button {
     padding: 2px 7px;
-    margin-right: 10px;
+    margin-inline-end: 10px;
     margin-bottom: 5px;
 }
 
@@ -19,7 +19,7 @@
 .bulk-actions-dialog .bulk-existing-action-list .button-column {
     width: 50px;
     white-space: nowrap;
-    text-align: right;
+    text-align: end;
 }
 
 .bulk-actions-dialog .bulk-existing-action-list .button-column > * {

@@ -40,8 +40,8 @@ kbd {
     border: none;
     cursor: pointer;
     font-size: 1.25em;
-    padding-left: 0.5em;
-    padding-right: 0.5em;
+    padding-inline-start: 0.5em;
+    padding-inline-end: 0.5em;
     color: var(--main-text-color);
 }
 .quick-search {
@@ -59,7 +59,7 @@ const FANCYTREE_CSS = `
     margin-top: 0px;
     overflow-y: auto;
     contain: content;
-    padding-left: 10px;
+    padding-inline-start: 10px;
 }
 
 .fancytree-custom-icon {
@@ -68,7 +68,7 @@ const FANCYTREE_CSS = `
 
 .fancytree-title {
     font-size: 1.5em;
-    margin-left: 0.6em !important;
+    margin-inline-start: 0.6em !important;
 }
 
 .fancytree-node {
@@ -81,7 +81,7 @@ const FANCYTREE_CSS = `
 
 span.fancytree-expander {
     width: 24px !important;
-    margin-right: 5px;
+    margin-inline-end: 5px;
 }
 
 .fancytree-loading span.fancytree-expander {
@@ -101,7 +101,7 @@ span.fancytree-expander {
 .tree-wrapper .scroll-to-active-note-button,
 .tree-wrapper .tree-settings-button {
     position: fixed;
-    margin-right: 16px;
+    margin-inline-end: 16px;
     display: none;
 }
 
@@ -126,8 +126,8 @@ export default class MobileLayout {
                             .class("d-md-flex d-lg-flex d-xl-flex col-12 col-sm-5 col-md-4 col-lg-3 col-xl-3")
                             .id("mobile-sidebar-wrapper")
                             .css("max-height", "100%")
-                            .css("padding-left", "0")
-                            .css("padding-right", "0")
+                            .css("padding-inline-start", "0")
+                            .css("padding-inline-end", "0")
                             .css("contain", "content")
                             .child(new FlexContainer("column").filling().id("mobile-sidebar-wrapper").child(new QuickSearchWidget()).child(new NoteTreeWidget().cssBlock(FANCYTREE_CSS)))
                     )

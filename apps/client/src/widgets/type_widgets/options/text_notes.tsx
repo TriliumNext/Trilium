@@ -62,7 +62,7 @@ function FormattingToolbar() {
                 name="multiline-toolbar"
                 label={t("editing.editor_type.multiline-toolbar")}
                 currentValue={textNoteEditorMultilineToolbar} onChange={setTextNoteEditorMultilineToolbar}
-                containerStyle={{ marginLeft: "1em" }}
+                containerStyle={{ marginInlineStart: "1em" }}
             />
         </OptionsSection>
     )

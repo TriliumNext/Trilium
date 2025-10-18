@@ -46,6 +46,7 @@ interface CustomGlobals {
     platform?: typeof process.platform;
     linter: typeof lint;
     hasNativeTitleBar: boolean;
+    isRtl: boolean;
 }
 
 type RequireMethod = (moduleName: string) => any;

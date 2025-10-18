@@ -338,7 +338,7 @@
     "sync-status-title": "同期状態",
     "settings-title": "設定",
     "llm-chat-title": "ノートとチャット",
-    "options-title": "オプション",
+    "options-title": "設定",
     "multi-factor-authentication-title": "多要素認証",
     "etapi-title": "ETAPI",
     "visible-launchers-title": "可視化されたランチャー",
@@ -411,7 +411,11 @@
     "geo-map": "ジオマップ",
     "geolocation": "ジオロケーション",
     "built-in-templates": "内蔵のテンプレート",
-    "board_status_todo": "未完了"
+    "board_status_todo": "未完了",
+    "presentation": "プレゼンテーション",
+    "presentation_slide": "プレゼンテーションスライド",
+    "presentation_slide_first": "最初のスライド",
+    "presentation_slide_second": "2番目のスライド"
   },
   "share_404": {
     "title": "該当なし",

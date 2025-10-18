@@ -1,6 +1,6 @@
 .sql-table-schemas-widget {
     padding: 12px;
-    padding-right: 10%;
+    padding-inline-end: 10%;
     contain: none !important;
 }
 

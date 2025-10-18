@@ -5,7 +5,8 @@
     "i18n-ally.keystyle": "nested",
     "i18n-ally.localesPaths": [
         "apps/server/src/assets/translations",
-        "apps/client/src/translations"
+        "apps/client/src/translations",
+        "apps/website/public/translations"
     ],
     "npm.exclude": [
         "**/dist",

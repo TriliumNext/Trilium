@@ -276,7 +276,12 @@
     "preview": "Aperçu :",
     "preview_not_available": "L'aperçu n'est pas disponible pour ce type de note.",
     "restore_button": "Restaurer",
-    "delete_button": "Supprimer"
+    "delete_button": "Supprimer",
+    "diff_on": "Afficher les différences",
+    "diff_off": "Afficher le contenu",
+    "diff_on_hint": "Cliquez pour afficher les différences de la note d'origine",
+    "diff_off_hint": "Cliquez pour afficher le contenu de la note",
+    "diff_not_available": "La comparaison n'est pas disponible."
   },
   "sort_child_notes": {
     "sort_children_by": "Trier les enfants par...",
@@ -731,7 +736,8 @@
     "insert_child_note": "Insérer une note enfant",
     "delete_this_note": "Supprimer cette note",
     "error_cannot_get_branch_id": "Impossible d'obtenir branchId pour notePath '{{notePath}}'",
-    "error_unrecognized_command": "Commande non reconnue {{command}}"
+    "error_unrecognized_command": "Commande non reconnue {{command}}",
+    "note_revisions": "Révision de la note"
   },
   "note_icon": {
     "change_note_icon": "Changer l'icône de note",
@@ -1625,7 +1631,8 @@
   "link_context_menu": {
     "open_note_in_new_tab": "Ouvrir la note dans un nouvel onglet",
     "open_note_in_new_split": "Ouvrir la note dans une nouvelle division",
-    "open_note_in_new_window": "Ouvrir la note dans une nouvelle fenêtre"
+    "open_note_in_new_window": "Ouvrir la note dans une nouvelle fenêtre",
+    "open_note_in_popup": "Édition rapide"
   },
   "electron_integration": {
     "desktop-application": "Application de bureau",
@@ -1763,7 +1770,14 @@
     "reprocess_index": "Rafraîchir l'index de recherche",
     "reprocessing_index": "Mise à jour...",
     "reprocess_index_started": "L'optimisation de l'indice de recherche à commencer en arrière-plan",
-    "reprocess_index_error": "Erreur dans le rafraichissement de l'indice de recherche"
+    "reprocess_index_error": "Erreur dans le rafraichissement de l'indice de recherche",
+    "failed_notes": "Notes échouées",
+    "last_processed": "Dernier traitement",
+    "restore_provider": "Restaurer le fournisseur de la recherche",
+    "index_rebuild_progress": "Progression de la reconstruction de l'index",
+    "index_rebuilding": "Optimisation de l'index ({{percentage}}%)",
+    "index_rebuild_complete": "Optimisation de l'index terminée",
+    "index_rebuild_status_error": "Erreur lors de la vérification de l'état de reconstruction de l'index"
   },
   "ui-performance": {
     "title": "Performance",

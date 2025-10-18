@@ -28,6 +28,7 @@ export default function ProtectedSessionPasswordDialog() {
         >
             <label htmlFor="protected-session-password" className="col-form-label">{t("protected_session_password.form_label")}</label>
             <FormTextBox
+                inputRef={inputRef}
                 id="protected-session-password"
                 name="protected-session-password"
                 type="password"

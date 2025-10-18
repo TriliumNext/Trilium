@@ -23,11 +23,13 @@ interface Options {
     tooltip?: boolean;
     trim?: boolean;
     imageHasZoom?: boolean;
+    /** If enabled, it will prevent the default behavior in which an empty note would display a list of children. */
+    noChildrenList?: boolean;
 }
 
 const CODE_MIME_TYPES = new Set(["application/json"]);
 
-async function getRenderedContent(this: {} | { ctx: string }, entity: FNote | FAttachment, options: Options = {}) {
+export async function getRenderedContent(this: {} | { ctx: string }, entity: FNote | FAttachment, options: Options = {}) {
 
     options = Object.assign(
         {
@@ -42,7 +44,7 @@ async function getRenderedContent(this: {} | { ctx: string }, entity: FNote | FA
     const $renderedContent = $('<div class="rendered-content">');
 
     if (type === "text" || type === "book") {
-        await renderText(entity, $renderedContent);
+        await renderText(entity, $renderedContent, options);
     } else if (type === "code") {
         await renderCode(entity, $renderedContent);
     } else if (["image", "canvas", "mindMap"].includes(type)) {
@@ -114,7 +116,7 @@ async function getRenderedContent(this: {} | { ctx: string }, entity: FNote | FA
     };
 }
 
-async function renderText(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>) {
+async function renderText(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: Options = {}) {
     // entity must be FNote
     const blob = await note.getBlob();
 
@@ -135,7 +137,7 @@ async function renderText(note: FNote | FAttachment, $renderedContent: JQuery<HT
         }
 
         await formatCodeBlocks($renderedContent);
-    } else if (note instanceof FNote) {
+    } else if (note instanceof FNote && !options.noChildrenList) {
         await renderChildrenList($renderedContent, note);
     }
 }

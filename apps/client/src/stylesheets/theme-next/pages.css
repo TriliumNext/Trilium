@@ -52,7 +52,7 @@
     background-color: #f5f5f5;
 }
 .google-login-btn img {
-    margin-right: 10px;
+    margin-inline-end: 10px;
     width: 18px;
     height: 18px;
 }
@@ -199,7 +199,7 @@ body.desktop .option-section:not(.tn-no-card) {
     color: var(--launcher-pane-text-color);
     margin-top: calc(-1 * var(--options-card-padding) - var(--options-title-font-size) - var(--options-title-offset)) !important;
     margin-bottom: calc(var(--options-title-offset) + var(--options-card-padding)) !important;
-    margin-left: calc(-1 * var(--options-card-padding));
+    margin-inline-start: calc(-1 * var(--options-card-padding));
 }
 
 .options-section:not(.tn-no-card) h5 {
@@ -216,8 +216,8 @@ body.desktop .option-section:not(.tn-no-card) {
 .options-section hr {
     --bs-border-width: 2px;
 
-    margin-left: calc(var(--options-card-padding) * -1);
-    margin-right: calc(var(--options-card-padding) * -1);
+    margin-inline-start: calc(var(--options-card-padding) * -1);
+    margin-inline-end: calc(var(--options-card-padding) * -1);
     opacity: 1;
     color: var(--root-background);
 }

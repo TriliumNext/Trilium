@@ -39,6 +39,15 @@ Notes are displayed recursively, so even the child notes of the child notes will
     *   Delete the current note.
 *   If there are many notes within the column, move the mouse over the column and use the mouse wheel to scroll.
 
+## Keyboard interaction
+
+The board view has mild support for keyboard-based navigation:
+
+*   Use <kbd>Tab</kbd> and <kbd>Shift</kbd>+<kbd>Tab</kbd> to navigate between column titles, notes and the “New item” button for each of the columns, in sequential order.
+*   To rename a column or a note, press <kbd>F2</kbd> while it is focused.
+*   To open a specific note or create a new item, press <kbd>Enter</kbd> while it is focused.
+*   To dismiss a rename of a note or a column, press <kbd>Escape</kbd>.
+
 ## Configuration
 
 ### Grouping by another attribute

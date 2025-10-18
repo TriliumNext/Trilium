@@ -5,7 +5,7 @@ It is possible to provide a CSS file to be used regardless of the theme set by t
 | --- | --- |
 | ![](Custom%20app-wide%20CSS_image.png) | Start by creating a new note and changing the note type to CSS |
 | ![](2_Custom%20app-wide%20CSS_image.png) | In the ribbon, press the “Owned Attributes” section and type `#appCss`. |
-| ![](3_Custom%20app-wide%20CSS_image.png) | Type the desired CSS.   <br>  <br>Generally it's a good idea to append `!important` for the styles that are being changed, in order to prevent other |
+| ![](3_Custom%20app-wide%20CSS_image.png) | Type the desired CSS.    <br>  <br>Generally it's a good idea to append `!important` for the styles that are being changed, in order to prevent other |
 
 ## Seeing the changes
 
@@ -79,3 +79,9 @@ To change the color of the note title and the icon (above the content):
     z-index: 0;
 }
 ```
+
+## Limitations
+
+Some parts of the application can't be styled directly via custom CSS because they are rendered in an isolated mode (shadow DOM), more specifically:
+
+*   The slides in a <a class="reference-link" href="../Note%20Types/Collections/Presentation%20View.md">Presentation View</a>.

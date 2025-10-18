@@ -26,16 +26,16 @@
   "devDependencies": {
     "@ckeditor/ckeditor5-dev-build-tools": "43.1.0",
     "@ckeditor/ckeditor5-inspector": ">=4.1.0",
-    "@ckeditor/ckeditor5-package-tools": "4.1.0",
-    "@typescript-eslint/eslint-plugin": "~8.45.0",
-    "@typescript-eslint/parser": "8.45.0",
+    "@ckeditor/ckeditor5-package-tools": "4.1.1",
+    "@typescript-eslint/eslint-plugin": "~8.46.0",
+    "@typescript-eslint/parser": "8.46.1",
     "@vitest/browser": "3.2.4",
     "@vitest/coverage-istanbul": "3.2.4",
-    "ckeditor5": "47.0.0",
+    "ckeditor5": "47.1.0",
     "eslint": "9.37.0",
     "eslint-config-ckeditor5": ">=9.1.0",
     "http-server": "14.1.1",
-    "lint-staged": "16.2.3",
+    "lint-staged": "16.2.4",
     "stylelint": "16.25.0",
     "stylelint-config-ckeditor5": ">=9.1.0",
     "ts-node": "10.9.2",
@@ -45,7 +45,7 @@
     "webdriverio": "9.20.0"
   },
   "peerDependencies": {
-    "ckeditor5": "47.0.0"
+    "ckeditor5": "47.1.0"
   },
   "scripts": {
     "build": "node ./scripts/build-dist.mjs",

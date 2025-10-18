@@ -4,7 +4,7 @@ import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import note_autocomplete, { Suggestion } from "../../../services/note_autocomplete";
 import CKEditor, { CKEditorApi } from "../../react/CKEditor";
-import { useLegacyImperativeHandlers, useLegacyWidget, useTooltip, useTriliumEvent } from "../../react/hooks";
+import { useLegacyImperativeHandlers, useLegacyWidget, useTooltip, useTriliumEvent, useTriliumOption } from "../../react/hooks";
 import FAttribute from "../../../entities/fattribute";
 import attribute_renderer from "../../../services/attribute_renderer";
 import FNote from "../../../entities/fnote";
@@ -100,6 +100,7 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
     const currentValueRef = useRef(currentValue);
     const wrapperRef = useRef<HTMLDivElement>(null);
     const editorRef = useRef<CKEditorApi>();
+    const [ locale ] = useTriliumOption("locale");
 
     const { showTooltip, hideTooltip } = useTooltip(wrapperRef, {
         trigger: "focus",
@@ -308,7 +309,8 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                         toolbar: { items: [] },
                         placeholder: t("attribute_editor.placeholder"),
                         mention: { feeds: mentionSetup },
-                        licenseKey: "GPL"
+                        licenseKey: "GPL",
+                        language: "en"
                     }}
                     onChange={(currentValue) => {
                         currentValueRef.current = currentValue ?? "";

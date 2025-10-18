@@ -1,3 +1,14 @@
+<div align="center">
+	<sup>Special thanks to:</sup><br />
+	<a href="https://go.warp.dev/Trilium" target="_blank">		
+		<img alt="Warp sponsorship" width="400" src="https://github.com/warpdotdev/brand-assets/blob/main/Github/Sponsor/Warp-Github-LG-03.png"><br />
+		Warp, built for coding with multiple AI agents<br />
+	</a>
+  <sup>Available for macOS, Linux and Windows</sup>
+</div>
+
+<hr />
+
 # Trilium Notes
 
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran) ![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)  
@@ -167,7 +178,7 @@ Please view the [documentation guide](https://github.com/TriliumNext/Trilium/blo
 ## 👏 Shoutouts
 
 * [zadam](https://github.com/zadam) for the original concept and implementation of the application.
-* [Larsa](https://github.com/LarsaSara) for designing the application icon.
+* [Sarah Hussein](https://github.com/Sarah-Hussein) for designing the application icon.
 * [nriver](https://github.com/nriver) for his work on internationalization.
 * [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
 * [antoniotejada](https://github.com/nriver) for the original syntax highlight widget.

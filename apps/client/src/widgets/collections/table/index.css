@@ -13,8 +13,8 @@
 .search-result-widget-content .table-view {
     position: absolute;
     top: 0;
-    left: 0;
-    right: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
     bottom: 0;
 }
 
@@ -33,7 +33,7 @@
 
 .tabulator .tabulator-header .tabulator-frozen.tabulator-frozen-left,
 .tabulator-row .tabulator-cell.tabulator-frozen.tabulator-frozen-left {
-    border-right-width: 1px;
+    border-inline-end-width: 1px;
 }
 
 .tabulator .tabulator-row.archived {
@@ -65,7 +65,7 @@
 .tabulator button.tree-collapse span {
     position: absolute;
     top: 0;
-    left: 0;
+    inset-inline-start: 0;
     font-size: 1.5em;
     transform: translateY(-50%);
 }

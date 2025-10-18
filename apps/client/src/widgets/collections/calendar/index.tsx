@@ -3,8 +3,8 @@ import { ViewModeProps } from "../interface";
 import Calendar from "./calendar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import "./index.css";
-import { useNoteLabel, useNoteLabelBoolean, useResizeObserver, useSpacedUpdate, useTouchBar, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
-import { LOCALE_IDS } from "@triliumnext/commons";
+import { useNoteLabel, useNoteLabelBoolean, useResizeObserver, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
+import { DISPLAYABLE_LOCALE_IDS, LOCALE_IDS } from "@triliumnext/commons";
 import { Calendar as FullCalendar } from "@fullcalendar/core";
 import { parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
 import dialog from "../../../services/dialog";
@@ -62,7 +62,7 @@ const CALENDAR_VIEWS = [
 const SUPPORTED_CALENDAR_VIEW_TYPE = CALENDAR_VIEWS.map(v => v.type);
 
 // Here we hard-code the imports in order to ensure that they are embedded by webpack without having to load all the languages.
-export const LOCALE_MAPPINGS: Record<LOCALE_IDS, (() => Promise<{ default: LocaleInput }>) | null> = {
+export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ default: LocaleInput }>) | null> = {
     de: () => import("@fullcalendar/core/locales/de"),
     es: () => import("@fullcalendar/core/locales/es"),
     fr: () => import("@fullcalendar/core/locales/fr"),
@@ -71,9 +71,12 @@ export const LOCALE_MAPPINGS: Record<LOCALE_IDS, (() => Promise<{ default: Local
     ro: () => import("@fullcalendar/core/locales/ro"),
     ru: () => import("@fullcalendar/core/locales/ru"),
     ja: () => import("@fullcalendar/core/locales/ja"),
+    pt: () => import("@fullcalendar/core/locales/pt"),
     "pt_br": () => import("@fullcalendar/core/locales/pt-br"),
     uk: () => import("@fullcalendar/core/locales/uk"),
-    en: null
+    en: null,
+    "en_rtl": null,
+    ar: () => import("@fullcalendar/core/locales/ar")
 };
 
 export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarViewData>) {

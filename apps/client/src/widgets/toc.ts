@@ -29,13 +29,13 @@ const TPL = /*html*/`<div class="toc-widget">
             contain: none;
             overflow: auto;
             position: relative;
-            padding-left:0px !important;
+            padding-inline-start:0px !important;
         }
 
         .toc ol {
             position: relative;
             overflow: hidden;
-            padding-left: 0px;
+            padding-inline-start: 0px;
             transition: max-height 0.3s ease;
         }
 
@@ -47,7 +47,7 @@ const TPL = /*html*/`<div class="toc-widget">
             content: "";
             position: absolute;
             height: 100%;
-            border-left: 1px solid var(--main-border-color);
+            border-inline-start: 1px solid var(--main-border-color);
             z-index: 10;
         }
 
@@ -56,7 +56,7 @@ const TPL = /*html*/`<div class="toc-widget">
             position: relative;
             list-style: none;
             align-items: center;
-            padding-left: 7px;
+            padding-inline-start: 7px;
             cursor: pointer;
             text-align: justify;
             word-wrap: break-word;
@@ -80,11 +80,11 @@ const TPL = /*html*/`<div class="toc-widget">
         }
 
         .toc > ol ol::before {
-            left: calc((var(--toc-depth-level) - 2) * 20px + 14px);
+            inset-inline-start: calc((var(--toc-depth-level) - 2) * 20px + 14px);
         }
 
         .toc li {
-            padding-left: calc((var(--toc-depth-level) - 1) * 20px + 4px);
+            padding-inline-start: calc((var(--toc-depth-level) - 1) * 20px + 4px);
         }
 
         .toc li .collapse-button {
@@ -103,12 +103,12 @@ const TPL = /*html*/`<div class="toc-widget">
         }
 
         .toc li .item-content {
-            margin-left: 25px;
+            margin-inline-start: 25px;
             flex: 1;
         }
 
         .toc li .collapse-button + .item-content {
-            margin-left: 4px;
+            margin-inline-start: 4px;
         }
 
         .toc li:hover {

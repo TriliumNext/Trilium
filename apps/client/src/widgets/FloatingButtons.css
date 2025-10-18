@@ -7,7 +7,7 @@
 .show-floating-buttons {
     position: absolute;
     top: var(--floating-buttons-vert-offset, 10px);
-    right: var(--floating-buttons-horiz-offset, 10px);
+    inset-inline-end: var(--floating-buttons-horiz-offset, 10px);
     display: flex;
     flex-direction: row;
     z-index: 100;
@@ -15,8 +15,7 @@
 
 .note-split.rtl .floating-buttons-children,
 .note-split.rtl .show-floating-buttons {
-    right: unset;
-    left: 10px;
+    inset-inline-end: 10px;
 }
 
 .note-split.rtl .close-floating-buttons {
@@ -74,7 +73,7 @@
 
 .show-floating-buttons {
     /* display: none;*/
-    margin-left: 5px !important;
+    margin-inline-start: 5px !important;
 }
 
 .show-floating-buttons-button {
@@ -97,7 +96,7 @@
 
 /* #region Close floating buttons */
 .close-floating-buttons {
-    margin-left: 5px !important;
+    margin-inline-start: 5px !important;
 }
 
 .close-floating-buttons:first-child {
@@ -140,7 +139,7 @@
     z-index: 10;
     position: absolute;
     top: 50px;
-    right: 10px;
+    inset-inline-end: 10px;
     width: 400px;
     border-radius: 10px;
     background-color: var(--accented-background-color);
@@ -150,8 +149,8 @@
 }
 
 .backlink-excerpt {
-    border-left: 2px solid var(--main-border-color);
-    padding-left: 10px;
+    border-inline-start: 2px solid var(--main-border-color);
+    padding-inline-start: 10px;
     opacity: 80%;
     font-size: 90%;
 }

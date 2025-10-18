@@ -1,6 +1,7 @@
 import { ComponentChildren, HTMLAttributes } from "preact";
 import { Link } from "./Button.js";
 import Icon from "./Icon.js";
+import { t } from "../i18n.js";
 
 interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
     title: ComponentChildren;
@@ -28,7 +29,7 @@ export default function Card({ title, children, imageUrl, iconSvg, className, mo
 
                 {moreInfoUrl && (
                     <div className="more-info-container">
-                        <Link href={moreInfoUrl} className="more-info" openExternally>Learn more...</Link>
+                        <Link href={moreInfoUrl} className="more-info" openExternally>{t("components.link_learn_more")}</Link>
                     </div>
                 )}
             </div>

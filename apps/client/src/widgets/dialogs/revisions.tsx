@@ -91,7 +91,7 @@ export default function RevisionsDialog() {
                     </>
                 )
             }
-            footer={<RevisionFooter note={note} />} 
+            footer={<RevisionFooter note={note} />}
             footerStyle={{ paddingTop: 0, paddingBottom: 0 }}
             onHidden={() => {
                 setShown(false);
@@ -115,16 +115,16 @@ export default function RevisionsDialog() {
 
                 <div className="revision-content-wrapper" style={{
                     flexGrow: "1",
-                    marginLeft: "20px",
+                    marginInlineStart: "20px",
                     display: "flex",
                     flexDirection: "column",
                     maxWidth: "calc(100% - 150px)",
-                    minWidth: 0                    
+                    minWidth: 0
                 }}>
-                    <RevisionPreview 
+                    <RevisionPreview
                         noteContent={noteContent}
                         revisionItem={currentRevision}
-                        showDiff={showDiff} 
+                        showDiff={showDiff}
                         setShown={setShown}
                         onRevisionDeleted={() => {
                             setRefreshCounter(c => c + 1);
@@ -138,7 +138,7 @@ export default function RevisionsDialog() {
 function RevisionsList({ revisions, onSelect, currentRevision }: { revisions: RevisionItem[], onSelect: (val: string) => void, currentRevision?: RevisionItem }) {
     return (
         <FormList onSelect={onSelect} fullHeight>
-            {revisions.map((item) => 
+            {revisions.map((item) =>
                 <FormListItem
                     title={t("revisions.revision_last_edited", { date: item.dateLastEdited })}
                     value={item.revisionId}
@@ -152,7 +152,7 @@ function RevisionsList({ revisions, onSelect, currentRevision }: { revisions: Re
 
 function RevisionPreview({noteContent, revisionItem, showDiff, setShown, onRevisionDeleted }: {
     noteContent?: string,
-    revisionItem?: RevisionItem,  
+    revisionItem?: RevisionItem,
     showDiff: boolean,
     setShown: Dispatch<StateUpdater<boolean>>,
     onRevisionDeleted?: () => void
@@ -163,7 +163,7 @@ function RevisionPreview({noteContent, revisionItem, showDiff, setShown, onRevis
         if (revisionItem) {
             server.get<RevisionPojo>(`revisions/${revisionItem.revisionId}`).then(setFullRevision);
         } else {
-            setFullRevision(undefined);            
+            setFullRevision(undefined);
         }
     }, [revisionItem]);
 
@@ -242,11 +242,11 @@ function RevisionContent({ noteContent, revisionItem, fullRevision, showDiff }: 
             return <RevisionContentText content={content} />
         case "code":
             return <pre style={CODE_STYLE}>{content}</pre>;
-        case "image":            
+        case "image":
             switch (revisionItem.mime) {
                 case "image/svg+xml": {
                     //Base64 of other format images may be embedded in svg
-                    const encodedSVG = encodeURIComponent(content as string); 
+                    const encodedSVG = encodeURIComponent(content as string);
                     return <img
                         src={`data:${fullRevision.mime};utf8,${encodedSVG}`}
                         style={IMAGE_STYLE} />;
@@ -355,7 +355,7 @@ function RevisionFooter({ note }: { note?: FNote }) {
     if (revisionsNumberLimit === -1) {
         revisionsNumberLimit = "∞";
     }
-    
+
     return <>
         <span class="revisions-snapshot-interval flex-grow-1 my-0 py-0">
             {t("revisions.snapshot_interval", { seconds: options.getInt("revisionSnapshotTimeInterval") })}

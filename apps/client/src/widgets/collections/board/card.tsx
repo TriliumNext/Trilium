@@ -63,6 +63,14 @@ export default function Card({
         setBranchIdToEdit?.(branch.branchId);
     }, [ setBranchIdToEdit, branch ]);
 
+    const handleKeyDown = useCallback((e: KeyboardEvent) => {
+        if (e.key === "Enter") {
+            api.openNote(note.noteId);
+        } else if (e.key === "F2") {
+            setBranchIdToEdit?.(branch.branchId);
+        }
+    }, [ setBranchIdToEdit, note ]);
+
     useEffect(() => {
         editorRef.current?.focus();
     }, [ isEditing ]);
@@ -83,9 +91,11 @@ export default function Card({
             onDragEnd={handleDragEnd}
             onContextMenu={handleContextMenu}
             onClick={!isEditing ? handleOpen : undefined}
+            onKeyDown={handleKeyDown}
             style={{
                 display: !isVisible ? "none" : undefined
             }}
+            tabIndex={300}
         >
             {!isEditing ? (
                 <>

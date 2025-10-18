@@ -299,7 +299,7 @@
     content: '';
     position: absolute;
     top: 0;
-    left: -100%;
+    inset-inline-start: -100%;
     width: 100%;
     height: 100%;
     background: linear-gradient(90deg, transparent, var(--hover-item-background-color, rgba(0, 0, 0, 0.03)), transparent);
@@ -406,10 +406,10 @@
 
 @keyframes shimmer {
     0% {
-        left: -100%;
+        inset-inline-start: -100%;
     }
     100% {
-        left: 100%;
+        inset-inline-start: 100%;
     }
 }
 

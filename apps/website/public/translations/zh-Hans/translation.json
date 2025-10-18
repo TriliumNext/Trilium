@@ -1,0 +1,51 @@
+{
+    "get-started": {
+        "desktop_title": "下载桌面版应用 （v{{version}}）",
+        "architecture": "架构："
+    },
+    "organization_benefits": {
+        "hoisting_description": "你可以通过将个人笔记和工作笔记分组到不同的工作区中，轻松地将它们分开。每个工作区会聚焦于特定的笔记集合，使你的笔记树仅显示相关内容。"
+    },
+    "productivity_benefits": {
+        "title": "高效且安全",
+        "revisions_title": "笔记历史版本",
+        "revisions_content": "笔记会在后台定期保存，且修订版本可用于回顾或撤销误修改。你也可以按需创建修订版本。",
+        "sync_title": "同步",
+        "sync_content": "使用自建或云端实例，可以轻松地在多设备之间同步笔记，并通过 PWA 从手机上访问它。",
+        "protected_notes_title": "被保护的笔记",
+        "protected_notes_content": "通过加密笔记并将其锁定在受密码保护的会话中，来保护敏感的个人信息。",
+        "jump_to_title": "快速的搜索和命令",
+        "jump_to_content": "通过搜索标题，可以在层级结构中快速跳转到笔记或 UI 命令；模糊匹配可容忍拼写错误或细微差异。",
+        "search_content": "或者在笔记中搜索文本，并通过筛选父笔记或深度来缩小搜索范围。",
+        "web_clipper_content": "抓取网页（或截图），并通过网页剪藏浏览器扩展直接保存到 Trilium 中。"
+    },
+    "note_types": {
+        "text_title": "文本笔记",
+        "text_description": "笔记是使用可视化（所见即所得，WYSIWYG）编辑器进行编辑的，支持表格、图像、数学表达式和带语法高亮的代码块。你可以通过类似 Markdown 的语法或使用斜杠命令快速格式化文本。",
+        "code_title": "代码笔记",
+        "code_description": "大量源代码或脚本通常使用专门的编辑器进行编写，这类编辑器为多种编程语言提供语法高亮，并支持多种配色主题。",
+        "file_title": "文件笔记",
+        "file_description": "嵌入多媒体文件（如 PDF、图像、视频），并在应用程序内进行预览。",
+        "canvas_title": "画布",
+        "canvas_description": "在无限画布上排列形状、图像和文本，使用与 excalidraw.com 相同的技术。非常适合用于绘制图表、草图和进行可视化规划。",
+        "mermaid_title": "Mermaid 图表",
+        "mermaid_description": "使用 Mermaid 语法创建各种图表，例如流程图、类图和时序图、甘特图等。",
+        "mindmap_title": "思维导图",
+        "mindmap_description": "把你的想法用视觉方式整理出来，或者进行一次头脑风暴。",
+        "others_list": "以及其他内容：<0>笔记映射</0>、<1>关系映射</1>、<2>已保存的搜索</2>、<3>渲染笔记</3> 和 <4>网页视图</4>。"
+    },
+    "extensibility_benefits": {
+        "title": "分享与可扩展性",
+        "import_export_title": "导入/导出",
+        "import_export_description": "使用 Markdown、ENEX、OML 格式即可轻松与其他应用程序交互。",
+        "share_title": "在网络上分享笔记",
+        "share_description": "如果你有一台服务器，它可以用来与他人共享你的一部分笔记。"
+    },
+    "download_helper_server_hosted": {
+        "download_triliumcc": "也可以访问 trilium.cc"
+    },
+    "download_helper_desktop_linux": {
+        "download_aur": "AUR",
+        "download_nixpkgs": "nixpkgs"
+    }
+}

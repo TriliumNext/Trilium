@@ -38,7 +38,7 @@ const TPL = /*html*/`<div class="note-map-widget">
             /* removing default appearance */
             -webkit-appearance: none;
             appearance: none;
-            margin-left: 15px;
+            margin-inline-start: 15px;
             width: 150px;
         }
 

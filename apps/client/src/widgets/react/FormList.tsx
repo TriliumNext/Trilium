@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "preact
 import "./FormList.css";
 import { CommandNames } from "../../components/app_context";
 import { useStaticTooltip } from "./hooks";
-import { isMobile } from "../../services/utils";
+import { handleRightToLeftPlacement, isMobile } from "../../services/utils";
 
 interface FormListOpts {
     children: ComponentChildren;
@@ -22,7 +22,7 @@ export default function FormList({ children, onSelect, style, fullHeight }: Form
         if (!triggerRef.current || !wrapperRef.current) {
             return;
         }
-        
+
         const $wrapperRef = $(wrapperRef.current);
         const dropdown = BootstrapDropdown.getOrCreateInstance(triggerRef.current);
         $wrapperRef.on("hide.bs.dropdown", (e) => e.preventDefault());
@@ -93,8 +93,8 @@ interface FormListItemOpts {
 }
 
 const TOOLTIP_CONFIG: Partial<Tooltip.Options> = {
-    placement: "right",
-    fallbackPlacements: [ "right" ]
+    placement: handleRightToLeftPlacement("right"),
+    fallbackPlacements: [ handleRightToLeftPlacement("right") ]
 }
 
 export function FormListItem({ className, icon, value, title, active, disabled, checked, container, onClick, selected, rtl, triggerCommand, description, ...contentProps }: FormListItemOpts) {

@@ -423,7 +423,11 @@
     "board_note_third": "A treia notiță",
     "board_status_todo": "De făcut",
     "board_status_progress": "În lucru",
-    "board_status_done": "Finalizat"
+    "board_status_done": "Finalizat",
+    "presentation": "Prezentare",
+    "presentation_slide": "Slide de prezentare",
+    "presentation_slide_first": "Primul slide",
+    "presentation_slide_second": "Al doilea slide"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Baza de date nu este inițializată, urmați instrucțiunile de pe ecran.",

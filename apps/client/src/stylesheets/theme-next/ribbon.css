@@ -95,7 +95,7 @@ div.promoted-attributes-container {
 /* Note type dropdown */
 
 ul.note-type-dropdown .check {
-    margin-right: 6px;
+    margin-inline-end: 6px;
 }
 
 ul.note-type-dropdown li.dropdown-item {
@@ -105,7 +105,7 @@ ul.note-type-dropdown li.dropdown-item {
 /* Editability dropdown */
 
 ul.editability-dropdown li.dropdown-item > div {
-    margin-left: 4px;
+    margin-inline-start: 4px;
 }
 
 .editability-dropdown .dropdown-item .description {
@@ -142,12 +142,12 @@ ul.editability-dropdown li.dropdown-item > div {
 }
 
 .attribute-list .save-attributes-button {
-    right: 30px;
+    inset-inline-end: 30px;
 }
 
 /* Note path in attribute detail dialog */
 .attr-detail .note-path {
-    margin-left: 8px;
+    margin-inline-start: 8px;
 }
 
 /*

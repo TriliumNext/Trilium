@@ -62,7 +62,7 @@
 .note-detail-relation-map .endpoint {
     position: absolute;
     bottom: 37%;
-    right: 5px;
+    inset-inline-end: 5px;
     width: 1em;
     height: 1em;
     background-color: #333;

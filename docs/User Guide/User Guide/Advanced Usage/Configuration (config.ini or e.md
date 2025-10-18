@@ -133,7 +133,7 @@ Both naming patterns are fully supported and can be used interchangeably:
 ```yaml
 services:
   trilium:
-    image: triliumnext/notes
+    image: triliumnext/trilium
     environment:
       # Using full format
       TRILIUM_GENERAL_INSTANCENAME: "My Trilium Instance"

@@ -1,6 +1,6 @@
 {
     "formatVersion": 2,
-    "appVersion": "0.99.0",
+    "appVersion": "0.99.1",
     "files": [
         {
             "isClone": false,
@@ -202,14 +202,14 @@
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "tAassRL4RSQL",
+                                    "value": "l2VkvOwUNfZj",
                                     "isInheritable": false,
                                     "position": 10
                                 },
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "l2VkvOwUNfZj",
+                                    "value": "tAassRL4RSQL",
                                     "isInheritable": false,
                                     "position": 20
                                 },
@@ -230,7 +230,45 @@
                             ],
                             "format": "markdown",
                             "dataFileName": "Desktop Installation.md",
-                            "attachments": []
+                            "attachments": [],
+                            "dirFileName": "Desktop Installation",
+                            "children": [
+                                {
+                                    "isClone": false,
+                                    "noteId": "nRqcgfTb97uV",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "Otzi9La2YAUX",
+                                        "poXkQfguuA0U",
+                                        "nRqcgfTb97uV"
+                                    ],
+                                    "title": "Using the desktop application as a server",
+                                    "notePosition": 10,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "x3i7MxGccDuM",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "WOcw2SLH6tbX",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Using the desktop application .md",
+                                    "attachments": []
+                                }
+                            ]
                         },
                         {
                             "isClone": false,
@@ -704,6 +742,13 @@
                                             "mime": "text/markdown",
                                             "attributes": [
                                                 {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "LLzSMXACKhUs",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
                                                     "type": "label",
                                                     "name": "shareAlias",
                                                     "value": "nginx-proxy-setup",
@@ -725,13 +770,20 @@
                                                 "vcjrb3VVYPZI",
                                                 "fDLvzOx29Pfg"
                                             ],
-                                            "title": "Apache",
+                                            "title": "Apache using Docker",
                                             "notePosition": 20,
                                             "prefix": null,
                                             "isExpanded": false,
                                             "type": "text",
                                             "mime": "text/markdown",
                                             "attributes": [
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "LLzSMXACKhUs",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
                                                 {
                                                     "type": "label",
                                                     "name": "shareAlias",
@@ -741,7 +793,43 @@
                                                 }
                                             ],
                                             "format": "markdown",
-                                            "dataFileName": "Apache.md",
+                                            "dataFileName": "Apache using Docker.md",
+                                            "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "LLzSMXACKhUs",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "Otzi9La2YAUX",
+                                                "WOcw2SLH6tbX",
+                                                "vcjrb3VVYPZI",
+                                                "LLzSMXACKhUs"
+                                            ],
+                                            "title": "Trusted proxy",
+                                            "notePosition": 30,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "vcjrb3VVYPZI",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "Gzjqa934BdH4",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "Trusted proxy.md",
                                             "attachments": []
                                         }
                                     ]
@@ -755,7 +843,7 @@
                                         "WOcw2SLH6tbX",
                                         "l2VkvOwUNfZj"
                                     ],
-                                    "title": "TLS Configuration",
+                                    "title": "HTTPS (TLS)",
                                     "notePosition": 100,
                                     "prefix": null,
                                     "isExpanded": false,
@@ -772,16 +860,23 @@
                                         {
                                             "type": "relation",
                                             "name": "internalLink",
-                                            "value": "tAassRL4RSQL",
+                                            "value": "vcjrb3VVYPZI",
                                             "isInheritable": false,
                                             "position": 20
                                         },
                                         {
                                             "type": "relation",
                                             "name": "internalLink",
-                                            "value": "Gzjqa934BdH4",
+                                            "value": "tAassRL4RSQL",
                                             "isInheritable": false,
                                             "position": 30
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "Gzjqa934BdH4",
+                                            "isInheritable": false,
+                                            "position": 40
                                         },
                                         {
                                             "type": "label",
@@ -789,10 +884,17 @@
                                             "value": "tls-configuration",
                                             "isInheritable": false,
                                             "position": 20
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-lock-alt",
+                                            "isInheritable": false,
+                                            "position": 50
                                         }
                                     ],
                                     "format": "markdown",
-                                    "dataFileName": "TLS Configuration.md",
+                                    "dataFileName": "HTTPS (TLS).md",
                                     "attachments": []
                                 },
                                 {
@@ -835,7 +937,7 @@
                                         {
                                             "type": "label",
                                             "name": "iconClass",
-                                            "value": "bx bx-lock-alt",
+                                            "value": "bx bx-user",
                                             "isInheritable": false,
                                             "position": 10
                                         }
@@ -994,23 +1096,30 @@
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "bwg0e8ewQMak",
+                                    "value": "nRqcgfTb97uV",
                                     "isInheritable": false,
                                     "position": 10
                                 },
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "WOcw2SLH6tbX",
+                                    "value": "bwg0e8ewQMak",
                                     "isInheritable": false,
                                     "position": 20
                                 },
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "CdNpE2pqjmI6",
+                                    "value": "WOcw2SLH6tbX",
                                     "isInheritable": false,
                                     "position": 30
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "CdNpE2pqjmI6",
+                                    "isInheritable": false,
+                                    "position": 40
                                 },
                                 {
                                     "type": "label",
@@ -1029,24 +1138,7 @@
                             ],
                             "format": "markdown",
                             "dataFileName": "Mobile Frontend.md",
-                            "attachments": [
-                                {
-                                    "attachmentId": "CyswsZZ3GwtQ",
-                                    "title": "mobile-tablet.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "Mobile Frontend_mobile-tab.png"
-                                },
-                                {
-                                    "attachmentId": "txzBbmMtgsrx",
-                                    "title": "mobile-smartphone.png",
-                                    "role": "image",
-                                    "mime": "image/png",
-                                    "position": 10,
-                                    "dataFileName": "Mobile Frontend_mobile-sma.png"
-                                }
-                            ]
+                            "attachments": []
                         },
                         {
                             "isClone": false,
@@ -7674,37 +7766,51 @@
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "BFs8mudNFgCS",
+                                    "value": "zEY4DaJG4YT5",
                                     "isInheritable": false,
                                     "position": 10
                                 },
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "zEY4DaJG4YT5",
+                                    "value": "XpOYSgsLkTJy",
                                     "isInheritable": false,
                                     "position": 20
                                 },
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "OFXdgB2nNk1F",
+                                    "value": "oPVyFC7WL2Lp",
                                     "isInheritable": false,
                                     "position": 30
                                 },
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "wX4HbRucYSDD",
+                                    "value": "yTjUdsOi4CIE",
                                     "isInheritable": false,
                                     "position": 40
                                 },
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "BCkXAVs63Ttv",
+                                    "value": "OFXdgB2nNk1F",
                                     "isInheritable": false,
                                     "position": 50
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "wX4HbRucYSDD",
+                                    "isInheritable": false,
+                                    "position": 60
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "bdUJEHsAPYQR",
+                                    "isInheritable": false,
+                                    "position": 70
                                 },
                                 {
                                     "type": "label",
@@ -8632,6 +8738,107 @@
                                             "mime": "image/png",
                                             "position": 10,
                                             "dataFileName": "Board View_image.png"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "isClone": false,
+                                    "noteId": "zP3PMqaG71Ct",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "KSZ04uQ2D1St",
+                                        "GTwFsgaA0lCt",
+                                        "zP3PMqaG71Ct"
+                                    ],
+                                    "title": "Presentation View",
+                                    "notePosition": 70,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-slideshow",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "BlN9DFI679QC",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "OFXdgB2nNk1F",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "R9pX4DGra2Vt",
+                                            "isInheritable": false,
+                                            "position": 40
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "0ESUbbAxVnoK",
+                                            "isInheritable": false,
+                                            "position": 50
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "s1aBHPd79XYj",
+                                            "isInheritable": false,
+                                            "position": 60
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "grjYqerjn243",
+                                            "isInheritable": false,
+                                            "position": 70
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "gBbsAeiuUxI5",
+                                            "isInheritable": false,
+                                            "position": 80
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "AlhDUqhENtH7",
+                                            "isInheritable": false,
+                                            "position": 90
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Presentation View.md",
+                                    "attachments": [
+                                        {
+                                            "attachmentId": "aJa7vIrYknDw",
+                                            "title": "image.png",
+                                            "role": "image",
+                                            "mime": "image/png",
+                                            "position": 10,
+                                            "dataFileName": "Presentation View_image.png"
+                                        },
+                                        {
+                                            "attachmentId": "aPooMxP74PeA",
+                                            "title": "image.png",
+                                            "role": "image",
+                                            "mime": "image/png",
+                                            "position": 10,
+                                            "dataFileName": "1_Presentation View_image.png"
                                         }
                                     ]
                                 }
@@ -9580,6 +9787,13 @@
                                     "value": "oPVyFC7WL2Lp",
                                     "isInheritable": false,
                                     "position": 20
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "zP3PMqaG71Ct",
+                                    "isInheritable": false,
+                                    "position": 30
                                 }
                             ],
                             "format": "markdown",

@@ -12,6 +12,7 @@ import { deferred } from "@triliumnext/server/src/services/utils.js";
 import { PRODUCT_NAME } from "./app-info";
 import port from "@triliumnext/server/src/services/port.js";
 import { join } from "path";
+import { LOCALES } from "../../../packages/commons/src";
 
 async function main() {
     const userDataPath = getUserData();
@@ -30,7 +31,7 @@ async function main() {
 
     // needed for excalidraw export https://github.com/zadam/trilium/issues/4271
     app.commandLine.appendSwitch("enable-experimental-web-platform-features");
-    app.commandLine.appendSwitch("lang", options.getOptionOrNull("formattingLocale") ?? "en");
+    app.commandLine.appendSwitch("lang", getElectronLocale());
 
     // Disable smooth scroll if the option is set
     const smoothScrollEnabled = options.getOptionOrNull("smoothScrollEnabled");
@@ -126,6 +127,17 @@ async function onReady() {
     }
 
     await windowService.registerGlobalShortcuts();
+}
+
+function getElectronLocale() {
+    const uiLocale = options.getOptionOrNull("locale");
+    const formattingLocale = options.getOptionOrNull("formattingLocale");
+    const correspondingLocale = LOCALES.find(l => l.id === uiLocale);
+
+    // For RTL, we have to force the UI locale to align the window buttons properly.
+    if (formattingLocale && !correspondingLocale?.rtl) return formattingLocale;
+
+    return uiLocale || "en"
 }
 
 main();

@@ -263,7 +263,7 @@ function AncestorOption({ note, ...restProps}: SearchOptionProps) {
         placeholder={t("ancestor.placeholder")}
       />
 
-      <div style="margin-left: 10px; margin-right: 10px">{t("ancestor.depth_label")}:</div>
+      <div style="margin-inline-start: 10px; margin-inline-end: 10px">{t("ancestor.depth_label")}:</div>
       <FormSelect
         values={options}
         keyProperty="value" titleProperty="label"

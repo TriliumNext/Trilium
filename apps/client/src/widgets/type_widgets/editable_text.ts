@@ -21,7 +21,7 @@ const TPL = /*html*/`
     <style>
     .note-detail-editable-text {
         font-family: var(--detail-font-family);
-        padding-left: 14px;
+        padding-inline-start: 14px;
         padding-top: 10px;
         height: 100%;
     }
@@ -32,7 +32,7 @@ const TPL = /*html*/`
     }
 
     body.mobile .note-detail-editable-text {
-        padding-left: 4px;
+        padding-inline-start: 4px;
     }
 
     .note-detail-editable-text a:hover {

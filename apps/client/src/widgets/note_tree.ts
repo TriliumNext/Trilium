@@ -61,7 +61,7 @@ const TPL = /*html*/`
         display: flex;
         align-items: flex-end;
         justify-content: flex-end;
-        right: 17px;
+        inset-inline-end: 17px;
         border-radius: 7px;
         border: 1px solid var(--main-border-color);
     }
@@ -82,15 +82,15 @@ const TPL = /*html*/`
     }
 
     .collapse-tree-button {
-        right: 100px;
+        inset-inline-end: 100px;
     }
 
     .scroll-to-active-note-button {
-        right: 55px;
+        inset-inline-end: 55px;
     }
 
     .tree-settings-button {
-        right: 10px;
+        inset-inline-end: 10px;
     }
 
     .tree-settings-popup {

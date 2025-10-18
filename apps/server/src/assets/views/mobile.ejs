@@ -96,8 +96,13 @@
             }
         }
     </style>
+
+    <script src="<%= appPath %>/runtime.js" crossorigin type="module"></script>
 </head>
-<body class="mobile heading-style-<%= headingStyle %>">
+<body
+    class="mobile heading-style-<%= headingStyle %>"
+    lang="<%= currentLocale.id %>" dir="<%= currentLocale.rtl ? 'rtl' : 'ltr' %>"
+>
 <noscript><%= t("javascript-required") %></noscript>
 
 <div id="toast-container" class="d-flex flex-column justify-content-center align-items-center"></div>
@@ -108,11 +113,9 @@
 
 <%- include("./partials/windowGlobal.ejs", locals) %>
 
-<script src="<%= appPath %>/runtime.js" crossorigin type="module"></script>
 <script src="<%= appPath %>/mobile.js" crossorigin type="module"></script>
 
 <link href="api/fonts" rel="stylesheet">
-<link rel="stylesheet" href="<%= appPath %>/bootstrap.css">
 <link href="<%= assetPath %>/stylesheets/ckeditor-theme.css" rel="stylesheet">
 <link href="<%= assetPath %>/stylesheets/theme-light.css" rel="stylesheet">
 <% if (themeCssUrl) { %>

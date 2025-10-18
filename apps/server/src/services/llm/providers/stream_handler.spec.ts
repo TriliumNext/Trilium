@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StreamProcessor, createStreamHandler, processProviderStream, extractStreamStats, performProviderHealthCheck } from './stream_handler.js';
-import type { StreamProcessingOptions, StreamChunk, ProviderStreamOptions } from './stream_handler.js';
+import type { StreamProcessingOptions, StreamChunk } from './stream_handler.js';
 
 // Mock the log module
 vi.mock('../../log.js', () => ({
@@ -86,7 +86,7 @@ describe('StreamProcessor', () => {
 
         it('should handle callback errors gracefully', async () => {
             const errorCallback = vi.fn().mockRejectedValue(new Error('Callback error'));
-            
+
             // Should not throw
             await expect(StreamProcessor.sendChunkToCallback(errorCallback, 'test', false, {}, 1))
                 .resolves.toBeUndefined();
@@ -127,7 +127,7 @@ describe('StreamProcessor', () => {
 
         it('should handle final callback errors gracefully', async () => {
             const errorCallback = vi.fn().mockRejectedValue(new Error('Final callback error'));
-            
+
             await expect(StreamProcessor.sendFinalCallback(errorCallback, 'test'))
                 .resolves.toBeUndefined();
         });
@@ -297,8 +297,8 @@ describe('processProviderStream', () => {
     it('should handle tool calls in stream', async () => {
         const chunks = [
             { message: { content: 'Using tool...' } },
-            { 
-                message: { 
+            {
+                message: {
                     tool_calls: [
                         { id: 'call_1', function: { name: 'calculator', arguments: '{"x": 5}' } }
                     ]
@@ -573,8 +573,8 @@ describe('Streaming edge cases and concurrency', () => {
     it('should handle mixed content and tool calls', async () => {
         const chunks = [
             { message: { content: 'Let me calculate that...' } },
-            { 
-                message: { 
+            {
+                message: {
                     content: '',
                     tool_calls: [{ id: '1', function: { name: 'calc' } }]
                 }

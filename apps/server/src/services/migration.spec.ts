@@ -12,7 +12,7 @@ describe("Migration", () => {
 
                 const migration = (await import("./migration.js")).default;
                 await migration.migrateIfNecessary();
-                expect(sql.getValue("SELECT count(*) FROM blobs")).toBe(116);
+                expect(sql.getValue("SELECT count(*) FROM blobs")).toBe(118);
                 resolve();
             });
         });

@@ -6,6 +6,7 @@ import { isElectron } from "../services/utils.js";
 import assetPath from "../services/asset_path.js";
 import appPath from "../services/app_path.js";
 import type { Request, Response } from "express";
+import { getCurrentLocale } from "../services/i18n.js";
 
 function setupPage(req: Request, res: Response) {
     if (sqlInit.isDbInitialized()) {
@@ -30,7 +31,8 @@ function setupPage(req: Request, res: Response) {
     res.render("setup", {
         syncInProgress: syncInProgress,
         assetPath: assetPath,
-        appPath: appPath
+        appPath: appPath,
+        currentLocale: getCurrentLocale()
     });
 }
 
@@ -39,7 +41,7 @@ async function handleElectronRedirect() {
     const { app } = await import("electron");
 
     // Wait for the main window to be created before closing the setup window to prevent triggering `window-all-closed`.
-    await windowService.createMainWindow(app); 
+    await windowService.createMainWindow(app);
     windowService.closeSetupWindow();
 
     const tray = (await import("../services/tray.js")).default;

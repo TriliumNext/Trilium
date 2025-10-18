@@ -10,7 +10,6 @@ import { t } from "./services/i18n.js";
 import options from "./services/options.js";
 import type ElectronRemote from "@electron/remote";
 import type Electron from "electron";
-import "bootstrap/dist/css/bootstrap.min.css";
 import "boxicons/css/boxicons.min.css";
 import "autocomplete.js/index_jquery.js";
 

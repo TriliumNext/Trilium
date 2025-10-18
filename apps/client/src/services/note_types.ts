@@ -168,7 +168,8 @@ async function getBuiltInTemplates(title: string | null, command: TreeCommandNam
     }
 
     for (const templateNote of childNotes) {
-        if (templateNote.hasLabel("collection") !== filterCollections) {
+        if (templateNote.hasLabel("collection") !== filterCollections ||
+            !templateNote.hasLabel("template")) {
             continue;
         }
 

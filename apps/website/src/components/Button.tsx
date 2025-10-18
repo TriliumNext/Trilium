@@ -6,7 +6,7 @@ interface LinkProps {
     className?: string;
     href?: string;
     openExternally?: boolean;
-    children: ComponentChildren;
+    children?: ComponentChildren;
     title?: string;
     onClick?: (e: MouseEvent) => void;
 }

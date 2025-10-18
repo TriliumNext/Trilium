@@ -646,7 +646,9 @@
     "about": "關於 TriliumNext 筆記",
     "logout": "登出",
     "show-cheatsheet": "顯示快捷鍵說明",
-    "toggle-zen-mode": "禪模式"
+    "toggle-zen-mode": "禪模式",
+    "new-version-available": "發現新更新",
+    "download-update": "取得版本 {{latestVersion}}"
   },
   "sync_status": {
     "unknown": "<p>同步狀態將在下一次同步嘗試開始後顯示。</p><p>點擊以立即觸發同步。</p>",
@@ -733,7 +735,8 @@
     "insert_child_note": "插入子筆記",
     "delete_this_note": "刪除此筆記",
     "error_cannot_get_branch_id": "無法獲取 notePath '{{notePath}}' 的 branchId",
-    "error_unrecognized_command": "無法識別的命令 {{command}}"
+    "error_unrecognized_command": "無法識別的命令 {{command}}",
+    "note_revisions": "筆記歷史版本"
   },
   "note_icon": {
     "change_note_icon": "更改筆記圖標",
@@ -746,7 +749,7 @@
     "editable": "可編輯",
     "basic_properties": "基本屬性",
     "language": "語言",
-    "configure_code_notes": "配寘代碼注釋..."
+    "configure_code_notes": "設定程式碼筆記…"
   },
   "book_properties": {
     "view_type": "視圖類型",
@@ -1250,7 +1253,13 @@
     "min-days-in-first-week": "第一週的最少天數",
     "first-week-info": "年度第一週包含第一個週四是基於 <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a> 標準。",
     "first-week-warning": "變更第一週選項可能導致與現有的「週筆記」重複，現有的「週筆記」將不會相應更新。",
-    "formatting-locale": "日期和數字格式"
+    "formatting-locale": "日期和數字格式",
+    "tuesday": "週二",
+    "wednesday": "週三",
+    "thursday": "週四",
+    "friday": "週五",
+    "saturday": "週六",
+    "formatting-locale-auto": "根據應用程式的語言設定"
   },
   "backup": {
     "automatic_backup": "自動備份",
@@ -1431,7 +1440,7 @@
     "relation-map": "關聯圖",
     "note-map": "筆記地圖",
     "render-note": "渲染筆記",
-    "mermaid-diagram": "美人魚圖（Mermaid）",
+    "mermaid-diagram": "美人魚圖",
     "canvas": "畫布",
     "web-view": "網頁顯示",
     "mind-map": "心智圖",
@@ -1627,7 +1636,7 @@
       "label": "格式工具欄",
       "floating": {
         "title": "浮動",
-        "description": "編輯工具出現在遊標附近;"
+        "description": "編輯工具出現在游標附近；"
       },
       "fixed": {
         "title": "固定",

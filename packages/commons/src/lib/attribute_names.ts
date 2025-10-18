@@ -39,6 +39,8 @@ type Labels = {
     "board:groupBy": string;
     maxNestingDepth: number;
     includeArchived: boolean;
+    "presentation:theme": string;
+    "slide:background": string;
 }
 
 /**

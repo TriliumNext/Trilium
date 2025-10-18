@@ -16,10 +16,12 @@ import searchService from "../services/search/services/search.js";
 import sql from "./sql.js";
 import { t } from "i18next";
 import { ordinal } from "./i18n.js";
+import isoWeek from "dayjs/plugin/isoWeek.js";
 
 dayjs.extend(isSameOrAfter);
 dayjs.extend(quarterOfYear);
 dayjs.extend(advancedFormat);
+dayjs.extend(isoWeek);
 
 const CALENDAR_ROOT_LABEL = "calendarRoot";
 const YEAR_LABEL = "yearNote";
@@ -295,88 +297,16 @@ function getMonthNote(dateStr: string, _rootNote: BNote | null = null): BNote {
 }
 
 function getWeekStartDate(date: Dayjs): Dayjs {
-    const day = date.day();
-    let diff: number;
-
-    if (optionService.getOption("firstDayOfWeek") === "0") { // Sunday
-        diff = date.date() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-    } else { // Monday
-        diff = date.date() - day;
-    }
-
-    const startDate = date.clone().date(diff);
-    return startDate;
+    const firstDayISO = parseInt(optionService.getOptionOrNull("firstDayOfWeek") ?? "1", 10);
+    const day = date.isoWeekday();
+    const diff = (day - firstDayISO + 7) % 7;
+    return date.clone().subtract(diff, "day").startOf("day");
 }
 
-// TODO: Duplicated with getWeekNumber in src/public/app/widgets/buttons/calendar.ts
-// Maybe can be merged later in monorepo setup
 function getWeekNumberStr(date: Dayjs): string {
-    const year = date.year();
-    const dayOfWeek = (day: number) =>
-        (day - parseInt(optionService.getOption("firstDayOfWeek")) + 7) % 7;
-
-    // Get first day of the year and adjust to first week start
-    const jan1 = date.clone().year(year).month(0).date(1);
-    const jan1Weekday = jan1.day();
-    const dayOffset = dayOfWeek(jan1Weekday);
-    let firstWeekStart = jan1.clone().subtract(dayOffset, "day");
-
-    // Adjust based on week rule
-    switch (parseInt(optionService.getOption("firstWeekOfYear"))) {
-        case 1: { // ISO 8601: first week contains Thursday
-            const thursday = firstWeekStart.clone().add(3, "day"); // Monday + 3 = Thursday
-            if (thursday.year() < year) {
-                firstWeekStart = firstWeekStart.add(7, "day");
-            }
-            break;
-        }
-        case 2: { // minDaysInFirstWeek rule
-            const daysInFirstWeek = 7 - dayOffset;
-            if (daysInFirstWeek < parseInt(optionService.getOption("minDaysInFirstWeek"))) {
-                firstWeekStart = firstWeekStart.add(7, "day");
-            }
-            break;
-        }
-        // default case 0: week containing Jan 1 → already handled
-    }
-
-    const diffDays = date.startOf("day").diff(firstWeekStart.startOf("day"), "day");
-    const weekNumber = Math.floor(diffDays / 7) + 1;
-
-    // Handle case when date is before first week start → belongs to last week of previous year
-    if (weekNumber <= 0) {
-        return getWeekNumberStr(date.subtract(1, "day"));
-    }
-
-    // Handle case when date belongs to first week of next year
-    const nextYear = year + 1;
-    const jan1Next = date.clone().year(nextYear).month(0).date(1);
-    const jan1WeekdayNext = jan1Next.day();
-    const offsetNext = dayOfWeek(jan1WeekdayNext);
-    let nextYearWeekStart = jan1Next.clone().subtract(offsetNext, "day");
-
-    switch (parseInt(optionService.getOption("firstWeekOfYear"))) {
-        case 1: {
-            const thursday = nextYearWeekStart.clone().add(3, "day");
-            if (thursday.year() < nextYear) {
-                nextYearWeekStart = nextYearWeekStart.add(7, "day");
-            }
-            break;
-        }
-        case 2: {
-            const daysInFirstWeek = 7 - offsetNext;
-            if (daysInFirstWeek < parseInt(optionService.getOption("minDaysInFirstWeek"))) {
-                nextYearWeekStart = nextYearWeekStart.add(7, "day");
-            }
-            break;
-        }
-    }
-
-    if (date.isSameOrAfter(nextYearWeekStart)) {
-        return `${nextYear}-W01`;
-    }
-
-    return `${year}-W${weekNumber.toString().padStart(2, "0")}`;
+    const isoYear = date.isoWeekYear();
+    const isoWeekNum = date.isoWeek();
+    return `${isoYear}-W${isoWeekNum.toString().padStart(2, "0")}`;
 }
 
 function getWeekFirstDayNote(dateStr: string, rootNote: BNote | null = null) {

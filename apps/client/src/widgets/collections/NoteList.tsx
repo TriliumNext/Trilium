@@ -12,8 +12,9 @@ import BoardView from "./board";
 import { subscribeToMessages, unsubscribeToMessage as unsubscribeFromMessage } from "../../services/ws";
 import { WebSocketMessage } from "@triliumnext/commons";
 import froca from "../../services/froca";
+import PresentationView from "./presentation";
 
-interface NoteListProps<T extends object> {
+interface NoteListProps {
     note: FNote | null | undefined;
     notePath: string | null | undefined;
     highlightedTokens?: string[] | null;
@@ -23,17 +24,17 @@ interface NoteListProps<T extends object> {
     ntxId: string | null | undefined;
 }
 
-export default function NoteList<T extends object>(props: Pick<NoteListProps<T>, "displayOnlyCollections">) {
+export default function NoteList<T extends object>(props: Pick<NoteListProps, "displayOnlyCollections">) {
     const { note, noteContext, notePath, ntxId } = useNoteContext();
     const isEnabled = noteContext?.hasNoteList();
     return <CustomNoteList note={note} isEnabled={!!isEnabled} notePath={notePath} ntxId={ntxId} {...props} />
 }
 
-export function SearchNoteList<T extends object>(props: Omit<NoteListProps<T>, "isEnabled">) {
+export function SearchNoteList<T extends object>(props: Omit<NoteListProps, "isEnabled">) {
     return <CustomNoteList {...props} isEnabled={true} />
 }
 
-function CustomNoteList<T extends object>({ note, isEnabled: shouldEnable, notePath, highlightedTokens, displayOnlyCollections, ntxId }: NoteListProps<T>) {
+function CustomNoteList<T extends object>({ note, isEnabled: shouldEnable, notePath, highlightedTokens, displayOnlyCollections, ntxId }: NoteListProps) {
     const widgetRef = useRef<HTMLDivElement>(null);
     const viewType = useNoteViewType(note);
     const noteIds = useNoteIds(note, viewType, ntxId);
@@ -104,6 +105,8 @@ function getComponentByViewType(viewType: ViewTypeOptions, props: ViewModeProps<
             return <TableView {...props} />
         case "board":
             return <BoardView {...props} />
+        case "presentation":
+            return <PresentationView {...props} />
     }
 }
 

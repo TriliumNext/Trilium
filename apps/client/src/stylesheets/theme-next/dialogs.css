@@ -29,7 +29,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-left: 8px;
+    margin-inline-start: 8px;
     border: 0;
     border-radius: 50%;
     padding: 0;
@@ -56,7 +56,7 @@
 }
 
 .modal .modal-header .help-button {
-    margin-right: 0;
+    margin-inline-end: 0;
     font-size: calc(var(--modal-control-button-size) * .75);
     font-family: unset;
     font-weight: bold;
@@ -141,7 +141,7 @@ div.tn-tool-dialog {
 
 /* Search box wrapper */
 .jump-to-note-dialog .input-group {
-    margin-right: 16px;
+    margin-inline-end: 16px;
 }
 
 .jump-to-note-dialog .input-group:hover {
@@ -197,8 +197,8 @@ div.tn-tool-dialog {
     border: unset;
     padding-top: var(--timeline-item-top-padding);
     padding-bottom: var(--timeline-item-bottom-padding);
-    padding-left: calc(var(--timeline-left-gap) + var(--timeline-right-gap));
-    padding-right: var(--timeline-left-gap);
+    padding-inline-start: calc(var(--timeline-left-gap) + var(--timeline-right-gap));
+    padding-inline-end: var(--timeline-left-gap);
     color: var(--active-item-text-color);
 }
 
@@ -259,7 +259,7 @@ div.tn-tool-dialog {
     position: absolute;
     content: "";
     top: var(--connector-top, 0);
-    left: calc(var(--timeline-left-gap) + ((var(--timeline-bullet-size) - var(--timeline-connector-size)) / 2));
+    inset-inline-start: calc(var(--timeline-left-gap) + ((var(--timeline-bullet-size) - var(--timeline-connector-size)) / 2));
     bottom: var(--connector-bottom, 0);
     width: var(--timeline-connector-size);
     border-radius: var(--connector-radius, 0) var(--connector-radius, 0) 0 0;
@@ -291,7 +291,7 @@ div.tn-tool-dialog {
     position: absolute;
     content: "";
     top: calc(var(--timeline-item-top-padding) + var(--timeline-bullet-vertical-pos));
-    left: var(--timeline-left-gap);
+    inset-inline-start: var(--timeline-left-gap);
     width: var(--timeline-bullet-size);
     height: var(--timeline-bullet-size);
     border-radius: 50%;
@@ -374,7 +374,7 @@ div.tn-tool-dialog {
 }
 
 .help-dialog .help-cards kbd:first-child {
-    margin-left: 0;
+    margin-inline-start: 0;
 }
 
 /* Inline code - used for Markdown samples */
@@ -392,7 +392,7 @@ div.tn-tool-dialog {
 }
 
 .delete-notes-list .note-path {
-    padding-left: 8px;
+    padding-inline-end: 8px;
 }
 
 /*
@@ -401,7 +401,7 @@ div.tn-tool-dialog {
 
 /* Labels */
 .attr-edit-table th {
-    padding-right: 12px;
+    padding-inline-end: 12px;
     font-weight: normal;
     white-space: nowrap;
 }
@@ -419,5 +419,5 @@ div.tn-tool-dialog {
 }
 
 .note-type-chooser-dialog div.note-type-dropdown .dropdown-item span.bx {
-    margin-right: .25em;
+    margin-inline-end: .25em;
 }

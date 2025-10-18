@@ -1,37 +1,38 @@
 <p>It is possible to provide a CSS file to be used regardless of the theme
   set by the user.</p>
-<table>
-  <thead>
-    <tr>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>
-        <img src="Custom app-wide CSS_image.png">
-      </td>
-      <td>Start by creating a new note and changing the note type to CSS</td>
-    </tr>
-    <tr>
-      <td>
-        <img src="2_Custom app-wide CSS_image.png">
-      </td>
-      <td>In the ribbon, press the “Owned Attributes” section and type <code>#appCss</code>.</td>
-    </tr>
-    <tr>
-      <td>
-        <img src="3_Custom app-wide CSS_image.png">
-      </td>
-      <td>Type the desired CSS.&nbsp;
-        <br>
-        <br>Generally it's a good idea to append <code>!important</code> for the styles
-        that are being changed, in order to prevent other</td>
-    </tr>
-  </tbody>
-</table>
-
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>&nbsp;</th>
+        <th>&nbsp;</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          <img src="Custom app-wide CSS_image.png">
+        </td>
+        <td>Start by creating a new note and changing the note type to CSS</td>
+      </tr>
+      <tr>
+        <td>
+          <img src="2_Custom app-wide CSS_image.png">
+        </td>
+        <td>In the ribbon, press the “Owned Attributes” section and type <code>#appCss</code>.</td>
+      </tr>
+      <tr>
+        <td>
+          <img src="3_Custom app-wide CSS_image.png">
+        </td>
+        <td>Type the desired CSS.&nbsp;&nbsp;
+          <br>
+          <br>Generally it's a good idea to append <code>!important</code> for the styles
+          that are being changed, in order to prevent other</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
 <h2>Seeing the changes</h2>
 <p>Adding a new <em>app CSS note</em> or modifying an existing one does not
   immediately apply changes. To see the changes, press Ctrl+Shift+R to refresh
@@ -53,9 +54,10 @@
   workspaces.</p>
 <p>To do so:</p>
 <ol>
-  <li>In the note with <code>#workspace</code>, add an inheritable attribute <code>#cssClass(inheritable)</code> with
+  <li data-list-item-id="eaca1b6777262e20c38dae5e2c2ef8496">In the note with <code>#workspace</code>, add an inheritable attribute <code>#cssClass(inheritable)</code> with
     a value that uniquely identifies the workspace (say <code>my-workspace</code>).</li>
-  <li>Anywhere in the note structure, create a CSS note with <code>#appCss</code>.</li>
+  <li
+  data-list-item-id="e01663cf2128c10a0cd0cab1bb27fd44d">Anywhere in the note structure, create a CSS note with <code>#appCss</code>.</li>
 </ol>
 <h4>Change the color of the icons in the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a></h4><pre><code class="language-text-x-trilium-auto">.fancytree-node.my-workspace.fancytree-custom-icon {
     color: #ff0000;
@@ -71,8 +73,8 @@
   width="641" height="630">
 </figure>
 <ol>
-  <li>Insert an image in any note and take the URL of the image.</li>
-  <li>Use the following CSS, adjusting the <code>background-image</code> and <code>width</code> and <code>height</code> to
+  <li data-list-item-id="e6e7ec9751bdc6f7846d10bf42c42c9b1">Insert an image in any note and take the URL of the image.</li>
+  <li data-list-item-id="edc7f77ed718593d91bda3b2983b81bed">Use the following CSS, adjusting the <code>background-image</code> and <code>width</code> and <code>height</code> to
     the desired values.</li>
 </ol><pre><code class="language-text-x-trilium-auto">.note-split.my-workspace .scrolling-container:after {
     position: fixed;
@@ -88,3 +90,9 @@
     opacity: 0.5;
     z-index: 0;
 }</code></pre>
+<h2>Limitations</h2>
+<p>Some parts of the application can't be styled directly via custom CSS
+  because they are rendered in an isolated mode (shadow DOM), more specifically:</p>
+<ul>
+  <li data-list-item-id="e3ce2c089fe536bc42856bb1b5edc8c8e">The slides in a&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/GTwFsgaA0lCt/_help_zP3PMqaG71Ct">Presentation View</a>.</li>
+</ul>

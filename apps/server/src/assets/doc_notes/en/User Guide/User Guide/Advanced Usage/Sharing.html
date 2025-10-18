@@ -234,6 +234,34 @@ class="image">
     This allows you to access note attributes or traverse the note tree using
     the <code>fetchNote()</code> API, which retrieves note data based on its
     ID.</p>
+  <h3>Adding custom HTML</h3>
+  <p>You can inject custom HTML snippets into specific locations of the shared
+    page using the <code>~shareHtml</code> relation. The HTML note should contain
+    the raw HTML content you want to inject, and you can control where it appears
+    by adding the <code>#shareHtmlLocation</code> label to the HTML snippet note
+    itself.</p>
+  <p>The <code>#shareHtmlLocation</code> label accepts values in the format <code>location:position</code>:</p>
+  <ul>
+    <li><strong>Locations</strong>: <code>head</code>, <code>body</code>, <code>content</code>
+    </li>
+    <li><strong>Positions</strong>: <code>start</code>, <code>end</code>
+    </li>
+  </ul>
+  <p>For example:</p>
+  <ul>
+    <li><code>#shareHtmlLocation=head:start</code> - Injects HTML at the beginning
+      of the <code>&lt;head&gt;</code> section</li>
+    <li><code>#shareHtmlLocation=head:end</code> - Injects HTML at the end of the <code>&lt;head&gt;</code> section
+      (default)</li>
+    <li><code>#shareHtmlLocation=body:start</code> - Injects HTML at the beginning
+      of the <code>&lt;body&gt;</code> section</li>
+    <li><code>#shareHtmlLocation=content:start</code> - Injects HTML at the beginning
+      of the content area</li>
+    <li><code>#shareHtmlLocation=content:end</code> - Injects HTML at the end of
+      the content area</li>
+  </ul>
+  <p>If no location is specified, the HTML will be injected at <code>content:end</code> by
+    default.</p>
   <p>Example:</p><pre><code class="language-application-javascript-env-backend">const currentNote = await fetchNote();
 const parentNote = await fetchNote(currentNote.parentNoteIds[0]);
 
@@ -343,6 +371,14 @@ for (const attr of parentNote.attributes) {
         <td><code>shareIndex</code>
         </td>
         <td>Note with this label will list all roots of shared notes.</td>
+      </tr>
+      <tr>
+        <td><code>shareHtmlLocation</code>
+        </td>
+        <td>defines where custom HTML injected via <code>~shareHtml</code> relation
+          should be placed. Applied to the HTML snippet note itself. Format: <code>location:position</code> where
+          location is <code>head</code>, <code>body</code>, or <code>content</code> and
+          position is <code>start</code> or <code>end</code>. Defaults to <code>content:end</code>.</td>
       </tr>
     </tbody>
   </table>

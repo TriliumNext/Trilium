@@ -1,0 +1,192 @@
+{
+    "get-started": {
+        "title": "Primii pași",
+        "desktop_title": "Descărcați aplicația desktop (v{{version}})",
+        "architecture": "Arhitectură:",
+        "older_releases": "Versiuni mai vechi",
+        "server_title": "Versiunea server, pentru acces pe mai multe dispozitive"
+    },
+    "hero_section": {
+        "title": "Organizați-vă gândurile. Construiți-vă propria bază de cunoștințe digitală.",
+        "subtitle": "Trilium este o aplicație open-source pentru notițe și pentru organizarea unei baze de cunoștințe personală. Se poate folosi local pe desktop sau se poate sincroniza cu un server găzduit de dvs. pentru a putea accesa notițele de oriunde.",
+        "get_started": "Primii pași",
+        "github": "GitHub",
+        "dockerhub": "Docker Hub",
+        "screenshot_alt": "Captură de ecran a aplicației de desktop Trilium Notes"
+    },
+    "organization_benefits": {
+        "title": "Funcții de organizare",
+        "note_structure_title": "Structura notițelor",
+        "note_structure_description": "Notițele pot fi aranjate ierarhic. Nu este nevoie de dosare, deoarece fiecare notiță poate conține sub-notițe. O singură notiță poate fi adăugată în mai multe locuri în ierarhie.",
+        "attributes_title": "Etichete și relații pentru notițe",
+        "attributes_description": "Folosiți relațiile dintre notițe sau adăugați etichete pentru o categorizare ușoară. Folosiți atribute promovate pentru a introduce informații structurate ce pot fi utilizate ulterior în tabele sau table Kanban.",
+        "hoisting_title": "Spații de lucru și focalizare",
+        "hoisting_description": "Separați cu ușurință notițele personale și de muncă prin gruparea lor într-un spațiu de lucru, ce focalizează arborele de notițe astfel încât afișează un anumit set de notițe."
+    },
+    "productivity_benefits": {
+        "title": "Productivitate și siguranță",
+        "revisions_title": "Revizii ale notițelor",
+        "revisions_content": "Notițele sunt salvate periodic în fundal, iar reviziile acestora pot fi utilizate pentru comparație sau pentru a anula modificări accidentale. Reviziile pot fi create și manual.",
+        "sync_title": "Sincronizare",
+        "sync_content": "Folosiți o instanță găzduită de dvs. sau în cloud pentru a putea sincroniza rapid notițele între mai multe dispozitive și pentru a putea să le accesați utilizând telefonul mobil (prin PWA).",
+        "protected_notes_title": "Notițe protejate",
+        "protected_notes_content": "Protejați informațiile personale prin criptarea acestora în spatele unei sesiuni protejate prin parolă.",
+        "jump_to_title": "Căutare și comenzi rapide",
+        "jump_to_content": "Navigați rapid printre notițe sau comenzi căutând după numele acestora, având căutare de tip fuzzy pentru a ignora greșeli de tastare sau diferențe minore.",
+        "search_title": "Căutare performantă",
+        "search_content": "Căutați în interiorul notițelor și reduceți numărul de rezultate prin filtrarea după notița părinte, sau după adâncime.",
+        "web_clipper_title": "Clipper web",
+        "web_clipper_content": "Preluați pagini web (sau capturi de ecran), care vor apărea direct în Trilium utilizând extensia de browser „Clipper web”."
+    },
+    "note_types": {
+        "text_title": "Notițe de tip text",
+        "text_description": "Aceste notițe sunt editate printr-un editor vizual (WYSIWYG), cu suport pentru tabele, imagini, expresii matematice și blocuri de cod cu evidențierea sintaxei. Formatați rapid textul folosind sintaxă similară cu Markdown sau folosind comenzi la tasta slash.",
+        "code_title": "Notițe de tip cod",
+        "code_description": "Stocați secvențe mari de cod sau script-uri utilizând un editor dedicat, cu evidențierea sintaxei pentru multe limbaje de programare și multiple teme de culori.",
+        "file_title": "Notițe de tip fișier",
+        "file_description": "Adăugați fișiere multimedia precum PDF-uri, imagini și video-uri cu previzualizare direct în aplicație.",
+        "canvas_title": "Schițe",
+        "canvas_description": "Aranjați forme geometrice, imagini și text pe o schiță infinită, utilizând aceeași tehnologie din spatele excalidraw.com. Ideală pentru diagrame, desene și planificare vizuală.",
+        "mermaid_title": "Diagrame Mermaid",
+        "mermaid_description": "Creați diagrame precum flowchart-uri, diagrame de secvență sau de clase, Gantt și multe altele, folosind sintaxa Mermaid.",
+        "mindmap_title": "Hartă mentală",
+        "mindmap_description": "Organizați-vă gândurile vizual sau organizați o sesiune de brainstorming.",
+        "others_list": "și altele: <0>hartă a notițelor</0>, <1>hartă a relațiilor</1>, <2>căutări salvate</2>, <3>randare a notițelor</3>, și <4>vizualizări web</4>."
+    },
+    "extensibility_benefits": {
+        "title": "Partajare și extensibilitate",
+        "import_export_title": "Import/export",
+        "import_export_description": "Interacționați rapid cu alte aplicații utilizând formatele Markdown, ENEX și OML.",
+        "share_title": "Publicați notițe pe Internet",
+        "share_description": "Dacă aveți o instanță de server, puteți să partajați pe Internet un set de notițe.",
+        "scripting_title": "Script-are avansată",
+        "scripting_description": "Construiți-vă propriile integrări cu Trilium utilizând widget-uri personalizate sau logică la nivel de server.",
+        "api_title": "API REST",
+        "api_description": "Interacționați cu Trilium programatic folosind API-ul REST integrat."
+    },
+    "collections": {
+        "calendar_title": "Calendar",
+        "calendar_description": "Organizați-vă evenimentele personale sau profesionale folosind un calendar, cu suport pentru evenimente pe toată ziua sau chiar pe mai multe zile. Vedeți evenimentele cu ușurință la nivel de săptămână, lună sau an. Interacțiune ușoară pentru a adăuga sau muta evenimente.",
+        "table_title": "Tabel",
+        "table_description": "Afișați și editați informații despre notițe într-o structură tabelară, cu multiple tipuri de coloane precum text, număr, bife, dată și timp, link-uri, culori și suport pentru relații. Opțional se poate afișa și structura ierarhică a notițelor în interiorul tabelului.",
+        "board_title": "Tabelă Kanban",
+        "board_description": "Organizați-vă sarcinile sau proiectele într-o tabelă Kanban cu o modalitate ușoară de a adăuga elemente și coloane noi și schimbarea stării acestora prin glisare cu mouse-ul.",
+        "geomap_title": "Hartă geografică",
+        "geomap_description": "Planificați-vă vacanțele sau marcați-vă punctele de interes direct pe o hartă geografică. Afișați traseele GPX înregistrate pentru a putea urmări itinerarii."
+    },
+    "faq": {
+        "title": "Întrebări frecvente",
+        "mobile_question": "Există o aplicație de mobil?",
+        "mobile_answer": "În momentul de față nu există o aplicație de mobil oficială. Totuși, dacă aveți o instanță de server o puteți accesa folosind un navigator web și o puteți instala ca un PWA. Pentru Android, există o aplicație neoficială denumită TriliumDroid care poate funcționa chiar și offline (similar cu aplicația de desktop).",
+        "database_question": "Unde sunt stocate datele?",
+        "database_answer": "Toate notițele sunt stocate într-o bază de date SQLite la nivelul unui dosar al aplicației. Motivul pentru care Trilium folosește o bază de date în locul de fișiere text este legat de performanță și deoarece unele funcții ar fi fost mult mai greu de replicat precum clone (aceeași notițe în mai multe locuri). Pentru a găsi folder-ul aplicației, mergeți în fereastra „Despre”.",
+        "server_question": "Am nevoie de un server să folosesc Trilium?",
+        "server_answer": "Nu, server-ul permite accesarea printr-un browser web și coordonează sincronizarea dacă aveți dispozitive multiple. Pentru început este suficient să descărcați aplicația de desktop și s-o folosiți.",
+        "scaling_question": "Cât de bine suportă aplicația un număr mare de notițe?",
+        "scaling_answer": "În funcție de modul de utilizare, aplicația ar trebui să suporte cel puțin 100.000 de notițe fără probleme. De avut în vedere faptul că procesul de sincronizare poate eșua dacă se încarcă prea multe fișiere mari (ex. 1 GB per fișier) deoarece Trilium este prevăzut mai mult ca o aplicație de bază de cunoștințe decât de stocare a fișierelor (precum NextCloud, spre exemplu).",
+        "network_share_question": "Pot partaja baza mea de date pe rețea?",
+        "network_share_answer": "Nu, nu este o idee bună să partajați o bază de date SQLite pe rețea. Deși uneori poate funcționa, sunt șanse mari ca baza de date să se corupă din cauza sistemului de blocare al fișierului la nivel de rețea.",
+        "security_question": "Cum sunt datele mele protejate?",
+        "security_answer": "În mod implicit, notițele nu sunt criptate și pot fi citite direct din baza de date. Odată ce o notiță este marcată drept protejată, conținutul este criptat folosind AES-128-CBC."
+    },
+    "final_cta": {
+        "title": "Gata de a folosi Trilium Notes?",
+        "description": "Construiți-vă baza de cunoștințe personală cu funcții puternice și intimitate maximă.",
+        "get_started": "Începe"
+    },
+    "components": {
+        "link_learn_more": "Mai multe detalii...",
+        "list_with_screenshot_alt": "Captură de ecran a funcției selectate"
+    },
+    "download_now": {
+        "text": "Descărcați acum ",
+        "platform_big": "v{{version}} pentru {{platform}}",
+        "platform_small": "pentru {{platform}}",
+        "linux_big": "v{{version}} pentru Linux",
+        "linux_small": "pentru Linux",
+        "more_platforms": "Mai multe platforme și instalarea server-ului"
+    },
+    "footer": {
+        "copyright_and_the": " și ",
+        "copyright_community": "comunitatea"
+    },
+    "support_us": {
+        "title": "Sprijină-ne",
+        "financial_donations_title": "Donații financiare",
+        "financial_donations_description": "Trilium este construit și menținut prin <Link>sute de ore de muncă</Link>. Sprijinul dvs. ne ajută să-l menținem open-source, să îmbunătățim funcțiile și să acoperim costuri precum găzduirea.",
+        "financial_donations_cta": "Considerați sprijinirea dezvoltatorului principal al aplicației (<Link>eliandoran</Link>) prin:",
+        "github_sponsors": "Sponsori GitHub",
+        "paypal": "PayPal",
+        "buy_me_a_coffee": "Buy Me A Coffee"
+    },
+    "contribute": {
+        "title": "Alte modalități de a contribui",
+        "way_translate": "Traduceți aplicația într-o limbă străină prin <Link>Weblate</Link>.",
+        "way_community": "Interacționați cu comunitatea pe <Discussions>Discuții GitHub</Discussions> sau pe <Matrix>Matrix</Matrix>.",
+        "way_reports": "Raportați bug-uri prin <Link>GitHub Issues</Link>.",
+        "way_document": "Îmbunătățiți documentația prin a ne informa de lacune în documentație sau prin a contribui ghiduri, întrebări frecvente și tutoriale.",
+        "way_market": "Informați-vă prietenii, colegii despre Trilium Notes sau prin blog-uri și social media."
+    },
+    "404": {
+        "title": "404: Nu s-a găsit pagina",
+        "description": "Pagina pe care ați căutat-o nu a putut fi găsită. Posibil să fi fost ștearsă sau URL-ul să fie incorect."
+    },
+    "download_helper_desktop_windows": {
+        "title_x64": "Windows 64 biți",
+        "title_arm64": "Windows pe ARM",
+        "description_x64": "Compatibil cu dispozitive Intel sau AMD ce rulează Windows 10 și 11.",
+        "description_arm64": "Compatibil cu dispozitive ARM (ex. cu Qualcomm Snapdragon).",
+        "quick_start": "Instalare prin Winget:",
+        "download_exe": "Descarcă Installer (.exe)",
+        "download_zip": "Portabil (.zip)",
+        "download_scoop": "Scoop"
+    },
+    "download_helper_desktop_linux": {
+        "title_x64": "Linux 64 biți",
+        "title_arm64": "Linux pe ARM",
+        "description_x64": "Pentru majoritatea distribuțiilor, compatibilă cu arhitectura x86_64.",
+        "description_arm64": "Pentru distribuțiile bazate pe ARM, compatibilă cu arhitectura aarch64.",
+        "quick_start": "Selectați un format de împachetare potrivit pentru distribuția dvs.:",
+        "download_deb": ".deb",
+        "download_zip": "Portabil (.zip)",
+        "download_rpm": ".rpm",
+        "download_flatpak": ".flatpak",
+        "download_nixpkgs": "nixpkgs",
+        "download_aur": "AUR"
+    },
+    "download_helper_desktop_macos": {
+        "title_x64": "macOS pentru Intel",
+        "title_arm64": "macOS pentru Apple Silicon",
+        "description_x64": "Pentru Mac-uri bazate pe Intel ce rulează macOS Big Sur sau mai nou.",
+        "description_arm64": "Pentru Mac-uri bazate pe Apple Silicon, precum cele cu chip-uri M1, M2.",
+        "quick_start": "Instalați prin Homebrew:",
+        "download_dmg": "Descarcă instalatorul (.dmg)",
+        "download_homebrew_cask": "Homebrew Cask",
+        "download_zip": "Portabil (.zip)"
+    },
+    "download_helper_server_docker": {
+        "title": "Găzduit în regim propriu prin Docker",
+        "description": "Lansați rapid o instanță pe Windows, Linux sau macOS folosind un container Docker.",
+        "download_dockerhub": "Docker Hub",
+        "download_ghcr": "ghcr.io"
+    },
+    "download_helper_server_linux": {
+        "title": "Găzduit în regim propriu pe Linux",
+        "description": "Rulați Trilium Notes pe propriul server sau VPS, compatibil cu majoritatea distribuțiilor.",
+        "download_tar_x64": "x64 (.tar.xz)",
+        "download_nixos": "Modul NixOS",
+        "download_tar_arm64": "ARM (.tar.xz)"
+    },
+    "download_helper_server_hosted": {
+        "title": "Găzduire contra cost",
+        "description": "Trilium Notes găzduit pe PikaPods, un serviciu plătit pentru acces facil. Nu este direct afiliat cu echipa Trilium.",
+        "download_pikapod": "Folosește PikaPods",
+        "download_triliumcc": "Alternativ, trilium.cc"
+    },
+    "social_buttons": {
+        "github": "GitHub",
+        "github_discussions": "GitHub Discussions",
+        "matrix": "Matrix",
+        "reddit": "Reddit"
+    }
+}

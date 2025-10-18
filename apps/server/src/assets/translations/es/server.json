@@ -3,7 +3,7 @@
     "back-in-note-history": "Navegar a la nota previa en el historial",
     "forward-in-note-history": "Navegar a la nota siguiente en el historial",
     "open-jump-to-note-dialog": "Abrir cuadro de diálogo \"Saltar a nota\"",
-    "scroll-to-active-note": "Desplazarse a la nota activa en el árbol de notas",
+    "scroll-to-active-note": "Desplazar el árbol de notas a la nota activa",
     "quick-search": "Activar barra de búsqueda rápida",
     "search-in-subtree": "Buscar notas en el subárbol de la nota activa",
     "expand-subtree": "Expandir el subárbol de la nota actual",
@@ -380,8 +380,8 @@
     "reload-frontend-app": "Recargar aplicación del cliente",
     "run-active-note": "Ejecutar nota activa",
     "render-active-note": "Generar nota activa",
-    "back-in-note-history": "Anterior en el historial de notas",
-    "forward-in-note-history": "Posterior en el historial de notas",
+    "back-in-note-history": "Atrás en el historial de notas",
+    "forward-in-note-history": "Avanzar en el historial de notas",
     "cut-notes-to-clipboard": "Cortar notas al portapapeles",
     "select-all-notes-in-parent": "Seleccionar todas las notas en padre",
     "show-backend-log": "Mostrar registro del servidor",
@@ -423,7 +423,11 @@
     "built-in-templates": "Plantillas predefinidas",
     "board_status_todo": "Por hacer",
     "board_status_done": "Hecho",
-    "board": "Tablero"
+    "board": "Tablero",
+    "presentation": "Presentación",
+    "presentation_slide": "Slide de presentación",
+    "presentation_slide_first": "Primer slide",
+    "presentation_slide_second": "Segundo slide"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Base de datos no inicializada, por favor, siga las instrucciones en pantalla.",

@@ -4,7 +4,10 @@
     "title": "Về Trilium Notes",
     "app_version": "Phiên bản:",
     "db_version": "Phiên bản DB:",
-    "sync_version": "Phiên bản liên kết:"
+    "sync_version": "Phiên bản liên kết:",
+    "build_date": "Ngày build:",
+    "build_revision": "Xây dựng bản sửa đổi:",
+    "data_directory": "Đường dẫn dữ liệu:"
   },
   "add_link": {
     "add_link": "Thêm liên kết",
@@ -34,7 +37,11 @@
   },
   "toast": {
     "critical-error": {
-      "title": "Lỗi nghiêm trọng"
+      "title": "Lỗi nghiêm trọng",
+      "message": "Đã xảy ra lỗi nghiêm trọng ngăn ứng dụng client khởi động\n\n{{message}}\n\nĐiều này có khả năng bị gây ra bởi một script hoạt động không như mong đợi. Hãy thử khởi động ứng dụng ở chế độ an toàn và giải quyết vấn đề."
+    },
+    "widget-error": {
+      "title": "Khởi tạo widget thất bại"
     }
   },
   "import": {

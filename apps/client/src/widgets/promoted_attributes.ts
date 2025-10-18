@@ -45,7 +45,7 @@ const TPL = /*html*/`
     }
 
     .promoted-attribute-cell div.input-group {
-        margin-left: 10px;
+        margin-inline-start: 10px;
         display: flex;
         min-height: 40px;
     }
@@ -95,8 +95,8 @@ const TPL = /*html*/`
         content: "";
         position: absolute;
         top: 10px;
-        left: 0px;
-        right: 0;
+        inset-inline-start: 0px;
+        inset-inline-end: 0;
         height: 2px;
         background: rgba(0, 0, 0, 0.5);
         transform: rotate(45deg);

@@ -3,16 +3,8 @@ import linkContextMenuService from "../menus/link_context_menu.js";
 import appContext, { type NoteCommandData } from "../components/app_context.js";
 import froca from "./froca.js";
 import utils from "./utils.js";
-
-// Be consistent with `allowedSchemes` in `src\services\html_sanitizer.ts`
-// TODO: Deduplicate with server once we can.
-export const ALLOWED_PROTOCOLS = [
-    'http', 'https', 'ftp', 'ftps', 'mailto', 'data', 'evernote', 'file', 'facetime', 'gemini', 'git',
-    'gopher', 'imap', 'irc', 'irc6', 'jabber', 'jar', 'lastfm', 'ldap', 'ldaps', 'magnet', 'message',
-    'mumble', 'nfs', 'onenote', 'pop', 'rmi', 's3', 'sftp', 'skype', 'sms', 'spotify', 'steam', 'svn', 'udp',
-    'view-source', 'vlc', 'vnc', 'ws', 'wss', 'xmpp', 'jdbc', 'slack', 'tel', 'smb', 'zotero', 'geo',
-    'mid'
-];
+import { ALLOWED_PROTOCOLS } from "@triliumnext/commons";
+import { openInCurrentNoteContext } from "../components/note_context.js";
 
 function getNotePathFromUrl(url: string) {
     const notePathMatch = /#(root[A-Za-z0-9_/]*)$/.exec(url);
@@ -325,21 +317,7 @@ function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent
                 viewScope
             });
         } else if (isLeftClick) {
-            const ntxId = $(evt?.target as any)
-                .closest("[data-ntx-id]")
-                .attr("data-ntx-id");
-
-            const noteContext = ntxId ? appContext.tabManager.getNoteContextById(ntxId) : appContext.tabManager.getActiveContext();
-
-            if (noteContext) {
-                noteContext.setNote(notePath, { viewScope }).then(() => {
-                    if (noteContext !== appContext.tabManager.getActiveContext()) {
-                        appContext.tabManager.activateNoteContext(noteContext.ntxId);
-                    }
-                });
-            } else {
-                appContext.tabManager.openContextWithNote(notePath, { viewScope, activate: true });
-            }
+            openInCurrentNoteContext(evt, notePath, viewScope);
         }
     } else if (hrefLink) {
         const withinEditLink = $link?.hasClass("ck-link-actions__preview");

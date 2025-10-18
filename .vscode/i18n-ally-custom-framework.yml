@@ -14,6 +14,7 @@ usageMatchRegex:
   # the `{key}` will be placed by a proper keypath matching regex,
   # you can ignore it and use your own matching rules as well
   - "[^\\w\\d]t\\(['\"`]({key})['\"`]"
+  - <Trans\s*i18nKey="({key})"[^>]*>
 
 # A RegEx to set a custom scope range. This scope will be used as a prefix when detecting keys
 # and works like how the i18next framework identifies the namespace scope from the

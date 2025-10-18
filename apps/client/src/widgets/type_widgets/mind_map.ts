@@ -29,7 +29,7 @@ const TPL = /*html*/`
         .map-container .node-menu {
             position: absolute;
             top: 60px;
-            right: 20px;
+            inset-inline-end: 20px;
             bottom: 80px;
             overflow: auto;
             background: var(--panel-bgcolor);

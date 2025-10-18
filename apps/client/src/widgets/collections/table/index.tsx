@@ -54,7 +54,7 @@ export default function TableView({ note, noteIds, notePath, viewConfig, saveCon
 
     return (
         <div className="table-view">
-            {persistenceProps &&  (
+            {rowData !== undefined && persistenceProps &&  (
                 <>
                     <Tabulator
                         tabulatorRef={tabulatorRef}

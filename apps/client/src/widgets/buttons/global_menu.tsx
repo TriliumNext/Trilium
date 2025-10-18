@@ -3,7 +3,7 @@ import "./global_menu.css";
 import { useStaticTooltip, useStaticTooltipWithKeyboardShortcut, useTriliumOption, useTriliumOptionBool, useTriliumOptionInt } from "../react/hooks";
 import { useContext, useEffect, useRef, useState } from "preact/hooks";
 import { t } from "../../services/i18n";
-import { FormDropdownDivider, FormDropdownSubmenu, FormListItem } from "../react/FormList";
+import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem } from "../react/FormList";
 import { CommandNames } from "../../components/app_context";
 import KeyboardShortcut from "../react/KeyboardShortcut";
 import { KeyboardActionNames } from "@triliumnext/commons";
@@ -26,7 +26,7 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
     const isVerticalLayout = !isHorizontalLayout;
     const parentComponent = useContext(ParentComponent);
     const { isUpdateAvailable, latestVersion } = useTriliumUpdateStatus();
-
+    
     return (
         <Dropdown
             className="global-menu"
@@ -34,7 +34,7 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
             text={<>
                 {isVerticalLayout && <VerticalLayoutIcon />}
                 {isUpdateAvailable && <div class="global-menu-button-update-available">
-                    <span className="bx bx-sync global-menu-button-update-available-button" title={t("update_available.update_available")}></span>
+                    <span className="bx bxs-down-arrow-alt global-menu-button-update-available-button" title={t("update_available.update_available")}></span>
                 </div>}
             </>}
             noDropdownListStyle
@@ -58,7 +58,14 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
             <KeyboardActionMenuItem command="showHelp" icon="bx bx-help-circle" text={t("global_menu.show_help")} />
             <KeyboardActionMenuItem command="showCheatsheet" icon="bx bxs-keyboard" text={t("global_menu.show-cheatsheet")} />
             <MenuItem command="openAboutDialog" icon="bx bx-info-circle" text={t("global_menu.about")} />
-            {isUpdateAvailable && <MenuItem command={() => window.open("https://github.com/TriliumNext/Trilium/releases/latest")} icon="bx bx-sync" text={`Version ${latestVersion} is available, click to download.`} /> }
+            
+            {isUpdateAvailable &&  <>
+                <FormListHeader text={t("global_menu.new-version-available")} />
+                <MenuItem command={() => window.open("https://github.com/TriliumNext/Trilium/releases/latest")}
+                          icon="bx bx-download"
+                          text={t("global_menu.download-update", {latestVersion})} />
+            </>}
+            
             {!isElectron() && <BrowserOnlyOptions />}
         </Dropdown>
     )

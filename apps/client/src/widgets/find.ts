@@ -32,7 +32,7 @@ const TPL = /*html*/`
         }
 
         .find-widget-box > *, .replace-widget-box > *{
-            margin-right: 15px;
+            margin-inline-end: 15px;
         }
 
         .find-widget-box, .replace-widget-box {
@@ -167,7 +167,7 @@ export default class FindWidget extends NoteContextAwareWidget {
             if (isIMEComposing(e.originalEvent as KeyboardEvent)) {
                 return;
             }
-            
+
             if ((e.metaKey || e.ctrlKey) && (e.key === "F" || e.key === "f")) {
                 // If ctrl+f is pressed when the findbox is shown, select the
                 // whole input to find

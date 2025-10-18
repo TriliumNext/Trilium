@@ -423,7 +423,12 @@
     "board_note_third": "第三个笔记",
     "board_status_todo": "待办",
     "board_status_progress": "进行中",
-    "board_status_done": "已完成"
+    "board_status_done": "已完成",
+    "presentation": "演示",
+    "presentation_slide": "演示幻灯片",
+    "presentation_slide_first": "第一张幻灯片",
+    "presentation_slide_second": "第二张幻灯片",
+    "background": "背景"
   },
   "sql_init": {
     "db_not_initialized_desktop": "数据库尚未初始化，请依照屏幕提示操作。",

@@ -9,13 +9,13 @@ import { changeLanguage } from "./i18n.js";
 import { deferred } from "./utils.js";
 
 describe("Hidden Subtree", () => {
-    describe("Launcher movement persistence", () => {
-        beforeAll(async () => {
-            sql_init.initializeDb();
-            await sql_init.dbReady;
-            cls.init(() => hiddenSubtreeService.checkHiddenSubtree());
-        });
+    beforeAll(async () => {
+        sql_init.initializeDb();
+        await sql_init.dbReady;
+        cls.init(() => hiddenSubtreeService.checkHiddenSubtree());
+    });
 
+    describe("Launcher movement persistence", () => {
         it("should persist launcher movement between visible and available after integrity check", () => {
             // Move backend log to visible launchers.
             const backendLogBranch = becca.getBranchFromChildAndParent("_lbBackendLog", "_lbAvailableLaunchers");
@@ -117,6 +117,16 @@ describe("Hidden Subtree", () => {
                 done.resolve();
             })();
             await done;
+        });
+    });
+
+    describe("Hidden subtree", () => {
+        it("cleans up exclude from note map at the root", async () => {
+            const hiddenSubtree = becca.getNoteOrThrow("_hidden");
+            cls.init(() => hiddenSubtree.addLabel("excludeFromNoteMap"));
+            expect(hiddenSubtree.hasLabel("excludeFromNoteMap")).toBeTruthy();
+            cls.init(() => hiddenSubtreeService.checkHiddenSubtree());
+            expect(hiddenSubtree.hasLabel("excludeFromNoteMap")).toBeFalsy();
         });
     });
 });

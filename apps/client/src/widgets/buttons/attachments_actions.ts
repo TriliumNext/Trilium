@@ -28,7 +28,7 @@ const TPL = /*html*/`
         position: relative;
         top: 3px;
         font-size: 120%;
-        margin-right: 5px;
+        margin-inline-end: 5px;
     }
 
     .attachment-actions .dropdown-item[disabled], .attachment-actions .dropdown-item[disabled]:hover {

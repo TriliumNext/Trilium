@@ -117,9 +117,9 @@
     content: "";
     position: absolute;
     top: var(--negative-padding);
-    right: var(--negative-padding);
+    inset-inline-end: var(--negative-padding);
     bottom: var(--negative-padding);
-    left: var(--negative-padding);
+    inset-inline-start: var(--negative-padding);
     border-radius: var(--dropdown-border-radius);
     backdrop-filter: var(--dropdown-backdrop-filter);
     z-index: -1;
@@ -210,7 +210,7 @@
 /* Separator */
 :root .ck .ck-list__separator {
     margin: .5em 0;
-    margin-left: calc(0px - var(--ck-editor-popup-padding));
+    margin-inline-start: calc(0px - var(--ck-editor-popup-padding));
     width: calc(100% + (var(--ck-editor-popup-padding) * 2));
     background: var(--menu-item-delimiter-color);
 }
@@ -233,8 +233,8 @@
     position: absolute;
     top: 0;
     bottom: var(--negative-padding);
-    left: var(--negative-padding);
-    right: var(--negative-padding);
+    inset-inline-start: var(--negative-padding);
+    inset-inline-end: var(--negative-padding);
     border-top: 1px solid var(--ck-editor-popup-border-color);
     background: var(--menu-section-background-color);
 }
@@ -255,7 +255,7 @@
 
 :root .ck.ck-toolbar .ck.ck-toolbar__separator {
     background: transparent;
-    border-left: 1px solid var(--ck-color-toolbar-border);
+    border-inline-start: 1px solid var(--ck-color-toolbar-border);
 }
 
 /* The last separator of the toolbar */
@@ -354,7 +354,8 @@
     align-items: center;
     width: 100%;
     margin: 4px;
-    padding-right: 2em;
+    background: color-mix(in srgb, var(--accent) 15%, var(--main-background-color));
+    padding-inline-end: 2em;
     border: 1px solid var(--accent);
     border-radius: 6px;
 }
@@ -492,7 +493,7 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
     /* Move the label above the text box regardless of the text box state */
     transform: translate(0, calc(-.2em - var(--ck-input-label-height))) !important;
     
-    padding-left: 0 !important;
+    padding-inline-start: 0 !important;
     background: transparent;
     font-size: .85em;
     font-weight: 600;
@@ -556,7 +557,7 @@ pre button.copy-button.icon-action {
 }
 
 :root pre:has(> button.copy-button) {
-    padding-right: calc(var(--icon-button-size) + (var(--copy-button-margin-size) * 2));
+    padding-inline-end: calc(var(--icon-button-size) + (var(--copy-button-margin-size) * 2));
 }
 
 html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
@@ -615,12 +616,12 @@ html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
 
 .ck-content blockquote:before {
     content: "“";
-    left: 0.2em;
+    inset-inline-start: 0.2em;
 }
 
 .ck-content blockquote:after {
     content: "”";
-    right: 0.35em;
+    inset-inline-end: 0.35em;
 }
 
 .ck-content h2,

@@ -1,0 +1,192 @@
+{
+    "get-started": {
+        "title": "上手指南",
+        "desktop_title": "下載桌面應用程式 (v{{version}})",
+        "architecture": "架構：",
+        "older_releases": "查看舊版本",
+        "server_title": "設定伺服器以供多台裝置存取"
+    },
+    "hero_section": {
+        "title": "整理您的思緒。建立您的個人知識庫。",
+        "subtitle": "Trilium 是一款開源解決方案，專為筆記記錄與個人知識庫管理而生。您可選擇在桌面端本地使用，或與自架伺服器同步，讓筆記隨行無阻。",
+        "get_started": "上手指南",
+        "github": "GitHub",
+        "dockerhub": "Docker Hub",
+        "screenshot_alt": "Trilium Notes 桌面應用程式的螢幕截圖"
+    },
+    "organization_benefits": {
+        "title": "組織",
+        "note_structure_title": "筆記結構",
+        "note_structure_description": "筆記可依層級排列。由於每則筆記皆可包含子筆記，故無需使用資料夾。單一筆記可在層級結構中的多個位置添加。",
+        "attributes_title": "筆記標籤及關聯",
+        "attributes_description": "運用筆記間的關聯或添加標籤以利分類。使用提升屬性輸入結構化資訊，此類資訊可用於表格與看板中。",
+        "hoisting_title": "工作區及聚焦",
+        "hoisting_description": "輕鬆將個人筆記與工作筆記分開管理，只需將它們歸類至特定工作區，該工作區會聚焦顯示筆記樹中的特定筆記群組。"
+    },
+    "productivity_benefits": {
+        "title": "生產力及安全性",
+        "revisions_title": "筆記歷史版本",
+        "revisions_content": "筆記會定期在背景自動儲存，您可透過版本記錄功能檢視修改歷程或撤銷意外變更。版本記錄亦可依需求手動建立。",
+        "sync_title": "同步",
+        "sync_content": "使用自託管或雲端實例，輕鬆在多台裝置間同步筆記，並透過 PWA 從手機存取。",
+        "protected_notes_title": "受保護的筆記",
+        "protected_notes_content": "透過加密筆記並將其鎖定在密碼保護的工作階段中，以保護敏感的個人資訊。",
+        "jump_to_title": "快速搜尋及命令",
+        "jump_to_content": "透過搜尋標題快速跳轉至各層級的筆記或介面指令，並支援模糊匹配以容許拼寫錯誤或細微差異。",
+        "search_title": "強大的搜尋功能",
+        "search_content": "或在筆記內搜尋文字，並透過篩選父筆記或層級深度來縮小搜尋範圍。",
+        "web_clipper_title": "網頁剪取器",
+        "web_clipper_content": "使用網頁剪取器瀏覽器擴充功能，直接擷取網頁（或截圖）並將其置入 Trilium。"
+    },
+    "note_types": {
+        "text_title": "文字筆記",
+        "text_description": "筆記採用所見即所得（WYSIWYG）編輯器進行編輯，支援表格、圖片、數學公式及帶有語法高亮的程式碼區塊。您可透過類 Markdown 語法或斜線指令快速格式化文字。",
+        "code_title": "程式碼筆記",
+        "code_description": "大型原始碼或腳本樣本採用專用編輯器，支援多種程式語言的語法高亮顯示，並提供多種色彩主題。",
+        "file_title": "檔案筆記",
+        "file_description": "嵌入多媒體檔案（例如 PDF、圖片、影片），並提供應用程式內預覽功能。",
+        "canvas_title": "畫布",
+        "canvas_description": "在無限畫布上排列圖形、圖像與文字，採用與 excalidraw.com 相同的技術。適用於繪製圖表、草圖與視覺化規劃。",
+        "mermaid_title": "美人魚圖",
+        "mermaid_description": "使用 Mermaid 語法繪製流程圖、類別圖與序列圖、甘特圖等多種圖表。",
+        "mindmap_title": "心智圖",
+        "mindmap_description": "以視覺方式整理思緒，或進行腦力激盪。",
+        "others_list": "及其他項目：<0>筆記地圖</0>、<1>關聯地圖</1>、<2>儲存搜尋</2>、<3>渲染筆記</3>，以及<4>網頁檢視</4>。"
+    },
+    "extensibility_benefits": {
+        "title": "分享及擴展性",
+        "import_export_title": "匯入/匯出",
+        "import_export_description": "輕鬆透過 Markdown、ENEX、OML 格式與其他應用程式互動。",
+        "share_title": "在網頁上分享筆記",
+        "share_description": "若您擁有伺服器，便可藉此與他人共享筆記的子集。",
+        "scripting_title": "進階腳本編寫",
+        "scripting_description": "在 Trilium 中透過自訂小工具或伺服器端邏輯，打造專屬整合方案。",
+        "api_title": "REST API",
+        "api_description": "透過其內建的 REST API 以程式化方式與 Trilium 進行互動。"
+    },
+    "collections": {
+        "calendar_title": "日曆",
+        "calendar_description": "使用行事曆規劃個人或專業活動，支援全天及多日活動。透過週、月、年檢視模式，一覽所有活動。輕鬆互動即可新增或拖曳活動。",
+        "table_title": "表格",
+        "table_description": "以表格結構顯示並編輯筆記資訊，支援多種欄位類型，包括文字、數字、核取方塊、日期與時間、連結及顏色，並具備關聯性功能。可選擇性地在表格內以樹狀層級結構顯示筆記內容。",
+        "board_title": "看板",
+        "board_description": "將您的任務或專案狀態整理成看板，輕鬆建立新項目與欄位，並透過在看板上拖曳即可簡單變更狀態。",
+        "geomap_title": "地理地圖",
+        "geomap_description": "使用可自訂的標記，直接在地圖上規劃您的假期行程或標記感興趣的地點。顯示已記錄的GPX軌跡，以便追蹤行程路線。"
+    },
+    "faq": {
+        "title": "常見問題",
+        "mobile_question": "是否有行動應用程式？",
+        "mobile_answer": "目前尚無官方行動應用程式。不過，若您擁有伺服器實例，可透過網頁瀏覽器存取，甚至能將其安裝為進程式網路應用程式（PWA）。至於 Android系統，則有款名為 TriliumDroid 的非官方應用程式，其功能與桌面端客戶端相同，甚至支援離線運作。",
+        "database_question": "資料儲存在哪裡？",
+        "database_answer": "所有筆記都將儲存於應用程式資料夾內的 SQLite 資料庫中。Trilium 採用資料庫而非純文字檔案的考量，在於效能表現，以及某些功能（例如複製筆記——在樹狀結構中多處出現相同筆記）若以純文字檔案實現將困難得多。若需尋找應用程式資料夾位置，請直接開啟「關於」視窗即可。",
+        "server_question": "使用 Trilium 是否需要伺服器？",
+        "server_answer": "不，伺服器允許透過網頁瀏覽器存取，並在您擁有多台裝置時管理同步作業。若無多台裝置同步需求，只需下載桌面應用程式並啟動即可。",
+        "scaling_question": "應用程式在筆記數量龐大時表現如何？",
+        "scaling_answer": "根據使用情境，本應用程式應能無障礙處理至少十萬筆筆記。請注意，若上傳大量大型檔案（單一檔案達 1 GB），同步過程可能發生失敗，因 Trilium 本質上更偏向知識庫應用程式，而非檔案儲存服務（例如 NextCloud）。",
+        "network_share_question": "我能否透過網路磁碟機共享我的資料庫？",
+        "network_share_answer": "不，通常不建議透過網路磁碟機共享 SQLite 資料庫。雖然有時可能運作正常，但由於網路環境中檔案鎖定機制不完善，資料庫仍存在損毀的風險。",
+        "security_question": "我的資料如何受到保護？",
+        "security_answer": "預設情況下，筆記不會進行加密，可直接從資料庫讀取。一旦將筆記標記為加密狀態，系統便會使用 AES-128-CBC 演算法對該筆記進行加密。"
+    },
+    "final_cta": {
+        "title": "準備好開始使用 Trilium Notes 了嗎？",
+        "description": "運用強大功能與完整隱私保護，建立您的個人知識庫。",
+        "get_started": "上手指南"
+    },
+    "components": {
+        "link_learn_more": "了解更多…",
+        "list_with_screenshot_alt": "已選擇功能的螢幕截圖"
+    },
+    "download_now": {
+        "text": "馬上下載 ",
+        "platform_big": "v{{version}} 適用於 {{platform}}",
+        "platform_small": "適用於 {{platform}}",
+        "linux_big": "v{{version}} 適用於 Linux",
+        "linux_small": "適用於 Linux",
+        "more_platforms": "更多平台與伺服器設定"
+    },
+    "footer": {
+        "copyright_and_the": " 以及 ",
+        "copyright_community": "社群"
+    },
+    "social_buttons": {
+        "github": "GitHub",
+        "github_discussions": "GitHub Discussions",
+        "matrix": "Matrix",
+        "reddit": "Reddit"
+    },
+    "support_us": {
+        "title": "支持我們",
+        "financial_donations_title": "財務捐贈",
+        "financial_donations_description": "Trilium 的開發與維護耗費了 <Link>數百小時的工作</Link>。您的支持能確保其開源性質、提升功能品質，並支付伺服器託管等相關成本。",
+        "financial_donations_cta": "請考慮透過以下方式支持本應用程式的主要開發者（<Link>eliandoran</Link>）：",
+        "github_sponsors": "GitHub Sponsors",
+        "paypal": "PayPal",
+        "buy_me_a_coffee": "Buy Me A Coffee"
+    },
+    "contribute": {
+        "title": "其他貢獻方式",
+        "way_translate": "透過 <Link>Weblate</Link> 將應用程式翻譯成您的母語。",
+        "way_community": "在 <Discussions>GitHub Discussions</Discussions> 或 <Matrix>Matrix</Matrix> 上與社群互動。",
+        "way_reports": "透過 <Link>GitHub issues</Link> 回報錯誤。",
+        "way_document": "告訴我們文件中的缺漏之處，或貢獻指南、常見問題解答或教學內容，協助完善文件。",
+        "way_market": "廣為宣傳：將 Trilium Notes 分享給朋友，或發佈於部落格與社群媒體。"
+    },
+    "404": {
+        "title": "404：找不到此頁面",
+        "description": "您所尋找的頁面無法找到。可能是該頁面已被刪除，或是網址有誤。"
+    },
+    "download_helper_desktop_windows": {
+        "title_x64": "Windows 64 位元",
+        "title_arm64": "Windows on ARM",
+        "description_x64": "相容於運行 Windows 10 及 11 的 Intel 或 AMD 裝置。",
+        "description_arm64": "相容於 ARM 裝置（例如搭載高通驍龍處理器的裝置）。",
+        "quick_start": "透過 Winget 安裝：",
+        "download_exe": "下載安裝程式 (.exe)",
+        "download_zip": "免安裝版 (.zip)",
+        "download_scoop": "Scoop"
+    },
+    "download_helper_desktop_linux": {
+        "title_x64": "Linux 64 位元",
+        "title_arm64": "Linux on ARM",
+        "description_x64": "適用於大多數 Linux 發行版，相容於 x86_64 架構。",
+        "description_arm64": "適用於基於 ARM 架構的 Linux 發行版，相容於 aarch64 架構。",
+        "quick_start": "請根據您的發行版選擇適當的套件格式：",
+        "download_deb": ".deb",
+        "download_rpm": ".rpm",
+        "download_flatpak": ".flatpak",
+        "download_zip": "免安裝版 (.zip)",
+        "download_nixpkgs": "nixpkgs",
+        "download_aur": "AUR"
+    },
+    "download_helper_desktop_macos": {
+        "title_x64": "macOS 適用於 Intel",
+        "title_arm64": "macOS 適用於 Apple Silicon",
+        "description_x64": "適用於搭載 Intel 處理器的 Mac，並運行 macOS Big Sur 或更新版本。",
+        "description_arm64": "適用於搭載 Apple Silicon 的 Mac，例如配備 M1 和 M2 晶片的機型。",
+        "quick_start": "透過 Homebrew 安裝：",
+        "download_dmg": "下載安裝程式 (.dmg)",
+        "download_homebrew_cask": "Homebrew Cask",
+        "download_zip": "免安裝版 (.zip)"
+    },
+    "download_helper_server_docker": {
+        "title": "使用 Docker 自行託管",
+        "description": "輕鬆透過 Docker 容器在 Windows、Linux 或 macOS 上部署。",
+        "download_dockerhub": "Docker Hub",
+        "download_ghcr": "ghcr.io"
+    },
+    "download_helper_server_linux": {
+        "title": "在 Linux 上自行架設",
+        "description": "在您自己的伺服器或虛擬專用伺服器上部署 Trilium Notes，相容於大多數發行版。",
+        "download_tar_x64": "x64 (.tar.xz)",
+        "download_tar_arm64": "ARM (.tar.xz)",
+        "download_nixos": "NixOS 模組"
+    },
+    "download_helper_server_hosted": {
+        "title": "付費託管",
+        "description": "Trilium Notes 託管於 PikaPods，此為付費服務，提供便捷存取與管理功能。與 Trilium 團隊無直接關聯。",
+        "download_pikapod": "在 PikaPods 上設定",
+        "download_triliumcc": "或參見 trilium.cc"
+    }
+}

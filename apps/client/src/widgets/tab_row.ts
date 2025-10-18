@@ -155,8 +155,8 @@ const TAB_ROW_TPL = `
     }
 
     .tab-row-widget .note-tab[is-mini] .note-tab-wrapper {
-        padding-left: 2px;
-        padding-right: 2px;
+        padding-inline-start: 2px;
+        padding-inline-end: 2px;
     }
 
     .tab-row-widget .note-tab .note-tab-title {
@@ -168,11 +168,11 @@ const TAB_ROW_TPL = `
 
     .tab-row-widget .note-tab .note-tab-icon {
         position: relative;
-        padding-right: 3px;
+        padding-inline-end: 3px;
     }
 
     .tab-row-widget .note-tab[is-small] .note-tab-title {
-        margin-left: 0;
+        margin-inline-start: 0;
     }
 
     .tab-row-widget .note-tab .note-tab-drag-handle {
@@ -240,14 +240,14 @@ const TAB_ROW_TPL = `
     }
 
     .tab-row-widget .note-tab[is-smaller] .note-tab-close {
-        margin-left: auto;
+        margin-inline-start: auto;
     }
     .tab-row-widget .note-tab[is-mini]:not([active]) .note-tab-close {
         display: none;
     }
     .tab-row-widget .note-tab[is-mini][active] .note-tab-close {
-        margin-left: auto;
-        margin-right: auto;
+        margin-inline-start: auto;
+        margin-inline-end: auto;
     }
     @-moz-keyframes note-tab-was-just-added {
         to {
@@ -500,6 +500,9 @@ export default class TabRowWidget extends BasicWidget {
         position -= MARGIN_WIDTH; // the last margin should not be applied
 
         const anchorPosition = position;
+        if (glob.isRtl) {
+            tabPositions.reverse();
+        }
 
         return { tabPositions, anchorPosition };
     }

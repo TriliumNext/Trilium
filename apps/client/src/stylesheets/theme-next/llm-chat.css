@@ -19,11 +19,11 @@
 }
 
 .chat-message.user-message {
-    margin-left: auto;
+    margin-inline-start: auto;
 }
 
 .chat-message.assistant-message {
-    margin-right: auto;
+    margin-inline-end: auto;
 }
 
 .message-avatar {
@@ -33,7 +33,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 8px;
+    margin-inline-end: 8px;
 }
 
 .user-message .message-avatar {

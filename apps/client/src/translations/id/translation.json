@@ -1,0 +1,32 @@
+{
+  "about": {
+    "title": "Tentang Trilium Notes",
+    "homepage": "Halaman utama:",
+    "app_version": "Versi Aplikasi:",
+    "db_version": "Versi DB:",
+    "sync_version": "Versi sinkronisasi:",
+    "build_date": "Tanggal pembuatan:",
+    "build_revision": "Revisi pembuatan:",
+    "data_directory": "Direktori data:"
+  },
+  "toast": {
+    "critical-error": {
+      "title": "Kesalahan kritis",
+      "message": "Telah terjadi kesalahan kritis yang mencegah aplikasi klien untuk memulai:\n\n{{message}}\n\nHal ini kemungkinan besar disebabkan oleh skrip yang gagal secara tidak terduga. Coba jalankan aplikasi dalam mode aman dan atasi masalahnya."
+    },
+    "widget-error": {
+      "title": "Gagal menginisialisasi widget",
+      "message-custom": "Widget kustom dari catatan dengan ID \"{{id}}\", berjudul \"{{title}}\" tidak dapat diinisialisasi karena:\n\n{{message}}",
+      "message-unknown": "Widget tidak dikenal tidak dapat diinisialisasi karena:\n\n{{message}}"
+    },
+    "bundle-error": {
+      "title": "Gagal memuat skrip kustom",
+      "message": "Skrip dari catatan dengan ID \"{{id}}\", berjudul \"{{title}}\" tidak dapat dijalankan karena:\n\n{{message}}"
+    }
+  },
+  "add_link": {
+    "add_link": "Tambah tautan",
+    "help_on_links": "Bantuan pada tautan",
+    "note": "Catatan"
+  }
+}

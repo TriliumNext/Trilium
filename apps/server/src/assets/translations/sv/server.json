@@ -1,0 +1,7 @@
+{
+  "keyboard_actions": {
+    "back-in-note-history": "Gå till föregående anteckning i historiken",
+    "forward-in-note-history": "Gå till nästa anteckning i historiken",
+    "open-jump-to-note-dialog": "Öppna \"Hoppa till anteckning\" dialog"
+  }
+}

@@ -8,6 +8,7 @@ import Icon from "../../components/Icon.js";
 import helpIcon from "../../assets/boxicons/bx-help-circle.svg?raw";
 import "./get-started.css";
 import packageJson from "../../../../../package.json" with { type: "json" };
+import { t } from "../../i18n.js";
 
 export default function DownloadPage() {
     const [ currentArch, setCurrentArch ] = useState<Architecture>("x64");
@@ -18,13 +19,13 @@ export default function DownloadPage() {
         setUserPlatform(getPlatform() ?? "windows");
     }, []);
 
-    usePageTitle("Get started");
+    usePageTitle(t("get-started.title"));
 
     return (
         <>
-            <Section title={`Download the desktop application (v${packageJson.version})`} className="fill accented download-desktop">
+            <Section title={t("get-started.desktop_title", { version: packageJson.version })} className="fill accented download-desktop">
                 <div className="architecture-switch">
-                    <span>Architecture:</span>
+                    <span>{t("get-started.architecture")}</span>
 
                     <div class="toggle-wrapper">
                         {(["x64", "arm64"] as const).map(arch => (
@@ -45,11 +46,11 @@ export default function DownloadPage() {
                 </div>
 
                 <div class="download-footer">
-                    <Link href="https://github.com/TriliumNext/Trilium/releases/" openExternally>See older releases</Link>
+                    <Link href="https://github.com/TriliumNext/Trilium/releases/" openExternally>{t("get-started.older_releases")}</Link>
                 </div>
             </Section>
 
-            <Section title="Set up a server for access on multiple devices">
+            <Section title={t("get-started.server_title")}>
                 <div className="grid-2-cols download-server">
                     {Object.entries(downloadMatrix.server).map(entry => (
                         <DownloadCard app="server" arch={currentArch} entry={entry} />

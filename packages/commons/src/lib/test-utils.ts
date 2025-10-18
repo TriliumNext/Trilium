@@ -54,3 +54,11 @@ export function trimIndentation(strings: TemplateStringsArray, ...values: any[])
     }
     return output.join("\n");
 }
+
+export function flushPromises() {
+    return new Promise(setImmediate);
+}
+
+export function sleepFor(duration: number) {
+    return new Promise(resolve => setTimeout(resolve, duration));
+}

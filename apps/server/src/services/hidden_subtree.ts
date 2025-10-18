@@ -40,8 +40,8 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
         // we want to keep the hidden subtree always last, otherwise there will be problems with e.g., keyboard navigation
         // over tree when it's in the middle
         notePosition: 999_999_999,
+        enforceAttributes: true,
         attributes: [
-            { type: "label", name: "excludeFromNoteMap", isInheritable: true },
             { type: "label", name: "docName", value: "hidden" }
         ],
         children: [
@@ -345,16 +345,23 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
     let branch;
 
     if (!note) {
+        // Missing item, add it.
         ({ note, branch } = noteService.createNewNote({
             noteId: item.id,
             title: item.title,
             type: item.type,
             parentNoteId: parentNoteId,
-            content: "",
+            content: item.content ?? "",
             ignoreForbiddenParents: true
         }));
     } else {
+        // Existing item, check if it's in the right state.
         branch = note.getParentBranches().find((branch) => branch.parentNoteId === parentNoteId);
+
+        if (item.content && note.getContent() !== item.content) {
+            log.info(`Updating content of ${item.id}.`);
+            note.setContent(item.content);
+        }
 
         // Clean up any branches that shouldn't exist according to the meta definition
         // For hidden subtree notes, we want to ensure they only exist in their designated locations
@@ -362,7 +369,7 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
             // If the note exists but doesn't have a branch in the expected parent,
             // create the missing branch to ensure it's in the correct location
             if (!branch) {
-                console.log("Creating missing branch for note", item.id, "under parent", parentNoteId);
+                log.info(`Creating missing branch for note ${item.id} under parent ${parentNoteId}.`);
                 branch = new BBranch({
                     noteId: item.id,
                     parentNoteId: parentNoteId,
@@ -441,6 +448,15 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
         }
     }
 
+    // Enforce attribute structure if needed.
+    if (item.enforceAttributes) {
+        for (const attribute of note.getAttributes()) {
+            if (!attrs.some(a => a.name === attribute.name)) {
+                attribute.markAsDeleted();
+            }
+        }
+    }
+
     for (const attr of attrs) {
         const attrId = note.noteId + "_" + attr.type.charAt(0) + attr.name;
 
@@ -457,7 +473,7 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
             }).save();
         } else if (attr.name === "docName" || (existingAttribute.noteId.startsWith("_help") && attr.name === "iconClass")) {
             if (existingAttribute.value !== attr.value) {
-                console.log(`Updating attribute ${attrId} from "${existingAttribute.value}" to "${attr.value}"`);
+                log.info(`Updating attribute ${attrId} from "${existingAttribute.value}" to "${attr.value}"`);
                 existingAttribute.value = attr.value ?? "";
                 existingAttribute.save();
             }

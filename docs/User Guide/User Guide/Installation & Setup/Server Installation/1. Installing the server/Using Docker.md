@@ -109,7 +109,7 @@ If you want to run your instance in a non-default way, please use the volume swi
 ## Reverse Proxy
 
 1.  [Nginx](../2.%20Reverse%20proxy/Nginx.md)
-2.  [Apache](../2.%20Reverse%20proxy/Apache.md)
+2.  [Apache](../2.%20Reverse%20proxy/Apache%20using%20Docker.md)
 
 ### Note on --user Directive
 

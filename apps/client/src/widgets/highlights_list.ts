@@ -24,7 +24,7 @@ const TPL = /*html*/`<div class="highlights-list-widget">
         }
 
         .highlights-list > ol {
-            padding-left: 20px;
+            padding-inline-start: 20px;
         }
 
         .highlights-list li {

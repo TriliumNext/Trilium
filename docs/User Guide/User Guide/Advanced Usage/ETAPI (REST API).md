@@ -62,3 +62,11 @@ Make sure to replace the values of:
 *   `TOKEN` with your ETAPI token.
 *   `SERVER` with the correct protocol, host name and port to your Trilium instance.
 *   `NOTE_ID` with an existing note ID to download.
+
+As another example, to obtain a .zip export of a note and place it in a directory called `out`, simply replace the last statement in the script with:
+
+```
+curl -H "Authorization: $TOKEN" \
+	-X GET "$SERVER/etapi/notes/$NOTE_ID/export" \
+    --output "out/$NOTE_ID.zip"
+```

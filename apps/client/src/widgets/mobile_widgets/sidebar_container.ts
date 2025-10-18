@@ -27,6 +27,7 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
     private backdropEl!: HTMLElement;
     private originalSidebarTransition: string;
     private originalBackdropTransition: string;
+    private screenWidth: number;
 
     constructor(screenName: Screen, direction: FlexDirection) {
         super(direction);
@@ -37,6 +38,7 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
         this.dragState = DRAG_STATE_NONE;
         this.originalSidebarTransition = "";
         this.originalBackdropTransition = "";
+        this.screenWidth = document.body.getBoundingClientRect().width;
     }
 
     doRender() {
@@ -51,7 +53,9 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
         const x = "touches" in e ? e.touches[0].clientX : e.clientX;
         this.startX = x;
 
-        if (x > 30 && this.currentTranslate === -100) {
+        // Prevent dragging if too far from the edge of the screen and the menu is closed.
+        let dragRefX = glob.isRtl ? this.screenWidth - x : x;
+        if (dragRefX > 30 && this.currentTranslate === -100) {
             return;
         }
 
@@ -66,7 +70,7 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
         }
 
         const x = "touches" in e ? e.touches[0].clientX : e.clientX;
-        const deltaX = x - this.startX;
+        const deltaX = glob.isRtl ? this.startX - x : x - this.startX;
         if (this.dragState === DRAG_STATE_INITIAL_DRAG) {
             if (this.currentTranslate === -100 ? deltaX > DRAG_CLOSED_START_THRESHOLD : deltaX < -DRAG_OPENED_START_THRESHOLD) {
                 /* Disable the transitions since they affect performance, they are going to reenabled once drag ends. */
@@ -85,10 +89,15 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
             }
         } else if (this.dragState === DRAG_STATE_DRAGGING) {
             const width = this.sidebarEl.offsetWidth;
-            const translatePercentage = Math.min(0, Math.max(this.currentTranslate + (deltaX / width) * 100, -100));
+            let translatePercentage = Math.min(0, Math.max(this.currentTranslate + (deltaX / width) * 100, -100));
+            const backdropOpacity = Math.max(0, 1 + translatePercentage / 100);
             this.translatePercentage = translatePercentage;
-            this.sidebarEl.style.transform = `translateX(${translatePercentage}%)`;
-            this.backdropEl.style.opacity = String(Math.max(0, 1 + translatePercentage / 100));
+            if (glob.isRtl) {
+                this.sidebarEl.style.transform = `translateX(${-translatePercentage}%)`;
+            } else {
+                this.sidebarEl.style.transform = `translateX(${translatePercentage}%)`;
+            }
+            this.backdropEl.style.opacity = String(backdropOpacity);
         }
 
         // Consume the event to prevent the user from doing the back to previous page gesture on iOS.
@@ -149,7 +158,15 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
         }
 
         this.sidebarEl.classList.toggle("show", isOpen);
-        this.sidebarEl.style.transform = isOpen ? "translateX(0)" : "translateX(-100%)";
+        if (isOpen) {
+            this.sidebarEl.style.transform = "translateX(0)";
+        } else {
+            if (glob.isRtl) {
+                this.sidebarEl.style.transform = "translateX(100%)"
+            } else {
+                this.sidebarEl.style.transform = "translateX(-100%)";
+            }
+        }
         this.sidebarEl.style.transition = this.originalSidebarTransition;
 
         this.backdropEl.classList.toggle("show", isOpen);

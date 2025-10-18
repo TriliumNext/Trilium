@@ -1,5 +1,4 @@
-import { ALLOWED_PROTOCOLS } from "../../../services/link.js";
-import { MIME_TYPE_AUTO } from "@triliumnext/commons";
+import { ALLOWED_PROTOCOLS, MIME_TYPE_AUTO } from "@triliumnext/commons";
 import { buildExtraCommands, type EditorConfig, PREMIUM_PLUGINS } from "@triliumnext/ckeditor5";
 import { getHighlightJsNameForMime } from "../../../services/mime_types.js";
 import options from "../../../services/options.js";

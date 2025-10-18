@@ -1,0 +1,17 @@
+{
+    "get-started": {
+        "title": "Bắt đầu",
+        "desktop_title": "Tải về ứng dụng desktop (v{{version}})",
+        "architecture": "Kiến trúc:",
+        "older_releases": "Xem các bản phát hành cũ hơn",
+        "server_title": "Thiết lập máy chủ để truy cập trên nhiều thiết bị"
+    },
+    "hero_section": {
+        "title": "Sắp xếp những suy nghĩ. Xây dựng cơ sở tri thức cá nhân của bạn.",
+        "subtitle": "Trilium là một giải pháp mã nguồn mở cho việc ghi chú và tổ chức cơ sở tri thức cá nhân. Sử dụng nó cục bộ trên máy tính, hoặc đồng bộ với một máy chủ tự triển khai của riêng bạn để mang theo các ghi chú mọi nơi bạn đến.",
+        "get_started": "Bắt đầu",
+        "github": "Github",
+        "dockerhub": "Kho Docker",
+        "screenshot_alt": "Ảnh chụp màn hình ứng dụng Trilium Notes (desktop)"
+    }
+}

@@ -82,6 +82,10 @@ body ::-webkit-calendar-picker-indicator {
     filter: invert(1);
 }
 
+#left-pane span.fancytree-node {
+    --custom-color: var(--dark-theme-custom-color);
+}
+
 .excalidraw.theme--dark {
     --theme-filter: invert(80%) hue-rotate(180deg) !important;
 }

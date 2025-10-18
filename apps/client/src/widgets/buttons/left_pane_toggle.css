@@ -1,0 +1,29 @@
+@keyframes left-pane-toggle-button-expand {
+    from {
+        rotate: 0deg;
+    } to {
+        rotate: 180deg;
+    }
+}
+
+@keyframes left-pane-toggle-button-collapse {
+    from {
+        rotate: 180deg;
+    } to {
+        rotate: 360deg;
+    }
+}
+
+.layout-vertical .left-pane-toggle-button::before {
+    display: block;
+}
+
+.layout-vertical .left-pane-toggle-button.action-collapse::before {
+    rotate: 360deg;
+    animation: left-pane-toggle-button-collapse 600ms ease-in-out;
+}
+
+.layout-vertical .left-pane-toggle-button.action-expand::before {
+    rotate: 180deg;
+    animation: left-pane-toggle-button-expand 600ms ease-in-out;
+}

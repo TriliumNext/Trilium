@@ -150,8 +150,8 @@ class ContextMenu {
         this.$widget
             .css({
                 display: "block",
-                top: top,
-                left: left
+                top,
+                left
             })
             .addClass("show");
     }
@@ -187,7 +187,7 @@ class ContextMenu {
             }
 
             // Create a new group to avoid column breaks before and after the seaparator / header.
-            // This is a workaround for Firefox not supporting break-before / break-after: avoid 
+            // This is a workaround for Firefox not supporting break-before / break-after: avoid
             // for columns.
             if (shouldStartNewGroup) {
                 $group = $("<div class='dropdown-no-break'>");
@@ -313,7 +313,7 @@ class ContextMenu {
                 }
 
                 $group.append($item);
-                
+
                 // After adding a menu item, if the previous item was a separator or header,
                 // reset the group so that the next item will be appended directly to the parent.
                 if (shouldResetGroup) {

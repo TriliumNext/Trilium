@@ -1,11 +1,10 @@
 import { Dropdown as BootstrapDropdown } from "bootstrap";
 import { ComponentChildren } from "preact";
-import { CSSProperties } from "preact/compat";
+import { CSSProperties, HTMLProps } from "preact/compat";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { useUniqueName } from "./hooks";
 
-export interface DropdownProps {
-    className?: string;
+export interface DropdownProps extends Pick<HTMLProps<HTMLDivElement>, "id" | "className"> {
     buttonClassName?: string;
     isStatic?: boolean;
     children: ComponentChildren;
@@ -22,7 +21,7 @@ export interface DropdownProps {
     forceShown?: boolean;
 }
 
-export default function Dropdown({ className, buttonClassName, isStatic, children, title, text, dropdownContainerStyle, dropdownContainerClassName, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, noDropdownListStyle, forceShown }: DropdownProps) {
+export default function Dropdown({ id, className, buttonClassName, isStatic, children, title, text, dropdownContainerStyle, dropdownContainerClassName, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, noDropdownListStyle, forceShown }: DropdownProps) {
     const dropdownRef = useRef<HTMLDivElement | null>(null);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
 
@@ -74,7 +73,7 @@ export default function Dropdown({ className, buttonClassName, isStatic, childre
                 aria-haspopup="true"
                 aria-expanded="false"
                 title={title}
-                id={ariaId}
+                id={id ?? ariaId}
                 disabled={disabled}
             >
                 {text}
