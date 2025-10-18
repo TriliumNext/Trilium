@@ -37,7 +37,7 @@
 | Image downloading | ⚠️ | Selection only | `background/index.ts:668-740` |
 | Screenshot cropping | ❌ | Rect stored, not applied | `background/index.ts:504-560` |
 | Date metadata extraction | ❌ | Not implemented | - |
-| Codeblock formatting preservation | ❌ | Not implemented | - |
+| Codeblock formatting preservation | ❌ | See Trilium Issue [#2092](https://github.com/TriliumNext/Trilium/issues/2092) | - |
 
 ### Priority Issues:
 
