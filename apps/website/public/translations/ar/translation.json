@@ -72,7 +72,8 @@
         "download_scoop": "Scoop",
         "download_exe": "تحميل ملف التثبيت (exe.)",
         "title_x64": "ويندوز 64 بت",
-        "download_zip": "النسخة المحمولة بصيغة zip"
+        "download_zip": "النسخة المحمولة بصيغة zip",
+        "title_arm64": "نظام ويندوز عاى ARM"
     },
     "download_helper_desktop_linux": {
         "download_deb": ".deb",
@@ -81,7 +82,8 @@
         "download_rpm": "rpm.",
         "download_flatpak": "flatpak.",
         "title_x64": "لينيكس 64 بت",
-        "download_zip": "النسخة المحمولة بصيغة zip"
+        "download_zip": "النسخة المحمولة بصيغة zip",
+        "title_arm64": "نظام لينكس على ARM"
     },
     "download_helper_server_docker": {
         "download_ghcr": "ghcr.io",
@@ -97,7 +99,8 @@
     "download_now": {
         "text": "تنزيل الان ",
         "platform_small": "لاجل{{platform}}",
-        "linux_small": "لLinux"
+        "linux_small": "لLinux",
+        "linux_big": "اصدار v {{version}} لنظام لينكس"
     },
     "faq": {
         "title": "الاسئلة المتكررة"

@@ -1,1 +1,192 @@
-{}
+{
+    "get-started": {
+        "desktop_title": "Pobierz wersję desktopową (v{{version}})",
+        "architecture": "Architektura:",
+        "older_releases": "Sprawdź poprzednie wydania",
+        "server_title": "Skonfiguruj serwer, aby mieć dostęp z wielu urządzeń",
+        "title": "Start"
+    },
+    "hero_section": {
+        "title": "Uporządkuj swoje myśli i zbuduj bazę Twojej wiedzy.",
+        "subtitle": "Trilium to otwartoźródłowe rozwiązanie do notowania i organizacji swojej personalnej bazy wiedzy. Używaj go lokalnie na swoim komputerze lub synchronizuj swoje notatki na własnym serwerze i miej do nich dostęp gdziekolwiek jesteś.",
+        "get_started": "Start",
+        "github": "GitHub",
+        "dockerhub": "Docker Hub",
+        "screenshot_alt": "Zrzut ekranu wersji desktopowej Trilium Notes"
+    },
+    "organization_benefits": {
+        "title": "Układ",
+        "note_structure_title": "Struktura notatek",
+        "note_structure_description": "Notatki mogą być ułożone w hierarchię. Każda notatka może zawierać w sobie inne, co pozwala umieścić tą samą notatkę w wielu miejscach w hierarchii i nie wymusza to tworzenia dodatkowych folderów.",
+        "attributes_title": "Etykiety i korelacje",
+        "attributes_description": "Porządkuj łatwiej swoje notatki przy użyciu relacji i etykiet, używaj ich jako odnośników w tabelach i tablicach.",
+        "hoisting_title": "Przestrzenie robocze i windowanie notatek",
+        "hoisting_description": "Łatwo oddziel swoje personalne notatki od tych z pracy przez grupowanie ich w przestrzenie robocze, które pomogą ci się skupić na danym temacie."
+    },
+    "productivity_benefits": {
+        "title": "Produktywność i bezpieczeństwo",
+        "revisions_title": "Historia zmian",
+        "revisions_content": "Notatki są regularnie zapisywane w tle, co pozwala to przeglądać i cofać wprowadzone zmiany. Zapisy można także wykonywać \"na życzenie\".",
+        "sync_title": "Synchronizacja",
+        "sync_content": "Używaj własnych lub chmurowych instancji do łatwiejszej synchronizacji notatek między wieloma urządzeniami, w tym twoim telefonem używając PWA.",
+        "protected_notes_title": "Notatki chronione",
+        "protected_notes_content": "Chroń wrażliwe informacje szyfrując notatki i blokując dostęp do nich za pomocą hasła sesji.",
+        "jump_to_title": "Szybkie wyszukiwanie i komendy",
+        "jump_to_content": "Szybko i łatwo wyszukuj swoje notatki używając funkcji lub komend, nawet gdy nie pamiętasz dokładnej ich nazwy.",
+        "search_title": "Dokładne wyszukiwanie",
+        "search_content": "Albo wyszukaj tekst w notatkach, możesz dostosować zakres szukania do konkretnej notatki albo hierarchii pliku.",
+        "web_clipper_title": "Web clipper",
+        "web_clipper_content": "Dołączaj strony internetowe albo ich zrzuty i umieszczaj je bezpośrednio w swoich notatkach dzięki rozszerzeniu do przeglądarki."
+    },
+    "note_types": {
+        "text_title": "Notatki tekstowe",
+        "text_description": "Edytuj notatki w graficznym interfejsie (WYSIWYG), który wspiera tabele, obrazy, działania matematyczne i bloki kodu z podświetlaniem składni. Szybko formatuj tekst używając skrótów (Markdown), jak i komend (/).",
+        "code_title": "Notatki kodowe",
+        "code_description": "Duże fragmenty kodu źródłowego albo skryptów można umieścić w dedykowanych plikach z własnym edytorem. Podświetlenie składni i struktur, różne motywy i wsparcie dla wielu języków programowania ułatwi edycję.",
+        "file_title": "Obsługa plików",
+        "file_description": "Dodawaj pliki takie jak PDF-y, zdjęcia i pliki wideo z podglądem w aplikacji.",
+        "canvas_title": "Płótno",
+        "canvas_description": "Dodawaj kształty, zdjęcia i tekst na nieskończonym płótnie, używając tej samej technologii co excalidraw.com. Idealne do diagramów, szkiców i projektowania.",
+        "mermaid_title": "Diagramy Mermaid",
+        "mermaid_description": "Twórz diagramy, takie jak schematy blokowe, diagramy klas i sekwencyjne, wykresy Gantta i wiele innych, korzystając z składni Mermaid.",
+        "mindmap_title": "Mapy myśli",
+        "mindmap_description": "Organizuj wizualnie swoje myśli albo przeprowadź sesję burzy mózgów.",
+        "others_list": "I wiele innych: <0>mapa notatek</0>, <1>mapa powiązań</1>, <2>zapisane wyszukiwania</2>, <3>renderowane notatki</3>, and <4>podgląd stron www</4>."
+    },
+    "extensibility_benefits": {
+        "title": "Udostępnianie i rozszerzenia",
+        "import_export_title": "Import/Export",
+        "import_export_description": "Łatwa interakcja z innymi aplikacjami przy użyciu formatów Markdown, ENEX i OLM.",
+        "share_title": "Udostępniaj notatki w internecie",
+        "share_description": "Jeśli masz własny serwer, możesz go używać do udostępniania danych notatek z innymi.",
+        "scripting_title": "Zaawansowane skrypty",
+        "scripting_description": "Stwórz swoje własne integracje z Trilium przy użyciu personalizowanych widżetów albo z serwerowych skryptów.",
+        "api_title": "REST API",
+        "api_description": "Twórz integracje Trilium z użyciem REST API."
+    },
+    "collections": {
+        "calendar_title": "Kalendarze",
+        "calendar_description": "Organizuj swoje prywatne i służbowe wydarzenia używając kalendarza. Miej plany pod kontrolą z tygodniowym, miesięcznym i rocznym podglądem. Twórz i edytuj wydarzenia w prosty i intuicyjny sposób.",
+        "table_title": "Tabele",
+        "table_description": "Wyświetlaj i edytuj informacje o notatkach w tabelach na wiele sposobów dzięki wielu typom kolumn: Tekstowym, numerycznym, z polami wyboru, z datami i godzinami, zawierającym linki, z kolorowymi wypełnieniami i powiązaniami notatek. Możesz nawet wyświetlić całe drzewo hierarchii w tabeli!",
+        "board_title": "Tablice",
+        "board_description": "Organizuj swoje zadania i postępy projektów w tablicach Kanban z prostym tworzeniem nowych elementów i kolumn, a możliwość graficznego ich przenoszenia ułatwi zmianę statusu i pozwoli zachować porządek.",
+        "geomap_title": "Mapy",
+        "geomap_description": "Zaplanuj wakacje albo interesujące miejsca bezpośrednio na mapie, używaj personalizowanych pinezek. Dzięki możliwości importu plików GPX możesz wyświetlać przebyte trasy."
+    },
+    "faq": {
+        "title": "Częste pytania",
+        "mobile_question": "Czy jest dostępna aplikacja mobilna?",
+        "mobile_answer": "Aktualnie nie ma oficjalnej aplikacji mobilnej, jednak jeśli posiadasz uruchomioną aplikacje na serwerze, to możesz mieć dostęp za pomocą przeglądarki, a nawet zainstalować ją jako PWA. Dla systemu android jest nieoficjalna aplikacja \"TriliumDroid\", która działa nawet w trybie offline (jak zwykła desktopowa).",
+        "database_question": "Gdzie są przechowywane moje dane?",
+        "database_answer": "Wszystkie twoje notatki są przechowywane w bazie danych SQLite, w folderze aplikacji (lokalnie). Trilium używa baz danych zamiast zwykłych plików tekstowych dla lepszej wydajności i niektórych funkcji, które byłoby trudno zaimplementować w inny sposób (np. ta sama notatka w wielu miejscach). Folder aplikacji możesz łatwo znaleźć w zakładce \"O programie\".",
+        "server_question": "Czy muszę posiadać serwer, aby używać Trilium?",
+        "server_answer": "Nie, serwer umożliwia dostęp do aplikacji z poziomu przeglądarki, i obsługuje synchronizację na wielu urządzeniach. Z początku wystarczającym rozwiązaniem jest aplikacja desktopowa.",
+        "scaling_question": "Jak dobrze aplikacja radzi sobie z dużą ilością notatek?",
+        "scaling_answer": "W zależności od użycia, aplikacja powinna być w stanie utrzymać bezproblemowo do 100 000 notatek. Trzeba zaznaczyć, że synchronizacja czasami może skończyć się niepowodzeniem w przypadku wielu plików ponad 1GB. Trilium jest bardziej przystosowane do tworzenia baz wiedzy, niż do jako katalog plików (np. NextCloud).",
+        "network_share_question": "Czy mogę udostępniać moje bazy danych przez dyski sieciowe?",
+        "network_share_answer": "Nie, ogólnie przesyłanie baz SQLite przez dyski sieciowe nie jest dobrym pomysłem. Czasami może to zadziałać, ale istnieje szansa, że taka baza danych może zostać uszkodzona przez niedoskonałości blokad plików w sieci.",
+        "security_question": "Jak są chronione moje dane?",
+        "security_answer": "Domyślnie notatki nie są szyfrowane i mogą być odczytane bezpośrednio z bazy danych. Kiedy notatka zostanie oznaczona jako zaszyfrowana, to ta notatka szyfrowana jest używając AES-128-CBC."
+    },
+    "final_cta": {
+        "title": "Gotowy aby zacząć przygodę z Trilium Notes?",
+        "description": "Zbuduj swoją personalną bazę wiedzy z zaawansowanymi funkcjami i pełną prywatnością.",
+        "get_started": "Start"
+    },
+    "components": {
+        "link_learn_more": "Dowiedz się więcej....",
+        "list_with_screenshot_alt": "Zrzut ekranu wybranej funkcji"
+    },
+    "download_now": {
+        "text": "Pobierz teraz ",
+        "platform_big": "v{{version}} dla {{platform}}",
+        "platform_small": "dla{{platform}}",
+        "linux_big": "v{{version}} dla Linuxa",
+        "linux_small": "dla Linuxa",
+        "more_platforms": "Więcej platform i konfiguracja serwera"
+    },
+    "footer": {
+        "copyright_and_the": " i ",
+        "copyright_community": "społeczność"
+    },
+    "social_buttons": {
+        "github": "GitHub",
+        "github_discussions": "GitHub - Forum",
+        "matrix": "Matrix",
+        "reddit": "Reddit"
+    },
+    "support_us": {
+        "title": "Wesprzyj nas",
+        "financial_donations_title": "Wsparcie finansowe",
+        "financial_donations_description": "Trilium jest tworzone i rozwijane przez <Link>setki godzin pracy</Link>. Twoje wsparcie utrzymuje projekt jako otwartoźródłowy, pomaga dodawać nowe rzeczy i pokrywa koszty hostingu.",
+        "financial_donations_cta": "Rozważ wsparcie głównego programisty (<Link>eliandoran</Link>) poza aplikacją przez:",
+        "github_sponsors": "GitHub Sponsors",
+        "paypal": "PayPal",
+        "buy_me_a_coffee": "Postaw mi wirtualną kawę"
+    },
+    "contribute": {
+        "title": "Inne sposoby wsparcia",
+        "way_translate": "Przetłumacz aplikacja na swój natywny język przez <Link>Weblate</Link>.",
+        "way_community": "Dołącz do społeczności na <Discussions>GitHub Discussions</Discussions> lub na <Matrix>Matrix</Matrix>.",
+        "way_reports": "Zgłoś błędy przez<Link>GitHub issues</Link>.",
+        "way_document": "Pomóż nam w doskonaleniu dokumentacji przez informowanie nas o lukach albo sam pomóż w tworzeniu treści (dokumentacja, FAQ, poradniki).",
+        "way_market": "Powiedz o nas swoim znajomym, na blogu albo na social mediach."
+    },
+    "404": {
+        "title": "404: Nie znaleziono strony",
+        "description": "Strona, której szukasz, nie istnieje. Mogła zostać usunięta, albo wpisany adres jest niepoprawny."
+    },
+    "download_helper_desktop_windows": {
+        "title_x64": "Windows 64-bit",
+        "title_arm64": "Windows na ARM",
+        "description_x64": "Kompatybilne z urządzeniami Intel i AMD działającymi pod kontrolą Windows 10 i 11.",
+        "description_arm64": "Kompatybilne z procesorami ARM (np. Qualcomm Snapdragon).",
+        "quick_start": "Aby zainstalować przez WinGet:",
+        "download_exe": "Pobierz instalator (.exe)",
+        "download_zip": "Wersja przenośna - Portable (.zip)",
+        "download_scoop": "Scoop"
+    },
+    "download_helper_desktop_linux": {
+        "title_x64": "Linux 64-bit",
+        "title_arm64": "Linux na ARM",
+        "description_x64": "Dla większości dystrybucji Linux, kompatybilnych z architekturą x86_64.",
+        "description_arm64": "Dla dystrybucji ARM Linux kompatybilnych z architekturą aarch64.",
+        "quick_start": "Wybierz odpowiedni format paczki, w zależności od twojej dystrybucji:",
+        "download_deb": ".deb",
+        "download_rpm": ".rpm",
+        "download_flatpak": ".flatpak",
+        "download_zip": "Wersja przenośna - Portable (.zip)",
+        "download_nixpkgs": "nixpkgs",
+        "download_aur": "AUR"
+    },
+    "download_helper_desktop_macos": {
+        "title_x64": "macOS z Intel",
+        "title_arm64": "macOS z Apple Silicon (ARM)",
+        "description_x64": "Dla macOS w wersji Big Sur i późniejszymi, z procesorem Intel.",
+        "description_arm64": "Dla produktów Apple z procesorami M1 i M2.",
+        "quick_start": "Instalacja przez Homebrew:",
+        "download_dmg": "Pobierz instalator (.dmg)",
+        "download_homebrew_cask": "Homebrew Cask",
+        "download_zip": "Wersja przenośna - Portable (.zip)"
+    },
+    "download_helper_server_docker": {
+        "title": "Własny serwer przez Docker",
+        "description": "Łatwa instalacja na Windows, Linux albo macOS używając Docker container.",
+        "download_dockerhub": "Docker Hub",
+        "download_ghcr": "ghcr.io"
+    },
+    "download_helper_server_linux": {
+        "title": "Własny serwer na Linux",
+        "description": "Wrzuć Trilium Notes na swój serwer albo VPS, kompatybilne z większością dystrybucji.",
+        "download_tar_x64": "x64 (.tar.xz)",
+        "download_tar_arm64": "ARM (.tar.xz)",
+        "download_nixos": "moduł NixOS"
+    },
+    "download_helper_server_hosted": {
+        "title": "Płatny Serwer - Hosting",
+        "description": "Trilium Notes hostowane na PikaPods, płatnym serwisie dla łatwego dostępu i zarządzania. Bezpośrednio nie związanie z Trilium team.",
+        "download_pikapod": "Konfiguruj na PikaPods",
+        "download_triliumcc": "Alternatywnie patrz na trilium.cc"
+    }
+}

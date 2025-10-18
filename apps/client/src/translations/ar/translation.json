@@ -25,7 +25,8 @@
   "branch_prefix": {
     "edit_branch_prefix": "تعديل بادئة الفرع",
     "prefix": "البادئة: ",
-    "save": "حفظ"
+    "save": "حفظ",
+    "help_on_tree_prefix": "مساعدة حول بادئة الشجرة"
   },
   "bulk_actions": {
     "bulk_actions": "اجراءات جماعية",
@@ -44,7 +45,8 @@
     "options": "خيارات",
     "upload": "تحميل",
     "choose_files": "اختر الملفات",
-    "shrink_images": "تصغير الصور"
+    "shrink_images": "تصغير الصور",
+    "upload_attachments_to_note": "تحميل المرفقات الى الملاحظة"
   },
   "attribute_detail": {
     "name": "الاسم",
@@ -74,7 +76,14 @@
     "date_time": "التاريخ والوقت",
     "label_definition": "تفاصيل تعريف التصنيف",
     "relation_definition": "تفاصيل تعريف العلاقة",
-    "attr_detail_title": "عنوان تفاصيل السمة"
+    "attr_detail_title": "عنوان تفاصيل السمة",
+    "close_button_title": "الغاء التغييرات و اغلاق",
+    "attr_is_owned_by": "السمة مملوكة ل",
+    "save_and_close": "حفظ ونسخ <kbd>Ctrl+Enter</kbd>",
+    "workspace_calendar_root": "‎تحديد جذر التقويم لكل مساحة عمل",
+    "hide_highlight_widget": "اخفاء عنصر واجهة قائمة التمييزات",
+    "is_owned_by_note": "تخص الملاحظة",
+    "and_more": "... و {{count}}مرات اكثر."
   },
   "rename_label": {
     "to": "الى",
@@ -86,7 +95,8 @@
   "move_note": {
     "to": "الى",
     "move_note": "نقل الملاحظة",
-    "target_parent_note": "ملاحظة الاصل الهدف"
+    "target_parent_note": "ملاحظة الاصل الهدف",
+    "on_all_matched_notes": "على كل الملاحظات المطابقة"
   },
   "add_relation": {
     "to": "الى",
@@ -106,7 +116,8 @@
     "update_relation": "تحديث العلاقة",
     "relation_name": "اسم العلاقة",
     "target_note": "الملاحظة الهدف",
-    "update_relation_target": "تحدث علاقة الهدف"
+    "update_relation_target": "تحدث علاقة الهدف",
+    "on_all_matched_notes": "على كل الملاحظات المطابقة"
   },
   "attachments_actions": {
     "download": "تنزيل",
@@ -114,7 +125,9 @@
     "open_custom": "فتح مخصص",
     "rename_attachment": "اعادة تسمية المرفق",
     "delete_attachment": "حذف المرفق",
-    "upload_new_revision": "رفع مراجعة جديدة"
+    "upload_new_revision": "رفع مراجعة جديدة",
+    "copy_link_to_clipboard": "نسخ الرابط الى الحافظة",
+    "convert_attachment_into_note": "تحويل المرفق الى ملاحظة"
   },
   "calendar": {
     "week": "أسبوع",
@@ -146,7 +159,9 @@
     "month_previous": "الشهر السابق",
     "month_next": "الشهر التالي",
     "year_previous": "السنة السابقة",
-    "year_next": "السنة التالية"
+    "year_next": "السنة التالية",
+    "cannot_find_day_note": "لا يمكن ايجاد ملاحظة اليوم",
+    "cannot_find_week_note": "لايمكن ايجاد ملاحظة الاسبوع"
   },
   "global_menu": {
     "menu": "القائمة",
@@ -171,7 +186,11 @@
     "open_dev_tools": "فتح ادوات المطور",
     "show_backend_log": "اظهار سجل الخلفية",
     "new-version-available": "متوفر تحديث جديد",
-    "download-update": "احصل على الاصدار{{latestVersion}}"
+    "download-update": "احصل على الاصدار{{latestVersion}}",
+    "switch_to_mobile_version": "التبديل الى اصدار الهاتف المحمول",
+    "switch_to_desktop_version": "التبديل الى اصدار سطح المكتب",
+    "show_shared_notes_subtree": "عرض شجرة الملاحظات المشتركة",
+    "open_sql_console_history": "فتح سجل لوحة تحكم SQL"
   },
   "zpetne_odkazy": {
     "relation": "العلاقة",
@@ -181,7 +200,8 @@
   "note_icon": {
     "category": "الفئة:",
     "search": "بحث:",
-    "change_note_icon": "تغيير ايقونة الملاحظة"
+    "change_note_icon": "تغيير ايقونة الملاحظة",
+    "reset-default": "اعادة تعيين الى الايقونة الافتراضية"
   },
   "basic_properties": {
     "language": "اللغة",
@@ -204,7 +224,8 @@
     "collapse_all_notes": "طي كل الملاحظات",
     "include_archived_notes": "عرض الملاحظات المؤرشفة",
     "expand_all_children": "توسيع جميع العناصر الفرعية",
-    "presentation": "عرض تقديمي"
+    "presentation": "عرض تقديمي",
+    "invalid_view_type": "نوع العرض {{type}} غير صالح"
   },
   "file_properties": {
     "download": "تنزيل",
@@ -223,7 +244,8 @@
     "file_type": "نوع الملف",
     "file_size": "حجم الملف",
     "original_file_name": "اسم الملف الاصلي",
-    "upload_new_revision": "رفع مراجعة جديدة"
+    "upload_new_revision": "رفع مراجعة جديدة",
+    "copy_reference_to_clipboard": "نسخ المرجع الى الحافظة"
   },
   "note_info_widget": {
     "created": "انشاء",
@@ -258,14 +280,20 @@
     "order_by": "ترتيب حسب",
     "search_parameters": "معايير البحث",
     "add_search_option": "اضافة خيار البحث:",
-    "save_to_note": "حفظ في تلملاحظة"
+    "save_to_note": "حفظ في تلملاحظة",
+    "limit_description": "تحديد عدد النتائج",
+    "search_execute": "البحث وتنفيذ الأجراءات",
+    "unknown_search_option": "خيار بحث غير معروف {{searchOptionName}}",
+    "actions_executed": "اجراءات تم تنفيذها."
   },
   "ancestor": {
     "label": "السلف",
     "depth_label": "العمق",
     "depth_doesnt_matter": "لايهم",
     "direct_children": "العقد الفرعية المباشرة",
-    "depth_eq": "يساوي تماما {{count}}"
+    "depth_eq": "يساوي تماما {{count}}",
+    "depth_gt": "هو اكبر من {{count}}",
+    "depth_lt": "هو اصغر من {{count}}"
   },
   "limit": {
     "limit": "الحد الاقصى"
@@ -285,7 +313,9 @@
     "revision_count": "عدد المراجعات",
     "parent_count": "عدد النسخ",
     "owned_label_count": "عدد التسميات",
-    "owned_relation_count": "عدد العلاقات"
+    "owned_relation_count": "عدد العلاقات",
+    "date_modified": "تاريخ اخر تعديل",
+    "children_count": "عدد الملاحظات الفرعية"
   },
   "search_string": {
     "search_prefix": "بحث:",
@@ -338,7 +368,8 @@
     "export": "تصدير",
     "export_note_title": "تصدير الملاحظة",
     "export_status": "حالة التصدير",
-    "export_finished_successfully": "اكتمل التصدير بنجاح."
+    "export_finished_successfully": "اكتمل التصدير بنجاح.",
+    "export_in_progress": "جار التصدير: {{progressCount}}"
   },
   "help": {
     "troubleshooting": "أستكشاف الاخطاء واصلاحها",
@@ -366,7 +397,9 @@
     "scrollToActiveNote": "مدتمرير الى الملاحظة النشطة",
     "jumpToParentNote": "الانتقال الى الملاحظة الاصل",
     "movingCloningNotes": "نقل/ استنساخ الملاحظات",
-    "deleteNotes": "حذف الملاحظة/ الشجرة الفرعية"
+    "deleteNotes": "حذف الملاحظة/ الشجرة الفرعية",
+    "collapseWholeTree": "طي شجرة الملاحظة باكملها",
+    "followLink": "اتبع تلرابط تحت المؤشر"
   },
   "import": {
     "options": "خيارات",
@@ -378,14 +411,18 @@
     "chooseImportFile": "اختر ملف الاستيراد",
     "failed": "فشل الاستيراد: {{messege}}.",
     "html_import_tags": {
-      "title": "علامات استيراد HTML"
+      "title": "علامات استيراد HTML",
+      "reset_button": "اعادة التعيين الى القائمة الافتراضية"
     },
-    "successful": "اكتمل الاستيراد بنجاح."
+    "successful": "اكتمل الاستيراد بنجاح.",
+    "in-progress": "جار الاستيراد: {{progress}}"
   },
   "include_note": {
     "label_note": "ملاحظة",
     "dialog_title": "تضمين ملاحظة",
-    "button_include": "تضمين ملاحظة"
+    "button_include": "تضمين ملاحظة",
+    "box_size_small": "صغير (10 سطور تقريبا)",
+    "box_size_medium": "متوسط ( 30 سطر تقريبا)"
   },
   "info": {
     "closeButton": "أغلاق",
@@ -409,7 +446,8 @@
   "protected_session_password": {
     "close_label": "أغلاق",
     "modal_title": "جلسة محمية",
-    "start_button": "بدء جلسة محمية"
+    "start_button": "بدء جلسة محمية",
+    "help_title": "مساعدة حول الملاحظات المحمية"
   },
   "revisions": {
     "delete_button": "حذف",
@@ -423,7 +461,8 @@
     "mime": "MIME: ",
     "delete_all_button": "حذف كل المراجعات",
     "settings": "اعدادات مراجعة الملاحظة",
-    "diff_not_available": "المقارنة غير متوفرة."
+    "diff_not_available": "المقارنة غير متوفرة.",
+    "help_title": "مساعدة حول مراجعات الملاحظة"
   },
   "sort_child_notes": {
     "title": "عنوان",
@@ -442,7 +481,8 @@
   "recent_changes": {
     "undelete_link": "الغاء الحذف",
     "title": "التغيرات الاخيرة",
-    "no_changes_message": "لايوجد تغيير لحد الان..."
+    "no_changes_message": "لايوجد تغيير لحد الان...",
+    "erase_notes_button": "مسح الملاحظات المحذوفة الان"
   },
   "edited_notes": {
     "deleted": "(حذف)",
@@ -874,7 +914,10 @@
     "unset-field-placeholder": "غير محدد",
     "open_external_link": "فتح رابط خارجي",
     "add_new_attribute": "اضافة سمة جديدة",
-    "remove_this_attribute": "حذف هذه السمة"
+    "remove_this_attribute": "حذف هذه السمة",
+    "unknown_label_type": "نوع التسمية  {{type}} غير معروف",
+    "unknown_attribute_type": "نوع السمة {{type}} غير معروف",
+    "remove_color": "حذف لون التسمية"
   },
   "duration": {
     "seconds": "ثواني",
@@ -885,7 +928,8 @@
   "editorfeatures": {
     "title": "مميزات",
     "note_completion_enabled": "تمكين الاكمال التلقائي للملاحظة",
-    "emoji_completion_enabled": "تفعيل الاكمال التلقائي للرموز التعبيرية"
+    "emoji_completion_enabled": "تفعيل الاكمال التلقائي للرموز التعبيرية",
+    "slash_commands_enabled": "تفعيل اوامر Slash"
   },
   "book_properties_config": {
     "raster": "نقطي",
@@ -921,7 +965,8 @@
     "add_label": "اضافة تسمية",
     "to_value": "الى القيمة",
     "new_value_placeholder": "قيمة جديدة",
-    "label_name_placeholder": "اسم التسمية"
+    "label_name_placeholder": "اسم التسمية",
+    "help_text": "عل كل الملاحظات المطابقة:"
   },
   "delete_label": {
     "delete_label": "حذف التسمية",
@@ -939,7 +984,8 @@
   },
   "rename_note": {
     "rename_note": "اعادة تسمية الملاحظة",
-    "new_note_title": "عنوان ملاحظة جديد"
+    "new_note_title": "عنوان ملاحظة جديد",
+    "rename_note_title_to": "اعادة تسمية عنوان الملاحظة الى"
   },
   "delete_relation": {
     "delete_relation": "حذف العلاقة",
@@ -966,7 +1012,8 @@
     "search_in_note": "بحث في الملاحظة",
     "open_note_externally": "فتح الملاحظة خارجيا",
     "open_note_custom": "فتح ملاحظة مخصص",
-    "print_pdf": "تصدير كملف PDF..."
+    "print_pdf": "تصدير كملف PDF...",
+    "convert_into_attachment_failed": "فشل تحويل الملاحظة {{title}}."
   },
   "update_available": {
     "update_available": "تحديث متوفر"
@@ -974,7 +1021,8 @@
   "code_buttons": {
     "execute_button_title": "تنفيذ السكريبت",
     "save_to_note_button_title": "حفظ في الملاحظا",
-    "opening_api_docs_message": "جاري فتح مستدات API..."
+    "opening_api_docs_message": "جاري فتح مستدات API...",
+    "trilium_api_docs_button_title": "فتح مستندات API لتريليوم"
   },
   "hide_floating_buttons_button": {
     "button_title": "اخفاء الازرار"
@@ -994,13 +1042,15 @@
     "title": "خريطة الملاحظة",
     "fix-nodes": "اصلاح العقد",
     "link-distance": "مسافة الرابط",
-    "open_full": "توسيع للعرض الكامل"
+    "open_full": "توسيع للعرض الكامل",
+    "collapse": "طي الى الحجم الطبيعي"
   },
   "owned_attribute_list": {
     "owned_attributes": "السمات المملوكة"
   },
   "similar_notes": {
-    "title": "ملاحظات مشابهة"
+    "title": "ملاحظات مشابهة",
+    "no_similar_notes_found": "لاتوجد ملاحظة مشابهة."
   },
   "fast_search": {
     "fast_search": "بحث سريع"
@@ -1010,7 +1060,8 @@
     "example_title": "انظر هذا المثال:"
   },
   "attachment_detail": {
-    "owning_note": "الملاحظة المالكة: "
+    "owning_note": "الملاحظة المالكة: ",
+    "list_of_all_attachments": "قائمة بكل المرفقات"
   },
   "attachment_list": {
     "owning_note": "الملاحظة المالكة: ",
@@ -1021,7 +1072,8 @@
     "protecting-title": "الحالة المحمية",
     "unprotecting-title": "الحالة الغير محمية",
     "protecting-finished-successfully": "تم الحماية بنجاح.",
-    "unprotecting-finished-successfully": "تم ازالة الحماية بنجاح."
+    "unprotecting-finished-successfully": "تم ازالة الحماية بنجاح.",
+    "start_session_button": "البدء بالجلسة المحمية </kbd>enter</kbd>"
   },
   "relation_map": {
     "remove_note": "حذف الملاحظة",
@@ -1189,7 +1241,9 @@
   },
   "move_to": {
     "notes_to_move": "الملاحظات المراد نقلها",
-    "target_parent_note": "ملاحظة الاصل الهدف"
+    "target_parent_note": "ملاحظة الاصل الهدف",
+    "dialog_title": "انقل الملاحظات الى...",
+    "move_button": "نقل الىالملاحظة المحددة"
   },
   "delete_revisions": {
     "delete_note_revisions": "حذف مراجعات الملاحظة"
@@ -1236,7 +1290,10 @@
     "enter_workspace": "ادخل مساحة العمل {{title}}"
   },
   "attribute_editor": {
-    "save_attributes": "حفظ السمات <enter>"
+    "save_attributes": "حفظ السمات <enter>",
+    "add_a_new_attribute": "اضافة سمة جديدة",
+    "add_new_label_definition": "اضافة تعريف لتسمية جديدة",
+    "add_new_relation_definition": "اضافة تعريف لعلاقة جديدة"
   },
   "zen_mode": {
     "button_exit": "الخروج من وضع Zen"
@@ -1257,5 +1314,24 @@
   "presentation_view": {
     "start-presentation": "بدء العرض التقديمي",
     "edit-slide": "تعديل هذه الشريحة"
+  },
+  "jump_to_note": {
+    "search_button": "البحث في النص الكامل"
+  },
+  "password_not_set": {
+    "title": "لم يتم تعيين كلمة المرور",
+    "go_to_password_options": "اذهب الى خيارات كلمة المرور"
+  },
+  "abstract_bulk_action": {
+    "remove_this_search_action": "حذف اجراء البحث هذا"
+  },
+  "show_toc_widget_button": {
+    "show_toc": "عرض جدول المحتويات"
+  },
+  "svg_export_button": {
+    "button_title": "تصدير المخطط ك SVG"
+  },
+  "abstract_search_option": {
+    "remove_this_search_option": "حذف خيار البحث هذا"
   }
 }
