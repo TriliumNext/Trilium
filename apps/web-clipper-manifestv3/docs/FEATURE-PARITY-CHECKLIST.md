@@ -38,6 +38,7 @@
 | Screenshot cropping | ❌ | Rect stored, not applied | `background/index.ts:504-560` |
 | Date metadata extraction | ❌ | Not implemented | - |
 | Codeblock formatting preservation | ❌ | Not implemented | - |
+| Meta Note popup option | ❌ | Not implemented | - |
 
 ### Priority Issues:
 
