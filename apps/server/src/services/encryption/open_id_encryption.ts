@@ -61,21 +61,22 @@ function verifyOpenIDSubjectIdentifier(subjectIdentifier: string) {
         throw new OpenIdError("Database not initialized!");
     }
 
-    if (isUserSaved()) {
-        return false;
+    if (!isUserSaved()) {
+        // No user exists yet - this is a new user registration, which is allowed
+        return true;
     }
 
-    const salt = sql.getValue("SELECT salt FROM user_data;");
+    const salt = sql.getValue<string>("SELECT salt FROM user_data;");
     if (salt == undefined) {
-        console.log("Salt undefined");
+        console.log("OpenID verification: Salt undefined - database may be corrupted");
         return undefined;
     }
 
     const givenHash = myScryptService
-        .getSubjectIdentifierVerificationHash(subjectIdentifier)
+        .getSubjectIdentifierVerificationHash(subjectIdentifier, salt)
         ?.toString("base64");
     if (givenHash === undefined) {
-        console.log("Sub id hash undefined!");
+        console.log("OpenID verification: Failed to generate hash for subject identifier");
         return undefined;
     }
 
@@ -83,12 +84,13 @@ function verifyOpenIDSubjectIdentifier(subjectIdentifier: string) {
         "SELECT userIDVerificationHash FROM user_data"
     );
     if (savedHash === undefined) {
-        console.log("verification hash undefined");
+        console.log("OpenID verification: No saved verification hash found");
         return undefined;
     }
 
-    console.log("Matches: " + givenHash === savedHash);
-    return givenHash === savedHash;
+    const matches = givenHash === savedHash;
+    console.log(`OpenID verification: Subject identifier match = ${matches}`);
+    return matches;
 }
 
 function setDataKey(
