@@ -856,6 +856,9 @@ importers:
       '@triliumnext/ckeditor5-mermaid':
         specifier: workspace:*
         version: link:../ckeditor5-mermaid
+      '@triliumnext/commons':
+        specifier: workspace:*
+        version: link:../commons
       ckeditor5:
         specifier: 47.1.0
         version: 47.1.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
