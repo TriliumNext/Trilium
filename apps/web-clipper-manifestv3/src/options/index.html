@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trilium Web Clipper Options</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <h1>⚙ Trilium Web Clipper Options</h1>
+    
+    <form id="options-form">
+      <div class="form-group">
+        <label for="trilium-url">Trilium Server URL:</label>
+        <input type="url" id="trilium-url" placeholder="http://localhost:8080" required>
+        <small>Enter the URL of your Trilium server (e.g., http://localhost:8080)</small>
+      </div>
+
+      <div class="form-group">
+        <label for="default-title">Default Note Title Template:</label>
+        <input type="text" id="default-title" placeholder="Web Clip - {title}" required>
+        <small>Use {title} for page title, {url} for page URL, {date} for current date</small>
+      </div>
+
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="auto-save"> Enable auto-save for selections
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="enable-toasts" checked> Show toast notifications
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label for="screenshot-format">Screenshot Format:</label>
+        <select id="screenshot-format">
+          <option value="png">PNG (Higher Quality)</option>
+          <option value="jpeg">JPEG (Smaller Size)</option>
+        </select>
+      </div>
+
+      <div class="actions">
+        <button type="button" id="view-logs" class="secondary-btn">View Extension Logs</button>
+        <button type="button" id="test-connection" class="secondary-btn">Test Connection</button>
+        <button type="submit">Save Settings</button>
+      </div>
+    </form>
+
+    <div class="theme-section">
+      <h3>◐ Theme Settings</h3>
+      <div class="theme-options">
+        <label class="theme-option">
+          <input type="radio" name="theme" value="light">
+          <span>☀ Light</span>
+        </label>
+        <label class="theme-option">
+          <input type="radio" name="theme" value="dark">
+          <span>☽ Dark</span>
+        </label>
+        <label class="theme-option">
+          <input type="radio" name="theme" value="system">
+          <span>↻ Follow System</span>
+        </label>
+      </div>
+      <p class="help-text">Choose your preferred theme. System follows your operating system's theme setting.</p>
+    </div>
+
+    <div class="content-format-section">
+      <h3>📄 Content Format</h3>
+      <p>Choose how to save clipped content:</p>
+      <div class="format-options">
+        <label class="format-option">
+          <input type="radio" name="contentFormat" value="html" checked>
+          <div class="format-details">
+            <strong>HTML</strong>
+            <span class="format-description">Human-readable with styling - best for reading in Trilium</span>
+          </div>
+        </label>
+        <label class="format-option">
+          <input type="radio" name="contentFormat" value="markdown">
+          <div class="format-details">
+            <strong>Markdown</strong>
+            <span class="format-description">AI/LLM-friendly format - best for use with ChatGPT, Claude, etc.</span>
+          </div>
+        </label>
+        <label class="format-option">
+          <input type="radio" name="contentFormat" value="both">
+          <div class="format-details">
+            <strong>Both</strong>
+            <span class="format-description">HTML + Markdown child note - maximum flexibility (recommended!)</span>
+          </div>
+        </label>
+      </div>
+      <p class="help-text">
+        <strong>Tip:</strong> The "Both" option creates an HTML note for reading and a markdown child note perfect for AI tools.
+      </p>
+    </div>
+
+    <div class="test-section">
+      <h3>⟲ Connection Test</h3>
+      <p>Test your connection to the Trilium server:</p>
+      <div id="connection-status" class="connection-indicator disconnected">
+        <span class="status-dot"></span>
+        <span id="connection-text">Not tested</span>
+      </div>
+    </div>
+
+    <div id="status" class="status-message" style="display: none;"></div>
+  </div>
+
+  <script type="module" src="./options.ts"></script>
+</body>
+</html>
