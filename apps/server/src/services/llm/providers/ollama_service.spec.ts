@@ -4,6 +4,8 @@ import options from '../../options.js';
 import * as providers from './providers.js';
 import type { ChatCompletionOptions, Message } from '../ai_interface.js';
 import { Ollama } from 'ollama';
+import toolFilterService from '../tool_filter_service.js';
+import pipelineConfigService from '../config/pipeline_config.js';
 
 // Mock dependencies
 vi.mock('../../options.js', () => ({
@@ -61,6 +63,25 @@ vi.mock('./stream_handler.js', () => ({
     performProviderHealthCheck: vi.fn(),
     processProviderStream: vi.fn(),
     extractStreamStats: vi.fn()
+}));
+
+vi.mock('../tool_filter_service.js', () => ({
+    default: {
+        filterToolsForProvider: vi.fn((config, tools) => tools), // Pass through by default
+        getFilterStats: vi.fn(() => ({
+            reductionPercent: 0,
+            estimatedTokenSavings: 0
+        }))
+    }
+}));
+
+vi.mock('../config/pipeline_config.js', () => ({
+    default: {
+        getConfig: vi.fn(() => ({
+            ollamaContextWindow: 8192,
+            enableQueryBasedFiltering: true
+        }))
+    }
 }));
 
 vi.mock('ollama', () => {
@@ -316,12 +337,14 @@ describe('OllamaService', () => {
             vi.mocked(options.getOption).mockReturnValue('http://localhost:11434');
 
             const mockTools = [{
-                name: 'test_tool',
-                description: 'Test tool',
-                parameters: {
-                    type: 'object',
-                    properties: {},
-                    required: []
+                function: {
+                    name: 'test_tool',
+                    description: 'Test tool',
+                    parameters: {
+                        type: 'object',
+                        properties: {},
+                        required: []
+                    }
                 }
             }];
 
@@ -334,10 +357,23 @@ describe('OllamaService', () => {
             };
             vi.mocked(providers.getOllamaOptions).mockResolvedValueOnce(mockOptions);
 
+            // Mock tool filter to return the same tools
+            vi.mocked(toolFilterService.filterToolsForProvider).mockReturnValueOnce(mockTools);
+
             const chatSpy = vi.spyOn(mockOllamaInstance, 'chat');
 
             await service.generateChatCompletion(messages);
 
+            // Verify that tool filtering was called with correct parameters
+            expect(toolFilterService.filterToolsForProvider).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    provider: 'ollama',
+                    contextWindow: 8192
+                }),
+                mockTools
+            );
+
+            // Verify the filtered tools were passed to Ollama
             const calledParams = chatSpy.mock.calls[0][0] as any;
             expect(calledParams.tools).toEqual(mockTools);
         });

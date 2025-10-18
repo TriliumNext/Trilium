@@ -4,10 +4,12 @@ import { OllamaMessageFormatter } from '../formatters/ollama_formatter.js';
 import log from '../../log.js';
 import type { ToolCall, Tool } from '../tools/tool_interfaces.js';
 import toolRegistry from '../tools/tool_registry.js';
+import toolFilterService from '../tool_filter_service.js';
 import type { OllamaOptions } from './provider_options.js';
 import { getOllamaOptions } from './providers.js';
 import { Ollama, type ChatRequest } from 'ollama';
 import options from '../../options.js';
+import pipelineConfigService from '../config/pipeline_config.js';
 import {
     StreamProcessor,
     createStreamHandler,
@@ -176,6 +178,41 @@ export class OllamaService extends BaseAIService {
                         log.info(`After initialization: ${tools.length} tools available`);
                     }
 
+                    // Phase 3: Apply Ollama-specific tool filtering
+                    // Ollama local models work best with max 3 tools
+                    if (tools.length > 0) {
+                        const originalCount = tools.length;
+
+                        // Check if filtering is enabled via pipeline config
+                        const config = pipelineConfigService.getConfig();
+                        const enableFiltering = config.enableQueryBasedFiltering !== false; // Default to true
+
+                        if (enableFiltering) {
+                            // Extract query from messages for intent-based filtering
+                            const query = this.extractQueryFromMessages(messagesToSend);
+
+                            // Get context window from config
+                            const contextWindow = config.ollamaContextWindow || 8192;
+
+                            // Apply tool filtering
+                            tools = toolFilterService.filterToolsForProvider({
+                                provider: 'ollama',
+                                contextWindow,
+                                query
+                            }, tools);
+
+                            const stats = toolFilterService.getFilterStats(originalCount, tools.length, {
+                                provider: 'ollama',
+                                contextWindow
+                            });
+
+                            log.info(`Ollama tool filtering: ${originalCount} → ${tools.length} tools (${stats.reductionPercent}% reduction, ~${stats.estimatedTokenSavings} tokens saved)`);
+                            log.info(`Selected tools: ${tools.map(t => t.function.name).join(', ')}`);
+                        } else {
+                            log.info(`Tool filtering disabled via config, sending all ${tools.length} tools to Ollama`);
+                        }
+                    }
+
                     if (tools.length > 0) {
                         log.info(`Sending ${tools.length} tool definitions to Ollama`);
                     }
@@ -247,6 +284,15 @@ export class OllamaService extends BaseAIService {
             // Add any model-specific parameters
             if (providerOptions.options) {
                 baseRequestOptions.options = providerOptions.options;
+            } else {
+                // Phase 3: Set reasonable defaults for Ollama
+                // Use context window from config (default 8192, 4x increase from 2048)
+                const config = pipelineConfigService.getConfig();
+                const contextWindow = config.ollamaContextWindow || 8192;
+                baseRequestOptions.options = {
+                    num_ctx: contextWindow
+                };
+                log.info(`Using Ollama default options: num_ctx=${contextWindow} (configurable context window)`);
             }
 
             // If JSON response is expected, set format
@@ -525,6 +571,20 @@ export class OllamaService extends BaseAIService {
 
         log.info(`Added tool execution feedback: ${toolExecutionStatus.length} statuses`);
         return updatedMessages;
+    }
+
+    /**
+     * Extract query from messages for tool filtering
+     * Takes the last user message as the query
+     */
+    private extractQueryFromMessages(messages: Message[]): string | undefined {
+        // Find the last user message
+        for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i].role === 'user') {
+                return messages[i].content;
+            }
+        }
+        return undefined;
     }
 
     /**
