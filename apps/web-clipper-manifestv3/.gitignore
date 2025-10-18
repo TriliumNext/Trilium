@@ -125,10 +125,7 @@ tests/
 # ============================================
 # PR Preparation Files (Keep Private)
 # ============================================
-/reference/github/PR-PREPARATION-CHECKLIST.md
-/reference/github/PR-NOTES.md
-/reference/github/PR-QUICK-START.md
-/reference/github/PR-DESCRIPTION.md
+docs/PR/
 .gitmessage
 /reference/github/
 
