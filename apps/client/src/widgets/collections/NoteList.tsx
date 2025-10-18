@@ -1,4 +1,4 @@
-import { allViewTypes, ViewModeProps, ViewTypeOptions } from "./interface";
+import { allViewTypes, ViewModeMedia, ViewModeProps, ViewTypeOptions } from "./interface";
 import { useNoteContext, useNoteLabel, useNoteLabelBoolean, useTriliumEvent } from "../react/hooks";
 import FNote from "../../entities/fnote";
 import "./NoteList.css";
@@ -22,9 +22,10 @@ interface NoteListProps {
     displayOnlyCollections?: boolean;
     isEnabled: boolean;
     ntxId: string | null | undefined;
+    media: ViewModeMedia;
 }
 
-export default function NoteList<T extends object>(props: Pick<NoteListProps, "displayOnlyCollections">) {
+export default function NoteList<T extends object>(props: Pick<NoteListProps, "displayOnlyCollections" | "media">) {
     const { note, noteContext, notePath, ntxId } = useNoteContext();
     const isEnabled = noteContext?.hasNoteList();
     return <CustomNoteList note={note} isEnabled={!!isEnabled} notePath={notePath} ntxId={ntxId} {...props} />
@@ -34,7 +35,7 @@ export function SearchNoteList<T extends object>(props: Omit<NoteListProps, "isE
     return <CustomNoteList {...props} isEnabled={true} />
 }
 
-function CustomNoteList<T extends object>({ note, isEnabled: shouldEnable, notePath, highlightedTokens, displayOnlyCollections, ntxId }: NoteListProps) {
+export function CustomNoteList<T extends object>({ note, isEnabled: shouldEnable, notePath, highlightedTokens, displayOnlyCollections, ntxId, ...restProps }: NoteListProps) {
     const widgetRef = useRef<HTMLDivElement>(null);
     const viewType = useNoteViewType(note);
     const noteIds = useNoteIds(note, viewType, ntxId);
@@ -76,7 +77,8 @@ function CustomNoteList<T extends object>({ note, isEnabled: shouldEnable, noteP
             note, noteIds, notePath,
             highlightedTokens,
             viewConfig: viewModeConfig[0],
-            saveConfig: viewModeConfig[1]
+            saveConfig: viewModeConfig[1],
+            ...restProps
         }
     }
 
@@ -123,7 +125,7 @@ function useNoteViewType(note?: FNote | null): ViewTypeOptions | undefined {
     }
 }
 
-function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOptions | undefined, ntxId: string | null | undefined) {
+export function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOptions | undefined, ntxId: string | null | undefined) {
     const [ noteIds, setNoteIds ] = useState<string[]>([]);
     const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
 
@@ -187,7 +189,7 @@ function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOptions | 
     return noteIds;
 }
 
-function useViewModeConfig<T extends object>(note: FNote | null | undefined, viewType: ViewTypeOptions | undefined) {
+export function useViewModeConfig<T extends object>(note: FNote | null | undefined, viewType: ViewTypeOptions | undefined) {
     const [ viewConfig, setViewConfig ] = useState<[T | undefined, (data: T) => void]>();
 
     useEffect(() => {

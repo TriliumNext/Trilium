@@ -378,8 +378,6 @@ function register(app: express.Application) {
     asyncApiRoute(PST, "/api/llm/chat/:chatNoteId/messages", llmRoute.sendMessage);
     asyncApiRoute(PST, "/api/llm/chat/:chatNoteId/messages/stream", llmRoute.streamMessage);
 
-
-
     // LLM provider endpoints - moved under /api/llm/providers hierarchy
     asyncApiRoute(GET, "/api/llm/providers/ollama/models", ollamaRoute.listModels);
     asyncApiRoute(GET, "/api/llm/providers/openai/models", openaiRoute.listModels);

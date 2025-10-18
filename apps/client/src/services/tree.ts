@@ -122,17 +122,17 @@ async function resolveNotePathToSegments(notePath: string, hoistedNoteId = "root
     }
 }
 
-ws.subscribeToMessages((message) => {
-    if (message.type === "openNote") {
-        appContext.tabManager.activateOrOpenNote(message.noteId);
+// ws.subscribeToMessages((message) => {
+//     if (message.type === "openNote") {
+//         appContext.tabManager.activateOrOpenNote(message.noteId);
 
-        if (utils.isElectron()) {
-            const currentWindow = utils.dynamicRequire("@electron/remote").getCurrentWindow();
+//         if (utils.isElectron()) {
+//             const currentWindow = utils.dynamicRequire("@electron/remote").getCurrentWindow();
 
-            currentWindow.show();
-        }
-    }
-});
+//             currentWindow.show();
+//         }
+//     }
+// });
 
 function getParentProtectedStatus(node: Fancytree.FancytreeNode) {
     return hoistedNoteService.isHoistedNode(node) ? false : node.getParent().data.isProtected;

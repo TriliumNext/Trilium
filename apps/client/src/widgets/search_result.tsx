@@ -54,6 +54,7 @@ export default function SearchResult() {
 
             {state === SearchResultState.GOT_RESULTS && (
                 <SearchNoteList
+                    media="screen"
                     note={note}
                     notePath={notePath}
                     highlightedTokens={highlightedTokens}

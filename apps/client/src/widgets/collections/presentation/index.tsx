@@ -1,4 +1,4 @@
-import { ViewModeProps } from "../interface";
+import { ViewModeMedia, ViewModeProps } from "../interface";
 import { useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
 import Reveal from "reveal.js";
 import slideBaseStylesheet from "reveal.js/dist/reveal.css?raw";
@@ -14,11 +14,11 @@ import { t } from "../../../services/i18n";
 import { DEFAULT_THEME, loadPresentationTheme } from "./themes";
 import FNote from "../../../entities/fnote";
 
-export default function PresentationView({ note, noteIds }: ViewModeProps<{}>) {
+export default function PresentationView({ note, noteIds, media }: ViewModeProps<{}>) {
     const [ presentation, setPresentation ] = useState<PresentationModel>();
     const containerRef = useRef<HTMLDivElement>(null);
     const [ api, setApi ] = useState<Reveal.Api>();
-    const stylesheets = usePresentationStylesheets(note);
+    const stylesheets = usePresentationStylesheets(note, media);
 
     function refresh() {
         buildPresentationModel(note).then(setPresentation);
@@ -33,31 +33,51 @@ export default function PresentationView({ note, noteIds }: ViewModeProps<{}>) {
 
     useLayoutEffect(refresh, [ note, noteIds ]);
 
-    return presentation && stylesheets && (
+    if (!presentation || !stylesheets) return;
+    const content = (
         <>
-            <ShadowDom
-                className="presentation-container"
-                containerRef={containerRef}
-            >
-                {stylesheets.map(stylesheet => <style>{stylesheet}</style>)}
-                <Presentation presentation={presentation} setApi={setApi} />
-            </ShadowDom>
-            <ButtonOverlay containerRef={containerRef} api={api} />
+            {stylesheets.map(stylesheet => <style>{stylesheet}</style>)}
+            <Presentation presentation={presentation} setApi={setApi} />
         </>
-    )
+    );
+
+    if (media === "screen") {
+        return (
+            <>
+                <ShadowDom
+                    className="presentation-container"
+                    containerRef={containerRef}
+                >{content}</ShadowDom>
+                <ButtonOverlay containerRef={containerRef} api={api} />
+            </>
+        )
+    } else if (media === "print") {
+        // Printing needs a query parameter that is read by Reveal.js.
+        const url = new URL(window.location.href);
+        url.searchParams.set("print-pdf", "");
+        window.history.replaceState({}, '', url);
+
+        // Shadow DOM doesn't work well with Reveal.js's PDF printing mechanism.
+        return content;
+    }
 }
 
-function usePresentationStylesheets(note: FNote) {
+function usePresentationStylesheets(note: FNote, media: ViewModeMedia) {
     const [ themeName ] = useNoteLabelWithDefault(note, "presentation:theme", DEFAULT_THEME);
     const [ stylesheets, setStylesheets ] = useState<string[]>();
 
     useLayoutEffect(() => {
         loadPresentationTheme(themeName).then((themeStylesheet) => {
-            setStylesheets([
+            let stylesheets = [
                 slideBaseStylesheet,
                 themeStylesheet,
                 slideCustomStylesheet
-            ].map(stylesheet => stylesheet.replace(/:root/g, ":host")));
+            ];
+            if (media === "screen") {
+                // We are rendering in the shadow DOM, so the global variables are not set correctly.
+                stylesheets = stylesheets.map(stylesheet => stylesheet.replace(/:root/g, ":host"));
+            }
+            setStylesheets(stylesheets);
         });
     }, [ themeName ]);
 
@@ -128,6 +148,7 @@ function Presentation({ presentation, setApi } : { presentation: PresentationMod
         const api = new Reveal(containerRef.current, {
             transition: "slide",
             embedded: true,
+            pdfMaxPagesPerSlide: 1,
             keyboardCondition(event) {
                 // Full-screen requests sometimes fail, we rely on the UI button instead.
                 if (event.key === "f") {

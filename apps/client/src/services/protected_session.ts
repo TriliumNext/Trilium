@@ -70,26 +70,26 @@ async function setupProtectedSession(password: string) {
     protectedSessionHolder.enableProtectedSession();
 }
 
-ws.subscribeToMessages(async (message) => {
-    if (message.type === "protectedSessionLogin") {
-        await reloadData();
+// ws.subscribeToMessages(async (message) => {
+//     if (message.type === "protectedSessionLogin") {
+//         await reloadData();
 
-        await appContext.triggerEvent("frocaReloaded", {});
+//         await appContext.triggerEvent("frocaReloaded", {});
 
-        appContext.triggerEvent("protectedSessionStarted", {});
+//         appContext.triggerEvent("protectedSessionStarted", {});
 
-        appContext.triggerCommand("closeProtectedSessionPasswordDialog");
+//         appContext.triggerCommand("closeProtectedSessionPasswordDialog");
 
-        if (protectedSessionDeferred !== null) {
-            protectedSessionDeferred.resolve(true);
-            protectedSessionDeferred = null;
-        }
+//         if (protectedSessionDeferred !== null) {
+//             protectedSessionDeferred.resolve(true);
+//             protectedSessionDeferred = null;
+//         }
 
-        toastService.showMessage(t("protected_session.started"));
-    } else if (message.type === "protectedSessionLogout") {
-        utils.reloadFrontendApp(`Protected session logout`);
-    }
-});
+//         toastService.showMessage(t("protected_session.started"));
+//     } else if (message.type === "protectedSessionLogout") {
+//         utils.reloadFrontendApp(`Protected session logout`);
+//     }
+// });
 
 async function protectNote(noteId: string, protect: boolean, includingSubtree: boolean) {
     await enterProtectedSession();
@@ -106,29 +106,29 @@ function makeToast(message: Message, title: string, text: string): ToastOptions 
     };
 }
 
-ws.subscribeToMessages(async (message) => {
-    if (!("taskType" in message) || message.taskType !== "protectNotes") {
-        return;
-    }
+// ws.subscribeToMessages(async (message) => {
+//     if (!("taskType" in message) || message.taskType !== "protectNotes") {
+//         return;
+//     }
 
-    const isProtecting = message.data?.protect;
-    const title = isProtecting ? t("protected_session.protecting-title") : t("protected_session.unprotecting-title");
+//     const isProtecting = message.data?.protect;
+//     const title = isProtecting ? t("protected_session.protecting-title") : t("protected_session.unprotecting-title");
 
-    if (message.type === "taskError") {
-        toastService.closePersistent(message.taskId);
-        toastService.showError(message.message);
-    } else if (message.type === "taskProgressCount") {
-        const count = message.progressCount;
-        const text = isProtecting ? t("protected_session.protecting-in-progress", { count }) : t("protected_session.unprotecting-in-progress-count", { count });
-        toastService.showPersistent(makeToast(message, title, text));
-    } else if (message.type === "taskSucceeded") {
-        const text = isProtecting ? t("protected_session.protecting-finished-successfully") : t("protected_session.unprotecting-finished-successfully");
-        const toast = makeToast(message, title, text);
-        toast.closeAfter = 3000;
+//     if (message.type === "taskError") {
+//         toastService.closePersistent(message.taskId);
+//         toastService.showError(message.message);
+//     } else if (message.type === "taskProgressCount") {
+//         const count = message.progressCount;
+//         const text = isProtecting ? t("protected_session.protecting-in-progress", { count }) : t("protected_session.unprotecting-in-progress-count", { count });
+//         toastService.showPersistent(makeToast(message, title, text));
+//     } else if (message.type === "taskSucceeded") {
+//         const text = isProtecting ? t("protected_session.protecting-finished-successfully") : t("protected_session.unprotecting-finished-successfully");
+//         const toast = makeToast(message, title, text);
+//         toast.closeAfter = 3000;
 
-        toastService.showPersistent(toast);
-    }
-});
+//         toastService.showPersistent(toast);
+//     }
+// });
 
 export default {
     protectNote,

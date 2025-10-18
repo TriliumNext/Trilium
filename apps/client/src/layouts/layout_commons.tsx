@@ -66,6 +66,6 @@ export function applyModals(rootContainer: RootContainer) {
                 .child(<PopupEditorFormattingToolbar />)
                 .child(new PromotedAttributesWidget())
                 .child(new NoteDetailWidget())
-                .child(<NoteList displayOnlyCollections />))
+                .child(<NoteList media="screen" displayOnlyCollections />))
         .child(<CallToActionDialog />);
 }

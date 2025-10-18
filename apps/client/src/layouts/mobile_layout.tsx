@@ -154,7 +154,7 @@ export default class MobileLayout {
                                             .filling()
                                             .contentSized()
                                             .child(new NoteDetailWidget())
-                                            .child(<NoteList />)
+                                            .child(<NoteList media="screen" />)
                                             .child(<FilePropertiesWrapper />)
                                     )
                                     .child(<MobileEditorToolbar />)

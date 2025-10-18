@@ -40,20 +40,23 @@ class FrocaImpl implements Froca {
 
     constructor() {
         this.initializedPromise = this.loadInitialTree();
+        this.#clear();
     }
 
     async loadInitialTree() {
         const resp = await server.get<SubtreeResponse>("tree");
 
         // clear the cache only directly before adding new content which is important for e.g., switching to protected session
+        this.#clear();
+        this.addResp(resp);
+    }
 
+    #clear() {
         this.notes = {};
         this.branches = {};
         this.attributes = {};
         this.attachments = {};
         this.blobPromises = {};
-
-        this.addResp(resp);
     }
 
     async loadSubTree(subTreeNoteId: string) {

@@ -138,7 +138,7 @@ export default class DesktopLayout {
                                                                 .child(new PromotedAttributesWidget())
                                                                 .child(<SqlTableSchemas />)
                                                                 .child(new NoteDetailWidget())
-                                                                .child(<NoteList />)
+                                                                .child(<NoteList media="screen" />)
                                                                 .child(<SearchResult />)
                                                                 .child(<SqlResults />)
                                                                 .child(<ScrollPadding />)
