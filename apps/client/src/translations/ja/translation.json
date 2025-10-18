@@ -282,8 +282,8 @@
     "selectAllNotes": "現在のレベルのノートをすべて選択",
     "selectNote": "ノートを選択",
     "copyNotes": "アクティブなノート（または現在の選択範囲）をクリップボードにコピーする（<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/cloning-notes.html#cloning-notes\">クローン</a>に使用）",
-    "cutNotes": "アクティブなノート（または現在の選択範囲）をクリップボードにカットする（ノートの移動に使用）",
-    "pasteNotes": "ノートをサブノートとしてアクティブノートに貼り付ける（コピーされたかカットされたかに よって、移動またはクローンになる）",
+    "cutNotes": "アクティブなノート（または現在の選択範囲）をクリップボードに切り取り（ノートの移動に使用）",
+    "pasteNotes": "ノートをサブノートとしてアクティブノートに貼り付ける（コピーされたか切り取りされたかに よって、移動またはクローンになる）",
     "deleteNotes": "ノート/サブツリーを削除",
     "editingNotes": "ノート編集",
     "editNoteTitle": "押下するとツリーペインからタイトルの編集に移ります。タイトルの編集からEnterキーを押すと、本文の編集に移動します。<kbd>Ctrl+.</kbd> で本文の編集からツリーペインに戻ります。",
@@ -405,7 +405,7 @@
     "unprotect-subtree": "サブツリーの保護を解除",
     "copy-clone": "コピー/クローン",
     "clone-to": "クローン先...",
-    "cut": "カット",
+    "cut": "切り取り",
     "move-to": "移動先...",
     "paste-into": "貼り付け",
     "paste-after": "後ろに貼り付け",
@@ -1245,7 +1245,7 @@
     "duplicated": "ノート \"{{title}}\" は複製されました。"
   },
   "clipboard": {
-    "cut": "ノートはクリップボードにカットされました。",
+    "cut": "ノートはクリップボードに切り取りとられました。",
     "copied": "ノートはクリップボードにコピーされました。",
     "copy_failed": "権限の問題で、クリップボードにコピーできません。",
     "copy_success": "クリップボードにコピーしました。"
@@ -1296,7 +1296,7 @@
   },
   "electron_context_menu": {
     "add-term-to-dictionary": "辞書に \"{{term}}\" を追加",
-    "cut": "カット",
+    "cut": "切り取り",
     "copy": "コピー",
     "copy-link": "リンクをコピー",
     "paste": "貼り付け",
