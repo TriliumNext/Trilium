@@ -93,12 +93,12 @@ export default function JumpToNoteDialogComponent() {
     function onShown() {
         const $autoComplete = refToJQuerySelector(autocompleteRef);
         switch (mode) {
-            case "last-search":
+            case Mode.LastSearch:
                 break;
-            case "recent-notes":
+            case Mode.RecentNotes:
                 note_autocomplete.showRecentNotes($autoComplete);
                 break;
-            case "commands":
+            case Mode.Commands:
                 note_autocomplete.showAllCommands($autoComplete);
                 break;
         }
