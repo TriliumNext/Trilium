@@ -1706,7 +1706,7 @@
   },
   "note_autocomplete": {
     "search-for": "Пошук для \"{{term}}\"",
-    "create-note-into-path": "Створити та зв'язати дочірню нотатку \"{{term}}\"",
+    "create-note": "Створити та зв'язати дочірню нотатку \"{{term}}\"",
     "insert-external-link": "Вставити зовнішнє посилання у \"{{term}}\"",
     "clear-text-field": "Очистити текстове поле",
     "show-recent-notes": "Показати останні нотатки",

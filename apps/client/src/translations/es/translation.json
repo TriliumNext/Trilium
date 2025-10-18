@@ -1863,7 +1863,7 @@
   },
   "note_autocomplete": {
     "search-for": "Buscar por \"{{term}}\"",
-    "create-note-into-path": "Crear y enlazar subnota \"{{term}}\"",
+    "create-note": "Crear y enlazar subnota \"{{term}}\"",
     "insert-external-link": "Insertar enlace externo a \"{{term}}\"",
     "clear-text-field": "Limpiar campo de texto",
     "show-recent-notes": "Mostrar notas recientes",

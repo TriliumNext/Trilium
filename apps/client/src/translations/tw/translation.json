@@ -1861,10 +1861,7 @@
   },
   "note_autocomplete": {
     "search-for": "搜尋 \"{{term}}\"",
-    "create-note-into-path": "建立並連接子筆記 \"{{term}}\"",
-    "create-note-into-inbox": "在收件匣中建立筆記 \"{{term}}\"",
-    "create-and-link-note-into-path": "建立並連接子筆記 \"{{term}}\"",
-    "create-and-link-note-into-inbox": "在收件匣中建立並連接筆記 \"{{term}}\"",
+    "create-note": "建立並連接子筆記 \"{{term}}\"",
     "insert-external-link": "插入至 \"{{term}}\" 的外部連結",
     "clear-text-field": "清空文字欄位",
     "show-recent-notes": "顯示最近的筆記",

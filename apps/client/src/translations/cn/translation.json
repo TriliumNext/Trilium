@@ -1707,10 +1707,7 @@
   },
   "note_autocomplete": {
     "search-for": "搜索 \"{{term}}\"",
-    "create-note-into-path": "创建并链接子笔记 \"{{term}}\"",
-    "create-note-into-inbox": "在收件箱中创建笔记 \"{{term}}\"",
-    "create-and-link-note-into-path": "创建并链接子笔记 \"{{term}}\"",
-    "create-and-link-note-into-inbox": "在收件箱中创建并链接笔记 \"{{term}}\"",
+    "create-note": "创建并链接子笔记 \"{{term}}\"",
     "insert-external-link": "插入指向 \"{{term}}\" 的外部链接",
     "clear-text-field": "清除文本字段",
     "show-recent-notes": "显示最近的笔记",

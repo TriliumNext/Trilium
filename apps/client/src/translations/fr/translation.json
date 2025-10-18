@@ -1646,7 +1646,7 @@
   },
   "note_autocomplete": {
     "search-for": "Rechercher \"{{term}}\"",
-    "create-note-into-path": "Créer et lier une note enfant \"{{term}}\"",
+    "create-note": "Créer et lier une note enfant \"{{term}}\"",
     "insert-external-link": "Insérer un lien externe vers \"{{term}}\"",
     "clear-text-field": "Effacer le champ de texte",
     "show-recent-notes": "Afficher les notes récentes",
