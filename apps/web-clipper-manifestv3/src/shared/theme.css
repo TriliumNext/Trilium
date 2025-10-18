@@ -1,0 +1,334 @@
+/* 
+ * Shared theme system for all extension UI components
+ * Supports light, dark, and system themes with smooth transitions
+ */
+
+:root {
+  /* Color scheme detection */
+  color-scheme: light dark;
+  
+  /* Animation settings */
+  --theme-transition: all 0.2s ease-in-out;
+}
+
+/* Light Theme (Default) */
+:root,
+:root.theme-light,
+[data-theme="light"] {
+  /* Primary colors */
+  --color-primary: #007cba;
+  --color-primary-hover: #005a87;
+  --color-primary-light: #e8f4f8;
+  
+  /* Background colors */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f8f9fa;
+  --color-bg-tertiary: #e9ecef;
+  --color-bg-modal: rgba(255, 255, 255, 0.95);
+  
+  /* Surface colors */
+  --color-surface: #ffffff;
+  --color-surface-hover: #f8f9fa;
+  --color-surface-active: #e9ecef;
+  
+  /* Text colors */
+  --color-text-primary: #212529;
+  --color-text-secondary: #6c757d;
+  --color-text-tertiary: #adb5bd;
+  --color-text-inverse: #ffffff;
+  
+  /* Border colors */
+  --color-border-primary: #dee2e6;
+  --color-border-secondary: #e9ecef;
+  --color-border-focus: #007cba;
+  
+  /* Status colors */
+  --color-success: #28a745;
+  --color-success-bg: #d4edda;
+  --color-success-border: #c3e6cb;
+  
+  --color-warning: #ffc107;
+  --color-warning-bg: #fff3cd;
+  --color-warning-border: #ffeaa7;
+  
+  --color-error: #dc3545;
+  --color-error-bg: #f8d7da;
+  --color-error-border: #f5c6cb;
+  
+  --color-info: #17a2b8;
+  --color-info-bg: #d1ecf1;
+  --color-info-border: #bee5eb;
+  
+  /* Shadow colors */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+  --shadow-focus: 0 0 0 3px rgba(0, 124, 186, 0.25);
+  
+  /* Log viewer specific */
+  --log-bg-debug: #f8f9fa;
+  --log-bg-info: #d1ecf1;
+  --log-bg-warn: #fff3cd;
+  --log-bg-error: #f8d7da;
+  --log-border-debug: #6c757d;
+  --log-border-info: #17a2b8;
+  --log-border-warn: #ffc107;
+  --log-border-error: #dc3545;
+}
+
+/* Dark Theme */
+:root.theme-dark,
+[data-theme="dark"] {
+  /* Primary colors */
+  --color-primary: #4dabf7;
+  --color-primary-hover: #339af0;
+  --color-primary-light: #1c2a3a;
+  
+  /* Background colors */
+  --color-bg-primary: #1a1a1a;
+  --color-bg-secondary: #2d2d2d;
+  --color-bg-tertiary: #404040;
+  --color-bg-modal: rgba(26, 26, 26, 0.95);
+  
+  /* Surface colors */
+  --color-surface: #2d2d2d;
+  --color-surface-hover: #404040;
+  --color-surface-active: #525252;
+  
+  /* Text colors */
+  --color-text-primary: #f8f9fa;
+  --color-text-secondary: #adb5bd;
+  --color-text-tertiary: #6c757d;
+  --color-text-inverse: #212529;
+  
+  /* Border colors */
+  --color-border-primary: #404040;
+  --color-border-secondary: #525252;
+  --color-border-focus: #4dabf7;
+  
+  /* Status colors */
+  --color-success: #51cf66;
+  --color-success-bg: #1a3d1a;
+  --color-success-border: #2d5a2d;
+  
+  --color-warning: #ffd43b;
+  --color-warning-bg: #3d3a1a;
+  --color-warning-border: #5a572d;
+  
+  --color-error: #ff6b6b;
+  --color-error-bg: #3d1a1a;
+  --color-error-border: #5a2d2d;
+  
+  --color-info: #74c0fc;
+  --color-info-bg: #1a2a3d;
+  --color-info-border: #2d405a;
+  
+  /* Shadow colors */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.3);
+  --shadow-focus: 0 0 0 3px rgba(77, 171, 247, 0.25);
+  
+  /* Log viewer specific */
+  --log-bg-debug: #2d2d2d;
+  --log-bg-info: #1a2a3d;
+  --log-bg-warn: #3d3a1a;
+  --log-bg-error: #3d1a1a;
+  --log-border-debug: #6c757d;
+  --log-border-info: #74c0fc;
+  --log-border-warn: #ffd43b;
+  --log-border-error: #ff6b6b;
+}
+
+/* System theme preference detection */
+@media (prefers-color-scheme: dark) {
+  :root:not(.theme-light):not([data-theme="light"]) {
+    /* Auto-apply dark theme variables when system is dark */
+    --color-primary: #4dabf7;
+    --color-primary-hover: #339af0;
+    --color-primary-light: #1c2a3a;
+    --color-bg-primary: #1a1a1a;
+    --color-bg-secondary: #2d2d2d;
+    --color-bg-tertiary: #404040;
+    --color-bg-modal: rgba(26, 26, 26, 0.95);
+    --color-surface: #2d2d2d;
+    --color-surface-hover: #404040;
+    --color-surface-active: #525252;
+    --color-text-primary: #f8f9fa;
+    --color-text-secondary: #adb5bd;
+    --color-text-tertiary: #6c757d;
+    --color-text-inverse: #212529;
+    --color-border-primary: #404040;
+    --color-border-secondary: #525252;
+    --color-border-focus: #4dabf7;
+    --color-success: #51cf66;
+    --color-success-bg: #1a3d1a;
+    --color-success-border: #2d5a2d;
+    --color-warning: #ffd43b;
+    --color-warning-bg: #3d3a1a;
+    --color-warning-border: #5a572d;
+    --color-error: #ff6b6b;
+    --color-error-bg: #3d1a1a;
+    --color-error-border: #5a2d2d;
+    --color-info: #74c0fc;
+    --color-info-bg: #1a2a3d;
+    --color-info-border: #2d405a;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.3);
+    --shadow-focus: 0 0 0 3px rgba(77, 171, 247, 0.25);
+    --log-bg-debug: #2d2d2d;
+    --log-bg-info: #1a2a3d;
+    --log-bg-warn: #3d3a1a;
+    --log-bg-error: #3d1a1a;
+    --log-border-debug: #6c757d;
+    --log-border-info: #74c0fc;
+    --log-border-warn: #ffd43b;
+    --log-border-error: #ff6b6b;
+  }
+}
+
+/* Base styling for all themed elements */
+* {
+  transition: var(--theme-transition);
+}
+
+body {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: var(--theme-transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.theme-toggle:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-border-focus);
+}
+
+.theme-toggle:focus {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.theme-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Theme selector dropdown */
+.theme-selector {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  padding: 6px 8px;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--theme-transition);
+}
+
+.theme-selector:hover {
+  border-color: var(--color-border-focus);
+}
+
+.theme-selector:focus {
+  outline: none;
+  border-color: var(--color-border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+/* Common form elements theming */
+input, textarea, select, button {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-primary);
+  color: var(--color-text-primary);
+  transition: var(--theme-transition);
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--color-surface-hover);
+}
+
+button.primary {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary);
+}
+
+button.primary:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+
+/* Status message theming */
+.status.success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border-color: var(--color-success-border);
+}
+
+.status.error {
+  background: var(--color-error-bg);
+  color: var(--color-error);
+  border-color: var(--color-error-border);
+}
+
+.status.warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+  border-color: var(--color-warning-border);
+}
+
+.status.info {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+  border-color: var(--color-info-border);
+}
+
+/* Scrollbar theming */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
+}
+
+/* Selection theming */
+::selection {
+  background: var(--color-primary-light);
+  color: var(--color-text-primary);
+}
