@@ -153,7 +153,9 @@
 | Date metadata | ❌ | publishedDate, modifiedDate | LOW |
 | Interactive toasts | ⚠️ | No "Open in Trilium" button | LOW |
 | Save tabs feature | ❌ | Bulk save all tabs | MED |
-| Meta Note Popup option | ❌ | Not implemented | MED |
+| Meta Note Popup option | ❌ | See Trilium Issue [#5350](https://github.com/TriliumNext/Trilium/issues/5350) | MED |
+| Add custom keyboard shortcuts | ❌ | See Trilium Issue [#5349](https://github.com/TriliumNext/Trilium/issues/5349) | LOW |
+| Handle Firefox Keyboard Shortcut Bug | ❌ | See Trilium Issue [#5226](https://github.com/TriliumNext/Trilium/issues/5226) | LOW |
 
 ---
 
