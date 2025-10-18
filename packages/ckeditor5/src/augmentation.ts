@@ -1,4 +1,5 @@
 import "ckeditor5";
+import { type CreateNoteAction } from "@triliumnext/commons"
 
 declare global {
     interface Component {
@@ -7,7 +8,8 @@ declare global {
 
     interface EditorComponent extends Component {
         loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string): Promise<void>;
-        createNoteForReferenceLink(title: string): Promise<string>;
+        // Must Return Note Path
+        createNoteFromCkEditor(title: string, parentNotePath: string | undefined, action: CreateNoteAction): Promise<string>;
         loadIncludedNote(noteId: string, $el: JQuery<HTMLElement>): void;
     }
 

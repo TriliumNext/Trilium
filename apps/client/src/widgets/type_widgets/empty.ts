@@ -1,4 +1,4 @@
-import noteAutocompleteService from "../../services/note_autocomplete.js";
+import noteAutocompleteService, { CreateMode } from "../../services/note_autocomplete.js";
 import TypeWidget from "./type_widget.js";
 import appContext from "../../components/app_context.js";
 import searchService from "../../services/search.js";
@@ -77,7 +77,7 @@ export default class EmptyTypeWidget extends TypeWidget {
         noteAutocompleteService
             .initNoteAutocomplete(this.$autoComplete, {
                 hideGoToSelectedNoteButton: true,
-                allowCreatingNotes: true,
+                createMode: CreateMode.CreateOnly,
                 allowJumpToSearchNotes: true,
                 container: this.$results[0]
             })
