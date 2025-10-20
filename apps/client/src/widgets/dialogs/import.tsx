@@ -58,7 +58,7 @@ export default function ImportDialog() {
             footer={<Button text={t("import.import")} primary disabled={!files} />}
             show={shown}
         >
-            <FormGroup name="files" label={t("import.chooseImportFile")} description={<>{t("import.importDescription")} <strong>{ noteTitle }</strong></>}>
+            <FormGroup name="files" label={t("import.chooseImportFile")} description={<>{t("import.importDescription")} <b>{ noteTitle }</b></>}>
                 <FormFileUpload multiple onChange={setFiles} />
             </FormGroup>
 
