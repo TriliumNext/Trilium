@@ -76,6 +76,7 @@ export default function NoteTypeChooserDialogComponent() {
             onHidden={() => {
                 callback?.({ success: false });
                 setShown(false);
+                setParentNote(null);
             }}
             show={shown}
             stackable
