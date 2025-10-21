@@ -13,13 +13,7 @@ import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import dateNoteService from "../services/date_notes.js";
 import { CreateChildrenResponse } from "@triliumnext/commons";
 
-// // Creating a note at a path creates ambiguity, do we want it created Into or
-// // Next to as sibling?
-// // TODO: where the heck is this defined
-// export enum NotePlacement {
-//     Into = "into",
-//     After = "after"
-// }
+// build around functionality of @see createNoteAtNote
 export enum CreateNoteTarget {
     IntoNoteURL,
     AfterNoteURL,
