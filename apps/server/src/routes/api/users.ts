@@ -5,9 +5,9 @@
  * All endpoints require authentication and most require admin privileges.
  */
 
-import userManagement from "../../services/user_management.js";
-import type { Request, Response } from "express";
+import { Request } from "express";
 import ValidationError from "../../errors/validation_error.js";
+import userManagement from "../../services/user_management.js";
 
 /**
  * Get list of all users

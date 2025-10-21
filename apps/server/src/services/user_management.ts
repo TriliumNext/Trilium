@@ -34,6 +34,7 @@ export interface UserCreateData {
 export interface UserUpdateData {
     email?: string;
     password?: string;
+    oldPassword?: string; // Required when changing password to decrypt existing data
     isActive?: boolean;
     isAdmin?: boolean;
 }
@@ -108,15 +109,9 @@ function createUser(userData: UserCreateData): User {
 }
 
 /**
- * Get user by ID
+ * Helper function to map database row to User object
  */
-function getUserById(userId: string): User | null {
-    const user = sql.getRow(`
-        SELECT * FROM users WHERE userId = ?
-    `, [userId]) as any;
-    
-    if (!user) return null;
-    
+function mapRowToUser(user: any): User {
     return {
         userId: user.userId,
         username: user.username,
@@ -133,6 +128,17 @@ function getUserById(userId: string): User | null {
 }
 
 /**
+ * Get user by ID
+ */
+function getUserById(userId: string): User | null {
+    const user = sql.getRow(`
+        SELECT * FROM users WHERE userId = ?
+    `, [userId]) as any;
+    
+    return user ? mapRowToUser(user) : null;
+}
+
+/**
  * Get user by username
  */
 function getUserByUsername(username: string): User | null {
@@ -140,21 +146,7 @@ function getUserByUsername(username: string): User | null {
         SELECT * FROM users WHERE username = ? COLLATE NOCASE
     `, [username]) as any;
     
-    if (!user) return null;
-    
-    return {
-        userId: user.userId,
-        username: user.username,
-        email: user.email,
-        passwordHash: user.passwordHash,
-        passwordSalt: user.passwordSalt,
-        derivedKeySalt: user.derivedKeySalt,
-        encryptedDataKey: user.encryptedDataKey,
-        isActive: Boolean(user.isActive),
-        isAdmin: Boolean(user.isAdmin),
-        utcDateCreated: user.utcDateCreated,
-        utcDateModified: user.utcDateModified
-    };
+    return user ? mapRowToUser(user) : null;
 }
 
 /**
@@ -173,16 +165,44 @@ function updateUser(userId: string, updates: UserUpdateData): User | null {
         values.push(updates.email || null);
     }
     
-    if (updates.password !== undefined) {
+    if (updates.password !== undefined && updates.oldPassword !== undefined) {
+        // Validate that user has existing encrypted data
+        if (!user.derivedKeySalt || !user.encryptedDataKey) {
+            throw new Error("Cannot change password: user has no encrypted data");
+        }
+        
+        // First, decrypt the existing dataKey with the old password
+        const oldPasswordDerivedKey = crypto.scryptSync(
+            updates.oldPassword, 
+            user.derivedKeySalt, 
+            32, 
+            { N: 16384, r: 8, p: 1 }
+        );
+        const dataKey = dataEncryptionService.decrypt(
+            oldPasswordDerivedKey, 
+            user.encryptedDataKey
+        );
+        
+        if (!dataKey) {
+            throw new Error("Cannot change password: failed to decrypt existing data key with old password");
+        }
+        
         // Generate new password hash
         const passwordSalt = randomSecureToken(32);
         const derivedKeySalt = randomSecureToken(32);
         const passwordHash = hashPassword(updates.password, passwordSalt);
         
-        // Re-encrypt data key with new password
-    const dataKey = randomSecureToken(16);
-    const passwordDerivedKey = crypto.scryptSync(updates.password, derivedKeySalt, 32, { N: 16384, r: 8, p: 1 });
-    const encryptedDataKey = dataEncryptionService.encrypt(passwordDerivedKey, Buffer.from(dataKey));
+        // Re-encrypt the same dataKey with new password
+        const passwordDerivedKey = crypto.scryptSync(
+            updates.password, 
+            derivedKeySalt, 
+            32, 
+            { N: 16384, r: 8, p: 1 }
+        );
+        const encryptedDataKey = dataEncryptionService.encrypt(
+            passwordDerivedKey, 
+            dataKey
+        );
         
         updateParts.push('passwordHash = ?', 'passwordSalt = ?', 'derivedKeySalt = ?', 'encryptedDataKey = ?');
         values.push(passwordHash, passwordSalt, derivedKeySalt, encryptedDataKey);

@@ -13,10 +13,8 @@
 
 import sql from "../services/sql.js";
 import optionService from "../services/options.js";
-import { randomSecureToken } from "../services/utils.js";
-import passwordEncryptionService from "../services/encryption/password_encryption.js";
+import { randomSecureToken, toBase64 } from "../services/utils.js";
 import myScryptService from "../services/encryption/my_scrypt.js";
-import { toBase64 } from "../services/utils.js";
 
 export default async () => {
     console.log("Starting multi-user support migration (v234)...");
@@ -191,16 +189,16 @@ export default async () => {
             `, [adminUserId, 'role_admin', now]);
 
             console.log(`Created default admin user with ID: ${adminUserId}`);
+            
+            // 8. Associate all existing data with the admin user (only if admin was created)
+            sql.execute(`UPDATE notes SET userId = ? WHERE userId IS NULL`, [adminUserId]);
+            sql.execute(`UPDATE branches SET userId = ? WHERE userId IS NULL`, [adminUserId]);
+            sql.execute(`UPDATE etapi_tokens SET userId = ? WHERE userId IS NULL`, [adminUserId]);
+            sql.execute(`UPDATE recent_notes SET userId = ? WHERE userId IS NULL`, [adminUserId]);
         }
     } else {
         console.log("No existing password found, admin user will need to be created on first login");
     }
-
-    // 8. Associate all existing data with the admin user
-    sql.execute(`UPDATE notes SET userId = ? WHERE userId IS NULL`, [adminUserId]);
-    sql.execute(`UPDATE branches SET userId = ? WHERE userId IS NULL`, [adminUserId]);
-    sql.execute(`UPDATE etapi_tokens SET userId = ? WHERE userId IS NULL`, [adminUserId]);
-    sql.execute(`UPDATE recent_notes SET userId = ? WHERE userId IS NULL`, [adminUserId]);
 
     console.log("Multi-user support migration completed successfully!");
 };
