@@ -13,7 +13,30 @@ import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import dateNoteService from "../services/date_notes.js";
 import { CreateChildrenResponse } from "@triliumnext/commons";
 
-export interface CreateNoteOpts {
+// // Creating a note at a path creates ambiguity, do we want it created Into or
+// // Next to as sibling?
+// // TODO: where the heck is this defined
+// export enum NotePlacement {
+//     Into = "into",
+//     After = "after"
+// }
+export enum CreateNoteTarget {
+    IntoNoteURL,
+    AfterNoteURL,
+    IntoInbox,
+}
+
+export type BaseCreateNoteOpts =
+  | ({
+      promptForType: true;
+      type?: never;
+    } & BaseCreateNoteSharedOpts)
+  | ({
+      promptForType?: false;
+      type?: string;
+    } & BaseCreateNoteSharedOpts);
+
+export interface BaseCreateNoteSharedOpts {
     isProtected?: boolean;
     saveSelection?: boolean;
     title?: string | null;
@@ -23,9 +46,28 @@ export interface CreateNoteOpts {
     templateNoteId?: string;
     activate?: boolean;
     focus?: "title" | "content";
-    target?: string;
     targetBranchId?: string;
     textEditor?: CKTextEditor;
+}
+
+// For creating *in a specific path*
+type CreateNoteAtURLOpts = BaseCreateNoteSharedOpts & {
+    // Url is either path or Id
+    parentNoteUrl: string;
+}
+
+export type CreateNoteIntoURLOpts = CreateNoteAtURLOpts;
+export type CreateNoteAfterURLOpts = Omit<CreateNoteAtURLOpts, "targetBranchId"> & {
+    // targetBranchId disambiguates the position for cloned notes, thus it must
+    // only be specified for a sibling
+    // This is also specified in the backend
+    targetBranchId: string;
+};
+
+// For creating *in the inbox*
+export type InboxNoteOpts = BaseCreateNoteSharedOpts & {
+    // disallowed
+    parentNoteUrl?: never;
 }
 
 interface Response {
@@ -42,14 +84,15 @@ interface DuplicateResponse {
 /**
  * Core function that creates a new note under the specified parent note path.
  *
- * @param {string | undefined} parentNotePath - The parent note path where the new note will be created.
- * @param {CreateNoteOpts} [options] - Options controlling note creation (title, content, type, template, focus, etc.).
+ * @param target - Duplicates apps/server/src/routes/api/notes.ts createNote
+ * @param {BaseCreateNoteSharedOpts} [options] - Options controlling note creation (title, content, type, template, focus, etc.).
+ * with parentNotePath - The parent note path where the new note will be created.
  * @returns {Promise<{ note: FNote | null; branch: FBranch | undefined }>}
  * Resolves with the created note and branch entities.
  */
-async function createNoteIntoPath(
-    parentNotePath: string | undefined,
-    options: CreateNoteOpts = {}
+async function createNoteAtNote(
+    target: "into" | "after" | "before",
+    options: CreateNoteAtURLOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
     options = Object.assign(
         {
@@ -74,7 +117,8 @@ async function createNoteIntoPath(
         [options.title, options.content] = parseSelectedHtml(options.textEditor.getSelectedHtml());
     }
 
-    const parentNoteId = treeService.getNoteIdFromUrl(parentNotePath);
+    const parentNoteUrl = options.parentNoteUrl;
+    const parentNoteId = treeService.getNoteIdFromUrl(parentNoteUrl);
 
     if (options.type === "mermaid" && !options.content && !options.templateNoteId) {
         options.content = `graph TD;
@@ -84,7 +128,7 @@ async function createNoteIntoPath(
     C-->D;`;
     }
 
-    const { note, branch } = await server.post<Response>(`notes/${parentNoteId}/children?target=${options.target}&targetBranchId=${options.targetBranchId || ""}`, {
+    const { note, branch } = await server.post<Response>(`notes/${parentNoteId}/children?target=${target}&targetBranchId=${options.targetBranchId || ""}`, {
         title: options.title,
         content: options.content || "",
         isProtected: options.isProtected,
@@ -102,7 +146,7 @@ async function createNoteIntoPath(
 
     const activeNoteContext = appContext.tabManager.getActiveContext();
     if (activeNoteContext && options.activate) {
-        await activeNoteContext.setNote(`${parentNotePath}/${note.noteId}`);
+        await activeNoteContext.setNote(`${parentNoteId}/${note.noteId}`);
 
         if (options.focus === "title") {
             appContext.triggerEvent("focusAndSelectTitle", { isNewNote: true });
@@ -120,15 +164,27 @@ async function createNoteIntoPath(
     };
 }
 
+async function createNoteIntoNote(
+    options: CreateNoteIntoURLOpts
+): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
+    return createNoteAtNote("into", {...options} as CreateNoteAtURLOpts);
+}
+
+async function createNoteAfterNote(
+    options: CreateNoteAfterURLOpts
+): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
+    return createNoteAtNote("after", {...options} as CreateNoteAtURLOpts);
+}
+
 /**
  * Creates a new note inside the user's Inbox.
  *
- * @param {CreateNoteOpts} [options] - Optional settings such as title, type, template, or content.
+ * @param {BaseCreateNoteSharedOpts} [options] - Optional settings such as title, type, template, or content.
  * @returns {Promise<{ note: FNote | null; branch: FBranch | undefined }>}
  * Resolves with the created note and its branch, or `{ note: null, branch: undefined }` if the inbox is missing.
  */
 async function createNoteIntoInbox(
-    options: CreateNoteOpts = {}
+    options: InboxNoteOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
     const inboxNote = await dateNoteService.getInboxNote();
     if (!inboxNote) {
@@ -142,10 +198,12 @@ async function createNoteIntoInbox(
             inboxNote.isProtected && protectedSessionHolder.isProtectedSessionAvailable();
     }
 
-    const result = await createNoteIntoPath(inboxNote.noteId, {
-        ...options,
-        target: "into",
-    });
+    const result = await createNoteIntoNote(
+        {
+            ...options,
+            parentNoteUrl: inboxNote.noteId,
+        } as CreateNoteIntoURLOpts
+    );
 
     return result;
 }
@@ -156,17 +214,70 @@ async function chooseNoteType() {
     });
 }
 
-async function createNoteIntoPathWithTypePrompt(parentNotePath: string, options: CreateNoteOpts = {}) {
-    const { success, noteType, templateNoteId, notePath } = await chooseNoteType();
+async function createNote(
+  target: CreateNoteTarget.IntoNoteURL,
+  options: CreateNoteIntoURLOpts
+): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
 
-    if (!success) {
-        return;
+async function createNote(
+  target: CreateNoteTarget.AfterNoteURL,
+  options: CreateNoteAfterURLOpts
+): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
+
+async function createNote(
+  target: CreateNoteTarget.IntoInbox,
+  options?: InboxNoteOpts
+): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
+
+async function createNote(
+  target: CreateNoteTarget,
+  options: BaseCreateNoteOpts = {promptForType: true}
+): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
+
+    let resolvedOptions = { ...options };
+    let resolvedTarget = target;
+
+    // handle prompts centrally to write once fix for all
+    if (options.promptForType) {
+        const { success, noteType, templateNoteId, notePath } = await chooseNoteType();
+
+        if (!success) return {
+            note: null, branch: undefined
+        };
+
+        resolvedOptions = {
+            ...resolvedOptions,
+            promptForType: false,
+            type: noteType,
+            templateNoteId,
+        } as BaseCreateNoteOpts;
+
+        if (notePath) {
+            resolvedOptions = resolvedOptions as CreateNoteIntoURLOpts;
+            resolvedOptions = {
+                ...resolvedOptions,
+                parentNoteUrl: notePath,
+            } as CreateNoteIntoURLOpts;
+            resolvedTarget = CreateNoteTarget.IntoNoteURL;
+        }
     }
 
-    options.type = noteType;
-    options.templateNoteId = templateNoteId;
+    switch (resolvedTarget) {
+        case CreateNoteTarget.IntoNoteURL:
+            return await createNoteIntoNote(resolvedOptions as CreateNoteIntoURLOpts);
 
-    return await createNoteIntoPath(notePath || parentNotePath, options);
+        case CreateNoteTarget.AfterNoteURL:
+            return await createNoteAfterNote(resolvedOptions as CreateNoteAfterURLOpts);
+
+        case CreateNoteTarget.IntoInbox:
+            return await createNoteIntoInbox(resolvedOptions as InboxNoteOpts);
+
+        default: {
+            console.warn("[createNote] Unknown target:", target, resolvedOptions);
+            toastService.showMessage("Unknown note creation target."); // optional
+            return { note: null, branch: undefined };
+        }
+    }
 }
 
 /* If the first element is heading, parse it out and use it as a new heading. */
@@ -201,9 +312,6 @@ async function duplicateSubtree(noteId: string, parentNotePath: string) {
 }
 
 export default {
-    createNoteIntoInbox,
-    createNoteIntoPath,
-    createNoteIntoPathWithTypePrompt,
+    createNote,
     duplicateSubtree,
-    chooseNoteType
 };

@@ -3,7 +3,7 @@ import appContext from "../../components/app_context";
 import contextMenu from "../../menus/context_menu";
 import branches from "../../services/branches";
 import { t } from "../../services/i18n";
-import note_create from "../../services/note_create";
+import note_create, { CreateNoteIntoURLOpts, CreateNoteTarget } from "../../services/note_create";
 import tree from "../../services/tree";
 import ActionButton from "../react/ActionButton";
 import { ParentComponent } from "../react/react_utils";
@@ -29,7 +29,12 @@ export default function MobileDetailMenu() {
                     ],
                     selectMenuItemHandler: async ({ command }) => {
                         if (command === "insertChildNote") {
-                            note_create.createNoteIntoPath(appContext.tabManager.getActiveContextNotePath() ?? undefined);
+                            note_create.createNote(
+                                CreateNoteTarget.IntoNoteURL,
+                                {
+                                    parentNoteUrl: appContext.tabManager.getActiveContextNotePath() ?? undefined
+                                } as CreateNoteIntoURLOpts
+                            );
                         } else if (command === "delete") {
                             const notePath = appContext.tabManager.getActiveContextNotePath();
                             if (!notePath) {

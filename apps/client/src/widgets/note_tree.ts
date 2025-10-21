@@ -7,7 +7,7 @@ import branchService from "../services/branches.js";
 import ws from "../services/ws.js";
 import NoteContextAwareWidget from "./note_context_aware_widget.js";
 import server from "../services/server.js";
-import noteCreateService from "../services/note_create.js";
+import noteCreateService, { CreateNoteIntoURLOpts, CreateNoteTarget } from "../services/note_create.js";
 import toastService from "../services/toast.js";
 import appContext, { type CommandListenerData, type EventData } from "../components/app_context.js";
 import keyboardActionsService from "../services/keyboard_actions.js";
@@ -224,7 +224,13 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             } else if (target.classList.contains("add-note-button")) {
                 const node = $.ui.fancytree.getNode(e as unknown as Event);
                 const parentNotePath = treeService.getNotePath(node);
-                noteCreateService.createNoteIntoPath(parentNotePath, { isProtected: node.data.isProtected });
+                noteCreateService.createNote(
+                    CreateNoteTarget.IntoNoteURL,
+                    {
+                        parentNoteUrl: parentNotePath,
+                        isProtected: node.data.isProtected
+                    } as CreateNoteIntoURLOpts,
+                );
             } else if (target.classList.contains("enter-workspace-button")) {
                 const node = $.ui.fancytree.getNode(e as unknown as Event);
                 this.triggerCommand("hoistNote", { noteId: node.data.noteId });
@@ -1836,9 +1842,13 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     const node = this.getActiveNode();
                     if (!node) return;
                     const notePath = treeService.getNotePath(node);
-                    noteCreateService.createNoteIntoPath(notePath, {
-                        isProtected: node.data.isProtected
-                    });
+                    noteCreateService.createNote(
+                        CreateNoteTarget.IntoNoteURL,
+                        {
+                            parentNoteUrl: notePath,
+                            isProtected: node.data.isProtected
+                        } as CreateNoteIntoURLOpts
+                    )
                 }
             }),
             new TouchBar.TouchBarButton({

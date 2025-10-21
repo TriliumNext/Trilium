@@ -1,6 +1,6 @@
 import server from "./server.js";
 import appContext from "../components/app_context.js";
-import noteCreateService from "./note_create.js";
+import noteCreateService, { CreateNoteIntoURLOpts, CreateNoteTarget, InboxNoteOpts } from "./note_create.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import commandRegistry from "./command_registry.js";
@@ -481,15 +481,16 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
 
             // --- CREATE NOTE INTO INBOX ---
             case SuggestionAction.CreateNoteIntoInbox: {
-                const { success, noteType, templateNoteId } = await noteCreateService.chooseNoteType();
-                if (!success) return;
+                const { note } = await noteCreateService.createNote(
+                    CreateNoteTarget.IntoInbox,
+                    {
+                        title: suggestion.noteTitle,
+                        activate: true,
+                        promptForType: true,
+                    } as InboxNoteOpts
+                );
 
-                const { note } = await noteCreateService.createNoteIntoInbox({
-                    title: suggestion.noteTitle,
-                    activate: true,
-                    type: noteType,
-                    templateNoteId,
-                });
+                if (!note) return;
 
                 const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
                 suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
@@ -501,15 +502,16 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
 
             // --- CREATE AND LINK NOTE INTO INBOX ---
             case SuggestionAction.CreateAndLinkNoteIntoInbox: {
-                const { success, noteType, templateNoteId } = await noteCreateService.chooseNoteType();
-                if (!success) return;
+                const { note } = await noteCreateService.createNote(
+                    CreateNoteTarget.IntoInbox,
+                    {
+                        title: suggestion.noteTitle,
+                        activate: false,
+                        promptForType: true,
+                    } as InboxNoteOpts,
+                );
 
-                const { note } = await noteCreateService.createNoteIntoInbox({
-                    title: suggestion.noteTitle,
-                    activate: false,
-                    type: noteType,
-                    templateNoteId,
-                });
+                if (!note) return;
 
                 const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
                 suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
@@ -521,15 +523,17 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
 
             // --- CREATE NOTE INTO PATH ---
             case SuggestionAction.CreateNoteIntoPath: {
-                const { success, noteType, templateNoteId, notePath } = await noteCreateService.chooseNoteType();
-                if (!success) return;
+                const { note } = await noteCreateService.createNote(
+                    CreateNoteTarget.IntoNoteURL,
+                    {
+                        parentNoteUrl: suggestion.parentNoteId,
+                        title: suggestion.noteTitle,
+                        activate: true,
+                        promptForType: true,
+                    } as CreateNoteIntoURLOpts
+                )
 
-                const { note } = await noteCreateService.createNoteIntoPath(notePath || suggestion.parentNoteId, {
-                    title: suggestion.noteTitle,
-                    activate: true,
-                    type: noteType,
-                    templateNoteId,
-                });
+                if (!note) return;
 
                 const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
                 suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
@@ -541,15 +545,16 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
 
             // --- CREATE AND LINK NOTE INTO PATH ---
             case SuggestionAction.CreateAndLinkNoteIntoPath: {
-                const { success, noteType, templateNoteId, notePath } = await noteCreateService.chooseNoteType();
-                if (!success) return;
+                const { note } = await noteCreateService.createNote(
+                    CreateNoteTarget.IntoNoteURL,
+                    {
+                        title: suggestion.noteTitle,
+                        activate: false,
+                        promptForType: true,
+                    } as CreateNoteIntoURLOpts
+                );
 
-                const { note } = await noteCreateService.createNoteIntoPath(notePath || suggestion.parentNoteId, {
-                    title: suggestion.noteTitle,
-                    activate: false,
-                    type: noteType,
-                    templateNoteId,
-                });
+                if (!note) return
 
                 const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
                 suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);

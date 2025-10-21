@@ -1,5 +1,5 @@
 import appContext, { type EventData } from "./app_context.js";
-import noteCreateService from "../services/note_create.js";
+import noteCreateService, { CreateNoteTarget, CreateNoteIntoURLOpts, CreateNoteAfterURLOpts } from "../services/note_create.js";
 import treeService from "../services/tree.js";
 import hoistedNoteService from "../services/hoisted_note.js";
 import Component from "./component.js";
@@ -48,10 +48,15 @@ export default class MainTreeExecutors extends Component {
             return;
         }
 
-        await noteCreateService.createNoteIntoPath(activeNoteContext.notePath, {
-            isProtected: activeNoteContext.note.isProtected,
-            saveSelection: false
-        });
+        await noteCreateService.createNote(
+            CreateNoteTarget.IntoNoteURL,
+            {
+                parentNoteUrl: activeNoteContext.notePath,
+                isProtected: activeNoteContext.note.isProtected,
+                saveSelection: false,
+                promptForType: false,
+            } as CreateNoteIntoURLOpts
+        );
     }
 
     async createNoteAfterCommand() {
@@ -72,11 +77,14 @@ export default class MainTreeExecutors extends Component {
             return;
         }
 
-        await noteCreateService.createNoteIntoPath(parentNotePath, {
-            target: "after",
-            targetBranchId: node.data.branchId,
-            isProtected: isProtected,
-            saveSelection: false
-        });
+        await noteCreateService.createNote(
+            CreateNoteTarget.AfterNoteURL,
+            {
+                parentNoteUrl: parentNotePath,
+                targetBranchId: node.data.branchId,
+                isProtected: isProtected,
+                saveSelection: false
+            } as CreateNoteAfterURLOpts
+        );
     }
 }

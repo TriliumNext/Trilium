@@ -7,7 +7,7 @@ import branches from "../../../services/branches";
 import { executeBulkActions } from "../../../services/bulk_action";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
-import note_create from "../../../services/note_create.js";
+import note_create, { CreateNoteIntoURLOpts, CreateNoteTarget } from "../../../services/note_create.js";
 import server from "../../../services/server";
 import { ColumnMap } from "./data";
 
@@ -39,10 +39,11 @@ export default class BoardApi {
             const parentNotePath = this.parentNote.noteId;
 
             // Create a new note as a child of the parent note
-            const { note: newNote, branch: newBranch } = await note_create.createNoteIntoPath(parentNotePath, {
+            const { note: newNote, branch: newBranch } = await note_create.createNote(CreateNoteTarget.IntoNoteURL, {
+                parentNoteUrl: parentNotePath,
                 activate: false,
-                title
-            });
+                title,
+            } as CreateNoteIntoURLOpts);
 
             if (newNote && newBranch) {
                 await this.changeColumn(newNote.noteId, column);
@@ -140,12 +141,16 @@ export default class BoardApi {
             column: string,
             relativeToBranchId: string,
             direction: "before" | "after") {
-        const { note, branch } = await note_create.createNoteIntoPath(this.parentNote.noteId, {
-            activate: false,
-            targetBranchId: relativeToBranchId,
-            target: direction,
-            title: t("board_view.new-item")
-        });
+        const { note, branch } = await note_create.createNote(
+            CreateNoteTarget.IntoNoteURL,
+            {
+                parentNoteUrl: this.parentNote.noteId,
+                activate: false,
+                targetBranchId: relativeToBranchId,
+                target: direction,
+                title: t("board_view.new-item"),
+            } as CreateNoteIntoURLOpts
+        );
 
         if (!note || !branch) {
             throw new Error("Failed to create note");
