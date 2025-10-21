@@ -20,7 +20,6 @@ export default function useRowTableEditing(api: RefObject<Tabulator>, attributeD
                     ...customOpts
                 }
                 note_create.createNote(
-                    CreateNoteTarget.IntoNoteURL,
                     {
                         parentNoteUrl: notePath,
                         ...opts

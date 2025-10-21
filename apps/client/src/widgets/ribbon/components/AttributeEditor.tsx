@@ -19,7 +19,7 @@ import contextMenu from "../../../menus/context_menu";
 import type { CommandData, FilteredCommandNames } from "../../../components/app_context";
 import { AttributeType } from "@triliumnext/commons";
 import attributes from "../../../services/attributes";
-import note_create, { CreateNoteAfterURLOpts, CreateNoteIntoURLOpts, CreateNoteTarget, InboxNoteOpts } from "../../../services/note_create";
+import note_create, { CreateNoteAfterURLOpts, CreateNoteIntoURLOpts, CreateNoteTarget, CreateNoteIntoInboxURLOpts } from "../../../services/note_create";
 import { CreateNoteAction } from "@triliumnext/commons";
 
 type AttributeCommandNames = FilteredCommandNames<CommandData>;
@@ -262,11 +262,11 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                 case CreateNoteAction.CreateNoteIntoInbox:
                 case CreateNoteAction.CreateAndLinkNoteIntoInbox: {
                     const { note } = await note_create.createNote(
-                        CreateNoteTarget.IntoInbox,
                         {
+                            target: CreateNoteTarget.IntoInbox,
                             title,
                             activate: false
-                        } as InboxNoteOpts
+                        } as CreateNoteIntoInboxURLOpts
                     );
                     return note?.getBestNotePathString() ?? "";
                 }
@@ -274,8 +274,8 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                 case CreateNoteAction.CreateNoteIntoPath:
                 case CreateNoteAction.CreateAndLinkNoteIntoPath: {
                     const resp = await note_create.createNote(
-                        CreateNoteTarget.IntoNoteURL,
                         {
+                            target: CreateNoteTarget.IntoNoteURL,
                             parentNoteUrl: parentNotePath,
                             title,
                             activate: false,
