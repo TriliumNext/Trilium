@@ -234,8 +234,8 @@ export default class RootCommandExecutor extends Component {
             const rootNoteId = "root";
 
             const result = await noteCreateService.createNote(
-                CreateNoteTarget.IntoNoteURL,
                 {
+                    target: CreateNoteTarget.IntoNoteURL,
                     title: "New AI Chat",
                     type: "aiChat",
                     content: JSON.stringify({

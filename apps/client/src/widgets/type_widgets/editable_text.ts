@@ -1,7 +1,7 @@
 import utils, { hasTouchBar } from "../../services/utils.js";
 import keyboardActionService from "../../services/keyboard_actions.js";
 import froca from "../../services/froca.js";
-import noteCreateService, { CreateNoteIntoURLOpts, CreateNoteTarget, InboxNoteOpts } from "../../services/note_create.js";
+import noteCreateService, { CreateNoteIntoURLOpts, CreateNoteTarget, CreateNoteIntoInboxURLOpts } from "../../services/note_create.js";
 import AbstractTextTypeWidget from "./abstract_text_type_widget.js";
 import link from "../../services/link.js";
 import appContext, { type CommandListenerData, type EventData } from "../../components/app_context.js";
@@ -475,12 +475,12 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                 // --- Create note INTO inbox ---
                 case CreateNoteAction.CreateNoteIntoInbox: {
                     const { note } = await note_create.createNote(
-                        CreateNoteTarget.IntoInbox,
                         {
+                            target: CreateNoteTarget.IntoInbox,
                             title,
                             activate: true,
                             promptForType: true,
-                        } as InboxNoteOpts
+                        } as CreateNoteIntoInboxURLOpts
                     );
 
                     return note?.getBestNotePathString() ?? "";
@@ -489,8 +489,8 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                 // --- Create note INTO current path ---
                 case CreateNoteAction.CreateNoteIntoPath: {
                     const { note } = await note_create.createNote(
-                        CreateNoteTarget.IntoNoteURL,
                         {
+                            target: CreateNoteTarget.IntoNoteURL,
                             parentNoteUrl: parentNotePath,
                             title,
                             activate: true,
@@ -504,12 +504,12 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                 // --- Create & link note INTO inbox ---
                 case CreateNoteAction.CreateAndLinkNoteIntoInbox: {
                     const { note } = await noteCreateService.createNote(
-                        CreateNoteTarget.IntoInbox,
                         {
+                            target: CreateNoteTarget.IntoInbox,
                             title,
                             activate: false,
                             promptForType: true,
-                        } as InboxNoteOpts
+                        } as CreateNoteIntoInboxURLOpts
                     );
 
                     return note?.getBestNotePathString() ?? "";
@@ -518,8 +518,8 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                 // --- Create & link note INTO current path ---
                 case CreateNoteAction.CreateAndLinkNoteIntoPath: {
                     const { note } = await noteCreateService.createNote(
-                        CreateNoteTarget.IntoNoteURL,
                         {
+                            target: CreateNoteTarget.IntoNoteURL,
                             parentNoteUrl: parentNotePath,
                             title,
                             activate: false,

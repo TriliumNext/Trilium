@@ -430,8 +430,8 @@ export default class NoteDetailWidget extends NoteContextAwareWidget {
         const parentNotePath = appContext.tabManager.getActiveContextNotePath();
         if (this.noteContext && parentNotePath) {
             noteCreateService.createNote(
-                CreateNoteTarget.IntoNoteURL,
                 {
+                    target: CreateNoteTarget.IntoNoteURL,
                     parentNoteUrl: parentNotePath,
                     isProtected: note.isProtected,
                     saveSelection: true,
