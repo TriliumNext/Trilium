@@ -21,6 +21,29 @@ export enum CreateNoteTarget {
     IntoInbox,
 }
 
+/**
+ * validation of note creation options through type checking.
+ *
+ * If the typechecking returns no errors, then the inputs create a valid state,
+ * but only if the types are defined semantically correct.
+ *
+ * These definitions use discriminated unions (`BaseCreateNoteOpts`) built from composable
+ * `type` aliases (not `interface`) to ensure that only *logically valid* configurations
+ * of creation parameters can exist at compile time.
+ *
+ * Through the Curry–Howard correspondence, this acts as a lightweight proof system:
+ * if the code type-checks, then the provided options represent a valid state
+ * for note creation — i.e. the combination of fields cannot express an invalid
+ * or contradictory configuration.
+ *
+ * In other words:
+ *   - Each variant of `BaseCreateNoteOpts` encodes one valid semantic path.
+ *   - The type system statically eliminates impossible states.
+ *   - The runtime logic can therefore assume the input is internally consistent.
+ *
+ * This is why `type` is used instead of `interface`: the goal is type-level proof
+ * of validity.
+ */
 export type BaseCreateNoteOpts =
   | ({
       promptForType: true;
@@ -31,7 +54,7 @@ export type BaseCreateNoteOpts =
       type?: string;
     } & BaseCreateNoteSharedOpts);
 
-export interface BaseCreateNoteSharedOpts {
+export type BaseCreateNoteSharedOpts = {
     target: CreateNoteTarget;
     isProtected?: boolean;
     saveSelection?: boolean;
@@ -63,7 +86,6 @@ type CreateNoteSiblingURLOpts = Omit<CreateNoteAtURLOpts, "targetBranchId"> & {
 export type CreateNoteBeforeURLOpts = CreateNoteSiblingURLOpts;
 export type CreateNoteAfterURLOpts = CreateNoteSiblingURLOpts;
 
-// For creating *in the inbox*
 export type CreateNoteIntoInboxURLOpts = BaseCreateNoteSharedOpts & {
     // disallowed
     parentNoteUrl?: never;
