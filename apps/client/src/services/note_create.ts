@@ -23,6 +23,7 @@ import { CreateChildrenResponse } from "@triliumnext/commons";
 export enum CreateNoteTarget {
     IntoNoteURL,
     AfterNoteURL,
+    BeforeNoteURL,
     IntoInbox,
 }
 
@@ -37,6 +38,7 @@ export type BaseCreateNoteOpts =
     } & BaseCreateNoteSharedOpts);
 
 export interface BaseCreateNoteSharedOpts {
+    target: CreateNoteTarget;
     isProtected?: boolean;
     saveSelection?: boolean;
     title?: string | null;
@@ -57,15 +59,18 @@ type CreateNoteAtURLOpts = BaseCreateNoteSharedOpts & {
 }
 
 export type CreateNoteIntoURLOpts = CreateNoteAtURLOpts;
-export type CreateNoteAfterURLOpts = Omit<CreateNoteAtURLOpts, "targetBranchId"> & {
-    // targetBranchId disambiguates the position for cloned notes, thus it must
-    // only be specified for a sibling
-    // This is also specified in the backend
+
+// targetBranchId disambiguates the position for cloned notes, thus it must
+// only be specified for a sibling
+// This is also specified in the backend
+type CreateNoteSiblingURLOpts = Omit<CreateNoteAtURLOpts, "targetBranchId"> & {
     targetBranchId: string;
 };
+export type CreateNoteBeforeURLOpts = CreateNoteSiblingURLOpts;
+export type CreateNoteAfterURLOpts = CreateNoteSiblingURLOpts;
 
 // For creating *in the inbox*
-export type InboxNoteOpts = BaseCreateNoteSharedOpts & {
+export type CreateNoteIntoInboxURLOpts = BaseCreateNoteSharedOpts & {
     // disallowed
     parentNoteUrl?: never;
 }
@@ -170,6 +175,12 @@ async function createNoteIntoNote(
     return createNoteAtNote("into", {...options} as CreateNoteAtURLOpts);
 }
 
+async function createNoteBeforeNote(
+    options: CreateNoteBeforeURLOpts
+): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
+    return createNoteAtNote("before", {...options} as CreateNoteAtURLOpts);
+}
+
 async function createNoteAfterNote(
     options: CreateNoteAfterURLOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
@@ -184,7 +195,7 @@ async function createNoteAfterNote(
  * Resolves with the created note and its branch, or `{ note: null, branch: undefined }` if the inbox is missing.
  */
 async function createNoteIntoInbox(
-    options: InboxNoteOpts
+    options: CreateNoteIntoInboxURLOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
     const inboxNote = await dateNoteService.getInboxNote();
     if (!inboxNote) {
@@ -215,27 +226,26 @@ async function chooseNoteType() {
 }
 
 async function createNote(
-  target: CreateNoteTarget.IntoNoteURL,
   options: CreateNoteIntoURLOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
 
 async function createNote(
-  target: CreateNoteTarget.AfterNoteURL,
   options: CreateNoteAfterURLOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
 
 async function createNote(
-  target: CreateNoteTarget.IntoInbox,
-  options?: InboxNoteOpts
+  options: CreateNoteBeforeURLOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
 
 async function createNote(
-  target: CreateNoteTarget,
-  options: BaseCreateNoteOpts = {promptForType: true}
+  options: CreateNoteIntoInboxURLOpts
+): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
+
+async function createNote(
+  options: BaseCreateNoteOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
 
     let resolvedOptions = { ...options };
-    let resolvedTarget = target;
 
     // handle prompts centrally to write once fix for all
     if (options.promptForType) {
@@ -256,24 +266,27 @@ async function createNote(
             resolvedOptions = resolvedOptions as CreateNoteIntoURLOpts;
             resolvedOptions = {
                 ...resolvedOptions,
+                target: CreateNoteTarget.IntoNoteURL,
                 parentNoteUrl: notePath,
             } as CreateNoteIntoURLOpts;
-            resolvedTarget = CreateNoteTarget.IntoNoteURL;
         }
     }
 
-    switch (resolvedTarget) {
+    switch (resolvedOptions.target) {
         case CreateNoteTarget.IntoNoteURL:
             return await createNoteIntoNote(resolvedOptions as CreateNoteIntoURLOpts);
+
+        case CreateNoteTarget.BeforeNoteURL:
+            return await createNoteBeforeNote(resolvedOptions as CreateNoteBeforeURLOpts);
 
         case CreateNoteTarget.AfterNoteURL:
             return await createNoteAfterNote(resolvedOptions as CreateNoteAfterURLOpts);
 
         case CreateNoteTarget.IntoInbox:
-            return await createNoteIntoInbox(resolvedOptions as InboxNoteOpts);
+            return await createNoteIntoInbox(resolvedOptions as CreateNoteIntoInboxURLOpts);
 
         default: {
-            console.warn("[createNote] Unknown target:", target, resolvedOptions);
+            console.warn("[createNote] Unknown target:", options.target, resolvedOptions);
             toastService.showMessage("Unknown note creation target."); // optional
             return { note: null, branch: undefined };
         }

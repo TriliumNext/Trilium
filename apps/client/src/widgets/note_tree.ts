@@ -225,8 +225,8 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 const node = $.ui.fancytree.getNode(e as unknown as Event);
                 const parentNotePath = treeService.getNotePath(node);
                 noteCreateService.createNote(
-                    CreateNoteTarget.IntoNoteURL,
                     {
+                        target: CreateNoteTarget.IntoNoteURL,
                         parentNoteUrl: parentNotePath,
                         isProtected: node.data.isProtected
                     } as CreateNoteIntoURLOpts,
@@ -1843,8 +1843,8 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     if (!node) return;
                     const notePath = treeService.getNotePath(node);
                     noteCreateService.createNote(
-                        CreateNoteTarget.IntoNoteURL,
                         {
+                            target: CreateNoteTarget.IntoNoteURL,
                             parentNoteUrl: notePath,
                             isProtected: node.data.isProtected
                         } as CreateNoteIntoURLOpts

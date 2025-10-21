@@ -285,8 +285,8 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
 
 
             noteCreateService.createNote(
-                CreateNoteTarget.AfterNoteURL,
                 {
+                    target: CreateNoteTarget.AfterNoteURL,
                     parentNoteUrl: parentNotePath,
                     targetBranchId: this.node.data.branchId,
                     type: type,
@@ -299,14 +299,13 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
             const parentNotePath = treeService.getNotePath(this.node);
 
             noteCreateService.createNote(
-                CreateNoteTarget.IntoNoteURL,
                 {
+                    target: CreateNoteTarget.IntoNoteURL,
                     parentNoteUrl: parentNotePath,
                     type: type,
                     isProtected: this.node.data.isProtected,
                     templateNoteId: templateNoteId,
                     promptForType: false,
-                    placement:
                 } as CreateNoteIntoURLOpts
             );
         } else if (command === "openNoteInSplit") {

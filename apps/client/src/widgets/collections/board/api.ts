@@ -39,7 +39,8 @@ export default class BoardApi {
             const parentNotePath = this.parentNote.noteId;
 
             // Create a new note as a child of the parent note
-            const { note: newNote, branch: newBranch } = await note_create.createNote(CreateNoteTarget.IntoNoteURL, {
+            const { note: newNote, branch: newBranch } = await note_create.createNote({
+                target: CreateNoteTarget.IntoNoteURL,
                 parentNoteUrl: parentNotePath,
                 activate: false,
                 title,
@@ -140,14 +141,14 @@ export default class BoardApi {
     async insertRowAtPosition(
             column: string,
             relativeToBranchId: string,
-            direction: "before" | "after") {
+            direction: CreateNoteTarget.BeforeNoteURL | CreateNoteTarget.AfterNoteURL
+    ) {
         const { note, branch } = await note_create.createNote(
-            CreateNoteTarget.IntoNoteURL,
             {
+                target: direction,
                 parentNoteUrl: this.parentNote.noteId,
                 activate: false,
                 targetBranchId: relativeToBranchId,
-                target: direction,
                 title: t("board_view.new-item"),
             } as CreateNoteIntoURLOpts
         );
