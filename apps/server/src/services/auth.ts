@@ -9,6 +9,7 @@ import totp from "./totp.js";
 import openID from "./open_id.js";
 import options from "./options.js";
 import attributes from "./attributes.js";
+import userManagement from "./user_management.js";
 import type { NextFunction, Request, Response } from "express";
 
 let noAuthentication = false;
@@ -166,6 +167,52 @@ function checkCredentials(req: Request, res: Response, next: NextFunction) {
     }
 }
 
+/**
+ * Check if the current user has admin privileges
+ */
+function checkAdmin(req: Request, res: Response, next: NextFunction) {
+    if (!req.session.userId) {
+        reject(req, res, "Not logged in");
+        return;
+    }
+
+    const user = userManagement.getUserById(req.session.userId);
+    if (!user || !user.isAdmin) {
+        reject(req, res, "Admin access required");
+        return;
+    }
+
+    next();
+}
+
+/**
+ * Check if the current user has a specific permission
+ */
+function checkPermission(resource: string, action: string) {
+    return (req: Request, res: Response, next: NextFunction) => {
+        if (!req.session.userId) {
+            reject(req, res, "Not logged in");
+            return;
+        }
+
+        if (userManagement.hasPermission(req.session.userId, resource, action)) {
+            next();
+        } else {
+            reject(req, res, `Permission denied: ${resource}.${action}`);
+        }
+    };
+}
+
+/**
+ * Get the current user from the session
+ */
+function getCurrentUser(req: Request) {
+    if (req.session.userId) {
+        return userManagement.getUserById(req.session.userId);
+    }
+    return null;
+}
+
 export default {
     checkAuth,
     checkApiAuth,
@@ -175,5 +222,8 @@ export default {
     checkAppNotInitialized,
     checkApiAuthOrElectron,
     checkEtapiToken,
-    checkCredentials
+    checkCredentials,
+    checkAdmin,
+    checkPermission,
+    getCurrentUser
 };

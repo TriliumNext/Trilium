@@ -52,6 +52,7 @@
     "@types/js-yaml": "4.0.9",
     "@types/mime-types": "3.0.1",
     "@types/multer": "2.0.0",
+    "@types/node": "22.18.11",
     "@types/safe-compare": "1.1.2",
     "@types/sanitize-html": "2.16.0",
     "@types/sax": "1.2.7",

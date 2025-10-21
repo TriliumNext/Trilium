@@ -22,6 +22,9 @@ export declare module "express-serve-static-core" {
 export declare module "express-session" {
     interface SessionData {
         loggedIn: boolean;
+        userId?: string;
+        username?: string;
+        isAdmin?: boolean;
         lastAuthState: {
             totpEnabled: boolean;
             ssoEnabled: boolean;

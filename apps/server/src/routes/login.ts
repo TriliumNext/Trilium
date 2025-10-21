@@ -12,6 +12,8 @@ import recoveryCodeService from '../services/encryption/recovery_codes.js';
 import openID from '../services/open_id.js';
 import openIDEncryption from '../services/encryption/open_id_encryption.js';
 import { getCurrentLocale } from "../services/i18n.js";
+import userManagement from "../services/user_management.js";
+import sql from "../services/sql.js";
 
 function loginPage(req: Request, res: Response) {
     // Login page is triggered twice. Once here, and another time (see sendLoginError) if the password is failed.
@@ -114,6 +116,7 @@ function login(req: Request, res: Response) {
 
     const submittedPassword = req.body.password;
     const submittedTotpToken = req.body.totpToken;
+    const submittedUsername = req.body.username; // New field for multi-user mode
 
     if (totp.isTotpEnabled()) {
         if (!verifyTOTP(submittedTotpToken)) {
@@ -122,9 +125,31 @@ function login(req: Request, res: Response) {
         }
     }
 
-    if (!verifyPassword(submittedPassword)) {
-        sendLoginError(req, res, 'password');
-        return;
+    // Check if multi-user mode is enabled
+    const multiUserMode = isMultiUserEnabled();
+    let authenticatedUser: any = null;
+
+    if (multiUserMode) {
+        if (submittedUsername) {
+            // Multi-user authentication when username is provided
+            authenticatedUser = verifyMultiUserCredentials(submittedUsername, submittedPassword);
+            if (!authenticatedUser) {
+                sendLoginError(req, res, 'credentials');
+                return;
+            }
+        } else {
+            // Backward-compatible fallback: allow legacy password-only login
+            if (!verifyPassword(submittedPassword)) {
+                sendLoginError(req, res, 'password');
+                return;
+            }
+        }
+    } else {
+        // Legacy single-user authentication
+        if (!verifyPassword(submittedPassword)) {
+            sendLoginError(req, res, 'password');
+            return;
+        }
     }
 
     const rememberMe = req.body.rememberMe;
@@ -143,6 +168,14 @@ function login(req: Request, res: Response) {
         };
 
         req.session.loggedIn = true;
+
+        // Store user information in session for multi-user mode
+        if (authenticatedUser) {
+            req.session.userId = authenticatedUser.userId;
+            req.session.username = authenticatedUser.username;
+            req.session.isAdmin = authenticatedUser.isAdmin;
+        }
+
         res.redirect('.');
     });
 }
@@ -163,7 +196,26 @@ function verifyPassword(submittedPassword: string) {
     return guess_hashed.equals(hashed_password);
 }
 
-function sendLoginError(req: Request, res: Response, errorType: 'password' | 'totp' = 'password') {
+/**
+ * Check if multi-user mode is enabled (users table exists)
+ */
+function isMultiUserEnabled(): boolean {
+    try {
+        const result = sql.getValue(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='users'`) as number;
+        return result > 0;
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * Authenticate using multi-user credentials (username + password)
+ */
+function verifyMultiUserCredentials(username: string, password: string) {
+    return userManagement.validateCredentials(username, password);
+}
+
+function sendLoginError(req: Request, res: Response, errorType: 'password' | 'totp' | 'credentials' = 'password') {
     // note that logged IP address is usually meaningless since the traffic should come from a reverse proxy
     if (totp.isTotpEnabled()) {
         log.info(`WARNING: Wrong ${errorType} from ${req.ip}, rejecting.`);

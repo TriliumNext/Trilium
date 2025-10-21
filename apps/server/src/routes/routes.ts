@@ -59,6 +59,7 @@ import openaiRoute from "./api/openai.js";
 import anthropicRoute from "./api/anthropic.js";
 import llmRoute from "./api/llm.js";
 import systemInfoRoute from "./api/system_info.js";
+import usersRoute from "./api/users.js";
 
 import etapiAuthRoutes from "../etapi/auth.js";
 import etapiAppInfoRoutes from "../etapi/app_info.js";
@@ -223,6 +224,15 @@ function register(app: express.Application) {
 
     apiRoute(PST, "/api/password/change", passwordApiRoute.changePassword);
     apiRoute(PST, "/api/password/reset", passwordApiRoute.resetPassword);
+
+    // User management routes
+    apiRoute(GET, "/api/users/current", usersRoute.getCurrentUser);
+    apiRoute(GET, "/api/users/check-username", usersRoute.checkUsername);
+    route(GET, "/api/users", [auth.checkApiAuth, csrfMiddleware, auth.checkAdmin], usersRoute.getUsers, apiResultHandler);
+    route(GET, "/api/users/:userId", [auth.checkApiAuth, csrfMiddleware], usersRoute.getUser, apiResultHandler);
+    route(PST, "/api/users", [auth.checkApiAuth, csrfMiddleware, auth.checkAdmin], usersRoute.createUser, apiResultHandler);
+    route(PUT, "/api/users/:userId", [auth.checkApiAuth, csrfMiddleware], usersRoute.updateUser, apiResultHandler);
+    route(DEL, "/api/users/:userId", [auth.checkApiAuth, csrfMiddleware, auth.checkAdmin], usersRoute.deleteUser, apiResultHandler);
 
     asyncApiRoute(PST, "/api/sync/test", syncApiRoute.testSync);
     asyncApiRoute(PST, "/api/sync/now", syncApiRoute.syncNow);
