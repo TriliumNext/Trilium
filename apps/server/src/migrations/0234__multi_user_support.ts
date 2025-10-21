@@ -2,98 +2,43 @@
  * Migration to add multi-user support to Trilium.
  * 
  * This migration:
- * 1. Creates users table
- * 2. Creates roles table
- * 3. Creates user_roles junction table
- * 4. Creates note_shares table for shared notes
- * 5. Adds userId column to existing tables (notes, branches, options, etapi_tokens, etc.)
- * 6. Creates a default admin user with existing password
- * 7. Associates all existing data with the admin user
+ * 1. Extends existing user_data table with multi-user fields
+ * 2. Migrates existing password to first user record
+ * 3. Adds userId columns to relevant tables (notes, branches, etapi_tokens, recent_notes)
+ * 4. Associates all existing data with the default user
+ * 
+ * Note: This reuses the existing user_data table from migration 229 (OAuth)
  */
 
 import sql from "../services/sql.js";
 import optionService from "../services/options.js";
-import { randomSecureToken, toBase64 } from "../services/utils.js";
-import myScryptService from "../services/encryption/my_scrypt.js";
 
 export default async () => {
     console.log("Starting multi-user support migration (v234)...");
 
-    // 1. Create users table
-    sql.execute(`
-        CREATE TABLE IF NOT EXISTS "users" (
-            userId TEXT PRIMARY KEY,
-            username TEXT NOT NULL UNIQUE,
-            email TEXT,
-            passwordHash TEXT NOT NULL,
-            passwordSalt TEXT NOT NULL,
-            derivedKeySalt TEXT NOT NULL,
-            encryptedDataKey TEXT,
-            isActive INTEGER NOT NULL DEFAULT 1,
-            isAdmin INTEGER NOT NULL DEFAULT 0,
-            utcDateCreated TEXT NOT NULL,
-            utcDateModified TEXT NOT NULL
-        )
-    `);
-
-    sql.execute(`CREATE INDEX IF NOT EXISTS IDX_users_username ON users (username)`);
-    sql.execute(`CREATE INDEX IF NOT EXISTS IDX_users_email ON users (email)`);
-    sql.execute(`CREATE INDEX IF NOT EXISTS IDX_users_isActive ON users (isActive)`);
-
-    // 2. Create roles table
-    sql.execute(`
-        CREATE TABLE IF NOT EXISTS "roles" (
-            roleId TEXT PRIMARY KEY,
-            name TEXT NOT NULL UNIQUE,
-            description TEXT,
-            permissions TEXT NOT NULL,
-            utcDateCreated TEXT NOT NULL,
-            utcDateModified TEXT NOT NULL
-        )
-    `);
-
-    // 3. Create user_roles junction table
-    sql.execute(`
-        CREATE TABLE IF NOT EXISTS "user_roles" (
-            userId TEXT NOT NULL,
-            roleId TEXT NOT NULL,
-            utcDateAssigned TEXT NOT NULL,
-            PRIMARY KEY (userId, roleId),
-            FOREIGN KEY (userId) REFERENCES users(userId) ON DELETE CASCADE,
-            FOREIGN KEY (roleId) REFERENCES roles(roleId) ON DELETE CASCADE
-        )
-    `);
-
-    // 4. Create note_shares table for sharing notes between users
-    sql.execute(`
-        CREATE TABLE IF NOT EXISTS "note_shares" (
-            shareId TEXT PRIMARY KEY,
-            noteId TEXT NOT NULL,
-            ownerId TEXT NOT NULL,
-            sharedWithUserId TEXT NOT NULL,
-            permission TEXT NOT NULL DEFAULT 'read',
-            utcDateCreated TEXT NOT NULL,
-            utcDateModified TEXT NOT NULL,
-            isDeleted INTEGER NOT NULL DEFAULT 0,
-            FOREIGN KEY (noteId) REFERENCES notes(noteId) ON DELETE CASCADE,
-            FOREIGN KEY (ownerId) REFERENCES users(userId) ON DELETE CASCADE,
-            FOREIGN KEY (sharedWithUserId) REFERENCES users(userId) ON DELETE CASCADE
-        )
-    `);
-
-    sql.execute(`CREATE INDEX IF NOT EXISTS IDX_note_shares_noteId ON note_shares (noteId)`);
-    sql.execute(`CREATE INDEX IF NOT EXISTS IDX_note_shares_sharedWithUserId ON note_shares (sharedWithUserId)`);
-
-    // 5. Add userId columns to existing tables (if they don't exist)
-    const addUserIdColumn = (tableName: string) => {
-        // Check if column already exists
+    // 1. Extend user_data table with additional fields for multi-user support
+    const addColumnIfNotExists = (tableName: string, columnName: string, columnDef: string) => {
         const columns = sql.getRows(`PRAGMA table_info(${tableName})`);
-        const hasUserId = columns.some((col: any) => col.name === 'userId');
+        const hasColumn = columns.some((col: any) => col.name === columnName);
         
-        if (!hasUserId) {
-            sql.execute(`ALTER TABLE ${tableName} ADD COLUMN userId TEXT`);
-            console.log(`Added userId column to ${tableName}`);
+        if (!hasColumn) {
+            sql.execute(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDef}`);
+            console.log(`Added ${columnName} column to ${tableName}`);
         }
+    };
+
+    // Add role/permission tracking
+    addColumnIfNotExists('user_data', 'role', 'TEXT DEFAULT "admin"');
+    addColumnIfNotExists('user_data', 'isActive', 'INTEGER DEFAULT 1');
+    addColumnIfNotExists('user_data', 'utcDateCreated', 'TEXT');
+    addColumnIfNotExists('user_data', 'utcDateModified', 'TEXT');
+
+    // Create index on username for faster lookups
+    sql.execute(`CREATE INDEX IF NOT EXISTS IDX_user_data_username ON user_data (username)`);
+
+    // 2. Add userId columns to existing tables (if they don't exist)
+    const addUserIdColumn = (tableName: string) => {
+        addColumnIfNotExists(tableName, 'userId', 'INTEGER');
     };
 
     addUserIdColumn('notes');
@@ -101,79 +46,34 @@ export default async () => {
     addUserIdColumn('recent_notes');
     addUserIdColumn('etapi_tokens');
     
-    // Create indexes for userId columns
+    // Create indexes for userId columns for better performance
     sql.execute(`CREATE INDEX IF NOT EXISTS IDX_notes_userId ON notes (userId)`);
     sql.execute(`CREATE INDEX IF NOT EXISTS IDX_branches_userId ON branches (userId)`);
     sql.execute(`CREATE INDEX IF NOT EXISTS IDX_etapi_tokens_userId ON etapi_tokens (userId)`);
+    sql.execute(`CREATE INDEX IF NOT EXISTS IDX_recent_notes_userId ON recent_notes (userId)`);
 
-    // 6. Create default roles
-    const now = new Date().toISOString();
+    // 3. Migrate existing single-user setup to first user in user_data table
+    const existingUser = sql.getValue(`SELECT COUNT(*) as count FROM user_data`) as number;
     
-    const defaultRoles = [
-        {
-            roleId: 'role_admin',
-            name: 'admin',
-            description: 'Full system administrator with all permissions',
-            permissions: JSON.stringify({
-                notes: ['create', 'read', 'update', 'delete'],
-                users: ['create', 'read', 'update', 'delete'],
-                settings: ['read', 'update'],
-                system: ['backup', 'restore', 'migrate']
-            })
-        },
-        {
-            roleId: 'role_user',
-            name: 'user',
-            description: 'Regular user with standard permissions',
-            permissions: JSON.stringify({
-                notes: ['create', 'read', 'update', 'delete'],
-                users: ['read_self', 'update_self'],
-                settings: ['read_self']
-            })
-        },
-        {
-            roleId: 'role_viewer',
-            name: 'viewer',
-            description: 'Read-only user',
-            permissions: JSON.stringify({
-                notes: ['read'],
-                users: ['read_self']
-            })
-        }
-    ];
+    if (existingUser === 0) {
+        // Get existing password components from options
+        const passwordVerificationHash = optionService.getOption('passwordVerificationHash');
+        const passwordVerificationSalt = optionService.getOption('passwordVerificationSalt');
+        const passwordDerivedKeySalt = optionService.getOption('passwordDerivedKeySalt');
+        const encryptedDataKey = optionService.getOption('encryptedDataKey');
 
-    for (const role of defaultRoles) {
-        sql.execute(`
-            INSERT OR IGNORE INTO roles (roleId, name, description, permissions, utcDateCreated, utcDateModified)
-            VALUES (?, ?, ?, ?, ?, ?)
-        `, [role.roleId, role.name, role.description, role.permissions, now, now]);
-    }
-
-    // 7. Create default admin user from existing password
-    const adminUserId = 'user_admin_' + randomSecureToken(10);
-    
-    // Get existing password hash components
-    const passwordVerificationHash = optionService.getOption('passwordVerificationHash');
-    const passwordVerificationSalt = optionService.getOption('passwordVerificationSalt');
-    const passwordDerivedKeySalt = optionService.getOption('passwordDerivedKeySalt');
-    const encryptedDataKey = optionService.getOption('encryptedDataKey');
-
-    if (passwordVerificationHash && passwordVerificationSalt && passwordDerivedKeySalt) {
-        // Check if admin user already exists
-        const existingAdmin = sql.getValue(`SELECT userId FROM users WHERE username = 'admin'`);
-        
-        if (!existingAdmin) {
+        if (passwordVerificationHash && passwordVerificationSalt) {
+            const now = new Date().toISOString();
+            
+            // Create default admin user from existing credentials
             sql.execute(`
-                INSERT INTO users (
-                    userId, username, email, passwordHash, passwordSalt, 
-                    derivedKeySalt, encryptedDataKey, isActive, isAdmin,
-                    utcDateCreated, utcDateModified
+                INSERT INTO user_data (
+                    tmpID, username, email, userIDVerificationHash, salt, 
+                    derivedKey, userIDEncryptedDataKey, isSetup, role, 
+                    isActive, utcDateCreated, utcDateModified
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, 1, 1, ?, ?)
+                VALUES (1, 'admin', NULL, ?, ?, ?, ?, 'true', 'admin', 1, ?, ?)
             `, [
-                adminUserId,
-                'admin',
-                null,
                 passwordVerificationHash,
                 passwordVerificationSalt,
                 passwordDerivedKeySalt,
@@ -182,22 +82,32 @@ export default async () => {
                 now
             ]);
 
-            // Assign admin role to the user
-            sql.execute(`
-                INSERT INTO user_roles (userId, roleId, utcDateAssigned)
-                VALUES (?, ?, ?)
-            `, [adminUserId, 'role_admin', now]);
-
-            console.log(`Created default admin user with ID: ${adminUserId}`);
+            console.log("Migrated existing password to default admin user (tmpID=1)");
             
-            // 8. Associate all existing data with the admin user (only if admin was created)
-            sql.execute(`UPDATE notes SET userId = ? WHERE userId IS NULL`, [adminUserId]);
-            sql.execute(`UPDATE branches SET userId = ? WHERE userId IS NULL`, [adminUserId]);
-            sql.execute(`UPDATE etapi_tokens SET userId = ? WHERE userId IS NULL`, [adminUserId]);
-            sql.execute(`UPDATE recent_notes SET userId = ? WHERE userId IS NULL`, [adminUserId]);
+            // 4. Associate all existing data with the default user (tmpID=1)
+            sql.execute(`UPDATE notes SET userId = 1 WHERE userId IS NULL`);
+            sql.execute(`UPDATE branches SET userId = 1 WHERE userId IS NULL`);
+            sql.execute(`UPDATE etapi_tokens SET userId = 1 WHERE userId IS NULL`);
+            sql.execute(`UPDATE recent_notes SET userId = 1 WHERE userId IS NULL`);
+            
+            console.log("Associated all existing data with default admin user");
+        } else {
+            console.log("No existing password found. User will be created on first login.");
         }
     } else {
-        console.log("No existing password found, admin user will need to be created on first login");
+        console.log(`Found ${existingUser} existing user(s) in user_data table`);
+        
+        // Ensure existing users have the new fields populated
+        sql.execute(`UPDATE user_data SET role = 'admin' WHERE role IS NULL`);
+        sql.execute(`UPDATE user_data SET isActive = 1 WHERE isActive IS NULL`);
+        sql.execute(`UPDATE user_data SET utcDateCreated = ? WHERE utcDateCreated IS NULL`, [new Date().toISOString()]);
+        sql.execute(`UPDATE user_data SET utcDateModified = ? WHERE utcDateModified IS NULL`, [new Date().toISOString()]);
+        
+        // Associate data with first user if not already associated
+        sql.execute(`UPDATE notes SET userId = 1 WHERE userId IS NULL`);
+        sql.execute(`UPDATE branches SET userId = 1 WHERE userId IS NULL`);
+        sql.execute(`UPDATE etapi_tokens SET userId = 1 WHERE userId IS NULL`);
+        sql.execute(`UPDATE recent_notes SET userId = 1 WHERE userId IS NULL`);
     }
 
     console.log("Multi-user support migration completed successfully!");

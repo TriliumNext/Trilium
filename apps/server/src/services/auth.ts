@@ -176,8 +176,7 @@ function checkAdmin(req: Request, res: Response, next: NextFunction) {
         return;
     }
 
-    const user = userManagement.getUserById(req.session.userId);
-    if (!user || !user.isAdmin) {
+    if (!userManagement.isAdmin(req.session.userId)) {
         reject(req, res, "Admin access required");
         return;
     }
@@ -187,6 +186,7 @@ function checkAdmin(req: Request, res: Response, next: NextFunction) {
 
 /**
  * Check if the current user has a specific permission
+ * Note: Simplified for basic multi-user support
  */
 function checkPermission(resource: string, action: string) {
     return (req: Request, res: Response, next: NextFunction) => {
@@ -195,7 +195,8 @@ function checkPermission(resource: string, action: string) {
             return;
         }
 
-        if (userManagement.hasPermission(req.session.userId, resource, action)) {
+        // Basic permission check: admins have all permissions
+        if (userManagement.isAdmin(req.session.userId)) {
             next();
         } else {
             reject(req, res, `Permission denied: ${resource}.${action}`);

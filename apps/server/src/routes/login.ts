@@ -171,9 +171,9 @@ function login(req: Request, res: Response) {
 
         // Store user information in session for multi-user mode
         if (authenticatedUser) {
-            req.session.userId = authenticatedUser.userId;
+            req.session.userId = authenticatedUser.tmpID; // Store tmpID from user_data table
             req.session.username = authenticatedUser.username;
-            req.session.isAdmin = authenticatedUser.isAdmin;
+            req.session.isAdmin = authenticatedUser.role === 'admin';
         }
 
         res.redirect('.');
@@ -197,12 +197,12 @@ function verifyPassword(submittedPassword: string) {
 }
 
 /**
- * Check if multi-user mode is enabled (users table exists)
+ * Check if multi-user mode is enabled (user_data table has users)
  */
 function isMultiUserEnabled(): boolean {
     try {
-        const result = sql.getValue(`SELECT COUNT(*) as count FROM sqlite_master WHERE type='table' AND name='users'`) as number;
-        return result > 0;
+        const count = sql.getValue(`SELECT COUNT(*) as count FROM user_data WHERE isSetup = 'true'`) as number;
+        return count > 0;
     } catch (e) {
         return false;
     }

@@ -1,8 +1,10 @@
-/**
+﻿/**
  * User Management API
  * 
  * Provides endpoints for managing users in multi-user installations.
  * All endpoints require authentication and most require admin privileges.
+ * 
+ * Works with user_data table (tmpID as primary key).
  */
 
 import { Request } from "express";
@@ -19,30 +21,28 @@ function getUsers(req: Request): any {
 }
 
 /**
- * Get a specific user by ID
+ * Get a specific user by ID (tmpID)
  * Requires: Admin access or own user
  */
 function getUser(req: Request): any {
-    const userId = req.params.userId;
+    const tmpID = parseInt(req.params.userId);
     const currentUserId = req.session.userId;
     
-    // Allow users to view their own profile, admins can view anyone
     const currentUser = currentUserId ? userManagement.getUserById(currentUserId) : null;
     if (!currentUser) {
         throw new ValidationError("Not authenticated");
     }
     
-    if (userId !== currentUserId && !currentUser.isAdmin) {
+    if (tmpID !== currentUserId && currentUserId && !userManagement.isAdmin(currentUserId)) {
         throw new ValidationError("Access denied");
     }
     
-    const user = userManagement.getUserById(userId);
+    const user = userManagement.getUserById(tmpID);
     if (!user) {
         throw new ValidationError("User not found");
     }
     
-    // Don't send sensitive data
-    const { passwordHash, passwordSalt, derivedKeySalt, encryptedDataKey, ...safeUser } = user;
+    const { userIDVerificationHash, salt, derivedKey, userIDEncryptedDataKey, ...safeUser } = user;
     return safeUser;
 }
 
@@ -51,32 +51,29 @@ function getUser(req: Request): any {
  * Requires: Admin access
  */
 function createUser(req: Request): any {
-    const { username, email, password, isAdmin } = req.body;
+    const { username, email, password, role } = req.body;
     
     if (!username || !password) {
         throw new ValidationError("Username and password are required");
     }
     
-    // Check if username already exists
     const existing = userManagement.getUserByUsername(username);
     if (existing) {
         throw new ValidationError("Username already exists");
     }
     
-    // Validate password strength
-    if (password.length < 8) {
-        throw new ValidationError("Password must be at least 8 characters long");
+    if (password.length < 4) {
+        throw new ValidationError("Password must be at least 4 characters long");
     }
     
     const user = userManagement.createUser({
         username,
         email,
         password,
-        isAdmin: isAdmin === true
+        role: role || userManagement.UserRole.USER
     });
     
-    // Don't send sensitive data
-    const { passwordHash, passwordSalt, derivedKeySalt, encryptedDataKey, ...safeUser } = user;
+    const { userIDVerificationHash, salt, derivedKey, userIDEncryptedDataKey, ...safeUser } = user;
     return safeUser;
 }
 
@@ -85,46 +82,42 @@ function createUser(req: Request): any {
  * Requires: Admin access or own user (with limited fields)
  */
 function updateUser(req: Request): any {
-    const userId = req.params.userId;
+    const tmpID = parseInt(req.params.userId);
     const currentUserId = req.session.userId;
-    const { email, password, isActive, isAdmin } = req.body;
+    const { email, password, isActive, role } = req.body;
     
     const currentUser = currentUserId ? userManagement.getUserById(currentUserId) : null;
     if (!currentUser) {
         throw new ValidationError("Not authenticated");
     }
     
-    const isSelf = userId === currentUserId;
-    const isAdminUser = currentUser.isAdmin;
+    const isSelf = tmpID === currentUserId;
+    const isAdminUser = currentUserId ? userManagement.isAdmin(currentUserId) : false;
     
-    // Regular users can only update their own email and password
     if (!isAdminUser && !isSelf) {
         throw new ValidationError("Access denied");
     }
     
-    // Only admins can change isActive and isAdmin flags
-    if (!isAdminUser && (isActive !== undefined || isAdmin !== undefined)) {
-        throw new ValidationError("Only admins can change user status or admin privileges");
+    if (!isAdminUser && (isActive !== undefined || role !== undefined)) {
+        throw new ValidationError("Only admins can change user status or role");
     }
     
-    // Validate password if provided
-    if (password && password.length < 8) {
-        throw new ValidationError("Password must be at least 8 characters long");
+    if (password && password.length < 4) {
+        throw new ValidationError("Password must be at least 4 characters long");
     }
     
     const updates: any = {};
     if (email !== undefined) updates.email = email;
     if (password !== undefined) updates.password = password;
     if (isAdminUser && isActive !== undefined) updates.isActive = isActive;
-    if (isAdminUser && isAdmin !== undefined) updates.isAdmin = isAdmin;
+    if (isAdminUser && role !== undefined) updates.role = role;
     
-    const user = userManagement.updateUser(userId, updates);
+    const user = userManagement.updateUser(tmpID, updates);
     if (!user) {
         throw new ValidationError("User not found");
     }
     
-    // Don't send sensitive data
-    const { passwordHash, passwordSalt, derivedKeySalt, encryptedDataKey, ...safeUser } = user;
+    const { userIDVerificationHash, salt, derivedKey, userIDEncryptedDataKey, ...safeUser } = user;
     return safeUser;
 }
 
@@ -133,15 +126,14 @@ function updateUser(req: Request): any {
  * Requires: Admin access
  */
 function deleteUser(req: Request): any {
-    const userId = req.params.userId;
+    const tmpID = parseInt(req.params.userId);
     const currentUserId = req.session.userId;
     
-    // Cannot delete yourself
-    if (userId === currentUserId) {
+    if (tmpID === currentUserId) {
         throw new ValidationError("Cannot delete your own account");
     }
     
-    const success = userManagement.deleteUser(userId);
+    const success = userManagement.deleteUser(tmpID);
     if (!success) {
         throw new ValidationError("User not found");
     }
@@ -163,14 +155,8 @@ function getCurrentUser(req: Request): any {
         throw new ValidationError("User not found");
     }
     
-    const roles = userManagement.getUserRoles(userId);
-    
-    // Don't send sensitive data
-    const { passwordHash, passwordSalt, derivedKeySalt, encryptedDataKey, ...safeUser } = user;
-    return {
-        ...safeUser,
-        roles
-    };
+    const { userIDVerificationHash, salt, derivedKey, userIDEncryptedDataKey, ...safeUser } = user;
+    return safeUser;
 }
 
 /**

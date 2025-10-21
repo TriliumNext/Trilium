@@ -3,23 +3,47 @@
  * 
  * Handles all user-related operations including creation, updates, authentication,
  * and role management for multi-user support.
+ * 
+ * Works with existing user_data table (from OAuth migration v229):
+ * - tmpID: Primary key (INTEGER)
+ * - username: User's login name
+ * - email: Email address
+ * - userIDVerificationHash: Password hash for verification
+ * - salt: Salt for password hashing
+ * - derivedKey: Salt for deriving encryption key
+ * - userIDEncryptedDataKey: Encrypted data key
+ * - isSetup: 'true' or 'false' string
+ * - role: 'admin', 'user', or 'viewer'
+ * - isActive: 1 or 0
  */
 
 import sql from "./sql.js";
-import { randomSecureToken, toBase64 } from "./utils.js";
-import dataEncryptionService from "./encryption/data_encryption.js";
+import { randomSecureToken, toBase64, fromBase64 } from "./utils.js";
 import crypto from "crypto";
 
+/**
+ * User roles with different permission levels
+ */
+export enum UserRole {
+    ADMIN = 'admin',
+    USER = 'user',
+    VIEWER = 'viewer'
+}
+
+/**
+ * User interface representing a Trilium user in user_data table
+ */
 export interface User {
-    userId: string;
+    tmpID: number;
     username: string;
     email: string | null;
-    passwordHash: string;
-    passwordSalt: string;
-    derivedKeySalt: string;
-    encryptedDataKey: string | null;
-    isActive: boolean;
-    isAdmin: boolean;
+    userIDVerificationHash: string;
+    salt: string;
+    derivedKey: string;
+    userIDEncryptedDataKey: string | null;
+    isSetup: string;
+    role: UserRole;
+    isActive: number;
     utcDateCreated: string;
     utcDateModified: string;
 }
@@ -28,29 +52,27 @@ export interface UserCreateData {
     username: string;
     email?: string;
     password: string;
-    isAdmin?: boolean;
+    role?: UserRole;
 }
 
 export interface UserUpdateData {
     email?: string;
     password?: string;
-    oldPassword?: string; // Required when changing password to decrypt existing data
     isActive?: boolean;
-    isAdmin?: boolean;
+    role?: UserRole;
 }
 
 export interface UserListItem {
-    userId: string;
+    tmpID: number;
     username: string;
     email: string | null;
-    isActive: boolean;
-    isAdmin: boolean;
-    roles: string[];
+    isActive: number;
+    role: UserRole;
     utcDateCreated: string;
 }
 
 /**
- * Hash password using scrypt (synchronous)
+ * Hash password using scrypt (matching Trilium's method)
  */
 function hashPassword(password: string, salt: string): string {
     const hashed = crypto.scryptSync(password, salt, 32, { N: 16384, r: 8, p: 1 });
@@ -58,82 +80,69 @@ function hashPassword(password: string, salt: string): string {
 }
 
 /**
+ * Helper function to map database row to User object
+ */
+function mapRowToUser(user: any): User {
+    return {
+        tmpID: user.tmpID,
+        username: user.username,
+        email: user.email,
+        userIDVerificationHash: user.userIDVerificationHash,
+        salt: user.salt,
+        derivedKey: user.derivedKey,
+        userIDEncryptedDataKey: user.userIDEncryptedDataKey,
+        isSetup: user.isSetup || 'true',
+        role: user.role || UserRole.USER,
+        isActive: user.isActive !== undefined ? user.isActive : 1,
+        utcDateCreated: user.utcDateCreated || new Date().toISOString(),
+        utcDateModified: user.utcDateModified || new Date().toISOString()
+    };
+}
+
+/**
  * Create a new user
  */
 function createUser(userData: UserCreateData): User {
-    const userId = 'user_' + randomSecureToken(20);
     const now = new Date().toISOString();
     
-    // Generate password salt and hash
+    // Get next tmpID
+    const maxId = sql.getValue(`SELECT MAX(tmpID) as maxId FROM user_data`) as number || 0;
+    const tmpID = maxId + 1;
+    
+    // Generate password components using Trilium's scrypt parameters
     const passwordSalt = randomSecureToken(32);
     const derivedKeySalt = randomSecureToken(32);
-    
-    // Hash the password using scrypt
     const passwordHash = hashPassword(userData.password, passwordSalt);
     
-    // Generate data encryption key for this user
-    const dataKey = randomSecureToken(16);
-    // derive a binary key for encrypting the user's data key
-    const passwordDerivedKey = crypto.scryptSync(userData.password, derivedKeySalt, 32, { N: 16384, r: 8, p: 1 });
-    // dataEncryptionService.encrypt expects Buffer key and Buffer|string payload
-    const encryptedDataKey = dataEncryptionService.encrypt(passwordDerivedKey, Buffer.from(dataKey));
-    
     sql.execute(`
-        INSERT INTO users (
-            userId, username, email, passwordHash, passwordSalt,
-            derivedKeySalt, encryptedDataKey, isActive, isAdmin,
-            utcDateCreated, utcDateModified
+        INSERT INTO user_data (
+            tmpID, username, email, userIDVerificationHash, salt,
+            derivedKey, userIDEncryptedDataKey, isSetup, role,
+            isActive, utcDateCreated, utcDateModified
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, '', 'true', ?, 1, ?, ?)
     `, [
-        userId,
+        tmpID,
         userData.username,
         userData.email || null,
         passwordHash,
         passwordSalt,
         derivedKeySalt,
-        encryptedDataKey,
-        userData.isAdmin ? 1 : 0,
+        userData.role || UserRole.USER,
         now,
         now
     ]);
     
-    // Assign default role
-    const defaultRoleId = userData.isAdmin ? 'role_admin' : 'role_user';
-    sql.execute(`
-        INSERT INTO user_roles (userId, roleId, utcDateAssigned)
-        VALUES (?, ?, ?)
-    `, [userId, defaultRoleId, now]);
-    
-    return getUserById(userId)!;
+    return getUserById(tmpID)!;
 }
 
 /**
- * Helper function to map database row to User object
+ * Get user by ID (tmpID)
  */
-function mapRowToUser(user: any): User {
-    return {
-        userId: user.userId,
-        username: user.username,
-        email: user.email,
-        passwordHash: user.passwordHash,
-        passwordSalt: user.passwordSalt,
-        derivedKeySalt: user.derivedKeySalt,
-        encryptedDataKey: user.encryptedDataKey,
-        isActive: Boolean(user.isActive),
-        isAdmin: Boolean(user.isAdmin),
-        utcDateCreated: user.utcDateCreated,
-        utcDateModified: user.utcDateModified
-    };
-}
-
-/**
- * Get user by ID
- */
-function getUserById(userId: string): User | null {
+function getUserById(tmpID: number): User | null {
     const user = sql.getRow(`
-        SELECT * FROM users WHERE userId = ?
-    `, [userId]) as any;
+        SELECT * FROM user_data WHERE tmpID = ?
+    `, [tmpID]) as any;
     
     return user ? mapRowToUser(user) : null;
 }
@@ -143,7 +152,7 @@ function getUserById(userId: string): User | null {
  */
 function getUserByUsername(username: string): User | null {
     const user = sql.getRow(`
-        SELECT * FROM users WHERE username = ? COLLATE NOCASE
+        SELECT * FROM user_data WHERE username = ? COLLATE NOCASE
     `, [username]) as any;
     
     return user ? mapRowToUser(user) : null;
@@ -152,8 +161,8 @@ function getUserByUsername(username: string): User | null {
 /**
  * Update user
  */
-function updateUser(userId: string, updates: UserUpdateData): User | null {
-    const user = getUserById(userId);
+function updateUser(tmpID: number, updates: UserUpdateData): User | null {
+    const user = getUserById(tmpID);
     if (!user) return null;
     
     const now = new Date().toISOString();
@@ -165,47 +174,14 @@ function updateUser(userId: string, updates: UserUpdateData): User | null {
         values.push(updates.email || null);
     }
     
-    if (updates.password !== undefined && updates.oldPassword !== undefined) {
-        // Validate that user has existing encrypted data
-        if (!user.derivedKeySalt || !user.encryptedDataKey) {
-            throw new Error("Cannot change password: user has no encrypted data");
-        }
-        
-        // First, decrypt the existing dataKey with the old password
-        const oldPasswordDerivedKey = crypto.scryptSync(
-            updates.oldPassword, 
-            user.derivedKeySalt, 
-            32, 
-            { N: 16384, r: 8, p: 1 }
-        );
-        const dataKey = dataEncryptionService.decrypt(
-            oldPasswordDerivedKey, 
-            user.encryptedDataKey
-        );
-        
-        if (!dataKey) {
-            throw new Error("Cannot change password: failed to decrypt existing data key with old password");
-        }
-        
+    if (updates.password !== undefined) {
         // Generate new password hash
         const passwordSalt = randomSecureToken(32);
         const derivedKeySalt = randomSecureToken(32);
         const passwordHash = hashPassword(updates.password, passwordSalt);
         
-        // Re-encrypt the same dataKey with new password
-        const passwordDerivedKey = crypto.scryptSync(
-            updates.password, 
-            derivedKeySalt, 
-            32, 
-            { N: 16384, r: 8, p: 1 }
-        );
-        const encryptedDataKey = dataEncryptionService.encrypt(
-            passwordDerivedKey, 
-            dataKey
-        );
-        
-        updateParts.push('passwordHash = ?', 'passwordSalt = ?', 'derivedKeySalt = ?', 'encryptedDataKey = ?');
-        values.push(passwordHash, passwordSalt, derivedKeySalt, encryptedDataKey);
+        updateParts.push('userIDVerificationHash = ?', 'salt = ?', 'derivedKey = ?');
+        values.push(passwordHash, passwordSalt, derivedKeySalt);
     }
     
     if (updates.isActive !== undefined) {
@@ -213,41 +189,37 @@ function updateUser(userId: string, updates: UserUpdateData): User | null {
         values.push(updates.isActive ? 1 : 0);
     }
     
-    if (updates.isAdmin !== undefined) {
-        updateParts.push('isAdmin = ?');
-        values.push(updates.isAdmin ? 1 : 0);
-        
-        // Update role assignment
-        sql.execute(`DELETE FROM user_roles WHERE userId = ?`, [userId]);
-        sql.execute(`
-            INSERT INTO user_roles (userId, roleId, utcDateAssigned)
-            VALUES (?, ?, ?)
-        `, [userId, updates.isAdmin ? 'role_admin' : 'role_user', now]);
+    if (updates.role !== undefined) {
+        updateParts.push('role = ?');
+        values.push(updates.role);
     }
     
     if (updateParts.length > 0) {
         updateParts.push('utcDateModified = ?');
-        values.push(now, userId);
+        values.push(now, tmpID);
         
         sql.execute(`
-            UPDATE users SET ${updateParts.join(', ')}
-            WHERE userId = ?
+            UPDATE user_data SET ${updateParts.join(', ')}
+            WHERE tmpID = ?
         `, values);
     }
     
-    return getUserById(userId);
+    return getUserById(tmpID);
 }
 
 /**
  * Delete user (soft delete by setting isActive = 0)
  */
-function deleteUser(userId: string): boolean {
-    const user = getUserById(userId);
+function deleteUser(tmpID: number): boolean {
+    const user = getUserById(tmpID);
     if (!user) return false;
     
     // Prevent deleting the last admin
-    if (user.isAdmin) {
-        const adminCount = sql.getValue(`SELECT COUNT(*) FROM users WHERE isAdmin = 1 AND isActive = 1`) as number;
+    if (user.role === UserRole.ADMIN) {
+        const adminCount = sql.getValue(`
+            SELECT COUNT(*) FROM user_data 
+            WHERE role = 'admin' AND isActive = 1
+        `) as number;
         if (adminCount <= 1) {
             throw new Error("Cannot delete the last admin user");
         }
@@ -255,9 +227,9 @@ function deleteUser(userId: string): boolean {
     
     const now = new Date().toISOString();
     sql.execute(`
-        UPDATE users SET isActive = 0, utcDateModified = ?
-        WHERE userId = ?
-    `, [now, userId]);
+        UPDATE user_data SET isActive = 0, utcDateModified = ?
+        WHERE tmpID = ?
+    `, [now, tmpID]);
     
     return true;
 }
@@ -266,32 +238,21 @@ function deleteUser(userId: string): boolean {
  * List all users
  */
 function listUsers(includeInactive: boolean = false): UserListItem[] {
-    const whereClause = includeInactive ? '' : 'WHERE u.isActive = 1';
+    const whereClause = includeInactive ? '' : 'WHERE isActive = 1';
     
     const users = sql.getRows(`
-        SELECT 
-            u.userId,
-            u.username,
-            u.email,
-            u.isActive,
-            u.isAdmin,
-            u.utcDateCreated,
-            GROUP_CONCAT(r.name) as roles
-        FROM users u
-        LEFT JOIN user_roles ur ON u.userId = ur.userId
-        LEFT JOIN roles r ON ur.roleId = r.roleId
+        SELECT tmpID, username, email, isActive, role, utcDateCreated
+        FROM user_data
         ${whereClause}
-        GROUP BY u.userId
-        ORDER BY u.username
+        ORDER BY username
     `);
     
     return users.map((user: any) => ({
-        userId: user.userId,
+        tmpID: user.tmpID,
         username: user.username,
         email: user.email,
-        isActive: Boolean(user.isActive),
-        isAdmin: Boolean(user.isAdmin),
-        roles: user.roles ? user.roles.split(',') : [],
+        isActive: user.isActive,
+        role: user.role || UserRole.USER,
         utcDateCreated: user.utcDateCreated
     }));
 }
@@ -301,14 +262,14 @@ function listUsers(includeInactive: boolean = false): UserListItem[] {
  */
 function validateCredentials(username: string, password: string): User | null {
     const user = getUserByUsername(username);
-    if (!user || !user.isActive) {
+    if (!user || user.isActive !== 1) {
         return null;
     }
     
     // Verify password using scrypt
-    const expectedHash = hashPassword(password, user.passwordSalt);
+    const expectedHash = hashPassword(password, user.salt);
     
-    if (expectedHash !== user.passwordHash) {
+    if (expectedHash !== user.userIDVerificationHash) {
         return null;
     }
     
@@ -316,94 +277,43 @@ function validateCredentials(username: string, password: string): User | null {
 }
 
 /**
- * Get user's roles
+ * Check if user is admin
  */
-function getUserRoles(userId: string): string[] {
-    const roles = sql.getRows(`
-        SELECT r.name
-        FROM user_roles ur
-        JOIN roles r ON ur.roleId = r.roleId
-        WHERE ur.userId = ?
-    `, [userId]);
-    
-    return roles.map((r: any) => r.name);
+function isAdmin(tmpID: number): boolean {
+    const user = getUserById(tmpID);
+    return user?.role === UserRole.ADMIN;
 }
 
 /**
- * Check if user has a specific permission
+ * Check if user can access a note (basic ownership check)
  */
-function hasPermission(userId: string, resource: string, action: string): boolean {
-    const user = getUserById(userId);
-    if (!user) return false;
-    
-    // Admins have all permissions
-    if (user.isAdmin) return true;
-    
-    const roles = sql.getRows(`
-        SELECT r.permissions
-        FROM user_roles ur
-        JOIN roles r ON ur.roleId = r.roleId
-        WHERE ur.userId = ?
-    `, [userId]);
-    
-    for (const role of roles) {
-        try {
-            const permissions = JSON.parse((role as any).permissions);
-            if (permissions[resource] && permissions[resource].includes(action)) {
-                return true;
-            }
-        } catch (e) {
-            console.error('Error parsing role permissions:', e);
-        }
-    }
-    
-    return false;
-}
-
-/**
- * Check if user can access a note
- */
-function canAccessNote(userId: string, noteId: string): boolean {
-    const user = getUserById(userId);
+function canAccessNote(tmpID: number, noteId: string): boolean {
+    const user = getUserById(tmpID);
     if (!user) return false;
     
     // Admins can access all notes
-    if (user.isAdmin) return true;
+    if (user.role === UserRole.ADMIN) return true;
     
     // Check if user owns the note
     const note = sql.getRow(`SELECT userId FROM notes WHERE noteId = ?`, [noteId]) as any;
-    if (note && note.userId === userId) return true;
-    
-    // Check if note is shared with user
-    const share = sql.getRow(`
-        SELECT * FROM note_shares 
-        WHERE noteId = ? AND sharedWithUserId = ? AND isDeleted = 0
-    `, [noteId, userId]);
-    
-    return !!share;
+    return note && note.userId === tmpID;
 }
 
 /**
- * Get note permission for user (own, read, write, or null)
+ * Get note permission for user (own, admin, or null)
  */
-function getNotePermission(userId: string, noteId: string): string | null {
-    const user = getUserById(userId);
+function getNotePermission(tmpID: number, noteId: string): string | null {
+    const user = getUserById(tmpID);
     if (!user) return null;
     
     // Admins have full access
-    if (user.isAdmin) return 'admin';
+    if (user.role === UserRole.ADMIN) return 'admin';
     
     // Check if user owns the note
     const note = sql.getRow(`SELECT userId FROM notes WHERE noteId = ?`, [noteId]) as any;
-    if (note && note.userId === userId) return 'own';
+    if (note && note.userId === tmpID) return 'own';
     
-    // Check if note is shared with user
-    const share = sql.getRow(`
-        SELECT permission FROM note_shares 
-        WHERE noteId = ? AND sharedWithUserId = ? AND isDeleted = 0
-    `, [noteId, userId]) as any;
-    
-    return share ? share.permission : null;
+    return null;
 }
 
 export default {
@@ -414,8 +324,8 @@ export default {
     deleteUser,
     listUsers,
     validateCredentials,
-    getUserRoles,
-    hasPermission,
+    isAdmin,
     canAccessNote,
-    getNotePermission
+    getNotePermission,
+    UserRole
 };
