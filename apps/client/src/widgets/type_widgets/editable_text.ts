@@ -1,7 +1,7 @@
 import utils, { hasTouchBar } from "../../services/utils.js";
 import keyboardActionService from "../../services/keyboard_actions.js";
 import froca from "../../services/froca.js";
-import noteCreateService from "../../services/note_create.js";
+import noteCreateService, { CreateNoteIntoURLOpts, CreateNoteTarget, InboxNoteOpts } from "../../services/note_create.js";
 import AbstractTextTypeWidget from "./abstract_text_type_widget.js";
 import link from "../../services/link.js";
 import appContext, { type CommandListenerData, type EventData } from "../../components/app_context.js";
@@ -474,60 +474,58 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
             switch (action) {
                 // --- Create note INTO inbox ---
                 case CreateNoteAction.CreateNoteIntoInbox: {
-                    const { success, noteType, templateNoteId } = await note_create.chooseNoteType();
-                    if (!success) return "";
-
-                    const { note } = await note_create.createNoteIntoInbox({
-                        title,
-                        activate: true,
-                        type: noteType,
-                        templateNoteId,
-                    });
+                    const { note } = await note_create.createNote(
+                        CreateNoteTarget.IntoInbox,
+                        {
+                            title,
+                            activate: true,
+                            promptForType: true,
+                        } as InboxNoteOpts
+                    );
 
                     return note?.getBestNotePathString() ?? "";
                 }
 
                 // --- Create note INTO current path ---
                 case CreateNoteAction.CreateNoteIntoPath: {
-                    const { success, noteType, templateNoteId, notePath } = await note_create.chooseNoteType();
-                    if (!success) return "";
-
-                    const { note } = await note_create.createNoteIntoPath(notePath || parentNotePath, {
-                        title,
-                        activate: true,
-                        type: noteType,
-                        templateNoteId,
-                    });
+                    const { note } = await note_create.createNote(
+                        CreateNoteTarget.IntoNoteURL,
+                        {
+                            parentNoteUrl: parentNotePath,
+                            title,
+                            activate: true,
+                            promptForType: true,
+                        } as CreateNoteIntoURLOpts
+                    )
 
                     return note?.getBestNotePathString() ?? "";
                 }
 
                 // --- Create & link note INTO inbox ---
                 case CreateNoteAction.CreateAndLinkNoteIntoInbox: {
-                    const { success, noteType, templateNoteId } = await note_create.chooseNoteType();
-                    if (!success) return "";
-
-                    const { note } = await note_create.createNoteIntoInbox({
-                        title,
-                        activate: false,
-                        type: noteType,
-                        templateNoteId,
-                    });
+                    const { note } = await noteCreateService.createNote(
+                        CreateNoteTarget.IntoInbox,
+                        {
+                            title,
+                            activate: false,
+                            promptForType: true,
+                        } as InboxNoteOpts
+                    );
 
                     return note?.getBestNotePathString() ?? "";
                 }
 
                 // --- Create & link note INTO current path ---
                 case CreateNoteAction.CreateAndLinkNoteIntoPath: {
-                    const { success, noteType, templateNoteId, notePath } = await note_create.chooseNoteType();
-                    if (!success) return "";
-
-                    const { note } = await note_create.createNoteIntoPath(notePath || parentNotePath, {
-                        title,
-                        activate: false,
-                        type: noteType,
-                        templateNoteId,
-                    });
+                    const { note } = await noteCreateService.createNote(
+                        CreateNoteTarget.IntoNoteURL,
+                        {
+                            parentNoteUrl: parentNotePath,
+                            title,
+                            activate: false,
+                            promptForType: true,
+                        } as CreateNoteIntoURLOpts
+                    );
 
                     return note?.getBestNotePathString() ?? "";
                 }
