@@ -10,7 +10,23 @@ Trilium now supports multiple users with role-based access control. Each user ha
 
 ### Database Schema
 
-Multi-user support extends the existing `user_data` table (introduced in migration v229 for OAuth):
+Multi-user support extends the existing `user_data` table (introduced in migration v229 for OAuth support).
+
+**Important Design Decisions:**
+
+1. **Why `user_data` table?** eliandoran asked about using `user_info` table from MFA. We use `user_data` because it's the established table from OAuth migration (v229) with existing password hashing infrastructure.
+
+2. **Why not Becca entities?** Users are NOT implemented as Becca entities because:
+   - Becca entities are for **synchronized content** (notes, branches, attributes, etc.)
+   - User authentication data should **never be synced** across instances for security
+   - Each Trilium instance needs its own isolated user database
+   - Syncing user credentials would create massive security risks
+   
+3. **Future sync support:** When multi-user sync is implemented, it will need:
+   - Per-user sync credentials on each instance
+   - User-to-user mappings across instances
+   - Separate authentication from content synchronization
+   - This is documented as a future enhancement
 
 **user_data table fields:**
 - `tmpID`: INTEGER primary key
@@ -34,11 +50,13 @@ Multi-user support extends the existing `user_data` table (introduced in migrati
 
 ### Migration (v234)
 
+**Migration Triggering:** This migration runs automatically on next server start because the database version was updated to 234 in `app_info.ts`.
+
 The migration automatically:
 1. Extends the `user_data` table with role and status fields
 2. Adds `userId` columns to notes, branches, etapi_tokens, and recent_notes tables
 3. Creates a default admin user from existing single-user credentials
-4. Associates all existing data with the admin user
+4. Associates all existing data with the admin user (tmpID=1)
 5. Maintains backward compatibility with single-user installations
 
 ## Setup
