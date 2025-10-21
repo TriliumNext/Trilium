@@ -13,7 +13,7 @@
 		"preact": "10.27.2",
 		"preact-iso": "2.11.0",
 		"preact-render-to-string": "6.6.2",
-		"react-i18next": "16.1.0"
+		"react-i18next": "16.1.2"
 	},
 	"devDependencies": {
 		"@preact/preset-vite": "2.10.2",
@@ -21,7 +21,7 @@
 		"eslint-config-preact": "2.0.0",
 		"typescript": "5.9.3",
 		"user-agent-data-types": "0.4.2",
-		"vite": "7.1.10"
+		"vite": "7.1.11"
 	},
 	"eslintConfig": {
 		"extends": "preact"

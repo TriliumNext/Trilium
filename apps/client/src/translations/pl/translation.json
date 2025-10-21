@@ -556,7 +556,7 @@
     "dialog_title": "Zaimportuj Markdown",
     "import_button": "Import",
     "import_success": "Treść Markdown została zaimportowana do dokumentu.",
-    "modal_body_text": "Ze względu na piaskownicę przeglądarki nie jest możliwe bezpośrednie odczytanie schowka z JavaScript. Wklej Markdown do importu do poniższego pola tekstowego i kliknij przycisk Importuj"
+    "modal_body_text": "Ze względu na środowisko przeglądarki nie jest możliwe bezpośrednie odczytanie schowka z JavaScript. Wklej Markdown do importu do poniższego pola tekstowego i kliknij przycisk Importuj"
   },
   "limit": {
     "limit": "Limit",
@@ -721,7 +721,7 @@
     "modal_body": "Wybierz typ / szablon notatki dla nowej notatki:",
     "templates": "Szablony",
     "builtin_templates": "Wbudowane szablony",
-    "change_path_prompt": "Zmień, gdzie utworzyć nową notatkę:",
+    "change_path_prompt": "Zmień ścieżkę, gdzie utworzyć nową notatkę:",
     "search_placeholder": "wyszukaj ścieżkę po nazwie (domyślna, jeśli pusta)"
   },
   "password_not_set": {

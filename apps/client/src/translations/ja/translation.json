@@ -81,7 +81,7 @@
   },
   "clone_to": {
     "notes_to_clone": "クローンするノート",
-    "target_parent_note": "ターゲットの親ノート",
+    "target_parent_note": "対象の親ノート",
     "search_for_note_by_its_name": "ノート名で検索",
     "cloned_note_prefix_title": "クローンされたノートは、指定された接頭辞を付けてノートツリーに表示されます",
     "prefix_optional": "接頭辞（任意）",
@@ -286,7 +286,7 @@
     "pasteNotes": "ノートをサブノートとしてアクティブノートに貼り付ける（コピーされたか切り取りされたかに よって、移動またはクローンになる）",
     "deleteNotes": "ノート/サブツリーを削除",
     "editingNotes": "ノート編集",
-    "editNoteTitle": "押下するとツリーペインからタイトルの編集に移ります。タイトルの編集からEnterキーを押すと、本文の編集に移動します。<kbd>Ctrl+.</kbd> で本文の編集からツリーペインに戻ります。",
+    "editNoteTitle": "ツリーペインでEnterキーを押すと、ツリーペインからノートタイトルに切り替わります。ノートタイトルだとテキストエディタにフォーカスが切り替わります。<kbd>Ctrl+.</kbd> を押すと、エディタからツリーペインに戻ります。",
     "createEditLink": "外部リンクの作成/編集",
     "createInternalLink": "内部リンクの作成",
     "followLink": "カーソル下のリンクをたどる",
@@ -334,7 +334,8 @@
     "import-status": "インポート状況",
     "in-progress": "インポート中: {{progress}}",
     "successful": "インポートは正常に終了しました。",
-    "explodeArchives": "<code>.zip</code>, <code>.enex</code> および <code>.opml</code> アーカイブの内容を読み取ります。"
+    "explodeArchives": "<code>.zip</code>, <code>.enex</code> および <code>.opml</code> アーカイブの内容を読み取ります。",
+    "importZipRecommendation": "ZIP ファイルをインポートすると、ノートの階層はアーカイブ内のサブディレクトリ構造を反映します。"
   },
   "password_not_set": {
     "title": "パスワードが設定されていない",
@@ -404,9 +405,9 @@
     "protect-subtree": "サブツリーを保護",
     "unprotect-subtree": "サブツリーの保護を解除",
     "copy-clone": "コピー/クローン",
-    "clone-to": "クローン先...",
+    "clone-to": "クローン...",
     "cut": "切り取り",
-    "move-to": "移動先...",
+    "move-to": "移動...",
     "paste-into": "貼り付け",
     "paste-after": "後ろに貼り付け",
     "duplicate": "複製",
@@ -416,7 +417,7 @@
     "converted-to-attachments": "{{count}}ノートが添付ファイルに変換されました。",
     "convert-to-attachment": "添付ファイルに変換",
     "convert-to-attachment-confirm": "選択したノートを親ノートの添付ファイルに変換しますか？",
-    "open-in-popup": "クイックエディット",
+    "open-in-popup": "クイック編集",
     "hoist-note": "ホイストノート",
     "unhoist-note": "ノートをホイストしない",
     "edit-branch-prefix": "ブランチの接頭辞を編集",
@@ -1054,7 +1055,7 @@
     "inheritable": "継承",
     "related_notes_title": "このラベルが付いた他のノート",
     "attr_detail_title": "属性の詳細なタイトル",
-    "target_note_title": "リレーションは、ソースノートとターゲットノート間の名前付き接続です。",
+    "target_note_title": "リレーションは、ソースノートと対象のノート間の名前付き接続です。",
     "target_note": "対象のノート",
     "promoted_title": "プロモート属性はノートに目立つように表示されます。",
     "promoted": "プロモート",
@@ -1151,13 +1152,13 @@
     "print_page_size": "PDF にエクスポートするときに、ページのサイズを変更します。サポートされる値: <code>A0</code>, <code>A1</code>, <code>A2</code>, <code>A3</code>, <code>A4</code>, <code>A5</code>, <code>A6</code>, <code>Legal</code>, <code>Letter</code>, <code>Tabloid</code>, <code>Ledger</code>。"
   },
   "link_context_menu": {
-    "open_note_in_popup": "クイックエディット",
+    "open_note_in_popup": "クイック編集",
     "open_note_in_new_tab": "新しいタブでノートを開く",
     "open_note_in_new_split": "新しく分割してノートを開く",
     "open_note_in_new_window": "新しいウィンドウでノートを開く"
   },
   "note_tooltip": {
-    "quick-edit": "クイックエディット",
+    "quick-edit": "クイック編集",
     "note-has-been-deleted": "ノートは削除されました。"
   },
   "protect_note": {
@@ -1759,7 +1760,7 @@
     "target_parent_note": "対象の親ノート",
     "move_note_new_parent": "ノートに親が 1 つしかない場合は、ノートを新しい親に移動します (つまり、古いブランチが削除され、新しい親に新しいブランチが作成されます)",
     "clone_note_new_parent": "ノートに複数のクローン/ブランチがある場合、ノートを新しい親にクローンします（どのブランチを削除すべきか不明なため）",
-    "nothing_will_happen": "ノートをターゲットノートに移動できない場合は何も起こりません（つまり、ツリーサイクルが生じるため）",
+    "nothing_will_happen": "ノートを対象のノートに移動できない場合は何も起こりません（つまり、ツリーサイクルが生じるため）",
     "to": "次へ"
   },
   "onclick_button": {

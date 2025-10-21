@@ -1,1 +1,8 @@
-{}
+{
+    "get-started": {
+        "title": "Commencer",
+        "desktop_title": "Télécharger l'application de bureau (v{{version}})",
+        "architecture": "Architecture:",
+        "older_releases": "Voir les versions plus anciennes"
+    }
+}
