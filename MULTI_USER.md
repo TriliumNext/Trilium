@@ -164,6 +164,50 @@ When multiple users exist:
 - Existing password continues to work after migration
 - All existing notes remain accessible
 
+## Security Considerations
+
+### Implemented Protections
+
+1. **Password Security**:
+   - scrypt hashing with N=16384, r=8, p=1 (matches Trilium's security)
+   - 32-byte random salt per user
+   - Minimum 8 character password requirement
+   - Maximum 100 character limit to prevent DoS
+
+2. **Timing Attack Prevention**:
+   - Constant-time password comparison using `crypto.timingSafeEqual`
+   - Dummy hash computation for non-existent users to prevent user enumeration via timing
+
+3. **Input Validation**:
+   - Username: 3-50 characters, alphanumeric + `.` `_` `-` only
+   - Email: Format validation, 100 character limit
+   - All inputs sanitized before database operations
+   - Parameterized SQL queries (no SQL injection)
+
+4. **Authorization**:
+   - Role-based access control (Admin/User/Viewer)
+   - Admin-only endpoints for user management
+   - Users can only modify their own data (except admins)
+   - Cannot delete last admin user
+
+### Recommended Additional Protections
+
+**Important**: These should be implemented at the infrastructure level:
+
+1. **Rate Limiting**: Add rate limiting to `/login` and user API endpoints to prevent brute force attacks
+2. **HTTPS**: Always use HTTPS in production to protect credentials in transit
+3. **Reverse Proxy**: Use nginx/Apache with request limiting and firewall rules
+4. **Monitoring**: Log failed login attempts and suspicious activity
+5. **Password Policy**: Consider enforcing complexity requirements (uppercase, numbers, symbols)
+
+### Known Limitations
+
+1. **Username Enumeration**: The `/api/users/check-username` endpoint reveals which usernames exist. Consider requiring authentication for this endpoint in production.
+
+2. **No Account Lockout**: Failed login attempts don't trigger account lockouts. Implement at reverse proxy level.
+
+3. **No Password Reset**: Currently no password reset mechanism. Admins must manually update passwords via API.
+
 ## Limitations
 
 - No per-note sharing between users yet (planned for future)

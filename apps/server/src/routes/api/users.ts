@@ -25,7 +25,11 @@ function getUsers(req: Request): any {
  * Requires: Admin access or own user
  */
 function getUser(req: Request): any {
-    const tmpID = parseInt(req.params.userId);
+    const tmpID = parseInt(req.params.userId, 10);
+    if (isNaN(tmpID)) {
+        throw new ValidationError("Invalid user ID");
+    }
+    
     const currentUserId = req.session.userId;
     
     const currentUser = currentUserId ? userManagement.getUserById(currentUserId) : null;
@@ -53,17 +57,18 @@ function getUser(req: Request): any {
 function createUser(req: Request): any {
     const { username, email, password, role } = req.body;
     
-    if (!username || !password) {
-        throw new ValidationError("Username and password are required");
+    // Validate inputs (validation functions will throw meaningful errors)
+    try {
+        userManagement.validateUsername(username);
+        userManagement.validatePassword(password);
+    } catch (err: any) {
+        throw new ValidationError(err.message);
     }
     
+    // Check for existing username
     const existing = userManagement.getUserByUsername(username);
     if (existing) {
         throw new ValidationError("Username already exists");
-    }
-    
-    if (password.length < 4) {
-        throw new ValidationError("Password must be at least 4 characters long");
     }
     
     const user = userManagement.createUser({
@@ -82,7 +87,11 @@ function createUser(req: Request): any {
  * Requires: Admin access or own user (with limited fields)
  */
 function updateUser(req: Request): any {
-    const tmpID = parseInt(req.params.userId);
+    const tmpID = parseInt(req.params.userId, 10);
+    if (isNaN(tmpID)) {
+        throw new ValidationError("Invalid user ID");
+    }
+    
     const currentUserId = req.session.userId;
     const { email, password, isActive, role } = req.body;
     
@@ -102,17 +111,19 @@ function updateUser(req: Request): any {
         throw new ValidationError("Only admins can change user status or role");
     }
     
-    if (password && password.length < 4) {
-        throw new ValidationError("Password must be at least 4 characters long");
-    }
-    
     const updates: any = {};
     if (email !== undefined) updates.email = email;
     if (password !== undefined) updates.password = password;
     if (isAdminUser && isActive !== undefined) updates.isActive = isActive;
     if (isAdminUser && role !== undefined) updates.role = role;
     
-    const user = userManagement.updateUser(tmpID, updates);
+    let user;
+    try {
+        user = userManagement.updateUser(tmpID, updates);
+    } catch (err: any) {
+        throw new ValidationError(err.message);
+    }
+    
     if (!user) {
         throw new ValidationError("User not found");
     }
@@ -126,7 +137,11 @@ function updateUser(req: Request): any {
  * Requires: Admin access
  */
 function deleteUser(req: Request): any {
-    const tmpID = parseInt(req.params.userId);
+    const tmpID = parseInt(req.params.userId, 10);
+    if (isNaN(tmpID)) {
+        throw new ValidationError("Invalid user ID");
+    }
+    
     const currentUserId = req.session.userId;
     
     if (tmpID === currentUserId) {
@@ -161,11 +176,20 @@ function getCurrentUser(req: Request): any {
 
 /**
  * Check if a username is available
+ * Note: This endpoint could enable username enumeration attacks.
+ * In production, consider requiring authentication and rate limiting.
  */
 function checkUsername(req: Request): any {
     const username = req.query.username as string;
     if (!username) {
         throw new ValidationError("Username is required");
+    }
+    
+    // Validate username format first
+    try {
+        userManagement.validateUsername(username);
+    } catch (err: any) {
+        throw new ValidationError(err.message);
     }
     
     const existing = userManagement.getUserByUsername(username);

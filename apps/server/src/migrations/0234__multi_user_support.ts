@@ -62,7 +62,9 @@ export default async () => {
         const passwordDerivedKeySalt = optionService.getOption('passwordDerivedKeySalt');
         const encryptedDataKey = optionService.getOption('encryptedDataKey');
 
-        if (passwordVerificationHash && passwordVerificationSalt) {
+        // Only create user if valid password exists (not empty string)
+        if (passwordVerificationHash && passwordVerificationHash.trim() !== '' && 
+            passwordVerificationSalt && passwordVerificationSalt.trim() !== '') {
             const now = new Date().toISOString();
             
             // Create default admin user from existing credentials

@@ -100,9 +100,56 @@ function mapRowToUser(user: any): User {
 }
 
 /**
+ * Validate username format
+ */
+function validateUsername(username: string): void {
+    if (!username || typeof username !== 'string') {
+        throw new Error("Username is required");
+    }
+    
+    const trimmed = username.trim();
+    if (trimmed.length === 0) {
+        throw new Error("Username cannot be empty");
+    }
+    
+    if (trimmed.length < 3) {
+        throw new Error("Username must be at least 3 characters long");
+    }
+    
+    if (trimmed.length > 50) {
+        throw new Error("Username must be at most 50 characters long");
+    }
+    
+    // Allow alphanumeric, underscore, hyphen, and dot
+    if (!/^[a-zA-Z0-9._-]+$/.test(trimmed)) {
+        throw new Error("Username can only contain letters, numbers, dots, underscores, and hyphens");
+    }
+}
+
+/**
+ * Validate password strength
+ */
+function validatePassword(password: string): void {
+    if (!password || typeof password !== 'string') {
+        throw new Error("Password is required");
+    }
+    
+    if (password.length < 8) {
+        throw new Error("Password must be at least 8 characters long");
+    }
+    
+    if (password.length > 100) {
+        throw new Error("Password must be at most 100 characters long");
+    }
+}
+
+/**
  * Create a new user
  */
 function createUser(userData: UserCreateData): User {
+    validateUsername(userData.username);
+    validatePassword(userData.password);
+    
     const now = new Date().toISOString();
     
     // Get next tmpID
@@ -164,6 +211,22 @@ function getUserByUsername(username: string): User | null {
 function updateUser(tmpID: number, updates: UserUpdateData): User | null {
     const user = getUserById(tmpID);
     if (!user) return null;
+    
+    // Validate password if provided
+    if (updates.password !== undefined) {
+        validatePassword(updates.password);
+    }
+    
+    // Validate email format if provided
+    if (updates.email !== undefined && updates.email !== null && updates.email.trim() !== '') {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(updates.email)) {
+            throw new Error("Invalid email format");
+        }
+        if (updates.email.length > 100) {
+            throw new Error("Email must be at most 100 characters long");
+        }
+    }
     
     const now = new Date().toISOString();
     const updateParts: string[] = [];
@@ -259,17 +322,30 @@ function listUsers(includeInactive: boolean = false): UserListItem[] {
 
 /**
  * Validate user credentials
+ * Uses constant-time comparison to prevent timing attacks
  */
 function validateCredentials(username: string, password: string): User | null {
     const user = getUserByUsername(username);
     if (!user || user.isActive !== 1) {
+        // Perform dummy hash computation to prevent timing attack via early exit
+        const dummySalt = 'dummy_salt_for_timing_protection_only';
+        hashPassword(password, dummySalt);
         return null;
     }
     
     // Verify password using scrypt
     const expectedHash = hashPassword(password, user.salt);
     
-    if (expectedHash !== user.userIDVerificationHash) {
+    // Use constant-time comparison to prevent timing attacks
+    const expectedBuffer = Buffer.from(expectedHash);
+    const actualBuffer = Buffer.from(user.userIDVerificationHash);
+    
+    // crypto.timingSafeEqual requires buffers of same length
+    if (expectedBuffer.length !== actualBuffer.length) {
+        return null;
+    }
+    
+    if (!crypto.timingSafeEqual(expectedBuffer, actualBuffer)) {
         return null;
     }
     
@@ -324,6 +400,8 @@ export default {
     deleteUser,
     listUsers,
     validateCredentials,
+    validateUsername,
+    validatePassword,
     isAdmin,
     canAccessNote,
     getNotePermission,
