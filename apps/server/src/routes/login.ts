@@ -17,6 +17,10 @@ import sql from "../services/sql.js";
 
 function loginPage(req: Request, res: Response) {
     // Login page is triggered twice. Once here, and another time (see sendLoginError) if the password is failed.
+    // Check if multi-user mode is active
+    const userCount = isMultiUserEnabled() ? sql.getValue(`SELECT COUNT(*) FROM user_data`) as number : 0;
+    const multiUserMode = userCount > 1;
+    
     res.render('login', {
         wrongPassword: false,
         wrongTotp: false,
@@ -24,6 +28,7 @@ function loginPage(req: Request, res: Response) {
         ssoEnabled: openID.isOpenIDEnabled(),
         ssoIssuerName: openID.getSSOIssuerName(),
         ssoIssuerIcon: openID.getSSOIssuerIcon(),
+        multiUserMode,
         assetPath: assetPath,
         assetPathFragment: assetUrlFragment,
         appPath: appPath,
@@ -223,11 +228,15 @@ function sendLoginError(req: Request, res: Response, errorType: 'password' | 'to
         log.info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
     }
 
+    const userCount = isMultiUserEnabled() ? sql.getValue(`SELECT COUNT(*) FROM user_data`) as number : 0;
+    const multiUserMode = userCount > 1;
+
     res.status(401).render('login', {
-        wrongPassword: errorType === 'password',
+        wrongPassword: errorType === 'password' || errorType === 'credentials',
         wrongTotp: errorType === 'totp',
         totpEnabled: totp.isTotpEnabled(),
         ssoEnabled: openID.isOpenIDEnabled(),
+        multiUserMode,
         assetPath: assetPath,
         assetPathFragment: assetUrlFragment,
         appPath: appPath,

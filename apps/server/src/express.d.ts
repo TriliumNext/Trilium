@@ -22,7 +22,7 @@ export declare module "express-serve-static-core" {
 export declare module "express-session" {
     interface SessionData {
         loggedIn: boolean;
-        userId?: string;
+        userId?: number; // tmpID from user_data table
         username?: string;
         isAdmin?: boolean;
         lastAuthState: {
