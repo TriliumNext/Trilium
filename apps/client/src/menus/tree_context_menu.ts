@@ -1,3 +1,5 @@
+import NoteColorPicker from "./custom-items/NoteColorPicker.jsx";
+import treeService from "../services/tree.js";
 import appContext, { type ContextMenuCommandData, type FilteredCommandNames } from "../components/app_context.js";
 import type { SelectMenuItemEventListener } from "../components/events.js";
 import type FAttachment from "../entities/fattachment.js";
@@ -301,21 +303,28 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
             const parentNotePath = treeService.getNotePath(this.node.getParent());
             const isProtected = treeService.getParentProtectedStatus(this.node);
 
-            noteCreateService.createNoteIntoPath(parentNotePath, {
-                target: "after",
-                targetBranchId: this.node.data.branchId,
-                type,
-                isProtected,
-                templateNoteId
-            });
+
+            noteCreateService.createNote(
+                CreateNoteTarget.AfterNoteURL,
+                    targetBranchId: this.node.data.branchId,
+                    type: type,
+                    isProtected: isProtected,
+                    templateNoteId: templateNoteId,
+            );
         } else if (command === "insertChildNote") {
             const parentNotePath = treeService.getNotePath(this.node);
 
-            noteCreateService.createNote(parentNotePath, {
-                type,
-                isProtected: this.node.data.isProtected,
-                templateNoteId
-            });
+            noteCreateService.createNote(
+                CreateNoteTarget.IntoNoteURL,
+                {
+                    parentNoteUrl: parentNotePath,
+                    type: type,
+                    isProtected: this.node.data.isProtected,
+                    templateNoteId: templateNoteId,
+                    promptForType: false,
+                    placement:
+                } as CreateNoteIntoURLOpts
+            );
         } else if (command === "openNoteInSplit") {
             const subContexts = appContext.tabManager.getActiveContext()?.getSubContexts();
             const { ntxId } = subContexts?.[subContexts.length - 1] ?? {};

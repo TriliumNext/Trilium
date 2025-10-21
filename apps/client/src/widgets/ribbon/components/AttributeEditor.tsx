@@ -21,6 +21,13 @@ import AttributeDetailWidget from "../../attribute_widgets/attribute_detail";
 import ActionButton from "../../react/ActionButton";
 import CKEditor, { CKEditorApi } from "../../react/CKEditor";
 import { useLegacyImperativeHandlers, useLegacyWidget, useTooltip, useTriliumEvent, useTriliumOption } from "../../react/hooks";
+import froca from "../../../services/froca";
+import contextMenu from "../../../menus/context_menu";
+import type { CommandData, FilteredCommandNames } from "../../../components/app_context";
+import { AttributeType } from "@triliumnext/commons";
+import attributes from "../../../services/attributes";
+import note_create, { CreateNoteAfterURLOpts, CreateNoteIntoURLOpts, CreateNoteTarget, InboxNoteOpts } from "../../../services/note_create";
+import { CreateNoteAction } from "@triliumnext/commons";
 
 type AttributeCommandNames = FilteredCommandNames<CommandData>;
 
@@ -262,19 +269,27 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
             switch (action) {
                 case CreateNoteAction.CreateNoteIntoInbox:
                 case CreateNoteAction.CreateAndLinkNoteIntoInbox: {
-                    const { note } = await note_create.createNoteIntoInbox({
-                        title,
-                        activate: false
-                    });
+                    const { note } = await note_create.createNote(
+                        CreateNoteTarget.IntoInbox,
+                        {
+                            title,
+                            activate: false
+                        } as InboxNoteOpts
+                    );
                     return note?.getBestNotePathString() ?? "";
                 }
 
                 case CreateNoteAction.CreateNoteIntoPath:
                 case CreateNoteAction.CreateAndLinkNoteIntoPath: {
-                    const resp = await note_create.createNoteIntoPathWithTypePrompt(parentNotePath, {
-                        title,
-                        activate: false
-                    });
+                    const resp = await note_create.createNote(
+                        CreateNoteTarget.IntoNoteURL,
+                        {
+                            parentNoteUrl: parentNotePath,
+                            title,
+                            activate: false,
+                            promptForType: true,
+                        } as CreateNoteIntoURLOpts,
+                    )
                     return resp?.note?.getBestNotePathString() ?? "";
                 }
 

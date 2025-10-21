@@ -230,7 +230,13 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             } else if (target.classList.contains("add-note-button")) {
                 const node = $.ui.fancytree.getNode(e as unknown as Event);
                 const parentNotePath = treeService.getNotePath(node);
-                noteCreateService.createNoteIntoPath(parentNotePath, { isProtected: node.data.isProtected });
+                noteCreateService.createNote(
+                    CreateNoteTarget.IntoNoteURL,
+                    {
+                        parentNoteUrl: parentNotePath,
+                        isProtected: node.data.isProtected
+                    } as CreateNoteIntoURLOpts,
+                );
             } else if (target.classList.contains("enter-workspace-button")) {
                 const node = $.ui.fancytree.getNode(e as unknown as Event);
                 this.triggerCommand("hoistNote", { noteId: node.data.noteId });
@@ -1873,9 +1879,13 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     const node = this.getActiveNode();
                     if (!node) return;
                     const notePath = treeService.getNotePath(node);
-                    noteCreateService.createNoteIntoPath(notePath, {
-                        isProtected: node.data.isProtected
-                    });
+                    noteCreateService.createNote(
+                        CreateNoteTarget.IntoNoteURL,
+                        {
+                            parentNoteUrl: notePath,
+                            isProtected: node.data.isProtected
+                        } as CreateNoteIntoURLOpts
+                    )
                 }
             }),
             new TouchBar.TouchBarButton({
