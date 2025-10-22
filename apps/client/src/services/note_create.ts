@@ -29,14 +29,15 @@ import dateNoteService from "../services/date_notes.js";
  *
  * * Hierarchy of general to specific categories(hypernyms -> hyponyms):
  *
- * BaseCreateNoteSharedOpts
+ * * BaseCreateNoteSharedOpts
  * |
  * \-- BaseCreateNoteOpts
  *     |
  *     +-- CreateNoteAtUrlOpts
  *     |   +-- CreateNoteIntoURLOpts
- *     |   +-- CreateNoteBeforeURLOpts
- *     |   \-- CreateNoteAfterURLOpts
+ *     |   \-- CreateNoteSiblingURLOpts
+ *     |       +-- CreateNoteBeforeURLOpts
+ *     |       \-- CreateNoteAfterURLOpts
  *     |
  *     \-- CreateNoteIntoInboxURLOpts
  */
@@ -56,7 +57,6 @@ type BaseCreateNoteSharedOpts = {
     templateNoteId?: string;
     activate?: boolean;
     focus?: "title" | "content";
-    targetBranchId?: string;
     textEditor?: CKTextEditor;
 }
 
@@ -79,17 +79,16 @@ type CreateNoteAtUrlOpts = BaseCreateNoteOpts & {
     // `Url` means either parentNotePath or parentNoteId.
     // The vocabulary  is inspired by its loose semantics of getNoteIdFromUrl.
     parentNoteUrl: string;
+    /*
+     * targetBranchId disambiguates the position for cloned notes. This is a
+     * concern whenever we are given a note URL.
+     */
+    targetBranchId: string;
 }
 
 export type CreateNoteIntoURLOpts = CreateNoteAtUrlOpts;
 
-/*
- * targetBranchId disambiguates the position for cloned notes. This is only a
- * concern for siblings. The reason for that is specified in the backend.
- */
-type CreateNoteSiblingURLOpts = Omit<CreateNoteAtUrlOpts, "targetBranchId"> & {
-    targetBranchId: string;
-};
+type CreateNoteSiblingURLOpts = CreateNoteAtUrlOpts;
 export type CreateNoteBeforeURLOpts = CreateNoteSiblingURLOpts;
 export type CreateNoteAfterURLOpts = CreateNoteSiblingURLOpts;
 
