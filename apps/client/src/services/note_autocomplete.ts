@@ -500,7 +500,6 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                 break;
             }
 
-            // --- CREATE AND LINK NOTE INTO INBOX ---
             case SuggestionAction.CreateAndLinkNoteIntoInbox: {
                 const { note } = await noteCreateService.createNote(
                     {
@@ -521,7 +520,6 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                 break;
             }
 
-            // --- CREATE NOTE INTO PATH ---
             case SuggestionAction.CreateNoteIntoPath: {
                 const { note } = await noteCreateService.createNote(
                     {
@@ -543,7 +541,6 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                 break;
             }
 
-            // --- CREATE AND LINK NOTE INTO PATH ---
             case SuggestionAction.CreateAndLinkNoteIntoPath: {
                 const { note } = await noteCreateService.createNote(
                     {
