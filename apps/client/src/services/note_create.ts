@@ -13,19 +13,23 @@ import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import dateNoteService from "../services/date_notes.js";
 
 /**
- * Creating notes through note_create can have multiple kinds of valid
- * arguments. This type hierarchy is checking if the arguments are correct.
- * Later the functions of note_create are overloaded based to reflect these types,
- * which define valid arguments.
+ * The `note_create` function can be called with multiple valid combinations
+ * of arguments. This type hierarchy defines and enforces which combinations
+ * are valid at compile time.
  *
- * Theoretically: If the typechecking returns no errors, then the inputs
- * create a valid state, given that the types are defined correctly.
- * Through the Curry–Howard correspondence, this acts as a proof system
- * proving that the arguments will produce a correct state at compile time.
- * That means when typescript does type-checks, then the arguments will
- * definitely represent a valid state.
+ * The function overloads later in `note_create` correspond to these types,
+ * ensuring that each variant of note creation accepts only the correct
+ * set of arguments.
  *
- * To represent the theoretical bases `type` is used instead of `interface`
+ * Theoretically: If type checking produces no errors, then the provided
+ * arguments represent a valid state — assuming the types below are defined
+ * correctly. Through the Curry–Howard correspondence, this type system
+ * effectively acts as a proof system: a successful type check serves as a
+ * compile-time proof that the arguments of `create_note` can only produce
+ * a valid state.
+ *
+ * To align with its theoretical foundation in type theory (via the
+ * Curry–Howard correspondence), `type` is used instead of `interface`
  *
  * * Hierarchy of general to specific categories(hypernyms -> hyponyms):
  *
@@ -44,7 +48,7 @@ import dateNoteService from "../services/date_notes.js";
 
 /**
  * this is the shared basis for all types. Every other type is child (hyponym)
- * of it (domain hypernym).
+ * of it (Its the domain hypernym).
  */
 type CreateNoteEntity = {
     target: CreateNoteTarget;
