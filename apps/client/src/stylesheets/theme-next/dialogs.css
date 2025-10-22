@@ -392,7 +392,8 @@ div.tn-tool-dialog {
 }
 
 .delete-notes-list .note-path {
-    padding-inline-end: 8px;
+    padding-inline-start: 8px;
+    color: var(--muted-text-color)
 }
 
 /*

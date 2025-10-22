@@ -1,5 +1,5 @@
 import options from "./options.js";
-import Split from "split.js"
+import Split from "@triliumnext/split.js";
 
 export const DEFAULT_GUTTER_SIZE = 5;
 
@@ -46,6 +46,7 @@ function setupLeftPaneResizer(leftPaneVisible: boolean) {
                 sizes: [leftPaneWidth, restPaneWidth],
                 gutterSize: DEFAULT_GUTTER_SIZE,
                 minSize: [150, 300],
+                rtl: glob.isRtl,
                 onDragEnd: (sizes) => {
                     leftPaneWidth = Math.round(sizes[0]);
                     options.save("leftPaneWidth", Math.round(sizes[0]));
@@ -79,6 +80,7 @@ function setupRightPaneResizer() {
             sizes: [100 - rightPaneWidth, rightPaneWidth],
             gutterSize: DEFAULT_GUTTER_SIZE,
             minSize: [300, 180],
+            rtl: glob.isRtl,
             onDragEnd: (sizes) => {
                 rightPaneWidth = Math.round(sizes[1]);
                 options.save("rightPaneWidth", Math.round(sizes[1]));
@@ -99,7 +101,7 @@ function setupNoteSplitResizer(ntxIds: string[]) {
     let targetNtxIds: string[] | undefined;
     for (const ntxId of ntxIds) {
         targetNtxIds = findKeyByNtxId(ntxId);
-        if (targetNtxIds) break; 
+        if (targetNtxIds) break;
     }
 
     if (targetNtxIds) {
@@ -154,6 +156,7 @@ function createSplitInstance(targetNtxIds: string[]) {
         const splitPanels = [...splitNoteContainer.querySelectorAll<HTMLElement>(':scope > .note-split')]
             .filter(el => targetNtxIds.includes(el.getAttribute('data-ntx-id') ?? ""));
         const splitInstance = Split(splitPanels, {
+            rtl: glob.isRtl,
             gutterSize: DEFAULT_GUTTER_SIZE,
             minSize: 150,
         });

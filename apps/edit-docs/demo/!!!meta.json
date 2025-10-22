@@ -1,6 +1,6 @@
 {
 	"formatVersion": 2,
-	"appVersion": "0.99.1",
+	"appVersion": "0.99.2",
 	"files": [
 		{
 			"isClone": false,
@@ -29,7 +29,7 @@
 					"title": "Journal",
 					"notePosition": 10,
 					"prefix": null,
-					"isExpanded": true,
+					"isExpanded": false,
 					"type": "book",
 					"mime": "",
 					"attributes": [
@@ -82,44 +82,51 @@
 					"title": "Trilium Demo",
 					"notePosition": 20,
 					"prefix": null,
-					"isExpanded": false,
+					"isExpanded": true,
 					"type": "text",
 					"mime": "text/html",
 					"attributes": [
 						{
 							"type": "relation",
 							"name": "internalLink",
-							"value": "Th0SHTjziC8R",
+							"value": "xY1FldcqIlaS",
 							"isInheritable": false,
 							"position": 10
 						},
 						{
 							"type": "relation",
 							"name": "internalLink",
-							"value": "1afuYh5pfoEP",
+							"value": "Th0SHTjziC8R",
 							"isInheritable": false,
 							"position": 20
 						},
 						{
 							"type": "relation",
 							"name": "internalLink",
-							"value": "FtCt1LKirRGs",
+							"value": "1afuYh5pfoEP",
 							"isInheritable": false,
 							"position": 30
 						},
 						{
 							"type": "relation",
 							"name": "internalLink",
-							"value": "uppxiNYbjvGw",
+							"value": "FtCt1LKirRGs",
 							"isInheritable": false,
 							"position": 40
 						},
 						{
 							"type": "relation",
 							"name": "internalLink",
-							"value": "Q3ve69mXIaMY",
+							"value": "uppxiNYbjvGw",
 							"isInheritable": false,
 							"position": 50
+						},
+						{
+							"type": "relation",
+							"name": "internalLink",
+							"value": "Q3ve69mXIaMY",
+							"isInheritable": false,
+							"position": 60
 						},
 						{
 							"type": "label",

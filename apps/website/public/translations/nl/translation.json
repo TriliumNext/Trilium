@@ -5,5 +5,30 @@
         "architecture": "Architectuur:",
         "older_releases": "Bekijk oudere versies",
         "server_title": "Richt een server in voor toegang vanaf meerdere apparaten"
+    },
+    "hero_section": {
+        "title": "Organiseer je gedachten. Bouw je persoonlijke kennisbank.",
+        "subtitle": "Trilium is een open-source oplossing voor notities en het organiseren van een persoonlijke kennisbank. Gebruik het lokaal op je desktop, of synchroniseer het met je zelfgehoste server om je notities overal bij de hand te hebben.",
+        "get_started": "Aan de slag",
+        "github": "GitHub",
+        "dockerhub": "Docker Hub",
+        "screenshot_alt": "Schermafbeelding van de Trilium Notes-desktopapplicatie"
+    },
+    "organization_benefits": {
+        "title": "Organisatie",
+        "note_structure_title": "Notitie structuur",
+        "note_structure_description": "Notities kunnen hiërarchisch worden geordend. Mappen zijn niet nodig, aangezien elke notitie subnotities kan bevatten. Een enkele notitie kan bovendien op meerdere plaatsen in de hiërarchie worden toegevoegd.",
+        "attributes_title": "Notitielabels en relaties",
+        "attributes_description": "Gebruik relaties tussen notities of voeg labels toe voor eenvoudige categorisatie. Gebruik gepromoveerde attributen om gestructureerde informatie in te voeren die kan worden gebruikt in tabellen en borden.",
+        "hoisting_title": "Werkruimtes en focus (hoisting)",
+        "hoisting_description": "Scheid eenvoudig je persoonlijke en werknotities door ze te groeperen onder een werkruimte, waarmee je de notitieboom kunt focussen op een specifieke set notities."
+    },
+    "productivity_benefits": {
+        "title": "Productiviteit en veiligheid",
+        "revisions_title": "Notitie revisies",
+        "revisions_content": "Notities worden periodiek op de achtergrond opgeslagen, en versies kunnen worden gebruikt om wijzigingen te bekijken of om per ongeluk gemaakte aanpassingen ongedaan te maken. Revisies kunnen ook handmatig worden aangemaakt.",
+        "sync_title": "Synchronisatie",
+        "sync_content": "Gebruik een zelfgehoste of cloudinstantie om je notities eenvoudig te synchroniseren tussen meerdere apparaten, en om er via een PWA toegang toe te krijgen op je mobiele telefoon.",
+        "protected_notes_title": "Beveiligde notities"
     }
 }

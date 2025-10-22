@@ -2,6 +2,7 @@ import utils from "../services/utils.js";
 import BNote from "../becca/entities/bnote.js";
 import BAttribute from "../becca/entities/battribute.js";
 import BBranch from "../becca/entities/bbranch.js";
+import { NoteType } from "@triliumnext/commons";
 
 type AttributeDefinitions = { [key in `#${string}`]: string; };
 type RelationDefinitions = { [key in `~${string}`]: string; };
@@ -10,6 +11,7 @@ interface NoteDefinition extends AttributeDefinitions, RelationDefinitions {
     id?: string | undefined;
     title?: string;
     content?: string;
+    type?: NoteType;
     children?: NoteDefinition[];
 }
 
@@ -42,7 +44,7 @@ export function buildNote(noteDef: NoteDefinition) {
     const note = new BNote({
         noteId: noteDef.id ?? utils.randomString(12),
         title: noteDef.title ?? "New note",
-        type: "text",
+        type: noteDef.type ?? "text",
         mime: "text/html",
         isProtected: false,
         blobId: ""

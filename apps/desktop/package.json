@@ -15,7 +15,8 @@
     "start-no-dir": "cross-env TRILIUM_PORT=37743 tsx ../../scripts/electron-start.mts src/main.ts",
     "build": "tsx scripts/build.ts",
     "start-prod": "pnpm build && cross-env TRILIUM_DATA_DIR=data TRILIUM_PORT=37841 ELECTRON_IS_DEV=0 electron dist",
-    "electron-forge:make": "pnpm build && cross-env electron-forge make dist",
+    "electron-forge:make": "pnpm build && electron-forge make dist",
+    "electron-forge:make-flatpak": "pnpm build && electron-forge make dist --targets=@electron-forge/maker-flatpak",
     "electron-forge:package": "pnpm build && electron-forge package dist",
     "electron-forge:start": "pnpm build && electron-forge start dist",
     "e2e": "pnpm build && cross-env TRILIUM_INTEGRATION_TEST=memory-no-store TRILIUM_PORT=8082 TRILIUM_DATA_DIR=data-e2e ELECTRON_IS_DEV=0 playwright test"

@@ -37,10 +37,11 @@
   "private": true,
   "devDependencies": {
     "@electron/rebuild": "4.0.1",
+    "@fast-csv/parse": "5.0.5",
     "@playwright/test": "1.56.1",
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.3",
-    "@types/node": "22.18.11",
+    "@types/node": "22.18.12",
     "@vitest/coverage-v8": "3.2.4",
     "@vitest/ui": "3.2.4",
     "chalk": "5.6.2",

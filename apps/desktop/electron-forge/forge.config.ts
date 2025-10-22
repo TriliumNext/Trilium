@@ -70,7 +70,6 @@ const config: ForgeConfig = {
         ]
     },
     rebuildConfig: {
-        force: true,
         extraModules: [ "better-sqlite3" ]
     },
     makers: [
@@ -85,14 +84,30 @@ const config: ForgeConfig = {
             config: {
                 options: {
                     ...baseLinuxMakerConfigOptions,
+                    desktopTemplate: undefined, // otherwise it would put in the wrong exec
+                    icon: {
+                        "128x128": path.join(APP_ICON_PATH, "png/128x128.png"),
+                    },
                     id: "com.triliumnext.notes",
                     runtimeVersion: "24.08",
                     base: "org.electronjs.Electron2.BaseApp",
                     baseVersion: "24.08",
                     baseFlatpakref: "https://flathub.org/repo/flathub.flatpakrepo",
                     finishArgs: [
+                        // Wayland/X11 Rendering
                         "--socket=fallback-x11",
-                        "--socket=wayland"
+                        "--socket=wayland",
+                        "--share=ipc",
+                        // Open GL
+                        "--device=dri",
+                        // Audio output
+                        "--socket=pulseaudio",
+                        // Read/write home directory access
+                        "--filesystem=home",
+                        // Allow communication with network
+                        "--share=network",
+                        // System notifications with libnotify
+                        "--talk-name=org.freedesktop.Notifications",
                     ],
                     modules: [
                         {

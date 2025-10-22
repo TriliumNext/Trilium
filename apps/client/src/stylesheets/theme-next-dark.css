@@ -277,6 +277,11 @@
     --custom-bg-color: hsl(var(--custom-color-hue), 20%, 33%, 0.4);
 }
 
+.reference-link,
+.ck-content a.reference-link > span {
+    color: var(--dark-theme-custom-color, inherit);
+}
+
 body ::-webkit-calendar-picker-indicator {
     filter: invert(1);
 }

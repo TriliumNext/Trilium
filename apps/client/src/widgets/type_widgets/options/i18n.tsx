@@ -33,7 +33,11 @@ function LocalizationOptions() {
                 return true;
             }),
             formattingLocales: [
-                ...allLocales.filter(locale => locale.electronLocale)
+                ...allLocales.filter(locale => {
+                    if (!locale.electronLocale) return false;
+                    if (locale.devOnly && !glob.isDev) return false;
+                    return true;
+                })
             ]
         }
     }, []);

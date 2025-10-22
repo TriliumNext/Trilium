@@ -667,3 +667,16 @@ html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
     background: var(--accented-background-color);
     color: var(--main-text-color);
 }
+
+/* Reference link */
+
+.ck-content a.reference-link,
+.ck-content a.reference-link:hover {
+    /* Apply underline only to the span inside the link so it can follow the
+     * target note's user defined color */
+    text-decoration: none;
+}
+
+.ck-content a.reference-link > span {
+    text-decoration: underline;
+}

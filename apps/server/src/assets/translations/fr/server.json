@@ -250,7 +250,13 @@
     "other": "Autre",
     "advanced-title": "Avancé",
     "visible-launchers-title": "Raccourcis visibles",
-    "user-guide": "Guide de l'utilisateur"
+    "user-guide": "Guide de l'utilisateur",
+    "jump-to-note-title": "Aller à...",
+    "llm-chat-title": "Discuter avec Notes",
+    "multi-factor-authentication-title": "MFA",
+    "ai-llm-title": "AI/LLM",
+    "localization": "Langue et région",
+    "inbox-title": "Boîte de réception"
   },
   "notes": {
     "new-note": "Nouvelle note",
@@ -375,7 +381,14 @@
     "zoom-in": "Zoomer",
     "reset-zoom-level": "Réinitilaliser le zoom",
     "copy-without-formatting": "Copier sans mise en forme",
-    "force-save-revision": "Forcer la sauvegarde de la révision"
+    "force-save-revision": "Forcer la sauvegarde de la révision",
+    "toggle-ribbon-tab-promoted-attributes": "Basculer les attributs promus de l'onglet du ruban",
+    "toggle-ribbon-tab-note-map": "Basculer l'onglet du ruban Note Map",
+    "toggle-ribbon-tab-note-info": "Basculer l'onglet du ruban Note Info",
+    "toggle-ribbon-tab-note-paths": "Basculer les chemins de notes de l'onglet du ruban",
+    "toggle-ribbon-tab-similar-notes": "Basculer l'onglet du ruban Notes similaires",
+    "toggle-note-hoisting": "Activer la focalisation sur la note",
+    "unhoist-note": "Désactiver la focalisation sur la note"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Base de données non initialisée, merci de suivre les instructions à l'écran.",
@@ -383,5 +396,7 @@
   },
   "desktop": {
     "instance_already_running": "Une instance est déjà en cours d'execution, ouverture de cette instance à la place."
-  }
+  },
+  "weekdayNumber": "Semaine {weekNumber}",
+  "quarterNumber": "Trimestre {quarterNumber}"
 }

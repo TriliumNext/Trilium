@@ -184,7 +184,8 @@
     },
     "import-status": "Statut de l'importation",
     "in-progress": "Importation en cours : {{progress}}",
-    "successful": "Importation terminée avec succès."
+    "successful": "Importation terminée avec succès.",
+    "importZipRecommendation": "Lors de l'importation d'un fichier ZIP, la hiérarchie des notes reflétera la structure des sous-répertoires au sein de l'archive."
   },
   "include_note": {
     "dialog_title": "Inclure une note",
@@ -1160,7 +1161,8 @@
     "download_images_description": "Le HTML collé peut contenir des références à des images en ligne, Trilium trouvera ces références et téléchargera les images afin qu'elles soient disponibles hors ligne.",
     "enable_image_compression": "Activer la compression des images",
     "max_image_dimensions": "Largeur/hauteur maximale d'une image en pixels (l'image sera redimensionnée si elle dépasse ce paramètre).",
-    "jpeg_quality_description": "Qualité JPEG (10 - pire qualité, 100 - meilleure qualité, 50 - 85 est recommandé)"
+    "jpeg_quality_description": "Qualité JPEG (10 - pire qualité, 100 - meilleure qualité, 50 - 85 est recommandé)",
+    "max_image_dimensions_unit": "pixels"
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Délai d'effacement des pièces jointes",
@@ -1192,7 +1194,8 @@
     "note_revisions_snapshot_limit_description": "La limite du nombre de versions de note désigne le nombre maximum de versions pouvant être enregistrées pour chaque note. -1 signifie aucune limite, 0 signifie supprimer toutes les versions. Vous pouvez définir le nombre maximal de versions pour une seule note avec le label #versioningLimit.",
     "snapshot_number_limit_label": "Nombre limite de versions de note :",
     "erase_excess_revision_snapshots": "Effacer maintenant les versions en excès",
-    "erase_excess_revision_snapshots_prompt": "Les versions en excès ont été effacées."
+    "erase_excess_revision_snapshots_prompt": "Les versions en excès ont été effacées.",
+    "snapshot_number_limit_unit": "instantanés"
   },
   "search_engine": {
     "title": "Moteur de recherche",
@@ -1234,19 +1237,35 @@
     "title": "Table des matières",
     "description": "La table des matières apparaîtra dans les notes textuelles lorsque la note comporte plus d'un nombre défini de titres. Vous pouvez personnaliser ce nombre :",
     "disable_info": "Vous pouvez également utiliser cette option pour désactiver la table des matières en définissant un nombre très élevé.",
-    "shortcut_info": "Vous pouvez configurer un raccourci clavier pour afficher/masquer le volet de droite (y compris la table des matières) dans Options -> Raccourcis (nom « toggleRightPane »)."
+    "shortcut_info": "Vous pouvez configurer un raccourci clavier pour afficher/masquer le volet de droite (y compris la table des matières) dans Options -> Raccourcis (nom « toggleRightPane »).",
+    "unit": "titres"
   },
   "text_auto_read_only_size": {
     "title": "Taille automatique en lecture seule",
     "description": "La taille automatique des notes en lecture seule est la taille au-delà de laquelle les notes seront affichées en mode lecture seule (pour des raisons de performances).",
-    "label": "Taille automatique en lecture seule (notes de texte)"
+    "label": "Taille automatique en lecture seule (notes de texte)",
+    "unit": "caractères"
   },
   "i18n": {
     "title": "Paramètres régionaux",
     "language": "Langue",
     "first-day-of-the-week": "Premier jour de la semaine",
     "sunday": "Dimanche",
-    "monday": "Lundi"
+    "monday": "Lundi",
+    "tuesday": "Mardi",
+    "wednesday": "Mercredi",
+    "thursday": "Jeudi",
+    "friday": "Vendredi",
+    "saturday": "Samedi",
+    "first-week-of-the-year": "Première semaine de l'année",
+    "first-week-contains-first-day": "La première semaine contient le premier jour de l'année",
+    "first-week-contains-first-thursday": "La première semaine contient le premier jeudi de l'année",
+    "first-week-has-minimum-days": "La première semaine a un nombre minimum de jours",
+    "min-days-in-first-week": "Nombre minimum de jours dans la première semaine",
+    "first-week-info": "La première semaine contient le premier jeudi de l'année et est basée sur la norme <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a> .",
+    "first-week-warning": "La modification des options de la première semaine peut entraîner des doublons avec les notes de semaine existantes et les notes de semaine existantes ne seront pas mises à jour en conséquence.",
+    "formatting-locale": "Format de date et de nombre",
+    "formatting-locale-auto": "En fonction de la langue de l'application"
   },
   "backup": {
     "automatic_backup": "Sauvegarde automatique",
@@ -1284,7 +1303,9 @@
     "delete_token": "Supprimer/désactiver ce token",
     "rename_token_title": "Renommer le jeton",
     "rename_token_message": "Veuillez saisir le nom du nouveau jeton",
-    "delete_token_confirmation": "Êtes-vous sûr de vouloir supprimer le jeton ETAPI « {{name}} » ?"
+    "delete_token_confirmation": "Êtes-vous sûr de vouloir supprimer le jeton ETAPI « {{name}} » ?",
+    "see_more": "Voir plus de détails dans le {{- link_to_wiki}} et le {{- link_to_openapi_spec}} ou le {{- link_to_swagger_ui }}.",
+    "swagger_ui": "Interface utilisateur ETAPI Swagger"
   },
   "options_widget": {
     "options_status": "Statut des options",
@@ -1347,7 +1368,8 @@
     "test_title": "Test de synchronisation",
     "test_description": "Testera la connexion et la prise de contact avec le serveur de synchronisation. Si le serveur de synchronisation n'est pas initialisé, cela le configurera pour qu'il se synchronise avec le document local.",
     "test_button": "Tester la synchronisation",
-    "handshake_failed": "Échec de la négociation avec le serveur de synchronisation, erreur : {{message}}"
+    "handshake_failed": "Échec de la négociation avec le serveur de synchronisation, erreur : {{message}}",
+    "timeout_unit": "millisecondes"
   },
   "api_log": {
     "close": "Fermer"
@@ -1407,7 +1429,10 @@
     "import-into-note": "Importer dans la note",
     "apply-bulk-actions": "Appliquer des Actions groupées",
     "converted-to-attachments": "Les notes {{count}} ont été converties en pièces jointes.",
-    "convert-to-attachment-confirm": "Êtes-vous sûr de vouloir convertir les notes sélectionnées en pièces jointes de leurs notes parentes ?"
+    "convert-to-attachment-confirm": "Êtes-vous sûr de vouloir convertir les notes sélectionnées en pièces jointes de leurs notes parentes ?",
+    "archive": "Archive",
+    "unarchive": "Désarchiver",
+    "open-in-popup": "Modification rapide"
   },
   "shared_info": {
     "shared_publicly": "Cette note est partagée publiquement sur {{- link}}",
@@ -1433,7 +1458,9 @@
     "confirm-change": "Il n'est pas recommandé de modifier le type de note lorsque son contenu n'est pas vide. Voulez-vous continuer ?",
     "geo-map": "Carte géo",
     "beta-feature": "Beta",
-    "task-list": "Liste de tâches"
+    "task-list": "Liste de tâches",
+    "book": "Collection",
+    "ai-chat": "Chat IA"
   },
   "protect_note": {
     "toggle-on": "Protéger la note",
@@ -1688,7 +1715,37 @@
     "minimum_input": "La valeur de temps saisie doit être d'au moins {{minimumSeconds}} secondes."
   },
   "multi_factor_authentication": {
-    "oauth_user_email": "Courriel de l'utilisateur : "
+    "oauth_user_email": "Courriel de l'utilisateur : ",
+    "title": "Authentification multifacteur",
+    "description": "L'authentification multifacteur (MFA) renforce la sécurité de votre compte. Au lieu de simplement saisir un mot de passe pour vous connecter, le MFA vous demande de fournir une ou plusieurs preuves supplémentaires pour vérifier votre identité. Ainsi, même si quelqu'un obtient votre mot de passe, il ne peut accéder à votre compte sans cette deuxième information. C'est comme ajouter une serrure supplémentaire à votre porte, rendant l'effraction beaucoup plus difficile.<br><br>Veuillez suivre les instructions ci-dessous pour activer le MFA. Si vous ne configurez pas correctement, la connexion se fera uniquement par mot de passe.",
+    "mfa_enabled": "Activer l'authentification multifacteur",
+    "mfa_method": "Méthode MFA",
+    "electron_disabled": "L'authentification multifacteur n'est actuellement pas prise en charge dans la version de bureau.",
+    "totp_title": "Mot de passe à usage unique basé sur le temps (TOTP)",
+    "totp_description": "Le TOTP (Time-Based One-Time Password) est une fonctionnalité de sécurité qui génère un code unique et temporaire, modifié toutes les 30 secondes. Vous utilisez ce code, associé à votre mot de passe, pour vous connecter à votre compte, ce qui rend l'accès à celui-ci beaucoup plus difficile.",
+    "totp_secret_title": "Générer un secret TOTP",
+    "totp_secret_generate": "Générer un secret TOTP",
+    "totp_secret_regenerate": "Re-générer un secret TOTP",
+    "no_totp_secret_warning": "Pour activer TOTP, vous devez d’abord générer un secret TOTP.",
+    "totp_secret_description_warning": "Après avoir généré un nouveau secret TOTP, vous devrez vous reconnecter avec le nouveau secret TOTP.",
+    "totp_secret_generated": "Secret TOTP généré",
+    "totp_secret_warning": "Veuillez conserver le secret généré dans un endroit sûr. Il ne sera plus affiché.",
+    "totp_secret_regenerate_confirm": "Voulez-vous vraiment régénérer le secret TOTP ? Cela invalidera le secret TOTP précédent et tous les codes de récupération existants.",
+    "recovery_keys_title": "Clés de récupération d'authentification unique",
+    "recovery_keys_description": "Les clés de récupération d'authentification unique sont utilisées pour vous connecter même si vous ne pouvez pas accéder à vos codes d'authentification.",
+    "recovery_keys_description_warning": "Les clés de récupération ne seront plus affichées après avoir quitté la page, conservez-les dans un endroit sûr et sécurisé.<br>Une fois qu'une clé de récupération a été utilisée, elle devient inutilisable.",
+    "recovery_keys_error": "Erreur lors de la génération des codes de récupération",
+    "recovery_keys_no_key_set": "Aucun code de récupération défini",
+    "recovery_keys_generate": "Générer des codes de récupération",
+    "recovery_keys_regenerate": "Re-générer des codes de récupération",
+    "recovery_keys_used": "Utilisé : {{date}}",
+    "recovery_keys_unused": "Le code de récupération {{index}} n'est pas utilisé",
+    "oauth_title": "OAuth/OpenID",
+    "oauth_description": "OpenID est un moyen standardisé de vous connecter à des sites web avec un compte d'un autre service, comme Google, afin de vérifier votre identité. L'émetteur par défaut est Google, mais vous pouvez le modifier pour n'importe quel autre fournisseur OpenID. Consultez <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">ici</a> pour plus d'informations. Suivez ces <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instructions</a> pour configurer un service OpenID via Google.",
+    "oauth_description_warning": "Pour activer OAuth/OpenID, vous devez définir l'URL de base, l'ID client et le secret client OAuth/OpenID dans le fichier config.ini, puis redémarrer l'application. Pour les définir à partir des variables d'environnement, définissez TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID et TRILIUM_OAUTH_CLIENT_SECRET.",
+    "oauth_missing_vars": "Paramètres manquants : {{-variables}}",
+    "oauth_user_account": "Compte utilisateur: ",
+    "oauth_user_not_logged_in": "Pas connecté !"
   },
   "modal": {
     "close": "Fermer"
@@ -1786,5 +1843,11 @@
     "enable-backdrop-effects": "Activer les effets d'arrière plan pour les menus, popups et panneaux",
     "enable-smooth-scroll": "Active le défilement fluide",
     "app-restart-required": "(redémarrer l'application pour appliquer les changements)"
+  },
+  "custom_date_time_format": {
+    "title": "Format de date/heure personnalisé",
+    "description": "Personnalisez le format de la date et de l'heure insérées via <shortcut /> ou la barre d'outils. Consultez la <doc>documentation Day.js</doc> pour connaître les formats disponibles.",
+    "format_string": "Chaîne de format :",
+    "formatted_time": "Date/heure formatée :"
   }
 }

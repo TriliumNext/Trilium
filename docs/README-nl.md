@@ -20,10 +20,10 @@ releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
 [![Vertaling
 status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
-[English](./README.md) | [Chinese (Simplified)](./docs/README-ZH_CN.md) |
-[Chinese (Traditional)](./docs/README-ZH_TW.md) | [Russian](./docs/README-ru.md)
-| [Japanese](./docs/README-ja.md) | [Italian](./docs/README-it.md) |
-[Spanish](./docs/README-es.md)
+[Engels](./README.md) [Chinees (Versimpeld)](./docs/README-ZH_CN.md) [Chinees
+(Traditioneel)](./docs/README-ZH_TW.md) [Russisch](./docs/README-ru.md)
+[Japans](./docs/README-ja.md) [Italiaans](./docs/README-it.md)
+[Spaans](./docs/README-es.md)
 
 Trillium Notes is een gratis en open-source, platformonafhankelijke,
 hiërarchische notitie-applicatie die zich richt op het opbouwen van grote

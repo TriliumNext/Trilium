@@ -4,9 +4,6 @@ import froca from "./froca.js";
 import hoistedNoteService from "./hoisted_note.js";
 import appContext from "../components/app_context.js";
 
-/**
- * @returns {string|null}
- */
 async function resolveNotePath(notePath: string, hoistedNoteId = "root") {
     const runPath = await resolveNotePathToSegments(notePath, hoistedNoteId);
 

@@ -10,7 +10,7 @@ export function formatDateTime(date: string | Date | number | null | undefined, 
         return "";
     }
 
-    const locale = options.get("formattingLocale") || options.get("locale") || navigator.language;
+    const locale = normalizeLocale(options.get("formattingLocale") || options.get("locale") || navigator.language);
 
     let parsedDate;
     if (typeof date === "string" || typeof date === "number") {
@@ -26,15 +26,37 @@ export function formatDateTime(date: string | Date | number | null | undefined, 
 
     if (timeStyle !== "none" && dateStyle !== "none") {
         // Format the date and time
-        const formatter = new Intl.DateTimeFormat(locale, { dateStyle, timeStyle });
-        return formatter.format(parsedDate);
+        try {
+            const formatter = new Intl.DateTimeFormat(locale, { dateStyle, timeStyle });
+            return formatter.format(parsedDate);
+        } catch (e) {
+            const formatter = new Intl.DateTimeFormat(undefined, { dateStyle, timeStyle });
+            return formatter.format(parsedDate);
+        }
     } else if (timeStyle === "none" && dateStyle !== "none") {
         // Format only the date
-        return parsedDate.toLocaleDateString(locale, { dateStyle });
+        try {
+            return parsedDate.toLocaleDateString(locale, { dateStyle });
+        } catch (e) {
+            return parsedDate.toLocaleDateString(undefined, { dateStyle });
+        }
     } else if (dateStyle === "none" && timeStyle !== "none") {
         // Format only the time
-        return parsedDate.toLocaleTimeString(locale, { timeStyle });
+        try {
+            return parsedDate.toLocaleTimeString(locale, { timeStyle });
+        } catch (e) {
+            return parsedDate.toLocaleTimeString(undefined, { timeStyle });
+        }
     }
 
     throw new Error("Incorrect state.");
+}
+
+export function normalizeLocale(locale: string) {
+    locale = locale.replaceAll("_", "-");
+    switch (locale) {
+        case "cn": return "zh-CN";
+        case "tw": return "zh-TW";
+        default: return locale;
+    }
 }
