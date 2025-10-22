@@ -25,20 +25,24 @@ import dateNoteService from "../services/date_notes.js";
  * that just means that if the code type-checks, then the provided options
  * represent a valid state. To represent the theoretical bases `type` is
  * used instead of `interface`
+ *
+ * * Hierarchy of general to specific categories(hypernyms -> hyponyms):
+ *
+ * BaseCreateNoteSharedOpts
+ * |
+ * \-- BaseCreateNoteOpts
+ *     |
+ *     +-- CreateNoteAtUrlOpts
+ *     |   +-- CreateNoteIntoURLOpts
+ *     |   +-- CreateNoteBeforeURLOpts
+ *     |   \-- CreateNoteAfterURLOpts
+ *     |
+ *     \-- CreateNoteIntoInboxURLOpts
  */
-export type BaseCreateNoteOpts =
-  | ({
-      promptForType: true;
-      type?: never;
-    } & BaseCreateNoteSharedOpts)
-  | ({
-      promptForType?: false;
-      type?: string;
-    } & BaseCreateNoteSharedOpts);
 
 /**
- * this is the shared basis for all types, but since BaseCreateNoteOpts is can
- * have multiple different type systems
+ * this is the shared basis for all types. Every other type is child (hyponym)
+ * of it (domain hypernym).
  */
 type BaseCreateNoteSharedOpts = {
     target: CreateNoteTarget;
@@ -55,12 +59,22 @@ type BaseCreateNoteSharedOpts = {
     textEditor?: CKTextEditor;
 }
 
+export type BaseCreateNoteOpts =
+  | (BaseCreateNoteSharedOpts & {
+      promptForType: true;
+      type?: never;
+    })
+  | (BaseCreateNoteSharedOpts & {
+      promptForType?: false;
+      type?: string;
+    });
+
 /*
  * For creating a note in a specific path. At is the broader category (hypernym)
  * of "into" and "as siblings". It is not exported because it only exists, to
  * have its legal values propagated to its children (types inheriting from it).
  */
-type CreateNoteAtUrlOpts = BaseCreateNoteSharedOpts & {
+type CreateNoteAtUrlOpts = BaseCreateNoteOpts & {
     // `Url` means either parentNotePath or parentNoteId.
     // The vocabulary  is inspired by its loose semantics of getNoteIdFromUrl.
     parentNoteUrl: string;
@@ -78,7 +92,7 @@ type CreateNoteSiblingURLOpts = Omit<CreateNoteAtUrlOpts, "targetBranchId"> & {
 export type CreateNoteBeforeURLOpts = CreateNoteSiblingURLOpts;
 export type CreateNoteAfterURLOpts = CreateNoteSiblingURLOpts;
 
-export type CreateNoteIntoInboxURLOpts = BaseCreateNoteSharedOpts & {
+export type CreateNoteIntoInboxURLOpts = BaseCreateNoteOpts & {
     parentNoteUrl?: never;
 }
 
