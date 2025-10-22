@@ -101,6 +101,75 @@ interface DuplicateResponse {
     note: FNote;
 }
 
+/* We are overloading createNote for each type */
+async function createNote(
+  options: CreateNoteIntoURLOpts
+): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
+
+async function createNote(
+  options: CreateNoteAfterURLOpts
+): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
+
+async function createNote(
+  options: CreateNoteBeforeURLOpts
+): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
+
+async function createNote(
+  options: CreateNoteIntoInboxURLOpts
+): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
+
+async function createNote(
+  options: BaseCreateNoteOpts
+): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
+
+    let resolvedOptions = { ...options };
+
+    // handle prompts centrally to write once fix for all
+    if (options.promptForType) {
+        const { success, noteType, templateNoteId, notePath } = await chooseNoteType();
+
+        if (!success) return {
+            note: null, branch: undefined
+        };
+
+        resolvedOptions = {
+            ...resolvedOptions,
+            promptForType: false,
+            type: noteType,
+            templateNoteId,
+        } as BaseCreateNoteOpts;
+
+        if (notePath) {
+            resolvedOptions = resolvedOptions as CreateNoteIntoURLOpts;
+            resolvedOptions = {
+                ...resolvedOptions,
+                target: CreateNoteTarget.IntoNoteURL,
+                parentNoteUrl: notePath,
+            } as CreateNoteIntoURLOpts;
+        }
+    }
+
+    switch (resolvedOptions.target) {
+        case CreateNoteTarget.IntoNoteURL:
+            return await createNoteIntoNote(resolvedOptions as CreateNoteIntoURLOpts);
+
+        case CreateNoteTarget.BeforeNoteURL:
+            return await createNoteBeforeNote(resolvedOptions as CreateNoteBeforeURLOpts);
+
+        case CreateNoteTarget.AfterNoteURL:
+            return await createNoteAfterNote(resolvedOptions as CreateNoteAfterURLOpts);
+
+        case CreateNoteTarget.IntoInbox:
+            return await createNoteIntoInbox(resolvedOptions as CreateNoteIntoInboxURLOpts);
+
+        default: {
+            console.warn("[createNote] Unknown target:", options.target, resolvedOptions);
+            toastService.showMessage("Unknown note creation target."); // optional
+            return { note: null, branch: undefined };
+        }
+    }
+}
+
 /**
  * Core function that creates a new note under the specified parent note path.
  *
@@ -185,6 +254,8 @@ async function createNoteAtNote(
 }
 
 
+// Small wrapper functions for @see createNoteAtNote, using it a certain way to
+// remove code duplication
 async function createNoteIntoNote(
     options: CreateNoteIntoURLOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
@@ -239,75 +310,6 @@ async function chooseNoteType() {
     return new Promise<ChooseNoteTypeResponse>((res) => {
         appContext.triggerCommand("chooseNoteType", { callback: res });
     });
-}
-
-/* We are overloading createNote for each type */
-async function createNote(
-  options: CreateNoteIntoURLOpts
-): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
-
-async function createNote(
-  options: CreateNoteAfterURLOpts
-): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
-
-async function createNote(
-  options: CreateNoteBeforeURLOpts
-): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
-
-async function createNote(
-  options: CreateNoteIntoInboxURLOpts
-): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
-
-async function createNote(
-  options: BaseCreateNoteOpts
-): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
-
-    let resolvedOptions = { ...options };
-
-    // handle prompts centrally to write once fix for all
-    if (options.promptForType) {
-        const { success, noteType, templateNoteId, notePath } = await chooseNoteType();
-
-        if (!success) return {
-            note: null, branch: undefined
-        };
-
-        resolvedOptions = {
-            ...resolvedOptions,
-            promptForType: false,
-            type: noteType,
-            templateNoteId,
-        } as BaseCreateNoteOpts;
-
-        if (notePath) {
-            resolvedOptions = resolvedOptions as CreateNoteIntoURLOpts;
-            resolvedOptions = {
-                ...resolvedOptions,
-                target: CreateNoteTarget.IntoNoteURL,
-                parentNoteUrl: notePath,
-            } as CreateNoteIntoURLOpts;
-        }
-    }
-
-    switch (resolvedOptions.target) {
-        case CreateNoteTarget.IntoNoteURL:
-            return await createNoteIntoNote(resolvedOptions as CreateNoteIntoURLOpts);
-
-        case CreateNoteTarget.BeforeNoteURL:
-            return await createNoteBeforeNote(resolvedOptions as CreateNoteBeforeURLOpts);
-
-        case CreateNoteTarget.AfterNoteURL:
-            return await createNoteAfterNote(resolvedOptions as CreateNoteAfterURLOpts);
-
-        case CreateNoteTarget.IntoInbox:
-            return await createNoteIntoInbox(resolvedOptions as CreateNoteIntoInboxURLOpts);
-
-        default: {
-            console.warn("[createNote] Unknown target:", options.target, resolvedOptions);
-            toastService.showMessage("Unknown note creation target."); // optional
-            return { note: null, branch: undefined };
-        }
-    }
 }
 
 /* If the first element is heading, parse it out and use it as a new heading. */
