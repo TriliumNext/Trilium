@@ -1,6 +1,6 @@
 import { EventCallBackMethods, RowComponent, Tabulator } from "tabulator-tables";
 import { CommandListenerData } from "../../../components/app_context";
-import note_create, { BaseCreateNoteOpts, CreateNoteIntoURLOpts as CreateNoteIntoURLOpts, CreateNoteTarget } from "../../../services/note_create";
+import note_create, { CreateNoteOpts, CreateNoteIntoURLOpts as CreateNoteIntoURLOpts, CreateNoteTarget } from "../../../services/note_create";
 import { useLegacyImperativeHandlers } from "../../react/hooks";
 import { RefObject } from "preact";
 import { setAttribute, setLabel } from "../../../services/attributes";
@@ -15,7 +15,7 @@ export default function useRowTableEditing(api: RefObject<Tabulator>, attributeD
         addNewRowCommand({ customOpts, parentNotePath: customNotePath }: CommandListenerData<"addNewRow">) {
             const notePath = customNotePath ?? parentNotePath;
             if (notePath) {
-                const opts: BaseCreateNoteOpts = {
+                const opts: CreateNoteOpts = {
                     activate: false,
                     ...customOpts
                 }

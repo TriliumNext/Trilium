@@ -29,9 +29,9 @@ import dateNoteService from "../services/date_notes.js";
  *
  * * Hierarchy of general to specific categories(hypernyms -> hyponyms):
  *
- * * BaseCreateNoteSharedOpts
+ * * CreateNoteEntity
  * |
- * \-- BaseCreateNoteOpts
+ * \-- CreateNoteOpts
  *     |
  *     +-- CreateNoteAtUrlOpts
  *     |   +-- CreateNoteIntoURLOpts
@@ -46,7 +46,7 @@ import dateNoteService from "../services/date_notes.js";
  * this is the shared basis for all types. Every other type is child (hyponym)
  * of it (domain hypernym).
  */
-type BaseCreateNoteSharedOpts = {
+type CreateNoteEntity = {
     target: CreateNoteTarget;
     isProtected?: boolean;
     saveSelection?: boolean;
@@ -60,12 +60,12 @@ type BaseCreateNoteSharedOpts = {
     textEditor?: CKTextEditor;
 }
 
-export type BaseCreateNoteOpts =
-  | (BaseCreateNoteSharedOpts & {
+export type CreateNoteOpts =
+  | (CreateNoteEntity & {
       promptForType: true;
       type?: never;
     })
-  | (BaseCreateNoteSharedOpts & {
+  | (CreateNoteEntity & {
       promptForType?: false;
       type?: string;
     });
@@ -75,7 +75,7 @@ export type BaseCreateNoteOpts =
  * of "into" and "as siblings". It is not exported because it only exists, to
  * have its legal values propagated to its children (types inheriting from it).
  */
-type CreateNoteAtUrlOpts = BaseCreateNoteOpts & {
+type CreateNoteAtUrlOpts = CreateNoteOpts & {
     // `Url` means either parentNotePath or parentNoteId.
     // The vocabulary  is inspired by its loose semantics of getNoteIdFromUrl.
     parentNoteUrl: string;
@@ -92,7 +92,7 @@ type CreateNoteSiblingURLOpts = CreateNoteAtUrlOpts;
 export type CreateNoteBeforeURLOpts = CreateNoteSiblingURLOpts;
 export type CreateNoteAfterURLOpts = CreateNoteSiblingURLOpts;
 
-export type CreateNoteIntoInboxURLOpts = BaseCreateNoteOpts & {
+export type CreateNoteIntoInboxURLOpts = CreateNoteOpts & {
     parentNoteUrl?: never;
 }
 
@@ -132,7 +132,7 @@ async function createNote(
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
 
 async function createNote(
-  options: BaseCreateNoteOpts
+  options: CreateNoteOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
 
     let resolvedOptions = { ...options };
@@ -150,7 +150,7 @@ async function createNote(
             promptForType: false,
             type: noteType,
             templateNoteId,
-        } as BaseCreateNoteOpts;
+        } as CreateNoteOpts;
 
         if (notePath) {
             resolvedOptions = resolvedOptions as CreateNoteIntoURLOpts;
@@ -187,7 +187,7 @@ async function createNote(
  * Core function that creates a new note under the specified parent note path.
  *
  * @param target - Duplicates apps/server/src/routes/api/notes.ts createNote
- * @param {BaseCreateNoteSharedOpts} [options] - Options controlling note creation (title, content, type, template, focus, etc.).
+ * @param {CreateNoteEntity} [options] - Options controlling note creation (title, content, type, template, focus, etc.).
  * with parentNotePath - The parent note path where the new note will be created.
  * @returns {Promise<{ note: FNote | null; branch: FBranch | undefined }>}
  * Resolves with the created note and branch entities.
@@ -290,7 +290,7 @@ async function createNoteAfterNote(
 /**
  * Creates a new note inside the user's Inbox.
  *
- * @param {BaseCreateNoteSharedOpts} [options] - Optional settings such as title, type, template, or content.
+ * @param {CreateNoteEntity} [options] - Optional settings such as title, type, template, or content.
  * @returns {Promise<{ note: FNote | null; branch: FBranch | undefined }>}
  * Resolves with the created note and its branch, or `{ note: null, branch: undefined }` if the inbox is missing.
  */
