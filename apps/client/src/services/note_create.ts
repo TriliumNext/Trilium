@@ -14,7 +14,7 @@ import dateNoteService from "../services/date_notes.js";
 
 /**
  * Creating notes through note_create can have multiple kinds of valid
- * arguments. This type hierchary is checking if the arguments are correct.
+ * arguments. This type hierarchy is checking if the arguments are correct.
  * Later the functions of note_create are overloaded based to reflect these types,
  * which define valid arguments.
  *
@@ -22,9 +22,10 @@ import dateNoteService from "../services/date_notes.js";
  * create a valid state, given that the types are defined correctly.
  * Through the Curry–Howard correspondence, this acts as a proof system
  * proving that the arguments will produce a correct state at compile time.
- * that just means that if the code type-checks, then the provided options
- * represent a valid state. To represent the theoretical bases `type` is
- * used instead of `interface`
+ * That means when typescript does type-checks, then the arguments will
+ * definitely represent a valid state.
+ *
+ * To represent the theoretical bases `type` is used instead of `interface`
  *
  * * Hierarchy of general to specific categories(hypernyms -> hyponyms):
  *
