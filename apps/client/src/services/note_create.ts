@@ -13,36 +13,19 @@ import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import dateNoteService from "../services/date_notes.js";
 import { CreateChildrenResponse } from "@triliumnext/commons";
 
-// build around functionality of @see createNoteAtNote
-export enum CreateNoteTarget {
-    IntoNoteURL,
-    AfterNoteURL,
-    BeforeNoteURL,
-    IntoInbox,
-}
-
 /**
- * validation of note creation options through type checking.
+ * Creating notes through note_create can have multiple kinds of valid
+ * arguments. This type hierchary is checking if the arguments are correct.
+ * Later the functions are overloaded based on an enum, to fixate the argument
+ * type and through the type system the legal arguments.
  *
- * If the typechecking returns no errors, then the inputs create a valid state,
- * but only if the types are defined semantically correct.
- *
- * These definitions use discriminated unions (`BaseCreateNoteOpts`) built from composable
- * `type` aliases (not `interface`) to ensure that only *logically valid* configurations
- * of creation parameters can exist at compile time.
- *
- * Through the Curry–Howard correspondence, this acts as a lightweight proof system:
- * if the code type-checks, then the provided options represent a valid state
- * for note creation — i.e. the combination of fields cannot express an invalid
- * or contradictory configuration.
- *
- * In other words:
- *   - Each variant of `BaseCreateNoteOpts` encodes one valid semantic path.
- *   - The type system statically eliminates impossible states.
- *   - The runtime logic can therefore assume the input is internally consistent.
- *
- * This is why `type` is used instead of `interface`: the goal is type-level proof
- * of validity.
+ * Theoretically: If the typechecking returns no errors, then the inputs
+ * create a valid state, but only if the types are defined correctly.
+ * Through the Curry–Howard correspondence, this kinda acts as a proof system
+ * for correctness of the arguments (I believe that this is the connection here):
+ * that just means that if the code type-checks, then the provided options
+ * represent a valid state. To represent the theoretical bases `type` is
+ * used instead of `interface`
  */
 export type BaseCreateNoteOpts =
   | ({
@@ -54,7 +37,11 @@ export type BaseCreateNoteOpts =
       type?: string;
     } & BaseCreateNoteSharedOpts);
 
-export type BaseCreateNoteSharedOpts = {
+/**
+ * this is the shared basis for all types, but since BaseCreateNoteOpts is can
+ * have multiple different type systems
+ */
+type BaseCreateNoteSharedOpts = {
     target: CreateNoteTarget;
     isProtected?: boolean;
     saveSelection?: boolean;
@@ -69,26 +56,38 @@ export type BaseCreateNoteSharedOpts = {
     textEditor?: CKTextEditor;
 }
 
-// For creating *in a specific path*
-type CreateNoteAtURLOpts = BaseCreateNoteSharedOpts & {
-    // Url is either path or Id
+/*
+ * For creating a note in a specific path. At is the broader category (hypernym)
+ * of "into" and "as siblings". It is not exported because it only exists, to
+ * have its legal values propagated to its children (types inheriting from it).
+ */
+type CreateNoteAtUrlOpts = BaseCreateNoteSharedOpts & {
+    // `Url` means either parentNotePath or parentNoteId.
+    // The vocabulary  is inspired by its loose semantics of getNoteIdFromUrl.
     parentNoteUrl: string;
 }
 
-export type CreateNoteIntoURLOpts = CreateNoteAtURLOpts;
+export type CreateNoteIntoURLOpts = CreateNoteAtUrlOpts;
 
-// targetBranchId disambiguates the position for cloned notes, thus it must
-// only be specified for a sibling
-// This is also specified in the backend
-type CreateNoteSiblingURLOpts = Omit<CreateNoteAtURLOpts, "targetBranchId"> & {
+/*
+ * targetBranchId disambiguates the position for cloned notes. This is only a
+ * concern for siblings. The reason for that is specified in the backend.
+ */
+type CreateNoteSiblingURLOpts = Omit<CreateNoteAtUrlOpts, "targetBranchId"> & {
     targetBranchId: string;
 };
 export type CreateNoteBeforeURLOpts = CreateNoteSiblingURLOpts;
 export type CreateNoteAfterURLOpts = CreateNoteSiblingURLOpts;
 
 export type CreateNoteIntoInboxURLOpts = BaseCreateNoteSharedOpts & {
-    // disallowed
     parentNoteUrl?: never;
+}
+
+export enum CreateNoteTarget {
+    IntoNoteURL,
+    AfterNoteURL,
+    BeforeNoteURL,
+    IntoInbox,
 }
 
 interface Response {
@@ -113,7 +112,7 @@ interface DuplicateResponse {
  */
 async function createNoteAtNote(
     target: "into" | "after" | "before",
-    options: CreateNoteAtURLOpts
+    options: CreateNoteAtUrlOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
     options = Object.assign(
         {
@@ -185,22 +184,23 @@ async function createNoteAtNote(
     };
 }
 
+
 async function createNoteIntoNote(
     options: CreateNoteIntoURLOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
-    return createNoteAtNote("into", {...options} as CreateNoteAtURLOpts);
+    return createNoteAtNote("into", {...options} as CreateNoteAtUrlOpts);
 }
 
 async function createNoteBeforeNote(
     options: CreateNoteBeforeURLOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
-    return createNoteAtNote("before", {...options} as CreateNoteAtURLOpts);
+    return createNoteAtNote("before", {...options} as CreateNoteAtUrlOpts);
 }
 
 async function createNoteAfterNote(
     options: CreateNoteAfterURLOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
-    return createNoteAtNote("after", {...options} as CreateNoteAtURLOpts);
+    return createNoteAtNote("after", {...options} as CreateNoteAtUrlOpts);
 }
 
 /**
@@ -241,6 +241,7 @@ async function chooseNoteType() {
     });
 }
 
+/* We are overloading createNote for each type */
 async function createNote(
   options: CreateNoteIntoURLOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
