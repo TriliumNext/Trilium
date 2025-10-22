@@ -10,6 +10,7 @@ import openID from "./open_id.js";
 import options from "./options.js";
 import attributes from "./attributes.js";
 import userManagement from "./user_management.js";
+import cls from "./cls.js";
 import type { NextFunction, Request, Response } from "express";
 
 let noAuthentication = false;
@@ -25,6 +26,12 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
     const lastAuthState = req.session.lastAuthState || { totpEnabled: false, ssoEnabled: false };
 
     if (isElectron || noAuthentication) {
+        // Store userId in CLS for note ownership tracking
+        if (req.session && req.session.userId) {
+            cls.set('userId', req.session.userId);
+        } else {
+            cls.set('userId', 1); // Default to admin
+        }
         next();
         return;
     } else if (!req.session.loggedIn && !noAuthentication) {
@@ -51,12 +58,24 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
         return;
     } else if (currentSsoStatus) {
         if (req.oidc?.isAuthenticated() && req.session.loggedIn) {
+            // Store userId in CLS for note ownership tracking
+            if (req.session && req.session.userId) {
+                cls.set('userId', req.session.userId);
+            } else {
+                cls.set('userId', 1); // Default to admin
+            }
             next();
             return;
         }
         res.redirect('login');
         return;
     } else {
+        // Store userId in CLS for note ownership tracking
+        if (req.session && req.session.userId) {
+            cls.set('userId', req.session.userId);
+        } else {
+            cls.set('userId', 1); // Default to admin
+        }
         next();
     }
 }
@@ -78,6 +97,12 @@ function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction)
         console.warn(`Missing session with ID '${req.sessionID}'.`);
         reject(req, res, "Logged in session not found");
     } else {
+        // Store userId in CLS for note ownership tracking
+        if (req.session && req.session.userId) {
+            cls.set('userId', req.session.userId);
+        } else {
+            cls.set('userId', 1); // Default to admin
+        }
         next();
     }
 }
@@ -87,6 +112,12 @@ function checkApiAuth(req: Request, res: Response, next: NextFunction) {
         console.warn(`Missing session with ID '${req.sessionID}'.`);
         reject(req, res, "Logged in session not found");
     } else {
+        // Store userId in CLS for note ownership tracking
+        if (req.session && req.session.userId) {
+            cls.set('userId', req.session.userId);
+        } else {
+            cls.set('userId', 1); // Default to admin
+        }
         next();
     }
 }

@@ -60,6 +60,8 @@ import anthropicRoute from "./api/anthropic.js";
 import llmRoute from "./api/llm.js";
 import systemInfoRoute from "./api/system_info.js";
 import usersRoute from "./api/users.js";
+import permissionsRoute from "./api/permissions.js";
+import groupsRoute from "./api/groups.js";
 
 import etapiAuthRoutes from "../etapi/auth.js";
 import etapiAppInfoRoutes from "../etapi/app_info.js";
@@ -91,7 +93,7 @@ function register(app: express.Application) {
         skipSuccessfulRequests: true // successful auth to rate-limited ETAPI routes isn't counted. However, successful auth to /login is still counted!
     });
 
-    route(PST, "/login", [loginRateLimiter], loginRoute.login);
+    asyncRoute(PST, "/login", [loginRateLimiter], loginRoute.login);
     route(PST, "/logout", [csrfMiddleware, auth.checkAuth], loginRoute.logout);
     route(PST, "/set-password", [auth.checkAppInitialized, auth.checkPasswordNotSet], loginRoute.setPassword);
     route(GET, "/setup", [], setupRoute.setupPage);
@@ -233,6 +235,24 @@ function register(app: express.Application) {
     route(PST, "/api/users", [auth.checkApiAuth, csrfMiddleware, auth.checkAdmin], usersRoute.createUser, apiResultHandler);
     route(PUT, "/api/users/:userId", [auth.checkApiAuth, csrfMiddleware], usersRoute.updateUser, apiResultHandler);
     route(DEL, "/api/users/:userId", [auth.checkApiAuth, csrfMiddleware, auth.checkAdmin], usersRoute.deleteUser, apiResultHandler);
+
+    // Permission management routes (collaborative multi-user)
+    apiRoute(GET, "/api/notes/:noteId/permissions", permissionsRoute.getNotePermissions);
+    apiRoute(PST, "/api/notes/:noteId/share", permissionsRoute.shareNote);
+    apiRoute(DEL, "/api/notes/:noteId/permissions/:permissionId", permissionsRoute.revokePermission);
+    apiRoute(GET, "/api/notes/accessible", permissionsRoute.getAccessibleNotes);
+    apiRoute(GET, "/api/notes/:noteId/my-permission", permissionsRoute.getMyPermission);
+    apiRoute(PST, "/api/notes/:noteId/transfer-ownership", permissionsRoute.transferOwnership);
+
+    // Group management routes (collaborative multi-user)
+    apiRoute(PST, "/api/groups", groupsRoute.createGroup);
+    apiRoute(GET, "/api/groups", groupsRoute.getAllGroups);
+    apiRoute(GET, "/api/groups/my", groupsRoute.getMyGroups);
+    apiRoute(GET, "/api/groups/:groupId", groupsRoute.getGroup);
+    apiRoute(PUT, "/api/groups/:groupId", groupsRoute.updateGroup);
+    apiRoute(DEL, "/api/groups/:groupId", groupsRoute.deleteGroup);
+    apiRoute(PST, "/api/groups/:groupId/members", groupsRoute.addMember);
+    apiRoute(DEL, "/api/groups/:groupId/members/:userId", groupsRoute.removeMember);
 
     asyncApiRoute(PST, "/api/sync/test", syncApiRoute.testSync);
     asyncApiRoute(PST, "/api/sync/now", syncApiRoute.syncNow);

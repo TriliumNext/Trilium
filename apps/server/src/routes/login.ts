@@ -12,13 +12,13 @@ import recoveryCodeService from '../services/encryption/recovery_codes.js';
 import openID from '../services/open_id.js';
 import openIDEncryption from '../services/encryption/open_id_encryption.js';
 import { getCurrentLocale } from "../services/i18n.js";
-import userManagement from "../services/user_management.js";
+import userManagement from "../services/user_management_collaborative.js";
 import sql from "../services/sql.js";
 
 function loginPage(req: Request, res: Response) {
     // Login page is triggered twice. Once here, and another time (see sendLoginError) if the password is failed.
     // Check if multi-user mode is active
-    const userCount = isMultiUserEnabled() ? sql.getValue(`SELECT COUNT(*) FROM user_data`) as number : 0;
+    const userCount = isMultiUserEnabled() ? sql.getValue(`SELECT COUNT(*) FROM users WHERE isActive = 1`) as number : 0;
     const multiUserMode = userCount > 1;
     
     res.render('login', {
@@ -84,7 +84,7 @@ function setPassword(req: Request, res: Response) {
  *     tags:
  *       - auth
  *     summary: Log in using password
- *     description: This will give you a Trilium session, which is required for some other API endpoints. `totpToken` is only required if the user configured TOTP authentication.
+ *     description: This will give you a Trilium session, which is required for some other API endpoints. `totpToken` is only required if the user configured TOTP authentication. In multi-user mode, `username` is also required.
  *     operationId: login-normal
  *     externalDocs:
  *       description: HMAC calculation
@@ -97,6 +97,9 @@ function setPassword(req: Request, res: Response) {
  *             required:
  *               - password
  *             properties:
+ *               username:
+ *                 type: string
+ *                 description: Username (required in multi-user mode)
  *               password:
  *                 type: string
  *               totpToken:
@@ -107,7 +110,7 @@ function setPassword(req: Request, res: Response) {
  *       '401':
  *         description: Password / TOTP mismatch
  */
-function login(req: Request, res: Response) {
+async function login(req: Request, res: Response) {
     if (openID.isOpenIDEnabled()) {
         res.oidc.login({
             returnTo: '/',
@@ -137,7 +140,7 @@ function login(req: Request, res: Response) {
     if (multiUserMode) {
         if (submittedUsername) {
             // Multi-user authentication when username is provided
-            authenticatedUser = verifyMultiUserCredentials(submittedUsername, submittedPassword);
+            authenticatedUser = await verifyMultiUserCredentials(submittedUsername, submittedPassword);
             if (!authenticatedUser) {
                 sendLoginError(req, res, 'credentials');
                 return;
@@ -176,9 +179,14 @@ function login(req: Request, res: Response) {
 
         // Store user information in session for multi-user mode
         if (authenticatedUser) {
-            req.session.userId = authenticatedUser.tmpID; // Store tmpID from user_data table
+            req.session.userId = authenticatedUser.userId; // Store userId from users table
             req.session.username = authenticatedUser.username;
             req.session.isAdmin = authenticatedUser.role === 'admin';
+        } else if (multiUserMode) {
+            // If no username provided but multi-user mode, default to admin user
+            req.session.userId = 1;
+            req.session.username = 'admin';
+            req.session.isAdmin = true;
         }
 
         res.redirect('.');
@@ -202,11 +210,11 @@ function verifyPassword(submittedPassword: string) {
 }
 
 /**
- * Check if multi-user mode is enabled (user_data table has users)
+ * Check if multi-user mode is enabled (users table has users)
  */
 function isMultiUserEnabled(): boolean {
     try {
-        const count = sql.getValue(`SELECT COUNT(*) as count FROM user_data WHERE isSetup = 'true'`) as number;
+        const count = sql.getValue(`SELECT COUNT(*) as count FROM users WHERE isActive = 1`) as number;
         return count > 0;
     } catch (e) {
         return false;
@@ -216,8 +224,8 @@ function isMultiUserEnabled(): boolean {
 /**
  * Authenticate using multi-user credentials (username + password)
  */
-function verifyMultiUserCredentials(username: string, password: string) {
-    return userManagement.validateCredentials(username, password);
+async function verifyMultiUserCredentials(username: string, password: string) {
+    return await userManagement.validateCredentials(username, password);
 }
 
 function sendLoginError(req: Request, res: Response, errorType: 'password' | 'totp' | 'credentials' = 'password') {
@@ -228,7 +236,7 @@ function sendLoginError(req: Request, res: Response, errorType: 'password' | 'to
         log.info(`WARNING: Wrong password from ${req.ip}, rejecting.`);
     }
 
-    const userCount = isMultiUserEnabled() ? sql.getValue(`SELECT COUNT(*) FROM user_data`) as number : 0;
+    const userCount = isMultiUserEnabled() ? sql.getValue(`SELECT COUNT(*) FROM users WHERE isActive = 1`) as number : 0;
     const multiUserMode = userCount > 1;
 
     res.status(401).render('login', {
