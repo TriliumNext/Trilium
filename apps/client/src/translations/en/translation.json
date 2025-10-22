@@ -679,6 +679,7 @@
     "open_note_externally": "Open note externally",
     "open_note_externally_title": "File will be open in an external application and watched for changes. You'll then be able to upload the modified version back to Trilium.",
     "open_note_custom": "Open note custom",
+    "open_note_on_server": "Open note on server",
     "import_files": "Import files",
     "export_note": "Export note",
     "delete_note": "Delete note",

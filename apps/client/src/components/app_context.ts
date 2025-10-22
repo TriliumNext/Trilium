@@ -327,6 +327,7 @@ export type CommandMappings = {
     exportAsPdf: CommandData;
     openNoteExternally: CommandData;
     openNoteCustom: CommandData;
+    openNoteOnServer: CommandData;
     renderActiveNote: CommandData;
     unhoist: CommandData;
     reloadFrontendApp: CommandData;

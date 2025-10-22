@@ -1,4 +1,4 @@
-import { ConvertToAttachmentResponse } from "@triliumnext/commons";
+import { ConvertToAttachmentResponse, OptionNames } from "@triliumnext/commons";
 import appContext, { CommandNames } from "../../components/app_context";
 import FNote from "../../entities/fnote"
 import dialog from "../../services/dialog";
@@ -12,6 +12,7 @@ import { FormDropdownDivider, FormListItem } from "../react/FormList";
 import { isElectron as getIsElectron, isMac as getIsMac } from "../../services/utils";
 import { ParentComponent } from "../react/react_utils";
 import { useContext } from "preact/hooks";
+import { useTriliumOption } from "../react/hooks";
 import NoteContext from "../../components/note_context";
 import branches from "../../services/branches";
 
@@ -52,6 +53,7 @@ function NoteContextMenu({ note, noteContext }: { note: FNote, noteContext?: Not
   const isMac = getIsMac();
   const hasSource = ["text", "code", "relationMap", "mermaid", "canvas", "mindMap"].includes(note.type);
   const isSearchOrBook = ["search", "book"].includes(note.type);
+  const [ syncServerHost ] = useTriliumOption("syncServerHost");
 
   return (
     <Dropdown
@@ -82,6 +84,7 @@ function NoteContextMenu({ note, noteContext }: { note: FNote, noteContext?: Not
       <CommandItem command="openNoteExternally" icon="bx bx-file-find" disabled={isSearchOrBook || !isElectron} text={t("note_actions.open_note_externally")} title={t("note_actions.open_note_externally_title")} />
       <CommandItem command="openNoteCustom" icon="bx bx-customize" disabled={isSearchOrBook || isMac || !isElectron} text={t("note_actions.open_note_custom")} />
       <CommandItem command="showNoteSource" icon="bx bx-code" disabled={!hasSource} text={t("note_actions.note_source")} />
+      <CommandItem command="openNoteOnServer" icon="bx bx-world" disabled={!syncServerHost} text={t("note_actions.open_note_on_server")} />
       <FormDropdownDivider />
 
       <CommandItem command="forceSaveRevision" icon="bx bx-save" disabled={isInOptionsOrHelp} text={t("note_actions.save_revision")} />
