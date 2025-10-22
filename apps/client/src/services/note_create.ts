@@ -11,7 +11,6 @@ import type FBranch from "../entities/fbranch.js";
 import type { ChooseNoteTypeResponse } from "../widgets/dialogs/note_type_chooser.js";
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import dateNoteService from "../services/date_notes.js";
-import { CreateChildrenResponse } from "@triliumnext/commons";
 
 /**
  * Creating notes through note_create can have multiple kinds of valid
