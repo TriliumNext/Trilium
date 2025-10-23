@@ -86,7 +86,9 @@ html {
     --custom-color: var(--light-theme-custom-color);
 }
 
-.reference-link,
-.ck-content a.reference-link > span {
+:root .reference-link,
+:root .reference-link:hover,
+.ck-content a.reference-link > span,
+.board-note {
     color: var(--light-theme-custom-color, inherit);
 }

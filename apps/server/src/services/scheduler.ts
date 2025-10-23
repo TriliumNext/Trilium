@@ -66,7 +66,7 @@ sqlInit.dbReady.then(() => {
         );
     }
 
-    setInterval(() => checkProtectedSessionExpiration(), 1);
+    setInterval(() => checkProtectedSessionExpiration(), 30000);
 });
 
 function checkProtectedSessionExpiration() {
