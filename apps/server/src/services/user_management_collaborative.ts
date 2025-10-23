@@ -236,12 +236,17 @@ export async function changePassword(userId: number, newPassword: string): Promi
 /**
  * Delete a user
  * @param userId - User ID
+ * @param transferToUserId - Optional: User ID to transfer ownership to (default: first admin)
  */
-export function deleteUser(userId: number): void {
+export function deleteUser(userId: number, transferToUserId?: number): void {
     // Prevent deleting the last admin
     const user = sql.getRow<User>("SELECT * FROM users WHERE userId = ?", [userId]);
 
-    if (user && user.role === "admin") {
+    if (!user) {
+        throw new Error(`User ${userId} not found`);
+    }
+
+    if (user.role === "admin") {
         const adminCount = sql.getValue<number>("SELECT COUNT(*) FROM users WHERE role = 'admin' AND isActive = 1");
 
         if (adminCount <= 1) {
@@ -249,6 +254,39 @@ export function deleteUser(userId: number): void {
         }
     }
 
+    // Handle orphan notes by transferring ownership
+    const ownedNotesCount = sql.getValue<number>(
+        "SELECT COUNT(*) FROM note_ownership WHERE userId = ?",
+        [userId]
+    );
+
+    if (ownedNotesCount > 0) {
+        // If no transfer user specified, find first active admin
+        if (!transferToUserId) {
+            transferToUserId = sql.getValue<number>(
+                "SELECT userId FROM users WHERE role = 'admin' AND isActive = 1 AND userId != ? ORDER BY userId LIMIT 1",
+                [userId]
+            );
+        }
+
+        if (!transferToUserId) {
+            throw new Error("Cannot delete user: no admin available to transfer note ownership");
+        }
+
+        // Transfer note ownership
+        sql.execute(
+            "UPDATE note_ownership SET userId = ? WHERE userId = ?",
+            [transferToUserId, userId]
+        );
+    }
+
+    // Remove user from groups
+    sql.execute("DELETE FROM group_members WHERE userId = ?", [userId]);
+
+    // Remove user's permissions
+    sql.execute("DELETE FROM note_permissions WHERE userId = ?", [userId]);
+
+    // Delete the user
     sql.execute("DELETE FROM users WHERE userId = ?", [userId]);
 }
 

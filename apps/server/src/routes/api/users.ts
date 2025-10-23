@@ -148,10 +148,10 @@ function deleteUser(req: Request): any {
         throw new ValidationError("Cannot delete your own account");
     }
     
-    const success = userManagement.deleteUser(tmpID);
-    if (!success) {
-        throw new ValidationError("User not found");
-    }
+    // Optional: transfer notes to specific user (from query param)
+    const transferToUserId = req.query.transferTo ? parseInt(req.query.transferTo as string, 10) : undefined;
+    
+    userManagement.deleteUser(tmpID, transferToUserId);
     
     return { success: true };
 }

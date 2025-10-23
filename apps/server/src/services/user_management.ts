@@ -272,8 +272,9 @@ function updateUser(tmpID: number, updates: UserUpdateData): User | null {
 
 /**
  * Delete user (soft delete by setting isActive = 0)
+ * Transfers note ownership to first available admin
  */
-function deleteUser(tmpID: number): boolean {
+function deleteUser(tmpID: number, transferToUserId?: number): boolean {
     const user = getUserById(tmpID);
     if (!user) return false;
     
@@ -287,6 +288,37 @@ function deleteUser(tmpID: number): boolean {
             throw new Error("Cannot delete the last admin user");
         }
     }
+    
+    // Handle orphan notes by transferring ownership
+    const ownedNotesCount = sql.getValue(`
+        SELECT COUNT(*) FROM note_ownership WHERE userId = ?
+    `, [tmpID]) as number;
+    
+    if (ownedNotesCount > 0) {
+        // If no transfer user specified, find first active admin
+        if (!transferToUserId) {
+            transferToUserId = sql.getValue(`
+                SELECT tmpID FROM user_data 
+                WHERE role = 'admin' AND isActive = 1 AND tmpID != ? 
+                ORDER BY tmpID LIMIT 1
+            `, [tmpID]) as number | undefined;
+        }
+        
+        if (!transferToUserId) {
+            throw new Error("Cannot delete user: no admin available to transfer note ownership");
+        }
+        
+        // Transfer note ownership
+        sql.execute(`
+            UPDATE note_ownership SET userId = ? WHERE userId = ?
+        `, [transferToUserId, tmpID]);
+    }
+    
+    // Remove user from groups
+    sql.execute(`DELETE FROM group_members WHERE userId = ?`, [tmpID]);
+    
+    // Remove user's permissions
+    sql.execute(`DELETE FROM note_permissions WHERE userId = ?`, [tmpID]);
     
     const now = new Date().toISOString();
     sql.execute(`
