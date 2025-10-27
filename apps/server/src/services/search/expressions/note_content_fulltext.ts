@@ -81,30 +81,40 @@ class NoteContentFulltextExp extends Expression {
         // Try to use FTS5 if available for better performance
         if (ftsSearchService.checkFTS5Availability() && this.canUseFTS5()) {
             try {
-                // Performance comparison logging for FTS5 vs traditional search
-                const searchQuery = this.tokens.join(" ");
-                const isQuickSearch = searchContext.fastSearch === false; // quick-search sets fastSearch to false
-                if (isQuickSearch) {
-                    log.info(`[QUICK-SEARCH-COMPARISON] Starting comparison for query: "${searchQuery}" with operator: ${this.operator}`);
-                }
-                
                 // Check if we need to search protected notes
                 const searchProtected = protectedSessionService.isProtectedSessionAvailable();
-                
-                // Time FTS5 search
-                const ftsStartTime = Date.now();
+
                 const noteIdSet = inputNoteSet.getNoteIds();
-                const ftsResults = ftsSearchService.searchSync(
-                    this.tokens,
-                    this.operator,
-                    noteIdSet.size > 0 ? noteIdSet : undefined,
-                    {
-                        includeSnippets: false,
-                        searchProtected: false // FTS5 doesn't index protected notes
-                    }
-                );
-                const ftsEndTime = Date.now();
-                const ftsTime = ftsEndTime - ftsStartTime;
+
+                // Determine which FTS5 method to use based on operator
+                let ftsResults;
+                if (this.operator === "*=*" || this.operator === "*=" || this.operator === "=*") {
+                    // Substring operators use LIKE queries (optimized by trigram index)
+                    // Do NOT pass a limit - we want all results to match traditional search behavior
+                    ftsResults = ftsSearchService.searchWithLike(
+                        this.tokens,
+                        this.operator,
+                        noteIdSet.size > 0 ? noteIdSet : undefined,
+                        {
+                            includeSnippets: false,
+                            searchProtected: false
+                            // No limit specified - return all results
+                        },
+                        searchContext // Pass context to track internal timing
+                    );
+                } else {
+                    // Other operators use MATCH syntax
+                    ftsResults = ftsSearchService.searchSync(
+                        this.tokens,
+                        this.operator,
+                        noteIdSet.size > 0 ? noteIdSet : undefined,
+                        {
+                            includeSnippets: false,
+                            searchProtected: false // FTS5 doesn't index protected notes
+                        },
+                        searchContext // Pass context to track internal timing
+                    );
+                }
 
                 // Add FTS results to note set
                 for (const result of ftsResults) {
@@ -112,50 +122,7 @@ class NoteContentFulltextExp extends Expression {
                         resultNoteSet.add(becca.notes[result.noteId]);
                     }
                 }
-                
-                // For quick-search, also run traditional search for comparison
-                if (isQuickSearch) {
-                    const traditionalStartTime = Date.now();
-                    const traditionalNoteSet = new NoteSet();
-                    
-                    // Run traditional search (use the fallback method)
-                    const traditionalResults = this.executeWithFallback(inputNoteSet, traditionalNoteSet, searchContext);
-                    
-                    const traditionalEndTime = Date.now();
-                    const traditionalTime = traditionalEndTime - traditionalStartTime;
-                    
-                    // Log performance comparison
-                    const speedup = traditionalTime > 0 ? (traditionalTime / ftsTime).toFixed(2) : "N/A";
-                    log.info(`[QUICK-SEARCH-COMPARISON] ===== Results for query: "${searchQuery}" =====`);
-                    log.info(`[QUICK-SEARCH-COMPARISON] FTS5 search: ${ftsTime}ms, found ${ftsResults.length} results`);
-                    log.info(`[QUICK-SEARCH-COMPARISON] Traditional search: ${traditionalTime}ms, found ${traditionalResults.notes.length} results`);
-                    log.info(`[QUICK-SEARCH-COMPARISON] FTS5 is ${speedup}x faster (saved ${traditionalTime - ftsTime}ms)`);
-                    
-                    // Check if results match
-                    const ftsNoteIds = new Set(ftsResults.map(r => r.noteId));
-                    const traditionalNoteIds = new Set(traditionalResults.notes.map(n => n.noteId));
-                    const matchingResults = ftsNoteIds.size === traditionalNoteIds.size && 
-                                          Array.from(ftsNoteIds).every(id => traditionalNoteIds.has(id));
-                    
-                    if (!matchingResults) {
-                        log.info(`[QUICK-SEARCH-COMPARISON] Results differ! FTS5: ${ftsNoteIds.size} notes, Traditional: ${traditionalNoteIds.size} notes`);
-                        
-                        // Find differences
-                        const onlyInFTS = Array.from(ftsNoteIds).filter(id => !traditionalNoteIds.has(id));
-                        const onlyInTraditional = Array.from(traditionalNoteIds).filter(id => !ftsNoteIds.has(id));
-                        
-                        if (onlyInFTS.length > 0) {
-                            log.info(`[QUICK-SEARCH-COMPARISON] Only in FTS5: ${onlyInFTS.slice(0, 5).join(", ")}${onlyInFTS.length > 5 ? "..." : ""}`);
-                        }
-                        if (onlyInTraditional.length > 0) {
-                            log.info(`[QUICK-SEARCH-COMPARISON] Only in Traditional: ${onlyInTraditional.slice(0, 5).join(", ")}${onlyInTraditional.length > 5 ? "..." : ""}`);
-                        }
-                    } else {
-                        log.info(`[QUICK-SEARCH-COMPARISON] Results match perfectly! ✓`);
-                    }
-                    log.info(`[QUICK-SEARCH-COMPARISON] ========================================`);
-                }
-                
+
                 // If we need to search protected notes, use the separate method
                 if (searchProtected) {
                     const protectedResults = ftsSearchService.searchProtectedNotesSync(
@@ -166,7 +133,7 @@ class NoteContentFulltextExp extends Expression {
                             includeSnippets: false
                         }
                     );
-                    
+
                     // Add protected note results
                     for (const result of protectedResults) {
                         if (becca.notes[result.noteId]) {
@@ -193,7 +160,7 @@ class NoteContentFulltextExp extends Expression {
                     } else {
                         log.error(`FTS5 error: ${error}`);
                     }
-                    
+
                     // Use fallback for recoverable errors
                     if (error.recoverable) {
                         log.info("Using fallback search implementation");
@@ -213,8 +180,8 @@ class NoteContentFulltextExp extends Expression {
         for (const row of sql.iterateRows<SearchRow>(`
                 SELECT noteId, type, mime, content, isProtected
                 FROM notes JOIN blobs USING (blobId)
-                WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap') 
-                  AND isDeleted = 0 
+                WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap')
+                  AND isDeleted = 0
                   AND LENGTH(content) < ${MAX_SEARCH_CONTENT_SIZE}`)) {
             this.findInText(row, inputNoteSet, resultNoteSet);
         }

@@ -54,6 +54,7 @@ export interface FTSSearchOptions {
     snippetLength?: number;
     highlightTag?: string;
     searchProtected?: boolean;
+    skipDiagnostics?: boolean; // Skip diagnostic queries for performance measurements
 }
 
 export interface FTSErrorInfo {
@@ -125,6 +126,11 @@ class FTSSearchService {
             throw new Error("No search tokens provided");
         }
 
+        // Substring operators (*=*, *=, =*) use LIKE queries now, not MATCH
+        if (operator === "*=*" || operator === "*=" || operator === "=*") {
+            throw new Error("Substring operators should use searchWithLike(), not MATCH queries");
+        }
+
         // Trigram tokenizer requires minimum 3 characters
         const shortTokens = tokens.filter(token => token.length < 3);
         if (shortTokens.length > 0) {
@@ -140,33 +146,24 @@ class FTSSearchService {
             this.sanitizeFTS5Token(token)
         );
 
+        // Only handle operators that work with MATCH
         switch (operator) {
-            case "=": // Exact match (phrase search)
+            case "=": // Exact phrase match
                 return `"${sanitizedTokens.join(" ")}"`;
-            
-            case "*=*": // Contains all tokens (AND)
-                return sanitizedTokens.join(" AND ");
-            
-            case "*=": // Ends with
-                return sanitizedTokens.map(t => `*${t}`).join(" AND ");
-            
-            case "=*": // Starts with  
-                return sanitizedTokens.map(t => `${t}*`).join(" AND ");
-            
-            case "!=": // Does not contain (NOT)
+
+            case "!=": // Does not contain
                 return `NOT (${sanitizedTokens.join(" OR ")})`;
-            
-            case "~=": // Fuzzy match (use OR for more flexible matching)
-            case "~*": // Fuzzy contains
+
+            case "~=": // Fuzzy match (use OR)
+            case "~*":
                 return sanitizedTokens.join(" OR ");
-            
-            case "%=": // Regex match - fallback to OR search
-                log.error(`Regex search operator ${operator} not fully supported in FTS5, using OR search`);
-                return sanitizedTokens.join(" OR ");
-            
+
+            case "%=": // Regex - fallback to custom function
+                log.error(`Regex search operator ${operator} not supported in FTS5`);
+                throw new FTSNotAvailableError("Regex search not supported in FTS5");
+
             default:
-                // Default to AND search
-                return sanitizedTokens.join(" AND ");
+                throw new FTSQueryError(`Unsupported MATCH operator: ${operator}`);
         }
     }
 
@@ -180,37 +177,282 @@ class FTSSearchService {
             .replace(/["\(\)\*]/g, '') // Remove quotes, parens, wildcards
             .replace(/\s+/g, ' ')       // Normalize whitespace
             .trim();
-        
+
         // Validate that token is not empty after sanitization
         if (!sanitized || sanitized.length === 0) {
             log.info(`Token became empty after sanitization: "${token}"`);
             // Return a safe placeholder that won't match anything
             return "__empty_token__";
         }
-        
+
         // Additional validation: ensure token doesn't contain SQL injection attempts
         if (sanitized.includes(';') || sanitized.includes('--')) {
             log.error(`Potential SQL injection attempt detected in token: "${token}"`);
             return "__invalid_token__";
         }
-        
+
         return sanitized;
     }
 
     /**
+     * Escapes LIKE wildcards (% and _) in user input to treat them as literals
+     * @param str - User input string
+     * @returns String with LIKE wildcards escaped
+     */
+    private escapeLikeWildcards(str: string): string {
+        return str.replace(/[%_]/g, '\\$&');
+    }
+
+    /**
+     * Performs substring search using LIKE queries optimized by trigram index
+     * This is used for *=*, *=, and =* operators with detail='none'
+     *
+     * @param tokens - Search tokens
+     * @param operator - Search operator (*=*, *=, =*)
+     * @param noteIds - Optional set of note IDs to filter
+     * @param options - Search options
+     * @param searchContext - Optional search context to track internal timing
+     * @returns Array of search results (noteIds only, no scoring)
+     */
+    searchWithLike(
+        tokens: string[],
+        operator: string,
+        noteIds?: Set<string>,
+        options: FTSSearchOptions = {},
+        searchContext?: any
+    ): FTSSearchResult[] {
+        if (!this.checkFTS5Availability()) {
+            throw new FTSNotAvailableError();
+        }
+
+        // Normalize tokens to lowercase for case-insensitive search
+        const normalizedTokens = tokens.map(t => t.toLowerCase());
+
+        // Validate token lengths to prevent memory issues
+        const MAX_TOKEN_LENGTH = 1000;
+        const longTokens = normalizedTokens.filter(t => t.length > MAX_TOKEN_LENGTH);
+        if (longTokens.length > 0) {
+            throw new FTSQueryError(
+                `Search tokens too long (max ${MAX_TOKEN_LENGTH} characters). ` +
+                `Long tokens: ${longTokens.map(t => t.substring(0, 50) + '...').join(', ')}`
+            );
+        }
+
+        const {
+            limit, // No default limit - return all results
+            offset = 0,
+            skipDiagnostics = false
+        } = options;
+
+        // Run diagnostics BEFORE the actual search (not counted in performance timing)
+        if (!skipDiagnostics) {
+            log.info('[FTS-DIAGNOSTICS] Running index completeness checks (not counted in search timing)...');
+            const totalInFts = sql.getValue<number>(`SELECT COUNT(*) FROM notes_fts`);
+            const totalNotes = sql.getValue<number>(`
+                SELECT COUNT(*)
+                FROM notes n
+                LEFT JOIN blobs b ON n.blobId = b.blobId
+                WHERE n.type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap')
+                    AND n.isDeleted = 0
+                    AND n.isProtected = 0
+                    AND b.content IS NOT NULL
+            `);
+
+            if (totalInFts < totalNotes) {
+                log.warn(`[FTS-DIAGNOSTICS] FTS index incomplete: ${totalInFts} indexed out of ${totalNotes} total notes. Run syncMissingNotes().`);
+            } else {
+                log.info(`[FTS-DIAGNOSTICS] FTS index complete: ${totalInFts} notes indexed`);
+            }
+        }
+
+        try {
+            // Start timing for actual search (excludes diagnostics)
+            const searchStartTime = Date.now();
+
+            // Optimization: If noteIds set is very large, skip filtering to avoid expensive IN clauses
+            // The FTS table already excludes protected notes, so we can search all notes
+            const LARGE_SET_THRESHOLD = 1000;
+            const isLargeNoteSet = noteIds && noteIds.size > LARGE_SET_THRESHOLD;
+
+            if (isLargeNoteSet) {
+                log.info(`[FTS-OPTIMIZATION] Large noteIds set (${noteIds!.size} notes) - skipping IN clause filter, searching all FTS notes`);
+            }
+
+            // Only filter noteIds if the set is small enough to benefit from it
+            const shouldFilterByNoteIds = noteIds && noteIds.size > 0 && !isLargeNoteSet;
+            const nonProtectedNoteIds = shouldFilterByNoteIds
+                ? this.filterNonProtectedNoteIds(noteIds)
+                : [];
+
+            let whereConditions: string[] = [];
+            const params: any[] = [];
+
+            // Build LIKE conditions for each token - search BOTH title and content
+            switch (operator) {
+                case "*=*": // Contains (substring)
+                    normalizedTokens.forEach(token => {
+                        // Search in BOTH title and content with escaped wildcards
+                        whereConditions.push(`(title LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\')`);
+                        const escapedToken = this.escapeLikeWildcards(token);
+                        params.push(`%${escapedToken}%`, `%${escapedToken}%`);
+                    });
+                    break;
+
+                case "*=": // Ends with
+                    normalizedTokens.forEach(token => {
+                        whereConditions.push(`(title LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\')`);
+                        const escapedToken = this.escapeLikeWildcards(token);
+                        params.push(`%${escapedToken}`, `%${escapedToken}`);
+                    });
+                    break;
+
+                case "=*": // Starts with
+                    normalizedTokens.forEach(token => {
+                        whereConditions.push(`(title LIKE ? ESCAPE '\\' OR content LIKE ? ESCAPE '\\')`);
+                        const escapedToken = this.escapeLikeWildcards(token);
+                        params.push(`${escapedToken}%`, `${escapedToken}%`);
+                    });
+                    break;
+
+                default:
+                    throw new FTSQueryError(`Unsupported LIKE operator: ${operator}`);
+            }
+
+            // Validate that we have search criteria
+            if (whereConditions.length === 0 && nonProtectedNoteIds.length === 0) {
+                throw new FTSQueryError("No search criteria provided (empty tokens and no note filter)");
+            }
+
+            // SQLite parameter limit handling (999 params max)
+            const MAX_PARAMS_PER_QUERY = 900; // Leave margin for other params
+
+            // Add noteId filter if provided
+            if (nonProtectedNoteIds.length > 0) {
+                const tokenParamCount = params.length;
+                const additionalParams = 2; // For limit and offset
+
+                if (nonProtectedNoteIds.length <= MAX_PARAMS_PER_QUERY - tokenParamCount - additionalParams) {
+                    // Normal case: all IDs fit in one query
+                    whereConditions.push(`noteId IN (${nonProtectedNoteIds.map(() => '?').join(',')})`);
+                    params.push(...nonProtectedNoteIds);
+                } else {
+                    // Large noteIds set: split into chunks and execute multiple queries
+                    const chunks: string[][] = [];
+                    for (let i = 0; i < nonProtectedNoteIds.length; i += MAX_PARAMS_PER_QUERY) {
+                        chunks.push(nonProtectedNoteIds.slice(i, i + MAX_PARAMS_PER_QUERY));
+                    }
+
+                    log.info(`Large noteIds set detected (${nonProtectedNoteIds.length} notes), splitting into ${chunks.length} chunks`);
+
+                    // Execute a query for each chunk and combine results
+                    const allResults: FTSSearchResult[] = [];
+                    let remainingLimit = limit !== undefined ? limit : Number.MAX_SAFE_INTEGER;
+                    let currentOffset = offset;
+
+                    for (const chunk of chunks) {
+                        if (remainingLimit <= 0) break;
+
+                        const chunkWhereConditions = [...whereConditions];
+                        const chunkParams: any[] = [...params];
+
+                        chunkWhereConditions.push(`noteId IN (${chunk.map(() => '?').join(',')})`);
+                        chunkParams.push(...chunk);
+
+                        // Build chunk query
+                        const chunkQuery = `
+                            SELECT noteId, title
+                            FROM notes_fts
+                            WHERE ${chunkWhereConditions.join(' AND ')}
+                            ${remainingLimit !== Number.MAX_SAFE_INTEGER ? 'LIMIT ?' : ''}
+                            ${currentOffset > 0 ? 'OFFSET ?' : ''}
+                        `;
+
+                        if (remainingLimit !== Number.MAX_SAFE_INTEGER) chunkParams.push(remainingLimit);
+                        if (currentOffset > 0) chunkParams.push(currentOffset);
+
+                        const chunkResults = sql.getRows<{ noteId: string; title: string }>(chunkQuery, chunkParams);
+                        allResults.push(...chunkResults.map(row => ({
+                            noteId: row.noteId,
+                            title: row.title,
+                            score: 1.0
+                        })));
+
+                        if (remainingLimit !== Number.MAX_SAFE_INTEGER) {
+                            remainingLimit -= chunkResults.length;
+                        }
+                        currentOffset = 0; // Only apply offset to first chunk
+                    }
+
+                    const searchTime = Date.now() - searchStartTime;
+                    log.info(`FTS5 LIKE search (chunked) returned ${allResults.length} results in ${searchTime}ms (excluding diagnostics)`);
+
+                    // Track internal search time on context for performance comparison
+                    if (searchContext) {
+                        searchContext.ftsInternalSearchTime = searchTime;
+                    }
+
+                    return allResults;
+                }
+            }
+
+            // Build query - LIKE queries are automatically optimized by trigram index
+            // Only add LIMIT/OFFSET if specified
+            const query = `
+                SELECT noteId, title
+                FROM notes_fts
+                WHERE ${whereConditions.join(' AND ')}
+                ${limit !== undefined ? 'LIMIT ?' : ''}
+                ${offset > 0 ? 'OFFSET ?' : ''}
+            `;
+
+            // Only add limit/offset params if specified
+            if (limit !== undefined) params.push(limit);
+            if (offset > 0) params.push(offset);
+
+            // Log the search parameters
+            log.info(`FTS5 LIKE search: tokens=[${normalizedTokens.join(', ')}], operator=${operator}, limit=${limit || 'none'}, offset=${offset}`);
+
+            const rows = sql.getRows<{ noteId: string; title: string }>(query, params);
+
+            const searchTime = Date.now() - searchStartTime;
+            log.info(`FTS5 LIKE search returned ${rows.length} results in ${searchTime}ms (excluding diagnostics)`);
+
+            // Track internal search time on context for performance comparison
+            if (searchContext) {
+                searchContext.ftsInternalSearchTime = searchTime;
+            }
+
+            return rows.map(row => ({
+                noteId: row.noteId,
+                title: row.title,
+                score: 1.0 // LIKE queries don't have ranking
+            }));
+
+        } catch (error: any) {
+            log.error(`FTS5 LIKE search error: ${error}`);
+            throw new FTSQueryError(
+                `FTS5 LIKE search failed: ${error.message}`,
+                undefined
+            );
+        }
+    }
+
+    /**
      * Performs a synchronous full-text search using FTS5
-     * 
+     *
      * @param tokens - Search tokens
      * @param operator - Search operator
      * @param noteIds - Optional set of note IDs to search within
      * @param options - Search options
+     * @param searchContext - Optional search context to track internal timing
      * @returns Array of search results
      */
     searchSync(
-        tokens: string[], 
+        tokens: string[],
         operator: string,
         noteIds?: Set<string>,
-        options: FTSSearchOptions = {}
+        options: FTSSearchOptions = {},
+        searchContext?: any
     ): FTSSearchResult[] {
         if (!this.checkFTS5Availability()) {
             throw new FTSNotAvailableError();
@@ -226,6 +468,9 @@ class FTSSearchService {
         } = options;
 
         try {
+            // Start timing for actual search
+            const searchStartTime = Date.now();
+
             const ftsQuery = this.convertToFTS5Query(tokens, operator);
             
             // Validate query length
@@ -249,10 +494,20 @@ class FTSSearchService {
             let whereConditions = [`notes_fts MATCH ?`];
             const params: any[] = [ftsQuery];
 
-            // Filter by noteIds if provided
-            if (noteIds && noteIds.size > 0) {
+            // Optimization: If noteIds set is very large, skip filtering to avoid expensive IN clauses
+            // The FTS table already excludes protected notes, so we can search all notes
+            const LARGE_SET_THRESHOLD = 1000;
+            const isLargeNoteSet = noteIds && noteIds.size > LARGE_SET_THRESHOLD;
+
+            if (isLargeNoteSet) {
+                log.info(`[FTS-OPTIMIZATION] Large noteIds set (${noteIds!.size} notes) - skipping IN clause filter, searching all FTS notes`);
+            }
+
+            // Filter by noteIds if provided and set is small enough
+            const shouldFilterByNoteIds = noteIds && noteIds.size > 0 && !isLargeNoteSet;
+            if (shouldFilterByNoteIds) {
                 // First filter out any protected notes from the noteIds
-                const nonProtectedNoteIds = this.filterNonProtectedNoteIds(noteIds);
+                const nonProtectedNoteIds = this.filterNonProtectedNoteIds(noteIds!);
                 if (nonProtectedNoteIds.length === 0) {
                     // All provided notes are protected, return empty results
                     return [];
@@ -286,6 +541,14 @@ class FTSSearchService {
                 score: number;
                 snippet?: string;
             }>(query, params);
+
+            const searchTime = Date.now() - searchStartTime;
+            log.info(`FTS5 MATCH search returned ${results.length} results in ${searchTime}ms`);
+
+            // Track internal search time on context for performance comparison
+            if (searchContext) {
+                searchContext.ftsInternalSearchTime = searchTime;
+            }
 
             return results;
 
