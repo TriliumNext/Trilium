@@ -1,7 +1,7 @@
 import utils, { hasTouchBar } from "../../services/utils.js";
 import keyboardActionService from "../../services/keyboard_actions.js";
 import froca from "../../services/froca.js";
-import noteCreateService, { CreateNoteIntoURLOpts, CreateNoteTarget, CreateNoteIntoInboxURLOpts } from "../../services/note_create.js";
+import noteCreateService, { CreateNoteIntoUrlOpts, CreateNoteTarget, CreateNoteIntoInboxOpts } from "../../services/note_create.js";
 import AbstractTextTypeWidget from "./abstract_text_type_widget.js";
 import link from "../../services/link.js";
 import appContext, { type CommandListenerData, type EventData } from "../../components/app_context.js";
@@ -508,7 +508,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                             title,
                             activate: true,
                             promptForType: true,
-                        } as CreateNoteIntoInboxURLOpts
+                        } as CreateNoteIntoInboxOpts
                     );
 
                     return note?.getBestNotePathString() ?? "";
@@ -523,7 +523,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                             title,
                             activate: true,
                             promptForType: true,
-                        } as CreateNoteIntoURLOpts
+                        } as CreateNoteIntoUrlOpts
                     )
 
                     return note?.getBestNotePathString() ?? "";
@@ -537,7 +537,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                             title,
                             activate: false,
                             promptForType: true,
-                        } as CreateNoteIntoInboxURLOpts
+                        } as CreateNoteIntoInboxOpts
                     );
 
                     return note?.getBestNotePathString() ?? "";
@@ -552,7 +552,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                             title,
                             activate: false,
                             promptForType: true,
-                        } as CreateNoteIntoURLOpts
+                        } as CreateNoteIntoUrlOpts
                     );
 
                     return note?.getBestNotePathString() ?? "";
