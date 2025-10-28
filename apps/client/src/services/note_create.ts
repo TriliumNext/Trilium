@@ -78,10 +78,10 @@ export type CreateNoteOpts = {
 
 /*
  * Defines options for creating a note at a specific path.
- * Serves as a base (not exported) for "into", "before", and "after" variants,
+ * Serves as a base for "into", "before", and "after" variants,
  * sharing common URL-related fields.
  */
-type CreateNoteAtUrlOpts = CreateNoteOpts & {
+type CreateNoteWithUrlOpts = CreateNoteOpts & {
     // `Url` may refer to either parentNotePath or parentNoteId.
     // The vocabulary is inspired by existing function getNoteIdFromUrl.
     parentNoteUrl: string;
@@ -90,9 +90,9 @@ type CreateNoteAtUrlOpts = CreateNoteOpts & {
     targetBranchId: string;
 }
 
-export type CreateNoteIntoUrlOpts = CreateNoteAtUrlOpts;
-export type CreateNoteBeforeUrlOpts = CreateNoteAtUrlOpts;
-export type CreateNoteAfterUrlOpts = CreateNoteAtUrlOpts;
+export type CreateNoteIntoUrlOpts = CreateNoteWithUrlOpts;
+export type CreateNoteBeforeUrlOpts = CreateNoteWithUrlOpts;
+export type CreateNoteAfterUrlOpts = CreateNoteWithUrlOpts;
 
 type NeverDefineParentNoteUrlRule = {
     parentNoteUrl?: never;
@@ -132,9 +132,9 @@ async function createNote(
         return createNoteIntoInbox(resolvedOptions as CreateNoteIntoInboxOpts);
     }
 
-    return createNoteAtNote(
+    return createNoteWithUrl(
         resolvedOptions.target as "into" | "after" | "before",
-        resolvedOptions as CreateNoteAtUrlOpts
+        resolvedOptions as CreateNoteWithUrlOpts
     );
 }
 
@@ -173,9 +173,9 @@ async function promptForType(
  * @param options - Note creation options
  * @returns A promise resolving with the created note and its branch.
  */
-async function createNoteAtNote(
+async function createNoteWithUrl(
     target: "into" | "after" | "before",
-    options: CreateNoteAtUrlOpts
+    options: CreateNoteWithUrlOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
     options = Object.assign(
         {
@@ -270,7 +270,7 @@ async function createNoteIntoInbox(
             inboxNote.isProtected && protectedSessionHolder.isProtectedSessionAvailable();
     }
 
-    const result = await createNoteAtNote("into",
+    const result = await createNoteWithUrl("into",
         {
             ...options,
             parentNoteUrl: inboxNote.noteId,
