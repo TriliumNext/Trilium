@@ -232,7 +232,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 const parentNotePath = treeService.getNotePath(node);
                 noteCreateService.createNote(
                     {
-                        target: CreateNoteTarget.IntoNoteURL,
+                        target: "into",
                         parentNoteUrl: parentNotePath,
                         isProtected: node.data.isProtected
                     } as CreateNoteIntoUrlOpts,
@@ -1881,7 +1881,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     const notePath = treeService.getNotePath(node);
                     noteCreateService.createNote(
                         {
-                            target: CreateNoteTarget.IntoNoteURL,
+                            target: "into",
                             parentNoteUrl: notePath,
                             isProtected: node.data.isProtected
                         } as CreateNoteIntoUrlOpts

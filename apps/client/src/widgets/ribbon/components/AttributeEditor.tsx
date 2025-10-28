@@ -26,7 +26,7 @@ import contextMenu from "../../../menus/context_menu";
 import type { CommandData, FilteredCommandNames } from "../../../components/app_context";
 import { AttributeType } from "@triliumnext/commons";
 import attributes from "../../../services/attributes";
-import note_create, { CreateNoteAfterUrlOpts, CreateNoteIntoUrlOpts, CreateNoteTarget, CreateNoteIntoInboxOpts } from "../../../services/note_create";
+import note_create, { CreateNoteAfterUrlOpts, CreateNoteIntoUrlOpts, CreateNoteIntoInboxOpts } from "../../../services/note_create";
 import { CreateNoteAction } from "@triliumnext/commons";
 
 type AttributeCommandNames = FilteredCommandNames<CommandData>;
@@ -271,7 +271,7 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                 case CreateNoteAction.CreateAndLinkNoteIntoInbox: {
                     const { note } = await note_create.createNote(
                         {
-                            target: CreateNoteTarget.IntoInbox,
+                            target: "inbox",
                             title,
                             activate: false
                         } as CreateNoteIntoInboxOpts
@@ -283,7 +283,7 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                 case CreateNoteAction.CreateAndLinkNoteIntoPath: {
                     const resp = await note_create.createNote(
                         {
-                            target: CreateNoteTarget.IntoNoteURL,
+                            target: "into",
                             parentNoteUrl: parentNotePath,
                             title,
                             activate: false,
