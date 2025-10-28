@@ -189,6 +189,9 @@
 - [ ] Add custom note text for links
 - [ ] Extract date metadata from pages
 - [ ] Add interactive toast buttons
+- [ ] Add meta note popup option (see Trilium Issue [#5350](https://github.com/TriliumNext/Trilium/issues/5350))
+- [ ] Add custom keyboard shortcuts (see Trilium Issue [#5349](https://github.com/TriliumNext/Trilium/issues/5349))
+- [ ] Handle Firefox keyboard shortcut bug (see Trilium Issue [#5226](https://github.com/TriliumNext/Trilium/issues/5226))
 
 ---
 
