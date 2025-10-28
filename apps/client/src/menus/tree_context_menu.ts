@@ -1,7 +1,7 @@
 import treeService from "../services/tree.js";
 import froca from "../services/froca.js";
 import clipboard from "../services/clipboard.js";
-import noteCreateService, { CreateNoteAfterUrlOpts, CreateNoteIntoUrlOpts, CreateNoteTarget } from "../services/note_create.js";
+import noteCreateService, { CreateNoteAfterUrlOpts, CreateNoteIntoUrlOpts } from "../services/note_create.js";
 import contextMenu, { type MenuCommandItem, type MenuItem } from "./context_menu.js";
 import appContext, { type ContextMenuCommandData, type FilteredCommandNames } from "../components/app_context.js";
 import noteTypesService from "../services/note_types.js";
@@ -276,7 +276,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
 
             noteCreateService.createNote(
                 {
-                    target: CreateNoteTarget.AfterNoteURL,
+                    target: "after",
                     parentNoteUrl: parentNotePath,
                     targetBranchId: this.node.data.branchId,
                     type: type,
@@ -290,7 +290,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
 
             noteCreateService.createNote(
                 {
-                    target: CreateNoteTarget.IntoNoteURL,
+                    target: "into",
                     parentNoteUrl: parentNotePath,
                     type: type,
                     isProtected: this.node.data.isProtected,
