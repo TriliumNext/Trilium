@@ -83,7 +83,7 @@ export type CreateNoteWithUrlOpts = CreateNoteOpts & {
     parentNoteUrl: string;
 
     // Disambiguates the position for cloned notes.
-    targetBranchId: string;
+    targetBranchId?: string;
 }
 
 type NeverDefineParentNoteUrlRule = {
