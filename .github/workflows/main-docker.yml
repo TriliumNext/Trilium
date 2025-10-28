@@ -116,12 +116,6 @@ jobs:
           - dockerfile: Dockerfile
             platform: linux/arm64
             image: ubuntu-24.04-arm
-          - dockerfile: Dockerfile
-            platform: linux/arm/v7
-            image: ubuntu-24.04-arm
-          - dockerfile: Dockerfile
-            platform: linux/arm/v8
-            image: ubuntu-24.04-arm
     runs-on: ${{ matrix.image }}
     needs:
       - test_docker
