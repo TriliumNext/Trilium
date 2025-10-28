@@ -1,6 +1,6 @@
 import server from "./server.js";
 import appContext from "../components/app_context.js";
-import noteCreateService, { CreateNoteIntoUrlOpts, CreateNoteTarget, CreateNoteIntoInboxOpts } from "./note_create.js";
+import noteCreateService, { CreateNoteIntoUrlOpts, CreateNoteIntoInboxOpts } from "./note_create.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import commandRegistry from "./command_registry.js";
@@ -483,7 +483,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
             case SuggestionAction.CreateNoteIntoInbox: {
                 const { note } = await noteCreateService.createNote(
                     {
-                        target: CreateNoteTarget.IntoInbox,
+                        target: "inbox",
                         title: suggestion.noteTitle,
                         activate: true,
                         promptForType: true,
@@ -503,7 +503,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
             case SuggestionAction.CreateAndLinkNoteIntoInbox: {
                 const { note } = await noteCreateService.createNote(
                     {
-                        target: CreateNoteTarget.IntoInbox,
+                        target: "inbox",
                         title: suggestion.noteTitle,
                         activate: false,
                         promptForType: true,
@@ -523,7 +523,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
             case SuggestionAction.CreateNoteIntoPath: {
                 const { note } = await noteCreateService.createNote(
                     {
-                        target: CreateNoteTarget.IntoNoteURL,
+                        target: "into",
                         parentNoteUrl: suggestion.parentNoteId,
                         title: suggestion.noteTitle,
                         activate: true,
@@ -544,7 +544,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
             case SuggestionAction.CreateAndLinkNoteIntoPath: {
                 const { note } = await noteCreateService.createNote(
                     {
-                        target: CreateNoteTarget.IntoNoteURL,
+                        target: "into",
                         parentNoteUrl: suggestion.parentNoteId,
                         title: suggestion.noteTitle,
                         activate: false,

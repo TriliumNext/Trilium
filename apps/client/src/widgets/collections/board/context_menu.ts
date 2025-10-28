@@ -6,7 +6,6 @@ import attributes from "../../../services/attributes";
 import branches from "../../../services/branches";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
-import { CreateNoteTarget } from "../../../services/note_create";
 import Api from "./api";
 
 export function openColumnContextMenu(api: Api, event: ContextMenuEvent, column: string) {
@@ -61,7 +60,7 @@ export function openNoteContextMenu(api: Api, event: ContextMenuEvent, note: FNo
                 handler: () => api.insertRowAtPosition(
                     column,
                     branchId,
-                    CreateNoteTarget.BeforeNoteURL)
+                    "before")
             },
             {
                 title: t("board_view.insert-below"),
@@ -69,7 +68,7 @@ export function openNoteContextMenu(api: Api, event: ContextMenuEvent, note: FNo
                 handler: () => api.insertRowAtPosition(
                     column,
                     branchId,
-                    CreateNoteTarget.AfterNoteURL)
+                    "after")
             },
             { kind: "separator" },
             {

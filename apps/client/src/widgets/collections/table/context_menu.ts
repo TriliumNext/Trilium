@@ -9,7 +9,7 @@ import branches from "../../../services/branches.js";
 import Component from "../../../components/component.js";
 import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker.jsx";
 import { RefObject } from "preact";
-import { CreateNoteAfterUrlOpts, CreateNoteBeforeUrlOpts, CreateNoteTarget } from "../../../services/note_create.js";
+import { CreateNoteAfterUrlOpts, CreateNoteBeforeUrlOpts } from "../../../services/note_create.js";
 
 export function useContextMenu(parentNote: FNote, parentComponent: Component | null | undefined, tabulator: RefObject<Tabulator>): Partial<EventCallBackMethods> {
     const events: Partial<EventCallBackMethods> = {};
@@ -184,7 +184,7 @@ export function showRowContextMenu(parentComponent: Component, e: MouseEvent, ro
                 handler: () => parentComponent?.triggerCommand("addNewRow", {
                     parentNotePath: parentNoteId,
                     customOpts: {
-                        target: CreateNoteTarget.BeforeNoteURL,
+                        target: "before",
                         targetBranchId: rowData.branchId,
                     } as CreateNoteBeforeUrlOpts
                 })
@@ -198,7 +198,7 @@ export function showRowContextMenu(parentComponent: Component, e: MouseEvent, ro
                     parentComponent?.triggerCommand("addNewRow", {
                         parentNotePath: note?.noteId,
                         customOpts: {
-                            target: CreateNoteTarget.AfterNoteURL,
+                            target: "after",
                             targetBranchId: branchId,
                         } as CreateNoteAfterUrlOpts
                     });
@@ -211,7 +211,7 @@ export function showRowContextMenu(parentComponent: Component, e: MouseEvent, ro
                 handler: () => parentComponent?.triggerCommand("addNewRow", {
                     parentNotePath: parentNoteId,
                     customOpts: {
-                        target: CreateNoteTarget.AfterNoteURL,
+                        target: "after",
                         targetBranchId: rowData.branchId,
                     } as CreateNoteAfterUrlOpts
                 })

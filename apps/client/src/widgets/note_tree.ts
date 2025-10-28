@@ -7,7 +7,7 @@ import branchService from "../services/branches.js";
 import ws from "../services/ws.js";
 import NoteContextAwareWidget from "./note_context_aware_widget.js";
 import server from "../services/server.js";
-import noteCreateService, { CreateNoteIntoUrlOpts, CreateNoteTarget } from "../services/note_create.js";
+import noteCreateService, { CreateNoteIntoUrlOpts } from "../services/note_create.js";
 import toastService from "../services/toast.js";
 import appContext, { type CommandListenerData, type EventData } from "../components/app_context.js";
 import keyboardActionsService from "../services/keyboard_actions.js";
@@ -226,7 +226,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 const parentNotePath = treeService.getNotePath(node);
                 noteCreateService.createNote(
                     {
-                        target: CreateNoteTarget.IntoNoteURL,
+                        target: "into",
                         parentNoteUrl: parentNotePath,
                         isProtected: node.data.isProtected
                     } as CreateNoteIntoUrlOpts,
@@ -1844,7 +1844,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     const notePath = treeService.getNotePath(node);
                     noteCreateService.createNote(
                         {
-                            target: CreateNoteTarget.IntoNoteURL,
+                            target: "into",
                             parentNoteUrl: notePath,
                             isProtected: node.data.isProtected
                         } as CreateNoteIntoUrlOpts
