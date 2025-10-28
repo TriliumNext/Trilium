@@ -575,9 +575,14 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
     padding: 0;
 }
 
+.note-list-wrapper .note-book-card .note-book-content.type-code {
+    height: 100%;
+}
+
 .note-list-wrapper .note-book-card .note-book-content.type-code pre {
     height: 100%;
     padding: 1em;
+    margin-bottom: 0;
 }
 
 .note-list-wrapper .note-book-card .bx {

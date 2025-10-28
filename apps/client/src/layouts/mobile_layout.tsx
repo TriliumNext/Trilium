@@ -1,6 +1,5 @@
 import FlexContainer from "../widgets/containers/flex_container.js";
 import NoteTitleWidget from "../widgets/note_title.js";
-import NoteDetailWidget from "../widgets/note_detail.js";
 import QuickSearchWidget from "../widgets/quick_search.js";
 import NoteTreeWidget from "../widgets/note_tree.js";
 import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
@@ -13,7 +12,7 @@ import PromotedAttributesWidget from "../widgets/promoted_attributes.js";
 import SidebarContainer from "../widgets/mobile_widgets/sidebar_container.js";
 import type AppContext from "../components/app_context.js";
 import TabRowWidget from "../widgets/tab_row.js";
-import MobileEditorToolbar from "../widgets/type_widgets/ckeditor/mobile_editor_toolbar.js";
+import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.js";
 import { applyModals } from "./layout_commons.js";
 import FilePropertiesTab from "../widgets/ribbon/FilePropertiesTab.jsx";
 import { useNoteContext } from "../widgets/react/hooks.jsx";
@@ -24,6 +23,7 @@ import CloseZenModeButton from "../widgets/close_zen_button.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
 import NoteList from "../widgets/collections/NoteList.jsx";
+import NoteDetail from "../widgets/NoteDetail.jsx";
 import StandaloneRibbonAdapter from "../widgets/ribbon/components/StandaloneRibbonAdapter.jsx";
 import SearchDefinitionTab from "../widgets/ribbon/SearchDefinitionTab.jsx";
 import SearchResult from "../widgets/search_result.jsx";
@@ -156,7 +156,7 @@ export default class MobileLayout {
                                         new ScrollingContainer()
                                             .filling()
                                             .contentSized()
-                                            .child(new NoteDetailWidget())
+                                            .child(<NoteDetail />)
                                             .child(<NoteList media="screen" />)
                                             .child(<StandaloneRibbonAdapter component={SearchDefinitionTab} />)
                                             .child(<SearchResult />)

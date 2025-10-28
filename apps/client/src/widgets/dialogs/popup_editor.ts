@@ -1,9 +1,8 @@
 import type { EventNames, EventData } from "../../components/app_context.js";
 import NoteContext from "../../components/note_context.js";
 import { openDialog } from "../../services/dialog.js";
-import BasicWidget from "../basic_widget.js";
+import BasicWidget, { ReactWrappedWidget } from "../basic_widget.js";
 import Container from "../containers/container.js";
-import TypeWidget from "../type_widgets/type_widget.js";
 
 const TPL = /*html*/`\
 <div class="popup-editor-dialog modal fade mx-auto" tabindex="-1" role="dialog">
@@ -130,7 +129,7 @@ export default class PopupEditorDialog extends Container<BasicWidget> {
         $dialog.on("hidden.bs.modal", () => {
             const $typeWidgetEl = $dialog.find(".note-detail-printable");
             if ($typeWidgetEl.length) {
-                const typeWidget = glob.getComponentByEl($typeWidgetEl[0]) as TypeWidget;
+                const typeWidget = glob.getComponentByEl($typeWidgetEl[0]) as ReactWrappedWidget;
                 typeWidget.cleanup();
             }
 

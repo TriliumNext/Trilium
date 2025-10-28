@@ -280,7 +280,7 @@ function goToLink(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent) {
  * @param $link the jQuery element of the link that was clicked, used to determine if the link is an anchor link (e.g., `#fn1` or `#fnref1`) and to handle it accordingly.
  * @returns `true` if the link was handled (i.e., the element was found and scrolled to), or a falsy value otherwise.
  */
-function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent | React.PointerEvent<HTMLCanvasElement> | null, hrefLink: string | undefined, $link?: JQuery<HTMLElement> | null) {
+export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent | React.PointerEvent<HTMLCanvasElement> | null, hrefLink: string | undefined, $link?: JQuery<HTMLElement> | null) {
     if (hrefLink?.startsWith("data:")) {
         return true;
     }

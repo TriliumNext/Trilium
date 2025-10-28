@@ -50,7 +50,7 @@ function NoteContextMenu({ note, noteContext }: { note: FNote, noteContext?: Not
   const isPrintable = ["text", "code"].includes(note.type) || (note.type === "book" && note.getLabelValue("viewType") === "presentation");
   const isElectron = getIsElectron();
   const isMac = getIsMac();
-  const hasSource = ["text", "code", "relationMap", "mermaid", "canvas", "mindMap"].includes(note.type);
+  const hasSource = ["text", "code", "relationMap", "mermaid", "canvas", "mindMap", "aiChat"].includes(note.type);
   const isSearchOrBook = ["search", "book"].includes(note.type);
 
   return (

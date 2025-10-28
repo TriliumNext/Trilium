@@ -407,7 +407,7 @@ body.desktop .tabulator-popup-container,
 .dropdown-menu .disabled .disabled-tooltip {
     pointer-events: all;
     margin-inline-start: 8px;
-    font-size: 0.5em;
+    font-size: 0.75rem;
     color: var(--disabled-tooltip-icon-color);
     cursor: help;
     opacity: 0.75;

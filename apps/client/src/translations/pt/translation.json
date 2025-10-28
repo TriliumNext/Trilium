@@ -968,7 +968,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "É necessário digitar a sua palavra-passe para mostar notas protegidas:",
-    "start_session_button": "Iniciar sessão protegida <kbd>enter</kbd>",
+    "start_session_button": "Iniciar sessão protegida",
     "started": "A sessão protegida foi iniciada.",
     "wrong_password": "Palavra-passe incorreta.",
     "protecting-finished-successfully": "A proteção foi finalizada com sucesso.",

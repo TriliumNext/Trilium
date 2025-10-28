@@ -5,7 +5,7 @@ import { BalloonEditor, DecoupledEditor, FindAndReplaceEditing, FindCommand } fr
 import "./translation_overrides.js";
 export { EditorWatchdog } from "ckeditor5";
 export { PREMIUM_PLUGINS } from "./plugins.js";
-export type { EditorConfig, MentionFeed, MentionFeedObjectItem, ModelNode, ModelPosition, ModelElement, WatchdogConfig } from "ckeditor5";
+export type { EditorConfig, MentionFeed, MentionFeedObjectItem, ModelNode, ModelPosition, ModelElement, WatchdogConfig, WatchdogState } from "ckeditor5";
 export type { TemplateDefinition } from "ckeditor5-premium-features";
 export { default as buildExtraCommands } from "./extra_slash_commands.js";
 
