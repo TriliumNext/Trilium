@@ -1,5 +1,5 @@
 import appContext, { type EventData } from "./app_context.js";
-import noteCreateService, { CreateNoteTarget, CreateNoteIntoURLOpts, CreateNoteAfterURLOpts } from "../services/note_create.js";
+import noteCreateService, { CreateNoteTarget, CreateNoteIntoUrlOpts, CreateNoteAfterUrlOpts } from "../services/note_create.js";
 import treeService from "../services/tree.js";
 import hoistedNoteService from "../services/hoisted_note.js";
 import Component from "./component.js";
@@ -55,7 +55,7 @@ export default class MainTreeExecutors extends Component {
                 isProtected: activeNoteContext.note.isProtected,
                 saveSelection: false,
                 promptForType: false,
-            } as CreateNoteIntoURLOpts
+            } as CreateNoteIntoUrlOpts
         );
     }
 
@@ -84,7 +84,7 @@ export default class MainTreeExecutors extends Component {
                 targetBranchId: node.data.branchId,
                 isProtected: isProtected,
                 saveSelection: false
-            } as CreateNoteAfterURLOpts
+            } as CreateNoteAfterUrlOpts
         );
     }
 }

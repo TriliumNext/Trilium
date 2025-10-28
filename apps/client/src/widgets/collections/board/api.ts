@@ -6,7 +6,7 @@ import branches from "../../../services/branches";
 import { executeBulkActions } from "../../../services/bulk_action";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
-import note_create, { CreateNoteIntoURLOpts, CreateNoteTarget } from "../../../services/note_create.js";
+import note_create, { CreateNoteIntoUrlOpts, CreateNoteTarget } from "../../../services/note_create.js";
 import server from "../../../services/server";
 import { ColumnMap } from "./data";
 
@@ -33,7 +33,7 @@ export default class BoardApi {
                 parentNoteUrl: parentNotePath,
                 activate: false,
                 title,
-            } as CreateNoteIntoURLOpts);
+            } as CreateNoteIntoUrlOpts);
 
             if (newNote && newBranch) {
                 await this.changeColumn(newNote.noteId, column);
@@ -140,7 +140,7 @@ export default class BoardApi {
                 activate: false,
                 targetBranchId: relativeToBranchId,
                 title: t("board_view.new-item"),
-            } as CreateNoteIntoURLOpts
+            } as CreateNoteIntoUrlOpts
         );
 
         if (!note || !branch) {
