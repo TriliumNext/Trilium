@@ -312,6 +312,8 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                     type: type,
                     isProtected: isProtected,
                     templateNoteId: templateNoteId,
+                    promptForType: false,
+                } as CreateNoteAfterUrlOpts
             );
         } else if (command === "insertChildNote") {
             const parentNotePath = treeService.getNotePath(this.node);
@@ -324,7 +326,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                     isProtected: this.node.data.isProtected,
                     templateNoteId: templateNoteId,
                     promptForType: false,
-                } as CreateNoteIntoURLOpts
+                } as CreateNoteIntoUrlOpts
             );
         } else if (command === "openNoteInSplit") {
             const subContexts = appContext.tabManager.getActiveContext()?.getSubContexts();

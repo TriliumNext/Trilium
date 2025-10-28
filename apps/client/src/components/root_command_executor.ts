@@ -2,7 +2,7 @@ import dateNoteService from "../services/date_notes.js";
 import froca from "../services/froca.js";
 import openService from "../services/open.js";
 import options from "../services/options.js";
-import noteCreateService, { CreateNoteIntoURLOpts, CreateNoteTarget } from "../services/note_create.js";
+import noteCreateService, { CreateNoteIntoUrlOpts, CreateNoteTarget } from "../services/note_create.js";
 import protectedSessionService from "../services/protected_session.js";
 import treeService from "../services/tree.js";
 import utils, { openInReusableSplit } from "../services/utils.js";
@@ -261,7 +261,7 @@ export default class RootCommandExecutor extends Component {
                         messages: [],
                         title: "New AI Chat"
                     }),
-                } as CreateNoteIntoURLOpts
+                } as CreateNoteIntoUrlOpts
             );
 
             if (!result.note) {
