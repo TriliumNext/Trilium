@@ -128,25 +128,14 @@ async function createNote(
         resolvedOptions = maybeResolvedOptions;
     }
 
-    switch (resolvedOptions.target) {
-        case "into":
-            return await createNoteAtNote("into", {...options} as CreateNoteAtUrlOpts);
-
-        case "before":
-            return await createNoteAtNote("before", resolvedOptions as CreateNoteBeforeUrlOpts);
-
-        case "after":
-            return await createNoteAtNote("after", resolvedOptions as CreateNoteAfterUrlOpts);
-
-        case "inbox":
-            return await createNoteIntoInbox(resolvedOptions as CreateNoteIntoInboxOpts);
-
-        default: {
-            console.warn("[createNote] Unknown target:", options.target, resolvedOptions);
-            toastService.showMessage("Unknown note creation target."); // optional
-            return { note: null, branch: undefined };
-        }
+    if (resolvedOptions.target === "inbox") {
+        return createNoteIntoInbox(resolvedOptions as CreateNoteIntoInboxOpts);
     }
+
+    return createNoteAtNote(
+        resolvedOptions.target as "into" | "after" | "before",
+        resolvedOptions as CreateNoteAtUrlOpts
+    );
 }
 
 async function promptForType(
