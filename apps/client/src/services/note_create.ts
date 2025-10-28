@@ -125,7 +125,7 @@ async function createNote(
     }
 
     return createNoteWithUrl(
-        resolvedOptions.target as "into" | "after" | "before",
+        resolvedOptions.target,
         resolvedOptions as CreateNoteWithUrlOpts
     );
 }
