@@ -58,8 +58,7 @@ type PromptingRule = {
  *
  * Combine with `&` to ensure valid logical combinations.
  */
-export type CreateNoteOpts = {
-    target: "into" | "after" | "before" | "inbox";
+type CreateNoteBase = {
     isProtected?: boolean;
     saveSelection?: boolean;
     title?: string | null;
@@ -77,19 +76,22 @@ export type CreateNoteOpts = {
  * Serves as a base for "into", "before", and "after" variants,
  * sharing common URL-related fields.
  */
-export type CreateNoteWithUrlOpts = CreateNoteOpts & {
+export type CreateNoteWithUrlOpts = CreateNoteBase & {
+    target: "into" | "after" | "before";
     // `Url` may refer to either parentNotePath or parentNoteId.
     // The vocabulary is inspired by existing function getNoteIdFromUrl.
     parentNoteUrl: string;
 
     // Disambiguates the position for cloned notes.
     targetBranchId?: string;
-}
+};
 
-type NeverDefineParentNoteUrlRule = {
+export type CreateNoteIntoInboxOpts = CreateNoteBase & {
+    target: "inbox";
     parentNoteUrl?: never;
 };
-export type CreateNoteIntoInboxOpts = CreateNoteOpts & NeverDefineParentNoteUrlRule;
+
+export type CreateNoteOpts = CreateNoteWithUrlOpts | CreateNoteIntoInboxOpts;
 
 interface Response {
     // TODO: Deduplicate with server once we have client/server architecture.
@@ -110,24 +112,20 @@ async function createNote(
 
     // handle prompts centrally to write once fix for all
     if (options.promptForType) {
-        let maybeResolvedOptions = await promptForType(options);
+        const maybeResolvedOptions = await promptForType(options);
         if (!maybeResolvedOptions) {
-            return {
-                note: null, branch: undefined
-            };
+            return { note: null, branch: undefined };
         }
 
         resolvedOptions = maybeResolvedOptions;
     }
 
     if (resolvedOptions.target === "inbox") {
-        return createNoteIntoInbox(resolvedOptions as CreateNoteIntoInboxOpts);
+        return createNoteIntoInbox(resolvedOptions);
     }
 
-    return createNoteWithUrl(
-        resolvedOptions.target,
-        resolvedOptions as CreateNoteWithUrlOpts
-    );
+    // Only "into" | "before" | "after" reach here
+    return createNoteWithUrl(resolvedOptions.target, resolvedOptions);
 }
 
 async function promptForType(
