@@ -13,44 +13,56 @@ import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import dateNoteService from "../services/date_notes.js";
 
 /**
- * The `note_create` function can be called with multiple valid combinations
- * of arguments. This type hierarchy defines and enforces which combinations
- * are valid at compile time.
+ * Defines the type hierarchy and rules for valid argument combinations
+ * accepted by `note_create`.
  *
- * The function overloads later in `note_create` correspond to these types,
- * ensuring that each variant of note creation accepts only the correct
- * set of arguments.
+ * ## Overview
+ * Each variant (e.g. `CreateNoteIntoUrlOpts`, `CreateNoteBeforeUrlOpts`, etc.)
+ * extends `CreateNoteOpts` and enforces specific constraints to ensure only
+ * valid note creation options are allowed at compile time.
  *
- * Theoretically: If type checking produces no errors, then the provided
- * arguments represent a valid state — assuming the types below are defined
- * correctly. Through the Curry–Howard correspondence, this type system
- * effectively acts as a proof system: a successful type check serves as a
- * compile-time proof that the arguments of `create_note` can only produce
- * a valid state.
+ * ## Type Safety
+ * The `PromptingRule` ensures that `promptForType` and `type` stay mutually
+ * exclusive (if prompting, `type` is undefined).
  *
- * To align with its theoretical foundation in type theory (via the
- * Curry–Howard correspondence), `type` is used instead of `interface`
+ * The type system prevents invalid argument mixes by design — successful type
+ * checks guarantee a valid state, following Curry–Howard correspondence
+ * principles (types as proofs).
  *
- * * Hierarchy of general to specific categories(hypernyms -> hyponyms):
+ * ## Maintenance
+ * If adding or modifying `Opts`, ensure:
+ * - All valid combinations are represented (avoid *false negatives*).
+ * - No invalid ones slip through (avoid *false positives*).
  *
- * * CreateNoteEntity
- * |
- * \-- CreateNoteOpts
- *     |
- *     +-- CreateNoteAtUrlOpts
- *     |   +-- CreateNoteIntoURLOpts
- *     |   \-- CreateNoteSiblingURLOpts
- *     |       +-- CreateNoteBeforeURLOpts
- *     |       \-- CreateNoteAfterURLOpts
- *     |
- *     \-- CreateNoteIntoInboxURLOpts
+ * Hierarchy (general → specific):
+ * - CreateNoteOpts
+ *   - CreateNoteAtUrlOpts
+ *     - CreateNoteIntoUrlOpts
+ *     - CreateNoteBeforeUrlOpts
+ *     - CreateNoteAfterUrlOpts
+ *   - CreateNoteIntoInboxOpts
  */
 
-/**
- * this is the shared basis for all types. Every other type is child (hyponym)
- * of it (Its the domain hypernym).
+/** enforces a truth rule:
+ * - If `promptForType` is true → `type` must be undefined.
+ * - If `promptForType` is false → `type` must be defined.
  */
-type CreateNoteEntity = {
+type PromptingRule = {
+  promptForType: true;
+  type?: never;
+} | {
+  promptForType?: false;
+  type: string;
+};
+
+
+/**
+ * Base type for all note creation options (domain hypernym).
+ * All specific note option types extend from this.
+ *
+ * Combine with `&` to ensure valid logical combinations.
+ */
+export type CreateNoteOpts = {
     target: CreateNoteTarget;
     isProtected?: boolean;
     saveSelection?: boolean;
@@ -62,43 +74,30 @@ type CreateNoteEntity = {
     activate?: boolean;
     focus?: "title" | "content";
     textEditor?: CKTextEditor;
-}
-
-export type CreateNoteOpts =
-  | (CreateNoteEntity & {
-      promptForType: true;
-      type?: never;
-    })
-  | (CreateNoteEntity & {
-      promptForType?: false;
-      type?: string;
-    });
+} & PromptingRule;
 
 /*
- * For creating a note in a specific path. At is the broader category (hypernym)
- * of "into" and "as siblings". It is not exported because it only exists, to
- * have its legal values propagated to its children (types inheriting from it).
+ * Defines options for creating a note at a specific path.
+ * Serves as a base (not exported) for "into", "before", and "after" variants,
+ * sharing common URL-related fields.
  */
 type CreateNoteAtUrlOpts = CreateNoteOpts & {
-    // `Url` means either parentNotePath or parentNoteId.
-    // The vocabulary  is inspired by its loose semantics of getNoteIdFromUrl.
+    // `Url` may refer to either parentNotePath or parentNoteId.
+    // The vocabulary is inspired by existing function getNoteIdFromUrl.
     parentNoteUrl: string;
-    /*
-     * targetBranchId disambiguates the position for cloned notes. This is a
-     * concern whenever we are given a note URL.
-     */
+
+    // Disambiguates the position for cloned notes.
     targetBranchId: string;
 }
 
-export type CreateNoteIntoURLOpts = CreateNoteAtUrlOpts;
+export type CreateNoteIntoUrlOpts = CreateNoteAtUrlOpts;
+export type CreateNoteBeforeUrlOpts = CreateNoteAtUrlOpts;
+export type CreateNoteAfterUrlOpts = CreateNoteAtUrlOpts;
 
-type CreateNoteSiblingURLOpts = CreateNoteAtUrlOpts;
-export type CreateNoteBeforeURLOpts = CreateNoteSiblingURLOpts;
-export type CreateNoteAfterURLOpts = CreateNoteSiblingURLOpts;
-
-export type CreateNoteIntoInboxURLOpts = CreateNoteOpts & {
+type NeverDefineParentNoteUrlRule = {
     parentNoteUrl?: never;
-}
+};
+export type CreateNoteIntoInboxOpts = CreateNoteOpts & NeverDefineParentNoteUrlRule;
 
 export enum CreateNoteTarget {
     IntoNoteURL,
@@ -118,23 +117,6 @@ interface DuplicateResponse {
     note: FNote;
 }
 
-/* We are overloading createNote for each type */
-async function createNote(
-  options: CreateNoteIntoURLOpts
-): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
-
-async function createNote(
-  options: CreateNoteAfterURLOpts
-): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
-
-async function createNote(
-  options: CreateNoteBeforeURLOpts
-): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
-
-async function createNote(
-  options: CreateNoteIntoInboxURLOpts
-): Promise<{ note: FNote | null; branch: FBranch | undefined }>;
-
 async function createNote(
   options: CreateNoteOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
@@ -143,41 +125,28 @@ async function createNote(
 
     // handle prompts centrally to write once fix for all
     if (options.promptForType) {
-        const { success, noteType, templateNoteId, notePath } = await chooseNoteType();
-
-        if (!success) return {
-            note: null, branch: undefined
-        };
-
-        resolvedOptions = {
-            ...resolvedOptions,
-            promptForType: false,
-            type: noteType,
-            templateNoteId,
-        } as CreateNoteOpts;
-
-        if (notePath) {
-            resolvedOptions = resolvedOptions as CreateNoteIntoURLOpts;
-            resolvedOptions = {
-                ...resolvedOptions,
-                target: CreateNoteTarget.IntoNoteURL,
-                parentNoteUrl: notePath,
-            } as CreateNoteIntoURLOpts;
+        let maybeResolvedOptions = await promptForType(options);
+        if (!maybeResolvedOptions) {
+            return {
+                note: null, branch: undefined
+            };
         }
+
+        resolvedOptions = maybeResolvedOptions;
     }
 
     switch (resolvedOptions.target) {
         case CreateNoteTarget.IntoNoteURL:
-            return await createNoteIntoNote(resolvedOptions as CreateNoteIntoURLOpts);
+            return await createNoteAtNote("into", {...options} as CreateNoteAtUrlOpts);
 
         case CreateNoteTarget.BeforeNoteURL:
-            return await createNoteBeforeNote(resolvedOptions as CreateNoteBeforeURLOpts);
+            return await createNoteAtNote("before", resolvedOptions as CreateNoteBeforeUrlOpts);
 
         case CreateNoteTarget.AfterNoteURL:
-            return await createNoteAfterNote(resolvedOptions as CreateNoteAfterURLOpts);
+            return await createNoteAtNote("after", resolvedOptions as CreateNoteAfterUrlOpts);
 
         case CreateNoteTarget.IntoInbox:
-            return await createNoteIntoInbox(resolvedOptions as CreateNoteIntoInboxURLOpts);
+            return await createNoteIntoInbox(resolvedOptions as CreateNoteIntoInboxOpts);
 
         default: {
             console.warn("[createNote] Unknown target:", options.target, resolvedOptions);
@@ -187,14 +156,40 @@ async function createNote(
     }
 }
 
+async function promptForType(
+  options: CreateNoteOpts
+) : Promise<CreateNoteOpts | null> {
+    const { success, noteType, templateNoteId, notePath } = await chooseNoteType();
+
+    if (!success) {
+        return null;
+    }
+
+    let resolvedOptions = {
+        ...options,
+        promptForType: false,
+        type: noteType,
+        templateNoteId,
+    } as CreateNoteOpts;
+
+    if (notePath) {
+        resolvedOptions = resolvedOptions as CreateNoteIntoUrlOpts;
+        resolvedOptions = {
+            ...resolvedOptions,
+            target: CreateNoteTarget.IntoNoteURL,
+            parentNoteUrl: notePath,
+        } as CreateNoteIntoUrlOpts;
+    }
+
+    return resolvedOptions;
+}
+
 /**
- * Core function that creates a new note under the specified parent note path.
+ * Creates a new note under a specified parent note path.
  *
- * @param target - Duplicates apps/server/src/routes/api/notes.ts createNote
- * @param {CreateNoteEntity} [options] - Options controlling note creation (title, content, type, template, focus, etc.).
- * with parentNotePath - The parent note path where the new note will be created.
- * @returns {Promise<{ note: FNote | null; branch: FBranch | undefined }>}
- * Resolves with the created note and branch entities.
+ * @param target - Mirrors the `createNote` API in apps/server/src/routes/api/notes.ts.
+ * @param options - Note creation options
+ * @returns A promise resolving with the created note and its branch.
  */
 async function createNoteAtNote(
     target: "into" | "after" | "before",
@@ -271,35 +266,15 @@ async function createNoteAtNote(
 }
 
 
-// Small wrapper functions for @see createNoteAtNote, using it a certain way to
-// remove code duplication
-async function createNoteIntoNote(
-    options: CreateNoteIntoURLOpts
-): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
-    return createNoteAtNote("into", {...options} as CreateNoteAtUrlOpts);
-}
-
-async function createNoteBeforeNote(
-    options: CreateNoteBeforeURLOpts
-): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
-    return createNoteAtNote("before", {...options} as CreateNoteAtUrlOpts);
-}
-
-async function createNoteAfterNote(
-    options: CreateNoteAfterURLOpts
-): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
-    return createNoteAtNote("after", {...options} as CreateNoteAtUrlOpts);
-}
-
 /**
  * Creates a new note inside the user's Inbox.
  *
- * @param {CreateNoteEntity} [options] - Optional settings such as title, type, template, or content.
+ * @param {CreateNoteIntoInboxOpts} [options] - Optional settings such as title, type, template, or content.
  * @returns {Promise<{ note: FNote | null; branch: FBranch | undefined }>}
  * Resolves with the created note and its branch, or `{ note: null, branch: undefined }` if the inbox is missing.
  */
 async function createNoteIntoInbox(
-    options: CreateNoteIntoInboxURLOpts
+    options: CreateNoteIntoInboxOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
     const inboxNote = await dateNoteService.getInboxNote();
     if (!inboxNote) {
@@ -313,11 +288,11 @@ async function createNoteIntoInbox(
             inboxNote.isProtected && protectedSessionHolder.isProtectedSessionAvailable();
     }
 
-    const result = await createNoteIntoNote(
+    const result = await createNoteAtNote("into",
         {
             ...options,
             parentNoteUrl: inboxNote.noteId,
-        } as CreateNoteIntoURLOpts
+        } as CreateNoteIntoUrlOpts
     );
 
     return result;

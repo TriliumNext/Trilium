@@ -1,6 +1,6 @@
 import server from "./server.js";
 import appContext from "../components/app_context.js";
-import noteCreateService, { CreateNoteIntoURLOpts, CreateNoteTarget, CreateNoteIntoInboxURLOpts } from "./note_create.js";
+import noteCreateService, { CreateNoteIntoUrlOpts, CreateNoteTarget, CreateNoteIntoInboxOpts } from "./note_create.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import commandRegistry from "./command_registry.js";
@@ -487,7 +487,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                         title: suggestion.noteTitle,
                         activate: true,
                         promptForType: true,
-                    } as CreateNoteIntoInboxURLOpts
+                    } as CreateNoteIntoInboxOpts
                 );
 
                 if (!note) return;
@@ -507,7 +507,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                         title: suggestion.noteTitle,
                         activate: false,
                         promptForType: true,
-                    } as CreateNoteIntoInboxURLOpts,
+                    } as CreateNoteIntoInboxOpts,
                 );
 
                 if (!note) return;
@@ -528,7 +528,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                         title: suggestion.noteTitle,
                         activate: true,
                         promptForType: true,
-                    } as CreateNoteIntoURLOpts,
+                    } as CreateNoteIntoUrlOpts,
                 );
 
                 if (!note) return;
@@ -549,7 +549,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                         title: suggestion.noteTitle,
                         activate: false,
                         promptForType: true,
-                    } as CreateNoteIntoURLOpts
+                    } as CreateNoteIntoUrlOpts
                 );
 
                 if (!note) return;

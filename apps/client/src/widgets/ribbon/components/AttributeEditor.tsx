@@ -19,7 +19,7 @@ import contextMenu from "../../../menus/context_menu";
 import type { CommandData, FilteredCommandNames } from "../../../components/app_context";
 import { AttributeType } from "@triliumnext/commons";
 import attributes from "../../../services/attributes";
-import note_create, { CreateNoteAfterURLOpts, CreateNoteIntoURLOpts, CreateNoteTarget, CreateNoteIntoInboxURLOpts } from "../../../services/note_create";
+import note_create, { CreateNoteAfterUrlOpts, CreateNoteIntoUrlOpts, CreateNoteTarget, CreateNoteIntoInboxOpts } from "../../../services/note_create";
 import { CreateNoteAction } from "@triliumnext/commons";
 
 type AttributeCommandNames = FilteredCommandNames<CommandData>;
@@ -266,7 +266,7 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                             target: CreateNoteTarget.IntoInbox,
                             title,
                             activate: false
-                        } as CreateNoteIntoInboxURLOpts
+                        } as CreateNoteIntoInboxOpts
                     );
                     return note?.getBestNotePathString() ?? "";
                 }
@@ -280,7 +280,7 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                             title,
                             activate: false,
                             promptForType: true,
-                        } as CreateNoteIntoURLOpts,
+                        } as CreateNoteIntoUrlOpts,
                     )
                     return resp?.note?.getBestNotePathString() ?? "";
                 }
