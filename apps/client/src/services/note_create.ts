@@ -63,7 +63,7 @@ type PromptingRule = {
  * Combine with `&` to ensure valid logical combinations.
  */
 export type CreateNoteOpts = {
-    target: CreateNoteTarget;
+    target: "into" | "after" | "before" | "inbox";
     isProtected?: boolean;
     saveSelection?: boolean;
     title?: string | null;
@@ -99,13 +99,6 @@ type NeverDefineParentNoteUrlRule = {
 };
 export type CreateNoteIntoInboxOpts = CreateNoteOpts & NeverDefineParentNoteUrlRule;
 
-export enum CreateNoteTarget {
-    IntoNoteURL,
-    AfterNoteURL,
-    BeforeNoteURL,
-    IntoInbox,
-}
-
 interface Response {
     // TODO: Deduplicate with server once we have client/server architecture.
     note: FNote;
@@ -136,16 +129,16 @@ async function createNote(
     }
 
     switch (resolvedOptions.target) {
-        case CreateNoteTarget.IntoNoteURL:
+        case "into":
             return await createNoteAtNote("into", {...options} as CreateNoteAtUrlOpts);
 
-        case CreateNoteTarget.BeforeNoteURL:
+        case "before":
             return await createNoteAtNote("before", resolvedOptions as CreateNoteBeforeUrlOpts);
 
-        case CreateNoteTarget.AfterNoteURL:
+        case "after":
             return await createNoteAtNote("after", resolvedOptions as CreateNoteAfterUrlOpts);
 
-        case CreateNoteTarget.IntoInbox:
+        case "inbox":
             return await createNoteIntoInbox(resolvedOptions as CreateNoteIntoInboxOpts);
 
         default: {
@@ -176,7 +169,7 @@ async function promptForType(
         resolvedOptions = resolvedOptions as CreateNoteIntoUrlOpts;
         resolvedOptions = {
             ...resolvedOptions,
-            target: CreateNoteTarget.IntoNoteURL,
+            target: "into",
             parentNoteUrl: notePath,
         } as CreateNoteIntoUrlOpts;
     }

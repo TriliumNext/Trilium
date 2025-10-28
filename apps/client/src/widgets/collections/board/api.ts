@@ -7,7 +7,7 @@ import branches from "../../../services/branches";
 import { executeBulkActions } from "../../../services/bulk_action";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
-import note_create, { CreateNoteIntoUrlOpts, CreateNoteTarget } from "../../../services/note_create.js";
+import note_create, { CreateNoteIntoUrlOpts } from "../../../services/note_create.js";
 import server from "../../../services/server";
 import { ColumnMap } from "./data";
 
@@ -40,7 +40,7 @@ export default class BoardApi {
 
             // Create a new note as a child of the parent note
             const { note: newNote, branch: newBranch } = await note_create.createNote({
-                target: CreateNoteTarget.IntoNoteURL,
+                target: "into",
                 parentNoteUrl: parentNotePath,
                 activate: false,
                 title,
@@ -141,7 +141,7 @@ export default class BoardApi {
     async insertRowAtPosition(
             column: string,
             relativeToBranchId: string,
-            direction: CreateNoteTarget.BeforeNoteURL | CreateNoteTarget.AfterNoteURL
+            direction: "before" | "after"
     ) {
         const { note, branch } = await note_create.createNote(
             {
