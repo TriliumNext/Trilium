@@ -1,7 +1,7 @@
 import treeService from "../services/tree.js";
 import froca from "../services/froca.js";
 import clipboard from "../services/clipboard.js";
-import noteCreateService, { CreateNoteAfterUrlOpts, CreateNoteIntoUrlOpts } from "../services/note_create.js";
+import noteCreateService, { CreateNoteWithUrlOpts } from "../services/note_create.js";
 import contextMenu, { type MenuCommandItem, type MenuItem } from "./context_menu.js";
 import appContext, { type ContextMenuCommandData, type FilteredCommandNames } from "../components/app_context.js";
 import noteTypesService from "../services/note_types.js";
@@ -283,7 +283,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                     isProtected: isProtected,
                     templateNoteId: templateNoteId,
                     promptForType: false,
-                } as CreateNoteAfterUrlOpts
+                } as CreateNoteWithUrlOpts
             );
         } else if (command === "insertChildNote") {
             const parentNotePath = treeService.getNotePath(this.node);
@@ -296,7 +296,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                     isProtected: this.node.data.isProtected,
                     templateNoteId: templateNoteId,
                     promptForType: false,
-                } as CreateNoteIntoUrlOpts
+                } as CreateNoteWithUrlOpts
             );
         } else if (command === "openNoteInSplit") {
             const subContexts = appContext.tabManager.getActiveContext()?.getSubContexts();

@@ -8,7 +8,7 @@ import froca from "../../../services/froca.js";
 import branches from "../../../services/branches.js";
 import Component from "../../../components/component.js";
 import { RefObject } from "preact";
-import { CreateNoteAfterUrlOpts, CreateNoteBeforeUrlOpts } from "../../../services/note_create.js";
+import { CreateNoteWithUrlOpts } from "../../../services/note_create.js";
 
 export function useContextMenu(parentNote: FNote, parentComponent: Component | null | undefined, tabulator: RefObject<Tabulator>): Partial<EventCallBackMethods> {
     const events: Partial<EventCallBackMethods> = {};
@@ -185,7 +185,7 @@ export function showRowContextMenu(parentComponent: Component, e: MouseEvent, ro
                     customOpts: {
                         target: "before",
                         targetBranchId: rowData.branchId,
-                    } as CreateNoteBeforeUrlOpts
+                    } as CreateNoteWithUrlOpts
                 })
             },
             {
@@ -199,7 +199,7 @@ export function showRowContextMenu(parentComponent: Component, e: MouseEvent, ro
                         customOpts: {
                             target: "after",
                             targetBranchId: branchId,
-                        } as CreateNoteAfterUrlOpts
+                        } as CreateNoteWithUrlOpts
                     });
                 }
             },
@@ -212,7 +212,7 @@ export function showRowContextMenu(parentComponent: Component, e: MouseEvent, ro
                     customOpts: {
                         target: "after",
                         targetBranchId: rowData.branchId,
-                    } as CreateNoteAfterUrlOpts
+                    } as CreateNoteWithUrlOpts
                 })
             },
             { kind: "separator" },
