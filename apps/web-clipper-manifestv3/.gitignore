@@ -132,6 +132,9 @@ docs/PR/
 # Copilot configuration (development only)
 .github/copilot-instructions.md
 
+# Copilot templates (development only)
+/docs/COPILOT/
+
 # Development documentation (not for end users)
 /reference/context-aware_prompting_templates.md
 /reference/copilot_task_templates.md
