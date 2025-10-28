@@ -17,9 +17,8 @@ import dateNoteService from "../services/date_notes.js";
  * accepted by `note_create`.
  *
  * ## Overview
- * Each variant (e.g. `CreateNoteIntoUrlOpts`, `CreateNoteBeforeUrlOpts`, etc.)
- * extends `CreateNoteOpts` and enforces specific constraints to ensure only
- * valid note creation options are allowed at compile time.
+ * Each variant extends `CreateNoteOpts` and enforces specific constraints to
+ * ensure only valid note creation options are allowed at compile time.
  *
  * ## Type Safety
  * The `PromptingRule` ensures that `promptForType` and `type` stay mutually
@@ -36,10 +35,7 @@ import dateNoteService from "../services/date_notes.js";
  *
  * Hierarchy (general → specific):
  * - CreateNoteOpts
- *   - CreateNoteAtUrlOpts
- *     - CreateNoteIntoUrlOpts
- *     - CreateNoteBeforeUrlOpts
- *     - CreateNoteAfterUrlOpts
+ *   - CreateNoteWithUrlOpts
  *   - CreateNoteIntoInboxOpts
  */
 
@@ -81,7 +77,7 @@ export type CreateNoteOpts = {
  * Serves as a base for "into", "before", and "after" variants,
  * sharing common URL-related fields.
  */
-type CreateNoteWithUrlOpts = CreateNoteOpts & {
+export type CreateNoteWithUrlOpts = CreateNoteOpts & {
     // `Url` may refer to either parentNotePath or parentNoteId.
     // The vocabulary is inspired by existing function getNoteIdFromUrl.
     parentNoteUrl: string;
@@ -89,10 +85,6 @@ type CreateNoteWithUrlOpts = CreateNoteOpts & {
     // Disambiguates the position for cloned notes.
     targetBranchId: string;
 }
-
-export type CreateNoteIntoUrlOpts = CreateNoteWithUrlOpts;
-export type CreateNoteBeforeUrlOpts = CreateNoteWithUrlOpts;
-export type CreateNoteAfterUrlOpts = CreateNoteWithUrlOpts;
 
 type NeverDefineParentNoteUrlRule = {
     parentNoteUrl?: never;
@@ -155,12 +147,12 @@ async function promptForType(
     } as CreateNoteOpts;
 
     if (notePath) {
-        resolvedOptions = resolvedOptions as CreateNoteIntoUrlOpts;
+        resolvedOptions = resolvedOptions as CreateNoteWithUrlOpts;
         resolvedOptions = {
             ...resolvedOptions,
             target: "into",
             parentNoteUrl: notePath,
-        } as CreateNoteIntoUrlOpts;
+        } as CreateNoteWithUrlOpts;
     }
 
     return resolvedOptions;
@@ -274,7 +266,7 @@ async function createNoteIntoInbox(
         {
             ...options,
             parentNoteUrl: inboxNote.noteId,
-        } as CreateNoteIntoUrlOpts
+        } as CreateNoteWithUrlOpts
     );
 
     return result;

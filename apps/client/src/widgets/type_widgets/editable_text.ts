@@ -1,7 +1,7 @@
 import utils, { hasTouchBar } from "../../services/utils.js";
 import keyboardActionService from "../../services/keyboard_actions.js";
 import froca from "../../services/froca.js";
-import noteCreateService, { CreateNoteIntoUrlOpts, CreateNoteIntoInboxOpts } from "../../services/note_create.js";
+import noteCreateService, { CreateNoteWithUrlOpts, CreateNoteIntoInboxOpts } from "../../services/note_create.js";
 import AbstractTextTypeWidget from "./abstract_text_type_widget.js";
 import link from "../../services/link.js";
 import appContext, { type CommandListenerData, type EventData } from "../../components/app_context.js";
@@ -523,7 +523,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                             title,
                             activate: true,
                             promptForType: true,
-                        } as CreateNoteIntoUrlOpts
+                        } as CreateNoteWithUrlOpts
                     )
 
                     return note?.getBestNotePathString() ?? "";
@@ -552,7 +552,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                             title,
                             activate: false,
                             promptForType: true,
-                        } as CreateNoteIntoUrlOpts
+                        } as CreateNoteWithUrlOpts
                     );
 
                     return note?.getBestNotePathString() ?? "";

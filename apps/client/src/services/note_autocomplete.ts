@@ -1,6 +1,6 @@
 import server from "./server.js";
 import appContext from "../components/app_context.js";
-import noteCreateService, { CreateNoteIntoUrlOpts, CreateNoteIntoInboxOpts } from "./note_create.js";
+import noteCreateService, { CreateNoteIntoInboxOpts, CreateNoteWithUrlOpts } from "./note_create.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import commandRegistry from "./command_registry.js";
@@ -528,7 +528,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                         title: suggestion.noteTitle,
                         activate: true,
                         promptForType: true,
-                    } as CreateNoteIntoUrlOpts,
+                    } as CreateNoteWithUrlOpts,
                 );
 
                 if (!note) return;
@@ -549,7 +549,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                         title: suggestion.noteTitle,
                         activate: false,
                         promptForType: true,
-                    } as CreateNoteIntoUrlOpts
+                    } as CreateNoteWithUrlOpts
                 );
 
                 if (!note) return;

@@ -9,7 +9,7 @@ import froca from "../services/froca.js";
 import utils from "../services/utils.js";
 import LlmChatPanel from "../widgets/llm_chat_panel.js";
 import toastService from "../services/toast.js";
-import noteCreateService, { CreateNoteIntoUrlOpts } from "../services/note_create.js";
+import noteCreateService, { CreateNoteWithUrlOpts } from "../services/note_create.js";
 
 export default class RootCommandExecutor extends Component {
     editReadOnlyNoteCommand() {
@@ -242,7 +242,7 @@ export default class RootCommandExecutor extends Component {
                         messages: [],
                         title: "New AI Chat"
                     }),
-                } as CreateNoteIntoUrlOpts
+                } as CreateNoteWithUrlOpts
             );
 
             if (!result.note) {

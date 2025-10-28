@@ -1,6 +1,6 @@
 import { EventCallBackMethods, RowComponent, Tabulator } from "tabulator-tables";
 import { CommandListenerData } from "../../../components/app_context";
-import note_create, { CreateNoteOpts, CreateNoteIntoUrlOpts as CreateNoteIntoUrlOpts } from "../../../services/note_create";
+import note_create, { CreateNoteOpts, CreateNoteWithUrlOpts } from "../../../services/note_create";
 import { useLegacyImperativeHandlers } from "../../react/hooks";
 import { RefObject } from "preact";
 import { setAttribute, setLabel } from "../../../services/attributes";
@@ -23,7 +23,7 @@ export default function useRowTableEditing(api: RefObject<Tabulator>, attributeD
                     {
                         parentNoteUrl: notePath,
                         ...opts
-                    } as CreateNoteIntoUrlOpts
+                    } as CreateNoteWithUrlOpts
                 ).then(({ branch }) => {
                     if (branch) {
                         setTimeout(() => {
