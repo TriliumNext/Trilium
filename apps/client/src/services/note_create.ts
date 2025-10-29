@@ -263,6 +263,7 @@ async function createNoteIntoInbox(
     const result = await createNoteWithUrl("into",
         {
             ...options,
+            target: "into",
             parentNoteUrl: inboxNote.noteId,
         } as CreateNoteWithUrlOpts
     );
