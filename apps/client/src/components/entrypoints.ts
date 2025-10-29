@@ -26,7 +26,7 @@ export default class Entrypoints extends Component {
 
     async createNoteIntoInboxCommand() {
         await noteCreateService.createNote(
-            { target: "into" } as CreateNoteIntoInboxOpts
+            { target: "inbox" } as CreateNoteIntoInboxOpts
         );
     }
 
