@@ -31,7 +31,10 @@ export default class MarkdownImportPlugin extends Plugin {
 class ImportMarkdownCommand extends Command {
 
     execute() {
-        glob.importMarkdownInline();
+		const editorEl = this.editor.editing.view.getDomRoot();
+		const component = glob.getComponentByEl(editorEl);
+
+		component.triggerCommand('pasteMarkdownIntoText');
     }
 
 }

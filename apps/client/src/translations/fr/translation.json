@@ -260,7 +260,6 @@
     "delete_all_revisions": "Supprimer toutes les versions de cette note",
     "delete_all_button": "Supprimer toutes les versions",
     "help_title": "Aide sur les versions de notes",
-    "revision_last_edited": "Cette version a été modifiée pour la dernière fois le {{date}}",
     "confirm_delete_all": "Voulez-vous supprimer toutes les versions de cette note ?",
     "no_revisions": "Aucune version pour cette note pour l'instant...",
     "confirm_restore": "Voulez-vous restaurer cette version ? Le titre et le contenu actuels de la note seront écrasés par cette version.",

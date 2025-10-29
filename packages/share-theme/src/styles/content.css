@@ -47,3 +47,7 @@
 #content img {
     max-width: 100%;
 }
+
+body:not(.math-loaded) .math-tex {
+    visibility: hidden;
+}

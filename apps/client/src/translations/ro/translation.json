@@ -1090,7 +1090,6 @@
     "preview_not_available": "Nu este disponibilă o previzualizare pentru acest tip de notiță.",
     "restore_button": "Restaurează",
     "revision_deleted": "Revizia notiței a fost ștearsă.",
-    "revision_last_edited": "Revizia a fost ultima oară modificată pe {{date}}",
     "revision_restored": "Revizia notiței a fost restaurată.",
     "revisions_deleted": "Notița reviziei a fost ștearsă.",
     "maximum_revisions": "Numărul maxim de revizii pentru notița curentă: {{number}}.",

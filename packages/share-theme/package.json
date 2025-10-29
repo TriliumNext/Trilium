@@ -21,6 +21,11 @@
     "Zerebos <me@zerebos.com>"
   ],
   "license": "Apache-2.0",
+  "dependencies": {
+    "katex": "0.16.25",
+    "mermaid": "11.12.0",
+    "boxicons": "2.1.4"
+  },
   "devDependencies": {
     "@digitak/esrun": "3.2.26",
     "@types/swagger-ui": "5.21.1",

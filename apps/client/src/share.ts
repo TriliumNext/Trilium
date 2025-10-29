@@ -9,16 +9,6 @@ async function ensureJQuery() {
     (window as any).$ = $;
 }
 
-async function applyMath() {
-    const anyMathBlock = document.querySelector("#content .math-tex");
-    if (!anyMathBlock) {
-        return;
-    }
-
-    const renderMathInElement = (await import("./services/math.js")).renderMathInElement;
-    renderMathInElement(document.getElementById("content"));
-}
-
 async function formatCodeBlocks() {
     const anyCodeBlock = document.querySelector("#content pre");
     if (!anyCodeBlock) {
@@ -31,54 +21,4 @@ async function formatCodeBlocks() {
 
 async function setupTextNote() {
     formatCodeBlocks();
-    applyMath();
-
-    const setupMermaid = (await import("./share/mermaid.js")).default;
-    setupMermaid();
 }
-
-/**
- * Fetch note with given ID from backend
- *
- * @param noteId of the given note to be fetched. If false, fetches current note.
- */
-async function fetchNote(noteId: string | null = null) {
-    if (!noteId) {
-        noteId = document.body.getAttribute("data-note-id");
-    }
-
-    const resp = await fetch(`api/notes/${noteId}`);
-
-    return await resp.json();
-}
-
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-        const noteType = determineNoteType();
-
-        if (noteType === "text") {
-            setupTextNote();
-        }
-
-        const toggleMenuButton = document.getElementById("toggleMenuButton");
-        const layout = document.getElementById("layout");
-
-        if (toggleMenuButton && layout) {
-            toggleMenuButton.addEventListener("click", () => layout.classList.toggle("showMenu"));
-        }
-    },
-    false
-);
-
-function determineNoteType() {
-    const bodyClass = document.body.className;
-    const match = bodyClass.match(/type-([^\s]+)/);
-    return match ? match[1] : null;
-}
-
-// workaround to prevent webpack from removing "fetchNote" as dead code:
-// add fetchNote as property to the window object
-Object.defineProperty(window, "fetchNote", {
-    value: fetchNote
-});

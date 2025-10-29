@@ -42,7 +42,7 @@
     "@playwright/test": "1.56.1",
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.5",
-    "@types/node": "22.18.12",
+    "@types/node": "24.9.1",
     "@vitest/coverage-v8": "3.2.4",
     "@vitest/ui": "3.2.4",
     "chalk": "5.6.2",

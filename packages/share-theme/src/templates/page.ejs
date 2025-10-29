@@ -30,17 +30,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link rel="shortcut icon" href="<% if (note.hasRelation("shareFavicon")) { %>api/notes/<%= note.getRelation("shareFavicon").value %>/download<% } else { %>../favicon.ico<% } %>">
-    <script src="../<%= appPath %>/share.js" type="module"></script>
-    <% if (!isDev && !note.isLabelTruthy("shareOmitDefaultCss")) { %>
-        <link href="<%= assetPath %>/src/share.css" rel="stylesheet">
-        <link href="<%= assetPath %>/src/boxicons.css" rel="stylesheet">
+    <% for (const url of cssToLoad) { %>
+        <link href="<%= url %>" rel="stylesheet">
     <% } %>
-
-    <% for (const cssRelation of note.getRelations("shareCss")) { %>
-        <link href="api/notes/<%= cssRelation.value %>/download" rel="stylesheet">
-    <% } %>
-    <% for (const jsRelation of note.getRelations("shareJs")) { %>
-        <script type="module" src="api/notes/<%= jsRelation.value %>/download"></script>
+    <% for (const url of jsToLoad) { %>
+        <script type="module" src="<%= url %>"></script>
     <% } %>
     <% if (note.hasLabel("shareDisallowRobotIndexing")) { %>
         <meta name="robots" content="noindex,follow" />
@@ -80,8 +74,6 @@
     <%- renderSnippets("head:end") %>
 </head>
 <%
-const customLogoId = subRoot.note.getRelation("shareLogo")?.value;
-const logoUrl = customLogoId ? `api/images/${customLogoId}/image.png` : `../${assetUrlFragment}/images/icon-color.svg`;
 const logoWidth = subRoot.note.getLabelValue("shareLogoWidth") ?? 53;
 const logoHeight = subRoot.note.getLabelValue("shareLogoHeight") ?? 40;
 const mobileLogoHeight = logoHeight && logoWidth ? 32 / (logoWidth / logoHeight) : "";
@@ -131,16 +123,7 @@ content = content.replaceAll(headingRe, (...match) => {
             </div>
         <% if (hasTree) { %>
             <nav id="menu">
-                <%
-                const ancestors = [];
-                let notePointer = note;
-                while (notePointer.parents[0].noteId !== "_share") {
-                    const pointerParent = notePointer.parents[0];
-                    ancestors.push(pointerParent.noteId);
-                    notePointer = pointerParent;
-                }
-                %>
-                <%- include("tree_item", {note: subRoot.note, activeNote: note, subRoot: subRoot, ancestors: ancestors}) %>
+                <%- include("tree_item", {note: subRoot.note, activeNote: note, subRoot: subRoot, ancestors}) %>
             </nav>
         <% } %>   
         </div>

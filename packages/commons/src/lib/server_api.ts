@@ -29,7 +29,7 @@ export interface DeleteNotesPreview {
 export interface RevisionItem {
     noteId: string;
     revisionId?: string;
-    dateLastEdited?: string;
+    dateCreated?: string;
     contentLength?: number;
     type: NoteType;
     title: string;

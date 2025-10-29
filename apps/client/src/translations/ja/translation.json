@@ -610,7 +610,6 @@
     "delete_all_revisions": "このノートの変更履歴をすべて削除",
     "delete_all_button": "変更履歴をすべて削除",
     "help_title": "変更履歴のヘルプ",
-    "revision_last_edited": "この変更は{{date}}に行われました",
     "confirm_delete_all": "このノートのすべての変更履歴を削除しますか？",
     "no_revisions": "このノートに変更履歴はまだありません...",
     "restore_button": "復元",

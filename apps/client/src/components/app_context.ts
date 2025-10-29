@@ -218,12 +218,12 @@ export type CommandMappings = {
     /** Works only in the electron context menu. */
     replaceMisspelling: CommandData;
 
-    importMarkdownInline: CommandData;
     showPasswordNotSet: CommandData;
     showProtectedSessionPasswordDialog: CommandData;
     showUploadAttachmentsDialog: CommandData & { noteId: string };
     showIncludeNoteDialog: CommandData & { textTypeWidget: EditableTextTypeWidget };
     showAddLinkDialog: CommandData & { textTypeWidget: EditableTextTypeWidget, text: string };
+    showPasteMarkdownDialog: CommandData & { textTypeWidget: EditableTextTypeWidget };
     closeProtectedSessionPasswordDialog: CommandData;
     copyImageReferenceToClipboard: CommandData;
     copyImageToClipboard: CommandData;

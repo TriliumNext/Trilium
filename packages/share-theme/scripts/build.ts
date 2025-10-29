@@ -1,4 +1,3 @@
-import fs from "node:fs";
 import path from "node:path";
 // import {fileURLToPath} from "node:url";
 
@@ -51,15 +50,18 @@ async function runBuild() {
     await esbuild.build({
         entryPoints: entryPoints,
         bundle: true,
+        splitting: true,
         outdir: path.join(rootDir, "dist"),
-        format: "cjs",
+        format: "esm",
         target: ["chrome96"],
         loader: {
             ".png": "dataurl",
             ".gif": "dataurl",
-            ".woff": "dataurl",
-            ".woff2": "dataurl",
-            ".ttf": "dataurl",
+            ".woff": "file",
+            ".woff2": "file",
+            ".ttf": "file",
+            ".eot": "empty",
+            ".svg": "empty",
             ".html": "text",
             ".css": "css"
         },

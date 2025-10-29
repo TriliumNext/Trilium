@@ -256,7 +256,6 @@
         "delete_all_revisions": "Obriši sve revizije ove beleške",
         "delete_all_button": "Obriši sve revizije",
         "help_title": "Pomoć za Revizije beleški",
-        "revision_last_edited": "Ova revizija je poslednji put izmenjena {{date}}",
         "confirm_delete_all": "Da li želite da obrišete sve revizije ove beleške?",
         "no_revisions": "Još uvek nema revizija za ovu belešku...",
         "restore_button": "Vrati",

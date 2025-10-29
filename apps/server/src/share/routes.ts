@@ -4,41 +4,12 @@ import type { Request, Response, Router } from "express";
 
 import shaca from "./shaca/shaca.js";
 import shacaLoader from "./shaca/shaca_loader.js";
-import shareRoot from "./share_root.js";
-import contentRenderer from "./content_renderer.js";
-import assetPath, { assetUrlFragment } from "../services/asset_path.js";
-import appPath from "../services/app_path.js";
 import searchService from "../services/search/services/search.js";
 import SearchContext from "../services/search/search_context.js";
-import log from "../services/log.js";
 import type SNote from "./shaca/entities/snote.js";
-import type SBranch from "./shaca/entities/sbranch.js";
 import type SAttachment from "./shaca/entities/sattachment.js";
-import utils, { isDev, safeExtractMessageAndStackFromError } from "../services/utils.js";
-import options from "../services/options.js";
-import { t } from "i18next";
-import ejs from "ejs";
-import { join } from "path";
-
-function getSharedSubTreeRoot(note: SNote): { note?: SNote; branch?: SBranch } {
-    if (note.noteId === shareRoot.SHARE_ROOT_NOTE_ID) {
-        // share root itself is not shared
-        return {};
-    }
-
-    // every path leads to share root, but which one to choose?
-    // for the sake of simplicity, URLs are not note paths
-    const parentBranch = note.getParentBranches()[0];
-
-    if (parentBranch.parentNoteId === shareRoot.SHARE_ROOT_NOTE_ID) {
-        return {
-            note,
-            branch: parentBranch
-        };
-    }
-
-    return getSharedSubTreeRoot(parentBranch.getParentNote());
-}
+import { renderNoteContent } from "./content_renderer.js";
+import utils from "../services/utils.js";
 
 function addNoIndexHeader(note: SNote, res: Response) {
     if (note.isLabelTruthy("shareDisallowRobotIndexing")) {
@@ -109,8 +80,7 @@ function renderImageAttachment(image: SNote, res: Response, attachmentName: stri
     let svgString = "<svg/>";
     const attachment = image.getAttachmentByTitle(attachmentName);
     if (!attachment) {
-        res.status(404);
-        renderDefault(res, "404");
+
         return;
     }
     const content = attachment.getContent();
@@ -138,12 +108,19 @@ function renderImageAttachment(image: SNote, res: Response, attachmentName: stri
     res.send(svg);
 }
 
+function render404(res: Response) {
+    res.status(404);
+    const shareThemePath = `../../share-theme/templates/404.ejs`;
+    res.render(shareThemePath);
+}
+
 function register(router: Router) {
+
     function renderNote(note: SNote, req: Request, res: Response) {
         if (!note) {
             console.log("Unable to find note ", note);
             res.status(404);
-            renderDefault(res, "404");
+            render404(res);
             return;
         }
 
@@ -161,63 +138,7 @@ function register(router: Router) {
             return;
         }
 
-        const { header, content, isEmpty } = contentRenderer.getContent(note);
-        const subRoot = getSharedSubTreeRoot(note);
-        const showLoginInShareTheme = options.getOption("showLoginInShareTheme");
-        const opts = {
-            note,
-            header,
-            content,
-            isEmpty,
-            subRoot,
-            assetPath: isDev ? assetPath : `../${assetPath}`,
-            assetUrlFragment,
-            appPath: isDev ? appPath : `../${appPath}`,
-            showLoginInShareTheme,
-            t,
-            isDev,
-            utils
-        };
-        let useDefaultView = true;
-
-        // Check if the user has their own template
-        if (note.hasRelation("shareTemplate")) {
-            // Get the template note and content
-            const templateId = note.getRelation("shareTemplate")?.value;
-            const templateNote = templateId && shaca.getNote(templateId);
-
-            // Make sure the note type is correct
-            if (templateNote && templateNote.type === "code" && templateNote.mime === "application/x-ejs") {
-                // EJS caches the result of this so we don't need to pre-cache
-                const includer = (path: string) => {
-                    const childNote = templateNote.children.find((n) => path === n.title);
-                    if (!childNote) throw new Error(`Unable to find child note: ${path}.`);
-                    if (childNote.type !== "code" || childNote.mime !== "application/x-ejs") throw new Error("Incorrect child note type.");
-
-                    const template = childNote.getContent();
-                    if (typeof template !== "string") throw new Error("Invalid template content type.");
-
-                    return { template };
-                };
-
-                // Try to render user's template, w/ fallback to default view
-                try {
-                    const content = templateNote.getContent();
-                    if (typeof content === "string") {
-                        const ejsResult = ejs.render(content, opts, { includer });
-                        res.send(ejsResult);
-                        useDefaultView = false; // Rendering went okay, don't use default view
-                    }
-                } catch (e: unknown) {
-                    const [errMessage, errStack] = safeExtractMessageAndStackFromError(e);
-                    log.error(`Rendering user provided share template (${templateId}) threw exception ${errMessage} with stacktrace: ${errStack}`);
-                }
-            }
-        }
-
-        if (useDefaultView) {
-            renderDefault(res, "page", opts);
-        }
+        res.send(renderNoteContent(note));
     }
 
     router.get("/share/", (req, res) => {
@@ -399,14 +320,6 @@ function register(router: Router) {
 
         res.json({ results: filteredResults });
     });
-}
-
-function renderDefault(res: Response<any, Record<string, any>>, template: "page" | "404", opts: any = {}) {
-    // Path is relative to apps/server/dist/assets/views
-    const shareThemePath = process.env.NODE_ENV === "development"
-        ? join(__dirname, `../../../../packages/share-theme/src/templates/${template}.ejs`)
-        : `../../share-theme/templates/${template}.ejs`;
-    res.render(shareThemePath, opts);
 }
 
 export default {

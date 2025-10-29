@@ -6,7 +6,7 @@ import { initializeTranslations } from "@triliumnext/server/src/services/i18n.js
 import debounce from "@triliumnext/client/src/services/debounce.js";
 import { extractZip, importData, initializeDatabase, startElectron } from "./utils.js";
 import cls from "@triliumnext/server/src/services/cls.js";
-import type { AdvancedExportOptions } from "@triliumnext/server/src/services/export/zip.js";
+import type { AdvancedExportOptions, ExportFormat } from "@triliumnext/server/src/services/export/zip/abstract_provider.js";
 import { parseNoteMetaFile } from "@triliumnext/server/src/services/in_app_help.js";
 import type NoteMeta from "@triliumnext/server/src/services/meta/note_meta.js";
 
@@ -75,7 +75,7 @@ async function setOptions() {
     optionsService.setOption("compressImages", "false");
 }
 
-async function exportData(noteId: string, format: "html" | "markdown", outputPath: string, ignoredFiles?: Set<string>) {
+async function exportData(noteId: string, format: ExportFormat, outputPath: string, ignoredFiles?: Set<string>) {
     const zipFilePath = "output.zip";
 
     try {

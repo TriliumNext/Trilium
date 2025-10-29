@@ -104,7 +104,8 @@
     "export_status": "Export status",
     "export_in_progress": "Export in progress: {{progressCount}}",
     "export_finished_successfully": "Export finished successfully.",
-    "format_pdf": "PDF - for printing or sharing purposes."
+    "format_pdf": "PDF - for printing or sharing purposes.",
+    "share-format": "HTML for web publishing - uses the same theme that is used shared notes, but can be published as a static website."
   },
   "help": {
     "title": "Cheatsheet",
@@ -260,7 +261,6 @@
     "delete_all_revisions": "Delete all revisions of this note",
     "delete_all_button": "Delete all revisions",
     "help_title": "Help on Note Revisions",
-    "revision_last_edited": "This revision was last edited on {{date}}",
     "confirm_delete_all": "Do you want to delete all revisions of this note?",
     "no_revisions": "No revisions for this note yet...",
     "restore_button": "Restore",

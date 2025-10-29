@@ -259,7 +259,6 @@
     "delete_all_revisions": "Apagar todas as versões desta nota",
     "delete_all_button": "Apagar todas as versões",
     "help_title": "Ajuda sobre as versões da nota",
-    "revision_last_edited": "Esta versão foi editada pela última vez em {{date}}",
     "confirm_delete_all": "Quer apagar todas as versões desta nota?",
     "no_revisions": "Ainda não há versões para esta nota...",
     "restore_button": "Recuperar",

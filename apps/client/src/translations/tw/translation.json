@@ -260,7 +260,6 @@
     "delete_all_revisions": "刪除此筆記的所有歷史版本",
     "delete_all_button": "刪除所有歷史版本",
     "help_title": "關於筆記歷史版本的說明",
-    "revision_last_edited": "此歷史版本上次於 {{date}} 編輯",
     "confirm_delete_all": "您是否要刪除此筆記的所有歷史版本？",
     "no_revisions": "此筆記暫無歷史版本…",
     "confirm_restore": "您是否要還原此歷史版本？這將使用此歷史版本覆寫筆記的目前標題和內容。",

@@ -1,7 +1,12 @@
-import mermaid from "mermaid";
+export default async function setupMermaid() {
+    const mermaidEls = document.querySelectorAll("#content pre code.language-mermaid");
+    if (mermaidEls.length === 0) {
+        return;
+    }
 
-export default function setupMermaid() {
-    for (const codeBlock of document.querySelectorAll("#content pre code.language-mermaid")) {
+    const mermaid = (await import("mermaid")).default;
+
+    for (const codeBlock of mermaidEls) {
         const parentPre = codeBlock.parentElement;
         if (!parentPre) {
             continue;

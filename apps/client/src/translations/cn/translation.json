@@ -259,7 +259,6 @@
     "delete_all_revisions": "删除此笔记的所有修订版本",
     "delete_all_button": "删除所有修订版本",
     "help_title": "关于笔记修订版本的帮助",
-    "revision_last_edited": "此修订版本上次编辑于 {{date}}",
     "confirm_delete_all": "您是否要删除此笔记的所有修订版本？",
     "no_revisions": "此笔记暂无修订版本...",
     "restore_button": "恢复",
