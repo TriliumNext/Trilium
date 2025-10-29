@@ -417,7 +417,7 @@ export default class FNote {
         return notePaths;
     }
 
-    getSortedNotePathRecords(hoistedNoteId = "root"): NotePathRecord[] {
+    getSortedNotePathRecords(hoistedNoteId = "root", activeNotePath: string | null = null): NotePathRecord[] {
         const isHoistedRoot = hoistedNoteId === "root";
 
         const notePaths: NotePathRecord[] = this.getAllNotePaths().map((path) => ({
@@ -428,7 +428,23 @@ export default class FNote {
             isHidden: path.includes("_hidden")
         }));
 
+        // Calculate the length of the prefix match between two arrays
+        const prefixMatchLength = (path: string[], target: string[]) => {
+            const diffIndex = path.findIndex((seg, i) => seg !== target[i]);
+            return diffIndex === -1 ? Math.min(path.length, target.length) : diffIndex;
+        };
+
         notePaths.sort((a, b) => {
+            if (activeNotePath) {
+                const activeSegments = activeNotePath.split('/');
+                const aOverlap = prefixMatchLength(a.notePath, activeSegments);
+                const bOverlap = prefixMatchLength(b.notePath, activeSegments);
+                // Paths with more matching prefix segments are prioritized
+                // when the match count is equal, other criteria are used for sorting
+                if (bOverlap !== aOverlap) {
+                    return bOverlap - aOverlap;
+                }
+            }
             if (a.isInHoistedSubTree !== b.isInHoistedSubTree) {
                 return a.isInHoistedSubTree ? -1 : 1;
             } else if (a.isArchived !== b.isArchived) {
@@ -449,10 +465,11 @@ export default class FNote {
      * Returns the note path considered to be the "best"
      *
      * @param {string} [hoistedNoteId='root']
+     * @param {string|null} [activeNotePath=null]
      * @return {string[]} array of noteIds constituting the particular note path
      */
-    getBestNotePath(hoistedNoteId = "root") {
-        return this.getSortedNotePathRecords(hoistedNoteId)[0]?.notePath;
+    getBestNotePath(hoistedNoteId = "root", activeNotePath: string | null = null) {
+        return this.getSortedNotePathRecords(hoistedNoteId, activeNotePath)[0]?.notePath;
     }
 
     /**
