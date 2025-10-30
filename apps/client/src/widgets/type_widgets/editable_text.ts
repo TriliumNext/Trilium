@@ -480,7 +480,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                             title,
                             activate: true,
                             promptForType: true,
-                        } as CreateNoteIntoInboxOpts
+                        }
                     );
 
                     return note?.getBestNotePathString() ?? "";
@@ -488,6 +488,13 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
 
                 // --- Create note INTO current path ---
                 case CreateNoteAction.CreateNoteIntoPath: {
+                    // This should be impossible but we must specify it anyways
+                    // because it might cause bugs, which the type-check from
+                    // createNote already catches
+                    if (!parentNotePath) {
+                        console.error("Cannot create note: parentNotePath is undefined.");
+                        return "";
+                    }
                     const { note } = await note_create.createNote(
                         {
                             target: "into",
@@ -495,7 +502,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                             title,
                             activate: true,
                             promptForType: true,
-                        } as CreateNoteWithUrlOpts
+                        }
                     )
 
                     return note?.getBestNotePathString() ?? "";
@@ -509,7 +516,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                             title,
                             activate: false,
                             promptForType: true,
-                        } as CreateNoteIntoInboxOpts
+                        }
                     );
 
                     return note?.getBestNotePathString() ?? "";
@@ -517,6 +524,10 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
 
                 // --- Create & link note INTO current path ---
                 case CreateNoteAction.CreateAndLinkNoteIntoPath: {
+                    if (!parentNotePath) {
+                        console.error("Cannot create note: parentNotePath is undefined.");
+                        return "";
+                    }
                     const { note } = await noteCreateService.createNote(
                         {
                             target: "into",
@@ -524,7 +535,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                             title,
                             activate: false,
                             promptForType: true,
-                        } as CreateNoteWithUrlOpts
+                        }
                     );
 
                     return note?.getBestNotePathString() ?? "";

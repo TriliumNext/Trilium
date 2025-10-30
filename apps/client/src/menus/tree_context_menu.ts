@@ -283,7 +283,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                     isProtected: isProtected,
                     templateNoteId: templateNoteId,
                     promptForType: false,
-                } as CreateNoteWithUrlOpts
+                }
             );
         } else if (command === "insertChildNote") {
             const parentNotePath = treeService.getNotePath(this.node);
@@ -296,7 +296,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                     isProtected: this.node.data.isProtected,
                     templateNoteId: templateNoteId,
                     promptForType: false,
-                } as CreateNoteWithUrlOpts
+                }
             );
         } else if (command === "openNoteInSplit") {
             const subContexts = appContext.tabManager.getActiveContext()?.getSubContexts();

@@ -33,7 +33,7 @@ export default class BoardApi {
                 parentNoteUrl: parentNotePath,
                 activate: false,
                 title,
-            } as CreateNoteWithUrlOpts);
+            });
 
             if (newNote && newBranch) {
                 await this.changeColumn(newNote.noteId, column);
@@ -140,7 +140,7 @@ export default class BoardApi {
                 activate: false,
                 targetBranchId: relativeToBranchId,
                 title: t("board_view.new-item"),
-            } as CreateNoteWithUrlOpts
+            }
         );
 
         if (!note || !branch) {
