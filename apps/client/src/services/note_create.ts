@@ -155,7 +155,6 @@ async function promptForType(
     };
 
     if (notePath) {
-        resolvedOptions = resolvedOptions as CreateNoteWithUrlOpts;
         resolvedOptions = {
             ...resolvedOptions,
             target: "into",
