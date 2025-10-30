@@ -83,15 +83,18 @@ type CreateNoteBase = {
  * Serves as a base for "into", "before", and "after" variants,
  * sharing common URL-related fields.
  */
-export type CreateNoteWithUrlOpts = CreateNoteBase & {
-    target: "into" | "after" | "before";
-    // `Url` may refer to either parentNotePath or parentNoteId.
-    // The vocabulary is inspired by existing function getNoteIdFromUrl.
-    parentNoteUrl: string;
-
-    // Disambiguates the position for cloned notes.
-    targetBranchId?: string;
-};
+export type CreateNoteWithUrlOpts =
+    | (CreateNoteBase & {
+          target: "into";
+          parentNoteUrl?: string;
+          // No branch ID needed for "into"
+      })
+    | (CreateNoteBase & {
+          target: "before" | "after";
+          parentNoteUrl?: string;
+          // Required for "before"/"after"
+          targetBranchId: string;
+      });
 
 export type CreateNoteIntoInboxOpts = CreateNoteBase & {
     target: "inbox";
@@ -134,7 +137,7 @@ async function createNote(
         case "into":
         case "before":
         case "after":
-            return createNoteWithUrl(resolvedOptions.target, resolvedOptions);
+            return createNoteWithUrl(resolvedOptions);
     }
 }
 
@@ -173,7 +176,6 @@ async function promptForType(
  * @returns A promise resolving with the created note and its branch.
  */
 async function createNoteWithUrl(
-    target: "into" | "after" | "before",
     options: CreateNoteWithUrlOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
     options = Object.assign(
@@ -210,7 +212,12 @@ async function createNoteWithUrl(
     C-->D;`;
     }
 
-    const { note, branch } = await server.post<Response>(`notes/${parentNoteId}/children?target=${target}&targetBranchId=${options.targetBranchId || ""}`, {
+    const query =
+        options.target === "into"
+            ? `target=${options.target}`
+            : `target=${options.target}&targetBranchId=${options.targetBranchId}`;
+
+    const { note, branch } = await server.post<Response>(`notes/${parentNoteId}/children?${query}`, {
         title: options.title,
         content: options.content || "",
         isProtected: options.isProtected,
@@ -269,7 +276,7 @@ async function createNoteIntoInbox(
             inboxNote.isProtected && protectedSessionHolder.isProtectedSessionAvailable();
     }
 
-    const result = await createNoteWithUrl("into",
+    const result = await createNoteWithUrl(
         {
             ...options,
             target: "into",

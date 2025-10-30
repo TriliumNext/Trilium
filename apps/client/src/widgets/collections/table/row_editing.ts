@@ -9,29 +9,20 @@ import server from "../../../services/server";
 import branches from "../../../services/branches";
 import AttributeDetailWidget from "../../attribute_widgets/attribute_detail";
 
-export default function useRowTableEditing(api: RefObject<Tabulator>, attributeDetailWidget: AttributeDetailWidget, parentNotePath: string): Partial<EventCallBackMethods> {
-    // Adding new rows
+export default function useRowTableEditing(api: RefObject<Tabulator>, attributeDetailWidget: AttributeDetailWidget, parentNotePath: string): Partial<EventCallBackMethods> { // Adding new rows
     useLegacyImperativeHandlers({
-        addNewRowCommand({ customOpts, parentNotePath: customNotePath }: CommandListenerData<"addNewRow">) {
-            const notePath = customNotePath ?? parentNotePath;
-            if (notePath) {
-                const opts: CreateNoteOpts = {
-                    activate: false,
-                    ...customOpts
-                }
+        addNewRowCommand({ customOpts }: CommandListenerData<"addNewRow">) {
+            if (!customOpts) {
+                customOpts = {
+                    target: "into",
+                };
+            }
 
-                // Normalize "inbox" targets into standard path-based creation.
-                // When adding a new row, we always have a concrete parent path (`notePath`),
-                // so even if the originating command requested an "inbox" creation,
-                // it should instead behave as "into" under the current note.
-                const normalizedOpts: CreateNoteWithUrlOpts =
-                    opts.target === "inbox"
-                        ? { ...opts, target: "into", parentNoteUrl: notePath }
-                        : { ...opts, parentNoteUrl: notePath };
-
-                note_create.createNote(
-                    normalizedOpts
-                ).then(({ branch }) => {
+            const noteUrl = customOpts.parentNoteUrl ?? parentNotePath;
+            if (noteUrl) {
+                customOpts.parentNoteUrl = noteUrl;
+                customOpts.activate = false;
+                note_create.createNote(customOpts).then(({ branch }) => {
                     if (branch) {
                         setTimeout(() => {
                             if (!api.current) return;
@@ -39,6 +30,7 @@ export default function useRowTableEditing(api: RefObject<Tabulator>, attributeD
                         }, 100);
                     }
                 })
+
             }
         }
     });
