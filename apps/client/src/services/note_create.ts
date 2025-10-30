@@ -124,8 +124,12 @@ async function createNote(
         return createNoteIntoInbox(resolvedOptions);
     }
 
-    // Only "into" | "before" | "after" reach here
-    return createNoteWithUrl(resolvedOptions.target, resolvedOptions);
+    // Only "into" | "before" | "after". the possibility of "inbox" was resolved
+    // a line above
+    return createNoteWithUrl(
+        resolvedOptions.target as "into" | "before" | "after",
+        resolvedOptions
+    );
 }
 
 async function promptForType(
