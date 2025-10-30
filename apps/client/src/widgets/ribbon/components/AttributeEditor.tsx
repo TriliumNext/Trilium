@@ -261,11 +261,6 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
             parentNotePath: string | undefined,
             action: CreateNoteAction
         ): Promise<string> => {
-            if (!parentNotePath) {
-                console.warn("Missing parentNotePath in createNoteFromCkEditor()");
-                return "";
-            }
-
             switch (action) {
                 case CreateNoteAction.CreateNoteIntoInbox:
                 case CreateNoteAction.CreateAndLinkNoteIntoInbox: {
@@ -273,7 +268,8 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                         {
                             target: "inbox",
                             title,
-                            activate: false
+                            activate: false,
+                            promptForType: true,
                         }
                     );
                     return note?.getBestNotePathString() ?? "";
@@ -281,6 +277,10 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
 
                 case CreateNoteAction.CreateNoteIntoPath:
                 case CreateNoteAction.CreateAndLinkNoteIntoPath: {
+                    if (!parentNotePath) {
+                        console.warn("Missing parentNotePath in createNoteFromCkEditor()");
+                        return "";
+                    }
                     const resp = await note_create.createNote(
                         {
                             target: "into",
