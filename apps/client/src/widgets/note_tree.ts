@@ -229,7 +229,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                         target: "into",
                         parentNoteUrl: parentNotePath,
                         isProtected: node.data.isProtected
-                    } as CreateNoteWithUrlOpts,
+                    },
                 );
             } else if (target.classList.contains("enter-workspace-button")) {
                 const node = $.ui.fancytree.getNode(e as unknown as Event);
@@ -1847,7 +1847,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                             target: "into",
                             parentNoteUrl: notePath,
                             isProtected: node.data.isProtected
-                        } as CreateNoteWithUrlOpts
+                        }
                     )
                 }
             }),

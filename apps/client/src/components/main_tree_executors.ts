@@ -55,7 +55,7 @@ export default class MainTreeExecutors extends Component {
                 isProtected: activeNoteContext.note.isProtected,
                 saveSelection: false,
                 promptForType: false,
-            } as CreateNoteWithUrlOpts
+            }
         );
     }
 
@@ -84,7 +84,7 @@ export default class MainTreeExecutors extends Component {
                 targetBranchId: node.data.branchId,
                 isProtected: isProtected,
                 saveSelection: false
-            } as CreateNoteWithUrlOpts
+            }
         );
     }
 }

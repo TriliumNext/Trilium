@@ -29,12 +29,14 @@ export default function MobileDetailMenu() {
                     ],
                     selectMenuItemHandler: async ({ command }) => {
                         if (command === "insertChildNote") {
-                            note_create.createNote(
-                                {
+                            const parentNoteUrl = appContext.tabManager.getActiveContextNotePath();
+
+                            if (parentNoteUrl) {
+                                note_create.createNote({
                                     target: "into",
-                                    parentNoteUrl: appContext.tabManager.getActiveContextNotePath() ?? undefined
-                                } as CreateNoteWithUrlOpts
-                            );
+                                    parentNoteUrl,
+                                });
+                            }
                         } else if (command === "delete") {
                             const notePath = appContext.tabManager.getActiveContextNotePath();
                             if (!notePath) {

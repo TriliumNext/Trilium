@@ -250,7 +250,7 @@ export default class RootCommandExecutor extends Component {
                         messages: [],
                         title: "New AI Chat"
                     }),
-                } as CreateNoteWithUrlOpts
+                }
             );
 
             if (!result.note) {
