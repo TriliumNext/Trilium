@@ -479,77 +479,25 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                 break;
             }
 
-            // --- CREATE NOTE INTO INBOX ---
-            case SuggestionAction.CreateNoteIntoInbox: {
+            case SuggestionAction.CreateNoteIntoInbox:
+            case SuggestionAction.CreateAndLinkNoteIntoInbox:
+            case SuggestionAction.CreateNoteIntoPath:
+            case SuggestionAction.CreateAndLinkNoteIntoPath: {
+                let target = "inbox";
+                if (
+                    suggestion.action === SuggestionAction.CreateNoteIntoPath ||
+                    suggestion.action === SuggestionAction.CreateAndLinkNoteIntoPath
+                ) {
+                    target = "path";
+                }
+
                 const { note } = await noteCreateService.createNote(
                     {
-                        target: "inbox",
+                        target: target,
                         title: suggestion.noteTitle,
                         activate: true,
                         promptForType: true,
                     } as CreateNoteIntoInboxOpts
-                );
-
-                if (!note) return;
-
-                const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
-                suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
-
-                $el.trigger("autocomplete:noteselected", [suggestion]);
-                $el.autocomplete("close");
-                break;
-            }
-
-            case SuggestionAction.CreateAndLinkNoteIntoInbox: {
-                const { note } = await noteCreateService.createNote(
-                    {
-                        target: "inbox",
-                        title: suggestion.noteTitle,
-                        activate: false,
-                        promptForType: true,
-                    } as CreateNoteIntoInboxOpts,
-                );
-
-                if (!note) return;
-
-                const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
-                suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
-
-                $el.trigger("autocomplete:noteselected", [suggestion]);
-                $el.autocomplete("close");
-                break;
-            }
-
-            case SuggestionAction.CreateNoteIntoPath: {
-                const { note } = await noteCreateService.createNote(
-                    {
-                        target: "into",
-                        parentNoteUrl: suggestion.parentNoteId,
-                        title: suggestion.noteTitle,
-                        activate: true,
-                        promptForType: true,
-                    } as CreateNoteWithUrlOpts,
-                );
-
-                if (!note) return;
-
-                const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
-                suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
-
-                $el.trigger("autocomplete:noteselected", [suggestion]);
-                $el.autocomplete("close");
-                break;
-            }
-
-            case SuggestionAction.CreateAndLinkNoteIntoPath: {
-                const { note } = await noteCreateService.createNote(
-                    {
-                        target: "into",
-                        parentNoteUrl: suggestion.parentNoteId,
-                        title: suggestion.noteTitle,
-                        activate: false,
-                        promptForType: true,
-                    } as CreateNoteWithUrlOpts
                 );
 
                 if (!note) return;
