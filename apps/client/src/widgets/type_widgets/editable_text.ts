@@ -500,42 +500,6 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
     ): Promise<string> {
         try {
             switch (action) {
-                // --- Create note INTO inbox ---
-                case CreateNoteAction.CreateNoteIntoInbox: {
-                    const { note } = await note_create.createNote(
-                        {
-                            target: "inbox",
-                            title,
-                            activate: true,
-                            promptForType: true,
-                        }
-                    );
-
-                    return note?.getBestNotePathString() ?? "";
-                }
-
-                // --- Create note INTO current path ---
-                case CreateNoteAction.CreateNoteIntoPath: {
-                    // This should be impossible but we must specify it anyways
-                    // because it might cause bugs, which the type-check from
-                    // createNote already catches
-                    if (!parentNotePath) {
-                        console.error("Cannot create note: parentNotePath is undefined.");
-                        return "";
-                    }
-                    const { note } = await note_create.createNote(
-                        {
-                            target: "into",
-                            parentNoteUrl: parentNotePath,
-                            title,
-                            activate: true,
-                            promptForType: true,
-                        }
-                    )
-
-                    return note?.getBestNotePathString() ?? "";
-                }
-
                 // --- Create & link note INTO inbox ---
                 case CreateNoteAction.CreateAndLinkNoteIntoInbox: {
                     const { note } = await noteCreateService.createNote(
@@ -570,7 +534,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                 }
 
                 default:
-                    console.warn("Unknown CreateNoteAction:", action);
+                    console.warn("impossible CreateNoteAction state:", action);
                     return "";
             }
         } catch (err) {
