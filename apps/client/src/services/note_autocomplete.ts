@@ -488,7 +488,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                     suggestion.action === SuggestionAction.CreateNoteIntoPath ||
                     suggestion.action === SuggestionAction.CreateAndLinkNoteIntoPath
                 ) {
-                    target = "path";
+                    target = "into";
                 }
 
                 const { note } = await noteCreateService.createNote(
