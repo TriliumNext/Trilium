@@ -48,7 +48,14 @@ type PromptingRule = {
   type?: never;
 } | {
   promptForType?: false;
-  type: string;
+  /**
+   * The note type (e.g. "text", "code", "image", "mermaid", etc.).
+   *
+   * If omitted, the server will automatically default to `"text"`.
+   * TypeScript still enforces explicit typing unless `promptForType` is true,
+   * to encourage clarity at the call site.
+   */
+  type?: string;
 };
 
 
@@ -120,16 +127,15 @@ async function createNote(
         resolvedOptions = maybeResolvedOptions;
     }
 
-    if (resolvedOptions.target === "inbox") {
-        return createNoteIntoInbox(resolvedOptions);
-    }
 
-    // Only "into" | "before" | "after". the possibility of "inbox" was resolved
-    // a line above
-    return createNoteWithUrl(
-        resolvedOptions.target as "into" | "before" | "after",
-        resolvedOptions
-    );
+    switch(resolvedOptions.target) {
+        case "inbox":
+            return createNoteIntoInbox(resolvedOptions);
+        case "into":
+        case "before":
+        case "after":
+            return createNoteWithUrl(resolvedOptions.target, resolvedOptions);
+    }
 }
 
 async function promptForType(
@@ -141,12 +147,12 @@ async function promptForType(
         return null;
     }
 
-    let resolvedOptions = {
+    let resolvedOptions: CreateNoteOpts = {
         ...options,
         promptForType: false,
         type: noteType,
         templateNoteId,
-    } as CreateNoteOpts;
+    };
 
     if (notePath) {
         resolvedOptions = resolvedOptions as CreateNoteWithUrlOpts;
@@ -154,7 +160,7 @@ async function promptForType(
             ...resolvedOptions,
             target: "into",
             parentNoteUrl: notePath,
-        } as CreateNoteWithUrlOpts;
+        };
     }
 
     return resolvedOptions;
@@ -269,7 +275,7 @@ async function createNoteIntoInbox(
             ...options,
             target: "into",
             parentNoteUrl: inboxNote.noteId,
-        } as CreateNoteWithUrlOpts
+        }
     );
 
     return result;

@@ -19,11 +19,18 @@ export default function useRowTableEditing(api: RefObject<Tabulator>, attributeD
                     activate: false,
                     ...customOpts
                 }
+
+                // Normalize "inbox" targets into standard path-based creation.
+                // When adding a new row, we always have a concrete parent path (`notePath`),
+                // so even if the originating command requested an "inbox" creation,
+                // it should instead behave as "into" under the current note.
+                const normalizedOpts: CreateNoteWithUrlOpts =
+                    opts.target === "inbox"
+                        ? { ...opts, target: "into", parentNoteUrl: notePath }
+                        : { ...opts, parentNoteUrl: notePath };
+
                 note_create.createNote(
-                    {
-                        parentNoteUrl: notePath,
-                        ...opts
-                    } as CreateNoteWithUrlOpts
+                    normalizedOpts
                 ).then(({ branch }) => {
                     if (branch) {
                         setTimeout(() => {
