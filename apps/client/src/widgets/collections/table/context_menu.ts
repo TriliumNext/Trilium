@@ -182,7 +182,6 @@ export function showRowContextMenu(parentComponent: Component, e: MouseEvent, ro
                 uiIcon: "bx bx-horizontal-left bx-rotate-90",
                 enabled: !sorters.length,
                 handler: () => parentComponent?.triggerCommand("addNewRow", {
-                    parentNotePath: parentNoteId,
                     customOpts: {
                         parentNoteUrl: parentNoteId,
                         target: "before",
@@ -200,7 +199,6 @@ export function showRowContextMenu(parentComponent: Component, e: MouseEvent, ro
                         return;
                     }
                     parentComponent?.triggerCommand("addNewRow", {
-                        parentNotePath: note.noteId,
                         customOpts: {
                             parentNoteUrl: note.noteId,
                             target: "after",
@@ -214,7 +212,6 @@ export function showRowContextMenu(parentComponent: Component, e: MouseEvent, ro
                 uiIcon: "bx bx-horizontal-left bx-rotate-270",
                 enabled: !sorters.length,
                 handler: () => parentComponent?.triggerCommand("addNewRow", {
-                    parentNotePath: parentNoteId,
                     customOpts: {
                         parentNoteUrl: parentNoteId,
                         target: "after",
