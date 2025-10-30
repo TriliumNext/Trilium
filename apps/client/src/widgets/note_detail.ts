@@ -436,7 +436,7 @@ export default class NoteDetailWidget extends NoteContextAwareWidget {
                     isProtected: note.isProtected,
                     saveSelection: true,
                     textEditor: await this.noteContext.getTextEditor()
-                } as CreateNoteWithUrlOpts
+                }
             );
         }
     }
