@@ -266,7 +266,7 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                             target: "inbox",
                             title,
                             activate: false
-                        } as CreateNoteIntoInboxOpts
+                        }
                     );
                     return note?.getBestNotePathString() ?? "";
                 }
@@ -280,7 +280,7 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                             title,
                             activate: false,
                             promptForType: true,
-                        } as CreateNoteWithUrlOpts,
+                        },
                     )
                     return resp?.note?.getBestNotePathString() ?? "";
                 }
