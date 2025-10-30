@@ -80,10 +80,10 @@ You don't need to tell the LLM to execute a certain tool, it should “smartly�
 
 ## Overview
 
-Now that you know about embeddings and tools, you can just go ahead and use the “Chat with Notes” button, where you can go ahead and start chatting!:
+Now that you know about embeddings and tools, you can use the “Chat with Notes” button in the Launchbar on the left side, where you can go ahead and start chatting!
 
 <figure class="image image_resized" style="width:60.77%;"><img style="aspect-ratio:1378/539;" src="2_Introduction_image.png" width="1378" height="539"></figure>
 
-If you don't see the “Chat with Notes” button on your side launchbar, you might need to move it from the “Available Launchers” section to the “Visible Launchers” section:
+If you don't see the “Chat with Notes” button on your Launchbar, you might need to move it from the “Available Launchers” section to the “Visible Launchers” section. Right click on the Launchbar, and choose "Configure Launcher":
 
 <figure class="image image_resized" style="width:69.81%;"><img style="aspect-ratio:1765/1287;" src="9_Introduction_image.png" width="1765" height="1287"></figure>
