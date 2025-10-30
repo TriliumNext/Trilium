@@ -480,24 +480,38 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
             }
 
             case SuggestionAction.CreateNoteIntoInbox:
-            case SuggestionAction.CreateAndLinkNoteIntoInbox:
-            case SuggestionAction.CreateNoteIntoPath:
-            case SuggestionAction.CreateAndLinkNoteIntoPath: {
-                let target = "inbox";
-                if (
-                    suggestion.action === SuggestionAction.CreateNoteIntoPath ||
-                    suggestion.action === SuggestionAction.CreateAndLinkNoteIntoPath
-                ) {
-                    target = "into";
-                }
-
+            case SuggestionAction.CreateAndLinkNoteIntoInbox: {
                 const { note } = await noteCreateService.createNote(
                     {
-                        target: target,
+                        target: "inbox",
                         title: suggestion.noteTitle,
                         activate: true,
                         promptForType: true,
                     } as CreateNoteIntoInboxOpts
+                );
+
+                if (!note) return;
+
+                const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
+                suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
+
+                $el.trigger("autocomplete:noteselected", [suggestion]);
+                $el.autocomplete("close");
+                break;
+            }
+
+            case SuggestionAction.CreateNoteIntoPath:
+            case SuggestionAction.CreateAndLinkNoteIntoPath: {
+                if (!suggestion.parentNoteId) return;
+
+                const { note } = await noteCreateService.createNote(
+                    {
+                        parentNoteUrl: suggestion.parentNoteId,
+                        target: "into",
+                        title: suggestion.noteTitle,
+                        activate: true,
+                        promptForType: true,
+                    },
                 );
 
                 if (!note) return;
