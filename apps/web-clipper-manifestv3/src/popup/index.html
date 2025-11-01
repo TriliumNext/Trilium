@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trilium Web Clipper</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="popup-container">
+        <header class="popup-header">
+            <h1 class="popup-title">
+                <img src="../icons/icon-32.png" alt="Trilium" class="popup-icon">
+                Trilium Web Clipper
+            </h1>
+            <div id="persistent-connection-status" class="persistent-connection-status" title="Connection status">
+                <span class="persistent-status-dot disconnected"></span>
+            </div>
+        </header>
+
+        <main class="popup-main">
+            <div class="action-buttons">
+                <button id="save-selection" class="action-btn" title="Ctrl+Shift+S">
+                    <span class="btn-icon">✂</span>
+                    <span class="btn-text">Save Selection</span>
+                </button>
+
+                <button id="save-page" class="action-btn" title="Alt+Shift+S">
+                    <span class="btn-icon">□</span>
+                    <span class="btn-text">Save Full Page</span>
+                </button>
+
+                <button id="save-screenshot" class="action-btn" title="Ctrl+Shift+E">
+                    <span class="btn-icon">⊞</span>
+                    <span class="btn-text">Save Screenshot</span>
+                </button>
+            </div>
+
+            <div class="status-section">
+                <div id="status-message" class="status-message hidden">
+                    <span id="status-text"></span>
+                </div>
+
+                <div id="progress-bar" class="progress-bar hidden">
+                    <div class="progress-fill"></div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <div class="current-page">
+                    <h3>Current Page</h3>
+                    <p id="page-title" class="page-title">Loading...</p>
+                    <p id="page-url" class="page-url">Loading...</p>
+                    
+                    <!-- Already clipped indicator -->
+                    <div id="already-clipped" class="already-clipped hidden">
+                        <div class="clipped-label">
+                            <span class="clipped-icon">✓</span>
+                            <span class="clipped-text">Already saved today</span>
+                        </div>
+                        <a id="open-note-link" class="open-note-link" href="#" title="Open this note in Trilium">
+                            Open in Trilium →
+                        </a>
+                    </div>
+                </div>
+
+                <div class="trilium-status">
+                    <h3>Trilium Connection</h3>
+                    <div id="connection-status" class="connection-status">
+                        <span class="status-indicator"></span>
+                        <span id="connection-text">Checking...</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Settings Panel (hidden by default) -->
+        <div id="settings-panel" class="settings-panel hidden">
+            <div class="settings-header">
+                <button id="back-to-main" class="back-btn">
+                    <span class="btn-icon">←</span>
+                    Back
+                </button>
+                <h2>Settings</h2>
+            </div>
+            
+            <div class="settings-content">
+                <form id="settings-form">
+                    <div class="connection-section">
+                        <h3>Connection Settings</h3>
+                        
+                        <div class="connection-subsection">
+                            <h4>Trilium Server</h4>
+                            <div class="form-group">
+                                <label for="trilium-url">Server URL:</label>
+                                <input type="url" id="trilium-url" placeholder="http://localhost:8080">
+                                <small>Enter the URL of your Trilium server (optional)</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="enable-server" checked>
+                                    <span>Enable server connection</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="connection-subsection">
+                            <h4>Trilium Desktop Client</h4>
+                            <div class="form-group">
+                                <label for="desktop-port">Desktop Client Port:</label>
+                                <input type="number" id="desktop-port" placeholder="37840" min="1" max="65535">
+                                <small>Port number for local Trilium desktop client (optional)</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="enable-desktop" checked>
+                                    <span>Enable desktop client connection</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="connection-test">
+                            <button type="button" id="test-connection" class="secondary-btn">Test Connections</button>
+                            <div id="connection-result" class="connection-result hidden">
+                                <span class="connection-status-dot"></span>
+                                <span id="connection-result-text">Not tested</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="content-section">
+                        <h3>Content Settings</h3>
+                        <div class="form-group">
+                            <label for="default-title">Note Title Template:</label>
+                            <input type="text" id="default-title" placeholder="Web Clip - {title}" required>
+                            <small>Use {title}, {url}, {date}</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="screenshot-format">Screenshot Format:</label>
+                            <select id="screenshot-format">
+                                <option value="png">PNG (Higher Quality)</option>
+                                <option value="jpeg">JPEG (Smaller Size)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="auto-save">
+                                <span>Enable auto-save for selections</span>
+                            </label>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="enable-toasts" checked>
+                                <span>Show toast notifications</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="theme-section">
+                        <h3>Theme Settings</h3>
+                        <div class="theme-options">
+                            <label class="theme-option">
+                                <input type="radio" name="theme" value="light">
+                                <span>Light</span>
+                            </label>
+                            <label class="theme-option">
+                                <input type="radio" name="theme" value="dark">
+                                <span>Dark</span>
+                            </label>
+                            <label class="theme-option">
+                                <input type="radio" name="theme" value="system">
+                                <span>System</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button type="submit" class="primary-btn">Save Settings</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <footer class="popup-footer">
+            <button id="open-settings" class="footer-btn">
+                <span class="btn-icon">⚙</span>
+                Settings
+            </button>
+            
+            <button id="view-logs" class="footer-btn">
+                <span class="btn-icon">≡</span>
+                Logs
+            </button>
+            
+            <button id="theme-toggle" class="footer-btn theme-toggle" title="Toggle theme">
+                <span class="btn-icon">☽</span>
+                <span id="theme-text">Dark</span>
+            </button>
+            
+            <button id="help" class="footer-btn">
+                <span class="btn-icon">?</span>
+                Help
+            </button>
+        </footer>
+    </div>
+
+    <script type="module" src="popup.ts"></script>
+</body>
+</html>
