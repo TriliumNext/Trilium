@@ -36,20 +36,22 @@ vi.mock('./constants/llm_prompt_constants.js', () => ({
 }));
 
 vi.mock('./pipeline/chat_pipeline.js', () => ({
-    ChatPipeline: vi.fn().mockImplementation((config) => ({
-        config,
-        execute: vi.fn(),
-        getMetrics: vi.fn(),
-        resetMetrics: vi.fn(),
-        stages: {
-            contextExtraction: {
-                execute: vi.fn()
-            },
-            semanticContextExtraction: {
-                execute: vi.fn()
+    ChatPipeline: vi.fn().mockImplementation(function (config) {
+        Object.assign(this, {
+            config,
+            execute: vi.fn(),
+            getMetrics: vi.fn(),
+            resetMetrics: vi.fn(),
+            stages: {
+                contextExtraction: {
+                    execute: vi.fn()
+                },
+                semanticContextExtraction: {
+                    execute: vi.fn()
+                }
             }
-        }
-    }))
+        });
+    });
 }));
 
 vi.mock('./ai_service_manager.js', () => ({
@@ -67,12 +69,12 @@ describe('ChatService', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        
+
         // Get mocked modules
         mockChatStorageService = (await import('./chat_storage_service.js')).default;
         mockAiServiceManager = (await import('./ai_service_manager.js')).default;
         mockLog = (await import('../log.js')).default;
-        
+
         // Setup pipeline mock
         mockChatPipeline = {
             execute: vi.fn(),
@@ -87,10 +89,10 @@ describe('ChatService', () => {
                 }
             }
         };
-        
+
         // Create a new ChatService instance
         chatService = new ChatService();
-        
+
         // Replace the internal pipelines with our mock
         (chatService as any).pipelines.set('default', mockChatPipeline);
         (chatService as any).pipelines.set('agent', mockChatPipeline);
@@ -228,7 +230,7 @@ describe('ChatService', () => {
 
         it('should create new session if not found', async () => {
             mockChatStorageService.getChat.mockResolvedValueOnce(null);
-            
+
             const mockNewChat = {
                 id: 'chat-new',
                 title: 'New Chat',
@@ -301,7 +303,7 @@ describe('ChatService', () => {
 
             mockChatStorageService.getChat.mockResolvedValue(mockChat);
             mockChatStorageService.updateChat.mockResolvedValue(mockChat);
-            
+
             mockChatPipeline.execute.mockResolvedValue({
                 text: 'Hello! How can I help you?',
                 model: 'gpt-3.5-turbo',
@@ -435,7 +437,7 @@ describe('ChatService', () => {
 
             mockChatStorageService.getChat.mockResolvedValue(mockChat);
             mockChatStorageService.updateChat.mockResolvedValue(mockChat);
-            
+
             mockChatPipeline.execute.mockResolvedValue({
                 text: 'Based on the context, here is my response.',
                 model: 'gpt-4',
@@ -841,7 +843,7 @@ describe('ChatService', () => {
 
         it('should return default title for empty or invalid messages', () => {
             const generateTitle = (chatService as any).generateTitleFromMessages.bind(chatService);
-            
+
             expect(generateTitle([])).toBe('New Chat');
             expect(generateTitle([{ role: 'assistant', content: 'Hello' }])).toBe('New Chat');
         });

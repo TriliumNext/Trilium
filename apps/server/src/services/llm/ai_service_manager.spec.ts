@@ -35,24 +35,24 @@ vi.mock('../log.js', () => ({
 }));
 
 vi.mock('./providers/anthropic_service.js', () => ({
-    AnthropicService: vi.fn().mockImplementation(() => ({
-        isAvailable: vi.fn().mockReturnValue(true),
-        generateChatCompletion: vi.fn()
-    }))
+    AnthropicService: vi.fn().mockImplementation(function () {
+        this.isAvailable = vi.fn().mockReturnValue(true);
+        this.generateChatCompletion = vi.fn();
+    })
 }));
 
 vi.mock('./providers/openai_service.js', () => ({
-    OpenAIService: vi.fn().mockImplementation(() => ({
-        isAvailable: vi.fn().mockReturnValue(true),
-        generateChatCompletion: vi.fn()
-    }))
+    OpenAIService: vi.fn().mockImplementation(function () {
+        this.isAvailable = vi.fn().mockReturnValue(true);
+        this.generateChatCompletion = vi.fn();
+    };
 }));
 
 vi.mock('./providers/ollama_service.js', () => ({
-    OllamaService: vi.fn().mockImplementation(() => ({
-        isAvailable: vi.fn().mockReturnValue(true),
-        generateChatCompletion: vi.fn()
-    }))
+    OllamaService: vi.fn().mockImplementation(function () {
+        this.isAvailable = vi.fn().mockReturnValue(true);
+        this.generateChatCompletion = vi.fn();
+    })
 }));
 
 vi.mock('./config/configuration_helpers.js', () => ({
@@ -65,7 +65,7 @@ vi.mock('./config/configuration_helpers.js', () => ({
 }));
 
 vi.mock('./context/index.js', () => ({
-    ContextExtractor: vi.fn().mockImplementation(() => ({}))
+    ContextExtractor: vi.fn().mockImplementation(function () {})
 }));
 
 vi.mock('./context_extractors/index.js', () => ({

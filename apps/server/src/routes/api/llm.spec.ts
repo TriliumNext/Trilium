@@ -52,9 +52,9 @@ vi.mock("../../services/llm/ai_service_manager.js", () => ({
 
 // Mock chat pipeline
 const mockChatPipelineExecute = vi.fn();
-const MockChatPipeline = vi.fn().mockImplementation(() => ({
-    execute: mockChatPipelineExecute
-}));
+const MockChatPipeline = vi.fn().mockImplementation(function () {
+    this.execute = mockChatPipelineExecute;
+});
 vi.mock("../../services/llm/pipeline/chat_pipeline.js", () => ({
     ChatPipeline: MockChatPipeline
 }));
