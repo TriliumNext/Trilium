@@ -29,6 +29,38 @@ import type { NoteParams } from "./note-interface.js";
 import imageService from "./image.js";
 import { t } from "i18next";
 
+/**
+ * Helper function to create note ownership record for collaborative multi-user support
+ */
+function createNoteOwnership(noteId: string, ownerId: number) {
+    try {
+        const now = new Date().toISOString();
+        sql.execute(
+            "INSERT OR IGNORE INTO note_ownership (noteId, ownerId, utcDateCreated) VALUES (?, ?, ?)",
+            [noteId, ownerId, now]
+        );
+    } catch (e) {
+        // Silently fail if table doesn't exist (backward compatibility)
+    }
+}
+
+/**
+ * Get userId from current context (session or default to admin)
+ */
+function getCurrentUserId(): number {
+    try {
+        // Try to get userId from CLS (context local storage) if set
+        const userId = cls.get('userId');
+        if (userId) {
+            return userId;
+        }
+    } catch (e) {
+        // CLS not available or userId not set
+    }
+    
+    // Default to admin user (userId = 1) for backward compatibility
+    return 1;
+}
 interface FoundLink {
     name: "imageLink" | "internalLink" | "includeNoteLink" | "relationMapLink";
     value: string;
@@ -244,6 +276,10 @@ function createNewNote(params: NoteParams): {
         eventService.emit(eventService.ENTITY_CREATED, { entityName: "branches", entity: branch });
         eventService.emit(eventService.ENTITY_CHANGED, { entityName: "branches", entity: branch });
         eventService.emit(eventService.CHILD_NOTE_CREATED, { childNote: note, parentNote: parentNote });
+
+        // Create ownership record for collaborative multi-user support
+        const userId = getCurrentUserId();
+        createNoteOwnership(note.noteId, userId);
 
         log.info(`Created new note '${note.noteId}', branch '${branch.branchId}' of type '${note.type}', mime '${note.mime}'`);
 
