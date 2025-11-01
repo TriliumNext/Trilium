@@ -9,7 +9,7 @@ import froca from "../services/froca.js";
 import utils from "../services/utils.js";
 import LlmChatPanel from "../widgets/llm_chat_panel.js";
 import toastService from "../services/toast.js";
-import noteCreateService from "../services/note_create.js";
+import noteCreateService, { CreateNoteWithUrlOpts } from "../services/note_create.js";
 
 export default class RootCommandExecutor extends Component {
     editReadOnlyNoteCommand() {
@@ -233,14 +233,18 @@ export default class RootCommandExecutor extends Component {
             // Create a new AI Chat note at the root level
             const rootNoteId = "root";
 
-            const result = await noteCreateService.createNote(rootNoteId, {
-                title: "New AI Chat",
-                type: "aiChat",
-                content: JSON.stringify({
-                    messages: [],
-                    title: "New AI Chat"
-                })
-            });
+            const result = await noteCreateService.createNote(
+                {
+                    parentNoteUrl: rootNoteId,
+                    target: "into",
+                    title: "New AI Chat",
+                    type: "aiChat",
+                    content: JSON.stringify({
+                        messages: [],
+                        title: "New AI Chat"
+                    }),
+                }
+            );
 
             if (!result.note) {
                 toastService.showError("Failed to create AI Chat note");

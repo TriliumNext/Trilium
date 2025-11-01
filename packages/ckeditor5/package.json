@@ -6,6 +6,7 @@
   "type": "module",
   "main": "./src/index.ts",
   "dependencies": {
+    "@triliumnext/commons": "workspace:*",
     "@triliumnext/ckeditor5-admonition": "workspace:*",
     "@triliumnext/ckeditor5-footnotes": "workspace:*",
     "@triliumnext/ckeditor5-keyboard-marker": "workspace:*",
