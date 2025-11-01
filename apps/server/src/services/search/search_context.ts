@@ -24,6 +24,7 @@ class SearchContext {
     fulltextQuery: string;
     dbLoadNeeded: boolean;
     error: string | null;
+    ftsInternalSearchTime: number | null; // Time spent in actual FTS search (excluding diagnostics)
 
     constructor(params: SearchParams = {}) {
         this.fastSearch = !!params.fastSearch;
@@ -54,6 +55,7 @@ class SearchContext {
         // and some extra data needs to be loaded before executing
         this.dbLoadNeeded = false;
         this.error = null;
+        this.ftsInternalSearchTime = null;
     }
 
     addError(error: string) {
