@@ -25,27 +25,28 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 | [Japanese](./docs/README-ja.md) | [Italian](./docs/README-it.md) |
 [Spanish](./docs/README-es.md)
 
-Trilium Notes is a free and open-source, cross-platform hierarchical note taking
-application with focus on building large personal knowledge bases.
+Trilium Notes é uma aplicação gratuita e de código aberto, multiplataforma, para
+a criação hierárquica de notas, com foco na construção de grandes bases de
+conhecimento pessoais.
 
 See [screenshots](https://triliumnext.github.io/Docs/Wiki/screenshot-tour) for
 quick overview:
 
 <a href="https://triliumnext.github.io/Docs/Wiki/screenshot-tour"><img src="./docs/app.png" alt="Trilium Screenshot" width="1000"></a>
 
-## ⏬ Download
+## ⏬ Transferir
 - [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
   stable version, recommended for most users.
 - [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
   unstable development version, updated daily with the latest features and
   fixes.
 
-## 📚 Documentation
+## 📚 Documentação
 
 **Visit our comprehensive documentation at
 [docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 
-Our documentation is available in multiple formats:
+A nossa documentação está disponível em múltiplos formatos:
 - **Online Documentation**: Browse the full documentation at
   [docs.triliumnotes.org](https://docs.triliumnotes.org/)
 - **In-App Help**: Press `F1` within Trilium to access the same documentation
