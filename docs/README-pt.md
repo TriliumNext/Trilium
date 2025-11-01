@@ -54,7 +54,7 @@ A nossa documentação está disponível em múltiplos formatos:
 - **GitHub**: Navigate through the [User
   Guide](./docs/User%20Guide/User%20Guide/) in this repository
 
-### Quick Links
+### Links rápidos
 - [Getting Started Guide](https://docs.triliumnotes.org/)
 - [Installation
   Instructions](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation.md)
