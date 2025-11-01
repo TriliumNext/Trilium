@@ -2,10 +2,9 @@ import type { Message, ChatCompletionOptions, ChatResponse } from './ai_interfac
 import chatStorageService from './chat_storage_service.js';
 import log from '../log.js';
 import { CONTEXT_PROMPTS, ERROR_PROMPTS } from './constants/llm_prompt_constants.js';
-import { ChatPipeline } from './pipeline/chat_pipeline.js';
-import type { ChatPipelineConfig, StreamCallback } from './pipeline/interfaces.js';
+import pipelineV2, { type PipelineV2Input } from './pipeline/pipeline_v2.js';
+import type { StreamCallback } from './pipeline/interfaces.js';
 import aiServiceManager from './ai_service_manager.js';
-import type { ChatPipelineInput } from './pipeline/interfaces.js';
 import type { NoteSearchResult } from './interfaces/context_interfaces.js';
 
 // Update the ChatCompletionOptions interface to include the missing properties
@@ -35,43 +34,13 @@ export interface ChatSession {
 }
 
 /**
- * Chat pipeline configurations for different use cases
- */
-const PIPELINE_CONFIGS: Record<string, Partial<ChatPipelineConfig>> = {
-    default: {
-        enableStreaming: true,
-        enableMetrics: true
-    },
-    agent: {
-        enableStreaming: true,
-        enableMetrics: true,
-        maxToolCallIterations: 5
-    },
-    performance: {
-        enableStreaming: false,
-        enableMetrics: true
-    }
-};
-
-/**
  * Service for managing chat interactions and history
  */
 export class ChatService {
     private sessionCache: Map<string, ChatSession> = new Map();
-    private pipelines: Map<string, ChatPipeline> = new Map();
 
     constructor() {
-        // Initialize pipelines
-        Object.entries(PIPELINE_CONFIGS).forEach(([name, config]) => {
-            this.pipelines.set(name, new ChatPipeline(config));
-        });
-    }
-
-    /**
-     * Get a pipeline by name, or the default one
-     */
-    private getPipeline(name: string = 'default'): ChatPipeline {
-        return this.pipelines.get(name) || this.pipelines.get('default')!;
+        // Pipeline V2 is used directly as a singleton, no initialization needed
     }
 
     /**
@@ -156,17 +125,15 @@ export class ChatService {
             // Log message processing
             log.info(`Processing message: "${content.substring(0, 100)}..."`);
 
-            // Select pipeline to use
-            const pipeline = this.getPipeline();
-
             // Include sessionId in the options for tool execution tracking
             const pipelineOptions = {
                 ...(options || session.options || {}),
-                sessionId: session.id
+                sessionId: session.id,
+                enableTools: options?.enableTools !== false
             };
 
             // Execute the pipeline
-            const response = await pipeline.execute({
+            const response = await pipelineV2.execute({
                 messages: session.messages,
                 options: pipelineOptions,
                 query: content,
@@ -261,26 +228,20 @@ export class ChatService {
             log.info(`Processing context-aware message: "${content.substring(0, 100)}..."`);
             log.info(`Using context from note: ${noteId}`);
 
-            // Get showThinking option if it exists
-            const showThinking = options?.showThinking === true;
-
-            // Select appropriate pipeline based on whether agent tools are needed
-            const pipelineType = showThinking ? 'agent' : 'default';
-            const pipeline = this.getPipeline(pipelineType);
-
             // Include sessionId in the options for tool execution tracking
             const pipelineOptions = {
                 ...(options || session.options || {}),
-                sessionId: session.id
+                sessionId: session.id,
+                useAdvancedContext: true,
+                enableTools: options?.enableTools !== false
             };
 
             // Execute the pipeline with note context
-            const response = await pipeline.execute({
+            const response = await pipelineV2.execute({
                 messages: session.messages,
                 options: pipelineOptions,
                 noteId,
                 query: content,
-                showThinking,
                 streamCallback
             });
 
@@ -351,6 +312,9 @@ export class ChatService {
      * @param noteId - The ID of the note to add context from
      * @param useSmartContext - Whether to use smart context extraction (default: true)
      * @returns The updated chat session
+     *
+     * @deprecated This method directly accesses legacy pipeline stages.
+     * Consider using sendContextAwareMessage() instead which uses the V2 pipeline.
      */
     async addNoteContext(sessionId: string, noteId: string, useSmartContext = true): Promise<ChatSession> {
         const session = await this.getOrCreateSession(sessionId);
@@ -359,89 +323,93 @@ export class ChatService {
         const lastUserMessage = [...session.messages].reverse()
             .find(msg => msg.role === 'user' && msg.content.length > 10)?.content || '';
 
-        // Use the context extraction stage from the pipeline
-        const pipeline = this.getPipeline();
-        const contextResult = await pipeline.stages.contextExtraction.execute({
-            noteId,
-            query: lastUserMessage,
-            useSmartContext
-        }) as ContextExtractionResult;
+        // Use context service directly instead of pipeline stages
+        try {
+            const contextService = await import('./context/services/context_service.js');
+            if (contextService?.default?.findRelevantNotes) {
+                const results = await contextService.default.findRelevantNotes(lastUserMessage, noteId, {
+                    maxResults: 5,
+                    summarize: true
+                });
 
-        const contextMessage: Message = {
-            role: 'user',
-            content: CONTEXT_PROMPTS.NOTE_CONTEXT_PROMPT.replace('{context}', contextResult.context)
-        };
+                if (results && results.length > 0) {
+                    const context = results.map(r => `${r.title}: ${r.content}`).join('\n\n');
+                    const contextMessage: Message = {
+                        role: 'user',
+                        content: CONTEXT_PROMPTS.NOTE_CONTEXT_PROMPT.replace('{context}', context)
+                    };
 
-        session.messages.push(contextMessage);
+                    session.messages.push(contextMessage);
 
-        // Store the context note id in metadata
-        const metadata = {
-            contextNoteId: noteId
-        };
+                    // Store the context note id in metadata
+                    const metadata = { contextNoteId: noteId };
 
-        // Check if the context extraction result has sources
-        if (contextResult.sources && contextResult.sources.length > 0) {
-            // Convert the sources to match expected format (handling null vs undefined)
-            const sources = contextResult.sources.map(source => ({
-                noteId: source.noteId,
-                title: source.title,
-                similarity: source.similarity,
-                // Replace null with undefined for content
-                content: source.content === null ? undefined : source.content
-            }));
+                    // Convert results to sources format
+                    const sources = results.map(source => ({
+                        noteId: source.noteId,
+                        title: source.title,
+                        similarity: source.similarity,
+                        content: source.content === null ? undefined : source.content
+                    }));
 
-            // Store these sources in metadata
-            await chatStorageService.recordSources(session.id, sources);
+                    await chatStorageService.recordSources(session.id, sources);
+                    await chatStorageService.updateChat(session.id, session.messages, undefined, metadata);
+                }
+            }
+        } catch (error) {
+            log.error(`Error adding note context: ${error}`);
         }
-
-        await chatStorageService.updateChat(session.id, session.messages, undefined, metadata);
 
         return session;
     }
 
     /**
      * Add semantically relevant context from a note based on a specific query
+     *
+     * @deprecated This method directly accesses legacy pipeline stages.
+     * Consider using sendContextAwareMessage() instead which uses the V2 pipeline.
      */
     async addSemanticNoteContext(sessionId: string, noteId: string, query: string): Promise<ChatSession> {
         const session = await this.getOrCreateSession(sessionId);
 
-        // Use the semantic context extraction stage from the pipeline
-        const pipeline = this.getPipeline();
-        const contextResult = await pipeline.stages.semanticContextExtraction.execute({
-            noteId,
-            query
-        });
+        // Use context service directly instead of pipeline stages
+        try {
+            const contextService = await import('./context/services/context_service.js');
+            if (contextService?.default?.findRelevantNotes) {
+                const results = await contextService.default.findRelevantNotes(query, noteId, {
+                    maxResults: 5,
+                    summarize: true
+                });
 
-        const contextMessage: Message = {
-            role: 'user',
-            content: CONTEXT_PROMPTS.SEMANTIC_NOTE_CONTEXT_PROMPT
-                .replace('{query}', query)
-                .replace('{context}', contextResult.context)
-        };
+                if (results && results.length > 0) {
+                    const context = results.map(r => `${r.title}: ${r.content}`).join('\n\n');
+                    const contextMessage: Message = {
+                        role: 'user',
+                        content: CONTEXT_PROMPTS.SEMANTIC_NOTE_CONTEXT_PROMPT
+                            .replace('{query}', query)
+                            .replace('{context}', context)
+                    };
 
-        session.messages.push(contextMessage);
+                    session.messages.push(contextMessage);
 
-        // Store the context note id and query in metadata
-        const metadata = {
-            contextNoteId: noteId
-        };
+                    // Store the context note id and query in metadata
+                    const metadata = { contextNoteId: noteId };
 
-        // Check if the semantic context extraction result has sources
-        const contextSources = (contextResult as ContextExtractionResult).sources || [];
-        if (contextSources && contextSources.length > 0) {
-            // Convert the sources to the format expected by recordSources
-            const sources = contextSources.map((source) => ({
-                noteId: source.noteId,
-                title: source.title,
-                similarity: source.similarity,
-                content: source.content === null ? undefined : source.content
-            }));
+                    // Convert results to sources format
+                    const sources = results.map(source => ({
+                        noteId: source.noteId,
+                        title: source.title,
+                        similarity: source.similarity,
+                        content: source.content === null ? undefined : source.content
+                    }));
 
-            // Store these sources in metadata
-            await chatStorageService.recordSources(session.id, sources);
+                    await chatStorageService.recordSources(session.id, sources);
+                    await chatStorageService.updateChat(session.id, session.messages, undefined, metadata);
+                }
+            }
+        } catch (error) {
+            log.error(`Error adding semantic note context: ${error}`);
         }
-
-        await chatStorageService.updateChat(session.id, session.messages, undefined, metadata);
 
         return session;
     }
@@ -486,18 +454,22 @@ export class ChatService {
 
     /**
      * Get pipeline performance metrics
+     *
+     * @deprecated Pipeline V2 uses structured logging instead of metrics.
+     * Check logs for performance data.
      */
-    getPipelineMetrics(pipelineType: string = 'default'): unknown {
-        const pipeline = this.getPipeline(pipelineType);
-        return pipeline.getMetrics();
+    getPipelineMetrics(): unknown {
+        log.warn('getPipelineMetrics() is deprecated. Pipeline V2 uses structured logging.');
+        return { message: 'Metrics deprecated. Use structured logs instead.' };
     }
 
     /**
      * Reset pipeline metrics
+     *
+     * @deprecated Pipeline V2 uses structured logging instead of metrics.
      */
-    resetPipelineMetrics(pipelineType: string = 'default'): void {
-        const pipeline = this.getPipeline(pipelineType);
-        pipeline.resetMetrics();
+    resetPipelineMetrics(): void {
+        log.warn('resetPipelineMetrics() is deprecated. Pipeline V2 uses structured logging.');
     }
 
     /**
@@ -533,7 +505,7 @@ export class ChatService {
     async generateChatCompletion(messages: Message[], options: ChatCompletionOptions = {}): Promise<ChatResponse> {
         log.info(`========== CHAT SERVICE FLOW CHECK ==========`);
         log.info(`Entered generateChatCompletion in ChatService`);
-        log.info(`Using pipeline for chat completion: ${this.getPipeline(options.pipeline).constructor.name}`);
+        log.info(`Using pipeline for chat completion: pipelineV2`);
         log.info(`Tool support enabled: ${options.enableTools !== false}`);
 
         try {
@@ -554,16 +526,18 @@ export class ChatService {
                 log.info(`Using chat pipeline for advanced context with query: ${query.substring(0, 50)}...`);
 
                 // Create a pipeline input with the query and messages
-                const pipelineInput: ChatPipelineInput = {
+                const pipelineInput: PipelineV2Input = {
                     messages,
-                    options,
+                    options: {
+                        ...options,
+                        enableTools: options.enableTools !== false
+                    },
                     query,
                     noteId: options.noteId
                 };
 
                 // Execute the pipeline
-                const pipeline = this.getPipeline(options.pipeline);
-                const response = await pipeline.execute(pipelineInput);
+                const response = await pipelineV2.execute(pipelineInput);
                 log.info(`Pipeline execution complete, response contains tools: ${response.tool_calls ? 'yes' : 'no'}`);
                 if (response.tool_calls) {
                     log.info(`Tool calls in pipeline response: ${response.tool_calls.length}`);
