@@ -1,1 +1,19 @@
-{}
+{
+    "get-started": {
+        "title": "Começar",
+        "architecture": "Arquitetura:",
+        "older_releases": "Ver versões anteriores",
+        "server_title": "Configurar um servidor para aceder a partir de vários dispositivos"
+    },
+    "hero_section": {
+        "title": "Organiza as tuas ideias. Constrói a tua base de conhecimento pessoal.",
+        "subtitle": "O Trilium é uma solução de código aberto para tomar notas e organizar a tua base de conhecimento pessoal. Usa-o localmente no teu computador ou sincroniza-o com o teu próprio servidor para teres as tuas notas acessíveis em qualquer lugar.",
+        "get_started": "Começar",
+        "github": "GitHub",
+        "dockerhub": "Docker Hub",
+        "screenshot_alt": "Captura de ecrã da aplicação Trilium Notes para computador"
+    },
+    "organization_benefits": {
+        "title": "Organização"
+    }
+}
