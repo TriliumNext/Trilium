@@ -107,6 +107,8 @@ CREATE TABLE IF NOT EXISTS "recent_notes"
 CREATE TABLE IF NOT EXISTS "blobs" (
                                                `blobId`	TEXT NOT NULL,
                                                `content`	TEXT NULL DEFAULT NULL,
+                                               `contentLocation`	TEXT NOT NULL DEFAULT 'internal',
+                                               `contentLength`	INTEGER NOT NULL DEFAULT 0,
                                                `dateModified` TEXT NOT NULL,
                                                `utcDateModified` TEXT NOT NULL,
                                                PRIMARY KEY(`blobId`)
