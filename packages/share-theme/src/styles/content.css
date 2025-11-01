@@ -25,6 +25,7 @@
 .ck-content pre {
     overflow: auto;
     position: relative;
+    min-width: unset !important;
 }
 
 .ck-content pre .copy-button {
@@ -46,4 +47,24 @@
 
 #content img {
     max-width: 100%;
+    height: auto;
+}
+
+body:not(.math-loaded) .math-tex {
+    visibility: hidden;
+}
+
+body.type-webView #main {
+    max-width: unset;
+}
+
+body.type-webView #content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+iframe.webview {
+    width: 100%;
+    flex-grow: 1;
 }

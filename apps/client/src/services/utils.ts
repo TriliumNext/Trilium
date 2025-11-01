@@ -11,7 +11,11 @@ export function reloadFrontendApp(reason?: string) {
         logInfo(`Frontend app reload: ${reason}`);
     }
 
-    window.location.reload();
+    if (isElectron()) {
+        dynamicRequire("@electron/remote").BrowserWindow.getFocusedWindow()?.reload();
+    } else {
+        window.location.reload();
+    }
 }
 
 export function restartDesktopApp() {

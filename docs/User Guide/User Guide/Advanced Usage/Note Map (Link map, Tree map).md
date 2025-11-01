@@ -10,7 +10,12 @@ There are two types of note map:
 
 ## Link Map
 
-Shows [relations](Attributes.md) between notes:
+The Link map is a visualization of links and <a class="reference-link" href="Attributes/Relations.md">Relations</a> incoming to and outgoing from a particular note.
+
+The map indicates the following types of relations:
+
+*   <a class="reference-link" href="../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> between notes.
+*   <a class="reference-link" href="Attributes/Relations.md">Relations</a>
 
 ![](1_Note%20Map%20\(Link%20map,%20Tree%20m.png)
 

@@ -3,8 +3,8 @@
 <aside
 class="admonition tip">
   <p>While Trilium supports HTTPS on its own, it's generally a good idea to
-    use a <a href="#root/_help_vcjrb3VVYPZI">reverse proxy</a> instead with TLS
-    termination. You can follow a <a href="https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-20-04">guide like this</a> for
+    use a <a href="#root/_help_vcjrb3VVYPZI">reverse proxy</a> instead with TLS termination.
+    You can follow a <a href="https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-20-04">guide like this</a> for
     such setups.</p>
   </aside>
   <h2>Obtaining a TLS Certificate</h2>
@@ -20,8 +20,8 @@ class="admonition tip">
   </ul>
   <h2>Modifying <code>config.ini</code></h2>
   <p>Once you have your certificate, modify the <code>config.ini</code> file
-    in the <a href="#root/_help_tAassRL4RSQL">data directory</a> to configure
-    Trilium to use it:</p><pre><code class="language-text-x-trilium-auto">[Network]
+    in the <a href="#root/_help_tAassRL4RSQL">data directory</a> to configure Trilium
+    to use it:</p><pre><code class="language-text-x-trilium-auto">[Network]
 port=8080
 # Set to true for TLS/SSL/HTTPS (secure), false for HTTP (insecure).
 https=true

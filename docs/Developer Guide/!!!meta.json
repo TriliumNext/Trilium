@@ -1,6 +1,6 @@
 {
     "formatVersion": 2,
-    "appVersion": "0.99.1",
+    "appVersion": "0.99.3",
     "files": [
         {
             "isClone": false,
@@ -1716,6 +1716,33 @@
                             "attributes": [],
                             "format": "markdown",
                             "dataFileName": "Hidden notes.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "vphziLmQeQHY",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "wbVIolLKDhe2",
+                                "vphziLmQeQHY"
+                            ],
+                            "title": "Share",
+                            "notePosition": 260,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-share-alt",
+                                    "isInheritable": false,
+                                    "position": 10
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Share.md",
                             "attachments": []
                         }
                     ]

@@ -14,7 +14,7 @@
 		"preact": "10.27.2",
 		"preact-iso": "2.11.0",
 		"preact-render-to-string": "6.6.3",
-		"react-i18next": "16.2.0"
+		"react-i18next": "16.2.1"
 	},
 	"devDependencies": {
 		"@preact/preset-vite": "2.10.2",

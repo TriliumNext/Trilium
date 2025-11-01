@@ -276,7 +276,8 @@
     "export_filter": "PDF 文档 (*.pdf)",
     "unable-to-export-message": "当前笔记无法被导出为 PDF。",
     "unable-to-export-title": "无法导出为 PDF",
-    "unable-to-save-message": "所选文件不能被写入。重试或选择另一个目的地。"
+    "unable-to-save-message": "所选文件不能被写入。重试或选择另一个目的地。",
+    "unable-to-print": "无法打印笔记"
   },
   "tray": {
     "tooltip": "TriliumNext 笔记",

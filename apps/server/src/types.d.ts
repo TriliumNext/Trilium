@@ -38,3 +38,9 @@ declare module "@triliumnext/share-theme/styles.css" {
     const content: string;
     export default content;
 }
+
+declare module '*.css' {}
+declare module '*?raw' {
+  const src: string
+  export default src
+}

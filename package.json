@@ -26,7 +26,7 @@
     "chore:generate-openapi": "tsx ./scripts/generate-openapi.ts",
     "chore:update-build-info": "tsx ./scripts/update-build-info.ts",
     "chore:update-version": "tsx ./scripts/update-version.ts",
-    "chore:fix-mkdocs-structure": "tsx ./scripts/fix-mkdocs-structure.ts",
+    "docs:build": "pnpm run --filter share-theme build && cd ./apps/edit-docs && tsx ./src/build-docs.ts",
     "edit-docs:edit-docs": "pnpm run --filter edit-docs edit-docs",
     "edit-docs:edit-demo": "pnpm run --filter edit-docs edit-demo",
     "test:all": "pnpm test:parallel && pnpm test:sequential",
@@ -41,8 +41,8 @@
     "@fast-csv/parse": "5.0.5",
     "@playwright/test": "1.56.1",
     "@triliumnext/server": "workspace:*",
-    "@types/express": "5.0.4",
-    "@types/node": "22.18.12",
+    "@types/express": "5.0.5",
+    "@types/node": "24.9.1",
     "@vitest/coverage-v8": "3.2.4",
     "@vitest/ui": "3.2.4",
     "chalk": "5.6.2",
@@ -89,7 +89,7 @@
       "ckeditor5": "patches/ckeditor5.patch"
     },
     "overrides": {
-      "mermaid": "11.12.0",
+      "mermaid": "11.12.1",
       "preact": "10.27.2",
       "roughjs": "4.6.6",
       "@types/express-serve-static-core": "5.1.0",

@@ -1,1 +1,6 @@
-{}
+{
+    "hero_section": {
+        "github": "깃허브",
+        "dockerhub": "도커 허브"
+    }
+}

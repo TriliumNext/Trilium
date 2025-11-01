@@ -1,6 +1,4 @@
-# GitHub Actions workflow for deploying MkDocs documentation to Cloudflare Pages
-# This workflow builds and deploys your MkDocs site when changes are pushed to main
-name: Deploy MkDocs Documentation
+name: Deploy Documentation
 
 on:
   # Trigger on push to main branch
@@ -11,11 +9,8 @@ on:
     # Only run when docs files change
     paths:
       - 'docs/**'
-      - 'README.md'  # README is synced to docs/index.md
-      - 'mkdocs.yml'
-      - 'requirements-docs.txt'
-      - '.github/workflows/deploy-docs.yml'
-      - 'scripts/fix-mkdocs-structure.ts'
+      - 'apps/edit-docs/**'
+      - 'packages/share-theme/**'
 
   # Allow manual triggering from Actions tab
   workflow_dispatch:
@@ -27,15 +22,12 @@ on:
       - master
     paths:
       - 'docs/**'
-      - 'README.md'  # README is synced to docs/index.md
-      - 'mkdocs.yml'
-      - 'requirements-docs.txt'
-      - '.github/workflows/deploy-docs.yml'
-      - 'scripts/fix-mkdocs-structure.ts'
+      - 'apps/edit-docs/**'
+      - 'packages/share-theme/**'
 
 jobs:
   build-and-deploy:
-    name: Build and Deploy MkDocs
+    name: Build and Deploy Documentation
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -49,72 +41,25 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v5
-        with:
-          fetch-depth: 0 # Fetch all history for git info and mkdocs-git-revision-date plugin
 
-      - name: Setup Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.14'
-          cache: 'pip'
-          cache-dependency-path: 'requirements-docs.txt'
-
-      - name: Install MkDocs and Dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r requirements-docs.txt
-        env:
-          PIP_DISABLE_PIP_VERSION_CHECK: 1
-
-      # Setup pnpm before fixing docs structure
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
-      # Setup Node.js with pnpm
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'pnpm'
 
-      # Install Node.js dependencies for the TypeScript script
       - name: Install Dependencies
-        run: |
-          pnpm install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
-      - name: Fix Documentation Structure
-        run: |
-          # Fix duplicate navigation entries by moving overview pages to index.md
-          pnpm run chore:fix-mkdocs-structure
-
-      - name: Build MkDocs Site
-        run: |
-          # Build with strict mode but allow expected warnings
-          mkdocs build --verbose || {
-            EXIT_CODE=$?
-            # Check if the only issue is expected warnings
-            if mkdocs build 2>&1 | grep -E "WARNING.*(README|not found)" && \
-               [ $(mkdocs build 2>&1 | grep -c "ERROR") -eq 0 ]; then
-              echo "✅ Build succeeded with expected warnings"
-              mkdocs build --verbose
-            else
-              echo "❌ Build failed with unexpected errors"
-              exit $EXIT_CODE
-            fi
-          }
-
-      - name: Fix HTML Links
-        run: |
-          # Remove .md extensions from links in generated HTML
-          pnpm tsx ./scripts/fix-html-links.ts site
+      - name: Trigger build of documentation
+        run: pnpm docs:build
 
       - name: Validate Built Site
         run: |
-          # Basic validation that important files exist
           test -f site/index.html || (echo "ERROR: site/index.html not found" && exit 1)
-          test -f site/sitemap.xml || (echo "ERROR: site/sitemap.xml not found" && exit 1)
-          test -d site/assets || (echo "ERROR: site/assets directory not found" && exit 1)
-          echo "✅ Site validation passed"
 
       - name: Deploy
         uses: ./.github/actions/deploy-to-cloudflare-pages

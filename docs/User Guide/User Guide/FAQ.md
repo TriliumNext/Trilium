@@ -1,4 +1,13 @@
 # FAQ
+## Inspiration for the name “Trilium”
+
+> Naming software is hard. I lived in Ontario when I first started the project and Trillium (the flower) is sort of a provincial logo, many institutions in Ontario are named "Trillium \[something\]". So I kept hearing/reading it almost everyday, I liked the sound of it and its nature motif, so I just reused it.
+> 
+> _– Zadam (original Trilium maintainer)_
+
+> [!NOTE]
+> Despite the fact that the Trillium flower has two “l"s, the Trilium application only has one.
+
 ## macOS support
 
 Originally, Trilium Notes considered the macOS build unsupported. TriliumNext commits to make the experience on macOS as good as possible.
@@ -60,7 +69,7 @@ More detailed answer:
 
 ### Why does search sometimes find results with typos?
 
-Trilium uses a progressive search strategy that includes fuzzy matching when exact matches return fewer than 5 results. This finds notes despite minor typos in your search query. You can use fuzzy search operators (`~=` for fuzzy exact match and `~*` for fuzzy contains). See the <a class="reference-link" href="Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a> documentation for details.
+Trilium uses a progressive search strategy that includes fuzzy matching when exact matches return fewer than 5 results. This finds notes despite minor typos in your search query. You can use fuzzy search operators (`~=` for fuzzy exact match and `~*` for fuzzy contains). See the <a class="reference-link" href="Basic%20Concepts%20and%20Features/Navigation/Search.md">Search</a> documentation for details.
 
 ### How can I search for notes when I'm not sure of the exact spelling?
 

@@ -72,14 +72,6 @@ input:checked + .slider:before {
    justify-content: space-between;
 }
 
-.theme-selection.no-transition .slider,
-.theme-selection.no-transition .slider::before,
-.theme-selection.no-transition .dark-icon,
-.theme-selection.no-transition .light-icon {
-    transition: none!important;
-}
-
-
 .theme-selection label {
     position: relative;
 }

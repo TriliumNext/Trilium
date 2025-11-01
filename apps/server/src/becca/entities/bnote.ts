@@ -1758,6 +1758,26 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return childBranches;
     }
 
+    get encodedTitle() {
+        return encodeURIComponent(this.title);
+    }
+
+    getVisibleChildBranches() {
+        return this.getChildBranches().filter((branch) => !branch.getNote().isLabelTruthy("shareHiddenFromTree"));
+    }
+
+    getVisibleChildNotes() {
+        return this.getVisibleChildBranches().map((branch) => branch.getNote());
+    }
+
+    hasVisibleChildren() {
+        return this.getVisibleChildNotes().length > 0;
+    }
+
+    get shareId() {
+        return this.noteId;
+    }
+
     /**
      * Return an attribute by it's attributeId.  Requires the attribute cache to be available.
      * @param attributeId - the id of the attribute owned by this note

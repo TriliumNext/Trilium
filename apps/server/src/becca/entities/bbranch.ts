@@ -278,6 +278,11 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
             });
         }
     }
+
+    getParentNote() {
+        return this.parentNote;
+    }
+
 }
 
 export default BBranch;

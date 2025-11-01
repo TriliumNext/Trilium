@@ -9,13 +9,13 @@ To create a table, simply press the table button and select with the mouse the d
 
 When a table is selected, a special formatting toolbar will appear:
 
-<img src="9_Tables_image.png" width="384" height="100">
+<img src="10_Tables_image.png" width="384" height="100">
 
 ## Navigating a table
 
 *   Using the mouse:
     *   Click on a cell to focus it.
-    *   Click the <img src="10_Tables_image.png" width="28" height="27"> button at the top or the bottom of a table to insert an empty paragraph near it.
+    *   Click the <img src="11_Tables_image.png" width="28" height="27"> button at the top or the bottom of a table to insert an empty paragraph near it.
     *   Click the <img src="5_Tables_image.png" width="24" height="26"> button at the top-left of the table to select it entirely (for easy copy-pasting or cutting) or drag and drop it to relocate the table.
 *   Using the keyboard:
     *   Use the arrow keys on the keyboard to easily navigate between cells.
@@ -48,7 +48,7 @@ More options are available by pressing the arrow next to it:
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:312/311;" src="2_Tables_image.png" width="312" height="311"></figure>
 
-The table properties can be accessed via the <img src="12_Tables_image.png" width="19" height="19"> button and allows for the following adjustments:
+The table properties can be accessed via the <img src="13_Tables_image.png" width="19" height="19"> button and allows for the following adjustments:
 
 *   Border (not the border of the cells, but the outer rim of the table), which includes the style (single, double), color and width.
 *   The background color, with none set by default.
@@ -63,7 +63,7 @@ The table will immediately update to reflect the changes, but the _Save_ button 
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:320/386;" src="3_Tables_image.png" width="320" height="386"></figure>
 
-Similarly to table properties, the <img src="11_Tables_image.png" width="19" height="19"> button opens a popup which adjusts the styling of one or more cells (based on the user's selection).
+Similarly to table properties, the <img src="12_Tables_image.png" width="19" height="19"> button opens a popup which adjusts the styling of one or more cells (based on the user's selection).
 
 The following options can be adjusted:
 
@@ -79,7 +79,25 @@ The cell will immediately update to reflect the changes, but the _Save_ button m
 
 Press the <img src="4_Tables_image.png" width="18" height="17"> button to insert a caption or a text description of the table, which is going to be displayed above the table.
 
-## Tables with invisible borders
+## Table borders
+
+By default, tables will come with a predefined gray border.
+
+To adjust the borders, follow these steps:
+
+1.  Select the table.
+2.  In the floating panel, select the _Table properties_ option (<img src="14_Tables_image.png" width="21" height="21">).
+    1.  Look for the _Border_ section at the top of the newly opened panel.
+    2.  This will control the outer borders of the table.
+    3.  Select a style for the border. Generally _Single_ is the desirable option.
+    4.  Select a color for the border.
+    5.  Select a width for the border, expressed in pixels.
+3.  Select all the cells of the table and then press the _Cell properties_ option (<img src="9_Tables_image.png" width="21" height="21">).
+    1.  This will control the inner borders of the table, at cell level.
+    2.  Note that it's possible to change the borders individually by selecting one or more cells, case in which it will only change the borders that intersect these cells.
+    3.  Repeat the same steps as from step (2).
+
+### Tables with invisible borders
 
 Tables can be set to have invisible borders in order to allow for basic layouts (columns, grids) of text or [images](Images.md) without the distraction of their border:
 

@@ -1,0 +1,135 @@
+<figure class="image">
+  <img style="aspect-ratio:1120/763;" src="Presentation_image.png"
+  width="1120" height="763">
+</figure>
+<p>The Presentation view allows the creation of slideshows directly from
+  within Trilium.</p>
+<h2>How it works</h2>
+<ul>
+  <li>Each slide is a child note of the collection.</li>
+  <li>The order of the child notes determines the order of the slides.</li>
+  <li>Unlike traditional presentation software, slides can be laid out both
+    horizontally and vertically (see belwo for more information).</li>
+  <li>Direct children will be laid out horizontally and the children of those
+    will be laid out vertically. Children deeper than two levels of nesting
+    are ignored.</li>
+</ul>
+<h2>Interaction and navigation</h2>
+<p>In the floating buttons section (top-right):</p>
+<ul>
+  <li>Edit button to go to the corresponding note of the current slide.</li>
+  <li>Press Overview button (or the <kbd>O</kbd> key) to show a birds-eye view
+    of the slides. Press the button again to disable it.</li>
+  <li>Press the “Start presentation” button to show the presentation in full-screen.</li>
+</ul>
+<p>The following keyboard shortcuts are supported:</p>
+<ul>
+  <li>Press <kbd>←</kbd> and <kbd>→</kbd> (or <kbd>H</kbd> and <kbd>L</kbd>) to go
+    to the slide on the left or on the right (horizontal).</li>
+  <li>Press <kbd>↑</kbd> and <kbd>↓</kbd> &nbsp;(or <kbd>K</kbd> and <kbd>J</kbd>)
+    to go to the upward or downward slide (vertical).</li>
+  <li>Press <kbd>Space</kbd> and <kbd>Shift</kbd> + <kbd>Space</kbd> or &nbsp;to go
+    to the next/previous slide in order.</li>
+  <li>And a few more, press <kbd>?</kbd> to display a popup with all the supported
+    keyboard combinations.</li>
+</ul>
+<h2>Vertical slides and nesting</h2>
+<p>Unlike traditional presentation software such as Microsoft PowerPoint,
+  the slides in Trilium can be laid out horizontally or vertically in order
+  to create depth or better organize the slides by topic.</p>
+<p>This horizontal/vertical organization affects transitions (especially
+  on the “slide” transition), however it is most noticeable in navigation.</p>
+<ul>
+  <li>Pressing <kbd>←</kbd> and <kbd>→</kbd> will navigate through slides horizontally,
+    thus skipping vertical notes under the current slide. This is useful to
+    skip entire chapters/related slides.</li>
+  <li>Pressing <kbd>↑</kbd> and <kbd>↓</kbd> will navigate through the vertical
+    slides at the current level.</li>
+  <li>Pressing <kbd>Space</kbd> and <kbd>Shift</kbd> + <kbd>Space</kbd> will go to
+    the next/previous slide in order, regardless of the direction. This is
+    generally the key combination to use when presenting.</li>
+  <li>The arrows on the bottom-right of the slide will also reflect this navigation
+    scheme.</li>
+</ul>
+<figure class="image image-style-align-right image_resized" style="width:55.57%;">
+  <img style="aspect-ratio:890/569;" src="1_Presentation_image.png"
+  width="890" height="569">
+</figure>
+<p>All direct children of the collection will be laid out horizontally. If
+  a direct child also has children, those children will be placed as vertical
+  slides.</p>
+<p>In the following example, the note structure is as follows:</p>
+<ul>
+  <li>Presentation collection
+    <ul>
+      <li>Trilium Notes (demo page)</li>
+      <li>“Introduction” slide
+        <ul>
+          <li>“The challenge of personal knowledge management”</li>
+          <li>“Note-taking structures”</li>
+        </ul>
+      </li>
+      <li>“Demo &amp; Feature highlights” slide
+        <ul>
+          <li>“Really fast installation process”</li>
+          <li>Video slide</li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+<h2>Customization</h2>
+<p>At collection level, it's possible to adjust:</p>
+<ul>
+  <li>The theme of the entire presentation to one of the predefined themes by
+    going to the&nbsp;<a class="reference-link" href="#root/_help_BlN9DFI679QC">Ribbon</a>&nbsp;and
+    looking for the <em>Collection Properties</em> tab.</li>
+  <li>It's currently not possible to create custom themes, although it is planned.</li>
+  <li>Note that it is note possible to alter the CSS via&nbsp;<a class="reference-link"
+    href="#root/_help_AlhDUqhENtH7">Custom app-wide CSS</a>&nbsp;because the slides
+    are rendered isolated (in a shadow DOM).</li>
+</ul>
+<p>At slide level:</p>
+<ul>
+  <li>It's possible to adjust the background color of a slide by using the
+    <a
+    href="#root/_help_OFXdgB2nNk1F">predefined promoted attribute</a>for the color or manually setting <code>#slide:background</code> to
+      a hex color.</li>
+  <li>More complex backgrounds can be achieved via gradients. There's no UI
+    for it; it has to be set via <code>#slide:background</code> to a CSS gradient
+    definition such as: <code>linear-gradient(to bottom, #283b95, #17b2c3)</code>.</li>
+</ul>
+<h2>Tips and tricks</h2>
+<ul>
+  <li>Text notes generally respect the formatting (bold, italic, foreground
+    and background colors) and font size. Code blocks and tables also work.</li>
+  <li>Try using more than just text notes, the presentation uses the same mechanism
+    as <a href="#root/_help_R9pX4DGra2Vt">shared notes</a> and&nbsp;<a class="reference-link"
+    href="#root/_help_0ESUbbAxVnoK">Note List</a>&nbsp;so it should be able to display&nbsp;
+    <a
+    class="reference-link" href="#root/_help_s1aBHPd79XYj">Mermaid Diagrams</a>,&nbsp;<a class="reference-link" href="#root/_help_grjYqerjn243">Canvas</a>&nbsp;and&nbsp;
+      <a
+      class="reference-link" href="#root/_help_gBbsAeiuUxI5">Mind Map</a>&nbsp;in full-screen (without the interactivity).
+        <ul>
+          <li>
+            <p>Consider using a transparent background for&nbsp;<a class="reference-link"
+              href="#root/_help_grjYqerjn243">Canvas</a>, if the slides have a custom background
+              (go to the hamburger menu in the Canvas, press the button select a custom
+              color and write <code>transparent</code>).</p>
+          </li>
+          <li>
+            <p>For&nbsp;<a class="reference-link" href="#root/_help_s1aBHPd79XYj">Mermaid Diagrams</a>,
+              some of them have a predefined background which can be changed via the
+              frontmatter. For example, for XY-charts:</p><pre><code class="language-text-x-trilium-auto">---
+config:
+    themeVariables:
+        xyChart:
+            backgroundColor: transparent
+---</code></pre>
+          </li>
+        </ul>
+  </li>
+</ul>
+<h2>Under the hood</h2>
+<p>The Presentation view uses <a href="https://revealjs.com/">Reveal.js</a> to
+  handle the navigation and layout of the slides.</p>

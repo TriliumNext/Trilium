@@ -206,7 +206,7 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 
 ### 開發者文件
 
-請參閱[環境設定指南](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)。若有更多疑問，歡迎透過上方「與我們交流」章節所列連結與我們聯繫。
+請參閱[文件指南](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)。若有更多疑問，歡迎透過上方「與我們交流」章節所列連結與我們聯繫。
 
 ## 👏 鳴謝
 
@@ -220,14 +220,14 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 
 若無其背後的技術支撐，Trilium 便無法開發完成：
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) -
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) ——
   文字筆記背後的視覺化編輯器。我們衷心感謝獲贈這套進階功能套件。
 * [CodeMirror](https://github.com/codemirror/CodeMirror) —— 支援大量語言的程式碼編輯器。
-* [Excalidraw](https://github.com/excalidraw/excalidraw) - 畫布筆記中使用的無限白板。
-* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - 提供心智圖功能。
-* [Leaflet](https://github.com/Leaflet/Leaflet) - 用於渲染地理地圖。
-* [Tabulator](https://github.com/olifolkerd/tabulator) - 用於集合中的互動式表格。
-* [FancyTree](https://github.com/mar10/fancytree) —— 功能非常豐富的樹狀元件，幾乎沒有對手。
+* [Excalidraw](https://github.com/excalidraw/excalidraw) —— 畫布筆記中使用的無限白板。
+* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) —— 提供心智圖功能。
+* [Leaflet](https://github.com/Leaflet/Leaflet) —— 用於渲染地理地圖。
+* [Tabulator](https://github.com/olifolkerd/tabulator) —— 用於集合中的互動式表格。
+* [FancyTree](https://github.com/mar10/fancytree) —— 功能非常豐富的樹狀元件，無可匹敵。
 * [jsPlumb](https://github.com/jsplumb/jsplumb) ——
   視覺連線函式庫。用於[關聯圖](https://triliumnext.github.io/Docs/Wiki/relation-map.html)與[連結圖](https://triliumnext.github.io/Docs/Wiki/note-map.html#link-map)
 

@@ -402,7 +402,7 @@
     "end-date": "終了日",
     "start-time": "開始時刻",
     "end-time": "終了時間",
-    "board": "ボード",
+    "board": "カンバンボード",
     "status": "ステータス",
     "board_note_first": "最初のノート",
     "board_note_second": "2番目のノート",

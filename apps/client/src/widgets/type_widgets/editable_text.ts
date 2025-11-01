@@ -329,6 +329,30 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
         });
     }
 
+    async addHtmlToEditor(html: string) {
+        await this.initialized;
+
+        const editor = this.watchdog.editor;
+        if (!editor) return;
+
+        editor.model.change((writer) => {
+            const viewFragment = editor.data.processor.toView(html); 
+            const modelFragment = editor.data.toModel(viewFragment); 
+            const insertPosition = editor.model.document.selection.getLastPosition();
+
+            if (insertPosition) {
+                const range = editor.model.insertContent(modelFragment, insertPosition);
+
+                if (range) {
+                    writer.setSelection(range.end);
+                }
+            }
+            
+        });
+        
+        editor.editing.view.focus();
+    }
+
     addTextToActiveEditorEvent({ text }: EventData<"addTextToActiveEditor">) {
         if (!this.isActive()) {
             return;
@@ -383,6 +407,10 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
         const selectedText = this.getSelectedText();
 
         this.triggerCommand("showAddLinkDialog", { textTypeWidget: this, text: selectedText });
+    }
+
+    pasteMarkdownIntoTextCommand() {
+        this.triggerCommand("showPasteMarkdownDialog", { textTypeWidget: this });
     }
 
     getSelectedText() {

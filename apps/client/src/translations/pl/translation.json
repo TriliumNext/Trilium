@@ -912,7 +912,6 @@
     "delete_all_revisions": "Usuń wszystkie wersje tej notatki",
     "delete_all_button": "Usuń wszystkie wersje",
     "help_title": "Pomoc dotycząca wersji notatki",
-    "revision_last_edited": "Ta wersja była ostatnio edytowana {{date}}",
     "confirm_delete_all": "Czy chcesz usunąć wszystkie wersje tej notatki?",
     "no_revisions": "Brak wersji dla tej notatki...",
     "restore_button": "Przywróć",

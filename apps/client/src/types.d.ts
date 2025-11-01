@@ -26,7 +26,6 @@ interface CustomGlobals {
     appContext: AppContext;
     froca: Froca;
     treeCache: Froca;
-    importMarkdownInline: () => Promise<unknown>;
     SEARCH_HELP_TEXT: string;
     activeDialog: JQuery<HTMLElement> | null;
     componentId: string;

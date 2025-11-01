@@ -35,16 +35,24 @@
 
 @media (max-width: 48em) {
     
+    html,
+    body {
+        width: unset;
+        height: unset;
+    }
+
+    #split-pane {
+        overflow: auto;
+    }
+
     #right-pane, #main {
         width: 100%;
-        overflow: hidden;
         padding: 0;
     }
     
     #main {
         padding: 1rem;
     }
-    
     
     #mobile-header {
         display: flex;

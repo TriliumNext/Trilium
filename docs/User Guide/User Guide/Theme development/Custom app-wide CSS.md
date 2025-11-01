@@ -84,4 +84,4 @@ To change the color of the note title and the icon (above the content):
 
 Some parts of the application can't be styled directly via custom CSS because they are rendered in an isolated mode (shadow DOM), more specifically:
 
-*   The slides in a <a class="reference-link" href="../Note%20Types/Collections/Presentation%20View.md">Presentation View</a>.
+*   The slides in a <a class="reference-link" href="../Collections/Presentation.md">Presentation View</a>.

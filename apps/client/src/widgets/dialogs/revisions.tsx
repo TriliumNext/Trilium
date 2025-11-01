@@ -140,11 +140,10 @@ function RevisionsList({ revisions, onSelect, currentRevision }: { revisions: Re
         <FormList onSelect={onSelect} fullHeight>
             {revisions.map((item) =>
                 <FormListItem
-                    title={t("revisions.revision_last_edited", { date: item.dateLastEdited })}
                     value={item.revisionId}
                     active={currentRevision && item.revisionId === currentRevision.revisionId}
                 >
-                    {item.dateLastEdited && item.dateLastEdited.substr(0, 16)} ({item.contentLength && utils.formatSize(item.contentLength)})
+                    {item.dateCreated && item.dateCreated.substr(0, 16)} ({item.contentLength && utils.formatSize(item.contentLength)})
                 </FormListItem>
             )}
         </FormList>);

@@ -867,7 +867,6 @@
     "delete_all_revisions": "Elimina tutte le revisioni di questa nota",
     "delete_all_button": "Elimina tutte le revisioni",
     "help_title": "Aiuto sulle revisioni delle note",
-    "revision_last_edited": "Questa revisione è stata modificata l'ultima volta il {{date}}",
     "confirm_delete_all": "Vuoi eliminare tutte le revisioni di questa nota?",
     "no_revisions": "Ancora nessuna revisione per questa nota...",
     "restore_button": "Ripristina",

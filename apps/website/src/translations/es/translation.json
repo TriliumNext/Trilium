@@ -51,7 +51,8 @@
         "mermaid_description": "Crea diagramas de flujo, de clases, de secuencia, de Gantt y muchos más con la sintaxis de Mermaid.",
         "mindmap_title": "Mapa mental",
         "mindmap_description": "Organiza ideas visualmente o haz una sesión de lluvia de ideas.",
-        "others_list": "y otros: <0>mapa de notas</0>, <1>mapa de relaciones</1>, <2>búsquedas guardadas</2>, <3>vista de nota</3>, y <4>vistas web</4>."
+        "others_list": "y otros: <0>mapa de notas</0>, <1>mapa de relaciones</1>, <2>búsquedas guardadas</2>, <3>vista de nota</3>, y <4>vistas web</4>.",
+        "title": "Múltiples formas de representar su información"
     },
     "extensibility_benefits": {
         "title": "Compartir y extensibilidad",
@@ -72,7 +73,10 @@
         "board_title": "Tablero Kanban",
         "board_description": "Organiza tus tareas o el progreso de tus proyectos en un tablero Kanban. Crea fácilmente nuevos elementos y columnas, y cambia su estado simplemente arrastrándolos por el tablero.",
         "geomap_title": "Mapa geográfico",
-        "geomap_description": "Planifica vacaciones o marca puntos de interés en un mapa geográfico con marcadores personalizables. Visualiza rutas GPX registradas para seguir itinerarios."
+        "geomap_description": "Planifica vacaciones o marca puntos de interés en un mapa geográfico con marcadores personalizables. Visualiza rutas GPX registradas para seguir itinerarios.",
+        "title": "Colecciones",
+        "presentation_title": "Presentación",
+        "presentation_description": "Organiza la información en diapositivas y preséntalas en pantalla completa con transiciones fluidas. Las diapositivas también se pueden exportar a PDF para compartirlas fácilmente."
     },
     "faq": {
         "title": "Preguntas frecuentes",
@@ -187,5 +191,10 @@
         "description": "Trilium Notes hospedado en PikaPods, un servicio de pago que ofrece acceso y gestión sencillos. Sin afiliación directa con el equipo de Trilium.",
         "download_pikapod": "Configurar en PikaPods",
         "download_triliumcc": "Alternativamente, consulta trilium.cc"
+    },
+    "header": {
+        "get-started": "Comencemos",
+        "documentation": "Documentación",
+        "support-us": "Apóyanos"
     }
 }

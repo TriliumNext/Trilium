@@ -71,7 +71,7 @@
     "calendar_description": "Organize your personal or professional events using a calendar, with support for all-day and multi-day events. See your events at a glance with the week, month and year views. Easy interaction to add or drag events.",
     "table_title": "Table",
     "table_description": "Display and edit information about notes in a tabular structure, with various column types such as text, number, check boxes, date & time, links and colors and support for relations. Optionally, display the notes within a tree hierarchy inside the table.",
-    "board_title": "Board",
+    "board_title": "Kanban Board",
     "board_description": "Organize your tasks or project status into a Kanban board with an easy way to create new items and columns and simply changing their status by dragging across the board.",
     "geomap_title": "Geomap",
     "geomap_description": "Plan your vacations or mark your points of interest directly on a geographical map using customizable markers. Display recorded GPX tracks to track itineraries.",

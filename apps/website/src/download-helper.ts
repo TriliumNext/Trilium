@@ -127,7 +127,7 @@ export function getDownloadMatrix(t: TFunction<"translation", undefined>): Downl
             docker: {
                 title: t("download_helper_server_docker.title"),
                 description: t("download_helper_server_docker.description"),
-                helpUrl: "https://docs.triliumnotes.org/User%20Guide/User%20Guide/Installation%20%26%20Setup/Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.html",
+                helpUrl: "https://docs.triliumnotes.org/user-guide/setup/server/installation/docker",
                 quickStartCode: "docker pull triliumnext/trilium\ndocker run -p 8080:8080 -d -v ./data:/home/node/trilium-data triliumnext/trilium",
                 downloads: {
                     dockerhub: {
@@ -143,7 +143,7 @@ export function getDownloadMatrix(t: TFunction<"translation", undefined>): Downl
             linux: {
                 title: t("download_helper_server_linux.title"),
                 description: t("download_helper_server_linux.description"),
-                helpUrl: "https://docs.triliumnotes.org/User%20Guide/User%20Guide/Installation%20%26%20Setup/Server%20Installation/1.%20Installing%20the%20server/Packaged%20version%20for%20Linux.html",
+                helpUrl: "https://docs.triliumnotes.org/user-guide/setup/server/installation/packaged-server",
                 downloads: {
                     tarX64: {
                         recommended: true,
@@ -157,7 +157,7 @@ export function getDownloadMatrix(t: TFunction<"translation", undefined>): Downl
                     },
                     nixos: {
                         name: t("download_helper_server_linux.download_nixos"),
-                        url: "https://docs.triliumnotes.org/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation/1.%20Installing%20the%20server/On%20NixOS"
+                        url: "https://docs.triliumnotes.org/user-guide/setup/server/installation/nixos"
                     }
                 }
             },

@@ -19,6 +19,5 @@ declare global {
         getHeaders(): Promise<Record<string, string>>;
         getReferenceLinkTitle(href: string): Promise<string>;
         getReferenceLinkTitleSync(href: string): string;
-        importMarkdownInline(): void;
     }
 }

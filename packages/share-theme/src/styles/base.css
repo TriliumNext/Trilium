@@ -68,37 +68,6 @@ iframe.pdf-view {
     left: 1px;
 }
 
-@media (max-width: 48em) {
-    #layout.showMenu #menu {
-        display: block;
-        margin-top: 40px;
-    }
-
-    #toggleMenuButton {
-        display: block;
-    }
-
-    #layout.showMenu #main {
-        display: none;
-    }
-
-    #title {
-        padding-left: 60px;
-    }
-
-    #layout.showMenu #toggleMenuButton::after {
-        content: "«";
-    }
-
-    #toggleMenuButton::after {
-        content: "»";
-    }
-
-    #menu {
-        display: none;
-    }
-}
-
 .ck-content .footnote-section {
     border-top: 1px solid #c4c4c4;
     border-radius: 2px;

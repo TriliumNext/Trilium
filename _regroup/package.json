@@ -37,8 +37,8 @@
   "devDependencies": {    
     "@playwright/test": "1.56.1",
     "@stylistic/eslint-plugin": "5.5.0",        
-    "@types/express": "5.0.4",    
-    "@types/node": "22.18.12",    
+    "@types/express": "5.0.5",    
+    "@types/node": "24.9.1",    
     "@types/yargs": "17.0.34",
     "@vitest/coverage-v8": "3.2.4",
     "eslint": "9.38.0",

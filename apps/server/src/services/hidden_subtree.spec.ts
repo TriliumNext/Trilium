@@ -83,6 +83,21 @@ describe("Hidden Subtree", () => {
             expect(updatedJumpToNote?.title).not.toBe("Renamed");
         });
 
+        it("enforces renames of templates", () => {
+            const boardTemplate = becca.getNote("_template_board");
+            expect(boardTemplate).toBeDefined();
+            boardTemplate!.title = "My renamed board";
+
+            cls.init(() => {
+                boardTemplate!.save();
+                hiddenSubtreeService.checkHiddenSubtree(true);
+            });
+
+            const updatedBoardTemplate = becca.getNote("_template_board");
+            expect(updatedBoardTemplate).toBeDefined();
+            expect(updatedBoardTemplate?.title).not.toBe("My renamed board");
+        });
+
         it("maintains launchers hidden, if they were shown by default but moved by the user", () => {
             const launcher = becca.getNote("_lbLlmChat");
             const branch = launcher?.getParentBranches()[0];

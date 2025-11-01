@@ -26,6 +26,7 @@
     padding: 1em;
     margin: 1.25em 0;
     position: relative;
+    padding-inline-start: 2.5em;
     overflow: hidden;
 }
 
@@ -42,3 +43,17 @@
 .admonition.important { --accent-color: #9839f7; }
 .admonition.caution { --accent-color: #ff2e2e; }
 .admonition.warning { --accent-color: #e2aa03; }
+
+.admonition::before {
+    color: var(--accent-color);
+    font-family: boxicons !important;
+    position: absolute;
+    top: 1em;
+    inset-inline-start: 1em;
+}
+
+.admonition.note::before { content: "\eb21"; }
+.admonition.tip::before { content: "\ea0d"; }
+.admonition.important::before { content: "\ea7c"; }
+.admonition.caution::before { content: "\eac7"; }
+.admonition.warning::before { content: "\eac5"; }

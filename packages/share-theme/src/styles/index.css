@@ -1,3 +1,5 @@
+@import "boxicons/css/boxicons.min.css";
+
 @import "./base.css";
 @import "./childlinks.css";
 @import "./externallinks.css";
@@ -30,7 +32,19 @@ Accent Color Ideas
   --text-link: #FFB628;
 */
 
-:root {
+html.theme-light {
+    --background-primary: #FFFFFF;
+    --background-secondary: #F3F3F3;
+    --background-highlight: #DDDDDD;
+    --background-active: #777777;
+    --text-primary: #000000;
+    --text-heading: #000000;
+    --text-menu: #333333;
+    --text-link: #0000ff;
+    color-scheme: light;
+}
+
+html.theme-dark {
     --background-primary: #333333;
     --background-secondary: #1F1F1F;
     --background-highlight: #484848;
@@ -41,18 +55,6 @@ Accent Color Ideas
     --text-link: #87CEFA;
     --text-menu-active: #000000;
     color-scheme: dark;
-}
-
-body.theme-light {
-    --background-primary: #FFFFFF;
-    --background-secondary: #F3F3F3;
-    --background-highlight: #DDDDDD;
-    --background-active: #777777;
-    --text-primary: #000000;
-    --text-heading: #000000;
-    --text-menu: #333333;
-    --text-link: #0000ff;
-    color-scheme: light;
 }
 
 body {
