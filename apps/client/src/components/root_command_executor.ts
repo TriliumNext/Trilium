@@ -67,6 +67,13 @@ export default class RootCommandExecutor extends Component {
         }
     }
 
+    openNoteOnServerCommand() {
+        const noteId = appContext.tabManager.getActiveContextNoteId();
+        if (noteId) {
+            openService.openNoteOnServer(noteId);
+        }
+    }
+
     enterProtectedSessionCommand() {
         protectedSessionService.enterProtectedSession();
     }
