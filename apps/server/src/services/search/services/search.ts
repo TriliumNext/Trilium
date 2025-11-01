@@ -500,19 +500,38 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
 
         // Extract snippet
         let snippet = content.substring(snippetStart, snippetStart + maxLength);
-        
+
         // If snippet contains linebreaks, limit to max 4 lines and override character limit
         const lines = snippet.split('\n');
         if (lines.length > 4) {
-            snippet = lines.slice(0, 4).join('\n');
+            // Find which lines contain the search tokens to ensure they're included
+            const normalizedLines = lines.map(line => normalizeString(line.toLowerCase()));
+            const normalizedTokens = searchTokens.map(token => normalizeString(token.toLowerCase()));
+
+            // Find the first line that contains a search token
+            let firstMatchLine = -1;
+            for (let i = 0; i < normalizedLines.length; i++) {
+                if (normalizedTokens.some(token => normalizedLines[i].includes(token))) {
+                    firstMatchLine = i;
+                    break;
+                }
+            }
+
+            if (firstMatchLine !== -1) {
+                // Center the 4-line window around the first match
+                // Try to show 1 line before and 2 lines after the match
+                const startLine = Math.max(0, firstMatchLine - 1);
+                const endLine = Math.min(lines.length, startLine + 4);
+                snippet = lines.slice(startLine, endLine).join('\n');
+            } else {
+                // No match found in lines (shouldn't happen), just take first 4
+                snippet = lines.slice(0, 4).join('\n');
+            }
             // Add ellipsis if we truncated lines
             snippet = snippet + "...";
         } else if (lines.length > 1) {
-            // For multi-line snippets, just limit to 4 lines (keep existing snippet)
-            snippet = lines.slice(0, 4).join('\n');
-            if (lines.length > 4) {
-                snippet = snippet + "...";
-            }
+            // For multi-line snippets that are 4 or fewer lines, keep them as-is
+            // No need to truncate
         } else {
             // Single line content - apply original word boundary logic
             // Try to start/end at word boundaries
@@ -770,5 +789,8 @@ export default {
     searchNotesForAutocomplete,
     findResultsWithQuery,
     findFirstNoteWithQuery,
-    searchNotes
+    searchNotes,
+    extractContentSnippet,
+    extractAttributeSnippet,
+    highlightSearchResults
 };

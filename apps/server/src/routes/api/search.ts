@@ -10,6 +10,8 @@ import cls from "../../services/cls.js";
 import attributeFormatter from "../../services/attribute_formatter.js";
 import ValidationError from "../../errors/validation_error.js";
 import type SearchResult from "../../services/search/search_result.js";
+import hoistedNoteService from "../../services/hoisted_note.js";
+import beccaService from "../../becca/becca_service.js";
 
 function searchFromNote(req: Request): SearchNoteResult {
     const note = becca.getNoteOrThrow(req.params.noteId);
@@ -49,13 +51,41 @@ function quickSearch(req: Request) {
     const searchContext = new SearchContext({
         fastSearch: false,
         includeArchivedNotes: false,
-        fuzzyAttributeSearch: false
+        includeHiddenNotes: true,
+        fuzzyAttributeSearch: true,
+        ignoreInternalAttributes: true,
+        ancestorNoteId: hoistedNoteService.isHoistedInHiddenSubtree() ? "root" : hoistedNoteService.getHoistedNoteId()
     });
 
-    // Use the same highlighting logic as autocomplete for consistency
-    const searchResults = searchService.searchNotesForAutocomplete(searchString, false);
-    
-    // Extract note IDs for backward compatibility
+    // Execute search with our context
+    const allSearchResults = searchService.findResultsWithQuery(searchString, searchContext);
+    const trimmed = allSearchResults.slice(0, 200);
+
+    // Extract snippets using highlightedTokens from our context
+    for (const result of trimmed) {
+        result.contentSnippet = searchService.extractContentSnippet(result.noteId, searchContext.highlightedTokens);
+        result.attributeSnippet = searchService.extractAttributeSnippet(result.noteId, searchContext.highlightedTokens);
+    }
+
+    // Highlight the results
+    searchService.highlightSearchResults(trimmed, searchContext.highlightedTokens, searchContext.ignoreInternalAttributes);
+
+    // Map to API format
+    const searchResults = trimmed.map((result) => {
+        const { title, icon } = beccaService.getNoteTitleAndIcon(result.noteId);
+        return {
+            notePath: result.notePath,
+            noteTitle: title,
+            notePathTitle: result.notePathTitle,
+            highlightedNotePathTitle: result.highlightedNotePathTitle,
+            contentSnippet: result.contentSnippet,
+            highlightedContentSnippet: result.highlightedContentSnippet,
+            attributeSnippet: result.attributeSnippet,
+            highlightedAttributeSnippet: result.highlightedAttributeSnippet,
+            icon: icon
+        };
+    });
+
     const resultNoteIds = searchResults.map((result) => result.notePath.split("/").pop()).filter(Boolean) as string[];
 
     return {
