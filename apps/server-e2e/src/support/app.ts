@@ -8,6 +8,7 @@ interface GotoOpts {
 }
 
 const BASE_URL = "http://127.0.0.1:8082";
+const NUM_OF_CREATE_NOTE_OPTIONS = 2;
 
 interface DropdownLocator extends Locator {
     selectOptionByText: (text: string) => Promise<void>;
@@ -73,7 +74,8 @@ export default class App {
         const resultsSelector = this.currentNoteSplit.locator(".note-detail-empty-results");
         await expect(resultsSelector).toContainText(noteTitle);
         await resultsSelector.locator(".aa-suggestion", { hasText: noteTitle })
-            .nth(1) // Select the second one, as the first one is "Create a new note"
+            // Select the n+1 one, as the first one is "Create a new note"
+            .nth(NUM_OF_CREATE_NOTE_OPTIONS)
             .click();
     }
 
