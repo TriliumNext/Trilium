@@ -61,8 +61,8 @@ quick overview:
   Docker](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md)
 - [ترقية تريليوم
   للملاحظات](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Upgrading%20TriliumNext.md)
-- [Basic Concepts and
-  Features](./docs/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes.md)
+- [مفاهيم ومميزات
+  اساسية](./docs/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes.md)
 - [Patterns of Personal Knowledge
   Base](https://triliumnext.github.io/Docs/Wiki/patterns-of-personal-knowledge)
 
@@ -110,7 +110,7 @@ quick overview:
   location pins and GPX tracks
 * [Scripting](https://triliumnext.github.io/Docs/Wiki/scripts) - see [Advanced
   showcases](https://triliumnext.github.io/Docs/Wiki/advanced-showcases)
-* [REST API](https://triliumnext.github.io/Docs/Wiki/etapi) for automation
+* [واجهة REST API](https://triliumnext.github.io/Docs/Wiki/etapi) للأتمتة
 * Scales well in both usability and performance upwards of 100 000 notes
 * Touch optimized [mobile
   frontend](https://triliumnext.github.io/Docs/Wiki/mobile-frontend) for

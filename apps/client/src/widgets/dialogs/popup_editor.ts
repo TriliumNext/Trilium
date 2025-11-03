@@ -155,6 +155,11 @@ export default class PopupEditorDialog extends Container<BasicWidget> {
             return Promise.resolve();
         }
 
+        // Avoid not showing recent notes when creating a new empty tab.
+        if ("noteContext" in data && data.noteContext.ntxId !== "_popup-editor") {
+            return Promise.resolve();
+        }
+
         return super.handleEventInChildren(name, data);
     }
 

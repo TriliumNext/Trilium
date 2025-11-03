@@ -10,6 +10,7 @@
         "moduleResolution": "Node16",
         "target": "ES2022",
         "rootDir": "src",
+        "outDir": "out-tsc",
         "module": "Node16"
     },
     "include": ["src/**/*"]

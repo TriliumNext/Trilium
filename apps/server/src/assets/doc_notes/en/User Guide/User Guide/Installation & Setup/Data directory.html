@@ -8,7 +8,7 @@
     documents</li>
   <li><code>log</code> - contains application log files</li>
 </ul>
-<h2>Location</h2>
+<h2>Location of the data directory</h2>
 <p>Easy way how to find out which data directory Trilium uses is to look
   at the "About Trilium Notes" dialog (from "Menu" in upper left corner):</p>
 <p>
@@ -62,20 +62,64 @@
 <p>To do this in unix based systems simply run trilium like this:</p><pre><code class="language-text-x-trilium-auto">TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data trilium</code></pre>
 <p>You can then save the above command as a shell script on your path for
   convenience.</p>
-<h3>Fine-grained directory/path location</h3>
-<p>It's possible to configure e.g. backup and log directories separately,
-  with following environment variables:</p>
-<ul>
-  <li><code>TRILIUM_DOCUMENT_PATH</code>
-  </li>
-  <li><code>TRILIUM_BACKUP_DIR</code>
-  </li>
-  <li><code>TRILIUM_LOG_DIR</code>
-  </li>
-  <li><code>TRILIUM_ANONYMIZED_DB_DIR</code>
-  </li>
-  <li><code>TRILIUM_CONFIG_INI_PATH</code>
-  </li>
-</ul>
-<p>If these are not set, default paths within the data directory will be
-  used.</p>
+<h2>Fine-grained directory/path location</h2>
+<p>Apart from the data directory, some of the subdirectories of it can be
+  moved elsewhere by changing an environment variable:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Environment variable</th>
+      <th>Default value</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>TRILIUM_DOCUMENT_PATH</code>
+      </td>
+      <td><code>${TRILIUM_DATA_DIR}/document.db</code>
+      </td>
+      <td>Path to the&nbsp;<a class="reference-link" href="#root/_help_wX4HbRucYSDD">Database</a>&nbsp;(storing
+        all notes and metadata).</td>
+    </tr>
+    <tr>
+      <td><code>TRILIUM_BACKUP_DIR</code>
+      </td>
+      <td><code>${TRILIUM_DATA_DIR}/backup</code>
+      </td>
+      <td>Directory where automated&nbsp;<a class="reference-link" href="#root/_help_ODY7qQn5m2FT">Backup</a>&nbsp;databases
+        are stored.</td>
+    </tr>
+    <tr>
+      <td><code>TRILIUM_LOG_DIR</code>
+      </td>
+      <td><code>${TRILIUM_DATA_DIR}/log</code>
+      </td>
+      <td>Directory where daily&nbsp;<a class="reference-link" href="#root/_help_bnyigUA2UK7s">Backend (server) logs</a>&nbsp;are
+        stored.</td>
+    </tr>
+    <tr>
+      <td><code>TRILIUM_TMP_DIR</code>
+      </td>
+      <td><code>${TRILIUM_DATA_DIR}/tmp</code>
+      </td>
+      <td>Directory where temporary files are stored (for example when opening in
+        an external app).</td>
+    </tr>
+    <tr>
+      <td><code>TRILIUM_ANONYMIZED_DB_DIR</code>
+      </td>
+      <td><code>${TRILIUM_DATA_DIR}/anonymized-db</code>
+      </td>
+      <td>Directory where a&nbsp;<a class="reference-link" href="#root/_help_x59R8J8KV5Bp">Anonymized Database</a>&nbsp;is
+        stored.</td>
+    </tr>
+    <tr>
+      <td><code>TRILIUM_CONFIG_INI_PATH</code>
+      </td>
+      <td><code>${TRILIUM_DATA_DIR}/config.ini</code>
+      </td>
+      <td>Path to&nbsp;<a class="reference-link" href="#root/_help_Gzjqa934BdH4">Configuration (config.ini or environment variables)</a>&nbsp;file.</td>
+    </tr>
+  </tbody>
+</table>

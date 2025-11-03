@@ -4,7 +4,7 @@
     "homepage": "Startseite:",
     "app_version": "App-Version:",
     "db_version": "DB-Version:",
-    "sync_version": "Synch-version:",
+    "sync_version": "Sync-Version:",
     "build_date": "Build-Datum:",
     "build_revision": "Build-Revision:",
     "data_directory": "Datenverzeichnis:"
@@ -104,7 +104,8 @@
     "export_status": "Exportstatus",
     "export_in_progress": "Export läuft: {{progressCount}}",
     "export_finished_successfully": "Der Export wurde erfolgreich abgeschlossen.",
-    "format_pdf": "PDF - für Ausdrucke oder Teilen."
+    "format_pdf": "PDF - für Ausdrucke oder Teilen.",
+    "share-format": "HTML für die Web-Veröffentlichung – verwendet dasselbe Theme wie bei freigegebenen Notizen, kann jedoch als statische Website veröffentlicht werden."
   },
   "help": {
     "noteNavigation": "Notiz Navigation",
@@ -184,7 +185,8 @@
     },
     "import-status": "Importstatus",
     "in-progress": "Import läuft: {{progress}}",
-    "successful": "Import erfolgreich abgeschlossen."
+    "successful": "Import erfolgreich abgeschlossen.",
+    "importZipRecommendation": "Beim Import einer ZIP-Datei wird die Notizhierarchie aus der Ordnerstruktur im Archiv übernommen."
   },
   "include_note": {
     "dialog_title": "Notiz beifügen",
@@ -259,7 +261,6 @@
     "delete_all_revisions": "Lösche alle Revisionen dieser Notiz",
     "delete_all_button": "Alle Revisionen löschen",
     "help_title": "Hilfe zu Notizrevisionen",
-    "revision_last_edited": "Diese Revision wurde zuletzt am {{date}} bearbeitet",
     "confirm_delete_all": "Möchtest du alle Revisionen dieser Notiz löschen?",
     "no_revisions": "Für diese Notiz gibt es noch keine Revisionen...",
     "confirm_restore": "Möchtest du diese Revision wiederherstellen? Dadurch werden der aktuelle Titel und Inhalt der Notiz mit dieser Revision überschrieben.",
@@ -647,7 +648,8 @@
     "logout": "Abmelden",
     "show-cheatsheet": "Cheatsheet anzeigen",
     "toggle-zen-mode": "Zen Modus",
-    "new-version-available": "Neues Update verfügbar"
+    "new-version-available": "Neues Update verfügbar",
+    "download-update": "Version {{latestVersion}} herunterladen"
   },
   "sync_status": {
     "unknown": "<p>Der Synchronisations-Status wird bekannt, sobald der nächste Synchronisierungsversuch gestartet wird.</p><p>Klicke, um eine Synchronisierung jetzt auszulösen.</p>",
@@ -989,7 +991,7 @@
     "enter_password_instruction": "Um die geschützte Notiz anzuzeigen, musst du dein Passwort eingeben:",
     "start_session_button": "Starte eine geschützte Sitzung <kbd>Eingabetaste</kbd>",
     "started": "Geschützte Sitzung gestartet.",
-    "wrong_password": "Passwort flasch.",
+    "wrong_password": "Passwort falsch.",
     "protecting-finished-successfully": "Geschützt erfolgreich beendet.",
     "unprotecting-finished-successfully": "Ungeschützt erfolgreich beendet.",
     "protecting-in-progress": "Schützen läuft: {{count}}",
@@ -1284,10 +1286,6 @@
   "etapi": {
     "title": "ETAPI",
     "description": "ETAPI ist eine REST-API, die für den programmgesteuerten Zugriff auf die Trilium-Instanz ohne Benutzeroberfläche verwendet wird.",
-    "see_more": "Weitere Details können im {{- link_to_wiki}} und in der {{- link_to_openapi_spec}} oder der {{- link_to_swagger_ui }} gefunden werden.",
-    "wiki": "Wiki",
-    "openapi_spec": "ETAPI OpenAPI-Spezifikation",
-    "swagger_ui": "ETAPI Swagger UI",
     "create_token": "Erstelle ein neues ETAPI-Token",
     "existing_tokens": "Vorhandene Token",
     "no_tokens_yet": "Es sind noch keine Token vorhanden. Klicke auf die Schaltfläche oben, um eine zu erstellen.",
@@ -1521,7 +1519,9 @@
     "window-on-top": "Dieses Fenster immer oben halten"
   },
   "note_detail": {
-    "could_not_find_typewidget": "Konnte typeWidget für Typ ‚{{type}}‘ nicht finden"
+    "could_not_find_typewidget": "Konnte typeWidget für Typ ‚{{type}}‘ nicht finden",
+    "printing": "Druckvorgang läuft…",
+    "printing_pdf": "PDF-Export läuft…"
   },
   "note_title": {
     "placeholder": "Titel der Notiz hier eingeben…"
@@ -1654,7 +1654,7 @@
     "add-term-to-dictionary": "Begriff \"{{term}}\" zum Wörterbuch hinzufügen",
     "cut": "Ausschneiden",
     "copy": "Kopieren",
-    "copy-link": "Link opieren",
+    "copy-link": "Link kopieren",
     "paste": "Einfügen",
     "paste-as-plain-text": "Als unformatierten Text einfügen",
     "search_online": "Suche nach \"{{term}}\" mit {{searchEngine}} starten"
@@ -2079,6 +2079,7 @@
   },
   "presentation_view": {
     "edit-slide": "Folie bearbeiten",
-    "start-presentation": "Präsentation starten"
+    "start-presentation": "Präsentation starten",
+    "slide-overview": "Übersicht der Folien ein-/ausblenden"
   }
 }

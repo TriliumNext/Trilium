@@ -1,0 +1,22 @@
+{
+  "name": "build-docs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/main.ts",
+  "scripts": {
+    "start": "tsx ."
+  },
+  "keywords": [],
+  "author": "Elian Doran <contact@eliandoran.me>",
+  "license": "AGPL-3.0-only",
+  "packageManager": "pnpm@10.20.0",
+  "devDependencies": {
+    "@redocly/cli": "2.10.0",
+    "archiver": "7.0.1",
+    "fs-extra": "11.3.2",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "typedoc": "0.28.14",
+    "typedoc-plugin-missing-exports": "4.1.2"
+  }
+}

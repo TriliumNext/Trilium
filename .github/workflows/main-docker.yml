@@ -46,7 +46,7 @@ jobs:
       - name: Set up node & dependencies
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: "pnpm"
 
       - name: Install npm dependencies
@@ -86,12 +86,12 @@ jobs:
 
       - name: Upload Playwright trace
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: Playwright trace (${{ matrix.dockerfile }})
           path: test-output/playwright/output
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: ${{ !cancelled() }}
         with:
           name: Playwright report (${{ matrix.dockerfile }})
@@ -116,10 +116,10 @@ jobs:
           - dockerfile: Dockerfile
             platform: linux/arm64
             image: ubuntu-24.04-arm
-          - dockerfile: Dockerfile
+          - dockerfile: Dockerfile.legacy
             platform: linux/arm/v7
             image: ubuntu-24.04-arm
-          - dockerfile: Dockerfile
+          - dockerfile: Dockerfile.legacy
             platform: linux/arm/v8
             image: ubuntu-24.04-arm
     runs-on: ${{ matrix.image }}
@@ -146,7 +146,7 @@ jobs:
       - name: Set up node & dependencies
         uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: 'pnpm'
 
       - name: Install dependencies
@@ -209,7 +209,7 @@ jobs:
           touch "/tmp/digests/${digest#sha256:}"
 
       - name: Upload digest
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: digests-${{ env.PLATFORM_PAIR }}-${{ matrix.dockerfile }}
           path: /tmp/digests/*
@@ -223,7 +223,7 @@ jobs:
       - build
     steps:
       - name: Download digests
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           path: /tmp/digests
           pattern: digests-*

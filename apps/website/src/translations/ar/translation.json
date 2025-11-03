@@ -1,0 +1,127 @@
+{
+    "download_helper_server_linux": {
+        "download_tar_arm64": "بصيغة ARM (.tar.xz)",
+        "download_nixos": "مكون NixOS",
+        "download_tar_x64": "x64 (.tar.xz)",
+        "title": "الاستضافة الذاتية على نظام لينكس"
+    },
+    "download_helper_server_hosted": {
+        "title": "استضافة مدفوعة",
+        "download_triliumcc": "بدلا من ذلك، راجع trillum. cc",
+        "download_pikapod": "اعدلد على PikaPods"
+    },
+    "get-started": {
+        "architecture": "المعمارية:",
+        "older_releases": "انظر الى الاصدارات القديمة",
+        "title": "ابدأ الان"
+    },
+    "hero_section": {
+        "github": "GitHub",
+        "get_started": "ابدأ الان",
+        "dockerhub": "مستودع Docker"
+    },
+    "organization_benefits": {
+        "title": "تنظيم",
+        "note_structure_title": "هيكيلية الملاحظة",
+        "hoisting_title": "مساحات العمل والتركيز على الملاحظة",
+        "attributes_title": "العلاقات وجداول الملاحظة"
+    },
+    "productivity_benefits": {
+        "sync_title": "‎المزامنة",
+        "revisions_title": "مراجعات الملاحظة",
+        "protected_notes_title": "الملاحظات المحمية",
+        "search_title": "البحث القوي",
+        "web_clipper_title": "اداة قص الويب",
+        "title": "الانتاجية والسلامة",
+        "jump_to_title": "الاوامر والبحث السريع"
+    },
+    "note_types": {
+        "canvas_title": "مساحة العمل",
+        "mindmap_title": "خريطة ذهنية",
+        "text_title": "ملاحظات النص",
+        "code_title": "ملاحظات الكود",
+        "file_title": "ملاحظات الملف",
+        "mermaid_title": "مخططات Mermaid"
+    },
+    "extensibility_benefits": {
+        "import_export_title": "استيراد/تصدير",
+        "title": "المشاركة وقابلية التوسيع",
+        "scripting_title": "البرمجة النصية المتقدمة",
+        "api_title": "واجهة برمجة REST"
+    },
+    "collections": {
+        "calendar_title": "التقويم",
+        "table_title": "جدول",
+        "board_title": "لوحة",
+        "geomap_title": "خريطة جغرافية"
+    },
+    "footer": {
+        "copyright_community": "المجتمع",
+        "copyright_and_the": " و ال "
+    },
+    "social_buttons": {
+        "github": "GitHub",
+        "matrix": "‍مصفوفة",
+        "reddit": "Reddit",
+        "github_discussions": "مناقشات GitHub"
+    },
+    "support_us": {
+        "paypal": "PayPal",
+        "title": "ادعمنا",
+        "financial_donations_title": "التبرعات المالية",
+        "github_sponsors": "الرعاة على GitHub",
+        "buy_me_a_coffee": "Buy Me A Coffee"
+    },
+    "download_helper_desktop_windows": {
+        "download_scoop": "Scoop",
+        "download_exe": "تحميل ملف التثبيت (exe.)",
+        "title_x64": "ويندوز 64 بت",
+        "download_zip": "النسخة المحمولة بصيغة zip",
+        "title_arm64": "نظام ويندوز عاى ARM",
+        "quick_start": "للتثبيت باستخدام Winget:"
+    },
+    "download_helper_desktop_linux": {
+        "download_deb": ".deb",
+        "download_nixpkgs": "nixpkgs",
+        "download_aur": "AUR",
+        "download_rpm": "rpm.",
+        "download_flatpak": "flatpak.",
+        "title_x64": "لينيكس 64 بت",
+        "download_zip": "النسخة المحمولة بصيغة zip",
+        "title_arm64": "نظام لينكس على ARM"
+    },
+    "download_helper_server_docker": {
+        "download_ghcr": "ghcr.io",
+        "download_dockerhub": "مستودع Docker",
+        "title": "الاستضافة الذاتية باستخدام الDocker"
+    },
+    "final_cta": {
+        "get_started": "ابدأ الان"
+    },
+    "components": {
+        "link_learn_more": "تعلم المزيد..."
+    },
+    "download_now": {
+        "text": "تنزيل الان ",
+        "platform_small": "لاجل{{platform}}",
+        "linux_small": "لLinux",
+        "linux_big": "اصدار v {{version}} لنظام لينكس"
+    },
+    "faq": {
+        "title": "الاسئلة المتكررة"
+    },
+    "404": {
+        "title": "404: غير موجود"
+    },
+    "download_helper_desktop_macos": {
+        "download_dmg": "تحميل ملف التثبيت (dmg.)",
+        "download_homebrew_cask": "Homebrew Cask",
+        "download_zip": "النسخة المحمولة بصيغة zip",
+        "title_x64": "نظام macOS لاصدار intel",
+        "title_arm64": "نظام macOS لمعالجة اجهزة Apple Silicon",
+        "quick_start": "للتثبيت بواسطة Homebrew:"
+    },
+    "contribute": {
+        "title": "طرق اخرى للمساهمة"
+    }
+}

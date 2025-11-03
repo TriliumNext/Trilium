@@ -51,7 +51,7 @@
     "bulk_actions_executed": "批量操作已成功执行。",
     "none_yet": "暂无操作 ... 通过点击上方的可用操作添加一个操作。",
     "labels": "标签",
-    "relations": "关联关系",
+    "relations": "关系",
     "notes": "笔记",
     "other": "其它"
   },
@@ -104,7 +104,8 @@
     "export_status": "导出状态",
     "export_in_progress": "导出进行中：{{progressCount}}",
     "export_finished_successfully": "导出成功完成。",
-    "format_pdf": "PDF - 用于打印或共享目的。"
+    "format_pdf": "PDF - 用于打印或共享目的。",
+    "share-format": "HTML 网页发布——采用与共享笔记相同的主题，但可发布为静态网站。"
   },
   "help": {
     "noteNavigation": "笔记导航",
@@ -184,7 +185,8 @@
     },
     "import-status": "导入状态",
     "in-progress": "导入进行中：{{progress}}",
-    "successful": "导入成功完成。"
+    "successful": "导入成功完成。",
+    "importZipRecommendation": "导入 ZIP 文件时，笔记层级将反映压缩文件内的子目录结构。"
   },
   "include_note": {
     "dialog_title": "包含笔记",
@@ -259,7 +261,6 @@
     "delete_all_revisions": "删除此笔记的所有修订版本",
     "delete_all_button": "删除所有修订版本",
     "help_title": "关于笔记修订版本的帮助",
-    "revision_last_edited": "此修订版本上次编辑于 {{date}}",
     "confirm_delete_all": "您是否要删除此笔记的所有修订版本？",
     "no_revisions": "此笔记暂无修订版本...",
     "restore_button": "恢复",
@@ -1288,10 +1289,6 @@
   "etapi": {
     "title": "ETAPI",
     "description": "ETAPI 是一个 REST API，用于以编程方式访问 Trilium 实例，而无需 UI。",
-    "see_more": "有关更多详细信息，请参见 {{- link_to_wiki}} 和 {{- link_to_openapi_spec}} 或 {{- link_to_swagger_ui}}。",
-    "wiki": "维基",
-    "openapi_spec": "ETAPI OpenAPI 规范",
-    "swagger_ui": "ETAPI Swagger UI",
     "create_token": "创建新的 ETAPI 令牌",
     "existing_tokens": "现有令牌",
     "no_tokens_yet": "目前还没有令牌。点击上面的按钮创建一个。",
@@ -1558,7 +1555,9 @@
     "window-on-top": "保持此窗口置顶"
   },
   "note_detail": {
-    "could_not_find_typewidget": "找不到类型为 '{{type}}' 的 typeWidget"
+    "could_not_find_typewidget": "找不到类型为 '{{type}}' 的 typeWidget",
+    "printing": "正在打印…",
+    "printing_pdf": "正在导出为PDF…"
   },
   "note_title": {
     "placeholder": "请输入笔记标题..."

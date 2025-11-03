@@ -1,0 +1,200 @@
+{
+    "get-started": {
+        "desktop_title": "下载桌面版应用 （v{{version}}）",
+        "architecture": "架构：",
+        "title": "开始使用",
+        "older_releases": "查看历史版本",
+        "server_title": "设置服务器以供多台设备访问"
+    },
+    "organization_benefits": {
+        "hoisting_description": "你可以通过将个人笔记和工作笔记分组到不同的工作区中，轻松地将它们分开。每个工作区会聚焦于特定的笔记集合，使你的笔记树仅显示相关内容。",
+        "title": "组织",
+        "note_structure_title": "笔记结构",
+        "note_structure_description": "笔记可按层级排列。由于每条笔记均可包含子笔记，因此无需使用文件夹。单条笔记可在层级结构中的多个位置添加。",
+        "attributes_title": "笔记标签及关系",
+        "attributes_description": "利用笔记间的关系或添加标签进行便捷分类。使用提升属性输入结构化信息，这些信息可用于表格和看板中。",
+        "hoisting_title": "工作区与提升"
+    },
+    "productivity_benefits": {
+        "title": "高效且安全",
+        "revisions_title": "笔记历史版本",
+        "revisions_content": "笔记会在后台定期保存，且修订版本可用于回顾或撤销误修改。你也可以按需创建修订版本。",
+        "sync_title": "同步",
+        "sync_content": "使用自建或云端实例，可以轻松地在多设备之间同步笔记，并通过 PWA 从手机上访问它。",
+        "protected_notes_title": "被保护的笔记",
+        "protected_notes_content": "通过加密笔记并将其锁定在受密码保护的会话中，来保护敏感的个人信息。",
+        "jump_to_title": "快速的搜索和命令",
+        "jump_to_content": "通过搜索标题，可以在层级结构中快速跳转到笔记或 UI 命令；模糊匹配可容忍拼写错误或细微差异。",
+        "search_content": "或者在笔记中搜索文本，并通过筛选父笔记或深度来缩小搜索范围。",
+        "web_clipper_content": "抓取网页（或截图），并通过网页剪藏浏览器扩展直接保存到 Trilium 中。",
+        "search_title": "强大的搜索功能",
+        "web_clipper_title": "网页抓取器"
+    },
+    "note_types": {
+        "text_title": "文本笔记",
+        "text_description": "笔记是使用可视化（所见即所得，WYSIWYG）编辑器进行编辑的，支持表格、图像、数学表达式和带语法高亮的代码块。你可以通过类似 Markdown 的语法或使用斜杠命令快速格式化文本。",
+        "code_title": "代码笔记",
+        "code_description": "大量源代码或脚本通常使用专门的编辑器进行编写，这类编辑器为多种编程语言提供语法高亮，并支持多种配色主题。",
+        "file_title": "文件笔记",
+        "file_description": "嵌入多媒体文件（如 PDF、图像、视频），并在应用程序内进行预览。",
+        "canvas_title": "画布",
+        "canvas_description": "在无限画布上排列形状、图像和文本，使用与 excalidraw.com 相同的技术。非常适合用于绘制图表、草图和进行可视化规划。",
+        "mermaid_title": "Mermaid 图表",
+        "mermaid_description": "使用 Mermaid 语法创建各种图表，例如流程图、类图和时序图、甘特图等。",
+        "mindmap_title": "思维导图",
+        "mindmap_description": "把你的想法用视觉方式整理出来，或者进行一次头脑风暴。",
+        "others_list": "以及其他内容：<0>笔记映射</0>、<1>关系映射</1>、<2>已保存的搜索</2>、<3>渲染笔记</3> 和 <4>网页视图</4>。",
+        "title": "多种信息呈现方式"
+    },
+    "extensibility_benefits": {
+        "title": "分享与可扩展性",
+        "import_export_title": "导入/导出",
+        "import_export_description": "使用 Markdown、ENEX、OML 格式即可轻松与其他应用程序交互。",
+        "share_title": "在网络上分享笔记",
+        "share_description": "如果你有一台服务器，它可以用来与他人共享你的一部分笔记。",
+        "scripting_title": "高级脚本编写",
+        "scripting_description": "在 Trilium 中通过自定义小部件或服务器端逻辑构建专属集成方案。",
+        "api_title": "REST API",
+        "api_description": "通过其内置的 REST API 以编程方式与 Trilium 进行交互。"
+    },
+    "download_helper_server_hosted": {
+        "download_triliumcc": "也可以访问 trilium.cc",
+        "title": "付费托管",
+        "description": "Trilium Notes 托管于 PikaPods，该付费服务提供便捷访问与管理功能。与 Trilium 团队无直接关联。",
+        "download_pikapod": "在 PikaPods 上设置"
+    },
+    "download_helper_desktop_linux": {
+        "download_aur": "AUR",
+        "download_nixpkgs": "nixpkgs",
+        "title_x64": "Linux 64位",
+        "title_arm64": "基于 ARM 架构的 Linux",
+        "description_x64": "适用于大多数 Linux 发行版，兼容 x86_64 架构。",
+        "description_arm64": "适用于基于 ARM 架构的 Linux 发行版，兼容 aarch64 架构。",
+        "quick_start": "根据你的发行版选择合适的软件包格式：",
+        "download_deb": ".deb",
+        "download_rpm": ".rpm",
+        "download_flatpak": ".flatpak",
+        "download_zip": "便携版（.zip）"
+    },
+    "hero_section": {
+        "title": "整理你的思路。建立你的个人知识库。",
+        "subtitle": "Trilium 是一款开源的笔记工具，用于记录和整理个人知识库。你可以在本地桌面使用它，或将其与自建服务器同步，让笔记随行随记。",
+        "get_started": "开始使用",
+        "github": "GitHub",
+        "dockerhub": "Docker Hub",
+        "screenshot_alt": "Trilium Notes 桌面应用程序的屏幕截图"
+    },
+    "collections": {
+        "title": "集合",
+        "calendar_title": "日历",
+        "calendar_description": "使用日历管理个人或工作活动，支持全天及多日活动。通过周视图、月视图和年视图快速查看所有活动。轻松交互即可添加或拖拽活动。",
+        "table_title": "表格",
+        "table_description": "以表格结构显示和编辑笔记信息，支持多种列类型，包括文本、数字、复选框、日期与时间、链接和颜色，并支持关系功能。可选地，在表格内以树形层次结构显示笔记。",
+        "board_title": "看板",
+        "board_description": "将任务或项目状态整理成看板，轻松创建新事项和列，只需在看板上拖拽即可简单更改状态。",
+        "geomap_title": "地理地图",
+        "geomap_description": "使用可自定义的标记，直接在地理地图上规划您的假期或标记兴趣点。显示记录的 GPX 轨迹以追踪行程路线。",
+        "presentation_title": "演示",
+        "presentation_description": "将信息整理成幻灯片，并以全屏模式呈现，配以流畅的过渡效果。幻灯片还可导出为 PDF 格式，便于轻松分享。"
+    },
+    "faq": {
+        "title": "常见问题解答",
+        "mobile_question": "是否有移动应用程序？",
+        "mobile_answer": "目前尚无官方移动应用程序。但若您拥有服务器实例，可通过网页浏览器访问，甚至将其安装为渐进式网页应用（PWA）。对于安卓用户，存在一款名为 TriliumDroid 的非官方应用程序，该程序支持离线使用（与桌面客户端功能相同）。",
+        "database_question": "数据存储在何处？",
+        "database_answer": "所有笔记都将存储在应用程序文件夹中的 SQLite 数据库内。Trilium 采用数据库而非纯文本文件的原因在于：数据库能提升性能，且某些功能（如克隆功能——即在树形结构中多处显示同一笔记）通过文本文件实现难度较大。若需查找应用程序文件夹，请前往“关于”窗口即可。",
+        "server_question": "使用 Trilium 需要服务器吗？",
+        "server_answer": "不，服务器支持通过网页浏览器访问，并能在您拥有多台设备时管理同步。若无同步需求，只需下载桌面应用程序即可。",
+        "scaling_question": "该应用程序在处理大量笔记时扩展性如何？",
+        "scaling_answer": "根据使用情况，该应用程序应能无障碍处理至少 10 万条笔记。请注意，若上传大量大文件（单个文件达 1 GB），同步过程可能失败，因为 Trilium 更侧重于知识库应用而非文件存储（例如 NextCloud ）。",
+        "network_share_question": "我能否通过网络硬盘共享我的数据库？",
+        "network_share_answer": "不，通常不建议通过网络硬盘共享 SQLite 数据库。虽然有时可能有效，但由于网络环境下文件锁定机制的不完善，数据库存在损坏的风险。",
+        "security_question": "我的数据如何得到保护？",
+        "security_answer": "默认情况下，笔记不会加密，可直接从数据库中读取。一旦笔记被标记为加密状态，该笔记将使用 AES-128-CBC 算法进行加密。"
+    },
+    "final_cta": {
+        "title": "准备好开始使用 Trilium Notes 了吗？",
+        "description": "借助强大功能和完全隐私保护，构建您的个人知识库。",
+        "get_started": "开始使用"
+    },
+    "components": {
+        "link_learn_more": "了解更多…"
+    },
+    "download_now": {
+        "text": "现在下载 ",
+        "platform_big": "v{{version}} 适用于 {{platform}}",
+        "platform_small": "适用于 {{platform}}",
+        "linux_big": "v{{version}} 适用于 Linux",
+        "linux_small": "适用于 Linux",
+        "more_platforms": "更多平台与服务器设置"
+    },
+    "header": {
+        "get-started": "开始使用",
+        "documentation": "文档",
+        "support-us": "支持我们"
+    },
+    "footer": {
+        "copyright_and_the": " 以及 ",
+        "copyright_community": "社区"
+    },
+    "social_buttons": {
+        "github": "GitHub",
+        "github_discussions": "GitHub 讨论",
+        "matrix": "Matrix",
+        "reddit": "Reddit"
+    },
+    "support_us": {
+        "title": "支持我们",
+        "financial_donations_title": "财务捐赠",
+        "financial_donations_description": "Trilium 的开发与维护凝聚了 <Link>数百小时的工作</Link>。您的支持确保其开源性质得以延续，推动功能持续优化，并覆盖托管等运营成本。",
+        "financial_donations_cta": "请考虑通过以下方式支持该应用程序的主要开发者（<Link>eliandoran</Link>）：",
+        "github_sponsors": "GitHub Sponsors",
+        "paypal": "PayPal",
+        "buy_me_a_coffee": "Buy Me A Coffee"
+    },
+    "contribute": {
+        "title": "其他贡献方式",
+        "way_translate": "通过<Link>Weblate</Link>将应用程序翻译成你的母语。",
+        "way_community": "在 <Discussions>GitHub 讨论</Discussions>或 <Matrix>Matrix</Matrix> 上与社区互动。",
+        "way_reports": "通过<Link>GitHub issues</Link>报告错误。",
+        "way_document": "通过告知文档中的缺失内容或贡献指南、常见问题解答或教程来完善文档。",
+        "way_market": "广而告之：将 Trilium Notes 分享给朋友，或发布在博客和社交媒体上。"
+    },
+    "404": {
+        "title": "404：未找到",
+        "description": "你要查找的页面无法找到。可能是该页面已被删除，或者网址有误。"
+    },
+    "download_helper_desktop_windows": {
+        "title_x64": "Windows 64位",
+        "title_arm64": "基于 ARM 的 Windows 系统",
+        "description_x64": "兼容运行 Windows 10 和 11 的英特尔或 AMD 设备。",
+        "description_arm64": "兼容 ARM 设备（例如搭载高通骁龙处理器的设备）。",
+        "quick_start": "通过 Winget 安装：",
+        "download_exe": "下载安装程序（.exe）",
+        "download_zip": "便携版（.zip）",
+        "download_scoop": "Scoop"
+    },
+    "download_helper_desktop_macos": {
+        "title_x64": "适用于英特尔处理器的 macOS",
+        "title_arm64": "适用于 Apple Silicon 的 macOS",
+        "description_x64": "适用于运行 macOS Monterey 或更高版本的基于英特尔处理器的 Mac。",
+        "description_arm64": "适用于搭载苹果自研芯片的 Mac 电脑，例如配备 M1 和 M2 芯片的机型。",
+        "quick_start": "通过 Homebrew 安装：",
+        "download_dmg": "下载安装程序 (.dmg)",
+        "download_homebrew_cask": "Homebrew Cask",
+        "download_zip": "便携版（.zip）"
+    },
+    "download_helper_server_docker": {
+        "title": "使用 Docker 进行自托管",
+        "description": "轻松通过 Docker 容器在 Windows、Linux 或 macOS 上部署。",
+        "download_dockerhub": "Docker Hub",
+        "download_ghcr": "ghcr.io"
+    },
+    "download_helper_server_linux": {
+        "title": "在 Linux 上自行托管",
+        "description": "在你自己的服务器或虚拟主机上部署 Trilium Notes，兼容大多数发行版。",
+        "download_tar_x64": "64 位 (.tar.xz)",
+        "download_tar_arm64": "ARM (.tar.xz)",
+        "download_nixos": "NixOS 模块"
+    }
+}

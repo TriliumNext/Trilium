@@ -5,16 +5,25 @@ footer {
     color: var(--muted-color);
     font-size: 0.8em;
 
-    .content-wrapper {
+    .row {
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-direction: column-reverse;
         gap: 2em;
+        margin-bottom: 1em;
 
         @media (min-width: 720px) {
             flex-direction: row;
         }
+    }
+
+    nav.languages {
+        flex-grow: 1;
+        justify-content: center;
+        flex-wrap: wrap;
+        display: flex;
+        gap: 0.5em 1em;
     }
 }
 

@@ -11,6 +11,7 @@ import dialog from "../../../services/dialog";
 import { formatDateTime } from "../../../utils/formatters";
 import ActionButton from "../../react/ActionButton";
 import { useTriliumEvent } from "../../react/hooks";
+import HelpButton from "../../react/HelpButton";
 
 type RenameTokenCallback = (tokenId: string, oldName: string) => Promise<void>;
 type DeleteTokenCallback = (tokenId: string, name: string ) => Promise<void>;
@@ -48,19 +49,13 @@ export default function EtapiSettings() {
             message: t("etapi.token_created_message"),
             defaultValue: authToken
         });
-    }, []);    
+    }, []);
 
     return (
         <OptionsSection title={t("etapi.title")}>
             <FormText>
-                {t("etapi.description")}<br />
-                <RawHtml
-                    html={t("etapi.see_more", {
-                        link_to_wiki: `<a class="tn-link" href="https://triliumnext.github.io/Docs/Wiki/etapi.html">${t("etapi.wiki")}</a>`,
-                        // TODO: We use window.open src/public/app/services/link.ts -> prevents regular click behavior on "a" element here because it's a relative path
-                        link_to_openapi_spec: `<a class="tn-link" onclick="window.open('etapi/etapi.openapi.yaml')" href="etapi/etapi.openapi.yaml">${t("etapi.openapi_spec")}</a>`,
-                        link_to_swagger_ui: `<a class="tn-link" href="#_help_f3xpgx6H01PW">${t("etapi.swagger_ui")}</a>`
-                    })} />                    
+                {t("etapi.description")}
+                <HelpButton helpPage="pgxEVkzLl1OP" />
             </FormText>
 
             <Button
@@ -68,6 +63,7 @@ export default function EtapiSettings() {
                 text={t("etapi.create_token")}
                 onClick={createTokenCallback}
             />
+
             <hr />
 
             <h5>{t("etapi.existing_tokens")}</h5>
@@ -123,7 +119,7 @@ function TokenList({ tokens }: { tokens: EtapiToken[] }) {
                                                 text={t("etapi.rename_token")}
                                                 onClick={() => renameCallback(etapiTokenId, name)}
                                             />
-            
+
                                             <ActionButton
                                                 icon="bx bx-trash"
                                                 text={t("etapi.delete_token")}

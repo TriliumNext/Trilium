@@ -1,0 +1,4668 @@
+openapi: 3.1.0
+info:
+  title: Internal Trilium API
+  version: 0.99.3
+  description: |
+    This is the internal API used by the Trilium Notes client application.
+    
+    **Important:** This API is primarily intended for internal use by the Trilium client.
+    For external integrations, please use the [ETAPI (External Trilium API)](https://github.com/TriliumNext/Trilium/blob/main/docs/User%20Guide/User%20Guide/Advanced%20Usage/ETAPI%20(REST%20API).md#etapi-rest-api) instead.
+    
+    ## Authentication
+    
+    Most endpoints require session-based authentication. You can authenticate using:
+    - **Password login**: POST to `/api/login` with password
+    - **Token authentication**: Generate a token via `/api/login/token`
+    - **Sync authentication**: Use document secret for sync operations
+    
+    ## Rate Limiting
+    
+    Authentication endpoints are rate-limited to prevent brute force attacks.
+    
+    ## CSRF Protection
+    
+    State-changing operations require CSRF tokens when using session authentication.
+    
+  contact:
+        name: Trilium Notes Team
+        email: contact@eliandoran.me
+        url: https://triliumnotes.org
+  license:
+      name: GNU Affero General Public License v3.0 only
+      url: https://www.gnu.org/licenses/agpl-3.0.en.html
+    
+servers:
+  - url: http://localhost:8080
+    description: Default local server
+  - url: https://your-trilium-server.com
+    description: Your Trilium server
+
+tags:
+  - name: Authentication
+    description: Login, logout, and session management
+  - name: Notes
+    description: Core note operations
+  - name: Tree
+    description: Note tree structure and branches
+  - name: Attributes
+    description: Note attributes and metadata
+  - name: Attachments
+    description: File attachments
+  - name: Revisions
+    description: Note revision history
+  - name: Search
+    description: Search and discovery
+  - name: Import/Export
+    description: Import and export operations
+  - name: Sync
+    description: Synchronization between instances
+  - name: Scripting
+    description: Script execution and automation
+  - name: Configuration
+    description: System options and settings
+  - name: Database
+    description: Database operations
+  - name: LLM
+    description: AI/LLM integration
+  - name: Security
+    description: Security features (2FA, tokens)
+  - name: Special Notes
+    description: Special note types (calendar, inbox)
+  - name: Visualization
+    description: Maps and visualizations
+  - name: External
+    description: External integrations (clipper, sender)
+  - name: Utilities
+    description: Miscellaneous utilities
+
+security:
+  - sessionAuth: []
+  - tokenAuth: []
+
+paths:
+  # Authentication endpoints
+  /api/login:
+    post:
+      tags: [Authentication]
+      summary: Login with password
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+                  format: password
+                totpToken:
+                  type: string
+                  description: TOTP token if 2FA is enabled
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: trilium.sid=s%3A...
+        '401':
+          description: Invalid credentials or TOTP token
+          
+  /api/login/token:
+    post:
+      tags: [Authentication]
+      summary: Generate API token
+      operationId: generateToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+                  format: password
+                tokenName:
+                  type: string
+                  description: Optional name for the token
+      responses:
+        '201':
+          description: Token created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authToken:
+                    type: string
+                    description: API authentication token
+                    
+  /api/login/sync:
+    post:
+      tags: [Authentication, Sync]
+      summary: Sync login using document secret
+      operationId: loginSync
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [timestamp, hash, syncVersion]
+              properties:
+                timestamp:
+                  type: string
+                  format: date-time
+                hash:
+                  type: string
+                  description: HMAC hash of document secret and timestamp
+                syncVersion:
+                  type: integer
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  instanceId:
+                    type: string
+                  maxEntityChangeId:
+                    type: string
+                    
+  /api/login/protected:
+    post:
+      tags: [Authentication, Security]
+      summary: Enter protected session
+      operationId: enterProtectedSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Protected session entered
+        '401':
+          description: Invalid password
+          
+  /api/logout/protected:
+    post:
+      tags: [Authentication, Security]
+      summary: Exit protected session
+      operationId: exitProtectedSession
+      responses:
+        '204':
+          description: Protected session exited
+          
+  /api/login/protected/touch:
+    post:
+      tags: [Authentication, Security]
+      summary: Keep protected session alive
+      operationId: touchProtectedSession
+      responses:
+        '204':
+          description: Session refreshed
+
+  # OAuth endpoints
+  /api/oauth/status:
+    get:
+      tags: [Authentication]
+      summary: Get OAuth status
+      operationId: getOAuthStatus
+      responses:
+        '200':
+          description: OAuth status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+                  configured:
+                    type: boolean
+                  providers:
+                    type: array
+                    items:
+                      type: string
+                      
+  /api/oauth/validate:
+    get:
+      tags: [Authentication]
+      summary: Validate OAuth configuration
+      operationId: validateOAuth
+      responses:
+        '200':
+          description: OAuth validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  errors:
+                    type: array
+                    items:
+                      type: string
+
+  # App Info
+  /api/app-info:
+    get:
+      tags: [Configuration]
+      summary: Get application information
+      operationId: getAppInfo
+      responses:
+        '200':
+          description: Application information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AppInfo'
+
+  # Setup endpoints
+  /api/setup/status:
+    get:
+      tags: [Configuration]
+      summary: Get setup status
+      operationId: getSetupStatus
+      security: []
+      responses:
+        '200':
+          description: Setup status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isInitialized:
+                    type: boolean
+                  schemaExists:
+                    type: boolean
+                  syncVersion:
+                    type: integer
+                    
+  /api/setup/new-document:
+    post:
+      tags: [Configuration]
+      summary: Initialize new document
+      operationId: initNewDocument
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password:
+                  type: string
+                  format: password
+                theme:
+                  type: string
+      responses:
+        '201':
+          description: Document initialized
+          
+  /api/setup/sync-from-server:
+    post:
+      tags: [Configuration, Sync]
+      summary: Setup sync from server
+      operationId: setupSyncFromServer
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [syncServerHost, password]
+              properties:
+                syncServerHost:
+                  type: string
+                  format: uri
+                syncProxy:
+                  type: string
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Sync setup successful
+          
+  /api/setup/sync-seed:
+    get:
+      tags: [Configuration, Sync]
+      summary: Get sync seed for setup
+      operationId: getSyncSeed
+      security: []
+      responses:
+        '200':
+          description: Sync seed information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  syncVersion:
+                    type: integer
+                  schemaVersion:
+                    type: integer
+                  documentSecret:
+                    type: string
+                  maxSyncId:
+                    type: integer
+
+  # Note operations
+  /api/notes/{noteId}:
+    get:
+      tags: [Notes]
+      summary: Get note metadata
+      operationId: getNote
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Note metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+        '404':
+          description: Note not found
+          
+    delete:
+      tags: [Notes]
+      summary: Delete note
+      operationId: deleteNote
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: taskId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: eraseNotes
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: last
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        '204':
+          description: Note deleted
+        '404':
+          description: Note not found
+          
+  /api/notes/{noteId}/blob:
+    get:
+      tags: [Notes]
+      summary: Get note content
+      operationId: getNoteContent
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Note content
+          content:
+            text/html:
+              schema:
+                type: string
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: object
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Note not found
+          
+  /api/notes/{noteId}/data:
+    put:
+      tags: [Notes]
+      summary: Update note content
+      operationId: updateNoteContent
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                attachments:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Attachment'
+      responses:
+        '204':
+          description: Content updated
+        '404':
+          description: Note not found
+          
+  /api/notes/{noteId}/metadata:
+    get:
+      tags: [Notes]
+      summary: Get note timestamps
+      operationId: getNoteMetadata
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Note timestamps
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Timestamps'
+        '404':
+          description: Note not found
+          
+  /api/notes/{noteId}/title:
+    put:
+      tags: [Notes]
+      summary: Change note title
+      operationId: updateNoteTitle
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+      responses:
+        '204':
+          description: Title updated
+        '404':
+          description: Note not found
+          
+  /api/notes/{noteId}/type:
+    put:
+      tags: [Notes]
+      summary: Change note type and MIME
+      operationId: updateNoteType
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, mime]
+              properties:
+                type:
+                  $ref: '#/components/schemas/NoteType'
+                mime:
+                  type: string
+      responses:
+        '204':
+          description: Type updated
+        '404':
+          description: Note not found
+          
+  /api/notes/{noteId}/protect/{isProtected}:
+    put:
+      tags: [Notes, Security]
+      summary: Protect or unprotect note
+      operationId: protectNote
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: isProtected
+          in: path
+          required: true
+          schema:
+            type: boolean
+        - name: subtree
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '204':
+          description: Protection status updated
+        '404':
+          description: Note not found
+          
+  /api/notes/{noteId}/undelete:
+    put:
+      tags: [Notes]
+      summary: Undelete note
+      operationId: undeleteNote
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '204':
+          description: Note undeleted
+        '404':
+          description: Note not found
+          
+  /api/notes/{parentNoteId}/children:
+    post:
+      tags: [Notes, Tree]
+      summary: Create new note
+      operationId: createNote
+      parameters:
+        - name: parentNoteId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: target
+          in: query
+          schema:
+            type: string
+            enum: [after, into]
+        - name: targetBranchId
+          in: query
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNoteRequest'
+      responses:
+        '201':
+          description: Note created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  note:
+                    $ref: '#/components/schemas/Note'
+                  branch:
+                    $ref: '#/components/schemas/Branch'
+                    
+  /api/notes/{noteId}/duplicate/{parentNoteId}:
+    post:
+      tags: [Notes, Tree]
+      summary: Duplicate note subtree
+      operationId: duplicateNote
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: parentNoteId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Note duplicated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/notes/{noteId}/revision:
+    post:
+      tags: [Notes, Revisions]
+      summary: Force save revision
+      operationId: saveRevision
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '201':
+          description: Revision saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Revision'
+                
+  /api/notes/{noteId}/sort-children:
+    put:
+      tags: [Notes, Tree]
+      summary: Sort child notes
+      operationId: sortChildren
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sortBy:
+                  type: string
+                  enum: [title, dateCreated, dateModified]
+                sortDirection:
+                  type: string
+                  enum: [asc, desc]
+                foldersFirst:
+                  type: boolean
+                sortNatural:
+                  type: boolean
+                sortLocale:
+                  type: string
+      responses:
+        '204':
+          description: Children sorted
+          
+  /api/notes/{noteId}/convert-to-attachment:
+    post:
+      tags: [Notes, Attachments]
+      summary: Convert note to attachment
+      operationId: convertToAttachment
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Note converted to attachment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+
+  # File operations
+  /api/notes/{noteId}/file:
+    put:
+      tags: [Notes]
+      summary: Upload file to note
+      operationId: uploadFileToNote
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                upload:
+                  type: string
+                  format: binary
+      responses:
+        '204':
+          description: File uploaded
+          
+  /api/notes/{noteId}/open:
+    get:
+      tags: [Notes]
+      summary: Open file note
+      operationId: openFileNote
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: File content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                
+  /api/notes/download/{noteId}:
+    get:
+      tags: [Notes]
+      summary: Download file note
+      operationId: downloadFileNote
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: File content
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename="document.pdf"
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                
+  /api/notes/{noteId}/download:
+    get:
+      tags: [Notes]
+      summary: Download file note (alternative path)
+      operationId: downloadFileNoteAlt
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: File content
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename="document.pdf"
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                
+  /api/attachments/{attachmentId}/open-partial:
+    get:
+      tags: [Attachments]
+      summary: Stream file with partial content support
+      operationId: openPartialFileAttachment
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: Range
+          in: header
+          schema:
+            type: string
+            example: bytes=0-1023
+      responses:
+        '206':
+          description: Partial content
+          headers:
+            Content-Range:
+              schema:
+                type: string
+                example: bytes 0-1023/146515
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                
+  /api/notes/{noteId}/save-to-tmp-dir:
+    post:
+      tags: [Notes]
+      summary: Save note to temp directory
+      operationId: saveToTmpDir
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: File saved to temp directory
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  filePath:
+                    type: string
+                    
+  /api/notes/{noteId}/upload-modified-file:
+    post:
+      tags: [Notes]
+      summary: Update note from modified temp file
+      operationId: uploadModifiedFile
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [filePath]
+              properties:
+                filePath:
+                  type: string
+      responses:
+        '204':
+          description: Note updated from file
+
+  # Tree and branch operations
+  /api/tree:
+    get:
+      tags: [Tree]
+      summary: Get tree structure
+      operationId: getTree
+      parameters:
+        - name: subTreeNoteId
+          in: query
+          schema:
+            type: string
+          description: Limit tree to this note and descendants
+      responses:
+        '200':
+          description: Tree structure
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Note'
+                  branches:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Branch'
+                  attributes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Attribute'
+                      
+  /api/tree/load:
+    post:
+      tags: [Tree]
+      summary: Load specific notes
+      operationId: loadNotes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [noteIds]
+              properties:
+                noteIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Loaded notes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Note'
+                  branches:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Branch'
+                  attributes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Attribute'
+                      
+  /api/branches/{branchId}:
+    delete:
+      tags: [Tree]
+      summary: Delete branch
+      operationId: deleteBranch
+      parameters:
+        - name: branchId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: taskId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: eraseNotes
+          in: query
+          schema:
+            type: boolean
+        - name: last
+          in: query
+          required: true
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Branch deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  noteDeleted:
+                    type: boolean
+                    
+  /api/branches/{branchId}/move-to/{parentBranchId}:
+    put:
+      tags: [Tree]
+      summary: Move branch to new parent
+      operationId: moveBranchToParent
+      parameters:
+        - name: branchId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: parentBranchId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Branch moved
+          
+  /api/branches/{branchId}/move-before/{beforeBranchId}:
+    put:
+      tags: [Tree]
+      summary: Move branch before another
+      operationId: moveBranchBefore
+      parameters:
+        - name: branchId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: beforeBranchId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Branch moved
+          
+  /api/branches/{branchId}/move-after/{afterBranchId}:
+    put:
+      tags: [Tree]
+      summary: Move branch after another
+      operationId: moveBranchAfter
+      parameters:
+        - name: branchId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: afterBranchId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Branch moved
+          
+  /api/branches/{branchId}/expanded/{expanded}:
+    put:
+      tags: [Tree]
+      summary: Set branch expanded state
+      operationId: setBranchExpanded
+      parameters:
+        - name: branchId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: expanded
+          in: path
+          required: true
+          schema:
+            type: boolean
+      responses:
+        '204':
+          description: Expanded state updated
+          
+  /api/branches/{branchId}/expanded-subtree/{expanded}:
+    put:
+      tags: [Tree]
+      summary: Set subtree expanded state
+      operationId: setSubtreeExpanded
+      parameters:
+        - name: branchId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: expanded
+          in: path
+          required: true
+          schema:
+            type: boolean
+      responses:
+        '204':
+          description: Subtree expanded state updated
+          
+  /api/branches/{branchId}/set-prefix:
+    put:
+      tags: [Tree]
+      summary: Set branch prefix
+      operationId: setBranchPrefix
+      parameters:
+        - name: branchId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                prefix:
+                  type: string
+                  nullable: true
+      responses:
+        '204':
+          description: Prefix updated
+
+  # Cloning operations
+  /api/notes/{noteId}/clone-to-branch/{parentBranchId}:
+    put:
+      tags: [Tree, Notes]
+      summary: Clone note to branch
+      operationId: cloneToBranch
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: parentBranchId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Note cloned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+                
+  /api/notes/{noteId}/clone-to-note/{parentNoteId}:
+    put:
+      tags: [Tree, Notes]
+      summary: Clone note to parent note
+      operationId: cloneToNote
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: parentNoteId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Note cloned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+                
+  /api/notes/{noteId}/clone-after/{afterBranchId}:
+    put:
+      tags: [Tree, Notes]
+      summary: Clone note after branch
+      operationId: cloneAfterBranch
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: afterBranchId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Note cloned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Branch'
+                
+  /api/notes/{noteId}/toggle-in-parent/{parentNoteId}/{present}:
+    put:
+      tags: [Tree, Notes]
+      summary: Toggle note presence in parent
+      operationId: toggleInParent
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: parentNoteId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: present
+          in: path
+          required: true
+          schema:
+            type: boolean
+      responses:
+        '204':
+          description: Presence toggled
+
+  # Attributes
+  /api/notes/{noteId}/attributes:
+    get:
+      tags: [Attributes]
+      summary: Get effective note attributes
+      operationId: getNoteAttributes
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Note attributes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Attribute'
+                  
+    post:
+      tags: [Attributes]
+      summary: Add note attribute
+      operationId: addNoteAttribute
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Attribute'
+      responses:
+        '201':
+          description: Attribute added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attribute'
+                
+    put:
+      tags: [Attributes]
+      summary: Update all note attributes
+      operationId: updateNoteAttributes
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Attribute'
+      responses:
+        '204':
+          description: Attributes updated
+          
+  /api/notes/{noteId}/attributes/{attributeId}:
+    delete:
+      tags: [Attributes]
+      summary: Delete attribute
+      operationId: deleteAttribute
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: attributeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Attribute deleted
+          
+  /api/notes/{noteId}/attribute:
+    put:
+      tags: [Attributes]
+      summary: Update single attribute
+      operationId: updateAttribute
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Attribute'
+      responses:
+        '204':
+          description: Attribute updated
+          
+  /api/notes/{noteId}/set-attribute:
+    put:
+      tags: [Attributes]
+      summary: Set attribute value
+      operationId: setAttribute
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, name, value]
+              properties:
+                type:
+                  type: string
+                  enum: [label, relation]
+                name:
+                  type: string
+                value:
+                  type: string
+      responses:
+        '204':
+          description: Attribute set
+          
+  /api/notes/{noteId}/relations/{name}/to/{targetNoteId}:
+    put:
+      tags: [Attributes]
+      summary: Create relation
+      operationId: createRelation
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: targetNoteId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Relation created
+          
+    delete:
+      tags: [Attributes]
+      summary: Delete relation
+      operationId: deleteRelation
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: targetNoteId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Relation deleted
+          
+  /api/attribute-names:
+    get:
+      tags: [Attributes]
+      summary: Get attribute name suggestions
+      operationId: getAttributeNames
+      parameters:
+        - name: type
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [label, relation]
+        - name: query
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attribute names
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  
+  /api/attribute-values/{attributeName}:
+    get:
+      tags: [Attributes]
+      summary: Get values for attribute
+      operationId: getAttributeValues
+      parameters:
+        - name: attributeName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attribute values
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+
+  # Attachments
+  /api/notes/{noteId}/attachments:
+    get:
+      tags: [Attachments]
+      summary: Get note attachments
+      operationId: getNoteAttachments
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Note attachments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Attachment'
+                  
+    post:
+      tags: [Attachments]
+      summary: Save attachment
+      operationId: saveAttachment
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: matchBy
+          in: query
+          schema:
+            type: string
+            enum: [attachmentId, title]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Attachment'
+      responses:
+        '201':
+          description: Attachment saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+                
+  /api/notes/{noteId}/attachments/upload:
+    post:
+      tags: [Attachments]
+      summary: Upload attachment file
+      operationId: uploadAttachment
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                upload:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Attachment uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+                
+  /api/attachments/{attachmentId}:
+    get:
+      tags: [Attachments]
+      summary: Get attachment metadata
+      operationId: getAttachment
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attachment metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+                
+    delete:
+      tags: [Attachments]
+      summary: Delete attachment
+      operationId: deleteAttachment
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Attachment deleted
+          
+  /api/attachments/{attachmentId}/blob:
+    get:
+      tags: [Attachments]
+      summary: Get attachment content
+      operationId: getAttachmentBlob
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: preview
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Attachment content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                
+  /api/attachments/{attachmentId}/rename:
+    put:
+      tags: [Attachments]
+      summary: Rename attachment
+      operationId: renameAttachment
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title:
+                  type: string
+      responses:
+        '204':
+          description: Attachment renamed
+          
+  /api/attachments/{attachmentId}/convert-to-note:
+    post:
+      tags: [Attachments, Notes]
+      summary: Convert attachment to note
+      operationId: convertAttachmentToNote
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attachment converted to note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/attachments/{attachmentId}/file:
+    put:
+      tags: [Attachments]
+      summary: Update attachment file
+      operationId: updateAttachmentFile
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                upload:
+                  type: string
+                  format: binary
+      responses:
+        '204':
+          description: Attachment file updated
+          
+  /api/attachments/{attachmentId}/open:
+    get:
+      tags: [Attachments]
+      summary: Open attachment
+      operationId: openAttachment
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attachment content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                
+  /api/attachments/download/{attachmentId}:
+    get:
+      tags: [Attachments]
+      summary: Download attachment
+      operationId: downloadAttachment
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attachment content
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename="document.pdf"
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                
+  /api/attachments/{attachmentId}/download:
+    get:
+      tags: [Attachments]
+      summary: Download attachment (alternative path)
+      operationId: downloadAttachmentAlt
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attachment content
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename="document.pdf"
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /api/attachments/{attachmentId}/all:
+    get:
+      tags: [Attachments]
+      summary: Get all attachment information
+      operationId: getAllAttachmentInfo
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Complete attachment information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attachmentId:
+                    type: string
+                  title:
+                    type: string
+                  mime:
+                    type: string
+                  isProtected:
+                    type: boolean
+                  position:
+                    type: integer
+                  contentLength:
+                    type: integer
+                  ownerId:
+                    type: string
+                  dateCreated:
+                    type: string
+                    format: date-time
+                  dateModified:
+                    type: string
+                    format: date-time
+
+  /api/attachments/{attachmentId}/save-to-tmp-dir:
+    post:
+      tags: [Attachments]
+      summary: Save attachment to temporary directory
+      operationId: saveAttachmentToTmpDir
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Attachment saved to temporary directory
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tmpPath:
+                    type: string
+                    description: Path to temporary file
+                  success:
+                    type: boolean
+                    
+  /api/attachments/{attachmentId}/upload-modified-file:
+    post:
+      tags: [Attachments]
+      summary: Upload modified attachment file
+      operationId: uploadModifiedAttachmentFile
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                upload:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Modified file uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  # Revisions
+  /api/notes/{noteId}/revisions:
+    get:
+      tags: [Revisions]
+      summary: Get note revisions
+      operationId: getNoteRevisions
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Note revisions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Revision'
+                  
+    delete:
+      tags: [Revisions]
+      summary: Erase all note revisions
+      operationId: eraseNoteRevisions
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '204':
+          description: Revisions erased
+          
+  /api/revisions/{revisionId}:
+    get:
+      tags: [Revisions]
+      summary: Get revision details
+      operationId: getRevision
+      parameters:
+        - name: revisionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Revision details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Revision'
+                
+    delete:
+      tags: [Revisions]
+      summary: Erase revision
+      operationId: eraseRevision
+      parameters:
+        - name: revisionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Revision erased
+          
+  /api/revisions/{revisionId}/blob:
+    get:
+      tags: [Revisions]
+      summary: Get revision content
+      operationId: getRevisionBlob
+      parameters:
+        - name: revisionId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: preview
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Revision content
+          content:
+            text/html:
+              schema:
+                type: string
+            text/plain:
+              schema:
+                type: string
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                
+  /api/revisions/{revisionId}/restore:
+    post:
+      tags: [Revisions, Notes]
+      summary: Restore revision
+      operationId: restoreRevision
+      parameters:
+        - name: revisionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Revision restored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/revisions/{revisionId}/download:
+    get:
+      tags: [Revisions]
+      summary: Download revision
+      operationId: downloadRevision
+      parameters:
+        - name: revisionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Revision content
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                
+  /api/revisions/erase-all-excess-revisions:
+    post:
+      tags: [Revisions]
+      summary: Cleanup old revisions
+      operationId: eraseExcessRevisions
+      responses:
+        '204':
+          description: Excess revisions erased
+          
+  /api/edited-notes/{date}:
+    get:
+      tags: [Revisions]
+      summary: Get notes edited on date
+      operationId: getEditedNotes
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+            example: '2024-01-15'
+      responses:
+        '200':
+          description: Edited notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Note'
+
+  # Search
+  /api/search/{searchString}:
+    get:
+      tags: [Search]
+      summary: Full text search
+      operationId: search
+      parameters:
+        - name: searchString
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SearchResult'
+                  
+  /api/quick-search/{searchString}:
+    get:
+      tags: [Search]
+      summary: Quick search with highlighting
+      operationId: quickSearch
+      parameters:
+        - name: searchString
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quick search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SearchResult'
+                  
+  /api/search-note/{noteId}:
+    get:
+      tags: [Search]
+      summary: Execute search note
+      operationId: executeSearchNote
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SearchResult'
+                  
+  /api/search-and-execute-note/{noteId}:
+    post:
+      tags: [Search, Scripting]
+      summary: Search and execute actions
+      operationId: searchAndExecute
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Execution results
+          
+  /api/search-related:
+    post:
+      tags: [Search]
+      summary: Find related notes by attributes
+      operationId: searchRelated
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Attribute'
+      responses:
+        '200':
+          description: Related notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Note'
+                  
+  /api/search-templates:
+    get:
+      tags: [Search]
+      summary: Search template notes
+      operationId: searchTemplates
+      responses:
+        '200':
+          description: Template notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Note'
+                  
+  /api/autocomplete:
+    get:
+      tags: [Search]
+      summary: Get autocomplete suggestions
+      operationId: autocomplete
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: fastSearch
+          in: query
+          schema:
+            type: boolean
+        - name: activeNoteId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Autocomplete suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    noteId:
+                      type: string
+                    title:
+                      type: string
+                    path:
+                      type: string
+                      
+  /api/autocomplete/notesCount:
+    get:
+      tags: [Search]
+      summary: Get total notes count
+      operationId: getNotesCount
+      responses:
+        '200':
+          description: Notes count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    
+  /api/similar-notes/{noteId}:
+    get:
+      tags: [Search]
+      summary: Find similar notes
+      operationId: findSimilarNotes
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Similar notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    noteId:
+                      type: string
+                    title:
+                      type: string
+                    similarity:
+                      type: number
+
+  # Images
+  /api/images/{noteId}/{filename}:
+    get:
+      tags: [Notes]
+      summary: Get image from note
+      operationId: getNoteImage
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Image content
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+                
+  /api/images/{noteId}:
+    put:
+      tags: [Notes]
+      summary: Update image note
+      operationId: updateImageNote
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                upload:
+                  type: string
+                  format: binary
+      responses:
+        '204':
+          description: Image updated
+          
+  /api/attachments/{attachmentId}/image/{filename}:
+    get:
+      tags: [Attachments]
+      summary: Get attached image
+      operationId: getAttachmentImage
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Image content
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+                
+  /api/revisions/{revisionId}/image/{filename}:
+    get:
+      tags: [Revisions]
+      summary: Get image from revision
+      operationId: getRevisionImage
+      parameters:
+        - name: revisionId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Image content
+          content:
+            image/*:
+              schema:
+                type: string
+                format: binary
+
+  # Import/Export
+  /api/branches/{branchId}/export/{type}/{format}/{version}/{taskId}:
+    get:
+      tags: [Import/Export]
+      summary: Export branch
+      operationId: exportBranch
+      parameters:
+        - name: branchId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [subtree, single]
+        - name: format
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [html, markdown, opml]
+        - name: version
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Exported content
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                
+  /api/notes/{parentNoteId}/notes-import:
+    post:
+      tags: [Import/Export]
+      summary: Import notes
+      operationId: importNotes
+      parameters:
+        - name: parentNoteId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                upload:
+                  type: string
+                  format: binary
+                safeImport:
+                  type: boolean
+                shrinkImages:
+                  type: boolean
+                textImportedAsText:
+                  type: boolean
+                codeImportedAsCode:
+                  type: boolean
+                explodeArchives:
+                  type: boolean
+                replaceUnderscoresWithSpaces:
+                  type: boolean
+      responses:
+        '200':
+          description: Import results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  noteId:
+                    type: string
+                  note:
+                    $ref: '#/components/schemas/Note'
+                    
+  /api/notes/{parentNoteId}/attachments-import:
+    post:
+      tags: [Import/Export, Attachments]
+      summary: Import attachments
+      operationId: importAttachments
+      parameters:
+        - name: parentNoteId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                upload:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Import results
+
+  # Options
+  /api/options:
+    get:
+      tags: [Configuration]
+      summary: Get system options
+      operationId: getOptions
+      responses:
+        '200':
+          description: System options
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+                  
+    put:
+      tags: [Configuration]
+      summary: Update multiple options
+      operationId: updateOptions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: string
+      responses:
+        '204':
+          description: Options updated
+          
+  /api/options/{name}/{value}:
+    put:
+      tags: [Configuration]
+      summary: Update single option
+      operationId: updateOption
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: value
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Option updated
+          
+  /api/options/user-themes:
+    get:
+      tags: [Configuration]
+      summary: Get user-defined themes
+      operationId: getUserThemes
+      responses:
+        '200':
+          description: User themes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    label:
+                      type: string
+                      
+  /api/options/locales:
+    get:
+      tags: [Configuration]
+      summary: Get supported locales
+      operationId: getLocales
+      responses:
+        '200':
+          description: Supported locales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                    name:
+                      type: string
+
+  # Password management
+  /api/password/change:
+    post:
+      tags: [Security]
+      summary: Change password
+      operationId: changePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [new_password]
+              properties:
+                current_password:
+                  type: string
+                  format: password
+                new_password:
+                  type: string
+                  format: password
+      responses:
+        '204':
+          description: Password changed
+          
+  /api/password/reset:
+    post:
+      tags: [Security]
+      summary: Reset password (destructive)
+      operationId: resetPassword
+      parameters:
+        - name: really
+          in: query
+          required: true
+          schema:
+            type: string
+            example: yesIReallyWantToResetMyPassword
+      responses:
+        '204':
+          description: Password reset
+
+  # Sync
+  /api/sync/test:
+    post:
+      tags: [Sync]
+      summary: Test sync connection
+      operationId: testSync
+      responses:
+        '200':
+          description: Sync test results
+          
+  /api/sync/now:
+    post:
+      tags: [Sync]
+      summary: Trigger sync now
+      operationId: syncNow
+      responses:
+        '200':
+          description: Sync started
+          
+  /api/sync/check:
+    get:
+      tags: [Sync]
+      summary: Get sync status
+      operationId: checkSync
+      responses:
+        '200':
+          description: Sync status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  synced:
+                    type: boolean
+                  lastSyncedPush:
+                    type: string
+                    format: date-time
+                  lastSyncedPull:
+                    type: string
+                    format: date-time
+                    
+  /api/sync/changed:
+    get:
+      tags: [Sync]
+      summary: Get sync changes
+      operationId: getSyncChanges
+      parameters:
+        - name: instanceId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: lastEntityChangeId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: logMarkerId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sync changes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  entityChanges:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EntityChange'
+                  lastEntityChangeId:
+                    type: integer
+                  outstandingPullCount:
+                    type: integer
+                    
+  /api/sync/update:
+    put:
+      tags: [Sync]
+      summary: Push sync changes
+      operationId: pushSyncChanges
+      parameters:
+        - name: logMarkerId
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pageCount
+          in: header
+          required: true
+          schema:
+            type: integer
+        - name: pageIndex
+          in: header
+          required: true
+          schema:
+            type: integer
+        - name: requestId
+          in: header
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                instanceId:
+                  type: string
+                entities:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/EntityChange'
+      responses:
+        '200':
+          description: Changes processed
+          
+  /api/sync/finished:
+    post:
+      tags: [Sync]
+      summary: Mark sync as finished
+      operationId: finishSync
+      responses:
+        '204':
+          description: Sync finished
+          
+  /api/sync/stats:
+    get:
+      tags: [Sync]
+      summary: Get sync statistics
+      operationId: getSyncStats
+      security: []
+      responses:
+        '200':
+          description: Sync statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  initialized:
+                    type: boolean
+                  stats:
+                    type: object
+                    
+  /api/sync/fill-entity-changes:
+    post:
+      tags: [Sync]
+      summary: Fill entity changes
+      operationId: fillEntityChanges
+      responses:
+        '204':
+          description: Entity changes filled
+          
+  /api/sync/force-full-sync:
+    post:
+      tags: [Sync]
+      summary: Force full sync
+      operationId: forceFullSync
+      responses:
+        '204':
+          description: Full sync forced
+          
+  /api/sync/check-entity-changes:
+    post:
+      tags: [Sync]
+      summary: Check entity changes consistency
+      operationId: checkEntityChanges
+      responses:
+        '200':
+          description: Consistency check results
+          
+  /api/sync/queue-sector/{entityName}/{sector}:
+    post:
+      tags: [Sync]
+      summary: Queue sector for sync
+      operationId: queueSyncSector
+      parameters:
+        - name: entityName
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sector
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Sector queued
+
+  # Scripting
+  /api/script/exec:
+    post:
+      tags: [Scripting]
+      summary: Execute script
+      operationId: executeScript
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [script]
+              properties:
+                script:
+                  type: string
+                params:
+                  type: array
+                  items:
+                    type: string
+                startNoteId:
+                  type: string
+                currentNoteId:
+                  type: string
+                originEntityName:
+                  type: string
+                originEntityId:
+                  type: string
+                transactional:
+                  type: boolean
+      responses:
+        '200':
+          description: Script execution results
+          content:
+            application/json:
+              schema:
+                type: object
+                
+  /api/script/run/{noteId}:
+    post:
+      tags: [Scripting]
+      summary: Run script note
+      operationId: runScriptNote
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Script execution results
+          
+  /api/script/startup:
+    get:
+      tags: [Scripting]
+      summary: Get startup script bundles
+      operationId: getStartupScripts
+      parameters:
+        - name: mobile
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Startup scripts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScriptBundle'
+                  
+  /api/script/widgets:
+    get:
+      tags: [Scripting]
+      summary: Get widget script bundles
+      operationId: getWidgetScripts
+      responses:
+        '200':
+          description: Widget scripts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScriptBundle'
+                  
+  /api/script/bundle/{noteId}:
+    post:
+      tags: [Scripting]
+      summary: Get script bundle for note
+      operationId: getScriptBundle
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Script bundle
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScriptBundle'
+                
+  /api/script/relation/{noteId}/{relationName}:
+    get:
+      tags: [Scripting]
+      summary: Get relation script bundles
+      operationId: getRelationScripts
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+        - name: relationName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Relation scripts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ScriptBundle'
+
+  # Database
+  /api/sql/schema:
+    get:
+      tags: [Database]
+      summary: Get database schema
+      operationId: getDatabaseSchema
+      responses:
+        '200':
+          description: Database schema
+          content:
+            text/plain:
+              schema:
+                type: string
+                
+  /api/sql/execute/{noteId}:
+    post:
+      tags: [Database]
+      summary: Execute SQL from note
+      operationId: executeSql
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: SQL execution results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  
+  /api/database/backup-database:
+    post:
+      tags: [Database]
+      summary: Create database backup
+      operationId: backupDatabase
+      responses:
+        '204':
+          description: Backup created
+          
+  /api/database/backups:
+    get:
+      tags: [Database]
+      summary: List existing backups
+      operationId: listBackups
+      responses:
+        '200':
+          description: Backup list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  
+  /api/database/vacuum-database:
+    post:
+      tags: [Database]
+      summary: Vacuum database
+      operationId: vacuumDatabase
+      responses:
+        '204':
+          description: Database vacuumed
+          
+  /api/database/anonymize/{type}:
+    post:
+      tags: [Database]
+      summary: Anonymize database
+      operationId: anonymizeDatabase
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [save-as-file, save-and-send]
+      responses:
+        '200':
+          description: Anonymization results
+          
+  /api/database/anonymized-databases:
+    get:
+      tags: [Database]
+      summary: List anonymized databases
+      operationId: listAnonymizedDatabases
+      responses:
+        '200':
+          description: Anonymized database list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  
+  /api/database/find-and-fix-consistency-issues:
+    post:
+      tags: [Database]
+      summary: Fix consistency issues
+      operationId: fixConsistencyIssues
+      responses:
+        '200':
+          description: Consistency check results
+          
+  /api/database/check-integrity:
+    get:
+      tags: [Database]
+      summary: Check database integrity
+      operationId: checkIntegrity
+      responses:
+        '200':
+          description: Integrity check results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: string
+
+  # System
+  /api/metrics:
+    get:
+      tags: [Utilities]
+      summary: Get system metrics
+      operationId: getMetrics
+      parameters:
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum: [prometheus, json]
+            default: json
+      responses:
+        '200':
+          description: System metrics
+          content:
+            application/json:
+              schema:
+                type: object
+            text/plain:
+              schema:
+                type: string
+                
+  /api/system-checks:
+    get:
+      tags: [Utilities]
+      summary: Run system diagnostics
+      operationId: runSystemChecks
+      responses:
+        '200':
+          description: System check results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    status:
+                      type: string
+                      enum: [pass, fail]
+                    message:
+                      type: string
+                      
+  /api/health-check:
+    get:
+      tags: [Utilities]
+      summary: Health check endpoint
+      operationId: healthCheck
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+                
+  /api/backend-log:
+    get:
+      tags: [Utilities]
+      summary: Get backend log
+      operationId: getBackendLog
+      responses:
+        '200':
+          description: Backend log entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    timestamp:
+                      type: string
+                      format: date-time
+                    level:
+                      type: string
+                    message:
+                      type: string
+
+  # Bulk operations
+  /api/bulk-action/execute:
+    post:
+      tags: [Notes]
+      summary: Execute bulk action
+      operationId: executeBulkAction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                noteIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Bulk action results
+          
+  /api/bulk-action/affected-notes:
+    post:
+      tags: [Notes]
+      summary: Get affected notes count
+      operationId: getAffectedNotesCount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                noteIds:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Affected notes count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    
+  /api/delete-notes-preview:
+    post:
+      tags: [Notes]
+      summary: Preview note deletion
+      operationId: previewNoteDeletion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                branchIdsToDelete:
+                  type: array
+                  items:
+                    type: string
+                deleteAllClones:
+                  type: boolean
+      responses:
+        '200':
+          description: Deletion preview
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  notesToDelete:
+                    type: array
+                    items:
+                      type: string
+                      
+  /api/notes/erase-deleted-notes-now:
+    post:
+      tags: [Notes]
+      summary: Erase deleted notes
+      operationId: eraseDeletedNotes
+      responses:
+        '204':
+          description: Deleted notes erased
+          
+  /api/notes/erase-unused-attachments-now:
+    post:
+      tags: [Attachments]
+      summary: Erase unused attachments
+      operationId: eraseUnusedAttachments
+      responses:
+        '204':
+          description: Unused attachments erased
+
+  # Special notes
+  /api/special-notes/inbox/{date}:
+    get:
+      tags: [Special Notes]
+      summary: Get/create inbox note
+      operationId: getInboxNote
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Inbox note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/special-notes/days/{date}:
+    get:
+      tags: [Special Notes]
+      summary: Get/create day note
+      operationId: getDayNote
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Day note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/special-notes/weeks/{week}:
+    get:
+      tags: [Special Notes]
+      summary: Get/create week note
+      operationId: getWeekNote
+      parameters:
+        - name: week
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}$
+            example: '2024-03'
+      responses:
+        '200':
+          description: Week note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/special-notes/months/{month}:
+    get:
+      tags: [Special Notes]
+      summary: Get/create month note
+      operationId: getMonthNote
+      parameters:
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^\d{4}-\d{2}$
+            example: '2024-01'
+      responses:
+        '200':
+          description: Month note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/special-notes/years/{year}:
+    get:
+      tags: [Special Notes]
+      summary: Get/create year note
+      operationId: getYearNote
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: ^\d{4}$
+            example: '2024'
+      responses:
+        '200':
+          description: Year note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/special-notes/sql-console:
+    post:
+      tags: [Special Notes, Database]
+      summary: Create SQL console note
+      operationId: createSqlConsole
+      responses:
+        '201':
+          description: SQL console created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/special-notes/search-note:
+    post:
+      tags: [Special Notes, Search]
+      summary: Create search note
+      operationId: createSearchNote
+      responses:
+        '201':
+          description: Search note created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/special-notes/launchers/{parentNoteId}/{launcherType}:
+    post:
+      tags: [Special Notes]
+      summary: Create launcher
+      operationId: createLauncher
+      parameters:
+        - name: parentNoteId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: launcherType
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Launcher created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/special-notes/notes-for-month/{month}:
+    get:
+      tags: [Special Notes]
+      summary: Get notes for specific month
+      operationId: getNotesForMonth
+      parameters:
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "2024-03"
+      responses:
+        '200':
+          description: Notes for the month
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Note'
+                  
+  /api/special-notes/quarters/{quarter}:
+    get:
+      tags: [Special Notes]
+      summary: Get quarter note
+      operationId: getQuarter
+      parameters:
+        - name: quarter
+          in: path
+          required: true
+          schema:
+            type: string
+            example: "2024-Q1"
+      responses:
+        '200':
+          description: Quarter note
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/special-notes/week-first-day/{date}:
+    get:
+      tags: [Special Notes]
+      summary: Get first day of week for date
+      operationId: getWeekFirstDay
+      parameters:
+        - name: date
+          in: path
+          required: true
+          schema:
+            type: string
+            format: date
+            example: "2024-03-15"
+      responses:
+        '200':
+          description: First day of week
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  date:
+                    type: string
+                    format: date
+                    
+  /api/special-notes/launchers/{noteId}/reset:
+    post:
+      tags: [Special Notes]
+      summary: Reset launcher note
+      operationId: resetLauncher
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Launcher reset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/special-notes/save-search-note:
+    post:
+      tags: [Special Notes]
+      summary: Save search note
+      operationId: saveSearchNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                title:
+                  type: string
+      responses:
+        '201':
+          description: Search note saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/special-notes/save-sql-console:
+    post:
+      tags: [Special Notes]
+      summary: Save SQL console note
+      operationId: saveSqlConsole
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sql:
+                  type: string
+                title:
+                  type: string
+      responses:
+        '201':
+          description: SQL console saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/special-notes/api-script-launcher:
+    put:
+      tags: [Special Notes]
+      summary: Update API script launcher
+      operationId: updateApiScriptLauncher
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+                  description: Script code
+      responses:
+        '200':
+          description: API script launcher updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+
+  # Maps
+  /api/note-map/{noteId}/tree:
+    post:
+      tags: [Visualization]
+      summary: Get tree map
+      operationId: getTreeMap
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Tree map data
+          content:
+            application/json:
+              schema:
+                type: object
+                
+  /api/note-map/{noteId}/link:
+    post:
+      tags: [Visualization]
+      summary: Get link map
+      operationId: getLinkMap
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Link map data
+          content:
+            application/json:
+              schema:
+                type: object
+                
+  /api/note-map/{noteId}/backlinks:
+    get:
+      tags: [Visualization]
+      summary: Get backlinks
+      operationId: getBacklinks
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Backlinks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    noteId:
+                      type: string
+                    title:
+                      type: string
+                      
+  /api/note-map/{noteId}/backlink-count:
+    get:
+      tags: [Visualization]
+      summary: Get backlink count for note
+      operationId: getBacklinkCount
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Backlink count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    description: Number of backlinks to this note
+                      
+  /api/relation-map:
+    post:
+      tags: [Visualization]
+      summary: Get relation map data
+      operationId: getRelationMap
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                noteId:
+                  type: string
+                maxDepth:
+                  type: integer
+                excludeArchived:
+                  type: boolean
+      responses:
+        '200':
+          description: Relation map data
+          content:
+            application/json:
+              schema:
+                type: object
+
+  # External integrations
+  /api/clipper/handshake:
+    get:
+      tags: [External]
+      summary: Clipper handshake
+      operationId: clipperHandshake
+      responses:
+        '200':
+          description: Handshake successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  protocolVersion:
+                    type: string
+                    
+  /api/clipper/clippings:
+    post:
+      tags: [External]
+      summary: Add web clipping
+      operationId: addClipping
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                url:
+                  type: string
+      responses:
+        '201':
+          description: Clipping created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/clipper/notes:
+    post:
+      tags: [External]
+      summary: Create clipper note
+      operationId: createClipperNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+                parentNoteId:
+                  type: string
+      responses:
+        '201':
+          description: Note created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/clipper/open/{noteId}:
+    post:
+      tags: [External]
+      summary: Open note in clipper
+      operationId: openNoteInClipper
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Note opened in clipper
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  url:
+                    type: string
+                    description: URL to open in clipper
+                
+  /api/sender/login:
+    post:
+      tags: [External]
+      summary: Sender login
+      operationId: senderLogin
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    
+  /api/sender/image:
+    post:
+      tags: [External]
+      summary: Upload image from sender
+      operationId: uploadSenderImage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                upload:
+                  type: string
+                  format: binary
+      responses:
+        '201':
+          description: Image uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+                
+  /api/sender/note:
+    post:
+      tags: [External]
+      summary: Save note from sender
+      operationId: saveSenderNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                content:
+                  type: string
+      responses:
+        '201':
+          description: Note saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Note'
+
+  # LLM endpoints
+  /api/llm/chat:
+    post:
+      tags: [LLM]
+      summary: Create new chat session
+      operationId: createChatSession
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                systemPrompt:
+                  type: string
+                temperature:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                maxTokens:
+                  type: integer
+                model:
+                  type: string
+                provider:
+                  type: string
+                  enum: [openai, anthropic, ollama]
+                contextNoteId:
+                  type: string
+      responses:
+        '201':
+          description: Chat session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatSession'
+                
+    get:
+      tags: [LLM]
+      summary: List all chat sessions
+      operationId: listChatSessions
+      responses:
+        '200':
+          description: Chat sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatSession'
+                  
+  /api/llm/chat/{sessionId}:
+    get:
+      tags: [LLM]
+      summary: Get specific chat session
+      operationId: getChatSession
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Chat session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatSession'
+                
+    patch:
+      tags: [LLM]
+      summary: Update chat session
+      operationId: updateChatSession
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                systemPrompt:
+                  type: string
+                temperature:
+                  type: number
+                maxTokens:
+                  type: integer
+                model:
+                  type: string
+                provider:
+                  type: string
+                contextNoteId:
+                  type: string
+      responses:
+        '200':
+          description: Session updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatSession'
+                
+  /api/llm/chat/{chatNoteId}:
+    delete:
+      tags: [LLM]
+      summary: Delete chat session
+      operationId: deleteChatSession
+      parameters:
+        - name: chatNoteId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Session deleted
+          
+  /api/llm/chat/{chatNoteId}/messages:
+    post:
+      tags: [LLM]
+      summary: Send message to LLM
+      operationId: sendChatMessage
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              properties:
+                message:
+                  type: string
+                options:
+                  type: object
+                  properties:
+                    temperature:
+                      type: number
+                    maxTokens:
+                      type: integer
+                    model:
+                      type: string
+                    provider:
+                      type: string
+                includeContext:
+                  type: boolean
+                useNoteContext:
+                  type: boolean
+      responses:
+        '200':
+          description: LLM response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  response:
+                    type: string
+                  sources:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        noteId:
+                          type: string
+                        title:
+                          type: string
+                        similarity:
+                          type: number
+                          
+  /api/llm/chat/{chatNoteId}/messages/stream:
+    post:
+      tags: [LLM]
+      summary: Stream message to LLM
+      operationId: streamChatMessage
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                useAdvancedContext:
+                  type: boolean
+                showThinking:
+                  type: boolean
+                mentions:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Streaming started
+          
+  /api/llm/providers/ollama/models:
+    get:
+      tags: [LLM]
+      summary: List Ollama models
+      operationId: listOllamaModels
+      parameters:
+        - name: baseUrl
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ollama models
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  models:
+                    type: array
+                    items:
+                      type: object
+                      
+  /api/llm/providers/openai/models:
+    get:
+      tags: [LLM]
+      summary: List OpenAI models
+      operationId: listOpenAIModels
+      responses:
+        '200':
+          description: OpenAI models
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  chatModels:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        type:
+                          type: string
+                  embeddingModels:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        type:
+                          type: string
+                          
+  /api/llm/providers/anthropic/models:
+    get:
+      tags: [LLM]
+      summary: List Anthropic models
+      operationId: listAnthropicModels
+      responses:
+        '200':
+          description: Anthropic models
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  chatModels:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        type:
+                          type: string
+
+  # TOTP/2FA
+  /api/totp/generate:
+    get:
+      tags: [Security]
+      summary: Generate TOTP secret
+      operationId: generateTotpSecret
+      responses:
+        '200':
+          description: TOTP secret generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  secret:
+                    type: string
+                  qrCode:
+                    type: string
+                    
+  /api/totp/status:
+    get:
+      tags: [Security]
+      summary: Get TOTP status
+      operationId: getTotpStatus
+      responses:
+        '200':
+          description: TOTP status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+                    
+  /api/totp/get:
+    get:
+      tags: [Security]
+      summary: Get TOTP configuration
+      operationId: getTotpConfig
+      responses:
+        '200':
+          description: TOTP configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  secret:
+                    type: string
+                  qrCode:
+                    type: string
+                  backupCodes:
+                    type: array
+                    items:
+                      type: string
+                      
+  /api/totp_recovery/enabled:
+    get:
+      tags: [Security]
+      summary: Check if TOTP recovery is enabled
+      operationId: isTotpRecoveryEnabled
+      responses:
+        '200':
+          description: TOTP recovery status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  enabled:
+                    type: boolean
+                    
+  /api/totp_recovery/generate:
+    get:
+      tags: [Security]
+      summary: Generate TOTP recovery codes
+      operationId: generateTotpRecoveryCodes
+      responses:
+        '200':
+          description: Generated recovery codes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  codes:
+                    type: array
+                    items:
+                      type: string
+                      
+  /api/totp_recovery/used:
+    get:
+      tags: [Security]
+      summary: Get used TOTP recovery codes
+      operationId: getUsedTotpRecoveryCodes
+      responses:
+        '200':
+          description: Used recovery codes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usedCodes:
+                    type: array
+                    items:
+                      type: string
+                      
+  /api/totp_recovery/set:
+    post:
+      tags: [Security]
+      summary: Set TOTP recovery codes
+      operationId: setTotpRecoveryCodes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                codes:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Recovery codes set
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    
+  /api/totp_recovery/verify:
+    post:
+      tags: [Security]
+      summary: Verify TOTP recovery code
+      operationId: verifyTotpRecoveryCode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    
+  # ETAPI tokens
+  /api/etapi-tokens:
+    get:
+      tags: [Security]
+      summary: List ETAPI tokens
+      operationId: listEtapiTokens
+      responses:
+        '200':
+          description: ETAPI tokens
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EtapiToken'
+                  
+    post:
+      tags: [Security]
+      summary: Create ETAPI token
+      operationId: createEtapiToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+      responses:
+        '201':
+          description: Token created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EtapiToken'
+                
+  /api/etapi-tokens/{etapiTokenId}:
+    patch:
+      tags: [Security]
+      summary: Update ETAPI token
+      operationId: updateEtapiToken
+      parameters:
+        - name: etapiTokenId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+      responses:
+        '200':
+          description: Token updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EtapiToken'
+                
+    delete:
+      tags: [Security]
+      summary: Delete ETAPI token
+      operationId: deleteEtapiToken
+      parameters:
+        - name: etapiTokenId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Token deleted
+
+  # Other utilities
+  /api/stats/note-size/{noteId}:
+    get:
+      tags: [Utilities]
+      summary: Get note size
+      operationId: getNoteSize
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Note size
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  size:
+                    type: integer
+                    
+  /api/stats/subtree-size/{noteId}:
+    get:
+      tags: [Utilities]
+      summary: Get subtree size
+      operationId: getSubtreeSize
+      parameters:
+        - $ref: '#/components/parameters/noteId'
+      responses:
+        '200':
+          description: Subtree size
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  size:
+                    type: integer
+                    
+  /api/keyboard-actions:
+    get:
+      tags: [Utilities]
+      summary: Get keyboard actions
+      operationId: getKeyboardActions
+      responses:
+        '200':
+          description: Keyboard actions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    actionName:
+                      type: string
+                    shortcut:
+                      type: string
+                    description:
+                      type: string
+                      
+  /api/keyboard-shortcuts-for-notes:
+    get:
+      tags: [Utilities]
+      summary: Get keyboard shortcuts for notes
+      operationId: getKeyboardShortcutsForNotes
+      responses:
+        '200':
+          description: Keyboard shortcuts for notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    noteId:
+                      type: string
+                    shortcut:
+                      type: string
+                    title:
+                      type: string
+                      
+  /api/fonts:
+    get:
+      tags: [Utilities]
+      summary: Get font CSS
+      operationId: getFonts
+      responses:
+        '200':
+          description: Font CSS
+          content:
+            text/css:
+              schema:
+                type: string
+                
+  /api/recent-notes:
+    post:
+      tags: [Utilities]
+      summary: Add recent note
+      operationId: addRecentNote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [noteId]
+              properties:
+                noteId:
+                  type: string
+      responses:
+        '204':
+          description: Note added to recent
+          
+  /api/recent-changes/{ancestorNoteId}:
+    get:
+      tags: [Utilities]
+      summary: Get recent changes
+      operationId: getRecentChanges
+      parameters:
+        - name: ancestorNoteId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Recent changes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    noteId:
+                      type: string
+                    title:
+                      type: string
+                    dateModified:
+                      type: string
+                      format: date-time
+                      
+  /api/other/icon-usage:
+    get:
+      tags: [Utilities]
+      summary: Get icon usage statistics
+      operationId: getIconUsage
+      responses:
+        '200':
+          description: Icon usage stats
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: integer
+                  
+  /api/other/render-markdown:
+    post:
+      tags: [Utilities]
+      summary: Render markdown to HTML
+      operationId: renderMarkdown
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [markdownContent]
+              properties:
+                markdownContent:
+                  type: string
+      responses:
+        '200':
+          description: Rendered HTML
+          content:
+            text/html:
+              schema:
+                type: string
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: trilium.sid
+      description: Session cookie obtained from login
+      
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: API token in format "Bearer {token}"
+      
+  parameters:
+    noteId:
+      name: noteId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: 12-character note ID
+      
+  schemas:
+    Note:
+      type: object
+      required:
+        - noteId
+        - title
+        - type
+        - mime
+        - isProtected
+      properties:
+        noteId:
+          type: string
+          description: 12-character note ID
+          example: ur11rSfHkzeV
+        title:
+          type: string
+          description: Note title
+        type:
+          $ref: '#/components/schemas/NoteType'
+        mime:
+          type: string
+          description: MIME type
+          example: text/html
+        isProtected:
+          type: boolean
+          description: Whether note is protected
+        blobId:
+          type: string
+          description: ID of content blob
+        dateCreated:
+          type: string
+          format: date-time
+        dateModified:
+          type: string
+          format: date-time
+        utcDateCreated:
+          type: string
+          format: date-time
+        utcDateModified:
+          type: string
+          format: date-time
+          
+    NoteType:
+      type: string
+      enum:
+        - text
+        - code
+        - render
+        - file
+        - image
+        - search
+        - relationMap
+        - book
+        - noteMap
+        - mermaid
+        - canvas
+        - webView
+        - launcher
+        - doc
+        - contentWidget
+        - mindMap
+        - geoMap
+        
+    Branch:
+      type: object
+      required:
+        - branchId
+        - noteId
+        - parentNoteId
+        - notePosition
+      properties:
+        branchId:
+          type: string
+          description: Branch ID (parentNoteId_noteId)
+        noteId:
+          type: string
+        parentNoteId:
+          type: string
+        notePosition:
+          type: integer
+        prefix:
+          type: string
+          nullable: true
+        isExpanded:
+          type: boolean
+          
+    Attribute:
+      type: object
+      required:
+        - attributeId
+        - noteId
+        - type
+        - name
+        - value
+      properties:
+        attributeId:
+          type: string
+        noteId:
+          type: string
+        type:
+          type: string
+          enum: [label, relation]
+        name:
+          type: string
+        value:
+          type: string
+        position:
+          type: integer
+        isInheritable:
+          type: boolean
+          
+    Attachment:
+      type: object
+      required:
+        - attachmentId
+        - ownerId
+        - role
+        - mime
+        - title
+      properties:
+        attachmentId:
+          type: string
+        ownerId:
+          type: string
+        role:
+          type: string
+          enum: [image, file]
+        mime:
+          type: string
+        title:
+          type: string
+        blobId:
+          type: string
+        dateModified:
+          type: string
+          format: date-time
+        utcDateModified:
+          type: string
+          format: date-time
+          
+    Revision:
+      type: object
+      properties:
+        revisionId:
+          type: string
+        noteId:
+          type: string
+        title:
+          type: string
+        type:
+          $ref: '#/components/schemas/NoteType'
+        mime:
+          type: string
+        dateCreated:
+          type: string
+          format: date-time
+        utcDateCreated:
+          type: string
+          format: date-time
+          
+    SearchResult:
+      type: object
+      properties:
+        noteId:
+          type: string
+        title:
+          type: string
+        path:
+          type: string
+        score:
+          type: number
+        highlights:
+          type: array
+          items:
+            type: string
+            
+    EntityChange:
+      type: object
+      properties:
+        entityChange:
+          type: object
+          properties:
+            entityName:
+              type: string
+            changeId:
+              type: string
+        entity:
+          type: object
+          
+    Timestamps:
+      type: object
+      properties:
+        dateCreated:
+          type: string
+          format: date-time
+        dateModified:
+          type: string
+          format: date-time
+        utcDateCreated:
+          type: string
+          format: date-time
+        utcDateModified:
+          type: string
+          format: date-time
+          
+    CreateNoteRequest:
+      type: object
+      required:
+        - title
+        - type
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        type:
+          $ref: '#/components/schemas/NoteType'
+        mime:
+          type: string
+        isProtected:
+          type: boolean
+        isExpanded:
+          type: boolean
+        notePosition:
+          type: integer
+        prefix:
+          type: string
+        parentNoteId:
+          type: string
+        templateNoteId:
+          type: string
+          
+    ScriptBundle:
+      type: object
+      properties:
+        noteId:
+          type: string
+        script:
+          type: string
+        html:
+          type: string
+        css:
+          type: string
+          
+    AppInfo:
+      type: object
+      properties:
+        appVersion:
+          type: string
+          example: 0.91.6
+        dbVersion:
+          type: integer
+          example: 228
+        nodeVersion:
+          type: string
+        syncVersion:
+          type: integer
+          example: 34
+        buildDate:
+          type: string
+          format: date-time
+        buildRevision:
+          type: string
+        dataDirectory:
+          type: string
+        clipperProtocolVersion:
+          type: string
+        utcDateTime:
+          type: string
+          format: date-time
+          
+    ChatSession:
+      type: object
+      properties:
+        sessionId:
+          type: string
+        title:
+          type: string
+        messages:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+                enum: [user, assistant, system]
+              content:
+                type: string
+              timestamp:
+                type: string
+                format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        lastActive:
+          type: string
+          format: date-time
+        messageCount:
+          type: integer
+          
+    EtapiToken:
+      type: object
+      properties:
+        etapiTokenId:
+          type: string
+        name:
+          type: string
+        token:
+          type: string
+        dateCreated:
+          type: string
+          format: date-time
+        isDeleted:
+          type: boolean

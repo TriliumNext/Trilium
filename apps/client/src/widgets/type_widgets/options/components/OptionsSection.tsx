@@ -2,7 +2,7 @@ import type { ComponentChildren } from "preact";
 import { CSSProperties } from "preact/compat";
 
 interface OptionsSectionProps {
-    title?: string;
+    title?: ComponentChildren;
     children: ComponentChildren;
     noCard?: boolean;
     style?: CSSProperties;

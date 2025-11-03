@@ -162,7 +162,7 @@ function getEditedNotesOnDate(req: Request) {
                     AND (noteId NOT LIKE '_%')
             UNION ALL
                 SELECT noteId FROM revisions
-                WHERE revisions.dateLastEdited LIKE :date
+                WHERE revisions.dateCreated LIKE :date
         )
         ORDER BY isDeleted
         LIMIT 50`,

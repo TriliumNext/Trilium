@@ -104,7 +104,8 @@
     "export_in_progress": "正在匯出：{{progressCount}}",
     "export_finished_successfully": "成功匯出。",
     "format_html": "HTML - 推薦，因為它保留了所有格式",
-    "format_pdf": "PDF - 用於列印或與他人分享。"
+    "format_pdf": "PDF - 用於列印或與他人分享。",
+    "share-format": "HTML 網頁發佈——使用與共享筆記相同的佈景主題，但可發佈為靜態網站。"
   },
   "help": {
     "noteNavigation": "筆記導航",
@@ -260,7 +261,6 @@
     "delete_all_revisions": "刪除此筆記的所有歷史版本",
     "delete_all_button": "刪除所有歷史版本",
     "help_title": "關於筆記歷史版本的說明",
-    "revision_last_edited": "此歷史版本上次於 {{date}} 編輯",
     "confirm_delete_all": "您是否要刪除此筆記的所有歷史版本？",
     "no_revisions": "此筆記暫無歷史版本…",
     "confirm_restore": "您是否要還原此歷史版本？這將使用此歷史版本覆寫筆記的目前標題和內容。",
@@ -1281,8 +1281,6 @@
   "etapi": {
     "title": "ETAPI",
     "description": "ETAPI 是一個 REST API，用於以編程方式訪問 Trilium 實例，而無需 UI。",
-    "wiki": "維基",
-    "openapi_spec": "ETAPI OpenAPI 規範",
     "create_token": "新增 ETAPI 令牌",
     "existing_tokens": "現有令牌",
     "no_tokens_yet": "目前還沒有令牌。點擊上面的按鈕新增一個。",
@@ -1299,9 +1297,7 @@
     "delete_token": "刪除 / 停用此令牌",
     "rename_token_title": "重新命名令牌",
     "rename_token_message": "請輸入新的令牌名稱",
-    "delete_token_confirmation": "您確定要刪除 ETAPI 令牌 \"{{name}}\" 嗎？",
-    "see_more": "有關更多詳細資訊，請參閱 {{- link_to_wiki}} 和 {{- link_to_openapi_spec}} 或 {{- link_to_swagger_ui}}。",
-    "swagger_ui": "ETAPI Swagger UI"
+    "delete_token_confirmation": "您確定要刪除 ETAPI 令牌 \"{{name}}\" 嗎？"
   },
   "options_widget": {
     "options_status": "選項狀態",

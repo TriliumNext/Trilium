@@ -1,9 +1,10 @@
+import { useTranslation } from "react-i18next";
 import Section from "../components/Section.js";
 import { usePageTitle } from "../hooks.js";
-import { t } from "../i18n.js";
 import "./_404.css";
 
 export function NotFound() {
+    const { t } = useTranslation();
     usePageTitle(t("404.title"));
 
 	return (

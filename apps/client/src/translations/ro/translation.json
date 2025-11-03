@@ -507,17 +507,13 @@
     "new_token_message": "Introduceți denumirea noului token",
     "new_token_title": "Token ETAPI nou",
     "no_tokens_yet": "Nu există încă token-uri. Clic pe butonul de deasupra pentru a crea una.",
-    "openapi_spec": "Specificația OpenAPI pentru ETAPI",
-    "swagger_ui": "UI-ul Swagger pentru ETAPI",
     "rename_token": "Redenumește token-ul",
     "rename_token_message": "Introduceți denumirea noului token",
     "rename_token_title": "Redenumire token",
-    "see_more": "Vedeți mai multe detalii în {{- link_to_wiki}} și în {{- link_to_openapi_spec}} sau în {{- link_to_swagger_ui }}.",
     "title": "ETAPI",
     "token_created_message": "Copiați token-ul creat în clipboard. Trilium stochează token-ul ca hash așadar această valoare poate fi văzută doar acum.",
     "token_created_title": "Token ETAPI creat",
-    "token_name": "Denumire token",
-    "wiki": "wiki"
+    "token_name": "Denumire token"
   },
   "execute_script": {
     "example_1": "De exemplu, pentru a adăuga un șir de caractere la titlul unei notițe, se poate folosi acest mic script:",
@@ -1090,7 +1086,6 @@
     "preview_not_available": "Nu este disponibilă o previzualizare pentru acest tip de notiță.",
     "restore_button": "Restaurează",
     "revision_deleted": "Revizia notiței a fost ștearsă.",
-    "revision_last_edited": "Revizia a fost ultima oară modificată pe {{date}}",
     "revision_restored": "Revizia notiței a fost restaurată.",
     "revisions_deleted": "Notița reviziei a fost ștearsă.",
     "maximum_revisions": "Numărul maxim de revizii pentru notița curentă: {{number}}.",

@@ -57,6 +57,8 @@ section.hero-section {
             color: transparent;
             line-height: 1.1;
             font-weight: 400;
+            font-size: 2em;
+            margin-block: 0.65em;
         }
     }
 
@@ -181,72 +183,43 @@ section.faq {
         display: flex;
     }
 
+    h3 {
+        color: var(--brand-1);
+    }
+
     ul {
         list-style-type: none;
         margin: 0;
         padding: 0;
+        gap: 1em;
+        display: grid;
+        
+        @media (min-width: 720px) {
+            grid-template-columns: 1fr 1fr 1fr;                
+        }
 
         li {
-            margin-bottom: 1em;
-
-            &:last-of-type {
-                margin-bottom: 0;
-            }            
+            margin: 0;        
 
             .card {
                 border: 1px solid transparent;
-            }
-
-            &.selected .card {
-                border: 1px solid var(--brand-1);
-            }            
+                height: 100%;
+            }     
         }
     }
 
     .details {
-        flex-basis: 50%;
-        flex-shrink: 0;
+        max-height: 35vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
 
         @media (max-width: 719px) {
             margin-top: 1em;
         }
     }
 
-    &.horizontal {
-        flex-direction: column-reverse;
-
-        ul {
-            gap: 1em;
-            display: grid;
-            
-            @media (min-width: 720px) {
-                grid-template-columns: 1fr 1fr 1fr;                
-            }
-        }
-
-        li {
-            margin: 0;
-        }
-
-        .card {
-            height: 100%;
-        }
-
-        h3 {
-            color: var(--brand-1);
-        }
-
-        .details {
-            max-height: 35vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-
-            img {
-                height: 100%;
-                width: auto;
-                object-fit: contain;
-            }
-        }
+    img {
+        object-fit: contain;
     }
 }

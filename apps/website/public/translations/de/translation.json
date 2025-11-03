@@ -1,8 +1,0 @@
-{
-    "get-started": {
-        "title": "Loslegen",
-        "desktop_title": "Die Desktop-App herunterladen (v{{version}})",
-        "architecture": "Architektur:",
-        "older_releases": "Ältere Releases anzeigen"
-    }
-}

@@ -31,7 +31,13 @@ html,
 body {
     margin: 0;
     line-height: 1.5;
-    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    font-family: Inter,
+        system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+        "Noto Sans", "Noto Sans CJK SC",
+        "Hiragino Sans", "Hiragino Kaku Gothic ProN",
+        "Microsoft YaHei", "Meiryo", "Malgun Gothic",
+        "PingFang SC", "Source Han Sans SC",
+        "Source Han Sans JP", "Source Han Sans KR";
     min-height: 100vh;
 }
 

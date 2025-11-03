@@ -104,7 +104,8 @@
     "export_status": "Estado de exportación",
     "export_in_progress": "Exportación en curso: {{progressCount}}",
     "export_finished_successfully": "La exportación finalizó exitosamente.",
-    "format_pdf": "PDF - para propósitos de impresión o compartición."
+    "format_pdf": "PDF - para propósitos de impresión o compartición.",
+    "share-format": "HTML para publicación web: utiliza el mismo tema que se utiliza en las notas compartidas, pero se puede publicar como un sitio web estático."
   },
   "help": {
     "noteNavigation": "Navegación de notas",
@@ -184,7 +185,8 @@
     },
     "import-status": "Estado de importación",
     "in-progress": "Importación en progreso: {{progress}}",
-    "successful": "Importación finalizada exitosamente."
+    "successful": "Importación finalizada exitosamente.",
+    "importZipRecommendation": "Al importar un archivo ZIP, la jerarquía de notas reflejará la estructura de subdirectorios dentro del archivo comprimido."
   },
   "include_note": {
     "dialog_title": "Incluir nota",
@@ -259,7 +261,6 @@
     "delete_all_revisions": "Eliminar todas las revisiones de esta nota",
     "delete_all_button": "Eliminar todas las revisiones",
     "help_title": "Ayuda sobre revisiones de notas",
-    "revision_last_edited": "Esta revisión se editó por última vez en {{date}}",
     "confirm_delete_all": "¿Quiere eliminar todas las revisiones de esta nota?",
     "no_revisions": "Aún no hay revisiones para esta nota...",
     "restore_button": "Restaurar",
@@ -1445,10 +1446,6 @@
   "etapi": {
     "title": "ETAPI",
     "description": "ETAPI es una REST API que se utiliza para acceder a la instancia de Trilium mediante programación, sin interfaz de usuario.",
-    "see_more": "Véa más detalles en el {{- link_to_wiki}} y el {{- link_to_openapi_spec}} o el {{- link_to_swagger_ui }}.",
-    "wiki": "wiki",
-    "openapi_spec": "Especificación ETAPI OpenAPI",
-    "swagger_ui": "ETAPI Swagger UI",
     "create_token": "Crear nuevo token ETAPI",
     "existing_tokens": "Tokens existentes",
     "no_tokens_yet": "Aún no hay tokens. Dé clic en el botón de arriba para crear uno.",
@@ -1715,7 +1712,9 @@
     "window-on-top": "Mantener esta ventana en la parte superior"
   },
   "note_detail": {
-    "could_not_find_typewidget": "No se pudo encontrar typeWidget para el tipo '{{type}}'"
+    "could_not_find_typewidget": "No se pudo encontrar typeWidget para el tipo '{{type}}'",
+    "printing": "Impresión en curso...",
+    "printing_pdf": "Exportando a PDF en curso.."
   },
   "note_title": {
     "placeholder": "escriba el título de la nota aquí..."

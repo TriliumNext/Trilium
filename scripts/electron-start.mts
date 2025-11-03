@@ -3,7 +3,7 @@ import { getElectronPath, isNixOS } from "./utils.mjs";
 
 const LD_LIBRARY_PATH = isNixOS() && execSync("nix eval --raw nixpkgs#gcc.cc.lib").toString("utf-8") + "/lib";
 
-execSync(`${getElectronPath()} ${process.argv[2]}`, {
+execSync(`${getElectronPath()} ${process.argv[2]} --no-sandbox`, {
     stdio: "inherit",
     env: {
         ...process.env,

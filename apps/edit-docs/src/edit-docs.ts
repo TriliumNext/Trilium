@@ -6,7 +6,7 @@ import { initializeTranslations } from "@triliumnext/server/src/services/i18n.js
 import debounce from "@triliumnext/client/src/services/debounce.js";
 import { extractZip, importData, initializeDatabase, startElectron } from "./utils.js";
 import cls from "@triliumnext/server/src/services/cls.js";
-import type { AdvancedExportOptions } from "@triliumnext/server/src/services/export/zip.js";
+import type { AdvancedExportOptions, ExportFormat } from "@triliumnext/server/src/services/export/zip/abstract_provider.js";
 import { parseNoteMetaFile } from "@triliumnext/server/src/services/in_app_help.js";
 import type NoteMeta from "@triliumnext/server/src/services/meta/note_meta.js";
 
@@ -22,6 +22,8 @@ const { DOCS_ROOT, USER_GUIDE_ROOT } = process.env;
 if (!DOCS_ROOT || !USER_GUIDE_ROOT) {
     throw new Error("Missing DOCS_ROOT or USER_GUIDE_ROOT environment variable.");
 }
+
+const BASE_URL = "https://docs.triliumnotes.org";
 
 const NOTE_MAPPINGS: NoteMapping[] = [
     {
@@ -75,7 +77,7 @@ async function setOptions() {
     optionsService.setOption("compressImages", "false");
 }
 
-async function exportData(noteId: string, format: "html" | "markdown", outputPath: string, ignoredFiles?: Set<string>) {
+async function exportData(noteId: string, format: ExportFormat, outputPath: string, ignoredFiles?: Set<string>) {
     const zipFilePath = "output.zip";
 
     try {
@@ -158,6 +160,14 @@ async function cleanUpMeta(outputPath: string, minify: boolean) {
         }
 
         el.isExpanded = false;
+
+        // Rewrite web view URLs that point to root.
+        if (el.type === "webView" && minify) {
+            const srcAttr = el.attributes.find(attr => attr.name === "webViewSrc");
+            if (srcAttr.value.startsWith("/")) {
+                srcAttr.value = BASE_URL + srcAttr.value;
+            }
+        }
     }
 
     if (minify) {

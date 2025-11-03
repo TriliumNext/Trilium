@@ -1,6 +1,6 @@
 {
     "formatVersion": 2,
-    "appVersion": "0.99.2",
+    "appVersion": "0.99.3",
     "files": [
         {
             "isClone": false,
@@ -937,13 +937,80 @@
                 },
                 {
                     "isClone": false,
+                    "noteId": "kzjHexDTTeVB",
+                    "notePath": [
+                        "hD3V4hiu2VW4",
+                        "kzjHexDTTeVB"
+                    ],
+                    "title": "v0.48",
+                    "notePosition": 420,
+                    "prefix": null,
+                    "isExpanded": false,
+                    "type": "text",
+                    "mime": "text/html",
+                    "attributes": [
+                        {
+                            "type": "relation",
+                            "name": "template",
+                            "value": "wyurrlcDl416",
+                            "isInheritable": false,
+                            "position": 60
+                        }
+                    ],
+                    "format": "markdown",
+                    "dataFileName": "v0.48.md",
+                    "attachments": [
+                        {
+                            "attachmentId": "645H74UA4xwf",
+                            "title": "note-map.png",
+                            "role": "image",
+                            "mime": "image/jpg",
+                            "position": 10,
+                            "dataFileName": "v0.48_note-map.png"
+                        },
+                        {
+                            "attachmentId": "c74WFpjTo0p4",
+                            "title": "screenshot.png",
+                            "role": "image",
+                            "mime": "image/jpg",
+                            "position": 10,
+                            "dataFileName": "v0.48_screenshot.png"
+                        },
+                        {
+                            "attachmentId": "szlnTmTJL4HL",
+                            "title": "split.png",
+                            "role": "image",
+                            "mime": "image/jpg",
+                            "position": 10,
+                            "dataFileName": "v0.48_split.png"
+                        },
+                        {
+                            "attachmentId": "VQxrtpQTYmI6",
+                            "title": "bookmarks.png",
+                            "role": "image",
+                            "mime": "image/jpg",
+                            "position": 10,
+                            "dataFileName": "v0.48_bookmarks.png"
+                        },
+                        {
+                            "attachmentId": "ZRyEqxAv1MTd",
+                            "title": "mermaid.png",
+                            "role": "image",
+                            "mime": "image/png",
+                            "position": 10,
+                            "dataFileName": "v0.48_mermaid.png"
+                        }
+                    ]
+                },
+                {
+                    "isClone": false,
                     "noteId": "wyurrlcDl416",
                     "notePath": [
                         "hD3V4hiu2VW4",
                         "wyurrlcDl416"
                     ],
                     "title": "Release Template",
-                    "notePosition": 420,
+                    "notePosition": 430,
                     "prefix": null,
                     "isExpanded": false,
                     "type": "text",

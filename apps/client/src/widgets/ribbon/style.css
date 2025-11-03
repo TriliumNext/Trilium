@@ -264,7 +264,6 @@
     position: absolute;
     inset-inline-end: 5px;
     bottom: 5px;
-    z-index: 1000;
 }
 
 .style-resolver {

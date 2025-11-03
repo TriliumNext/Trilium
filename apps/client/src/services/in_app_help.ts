@@ -10,7 +10,7 @@ export const byNoteType: Record<Exclude<NoteType, "book">, string | null> = {
     file: null,
     image: null,
     launcher: null,
-    mermaid: null,
+    mermaid: "s1aBHPd79XYj",
     mindMap: null,
     noteMap: null,
     relationMap: null,

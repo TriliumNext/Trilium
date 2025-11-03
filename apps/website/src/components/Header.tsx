@@ -1,13 +1,16 @@
 import "./Header.css";
 import { Link } from "./Button.js";
 import { SocialButtons, SocialButton } from "./Footer.js";
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useContext, useEffect, useMemo, useState } from "preact/hooks";
 import { useLocation } from 'preact-iso';
 import DownloadButton from './DownloadButton.js';
 import githubIcon from "../assets/boxicons/bx-github.svg?raw";
 import Icon from "./Icon.js";
 import logoPath from "../assets/icon-color.svg";
 import menuIcon from "../assets/boxicons/bx-menu.svg?raw";
+import { LocaleContext } from "..";
+import { useTranslation } from "react-i18next";
+import { swapLocaleInUrl } from "../i18n";
 
 interface HeaderLink {
     url: string;
@@ -15,21 +18,26 @@ interface HeaderLink {
     external?: boolean;
 }
 
-const HEADER_LINKS: HeaderLink[] = [
-    { url: "/get-started/", text: "Get started" },
-    { url: "https://docs.triliumnotes.org/", text: "Documentation", external: true },
-    { url: "/support-us/", text: "Support us" }
-]
-
 export function Header(props: {repoStargazersCount: number}) {
 	const { url } = useLocation();
+    const { t } = useTranslation();
+    const locale = useContext(LocaleContext);
     const [ mobileMenuShown, setMobileMenuShown ] = useState(false);
+
+    const [ headerLinks, setHeaderLinks ] = useState<HeaderLink[]>([]);
+    useEffect(() => {
+        setHeaderLinks([
+            { url: "/get-started", text: t("header.get-started") },
+            { url: "https://docs.triliumnotes.org/", text: t("header.documentation"), external: true },
+            { url: "/support-us", text: t("header.support-us") }
+        ]);
+    }, [ locale, t ]);
 
 	return (
 		<header>
             <div class="content-wrapper">
                 <div class="first-row">
-                    <a class="banner" href="/">
+                    <a class="banner" href={`/${locale}/`}>
                         <img src={logoPath} width="300" height="300" alt="Trilium Notes logo" />&nbsp;<span>Trilium Notes</span>
                     </a>
 
@@ -46,16 +54,17 @@ export function Header(props: {repoStargazersCount: number}) {
                 </div>
 
                 <nav className={`${mobileMenuShown ? "mobile-shown" : ""}`}>
-                    {HEADER_LINKS.map(link => (
-                        <Link
-                            href={link.url}
-                            className={url === link.url ? "active" : ""}
+                    {headerLinks.map(link => {
+                        const linkHref = link.external ? link.url : swapLocaleInUrl(link.url, locale);
+                        return (<Link
+                            href={linkHref}
+                            className={url === linkHref ? "active" : ""}
                             openExternally={link.external}
                             onClick={() => {
                                 setMobileMenuShown(false);
                             }}
-                        >{link.text}</Link>
-                    ))}
+                        >{link.text}</Link>)
+                    })}
 
                     <SocialButtons className="mobile-only" withText />
                 </nav>

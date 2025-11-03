@@ -148,6 +148,12 @@ const categories: Category[] = [
 
 const icons: Icon[] = [
     {
+        name: "empty",
+        slug: "empty",
+        category_id: 113,
+        type_of_icon: "REGULAR"
+    },
+    {
         name: "child",
         slug: "child-regular",
         category_id: 122,

@@ -13,6 +13,13 @@
     "critical-error": {
       "title": "Kritische Error",
       "message": "Een kritieke fout heeft plaatsgevonden waardoor de cliënt zich aanmeldt vanaf het begin:\n\n84X\n\nDit is waarschijnlijk veroorzaakt door een script dat op een onverwachte manier faalt. Probeer de sollicitatie in veilige modus te starten en de kwestie aan te spreken."
+    },
+    "widget-error": {
+      "title": "Starten widget mislukt",
+      "message-unknown": "Onbekende widget kan niet gestart worden omdat:\n\n{{message}}"
+    },
+    "bundle-error": {
+      "title": "Custom script laden mislukt"
     }
   },
   "add_link": {

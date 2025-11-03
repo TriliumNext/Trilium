@@ -260,7 +260,6 @@
     "delete_all_revisions": "Supprimer toutes les versions de cette note",
     "delete_all_button": "Supprimer toutes les versions",
     "help_title": "Aide sur les versions de notes",
-    "revision_last_edited": "Cette version a été modifiée pour la dernière fois le {{date}}",
     "confirm_delete_all": "Voulez-vous supprimer toutes les versions de cette note ?",
     "no_revisions": "Aucune version pour cette note pour l'instant...",
     "confirm_restore": "Voulez-vous restaurer cette version ? Le titre et le contenu actuels de la note seront écrasés par cette version.",
@@ -1289,8 +1288,6 @@
   "etapi": {
     "title": "ETAPI",
     "description": "ETAPI est une API REST utilisée pour accéder à l'instance Trilium par programme, sans interface utilisateur.",
-    "wiki": "wiki",
-    "openapi_spec": "Spec ETAPI OpenAPI",
     "create_token": "Créer un nouveau jeton ETAPI",
     "existing_tokens": "Jetons existants",
     "no_tokens_yet": "Il n'y a pas encore de jetons. Cliquez sur le bouton ci-dessus pour en créer un.",
@@ -1307,9 +1304,7 @@
     "delete_token": "Supprimer/désactiver ce token",
     "rename_token_title": "Renommer le jeton",
     "rename_token_message": "Veuillez saisir le nom du nouveau jeton",
-    "delete_token_confirmation": "Êtes-vous sûr de vouloir supprimer le jeton ETAPI « {{name}} » ?",
-    "see_more": "Voir plus de détails dans le {{- link_to_wiki}} et le {{- link_to_openapi_spec}} ou le {{- link_to_swagger_ui }}.",
-    "swagger_ui": "Interface utilisateur ETAPI Swagger"
+    "delete_token_confirmation": "Êtes-vous sûr de vouloir supprimer le jeton ETAPI « {{name}} » ?"
   },
   "options_widget": {
     "options_status": "Statut des options",

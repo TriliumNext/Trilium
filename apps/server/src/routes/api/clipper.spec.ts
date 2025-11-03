@@ -1,4 +1,4 @@
-import { BNote } from "../../services/backend_script_entrypoint";
+import BNote from '../../becca/entities/bnote.js';
 import cls from "../../services/cls";
 import { buildNote } from "../../test/becca_easy_mocking";
 import { processContent } from "./clipper";

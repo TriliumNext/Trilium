@@ -422,7 +422,7 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
         }
     }
 
-    const shouldRestoreNames = extraOpts.restoreNames || note.noteId.startsWith("_help") || item.id.startsWith("_lb");
+    const shouldRestoreNames = extraOpts.restoreNames || note.noteId.startsWith("_help") || item.id.startsWith("_lb") || item.id.startsWith("_template");
     if (shouldRestoreNames && note.title !== item.title) {
         note.title = item.title;
         note.save();
@@ -451,8 +451,16 @@ function checkHiddenSubtreeRecursively(parentNoteId: string, item: HiddenSubtree
     // Enforce attribute structure if needed.
     if (item.enforceAttributes) {
         for (const attribute of note.getAttributes()) {
-            if (!attrs.some(a => a.name === attribute.name)) {
+            // Remove unwanted attributes.
+            const attrDef = attrs.find(a => a.name === attribute.name);
+            if (!attrDef) {
                 attribute.markAsDeleted();
+                continue;
+            }
+
+            // Ensure value is consistent.
+            if (attribute.value !== attrDef.value) {
+                note.setAttributeValueById(attribute.attributeId, attrDef.value);
             }
         }
     }

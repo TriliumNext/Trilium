@@ -40,4 +40,4 @@ When pressed, the note will become editable but will become read-only again afte
 Some note types have a special behavior based on whether the read-only mode is enabled:
 
 *   <a class="reference-link" href="../../Note%20Types/Mermaid%20Diagrams.md">Mermaid Diagrams</a> will hide the Mermaid source code and display the diagram preview in full-size. In this case, the read-only mode can be easily toggled on or off via a dedicated button in the <a class="reference-link" href="../UI%20Elements/Floating%20buttons.md">Floating buttons</a> area.
-*   <a class="reference-link" href="../../Note%20Types/Collections/Geo%20Map%20View.md">Geo Map View</a> will disallow all interaction that would otherwise change the map (dragging notes, adding new items).
+*   <a class="reference-link" href="../../Collections/Geo%20Map.md">Geo Map View</a> will disallow all interaction that would otherwise change the map (dragging notes, adding new items).

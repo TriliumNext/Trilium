@@ -6,10 +6,10 @@ import buyMeACoffeeIcon from "../../assets/boxicons/bx-buy-me-a-coffee.svg?raw";
 import Button, { Link } from "../../components/Button.js";
 import Card from "../../components/Card.js";
 import { usePageTitle } from "../../hooks.js";
-import { t } from "../../i18n.js";
-import { Trans } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 
 export default function Donate() {
+    const { t } = useTranslation();
     usePageTitle(t("support_us.title"));
 
     return (

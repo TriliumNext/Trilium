@@ -274,7 +274,8 @@
     "export_filter": "PDF Dokument (*.pdf)",
     "unable-to-export-message": "Die aktuelle Notiz konnte nicht als PDF exportiert werden.",
     "unable-to-export-title": "Export als PDF fehlgeschlagen",
-    "unable-to-save-message": "Die ausgewählte Datei konnte nicht beschrieben werden. Erneut versuchen oder ein anderes Ziel auswählen."
+    "unable-to-save-message": "Die ausgewählte Datei konnte nicht beschrieben werden. Erneut versuchen oder ein anderes Ziel auswählen.",
+    "unable-to-print": "Notiz kann nicht gedruckt werden"
   },
   "tray": {
     "tooltip": "Trilium Notes",

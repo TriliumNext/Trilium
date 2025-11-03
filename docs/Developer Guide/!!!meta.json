@@ -1,6 +1,6 @@
 {
     "formatVersion": 2,
-    "appVersion": "0.99.1",
+    "appVersion": "0.99.3",
     "files": [
         {
             "isClone": false,
@@ -14,8 +14,31 @@
             "isExpanded": false,
             "type": "text",
             "mime": "text/html",
-            "attributes": [],
+            "attributes": [
+                {
+                    "type": "label",
+                    "name": "label:shareAlias",
+                    "value": "promoted,alias=Slug,single,text",
+                    "isInheritable": true,
+                    "position": 10
+                },
+                {
+                    "type": "label",
+                    "name": "iconClass",
+                    "value": "bx bx-code-alt",
+                    "isInheritable": false,
+                    "position": 20
+                },
+                {
+                    "type": "label",
+                    "name": "shareAlias",
+                    "value": "developer-guide",
+                    "isInheritable": false,
+                    "position": 30
+                }
+            ],
             "format": "markdown",
+            "dataFileName": "Developer Guide.md",
             "attachments": [],
             "dirFileName": "Developer Guide",
             "children": [
@@ -39,6 +62,13 @@
                             "value": "bx bx-cog",
                             "isInheritable": false,
                             "position": 10
+                        },
+                        {
+                            "type": "label",
+                            "name": "shareAlias",
+                            "value": "environment-setup",
+                            "isInheritable": false,
+                            "position": 20
                         }
                     ],
                     "format": "markdown",
@@ -65,6 +95,13 @@
                             "value": "bx bx-list-ul",
                             "isInheritable": false,
                             "position": 10
+                        },
+                        {
+                            "type": "label",
+                            "name": "shareAlias",
+                            "value": "project-structure",
+                            "isInheritable": false,
+                            "position": 20
                         }
                     ],
                     "format": "markdown",
@@ -100,6 +137,13 @@
                                     "value": "bx bx-package",
                                     "isInheritable": false,
                                     "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "ckeditor",
+                                    "isInheritable": false,
+                                    "position": 20
                                 }
                             ],
                             "format": "markdown",
@@ -122,7 +166,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "plugin-migration",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Plugin migration guide.md",
                                     "attachments": []
@@ -151,6 +203,13 @@
                             "value": "bx bx-bug",
                             "isInheritable": false,
                             "position": 10
+                        },
+                        {
+                            "type": "label",
+                            "name": "shareAlias",
+                            "value": "troubleshooting",
+                            "isInheritable": false,
+                            "position": 20
                         }
                     ],
                     "format": "markdown",
@@ -171,7 +230,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "better-sqlite3",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "better-sqlite3 was compiled ag.md",
                             "attachments": []
@@ -191,7 +258,15 @@
                     "isExpanded": false,
                     "type": "text",
                     "mime": "text/html",
-                    "attributes": [],
+                    "attributes": [
+                        {
+                            "type": "label",
+                            "name": "shareAlias",
+                            "value": "architecture",
+                            "isInheritable": false,
+                            "position": 20
+                        }
+                    ],
                     "format": "markdown",
                     "attachments": [],
                     "dirFileName": "Development and architecture",
@@ -224,6 +299,13 @@
                                     "value": "bx bx-globe",
                                     "isInheritable": false,
                                     "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "i18n",
+                                    "isInheritable": false,
+                                    "position": 20
                                 }
                             ],
                             "format": "markdown",
@@ -246,7 +328,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "guidelines",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Guidelines.md",
                                     "attachments": []
@@ -273,6 +363,13 @@
                                             "value": "ky5zpmxXZhhr",
                                             "isInheritable": false,
                                             "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "i18n-ally",
+                                            "isInheritable": false,
+                                            "position": 20
                                         }
                                     ],
                                     "format": "markdown",
@@ -294,7 +391,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "server-translation",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Server translations.md",
                                     "attachments": []
@@ -315,7 +420,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "live-reload",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Live reload.md",
                             "attachments": []
@@ -334,7 +447,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "themes",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Themes.md",
                             "attachments": []
@@ -353,7 +474,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "sync",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "attachments": [],
                             "dirFileName": "Synchronisation",
@@ -373,7 +502,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "content-hashing",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Content hashing.md",
                                     "attachments": []
@@ -401,6 +538,13 @@
                                     "value": "PXzm2t3sCdsP",
                                     "isInheritable": false,
                                     "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "build-info",
+                                    "isInheritable": false,
+                                    "position": 20
                                 }
                             ],
                             "format": "markdown",
@@ -421,7 +565,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "database",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "attachments": [],
                             "dirFileName": "Database",
@@ -476,6 +628,13 @@
                                             "value": "bx bx-table",
                                             "isInheritable": false,
                                             "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "attachments",
+                                            "isInheritable": false,
+                                            "position": 50
                                         }
                                     ],
                                     "format": "markdown",
@@ -525,6 +684,13 @@
                                             "value": "bx bx-table",
                                             "isInheritable": false,
                                             "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "attributes",
+                                            "isInheritable": false,
+                                            "position": 40
                                         }
                                     ],
                                     "format": "markdown",
@@ -553,6 +719,13 @@
                                             "value": "bx bx-table",
                                             "isInheritable": false,
                                             "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "blobs",
+                                            "isInheritable": false,
+                                            "position": 20
                                         }
                                     ],
                                     "format": "markdown",
@@ -602,6 +775,13 @@
                                             "value": "bx bx-table",
                                             "isInheritable": false,
                                             "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "branches",
+                                            "isInheritable": false,
+                                            "position": 40
                                         }
                                     ],
                                     "format": "markdown",
@@ -630,6 +810,13 @@
                                             "value": "bx bx-table",
                                             "isInheritable": false,
                                             "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "entity-changes",
+                                            "isInheritable": false,
+                                            "position": 20
                                         }
                                     ],
                                     "format": "markdown",
@@ -665,6 +852,13 @@
                                             "value": "bx bx-table",
                                             "isInheritable": false,
                                             "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "etapi-tokens",
+                                            "isInheritable": false,
+                                            "position": 20
                                         }
                                     ],
                                     "format": "markdown",
@@ -714,6 +908,13 @@
                                             "value": "bx bx-table",
                                             "isInheritable": false,
                                             "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "notes",
+                                            "isInheritable": false,
+                                            "position": 40
                                         }
                                     ],
                                     "format": "markdown",
@@ -742,6 +943,13 @@
                                             "value": "bx bx-table",
                                             "isInheritable": false,
                                             "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "options",
+                                            "isInheritable": false,
+                                            "position": 20
                                         }
                                     ],
                                     "format": "markdown",
@@ -777,6 +985,13 @@
                                             "value": "bx bx-table",
                                             "isInheritable": false,
                                             "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "recent-notes",
+                                            "isInheritable": false,
+                                            "position": 20
                                         }
                                     ],
                                     "format": "markdown",
@@ -800,16 +1015,16 @@
                                     "mime": "text/html",
                                     "attributes": [
                                         {
-                                            "type": "relation",
-                                            "name": "internalLink",
-                                            "value": "DSkl8C325tEC",
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-table",
                                             "isInheritable": false,
                                             "position": 10
                                         },
                                         {
                                             "type": "relation",
                                             "name": "internalLink",
-                                            "value": "VIcWnKGs0sMh",
+                                            "value": "DSkl8C325tEC",
                                             "isInheritable": false,
                                             "position": 20
                                         },
@@ -821,11 +1036,18 @@
                                             "position": 30
                                         },
                                         {
-                                            "type": "label",
-                                            "name": "iconClass",
-                                            "value": "bx bx-table",
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "VIcWnKGs0sMh",
                                             "isInheritable": false,
-                                            "position": 10
+                                            "position": 40
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "revisions",
+                                            "isInheritable": false,
+                                            "position": 50
                                         }
                                     ],
                                     "format": "markdown",
@@ -869,6 +1091,13 @@
                                     "value": "s7ZBiaJVNumK",
                                     "isInheritable": false,
                                     "position": 30
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "protected-entities",
+                                    "isInheritable": false,
+                                    "position": 40
                                 }
                             ],
                             "format": "markdown",
@@ -889,7 +1118,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "deleted-notes",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Deleted notes.md",
                             "attachments": []
@@ -908,7 +1145,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "special-notes",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Special notes.md",
                             "attachments": []
@@ -927,7 +1172,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "branch-prefix",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Branch prefixes.md",
                             "attachments": []
@@ -946,7 +1199,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "revisions",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Revisions.md",
                             "attachments": []
@@ -965,7 +1226,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "backlinks",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Backlinks.md",
                             "attachments": []
@@ -991,6 +1260,13 @@
                                     "value": "DSkl8C325tEC",
                                     "isInheritable": false,
                                     "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "note-types",
+                                    "isInheritable": false,
+                                    "position": 20
                                 }
                             ],
                             "format": "markdown",
@@ -1011,7 +1287,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "safe-mode",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Safe mode.md",
                             "attachments": []
@@ -1044,6 +1328,13 @@
                                     "value": "oLhKpfi2kGON",
                                     "isInheritable": false,
                                     "position": 20
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "icons",
+                                    "isInheritable": false,
+                                    "position": 30
                                 }
                             ],
                             "format": "markdown",
@@ -1066,7 +1357,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "removed-icons",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Removed icons.md",
                                     "attachments": []
@@ -1086,7 +1385,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "mac-icons",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Icons on Mac.md",
                                     "attachments": [
@@ -1125,7 +1432,15 @@
                                             "isExpanded": false,
                                             "type": "text",
                                             "mime": "text/html",
-                                            "attributes": [],
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "slightly-blurry-icon",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
                                             "format": "markdown",
                                             "dataFileName": "Slightly blurry icon on Mac.md",
                                             "attachments": [
@@ -1171,7 +1486,15 @@
                                             "isExpanded": false,
                                             "type": "text",
                                             "mime": "text/html",
-                                            "attributes": [],
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "adaptive-icon",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
                                             "format": "markdown",
                                             "dataFileName": "Adaptive icon.md",
                                             "attachments": [
@@ -1251,7 +1574,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "demo-document",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Demo document.md",
                             "attachments": []
@@ -1270,7 +1601,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "docker",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Docker.md",
                             "attachments": []
@@ -1289,7 +1628,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "options",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Options.md",
                             "attachments": [],
@@ -1310,7 +1657,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "checkbox-options",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Check box option.md",
                                     "attachments": []
@@ -1330,7 +1685,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "ui-refresh",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Trigger UI refresh.md",
                                     "attachments": []
@@ -1350,7 +1713,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "in-settings",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Displaying the option in setti.md",
                                     "attachments": []
@@ -1370,7 +1741,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "refreshing-with-options",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Refresh widget with option cha.md",
                                     "attachments": []
@@ -1390,7 +1769,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "new-option",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Creating a new option.md",
                                     "attachments": []
@@ -1411,7 +1798,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "new-note-type",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "attachments": [],
                             "dirFileName": "Adding a new note type",
@@ -1445,6 +1840,13 @@
                                             "value": "oLhKpfi2kGON",
                                             "isInheritable": false,
                                             "position": 20
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "first-steps",
+                                            "isInheritable": false,
+                                            "position": 30
                                         }
                                     ],
                                     "format": "markdown",
@@ -1510,6 +1912,13 @@
                                             "value": "bx bx-list-check",
                                             "isInheritable": false,
                                             "position": 40
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "checklist",
+                                            "isInheritable": false,
+                                            "position": 50
                                         }
                                     ],
                                     "format": "markdown",
@@ -1538,6 +1947,13 @@
                                             "value": "OGYpAbrmEXbX",
                                             "isInheritable": false,
                                             "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "saving-data",
+                                            "isInheritable": false,
+                                            "position": 20
                                         }
                                     ],
                                     "format": "markdown",
@@ -1566,6 +1982,13 @@
                                             "value": "PoxUNujeKJ7T",
                                             "isInheritable": false,
                                             "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "loading-data",
+                                            "isInheritable": false,
+                                            "position": 20
                                         }
                                     ],
                                     "format": "markdown",
@@ -1587,7 +2010,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "svg-rendering",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "SVG rendering.md",
                                     "attachments": []
@@ -1607,7 +2038,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "copy-image-reference",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Copy image reference to the cl.md",
                                     "attachments": []
@@ -1634,6 +2073,13 @@
                                             "value": "OGYpAbrmEXbX",
                                             "isInheritable": false,
                                             "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "export-to-svg",
+                                            "isInheritable": false,
+                                            "position": 20
                                         }
                                     ],
                                     "format": "markdown",
@@ -1656,7 +2102,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "printing",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Printing.md",
                             "attachments": []
@@ -1675,7 +2129,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "launchers",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Launchers.md",
                             "attachments": []
@@ -1694,7 +2156,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "syntax-highlighting",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Syntax highlighting.md",
                             "attachments": []
@@ -1713,9 +2183,51 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "hidden-notes",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Hidden notes.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "vphziLmQeQHY",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "wbVIolLKDhe2",
+                                "vphziLmQeQHY"
+                            ],
+                            "title": "Share",
+                            "notePosition": 260,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-share-alt",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "share",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Share.md",
                             "attachments": []
                         }
                     ]
@@ -1733,7 +2245,15 @@
                     "isExpanded": false,
                     "type": "text",
                     "mime": "text/html",
-                    "attributes": [],
+                    "attributes": [
+                        {
+                            "type": "label",
+                            "name": "shareAlias",
+                            "value": "building",
+                            "isInheritable": false,
+                            "position": 20
+                        }
+                    ],
                     "format": "markdown",
                     "attachments": [],
                     "dirFileName": "Building and deployment",
@@ -1752,7 +2272,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "nix-flake",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Nix flake.md",
                             "attachments": []
@@ -1772,7 +2300,15 @@
                     "isExpanded": false,
                     "type": "text",
                     "mime": "text/html",
-                    "attributes": [],
+                    "attributes": [
+                        {
+                            "type": "label",
+                            "name": "shareAlias",
+                            "value": "old-documentation",
+                            "isInheritable": false,
+                            "position": 20
+                        }
+                    ],
                     "format": "markdown",
                     "attachments": [],
                     "dirFileName": "Old documentation",
@@ -1791,7 +2327,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "build-deliveries",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Build deliveries locally.md",
                             "attachments": []
@@ -1810,7 +2354,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "releasing",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Releasing a version.md",
                             "attachments": []
@@ -1829,7 +2381,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "dev-build",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Running a development build.md",
                             "attachments": []
@@ -1848,7 +2408,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "building",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "attachments": [],
                             "dirFileName": "Building and deployment",
@@ -1884,7 +2452,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "documentation",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Documentation.md",
                                     "attachments": []
@@ -1904,7 +2480,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "ci",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "attachments": [],
                                     "dirFileName": "CI",
@@ -1932,6 +2516,13 @@
                                                     "value": "PXzm2t3sCdsP",
                                                     "isInheritable": false,
                                                     "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "main",
+                                                    "isInheritable": false,
+                                                    "position": 20
                                                 }
                                             ],
                                             "format": "markdown",
@@ -2012,6 +2603,13 @@
                                     "value": "bx bx-package",
                                     "isInheritable": false,
                                     "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "deps",
+                                    "isInheritable": false,
+                                    "position": 20
                                 }
                             ],
                             "format": "markdown",
@@ -2033,7 +2631,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "new-client-library",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Adding a new client library.md",
                                     "attachments": []
@@ -2053,7 +2659,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "packaging-system",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Having a simpler packaging sys.md",
                                     "attachments": []
@@ -2074,7 +2688,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "project-maintenance",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "attachments": [],
                             "dirFileName": "Project maintenance",
@@ -2101,6 +2723,13 @@
                                             "value": "Xfi1ScuBTKJf",
                                             "isInheritable": false,
                                             "position": 10
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "updating-deps",
+                                            "isInheritable": false,
+                                            "position": 20
                                         }
                                     ],
                                     "format": "markdown",
@@ -2131,6 +2760,13 @@
                                                     "value": "PXzm2t3sCdsP",
                                                     "isInheritable": false,
                                                     "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "bettersqlite-binaries",
+                                                    "isInheritable": false,
+                                                    "position": 20
                                                 }
                                             ],
                                             "format": "markdown",
@@ -2153,7 +2789,15 @@
                                             "isExpanded": false,
                                             "type": "text",
                                             "mime": "text/html",
-                                            "attributes": [],
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "nodejs-electron-bettersqlite3",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
                                             "format": "markdown",
                                             "dataFileName": "Node.js, Electron and `better-.md",
                                             "attachments": []
@@ -2174,7 +2818,15 @@
                                             "isExpanded": false,
                                             "type": "text",
                                             "mime": "text/html",
-                                            "attributes": [],
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "compatibility-matrix",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
                                             "format": "markdown",
                                             "dataFileName": "Testing compatibility.md",
                                             "attachments": []
@@ -2197,7 +2849,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "scripting",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "attachments": [],
                             "dirFileName": "Scripting",
@@ -2217,7 +2877,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "widgets",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Widgets.md",
                                     "attachments": [],
@@ -2239,7 +2907,15 @@
                                             "isExpanded": false,
                                             "type": "text",
                                             "mime": "text/html",
-                                            "attributes": [],
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "right-pane-widget",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
                                             "format": "markdown",
                                             "dataFileName": "Right pane widget.md",
                                             "attachments": []
@@ -2260,7 +2936,15 @@
                                             "isExpanded": false,
                                             "type": "text",
                                             "mime": "text/html",
-                                            "attributes": [],
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "css",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
                                             "format": "markdown",
                                             "dataFileName": "CSS.md",
                                             "attachments": []
@@ -2282,7 +2966,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "server-imports",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Server-side imports.md",
                                     "attachments": []
@@ -2303,7 +2995,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "documentation",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Documentation.md",
                             "attachments": [
@@ -2333,7 +3033,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "doc-references",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Documentation references in th.md",
                                     "attachments": []
@@ -2354,7 +3062,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "testing",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "dataFileName": "Testing.md",
                             "attachments": [],
@@ -2375,7 +3091,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "integration",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "attachments": [],
                                     "dirFileName": "Integration testing",
@@ -2396,7 +3120,15 @@
                                             "isExpanded": false,
                                             "type": "text",
                                             "mime": "text/html",
-                                            "attributes": [],
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "auth",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
                                             "format": "markdown",
                                             "dataFileName": "Setting up authentication.md",
                                             "attachments": [
@@ -2434,7 +3166,15 @@
                                             "isExpanded": false,
                                             "type": "text",
                                             "mime": "text/html",
-                                            "attributes": [],
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "test-database",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
                                             "format": "markdown",
                                             "dataFileName": "Test database.md",
                                             "attachments": []
@@ -2455,7 +3195,15 @@
                                             "isExpanded": false,
                                             "type": "text",
                                             "mime": "text/html",
-                                            "attributes": [],
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "running-tests",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
                                             "format": "markdown",
                                             "dataFileName": "Running tests.md",
                                             "attachments": []
@@ -2478,7 +3226,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "subprojects",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "attachments": [],
                             "dirFileName": "Sub-projects",
@@ -2498,7 +3254,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "ckeditor",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "attachments": [],
                                     "dirFileName": "CKEditor",
@@ -2526,6 +3290,13 @@
                                                     "value": "CaInsmrlZhR6",
                                                     "isInheritable": false,
                                                     "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "environment-setup",
+                                                    "isInheritable": false,
+                                                    "position": 20
                                                 }
                                             ],
                                             "format": "markdown",
@@ -2555,6 +3326,13 @@
                                                     "value": "5yWZVlKPjLCC",
                                                     "isInheritable": false,
                                                     "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "building-the-editor",
+                                                    "isInheritable": false,
+                                                    "position": 20
                                                 }
                                             ],
                                             "format": "markdown",
@@ -2591,6 +3369,13 @@
                                                     "value": "",
                                                     "isInheritable": false,
                                                     "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "differences-from-upstream",
+                                                    "isInheritable": false,
+                                                    "position": 20
                                                 }
                                             ],
                                             "format": "markdown",
@@ -2634,6 +3419,13 @@
                                                     "value": "yAFSS6awVbaZ",
                                                     "isInheritable": false,
                                                     "position": 30
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "updating",
+                                                    "isInheritable": false,
+                                                    "position": 40
                                                 }
                                             ],
                                             "format": "markdown",
@@ -2663,6 +3455,13 @@
                                                     "value": "lY19SLxUMj3J",
                                                     "isInheritable": false,
                                                     "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "external-plugin-and-versions",
+                                                    "isInheritable": false,
+                                                    "position": 20
                                                 }
                                             ],
                                             "format": "markdown",
@@ -2707,6 +3506,13 @@
                                             "value": "CaInsmrlZhR6",
                                             "isInheritable": false,
                                             "position": 30
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "ckeditor5-math",
+                                            "isInheritable": false,
+                                            "position": 40
                                         }
                                     ],
                                     "format": "markdown",
@@ -2746,6 +3552,13 @@
                                                     "value": "UMN2ABrBU5D7",
                                                     "isInheritable": false,
                                                     "position": 10
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "updating-upstream",
+                                                    "isInheritable": false,
+                                                    "position": 20
                                                 }
                                             ],
                                             "format": "markdown",
@@ -2768,7 +3581,15 @@
                                             "isExpanded": false,
                                             "type": "text",
                                             "mime": "text/html",
-                                            "attributes": [],
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "release-management",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                }
+                                            ],
                                             "format": "markdown",
                                             "dataFileName": "Release management & continuou.md",
                                             "attachments": []
@@ -2791,7 +3612,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "troubleshooting",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "attachments": [],
                             "dirFileName": "Troubleshooting",
@@ -2811,7 +3640,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "esbuild-error",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Error [TransformError] The pac.md",
                                     "attachments": []
@@ -2832,7 +3669,15 @@
                             "isExpanded": false,
                             "type": "text",
                             "mime": "text/html",
-                            "attributes": [],
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "installation",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
                             "format": "markdown",
                             "attachments": [],
                             "dirFileName": "Installation",
@@ -2852,7 +3697,15 @@
                                     "isExpanded": false,
                                     "type": "text",
                                     "mime": "text/html",
-                                    "attributes": [],
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "download-nightly",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        }
+                                    ],
                                     "format": "markdown",
                                     "dataFileName": "Download latest nightly and in.md",
                                     "attachments": []

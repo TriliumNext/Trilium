@@ -13,7 +13,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "7.6.13",
     "@types/mime-types": "3.0.1",
-    "@types/yargs": "17.0.33"
+    "@types/yargs": "17.0.34"
   },
   "scripts": {
     "dev": "tsx src/main.ts",

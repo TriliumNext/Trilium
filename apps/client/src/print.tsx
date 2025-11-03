@@ -56,7 +56,20 @@ function SingleNoteRenderer({ note, onReady }: RendererProps) {
                 await import("@triliumnext/ckeditor5/src/theme/ck-content.css");
             }
             const { $renderedContent } = await content_renderer.getRenderedContent(note, { noChildrenList: true });
-            containerRef.current?.replaceChildren(...$renderedContent);
+            const container = containerRef.current!;
+            container.replaceChildren(...$renderedContent);
+
+            // Wait for all images to load.
+            const images = Array.from(container.querySelectorAll("img"));
+            await Promise.all(
+                images.map(img => {
+                    if (img.complete) return Promise.resolve();
+                    return new Promise<void>(resolve => {
+                        img.addEventListener("load", () => resolve(), { once: true });
+                        img.addEventListener("error", () => resolve(), { once: true });
+                    });
+                })
+            );
         }
 
         load().then(() => requestAnimationFrame(onReady))

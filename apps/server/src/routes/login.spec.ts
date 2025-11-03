@@ -4,6 +4,7 @@ import type { Application } from "express";
 import dayjs from "dayjs";
 import { type SQLiteSessionStore } from "./session_parser.js";
 import { SessionData } from "express-session";
+import cls from "../services/cls.js";
 
 let app: Application;
 let sessionStore: SQLiteSessionStore;
@@ -106,7 +107,7 @@ describe("Login Route test", () => {
             expect(expiry).toBeTruthy();
 
             vi.setSystemTime(expiry!);
-            vi.advanceTimersByTime(CLEAN_UP_INTERVAL);
+            cls.init(() => vi.advanceTimersByTime(CLEAN_UP_INTERVAL));
             ({ session } = await getSessionFromCookie(setCookieHeader));
             expect(session).toBeFalsy();
         });

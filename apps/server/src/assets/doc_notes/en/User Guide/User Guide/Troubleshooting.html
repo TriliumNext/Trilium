@@ -16,8 +16,8 @@
   In Linux, you can set it as follows:</p><pre><code class="language-text-x-trilium-auto">TRILIUM_START_NOTE_ID=root ./trilium</code></pre>
 <h2>Broken Script Prevents Application Startup</h2>
 <p>If a custom script causes Triliumto crash, and it is set as a startup
-  script or in an active <a href="#root/_help_MgibgPcfeuGz">custom widget</a>,
-  start Triliumin "safe mode" to prevent any custom scripts from executing:</p><pre><code class="language-text-x-trilium-auto">TRILIUM_SAFE_MODE=true ./trilium</code></pre>
+  script or in an active <a href="#root/_help_MgibgPcfeuGz">custom widget</a>, start
+  Triliumin "safe mode" to prevent any custom scripts from executing:</p><pre><code class="language-text-x-trilium-auto">TRILIUM_SAFE_MODE=true ./trilium</code></pre>
 <p>Depending on your Trilium distribution, you may have pre-made scripts
   available: <code>trilium-safe-mode.bat</code> and <code>trilium-safe-mode.sh</code>.</p>
 <p>Once Trilium starts, locate and fix or delete the problematic note.</p>
@@ -36,11 +36,9 @@
   <li>Protected notes are irretrievable without the password.</li>
   <li>Unprotected notes can be recovered. Follow these steps:</li>
 </ul>
-<p>Access the <a href="#root/_help_wX4HbRucYSDD">database</a> file in the
-  <a
-  href="#root/_help_tAassRL4RSQL">data directory</a>. Open the <code>document.db</code> file with an SQLite
-    client (e.g., <a href="https://sqlitebrowser.org/">DB Browser</a>) and execute
-    the following queries:</p><pre><code class="language-text-x-trilium-auto">UPDATE options SET value = '77/twC5O00cuQgNC63VK32qOKKYwj21ev3jZDXoytVU=' WHERE name = 'passwordVerificationSalt';
+<p>Access the <a href="#root/_help_wX4HbRucYSDD">database</a> file in the <a href="#root/_help_tAassRL4RSQL">data directory</a>.
+  Open the <code>document.db</code> file with an SQLite client (e.g., <a href="https://sqlitebrowser.org/">DB Browser</a>)
+  and execute the following queries:</p><pre><code class="language-text-x-trilium-auto">UPDATE options SET value = '77/twC5O00cuQgNC63VK32qOKKYwj21ev3jZDXoytVU=' WHERE name = 'passwordVerificationSalt';
 UPDATE options SET value = '710BMasZCAgibzIc07X4P9Q4TeBd4ONnqJOho+pWcBM=' WHERE name = 'passwordDerivedKeySalt';
 UPDATE options SET value = 'Eb8af1/T57b89lCRuS97tPEl4CwxsAWAU7YNJ77oY+s=' WHERE name = 'passwordVerificationHash';
 UPDATE options SET value = 'QpC8XoiYYeqHPtHKRtbNxfTHsk+pEBqVBODYp0FkPBa22tlBBKBMigdLu5GNX8Uu' WHERE name = 'encryptedDataKey';</code></pre>
@@ -56,6 +54,6 @@ UPDATE options SET value = 'QpC8XoiYYeqHPtHKRtbNxfTHsk+pEBqVBODYp0FkPBa22tlBBKBM
 <ul>
   <li>Use GitHub issues for reporting: <a href="https://github.com/TriliumNext/Trilium/issues">https://github.com/TriliumNext/Trilium/issues</a>
   </li>
-  <li>Refer to the <a href="#root/_help_qzNzp9LYQyPT">error logs</a> page for
-    information on providing necessary details.</li>
+  <li>Refer to the <a href="#root/_help_qzNzp9LYQyPT">error logs</a> page for information
+    on providing necessary details.</li>
 </ul>

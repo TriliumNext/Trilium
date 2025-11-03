@@ -14,6 +14,7 @@ import type { ParsedQs } from "qs";
 import type { NoteParams } from "../services/note-interface.js";
 import type { SearchParams } from "../services/search/services/types.js";
 import type { ValidatorMap } from "./etapi-interface.js";
+import type { ExportFormat } from "../services/export/zip/abstract_provider.js";
 
 function register(router: Router) {
     eu.route(router, "get", "/etapi/notes", (req, res, next) => {
@@ -149,8 +150,8 @@ function register(router: Router) {
         const note = eu.getAndCheckNote(req.params.noteId);
         const format = req.query.format || "html";
 
-        if (typeof format !== "string" || !["html", "markdown"].includes(format)) {
-            throw new eu.EtapiError(400, "UNRECOGNIZED_EXPORT_FORMAT", `Unrecognized export format '${format}', supported values are 'html' (default) or 'markdown'.`);
+        if (typeof format !== "string" || !["html", "markdown", "share"].includes(format)) {
+            throw new eu.EtapiError(400, "UNRECOGNIZED_EXPORT_FORMAT", `Unrecognized export format '${format}', supported values are 'html' (default), 'markdown' or 'share'.`);
         }
 
         const taskContext = new TaskContext("no-progress-reporting", "export", null);
@@ -159,7 +160,7 @@ function register(router: Router) {
         // (e.g. branchIds are not seen in UI), that we export "note export" instead.
         const branch = note.getParentBranches()[0];
 
-        zipExportService.exportToZip(taskContext, branch, format as "html" | "markdown", res);
+        zipExportService.exportToZip(taskContext, branch, format as ExportFormat, res);
     });
 
     eu.route(router, "post", "/etapi/notes/:noteId/import", (req, res, next) => {

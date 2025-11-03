@@ -1,0 +1,46 @@
+{
+    "get-started": {
+        "title": "Loslegen",
+        "desktop_title": "Die Desktop-App herunterladen (v{{version}})",
+        "architecture": "Architektur:",
+        "older_releases": "Ältere Releases anzeigen",
+        "server_title": "Richte einen Server für den Zugriff auf mehreren Geräten ein"
+    },
+    "hero_section": {
+        "github": "GitHub",
+        "get_started": "Loslegen",
+        "dockerhub": "Docker Hub",
+        "title": "Organisieren Sie Ihre Gedanken. Bauen Sie Ihre persönliche Wissensdatenbank auf.",
+        "subtitle": "Trilium ist eine Open-Source-Lösung zum Erstellen von Notizen und Organisieren einer persönlichen Wissensdatenbank. Sie kann lokal auf dem Desktop verwendet oder mit einem selbst gehosteten Server synchronisieren werden, um erstellte Notizen überall verfügbar zu haben.",
+        "screenshot_alt": "Screenshot der Desktop-Anwendung Trilium Notes"
+    },
+    "organization_benefits": {
+        "title": "Organisation",
+        "note_structure_title": "Notizstruktur",
+        "attributes_title": "Notiz Labels und Beziehungen"
+    },
+    "productivity_benefits": {
+        "revisions_title": "Notizrevisionen",
+        "title": "Produktivität und Sicherheit",
+        "sync_title": "Synchronisation",
+        "protected_notes_title": "Geschützte Notizen",
+        "jump_to_title": "Schnellsuche und Kommandos",
+        "search_title": "Leistungsstarke Suche",
+        "web_clipper_title": "Web clipper"
+    },
+    "note_types": {
+        "text_title": "Text Notizen",
+        "code_title": "Code Notizen",
+        "canvas_title": "Canvas",
+        "mermaid_title": "Mermaid Diagramm",
+        "mindmap_title": "Mind Map"
+    },
+    "extensibility_benefits": {
+        "import_export_title": "Import/Export",
+        "scripting_title": "Erweitertes Scripting",
+        "api_title": "REST API"
+    },
+    "collections": {
+        "calendar_title": "Kalender"
+    }
+}

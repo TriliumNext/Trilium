@@ -57,3 +57,15 @@
 .note-icon-widget .icon-list span:hover {
     border: 1px solid var(--main-border-color);
 }
+
+.note-icon-widget .icon-list span.bx-empty {
+    width: unset;
+}
+
+.note-icon-widget .icon-list span.bx-empty::before {
+    display: inline-block;
+    content: "";
+    border: 1px dashed var(--muted-text-color);
+    width: 1em;
+    height: 1em;
+}

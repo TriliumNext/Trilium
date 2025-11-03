@@ -30,12 +30,11 @@ Trilium Notes 是一款免费且开源、跨平台的阶层式笔记应用程序
 
 <a href="https://triliumnext.github.io/Docs/Wiki/screenshot-tour"><img src="./docs/app.png" alt="Trilium Screenshot" width="1000"></a>
 
-## ⏬ Download
-- [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
-  stable version, recommended for most users.
-- [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  unstable development version, updated daily with the latest features and
-  fixes.
+## ⏬ 下载
+- [最新版本](https://github.com/TriliumNext/Trilium/releases/latest) –
+  稳定版本，推荐给大多数用户。
+- [每日构建](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
+  不稳定开发版本，每日更新，包含最新功能与修复。
 
 ## 📖 文件
 
@@ -43,23 +42,18 @@ Trilium Notes 是一款免费且开源、跨平台的阶层式笔记应用程序
 
 我们的文档有多种格式可供使用：
 - **在线文档**：请访问我们完整的文档：[docs.triliumnotes.org](https://docs.triliumnotes.org/)
-- **In-App Help**: Press `F1` within Trilium to access the same documentation
-  directly in the application
-- **GitHub**: Navigate through the [User
-  Guide](./docs/User%20Guide/User%20Guide/) in this repository
+- **应用内帮助**：在 Trilium 中按下`F1`即可直接在应用程序内访问相同文档
+- **GitHub**：浏览此存储库中的[用户指南](./docs/User%20Guide/User%20Guide/)
 
-### Quick Links
-- [Getting Started Guide](https://docs.triliumnotes.org/)
-- [Installation
-  Instructions](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation.md)
+### 快速链接
+- [用户说明](https://docs.triliumnotes.org/)
+- [安装说明](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation.md)
 - [Docker
-  Setup](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md)
-- [Upgrading
+  设置](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md)
+- [升级
   TriliumNext](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Upgrading%20TriliumNext.md)
-- [Basic Concepts and
-  Features](./docs/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes.md)
-- [Patterns of Personal Knowledge
-  Base](https://triliumnext.github.io/Docs/Wiki/patterns-of-personal-knowledge)
+- [基本概念与特性](./docs/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes.md)
+- [个人知识库模式](https://triliumnext.github.io/Docs/Wiki/patterns-of-personal-knowledge)
 
 ## 🎁 功能
 
@@ -106,9 +100,8 @@ Trilium Notes 是一款免费且开源、跨平台的阶层式笔记应用程序
 
 ## ⚠️ 为什么是 TriliumNext？
 
-The original Trilium developer ([Zadam](https://github.com/zadam)) has
-graciously given the Trilium repository to the community project which resides
-at https://github.com/TriliumNext
+Trilium 的原始开发者（[Zadam](https://github.com/zadam)）已慷慨地将 Trilium
+代码库移交至社区项目，该项目现托管于：https://github.com/TriliumNext
 
 ### ⬆️ 从 Trilium 迁移？
 
@@ -141,8 +134,7 @@ TriliumNext 版本已提升同步版本号（与上述不再兼容）。
 
 如果你的发行版如下表所列，请使用该发行版的套件。
 
-[![Packaging
-status](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+[![打包状态](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
 
 你也可以从[最新释出页面](https://github.com/TriliumNext/Trilium/releases/latest)下载对应平台的二进制文件，解压缩后执行
 `trilium` 可执行文件。
@@ -159,8 +151,7 @@ TriliumNext 也提供 Flatpak，惟尚未发布到 FlatHub。
 
 若要在行动装置上使用 TriliumNext，你可以透过移动查看器存取服务器安装的移动版接口（见下）。
 
-See issue https://github.com/TriliumNext/Trilium/issues/4962 for more
-information on mobile app support.
+有关移动应用支持的更多信息，请参阅问题 https://github.com/TriliumNext/Trilium/issues/4962。
 
 如果你偏好原生 Android 应用，可使用
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid)。回报问题或缺少的功能，请至[其储存库](https://github.com/FliegendeWurst/TriliumDroid)。
@@ -181,8 +172,7 @@ Trilium。
 
 以下是目前的语言覆盖状态：
 
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
+[![翻译状态](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
 
 ### 程序代码
 
@@ -215,57 +205,39 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 
 更多细节请参见[开发文件](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide)。
 
-### Developer Documentation
+### 开发者文档
 
-Please view the [documentation
-guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
-for details. If you have more questions, feel free to reach out via the links
-described in the "Discuss with us" section above.
+详情请参阅[文档指南](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)。如有更多疑问，欢迎通过上方“联系我们”部分提供的链接与我们沟通。
 
 ## 👏 鸣谢
 
-* [zadam](https://github.com/zadam) for the original concept and implementation
-  of the application.
-* [Sarah Hussein](https://github.com/Sarah-Hussein) for designing the
-  application icon.
-* [nriver](https://github.com/nriver) for his work on internationalization.
-* [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
-* [antoniotejada](https://github.com/nriver) for the original syntax highlight
-  widget.
-* [Dosu](https://dosu.dev/) for providing us with the automated responses to
-  GitHub issues and discussions.
-* [Tabler Icons](https://tabler.io/icons) for the system tray icons.
+* [zadam](https://github.com/zadam) 对于应用程序的原始概念设计与实现。
+* [Sarah Hussein](https://github.com/Sarah-Hussein) 为应用程序设计图标。
+* [nriver](https://github.com/nriver) 对其在国际化工作中的贡献。
+* [Thomas Frei](https://github.com/thfrei) 因其在 Canvas 方面的原创工作。
+* [antoniotejada](https://github.com/nriver) 原始语法高亮小部件的作者。
+* [Dosu](https://dosu.dev/) 为我们提供 GitHub 问题和讨论的自动化回复。
+* [Tabler Icons](https://tabler.io/icons) 用于系统托盘图标。
 
-Trilium would not be possible without the technologies behind it:
+若没有支撑其背后的技术，Trilium 项目便无法实现：
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes. We are grateful for being offered a set of the premium features.
-* [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with
-  support for huge amount of languages.
-* [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite
-  whiteboard used in Canvas notes.
-* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - providing the
-  mind map functionality.
-* [Leaflet](https://github.com/Leaflet/Leaflet) - for rendering geographical
-  maps.
-* [Tabulator](https://github.com/olifolkerd/tabulator) - for the interactive
-  table used in collections.
-* [FancyTree](https://github.com/mar10/fancytree) - feature-rich tree library
-  without real competition.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - visual connectivity library.
-  Used in [relation
-  maps](https://triliumnext.github.io/Docs/Wiki/relation-map.html) and [link
-  maps](https://triliumnext.github.io/Docs/Wiki/note-map.html#link-map)
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) ——
+  文本笔记背后的可视化编辑器。我们非常感谢能获得这套高级功能的使用权限。
+* [CodeMirror](https://github.com/codemirror/CodeMirror) —— 支持海量编程语言的代码编辑器。
+* [Excalidraw](https://github.com/excalidraw/excalidraw) —— 画布笔记中使用的无限白板。
+* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) —— 提供思维导图功能。
+* [Leaflet](https://github.com/Leaflet/Leaflet) —— 用于渲染地理地图。
+* [Tabulator](https://github.com/olifolkerd/tabulator) —— 用于集合中的交互式表格。
+* [FancyTree](https://github.com/mar10/fancytree) —— 功能丰富的树形控件库，无可匹敌。
+* [jsPlumb](https://github.com/jsplumb/jsplumb) ——
+  可视化连接库。用于[关系图](https://triliumnext.github.io/Docs/Wiki/relation-map.html)和[链接图](https://triliumnext.github.io/Docs/Wiki/note-map.html#link-map)
 
 ## 🤝 支持我们
 
-Trilium is built and maintained with [hundreds of hours of
-work](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Your
-support keeps it open-source, improves features, and covers costs such as
-hosting.
+Trilium
+的开发与维护凝聚了[数百小时的工作](https://github.com/TriliumNext/Trilium/graphs/commit-activity)。你的支持将确保其开源性质，推动功能改进，并覆盖托管等相关成本。
 
-Consider supporting the main developer
-([eliandoran](https://github.com/eliandoran)) of the application via:
+请考虑通过以下方式支持该应用程序的主要开发者（[eliandoran](https://github.com/eliandoran)）：
 
 - [GitHub Sponsors](https://github.com/sponsors/eliandoran)
 - [PayPal](https://paypal.me/eliandoran)

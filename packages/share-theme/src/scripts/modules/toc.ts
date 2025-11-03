@@ -3,14 +3,15 @@
  * it even exists for users without client-side js
  * and that means it loads with the page so it avoids
  * all potential reshuffling or layout recalculations.
- * 
+ *
  * So, all this function needs to do is make the links
  * perform smooth animation, and adjust the "active"
  * entry as the user scrolls.
  */
 export default function setupToC() {
+    const container = document.getElementById("right-pane");
     const toc = document.getElementById("toc");
-    if (!toc) return;
+    if (!toc || !container) return;
 
     // Get all relevant elements
     const sections = document.getElementById("content")!.querySelectorAll("h2, h3, h4, h5, h6");
@@ -23,7 +24,7 @@ export default function setupToC() {
             if (!target) return;
             e.preventDefault();
             e.stopPropagation();
-            
+
             target.scrollIntoView({behavior: "smooth"});
         });
     }
@@ -32,15 +33,15 @@ export default function setupToC() {
     function changeLinkState() {
         let index = sections.length;
 
-        // Work backkwards to find the first matching section
-        while (--index && window.scrollY + 50 < (sections[index] as HTMLElement).offsetTop) {} // eslint-disable-line no-empty
+        // Work backwards to find the first matching section
+        while (--index && container!.scrollTop + 50 < (sections[index] as HTMLElement).offsetTop) {} // eslint-disable-line no-empty
 
         // Update the "active" item in ToC
         links.forEach((link) => link.classList.remove("active"));
         links[index].classList.add("active");
     }
-    
+
     // Initial render
     changeLinkState();
-    window.addEventListener("scroll", changeLinkState);
+    container.addEventListener("scroll", changeLinkState);
 }

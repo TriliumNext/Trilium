@@ -29,18 +29,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <link rel="shortcut icon" href="<% if (note.hasRelation("shareFavicon")) { %>api/notes/<%= note.getRelation("shareFavicon").value %>/download<% } else { %>../favicon.ico<% } %>">
-    <script src="../<%= appPath %>/share.js" type="module"></script>
-    <% if (!isDev && !note.isLabelTruthy("shareOmitDefaultCss")) { %>
-        <link href="<%= assetPath %>/src/share.css" rel="stylesheet">
-        <link href="<%= assetPath %>/src/boxicons.css" rel="stylesheet">
+    <link rel="shortcut icon" href="<%= faviconUrl %>">
+    <% for (const url of cssToLoad) { %>
+        <link href="<%= url %>" rel="stylesheet">
     <% } %>
-
-    <% for (const cssRelation of note.getRelations("shareCss")) { %>
-        <link href="api/notes/<%= cssRelation.value %>/download" rel="stylesheet">
-    <% } %>
-    <% for (const jsRelation of note.getRelations("shareJs")) { %>
-        <script type="module" src="api/notes/<%= jsRelation.value %>/download"></script>
+    <% for (const url of jsToLoad) { %>
+        <script type="module" src="<%= url %>"></script>
     <% } %>
     <% if (note.hasLabel("shareDisallowRobotIndexing")) { %>
         <meta name="robots" content="noindex,follow" />
@@ -60,6 +54,19 @@
         }
     %>
     <title><%= pageTitle %></title>
+    <script>
+        // Load dark/light theme as soon as possible to avoid color flashes.
+        let theme = localStorage.getItem("theme");
+        if (!theme) {
+            theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light";
+        }
+        document.documentElement.classList.add(`theme-${theme}`);
+
+        window.glob = {
+            isStatic: <%= !!isStatic %>,
+            theme
+        };
+    </script>
     <!-- HTML Meta Tags -->
     <meta name="description" content="<%= note.getLabelValue("shareDescription") %>">
     <!-- Facebook Meta Tags -->
@@ -80,14 +87,10 @@
     <%- renderSnippets("head:end") %>
 </head>
 <%
-const customLogoId = subRoot.note.getRelation("shareLogo")?.value;
-const logoUrl = customLogoId ? `api/images/${customLogoId}/image.png` : `../${assetUrlFragment}/images/icon-color.svg`;
 const logoWidth = subRoot.note.getLabelValue("shareLogoWidth") ?? 53;
 const logoHeight = subRoot.note.getLabelValue("shareLogoHeight") ?? 40;
 const mobileLogoHeight = logoHeight && logoWidth ? 32 / (logoWidth / logoHeight) : "";
 const shareRootLink = subRoot.note.hasLabel("shareRootLink") ? subRoot.note.getLabelValue("shareRootLink") : `./${subRoot.note.noteId}`;
-const currentTheme = note.getLabel("shareTheme") === "light" ? "light" : "dark";
-const themeClass = currentTheme === "light" ? " theme-light" : " theme-dark";
 const headingRe = /(<h[1-6]>)(.+?)(<\/h[1-6]>)/g;
 const headingMatches = [...content.matchAll(headingRe)];
 content = content.replaceAll(headingRe, (...match) => {
@@ -96,7 +99,7 @@ content = content.replaceAll(headingRe, (...match) => {
     return match[0];
 });
 %>
-<body data-note-id="<%= note.noteId %>" class="type-<%= note.type %><%= themeClass %>" data-ancestor-note-id="<%= subRoot.note.noteId %>">
+<body data-note-id="<%= note.noteId %>" class="type-<%= note.type %>" data-ancestor-note-id="<%= subRoot.note.noteId %>">
 <%- renderSnippets("body:start") %>
 <div id="mobile-header">
     <a href="<%= shareRootLink %>">
@@ -116,11 +119,15 @@ content = content.replaceAll(headingRe, (...match) => {
                 <div class="theme-selection">
                     <span id="sitetheme"><%= t("share_theme.site-theme") %></span>
                     <label class="switch">
-                      <input type="checkbox" checked="<%= currentTheme === "dark" %>" aria-labelledby="sitetheme">
+                      <input type="checkbox" aria-labelledby="sitetheme">
                       <span class="slider"></span>
                       <svg class="dark-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20.742 13.045a8.088 8.088 0 0 1-2.077.271c-2.135 0-4.14-.83-5.646-2.336a8.025 8.025 0 0 1-2.064-7.723A1 1 0 0 0 9.73 2.034a10.014 10.014 0 0 0-4.489 2.582c-3.898 3.898-3.898 10.243 0 14.143a9.937 9.937 0 0 0 7.072 2.93 9.93 9.93 0 0 0 7.07-2.929 10.007 10.007 0 0 0 2.583-4.491 1.001 1.001 0 0 0-1.224-1.224zm-2.772 4.301a7.947 7.947 0 0 1-5.656 2.343 7.953 7.953 0 0 1-5.658-2.344c-3.118-3.119-3.118-8.195 0-11.314a7.923 7.923 0 0 1 2.06-1.483 10.027 10.027 0 0 0 2.89 7.848 9.972 9.972 0 0 0 7.848 2.891 8.036 8.036 0 0 1-1.484 2.059z"></path></svg>
                       <svg class="light-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6.993 12c0 2.761 2.246 5.007 5.007 5.007s5.007-2.246 5.007-5.007S14.761 6.993 12 6.993 6.993 9.239 6.993 12zM12 8.993c1.658 0 3.007 1.349 3.007 3.007S13.658 15.007 12 15.007 8.993 13.658 8.993 12 10.342 8.993 12 8.993zM10.998 19h2v3h-2zm0-17h2v3h-2zm-9 9h3v2h-3zm17 0h3v2h-3zM4.219 18.363l2.12-2.122 1.415 1.414-2.12 2.122zM16.24 6.344l2.122-2.122 1.414 1.414-2.122 2.122zM6.342 7.759 4.22 5.637l1.415-1.414 2.12 2.122zm13.434 10.605-1.414 1.414-2.122-2.122 1.414-1.414z"></path></svg>
                     </label>
+                    <script>
+                        const el = document.querySelector(".theme-selection input");
+                        el.checked = (glob.theme === "dark");
+                    </script>
                 </div>
                 <% if (hasTree) { %>
                     <div class="search-item">
@@ -131,16 +138,7 @@ content = content.replaceAll(headingRe, (...match) => {
             </div>
         <% if (hasTree) { %>
             <nav id="menu">
-                <%
-                const ancestors = [];
-                let notePointer = note;
-                while (notePointer.parents[0].noteId !== "_share") {
-                    const pointerParent = notePointer.parents[0];
-                    ancestors.push(pointerParent.noteId);
-                    notePointer = pointerParent;
-                }
-                %>
-                <%- include("tree_item", {note: subRoot.note, activeNote: note, subRoot: subRoot, ancestors: ancestors}) %>
+                <%- include("tree_item", {note: subRoot.note, activeNote: note, subRoot: subRoot, ancestors}) %>
             </nav>
         <% } %>   
         </div>
@@ -184,7 +182,7 @@ content = content.replaceAll(headingRe, (...match) => {
             <% } %>
 
             <footer id="content-footer">
-                <% if (!isEmpty) { %>
+                <% if (!isEmpty && !isStatic) { %>
                     <div class="updated">
                         <% const lastUpdated = new Date(note.utcDateModified); %>
                         <%- t("share_theme.last-updated", { date: `<time datetime="${lastUpdated.toISOString()}">${lastUpdated.toLocaleDateString()}</time>`}) %>

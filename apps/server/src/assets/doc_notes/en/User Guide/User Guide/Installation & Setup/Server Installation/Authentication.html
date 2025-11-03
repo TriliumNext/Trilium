@@ -4,8 +4,7 @@
   by adding the following to <code>config.ini</code>:</p><pre><code class="language-text-x-trilium-auto">[General]
 noAuthentication=true</code></pre>
 <p>Disabling authentication will bypass even the&nbsp;<a class="reference-link"
-  href="#root/_help_7DAiwaf8Z7Rz">Multi-Factor Authentication</a>&nbsp;since
-  v0.94.1.</p>
+  href="#root/_help_7DAiwaf8Z7Rz">Multi-Factor Authentication</a>&nbsp;since v0.94.1.</p>
 <h2>Understanding how the session works</h2>
 <p>Once logged into Trilium, the application will store this information
   about the login into a cookie on the browser, but also as a session on
@@ -22,10 +21,9 @@ cookieMaxAge=86400</code></pre>
   the <em>last interaction with the application</em>.</p>
 <h2>Viewing active sessions</h2>
 <p>The login sessions are now stored in the same&nbsp;<a class="reference-link"
-  href="#root/_help_wX4HbRucYSDD">Database</a>&nbsp;as the user data. In
-  order to view which sessions are active, open the&nbsp;<a class="reference-link"
-  href="#root/_help_YKWqdJhzi2VY">SQL Console</a>&nbsp;and run the following
-  query:</p><pre><code class="language-text-x-trilium-auto">SELECT * FROM sessions</code></pre>
+  href="#root/_help_wX4HbRucYSDD">Database</a>&nbsp;as the user data. In order
+  to view which sessions are active, open the&nbsp;<a class="reference-link"
+  href="#root/_help_YKWqdJhzi2VY">SQL Console</a>&nbsp;and run the following query:</p><pre><code class="language-text-x-trilium-auto">SELECT * FROM sessions</code></pre>
 <p>Expired sessions are periodically cleaned by the server, generally an
   hourly interval.</p>
 <h2>See also</h2>

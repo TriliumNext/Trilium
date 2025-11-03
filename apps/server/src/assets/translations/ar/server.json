@@ -84,7 +84,9 @@
     "show-backend-log": "فتح صفحة \"سجل الخلفية\"",
     "edit-readonly-note": "تعديل ملاحظة القراءة فقط",
     "attributes-labels-and-relations": "سمات ( تسميات و علاقات)",
-    "render-active-note": "عرض ( اعادة عرض) الملاحظة المؤرشفة"
+    "render-active-note": "عرض ( اعادة عرض) الملاحظة المؤرشفة",
+    "show-help": "فتح دليل التعليمات",
+    "copy-without-formatting": "نسخ النص المحدد بدون تنسيق"
   },
   "setup_sync-from-server": {
     "note": "ملاحظة:",
@@ -196,7 +198,8 @@
     "expand": "توسيع",
     "site-theme": "المظهر العام للموقع",
     "image_alt": "صورة المقال",
-    "on-this-page": "في هذه السفحة"
+    "on-this-page": "في هذه السفحة",
+    "last-updated": "اخر تحديث {{- date}}"
   },
   "hidden_subtree_templates": {
     "description": "الوصف",
@@ -258,7 +261,8 @@
   },
   "share_page": {
     "parent": "الأصل:",
-    "child-notes": "الملاحظات الفرعية:"
+    "child-notes": "الملاحظات الفرعية:",
+    "no-content": "لاتحتوي هذة الملاحظة على محتوى."
   },
   "notes": {
     "duplicate-note-suffix": "(مكرر)",
@@ -339,7 +343,24 @@
     "toggle-system-tray-icon": "تبديل ايقونة علبة النظام",
     "switch-to-first-tab": "التبديل الى التبويب الاول",
     "follow-link-under-cursor": "اتبع الرابط اسفل المؤشر",
-    "paste-markdown-into-text": "لصق نص بتنسبق Markdown"
+    "paste-markdown-into-text": "لصق نص بتنسبق Markdown",
+    "move-note-up-in-hierarchy": "نقل الملاحظة للاعلى في الهيكل",
+    "move-note-down-in-hierarchy": "نقل الملاحظة للاسفل في الهيكل",
+    "select-all-notes-in-parent": "تحديد جميع الملاحظات التابعة للملاحظة الاصل",
+    "add-note-above-to-selection": "اضافة ملاحظة فوق الملاحظة المحددة",
+    "add-note-below-to-selection": "اصافة ملاحظة اسفل الملاحظة المحددة",
+    "add-include-note-to-text": "اضافة الملاحظة الى النص",
+    "toggle-ribbon-tab-image-properties": "اظهار/ اخفاء صورة علامة التبويب في الشريط.",
+    "toggle-ribbon-tab-classic-editor": "عرض/اخفاء تبويب المحور الكلاسيكي",
+    "toggle-ribbon-tab-basic-properties": "عرض/اخفاء تبويب الخصائص الاساسية",
+    "toggle-ribbon-tab-book-properties": "عرض/اخفاء تبويب خصائص الدفتر",
+    "toggle-ribbon-tab-file-properties": "عرض/ادخفاء تبويب خصائص الملف",
+    "toggle-ribbon-tab-owned-attributes": "عرض/اخفاء تبويب المميزات المملوكة",
+    "toggle-ribbon-tab-inherited-attributes": "عرض/اخفاء تبويب السمات الموروثة",
+    "toggle-ribbon-tab-promoted-attributes": "عرض/ اخفاء تبويب السمات المعززة",
+    "toggle-ribbon-tab-note-map": "عرض/اخفاء تبويب خريطة الملاحظات",
+    "toggle-ribbon-tab-similar-notes": "عرض/اخفاء شريط الملاحظات المشابهة",
+    "export-active-note-as-pdf": "تصدير الملاحظة النشطة كملفPDF"
   },
   "share_404": {
     "title": "غير موجود",
@@ -348,6 +369,7 @@
   "weekdayNumber": "الاسبوع{رقم الاسيوع}",
   "quarterNumber": "الربع {رقم الربع}",
   "pdf": {
-    "export_filter": "مستند PDF (.pdf)"
+    "export_filter": "مستند PDF (.pdf)",
+    "unable-to-export-title": "تعذر التصدير كملف PDF"
   }
 }

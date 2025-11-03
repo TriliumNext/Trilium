@@ -11,19 +11,19 @@
 
 # Trilium Notes
 
-![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
-![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
-![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![GitHub Downloads (all assets, all
+![Спонсоры GitHub](https://img.shields.io/github/sponsors/eliandoran) ![Меценаты
+LiberaPay ](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![Загрузок Docker](https://img.shields.io/docker/pulls/triliumnext/trilium)
+![Загрузок GitHub (all assets, all
 releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
 [![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+[![Процесс
+перевода](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
-[English](./README.md) | [Chinese (Simplified)](./docs/README-ZH_CN.md) |
-[Chinese (Traditional)](./docs/README-ZH_TW.md) | [Russian](./docs/README-ru.md)
-| [Japanese](./docs/README-ja.md) | [Italian](./docs/README-it.md) |
-[Spanish](./docs/README-es.md)
+[Английский](./README.md) | [Китайский (Упрощенный)](./docs/README-ZH_CN.md) |
+[Китайский (Традиционный)](./docs/README-ZH_TW.md) |
+[Русский](./docs/README-ru.md) | [Японский](./docs/README-ja.md) |
+[Итальянский](./docs/README-it.md) | [Испанский](./docs/README-es.md)
 
 Trilium Notes – это приложение для заметок с иерархической структурой,
 ориентированное на создание больших персональных баз знаний.
@@ -33,38 +33,38 @@ Trilium Notes – это приложение для заметок с иера�
 
 <a href="https://triliumnext.github.io/Docs/Wiki/screenshot-tour"><img src="./docs/app.png" alt="Trilium Screenshot" width="1000"></a>
 
-## ⏬ Download
-- [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
-  stable version, recommended for most users.
-- [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  unstable development version, updated daily with the latest features and
-  fixes.
+## ⏬ Загрузка
+- [Последний релиз](https://github.com/TriliumNext/Trilium/releases/latest) –
+  стабильная версия, подойдёт для большинства пользователей.
+- [Ночной билд](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
+  нестабильная разрабатываемая версия, ежедневно получает новые функции и
+  исправления.
 
 ## 📚 Документация
 
-**Visit our comprehensive documentation at
+**Полная документация по адресу
 [docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 
-Our documentation is available in multiple formats:
-- **Online Documentation**: Browse the full documentation at
+Документация доступна в нескольких форматах:
+- **Онлайн Документация**: Полная документация доступна по адресу:
   [docs.triliumnotes.org](https://docs.triliumnotes.org/)
-- **In-App Help**: Press `F1` within Trilium to access the same documentation
-  directly in the application
+- **Справка в приложении**: Нажмите`F1` в Trilium для доступа к этой
+  документации прямо в приложении
 - **GitHub**: Navigate through the [User
   Guide](./docs/User%20Guide/User%20Guide/) in this repository
 
-### Quick Links
-- [Getting Started Guide](https://docs.triliumnotes.org/)
-- [Installation
-  Instructions](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation.md)
-- [Docker
-  Setup](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md)
-- [Upgrading
+### Важные Ссылки
+- [Руководство по началу работы](https://docs.triliumnotes.org/)
+- [Инструкция по
+  установке](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation.md)
+- [Установка
+  Docker](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md)
+- [Обновление
   TriliumNext](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Upgrading%20TriliumNext.md)
-- [Basic Concepts and
-  Features](./docs/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes.md)
-- [Patterns of Personal Knowledge
-  Base](https://triliumnext.github.io/Docs/Wiki/patterns-of-personal-knowledge)
+- [Основные идеи и
+  возможности](./docs/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes.md)
+- [Шаблоны Персональный Базы
+  Знаний](https://triliumnext.github.io/Docs/Wiki/patterns-of-personal-knowledge)
 
 ## 🎁 Возможности
 
@@ -88,11 +88,11 @@ Our documentation is available in multiple formats:
 * Специальные [атрибуты](https://triliumnext.github.io/Docs/Wiki/attributes)
   позволяют гибко организовать структуру, используются для поиска и продвинутого
   [скриптинга](https://triliumnext.github.io/Docs/Wiki/scripts)
-* UI available in English, German, Spanish, French, Romanian, and Chinese
-  (simplified and traditional)
-* Direct [OpenID and TOTP
+* Интерфейс доступен на Английском, Немецком, Испанском, Французском, Румынском
+  и Китайском (упрощённом и традиционном)
+* Интеграция [OpenID and TOTP
   integration](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Server%20Installation/Multi-Factor%20Authentication.md)
-  for more secure login
+  для более безопасного входа
 * [Синхронизация](https://triliumnext.github.io/Docs/Wiki/synchronization)
   заметок со своим сервером
   * there's a [3rd party service for hosting synchronisation
@@ -223,20 +223,20 @@ installation docs](https://triliumnext.github.io/Docs/Wiki/server-installation).
 
 ## 💻 Участвуйте в разработке
 
-### Translations
+### Переводы
 
-If you are a native speaker, help us translate Trilium by heading over to our
-[Weblate page](https://hosted.weblate.org/engage/trilium/).
+Если вы являетесь носителем языка, помогите нам перевести Trilium, перейдя на
+нашу [страницу Weblate](https://hosted.weblate.org/engage/trilium/).
 
-Here's the language coverage we have so far:
+Что сделано на данный момент:
 
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
+[![Статус
+перевода](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
 
-### Code
+### Код
 
-Download the repository, install dependencies using `pnpm` and then run the
-server (available at http://localhost:8080):
+Скачайте репозиторий, установите зависимости с помощью `pnpm`, затем запустите
+сервер (доступен по адресу http://localhost:8080):
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -244,10 +244,10 @@ pnpm install
 pnpm run server:start
 ```
 
-### Documentation
+### Документация
 
-Download the repository, install dependencies using `pnpm` and then run the
-environment required to edit the documentation:
+Скачайте репозиторий, установите зависимости с помощью `pnpm`, затем запустите
+окружение, необходимое для редактирование документации:
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -255,9 +255,9 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
-### Building the Executable
-Download the repository, install dependencies using `pnpm` and then build the
-desktop app for Windows:
+### Сборка исполняемого файла
+Скачайте репозиторий, установите зависимости с помощью `pnpm`, затем соберите
+приложение для Windows:
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -265,10 +265,10 @@ pnpm install
 pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 ```
 
-For more details, see the [development
-docs](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
+Для получения подробностей, смотрите [документы
+разработки](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
 
-### Developer Documentation
+### Документация для разработчиков
 
 Please view the [documentation
 guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
@@ -277,48 +277,49 @@ described in the "Discuss with us" section above.
 
 ## 👏 Благодарности
 
-* [zadam](https://github.com/zadam) for the original concept and implementation
-  of the application.
-* [Sarah Hussein](https://github.com/Sarah-Hussein) for designing the
-  application icon.
-* [nriver](https://github.com/nriver) for his work on internationalization.
+* [zadam](https://github.com/zadam) за оригинальный концепт и реализацию
+  приложения.
+* [Sarah Hussein](https://github.com/Sarah-Hussein) за создание иконки
+  приложения.
+* [nriver](https://github.com/nriver) за работу по интернационализации.
 * [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
-* [antoniotejada](https://github.com/nriver) for the original syntax highlight
-  widget.
-* [Dosu](https://dosu.dev/) for providing us with the automated responses to
-  GitHub issues and discussions.
-* [Tabler Icons](https://tabler.io/icons) for the system tray icons.
+* [antoniotejada](https://github.com/nriver) за оригинальный виджет подсветки
+  синтаксиса.
+* [Dosu](https://dosu.dev/) за обеспечение автоматических ответов на вопросы и
+  обсуждения GitHub.
+* [Tabler Icons](https://tabler.io/icons) за системные иконки.
 
-Trilium would not be possible without the technologies behind it:
+Trilium не существовал бы без технологий, лежащих в его основе:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes. We are grateful for being offered a set of the premium features.
-* [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with
-  support for huge amount of languages.
-* [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite
-  whiteboard used in Canvas notes.
-* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - providing the
-  mind map functionality.
-* [Leaflet](https://github.com/Leaflet/Leaflet) - for rendering geographical
-  maps.
-* [Tabulator](https://github.com/olifolkerd/tabulator) - for the interactive
-  table used in collections.
-* [FancyTree](https://github.com/mar10/fancytree) - feature-rich tree library
-  without real competition.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - visual connectivity library.
-  Used in [relation
-  maps](https://triliumnext.github.io/Docs/Wiki/relation-map.html) and [link
-  maps](https://triliumnext.github.io/Docs/Wiki/note-map.html#link-map)
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - визуальный редактор
+  текстовых заметок. Мы благодарны за предоставленный нам набор дополнительный
+  функций.
+* [CodeMirror](https://github.com/codemirror/CodeMirror) - редактор кода с
+  поддержкой огромного количества языков.
+* [Excalidraw](https://github.com/excalidraw/excalidraw) - бесконечная белая
+  доска, используемая в заметках Canvas.
+* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - обеспечивает
+  функционирование ментальной карты.
+* [Leaflet](https://github.com/Leaflet/Leaflet) - отображение географических
+  карт.
+* [Tabulator](https://github.com/olifolkerd/tabulator) - интерактивные таблицы,
+  используемые в коллекциях.
+* [FancyTree](https://github.com/mar10/fancytree) - многофункциональная
+  библиотека деревьев, не имеющая себе равных.
+* [jsPlumb](https://github.com/jsplumb/jsplumb) - библиотека визуальных связей.
+  Используется в [картах
+  связей](https://triliumnext.github.io/Docs/Wiki/relation-map.html) и [картах
+  ссылок](https://triliumnext.github.io/Docs/Wiki/note-map.html#link-map)
 
-## 🤝 Support
+## 🤝 Поддержка
 
-Trilium is built and maintained with [hundreds of hours of
-work](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Your
-support keeps it open-source, improves features, and covers costs such as
-hosting.
+На создание и поддержку Trilium затрачены [сотни часов
+работы](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Ваша
+поддержка помогает ему оставаться open-source, улучшает функции и покрывает
+расходы, такие как хостинг.
 
-Consider supporting the main developer
-([eliandoran](https://github.com/eliandoran)) of the application via:
+Вы также можете поддержать главного разработчика приложения
+([eliandoran](https://github.com/eliandoran)) с помощью:
 
 - [GitHub Sponsors](https://github.com/sponsors/eliandoran)
 - [PayPal](https://paypal.me/eliandoran)

@@ -1,7 +1,7 @@
 import { ComponentChildren, HTMLAttributes } from "preact";
 import { Link } from "./Button.js";
 import Icon from "./Icon.js";
-import { t } from "../i18n.js";
+import { useTranslation } from "react-i18next";
 
 interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
     title: ComponentChildren;
@@ -13,6 +13,8 @@ interface CardProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
 }
 
 export default function Card({ title, children, imageUrl, iconSvg, className, moreInfoUrl, ...restProps }: CardProps) {
+    const { t } = useTranslation();
+
     return (
         <div className={`card ${className}`} {...restProps}>
             {imageUrl && <img class="image" src={imageUrl} loading="lazy" />}

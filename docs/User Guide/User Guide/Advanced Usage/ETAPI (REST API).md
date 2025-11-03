@@ -1,7 +1,8 @@
 # ETAPI (REST API)
-ETAPI is Trilium's public/external REST API. It is available since Trilium v0.50.
+> [!TIP]
+> For a quick start, consult the <a class="reference-link" href="ETAPI%20(REST%20API)/API%20Reference.dat">API Reference</a>.
 
-The documentation is in OpenAPI format, available [here](https://github.com/TriliumNext/Trilium/blob/master/src/etapi/etapi.openapi.yaml).
+ETAPI is Trilium's public/external REST API. It is available since Trilium v0.50.
 
 ## API clients
 

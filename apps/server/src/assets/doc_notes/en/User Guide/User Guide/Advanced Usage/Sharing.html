@@ -3,8 +3,8 @@
   from your Trilium notes, making it accessible to others online.</p>
 <figure
 class="image">
-  <img style="aspect-ratio:1144/660;" src="Sharing_image.png" width="1144"
-  height="660">
+  <img style="aspect-ratio:1144/660;" src="Sharing_image.png"
+  width="1144" height="660">
   </figure>
   
 <h2>Features, interaction and limitations</h2>
@@ -149,7 +149,7 @@ class="image">
         </td>
       </tr>
       <tr>
-        <th><a class="reference-link" href="#root/_help_81SGnPGMk7Xc">Geo Map View</a>
+        <th><a class="reference-link" href="#root/_help_81SGnPGMk7Xc">Geo Map</a>
         </th>
         <td>Not supported.</td>
         <td>&nbsp;</td>
@@ -177,8 +177,8 @@ class="image">
   <p>Some of these limitations may be addressed in future updates.</p>
   <h2>Prerequisites</h2>
   <p>To use the sharing feature, you must have a&nbsp;<a class="reference-link"
-    href="#root/_help_WOcw2SLH6tbX">Server Installation</a>&nbsp;of Trilium.
-    This is necessary because the notes will be hosted from the server.</p>
+    href="#root/_help_WOcw2SLH6tbX">Server Installation</a>&nbsp;of Trilium. This
+    is necessary because the notes will be hosted from the server.</p>
   <h2>Sharing a note</h2>
   <ol>
     <li>
@@ -186,7 +186,8 @@ class="image">
         within the note's interface. Once sharing is enabled, an URL will appear,
         which you can click to access the shared note.</p>
       <p>
-        <img src="Sharing_share-single-note.png" alt="Share Note">
+        <img src="Sharing_share-single-note.png"
+        alt="Share Note">
       </p>
     </li>
     <li>
@@ -207,9 +208,19 @@ class="image">
     This allows you to manage and navigate through all the notes you have made
     public.</p>
   <h2>Security considerations</h2>
-  <p>Shared notes are published on the open internet and can be accessed by
-    anyone with the URL. The URL's randomness does not provide security, so
-    it is crucial not to share sensitive information through this feature.</p>
+  <ul>
+    <li>Shared notes are published on the open internet and can be accessed by
+      anyone with the URL unless the notes are password-protected.</li>
+    <li>The URL's randomness does not provide security, so it is crucial not to
+      share sensitive information through this feature.</li>
+    <li>Trilium takes precautions to protect your publicly shared instance from
+      leaking information for non-shared notes, including opening a separate
+      read-only connection to the&nbsp;<a class="reference-link" href="#root/_help_wX4HbRucYSDD">Database</a>.
+      Depending on your threat model, it might make more sense to use&nbsp;
+      <a
+      class="reference-link" href="#root/_help_ycBFjKrrwE9p">Exporting HTML for web publishing</a>&nbsp;and use battle-tested web servers
+        such as Nginx or Apache to serve static content.</li>
+  </ul>
   <h3>Password protection</h3>
   <p>To protect shared notes with a username and password, you can use the <code>#shareCredentials</code> attribute.
     Add this label to the note with the format <code>#shareCredentials="username:password"</code>.
@@ -220,10 +231,10 @@ class="image">
     it using your own CSS:</p>
   <ul>
     <li><strong>Custom CSS</strong>: Link a CSS&nbsp;<a class="reference-link"
-      href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note to the shared page by
-      adding a <code>~shareCss</code> relation to the note. If you want this style
-      to apply to the entire subtree, make the label inheritable. You can hide
-      the CSS code note from the tree navigation by adding the <code>#shareHiddenFromTree</code> label.</li>
+      href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note to the shared page by adding
+      a <code>~shareCss</code> relation to the note. If you want this style to
+      apply to the entire subtree, make the label inheritable. You can hide the
+      CSS code note from the tree navigation by adding the <code>#shareHiddenFromTree</code> label.</li>
     <li><strong>Omitting Default CSS</strong>: For extensive styling changes,
       use the <code>#shareOmitDefaultCss</code> label to avoid conflicts with Trilium's
       <a
@@ -279,6 +290,15 @@ for (const attr of parentNote.attributes) {
     <li>Using slashes (<code>/</code>) within aliases to create subpaths is not
       supported.</li>
   </ol>
+  <aside class="admonition tip">
+    <ul>
+      <li>To easily identify pages that don't have a share alias, run a&nbsp;
+        <a
+        class="reference-link" href="#root/_help_eIg8jdvaoNNd">Search</a>&nbsp;with <code>#!shareAlias</code>.</li>
+      <li>To be able to enter the share alias faster, consider using&nbsp;<a class="reference-link"
+        href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;(for example <code>#label:shareAlias(inheritable)="promoted,alias=Slug,single,text"</code>).</li>
+    </ul>
+  </aside>
   <h3>Setting a custom favicon</h3>
   <p>To customize the favicon for your shared pages, create a relation <code>~shareFavicon</code> pointing
     to a file note containing the favicon (e.g., in <code>.ico</code> format).</p>
@@ -299,7 +319,11 @@ for (const attr of parentNote.attributes) {
     When viewed, the list of shared roots will be displayed at the bottom of
     the note.</p>
   <h2>Attribute reference</h2>
-  <table>
+  <table class="ck-table-resized">
+    <colgroup>
+      <col style="width:18.38%;">
+        <col style="width:81.62%;">
+    </colgroup>
     <thead>
       <tr>
         <th>Attribute</th>
@@ -308,40 +332,40 @@ for (const attr of parentNote.attributes) {
     </thead>
     <tbody>
       <tr>
-        <td><code>shareHiddenFromTree</code>
+        <td><code>#shareHiddenFromTree</code>
         </td>
         <td>this note is hidden from left navigation tree, but still accessible with
           its URL</td>
       </tr>
       <tr>
-        <td><code>shareExternalLink</code>
+        <td><code>#shareExternalLink</code>
         </td>
         <td>note will act as a link to an external website in the share tree</td>
       </tr>
       <tr>
-        <td><code>shareAlias</code>
+        <td><code>#shareAlias</code>
         </td>
         <td>define an alias using which the note will be available under <code>https://your_trilium_host/share/[your_alias]</code>
         </td>
       </tr>
       <tr>
-        <td><code>shareOmitDefaultCss</code>
+        <td><code>#shareOmitDefaultCss</code>
         </td>
         <td>default share page CSS will be omitted. Use when you make extensive styling
           changes.</td>
       </tr>
       <tr>
-        <td><code>shareRoot</code>
+        <td><code>#shareRoot</code>
         </td>
         <td>marks note which is served on /share root.</td>
       </tr>
       <tr>
-        <td><code>shareDescription</code>
+        <td><code>#shareDescription</code>
         </td>
         <td>define text to be added to the HTML meta tag for description</td>
       </tr>
       <tr>
-        <td><code>shareRaw</code>
+        <td><code>#shareRaw</code>
         </td>
         <td>Note will be served in its raw format, without HTML wrapper. See also&nbsp;
           <a
@@ -349,7 +373,7 @@ for (const attr of parentNote.attributes) {
             without setting an attribute.</td>
       </tr>
       <tr>
-        <td><code>shareDisallowRobotIndexing</code>
+        <td><code>#shareDisallowRobotIndexing</code>
         </td>
         <td>
           <p>Indicates to web crawlers that the page should not be indexed of this
@@ -361,24 +385,94 @@ for (const attr of parentNote.attributes) {
         </td>
       </tr>
       <tr>
-        <td><code>shareCredentials</code>
+        <td><code>#shareCredentials</code>
         </td>
         <td>require credentials to access this shared note. Value is expected to be
           in format <code>username:password</code>. Don't forget to make this inheritable
           to apply to child-notes/images.</td>
       </tr>
       <tr>
-        <td><code>shareIndex</code>
+        <td><code>#shareIndex</code>
         </td>
         <td>Note with this label will list all roots of shared notes.</td>
       </tr>
       <tr>
-        <td><code>shareHtmlLocation</code>
+        <td><code>#shareHtmlLocation</code>
         </td>
         <td>defines where custom HTML injected via <code>~shareHtml</code> relation
           should be placed. Applied to the HTML snippet note itself. Format: <code>location:position</code> where
           location is <code>head</code>, <code>body</code>, or <code>content</code> and
           position is <code>start</code> or <code>end</code>. Defaults to <code>content:end</code>.</td>
+      </tr>
+    </tbody>
+  </table>
+  
+<h3>Customizing logo</h3>
+  <p>It's possible to adjust the logo which is displayed on the top-left of
+    the left pane.</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Attribute</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>~shareLogo</code>
+        </td>
+        <td>Relation set to an image to use as logo. The image must be part of the
+          share tree (it can be hidden if needed).</td>
+      </tr>
+      <tr>
+        <td><code>#shareLogoWidth</code>
+        </td>
+        <td>The width (in pixels, without unit) to set for the logo. Default is <code>53</code>.</td>
+      </tr>
+      <tr>
+        <td><code>#shareLogoHeight</code>
+        </td>
+        <td>The height (in pixels, without unit) to set for the logo. Default is <code>40</code>.</td>
+      </tr>
+      <tr>
+        <td><code>#shareRootLink</code>
+        </td>
+        <td>URL to navigate to when the logo is pressed.</td>
+      </tr>
+    </tbody>
+  </table>
+  
+<h3>Customizing OpenGraph</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Attribute</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>#shareOpenGraphColor</code>
+        </td>
+        <td>This adjusts the <code>theme-color</code> meta-property.</td>
+      </tr>
+      <tr>
+        <td><code>#shareOpenGraphURL</code>
+        </td>
+        <td>This adjusts the <code>og:url</code> and <code>twitter:url</code> meta-properties.</td>
+      </tr>
+      <tr>
+        <td><code>#shareOpenGraphDomain</code>
+        </td>
+        <td>Adjusts the <code>twitter:domain</code> meta-property.</td>
+      </tr>
+      <tr>
+        <td><code>#shareOpenGraphImage</code> 
+          <br><code>~shareOpenGraphImage</code>
+        </td>
+        <td>Can be either a label, case in which the value is passed on as-is, or
+          it can be a relation to an image&nbsp;<a class="reference-link" href="#root/_help_W8vYD3Q1zjCR">File</a>.
+          This controls the <code>og:image</code> meta-property.</td>
       </tr>
     </tbody>
   </table>

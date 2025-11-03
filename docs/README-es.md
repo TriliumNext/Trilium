@@ -36,12 +36,12 @@ resumen rápido:
 
 <a href="https://triliumnext.github.io/Docs/Wiki/screenshot-tour"><img src="./docs/app.png" alt="Trilium Screenshot" width="1000"></a>
 
-## ⏬ Download
+## ⏬ Descargar
 - [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
-  stable version, recommended for most users.
-- [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  unstable development version, updated daily with the latest features and
-  fixes.
+  versión estable, recomendada para la mayoría de los usuarios.
+- [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly):
+  versión de desarrollo inestable, actualizada diariamente con las últimas
+  funciones y correcciones.
 
 ## 📚 Documentación
 

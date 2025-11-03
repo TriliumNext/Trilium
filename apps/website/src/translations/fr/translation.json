@@ -1,0 +1,191 @@
+{
+    "get-started": {
+        "title": "Commencer",
+        "desktop_title": "Télécharger l'application de bureau (v{{version}})",
+        "architecture": "Architecture :",
+        "older_releases": "Voir les versions plus anciennes",
+        "server_title": "Configurer un serveur pour accéder à plusieurs appareils"
+    },
+    "hero_section": {
+        "github": "GitHub",
+        "get_started": "Commencer",
+        "title": "Organisez vos pensées. Construisez votre base de connaissances personnelles.",
+        "subtitle": "Trilium est une solution open source pour la prise de notes et l'organisation de votre base de connaissances personnelle. Utilisez-la localement sur votre ordinateur ou synchronisez-la avec votre serveur auto-hébergé pour conserver vos notes où que vous soyez.",
+        "dockerhub": "Docker Hub",
+        "screenshot_alt": "Capture d'écran de l'application de bureau Trilium Notes"
+    },
+    "organization_benefits": {
+        "title": "Organisation",
+        "note_structure_title": "Structure des notes",
+        "note_structure_description": "Les notes peuvent être organisées hiérarchiquement. Il n'est pas nécessaire de créer des dossiers, car chaque note peut contenir des sous-notes. Une même note peut être ajoutée à plusieurs endroits de la hiérarchie.",
+        "attributes_title": "Noter les étiquettes et les relations",
+        "attributes_description": "Utilisez des relations entre les notes ou ajoutez des étiquettes pour faciliter la catégorisation. Utilisez les attributs promus pour saisir des informations structurées utilisables dans des tableaux et des tableaux de bord.",
+        "hoisting_title": "Espaces de travail et focalisation",
+        "hoisting_description": "Séparez facilement vos notes personnelles et professionnelles en les regroupant sous un espace de travail, ce qui concentre votre arborescence de notes pour afficher uniquement l'ensemble spécifique de celles-ci."
+    },
+    "productivity_benefits": {
+        "title": "Productivité et sécurité",
+        "revisions_title": "Révisions de note",
+        "revisions_content": "Les notes sont sauvegardées périodiquement en arrière-plan, et les révisions peuvent être utilisées pour consulter l’historique ou annuler des modifications accidentelles. Il est également possible de créer des révisions à la demande.",
+        "sync_title": "Synchronisation",
+        "sync_content": "Utilisez une instance auto-hébergée ou cloud pour synchroniser facilement vos notes sur plusieurs appareils, et pour y accéder à partir de votre téléphone mobile en utilisant un PWA.",
+        "protected_notes_title": "Notes protégées",
+        "protected_notes_content": "Protégez les informations personnelles sensibles en chiffrant les notes et en les verrouillant dans une session protégée par mot de passe.",
+        "jump_to_title": "Recherche rapide et commandes",
+        "jump_to_content": "Accédez rapidement à des notes ou commandes de l’interface dans toute la hiérarchie en recherchant leur titre, avec une correspondance approximative pour gérer les fautes de frappe ou légères variations.",
+        "search_title": "Recherche puissante",
+        "search_content": "Ou recherchez du texte à l’intérieur des notes et affinez les résultats en filtrant par note parente ou par profondeur.",
+        "web_clipper_title": "Web clipper",
+        "web_clipper_content": "Récupérez des pages Web (ou des captures d'écran) et placez-les directement dans Trilium à l'aide de l'extension de navigateur \"Web Clipper\"."
+    },
+    "note_types": {
+        "text_title": "Notes de texte",
+        "text_description": "Les notes sont éditées à l'aide d'un éditeur visuel (WYSIWYG) prenant en charge les tableaux, les images, les expressions mathématiques et les blocs de code avec coloration syntaxique. Formatez rapidement le texte grâce à une syntaxe de type Markdown ou à des commandes slash.",
+        "code_title": "Notes de code",
+        "code_description": "De grands échantillons de code source ou de scripts utilisent un éditeur dédié, avec une coloration syntaxique pour de nombreux langages de programmation et avec différents thèmes de couleurs.",
+        "file_title": "Notes de fichier",
+        "file_description": "Intégrez des fichiers multimédias tels que des PDF, des images, des vidéos avec un aperçu intégré à l'application.",
+        "canvas_title": "Canvas",
+        "canvas_description": "Agencez formes, images et textes sur une surface infinie grâce à la même technologie qu'excalidraw.com. Idéal pour les diagrammes, les croquis et la planification visuelle.",
+        "mermaid_title": "Diagrammes Mermaid",
+        "mermaid_description": "Créez des diagrammes tels que des organigrammes, des diagrammes de classes et de séquences, des diagrammes de Gantt et bien d'autres, en utilisant la syntaxe Mermaid.",
+        "mindmap_title": "Carte mentale",
+        "mindmap_description": "Organisez vos pensées visuellement ou faites une séance de brainstorming.",
+        "others_list": "et autres : <0>carte de notes</0>, <1>carte de relations</1>, <2>recherches enregistrées</2>, <3>note de rendu</3> et <4>vues Web</4>."
+    },
+    "faq": {
+        "database_question": "Où sont les données stockées?",
+        "database_answer": "Toutes vos notes seront stockées dans une base de données SQLite, dans un dossier d'application. Trilium utilise une base de données plutôt que des fichiers texte pour des raisons de performances, et certaines fonctionnalités seraient beaucoup plus complexes à implémenter, comme les clones (même note à plusieurs endroits de l'arborescence). Pour trouver le dossier d'application, accédez simplement à la fenêtre « À propos ».",
+        "mobile_answer": "Il n'existe actuellement aucune application mobile officielle. Cependant, si vous disposez d'une instance serveur, vous pouvez y accéder via un navigateur web et même l'installer en tant que PWA. Pour Android, il existe une application non officielle appelée \"TriliumDroid\", qui fonctionne même hors ligne (comme un client de bureau).",
+        "mobile_question": "Y a-t-il une application mobile ?",
+        "title": "Foire aux questions",
+        "server_question": "Ai-je besoin d'un serveur pour utiliser Trilium ?",
+        "server_answer": "Non, le serveur permet l'accès via un navigateur web et gère la synchronisation si vous possédez plusieurs appareils. Pour commencer, il suffit de télécharger l'application de bureau et de l'utiliser.",
+        "scaling_question": "Dans quelle mesure l'application s'adapte-t-elle à une grande quantité de notes ?",
+        "scaling_answer": "Selon l'utilisation, l'application devrait pouvoir gérer au moins 100 000 notes sans problème. Notez que la synchronisation peut parfois échouer lors du téléchargement de nombreux fichiers volumineux (1 Go par fichier), car Trilium est davantage conçu comme une base de connaissances que comme un espace de stockage de fichiers (comme NextCloud, par exemple).",
+        "network_share_question": "Puis-je partager ma base de données sur un lecteur réseau ?",
+        "network_share_answer": "Non, il est généralement déconseillé de partager une base de données SQLite sur un lecteur réseau. Bien que cela puisse parfois fonctionner, il existe un risque de corruption de la base de données en raison de verrous de fichiers imparfaits sur le réseau.",
+        "security_question": "Comment mes données sont-elles protégées?",
+        "security_answer": "Par défaut, les notes ne sont pas chiffrées et peuvent être consultées directement depuis la base de données. Une fois chiffrée, une note l'est avec le protocole AES-128-CBC."
+    },
+    "final_cta": {
+        "title": "Prêt à commencer avec Trilium Notes ?",
+        "description": "Créez votre base de connaissances personnelle avec des fonctionnalités puissantes et une totale confidentialité.",
+        "get_started": "Commencer"
+    },
+    "components": {
+        "link_learn_more": "En savoir plus..."
+    },
+    "support_us": {
+        "financial_donations_title": "Dons financiers",
+        "financial_donations_description": "Trilium est développé et maintenu grâce à <Link>des centaines d'heures de travail</Link>. Votre soutien permet de maintenir son open-source, d'améliorer ses fonctionnalités et de couvrir des coûts tels que l'hébergement.",
+        "financial_donations_cta": "Envisagez de soutenir le développeur principal (<Link>eliandoran</Link>) de l'application via :",
+        "github_sponsors": "Sponsors GitHub",
+        "paypal": "PayPal",
+        "buy_me_a_coffee": "Offrez-moi un café",
+        "title": "Soutenez-nous"
+    },
+    "contribute": {
+        "title": "Autres façons de contribuer",
+        "way_translate": "Traduisez l'application dans votre langue maternelle via <Link>Weblate</Link>.",
+        "way_community": "Interagissez avec la communauté sur <Discussions>GitHub Discussions</Discussions> ou sur <Matrix>Matrix</Matrix>.",
+        "way_reports": "Signalez les bugs via <Link>GitHub issues</Link>.",
+        "way_document": "Améliorez la documentation en nous informant des lacunes dans celle-ci ou en contribuant à des guides, des FAQ ou des tutoriels.",
+        "way_market": "Passez le mot : partagez Trilium Notes avec vos amis, sur des blogs et sur les réseaux sociaux."
+    },
+    "404": {
+        "title": "404 : introuvable",
+        "description": "La page que vous cherchiez est introuvable. Elle a peut-être été supprimée ou l'URL est incorrecte."
+    },
+    "download_helper_desktop_windows": {
+        "title_x64": "Windows 64-bit",
+        "title_arm64": "Windows sur ARM",
+        "description_x64": "Compatible avec les appareils Intel ou AMD exécutant Windows 10 et 11.",
+        "description_arm64": "Compatible avec les appareils ARM (par exemple avec Qualcomm Snapdragon).",
+        "quick_start": "Pour installer via Winget :",
+        "download_exe": "télécharger l'installeur (.exe)",
+        "download_zip": "Portable (.zip)",
+        "download_scoop": "Scoop"
+    },
+    "download_helper_desktop_linux": {
+        "title_x64": "Linux 64-bit",
+        "title_arm64": "Linux sur ARM",
+        "description_x64": "Pour la plupart des distributions Linux, compatible avec l'architecture x86_64.",
+        "description_arm64": "Pour les distributions Linux basées sur ARM, compatible avec l'architecture aarch64.",
+        "quick_start": "Sélectionnez un format de package approprié, en fonction de votre distribution :",
+        "download_deb": ".deb",
+        "download_rpm": ".rpm",
+        "download_flatpak": ".flatpak",
+        "download_zip": "Portable (.zip)",
+        "download_nixpkgs": "nixpkgs",
+        "download_aur": "AUR"
+    },
+    "download_helper_desktop_macos": {
+        "title_x64": "macOS pour Intel",
+        "title_arm64": "macOS pour Apple Silicon",
+        "description_x64": "Pour les Mac basés sur Intel exécutant macOS Monterey ou une version ultérieure.",
+        "description_arm64": "Pour les Mac Apple Silicon tels que ceux équipés de puces M1 et M2.",
+        "quick_start": "Pour installer via Homebrew :",
+        "download_dmg": "Télécharger le programme d'installation (.dmg)",
+        "download_homebrew_cask": "Homebrew Cask",
+        "download_zip": "Portable (.zip)"
+    },
+    "download_helper_server_docker": {
+        "title": "Auto-hébergé avec Docker",
+        "description": "Déployez facilement sur Windows, Linux ou macOS à l'aide d'un conteneur Docker.",
+        "download_dockerhub": "Docker Hub",
+        "download_ghcr": "ghcr.io"
+    },
+    "download_helper_server_linux": {
+        "title": "Auto-hébergé sur Linux",
+        "description": "Déployez Trilium Notes sur votre propre serveur ou VPS, compatible avec la plupart des distributions.",
+        "download_tar_x64": "x64 (.tar.xz)",
+        "download_tar_arm64": "ARM (.tar.xz)",
+        "download_nixos": "Module NixOS"
+    },
+    "download_helper_server_hosted": {
+        "title": "Hébergement payant",
+        "description": "Notes Trilium hébergées sur PikaPods, un service payant pour un accès et une gestion simplifiés. Non affilié directement à l'équipe Trilium.",
+        "download_pikapod": "Installé sur PikaPods",
+        "download_triliumcc": "Voir également trilium.cc"
+    },
+    "extensibility_benefits": {
+        "title": "Partage et extensibilité",
+        "import_export_title": "Import/export",
+        "import_export_description": "Interagissez facilement avec d'autres applications utilisant les formats Markdown, ENEX, OML.",
+        "share_title": "Partager des notes sur le Web",
+        "share_description": "Si vous disposez d'un serveur, vous pouvez l'utiliser pour partager un sous-ensemble de vos notes avec d'autres personnes.",
+        "scripting_title": "Scripts avancés",
+        "scripting_description": "Créez vos propres intégrations dans Trilium avec des widgets personnalisés ou une logique côté serveur.",
+        "api_title": "REST API",
+        "api_description": "Interagissez avec Trilium par programmation à l'aide de son API REST intégrée."
+    },
+    "collections": {
+        "calendar_title": "Calendrier",
+        "calendar_description": "Organisez vos événements personnels ou professionnels grâce à un calendrier compatible avec les événements d'une journée ou de plusieurs jours. Visualisez vos événements en un coup d'œil grâce aux vues hebdomadaire, mensuelle et annuelle. Ajoutez ou déplacez facilement des événements.",
+        "table_title": "Tableau",
+        "table_description": "Affichez et modifiez les informations relatives aux notes dans une structure tabulaire, avec différents types de colonnes (texte, nombre, cases à cocher, date et heure, liens, couleurs) et la prise en charge des relations. Vous pouvez également afficher les notes sous forme d'arborescence à l'intérieur du tableau.",
+        "board_title": "Tableau de bord",
+        "board_description": "Organisez vos tâches ou l'état de vos projets dans un tableau Kanban avec un moyen simple de créer de nouveaux éléments et colonnes et de modifier simplement leur état en les faisant glisser sur le tableau.",
+        "geomap_title": "Géocarte",
+        "geomap_description": "Planifiez vos vacances ou marquez vos points d'intérêt directement sur une carte géographique grâce à des marqueurs personnalisables. Affichez les traces GPX enregistrées pour suivre vos itinéraires."
+    },
+    "download_now": {
+        "text": "Télécharger maintenant. ",
+        "platform_big": "v{{version}} pour {{platform}}",
+        "platform_small": "pour {{platform}}",
+        "linux_big": "v{{version}} pour Linux",
+        "linux_small": "pour Linux",
+        "more_platforms": "Plus de plateformes et de configuration de serveur"
+    },
+    "footer": {
+        "copyright_and_the": " et le ",
+        "copyright_community": "communauté"
+    },
+    "social_buttons": {
+        "github": "GitHub",
+        "github_discussions": "Discussions GitHub",
+        "matrix": "Matrix",
+        "reddit": "Reddit"
+    }
+}

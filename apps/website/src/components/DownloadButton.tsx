@@ -3,18 +3,21 @@ import "./DownloadButton.css";
 import Button from "./Button.js";
 import downloadIcon from "../assets/boxicons/bx-arrow-in-down-square-half.svg?raw";
 import packageJson from "../../../../package.json" with { type: "json" };
-import { useEffect, useState } from "preact/hooks";
-import { t } from "../i18n.js";
+import { useContext, useEffect, useState } from "preact/hooks";
+import { useTranslation } from "react-i18next";
+import { LocaleContext } from "../index.js";
 
 interface DownloadButtonProps {
     big?: boolean;
 }
 
 export default function DownloadButton({ big }: DownloadButtonProps) {
+    const locale = useContext(LocaleContext);
+    const { t } = useTranslation();
     const [ recommendedDownload, setRecommendedDownload ] = useState<RecommendedDownload | null>();
     useEffect(() => {
-        getRecommendedDownload()?.then(setRecommendedDownload);
-    }, []);
+        getRecommendedDownload(t)?.then(setRecommendedDownload);
+    }, [ t ]);
 
     return (recommendedDownload &&
         <>
@@ -35,7 +38,7 @@ export default function DownloadButton({ big }: DownloadButtonProps) {
             ) : (
                 <Button
                     className={`download-button desktop-only ${big ? "big" : ""}`}
-                    href="/get-started/"
+                    href={`/${locale}/get-started/`}
                     iconSvg={downloadIcon}
                     text={<>
                             {t("download_now.text")}

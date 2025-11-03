@@ -63,8 +63,8 @@ Not all <a class="reference-link" href="../../Note%20Types.md">Note Types</a> 
 *   For <a class="reference-link" href="../../Note%20Types/Code.md">Code</a> notes:
     *   Line numbers are not printed.
     *   Syntax highlighting is enabled, however a default theme (Visual Studio) is enforced.
-*   For <a class="reference-link" href="../../Note%20Types/Collections.md">Collections</a>:
-    *   Only <a class="reference-link" href="../../Note%20Types/Collections/Presentation%20View.md">Presentation View</a> is currently supported.
+*   For <a class="reference-link" href="../../Collections.md">Collections</a>:
+    *   Only <a class="reference-link" href="../../Collections/Presentation.md">Presentation View</a> is currently supported.
     *   We plan to add support for all the collection types at some point.
 *   Using <a class="reference-link" href="../../Theme%20development/Custom%20app-wide%20CSS.md">Custom app-wide CSS</a> for printing is not longer supported, due to a more stable but isolated mechanism.
     *   We plan to introduce a new mechanism specifically for a print CSS.

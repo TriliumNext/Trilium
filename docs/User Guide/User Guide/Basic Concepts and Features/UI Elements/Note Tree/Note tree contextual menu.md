@@ -62,9 +62,9 @@ The contextual menu can operate:
         *   _Delete also all clones_ to ensure that the note will be deleted everywhere if it has been placed into multiple locations (see <a class="reference-link" href="../../Notes/Cloning%20Notes.md">Cloning Notes</a>).
         *   _Erase notes permanently_ will ensure that the note cannot be recovered from <a class="reference-link" href="../Recent%20Changes.md">Recent Changes</a>.
 *   **Import into note**
-    *   Opens the [import](../../Import%20%26%20Export) dialog and places the imported notes as child notes of the selected one.
+    *   Opens the [import](../../Import%20%26%20Export.md) dialog and places the imported notes as child notes of the selected one.
 *   **Export**
-    *   Opens the [export](../../Import%20%26%20Export) dialog for the selected notes.
+    *   Opens the [export](../../Import%20%26%20Export.md) dialog for the selected notes.
 *   **Search in subtree**
     *   Opens a full <a class="reference-link" href="../../Navigation/Search.md">Search</a> with it preconfigured to only look into this note and its descendants (the _Ancestor_ field).
 

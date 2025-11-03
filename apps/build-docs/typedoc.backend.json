@@ -1,0 +1,10 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "name": "Trilium Backend API",
+  "entryPoints": [
+    "src/backend_script_entrypoint.ts"
+  ],
+  "plugin": [
+    "typedoc-plugin-missing-exports"
+  ]
+}

@@ -6,7 +6,7 @@ Data directory contains:
 *   `backup` - contains automatically [backup](Backup.md) of documents
 *   `log` - contains application log files
 
-## Location
+## Location of the data directory
 
 Easy way how to find out which data directory Trilium uses is to look at the "About Trilium Notes" dialog (from "Menu" in upper left corner):
 
@@ -75,14 +75,15 @@ TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data trilium
 
 You can then save the above command as a shell script on your path for convenience.
 
-### Fine-grained directory/path location
+## Fine-grained directory/path location
 
-It's possible to configure e.g. backup and log directories separately, with following environment variables:
+Apart from the data directory, some of the subdirectories of it can be moved elsewhere by changing an environment variable:
 
-*   `TRILIUM_DOCUMENT_PATH`
-*   `TRILIUM_BACKUP_DIR`
-*   `TRILIUM_LOG_DIR`
-*   `TRILIUM_ANONYMIZED_DB_DIR`
-*   `TRILIUM_CONFIG_INI_PATH`
-
-If these are not set, default paths within the data directory will be used.
+| Environment variable | Default value | Description |
+| --- | --- | --- |
+| `TRILIUM_DOCUMENT_PATH` | `${TRILIUM_DATA_DIR}/document.db` | Path to the <a class="reference-link" href="../Advanced%20Usage/Database.md">Database</a> (storing all notes and metadata). |
+| `TRILIUM_BACKUP_DIR` | `${TRILIUM_DATA_DIR}/backup` | Directory where automated <a class="reference-link" href="Backup.md">Backup</a> databases are stored. |
+| `TRILIUM_LOG_DIR` | `${TRILIUM_DATA_DIR}/log` | Directory where daily <a class="reference-link" href="../Troubleshooting/Error%20logs/Backend%20(server)%20logs.md">Backend (server) logs</a> are stored. |
+| `TRILIUM_TMP_DIR` | `${TRILIUM_DATA_DIR}/tmp` | Directory where temporary files are stored (for example when opening in an external app). |
+| `TRILIUM_ANONYMIZED_DB_DIR` | `${TRILIUM_DATA_DIR}/anonymized-db` | Directory where a <a class="reference-link" href="../Troubleshooting/Anonymized%20Database.md">Anonymized Database</a> is stored. |
+| `TRILIUM_CONFIG_INI_PATH` | `${TRILIUM_DATA_DIR}/config.ini` | Path to <a class="reference-link" href="../Advanced%20Usage/Configuration%20(config.ini%20or%20e.md">Configuration (config.ini or environment variables)</a> file. |

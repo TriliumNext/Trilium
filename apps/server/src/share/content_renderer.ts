@@ -1,10 +1,27 @@
-import { parse, HTMLElement, TextNode } from "node-html-parser";
+import { parse, HTMLElement, TextNode, Options } from "node-html-parser";
 import shaca from "./shaca/shaca.js";
-import assetPath from "../services/asset_path.js";
+import assetPath, { assetUrlFragment } from "../services/asset_path.js";
 import shareRoot from "./share_root.js";
 import escapeHtml from "escape-html";
 import type SNote from "./shaca/entities/snote.js";
+import BNote from "../becca/entities/bnote.js";
+import type BBranch from "../becca/entities/bbranch.js";
 import { t } from "i18next";
+import SBranch from "./shaca/entities/sbranch.js";
+import options from "../services/options.js";
+import utils, { getResourceDir, isDev, safeExtractMessageAndStackFromError } from "../services/utils.js";
+import ejs from "ejs";
+import log from "../services/log.js";
+import { join } from "path";
+import { readFileSync } from "fs";
+import { highlightAuto } from "@triliumnext/highlightjs";
+import becca from "../becca/becca.js";
+import BAttachment from '../becca/entities/battachment.js';
+import SAttachment from "./shaca/entities/sattachment.js";
+import { sanitizeUrl } from "@braintree/sanitize-url";
+
+const shareAdjustedAssetPath = isDev ? assetPath : `../${assetPath}`;
+const templateCache: Map<string, string> = new Map();
 
 /**
  * Represents the output of the content renderer.
@@ -16,7 +33,198 @@ export interface Result {
     isEmpty?: boolean;
 }
 
-export function getContent(note: SNote) {
+interface Subroot {
+    note?: SNote | BNote;
+    branch?: SBranch | BBranch
+}
+
+function getSharedSubTreeRoot(note: SNote | BNote | undefined): Subroot {
+    if (!note || note.noteId === shareRoot.SHARE_ROOT_NOTE_ID) {
+        // share root itself is not shared
+        return {};
+    }
+
+    // every path leads to share root, but which one to choose?
+    // for the sake of simplicity, URLs are not note paths
+    const parentBranch = note.getParentBranches()[0];
+
+    if (note instanceof BNote) {
+        return {
+            note,
+            branch: parentBranch
+        }
+    }
+
+    if (parentBranch.parentNoteId === shareRoot.SHARE_ROOT_NOTE_ID) {
+        return {
+            note,
+            branch: parentBranch
+        };
+    }
+
+    return getSharedSubTreeRoot(parentBranch.getParentNote());
+}
+
+export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath: string, ancestors: string[]) {
+    const subRoot: Subroot = {
+        branch: parentBranch,
+        note: parentBranch.getNote()
+    };
+
+    return renderNoteContentInternal(note, {
+        subRoot,
+        rootNoteId: parentBranch.noteId,
+        cssToLoad: [
+            `${basePath}assets/styles.css`,
+            `${basePath}assets/scripts.css`,
+        ],
+        jsToLoad: [
+            `${basePath}assets/scripts.js`
+        ],
+        logoUrl: `${basePath}icon-color.svg`,
+        faviconUrl: `${basePath}favicon.ico`,
+        ancestors,
+        isStatic: true
+    });
+}
+
+export function renderNoteContent(note: SNote) {
+    const subRoot = getSharedSubTreeRoot(note);
+
+    const ancestors: string[] = [];
+    let notePointer = note;
+    while (notePointer.parents[0]?.noteId !== subRoot.note?.noteId) {
+        const pointerParent = notePointer.parents[0];
+        if (!pointerParent) {
+            break;
+        }
+        ancestors.push(pointerParent.noteId);
+        notePointer = pointerParent;
+    }
+
+    // Determine CSS to load.
+    const cssToLoad: string[] = [];
+    if (!note.isLabelTruthy("shareOmitDefaultCss")) {
+        cssToLoad.push(`assets/styles.css`);
+        cssToLoad.push(`assets/scripts.css`);
+    }
+    for (const cssRelation of note.getRelations("shareCss")) {
+        cssToLoad.push(`api/notes/${cssRelation.value}/download`);
+    }
+
+    // Determine JS to load.
+    const jsToLoad: string[] = [
+        "assets/scripts.js"
+    ];
+    for (const jsRelation of note.getRelations("shareJs")) {
+        jsToLoad.push(`api/notes/${jsRelation.value}/download`);
+    }
+
+    const customLogoId = note.getRelation("shareLogo")?.value;
+    const logoUrl = customLogoId ? `api/images/${customLogoId}/image.png` : `../${assetUrlFragment}/images/icon-color.svg`;
+
+    return renderNoteContentInternal(note, {
+        subRoot,
+        rootNoteId: "_share",
+        cssToLoad,
+        jsToLoad,
+        logoUrl,
+        ancestors,
+        isStatic: false,
+        faviconUrl: note.hasRelation("shareFavicon") ? `api/notes/${note.getRelationValue("shareFavicon")}/download` : `../favicon.ico`
+    });
+}
+
+interface RenderArgs {
+    subRoot: Subroot;
+    rootNoteId: string;
+    cssToLoad: string[];
+    jsToLoad: string[];
+    logoUrl: string;
+    ancestors: string[];
+    isStatic: boolean;
+    faviconUrl: string;
+}
+
+function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) {
+    const { header, content, isEmpty } = getContent(note);
+    const showLoginInShareTheme = options.getOption("showLoginInShareTheme");
+    const opts = {
+        note,
+        header,
+        content,
+        isEmpty,
+        assetPath: shareAdjustedAssetPath,
+        assetUrlFragment,
+        showLoginInShareTheme,
+        t,
+        isDev,
+        utils,
+        ...renderArgs,
+    };
+
+    // Check if the user has their own template.
+    if (note.hasRelation("shareTemplate")) {
+        // Get the template note and content
+        const templateId = note.getRelation("shareTemplate")?.value;
+        const templateNote = templateId && shaca.getNote(templateId);
+
+        // Make sure the note type is correct
+        if (templateNote && templateNote.type === "code" && templateNote.mime === "application/x-ejs") {
+            // EJS caches the result of this so we don't need to pre-cache
+            const includer = (path: string) => {
+                const childNote = templateNote.children.find((n) => path === n.title);
+                if (!childNote) throw new Error(`Unable to find child note: ${path}.`);
+                if (childNote.type !== "code" || childNote.mime !== "application/x-ejs") throw new Error("Incorrect child note type.");
+
+                const template = childNote.getContent();
+                if (typeof template !== "string") throw new Error("Invalid template content type.");
+
+                return { template };
+            };
+
+            // Try to render user's template, w/ fallback to default view
+            try {
+                const content = templateNote.getContent();
+                if (typeof content === "string") {
+                    return ejs.render(content, opts, { includer });
+                }
+            } catch (e: unknown) {
+                const [errMessage, errStack] = safeExtractMessageAndStackFromError(e);
+                log.error(`Rendering user provided share template (${templateId}) threw exception ${errMessage} with stacktrace: ${errStack}`);
+            }
+        }
+    }
+
+    // Render with the default view otherwise.
+    const templatePath = getDefaultTemplatePath("page");
+    return ejs.render(readTemplate(templatePath), opts, {
+        includer: (path) => {
+            // Path is relative to apps/server/dist/assets/views
+            return { template: readTemplate(getDefaultTemplatePath(path)) };
+        }
+    });
+}
+
+export function getDefaultTemplatePath(template: string) {
+    // Path is relative to apps/server/dist/assets/views
+    return process.env.NODE_ENV === "development"
+        ? join(__dirname, `../../../../packages/share-theme/src/templates/${template}.ejs`)
+        : join(getResourceDir(), `share-theme/templates/${template}.ejs`);
+}
+
+export function readTemplate(path: string) {
+    const cachedTemplate = templateCache.get(path);
+    if (cachedTemplate) {
+        return cachedTemplate;
+    }
+
+    const templateString = readFileSync(path, "utf-8");
+    templateCache.set(path, templateString);
+    return templateString;
+}
+
+export function getContent(note: SNote | BNote) {
     if (note.isProtected) {
         return {
             header: "",
@@ -43,6 +251,8 @@ export function getContent(note: SNote) {
         renderFile(note, result);
     } else if (note.type === "book") {
         result.isEmpty = true;
+    } else if (note.type === "webView") {
+        renderWebView(note, result);
     } else {
         result.content = `<p>${t("content_renderer.note-cannot-be-displayed")}</p>`;
     }
@@ -65,9 +275,12 @@ function renderIndex(result: Result) {
     result.content += "</ul>";
 }
 
-function renderText(result: Result, note: SNote) {
+function renderText(result: Result, note: SNote | BNote) {
     if (typeof result.content !== "string") return;
-    const document = parse(result.content || "");
+    const parseOpts: Partial<Options> = {
+        blockTextElements: {}
+    }
+    const document = parse(result.content || "", parseOpts);
 
     // Process include notes.
     for (const includeNoteEl of document.querySelectorAll("section.include-note")) {
@@ -80,7 +293,7 @@ function renderText(result: Result, note: SNote) {
         const includedResult = getContent(note);
         if (typeof includedResult.content !== "string") continue;
 
-        const includedDocument = parse(includedResult.content).childNodes;
+        const includedDocument = parse(includedResult.content, parseOpts).childNodes;
         if (includedDocument) {
             includeNoteEl.replaceWith(...includedDocument);
         }
@@ -88,7 +301,15 @@ function renderText(result: Result, note: SNote) {
 
     result.isEmpty = document.textContent?.trim().length === 0 && document.querySelectorAll("img").length === 0;
 
+    const getNote = note instanceof BNote
+        ? (noteId: string) => becca.getNote(noteId)
+        : (noteId: string) => shaca.getNote(noteId);
+    const getAttachment = note instanceof BNote
+        ? (attachmentId: string) => becca.getAttachment(attachmentId)
+        : (attachmentId: string) => shaca.getAttachment(attachmentId);
+
     if (!result.isEmpty) {
+        // Process attachment links.
         for (const linkEl of document.querySelectorAll("a")) {
             const href = linkEl.getAttribute("href");
 
@@ -98,24 +319,18 @@ function renderText(result: Result, note: SNote) {
             }
 
             if (href?.startsWith("#")) {
-                handleAttachmentLink(linkEl, href);
+                handleAttachmentLink(linkEl, href, getNote, getAttachment);
             }
         }
 
-        result.content = document.innerHTML ?? "";
-
-        if (result.content.includes(`<span class="math-tex">`)) {
-            result.header += `
-<script src="../${assetPath}/node_modules/katex/dist/katex.min.js"></script>
-<link rel="stylesheet" href="../${assetPath}/node_modules/katex/dist/katex.min.css">
-<script src="../${assetPath}/node_modules/katex/dist/contrib/auto-render.min.js"></script>
-<script src="../${assetPath}/node_modules/katex/dist/contrib/mhchem.min.js"></script>
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    renderMathInElement(document.getElementById('content'));
-});
-</script>`;
+        // Apply syntax highlight.
+        for (const codeEl of document.querySelectorAll("pre code")) {
+            const highlightResult = highlightAuto(codeEl.innerText);
+            codeEl.innerHTML = highlightResult.value;
+            codeEl.classList.add("hljs");
         }
+
+        result.content = document.innerHTML ?? "";
 
         if (note.hasLabel("shareIndex")) {
             renderIndex(result);
@@ -123,12 +338,12 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 }
 
-function handleAttachmentLink(linkEl: HTMLElement, href: string) {
+function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: (id: string) => SNote | BNote | null, getAttachment: (id: string) => BAttachment | SAttachment | null) {
     const linkRegExp = /attachmentId=([a-zA-Z0-9_]+)/g;
     let attachmentMatch;
     if ((attachmentMatch = linkRegExp.exec(href))) {
         const attachmentId = attachmentMatch[1];
-        const attachment = shaca.getAttachment(attachmentId);
+        const attachment = getAttachment(attachmentId);
 
         if (attachment) {
             linkEl.setAttribute("href", `api/attachments/${attachmentId}/download`);
@@ -138,12 +353,13 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string) {
             linkEl.appendChild(new TextNode(attachment.title));
         } else {
             linkEl.removeAttribute("href");
+            log.error(`Broken attachment link detected in shared note: unable to find attachment with ID ${attachmentId}`);
         }
     } else {
         const [notePath] = href.split("?");
         const notePathSegments = notePath.split("/");
         const noteId = notePathSegments[notePathSegments.length - 1];
-        const linkedNote = shaca.getNote(noteId);
+        const linkedNote = getNote(noteId);
         if (linkedNote) {
             const isExternalLink = linkedNote.hasLabel("shareExternalLink");
             const href = isExternalLink ? linkedNote.getLabelValue("shareExternalLink") : `./${linkedNote.shareId}`;
@@ -156,6 +372,7 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string) {
             }
             linkEl.classList.add(`type-${linkedNote.type}`);
         } else {
+            log.error(`Broken link detected in shared note: unable to find note with ID ${noteId}`);
             linkEl.removeAttribute("href");
         }
     }
@@ -174,7 +391,7 @@ export function renderCode(result: Result) {
     }
 }
 
-function renderMermaid(result: Result, note: SNote) {
+function renderMermaid(result: Result, note: SNote | BNote) {
     if (typeof result.content !== "string") {
         return;
     }
@@ -188,16 +405,23 @@ function renderMermaid(result: Result, note: SNote) {
 </details>`;
 }
 
-function renderImage(result: Result, note: SNote) {
+function renderImage(result: Result, note: SNote | BNote) {
     result.content = `<img src="api/images/${note.noteId}/${note.encodedTitle}?${note.utcDateModified}">`;
 }
 
-function renderFile(note: SNote, result: Result) {
+function renderFile(note: SNote | BNote, result: Result) {
     if (note.mime === "application/pdf") {
         result.content = `<iframe class="pdf-view" src="api/notes/${note.noteId}/view"></iframe>`;
     } else {
         result.content = `<button type="button" onclick="location.href='api/notes/${note.noteId}/download'">Download file</button>`;
     }
+}
+
+function renderWebView(note: SNote | BNote, result: Result) {
+    const url = note.getLabelValue("webViewSrc");
+    if (!url) return;
+
+    result.content = `<iframe class="webview" src="${sanitizeUrl(url)}" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>`;
 }
 
 export default {

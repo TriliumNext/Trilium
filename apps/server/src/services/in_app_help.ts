@@ -78,6 +78,7 @@ export function parseNoteMeta(noteMeta: NoteMeta, docNameRoot: string): HiddenSu
     // Handle web views
     if (noteMeta.type === "webView") {
         item.type = "webView";
+        item.enforceAttributes = true;
     }
 
     // Handle children

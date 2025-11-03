@@ -5,6 +5,7 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "vite build",
+		"test": "vitest",
 		"preview": "pnpm build && vite preview"
 	},
 	"dependencies": {
@@ -12,16 +13,16 @@
 		"i18next-http-backend": "3.0.2",
 		"preact": "10.27.2",
 		"preact-iso": "2.11.0",
-		"preact-render-to-string": "6.6.2",
-		"react-i18next": "16.1.2"
+		"preact-render-to-string": "6.6.3",
+		"react-i18next": "16.2.3"
 	},
 	"devDependencies": {
 		"@preact/preset-vite": "2.10.2",
-		"eslint": "9.38.0",
+		"eslint": "9.39.0",
 		"eslint-config-preact": "2.0.0",
 		"typescript": "5.9.3",
 		"user-agent-data-types": "0.4.2",
-		"vite": "7.1.11"
+		"vite": "7.1.12"
 	},
 	"eslintConfig": {
 		"extends": "preact"

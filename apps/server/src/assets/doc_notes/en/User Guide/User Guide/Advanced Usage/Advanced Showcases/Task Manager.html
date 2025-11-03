@@ -10,9 +10,9 @@
   and arbitrary tags - whenever you change tag attribute in the task note,
   this task is then automatically moved to appropriate location.</p>
 <p>Task Manager also integrates with <a href="#root/_help_l0tKav7yLHGF">day notes</a> -
-  notes are <a href="#root/_help_IakOLONlIfGI">cloned</a> into day note to
-  both todoDate note and doneDate note (with <a href="#root/_help_kBrnXNG3Hplm">prefix</a> of
-  either "TODO" or "DONE").</p>
+  notes are <a href="#root/_help_IakOLONlIfGI">cloned</a> into day note to both todoDate
+  note and doneDate note (with <a href="#root/_help_kBrnXNG3Hplm">prefix</a> of either
+  "TODO" or "DONE").</p>
 <h2>Implementation</h2>
 <p>New tasks are created in the TODO note which has <code>~child:template</code> 
   <a
@@ -22,9 +22,9 @@
 <p>Task template defines several <a href="#root/_help_OFXdgB2nNk1F">promoted attributes</a> -
   todoDate, doneDate, tags, location. Importantly it also defines <code>~runOnAttributeChange</code> relation
   - <a href="#root/_help_GPERMystNGTB">event</a> handler which is run on attribute
-  change. This <a href="#root/_help_CdNpE2pqjmI6">script</a> handles when e.g.
-  we fill out the doneDate attribute - meaning the task is done and should
-  be moved to "Done" note and removed from TODO, locations and tags.</p>
+  change. This <a href="#root/_help_CdNpE2pqjmI6">script</a> handles when e.g. we
+  fill out the doneDate attribute - meaning the task is done and should be
+  moved to "Done" note and removed from TODO, locations and tags.</p>
 <h3>New task button</h3>
 <p>There's also "button" note which contains simple script which adds a button
   to create new note (task) in the TODO note.</p><pre><code class="language-text-x-trilium-auto">api.addButtonToToolbar({

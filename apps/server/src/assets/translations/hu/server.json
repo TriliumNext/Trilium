@@ -23,6 +23,14 @@
     "edit-note-title": "Ugrás fáról a jegyzet részleteihez és a cím szerkesztése",
     "edit-branch-prefix": "\"Ág címjelzésének szerkesztése\" ablak mutatása",
     "clone-notes-to": "Kijelölt jegyzetek másolása",
-    "move-notes-to": "Kijelölt jegyzetek elhelyzése"
+    "move-notes-to": "Kijelölt jegyzetek elhelyzése",
+    "note-clipboard": "Megjegyzés vágólap",
+    "copy-notes-to-clipboard": "Másolja a kiválasztott jegyzeteket a vágólapra",
+    "paste-notes-from-clipboard": "A vágólapról szóló jegyzetek beillesztése aktív jegyzetbe",
+    "cut-notes-to-clipboard": "A kiválasztott jegyzetek kivágása a vágólapra",
+    "select-all-notes-in-parent": "Válassza ki az összes jegyzetet az aktuális jegyzetszintről",
+    "activate-next-tab": "Aktiválja a jobb oldali fület",
+    "activate-previous-tab": "Aktiválja a lapot a bal oldalon",
+    "open-new-window": "Nyiss új üres ablakot"
   }
 }

@@ -74,7 +74,6 @@ export default defineConfig(() => ({
                 mobile: join(__dirname, "src", "mobile.ts"),
                 login: join(__dirname, "src", "login.ts"),
                 setup: join(__dirname, "src", "setup.ts"),
-                share: join(__dirname, "src", "share.ts"),
                 set_password: join(__dirname, "src", "set_password.ts"),
                 runtime: join(__dirname, "src", "runtime.ts"),
                 print: join(__dirname, "src", "print.tsx")
@@ -84,7 +83,8 @@ export default defineConfig(() => ({
                 chunkFileNames: "src/[name].js",
                 assetFileNames: "src/[name].[ext]",
                 manualChunks: {
-                    "ckeditor5": [ "@triliumnext/ckeditor5" ]
+                    "ckeditor5": [ "@triliumnext/ckeditor5" ],
+                    "boxicons": [ "../../node_modules/boxicons/css/boxicons.min.css" ]
                 },
             },
             onwarn(warning, rollupWarn) {

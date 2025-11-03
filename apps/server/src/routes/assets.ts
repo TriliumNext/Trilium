@@ -44,11 +44,22 @@ async function register(app: express.Application) {
         app.use(`/${assetUrlFragment}/translations/`, persistentCacheStatic(path.join(publicDir, "translations")));
         app.use(`/node_modules/`, persistentCacheStatic(path.join(publicDir, "node_modules")));
     }
+    app.use(`/share/assets/`, express.static(getShareThemeAssetDir()));
     app.use(`/${assetUrlFragment}/images`, persistentCacheStatic(path.join(resourceDir, "assets", "images")));
     app.use(`/${assetUrlFragment}/doc_notes`, persistentCacheStatic(path.join(resourceDir, "assets", "doc_notes")));
     app.use(`/assets/vX/fonts`, express.static(path.join(srcRoot, "public/fonts")));
     app.use(`/assets/vX/images`, express.static(path.join(srcRoot, "..", "images")));
     app.use(`/assets/vX/stylesheets`, express.static(path.join(srcRoot, "public/stylesheets")));
+}
+
+export function getShareThemeAssetDir() {
+    if (process.env.NODE_ENV === "development") {
+        const srcRoot = path.join(__dirname, "..", "..");
+        return path.join(srcRoot, "../../packages/share-theme/dist");
+    } else {
+        const resourceDir = getResourceDir();
+        return path.join(resourceDir, "share-theme/assets");
+    }
 }
 
 export default {

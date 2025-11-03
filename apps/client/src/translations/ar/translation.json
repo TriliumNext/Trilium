@@ -12,6 +12,9 @@
   "toast": {
     "critical-error": {
       "title": "خطأ فادح"
+    },
+    "widget-error": {
+      "title": "فشل في البدء بعنصر الواجهة"
     }
   },
   "add_link": {
@@ -26,7 +29,8 @@
     "edit_branch_prefix": "تعديل بادئة الفرع",
     "prefix": "البادئة: ",
     "save": "حفظ",
-    "help_on_tree_prefix": "مساعدة حول بادئة الشجرة"
+    "help_on_tree_prefix": "مساعدة حول بادئة الشجرة",
+    "branch_prefix_saved": "تم حفظ بادئة الفرع."
   },
   "bulk_actions": {
     "bulk_actions": "اجراءات جماعية",
@@ -83,7 +87,8 @@
     "workspace_calendar_root": "‎تحديد جذر التقويم لكل مساحة عمل",
     "hide_highlight_widget": "اخفاء عنصر واجهة قائمة التمييزات",
     "is_owned_by_note": "تخص الملاحظة",
-    "and_more": "... و {{count}}مرات اكثر."
+    "and_more": "... و {{count}}مرات اكثر.",
+    "related_notes_title": "ملاحظات اخرى بنفس التسمية"
   },
   "rename_label": {
     "to": "الى",
@@ -127,7 +132,9 @@
     "delete_attachment": "حذف المرفق",
     "upload_new_revision": "رفع مراجعة جديدة",
     "copy_link_to_clipboard": "نسخ الرابط الى الحافظة",
-    "convert_attachment_into_note": "تحويل المرفق الى ملاحظة"
+    "convert_attachment_into_note": "تحويل المرفق الى ملاحظة",
+    "delete_success": "تم حذف المرفق \"{{title}}\" .",
+    "enter_new_name": "ادخل اسم مرفق جديد"
   },
   "calendar": {
     "week": "أسبوع",
@@ -259,7 +266,8 @@
   "note_paths": {
     "search": "بحث",
     "archived": "مؤرشف",
-    "title": "مسارات الملاحظة"
+    "title": "مسارات الملاحظة",
+    "clone_button": "جار نسخ الملاحظة الى مكان جديد..."
   },
   "script_executor": {
     "query": "استعلام",
@@ -372,7 +380,8 @@
     "export_note_title": "تصدير الملاحظة",
     "export_status": "حالة التصدير",
     "export_finished_successfully": "اكتمل التصدير بنجاح.",
-    "export_in_progress": "جار التصدير: {{progressCount}}"
+    "export_in_progress": "جار التصدير: {{progressCount}}",
+    "choose_export_type": "اختر نوع التصدير اولا من فضلك"
   },
   "help": {
     "troubleshooting": "أستكشاف الاخطاء واصلاحها",
@@ -402,7 +411,10 @@
     "movingCloningNotes": "نقل/ استنساخ الملاحظات",
     "deleteNotes": "حذف الملاحظة/ الشجرة الفرعية",
     "collapseWholeTree": "طي شجرة الملاحظة باكملها",
-    "followLink": "اتبع تلرابط تحت المؤشر"
+    "followLink": "اتبع تلرابط تحت المؤشر",
+    "onlyInDesktop": "في سطح المكتب فقط(Electron build)",
+    "createEditLink": "انشاء/ تحرير رابط خارجي",
+    "quickSearch": "الانتقال الى مربع البحث السريع"
   },
   "import": {
     "options": "خيارات",
@@ -465,7 +477,13 @@
     "delete_all_button": "حذف كل المراجعات",
     "settings": "اعدادات مراجعة الملاحظة",
     "diff_not_available": "المقارنة غير متوفرة.",
-    "help_title": "مساعدة حول مراجعات الملاحظة"
+    "help_title": "مساعدة حول مراجعات الملاحظة",
+    "diff_off_hint": "انقر لعرض محتويات الملاحظة",
+    "revisions_deleted": "تم حذف جميع نسخ المراجعات للملاحظة.",
+    "revision_restored": "تم استعادة نسخ المراجعة للملاحظة.",
+    "revision_deleted": "تم حذف مراجعة الملاحظة.",
+    "snapshot_interval": "فاصل زمني لحفظ لقطات اصدارات المراجعة: {{seconds}}",
+    "maximum_revisions": "حد عدد لقطات اصدارات الملاحظة: {{number}}"
   },
   "sort_child_notes": {
     "title": "عنوان",
@@ -479,13 +497,15 @@
     "sorting_direction": "اتجاه الترتيب",
     "natural_sort": "الترتيب الطبيعي",
     "natural_sort_language": "لغات الترتيب الطبيعي",
-    "sort_children_by": "ترتيب العناصر الفرعية حسب..."
+    "sort_children_by": "ترتيب العناصر الفرعية حسب...",
+    "sort_folders_at_top": "ترتيب المجلدات في الاعلى"
   },
   "recent_changes": {
     "undelete_link": "الغاء الحذف",
     "title": "التغيرات الاخيرة",
     "no_changes_message": "لايوجد تغيير لحد الان...",
-    "erase_notes_button": "مسح الملاحظات المحذوفة الان"
+    "erase_notes_button": "مسح الملاحظات المحذوفة الان",
+    "deleted_notes_message": "تم حذف الملاحظات نهائيا."
   },
   "edited_notes": {
     "deleted": "(حذف)",
@@ -696,7 +716,6 @@
     "backup_database_now": "نسخ اختياطي لقاعدة البيانات الان"
   },
   "etapi": {
-    "wiki": "ويكي",
     "created": "تم الأنشاء",
     "actions": "أجراءات",
     "title": "ETAPI",
@@ -705,7 +724,9 @@
     "default_token_name": "رمز جديد",
     "rename_token_title": "اعادة تسمية الرمز",
     "rename_token": "اعادة تسمية هذا الرمز",
-    "create_token": "انشاء رمز PEAPI جديد"
+    "create_token": "انشاء رمز PEAPI جديد",
+    "new_token_title": "رمز ETAPI جديد",
+    "token_created_title": "انشاء رمز ETAPI"
   },
   "password": {
     "heading": "كلمة المرور",
@@ -811,7 +832,8 @@
     "help_on_links": "مساعدة حول الارتباطات التشعبية",
     "notes_to_clone": "ملاحظات للنسخ",
     "target_parent_note": "الملاحظة الاصلية الهدف",
-    "clone_to_selected_note": "استنساخ الى الملاحظة المحددة"
+    "clone_to_selected_note": "استنساخ الى الملاحظة المحددة",
+    "no_path_to_clone_to": "لايوجد مسار لنسخ المحتوى الية."
   },
   "table_of_contents": {
     "unit": "عناوين",
@@ -1029,7 +1051,8 @@
   },
   "delete_note": {
     "delete_note": "حذف الملاحظة",
-    "delete_matched_notes": "حف الملاحظات المطابقة"
+    "delete_matched_notes": "حف الملاحظات المطابقة",
+    "delete_matched_notes_description": "سوف يؤدي هذا الى حذف الملاحظات المطابقة."
   },
   "rename_note": {
     "rename_note": "اعادة تسمية الملاحظة",
@@ -1312,7 +1335,8 @@
     "notes_to_move": "الملاحظات المراد نقلها",
     "target_parent_note": "ملاحظة الاصل الهدف",
     "dialog_title": "انقل الملاحظات الى...",
-    "move_button": "نقل الىالملاحظة المحددة"
+    "move_button": "نقل الىالملاحظة المحددة",
+    "error_no_path": "لايوجد مسار لنقل العنصر الية."
   },
   "delete_revisions": {
     "delete_note_revisions": "حذف مراجعات الملاحظة"
@@ -1363,7 +1387,8 @@
     "save_attributes": "حفظ السمات <enter>",
     "add_a_new_attribute": "اضافة سمة جديدة",
     "add_new_label_definition": "اضافة تعريف لتسمية جديدة",
-    "add_new_relation_definition": "اضافة تعريف لعلاقة جديدة"
+    "add_new_relation_definition": "اضافة تعريف لعلاقة جديدة",
+    "add_new_relation": "اضافة علاقة جديدة <kbd data-command=\"addNewRelation\">"
   },
   "zen_mode": {
     "button_exit": "الخروج من وضع Zen"
@@ -1434,5 +1459,8 @@
   },
   "png_export_button": {
     "button_title": "تصدير المخطط كملف PNG"
+  },
+  "protected_session_status": {
+    "inactive": "انقر للدخول الى جلسة محمية"
   }
 }
