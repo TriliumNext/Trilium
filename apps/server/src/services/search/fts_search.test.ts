@@ -1254,6 +1254,15 @@ describe('searchWithLike - Substring Search with LIKE Queries', () => {
 
             const tooLongToken = 'x'.repeat(1500);
 
+            expect(() => {
+                ftsSearchService.searchWithLike(
+                    [tooLongToken],
+                    '*=*',
+                    undefined,
+                    {}
+                );
+            }).toThrow();
+
             try {
                 ftsSearchService.searchWithLike(
                     [tooLongToken],
@@ -1261,7 +1270,6 @@ describe('searchWithLike - Substring Search with LIKE Queries', () => {
                     undefined,
                     {}
                 );
-                fail('Should have thrown error');
             } catch (error: any) {
                 expect(error.message).toContain('xxx...'); // Truncated to 50 chars
                 expect(error.message).not.toContain('x'.repeat(1500)); // Not full token

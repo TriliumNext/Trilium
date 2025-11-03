@@ -259,7 +259,7 @@ class FTSSearchService {
             `);
 
             if (totalInFts < totalNotes) {
-                log.warn(`[FTS-DIAGNOSTICS] FTS index incomplete: ${totalInFts} indexed out of ${totalNotes} total notes. Run syncMissingNotes().`);
+                log.info(`[FTS-DIAGNOSTICS] FTS index incomplete: ${totalInFts} indexed out of ${totalNotes} total notes. Run syncMissingNotes().`);
             } else {
                 log.info(`[FTS-DIAGNOSTICS] FTS index complete: ${totalInFts} notes indexed`);
             }
