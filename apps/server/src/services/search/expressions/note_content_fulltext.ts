@@ -78,8 +78,13 @@ class NoteContentFulltextExp extends Expression {
 
         const resultNoteSet = new NoteSet();
 
+        // Skip FTS5 for empty token searches - traditional search is more efficient
+        // Empty tokens means we're returning all notes (no filtering), which FTS5 doesn't optimize
+        if (this.tokens.length === 0) {
+            // Fall through to traditional search below
+        }
         // Try to use FTS5 if available for better performance
-        if (ftsSearchService.checkFTS5Availability() && this.canUseFTS5()) {
+        else if (ftsSearchService.checkFTS5Availability() && this.canUseFTS5()) {
             try {
                 // Check if we need to search protected notes
                 const searchProtected = protectedSessionService.isProtectedSessionAvailable();

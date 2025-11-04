@@ -225,6 +225,40 @@ class FTSSearchService {
             throw new FTSNotAvailableError();
         }
 
+        // Handle empty tokens efficiently - return all notes without running diagnostics
+        if (tokens.length === 0) {
+            // Empty query means return all indexed notes (optionally filtered by noteIds)
+            log.info('[FTS-OPTIMIZATION] Empty token array - returning all indexed notes without diagnostics');
+
+            const results: FTSSearchResult[] = [];
+            let query: string;
+            const params: any[] = [];
+
+            if (noteIds && noteIds.size > 0) {
+                const nonProtectedNoteIds = this.filterNonProtectedNoteIds(noteIds);
+                if (nonProtectedNoteIds.length === 0) {
+                    return []; // No non-protected notes to search
+                }
+                query = `SELECT noteId, title FROM notes_fts WHERE noteId IN (${nonProtectedNoteIds.map(() => '?').join(',')})`;
+                params.push(...nonProtectedNoteIds);
+            } else {
+                // Return all indexed notes
+                query = `SELECT noteId, title FROM notes_fts`;
+            }
+
+            for (const row of sql.iterateRows<{ noteId: string; title: string }>(query, params)) {
+                results.push({
+                    noteId: row.noteId,
+                    title: row.title,
+                    score: 0, // No ranking for empty query
+                    snippet: undefined
+                });
+            }
+
+            log.info(`[FTS-OPTIMIZATION] Empty token search returned ${results.length} results`);
+            return results;
+        }
+
         // Normalize tokens to lowercase for case-insensitive search
         const normalizedTokens = tokens.map(t => t.toLowerCase());
 
@@ -456,6 +490,40 @@ class FTSSearchService {
     ): FTSSearchResult[] {
         if (!this.checkFTS5Availability()) {
             throw new FTSNotAvailableError();
+        }
+
+        // Handle empty tokens efficiently - return all notes without MATCH query
+        if (tokens.length === 0) {
+            log.info('[FTS-OPTIMIZATION] Empty token array in searchSync - returning all indexed notes');
+
+            // Reuse the empty token logic from searchWithLike
+            const results: FTSSearchResult[] = [];
+            let query: string;
+            const params: any[] = [];
+
+            if (noteIds && noteIds.size > 0) {
+                const nonProtectedNoteIds = this.filterNonProtectedNoteIds(noteIds);
+                if (nonProtectedNoteIds.length === 0) {
+                    return []; // No non-protected notes to search
+                }
+                query = `SELECT noteId, title FROM notes_fts WHERE noteId IN (${nonProtectedNoteIds.map(() => '?').join(',')})`;
+                params.push(...nonProtectedNoteIds);
+            } else {
+                // Return all indexed notes
+                query = `SELECT noteId, title FROM notes_fts`;
+            }
+
+            for (const row of sql.iterateRows<{ noteId: string; title: string }>(query, params)) {
+                results.push({
+                    noteId: row.noteId,
+                    title: row.title,
+                    score: 0, // No ranking for empty query
+                    snippet: undefined
+                });
+            }
+
+            log.info(`[FTS-OPTIMIZATION] Empty token search returned ${results.length} results`);
+            return results;
         }
 
         const {
