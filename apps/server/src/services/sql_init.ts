@@ -67,20 +67,8 @@ async function initDbConnection() {
         PRIMARY KEY (tmpID)
     );`)
 
-    // Register SQLite search functions after database is ready
-    try {
-        const { getSqliteFunctionsService } = await import("./search/sqlite_functions.js");
-        const functionsService = getSqliteFunctionsService();
-        const db = sql.getDbConnection();
-        
-        if (functionsService.registerFunctions(db)) {
-            log.info("SQLite search functions registered successfully");
-        } else {
-            log.info("SQLite search functions registration skipped (already registered)");
-        }
-    } catch (error) {
-        log.error(`Failed to register SQLite search functions: ${error}`);
-    }
+    // Note: SQLite search functions are now initialized directly in sql.ts
+    // This ensures they're available before any queries run
 
     dbReady.resolve();
 }

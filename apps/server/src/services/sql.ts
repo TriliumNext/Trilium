@@ -389,10 +389,6 @@ function disableSlowQueryLogging<T>(cb: () => T) {
     }
 }
 
-function getDbConnection(): DatabaseType {
-    return dbConnection;
-}
-
 export default {
     insert,
     replace,
@@ -460,6 +456,5 @@ export default {
     fillParamList,
     copyDatabase,
     disableSlowQueryLogging,
-    rebuildIntegrationTestDatabase,
-    getDbConnection
+    rebuildIntegrationTestDatabase
 };
