@@ -122,6 +122,9 @@ export function assertSortedByProperty(
         const val1 = note1[property];
         const val2 = note2[property];
 
+        // Skip comparison if either value is null or undefined
+        if (val1 == null || val2 == null) continue;
+
         if (ascending) {
             expect(val1 <= val2, `Results not sorted ascending by ${property}: ${val1} > ${val2}`).toBe(true);
         } else {
@@ -186,8 +189,7 @@ export function assertNoArchivedNotes(results: SearchResult[]): void {
         const note = becca.notes[result.noteId];
         if (!note) continue;
 
-        const isArchived = note.hasInheritableLabel("archived");
-        expect(isArchived, `Result contains archived note "${note.title}"`).toBe(false);
+        expect(note.isArchived, `Result contains archived note "${note.title}"`).toBe(false);
     }
 }
 

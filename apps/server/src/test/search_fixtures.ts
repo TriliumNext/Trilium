@@ -588,7 +588,8 @@ export function createMultipleParentsFixture(root: NoteBuilder): {
     folder1.child(sharedNote);
     folder2.child(sharedNote);
 
-    root.children(folder1, folder2);
+    root.child(folder1);
+    root.child(folder2);
 
     return { folder1, folder2, sharedNote };
 }

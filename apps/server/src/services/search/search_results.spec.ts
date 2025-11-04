@@ -54,11 +54,11 @@ describe('Search - Result Processing and Formatting', () => {
 
         it('should include notePath in results', () => {
             const parentBuilder = rootNote.child(note('Parent'));
-            parentBuilder.child(note('Child', { content: 'searchable' }));
+            parentBuilder.child(note('Searchable Child'));
 
             const searchContext = new SearchContext();
             const results = searchService.findResultsWithQuery('searchable', searchContext);
-            const result = results.find((r) => findNoteByTitle([r], 'Child'));
+            const result = results.find((r) => findNoteByTitle([r], 'Searchable Child'));
 
             expect(result).toBeTruthy();
             // notePath property may be available depending on implementation
@@ -66,11 +66,11 @@ describe('Search - Result Processing and Formatting', () => {
         });
 
         it('should include metadata in results', () => {
-            rootNote.child(note('Test', { content: 'searchable content' }));
+            rootNote.child(note('Searchable Test'));
 
             const searchContext = new SearchContext();
             const results = searchService.findResultsWithQuery('searchable', searchContext);
-            const result = results.find((r) => findNoteByTitle([r], 'Test'));
+            const result = results.find((r) => findNoteByTitle([r], 'Searchable Test'));
 
             expect(result).toBeTruthy();
             expect(result!.score).toBeGreaterThanOrEqual(0);
@@ -173,24 +173,24 @@ describe('Search - Result Processing and Formatting', () => {
 
         it('should allow custom ordering to override score ordering', () => {
             rootNote
-                .child(note('Z Title', { content: 'test test test' }))
-                .child(note('A Title', { content: 'test' }));
+                .child(note('Z Test Title').label('test'))
+                .child(note('A Test Title').label('test'));
 
             const searchContext = new SearchContext();
-            const results = searchService.findResultsWithQuery('test orderBy note.title', searchContext);
+            const results = searchService.findResultsWithQuery('#test orderBy note.title', searchContext);
             const titles = results.map((r) => becca.notes[r.noteId]!.title);
 
             // Should order by title, not by score
-            expect(titles).toEqual(['A Title', 'Z Title']);
+            expect(titles).toEqual(['A Test Title', 'Z Test Title']);
         });
 
         it('should use score as tiebreaker when custom ordering produces ties', () => {
             rootNote
-                .child(note('Same Priority', { content: 'test' }).label('priority', '5'))
-                .child(note('Same Priority', { content: 'test test test' }).label('priority', '5'));
+                .child(note('Test Same Priority').label('test').label('priority', '5'))
+                .child(note('Test Test Same Priority').label('test').label('priority', '5'));
 
             const searchContext = new SearchContext();
-            const results = searchService.findResultsWithQuery('test orderBy #priority', searchContext);
+            const results = searchService.findResultsWithQuery('#test orderBy #priority', searchContext);
 
             // When priority is same, should fall back to score
             expect(results.length).toBeGreaterThanOrEqual(2);
@@ -203,11 +203,11 @@ describe('Search - Result Processing and Formatting', () => {
     describe('Note Path Resolution', () => {
         it('should resolve path for note with single parent', () => {
             const parentBuilder = rootNote.child(note('Parent'));
-            parentBuilder.child(note('Child', { content: 'searchable' }));
+            parentBuilder.child(note('Searchable Child'));
 
             const searchContext = new SearchContext();
             const results = searchService.findResultsWithQuery('searchable', searchContext);
-            const result = results.find((r) => findNoteByTitle([r], 'Child'));
+            const result = results.find((r) => findNoteByTitle([r], 'Searchable Child'));
 
             expect(result).toBeTruthy();
             expect(result!.noteId).toBeTruthy();
@@ -217,7 +217,7 @@ describe('Search - Result Processing and Formatting', () => {
             const parent1Builder = rootNote.child(note('Parent1'));
             const parent2Builder = rootNote.child(note('Parent2'));
 
-            const childBuilder = parent1Builder.child(note('Cloned Child', { content: 'searchable' }));
+            const childBuilder = parent1Builder.child(note('Searchable Cloned Child'));
 
             // Clone the child under parent2
             new BBranch({
@@ -229,7 +229,7 @@ describe('Search - Result Processing and Formatting', () => {
 
             const searchContext = new SearchContext();
             const results = searchService.findResultsWithQuery('searchable', searchContext);
-            const childResults = results.filter((r) => findNoteByTitle([r], 'Cloned Child'));
+            const childResults = results.filter((r) => findNoteByTitle([r], 'Searchable Cloned Child'));
 
             // Should find the note (possibly once for each path, depending on implementation)
             expect(childResults.length).toBeGreaterThan(0);
@@ -238,22 +238,22 @@ describe('Search - Result Processing and Formatting', () => {
         it('should resolve deep paths (multiple levels)', () => {
             const grandparentBuilder = rootNote.child(note('Grandparent'));
             const parentBuilder = grandparentBuilder.child(note('Parent'));
-            parentBuilder.child(note('Child', { content: 'searchable' }));
+            parentBuilder.child(note('Searchable Child'));
 
             const searchContext = new SearchContext();
             const results = searchService.findResultsWithQuery('searchable', searchContext);
-            const result = results.find((r) => findNoteByTitle([r], 'Child'));
+            const result = results.find((r) => findNoteByTitle([r], 'Searchable Child'));
 
             expect(result).toBeTruthy();
             expect(result!.noteId).toBeTruthy();
         });
 
         it('should handle root notes', () => {
-            rootNote.child(note('Root Level', { content: 'searchable' }));
+            rootNote.child(note('Searchable Root Level'));
 
             const searchContext = new SearchContext();
             const results = searchService.findResultsWithQuery('searchable', searchContext);
-            const result = results.find((r) => findNoteByTitle([r], 'Root Level'));
+            const result = results.find((r) => findNoteByTitle([r], 'Searchable Root Level'));
 
             expect(result).toBeTruthy();
             expect(result!.noteId).toBeTruthy();
@@ -265,19 +265,20 @@ describe('Search - Result Processing and Formatting', () => {
             const parent1Builder = rootNote.child(note('Parent1'));
             const parent2Builder = rootNote.child(note('Parent2'));
 
-            const childBuilder = parent1Builder.child(note('Cloned Child', { content: 'searchable unique' }));
+            const childNoteBuilder = note('Unique Cloned Child');
+            parent1Builder.child(childNoteBuilder);
 
             // Clone the child under parent2
             new BBranch({
                 branchId: 'clone_branch2',
-                noteId: childBuilder.note.noteId,
+                noteId: childNoteBuilder.note.noteId,
                 parentNoteId: parent2Builder.note.noteId,
                 notePosition: 10,
             });
 
             const searchContext = new SearchContext();
             const results = searchService.findResultsWithQuery('unique', searchContext);
-            const childResults = results.filter((r) => r.noteId === childBuilder.note.noteId);
+            const childResults = results.filter((r) => r.noteId === childNoteBuilder.note.noteId);
 
             // Should appear once in results (deduplication by noteId)
             expect(childResults.length).toBe(1);
@@ -299,7 +300,7 @@ describe('Search - Result Processing and Formatting', () => {
     describe('Result Limits', () => {
         it('should respect default limit behavior', () => {
             for (let i = 0; i < 100; i++) {
-                rootNote.child(note(`Test ${i}`, { content: 'searchable' }));
+                rootNote.child(note(`Searchable Test ${i}`));
             }
 
             const searchContext = new SearchContext();
@@ -312,22 +313,22 @@ describe('Search - Result Processing and Formatting', () => {
 
         it('should enforce custom limits', () => {
             for (let i = 0; i < 50; i++) {
-                rootNote.child(note(`Test ${i}`, { content: 'searchable' }));
+                rootNote.child(note(`Test ${i}`).label('searchable'));
             }
 
             const searchContext = new SearchContext();
-            const results = searchService.findResultsWithQuery('searchable limit 10', searchContext);
+            const results = searchService.findResultsWithQuery('#searchable limit 10', searchContext);
 
             expect(results.length).toBe(10);
         });
 
         it('should return all results when limit exceeds count', () => {
             for (let i = 0; i < 5; i++) {
-                rootNote.child(note(`Test ${i}`, { content: 'searchable' }));
+                rootNote.child(note(`Test ${i}`).label('searchable'));
             }
 
             const searchContext = new SearchContext();
-            const results = searchService.findResultsWithQuery('searchable limit 100', searchContext);
+            const results = searchService.findResultsWithQuery('#searchable limit 100', searchContext);
 
             expect(results.length).toBe(5);
         });

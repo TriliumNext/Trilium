@@ -281,8 +281,8 @@ export function temporalNote(title: string, options: {
         }
 
         // Format the calculated past date for both local and UTC timestamps
-        const utcDateCreated = now.toISOString().replace('T', ' ').replace('Z', '');
-        const dateCreated = dateUtils.formatDateTime(now);
+        const utcDateCreated = dateUtils.utcDateTimeStr(now);
+        const dateCreated = dateUtils.utcDateTimeStr(now);
         noteBuilder.dates({ dateCreated, utcDateCreated });
     }
 
