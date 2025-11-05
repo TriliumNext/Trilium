@@ -51,10 +51,6 @@ export default function JumpToNoteDialogComponent() {
                 }
                 break;
 
-            // Mode.RecentNotes intentionally falls through to default:
-            // both represent the "normal open" behavior, where we decide between
-            // showing recent notes or restoring the last search depending on timing.
-            case Mode.RecentNotes:
             default:
                 if (Date.now() - lastOpenedTs <= KEEP_LAST_SEARCH_FOR_X_SECONDS * 1000 && actualText.current) {
                     newMode = Mode.LastSearch;
