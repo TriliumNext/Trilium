@@ -11,7 +11,7 @@ import froca from "../services/froca.js";
 import linkService from "../services/link.js";
 import { t } from "../services/i18n.js";
 import { CreateChildrenResponse, SqlExecuteResponse } from "@triliumnext/commons";
-import noteCreateService, { CreateNoteIntoInboxOpts } from "../services/note_create.js";
+import noteCreateService from "../services/note_create.js";
 
 export default class Entrypoints extends Component {
     constructor() {

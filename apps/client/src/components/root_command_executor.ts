@@ -8,7 +8,7 @@ import options from "../services/options.js";
 import froca from "../services/froca.js";
 import utils from "../services/utils.js";
 import toastService from "../services/toast.js";
-import noteCreateService, { CreateNoteWithUrlOpts } from "../services/note_create.js";
+import noteCreateService from "../services/note_create.js";
 
 export default class RootCommandExecutor extends Component {
     editReadOnlyNoteCommand() {

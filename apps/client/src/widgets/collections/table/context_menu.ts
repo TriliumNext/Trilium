@@ -9,7 +9,6 @@ import branches from "../../../services/branches.js";
 import Component from "../../../components/component.js";
 import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker.jsx";
 import { RefObject } from "preact";
-import { CreateNoteWithUrlOpts } from "../../../services/note_create.js";
 
 export function useContextMenu(parentNote: FNote, parentComponent: Component | null | undefined, tabulator: RefObject<Tabulator>): Partial<EventCallBackMethods> {
     const events: Partial<EventCallBackMethods> = {};
