@@ -59,10 +59,10 @@ class CustomMentionCommand extends Command {
 			});
 		}
 	    else if (
-	        mention.action === CreateNoteAction.CreateNoteIntoInbox ||
-	            mention.action === CreateNoteAction.CreateNoteIntoPath ||
-	            mention.action === CreateNoteAction.CreateAndLinkNoteIntoInbox ||
-	            mention.action === CreateNoteAction.CreateAndLinkNoteIntoPath
+	        mention.action === CreateNoteAction.CreateNote ||
+	            mention.action === CreateNoteAction.CreateChildNote ||
+	            mention.action === CreateNoteAction.CreateAndLinkNote ||
+	            mention.action === CreateNoteAction.CreateAndLinkChildNote
 	    ) {
 	        const editorEl = this.editor.editing.view.getDomRoot();
 	        const component = glob.getComponentByEl<EditorComponent>(editorEl);
