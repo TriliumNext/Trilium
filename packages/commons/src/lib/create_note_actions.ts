@@ -1,6 +1,6 @@
 export enum CreateNoteAction {
-    CreateNoteIntoInbox = "create-note-into-inbox",
-    CreateNoteIntoPath = "create-note-into-path",
-    CreateAndLinkNoteIntoInbox = "create-and-link-note-into-inbox",
-    CreateAndLinkNoteIntoPath = "create-and-link-note-into-path"
+    CreateNote = "create-note",
+    CreateChildNote = "create-child-note",
+    CreateAndLinkNote = "create-and-link-note",
+    CreateAndLinkChildNote = "create-and-link-child-note"
 }

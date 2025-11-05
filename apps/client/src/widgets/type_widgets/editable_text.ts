@@ -500,7 +500,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
         try {
             switch (action) {
                 // --- Create & link note INTO inbox ---
-                case CreateNoteAction.CreateAndLinkNoteIntoInbox: {
+                case CreateNoteAction.CreateAndLinkNote: {
                     const { note } = await noteCreateService.createNote(
                         {
                             target: "inbox",
@@ -514,7 +514,7 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                 }
 
                 // --- Create & link note INTO current path ---
-                case CreateNoteAction.CreateAndLinkNoteIntoPath: {
+                case CreateNoteAction.CreateAndLinkChildNote: {
                     if (!parentNotePath) {
                         console.error("Cannot create note: parentNotePath is undefined.");
                         return "";
