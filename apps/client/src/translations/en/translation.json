@@ -1897,14 +1897,13 @@
   },
   "note_autocomplete": {
     "search-for": "Search for \"{{term}}\"",
-    "create-note-into-path": "Create child note \"{{term}}\"",
-    "create-note-into-inbox": "Create in Inbox note \"{{term}}\"",
-    "create-and-link-note-into-path": "Create and link child note \"{{term}}\"",
-    "create-and-link-note-into-inbox": "Create in Inbox and link note \"{{term}}\"",
+    "create-child-note": "Create child note \"{{term}}\"",
+    "create-note": "Create note \"{{term}}\"",
+    "create-and-link-child-note": "Create and link child note \"{{term}}\"",
+    "create-and-link-note": "Create and link note \"{{term}}\"",
     "insert-external-link": "Insert external link to \"{{term}}\"",
     "clear-text-field": "Clear text field",
-    "show-recent-notes": "Show recent notes",
-    "full-text-search": "Full text search"
+    "show-recent-notes": "Show recent notes"
   },
   "note_tooltip": {
     "note-has-been-deleted": "Note has been deleted.",

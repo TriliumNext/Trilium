@@ -46,10 +46,10 @@ export enum SuggestionAction {
     // This overlap ensures that when a suggestion triggers a note creation callback,
     // the receiving features (e.g. note creation handlers, CKEditor mentions) can interpret
     // the action type consistently
-    CreateNoteIntoInbox = CreateNoteAction.CreateNoteIntoInbox,
-    CreateNoteIntoPath = CreateNoteAction.CreateNoteIntoPath,
-    CreateAndLinkNoteIntoInbox = CreateNoteAction.CreateAndLinkNoteIntoInbox,
-    CreateAndLinkNoteIntoPath = CreateNoteAction.CreateAndLinkNoteIntoPath,
+    CreateNote = CreateNoteAction.CreateNote,
+    CreateChildNote = CreateNoteAction.CreateChildNote,
+    CreateAndLinkNote = CreateNoteAction.CreateAndLinkNote,
+    CreateAndLinkChildNote = CreateNoteAction.CreateAndLinkChildNote,
 
     SearchNotes = "search-notes",
     ExternalLink = "external-link",
@@ -182,16 +182,16 @@ async function autocompleteSource(
             case CreateMode.CreateOnly: {
                 results = [
                     {
-                        action: SuggestionAction.CreateNoteIntoInbox,
+                        action: SuggestionAction.CreateNote,
                         noteTitle: trimmedTerm,
                         parentNoteId: "inbox",
-                        highlightedNotePathTitle: t("note_autocomplete.create-note-into-inbox", { term: trimmedTerm }),
+                        highlightedNotePathTitle: t("note_autocomplete.create-note", { term: trimmedTerm }),
                     },
                     {
-                        action: SuggestionAction.CreateNoteIntoPath,
+                        action: SuggestionAction.CreateChildNote,
                         noteTitle: trimmedTerm,
                         parentNoteId: activeNoteId || "root",
-                        highlightedNotePathTitle: t("note_autocomplete.create-note-into-path", { term: trimmedTerm }),
+                        highlightedNotePathTitle: t("note_autocomplete.create-child-note", { term: trimmedTerm }),
                     },
                     ...results,
                 ];
@@ -201,16 +201,16 @@ async function autocompleteSource(
             case CreateMode.CreateAndLink: {
                 results = [
                     {
-                        action: SuggestionAction.CreateAndLinkNoteIntoInbox,
+                        action: SuggestionAction.CreateAndLinkNote,
                         noteTitle: trimmedTerm,
                         parentNoteId: "inbox",
-                        highlightedNotePathTitle: t("note_autocomplete.create-and-link-note-into-inbox", { term: trimmedTerm }),
+                        highlightedNotePathTitle: t("note_autocomplete.create-and-link-note", { term: trimmedTerm }),
                     },
                     {
-                        action: SuggestionAction.CreateAndLinkNoteIntoPath,
+                        action: SuggestionAction.CreateAndLinkChildNote,
                         noteTitle: trimmedTerm,
                         parentNoteId: activeNoteId || "root",
-                        highlightedNotePathTitle: t("note_autocomplete.create-and-link-note-into-path", { term: trimmedTerm }),
+                        highlightedNotePathTitle: t("note_autocomplete.create-and-link-child-note", { term: trimmedTerm }),
                     },
                     ...results,
                 ];
@@ -316,11 +316,11 @@ function renderNoteSuggestion(s: Suggestion): string {
         switch (s.action) {
             case SuggestionAction.SearchNotes:
                 return "bx bx-search";
-            case SuggestionAction.CreateAndLinkNoteIntoInbox:
-            case SuggestionAction.CreateNoteIntoInbox:
+            case SuggestionAction.CreateAndLinkNote:
+            case SuggestionAction.CreateNote:
                 return "bx bx-plus";
-            case SuggestionAction.CreateAndLinkNoteIntoPath:
-            case SuggestionAction.CreateNoteIntoPath:
+            case SuggestionAction.CreateAndLinkChildNote:
+            case SuggestionAction.CreateChildNote:
                 return "bx bx-plus";
             case SuggestionAction.ExternalLink:
                 return "bx bx-link-external";
@@ -477,7 +477,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
             }
 
             // --- CREATE NOTE INTO INBOX ---
-            case SuggestionAction.CreateNoteIntoInbox: {
+            case SuggestionAction.CreateNote: {
                 const { note } = await noteCreateService.createNote(
                     {
                         target: "inbox",
@@ -495,7 +495,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                 break;
             }
 
-            case SuggestionAction.CreateAndLinkNoteIntoInbox: {
+            case SuggestionAction.CreateAndLinkNote: {
                 const { note } = await noteCreateService.createNote(
                     {
                         target: "inbox",
@@ -516,7 +516,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                 return;
             }
 
-            case SuggestionAction.CreateNoteIntoPath: {
+            case SuggestionAction.CreateChildNote: {
                 if (!suggestion.parentNoteId) {
                     console.warn("Missing parentNoteId for CreateNoteIntoPath");
                     return;
@@ -538,7 +538,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                 break;
             }
 
-            case SuggestionAction.CreateAndLinkNoteIntoPath: {
+            case SuggestionAction.CreateAndLinkChildNote: {
                 if (!suggestion.parentNoteId) {
                     console.warn("Missing parentNoteId for CreateNoteIntoPath");
                     return;
