@@ -1,6 +1,6 @@
 import server from "./server.js";
 import appContext from "../components/app_context.js";
-import noteCreateService, { CreateNoteIntoInboxOpts, CreateNoteWithUrlOpts } from "./note_create.js";
+import noteCreateService from "./note_create.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import commandRegistry from "./command_registry.js";

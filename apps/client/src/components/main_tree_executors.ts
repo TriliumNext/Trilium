@@ -1,5 +1,5 @@
 import appContext, { type EventData } from "./app_context.js";
-import noteCreateService, { CreateNoteWithUrlOpts } from "../services/note_create.js";
+import noteCreateService from "../services/note_create.js";
 import treeService from "../services/tree.js";
 import hoistedNoteService from "../services/hoisted_note.js";
 import Component from "./component.js";

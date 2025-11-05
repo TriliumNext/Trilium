@@ -5,7 +5,7 @@ import SpacedUpdate from "../services/spaced_update.js";
 import server from "../services/server.js";
 import appContext, { type CommandListenerData, type EventData } from "../components/app_context.js";
 import keyboardActionsService from "../services/keyboard_actions.js";
-import noteCreateService, { CreateNoteWithUrlOpts } from "../services/note_create.js";
+import noteCreateService from "../services/note_create.js";
 import attributeService from "../services/attributes.js";
 
 import EmptyTypeWidget from "./type_widgets/empty.js";

@@ -8,7 +8,6 @@ import froca from "../../../services/froca.js";
 import branches from "../../../services/branches.js";
 import Component from "../../../components/component.js";
 import { RefObject } from "preact";
-import { CreateNoteWithUrlOpts } from "../../../services/note_create.js";
 
 export function useContextMenu(parentNote: FNote, parentComponent: Component | null | undefined, tabulator: RefObject<Tabulator>): Partial<EventCallBackMethods> {
     const events: Partial<EventCallBackMethods> = {};
