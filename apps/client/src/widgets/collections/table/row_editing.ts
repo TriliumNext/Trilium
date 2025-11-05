@@ -9,7 +9,10 @@ import server from "../../../services/server";
 import branches from "../../../services/branches";
 import AttributeDetailWidget from "../../attribute_widgets/attribute_detail";
 
-export default function useRowTableEditing(api: RefObject<Tabulator>, attributeDetailWidget: AttributeDetailWidget, parentNotePath: string): Partial<EventCallBackMethods> { // Adding new rows
+/**
+ * Hook for handling row table editing, including adding new rows.
+ */
+export default function useRowTableEditing(api: RefObject<Tabulator>, attributeDetailWidget: AttributeDetailWidget, parentNotePath: string): Partial<EventCallBackMethods> {
     useLegacyImperativeHandlers({
         addNewRowCommand({ customOpts }: CommandListenerData<"addNewRow">) {
             if (!customOpts) {
