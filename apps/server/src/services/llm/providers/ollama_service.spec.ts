@@ -30,11 +30,11 @@ vi.mock('./providers.js', () => ({
 }));
 
 vi.mock('../formatters/ollama_formatter.js', () => ({
-    OllamaMessageFormatter: vi.fn().mockImplementation(() => ({
-        formatMessages: vi.fn().mockReturnValue([
+    OllamaMessageFormatter: vi.fn().mockImplementation(function () {
+        this.formatMessages = vi.fn().mockReturnValue([
             { role: 'user', content: 'Hello' }
-        ]),
-        formatResponse: vi.fn().mockReturnValue({
+        ]);
+        this.formatResponse = vi.fn().mockReturnValue({
             text: 'Hello! How can I help you today?',
             provider: 'Ollama',
             model: 'llama2',
@@ -44,8 +44,8 @@ vi.mock('../formatters/ollama_formatter.js', () => ({
                 totalTokens: 15
             },
             tool_calls: null
-        })
-    }))
+        });
+    })
 }));
 
 vi.mock('../tools/tool_registry.js', () => ({
@@ -83,8 +83,8 @@ vi.mock('ollama', () => {
         }
     };
 
-    const mockOllama = vi.fn().mockImplementation(() => ({
-        chat: vi.fn().mockImplementation((params) => {
+    const mockOllama = vi.fn().mockImplementation(function () {
+        this.chat = vi.fn().mockImplementation((params) => {
             if (params.stream) {
                 return Promise.resolve(mockStream);
             }
@@ -97,8 +97,8 @@ vi.mock('ollama', () => {
                 model: 'llama2',
                 done: true
             });
-        }),
-        show: vi.fn().mockResolvedValue({
+        });
+        this.show = vi.fn().mockResolvedValue({
             modelfile: 'FROM llama2',
             parameters: {},
             template: '',
@@ -109,8 +109,8 @@ vi.mock('ollama', () => {
                 parameter_size: '7B',
                 quantization_level: 'Q4_0'
             }
-        }),
-        list: vi.fn().mockResolvedValue({
+        });
+        this.list = vi.fn().mockResolvedValue({
             models: [
                 {
                     name: 'llama2:latest',
@@ -119,7 +119,7 @@ vi.mock('ollama', () => {
                 }
             ]
         })
-    }));
+    });
 
     return { Ollama: mockOllama };
 });
@@ -196,7 +196,9 @@ describe('OllamaService', () => {
             })
         };
 
-        OllamaMock.mockImplementation(() => mockOllamaInstance);
+        OllamaMock.mockImplementation(function () {
+            Object.assign(this, mockOllamaInstance);
+        });
 
         service = new OllamaService();
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { StreamProcessor, createStreamHandler, processProviderStream, extractStreamStats, performProviderHealthCheck } from './stream_handler.js';
 import type { StreamProcessingOptions, StreamChunk } from './stream_handler.js';
 
@@ -12,11 +12,11 @@ vi.mock('../../log.js', () => ({
 }));
 
 describe('StreamProcessor', () => {
-    let mockCallback: ReturnType<typeof vi.fn>;
+    let mockCallback: Mock<(text: string, done: boolean, chunk?: any) => Promise<void> | void>;
     let mockOptions: StreamProcessingOptions;
 
     beforeEach(() => {
-        mockCallback = vi.fn();
+        mockCallback = vi.fn<(text: string, done: boolean, chunk?: any) => Promise<void> | void>();
         mockOptions = {
             streamCallback: mockCallback,
             providerName: 'TestProvider',
@@ -262,7 +262,7 @@ describe('createStreamHandler', () => {
 
 describe('processProviderStream', () => {
     let mockStreamIterator: AsyncIterable<any>;
-    let mockCallback: ReturnType<typeof vi.fn>;
+    let mockCallback: Mock<(text: string, done: boolean, chunk?: any) => Promise<void> | void>;
 
     beforeEach(() => {
         mockCallback = vi.fn();
