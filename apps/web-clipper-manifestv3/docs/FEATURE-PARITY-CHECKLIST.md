@@ -52,23 +52,12 @@
 | Context menus | ✅ | All save types including cropped/full screenshot | - |
 | Keyboard shortcuts | ✅ | Save (Ctrl+Shift+S), Screenshot (Ctrl+Shift+E) | - |
 | Toast notifications | ⚠️ | Basic only | LOW |
-| Already visited banner | ❌ | Backend exists, UI doesn't use | MED |
+| Already visited banner | ✅ | Shows when page was previously clipped | - |
 | Screenshot selection UI | ✅ | Drag-to-select with ESC cancel | - |
 
 ### Priority Issues:
 
-#### 1. Already Visited Detection (MED)
-**Problem**: Popup doesn't show if page was already clipped.
-
-**MV2 Implementation**: `apps/web-clipper/popup/popup.js` (checks on open)
-
-**What's Needed**:
-- Call `checkForExistingNote()` when popup opens
-- Show banner with link to existing note
-- Allow user to still save (update or new note)
-
-**Files to Modify**:
-- `src/popup/index.ts`
+_(No priority issues remaining in this category)_
 
 ---
 
@@ -152,7 +141,7 @@
 - [x] Implement "save tabs" feature
 - [x] Add custom note text for links
 - [x] **Extract date metadata from pages** - Implemented with customizable formats
-- [ ] Add "already visited" detection to popup
+- [x] **Add "already visited" detection to popup** - Fully implemented
 - [ ] Add interactive toast buttons
 - [ ] Add meta note popup option (see Trilium Issue [#5350](https://github.com/TriliumNext/Trilium/issues/5350))
 - [ ] Add custom keyboard shortcuts (see Trilium Issue [#5349](https://github.com/TriliumNext/Trilium/issues/5349))
@@ -165,6 +154,14 @@
 - Format cheatsheet with live preview
 - Dates formatted per user preference before saving as labels
 - Files: `src/shared/date-formatter.ts`, `src/content/index.ts`, `src/options/`
+
+**Already Visited Detection Implementation** (November 8, 2025):
+- Feature was already fully implemented in the MV3 extension
+- Backend: `checkForExistingNote()` in `src/shared/trilium-server.ts` calls Trilium API
+- Popup: Automatically checks when popup opens via `loadCurrentPageInfo()`
+- UI: Shows green banner with checkmark and "Open in Trilium" link
+- Styling: Theme-aware success colors with proper hover states
+- Files: `src/popup/popup.ts:759-862`, `src/popup/index.html:109-117`, `src/popup/popup.css:297-350`
 
 ---
 
@@ -197,7 +194,7 @@
 
 ### Important (Should fix)
 
-1. **No "already visited" indicator** - Backend function exists but unused
+_(No important issues remaining)_
 
 ### Nice to Have
 
