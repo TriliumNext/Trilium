@@ -17,9 +17,11 @@ body {
   color: var(--color-text-primary);
   background: var(--color-bg-primary);
   width: 380px;
-  min-height: 500px;
-  max-height: 600px;
+  height: 600px;
   transition: var(--theme-transition);
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 /* Popup container */
@@ -27,18 +29,23 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
+  overflow: hidden;
 }
 
 /* Header */
 .popup-header {
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
-  padding: 16px;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  padding: 16px 20px;
   text-align: center;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-bottom: 2px solid var(--color-border-primary);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  flex-shrink: 0;
 }
 
 .popup-title {
@@ -49,6 +56,7 @@ body {
   font-size: 18px;
   font-weight: 600;
   margin: 0;
+  color: var(--color-text-primary);
 }
 
 .persistent-connection-status {
@@ -95,10 +103,31 @@ body {
 /* Main content */
 .popup-main {
   flex: 1;
-  padding: 16px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+/* Custom scrollbar styling */
+.popup-main::-webkit-scrollbar {
+  width: 8px;
+}
+
+.popup-main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.popup-main::-webkit-scrollbar-thumb {
+  background: var(--color-border-primary);
+  border-radius: 4px;
+}
+
+.popup-main::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-secondary);
 }
 
 /* Action buttons */
@@ -142,9 +171,15 @@ body {
 }
 
 .btn-icon {
-  font-size: 18px;
-  min-width: 18px;
+  font-size: 20px;
+  min-width: 24px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--color-icon-secondary);
+  flex-shrink: 0;
 }
 
 .action-btn:hover .btn-icon {
@@ -153,6 +188,7 @@ body {
 
 .btn-text {
   flex: 1;
+  line-height: 1.4;
 }
 
 /* Status section */
@@ -365,24 +401,31 @@ body {
 /* Footer */
 .popup-footer {
   border-top: 1px solid var(--color-border-primary);
-  padding: 12px;
+  padding: 10px 16px;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
+  align-items: center;
   background: var(--color-surface-secondary);
+  flex-shrink: 0;
+  gap: 4px;
 }
 
 .footer-btn {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 3px;
-  padding: 5px 8px;
+  gap: 2px;
+  padding: 6px 4px;
   border: none;
   border-radius: 6px;
   background: transparent;
   color: var(--color-text-secondary);
-  font-size: 12px;
+  font-size: 11px;
   cursor: pointer;
   transition: var(--theme-transition);
+  min-width: 0;
+  flex: 1;
+  max-width: 80px;
 }
 
 .footer-btn:hover {
@@ -391,7 +434,7 @@ body {
 }
 
 .footer-btn .btn-icon {
-  font-size: 14px;
+  font-size: 16px;
 }
 
 /* Responsive adjustments */

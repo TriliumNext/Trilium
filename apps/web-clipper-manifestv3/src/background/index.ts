@@ -214,32 +214,32 @@ class BackgroundService {
       const menus = [
         {
           id: 'save-selection',
-          title: 'Save selection to Trilium',
+          title: 'Save selection',
           contexts: ['selection'] as chrome.contextMenus.ContextType[]
         },
         {
           id: 'save-page',
-          title: 'Save page to Trilium',
+          title: 'Save page',
           contexts: ['page'] as chrome.contextMenus.ContextType[]
         },
         {
           id: 'save-cropped-screenshot',
-          title: 'Crop screenshot to Trilium',
+          title: 'Save screenshot (Crop)',
           contexts: ['page'] as chrome.contextMenus.ContextType[]
         },
         {
           id: 'save-full-screenshot',
-          title: 'Save full screenshot to Trilium',
+          title: 'Save screenshot (Full)',
           contexts: ['page'] as chrome.contextMenus.ContextType[]
         },
         {
           id: 'save-link',
-          title: 'Save link to Trilium',
+          title: 'Save link',
           contexts: ['link'] as chrome.contextMenus.ContextType[]
         },
         {
           id: 'save-image',
-          title: 'Save image to Trilium',
+          title: 'Save image',
           contexts: ['image'] as chrome.contextMenus.ContextType[]
         }
       ];
@@ -647,7 +647,7 @@ class BackgroundService {
       }
 
       // Create clip data with the screenshot
-      const screenshotType = isFullScreen ? 'Full Screenshot' : (screenshotRect ? 'Cropped Screenshot' : 'Screenshot');
+      const screenshotType = isFullScreen ? 'Save Screenshot (Full)' : (screenshotRect ? 'Save Screenshot (Crop)' : 'Screenshot');
       const clipData: ClipData = {
         title: `${screenshotType} - ${tab.title || 'Untitled'} - ${new Date().toLocaleString()}`,
         content: `<img src="screenshot.png" alt="Screenshot" style="max-width: 100%; height: auto;">`,
