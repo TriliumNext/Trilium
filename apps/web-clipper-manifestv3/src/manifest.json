@@ -56,6 +56,13 @@
         "mac": "Command+Shift+E"
       },
       "description": "Save screenshot to Trilium"
+    },
+    "save-tabs": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+T",
+        "mac": "Command+Shift+T"
+      },
+      "description": "Save all tabs to Trilium"
     }
   },
   "web_accessible_resources": [

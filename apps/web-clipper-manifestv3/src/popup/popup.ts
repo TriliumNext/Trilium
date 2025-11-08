@@ -39,6 +39,13 @@ class PopupController {
       'save-page',
       'save-cropped-screenshot',
       'save-full-screenshot',
+      'save-link-with-note',
+      'save-tabs',
+      'save-link-panel',
+      'save-link-textarea',
+      'keep-title-checkbox',
+      'save-link-submit',
+      'save-link-cancel',
       'open-settings',
       'back-to-main',
       'view-logs',
@@ -84,6 +91,13 @@ class PopupController {
     this.elements['save-page']?.addEventListener('click', this.handleSavePage.bind(this));
     this.elements['save-cropped-screenshot']?.addEventListener('click', this.handleSaveCroppedScreenshot.bind(this));
     this.elements['save-full-screenshot']?.addEventListener('click', this.handleSaveFullScreenshot.bind(this));
+    this.elements['save-link-with-note']?.addEventListener('click', this.handleShowSaveLinkPanel.bind(this));
+    this.elements['save-tabs']?.addEventListener('click', this.handleSaveTabs.bind(this));
+
+    // Save link panel
+    this.elements['save-link-submit']?.addEventListener('click', this.handleSaveLinkSubmit.bind(this));
+    this.elements['save-link-cancel']?.addEventListener('click', this.handleSaveLinkCancel.bind(this));
+    this.elements['save-link-textarea']?.addEventListener('keydown', this.handleSaveLinkKeydown.bind(this));
 
     // Footer buttons
     this.elements['open-settings']?.addEventListener('click', this.handleOpenSettings.bind(this));
@@ -116,6 +130,9 @@ class PopupController {
     } else if (event.ctrlKey && event.shiftKey && event.key === 'E') {
       event.preventDefault();
       this.handleSaveCroppedScreenshot();
+    } else if (event.ctrlKey && event.shiftKey && event.key === 'T') {
+      event.preventDefault();
+      this.handleSaveTabs();
     }
   }
 
@@ -189,6 +206,140 @@ class PopupController {
       this.showError('Failed to save screenshot');
       logger.error('Failed to save full screenshot', error as Error);
     }
+  }
+
+  private async handleSaveTabs(): Promise<void> {
+    logger.info('Save tabs requested');
+
+    try {
+      this.showProgress('Saving all tabs...');
+
+      const response = await MessageUtils.sendMessage({
+        type: 'SAVE_TABS'
+      });
+
+      this.showSuccess('All tabs saved successfully!');
+      logger.info('Tabs saved', { response });
+    } catch (error) {
+      this.showError('Failed to save tabs');
+      logger.error('Failed to save tabs', error as Error);
+    }
+  }
+
+  private handleShowSaveLinkPanel(): void {
+    logger.info('Show save link panel requested');
+
+    try {
+      const panel = this.elements['save-link-panel'];
+      const textarea = this.elements['save-link-textarea'] as HTMLTextAreaElement;
+
+      if (panel) {
+        panel.classList.remove('hidden');
+
+        // Focus textarea after a short delay to ensure DOM is ready
+        setTimeout(() => {
+          if (textarea) {
+            textarea.focus();
+          }
+        }, 100);
+      }
+    } catch (error) {
+      logger.error('Failed to show save link panel', error as Error);
+    }
+  }
+
+  private handleSaveLinkCancel(): void {
+    logger.info('Save link cancelled');
+
+    try {
+      const panel = this.elements['save-link-panel'];
+      const textarea = this.elements['save-link-textarea'] as HTMLTextAreaElement;
+      const checkbox = this.elements['keep-title-checkbox'] as HTMLInputElement;
+
+      if (panel) {
+        panel.classList.add('hidden');
+      }
+
+      // Clear form
+      if (textarea) {
+        textarea.value = '';
+      }
+      if (checkbox) {
+        checkbox.checked = false;
+      }
+    } catch (error) {
+      logger.error('Failed to cancel save link', error as Error);
+    }
+  }
+
+  private handleSaveLinkKeydown(event: KeyboardEvent): void {
+    // Handle Ctrl+Enter to save
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+      event.preventDefault();
+      this.handleSaveLinkSubmit();
+    }
+  }
+
+  private async handleSaveLinkSubmit(): Promise<void> {
+    logger.info('Save link submit requested');
+
+    try {
+      const textarea = this.elements['save-link-textarea'] as HTMLTextAreaElement;
+      const checkbox = this.elements['keep-title-checkbox'] as HTMLInputElement;
+
+      const textNoteVal = textarea?.value?.trim() || '';
+      const keepTitle = checkbox?.checked || false;
+
+      let title = '';
+      let content = '';
+
+      if (!textNoteVal) {
+        // No custom text - will use page title and URL
+        title = '';
+        content = '';
+      } else if (keepTitle) {
+        // Keep page title, use all text as content
+        title = '';
+        content = this.escapeHtml(textNoteVal);
+      } else {
+        // Parse first sentence as title
+        const match = /^(.*?)([.?!]\s|\n)/.exec(textNoteVal);
+
+        if (match) {
+          title = match[0].trim();
+          content = this.escapeHtml(textNoteVal.substring(title.length).trim());
+        } else {
+          // No sentence delimiter - use all as title
+          title = textNoteVal;
+          content = '';
+        }
+      }
+
+      this.showProgress('Saving link with note...');
+
+      const response = await MessageUtils.sendMessage({
+        type: 'SAVE_LINK',
+        title,
+        content,
+        keepTitle
+      });
+
+      this.showSuccess('Link saved successfully!');
+      logger.info('Link with note saved', { response });
+
+      // Close panel and clear form
+      this.handleSaveLinkCancel();
+
+    } catch (error) {
+      this.showError('Failed to save link');
+      logger.error('Failed to save link with note', error as Error);
+    }
+  }
+
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   private handleOpenSettings(): void {

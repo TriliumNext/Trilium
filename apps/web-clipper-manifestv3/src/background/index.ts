@@ -91,6 +91,12 @@ class BackgroundService {
         case 'SAVE_FULL_SCREENSHOT':
           return await this.saveScreenshot({ fullScreen: true } as any);
 
+        case 'SAVE_LINK':
+          return await this.saveLinkWithNote(typedMessage.url, typedMessage.title, typedMessage.content, typedMessage.keepTitle);
+
+        case 'SAVE_TABS':
+          return await this.saveTabs();
+
         case 'CHECK_EXISTING_NOTE':
           return await this.checkForExistingNote(typedMessage.url);
 
@@ -155,6 +161,10 @@ class BackgroundService {
           await this.saveScreenshot();
           break;
 
+        case 'save-tabs':
+          await this.saveTabs();
+          break;
+
         default:
           logger.warn('Unknown command', { command });
       }
@@ -202,6 +212,10 @@ class BackgroundService {
             await this.saveImage(info.srcUrl);
           }
           break;
+
+        case 'save-tabs':
+          await this.saveTabs();
+          break;
       }
     } catch (error) {
       logger.error('Error handling context menu click', error as Error, { info });
@@ -241,6 +255,11 @@ class BackgroundService {
           id: 'save-image',
           title: 'Save image',
           contexts: ['image'] as chrome.contextMenus.ContextType[]
+        },
+        {
+          id: 'save-tabs',
+          title: 'Save all tabs',
+          contexts: ['page'] as chrome.contextMenus.ContextType[]
         }
       ];
 
@@ -769,7 +788,7 @@ class BackgroundService {
   }
 
   private async saveLink(url: string, text?: string): Promise<TriliumResponse> {
-    logger.info('Saving link...');
+    logger.info('Saving link (basic - from context menu)...', { url, text });
 
     try {
       const clipData: ClipData = {
@@ -812,6 +831,101 @@ class BackgroundService {
     }
   }
 
+  private async saveLinkWithNote(
+    url?: string,
+    customTitle?: string,
+    customContent?: string,
+    keepTitle?: boolean
+  ): Promise<TriliumResponse> {
+    logger.info('Saving link with note...', { url, customTitle, customContent, keepTitle });
+
+    try {
+      // Get the active tab information
+      const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+      const activeTab = tabs[0];
+
+      if (!activeTab) {
+        throw new Error('No active tab found');
+      }
+
+      const pageUrl = url || activeTab.url || '';
+      const pageTitle = activeTab.title || 'Untitled';
+
+      let finalTitle = '';
+      let finalContent = '';
+
+      // Determine the final title and content
+      if (!customTitle && !customContent) {
+        // No custom text provided - use page title and create a simple link
+        finalTitle = pageTitle;
+        finalContent = `<a href="${pageUrl}">${pageUrl}</a>`;
+      } else if (keepTitle) {
+        // Keep page title, use custom content
+        finalTitle = pageTitle;
+        finalContent = customContent || '';
+      } else if (customTitle) {
+        // Use custom title
+        finalTitle = customTitle;
+        finalContent = customContent || '';
+      } else {
+        // Only custom content provided
+        finalTitle = pageTitle;
+        finalContent = customContent || '';
+      }
+
+      // Build the clip data
+      const clipData: ClipData = {
+        title: finalTitle,
+        content: finalContent,
+        url: pageUrl,
+        type: 'link',
+        metadata: {
+          labels: {
+            clipType: 'link'
+          }
+        }
+      };
+
+      logger.debug('Prepared link clip data', { clipData });
+
+      // Check for existing note and ask user what to do
+      const result = await this.saveTriliumNoteWithDuplicateCheck(clipData);
+
+      // Show success toast if save was successful
+      if (result.success && result.noteId) {
+        await this.showToast(
+          'Link with note saved successfully!',
+          'success',
+          3000,
+          result.noteId
+        );
+      } else if (!result.success && result.error) {
+        await this.showToast(
+          `Failed to save link: ${result.error}`,
+          'error',
+          5000
+        );
+      }
+
+      return result;
+    } catch (error) {
+      const detailedMessage = this.getDetailedErrorMessage(error as Error, 'Save Link with Note');
+      logger.error('Failed to save link with note', error as Error);
+
+      // Show error toast
+      await this.showToast(
+        `Failed to save link: ${detailedMessage}`,
+        'error',
+        5000
+      );
+
+      return {
+        success: false,
+        error: detailedMessage
+      };
+    }
+  }
+
   private async saveImage(_imageUrl: string): Promise<TriliumResponse> {
     logger.info('Saving image...');
 
@@ -822,6 +936,132 @@ class BackgroundService {
       logger.error('Failed to save image', error as Error);
       throw error;
     }
+  }
+
+  /**
+   * Save all tabs in the current window as a single note with links
+   */
+  private async saveTabs(): Promise<TriliumResponse> {
+    logger.info('Saving tabs...');
+
+    try {
+      // Get all tabs in the current window
+      const tabs = await chrome.tabs.query({ currentWindow: true });
+
+      logger.info('Retrieved tabs for saving', { count: tabs.length });
+
+      if (tabs.length === 0) {
+        throw new Error('No tabs found in current window');
+      }
+
+      // Build HTML content with list of tab links
+      let content = '<ul>\n';
+      for (const tab of tabs) {
+        const url = tab.url || '';
+        const title = tab.title || 'Untitled';
+
+        // Escape HTML entities in title
+        const escapedTitle = this.escapeHtml(title);
+
+        content += `  <li><a href="${url}">${escapedTitle}</a></li>\n`;
+      }
+      content += '</ul>';
+
+      // Create a smart title with domain info
+      const domainsCount = new Map<string, number>();
+      for (const tab of tabs) {
+        if (tab.url) {
+          try {
+            const hostname = new URL(tab.url).hostname;
+            domainsCount.set(hostname, (domainsCount.get(hostname) || 0) + 1);
+          } catch (error) {
+            // Invalid URL, skip
+            logger.debug('Skipping invalid URL for domain extraction', { url: tab.url });
+          }
+        }
+      }
+
+      // Get top 3 domains
+      const topDomains = Array.from(domainsCount.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([domain]) => domain)
+        .join(', ');
+
+      const title = `${tabs.length} browser tabs${topDomains ? `: ${topDomains}` : ''}${tabs.length > 3 ? '...' : ''}`;
+
+      // Build the clip data
+      const clipData: ClipData = {
+        title,
+        content,
+        url: '', // No specific URL for tab collection
+        type: 'link', // Using 'link' type since it's a collection of links
+        metadata: {
+          labels: {
+            clipType: 'tabs',
+            tabCount: tabs.length.toString()
+          }
+        }
+      };
+
+      logger.debug('Prepared tabs clip data', {
+        title,
+        tabCount: tabs.length,
+        contentLength: content.length
+      });
+
+      // Save to Trilium - tabs are always new notes (no duplicate check)
+      const result = await triliumServerFacade.createNote(clipData);
+
+      // Show success toast if save was successful
+      if (result.success && result.noteId) {
+        await this.showToast(
+          `${tabs.length} tabs saved successfully!`,
+          'success',
+          3000,
+          result.noteId
+        );
+      } else if (!result.success && result.error) {
+        await this.showToast(
+          `Failed to save tabs: ${result.error}`,
+          'error',
+          5000
+        );
+      }
+
+      return result;
+    } catch (error) {
+      const detailedMessage = this.getDetailedErrorMessage(error as Error, 'Save Tabs');
+      logger.error('Failed to save tabs', error as Error);
+
+      // Show error toast
+      await this.showToast(
+        `Failed to save tabs: ${detailedMessage}`,
+        'error',
+        5000
+      );
+
+      return {
+        success: false,
+        error: detailedMessage
+      };
+    }
+  }
+
+  /**
+   * Escape HTML special characters
+   * Uses string replacement since service workers don't have DOM access
+   */
+  private escapeHtml(text: string): string {
+    const htmlEscapeMap: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    };
+
+    return text.replace(/[&<>"']/g, (char) => htmlEscapeMap[char] || char);
   }
 
   /**

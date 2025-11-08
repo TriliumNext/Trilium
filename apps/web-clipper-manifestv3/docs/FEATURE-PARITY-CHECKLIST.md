@@ -20,11 +20,11 @@
 |---------|--------|-------|----------|
 | Save Selection | ✅ | Working with image processing | - |
 | Save Full Page | ✅ | Readability + DOMPurify + Cheerio | - |
-| Save Link | ⚠️ | Basic (URL + title only) | LOW |
+| Save Link | ✅ | Full implementation with custom notes | - |
 | Save Screenshot (Full) | ✅ | Captures visible viewport | - |
 | Save Screenshot (Cropped) | ✅ | With zoom adjustment & validation | - |
 | Save Image | ✅ | Downloads and embeds | - |
-| Save Tabs (Bulk) | ❌ | Not implemented | MED |
+| Save Tabs (Bulk) | ✅ | Saves all tabs in current window as list of links | - |
 
 ---
 
@@ -100,10 +100,10 @@
 
 | Feature | Status | Notes | Priority |
 |---------|--------|-------|----------|
-| Link with custom note | ❌ | Only URL + title | LOW |
+| Link with custom note | ✅ | Full UI with title parsing | - |
 | Date metadata | ❌ | publishedDate, modifiedDate | LOW |
 | Interactive toasts | ⚠️ | No "Open in Trilium" button | LOW |
-| Save tabs feature | ❌ | Bulk save all tabs | MED |
+| Save tabs feature | ✅ | Bulk save all tabs as note with links | - |
 | Meta Note Popup option | ❌ | See Trilium Issue [#5350](https://github.com/TriliumNext/Trilium/issues/5350) | MED |
 | Add custom keyboard shortcuts | ❌ | See Trilium Issue [#5349](https://github.com/TriliumNext/Trilium/issues/5349) | LOW |
 | Handle Firefox Keyboard Shortcut Bug | ❌ | See Trilium Issue [#5226](https://github.com/TriliumNext/Trilium/issues/5226) | LOW |
@@ -191,9 +191,8 @@
 1. **No "already visited" indicator** - Backend function exists but unused
 
 ### Nice to Have
-2. **No custom note text for links** - Only saves URL and title
-3. **No date metadata extraction** - Loses temporal context
-4. **Basic toast notifications** - No interactive buttons
+2. **No date metadata extraction** - Loses temporal context
+3. **Basic toast notifications** - No interactive buttons
 
 ---
 

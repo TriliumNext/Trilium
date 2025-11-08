@@ -39,6 +39,54 @@
                     <span class="btn-icon">🖼</span>
                     <span class="btn-text">Save Screenshot (Full)</span>
                 </button>
+
+                <button id="save-link-with-note" class="action-btn">
+                    <span class="btn-icon">🔗</span>
+                    <span class="btn-text">Save Link with Note</span>
+                </button>
+
+                <button id="save-tabs" class="action-btn" title="Ctrl+Shift+T">
+                    <span class="btn-icon">📑</span>
+                    <span class="btn-text">Save All Tabs</span>
+                </button>
+            </div>
+
+            <!-- Save Link with Note Panel (hidden by default) -->
+            <div id="save-link-panel" class="save-link-panel hidden">
+                <div class="panel-header">
+                    <h3>Save Link with Custom Note</h3>
+                </div>
+                
+                <div class="panel-content">
+                    <textarea 
+                        id="save-link-textarea" 
+                        class="link-textarea" 
+                        rows="5" 
+                        placeholder="Enter your note text here... 
+
+The first sentence (ending with . ! ?) will become the note title, unless you check 'Keep page title' below.
+
+Press Ctrl+Enter to save."
+                        autofocus></textarea>
+
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="keep-title-checkbox" />
+                            <span>Keep page title as note title</span>
+                        </label>
+                    </div>
+
+                    <div class="panel-actions">
+                        <button type="button" class="btn btn-primary" id="save-link-submit">
+                            <span class="btn-icon">💾</span>
+                            Save
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="save-link-cancel">
+                            <span class="btn-icon">✕</span>
+                            Cancel
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <div class="status-section">

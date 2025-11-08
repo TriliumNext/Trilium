@@ -28,6 +28,18 @@ export interface SaveFullScreenshotMessage extends BaseMessage {
   type: 'SAVE_FULL_SCREENSHOT';
 }
 
+export interface SaveLinkMessage extends BaseMessage {
+  type: 'SAVE_LINK';
+  url?: string;
+  title?: string;
+  content?: string;
+  keepTitle?: boolean;
+}
+
+export interface SaveTabsMessage extends BaseMessage {
+  type: 'SAVE_TABS';
+}
+
 export interface ToastMessage extends BaseMessage {
   type: 'SHOW_TOAST';
   message: string;
@@ -97,6 +109,8 @@ export type ExtensionMessage =
   | SaveScreenshotMessage
   | SaveCroppedScreenshotMessage
   | SaveFullScreenshotMessage
+  | SaveLinkMessage
+  | SaveTabsMessage
   | ToastMessage
   | LoadScriptMessage
   | GetScreenshotAreaMessage
