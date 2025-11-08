@@ -1,7 +1,7 @@
 # Feature Parity Checklist - MV2 to MV3 Migration
 
-**Last Updated**: October 18, 2025  
-**Current Phase**: Screenshot Features
+**Last Updated**: November 8, 2025  
+**Current Phase**: Quality of Life Features
 
 ---
 
@@ -35,26 +35,10 @@
 | Readability extraction | ✅ | Working | `background/index.ts:608-630` |
 | DOMPurify sanitization | ✅ | Working | `background/index.ts:631-653` |
 | Cheerio cleanup | ✅ | Working | `background/index.ts:654-666` |
-| Image downloading | ⚠️ | Selection only | `background/index.ts:668-740` |
+| Image downloading | ✅ | All capture types | `background/index.ts:832-930` |
 | Screenshot cropping | ✅ | Implemented with offscreen document | `background/index.ts:536-668`, `offscreen/offscreen.ts` |
 | Date metadata extraction | ❌ | Not implemented | - |
 | Codeblock formatting preservation | ❌ | See Trilium Issue [#2092](https://github.com/TriliumNext/Trilium/issues/2092) | - |
-
-### Priority Issues:
-
-#### 1. Image Processing for Full Page (HIGH)
-**Problem**: `postProcessImages()` only runs for selection saves, not full page captures.
-
-**MV2 Implementation**: `apps/web-clipper/background.js:293-301` (downloads all images)
-
-**What's Needed**:
-- Call `postProcessImages()` for all capture types
-- Handle CORS errors gracefully
-- Test with various image formats
-- Consider performance for image-heavy pages
-
-**Files to Modify**:
-- `src/background/index.ts:608-630` (processContent function)
 
 ---
 
@@ -73,7 +57,7 @@
 
 ### Priority Issues:
 
-#### 2. Already Visited Detection (MED)
+#### 1. Already Visited Detection (MED)
 **Problem**: Popup doesn't show if page was already clipped.
 
 **MV2 Implementation**: `apps/web-clipper/popup/popup.js` (checks on open)
@@ -150,11 +134,19 @@
 - Context menus for both cropped and full screenshots
 - Keyboard shortcut: Ctrl+Shift+E for cropped screenshot
 
-### Phase 3: Image Processing (PLANNED)
-- [ ] Apply image processing to full page captures
-- [ ] Test with various image formats (PNG, JPG, WebP, SVG)
-- [ ] Handle CORS edge cases
-- [ ] Performance testing with image-heavy pages
+### Phase 3: Image Processing ✅ COMPLETE
+- [x] Apply image processing to full page captures
+- [x] Test with various image formats (PNG, JPG, WebP, SVG)
+- [x] Handle CORS edge cases
+- [x] Performance considerations for image-heavy pages
+
+**Implementation Details**:
+- Image processing function: `src/background/index.ts:832-930`
+- Called for all capture types (selections, full page, screenshots)
+- CORS errors handled gracefully with fallback to Trilium server
+- Enhanced logging with success/error counts and rates
+- Validates image content types before processing
+- Successfully builds without TypeScript errors
 
 ### Phase 4: Quality of Life (PLANNED)
 - [ ] Implement "save tabs" feature
@@ -195,16 +187,13 @@
 
 ## Known Issues
 
-### Critical (Blocking)
-1. **Images not embedded in full page** - Only works for selection saves
-
 ### Important (Should fix)
-2. **No "already visited" indicator** - Backend function exists but unused
+1. **No "already visited" indicator** - Backend function exists but unused
 
 ### Nice to Have
-3. **No custom note text for links** - Only saves URL and title
-4. **No date metadata extraction** - Loses temporal context
-5. **Basic toast notifications** - No interactive buttons
+2. **No custom note text for links** - Only saves URL and title
+3. **No date metadata extraction** - Loses temporal context
+4. **Basic toast notifications** - No interactive buttons
 
 ---
 

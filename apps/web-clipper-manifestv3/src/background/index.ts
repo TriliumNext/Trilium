@@ -837,6 +837,10 @@ class BackgroundService {
 
     logger.info('Processing images in background context', { count: clipData.images.length });
 
+    let successCount = 0;
+    let corsErrorCount = 0;
+    let otherErrorCount = 0;
+
     for (const image of clipData.images) {
       try {
         if (image.src.startsWith('data:image/')) {
@@ -848,6 +852,7 @@ class BackgroundService {
           image.src = mimeMatch ? `inline.${mimeMatch[1]}` : 'inline.png';
 
           logger.debug('Processed inline image', { src: image.src });
+          successCount++;
         } else {
           // Download image from URL (no CORS restrictions in background!)
           logger.debug('Downloading image', { src: image.src });
@@ -857,12 +862,24 @@ class BackgroundService {
           if (!response.ok) {
             logger.warn('Failed to fetch image', {
               src: image.src,
-              status: response.status
+              status: response.status,
+              statusText: response.statusText
             });
+            otherErrorCount++;
             continue;
           }
 
           const blob = await response.blob();
+
+          // Validate that we received image data
+          if (!blob.type.startsWith('image/')) {
+            logger.warn('Downloaded file is not an image', {
+              src: image.src,
+              contentType: blob.type
+            });
+            otherErrorCount++;
+            continue;
+          }
 
           // Convert to base64 data URL
           const reader = new FileReader();
@@ -880,20 +897,39 @@ class BackgroundService {
 
           logger.debug('Successfully downloaded image', {
             src: image.src,
+            contentType: blob.type,
             dataUrlLength: image.dataUrl?.length || 0
           });
+          successCount++;
         }
       } catch (error) {
-        logger.warn(`Failed to process image: ${image.src}`, {
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const isCorsError = errorMessage.includes('CORS') ||
+                           errorMessage.includes('NetworkError') ||
+                           errorMessage.includes('Failed to fetch');
+
+        if (isCorsError) {
+          logger.warn(`CORS or network error downloading image: ${image.src}`, {
+            error: errorMessage,
+            fallback: 'Trilium server will attempt to download'
+          });
+          corsErrorCount++;
+        } else {
+          logger.warn(`Failed to process image: ${image.src}`, {
+            error: errorMessage
+          });
+          otherErrorCount++;
+        }
         // Keep original src as fallback - Trilium server will handle it
       }
     }
 
     logger.info('Completed image processing', {
       total: clipData.images.length,
-      successful: clipData.images.filter(img => img.dataUrl).length
+      successful: successCount,
+      corsErrors: corsErrorCount,
+      otherErrors: otherErrorCount,
+      successRate: `${Math.round((successCount / clipData.images.length) * 100)}%`
     });
   }
 
@@ -917,12 +953,10 @@ class BackgroundService {
 
       logger.info('Forwarding sanitized HTML to Trilium server for parsing...');
 
-      // For full page captures, we skip client-side image processing
-      // The server will handle image extraction during parsing
-      const isFullPageCapture = clipData.metadata?.fullPageCapture === true;
-
-      if (!isFullPageCapture && clipData.images && clipData.images.length > 0) {
-        // Only for selections or legacy fallback: process images client-side
+      // Process images for all capture types (selections, full page, etc.)
+      // Background scripts don't have CORS restrictions, so we download images here
+      // This matches the MV2 extension behavior
+      if (clipData.images && clipData.images.length > 0) {
         await this.postProcessImages(clipData);
       }
 
