@@ -230,6 +230,50 @@ Press Ctrl+Enter to save."
                         </div>
                     </div>
 
+                    <div class="datetime-section">
+                        <h3>Date/Time Format</h3>
+                        <div class="form-group">
+                            <label>Format Type:</label>
+                            <div class="format-type-radio">
+                                <label class="radio-label">
+                                    <input type="radio" name="popup-dateTimeFormat" value="preset" checked>
+                                    <span>Preset</span>
+                                </label>
+                                <label class="radio-label">
+                                    <input type="radio" name="popup-dateTimeFormat" value="custom">
+                                    <span>Custom</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="popup-preset-container" class="form-group">
+                            <label for="popup-datetime-preset">Preset Format:</label>
+                            <select id="popup-datetime-preset">
+                                <option value="iso">ISO 8601 (2025-11-08)</option>
+                                <option value="iso-time">ISO with Time (2025-11-08 14:30:45)</option>
+                                <option value="us">US (11/08/2025)</option>
+                                <option value="us-time">US with Time (11/08/2025 02:30 PM)</option>
+                                <option value="eu">European (08/11/2025)</option>
+                                <option value="eu-time">European with Time (08/11/2025 14:30)</option>
+                                <option value="long">Long (November 08, 2025)</option>
+                                <option value="long-time">Long with Time (November 08, 2025 at 14:30)</option>
+                                <option value="short">Short (Nov 08, 2025)</option>
+                                <option value="timestamp">Unix Timestamp</option>
+                                <option value="relative">Relative (e.g., "2 days ago")</option>
+                            </select>
+                        </div>
+
+                        <div id="popup-custom-container" class="form-group hidden">
+                            <label for="popup-datetime-custom">Custom Format:</label>
+                            <input type="text" id="popup-datetime-custom" placeholder="YYYY-MM-DD HH:mm:ss">
+                            <small>Tokens: YYYY, MM, DD, HH, mm, ss, A/a</small>
+                        </div>
+
+                        <div class="format-preview-box">
+                            <strong>Preview:</strong> <span id="popup-format-preview">2025-11-08</span>
+                        </div>
+                    </div>
+
                     <div class="settings-actions">
                         <button type="submit" class="primary-btn">Save Settings</button>
                     </div>

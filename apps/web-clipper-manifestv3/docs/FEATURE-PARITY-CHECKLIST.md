@@ -37,7 +37,7 @@
 | Cheerio cleanup | ✅ | Working | `background/index.ts:654-666` |
 | Image downloading | ✅ | All capture types | `background/index.ts:832-930` |
 | Screenshot cropping | ✅ | Implemented with offscreen document | `background/index.ts:536-668`, `offscreen/offscreen.ts` |
-| Date metadata extraction | ❌ | Not implemented | - |
+| Date metadata extraction | ✅ | Fully implemented with customizable formats | `shared/date-formatter.ts`, `content/index.ts:313-328`, `options/` |
 | Codeblock formatting preservation | ❌ | See Trilium Issue [#2092](https://github.com/TriliumNext/Trilium/issues/2092) | - |
 
 ---
@@ -101,7 +101,7 @@
 | Feature | Status | Notes | Priority |
 |---------|--------|-------|----------|
 | Link with custom note | ✅ | Full UI with title parsing | - |
-| Date metadata | ❌ | publishedDate, modifiedDate | LOW |
+| Date metadata | ✅ | publishedDate, modifiedDate with customizable formats | - |
 | Interactive toasts | ⚠️ | No "Open in Trilium" button | LOW |
 | Save tabs feature | ✅ | Bulk save all tabs as note with links | - |
 | Meta Note Popup option | ❌ | See Trilium Issue [#5350](https://github.com/TriliumNext/Trilium/issues/5350) | MED |
@@ -148,15 +148,23 @@
 - Validates image content types before processing
 - Successfully builds without TypeScript errors
 
-### Phase 4: Quality of Life (PLANNED)
-- [ ] Implement "save tabs" feature
+### Phase 4: Quality of Life
+- [x] Implement "save tabs" feature
+- [x] Add custom note text for links
+- [x] **Extract date metadata from pages** - Implemented with customizable formats
 - [ ] Add "already visited" detection to popup
-- [ ] Add custom note text for links
-- [ ] Extract date metadata from pages
 - [ ] Add interactive toast buttons
 - [ ] Add meta note popup option (see Trilium Issue [#5350](https://github.com/TriliumNext/Trilium/issues/5350))
 - [ ] Add custom keyboard shortcuts (see Trilium Issue [#5349](https://github.com/TriliumNext/Trilium/issues/5349))
 - [ ] Handle Firefox keyboard shortcut bug (see Trilium Issue [#5226](https://github.com/TriliumNext/Trilium/issues/5226))
+
+**Date Metadata Implementation** (November 8, 2025):
+- Created `src/shared/date-formatter.ts` with comprehensive date extraction and formatting
+- Extracts dates from Open Graph meta tags, JSON-LD structured data, and other metadata
+- Added settings UI in options page with 11 preset formats and custom format support
+- Format cheatsheet with live preview
+- Dates formatted per user preference before saving as labels
+- Files: `src/shared/date-formatter.ts`, `src/content/index.ts`, `src/options/`
 
 ---
 
@@ -188,11 +196,12 @@
 ## Known Issues
 
 ### Important (Should fix)
+
 1. **No "already visited" indicator** - Backend function exists but unused
 
 ### Nice to Have
-2. **No date metadata extraction** - Loses temporal context
-3. **Basic toast notifications** - No interactive buttons
+
+1. **Basic toast notifications** - No interactive buttons
 
 ---
 

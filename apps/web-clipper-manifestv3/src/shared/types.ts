@@ -183,4 +183,17 @@ export interface ExtensionConfig {
   enableToasts: boolean;
   screenshotFormat: 'png' | 'jpeg';
   screenshotQuality: number;
+  dateTimeFormat?: 'preset' | 'custom';
+  dateTimePreset?: string;
+  dateTimeCustomFormat?: string;
+}
+
+/**
+ * Date/time format presets
+ */
+export interface DateTimeFormatPreset {
+  id: string;
+  name: string;
+  format: string;
+  example: string;
 }

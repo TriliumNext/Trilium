@@ -1,6 +1,7 @@
 import { Logger } from '@/shared/utils';
 import { ExtensionConfig } from '@/shared/types';
 import { ThemeManager, ThemeMode } from '@/shared/theme';
+import { DateFormatter, DATE_TIME_PRESETS } from '@/shared/date-formatter';
 
 const logger = Logger.create('Options', 'options');
 
@@ -48,6 +49,24 @@ class OptionsController {
     themeRadios.forEach(radio => {
       radio.addEventListener('change', this.handleThemeChange.bind(this));
     });
+
+    // Date/time format radio buttons
+    const formatTypeRadios = document.querySelectorAll('input[name="dateTimeFormat"]');
+    formatTypeRadios.forEach(radio => {
+      radio.addEventListener('change', this.handleFormatTypeChange.bind(this));
+    });
+
+    // Date/time preset selector
+    const presetSelector = document.getElementById('datetime-preset') as HTMLSelectElement;
+    presetSelector?.addEventListener('change', this.updateFormatPreview.bind(this));
+
+    // Custom format input
+    const customFormatInput = document.getElementById('datetime-custom') as HTMLInputElement;
+    customFormatInput?.addEventListener('input', this.updateFormatPreview.bind(this));
+
+    // Format help toggle
+    const helpToggle = document.getElementById('format-help-toggle');
+    helpToggle?.addEventListener('click', this.toggleFormatHelp.bind(this));
   }
 
   private async loadCurrentSettings(): Promise<void> {
@@ -74,6 +93,31 @@ class OptionsController {
         formatRadio.checked = true;
       }
 
+      // Load date/time format settings
+      const dateTimeFormat = config.dateTimeFormat || 'preset';
+      const dateTimeFormatRadio = document.querySelector(`input[name="dateTimeFormat"][value="${dateTimeFormat}"]`) as HTMLInputElement;
+      if (dateTimeFormatRadio) {
+        dateTimeFormatRadio.checked = true;
+      }
+
+      const dateTimePreset = config.dateTimePreset || 'iso';
+      const presetSelector = document.getElementById('datetime-preset') as HTMLSelectElement;
+      if (presetSelector) {
+        presetSelector.value = dateTimePreset;
+      }
+
+      const dateTimeCustomFormat = config.dateTimeCustomFormat || 'YYYY-MM-DD HH:mm:ss';
+      const customFormatInput = document.getElementById('datetime-custom') as HTMLInputElement;
+      if (customFormatInput) {
+        customFormatInput.value = dateTimeCustomFormat;
+      }
+
+      // Show/hide format containers based on selection
+      this.updateFormatContainerVisibility(dateTimeFormat);
+
+      // Update format preview
+      this.updateFormatPreview();
+
       logger.debug('Settings loaded', { config });
     } catch (error) {
       logger.error('Failed to load settings', error as Error);
@@ -91,13 +135,23 @@ class OptionsController {
       const contentFormatRadio = document.querySelector('input[name="contentFormat"]:checked') as HTMLInputElement;
       const contentFormat = contentFormatRadio?.value || 'html';
 
+      // Get date/time format settings
+      const dateTimeFormatRadio = document.querySelector('input[name="dateTimeFormat"]:checked') as HTMLInputElement;
+      const dateTimeFormat = dateTimeFormatRadio?.value || 'preset';
+
+      const dateTimePreset = (document.getElementById('datetime-preset') as HTMLSelectElement)?.value || 'iso';
+      const dateTimeCustomFormat = (document.getElementById('datetime-custom') as HTMLInputElement)?.value || 'YYYY-MM-DD';
+
       const config: Partial<ExtensionConfig> = {
         triliumServerUrl: (document.getElementById('trilium-url') as HTMLInputElement).value.trim(),
         defaultNoteTitle: (document.getElementById('default-title') as HTMLInputElement).value.trim(),
         autoSave: (document.getElementById('auto-save') as HTMLInputElement).checked,
         enableToasts: (document.getElementById('enable-toasts') as HTMLInputElement).checked,
         screenshotFormat: (document.getElementById('screenshot-format') as HTMLSelectElement).value as 'png' | 'jpeg',
-        screenshotQuality: 0.9
+        screenshotQuality: 0.9,
+        dateTimeFormat: dateTimeFormat as 'preset' | 'custom',
+        dateTimePreset,
+        dateTimeCustomFormat
       };
 
       // Validate settings
@@ -109,7 +163,14 @@ class OptionsController {
         throw new Error('Please enter a default note title template');
       }
 
-      // Save to storage (including content format)
+      // Validate custom format if selected
+      if (dateTimeFormat === 'custom' && dateTimeCustomFormat) {
+        if (!DateFormatter.isValidFormat(dateTimeCustomFormat)) {
+          throw new Error('Invalid custom date format. Please check the format tokens.');
+        }
+      }
+
+      // Save to storage (including content format and date settings)
       await chrome.storage.sync.set({ ...config, contentFormat });
 
       this.showStatus('Settings saved successfully!', 'success');
@@ -277,6 +338,79 @@ class OptionsController {
     } catch (error) {
       logger.error('Failed to change theme', error as Error);
       this.showStatus('Failed to update theme', 'error');
+    }
+  }
+
+  private handleFormatTypeChange(event: Event): void {
+    const radio = event.target as HTMLInputElement;
+    const formatType = radio.value as 'preset' | 'custom';
+
+    this.updateFormatContainerVisibility(formatType);
+    this.updateFormatPreview();
+  }
+
+  private updateFormatContainerVisibility(formatType: string): void {
+    const presetContainer = document.getElementById('preset-format-container');
+    const customContainer = document.getElementById('custom-format-container');
+
+    if (presetContainer && customContainer) {
+      if (formatType === 'preset') {
+        presetContainer.style.display = 'block';
+        customContainer.style.display = 'none';
+      } else {
+        presetContainer.style.display = 'none';
+        customContainer.style.display = 'block';
+      }
+    }
+  }
+
+  private updateFormatPreview(): void {
+    try {
+      const formatTypeRadio = document.querySelector('input[name="dateTimeFormat"]:checked') as HTMLInputElement;
+      const formatType = formatTypeRadio?.value || 'preset';
+
+      let formatString = 'YYYY-MM-DD';
+
+      if (formatType === 'preset') {
+        const presetSelector = document.getElementById('datetime-preset') as HTMLSelectElement;
+        const presetId = presetSelector?.value || 'iso';
+        const preset = DATE_TIME_PRESETS.find(p => p.id === presetId);
+        formatString = preset?.format || 'YYYY-MM-DD';
+      } else {
+        const customInput = document.getElementById('datetime-custom') as HTMLInputElement;
+        formatString = customInput?.value || 'YYYY-MM-DD';
+      }
+
+      // Generate preview with current date/time
+      const previewDate = new Date();
+      const formattedDate = DateFormatter.format(previewDate, formatString);
+
+      const previewElement = document.getElementById('format-preview-text');
+      if (previewElement) {
+        previewElement.textContent = formattedDate;
+      }
+
+      logger.debug('Format preview updated', { formatString, formattedDate });
+    } catch (error) {
+      logger.error('Failed to update format preview', error as Error);
+      const previewElement = document.getElementById('format-preview-text');
+      if (previewElement) {
+        previewElement.textContent = 'Invalid format';
+        previewElement.style.color = 'var(--color-error-text)';
+      }
+    }
+  }
+
+  private toggleFormatHelp(): void {
+    const cheatsheet = document.getElementById('format-cheatsheet');
+    if (cheatsheet) {
+      const isVisible = cheatsheet.style.display !== 'none';
+      cheatsheet.style.display = isVisible ? 'none' : 'block';
+
+      const button = document.getElementById('format-help-toggle');
+      if (button) {
+        button.textContent = isVisible ? '? Format Guide' : '✕ Close Guide';
+      }
     }
   }
 }

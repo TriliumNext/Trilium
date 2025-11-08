@@ -3,6 +3,7 @@ import { ClipData, ImageData } from '@/shared/types';
 import { HTMLSanitizer } from '@/shared/html-sanitizer';
 import { DuplicateDialog } from './duplicate-dialog';
 import { Readability } from '@mozilla/readability';
+import { DateFormatter } from '@/shared/date-formatter';
 
 const logger = Logger.create('Content', 'content');
 
@@ -312,15 +313,26 @@ class ContentScript {
         securityThreatsRemoved: Object.values(sanitizationResults.elementsStripped).reduce((a, b) => a + b, 0)
       });
 
-      // Extract metadata (dates) from the page
-      const dates = this.extractDocumentDates();
+      // Extract metadata (dates) from the page using enhanced date extraction
+      const dates = DateFormatter.extractDatesFromDocument(document);
       const labels: Record<string, string> = {};
 
+      // Format dates using user's preferred format
       if (dates.publishedDate) {
-        labels['publishedDate'] = dates.publishedDate.toISOString().substring(0, 10);
+        const formattedDate = await DateFormatter.formatWithUserSettings(dates.publishedDate);
+        labels['publishedDate'] = formattedDate;
+        logger.debug('Formatted published date', {
+          original: dates.publishedDate.toISOString(),
+          formatted: formattedDate
+        });
       }
       if (dates.modifiedDate) {
-        labels['modifiedDate'] = dates.modifiedDate.toISOString().substring(0, 10);
+        const formattedDate = await DateFormatter.formatWithUserSettings(dates.modifiedDate);
+        labels['modifiedDate'] = formattedDate;
+        logger.debug('Formatted modified date', {
+          original: dates.modifiedDate.toISOString(),
+          formatted: formattedDate
+        });
       }
 
       logger.info('Content extraction complete - ready for Phase 3 in background script', {
@@ -577,43 +589,6 @@ class ContentScript {
     }
 
     return undefined;
-  }
-
-
-
-  private extractDocumentDates(): { publishedDate?: Date; modifiedDate?: Date } {
-    const dates: { publishedDate?: Date; modifiedDate?: Date } = {};
-
-    // Try to extract published date
-    const publishedMeta = document.querySelector("meta[property='article:published_time']");
-    if (publishedMeta) {
-      const publishedContent = publishedMeta.getAttribute('content');
-      if (publishedContent) {
-        try {
-          dates.publishedDate = new Date(publishedContent);
-        } catch (error) {
-          logger.warn('Failed to parse published date', { publishedContent });
-        }
-      }
-    }
-
-    // Try to extract modified date
-    const modifiedMeta = document.querySelector("meta[property='article:modified_time']");
-    if (modifiedMeta) {
-      const modifiedContent = modifiedMeta.getAttribute('content');
-      if (modifiedContent) {
-        try {
-          dates.modifiedDate = new Date(modifiedContent);
-        } catch (error) {
-          logger.warn('Failed to parse modified date', { modifiedContent });
-        }
-      }
-    }
-
-    // TODO: Add support for JSON-LD structured data extraction
-    // This could include more sophisticated date extraction from schema.org markup
-
-    return dates;
   }
 
   /**

@@ -100,6 +100,76 @@
       </p>
     </div>
 
+    <div class="datetime-format-section">
+      <h3>📅 Date/Time Format</h3>
+      <p>Choose how dates and times are formatted when saving notes:</p>
+      
+      <div class="format-type-selection">
+        <label class="format-type-option">
+          <input type="radio" name="dateTimeFormat" value="preset" checked>
+          <span>Use Preset Format</span>
+        </label>
+        <label class="format-type-option">
+          <input type="radio" name="dateTimeFormat" value="custom">
+          <span>Custom Format</span>
+        </label>
+      </div>
+
+      <div id="preset-format-container" class="format-container">
+        <label for="datetime-preset">Select Preset:</label>
+        <select id="datetime-preset" class="format-select">
+          <option value="iso">ISO 8601 (YYYY-MM-DD)</option>
+          <option value="iso-time">ISO with Time (YYYY-MM-DD HH:mm:ss)</option>
+          <option value="us">US Format (MM/DD/YYYY)</option>
+          <option value="us-time">US with Time (MM/DD/YYYY hh:mm A)</option>
+          <option value="eu">European (DD/MM/YYYY)</option>
+          <option value="eu-time">European with Time (DD/MM/YYYY HH:mm)</option>
+          <option value="long">Long Format (MMMM DD, YYYY)</option>
+          <option value="long-time">Long with Time (MMMM DD, YYYY at HH:mm)</option>
+          <option value="short">Short Format (MMM DD, YYYY)</option>
+          <option value="timestamp">Unix Timestamp</option>
+          <option value="relative">Relative (e.g., "2 days ago")</option>
+        </select>
+      </div>
+
+      <div id="custom-format-container" class="format-container" style="display: none;">
+        <label for="datetime-custom">Custom Format String:</label>
+        <input type="text" id="datetime-custom" placeholder="YYYY-MM-DD HH:mm:ss" class="format-input">
+        <div class="format-help">
+          <button type="button" id="format-help-toggle" class="help-button" title="Show format tokens">
+            <span class="help-icon">?</span> Format Guide
+          </button>
+          <div id="format-cheatsheet" class="format-cheatsheet" style="display: none;">
+            <h4>Format Tokens:</h4>
+            <div class="token-grid">
+              <div class="token-item"><code>YYYY</code> - Full year (2025)</div>
+              <div class="token-item"><code>YY</code> - 2-digit year (25)</div>
+              <div class="token-item"><code>MMMM</code> - Full month (November)</div>
+              <div class="token-item"><code>MMM</code> - Short month (Nov)</div>
+              <div class="token-item"><code>MM</code> - 2-digit month (11)</div>
+              <div class="token-item"><code>M</code> - Month (11)</div>
+              <div class="token-item"><code>DD</code> - 2-digit day (08)</div>
+              <div class="token-item"><code>D</code> - Day (8)</div>
+              <div class="token-item"><code>HH</code> - 24-hour (14)</div>
+              <div class="token-item"><code>hh</code> - 12-hour (02)</div>
+              <div class="token-item"><code>mm</code> - Minutes (30)</div>
+              <div class="token-item"><code>ss</code> - Seconds (45)</div>
+              <div class="token-item"><code>A</code> - AM/PM</div>
+            </div>
+            <p class="help-note">Example: <code>YYYY-MM-DD HH:mm:ss</code> → 2025-11-08 14:30:45</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="format-preview">
+        <strong>Preview:</strong> <span id="format-preview-text">2025-11-08</span>
+      </div>
+
+      <p class="help-text">
+        This format applies to publishedDate and modifiedDate labels extracted from web pages.
+      </p>
+    </div>
+
     <div class="test-section">
       <h3>⟲ Connection Test</h3>
       <p>Test your connection to the Trilium server:</p>
