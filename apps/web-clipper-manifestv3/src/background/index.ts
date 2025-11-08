@@ -352,16 +352,31 @@ class BackgroundService {
       });
       return await chrome.tabs.sendMessage(tab.id!, message);
     } catch (error) {
-      // Edge case: Content script might not be loaded yet (race condition, manual injection, etc.)
-      // Simple retry with brief delay - no PING/PONG needed
-      logger.debug('Content script not responding, will retry once...', {
+      // Edge case: Content script might not be loaded yet
+      // Try to inject it programmatically
+      logger.debug('Content script not responding, attempting to inject...', {
         error: (error as Error).message,
         tabId: tab.id
       });
 
-      await Utils.sleep(100);  // Brief delay for content script initialization
+      try {
+        // Inject content script programmatically
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id! },
+          files: ['content.js']
+        });
 
-      return await chrome.tabs.sendMessage(tab.id!, message);
+        logger.debug('Content script injected successfully, retrying message');
+
+        // Wait a moment for the script to initialize
+        await Utils.sleep(200);
+
+        // Try sending the message again
+        return await chrome.tabs.sendMessage(tab.id!, message);
+      } catch (injectError) {
+        logger.error('Failed to inject content script', injectError as Error);
+        throw new Error('Failed to communicate with page. Please refresh the page and try again.');
+      }
     }
   }
 

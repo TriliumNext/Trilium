@@ -76,6 +76,18 @@ await esbuild.build({
   sourcemap: false,
 })
 
+// Build offscreen document
+console.log('Building offscreen document...')
+await esbuild.build({
+  entryPoints: [resolve(__dirname, 'src/offscreen/offscreen.ts')],
+  bundle: true,
+  format: 'iife',
+  outfile: resolve(__dirname, 'dist/offscreen.js'),
+  platform: 'browser',
+  target: 'es2022',
+  sourcemap: false,
+})
+
 // Copy HTML files and fix script references
 console.log('Copying HTML files...')
 
@@ -103,6 +115,11 @@ writeFileSync(resolve(__dirname, 'dist/options.html'), optionsHtml)
 let logsHtml = readFileSync(resolve(__dirname, 'src/logs/index.html'), 'utf-8')
 logsHtml = fixHtmlScriptReferences(logsHtml, 'logs')
 writeFileSync(resolve(__dirname, 'dist/logs.html'), logsHtml)
+
+// Copy and fix offscreen.html
+let offscreenHtml = readFileSync(resolve(__dirname, 'src/offscreen/offscreen.html'), 'utf-8')
+offscreenHtml = fixHtmlScriptReferences(offscreenHtml, 'offscreen')
+writeFileSync(resolve(__dirname, 'dist/offscreen.html'), offscreenHtml)
 
 // Copy CSS files
 console.log('Copying CSS files...')
