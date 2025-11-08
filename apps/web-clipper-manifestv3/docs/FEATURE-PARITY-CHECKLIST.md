@@ -21,7 +21,8 @@
 | Save Selection | ✅ | Working with image processing | - |
 | Save Full Page | ✅ | Readability + DOMPurify + Cheerio | - |
 | Save Link | ⚠️ | Basic (URL + title only) | LOW |
-| Save Screenshot | ⚠️ | No cropping applied | **HIGH** |
+| Save Screenshot (Full) | ✅ | Captures visible viewport | - |
+| Save Screenshot (Cropped) | ✅ | With zoom adjustment & validation | - |
 | Save Image | ✅ | Downloads and embeds | - |
 | Save Tabs (Bulk) | ❌ | Not implemented | MED |
 
@@ -35,28 +36,13 @@
 | DOMPurify sanitization | ✅ | Working | `background/index.ts:631-653` |
 | Cheerio cleanup | ✅ | Working | `background/index.ts:654-666` |
 | Image downloading | ⚠️ | Selection only | `background/index.ts:668-740` |
-| Screenshot cropping | ❌ | Rect stored, not applied | `background/index.ts:504-560` |
+| Screenshot cropping | ✅ | Implemented with offscreen document | `background/index.ts:536-668`, `offscreen/offscreen.ts` |
 | Date metadata extraction | ❌ | Not implemented | - |
 | Codeblock formatting preservation | ❌ | See Trilium Issue [#2092](https://github.com/TriliumNext/Trilium/issues/2092) | - |
 
 ### Priority Issues:
 
-#### 1. Screenshot Cropping (HIGH)
-**Problem**: Full-page screenshot captured, crop rectangle stored in metadata, but crop NOT applied to image.
-
-**MV2 Implementation**: `apps/web-clipper/background.js:393-427` (cropImage function)
-
-**What's Needed**:
-- Implement `cropImage()` function in background
-- Use OffscreenCanvas API or send to content script
-- Apply crop before saving to Trilium
-- Test with various screen sizes
-
-**Files to Modify**:
-- `src/background/index.ts` (add crop function)
-- Possibly `src/content/screenshot.ts` (if canvas needed)
-
-#### 2. Image Processing for Full Page (HIGH)
+#### 1. Image Processing for Full Page (HIGH)
 **Problem**: `postProcessImages()` only runs for selection saves, not full page captures.
 
 **MV2 Implementation**: `apps/web-clipper/background.js:293-301` (downloads all images)
@@ -79,34 +65,15 @@
 | Popup interface | ✅ | With theme support | - |
 | Settings page | ✅ | Connection config | - |
 | Logs viewer | ✅ | Filter/search/export | - |
-| Context menus | ✅ | All save types | - |
-| Keyboard shortcuts | ✅ | Save (Ctrl+Shift+S), Screenshot (Ctrl+Shift+A) | - |
+| Context menus | ✅ | All save types including cropped/full screenshot | - |
+| Keyboard shortcuts | ✅ | Save (Ctrl+Shift+S), Screenshot (Ctrl+Shift+E) | - |
 | Toast notifications | ⚠️ | Basic only | LOW |
 | Already visited banner | ❌ | Backend exists, UI doesn't use | MED |
-| Screenshot selection UI | ❓ | Needs verification | **HIGH** |
+| Screenshot selection UI | ✅ | Drag-to-select with ESC cancel | - |
 
 ### Priority Issues:
 
-#### 3. Screenshot Selection UI Verification (HIGH)
-**Problem**: Unknown if MV3 version has feature parity with MV2 overlay UI.
-
-**MV2 Implementation**: `apps/web-clipper/content.js:66-193`
-- Drag-to-select with visual overlay
-- Escape key to cancel
-- Visual feedback during selection
-- Crosshair cursor
-
-**What's Needed**:
-- Test MV3 screenshot selection workflow
-- Compare UI/UX with MV2 version
-- Verify all keyboard shortcuts work
-- Check visual styling matches
-
-**Files to Check**:
-- `src/content/screenshot.ts`
-- `src/content/index.ts`
-
-#### 4. Already Visited Detection (MED)
+#### 2. Already Visited Detection (MED)
 **Problem**: Popup doesn't show if page was already clipped.
 
 **MV2 Implementation**: `apps/web-clipper/popup/popup.js` (checks on open)
@@ -169,13 +136,19 @@
 - [x] Theme system
 - [x] Centralized logging
 
-### Phase 2: Screenshot Features 🚧 IN PROGRESS
-- [ ] **Task 2.1**: Verify screenshot selection UI against MV2
-- [ ] **Task 2.2**: Implement screenshot cropping function
-- [ ] **Task 2.3**: Test end-to-end screenshot workflow
-- [ ] **Task 2.4**: Handle edge cases (very large/small crops)
+### Phase 2: Screenshot Features ✅ COMPLETE
+- [x] **Task 2.1**: Implement screenshot cropping with offscreen document
+- [x] **Task 2.2**: Add separate UI for cropped vs full screenshots  
+- [x] **Task 2.3**: Handle edge cases (small selections, cancellation, zoom)
+- [x] **Task 2.4**: Verify screenshot selection UI works correctly
 
-**Current Task**: Screenshot selection UI verification
+**Implementation Details**:
+- Offscreen document for canvas operations: `src/offscreen/offscreen.ts`
+- Background service handlers: `src/background/index.ts:536-668`
+- Content script UI: `src/content/index.ts:822-967`
+- Popup buttons: `src/popup/index.html`, `src/popup/popup.ts`
+- Context menus for both cropped and full screenshots
+- Keyboard shortcut: Ctrl+Shift+E for cropped screenshot
 
 ### Phase 3: Image Processing (PLANNED)
 - [ ] Apply image processing to full page captures
@@ -223,17 +196,15 @@
 ## Known Issues
 
 ### Critical (Blocking)
-1. **Screenshot cropping not applied** - Full image saved instead of selection
-2. **Images not embedded in full page** - Only works for selection saves
+1. **Images not embedded in full page** - Only works for selection saves
 
 ### Important (Should fix)
-3. **Screenshot selection UI untested** - Need to verify against MV2
-4. **No "already visited" indicator** - Backend function exists but unused
+2. **No "already visited" indicator** - Backend function exists but unused
 
 ### Nice to Have
-5. **No custom note text for links** - Only saves URL and title
-6. **No date metadata extraction** - Loses temporal context
-7. **Basic toast notifications** - No interactive buttons
+3. **No custom note text for links** - Only saves URL and title
+4. **No date metadata extraction** - Loses temporal context
+5. **Basic toast notifications** - No interactive buttons
 
 ---
 

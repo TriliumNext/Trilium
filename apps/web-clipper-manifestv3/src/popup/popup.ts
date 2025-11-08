@@ -37,7 +37,8 @@ class PopupController {
     const elementIds = [
       'save-selection',
       'save-page',
-      'save-screenshot',
+      'save-cropped-screenshot',
+      'save-full-screenshot',
       'open-settings',
       'back-to-main',
       'view-logs',
@@ -81,7 +82,8 @@ class PopupController {
     // Action buttons
     this.elements['save-selection']?.addEventListener('click', this.handleSaveSelection.bind(this));
     this.elements['save-page']?.addEventListener('click', this.handleSavePage.bind(this));
-    this.elements['save-screenshot']?.addEventListener('click', this.handleSaveScreenshot.bind(this));
+    this.elements['save-cropped-screenshot']?.addEventListener('click', this.handleSaveCroppedScreenshot.bind(this));
+    this.elements['save-full-screenshot']?.addEventListener('click', this.handleSaveFullScreenshot.bind(this));
 
     // Footer buttons
     this.elements['open-settings']?.addEventListener('click', this.handleOpenSettings.bind(this));
@@ -113,7 +115,7 @@ class PopupController {
       this.handleSavePage();
     } else if (event.ctrlKey && event.shiftKey && event.key === 'E') {
       event.preventDefault();
-      this.handleSaveScreenshot();
+      this.handleSaveCroppedScreenshot();
     }
   }
 
@@ -153,21 +155,39 @@ class PopupController {
     }
   }
 
-  private async handleSaveScreenshot(): Promise<void> {
-    logger.info('Save screenshot requested');
+  private async handleSaveCroppedScreenshot(): Promise<void> {
+    logger.info('Save cropped screenshot requested');
 
     try {
-      this.showProgress('Capturing screenshot...');
+      this.showProgress('Capturing cropped screenshot...');
 
       const response = await MessageUtils.sendMessage({
-        type: 'SAVE_SCREENSHOT'
+        type: 'SAVE_CROPPED_SCREENSHOT'
       });
 
       this.showSuccess('Screenshot saved successfully!');
-      logger.info('Screenshot saved', { response });
+      logger.info('Cropped screenshot saved', { response });
     } catch (error) {
       this.showError('Failed to save screenshot');
-      logger.error('Failed to save screenshot', error as Error);
+      logger.error('Failed to save cropped screenshot', error as Error);
+    }
+  }
+
+  private async handleSaveFullScreenshot(): Promise<void> {
+    logger.info('Save full screenshot requested');
+
+    try {
+      this.showProgress('Capturing full screenshot...');
+
+      const response = await MessageUtils.sendMessage({
+        type: 'SAVE_FULL_SCREENSHOT'
+      });
+
+      this.showSuccess('Screenshot saved successfully!');
+      logger.info('Full screenshot saved', { response });
+    } catch (error) {
+      this.showError('Failed to save screenshot');
+      logger.error('Failed to save full screenshot', error as Error);
     }
   }
 

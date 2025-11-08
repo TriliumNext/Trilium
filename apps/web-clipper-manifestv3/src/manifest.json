@@ -11,6 +11,7 @@
   "permissions": [
     "activeTab",
     "contextMenus",
+    "offscreen",
     "scripting",
     "storage",
     "tabs"
@@ -59,7 +60,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["lib/*"],
+      "resources": ["lib/*", "offscreen.html"],
       "matches": ["http://*/*", "https://*/*"]
     }
   ],

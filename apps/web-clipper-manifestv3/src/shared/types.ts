@@ -17,6 +17,15 @@ export interface SavePageMessage extends BaseMessage {
 export interface SaveScreenshotMessage extends BaseMessage {
   type: 'SAVE_SCREENSHOT';
   cropRect?: CropRect;
+  fullScreen?: boolean; // If true, capture full visible area without cropping
+}
+
+export interface SaveCroppedScreenshotMessage extends BaseMessage {
+  type: 'SAVE_CROPPED_SCREENSHOT';
+}
+
+export interface SaveFullScreenshotMessage extends BaseMessage {
+  type: 'SAVE_FULL_SCREENSHOT';
 }
 
 export interface ToastMessage extends BaseMessage {
@@ -86,6 +95,8 @@ export type ExtensionMessage =
   | SaveSelectionMessage
   | SavePageMessage
   | SaveScreenshotMessage
+  | SaveCroppedScreenshotMessage
+  | SaveFullScreenshotMessage
   | ToastMessage
   | LoadScriptMessage
   | GetScreenshotAreaMessage

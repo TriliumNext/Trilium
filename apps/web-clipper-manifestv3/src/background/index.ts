@@ -85,6 +85,12 @@ class BackgroundService {
         case 'SAVE_SCREENSHOT':
           return await this.saveScreenshot(typedMessage.cropRect);
 
+        case 'SAVE_CROPPED_SCREENSHOT':
+          return await this.saveScreenshot(); // Will prompt user for crop area
+
+        case 'SAVE_FULL_SCREENSHOT':
+          return await this.saveScreenshot({ fullScreen: true } as any);
+
         case 'CHECK_EXISTING_NOTE':
           return await this.checkForExistingNote(typedMessage.url);
 
@@ -177,6 +183,14 @@ class BackgroundService {
           await this.saveScreenshot();
           break;
 
+        case 'save-cropped-screenshot':
+          await this.saveScreenshot(); // Will prompt for crop area
+          break;
+
+        case 'save-full-screenshot':
+          await this.saveScreenshot({ fullScreen: true } as any);
+          break;
+
         case 'save-link':
           if (info.linkUrl) {
             await this.saveLink(info.linkUrl || '', info.linkUrl || '');
@@ -209,8 +223,13 @@ class BackgroundService {
           contexts: ['page'] as chrome.contextMenus.ContextType[]
         },
         {
-          id: 'save-screenshot',
-          title: 'Save screenshot to Trilium',
+          id: 'save-cropped-screenshot',
+          title: 'Crop screenshot to Trilium',
+          contexts: ['page'] as chrome.contextMenus.ContextType[]
+        },
+        {
+          id: 'save-full-screenshot',
+          title: 'Save full screenshot to Trilium',
           contexts: ['page'] as chrome.contextMenus.ContextType[]
         },
         {
@@ -533,18 +552,27 @@ class BackgroundService {
     return await this.saveTriliumNote(clipData, false);
   }
 
-  private async saveScreenshot(cropRect?: { x: number; y: number; width: number; height: number }): Promise<TriliumResponse> {
+  private async saveScreenshot(cropRect?: { x: number; y: number; width: number; height: number } | { fullScreen: boolean }): Promise<TriliumResponse> {
     logger.info('Saving screenshot...', { cropRect });
 
     try {
-      let screenshotRect = cropRect;
+      let screenshotRect: { x: number; y: number; width: number; height: number } | undefined;
+      let isFullScreen = false;
 
-      // If no crop rectangle provided, prompt user to select area
-      if (!screenshotRect) {
+      // Check if full screen mode is requested
+      if (cropRect && 'fullScreen' in cropRect && cropRect.fullScreen) {
+        isFullScreen = true;
+        screenshotRect = undefined;
+      } else if (cropRect && 'x' in cropRect) {
+        screenshotRect = cropRect as { x: number; y: number; width: number; height: number };
+      } else {
+        // No crop rectangle provided, prompt user to select area
         try {
           screenshotRect = await this.sendMessageToActiveTab({
             type: 'GET_SCREENSHOT_AREA'
           }) as { x: number; y: number; width: number; height: number };
+
+          logger.debug('Screenshot area selected', { screenshotRect });
         } catch (error) {
           logger.warn('User cancelled screenshot area selection', error as Error);
           await this.showToast(
@@ -556,24 +584,70 @@ class BackgroundService {
         }
       }
 
-      // Capture the visible tab
+      // Validate crop rectangle dimensions (only if cropping)
+      if (screenshotRect && !isFullScreen && (screenshotRect.width < 10 || screenshotRect.height < 10)) {
+        logger.warn('Screenshot area too small', { screenshotRect });
+        await this.showToast(
+          'Screenshot area too small (minimum 10x10 pixels)',
+          'error',
+          3000
+        );
+        throw new Error('Screenshot area too small');
+      }
+
+      // Get active tab
       const tab = await this.getActiveTab();
+
+      if (!tab.id) {
+        throw new Error('Unable to get active tab ID');
+      }
+
+      // Capture the visible tab
       const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, {
-        format: 'png',
-        quality: 90
+        format: 'png'
       });
 
-      // If we have a crop rectangle, we'll need to crop the image
-      // For now, we'll save the full screenshot with crop info in metadata
+      let finalDataUrl = dataUrl;
+
+      // If we have a crop rectangle and not in full screen mode, crop the image
+      if (screenshotRect && !isFullScreen) {
+        // Get zoom level and device pixel ratio for coordinate adjustment
+        const zoom = await chrome.tabs.getZoom(tab.id);
+        const devicePixelRatio = await this.getDevicePixelRatio(tab.id);
+        const totalZoom = zoom * devicePixelRatio;
+
+        logger.debug('Zoom information', { zoom, devicePixelRatio, totalZoom });
+
+        // Adjust crop rectangle for zoom level
+        const adjustedRect = {
+          x: Math.round(screenshotRect.x * totalZoom),
+          y: Math.round(screenshotRect.y * totalZoom),
+          width: Math.round(screenshotRect.width * totalZoom),
+          height: Math.round(screenshotRect.height * totalZoom)
+        };
+
+        logger.debug('Adjusted crop rectangle', { original: screenshotRect, adjusted: adjustedRect });
+
+        finalDataUrl = await this.cropImageWithOffscreen(dataUrl, adjustedRect);
+      }
+
+      // Create clip data with the screenshot
+      const screenshotType = isFullScreen ? 'Full Screenshot' : (screenshotRect ? 'Cropped Screenshot' : 'Screenshot');
       const clipData: ClipData = {
-        title: `Screenshot - ${new Date().toLocaleString()}`,
-        content: `<img src="${dataUrl}" alt="Screenshot" style="max-width: 100%; height: auto;">`,
+        title: `${screenshotType} - ${tab.title || 'Untitled'} - ${new Date().toLocaleString()}`,
+        content: `<img src="screenshot.png" alt="Screenshot" style="max-width: 100%; height: auto;">`,
         url: tab.url || '',
         type: 'screenshot',
+        images: [{
+          imageId: 'screenshot.png',
+          src: 'screenshot.png',
+          dataUrl: finalDataUrl
+        }],
         metadata: {
           screenshotData: {
-            dataUrl,
+            screenshotType,
             cropRect: screenshotRect,
+            isFullScreen,
             timestamp: new Date().toISOString(),
             tabTitle: tab.title || 'Unknown'
           }
@@ -611,6 +685,70 @@ class BackgroundService {
         );
       }
 
+      throw error;
+    }
+  }
+
+  /**
+   * Get the device pixel ratio from the active tab
+   */
+  private async getDevicePixelRatio(tabId: number): Promise<number> {
+    try {
+      const results = await chrome.scripting.executeScript({
+        target: { tabId },
+        func: () => window.devicePixelRatio
+      });
+
+      if (results && results[0] && typeof results[0].result === 'number') {
+        return results[0].result;
+      }
+
+      return 1; // Default if we can't get it
+    } catch (error) {
+      logger.warn('Failed to get device pixel ratio, using default', error as Error);
+      return 1;
+    }
+  }
+
+  /**
+   * Crop an image using an offscreen document
+   * Service workers don't have access to Canvas API, so we need an offscreen document
+   */
+  private async cropImageWithOffscreen(
+    dataUrl: string,
+    cropRect: { x: number; y: number; width: number; height: number }
+  ): Promise<string> {
+    try {
+      // Try to create offscreen document
+      // If it already exists, this will fail silently
+      try {
+        await chrome.offscreen.createDocument({
+          url: 'offscreen.html',
+          reasons: ['DOM_SCRAPING' as chrome.offscreen.Reason],
+          justification: 'Crop screenshot using Canvas API'
+        });
+
+        logger.debug('Offscreen document created for image cropping');
+      } catch (error) {
+        // Document might already exist, that's fine
+        logger.debug('Offscreen document creation skipped (may already exist)');
+      }
+
+      // Send message to offscreen document to crop the image
+      const response = await chrome.runtime.sendMessage({
+        type: 'CROP_IMAGE',
+        dataUrl,
+        cropRect
+      }) as { success: boolean; dataUrl?: string; error?: string };
+
+      if (!response.success || !response.dataUrl) {
+        throw new Error(response.error || 'Failed to crop image');
+      }
+
+      logger.debug('Image cropped successfully');
+      return response.dataUrl;
+    } catch (error) {
+      logger.error('Failed to crop image with offscreen document', error as Error);
       throw error;
     }
   }
