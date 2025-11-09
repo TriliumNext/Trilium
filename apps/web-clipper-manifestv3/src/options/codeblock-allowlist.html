@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Code Block Preservation - Trilium Web Clipper</title>
+  <link rel="stylesheet" href="options.css">
+  <link rel="stylesheet" href="codeblock-allowlist.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header Section -->
+    <div class="header-section">
+      <h1>⚙ Code Block Preservation Settings</h1>
+      <p class="page-description">
+        Manage which websites preserve code blocks in their original positions when clipping technical articles.
+      </p>
+    </div>
+
+    <!-- Info Box explaining the feature -->
+    <div class="info-box">
+      <div class="info-icon">ℹ️</div>
+      <div class="info-content">
+        <h3>How Code Block Preservation Works</h3>
+        <p>
+          When clipping articles from technical sites, this feature ensures that code examples remain 
+          in their correct positions within the text. Without this feature, code blocks may be removed 
+          or relocated during the clipping process.
+        </p>
+        <p>
+          You can enable preservation for specific sites using the allow list below, or enable 
+          <strong>auto-detect</strong> to automatically preserve code blocks on all websites.
+        </p>
+        <p class="help-link-container">
+          📖 <a href="https://github.com/TriliumNext/Trilium/blob/develop/apps/web-clipper-manifestv3/docs/USER_GUIDE_CODE_BLOCK_PRESERVATION.md" target="_blank" rel="noopener noreferrer">View Complete User Guide</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- Master Settings Section -->
+    <div class="settings-section">
+      <h2>🎚️ Master Settings</h2>
+      
+      <div class="setting-item">
+        <div class="setting-header">
+          <label class="toggle-label">
+            <input type="checkbox" id="enable-preservation" class="toggle-input">
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">Enable Code Block Preservation</span>
+          </label>
+        </div>
+        <p class="setting-description">
+          Globally enable or disable code block preservation. When disabled, code blocks 
+          will be handled normally by the article extractor (may be removed or relocated).
+        </p>
+      </div>
+
+      <div class="setting-item">
+        <div class="setting-header">
+          <label class="toggle-label">
+            <input type="checkbox" id="auto-detect" class="toggle-input">
+            <span class="toggle-slider"></span>
+            <span class="toggle-text">Auto-Detect Code Blocks</span>
+          </label>
+        </div>
+        <p class="setting-description">
+          Automatically preserve code blocks on <strong>all websites</strong>, regardless of 
+          the allow list below. Recommended for users who frequently clip technical content 
+          from various sources.
+        </p>
+      </div>
+    </div>
+
+    <!-- Allow List Management Section -->
+    <div class="allowlist-section">
+      <h2>📋 Allow List</h2>
+      <p class="section-description">
+        Add specific websites where code block preservation should be applied. 
+        The allow list is ignored when <strong>Auto-Detect</strong> is enabled.
+      </p>
+
+      <!-- Add Entry Form -->
+      <div class="add-entry-form">
+        <div class="form-row">
+          <div class="form-group form-type">
+            <label for="entry-type">Type:</label>
+            <select id="entry-type" class="form-control">
+              <option value="domain">Domain</option>
+              <option value="url">Exact URL</option>
+            </select>
+          </div>
+          
+          <div class="form-group form-value">
+            <label for="entry-value">Value:</label>
+            <input 
+              type="text" 
+              id="entry-value" 
+              class="form-control" 
+              placeholder="e.g., stackoverflow.com or https://example.com/article"
+            >
+          </div>
+          
+          <div class="form-group form-action">
+            <button type="button" id="add-entry-btn" class="btn-primary">
+              ➕ Add Entry
+            </button>
+          </div>
+        </div>
+
+        <div class="form-help">
+          <div class="help-item">
+            <strong>Domain:</strong> Matches the entire domain and all subdomains 
+            (e.g., <code>stackoverflow.com</code> matches <code>stackoverflow.com</code> and <code>meta.stackoverflow.com</code>)
+          </div>
+          <div class="help-item">
+            <strong>Exact URL:</strong> Matches only the specific URL provided 
+            (e.g., <code>https://example.com/docs</code>)
+          </div>
+          <div class="help-item">
+            <strong>Wildcard Domains:</strong> Use <code>*.</code> prefix for explicit subdomain matching 
+            (e.g., <code>*.github.com</code> matches <code>gist.github.com</code> but not <code>github.com</code>)
+          </div>
+        </div>
+      </div>
+
+      <!-- Error/Success Messages -->
+      <div id="message-container" class="message-container" style="display: none;">
+        <div id="message-content" class="message-content"></div>
+      </div>
+
+      <!-- Allow List Table -->
+      <div class="allowlist-table-container">
+        <table class="allowlist-table" id="allowlist-table">
+          <thead>
+            <tr>
+              <th class="col-type">Type</th>
+              <th class="col-value">Value</th>
+              <th class="col-status">Status</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="allowlist-tbody">
+            <!-- Populated dynamically by JavaScript -->
+            <tr class="empty-state">
+              <td colspan="4" class="empty-message">
+                <div class="empty-icon">📝</div>
+                <div class="empty-text">No entries in allow list. Add your first entry above!</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Table Legend -->
+      <div class="table-legend">
+        <div class="legend-item">
+          <span class="badge badge-default">Default</span>
+          <span>Pre-configured entry (cannot be removed)</span>
+        </div>
+        <div class="legend-item">
+          <span class="badge badge-custom">Custom</span>
+          <span>User-added entry (can be removed)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="actions">
+      <button type="button" id="reset-defaults-btn" class="secondary-btn">
+        🔄 Reset to Defaults
+      </button>
+      <button type="button" id="back-btn" class="secondary-btn">
+        ← Back to Settings
+      </button>
+    </div>
+
+    <!-- Status Messages (for save operations) -->
+    <div id="status-message" class="status-message" style="display: none;">
+      <span id="status-text"></span>
+    </div>
+  </div>
+
+  <!-- Load JavaScript -->
+  <script type="module" src="codeblock-allowlist.ts"></script>
+</body>
+</html>

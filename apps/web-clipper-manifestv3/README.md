@@ -6,6 +6,7 @@ A modern Chrome extension for saving web content to [Trilium Notes](https://gith
 
 - 🔥 **Modern Manifest V3** - Built with latest Chrome extension standards
 - 📝 **Multiple Save Options** - Selection, full page, screenshots, links, and images
+- 💻 **Code Block Preservation** - Preserve code blocks in technical articles ([User Guide](docs/USER_GUIDE_CODE_BLOCK_PRESERVATION.md))
 - ⌨️ **Keyboard Shortcuts** - Quick access with customizable hotkeys
 - 🎨 **Modern UI** - Clean, responsive popup interface
 - 🛠️ **TypeScript** - Full type safety and developer experience
@@ -66,6 +67,16 @@ Ensure your Trilium server is accessible and ETAPI is enabled:
 1. In Trilium, go to Options → ETAPI
 2. Create a new token or use an existing one
 3. Enter the token in the extension options
+
+### Code Block Preservation
+
+Save technical articles with code blocks in their original positions:
+1. Go to Options → Code Block Preservation → Configure Allow List
+2. Enable "Code Block Preservation"
+3. Use the default allow list (Stack Overflow, GitHub, etc.) or add your own sites
+4. Optionally enable "Auto-detect" to preserve code blocks on all sites
+
+**📖 [Complete Code Block Preservation Guide](docs/USER_GUIDE_CODE_BLOCK_PRESERVATION.md)**
 
 ## 🔧 Development
 

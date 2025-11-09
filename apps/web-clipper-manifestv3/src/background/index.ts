@@ -1,6 +1,7 @@
 import { Logger, Utils, MessageUtils } from '@/shared/utils';
 import { ExtensionMessage, ClipData, TriliumResponse, ContentScriptErrorMessage } from '@/shared/types';
 import { triliumServerFacade } from '@/shared/trilium-server';
+import { initializeDefaultSettings } from '@/shared/code-block-settings';
 import TurndownService from 'turndown';
 import { gfm } from 'turndown-plugin-gfm';
 import * as cheerio from 'cheerio';
@@ -64,6 +65,9 @@ class BackgroundService {
     if (details.reason === 'install') {
       // Set default configuration
       await this.setDefaultConfiguration();
+
+      // Initialize code block preservation settings
+      await initializeDefaultSettings();
 
       // Open options page for initial setup
       chrome.runtime.openOptionsPage();
@@ -1521,7 +1525,73 @@ class BackgroundService {
     // Add GitHub Flavored Markdown support (tables, strikethrough, etc.)
     turndown.use(gfm);
 
-    return turndown.turndown(html);
+    // Enhanced code block handling to preserve language information
+    turndown.addRule('codeBlock', {
+      filter: (node) => {
+        return (
+          node.nodeName === 'PRE' &&
+          node.firstChild !== null &&
+          node.firstChild.nodeName === 'CODE'
+        );
+      },
+      replacement: (content, node) => {
+        try {
+          const codeElement = (node as HTMLElement).firstChild as HTMLElement;
+
+          // Extract language from class names
+          // Common patterns: language-javascript, lang-js, javascript, highlight-js, etc.
+          let language = '';
+          const className = codeElement.className || '';
+
+          const langMatch = className.match(/(?:language-|lang-|highlight-)([a-zA-Z0-9_-]+)|^([a-zA-Z0-9_-]+)$/);
+          if (langMatch) {
+            language = langMatch[1] || langMatch[2] || '';
+          }
+
+          // Get the code content, preserving whitespace
+          const codeContent = codeElement.textContent || '';
+
+          // Clean up the content but preserve essential formatting
+          const cleanContent = codeContent.replace(/\n\n\n+/g, '\n\n').trim();
+
+          logger.debug('Converting code block to markdown', {
+            language,
+            contentLength: cleanContent.length,
+            className
+          });
+
+          // Return fenced code block with language identifier
+          return `\n\n\`\`\`${language}\n${cleanContent}\n\`\`\`\n\n`;
+        } catch (error) {
+          logger.error('Error converting code block', error as Error);
+          // Fallback to default behavior
+          return '\n\n```\n' + content + '\n```\n\n';
+        }
+      }
+    });
+
+    // Handle inline code elements
+    turndown.addRule('inlineCode', {
+      filter: ['code'],
+      replacement: (content) => {
+        if (!content.trim()) {
+          return '';
+        }
+        // Escape backticks in inline code
+        const escapedContent = content.replace(/`/g, '\\`');
+        return '`' + escapedContent + '`';
+      }
+    });
+
+    logger.debug('Converting HTML to Markdown', { htmlLength: html.length });
+    const markdown = turndown.turndown(html);
+    logger.info('Markdown conversion complete', {
+      htmlLength: html.length,
+      markdownLength: markdown.length,
+      codeBlocks: (markdown.match(/```/g) || []).length / 2
+    });
+
+    return markdown;
   }
 
   private async showToast(

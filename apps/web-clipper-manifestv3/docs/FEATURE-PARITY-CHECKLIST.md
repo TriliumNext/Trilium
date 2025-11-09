@@ -38,7 +38,7 @@
 | Image downloading | ✅ | All capture types | `background/index.ts:832-930` |
 | Screenshot cropping | ✅ | Implemented with offscreen document | `background/index.ts:536-668`, `offscreen/offscreen.ts` |
 | Date metadata extraction | ✅ | Fully implemented with customizable formats | `shared/date-formatter.ts`, `content/index.ts:313-328`, `options/` |
-| Codeblock formatting preservation | ❌ | See Trilium Issue [#2092](https://github.com/TriliumNext/Trilium/issues/2092) | - |
+| Codeblock formatting preservation | ✅ | Preserves code blocks through Readability + enhanced Turndown rules | `content/index.ts:506-648`, `background/index.ts:1512-1590` |
 
 ---
 

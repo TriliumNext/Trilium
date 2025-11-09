@@ -64,6 +64,18 @@ await esbuild.build({
   sourcemap: false,
 })
 
+// Build codeblock-allowlist
+console.log('Building codeblock-allowlist...')
+await esbuild.build({
+  entryPoints: [resolve(__dirname, 'src/options/codeblock-allowlist.ts')],
+  bundle: true,
+  format: 'iife',
+  outfile: resolve(__dirname, 'dist/codeblock-allowlist.js'),
+  platform: 'browser',
+  target: 'es2022',
+  sourcemap: false,
+})
+
 // Build logs
 console.log('Building logs...')
 await esbuild.build({
@@ -121,6 +133,11 @@ let offscreenHtml = readFileSync(resolve(__dirname, 'src/offscreen/offscreen.htm
 offscreenHtml = fixHtmlScriptReferences(offscreenHtml, 'offscreen')
 writeFileSync(resolve(__dirname, 'dist/offscreen.html'), offscreenHtml)
 
+// Copy and fix codeblock-allowlist.html
+let codeblockAllowlistHtml = readFileSync(resolve(__dirname, 'src/options/codeblock-allowlist.html'), 'utf-8')
+codeblockAllowlistHtml = fixHtmlScriptReferences(codeblockAllowlistHtml, 'codeblock-allowlist')
+writeFileSync(resolve(__dirname, 'dist/codeblock-allowlist.html'), codeblockAllowlistHtml)
+
 // Copy CSS files
 console.log('Copying CSS files...')
 // Copy shared theme.css first
@@ -141,6 +158,10 @@ copyFileSync(
 copyFileSync(
   resolve(__dirname, 'src/logs/logs.css'),
   resolve(__dirname, 'dist/logs.css')
+)
+copyFileSync(
+  resolve(__dirname, 'src/options/codeblock-allowlist.css'),
+  resolve(__dirname, 'dist/codeblock-allowlist.css')
 )
 
 // Copy icons folder

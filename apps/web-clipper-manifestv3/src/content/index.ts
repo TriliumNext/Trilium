@@ -2,8 +2,9 @@ import { Logger, MessageUtils } from '@/shared/utils';
 import { ClipData, ImageData } from '@/shared/types';
 import { HTMLSanitizer } from '@/shared/html-sanitizer';
 import { DuplicateDialog } from './duplicate-dialog';
-import { Readability } from '@mozilla/readability';
 import { DateFormatter } from '@/shared/date-formatter';
+import { extractArticle } from '@/shared/article-extraction';
+import type { ArticleExtractionResult } from '@/shared/article-extraction';
 
 const logger = Logger.create('Content', 'content');
 
@@ -183,14 +184,20 @@ class ContentScript {
       // - Proper MV3 message passing between phases
       // ============================================================
 
-      logger.info('Phase 1: Running Readability on real DOM...');
+      logger.info('Phase 1: Running article extraction with code block preservation...');
 
-      // Clone the document to preserve the original page
-      // Readability modifies the passed document, so we work with a copy
-      const documentCopy = document.cloneNode(true) as Document;
+      // ============================================================
+      // CODE BLOCK PRESERVATION SYSTEM
+      // ============================================================
+      // The article extraction module intelligently determines whether to
+      // apply code block preservation based on:
+      // - User settings (enabled/disabled globally)
+      // - Site allow list (specific domains/URLs)
+      // - Auto-detection (presence of code blocks)
+      // ============================================================
 
-      // Capture pre-Readability stats
-      const preReadabilityStats = {
+      // Capture pre-extraction stats for logging
+      const preExtractionStats = {
         totalElements: document.body.querySelectorAll('*').length,
         scripts: document.body.querySelectorAll('script').length,
         styles: document.body.querySelectorAll('style, link[rel="stylesheet"]').length,
@@ -199,22 +206,25 @@ class ContentScript {
         bodyLength: document.body.innerHTML.length
       };
 
-      logger.debug('Pre-Readability DOM stats', preReadabilityStats);
+      logger.debug('Pre-extraction DOM stats', preExtractionStats);
 
-      // Run @mozilla/readability to extract the main article content
-      const readability = new Readability(documentCopy);
-      const article = readability.parse();
+      // Extract article using centralized extraction module
+      // This will automatically handle code block preservation based on settings
+      const extractionResult: ArticleExtractionResult | null = await extractArticle(
+        document,
+        window.location.href
+      );
 
-      if (!article) {
-        logger.warn('Readability failed to parse article, falling back to basic extraction');
+      if (!extractionResult || !extractionResult.content) {
+        logger.warn('Article extraction failed, falling back to basic extraction');
         return this.getBasicPageContent();
       }
 
       // Create temp container to analyze extracted content
       const tempContainer = document.createElement('div');
-      tempContainer.innerHTML = article.content;
+      tempContainer.innerHTML = extractionResult.content;
 
-      const postReadabilityStats = {
+      const postExtractionStats = {
         totalElements: tempContainer.querySelectorAll('*').length,
         paragraphs: tempContainer.querySelectorAll('p').length,
         headings: tempContainer.querySelectorAll('h1, h2, h3, h4, h5, h6').length,
@@ -224,26 +234,31 @@ class ContentScript {
         tables: tempContainer.querySelectorAll('table').length,
         codeBlocks: tempContainer.querySelectorAll('pre, code').length,
         blockquotes: tempContainer.querySelectorAll('blockquote').length,
-        contentLength: article.content?.length || 0
+        contentLength: extractionResult.content.length
       };
 
-      logger.info('Phase 1 complete: Readability extracted article', {
-        title: article.title,
-        byline: article.byline,
-        excerpt: article.excerpt?.substring(0, 100),
-        textLength: article.textContent?.length || 0,
-        elementsRemoved: preReadabilityStats.totalElements - postReadabilityStats.totalElements,
-        contentStats: postReadabilityStats,
+      logger.info('Phase 1 complete: Article extraction successful', {
+        title: extractionResult.title,
+        byline: extractionResult.byline,
+        excerpt: extractionResult.excerpt?.substring(0, 100),
+        textLength: extractionResult.textContent?.length || 0,
+        elementsRemoved: preExtractionStats.totalElements - postExtractionStats.totalElements,
+        contentStats: postExtractionStats,
+        extractionMethod: extractionResult.extractionMethod,
+        preservationApplied: extractionResult.preservationApplied,
+        codeBlocksPreserved: extractionResult.codeBlocksPreserved || 0,
+        codeBlocksDetected: extractionResult.codeBlocksDetected,
+        codeBlocksDetectedCount: extractionResult.codeBlocksDetectedCount,
         extraction: {
-          kept: postReadabilityStats.totalElements,
-          removed: preReadabilityStats.totalElements - postReadabilityStats.totalElements,
-          reductionPercent: Math.round(((preReadabilityStats.totalElements - postReadabilityStats.totalElements) / preReadabilityStats.totalElements) * 100)
+          kept: postExtractionStats.totalElements,
+          removed: preExtractionStats.totalElements - postExtractionStats.totalElements,
+          reductionPercent: Math.round(((preExtractionStats.totalElements - postExtractionStats.totalElements) / preExtractionStats.totalElements) * 100)
         }
       });
 
       // Create a temporary container for the article HTML
       const articleContainer = document.createElement('div');
-      articleContainer.innerHTML = article.content;
+      articleContainer.innerHTML = extractionResult.content;
 
       // Process embedded media (videos, audio, advanced images)
       this.processEmbeddedMedia(articleContainer);
@@ -336,7 +351,7 @@ class ContentScript {
       }
 
       logger.info('Content extraction complete - ready for Phase 3 in background script', {
-        title: article.title,
+        title: extractionResult.title,
         contentLength: sanitizedHTML.length,
         imageCount: images.length,
         url: window.location.href
@@ -345,7 +360,7 @@ class ContentScript {
       // Return the sanitized article content
       // Background script will handle Phase 3 (Cheerio processing)
       return {
-        title: article.title || this.getPageTitle(),
+        title: extractionResult.title || this.getPageTitle(),
         content: sanitizedHTML,
         url: window.location.href,
         images: images,
@@ -355,11 +370,11 @@ class ContentScript {
           modifiedDate: dates.modifiedDate?.toISOString(),
           labels,
           readabilityProcessed: true, // Flag to indicate Readability was successful
-          excerpt: article.excerpt
+          excerpt: extractionResult.excerpt
         }
       };
     } catch (error) {
-      logger.error('Failed to capture page content with Readability', error as Error);
+      logger.error('Failed to capture page content with article extraction', error as Error);
       // Fallback to basic content extraction
       return this.getBasicPageContent();
     }
@@ -995,6 +1010,16 @@ class ContentScript {
 
     return colors[variant as keyof typeof colors] || colors.info;
   }
+
+  // ============================================================
+  // CODE BLOCK PRESERVATION SYSTEM
+  // ============================================================
+  // Code block preservation is now handled by the centralized
+  // article-extraction module (src/shared/article-extraction.ts)
+  // which uses the readability-code-preservation module internally.
+  // This provides consistent behavior across the extension.
+  // ============================================================
+
 }
 
 // Initialize the content script

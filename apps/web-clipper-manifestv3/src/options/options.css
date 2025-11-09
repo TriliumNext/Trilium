@@ -356,6 +356,104 @@ button:disabled {
   margin-top: 0;
 }
 
+/* Code Block Preservation Section */
+.code-block-preservation-section {
+  background: var(--color-surface-secondary);
+  padding: 20px;
+  border-radius: 6px;
+  margin-top: 20px;
+  border: 1px solid var(--color-border-primary);
+}
+
+.code-block-preservation-section h3 {
+  margin-top: 0;
+  color: var(--color-text-primary);
+  margin-bottom: 10px;
+}
+
+.code-block-preservation-section > p {
+  color: var(--color-text-secondary);
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.feature-description {
+  margin-bottom: 20px;
+}
+
+.feature-description .help-text {
+  background: var(--color-info-bg);
+  border-left: 3px solid var(--color-info-border);
+  padding: 10px 12px;
+  border-radius: 4px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.settings-link-container {
+  margin-top: 15px;
+}
+
+.settings-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--color-surface);
+  border: 2px solid var(--color-border-primary);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--color-text-primary);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.settings-link:hover {
+  background: var(--color-surface-hover);
+  border-color: var(--color-primary);
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.settings-link:active {
+  transform: translateX(1px);
+}
+
+.link-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.link-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.link-content strong {
+  color: var(--color-text-primary);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.link-description {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+}
+
+.link-arrow {
+  font-size: 20px;
+  color: var(--color-primary);
+  font-weight: bold;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.settings-link:hover .link-arrow {
+  transform: translateX(4px);
+}
+
 /* Date/Time Format Section */
 .datetime-format-section {
   background: var(--color-surface-secondary);
