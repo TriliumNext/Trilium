@@ -91,7 +91,7 @@ _(No priority issues remaining in this category)_
 |---------|--------|-------|----------|
 | Link with custom note | ✅ | Full UI with title parsing | - |
 | Date metadata | ✅ | publishedDate, modifiedDate with customizable formats | - |
-| Interactive toasts | ⚠️ | No "Open in Trilium" button | LOW |
+| Interactive toasts | ✅ | With "Open in Trilium" button when noteId provided | - |
 | Save tabs feature | ✅ | Bulk save all tabs as note with links | - |
 | Meta Note Popup option | ❌ | See Trilium Issue [#5350](https://github.com/TriliumNext/Trilium/issues/5350) | MED |
 | Add custom keyboard shortcuts | ❌ | See Trilium Issue [#5349](https://github.com/TriliumNext/Trilium/issues/5349) | LOW |

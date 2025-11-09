@@ -36,6 +36,15 @@
       </div>
 
       <div class="form-group">
+        <label for="toast-duration">Toast notification duration:</label>
+        <div class="duration-control">
+          <input type="range" id="toast-duration" min="1000" max="10000" step="500" value="3000">
+          <span id="toast-duration-value">3.0s</span>
+        </div>
+        <small>How long toast notifications stay on screen (1-10 seconds)</small>
+      </div>
+
+      <div class="form-group">
         <label for="screenshot-format">Screenshot Format:</label>
         <select id="screenshot-format">
           <option value="png">PNG (Higher Quality)</option>

@@ -181,6 +181,7 @@ export interface ExtensionConfig {
   autoSave: boolean;
   defaultNoteTitle: string;
   enableToasts: boolean;
+  toastDuration?: number; // Duration in milliseconds (default: 3000)
   screenshotFormat: 'png' | 'jpeg';
   screenshotQuality: number;
   dateTimeFormat?: 'preset' | 'custom';

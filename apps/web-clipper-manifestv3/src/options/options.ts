@@ -67,6 +67,10 @@ class OptionsController {
     // Format help toggle
     const helpToggle = document.getElementById('format-help-toggle');
     helpToggle?.addEventListener('click', this.toggleFormatHelp.bind(this));
+
+    // Toast duration slider
+    const toastDurationSlider = document.getElementById('toast-duration') as HTMLInputElement;
+    toastDurationSlider?.addEventListener('input', this.updateToastDurationDisplay.bind(this));
   }
 
   private async loadCurrentSettings(): Promise<void> {
@@ -78,12 +82,17 @@ class OptionsController {
       const defaultTitle = document.getElementById('default-title') as HTMLInputElement;
       const autoSave = document.getElementById('auto-save') as HTMLInputElement;
       const enableToasts = document.getElementById('enable-toasts') as HTMLInputElement;
+      const toastDuration = document.getElementById('toast-duration') as HTMLInputElement;
       const screenshotFormat = document.getElementById('screenshot-format') as HTMLSelectElement;
 
       if (triliumUrl) triliumUrl.value = config.triliumServerUrl || '';
       if (defaultTitle) defaultTitle.value = config.defaultNoteTitle || 'Web Clip - {title}';
       if (autoSave) autoSave.checked = config.autoSave || false;
       if (enableToasts) enableToasts.checked = config.enableToasts !== false; // default true
+      if (toastDuration) {
+        toastDuration.value = String(config.toastDuration || 3000);
+        this.updateToastDurationDisplay();
+      }
       if (screenshotFormat) screenshotFormat.value = config.screenshotFormat || 'png';
 
       // Load content format preference (default to 'html')
@@ -147,6 +156,7 @@ class OptionsController {
         defaultNoteTitle: (document.getElementById('default-title') as HTMLInputElement).value.trim(),
         autoSave: (document.getElementById('auto-save') as HTMLInputElement).checked,
         enableToasts: (document.getElementById('enable-toasts') as HTMLInputElement).checked,
+        toastDuration: parseInt((document.getElementById('toast-duration') as HTMLInputElement).value, 10) || 3000,
         screenshotFormat: (document.getElementById('screenshot-format') as HTMLSelectElement).value as 'png' | 'jpeg',
         screenshotQuality: 0.9,
         dateTimeFormat: dateTimeFormat as 'preset' | 'custom',
@@ -411,6 +421,17 @@ class OptionsController {
       if (button) {
         button.textContent = isVisible ? '? Format Guide' : '✕ Close Guide';
       }
+    }
+  }
+
+  private updateToastDurationDisplay(): void {
+    const slider = document.getElementById('toast-duration') as HTMLInputElement;
+    const valueDisplay = document.getElementById('toast-duration-value');
+
+    if (slider && valueDisplay) {
+      const milliseconds = parseInt(slider.value, 10);
+      const seconds = (milliseconds / 1000).toFixed(1);
+      valueDisplay.textContent = `${seconds}s`;
     }
   }
 }

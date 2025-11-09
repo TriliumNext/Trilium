@@ -682,3 +682,59 @@ button:disabled {
   font-size: 13px;
   color: var(--color-text-secondary);
 }
+
+/* Toast duration control */
+.duration-control {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.duration-control input[type="range"] {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-border-primary);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.duration-control input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  cursor: pointer;
+  transition: var(--theme-transition);
+}
+
+.duration-control input[type="range"]::-webkit-slider-thumb:hover {
+  background: var(--color-primary-hover);
+  transform: scale(1.1);
+}
+
+.duration-control input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  cursor: pointer;
+  border: none;
+  transition: var(--theme-transition);
+}
+
+.duration-control input[type="range"]::-moz-range-thumb:hover {
+  background: var(--color-primary-hover);
+  transform: scale(1.1);
+}
+
+#toast-duration-value {
+  min-width: 45px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: 14px;
+}

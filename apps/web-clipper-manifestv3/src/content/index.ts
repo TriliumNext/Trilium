@@ -117,7 +117,7 @@ class ContentScript {
           return this.getScreenshotArea();
 
         case 'SHOW_TOAST':
-          return this.showToast(message.message, message.variant, message.duration);
+          return await this.showToast(message.message, message.variant, message.duration, message.noteId);
 
         case 'SHOW_DUPLICATE_DIALOG':
           return this.showDuplicateDialog(message.existingNoteId, message.url);
@@ -954,11 +954,60 @@ class ContentScript {
     return selection;
   }
 
-  private showToast(message: string, variant: string = 'info', duration: number = 3000): { success: boolean } {
-    // Create a simple toast notification
+  private async showToast(message: string, variant: string = 'info', duration?: number, noteId?: string): Promise<{ success: boolean }> {
+    // Load user's preferred toast duration if not explicitly provided
+    if (duration === undefined) {
+      try {
+        const settings = await chrome.storage.sync.get('toastDuration');
+        duration = settings.toastDuration || 3000; // default to 3 seconds
+      } catch (error) {
+        logger.error('Failed to load toast duration setting', error as Error);
+        duration = 3000; // fallback to default
+      }
+    }
+
+    // Create toast container
     const toast = document.createElement('div');
     toast.className = `trilium-toast trilium-toast--${variant}`;
-    toast.textContent = message;
+
+    // If noteId is provided, create an interactive toast with "Open in Trilium" link
+    if (noteId) {
+      // Create message text
+      const messageSpan = document.createElement('span');
+      messageSpan.textContent = message + ' ';
+      toast.appendChild(messageSpan);
+
+      // Create "Open in Trilium" link
+      const link = document.createElement('a');
+      link.textContent = 'Open in Trilium';
+      link.href = '#';
+      link.style.cssText = 'color: white; text-decoration: underline; cursor: pointer; font-weight: 500;';
+
+      // Handle click to open note in Trilium
+      link.addEventListener('click', async (e) => {
+        e.preventDefault();
+        logger.info('Opening note in Trilium from toast', { noteId });
+
+        try {
+          // Send message to background to open the note
+          await chrome.runtime.sendMessage({
+            type: 'OPEN_NOTE',
+            noteId: noteId
+          });
+        } catch (error) {
+          logger.error('Failed to open note from toast', error as Error);
+        }
+      });
+
+      toast.appendChild(link);
+
+      // Make the toast interactive (enable pointer events)
+      toast.style.pointerEvents = 'auto';
+    } else {
+      // Simple non-interactive toast
+      toast.textContent = message;
+      toast.style.pointerEvents = 'none';
+    }
 
     // Basic styling
     Object.assign(toast.style, {

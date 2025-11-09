@@ -527,7 +527,7 @@ export class TriliumServerFacade {
     try {
       logger.info('Opening note in Trilium', { noteId });
 
-      await this.callService('GET', `open/${noteId}`);
+      await this.callService('POST', `open/${noteId}`);
 
       logger.info('Note open request sent successfully', { noteId });
     } catch (error) {
