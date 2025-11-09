@@ -9,6 +9,8 @@ import totp from "./totp.js";
 import openID from "./open_id.js";
 import options from "./options.js";
 import attributes from "./attributes.js";
+import userManagement from "./user_management.js";
+import cls from "./cls.js";
 import type { NextFunction, Request, Response } from "express";
 
 let noAuthentication = false;
@@ -24,6 +26,12 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
     const lastAuthState = req.session.lastAuthState || { totpEnabled: false, ssoEnabled: false };
 
     if (isElectron || noAuthentication) {
+        // Store userId in CLS for note ownership tracking
+        if (req.session && req.session.userId) {
+            cls.set('userId', req.session.userId);
+        } else {
+            cls.set('userId', 1); // Default to admin
+        }
         next();
         return;
     } else if (!req.session.loggedIn && !noAuthentication) {
@@ -50,12 +58,24 @@ function checkAuth(req: Request, res: Response, next: NextFunction) {
         return;
     } else if (currentSsoStatus) {
         if (req.oidc?.isAuthenticated() && req.session.loggedIn) {
+            // Store userId in CLS for note ownership tracking
+            if (req.session && req.session.userId) {
+                cls.set('userId', req.session.userId);
+            } else {
+                cls.set('userId', 1); // Default to admin
+            }
             next();
             return;
         }
         res.redirect('login');
         return;
     } else {
+        // Store userId in CLS for note ownership tracking
+        if (req.session && req.session.userId) {
+            cls.set('userId', req.session.userId);
+        } else {
+            cls.set('userId', 1); // Default to admin
+        }
         next();
     }
 }
@@ -77,6 +97,12 @@ function checkApiAuthOrElectron(req: Request, res: Response, next: NextFunction)
         console.warn(`Missing session with ID '${req.sessionID}'.`);
         reject(req, res, "Logged in session not found");
     } else {
+        // Store userId in CLS for note ownership tracking
+        if (req.session && req.session.userId) {
+            cls.set('userId', req.session.userId);
+        } else {
+            cls.set('userId', 1); // Default to admin
+        }
         next();
     }
 }
@@ -86,6 +112,12 @@ function checkApiAuth(req: Request, res: Response, next: NextFunction) {
         console.warn(`Missing session with ID '${req.sessionID}'.`);
         reject(req, res, "Logged in session not found");
     } else {
+        // Store userId in CLS for note ownership tracking
+        if (req.session && req.session.userId) {
+            cls.set('userId', req.session.userId);
+        } else {
+            cls.set('userId', 1); // Default to admin
+        }
         next();
     }
 }
@@ -166,6 +198,53 @@ function checkCredentials(req: Request, res: Response, next: NextFunction) {
     }
 }
 
+/**
+ * Check if the current user has admin privileges
+ */
+function checkAdmin(req: Request, res: Response, next: NextFunction) {
+    if (!req.session.userId) {
+        reject(req, res, "Not logged in");
+        return;
+    }
+
+    if (!userManagement.isAdmin(req.session.userId)) {
+        reject(req, res, "Admin access required");
+        return;
+    }
+
+    next();
+}
+
+/**
+ * Check if the current user has a specific permission
+ * Note: Simplified for basic multi-user support
+ */
+function checkPermission(resource: string, action: string) {
+    return (req: Request, res: Response, next: NextFunction) => {
+        if (!req.session.userId) {
+            reject(req, res, "Not logged in");
+            return;
+        }
+
+        // Basic permission check: admins have all permissions
+        if (userManagement.isAdmin(req.session.userId)) {
+            next();
+        } else {
+            reject(req, res, `Permission denied: ${resource}.${action}`);
+        }
+    };
+}
+
+/**
+ * Get the current user from the session
+ */
+function getCurrentUser(req: Request) {
+    if (req.session.userId) {
+        return userManagement.getUserById(req.session.userId);
+    }
+    return null;
+}
+
 export default {
     checkAuth,
     checkApiAuth,
@@ -175,5 +254,8 @@ export default {
     checkAppNotInitialized,
     checkApiAuthOrElectron,
     checkEtapiToken,
-    checkCredentials
+    checkCredentials,
+    checkAdmin,
+    checkPermission,
+    getCurrentUser
 };

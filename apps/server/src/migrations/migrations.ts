@@ -6,6 +6,11 @@
 
 // Migrations should be kept in descending order, so the latest migration is first.
 const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Multi-user support
+    {
+        version: 234,
+        module: async () => import("./0234__multi_user_support.js")
+    },
     // Migrate geo map to collection
     {
         version: 233,

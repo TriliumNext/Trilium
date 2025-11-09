@@ -30,10 +30,19 @@
             </a>
         <% } else { %>
             <form action="login" method="POST">
+                <% if (multiUserMode) { %>
+                    <div class="form-group">
+                        <label for="username"><%= t("login.username") || "Username" %></label>
+                        <div class="controls">
+                            <input id="username" name="username" placeholder="" class="form-control" type="text" autocomplete="username" autofocus>
+                        </div>
+                    </div>
+                <% } %>
+                
                 <div class="form-group">
                     <label for="password"><%= t("login.password") %></label>
                     <div class="controls">
-                        <input id="password" name="password" placeholder="" class="form-control" type="password" autocomplete="current-password" autofocus>
+                        <input id="password" name="password" placeholder="" class="form-control" type="password" autocomplete="current-password" <% if (!multiUserMode) { %>autofocus<% } %>>
                     </div>
                 </div>
                 <% if( totpEnabled ) { %>

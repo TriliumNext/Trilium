@@ -16,6 +16,7 @@ import ValidationError from "../../errors/validation_error.js";
 import consistencyChecksService from "../../services/consistency_checks.js";
 import { t } from "i18next";
 import { SyncTestResponse, type EntityChange } from "@triliumnext/commons";
+import permissions from "../../services/permissions.js";
 
 async function testSync(): Promise<SyncTestResponse> {
     try {
@@ -173,6 +174,11 @@ function getChanged(req: Request) {
         }
     } while (filteredEntityChanges.length === 0);
 
+    // Apply permission filtering if user is authenticated in multi-user mode
+    if (req.session && req.session.userId) {
+        filteredEntityChanges = permissions.filterEntityChangesForUser(req.session.userId, filteredEntityChanges);
+    }
+
     const entityChangeRecords = syncService.getEntityChangeRecords(filteredEntityChanges);
 
     if (entityChangeRecords.length > 0) {
@@ -294,6 +300,31 @@ function update(req: Request) {
     }
 
     const { entities, instanceId } = body;
+
+    // Validate write permissions in multi-user mode
+    if (req.session && req.session.userId) {
+        const userId = req.session.userId;
+        
+        for (const entity of entities) {
+            const entityChange = entity.entityChange || entity;
+            
+            // Check write permission for note-related entities
+            if (entityChange.entityName === 'notes') {
+                if (!permissions.checkNoteAccess(userId, entityChange.entityId, 'write')) {
+                    throw new ValidationError(`User does not have write permission for note ${entityChange.entityId}`);
+                }
+            } else if (entityChange.entityName === 'branches' || entityChange.entityName === 'attributes') {
+                // Get the noteId for branches and attributes
+                const noteId = entityChange.entityName === 'branches' 
+                    ? sql.getValue<string>('SELECT noteId FROM branches WHERE branchId = ?', [entityChange.entityId])
+                    : sql.getValue<string>('SELECT noteId FROM attributes WHERE attributeId = ?', [entityChange.entityId]);
+                
+                if (noteId && !permissions.checkNoteAccess(userId, noteId, 'write')) {
+                    throw new ValidationError(`User does not have write permission for related note ${noteId}`);
+                }
+            }
+        }
+    }
 
     sql.transactional(() => syncUpdateService.updateEntities(entities, instanceId));
 }
