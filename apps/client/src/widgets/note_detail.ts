@@ -431,11 +431,15 @@ export default class NoteDetailWidget extends NoteContextAwareWidget {
         // without await as this otherwise causes deadlock through component mutex
         const parentNotePath = appContext.tabManager.getActiveContextNotePath();
         if (this.noteContext && parentNotePath) {
-            noteCreateService.createNote(parentNotePath, {
-                isProtected: note.isProtected,
-                saveSelection: true,
-                textEditor: await this.noteContext.getTextEditor()
-            });
+            noteCreateService.createNote(
+                {
+                    target: "into",
+                    parentNoteUrl: parentNotePath,
+                    isProtected: note.isProtected,
+                    saveSelection: true,
+                    textEditor: await this.noteContext.getTextEditor()
+                }
+            );
         }
     }
 

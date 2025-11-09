@@ -1,18 +1,19 @@
 import utils, { hasTouchBar } from "../../services/utils.js";
 import keyboardActionService from "../../services/keyboard_actions.js";
 import froca from "../../services/froca.js";
-import noteCreateService from "../../services/note_create.js";
 import AbstractTextTypeWidget from "./abstract_text_type_widget.js";
+import noteCreateService from "../../services/note_create.js";
 import link from "../../services/link.js";
 import appContext, { type CommandListenerData, type EventData } from "../../components/app_context.js";
 import dialogService from "../../services/dialog.js";
 import options from "../../services/options.js";
 import toast from "../../services/toast.js";
 import { buildSelectedBackgroundColor } from "../../components/touch_bar.js";
-import { buildConfig, BuildEditorOptions, OPEN_SOURCE_LICENSE_KEY } from "./ckeditor/config.js";
+import { buildConfig, BuildEditorOptions } from "./ckeditor/config.js";
 import type FNote from "../../entities/fnote.js";
-import { PopupEditor, ClassicEditor, EditorWatchdog, type CKTextEditor, type MentionFeed, type WatchdogConfig, EditorConfig } from "@triliumnext/ckeditor5";
+import { PopupEditor, ClassicEditor, EditorWatchdog, type CKTextEditor, type WatchdogConfig } from "@triliumnext/ckeditor5";
 import { updateTemplateCache } from "./ckeditor/snippets.js";
+import { CreateNoteAction } from "@triliumnext/commons";
 
 export type BoxSize = "small" | "medium" | "full";
 
@@ -336,8 +337,8 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
         if (!editor) return;
 
         editor.model.change((writer) => {
-            const viewFragment = editor.data.processor.toView(html); 
-            const modelFragment = editor.data.toModel(viewFragment); 
+            const viewFragment = editor.data.processor.toView(html);
+            const modelFragment = editor.data.toModel(viewFragment);
             const insertPosition = editor.model.document.selection.getLastPosition();
 
             if (insertPosition) {
@@ -347,9 +348,9 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
                     writer.setSelection(range.end);
                 }
             }
-            
+
         });
-        
+
         editor.editing.view.focus();
     }
 
@@ -491,21 +492,54 @@ export default class EditableTextTypeWidget extends AbstractTextTypeWidget {
         });
     }
 
-    async createNoteForReferenceLink(title: string) {
-        if (!this.notePath) {
-            return;
+    async createNoteFromCkEditor (
+        title: string,
+        parentNotePath: string | undefined,
+        action: CreateNoteAction
+    ): Promise<string> {
+        try {
+            switch (action) {
+                // --- Create & link note INTO inbox ---
+                case CreateNoteAction.CreateAndLinkNote: {
+                    const { note } = await noteCreateService.createNote(
+                        {
+                            target: "inbox",
+                            title,
+                            activate: false,
+                            promptForType: true,
+                        }
+                    );
+
+                    return note?.getBestNotePathString() ?? "";
+                }
+
+                // --- Create & link note INTO current path ---
+                case CreateNoteAction.CreateAndLinkChildNote: {
+                    if (!parentNotePath) {
+                        console.error("Cannot create note: parentNotePath is undefined.");
+                        return "";
+                    }
+                    const { note } = await noteCreateService.createNote(
+                        {
+                            target: "into",
+                            parentNoteUrl: parentNotePath,
+                            title,
+                            activate: false,
+                            promptForType: true,
+                        }
+                    );
+
+                    return note?.getBestNotePathString() ?? "";
+                }
+
+                default:
+                    console.warn("impossible CreateNoteAction state:", action);
+                    return "";
+            }
+        } catch (err) {
+            console.error("Error while creating note from CKEditor:", err);
+            return "";
         }
-
-        const resp = await noteCreateService.createNoteWithTypePrompt(this.notePath, {
-            activate: false,
-            title: title
-        });
-
-        if (!resp || !resp.note) {
-            return;
-        }
-
-        return resp.note.getBestNotePathString();
     }
 
     async refreshIncludedNoteEvent({ noteId }: EventData<"refreshIncludedNote">) {
