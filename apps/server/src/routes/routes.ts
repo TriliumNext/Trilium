@@ -22,6 +22,7 @@ import attachmentsApiRoute from "./api/attachments.js";
 import autocompleteApiRoute from "./api/autocomplete.js";
 import cloningApiRoute from "./api/cloning.js";
 import revisionsApiRoute from "./api/revisions.js";
+import editedNotesApiRoute from "./api/edited-notes.js";
 import recentChangesApiRoute from "./api/recent_changes.js";
 import optionsApiRoute from "./api/options.js";
 import passwordApiRoute from "./api/password.js";
@@ -349,7 +350,7 @@ function register(app: express.Application) {
     apiRoute(GET, "/api/other/icon-usage", otherRoute.getIconUsage);
     apiRoute(PST, "/api/other/render-markdown", otherRoute.renderMarkdown);
     apiRoute(GET, "/api/recent-changes/:ancestorNoteId", recentChangesApiRoute.getRecentChanges);
-    apiRoute(GET, "/api/edited-notes/:date", revisionsApiRoute.getEditedNotesOnDate);
+    apiRoute(GET, "/api/edited-notes/:date", editedNotesApiRoute.getEditedNotesOnDate);
 
     apiRoute(PST, "/api/note-map/:noteId/tree", noteMapRoute.getTreeMap);
     apiRoute(PST, "/api/note-map/:noteId/link", noteMapRoute.getLinkMap);
