@@ -1,16 +1,34 @@
+import cls from '../../services/cls.js';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import dayjs from "dayjs";
 import { resolveDateParams } from "./edited-notes.js";
 
-function resolveAsDate(dateStr: string) {
-    return resolveDateParams(dateStr).date;
+// test date setup
+// client: UTC+1
+// server: UTC
+// day/month/year is changed when server converts a client date to to UTC
+const clientDate =           "2025-01-01 00:11:11.000+0100";
+const serverDate =           "2024-12-31 23:11:11.000Z";
+
+// expected values - from client's point of view
+const expectedToday =        "2025-01-01";
+const expectedTodayMinus1 =  "2024-12-31";
+const expectedMonth =        "2025-01";
+const expectedMonthMinus2  = "2024-11";
+const expectedYear =         "2025";
+const expectedYearMinus1 =   "2024";
+
+function runTest(dateStrToResolve: string, expectedDate: string) {
+   cls.init(() => {
+        cls.set("localNowDateTime", clientDate);
+        const resolvedDate = resolveDateParams(dateStrToResolve).date;
+        expect(resolvedDate).toBe(expectedDate);
+    });
 }
 
-describe("edited-notes::resolveAsDate", () => {
+describe("edited-notes::resolveDateParams", () => {
     beforeEach(() => {
-        // Set a fixed date and time before each test
         vi.useFakeTimers();
-        vi.setSystemTime(new Date('2012-11-10T23:22:21Z')); // NOTE!!: Date wrap in my timezone
+        vi.setSystemTime(new Date(serverDate));
     });
 
     afterEach(() => {
@@ -18,59 +36,40 @@ describe("edited-notes::resolveAsDate", () => {
         vi.useRealTimers();
     });
 
-
     it("resolves 'TODAY' to today's date", () => {
-        const expectedDate = dayjs().format("YYYY-MM-DD");
-        const resolvedDate = resolveAsDate("TODAY");
-        expect(resolvedDate).toBe(expectedDate);
+        runTest("TODAY", expectedToday);
     });
 
     it("resolves 'MONTH' to current month", () => {
-        const expectedMonth = dayjs().format("YYYY-MM");
-        const resolvedMonth = resolveAsDate("MONTH");
-        expect(resolvedMonth).toBe(expectedMonth);
+        runTest("MONTH", expectedMonth);
     });
 
     it("resolves 'YEAR' to current year", () => {
-        const expectedYear = dayjs().format("YYYY");
-        const resolvedYear = resolveAsDate("YEAR");
-        expect(resolvedYear).toBe(expectedYear);
+        runTest("YEAR", expectedYear);
     });
 
     it("resolves 'TODAY-1' to yesterday's date", () => {
-        const expectedDate = dayjs().subtract(1, "day").format("YYYY-MM-DD");
-        const resolvedDate = resolveAsDate("TODAY-1");
-        expect(resolvedDate).toBe(expectedDate);
+        runTest("TODAY-1", expectedTodayMinus1);
     });
 
     it("resolves 'MONTH-2' to 2 months ago", () => {
-        const expectedMonth = dayjs().subtract(2, "month").format("YYYY-MM");
-        const resolvedMonth = resolveAsDate("MONTH-2");
-        expect(resolvedMonth).toBe(expectedMonth);
+        runTest("MONTH-2", expectedMonthMinus2);
     });
 
-    it("resolves 'YEAR+1' to next year", () => {
-        const expectedYear = dayjs().add(1, "year").format("YYYY");
-        const resolvedYear = resolveAsDate("YEAR+1");
-        expect(resolvedYear).toBe(expectedYear);
+    it("resolves 'YEAR-1' to last year", () => {
+        runTest("YEAR-1", expectedYearMinus1);
     });
 
     it("returns original string for unrecognized keyword", () => {
-        const unrecognizedString = "NOT_A_DYNAMIC_DATE";
-        const resolvedString = resolveAsDate(unrecognizedString);
-        expect(resolvedString).toBe(unrecognizedString);
+        runTest("FOO", "FOO");
     });
 
     it("returns original string for partially recognized keyword", () => {
-        const partialString = "TODAY-";
-        const resolvedString = resolveAsDate(partialString);
-        expect(resolvedString).toBe(partialString);
+        runTest("TODAY-", "TODAY-");
     });
 
     it("resolves 'today' (lowercase) to today's date", () => {
-        const expectedDate = dayjs().format("YYYY-MM-DD");
-        const resolvedDate = resolveAsDate("today");
-        expect(resolvedDate).toBe(expectedDate);
+        runTest("today", expectedToday);
     });
 
 });
