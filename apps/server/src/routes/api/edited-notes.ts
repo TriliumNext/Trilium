@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import beccaService from "../../becca/becca_service.js";
 import sql from "../../services/sql.js";
 import cls from "../../services/cls.js";
@@ -6,7 +7,7 @@ import type { Request } from "express";
 import { NotePojo } from "../../becca/becca-interface.js";
 import type BNote from "../../becca/entities/bnote.js";
 import { EditedNotesResponse } from "@triliumnext/commons";
-import dayjs from "dayjs";
+import dateUtils from "../../services/date_utils.js";
 
 interface NotePath {
     noteId: string;
@@ -85,7 +86,7 @@ function getNotePathData(note: BNote): NotePath | undefined {
     }
 }
 
-function formatDateFromKeywordAndDelta(keyword: string, delta: number): string {
+function formatDateFromKeywordAndDelta(startingDate: dayjs.Dayjs, keyword: string, delta: number): string {
     const formatMap = new Map<string, { format: string, addUnit: dayjs.UnitType }>([
         ["today", { format: "YYYY-MM-DD", addUnit: "day" }],
         ["month", { format: "YYYY-MM", addUnit: "month" }],
@@ -98,7 +99,7 @@ function formatDateFromKeywordAndDelta(keyword: string, delta: number): string {
         throw new Error(`Unrecognized keyword: ${keyword}`);
     }
 
-    const date = dayjs().add(delta, handler.addUnit);
+    const date = startingDate.add(delta, handler.addUnit);
     return date.format(handler.format);
 }
 
@@ -126,7 +127,8 @@ export function resolveDateParams(dateStr: string): DateFilter {
     const keyword = match[1].toLowerCase();
     const delta = match[2] ? parseInt(match[2]) : 0;
 
-    const date = formatDateFromKeywordAndDelta(keyword, delta);
+    const clientDate = dayjs(dateUtils.localNowDate());
+    const date = formatDateFromKeywordAndDelta(clientDate, keyword, delta);
     return {
         date: `${date}`
     }
