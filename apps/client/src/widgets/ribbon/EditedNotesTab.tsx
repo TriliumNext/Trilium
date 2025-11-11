@@ -1,6 +1,6 @@
 import { useEffect, useState } from "preact/hooks";
 import { TabContext } from "./ribbon-interface";
-import { EditedNotesResponse } from "@triliumnext/commons";
+import { EditedNotesResponse, EditedNotes } from "@triliumnext/commons";
 import server from "../../services/server";
 import { t } from "../../services/i18n";
 import froca from "../../services/froca";
@@ -8,12 +8,12 @@ import NoteLink from "../react/NoteLink";
 import { joinElements } from "../react/react_utils";
 
 export default function EditedNotesTab({ note }: TabContext) {
-    const [ editedNotes, setEditedNotes ] = useState<EditedNotesResponse>();
+    const [ editedNotes, setEditedNotes ] = useState<EditedNotes>();
 
     useEffect(() => {
         if (!note) return;
-        server.get<EditedNotesResponse>(`edited-notes/${note.getLabelValue("dateNote")}`).then(async editedNotes => {
-            editedNotes = editedNotes.filter((n) => n.noteId !== note.noteId);
+        server.get<EditedNotesResponse>(`edited-notes/${note.getLabelValue("dateNote")}`).then(async response => {
+            const editedNotes = response.notes.filter((n) => n.noteId !== note.noteId);
             const noteIds = editedNotes.flatMap((n) => n.noteId);
             await froca.getNotes(noteIds, true); // preload all at once
             setEditedNotes(editedNotes);

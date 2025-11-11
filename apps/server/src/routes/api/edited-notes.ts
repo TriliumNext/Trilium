@@ -6,7 +6,7 @@ import becca from "../../becca/becca.js";
 import type { Request } from "express";
 import { NotePojo } from "../../becca/becca-interface.js";
 import type BNote from "../../becca/entities/bnote.js";
-import { EditedNotesResponse } from "@triliumnext/commons";
+import { EditedNotes, EditedNotesResponse } from "@triliumnext/commons";
 import dateUtils from "../../services/date_utils.js";
 
 interface NotePath {
@@ -53,14 +53,18 @@ function getEditedNotesOnDate(req: Request) {
         notes = notes.filter((note) => note.hasAncestor(hoistedNoteId));
     }
 
-    return notes.map((note) => {
+    const editedNotes = notes.map((note) => {
         const notePath = getNotePathData(note);
 
         const notePojo: NotePojoWithNotePath = note.getPojo();
         notePojo.notePath = notePath ? notePath.notePath : null;
 
         return notePojo;
-    }) satisfies EditedNotesResponse;
+    });
+
+    return {
+        notes: editedNotes,
+    } satisfies EditedNotesResponse;
 }
 
 function getNotePathData(note: BNote): NotePath | undefined {
