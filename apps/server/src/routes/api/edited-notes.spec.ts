@@ -27,11 +27,13 @@ function runTest(dateStrToResolve: string, expectedDate: string) {
 
 describe("edited-notes::resolveDateParams", () => {
     beforeEach(() => {
+        vi.stubEnv('TZ', 'UTC');
         vi.useFakeTimers();
         vi.setSystemTime(new Date(serverDate));
     });
 
     afterEach(() => {
+        vi.unstubAllEnvs();
         // Restore real timers after each test
         vi.useRealTimers();
     });
