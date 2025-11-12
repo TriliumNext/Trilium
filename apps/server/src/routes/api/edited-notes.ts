@@ -88,17 +88,17 @@ function getNotePathData(note: BNote): NotePath | undefined {
     }
 }
 
+const formatMap = new Map<string, { format: string, addUnit: dayjs.UnitType }>([
+    ["today", { format: "YYYY-MM-DD", addUnit: "day" }],
+    ["month", { format: "YYYY-MM", addUnit: "month" }],
+    ["year", { format: "YYYY", addUnit: "year" }]
+]);
+
 function formatDateFromKeywordAndDelta(
     startingDate: dayjs.Dayjs,
     keyword: string,
     delta: number
 ): string {
-    const formatMap = new Map<string, { format: string, addUnit: dayjs.UnitType }>([
-        ["today", { format: "YYYY-MM-DD", addUnit: "day" }],
-        ["month", { format: "YYYY-MM", addUnit: "month" }],
-        ["year", { format: "YYYY", addUnit: "year" }]
-    ]);
-
     const handler = formatMap.get(keyword);
 
     if (!handler) {
@@ -144,7 +144,7 @@ export function resolveDateParams(dateStr: string): DateFilter {
 
     if (!match) {
         return {
-            date: `${dateStr}`
+            date: dateStr
         }
     }
 
@@ -154,7 +154,7 @@ export function resolveDateParams(dateStr: string): DateFilter {
     const clientDate = dayjs(dateUtils.localNowDate());
     const date = formatDateFromKeywordAndDelta(clientDate, keyword, delta);
     return {
-        date: `${date}`
+        date: date
     }
 }
 
