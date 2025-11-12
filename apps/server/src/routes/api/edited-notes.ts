@@ -111,9 +111,27 @@ interface DateValue {
 type DateFilter = DateValue;
 
 /**
- * Resolves date keyword with optional delta (e.g., "TODAY-1") to date
- * @param dateStr date keyword (TODAY, MONTH, YEAR) or date in format YYYY-MM-DD (or beggining)
- * @returns
+ * Resolves a date string into a concrete date representation.
+ * The date string can be a keyword with an optional delta, or a standard date format.
+ *
+ * Supported keywords are:
+ * - `today`: Resolves to the current date in `YYYY-MM-DD` format.
+ * - `month`: Resolves to the current month in `YYYY-MM` format.
+ * - `year`: Resolves to the current year in `YYYY` format.
+ *
+ * An optional delta can be appended to the keyword to specify an offset.
+ * For example:
+ * - `today-1` resolves to yesterday.
+ * - `month+2` resolves to the month after next.
+ * - `year-10` resolves to 10 years ago.
+ *
+ * If the `dateStr` does not match a keyword pattern, it is returned as is.
+ * This is to support standard date formats like `YYYY-MM-DD`, `YYYY-MM`, or `YYYY`.
+ *
+ * @param dateStr A string representing the date. This can be a keyword
+ *                (e.g., "today", "month-1", "year+5") or a date string
+ *                (e.g., "2023-10-27", "2023-10", "2023").
+ * @returns A `DateFilter` object containing the resolved date string.
  */
 export function resolveDateParams(dateStr: string): DateFilter {
     const match = dateStr.match(/^(today|month|year)([+-]\d+)?$/i);
