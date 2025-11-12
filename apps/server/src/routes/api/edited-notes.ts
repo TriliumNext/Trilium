@@ -25,8 +25,7 @@ function getEditedNotesOnDate(req: Request) {
     const resolvedDateParams = resolveDateParams(req.params.date);
 
     const sqlParams = { date: resolvedDateParams.date + "%" };
-
-    const noteIds = sql.getColumn<string>(/*sql*/`\
+    const sqlQuery = /*sql*/`\
         SELECT notes.*
         FROM notes
         WHERE noteId IN (
@@ -39,7 +38,10 @@ function getEditedNotesOnDate(req: Request) {
                 WHERE revisions.dateCreated LIKE :date
         )
         ORDER BY isDeleted
-        LIMIT 50`,
+        LIMIT 50`;
+
+    const noteIds = sql.getColumn<string>(
+        sqlQuery,
         sqlParams
     );
 
