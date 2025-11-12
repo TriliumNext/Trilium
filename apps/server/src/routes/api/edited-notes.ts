@@ -86,7 +86,11 @@ function getNotePathData(note: BNote): NotePath | undefined {
     }
 }
 
-function formatDateFromKeywordAndDelta(startingDate: dayjs.Dayjs, keyword: string, delta: number): string {
+function formatDateFromKeywordAndDelta(
+    startingDate: dayjs.Dayjs,
+    keyword: string,
+    delta: number
+): string {
     const formatMap = new Map<string, { format: string, addUnit: dayjs.UnitType }>([
         ["today", { format: "YYYY-MM-DD", addUnit: "day" }],
         ["month", { format: "YYYY-MM", addUnit: "month" }],
