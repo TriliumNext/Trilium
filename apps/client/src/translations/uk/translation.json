@@ -939,8 +939,7 @@
     "outside_hoisted": "Цей шлях знаходиться поза межами закріпленої нотатки і вам доведеться відкріпити."
   },
   "note_properties": {
-    "this_note_was_originally_taken_from": "Цю нотатку було спочатку взято з:",
-    "info": "Інформація"
+    "this_note_was_originally_taken_from": "Цю нотатку було спочатку взято з:"
   },
   "owned_attribute_list": {
     "owned_attributes": "Власні Атрибути"

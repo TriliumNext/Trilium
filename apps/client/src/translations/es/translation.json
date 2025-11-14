@@ -836,8 +836,7 @@
     "search": "Buscar"
   },
   "note_properties": {
-    "this_note_was_originally_taken_from": "Esta nota fue tomada originalmente de:",
-    "info": "Información"
+    "this_note_was_originally_taken_from": "Esta nota fue tomada originalmente de:"
   },
   "owned_attribute_list": {
     "owned_attributes": "Atributos propios"

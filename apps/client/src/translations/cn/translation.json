@@ -837,8 +837,7 @@
     "search": "搜索"
   },
   "note_properties": {
-    "this_note_was_originally_taken_from": "笔记来源:",
-    "info": "信息"
+    "this_note_was_originally_taken_from": "笔记来源:"
   },
   "owned_attribute_list": {
     "owned_attributes": "拥有的属性"

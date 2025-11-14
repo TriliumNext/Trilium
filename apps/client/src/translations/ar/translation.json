@@ -512,7 +512,7 @@
     "title": "الملاحظات المعدلة"
   },
   "note_properties": {
-    "info": "معلومات"
+    "this_note_was_originally_taken_from": ""
   },
   "backend_log": {
     "refresh": "تحديث"

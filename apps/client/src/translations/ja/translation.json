@@ -688,7 +688,6 @@
     "outside_hoisted": "このパスはホイストされたノートの外側にあるため、ホイストを解除する必要があります。"
   },
   "note_properties": {
-    "info": "情報",
     "this_note_was_originally_taken_from": "このノートは元々以下から引用したものです:"
   },
   "similar_notes": {
