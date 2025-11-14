@@ -28,7 +28,7 @@ export default function CollectionPropertiesTab({ note }: TabContext) {
   const defaultViewType = (note?.type === "search" ? "list" : "grid");
   const viewTypeWithDefault = (viewType ?? defaultViewType) as ViewTypeOptions;
   const properties = bookPropertiesConfig[viewTypeWithDefault].properties;
-  console.warn('CollectionPropertiesTab:', properties)
+
   return (
     <div className="book-properties-widget">
       {note && (
@@ -137,7 +137,7 @@ function NumberPropertyView({ note, property }: { note: FNote, property: NumberP
 
 function ComboBoxPropertyView({ note, property }: { note: FNote, property: ComboBoxProperty }) {
     const [ value, setValue ] = useNoteLabel(note, property.bindToLabel);
-    console.warn('ComboBoxPropertyView:', value)
+
     return (
         <LabelledEntry label={property.label}>
             <FormSelectWithGroups
@@ -150,7 +150,6 @@ function ComboBoxPropertyView({ note, property }: { note: FNote, property: Combo
 }
 
 function LabelledEntry({ label, children }: { label: string, children: ComponentChildren }) {
-    console.warn('LabelledEntry:', label)
     return (
         <>
             <label>
