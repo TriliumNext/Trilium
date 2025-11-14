@@ -1,6 +1,5 @@
 import ScriptTab from "./ScriptTab";
 import EditedNotesTab from "./EditedNotesTab";
-import NotePropertiesTab from "./NotePropertiesTab";
 import NoteInfoTab from "./NoteInfoTab";
 import SimilarNotesTab from "./SimilarNotesTab";
 import FilePropertiesTab from "./FilePropertiesTab";
@@ -58,13 +57,6 @@ export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
         content: CollectionPropertiesTab,
         show: ({ note }) => note?.type === "book" || note?.type === "search",
         toggleCommand: "toggleRibbonTabBookProperties"
-    },
-    {
-        title: t("note_properties.info"),
-        icon: "bx bx-info-square",
-        content: NotePropertiesTab,
-        show: ({ note }) => !!note?.getLabelValue("pageUrl"),
-        activate: true
     },
     {
         title: t("file_properties.title"),

@@ -31,6 +31,7 @@ import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import ScrollPadding from "../widgets/scroll_padding.js";
 import SearchResult from "../widgets/search_result.jsx";
 import SharedInfo from "../widgets/shared_info.jsx";
+import OriginInfo from "../widgets/note_origin.jsx";
 import SpacerWidget from "../widgets/spacer.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
 import SqlResults from "../widgets/sql_result.js";
@@ -137,6 +138,7 @@ export default class DesktopLayout {
                                                             new ScrollingContainer()
                                                                 .filling()
                                                                 .child(new ContentHeader()
+                                                                    .child(<OriginInfo />)
                                                                     .child(<ReadOnlyNoteInfoBar />)
                                                                     .child(<SharedInfo />)
                                                                 )
