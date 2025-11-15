@@ -830,8 +830,7 @@
     "search": "Suchen"
   },
   "note_properties": {
-    "this_note_was_originally_taken_from": "Diese Notiz stammt ursprünglich aus:",
-    "info": "Info"
+    "this_note_was_originally_taken_from": "Diese Notiz stammt ursprünglich aus:"
   },
   "owned_attribute_list": {
     "owned_attributes": "Eigene Attribute"

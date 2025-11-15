@@ -448,8 +448,7 @@
     "search": "Szukaj"
   },
   "note_properties": {
-    "this_note_was_originally_taken_from": "Ta notatka oryginalnie została wzięta z:",
-    "info": "Info"
+    "this_note_was_originally_taken_from": "Ta notatka oryginalnie została wzięta z:"
   },
   "owned_attribute_list": {
     "owned_attributes": "Posiadane atrybuty"
