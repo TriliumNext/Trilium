@@ -105,7 +105,7 @@
     "is-svg": "6.1.0",
     "jimp": "1.6.0",
     "js-yaml": "4.1.1",
-    "marked": "16.4.2",
+    "marked": "17.0.0",
     "mime-types": "3.0.1",
     "multer": "2.0.2",
     "normalize-strings": "1.1.1",

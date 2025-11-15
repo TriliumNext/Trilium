@@ -269,8 +269,8 @@ importers:
         specifier: 8.11.1
         version: 8.11.1
       marked:
-        specifier: 16.4.2
-        version: 16.4.2
+        specifier: 17.0.0
+        version: 17.0.0
       mermaid:
         specifier: 11.12.1
         version: 11.12.1
@@ -718,8 +718,8 @@ importers:
         specifier: 4.1.1
         version: 4.1.1
       marked:
-        specifier: 16.4.2
-        version: 16.4.2
+        specifier: 17.0.0
+        version: 17.0.0
       mime-types:
         specifier: 3.0.1
         version: 3.0.1
@@ -10122,6 +10122,11 @@ packages:
     engines: {node: '>= 20'}
     hasBin: true
 
+  marked@17.0.0:
+    resolution: {integrity: sha512-KkDYEWEEiYJw/KC+DVm1zzlpMQSMIu6YRltkcCvwheCp8HWPXCk9JwOmHJKBlGfzcpzcIt6x3sMnTsRm/51oDg==}
+    engines: {node: '>= 20'}
+    hasBin: true
+
   marked@4.3.0:
     resolution: {integrity: sha512-PRsaiG84bK+AMvxziE/lCFss8juXjNaWzVbN5tXAm4XjeaS9NAHhop+PjQxz2A9h8Q4M/xGmzP8vqNwy6JeK0A==}
     engines: {node: '>= 12'}
@@ -15687,8 +15692,6 @@ snapshots:
       '@ckeditor/ckeditor5-core': 47.2.0
       '@ckeditor/ckeditor5-utils': 47.2.0
       ckeditor5: 47.2.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-code-block@47.2.0(patch_hash=2361d8caad7d6b5bddacc3a3b4aa37dbfba260b1c1b22a450413a79c1bb1ce95)':
     dependencies:
@@ -16652,6 +16655,8 @@ snapshots:
       '@ckeditor/ckeditor5-icons': 47.2.0
       '@ckeditor/ckeditor5-ui': 47.2.0
       '@ckeditor/ckeditor5-utils': 47.2.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-upload@47.2.0':
     dependencies:
@@ -22157,8 +22162,6 @@ snapshots:
   ckeditor5-collaboration@47.2.0:
     dependencies:
       '@ckeditor/ckeditor5-collaboration-core': 47.2.0
-    transitivePeerDependencies:
-      - supports-color
 
   ckeditor5-premium-features@47.2.0(bufferutil@4.0.9)(ckeditor5@47.2.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41))(utf-8-validate@6.0.5):
     dependencies:
@@ -26625,6 +26628,8 @@ snapshots:
   markdown-table@3.0.4: {}
 
   marked@16.4.2: {}
+
+  marked@17.0.0: {}
 
   marked@4.3.0: {}
 
