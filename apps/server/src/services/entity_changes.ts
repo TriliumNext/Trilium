@@ -6,6 +6,7 @@ import { randomString } from "./utils.js";
 import instanceId from "./instance_id.js";
 import becca from "../becca/becca.js";
 import blobService from "../services/blob.js";
+import blobStorageService from "./blob-storage.js";
 import type { EntityChange } from "@triliumnext/commons";
 import type { Blob } from "./blob-interface.js";
 import eventService from "./events.js";
@@ -146,7 +147,10 @@ function fillEntityChanges(entityName: string, entityPrimaryKey: string, conditi
             };
 
             if (entityName === "blobs") {
-                const blob = sql.getRow<Blob>("SELECT blobId, content, utcDateModified FROM blobs WHERE blobId = ?", [entityId]);
+                const query = blobStorageService.hasExternalContentColumns()
+                    ? "SELECT blobId, content, contentLocation, contentLength, utcDateModified FROM blobs WHERE blobId = ?"
+                    : "SELECT blobId, content, 'internal' as contentLocation, LENGTH(COALESCE(content, '')) as contentLength, utcDateModified FROM blobs WHERE blobId = ?";
+                const blob = sql.getRow<Blob>(query, [entityId]);
                 ec.hash = blobService.calculateContentHash(blob);
                 ec.utcDateChanged = blob.utcDateModified;
                 ec.isSynced = true; // blobs are always synced

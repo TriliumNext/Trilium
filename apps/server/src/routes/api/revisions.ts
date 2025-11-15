@@ -7,6 +7,7 @@ import cls from "../../services/cls.js";
 import path from "path";
 import becca from "../../becca/becca.js";
 import blobService from "../../services/blob.js";
+import blobStorageService from "../../services/blob-storage.js";
 import eraseService from "../../services/erase.js";
 import type { Request, Response } from "express";
 import type BRevision from "../../becca/entities/brevision.js";
@@ -33,10 +34,14 @@ function getRevisionBlob(req: Request) {
 }
 
 function getRevisions(req: Request) {
+    const contentLengthColumn = blobStorageService.hasExternalContentColumns()
+        ? "blobs.contentLength"
+        : "LENGTH(COALESCE(blobs.content, ''))";
+
     return becca.getRevisionsFromQuery(
         `
         SELECT revisions.*,
-                LENGTH(blobs.content) AS contentLength
+                ${contentLengthColumn} AS contentLength
         FROM revisions
         JOIN blobs ON revisions.blobId = blobs.blobId
         WHERE revisions.noteId = ?

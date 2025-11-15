@@ -7,6 +7,10 @@ Each note exclusively owns its attachments, meaning attachments cannot be shared
 
 Attachments, especially image files, are the recommended method for embedding visuals in notes. It is important to link image attachments within the text of the owning note; otherwise, they will be automatically deleted after a configurable timeout period if not referenced.
 
+## Storage
+
+By default, attachments are stored within the SQLite database. For installations with many large attachments, Trilium supports [external blob storage](../../Advanced%20Usage/External%20Blob%20Storage.md) which stores large files separately on the file system. This is optional and disabled by default to maintain simplicity for most users.
+
 ## Converting notes to attachments
 
 <a class="reference-link" href="../../Note%20Types/File.md">File</a> notes can be easily converted to attachments of the parent note.

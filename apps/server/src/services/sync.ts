@@ -17,11 +17,12 @@ import ws from "./ws.js";
 import entityChangesService from "./entity_changes.js";
 import entityConstructor from "../becca/entity_constructor.js";
 import becca from "../becca/becca.js";
-import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
+import type { EntityChange, EntityChangeRecord, EntityRow, BlobRow } from "@triliumnext/commons";
 import type { CookieJar, ExecOpts } from "./request_interface.js";
 import setupService from "./setup.js";
 import consistency_checks from "./consistency_checks.js";
 import becca_loader from "../becca/becca_loader.js";
+import blobStorageService from "./blob-storage.js";
 
 let proxyToggle = true;
 
@@ -354,13 +355,15 @@ function getEntityChangeRow(entityChange: EntityChange) {
             return null;
         }
 
-        if (entityName === "blobs" && entityRow.content !== null) {
-            if (typeof entityRow.content === "string") {
-                entityRow.content = Buffer.from(entityRow.content, "utf-8");
-            }
+        if (entityName === "blobs") {
+            const blobRow = entityRow as BlobRow;
+            const rawContent = blobStorageService.getContent(blobRow);
+            if (rawContent) {
+                const buffer = Buffer.isBuffer(rawContent)
+                    ? rawContent
+                    : Buffer.from(rawContent, "utf-8");
 
-            if (entityRow.content) {
-                entityRow.content = entityRow.content.toString("base64");
+                entityRow.content = buffer.toString("base64");
             }
         }
 

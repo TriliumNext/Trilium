@@ -2,6 +2,7 @@
 
 import sql from "../../sql.js";
 import utils from "../../../services/utils.js";
+import blobStorageService from "../../../services/blob-storage.js";
 import AbstractShacaEntity from "./abstract_shaca_entity.js";
 import type SNote from "./snote.js";
 import type { Blob } from "../../../services/blob-interface.js";
@@ -37,7 +38,11 @@ class SAttachment extends AbstractShacaEntity {
     }
 
     getContent(silentNotFoundError = false) {
-        const row = sql.getRow<Pick<Blob, "content">>(/*sql*/`SELECT content FROM blobs WHERE blobId = ?`, [this.blobId]);
+        const query = blobStorageService.hasExternalContentColumns()
+            ? /*sql*/`SELECT content, contentLocation FROM blobs WHERE blobId = ?`
+            : /*sql*/`SELECT content, 'internal' as contentLocation FROM blobs WHERE blobId = ?`;
+
+        const row = sql.getRow<Pick<Blob, "content" | "contentLocation">>(query, [this.blobId]);
 
         if (!row) {
             if (silentNotFoundError) {
@@ -47,7 +52,7 @@ class SAttachment extends AbstractShacaEntity {
             }
         }
 
-        const content = row.content;
+        const content = blobStorageService.getContent(row);
 
         if (this.hasStringContent()) {
             return content === null ? "" : content.toString("utf-8");

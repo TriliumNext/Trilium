@@ -6,6 +6,7 @@ import dateUtils from "../../services/date_utils.js";
 import becca from "../becca.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import sql from "../../services/sql.js";
+import blobStorageService from "../../services/blob-storage.js";
 import BAttachment from "./battachment.js";
 import type { AttachmentRow, NoteType, RevisionPojo, RevisionRow } from "@triliumnext/commons";
 import eraseService from "../../services/erase.js";
@@ -140,8 +141,12 @@ class BRevision extends AbstractBeccaEntity<BRevision> {
     getAttachmentById(attachmentId: String, opts: GetByIdOpts = {}): BAttachment | null {
         opts.includeContentLength = !!opts.includeContentLength;
 
+        const contentLengthColumn = blobStorageService.hasExternalContentColumns()
+            ? "blobs.contentLength"
+            : "LENGTH(COALESCE(blobs.content, ''))";
+
         const query = opts.includeContentLength
-            ? /*sql*/`SELECT attachments.*, LENGTH(blobs.content) AS contentLength
+            ? /*sql*/`SELECT attachments.*, ${contentLengthColumn} AS contentLength
                 FROM attachments
                 JOIN blobs USING (blobId)
                 WHERE ownerId = ? AND attachmentId = ? AND isDeleted = 0`

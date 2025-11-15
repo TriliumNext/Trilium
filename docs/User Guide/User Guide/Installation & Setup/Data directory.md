@@ -5,6 +5,7 @@ Data directory contains:
 *   `config.ini` - instance level settings like port on which the Trilium application runs
 *   `backup` - contains automatically [backup](Backup.md) of documents
 *   `log` - contains application log files
+*   `external-blobs` - contains large attachments when [external blob storage](../Advanced%20Usage/External%20Blob%20Storage.md) is enabled (optional, not present by default)
 
 ## Location of the data directory
 

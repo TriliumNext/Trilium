@@ -81,6 +81,13 @@ Additionally, shorter aliases are available for common configurations (see Alter
 | --- | --- | --- | --- |
 | `TRILIUM_LOGGING_RETENTIONDAYS` | integer | 90  | Number of days to retain log files |
 
+### ExternalBlobStorage Section
+
+| Environment Variable | Type | Default | Description |
+| --- | --- | --- | --- |
+| `TRILIUM_EXTERNAL_BLOB_STORAGE_ENABLED` | boolean | false | Enable external blob storage for large attachments |
+| `TRILIUM_EXTERNAL_BLOB_STORAGE_THRESHOLD` | integer | 102400 | Size threshold in bytes (100KB default) for external storage |
+
 ## Alternative Environment Variables
 
 The following alternative environment variable names are also supported and work identically to their longer counterparts:
