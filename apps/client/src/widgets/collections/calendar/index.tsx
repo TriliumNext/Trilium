@@ -91,6 +91,7 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     const [ hideWeekends ] = useNoteLabelBoolean(note, "calendar:hideWeekends");
     const [ weekNumbers ] = useNoteLabelBoolean(note, "calendar:weekNumbers");
     const [ calendarView, setCalendarView ] = useNoteLabel(note, "calendar:view");
+    const [ initialDate ] = useNoteLabel(note, "calendar:initialDate");
     const initialView = useRef(calendarView);
     const viewSpacedUpdate = useSpacedUpdate(() => setCalendarView(initialView.current));
     useResizeObserver(containerRef, () => calendarRef.current?.updateSize());
@@ -134,6 +135,7 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                 height="90%"
                 nowIndicator
                 handleWindowResize={false}
+                initialDate={initialDate || undefined}
                 locale={locale}
                 {...editingProps}
                 eventDidMount={eventDidMount}

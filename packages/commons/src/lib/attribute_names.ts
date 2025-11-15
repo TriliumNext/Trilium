@@ -33,6 +33,7 @@ type Labels = {
     "calendar:hideWeekends": boolean;
     "calendar:weekNumbers": boolean;
     "calendar:view": string;
+    "calendar:initialDate": string;
     "map:style": string;
     "map:scale": boolean;
     "board:groupBy": string;
