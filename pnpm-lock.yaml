@@ -361,7 +361,7 @@ importers:
     dependencies:
       '@electron/remote':
         specifier: 2.1.3
-        version: 2.1.3(electron@38.7.0)
+        version: 2.1.3(electron@39.2.0)
       better-sqlite3:
         specifier: 12.4.1
         version: 12.4.1
@@ -418,8 +418,8 @@ importers:
         specifier: 13.0.1
         version: 13.0.1(webpack@5.101.3(esbuild@0.27.0))
       electron:
-        specifier: 38.7.0
-        version: 38.7.0
+        specifier: 39.2.0
+        version: 39.2.0
       prebuild-install:
         specifier: 7.1.3
         version: 7.1.3
@@ -474,8 +474,8 @@ importers:
         specifier: 13.0.1
         version: 13.0.1(webpack@5.101.3(esbuild@0.27.0))
       electron:
-        specifier: 38.7.0
-        version: 38.7.0
+        specifier: 39.2.0
+        version: 39.2.0
       fs-extra:
         specifier: 11.3.2
         version: 11.3.2
@@ -500,7 +500,7 @@ importers:
         version: 7.1.1
       '@electron/remote':
         specifier: 2.1.3
-        version: 2.1.3(electron@38.7.0)
+        version: 2.1.3(electron@39.2.0)
       '@preact/preset-vite':
         specifier: 2.10.2
         version: 2.10.2(@babel/core@7.28.0)(preact@10.27.2)(vite@7.2.2(@types/node@24.10.1)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.20.6)(yaml@2.8.1))
@@ -646,8 +646,8 @@ importers:
         specifier: 3.1.10
         version: 3.1.10
       electron:
-        specifier: 38.7.0
-        version: 38.7.0
+        specifier: 39.2.0
+        version: 39.2.0
       electron-debug:
         specifier: 4.1.0
         version: 4.1.0
@@ -7775,8 +7775,8 @@ packages:
     resolution: {integrity: sha512-bO3y10YikuUwUuDUQRM4KfwNkKhnpVO7IPdbsrejwN9/AABJzzTQ4GeHwyzNSrVO+tEH3/Np255a3sVZpZDjvg==}
     engines: {node: '>=8.0.0'}
 
-  electron@38.7.0:
-    resolution: {integrity: sha512-ZHrhfzceUgZwdi6Cd8VS/A10ljIjiHOY5KwZ4iJ5D+JuUYMeS/Uvxbrr1WqjnZUwGe9aUjQHFsxeS3gBWGalOw==}
+  electron@39.2.0:
+    resolution: {integrity: sha512-iISf3nmZYOBb2WZXETNr46Ot7Ny5nq7aTAWxkPnpaFvdVnDTk9ixK4JgC9NNctKR+VS/pXP1Ryp86mudny3sDQ==}
     engines: {node: '>= 12.20.55'}
     hasBin: true
 
@@ -15543,6 +15543,8 @@ snapshots:
       '@ckeditor/ckeditor5-core': 47.2.0
       '@ckeditor/ckeditor5-upload': 47.2.0
       ckeditor5: 47.2.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-ai@47.2.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)':
     dependencies:
@@ -15613,6 +15615,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.2.0
       '@ckeditor/ckeditor5-utils': 47.2.0
       ckeditor5: 47.2.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-block-quote@47.2.0':
     dependencies:
@@ -15753,6 +15757,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.2.0
       '@ckeditor/ckeditor5-watchdog': 47.2.0
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-dev-build-tools@43.1.0(@swc/helpers@0.5.17)(tslib@2.8.1)(typescript@5.9.3)':
     dependencies:
@@ -15929,6 +15935,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.2.0
       ckeditor5: 47.2.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-editor-decoupled@47.2.0':
     dependencies:
@@ -15947,8 +15955,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.2.0
       ckeditor5: 47.2.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-editor-multi-root@47.2.0':
     dependencies:
@@ -16129,6 +16135,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.2.0
       '@ckeditor/ckeditor5-widget': 47.2.0
       ckeditor5: 47.2.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-html-embed@47.2.0':
     dependencies:
@@ -16155,6 +16163,8 @@ snapshots:
       '@ckeditor/ckeditor5-widget': 47.2.0
       ckeditor5: 47.2.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-icons@47.2.0': {}
 
@@ -16455,6 +16465,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.2.0
       '@ckeditor/ckeditor5-utils': 47.2.0
       ckeditor5: 47.2.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-restricted-editing@47.2.0':
     dependencies:
@@ -16541,6 +16553,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.2.0
       '@ckeditor/ckeditor5-utils': 47.2.0
       ckeditor5: 47.2.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41)
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-special-characters@47.2.0':
     dependencies:
@@ -17299,9 +17313,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@electron/remote@2.1.3(electron@38.7.0)':
+  '@electron/remote@2.1.3(electron@39.2.0)':
     dependencies:
-      electron: 38.7.0
+      electron: 39.2.0
 
   '@electron/universal@2.0.2':
     dependencies:
@@ -22157,8 +22171,6 @@ snapshots:
   ckeditor5-collaboration@47.2.0:
     dependencies:
       '@ckeditor/ckeditor5-collaboration-core': 47.2.0
-    transitivePeerDependencies:
-      - supports-color
 
   ckeditor5-premium-features@47.2.0(bufferutil@4.0.9)(ckeditor5@47.2.0(patch_hash=8331a09d41443b39ea1c784daaccfeb0da4f9065ed556e7de92e9c77edd9eb41))(utf-8-validate@6.0.5):
     dependencies:
@@ -23609,7 +23621,7 @@ snapshots:
       - supports-color
     optional: true
 
-  electron@38.7.0:
+  electron@39.2.0:
     dependencies:
       '@electron/get': 2.0.3
       '@types/node': 22.18.13
