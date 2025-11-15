@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trilium Web Clipper - Log Viewer</title>
+  <style>
+    /* Reset and base styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #1a1a1a;
+      color: #e0e0e0;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .container {
+      width: 100vw;
+      height: 100vh;
+      background: #2d2d2d;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1 {
+      color: #ffffff;
+      margin: 0 0 20px 0;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    /* Simple controls */
+    .controls {
+      background: #3d3d3d;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .controls label {
+      margin-right: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #f0f0f0;
+      line-height: 1.4;
+    }
+
+    select, input {
+      padding: 6px 10px;
+      border: 1px solid #555;
+      border-radius: 4px;
+      background: #2d2d2d;
+      color: #e0e0e0;
+    }
+
+    select {
+      padding-right: 30px;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e0e0e0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 16px;
+      min-width: 120px;
+    }
+
+    button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      background: #007cba;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #005a87;
+    }
+
+    /* Simple log container */
+    .logs-container {
+      background: #2d2d2d;
+      border: 1px solid #555;
+      border-radius: 6px;
+      flex: 1;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    /* Simple log entry */
+    .log-item {
+      padding: 12px;
+      border-bottom: 1px solid #444;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .log-item:last-child {
+      border-bottom: none;
+    }
+
+    .log-meta {
+      color: #888;
+      font-size: 11px;
+      margin-bottom: 4px;
+    }
+
+    .log-content {
+      color: #e0e0e0;
+      word-wrap: break-word;
+    }
+
+    .log-level {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-right: 8px;
+    }
+
+    .log-level.info { background: #17a2b8; }
+    .log-level.debug { background: #6c757d; }
+    .log-level.warn { background: #ffc107; color: #000; }
+    .log-level.error { background: #dc3545; }
+
+    .expand-btn {
+      background: #555;
+      color: #ccc;
+      font-size: 11px;
+      padding: 2px 6px;
+      margin-top: 4px;
+      cursor: pointer;
+      border: none;
+      border-radius: 3px;
+    }
+
+    .expand-btn:hover {
+      background: #666;
+    }
+
+    /* Auto-refresh indicators */
+    #auto-refresh-interval {
+      min-width: 100px;
+    }
+
+    .auto-refresh-status {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .new-logs-indicator {
+      color: #28a745;
+      font-weight: bold;
+    }
+
+    .log-details {
+      background: #1a1a1a;
+      padding: 8px;
+      margin-top: 4px;
+      border-radius: 3px;
+      font-size: 11px;
+      color: #ccc;
+      white-space: pre-wrap;
+      border: 1px solid #444;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    /* Expand/Collapse all buttons container */
+    .expand-collapse-controls {
+      margin-left: auto;
+      display: flex;
+      gap: 5px;
+    }
+
+    #expand-all-btn:hover {
+      background: #218838;
+    }
+
+    #collapse-all-btn:hover {
+      background: #5a6268;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+      
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .controls > * {
+        margin-bottom: 10px;
+      }
+
+      .expand-collapse-controls {
+        margin-left: 0;
+        order: -1; /* Show expand/collapse buttons at top on mobile */
+      }
+      
+      h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Extension Log Viewer</h1>
+    
+    <div class="controls">
+      <label>Level:</label>
+      <select id="level-filter">
+        <option value="">All Levels</option>
+        <option value="debug">Debug</option>
+        <option value="info">Info</option>
+        <option value="warn">Warning</option>
+        <option value="error">Error</option>
+      </select>
+      
+      <label>Source:</label>
+      <select id="source-filter">
+        <option value="">All Sources</option>
+        <option value="background">Background</option>
+        <option value="content">Content</option>
+        <option value="popup">Popup</option>
+        <option value="options">Options</option>
+      </select>
+
+      <input type="search" id="search-box" placeholder="Search logs...">
+      
+      <label>Auto-refresh:</label>
+      <select id="auto-refresh-interval">
+        <option value="0">Off</option>
+        <option value="1000">1 second</option>
+        <option value="2000">2 seconds</option>
+        <option value="5000" selected>5 seconds</option>
+        <option value="10000">10 seconds</option>
+        <option value="30000">30 seconds</option>
+        <option value="60000">1 minute</option>
+      </select>
+      
+      <button id="refresh-btn">Refresh</button>
+      <button id="export-btn">Export</button>
+      <button id="clear-btn" style="background: #dc3545;">Clear All</button>
+      
+      <div class="expand-collapse-controls">
+        <button id="expand-all-btn" style="background: #28a745;">Expand All</button>
+        <button id="collapse-all-btn" style="background: #6c757d;">Collapse All</button>
+      </div>
+    </div>
+
+    <div class="logs-container">
+      <div id="logs-list">Loading logs...</div>
+    </div>
+  </div>
+
+  <script type="module" src="logs.ts"></script>
+</body>
+</html>
