@@ -12,6 +12,7 @@ const serverDate =           "2024-12-31 23:11:11.000Z";
 // expected values - from client's point of view
 const expectedToday =        "2025-01-01";
 const expectedTodayMinus1 =  "2024-12-31";
+const expectedTodayPlus1  =  "2025-01-02";
 const expectedMonth =        "2025-01";
 const expectedMonthMinus2  = "2024-11";
 const expectedYear =         "2025";
@@ -48,6 +49,10 @@ describe("edited-notes::dateNoteLabelKeywordToDateFilter", () => {
 
     it("resolves 'TODAY' to today's date", () => {
         keywordResolvesToDate("TODAY", expectedToday);
+    });
+
+    it("resolves 'TODAY+1' to tomorrow's date", () => {
+        keywordResolvesToDate("TODAY+1", expectedTodayPlus1);
     });
 
     it("resolves 'MONTH' to current month", () => {
