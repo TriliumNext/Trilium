@@ -1,6 +1,6 @@
 import cls from '../../services/cls.js';
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { resolveDateParams } from "./edited-notes.js";
+import { dateNoteLabelKeywordToDateFilter } from "./edited-notes.js";
 
 // test date setup
 // client: UTC+1
@@ -20,12 +20,12 @@ const expectedYearMinus1 =   "2024";
 function runTest(dateStrToResolve: string, expectedDate: string) {
    cls.init(() => {
         cls.set("localNowDateTime", clientDate);
-        const resolvedDate = resolveDateParams(dateStrToResolve).date;
-        expect(resolvedDate).toBe(expectedDate);
+        const dateFilter = dateNoteLabelKeywordToDateFilter(dateStrToResolve);
+        expect(dateFilter.date).toBe(expectedDate);
     });
 }
 
-describe("edited-notes::resolveDateParams", () => {
+describe("edited-notes::dateNoteLabelKeywordToDateFilter", () => {
     beforeEach(() => {
         vi.stubEnv('TZ', 'UTC');
         vi.useFakeTimers();
