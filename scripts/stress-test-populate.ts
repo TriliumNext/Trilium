@@ -30,7 +30,6 @@ import BAttribute from "../apps/server/src/becca/entities/battribute.js";
 import becca from "../apps/server/src/becca/becca.js";
 import { NoteBuilder, id, note } from "../apps/server/src/test/becca_mocking.js";
 import type { NoteType } from "@triliumnext/commons";
-import { dbReady } from "../apps/server/src/services/sql_init.js";
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -397,17 +396,23 @@ async function main() {
     console.log("Initializing translations...");
     await initializeTranslations();
 
-    console.log("Initializing database connection...");
-
-    // Wait for database to be ready (initialized by sql.ts import)
-    await dbReady;
-
     console.log("Loading becca (backend cache)...");
 
-    // Dynamically import becca_loader to ensure proper initialization order
-    const { beccaLoaded } = await import("../apps/server/src/becca/becca_loader.js");
-    await beccaLoaded;
+    // Directly load becca instead of waiting for beccaLoaded promise
+    // (beccaLoaded depends on dbReady which won't resolve in this script context)
+    const becca_loader = (await import("../apps/server/src/becca/becca_loader.js")).default;
+    const cls = (await import("../apps/server/src/services/cls.js")).default;
 
+    // Load becca and run the population inside CLS context
+    cls.init(() => {
+        becca_loader.load();
+        console.log("Becca loaded successfully.");
+
+        populateNotes();
+    });
+}
+
+function populateNotes() {
     const rootNote = becca.getNote("root");
     if (!rootNote) {
         throw new Error("Root note not found!");
