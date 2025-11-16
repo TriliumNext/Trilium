@@ -165,6 +165,7 @@ export type ToggleInParentResponse = {
 
 export type EditedNotesResponse = {
     notes: EditedNotes,
+    limit: number
 }
 
 export type EditedNote = {
