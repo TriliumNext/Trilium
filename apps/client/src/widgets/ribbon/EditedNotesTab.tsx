@@ -13,10 +13,10 @@ export default function EditedNotesTab({ note }: TabContext) {
     useEffect(() => {
         if (!note) return;
         server.get<EditedNotesResponse>(`edited-notes/${note.getLabelValue("dateNote")}`).then(async response => {
-            const editedNotes = response.notes.filter((n) => n.noteId !== note.noteId);
-            const noteIds = editedNotes.flatMap((n) => n.noteId);
+            const filteredNotes = response.notes.filter((n) => n.noteId !== note.noteId);
+            const noteIds = filteredNotes.flatMap((n) => n.noteId);
             await froca.getNotes(noteIds, true); // preload all at once
-            setEditedNotes(editedNotes);
+            setEditedNotes(filteredNotes);
         });
     }, [ note?.noteId ]);
 
