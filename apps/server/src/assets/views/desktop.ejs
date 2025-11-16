@@ -28,12 +28,6 @@
 
 <%- include("./partials/windowGlobal.ejs", locals) %>
 
-<style>
-    .note-split {
-        max-width: <%= maxContentWidth %>px;
-    }
-</style>
-
 <!-- Required for match the PWA's top bar color with the theme -->
 <!-- This works even when the user directly changes --root-background in CSS -->
 <div id="background-color-tracker" style="position: absolute; visibility: hidden; color: var(--root-background); transition: color 1ms;"></div>

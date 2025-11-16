@@ -136,8 +136,8 @@ function sortNotes(parentNoteId: string, customSortBy: string = "title", reverse
             const topBEl = fetchValue(b, "top");
 
             if (topAEl !== topBEl) {
-                if (topAEl === null) return 1;
-                if (topBEl === null) return -1;
+                if (topAEl === null) return reverse ? -1 : 1;
+                if (topBEl === null) return reverse ? 1 : -1;
 
                 // since "top" should not be reversible, we'll reverse it once more to nullify this effect
                 return compare(topAEl, topBEl) * (reverse ? -1 : 1);
@@ -147,8 +147,8 @@ function sortNotes(parentNoteId: string, customSortBy: string = "title", reverse
             const bottomBEl = fetchValue(b, "bottom");
 
             if (bottomAEl !== bottomBEl) {
-                if (bottomAEl === null) return -1;
-                if (bottomBEl === null) return 1;
+                if (bottomAEl === null) return reverse ? 1 : -1;
+                if (bottomBEl === null) return reverse ? -1 : 1;
 
                 // since "bottom" should not be reversible, we'll reverse it once more to nullify this effect
                 return compare(bottomBEl, bottomAEl) * (reverse ? -1 : 1);

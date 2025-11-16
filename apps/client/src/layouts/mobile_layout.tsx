@@ -1,32 +1,34 @@
+import { applyModals } from "./layout_commons.js";
+import { MOBILE_FLOATING_BUTTONS } from "../widgets/FloatingButtonsDefinitions.jsx";
+import { useNoteContext } from "../widgets/react/hooks.jsx";
+import CloseZenModeButton from "../widgets/close_zen_button.js";
+import FilePropertiesTab from "../widgets/ribbon/FilePropertiesTab.jsx";
 import FlexContainer from "../widgets/containers/flex_container.js";
-import NoteTitleWidget from "../widgets/note_title.js";
-import NoteDetailWidget from "../widgets/note_detail.js";
-import QuickSearchWidget from "../widgets/quick_search.js";
-import NoteTreeWidget from "../widgets/note_tree.js";
-import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
-import ScrollingContainer from "../widgets/containers/scrolling_container.js";
+import FloatingButtons from "../widgets/FloatingButtons.jsx";
 import GlobalMenuWidget from "../widgets/buttons/global_menu.js";
 import LauncherContainer from "../widgets/containers/launcher_container.js";
-import RootContainer from "../widgets/containers/root_container.js";
-import SharedInfoWidget from "../widgets/shared_info.js";
-import PromotedAttributesWidget from "../widgets/promoted_attributes.js";
-import SidebarContainer from "../widgets/mobile_widgets/sidebar_container.js";
-import type AppContext from "../components/app_context.js";
-import TabRowWidget from "../widgets/tab_row.js";
-import MobileEditorToolbar from "../widgets/type_widgets/ckeditor/mobile_editor_toolbar.js";
-import { applyModals } from "./layout_commons.js";
-import FilePropertiesTab from "../widgets/ribbon/FilePropertiesTab.jsx";
-import { useNoteContext } from "../widgets/react/hooks.jsx";
-import FloatingButtons from "../widgets/FloatingButtons.jsx";
-import { MOBILE_FLOATING_BUTTONS } from "../widgets/FloatingButtonsDefinitions.jsx";
-import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button.jsx";
-import CloseZenModeButton from "../widgets/close_zen_button.js";
-import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
 import NoteList from "../widgets/collections/NoteList.jsx";
-import StandaloneRibbonAdapter from "../widgets/ribbon/components/StandaloneRibbonAdapter.jsx";
+import NoteTitleWidget from "../widgets/note_title.js";
+import ContentHeader from "../widgets/containers/content_header.js";
+import NoteTreeWidget from "../widgets/note_tree.js";
+import NoteWrapperWidget from "../widgets/note_wrapper.js";
+import PromotedAttributesWidget from "../widgets/promoted_attributes.js";
+import QuickSearchWidget from "../widgets/quick_search.js";
+import ReadOnlyNoteInfoBar from "../widgets/ReadOnlyNoteInfoBar.jsx";
+import RootContainer from "../widgets/containers/root_container.js";
+import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
+import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SearchDefinitionTab from "../widgets/ribbon/SearchDefinitionTab.jsx";
 import SearchResult from "../widgets/search_result.jsx";
+import SharedInfoWidget from "../widgets/shared_info.js";
+import SidebarContainer from "../widgets/mobile_widgets/sidebar_container.js";
+import StandaloneRibbonAdapter from "../widgets/ribbon/components/StandaloneRibbonAdapter.jsx";
+import TabRowWidget from "../widgets/tab_row.js";
+import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button.jsx";
+import type AppContext from "../components/app_context.js";
+import NoteDetail from "../widgets/NoteDetail.jsx";
+import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.jsx";
 
 const MOBILE_CSS = `
 <style>
@@ -149,14 +151,17 @@ export default class MobileLayout {
                                             .child(<NoteTitleWidget />)
                                             .child(<MobileDetailMenu />)
                                     )
-                                    .child(<SharedInfoWidget />)
                                     .child(<FloatingButtons items={MOBILE_FLOATING_BUTTONS} />)
                                     .child(new PromotedAttributesWidget())
                                     .child(
                                         new ScrollingContainer()
                                             .filling()
                                             .contentSized()
-                                            .child(new NoteDetailWidget())
+                                            .child(new ContentHeader()
+                                                .child(<ReadOnlyNoteInfoBar />)
+                                                .child(<SharedInfoWidget />)
+                                            )
+                                            .child(<NoteDetail />)
                                             .child(<NoteList media="screen" />)
                                             .child(<StandaloneRibbonAdapter component={SearchDefinitionTab} />)
                                             .child(<SearchResult />)

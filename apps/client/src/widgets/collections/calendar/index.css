@@ -1,6 +1,7 @@
 .calendar-view {
     overflow: hidden;
     position: relative;
+    outline: 0;
     height: 100%;
     user-select: none;
     padding: 10px;
@@ -67,6 +68,7 @@
 }
 
 body.desktop:not(.zen) .calendar-view .calendar-header {
+    padding-block-start: 4px;
     padding-inline-end: 5em;
 }
 

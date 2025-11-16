@@ -51,7 +51,8 @@
         "mermaid_description": "Creați diagrame precum flowchart-uri, diagrame de secvență sau de clase, Gantt și multe altele, folosind sintaxa Mermaid.",
         "mindmap_title": "Hartă mentală",
         "mindmap_description": "Organizați-vă gândurile vizual sau organizați o sesiune de brainstorming.",
-        "others_list": "și altele: <0>hartă a notițelor</0>, <1>hartă a relațiilor</1>, <2>căutări salvate</2>, <3>randare a notițelor</3>, și <4>vizualizări web</4>."
+        "others_list": "și altele: <0>hartă a notițelor</0>, <1>hartă a relațiilor</1>, <2>căutări salvate</2>, <3>randare a notițelor</3>, și <4>vizualizări web</4>.",
+        "title": "Multiple modalități de a reprezenta informația"
     },
     "extensibility_benefits": {
         "title": "Partajare și extensibilitate",
@@ -72,7 +73,10 @@
         "board_title": "Tabelă Kanban",
         "board_description": "Organizați-vă sarcinile sau proiectele într-o tabelă Kanban cu o modalitate ușoară de a adăuga elemente și coloane noi și schimbarea stării acestora prin glisare cu mouse-ul.",
         "geomap_title": "Hartă geografică",
-        "geomap_description": "Planificați-vă vacanțele sau marcați-vă punctele de interes direct pe o hartă geografică. Afișați traseele GPX înregistrate pentru a putea urmări itinerarii."
+        "geomap_description": "Planificați-vă vacanțele sau marcați-vă punctele de interes direct pe o hartă geografică. Afișați traseele GPX înregistrate pentru a putea urmări itinerarii.",
+        "title": "Colecții",
+        "presentation_title": "Prezentare",
+        "presentation_description": "Organizați informația în diapozitive și prezentați-le pe tot ecranul, cu tranziții fine. Diapozitivele pot fi ulterior exportate ca PDF pentru o partajare ușoară."
     },
     "faq": {
         "title": "Întrebări frecvente",

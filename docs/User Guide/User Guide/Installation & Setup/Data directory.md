@@ -26,7 +26,17 @@ If you want to back up your Trilium data, just backup this single directory - it
 
 ### Changing the location of data directory
 
-If you want to use some other location for the data directory than the default one, you may change it via TRILIUM\_DATA\_DIR environment variable to some other location:
+If you want to use some other location for the data directory than the default one, you may change it via `TRILIUM_DATA_DIR` environment variable to some other location:
+
+### Windows
+
+1.  Press the Windows key on your keyboard.
+2.  Search and select “Edit the system variables”.
+3.  Press the “Environment Variables…” button in the bottom-right of the newly opened screen.
+4.  On the top section ("User variables for \[user\]"), press the “New…” button.
+5.  In the _Variable name_ field insert `TRILIUM_DATA_DIR`.
+6.  Press the _Browse Directory…_ button and select the new directory where to store the database.
+7.  Close all the windows by pressing the _OK_ button for each of them.
 
 #### Linux
 
@@ -43,11 +53,6 @@ To load it manually, you need to use `launchctl setenv TRILIUM_DATA_DIR <yourpat
 Here is a pre-defined template, where you just need to add your path to:
 
 ```
-
-
-
-
-    
         Label
         set.trilium.env
         RunAtLoad
@@ -57,17 +62,14 @@ Here is a pre-defined template, where you just need to add your path to:
             launchctl
             setenv
             TRILIUM_DATA_DIR
-            /Users/YourUserName/Library/Application Support/trilium-data
-        
-    
-
+            /Users/YourUserName/Library/Application Support/trilium-data    
 ```
 
 ### Create a script to run with specific data directory
 
 An alternative to globally setting environment variable is to run only the Trilium Notes with this environment variable. This then allows for different setup styles like two [database](../Advanced%20Usage/Database.md) instances or "portable" installation.
 
-To do this in unix based systems simply run trilium like this:
+To do this in Unix-based systems simply run `trilium` like this:
 
 ```
 TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data trilium

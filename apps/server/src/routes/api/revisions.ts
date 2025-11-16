@@ -159,7 +159,7 @@ function getEditedNotesOnDate(req: Request) {
                 SELECT noteId FROM notes
                 WHERE
                     (notes.dateCreated LIKE :date OR notes.dateModified LIKE :date)
-                    AND (noteId NOT LIKE '_%')
+                    AND (notes.noteId NOT LIKE  '\\_%' ESCAPE '\\')
             UNION ALL
                 SELECT noteId FROM revisions
                 WHERE revisions.dateCreated LIKE :date

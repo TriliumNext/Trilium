@@ -1,4 +1,5 @@
 import utils from "./utils.js";
+import options from "./options.js";
 import server from "./server.js";
 
 type ExecFunction = (command: string, cb: (err: string, stdout: string, stderror: string) => void) => void;
@@ -126,7 +127,7 @@ function downloadRevision(noteId: string, revisionId: string) {
 /**
  * @param url - should be without initial slash!!!
  */
-function getUrlForDownload(url: string) {
+export function getUrlForDownload(url: string) {
     if (utils.isElectron()) {
         // electron needs absolute URL, so we extract current host, port, protocol
         return `${getHost()}/${url}`;
@@ -171,6 +172,21 @@ function getHost() {
     return `${url.protocol}//${url.hostname}:${url.port}`;
 }
 
+async function openNoteOnServer(noteId: string) {
+    // Get the sync server host from options
+    const syncServerHost = options.get("syncServerHost");
+
+    if (!syncServerHost) {
+        console.error("No sync server host configured");
+        return;
+    }
+
+    const url = new URL(`#root/${noteId}`, syncServerHost).toString();
+
+    // Use window.open to ensure link opens in external browser in Electron
+    window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 async function openDirectory(directory: string) {
     try {
         if (utils.isElectron()) {
@@ -198,5 +214,6 @@ export default {
     openAttachmentExternally,
     openNoteCustom,
     openAttachmentCustom,
+    openNoteOnServer,
     openDirectory
 };

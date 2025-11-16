@@ -60,3 +60,14 @@ declare global {
         windowControlsOverlay?: unknown;
     }
 }
+
+declare module "preact" {
+    namespace JSX {
+        interface IntrinsicElements {
+            webview: {
+                src: string;
+                class: string;
+            }
+        }
+    }
+}

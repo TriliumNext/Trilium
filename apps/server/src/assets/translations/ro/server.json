@@ -256,7 +256,9 @@
     "multi-factor-authentication-title": "Autentificare multi-factor",
     "ai-llm-title": "AI/LLM",
     "localization": "Limbă și regiune",
-    "inbox-title": "Inbox"
+    "inbox-title": "Inbox",
+    "command-palette": "Deschide paleta de comenzi",
+    "zen-mode": "Mod zen"
   },
   "notes": {
     "new-note": "Notiță nouă",
@@ -274,7 +276,8 @@
     "export_filter": "Document PDF (*.pdf)",
     "unable-to-export-message": "Notița curentă nu a putut fi exportată ca PDF.",
     "unable-to-export-title": "Nu s-a putut exporta ca PDF",
-    "unable-to-save-message": "Nu s-a putut scrie fișierul selectat. Încercați din nou sau selectați altă destinație."
+    "unable-to-save-message": "Nu s-a putut scrie fișierul selectat. Încercați din nou sau selectați altă destinație.",
+    "unable-to-print": "Nu s-a putut imprima notița"
   },
   "tray": {
     "bookmarks": "Semne de carte",
@@ -427,7 +430,8 @@
     "presentation": "Prezentare",
     "presentation_slide": "Slide de prezentare",
     "presentation_slide_first": "Primul slide",
-    "presentation_slide_second": "Al doilea slide"
+    "presentation_slide_second": "Al doilea slide",
+    "background": "Fundal"
   },
   "sql_init": {
     "db_not_initialized_desktop": "Baza de date nu este inițializată, urmați instrucțiunile de pe ecran.",

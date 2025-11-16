@@ -20,7 +20,7 @@ If you are using the _Fixed_ formatting toolbar, all the formatting buttons for 
     *   As a more advanced use, it's possible to change the note type in order to modify the [source code](../../Advanced%20Usage/Note%20source.md) of a note.
 *   _**Protect the note**_ toggles whether the current note is encrypted and accessible only by entering the protected session. See [Protected Notes](../Notes/Protected%20Notes.md) for more information.
 *   _**Editable**_ changes whether the current note:
-    *   Enters [read-only mode](../Notes/Read-Only%20Notes.md) automatically if the note is too big (default behaviour).
+    *   Enters [read-only mode](../Notes/Read-Only%20Notes.md) automatically if the note is too big (default behavior).
     *   Is always in read-only mode (however it can still be edited temporarily).
     *   Is always editable, regardless of its size.
 *   _**Bookmark**_ toggles the display of the current note into the [Launch Bar](Launch%20Bar.md) for easy access. See [Bookmarks](../Navigation/Bookmarks.md) for more information.

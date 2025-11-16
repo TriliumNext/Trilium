@@ -7,7 +7,6 @@ import protectedSessionService from "../services/protected_session.js";
 import options from "../services/options.js";
 import froca from "../services/froca.js";
 import utils from "../services/utils.js";
-import LlmChatPanel from "../widgets/llm_chat_panel.js";
 import toastService from "../services/toast.js";
 import noteCreateService from "../services/note_create.js";
 
@@ -64,6 +63,13 @@ export default class RootCommandExecutor extends Component {
         const mime = appContext.tabManager.getActiveContextNoteMime();
         if (noteId) {
             openService.openNoteCustom(noteId, mime || "");
+        }
+    }
+
+    openNoteOnServerCommand() {
+        const noteId = appContext.tabManager.getActiveContextNoteId();
+        if (noteId) {
+            openService.openNoteOnServer(noteId);
         }
     }
 
@@ -171,7 +177,8 @@ export default class RootCommandExecutor extends Component {
     }
 
     toggleTrayCommand() {
-        if (!utils.isElectron()) return;
+        if (!utils.isElectron() || options.is("disableTray")) return;
+
         const { BrowserWindow } = utils.dynamicRequire("@electron/remote");
         const windows = BrowserWindow.getAllWindows() as Electron.BaseWindow[];
         const isVisible = windows.every((w) => w.isVisible());

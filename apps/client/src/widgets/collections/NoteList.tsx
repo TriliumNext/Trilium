@@ -77,8 +77,8 @@ export function CustomNoteList<T extends object>({ note, isEnabled: shouldEnable
         props = {
             note, noteIds, notePath,
             highlightedTokens,
-            viewConfig: viewModeConfig[0],
-            saveConfig: viewModeConfig[1],
+            viewConfig: viewModeConfig.config,
+            saveConfig: viewModeConfig.storeFn,
             onReady: onReady ?? (() => {}),
             ...restProps
         }
@@ -141,7 +141,7 @@ export function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOpt
 
     async function getNoteIds(note: FNote) {
         if (viewType === "list" || viewType === "grid" || viewType === "table" || note.type === "search") {
-            return note.getChildNoteIds();
+            return await note.getChildNoteIdsWithArchiveFiltering(includeArchived);
         } else {
             return await note.getSubtreeNoteIds(includeArchived);
         }
@@ -192,7 +192,11 @@ export function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOpt
 }
 
 export function useViewModeConfig<T extends object>(note: FNote | null | undefined, viewType: ViewTypeOptions | undefined) {
-    const [ viewConfig, setViewConfig ] = useState<[T | undefined, (data: T) => void]>();
+    const [ viewConfig, setViewConfig ] = useState<{
+        config: T | undefined;
+        storeFn: (data: T) => void;
+        note: FNote;
+    }>();
 
     useEffect(() => {
         if (!note || !viewType) return;
@@ -200,12 +204,14 @@ export function useViewModeConfig<T extends object>(note: FNote | null | undefin
         const viewStorage = new ViewModeStorage<T>(note, viewType);
         viewStorage.restore().then(config => {
             const storeFn = (config: T) => {
-                setViewConfig([ config, storeFn ]);
+                setViewConfig({ note, config, storeFn });
                 viewStorage.store(config);
             };
-            setViewConfig([ config, storeFn ]);
+            setViewConfig({ note, config, storeFn });
         });
     }, [ note, viewType ]);
 
+    // Only expose config for the current note, avoid leaking notes when switching between them.
+    if (viewConfig?.note !== note) return undefined;
     return viewConfig;
 }

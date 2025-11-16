@@ -203,7 +203,7 @@ function Font({ title, fontFamilyOption, fontSizeOption }: { title: string, font
                     <FormTextBoxWithUnit
                         name="tree-font-size"
                         type="number" min={50} max={200} step={10}
-                        currentValue={fontSize} onChange={setFontSize}
+                        currentValue={fontSize} onBlur={setFontSize}
                         unit={t("units.percentage")}
                     />
                 </FormGroup>
@@ -284,7 +284,8 @@ function SmoothScrollEnabledOption() {
 }
 
 function MaxContentWidth() {
-    const [ maxContentWidth, setMaxContentWidth ] = useTriliumOption("maxContentWidth");
+    const [maxContentWidth, setMaxContentWidth] = useTriliumOption("maxContentWidth");
+    const [centerContent, setCenterContent] = useTriliumOptionBool("centerContent");
 
     return (
         <OptionsSection title={t("max_content_width.title")}>
@@ -300,9 +301,9 @@ function MaxContentWidth() {
                 </FormGroup>
             </Column>
 
-            <p>
-                {t("max_content_width.apply_changes_description")} <Button text={t("max_content_width.reload_button")} size="micro" onClick={reloadFrontendApp} />
-            </p>
+            <FormCheckbox label={t("max_content_width.centerContent")}
+                          currentValue={centerContent}
+                          onChange={setCenterContent} />
         </OptionsSection>
     )
 }

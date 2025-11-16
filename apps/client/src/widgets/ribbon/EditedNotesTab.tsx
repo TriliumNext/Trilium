@@ -13,8 +13,8 @@ export default function EditedNotesTab({ note }: TabContext) {
     useEffect(() => {
         if (!note) return;
         server.get<EditedNotesResponse>(`edited-notes/${note.getLabelValue("dateNote")}`).then(async editedNotes => {
-            editedNotes = editedNotes.filter((n) => n.noteId !== note.noteId);        
-            const noteIds = editedNotes.flatMap((n) => n.noteId);            
+            editedNotes = editedNotes.filter((n) => n.noteId !== note.noteId);
+            const noteIds = editedNotes.flatMap((n) => n.noteId);
             await froca.getNotes(noteIds, true); // preload all at once
             setEditedNotes(editedNotes);
         });
@@ -41,11 +41,11 @@ export default function EditedNotesTab({ note }: TabContext) {
                                 )}
                             </span>
                         )
-                    }))}
+                    }), " ")}
                 </div>
             ) : (
                 <div className="no-edited-notes-found">{t("edited_notes.no_edited_notes_found")}</div>
             )}
         </div>
-    )    
+    )
 }

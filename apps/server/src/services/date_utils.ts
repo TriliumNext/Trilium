@@ -91,9 +91,12 @@ function validateUtcDateTime(str: string | undefined) {
 }
 
 export default {
+    LOCAL_DATETIME_FORMAT,
+    UTC_DATETIME_FORMAT,
     utcNowDateTime,
     localNowDateTime,
     localNowDate,
+
     utcDateStr,
     utcDateTimeStr,
     parseDateTime,

@@ -379,14 +379,6 @@ describe("#timeLimit", () => {
     });
 });
 
-describe("#deferred", () => {
-    it("should return a promise", () => {
-        const result = utils.deferred();
-        expect(result).toBeInstanceOf(Promise);
-    });
-    // TriliumNextTODO: Add further tests!
-});
-
 describe("#removeDiacritic", () => {
     const testCases: TestCase<typeof utils.removeDiacritic>[] = [
         [ "w/ 'Äpfel' it should replace the 'Ä'", [ "Äpfel" ], "Apfel" ],

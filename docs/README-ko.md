@@ -9,7 +9,7 @@
 
 <hr />
 
-# Trilium Notes
+# 트릴리움 노트
 
 ![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
 ![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
@@ -20,36 +20,32 @@ releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
 [![Translation
 status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
-[English](./README.md) | [Chinese (Simplified)](./docs/README-ZH_CN.md) |
-[Chinese (Traditional)](./docs/README-ZH_TW.md) | [Russian](./docs/README-ru.md)
-| [Japanese](./docs/README-ja.md) | [Italian](./docs/README-it.md) |
-[Spanish](./docs/README-es.md)
+[영어](./README.md) | [중국어 (간체)](./docs/README-ZH_CN.md) | [중국어
+(번체)](./docs/README-ZH_TW.md) | [러시아어](./docs/README-ru.md) |
+[일본어](./docs/README-ja.md) | [이탈리아어](./docs/README-it.md) |
+[스페인어](./docs/README-es.md)
 
-Trilium Notes is a free and open-source, cross-platform hierarchical note taking
-application with focus on building large personal knowledge bases.
+Trilium Notes는 대규모 개인 지식 기반 구축에 중점을 둔 무료 오픈 소스 크로스 플랫폼 계층적 메모 작성 애플리케이션입니다.
 
 See [screenshots](https://triliumnext.github.io/Docs/Wiki/screenshot-tour) for
 quick overview:
 
 <a href="https://triliumnext.github.io/Docs/Wiki/screenshot-tour"><img src="./docs/app.png" alt="Trilium Screenshot" width="1000"></a>
 
-## ⏬ Download
-- [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
-  stable version, recommended for most users.
-- [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  unstable development version, updated daily with the latest features and
-  fixes.
+## ⏬ 내려받기
+- [최신 릴리스](https://github.com/TriliumNext/Trilium/releases/latest) – 안정된 버전으로
+  대부분의 사용자에게 권장됩니다.
+- [야간 빌드](https://github.com/TriliumNext/Trilium/releases/tag/nightly) – 불안정한 개발
+  버전으로, 최신 기능과 수정 사항이 매일 업데이트됩니다.
 
-## 📚 Documentation
+## 📚 문서
 
-**Visit our comprehensive documentation at
-[docs.triliumnotes.org](https://docs.triliumnotes.org/)**
+**[docs.triliumnotes.org](https://docs.triliumnotes.org/)에서 포괄적인 문서를 방문하세요**
 
-Our documentation is available in multiple formats:
-- **Online Documentation**: Browse the full documentation at
-  [docs.triliumnotes.org](https://docs.triliumnotes.org/)
-- **In-App Help**: Press `F1` within Trilium to access the same documentation
-  directly in the application
+저희 문서는 다양한 형식으로 제공됩니다.
+- **온라인 문서**: [docs.triliumnotes.org](https://docs.triliumnotes.org/)에서 모든 문서를
+  보여줍니다
+- **도움말**: 트릴리움 어플리케이션에서 `F1` 버튼을 눌러 같은 문서를 직접 볼 수 있습니다
 - **GitHub**: Navigate through the [User
   Guide](./docs/User%20Guide/User%20Guide/) in this repository
 
@@ -133,7 +129,7 @@ related goodies:
   themes, scripts, plugins and more.
 - [TriliumRocks!](https://trilium.rocks/) for tutorials, guides, and much more.
 
-## ❓Why TriliumNext?
+## ❓왜 TriliumNext일까?
 
 The original Trilium developer ([Zadam](https://github.com/zadam)) has
 graciously given the Trilium repository to the community project which resides
@@ -169,7 +165,7 @@ features, suggestions, or issues you may have!
 
 ## 🏗 Installation
 
-### Windows / MacOS
+### 윈도우 / 맥OS
 
 Download the binary release for your platform from the [latest release
 page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the package
@@ -197,7 +193,7 @@ interface (which is almost identical to the desktop app).
 Currently only the latest versions of Chrome & Firefox are supported (and
 tested).
 
-### Mobile
+### 모바일
 
 To use TriliumNext on a mobile device, you can use a mobile web browser to
 access the mobile interface of a server installation (see below).
@@ -212,7 +208,7 @@ repository](https://github.com/FliegendeWurst/TriliumDroid). Note: It is best to
 disable automatic updates on your server installation (see below) when using
 TriliumDroid since the sync version must match between Trilium and TriliumDroid.
 
-### Server
+### 서버
 
 To install TriliumNext on your own server (including via Docker from
 [Dockerhub](https://hub.docker.com/r/triliumnext/trilium)) follow [the server
@@ -263,8 +259,9 @@ pnpm install
 pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 ```
 
-For more details, see the [development
-docs](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
+자세한 내용은 [development
+docs](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide)를
+참고하세요.
 
 ### Developer Documentation
 

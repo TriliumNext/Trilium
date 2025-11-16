@@ -6,9 +6,9 @@ export interface CKEditorApi {
     focus(): void;
     /**
      * Imperatively sets the text in the editor.
-     * 
+     *
      * Prefer setting `currentValue` prop where possible.
-     * 
+     *
      * @param text text to set in the editor
      */
     setText(text: string): void;
@@ -27,15 +27,16 @@ interface CKEditorOpts {
     onClick?: (e: MouseEvent, pos?: ModelPosition | null) => void;
     onKeyDown?: (e: KeyboardEvent) => void;
     onBlur?: () => void;
+    onInitialized?: (editorInstance: CKTextEditor) => void;
 }
 
-export default function CKEditor({ apiRef, currentValue, editor, config, disableNewlines, disableSpellcheck, onChange, onClick, ...restProps }: CKEditorOpts) {
-    const editorContainerRef = useRef<HTMLDivElement>(null);    
+export default function CKEditor({ apiRef, currentValue, editor, config, disableNewlines, disableSpellcheck, onChange, onClick, onInitialized, ...restProps }: CKEditorOpts) {
+    const editorContainerRef = useRef<HTMLDivElement>(null);
     const textEditorRef = useRef<CKTextEditor>(null);
     useImperativeHandle(apiRef, () => {
         return {
             focus() {
-                editorContainerRef.current?.focus();
+                textEditorRef.current?.editing.view.focus();
                 textEditorRef.current?.model.change((writer) => {
                     const documentRoot = textEditorRef.current?.editing.model.document.getRoot();
                     if (documentRoot) {
@@ -83,6 +84,8 @@ export default function CKEditor({ apiRef, currentValue, editor, config, disable
             if (currentValue) {
                 textEditor.setData(currentValue);
             }
+
+            onInitialized?.(textEditor);
         });
     }, []);
 

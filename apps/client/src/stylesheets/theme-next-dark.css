@@ -15,7 +15,7 @@
     --native-titlebar-background: #00000000;
     --window-background-color-bgfx: transparent; /* When background effects enabled */
 
-    --main-background-color: #272727;
+    --main-background-color: #242424;
     --main-text-color: #ccc;
     --main-border-color: #454545;
     --subtle-border-color: #313131;
@@ -166,6 +166,9 @@
     --protected-session-active-icon-color: #8edd8e;
     --sync-status-error-pulse-color: #f47871;
 
+    --center-pane-vert-layout-background-color-bgfx: #0c0c0c69;
+    --center-pane-horiz-layout-background-color-bgfx: #1e1e1ec7;
+
     --right-pane-heading-color: gray;
 
     --root-background: var(--left-pane-background-color);
@@ -192,9 +195,9 @@
     --badge-background-color: #ffffff1a;
     --badge-text-color: var(--muted-text-color);
 
-    --promoted-attribute-card-background-color: var(--card-background-color);
-    --promoted-attribute-card-shadow-color: #000000b3;
-
+    --promoted-attribute-card-background-color: #ffffff21;
+    --promoted-attribute-card-shadow: none;
+    
     --floating-button-shadow-color: #00000080;
     --floating-button-background-color: #494949d2;
     --floating-button-color: var(--button-text-color);
@@ -208,6 +211,8 @@
     --floating-button-hide-button-background: #00000029;
     --floating-button-hide-button-color: #ffffff63;
 
+    --right-pane-background-color: var(--main-background-color);
+    --right-pane-background-color-bgfx: #0c0c0c24; /* Only for the vertical layout */
     --right-pane-item-hover-background: #ffffff26;
     --right-pane-item-hover-color: white;
 
@@ -225,10 +230,9 @@
     --code-block-box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
 
     --card-background-color: #ffffff12;
-    --card-background-hover-color: #3c3c3c;
-    --card-background-press-color: #464646;
-    --card-border-color: #222222;
-    --card-box-shadow: 0 0 12px rgba(0, 0, 0, 0.15);
+    --card-background-hover-color: #ffffff20;
+    --card-border-color: transparent;
+    --card-box-shadow: none;
 
     --calendar-color: var(--menu-text-color);
     --calendar-weekday-labels-color: var(--muted-text-color);
@@ -294,4 +298,10 @@ body ::-webkit-calendar-picker-indicator {
 
 body .todo-list input[type="checkbox"]:not(:checked):before {
     border-color: var(--muted-text-color) !important;
+}
+
+.tinted-quick-edit-dialog {
+    --modal-background-color: hsl(var(--custom-color-hue), 8.8%, 11.2%);
+    --modal-border-color: hsl(var(--custom-color-hue), 9.4%, 25.1%);
+    --promoted-attribute-card-background-color: hsl(var(--custom-color-hue), 13.2%, 20.8%);
 }

@@ -9,10 +9,10 @@ import hoistedNoteService from "../services/hoisted_note.js";
 import options from "../services/options.js";
 import type { ViewScope } from "../services/link.js";
 import type FNote from "../entities/fnote.js";
-import type TypeWidget from "../widgets/type_widgets/type_widget.js";
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
 import { closeActiveDialog } from "../services/dialog.js";
+import { ReactWrappedWidget } from "../widgets/basic_widget.js";
 
 export interface SetNoteOpts {
     triggerSwitchEvent?: unknown;
@@ -397,7 +397,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
     async getTypeWidget() {
         return this.timeout(
-            new Promise<TypeWidget | null>((resolve) =>
+            new Promise<ReactWrappedWidget | null>((resolve) =>
                 appContext.triggerCommand("executeWithTypeWidget", {
                     resolve,
                     ntxId: this.ntxId

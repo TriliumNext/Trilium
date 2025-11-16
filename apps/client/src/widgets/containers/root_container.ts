@@ -1,9 +1,10 @@
 import { EventData } from "../../components/app_context.js";
+import { LOCALES } from "@triliumnext/commons";
+import { readCssVar } from "../../utils/css-var.js";
 import FlexContainer from "./flex_container.js";
 import options from "../../services/options.js";
 import type BasicWidget from "../basic_widget.js";
 import utils from "../../services/utils.js";
-import { LOCALES } from "@triliumnext/commons";
 
 /**
  * The root container is the top-most widget/container, from which the entire layout derives.
@@ -30,9 +31,11 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
             window.visualViewport?.addEventListener("resize", () => this.#onMobileResize());
         }
 
-        this.#setMotion(options.is("motionEnabled"));
-        this.#setShadows(options.is("shadowsEnabled"));
-        this.#setBackdropEffects(options.is("backdropEffectsEnabled"));
+        this.#setMaxContentWidth();
+        this.#setMotion();
+        this.#setShadows();
+        this.#setBackdropEffects();
+        this.#setThemeCapabilities();
         this.#setLocaleAndDirection(options.get("locale"));
 
         return super.render();
@@ -40,15 +43,21 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
 
     entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
         if (loadResults.isOptionReloaded("motionEnabled")) {
-            this.#setMotion(options.is("motionEnabled"));
+            this.#setMotion();
         }
 
         if (loadResults.isOptionReloaded("shadowsEnabled")) {
-            this.#setShadows(options.is("shadowsEnabled"));
+            this.#setShadows();
         }
 
         if (loadResults.isOptionReloaded("backdropEffectsEnabled")) {
-            this.#setBackdropEffects(options.is("backdropEffectsEnabled"));
+            this.#setBackdropEffects();
+        }
+
+        if (loadResults.isOptionReloaded("maxContentWidth")
+            || loadResults.isOptionReloaded("centerContent")) {
+            
+            this.#setMaxContentWidth();
         }
     }
 
@@ -58,17 +67,36 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
         this.$widget.toggleClass("virtual-keyboard-opened", isKeyboardOpened);
     }
 
-    #setMotion(enabled: boolean) {
+    #setMaxContentWidth() {
+        const width = Math.max(options.getInt("maxContentWidth") || 0, 640);
+        document.body.style.setProperty("--preferred-max-content-width", `${width}px`);
+
+        document.body.classList.toggle("prefers-centered-content", options.is("centerContent"));
+    }
+
+    #setMotion() {
+        const enabled = options.is("motionEnabled");
         document.body.classList.toggle("motion-disabled", !enabled);
         jQuery.fx.off = !enabled;
     }
 
-    #setShadows(enabled: boolean) {
+    #setShadows() {
+        const enabled = options.is("shadowsEnabled");
         document.body.classList.toggle("shadows-disabled", !enabled);
     }
 
-    #setBackdropEffects(enabled: boolean) {
+    #setBackdropEffects() {
+        const enabled = options.is("backdropEffectsEnabled");
         document.body.classList.toggle("backdrop-effects-disabled", !enabled);
+    }
+
+    #setThemeCapabilities() {
+        // Supports background effects
+
+        const useBgfx = readCssVar(document.documentElement, "allow-background-effects")
+                        .asBoolean(false);
+
+        document.body.classList.toggle("theme-supports-background-effects", useBgfx);
     }
 
     #setLocaleAndDirection(locale: string) {

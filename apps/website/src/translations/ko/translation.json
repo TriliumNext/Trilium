@@ -1,6 +1,20 @@
 {
     "hero_section": {
         "github": "깃허브",
-        "dockerhub": "도커 허브"
+        "dockerhub": "도커 허브",
+        "get_started": "시작하기",
+        "title": "생각을 정리하고, 개인 지식 기반을 구축하세요.",
+        "subtitle": "Trilium은 개인 지식 베이스를 정리하고 노트를 작성하는 오픈소스 솔루션입니다. 데스크톱에서 로컬로 사용하거나, 자체 호스팅 서버와 동기화하여 어디에서나 노트를 보관할 수 있습니다.",
+        "screenshot_alt": "Trilium Notes 데스크톱 애플리케이션의 스크린샷"
+    },
+    "get-started": {
+        "title": "시작하기",
+        "desktop_title": "데스크탑 애플리케이션 내려받기 (v{{version}})",
+        "older_releases": "오래된 릴리즈 보기",
+        "architecture": "아키텍쳐:",
+        "server_title": "여러 기기에서 액세스할 수 있는 서버 설정"
+    },
+    "download_now": {
+        "text": "지금 내려받기 "
     }
 }

@@ -22,7 +22,7 @@
       let
         pkgs = import nixpkgs { inherit system; };
         electron = pkgs."electron_${lib.versions.major packageJsonDesktop.devDependencies.electron}";
-        nodejs = pkgs.nodejs_22;
+        nodejs = pkgs.nodejs_24;
         # pnpm creates an overly long PATH env variable for child processes.
         # This patch deduplicates entries in PATH, which results in an equivalent but shorter entry.
         # https://github.com/pnpm/pnpm/issues/6106
@@ -76,7 +76,7 @@
             preBuildCommands ? "",
           }:
           pnpm2nix.packages.${system}.mkPnpmPackage rec {
-            pname = "triliumnext-${app}";
+            pname = "trilium-${app}";
             version = packageJson.version + (lib.optionalString (self ? shortRev) "-${self.shortRev}");
 
             src = fullCleanSource ./.;

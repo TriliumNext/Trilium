@@ -160,17 +160,20 @@
 /* #region Note info */
 .note-info-widget {
     padding: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
 }
 
-.note-info-widget-table {
-    max-width: 100%;
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
+.note-info-item {
+    display: flex;
+    align-items: baseline;
+    padding-inline-end: 15px;
+    padding-block: 5px;
 }
 
-.note-info-widget-table td, .note-info-widget-table th {
-    padding: 5px;
+.note-info-item > span:first-child {
+    padding-inline-end: 5px;
 }
 
 .note-info-mime {
@@ -185,6 +188,10 @@
     font-family: var(--monospace-font-family);
     font-size: 0.8em;
     vertical-align: middle !important;
+}
+
+.note-info-widget .calculate-button {
+    padding: 0 10px;
 }
 /* #endregion */
 

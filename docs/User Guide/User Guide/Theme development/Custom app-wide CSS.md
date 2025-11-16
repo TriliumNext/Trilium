@@ -5,7 +5,7 @@ It is possible to provide a CSS file to be used regardless of the theme set by t
 | --- | --- |
 | ![](Custom%20app-wide%20CSS_image.png) | Start by creating a new note and changing the note type to CSS |
 | ![](2_Custom%20app-wide%20CSS_image.png) | In the ribbon, press the “Owned Attributes” section and type `#appCss`. |
-| ![](3_Custom%20app-wide%20CSS_image.png) | Type the desired CSS.    <br>  <br>Generally it's a good idea to append `!important` for the styles that are being changed, in order to prevent other |
+| ![](3_Custom%20app-wide%20CSS_image.png) | Type the desired CSS.     <br>  <br>Generally it's a good idea to append `!important` for the styles that are being changed, in order to prevent other |
 
 ## Seeing the changes
 
@@ -15,18 +15,10 @@ Adding a new _app CSS note_ or modifying an existing one does not immediately ap
 
 ### Customizing the printing stylesheet
 
-When printing a document or exporting as PDF, it is possible to adjust the style by creating a CSS note that uses the `@media` selector.
-
-For example, to change the font of the document from the one defined by the theme or the user to a serif one:
-
-```
-@media print {
-	body {
-        --main-font-family: serif !important;
-        --detail-font-family: var(--main-font-family) !important;
-    }
-}
-```
+> [!TIP]
+> Since v0.99.2, it's no longer possible to use `#appCss` to customize the printing CSS, since the printing is now done in an isolated environment.
+> 
+> However, it's still possible to customize the CSS via `~printCss`; see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md">Printing &amp; Exporting as PDF</a> for more information.
 
 ### Per-workspace styles
 
@@ -84,4 +76,4 @@ To change the color of the note title and the icon (above the content):
 
 Some parts of the application can't be styled directly via custom CSS because they are rendered in an isolated mode (shadow DOM), more specifically:
 
-*   The slides in a <a class="reference-link" href="../Collections/Presentation.md">Presentation View</a>.
+*   The slides in a <a class="reference-link" href="../Collections/Presentation.md">Presentation</a>.

@@ -2,6 +2,7 @@ import type { CommandListenerData, EventData, EventNames } from "../../component
 import type NoteContext from "../../components/note_context.js";
 import type BasicWidget from "../basic_widget.js";
 import Container from "./container.js";
+import "./scrolling_container.css";
 
 export default class ScrollingContainer extends Container<BasicWidget> {
 
@@ -11,9 +12,6 @@ export default class ScrollingContainer extends Container<BasicWidget> {
         super();
 
         this.class("scrolling-container");
-        this.css("overflow", "auto");
-        this.css("scroll-behavior", "smooth");
-        this.css("position", "relative");
     }
 
     setNoteContextEvent({ noteContext }: EventData<"setNoteContext">) {

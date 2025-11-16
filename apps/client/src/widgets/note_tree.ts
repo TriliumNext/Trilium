@@ -173,14 +173,6 @@ interface ExpandedSubtreeResponse {
     branchIds: string[];
 }
 
-interface Node extends Fancytree.NodeData {
-    noteId: string;
-    parentNoteId: string;
-    branchId: string;
-    isProtected: boolean;
-    noteType: NoteType;
-}
-
 interface RefreshContext {
     noteIdsToUpdate: Set<string>;
     noteIdsToReload: Set<string>;
@@ -769,7 +761,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
     prepareChildren(parentNote: FNote) {
         utils.assertArguments(parentNote);
 
-        const noteList: Node[] = [];
+        const noteList: Fancytree.FancytreeNewNode[] = [];
 
         const hideArchivedNotes = this.hideArchivedNotes;
 
@@ -837,7 +829,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
         const isFolder = note.isFolder();
 
-        const node: Node = {
+        const node: Fancytree.FancytreeNewNode = {
             noteId: note.noteId,
             parentNoteId: branch.parentNoteId,
             branchId: branch.branchId,
@@ -849,7 +841,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             refKey: note.noteId,
             lazy: true,
             folder: isFolder,
-            expanded: branch.isExpanded && note.type !== "search",
+            expanded: !!branch.isExpanded && note.type !== "search",
             key: utils.randomString(12) // this should prevent some "duplicate key" errors
         };
 
@@ -911,7 +903,6 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         return extraClasses.join(" ");
     }
 
-    /** @returns {FancytreeNode[]} */
     getSelectedNodes(stopOnParents = false) {
         return this.tree.getSelectedNodes(stopOnParents);
     }
@@ -1532,7 +1523,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
             // Automatically expand the hoisted note by default
             const node = this.getActiveNode();
-            if (node?.data.noteId === this.noteContext.hoistedNoteId){
+            if (node && node.data.noteId === this.noteContext.hoistedNoteId){
                 this.setExpanded(node.data.branchId, true);
             }
         }
@@ -1589,6 +1580,20 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         await branchService.deleteNotes(branchIds);
 
         this.clearSelectedNodes();
+    }
+
+    async editBranchPrefixCommand({ node }: CommandListenerData<"editBranchPrefix">) {
+        const branchIds = this.getSelectedOrActiveBranchIds(node).filter((branchId) => !branchId.startsWith("virt-"));
+
+        if (!branchIds.length) {
+            return;
+        }
+
+        // Trigger the event with the selected branch IDs
+        appContext.triggerEvent("editBranchPrefix", {
+            selectedOrActiveBranchIds: branchIds,
+            node: node
+        });
     }
 
     canBeMovedUpOrDown(node: Fancytree.FancytreeNode) {

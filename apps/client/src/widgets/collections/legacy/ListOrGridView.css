@@ -16,6 +16,10 @@
     flex-grow: 1;
 }
 
+.note-book-card.archived {
+    opacity: 0.5;
+}
+
 .note-book-card:not(.expanded) .note-book-content {
     padding: 10px
 }

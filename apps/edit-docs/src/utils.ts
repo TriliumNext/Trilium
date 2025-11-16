@@ -3,12 +3,12 @@ import fs from "fs/promises";
 import fsExtra from "fs-extra";
 import path from "path";
 import electron from "electron";
-import { deferred, type DeferredPromise } from "@triliumnext/server/src/services/utils.js";
 import windowService from "@triliumnext/server/src/services/window.js";
 import archiver, { type Archiver } from "archiver";
 import type { WriteStream } from "fs";
 import TaskContext from "@triliumnext/server/src/services/task_context.js";
 import { resolve } from "path";
+import { deferred, DeferredPromise } from "../../../packages/commons/src";
 
 export function initializeDatabase(skipDemoDb: boolean) {
     return new Promise<void>(async (resolve) => {
@@ -92,8 +92,6 @@ function waitForEnd(archive: Archiver, stream: WriteStream) {
 }
 
 export async function extractZip(zipFilePath: string, outputPath: string, ignoredFiles?: Set<string>) {
-    const deferred = (await import("@triliumnext/server/src/services/utils.js")).deferred;
-
     const promise = deferred<void>()
     setTimeout(async () => {
         // Then extract the zip.

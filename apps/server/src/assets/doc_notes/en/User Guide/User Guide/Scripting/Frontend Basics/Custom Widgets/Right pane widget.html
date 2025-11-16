@@ -1,0 +1,30 @@
+<ul>
+  <li><code>doRender</code> must not be overridden, instead <code>doRenderBody()</code> has
+    to be overridden.</li>
+  <li><code>parentWidget()</code> must be set to <code>“rightPane”</code>.</li>
+  <li><code>widgetTitle()</code> getter can optionally be overriden, otherwise
+    the widget will be displayed as “Untitled widget”.</li>
+</ul><pre><code class="language-text-x-trilium-auto">const template = `&lt;div&gt;Hi&lt;/div&gt;`;
+
+class ToDoListWidget extends api.RightPanelWidget {
+    
+    get widgetTitle() {
+        return "Title goes here";
+    }
+        
+    get parentWidget() { return "right-pane" }
+    
+    doRenderBody() {
+        this.$body.empty().append($(template));
+    }   
+    
+    async refreshWithNote(note) {
+        this.toggleInt(false);                
+        this.triggerCommand("reEvaluateRightPaneVisibility");
+        this.toggleInt(true);
+        this.triggerCommand("reEvaluateRightPaneVisibility");
+    }
+}
+
+module.exports = new ToDoListWidget();</code></pre>
+<p>The implementation is in <code>src/public/app/widgets/right_panel_widget.js</code>.</p>

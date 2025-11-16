@@ -24,7 +24,7 @@
       <td>
         <img src="3_Custom app-wide CSS_image.png">
       </td>
-      <td>Type the desired CSS.&nbsp;&nbsp;
+      <td>Type the desired CSS.&nbsp;&nbsp;&nbsp;
         <br>
         <br>Generally it's a good idea to append <code>!important</code> for the styles
         that are being changed, in order to prevent other</td>
@@ -38,15 +38,13 @@
   the page first.</p>
 <h2>Sample use cases</h2>
 <h3>Customizing the printing stylesheet</h3>
-<p>When printing a document or exporting as PDF, it is possible to adjust
-  the style by creating a CSS note that uses the <code>@media</code> selector.</p>
-<p>For example, to change the font of the document from the one defined by
-  the theme or the user to a serif one:</p><pre><code class="language-text-x-trilium-auto">@media print {
-	body {
-        --main-font-family: serif !important;
-        --detail-font-family: var(--main-font-family) !important;
-    }
-}</code></pre>
+<aside class="admonition tip">
+  <p>Since v0.99.2, it's no longer possible to use <code>#appCss</code> to customize
+    the printing CSS, since the printing is now done in an isolated environment.</p>
+  <p>However, it's still possible to customize the CSS via <code>~printCss</code>;
+    see&nbsp;<a class="reference-link" href="#root/_help_NRnIZmSMc5sj">Printing &amp; Exporting as PDF</a>&nbsp;for
+    more information.</p>
+</aside>
 <h3>Per-workspace styles</h3>
 <p>When using&nbsp;<a class="reference-link" href="#root/_help_9sRHySam5fXb">Workspaces</a>,
   it can be helpful to create a visual distinction between notes in different
@@ -92,5 +90,5 @@
 <p>Some parts of the application can't be styled directly via custom CSS
   because they are rendered in an isolated mode (shadow DOM), more specifically:</p>
 <ul>
-  <li>The slides in a&nbsp;<a class="reference-link" href="#root/_help_zP3PMqaG71Ct">Presentation View</a>.</li>
+  <li>The slides in a&nbsp;<a class="reference-link" href="#root/_help_zP3PMqaG71Ct">Presentation</a>.</li>
 </ul>

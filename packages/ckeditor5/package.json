@@ -6,16 +6,17 @@
   "type": "module",
   "main": "./src/index.ts",
   "dependencies": {
+    "@triliumnext/commons": "workspace:*",
     "@triliumnext/ckeditor5-admonition": "workspace:*",
     "@triliumnext/ckeditor5-footnotes": "workspace:*",
     "@triliumnext/ckeditor5-keyboard-marker": "workspace:*",
     "@triliumnext/ckeditor5-math": "workspace:*",
     "@triliumnext/ckeditor5-mermaid": "workspace:*",
-    "ckeditor5": "47.1.0",
-    "ckeditor5-premium-features": "47.1.0"
+    "ckeditor5": "47.2.0",
+    "ckeditor5-premium-features": "47.2.0"
   },
   "devDependencies": {
-    "@smithy/middleware-retry": "4.4.6",
+    "@smithy/middleware-retry": "4.4.11",
     "@types/jquery": "3.5.33"
   }
 }

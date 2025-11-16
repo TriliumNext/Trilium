@@ -72,8 +72,8 @@ function EditorFeatures() {
     return (
         <OptionsSection title={t("editorfeatures.title")}>
             <EditorFeature name="emoji-completion-enabled" optionName="textNoteEmojiCompletionEnabled" label={t("editorfeatures.emoji_completion_enabled")} description={t("editorfeatures.emoji_completion_description")} />
-            <EditorFeature name="note-completion-enabled" optionName="textNoteCompletionEnabled" label={t("editorfeatures.note_completion_enabled")} description={t("editorfeatures.emoji_completion_description")} />
-            <EditorFeature name="slash-commands-enabled" optionName="textNoteSlashCommandsEnabled" label={t("editorfeatures.slash_commands_enabled")} description={t("editorfeatures.emoji_completion_description")} />
+            <EditorFeature name="note-completion-enabled" optionName="textNoteCompletionEnabled" label={t("editorfeatures.note_completion_enabled")} description={t("editorfeatures.note_completion_description")} />
+            <EditorFeature name="slash-commands-enabled" optionName="textNoteSlashCommandsEnabled" label={t("editorfeatures.slash_commands_enabled")} description={t("editorfeatures.slash_commands_description")} />
         </OptionsSection>
     );
 }

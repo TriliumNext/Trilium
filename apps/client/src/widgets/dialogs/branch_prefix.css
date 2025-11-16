@@ -1,0 +1,13 @@
+.branch-prefix-dialog .branch-prefix-notes-list {
+    margin-top: 10px;
+}
+
+.branch-prefix-dialog .branch-prefix-notes-list ul {
+    max-height: 200px;
+    overflow: auto;
+    margin-top: 5px;
+}
+
+.branch-prefix-dialog .branch-prefix-current {
+    opacity: 0.6;
+}

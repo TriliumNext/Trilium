@@ -355,7 +355,9 @@
     "visible-launchers-title": "可見啟動器",
     "user-guide": "用戶說明",
     "localization": "語言和區域",
-    "inbox-title": "收件匣"
+    "inbox-title": "收件匣",
+    "command-palette": "打開命令面板",
+    "zen-mode": "禪模式"
   },
   "notes": {
     "new-note": "新增筆記",
@@ -417,7 +419,7 @@
     "end-time": "結束時間",
     "geolocation": "地理位置",
     "built-in-templates": "內建模版",
-    "board": "儀表板",
+    "board": "看板",
     "status": "狀態",
     "board_note_first": "第一個筆記",
     "board_note_second": "第二個筆記",

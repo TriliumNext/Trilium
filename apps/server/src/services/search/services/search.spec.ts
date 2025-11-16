@@ -242,18 +242,149 @@ describe("Search", () => {
 
         const searchContext = new SearchContext();
 
-        // Using leading = for exact title match
-        let searchResults = searchService.findResultsWithQuery("=Example Note", searchContext);
-        expect(searchResults.length).toEqual(1);
+        // Using leading = for exact word match - should find notes containing the exact word "example"
+        let searchResults = searchService.findResultsWithQuery("=example", searchContext);
+        expect(searchResults.length).toEqual(2); // "Example Note" and "Sample" (has label "example")
         expect(findNoteByTitle(searchResults, "Example Note")).toBeTruthy();
+        expect(findNoteByTitle(searchResults, "Sample")).toBeTruthy();
 
-        // Without =, it should find all notes containing "example"
+        // Without =, it should find all notes containing "example" (substring match)
         searchResults = searchService.findResultsWithQuery("example", searchContext);
-        expect(searchResults.length).toEqual(3);
+        expect(searchResults.length).toEqual(3); // All notes
 
         // = operator should not match partial words
-        searchResults = searchService.findResultsWithQuery("=Example", searchContext);
-        expect(searchResults.length).toEqual(0);
+        searchResults = searchService.findResultsWithQuery("=examples", searchContext);
+        expect(searchResults.length).toEqual(1); // Only "Examples of Usage"
+        expect(findNoteByTitle(searchResults, "Examples of Usage")).toBeTruthy();
+    });
+
+    it("leading = operator for exact match - comprehensive title tests", () => {
+        // Create notes with varying titles to test exact vs contains matching
+        rootNote
+            .child(note("testing"))
+            .child(note("testing123"))
+            .child(note("My testing notes"))
+            .child(note("123testing"))
+            .child(note("test"));
+
+        const searchContext = new SearchContext();
+
+        // Test 1: Exact word match with leading = should find notes containing the exact word "testing"
+        let searchResults = searchService.findResultsWithQuery("=testing", searchContext);
+        expect(searchResults.length).toEqual(2); // "testing" and "My testing notes" (word boundary)
+        expect(findNoteByTitle(searchResults, "testing")).toBeTruthy();
+        expect(findNoteByTitle(searchResults, "My testing notes")).toBeTruthy();
+
+        // Test 2: Without =, it should find all notes containing "testing" (substring contains behavior)
+        searchResults = searchService.findResultsWithQuery("testing", searchContext);
+        expect(searchResults.length).toEqual(4); // All notes with "testing" substring
+
+        // Test 3: Exact match should only find the exact composite word
+        searchResults = searchService.findResultsWithQuery("=testing123", searchContext);
+        expect(searchResults.length).toEqual(1);
+        expect(findNoteByTitle(searchResults, "testing123")).toBeTruthy();
+
+        // Test 4: Exact match should only find the exact composite word
+        searchResults = searchService.findResultsWithQuery("=123testing", searchContext);
+        expect(searchResults.length).toEqual(1);
+        expect(findNoteByTitle(searchResults, "123testing")).toBeTruthy();
+
+        // Test 5: Verify that "test" doesn't match "testing" with exact search
+        searchResults = searchService.findResultsWithQuery("=test", searchContext);
+        expect(searchResults.length).toEqual(1);
+        expect(findNoteByTitle(searchResults, "test")).toBeTruthy();
+    });
+
+    it("leading = operator with quoted phrases", () => {
+        rootNote
+            .child(note("exact phrase"))
+            .child(note("exact phrase match"))
+            .child(note("this exact phrase here"))
+            .child(note("phrase exact"));
+
+        const searchContext = new SearchContext();
+
+        // Test 1: With = and quotes, treat as exact phrase match (consecutive words in order)
+        let searchResults = searchService.findResultsWithQuery("='exact phrase'", searchContext);
+        // Should match only notes containing the exact phrase "exact phrase"
+        expect(searchResults.length).toEqual(3); // Only notes with consecutive "exact phrase"
+        expect(findNoteByTitle(searchResults, "exact phrase")).toBeTruthy();
+        expect(findNoteByTitle(searchResults, "exact phrase match")).toBeTruthy();
+        expect(findNoteByTitle(searchResults, "this exact phrase here")).toBeTruthy();
+
+        // Test 2: Without =, quoted phrase should find substring/contains matches
+        searchResults = searchService.findResultsWithQuery("'exact phrase'", searchContext);
+        expect(searchResults.length).toEqual(3); // All notes containing the phrase substring
+        expect(findNoteByTitle(searchResults, "exact phrase")).toBeTruthy();
+        expect(findNoteByTitle(searchResults, "exact phrase match")).toBeTruthy();
+        expect(findNoteByTitle(searchResults, "this exact phrase here")).toBeTruthy();
+
+        // Test 3: Verify word order matters with exact phrase matching
+        searchResults = searchService.findResultsWithQuery("='phrase exact'", searchContext);
+        expect(searchResults.length).toEqual(1); // Only "phrase exact" matches
+        expect(findNoteByTitle(searchResults, "phrase exact")).toBeTruthy();
+    });
+
+    it("leading = operator case sensitivity", () => {
+        rootNote
+            .child(note("TESTING"))
+            .child(note("testing"))
+            .child(note("Testing"))
+            .child(note("TeStiNg"));
+
+        const searchContext = new SearchContext();
+
+        // Exact match should be case-insensitive (based on lex.ts line 4: str.toLowerCase())
+        let searchResults = searchService.findResultsWithQuery("=testing", searchContext);
+        expect(searchResults.length).toEqual(4); // All variants of "testing"
+
+        searchResults = searchService.findResultsWithQuery("=TESTING", searchContext);
+        expect(searchResults.length).toEqual(4); // All variants
+
+        searchResults = searchService.findResultsWithQuery("=Testing", searchContext);
+        expect(searchResults.length).toEqual(4); // All variants
+
+        searchResults = searchService.findResultsWithQuery("=TeStiNg", searchContext);
+        expect(searchResults.length).toEqual(4); // All variants
+    });
+
+    it("leading = operator with special characters", () => {
+        rootNote
+            .child(note("test-note"))
+            .child(note("test_note"))
+            .child(note("test.note"))
+            .child(note("test note"))
+            .child(note("testnote"));
+
+        const searchContext = new SearchContext();
+
+        // Each exact match should only find its specific variant (compound words are treated as single words)
+        let searchResults = searchService.findResultsWithQuery("=test-note", searchContext);
+        expect(searchResults.length).toEqual(1);
+        expect(findNoteByTitle(searchResults, "test-note")).toBeTruthy();
+
+        searchResults = searchService.findResultsWithQuery("=test_note", searchContext);
+        expect(searchResults.length).toEqual(1);
+        expect(findNoteByTitle(searchResults, "test_note")).toBeTruthy();
+
+        searchResults = searchService.findResultsWithQuery("=test.note", searchContext);
+        expect(searchResults.length).toEqual(1);
+        expect(findNoteByTitle(searchResults, "test.note")).toBeTruthy();
+
+        // For phrases with spaces, use quotes to keep them together
+        // With exact phrase matching, this finds notes with the consecutive phrase
+        searchResults = searchService.findResultsWithQuery("='test note'", searchContext);
+        expect(searchResults.length).toEqual(1); // Only "test note" has the exact phrase
+        expect(findNoteByTitle(searchResults, "test note")).toBeTruthy();
+
+        // Without quotes, "test note" is tokenized as two separate tokens
+        // and will be treated as an exact phrase search with = operator
+        searchResults = searchService.findResultsWithQuery("=test note", searchContext);
+        expect(searchResults.length).toEqual(1); // Only "test note" has the exact phrase
+
+        // Without =, should find all matches containing "test" substring
+        searchResults = searchService.findResultsWithQuery("test", searchContext);
+        expect(searchResults.length).toEqual(5);
     });
 
     it("fuzzy attribute search", () => {

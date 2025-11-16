@@ -1,3 +1,5 @@
+@import "boxicons/css/boxicons.min.css";
+
 :root {
     --print-font-size: 11pt;
     --ck-content-color-image-caption-background: transparent !important;

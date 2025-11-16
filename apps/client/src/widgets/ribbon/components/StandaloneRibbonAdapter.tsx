@@ -1,8 +1,9 @@
 import { ComponentChildren } from "preact";
 import { useNoteContext } from "../../react/hooks";
-import { TabContext, TitleContext } from "../ribbon-interface";
+import { TabContext } from "../ribbon-interface";
 import { useEffect, useMemo, useState } from "preact/hooks";
 import { RIBBON_TAB_DEFINITIONS } from "../RibbonDefinition";
+import { shouldShowTab } from "../Ribbon";
 
 interface StandaloneRibbonAdapterProps {
     component: (props: TabContext) => ComponentChildren;
@@ -16,10 +17,11 @@ export default function StandaloneRibbonAdapter({ component }: StandaloneRibbonA
     const Component = component;
     const { note, ntxId, hoistedNoteId, notePath, noteContext, componentId } = useNoteContext();
     const definition = useMemo(() => RIBBON_TAB_DEFINITIONS.find(def => def.content === component), [ component ]);
-    const [ shown, setShown ] = useState(unwrapShown(definition?.show, { note }));
+    const [ shown, setShown ] = useState<boolean | null | undefined>(false);
 
     useEffect(() => {
-        setShown(unwrapShown(definition?.show, { note }));
+        if (!definition) return;
+        shouldShowTab(definition.show, { note, noteContext }).then(setShown);
     }, [ note ]);
 
     return (
@@ -34,10 +36,4 @@ export default function StandaloneRibbonAdapter({ component }: StandaloneRibbonA
             activate={() => {}}
         />
     );
-}
-
-function unwrapShown(value: boolean | ((context: TitleContext) => boolean | null | undefined) | undefined, context: TitleContext) {
-    if (!value) return true;
-    if (typeof value === "boolean") return value;
-    return !!value(context);
 }

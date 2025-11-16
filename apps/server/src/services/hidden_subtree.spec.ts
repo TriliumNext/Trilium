@@ -4,9 +4,8 @@ import hiddenSubtreeService from "./hidden_subtree.js";
 import sql_init from "./sql_init.js";
 import branches from "./branches.js";
 import becca from "../becca/becca.js";
-import { LOCALES } from "@triliumnext/commons";
+import { deferred, LOCALES } from "@triliumnext/commons";
 import { changeLanguage } from "./i18n.js";
-import { deferred } from "./utils.js";
 
 describe("Hidden Subtree", () => {
     beforeAll(async () => {

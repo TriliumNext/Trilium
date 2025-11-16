@@ -1464,10 +1464,7 @@
     "title": "Szerokość zawartości",
     "default_description": "Trilium domyślnie ogranicza maksymalną szerokość zawartości, aby poprawić czytelność na zmaksymalizowanych ekranach o dużej szerokości.",
     "max_width_label": "Maksymalna szerokość zawartości",
-    "max_width_unit": "piksele",
-    "apply_changes_description": "Aby zastosować zmiany szerokości zawartości, kliknij na",
-    "reload_button": "przeładuj frontend",
-    "reload_description": "zmiany z opcji wyglądu"
+    "max_width_unit": "piksele"
   },
   "native_title_bar": {
     "title": "Natywny pasek tytułu (wymaga ponownego uruchomienia aplikacji)",

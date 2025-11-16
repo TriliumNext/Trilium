@@ -39,7 +39,10 @@
     "help_on_tree_prefix": "有關樹前綴的說明",
     "prefix": "前綴： ",
     "save": "儲存",
-    "branch_prefix_saved": "已儲存分支前綴。"
+    "branch_prefix_saved": "已儲存分支前綴。",
+    "edit_branch_prefix_multiple": "編輯 {{count}} 個分支的前綴",
+    "branch_prefix_saved_multiple": "已為 {{count}} 個分支儲存分支前綴。",
+    "affected_branches": "受影響的分支 ({{count}}):"
   },
   "bulk_actions": {
     "bulk_actions": "批次操作",
@@ -684,7 +687,8 @@
     "convert_into_attachment_failed": "筆記 '{{title}}' 轉換失敗。",
     "convert_into_attachment_successful": "筆記 '{{title}}' 已成功轉換為附件。",
     "convert_into_attachment_prompt": "確定要將筆記 '{{title}}' 轉換為父級筆記的附件嗎？",
-    "print_pdf": "匯出為 PDF…"
+    "print_pdf": "匯出為 PDF…",
+    "open_note_on_server": "在伺服器上開啟筆記"
   },
   "onclick_button": {
     "no_click_handler": "按鈕元件'{{componentId}}'沒有定義點擊時的處理方式"
@@ -989,7 +993,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "顯示受保護的筆記需要輸入您的密碼：",
-    "start_session_button": "開始受保護的作業階段 <kbd>Enter</kbd>",
+    "start_session_button": "開始受保護的作業階段",
     "started": "已啟動受保護的作業階段。",
     "wrong_password": "密碼錯誤。",
     "protecting-finished-successfully": "已成功完成保護操作。",
@@ -1104,10 +1108,8 @@
     "title": "內容寬度",
     "default_description": "Trilium 預設會限制內容的最大寬度以提高在寬螢幕中全螢幕時的可讀性。",
     "max_width_label": "內容最大寬度（像素）",
-    "apply_changes_description": "要套用內容寬度更改，請點擊",
-    "reload_button": "重新載入前端",
-    "reload_description": "來自外觀選項的更改",
-    "max_width_unit": "像素"
+    "max_width_unit": "像素",
+    "centerContent": "將內容置中"
   },
   "native_title_bar": {
     "title": "原生標題列（需要重新啟動程式）",
@@ -2079,5 +2081,14 @@
     "edit-slide": "編輯此投影片",
     "start-presentation": "開始簡報",
     "slide-overview": "切換投影片概覽"
+  },
+  "calendar_view": {
+    "delete_note": "刪除筆記…"
+  },
+  "read-only-info": {
+    "read-only-note": "目前正在檢視唯讀筆記。",
+    "auto-read-only-note": "此筆記以唯讀模式顯示以加快載入速度。",
+    "auto-read-only-learn-more": "了解更多",
+    "edit-note": "編輯筆記"
   }
 }

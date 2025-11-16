@@ -25,6 +25,7 @@ interface ButtonProps {
     icon?: string;
     click: () => void;
     enabled?: boolean;
+    backgroundColor?: string;
 }
 
 interface SpacerProps {
@@ -129,13 +130,14 @@ export function TouchBarSlider({ label, value, minValue, maxValue, onChange }: S
     return <></>;
 }
 
-export function TouchBarButton({ label, icon, click, enabled }: ButtonProps) {
+export function TouchBarButton({ label, icon, click, enabled, backgroundColor }: ButtonProps) {
     const api = useContext(TouchBarContext);
     const item = useMemo(() => {
         if (!api) return null;
         return new api.TouchBar.TouchBarButton({
             label, click, enabled,
-            icon: icon ? buildIcon(api.nativeImage, icon) : undefined
+            icon: icon ? buildIcon(api.nativeImage, icon) : undefined,
+            backgroundColor
         });
     }, [ label, icon ]);
 
@@ -169,6 +171,32 @@ export function TouchBarSegmentedControl({ mode, segments, selectedIndex, onChan
     }
 
     return <></>;
+}
+
+export function TouchBarGroup({ children }: { children: ComponentChildren }) {
+    const remote = dynamicRequire("@electron/remote") as typeof import("@electron/remote");
+    const items: TouchBarItem[] = [];
+
+    const api: TouchBarContextApi = {
+        TouchBar: remote.TouchBar,
+        nativeImage: remote.nativeImage,
+        addItem: (item) => {
+            items.push(item);
+        }
+    };
+
+    if (api) {
+        const item = new api.TouchBar.TouchBarGroup({
+            items: new api.TouchBar({ items })
+        });
+        api.addItem(item);
+    }
+
+    return <>
+        <TouchBarContext.Provider value={api}>
+            {children}
+        </TouchBarContext.Provider>
+    </>;
 }
 
 export function TouchBarSpacer({ size }: SpacerProps) {

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks"
 import { useNoteContext, useNoteProperty, useStaticTooltipWithKeyboardShortcut, useTriliumEvents } from "../react/hooks";
 import "./style.css";
 
-import { numberObjectsInPlace } from "../../services/utils";
+import { Indexed, numberObjectsInPlace } from "../../services/utils";
 import { EventNames } from "../../components/app_context";
 import NoteActions from "./NoteActions";
 import { KeyboardActionNames } from "@triliumnext/commons";
@@ -11,30 +11,47 @@ import { TabConfiguration, TitleContext } from "./ribbon-interface";
 
 const TAB_CONFIGURATION = numberObjectsInPlace<TabConfiguration>(RIBBON_TAB_DEFINITIONS);
 
+interface ComputedTab extends Indexed<TabConfiguration> {
+    shouldShow: boolean;
+}
+
 export default function Ribbon() {
-    const { note, ntxId, hoistedNoteId, notePath, noteContext, componentId } = useNoteContext();
+    const { note, ntxId, hoistedNoteId, notePath, noteContext, componentId, isReadOnlyTemporarilyDisabled } = useNoteContext();
     const noteType = useNoteProperty(note, "type");
-    const titleContext: TitleContext = { note };
     const [ activeTabIndex, setActiveTabIndex ] = useState<number | undefined>();
-    const computedTabs = useMemo(
-        () => TAB_CONFIGURATION.map(tab => {
-            const shouldShow = typeof tab.show === "boolean" ? tab.show : tab.show?.(titleContext);
-            return {
+    const [ computedTabs, setComputedTabs ] = useState<ComputedTab[]>();
+    const titleContext: TitleContext = useMemo(() => ({
+        note,
+        noteContext
+    }), [ note, noteContext ]);
+
+    async function refresh() {
+        const computedTabs: ComputedTab[] = [];
+        for (const tab of TAB_CONFIGURATION) {
+            const shouldShow = await shouldShowTab(tab.show, titleContext);
+            computedTabs.push({
                 ...tab,
-                shouldShow
-            }
-        }),
-        [ titleContext, note, noteType ]);
+                shouldShow: !!shouldShow
+            });
+        }
+        setComputedTabs(computedTabs);
+    }
+
+    useEffect(() => {
+        refresh();
+    }, [ note, noteType, isReadOnlyTemporarilyDisabled ]);
 
     // Automatically activate the first ribbon tab that needs to be activated whenever a note changes.
     useEffect(() => {
+        if (!computedTabs) return;
         const tabToActivate = computedTabs.find(tab => tab.shouldShow && (typeof tab.activate === "boolean" ? tab.activate : tab.activate?.(titleContext)));
         setActiveTabIndex(tabToActivate?.index);
-    }, [ note?.noteId ]);
+    }, [ computedTabs, note?.noteId ]);
 
     // Register keyboard shortcuts.
     const eventsToListenTo = useMemo(() => TAB_CONFIGURATION.filter(config => config.toggleCommand).map(config => config.toggleCommand) as EventNames[], []);
     useTriliumEvents(eventsToListenTo, useCallback((e, toggleCommand) => {
+        if (!computedTabs) return;
         const correspondingTab = computedTabs.find(tab => tab.toggleCommand === toggleCommand);
         if (correspondingTab) {
             if (activeTabIndex !== correspondingTab.index) {
@@ -51,7 +68,7 @@ export default function Ribbon() {
                 <>
                     <div className="ribbon-top-row">
                         <div className="ribbon-tab-container">
-                            {computedTabs.map(({ title, icon, index, toggleCommand, shouldShow }) => (
+                            {computedTabs && computedTabs.map(({ title, icon, index, toggleCommand, shouldShow }) => (
                                 shouldShow && <RibbonTab
                                     icon={icon}
                                     title={typeof title === "string" ? title : title(titleContext)}
@@ -74,7 +91,7 @@ export default function Ribbon() {
                     </div>
 
                     <div className="ribbon-body-container">
-                        {computedTabs.map(tab => {
+                        {computedTabs && computedTabs.map(tab => {
                             const isActive = tab.index === activeTabIndex;
                             if (!isActive && !tab.stayInDom) {
                                 return;
@@ -129,3 +146,9 @@ function RibbonTab({ icon, title, active, onClick, toggleCommand }: { icon: stri
     )
 }
 
+export async function shouldShowTab(showConfig: boolean | ((context: TitleContext) => Promise<boolean | null | undefined> | boolean | null | undefined), context: TitleContext) {
+    if (showConfig === null || showConfig === undefined) return true;
+    if (typeof showConfig === "boolean") return showConfig;
+    if ("then" in showConfig) return await showConfig(context);
+    return showConfig(context);
+}

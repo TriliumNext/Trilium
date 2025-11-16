@@ -81,7 +81,7 @@ export const bookPropertiesConfig: Record<ViewTypeOptions, BookConfig> = {
                         await attributes.removeAttributeById(noteId, expandedAttr.attributeId);
                     }
 
-                    triggerCommand("refreshNoteList", { noteId: noteId });
+                    triggerCommand("refreshNoteList", { noteId });
                 },
             },
             {

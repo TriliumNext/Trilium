@@ -68,6 +68,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "smoothScrollEnabled",
     "backdropEffectsEnabled",
     "maxContentWidth",
+    "centerContent",
     "compressImages",
     "downloadImagesAutomatically",
     "minTocHeadings",

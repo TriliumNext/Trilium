@@ -64,7 +64,7 @@ function ListNoteCard({ note, parentNote, expand, highlightedTokens }: { note: F
 
     return (
         <div
-            className={`note-book-card no-tooltip-preview ${isExpanded ? "expanded" : ""}`}
+            className={`note-book-card no-tooltip-preview ${isExpanded ? "expanded" : ""} ${note.isArchived ? "archived" : ""}`}
             data-note-id={note.noteId}
         >
             <h5 className="note-book-header">
@@ -100,7 +100,7 @@ function GridNoteCard({ note, parentNote, highlightedTokens }: { note: FNote, pa
 
     return (
         <div
-            className={`note-book-card no-tooltip-preview block-link`}
+            className={`note-book-card no-tooltip-preview block-link ${note.isArchived ? "archived" : ""}`}
             data-href={`#${notePath}`}
             data-note-id={note.noteId}
             onClick={(e) => link.goToLink(e)}

@@ -14,7 +14,7 @@ const {secret, title, content} = req.body;
 if (req.method == 'POST' && secret === 'secret-password') {
     // notes must be saved somewhere in the tree hierarchy specified by a parent note. 
     // This is defined by a relation from this code note to the "target" parent note
-    // alternetively you can just use constant noteId for simplicity (get that from "Note Info" dialog of the desired parent note)
+    // alternatively you can just use constant noteId for simplicity (get that from "Note Info" dialog of the desired parent note)
     const targetParentNoteId = api.currentNote.getRelationValue('targetNote');
     
     const {note} = api.createTextNote(targetParentNoteId, title, content);
@@ -37,7 +37,7 @@ This script note has also following two attributes:
 Let's test this by using an HTTP client to send a request:
 
 ```
-POST http://my.trilium.org/custom/create-note
+POST http://your-trilium-server/custom/create-note
 Content-Type: application/json
 
 {
@@ -70,7 +70,7 @@ For more information, see [Custom Resource Providers](Custom%20Resource%20Provi
 REST request paths often contain parameters in the URL, e.g.:
 
 ```
-http://my.trilium.org/custom/notes/123
+http://your-trilium-server/custom/notes/123
 ```
 
 The last part is dynamic so the matching of the URL must also be dynamic - for this reason the matching is done with regular expressions. Following `customRequestHandler` value would match it:
@@ -85,4 +85,4 @@ Additionally, this also defines a matching group with the use of parenthesis whi
 const noteId = api.pathParams[0];
 ```
 
-Often you also need query params (as in e.g. `http://my.trilium.org/custom/notes?noteId=123`), you can get those with standard express `req.query.noteId`.
+Often you also need query params (as in e.g. `http://your-trilium-server/custom/notes?noteId=123`), you can get those with standard express `req.query.noteId`.

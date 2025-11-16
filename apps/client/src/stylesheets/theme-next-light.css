@@ -159,6 +159,9 @@
     --protected-session-active-icon-color: #16b516;
     --sync-status-error-pulse-color: #ff5528;
 
+    --center-pane-vert-layout-background-color-bgfx: #ffffff75;
+    --center-pane-horiz-layout-background-color-bgfx: #ffffffd6;
+
     --right-pane-heading-color: gray;
 
     --root-background: var(--left-pane-background-color);
@@ -180,13 +183,13 @@
     --inactive-tab-hover-background-color: #00000016;
     --inactive-tab-text-color: #4e4e4e;
 
-    --alert-bar-background: #32637b29;
+    --alert-bar-background: #f9cf2b29;
 
     --badge-background-color: #00000011;
     --badge-text-color: var(--muted-text-color);
 
-    --promoted-attribute-card-background-color: var(--card-background-color);
-    --promoted-attribute-card-shadow-color: #00000033;
+    --promoted-attribute-card-background-color: #00000014;
+    --promoted-attribute-card-shadow: none;
 
     --floating-button-shadow-color: #00000042;
     --floating-button-background-color: #eaeaeacc;
@@ -207,7 +210,9 @@
     --new-tab-button-hover-background: white;
     --new-tab-button-hover-color: black;
 
-    --right-pane-item-hover-background: #ececec;
+    --right-pane-background-color: var(--main-background-color);
+    --right-pane-background-color-bgfx: #ffffff9e; /* Only for the vertical layout */
+    --right-pane-item-hover-background: #00000013;
     --right-pane-item-hover-color: inherit;
 
     --scrollbar-thumb-color: #0000005c;
@@ -223,12 +228,11 @@
 
     --code-block-box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.1), 0px 0px 2px rgba(0, 0, 0, 0.2);
 
-    --card-background-color: var(--accented-background-color);
-    --card-background-hover-color: #f9f9f9;
-    --card-background-press-color: #efefef;
-    --card-border-color: #eaeaea;
+    --card-background-color: #0000000d;
+    --card-background-hover-color: #0000001c;
+    --card-border-color: transparent;
     --card-shadow-color: rgba(0, 0, 0, 0.1);
-    --card-box-shadow: 0 0 12px var(--card-shadow-color);
+    --card-box-shadow: none;
 
     --calendar-color: var(--menu-text-color);
     --calendar-weekday-labels-color: var(--muted-text-color);
@@ -270,4 +274,10 @@
      * The --custom-color-hue variable contains the hue of the user-selected note color.
      * This value is unset for gray tones. */
     --custom-bg-color: hsl(var(--custom-color-hue), 37%, 89%, 1);
+}
+
+.tinted-quick-edit-dialog {
+    --modal-background-color: hsl(var(--custom-color-hue), 56%, 96%);
+    --modal-border-color: hsl(var(--custom-color-hue), 33%, 41%);
+    --promoted-attribute-card-background-color: hsl(var(--custom-color-hue), 40%, 88%);
 }

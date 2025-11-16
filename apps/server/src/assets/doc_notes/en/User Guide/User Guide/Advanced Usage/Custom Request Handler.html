@@ -11,7 +11,7 @@ const {secret, title, content} = req.body;
 if (req.method == 'POST' &amp;&amp; secret === 'secret-password') {
     // notes must be saved somewhere in the tree hierarchy specified by a parent note. 
     // This is defined by a relation from this code note to the "target" parent note
-    // alternetively you can just use constant noteId for simplicity (get that from "Note Info" dialog of the desired parent note)
+    // alternatively you can just use constant noteId for simplicity (get that from "Note Info" dialog of the desired parent note)
     const targetParentNoteId = api.currentNote.getRelationValue('targetNote');
     
     const {note} = api.createTextNote(targetParentNoteId, title, content);
@@ -30,7 +30,7 @@ else {
     be saved</li>
 </ul>
 <h3>Explanation</h3>
-<p>Let's test this by using an HTTP client to send a request:</p><pre><code class="language-text-x-trilium-auto">POST http://my.trilium.org/custom/create-note
+<p>Let's test this by using an HTTP client to send a request:</p><pre><code class="language-text-x-trilium-auto">POST http://your-trilium-server/custom/create-note
 Content-Type: application/json
 
 {
@@ -64,12 +64,12 @@ Content-Type: application/json
   can always look into its <a href="https://expressjs.com/en/api.html">documentation</a> for
   details.</p>
 <h3>Parameters</h3>
-<p>REST request paths often contain parameters in the URL, e.g.:</p><pre><code class="language-text-x-trilium-auto">http://my.trilium.org/custom/notes/123</code></pre>
+<p>REST request paths often contain parameters in the URL, e.g.:</p><pre><code class="language-text-x-trilium-auto">http://your-trilium-server/custom/notes/123</code></pre>
 <p>The last part is dynamic so the matching of the URL must also be dynamic
   - for this reason the matching is done with regular expressions. Following <code>customRequestHandler</code> value
   would match it:</p><pre><code class="language-text-x-trilium-auto">notes/([0-9]+)</code></pre>
 <p>Additionally, this also defines a matching group with the use of parenthesis
   which then makes it easier to extract the value. The matched groups are
   available in <code>api.pathParams</code>:</p><pre><code class="language-text-x-trilium-auto">const noteId = api.pathParams[0];</code></pre>
-<p>Often you also need query params (as in e.g. <code>http://my.trilium.org/custom/notes?noteId=123</code>),
+<p>Often you also need query params (as in e.g. <code>http://your-trilium-server/custom/notes?noteId=123</code>),
   you can get those with standard express <code>req.query.noteId</code>.</p>

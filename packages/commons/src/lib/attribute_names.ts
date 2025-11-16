@@ -29,7 +29,6 @@ type Labels = {
     status: string;
     pageSize: number;
     geolocation: string;
-    readOnly: boolean;
     expanded: boolean;
     "calendar:hideWeekends": boolean;
     "calendar:weekNumbers": boolean;
@@ -41,6 +40,12 @@ type Labels = {
     includeArchived: boolean;
     "presentation:theme": string;
     "slide:background": string;
+
+    // Note-type specific
+    webViewSrc: string;
+    readOnly: boolean;
+    mapType: string;
+    mapRootNoteId: string;
 }
 
 /**

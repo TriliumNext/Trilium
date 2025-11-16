@@ -8,11 +8,10 @@ import tray from "@triliumnext/server/src/services/tray.js";
 import options from "@triliumnext/server/src/services/options.js";
 import electronDebug from "electron-debug";
 import electronDl from "electron-dl";
-import { deferred } from "@triliumnext/server/src/services/utils.js";
 import { PRODUCT_NAME } from "./app-info";
 import port from "@triliumnext/server/src/services/port.js";
 import { join } from "path";
-import { LOCALES } from "../../../packages/commons/src";
+import { deferred, LOCALES } from "../../../packages/commons/src";
 
 async function main() {
     const userDataPath = getUserData();
@@ -39,11 +38,16 @@ async function main() {
         app.commandLine.appendSwitch("disable-smooth-scrolling");
     }
 
-    // Electron 36 crashes with "Using GTK 2/3 and GTK 4 in the same process is not supported" on some distributions.
-    // See https://github.com/electron/electron/issues/46538 for more info.
     if (process.platform === "linux") {
         app.setName(PRODUCT_NAME);
+
+        // Electron 36 crashes with "Using GTK 2/3 and GTK 4 in the same process is not supported" on some distributions.
+        // See https://github.com/electron/electron/issues/46538 for more info.
         app.commandLine.appendSwitch("gtk-version", "3");
+
+        // Enable global shortcuts in Flatpak
+        // the app runs in a Wayland session.
+        app.commandLine.appendSwitch("enable-features", "GlobalShortcutsPortal");
     }
 
     // Quit when all windows are closed, except on macOS. There, it's common

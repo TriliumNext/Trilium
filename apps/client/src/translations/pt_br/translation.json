@@ -1218,7 +1218,7 @@
     "unprotecting-in-progress-count": "Remoções de proteção em andamento: {{count}}",
     "protecting-title": "Estado da proteção",
     "unprotecting-title": "Estado da remoção de proteção",
-    "start_session_button": "Iniciar sessão protegida <kbd>enter</kbd>"
+    "start_session_button": "Iniciar sessão protegida"
   },
   "relation_map": {
     "open_in_new_tab": "Abrir em nova aba",
@@ -1304,9 +1304,6 @@
     "title": "Largura do Conteúdo",
     "max_width_label": "Largura máxima do conteúdo",
     "max_width_unit": "pixels",
-    "apply_changes_description": "Para aplicar as alterações de largura do conteúdo, clique em",
-    "reload_button": "recarregar frontend",
-    "reload_description": "alterações de opções de aparência",
     "default_description": "Por padrão, o Trilium limita a largura máxima do conteúdo para melhorar a legibilidade em janelas maximizadas em telas wide."
   },
   "native_title_bar": {

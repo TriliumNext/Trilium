@@ -39,7 +39,10 @@
     "help_on_tree_prefix": "有关树前缀的帮助",
     "prefix": "前缀： ",
     "save": "保存",
-    "branch_prefix_saved": "分支前缀已保存。"
+    "branch_prefix_saved": "分支前缀已保存。",
+    "edit_branch_prefix_multiple": "编辑 {{count}} 个分支的前缀",
+    "branch_prefix_saved_multiple": "已为 {{count}} 个分支保存分支前缀。",
+    "affected_branches": "受影响的分支 {{count}}:"
   },
   "bulk_actions": {
     "bulk_actions": "批量操作",
@@ -687,7 +690,8 @@
     "convert_into_attachment_failed": "笔记 '{{title}}' 转换失败。",
     "convert_into_attachment_successful": "笔记 '{{title}}' 已成功转换为附件。",
     "convert_into_attachment_prompt": "确定要将笔记 '{{title}}' 转换为父笔记的附件吗？",
-    "print_pdf": "导出为 PDF..."
+    "print_pdf": "导出为 PDF...",
+    "open_note_on_server": "在服务器上打开笔记"
   },
   "onclick_button": {
     "no_click_handler": "按钮组件'{{componentId}}'没有定义点击处理程序"
@@ -992,7 +996,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "显示受保护的笔记需要输入您的密码：",
-    "start_session_button": "开始受保护的会话 <kbd>Enter</kbd>",
+    "start_session_button": "开始受保护的会话",
     "started": "受保护的会话已启动。",
     "wrong_password": "密码错误。",
     "protecting-finished-successfully": "保护操作已成功完成。",
@@ -1107,10 +1111,8 @@
     "title": "内容宽度",
     "default_description": "Trilium默认会限制内容的最大宽度以提高在宽屏中全屏时的可读性。",
     "max_width_label": "内容最大宽度(像素)",
-    "apply_changes_description": "要应用内容宽度更改，请点击",
-    "reload_button": "重载前端",
-    "reload_description": "来自外观选项的更改",
-    "max_width_unit": "像素"
+    "max_width_unit": "像素",
+    "centerContent": "保持内容居中"
   },
   "native_title_bar": {
     "title": "原生标题栏（需要重新启动应用）",
@@ -1917,7 +1919,7 @@
   },
   "custom_date_time_format": {
     "title": "自定义日期/时间格式",
-    "description": "通过<shortcut />或工具栏的方式可自定义日期和时间格式，有关日期/时间格式字符串中各个字符的含义，请参阅<doc>Day.js docs</doc>。",
+    "description": "自定义通过 <shortcut /> 或工具栏插入的日期和时间格式。有关日期/时间格式字符串中各个字符的含义，请参阅<doc>Day.js docs</doc>。",
     "format_string": "日期/时间格式字符串：",
     "formatted_time": "格式化后日期/时间："
   },
@@ -2079,5 +2081,14 @@
     "edit-slide": "编辑此幻灯片",
     "start-presentation": "开始演示",
     "slide-overview": "切换幻灯片概览"
+  },
+  "calendar_view": {
+    "delete_note": "删除笔记..."
+  },
+  "read-only-info": {
+    "read-only-note": "当前正在查看一个只读笔记。",
+    "auto-read-only-note": "这条笔记以只读模式显示便于快速加载。",
+    "auto-read-only-learn-more": "了解更多",
+    "edit-note": "编辑笔记"
   }
 }

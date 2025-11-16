@@ -22,6 +22,15 @@ export async function setLabel(noteId: string, name: string, value: string = "",
     });
 }
 
+export async function setRelation(noteId: string, name: string, value: string = "", isInheritable = false) {
+    await server.put(`notes/${noteId}/set-attribute`, {
+        type: "relation",
+        name: name,
+        value: value,
+        isInheritable
+    });
+}
+
 async function removeAttributeById(noteId: string, attributeId: string) {
     await server.remove(`notes/${noteId}/attributes/${attributeId}`);
 }
@@ -46,6 +55,23 @@ function removeOwnedLabelByName(note: FNote, labelName: string) {
     const label = note.getOwnedLabel(labelName);
     if (label) {
         removeAttributeById(note.noteId, label.attributeId);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Removes a relation identified by its name from the given note, if it exists. Note that the relation must be owned, i.e.
+ * it will not remove inherited attributes.
+ *
+ * @param note the note from which to remove the relation.
+ * @param relationName the name of the relation to remove.
+ * @returns `true` if an attribute was identified and removed, `false` otherwise.
+ */
+function removeOwnedRelationByName(note: FNote, relationName: string) {
+    const relation = note.getOwnedRelation(relationName);
+    if (relation) {
+        removeAttributeById(note.noteId, relation.attributeId);
         return true;
     }
     return false;
@@ -116,8 +142,10 @@ function isAffecting(attrRow: AttributeRow, affectedNote: FNote | null | undefin
 export default {
     addLabel,
     setLabel,
+    setRelation,
     setAttribute,
     removeAttributeById,
     removeOwnedLabelByName,
+    removeOwnedRelationByName,
     isAffecting
 };

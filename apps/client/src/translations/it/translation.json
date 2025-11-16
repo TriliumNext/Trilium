@@ -39,7 +39,10 @@
     "help_on_tree_prefix": "Aiuto sui prefissi dell'Albero",
     "prefix": "Prefisso: ",
     "save": "Salva",
-    "branch_prefix_saved": "Il prefisso del ramo è stato salvato."
+    "branch_prefix_saved": "Il prefisso del ramo è stato salvato.",
+    "edit_branch_prefix_multiple": "Modifica prefisso ramo per {{count}} rami",
+    "branch_prefix_saved_multiple": "Il prefisso del ramo è stato salvato per {{count}} rami.",
+    "affected_branches": "Rami interessati ({{count}}):"
   },
   "bulk_actions": {
     "bulk_actions": "Azioni massive",
@@ -109,7 +112,8 @@
     "export_type_single": "Solo questa nota, senza le sottostanti",
     "format_opml": "OPML - formato per scambio informazioni outline. Formattazione, immagini e files non sono inclusi.",
     "opml_version_1": "OPML v.1.0 - solo testo semplice",
-    "opml_version_2": "OPML v2.0 - supporta anche HTML"
+    "opml_version_2": "OPML v2.0 - supporta anche HTML",
+    "share-format": "HTML per la pubblicazione sul web - utilizza lo stesso tema utilizzato per le note condivise, ma può essere pubblicato come sito web statico."
   },
   "password_not_set": {
     "body1": "Le note protette sono crittografate utilizzando una password utente, ma la password non è stata ancora impostata.",
@@ -1498,7 +1502,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "Per visualizzare la nota protetta è necessario inserire la password:",
-    "start_session_button": "Avvia sessione protetta <kbd>invio</kbd>",
+    "start_session_button": "Avvia sessione protetta",
     "started": "La sessione protetta è stata avviata.",
     "wrong_password": "Password errata.",
     "protecting-finished-successfully": "Protezione completata con successo.",
@@ -1570,9 +1574,7 @@
     "default_description": "Per impostazione predefinita, Trilium limita la larghezza massima del contenuto per migliorare la leggibilità sugli schermi più grandi.",
     "max_width_label": "Larghezza massima del contenuto",
     "max_width_unit": "pixel",
-    "apply_changes_description": "Per applicare le modifiche alla larghezza del contenuto, fare clic su",
-    "reload_button": "ricarica frontend",
-    "reload_description": "modifiche dalle opzioni di aspetto"
+    "centerContent": "Mantieni il contenuto centrato"
   },
   "native_title_bar": {
     "title": "Barra del titolo nativa (richiede il riavvio dell'app)",
@@ -2082,5 +2084,14 @@
   },
   "collections": {
     "rendering_error": "Impossibile mostrare il contenuto a causa di un errore."
+  },
+  "read-only-info": {
+    "read-only-note": "Stai visualizzando una nota di sola lettura.",
+    "auto-read-only-note": "Questa nota viene visualizzata in modalità di sola lettura per un caricamento più rapido.",
+    "auto-read-only-learn-more": "Per saperne di più",
+    "edit-note": "Modifica nota"
+  },
+  "calendar_view": {
+    "delete_note": "Eliminazione nota..."
   }
 }

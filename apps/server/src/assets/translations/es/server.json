@@ -258,7 +258,9 @@
     "user-guide": "Guía de Usuario",
     "localization": "Idioma y Región",
     "inbox-title": "Bandeja",
-    "jump-to-note-title": "Saltar a..."
+    "jump-to-note-title": "Saltar a...",
+    "command-palette": "Abrir paleta de comandos",
+    "zen-mode": "Modo Zen"
   },
   "notes": {
     "new-note": "Nueva nota",
@@ -424,7 +426,7 @@
     "built-in-templates": "Plantillas predefinidas",
     "board_status_todo": "Por hacer",
     "board_status_done": "Hecho",
-    "board": "Tablero",
+    "board": "Tablero Kanban",
     "presentation": "Presentación",
     "presentation_slide": "Slide de presentación",
     "presentation_slide_first": "Primer slide",

@@ -238,11 +238,6 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
         }
     });
 
-    // Focus on show.
-    useEffect(() => {
-        setTimeout(() => editorRef.current?.focus(), 0);
-    }, []);
-
     // Interaction with CKEditor.
     useLegacyImperativeHandlers(useMemo(() => ({
         loadReferenceLinkTitle: async ($el: JQuery<HTMLElement>, href: string) => {
@@ -363,6 +358,7 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                     }}
                     onKeyDown={() => attributeDetailWidget.hide()}
                     onBlur={() => save()}
+                    onInitialized={() => editorRef.current?.focus()}
                     disableNewlines disableSpellcheck
                 />
 

@@ -77,11 +77,11 @@ function closePersistent(id: string) {
     $(`#toast-${id}`).remove();
 }
 
-function showMessage(message: string, delay = 2000) {
+function showMessage(message: string, delay = 2000, icon = "check") {
     console.debug(utils.now(), "message:", message);
 
     toast({
-        icon: "check",
+        icon,
         message: message,
         autohide: true,
         delay

@@ -101,7 +101,7 @@
 .sql-table-schemas-widget .sql-table-schemas button:hover,
 .sql-table-schemas-widget .sql-table-schemas button:active,
 .sql-table-schemas-widget .sql-table-schemas button:focus-visible {
-    --background: var(--card-background-press-color);
+    --background: var(--card-background-hover-color);
     --color: var(--main-text-color);
 }
 
@@ -123,8 +123,12 @@
  */
 
 /* The container */
-div.note-detail-empty {
-    max-width: 70%;
+
+.note-split.empty-note {
+    --max-content-width: 70%;
+}
+
+.note-split.empty-note div.note-detail {
     margin: 50px auto;
 }
 
@@ -148,7 +152,7 @@ div.note-detail-empty {
     --options-card-min-width: 500px;
     --options-card-max-width: 900px;
     --options-card-padding: 17px;
-    --options-title-font-size: 1rem;
+    --options-title-font-size: .75rem;
     --options-title-offset: 13px;
 }
 /* Create a gap at the top of the option pages */
@@ -173,16 +177,19 @@ div.note-detail-empty {
 }
 
 .options-section:not(.tn-no-card) {
-    margin: auto;    
-    border-radius: 12px;
-    border: 1px solid var(--card-border-color) !important;
+    margin-bottom: calc(var(--options-title-offset) + 26px) !important;
     box-shadow: var(--card-box-shadow);
+    border: 1px solid var(--card-border-color) !important;
+    border-radius: 8px;
     background: var(--card-background-color);
     padding: var(--options-card-padding);
-    margin-bottom: calc(var(--options-title-offset) + 26px) !important;
 }
 
-body.desktop .option-section:not(.tn-no-card) {
+body.prefers-centered-content .options-section:not(.tn-no-card) {
+    margin-inline: auto;
+}
+
+body.desktop .options-section:not(.tn-no-card) {
     min-width: var(--options-card-min-width);
     max-width: var(--options-card-max-width);
 }
@@ -193,9 +200,16 @@ body.desktop .option-section:not(.tn-no-card) {
     padding-bottom: var(--default-padding);
 }
 
+.options-section:not(.tn-no-card) h4,
+.options-section:not(.tn-no-card) h5 {
+    text-transform: uppercase;
+    letter-spacing: .4pt;
+}
+
+
 .options-section:not(.tn-no-card) h4 {
     font-size: var(--options-title-font-size);
-    font-weight: bold;
+    font-weight: 600;
     color: var(--launcher-pane-text-color);
     margin-top: calc(-1 * var(--options-card-padding) - var(--options-title-font-size) - var(--options-title-offset)) !important;
     margin-bottom: calc(var(--options-title-offset) + var(--options-card-padding)) !important;

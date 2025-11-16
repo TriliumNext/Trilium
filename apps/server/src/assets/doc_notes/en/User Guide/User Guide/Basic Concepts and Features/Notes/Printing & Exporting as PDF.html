@@ -95,7 +95,7 @@ class="admonition note">
     </li>
     <li>For&nbsp;<a class="reference-link" href="#root/_help_GTwFsgaA0lCt">Collections</a>:
       <ul>
-        <li>Only&nbsp;<a class="reference-link" href="#root/_help_zP3PMqaG71Ct">Presentation View</a>&nbsp;is
+        <li>Only&nbsp;<a class="reference-link" href="#root/_help_zP3PMqaG71Ct">Presentation</a>&nbsp;is
           currently supported.</li>
         <li>We plan to add support for all the collection types at some point.</li>
       </ul>
@@ -106,6 +106,34 @@ class="admonition note">
         <li>We plan to introduce a new mechanism specifically for a print CSS.</li>
       </ul>
     </li>
+  </ul>
+  <h2>Customizing the print CSS</h2>
+  <p>As an advanced use case, it's possible to customize the CSS used for printing
+    such as adjusting the fonts, sizes or margins. Note that&nbsp;<a class="reference-link"
+    href="#root/_help_AlhDUqhENtH7">Custom app-wide CSS</a>&nbsp;will not work for
+    printing.</p>
+  <p>To do so:</p>
+  <ul>
+    <li>Create a CSS <a href="#root/_help_6f9hih2hXXZk">code note</a>.</li>
+    <li>On the note being printed, apply the <code>~printCss</code> relation to
+      point to the newly created CSS code note.</li>
+    <li>To apply the CSS to multiple notes, consider using <a href="#root/_help_bwZpz2ajCEwO">inheritable attributes</a> or&nbsp;
+      <a
+      class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>.</li>
+  </ul>
+  <p>For example, to change the font of the document from the one defined by
+    the theme or the user to a serif one:</p><pre><code class="language-text-x-trilium-auto">body {
+	--main-font-family: serif !important;
+    --detail-font-family: var(--main-font-family) !important;
+}</code></pre>
+  <p>To remark:</p>
+  <ul>
+    <li>Multiple CSS notes can be add by using multiple <code>~printCss</code> relations.</li>
+    <li>If the note pointing to the <code>printCss</code> doesn't have the right
+      note type or mime type, it will be ignored.</li>
+    <li>If migrating from a previous version where&nbsp;<a class="reference-link"
+      href="#root/_help_AlhDUqhENtH7">Custom app-wide CSS</a>, there's no need for <code>@media print {</code>  since
+      the style-sheet is used only for printing.</li>
   </ul>
   <h2>Under the hood</h2>
   <p>Both printing and exporting as PDF use the same mechanism: a note is rendered

@@ -4,8 +4,6 @@ import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import toastService from "../services/toast.js";
 import { renderReactWidget } from "./react/react_utils.jsx";
-import { EventNames, EventData } from "../components/app_context.js";
-import { Handler } from "leaflet";
 
 export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedComponent<T> {
     protected attrs: Record<string, string>;

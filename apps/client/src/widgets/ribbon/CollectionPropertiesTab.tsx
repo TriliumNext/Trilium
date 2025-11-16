@@ -59,13 +59,12 @@ function CollectionTypeSwitcher({ viewType, setViewType }: { viewType: string, s
 function BookProperties({ viewType, note, properties }: { viewType: ViewTypeOptions, note: FNote, properties: BookProperty[] }) {
   return (
     <>
-      {properties.map(property => (
+        {properties.map(property => (
         <div className={`type-${property}`}>
-          {mapPropertyView({ note, property })}
+            {mapPropertyView({ note, property })}
         </div>
-      ))}
+        ))}
 
-      {viewType !== "list" && viewType !== "grid" && (
         <CheckboxPropertyView
             note={note} property={{
                 bindToLabel: "includeArchived",
@@ -73,7 +72,6 @@ function BookProperties({ viewType, note, properties }: { viewType: ViewTypeOpti
                 type: "checkbox"
             }}
         />
-      )}
     </>
   )
 }

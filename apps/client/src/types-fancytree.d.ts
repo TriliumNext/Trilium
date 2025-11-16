@@ -215,6 +215,30 @@ declare namespace Fancytree {
         enableUpdate(enabled: boolean): void;
     }
 
+    interface FancytreeNodeData {
+        noteId: string;
+        parentNoteId: string;
+        branchId: string;
+        isProtected: boolean;
+        noteType: NoteType;
+    }
+
+    interface FancytreeNewNode extends FancytreeNodeData {
+        title: string;
+        extraClasses: string;
+        icon: string;
+        refKey: string;
+        /** True if this node is loaded on demand, i.e. on first expansion. */
+        lazy: boolean;
+        /** Folder nodes have different default icons and click behavior. Note: Also non-folders may have children. */
+        folder: boolean;
+        /** Use isExpanded(), setExpanded() to access this property. */
+        expanded: boolean;
+        /** Node id (must be unique inside the tree) */
+        key: string;
+        children?: FancytreeNewNode[];
+    }
+
     /** A FancytreeNode represents the hierarchical data model and operations. */
     interface FancytreeNode {
         // #region Properties
@@ -227,7 +251,7 @@ declare namespace Fancytree {
         /** Display name (may contain HTML) */
         title: string;
         /** Contains all extra data that was passed on node creation */
-        data: any;
+        data: FancytreeNodeData;
         /** Array of child nodes. For lazy nodes, null or undefined means 'not yet loaded'. Use an empty array to define a node that has no children. */
         children: FancytreeNode[];
         /** Use isExpanded(), setExpanded() to access this property. */

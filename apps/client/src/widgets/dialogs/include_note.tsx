@@ -8,17 +8,21 @@ import Button from "../react/Button";
 import { Suggestion, triggerRecentNotes } from "../../services/note_autocomplete";
 import tree from "../../services/tree";
 import froca from "../../services/froca";
-import EditableTextTypeWidget, { type BoxSize } from "../type_widgets/editable_text";
 import { useTriliumEvent } from "../react/hooks";
+import { type BoxSize, CKEditorApi } from "../type_widgets/text/CKEditorWithWatchdog";
+
+export interface IncludeNoteOpts {
+    editorApi: CKEditorApi;
+}
 
 export default function IncludeNoteDialog() {
-    const [textTypeWidget, setTextTypeWidget] = useState<EditableTextTypeWidget>();
+    const editorApiRef = useRef<CKEditorApi>(null);
     const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
-    const [boxSize, setBoxSize] = useState("medium");
+    const [boxSize, setBoxSize] = useState<string>("medium");
     const [shown, setShown] = useState(false);
 
-    useTriliumEvent("showIncludeNoteDialog", ({ textTypeWidget }) => {
-        setTextTypeWidget(textTypeWidget);
+    useTriliumEvent("showIncludeNoteDialog", ({ editorApi }) => {
+        editorApiRef.current = editorApi;
         setShown(true);
     });
 
@@ -32,12 +36,9 @@ export default function IncludeNoteDialog() {
             onShown={() => triggerRecentNotes(autoCompleteRef.current)}
             onHidden={() => setShown(false)}
             onSubmit={() => {
-                if (!suggestion?.notePath || !textTypeWidget) {
-                    return;
-                }
-
+                if (!suggestion?.notePath || !editorApiRef.current) return;
                 setShown(false);
-                includeNote(suggestion.notePath, textTypeWidget, boxSize as BoxSize);
+                includeNote(suggestion.notePath, editorApiRef.current, boxSize as BoxSize);
             }}
             footer={<Button text={t("include_note.button_include")} keyboardShortcut="Enter" />}
             show={shown}
@@ -69,7 +70,7 @@ export default function IncludeNoteDialog() {
     )
 }
 
-async function includeNote(notePath: string, textTypeWidget: EditableTextTypeWidget, boxSize: BoxSize) {
+async function includeNote(notePath: string, editorApi: CKEditorApi, boxSize: BoxSize) {
     const noteId = tree.getNoteIdFromUrl(notePath);
     if (!noteId) {
         return;
@@ -79,8 +80,8 @@ async function includeNote(notePath: string, textTypeWidget: EditableTextTypeWid
     if (["image", "canvas", "mermaid"].includes(note?.type ?? "")) {
         // there's no benefit to use insert note functionlity for images,
         // so we'll just add an IMG tag
-        textTypeWidget.addImage(noteId);
+        editorApi.addImage(noteId);
     } else {
-        textTypeWidget.addIncludeNote(noteId, boxSize);
+        editorApi.addIncludeNote(noteId, boxSize);
     }
 }

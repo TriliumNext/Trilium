@@ -11,7 +11,7 @@ export async function getBoardData(parentNote: FNote, groupByColumn: string, per
     const byColumn: ColumnMap = new Map();
 
     // First, scan all notes to find what columns actually exist
-    await recursiveGroupBy(parentNote.getChildBranches(), byColumn, groupByColumn, includeArchived);
+    await recursiveGroupBy(parentNote.getChildBranches(), byColumn, groupByColumn, includeArchived, new Set<string>());
 
     // Get all columns that exist in the notes
     const columnsFromNotes = [...byColumn.keys()];
@@ -57,30 +57,33 @@ export async function getBoardData(parentNote: FNote, groupByColumn: string, per
 
     return {
         byColumn,
-        newPersistedData
+        newPersistedData,
+        isInRelationMode: groupByColumn.startsWith("~")
     };
 }
 
-async function recursiveGroupBy(branches: FBranch[], byColumn: ColumnMap, groupByColumn: string, includeArchived: boolean) {
+async function recursiveGroupBy(branches: FBranch[], byColumn: ColumnMap, groupByColumn: string, includeArchived: boolean, seenNoteIds: Set<string>) {
     for (const branch of branches) {
         const note = await branch.getNote();
         if (!note || (!includeArchived && note.isArchived)) continue;
 
         if (note.type !== "search" && note.hasChildren()) {
-            await recursiveGroupBy(note.getChildBranches(), byColumn, groupByColumn, includeArchived);
+            await recursiveGroupBy(note.getChildBranches(), byColumn, groupByColumn, includeArchived, seenNoteIds);
         }
 
-        const group = note.getLabelValue(groupByColumn);
-        if (!group) {
+        const group = note.getLabelOrRelation(groupByColumn);
+        if (!group || seenNoteIds.has(note.noteId)) {
             continue;
         }
 
         if (!byColumn.has(group)) {
             byColumn.set(group, []);
         }
+
         byColumn.get(group)!.push({
             branch,
             note
         });
+        seenNoteIds.add(note.noteId);
     }
 }

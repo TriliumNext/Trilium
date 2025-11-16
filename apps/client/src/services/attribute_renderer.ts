@@ -90,7 +90,8 @@ const HIDDEN_ATTRIBUTES = [
     "viewType",
     "geolocation",
     "docName",
-    "webViewSrc"
+    "webViewSrc",
+    "archived"
 ];
 
 async function renderNormalAttributes(note: FNote) {

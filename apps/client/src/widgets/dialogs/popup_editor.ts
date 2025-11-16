@@ -1,13 +1,17 @@
 import type { EventNames, EventData } from "../../components/app_context.js";
 import NoteContext from "../../components/note_context.js";
 import { openDialog } from "../../services/dialog.js";
-import BasicWidget from "../basic_widget.js";
+import BasicWidget, { ReactWrappedWidget } from "../basic_widget.js";
 import Container from "../containers/container.js";
-import TypeWidget from "../type_widgets/type_widget.js";
 
 const TPL = /*html*/`\
 <div class="popup-editor-dialog modal fade mx-auto" tabindex="-1" role="dialog">
     <style>
+        /** Reduce the z-index of modals so that ckeditor popups are properly shown on top of it. */
+        body.popup-editor-open > .modal-backdrop { z-index: 998; }
+        body.popup-editor-open .popup-editor-dialog { z-index: 999; }
+        body.popup-editor-open .ck-clipboard-drop-target-line { z-index: 1000; }
+
         body.desktop .modal.popup-editor-dialog .modal-dialog {
             max-width: 75vw;
         }
@@ -57,17 +61,19 @@ const TPL = /*html*/`\
         }
     </style>
 
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">
-                    <!-- This is where the first child will be injected -->
+    <div class="quick-edit-dialog-wrapper">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-title">
+                        <!-- This is where the first child will be injected -->
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
 
-            <div class="modal-body">
-                <!-- This is where all but the first child will be injected. -->
+                <div class="modal-body">
+                    <!-- This is where all but the first child will be injected. -->
+                </div>
             </div>
         </div>
     </div>
@@ -79,6 +85,7 @@ export default class PopupEditorDialog extends Container<BasicWidget> {
     private noteContext: NoteContext;
     private $modalHeader!: JQuery<HTMLElement>;
     private $modalBody!: JQuery<HTMLElement>;
+    private $wrapper!: JQuery<HTMLDivElement>;
 
     constructor() {
         super();
@@ -93,6 +100,7 @@ export default class PopupEditorDialog extends Container<BasicWidget> {
         const $newWidget = $(TPL);
         this.$modalHeader = $newWidget.find(".modal-title");
         this.$modalBody = $newWidget.find(".modal-body");
+        this.$wrapper = $newWidget.find(".quick-edit-dialog-wrapper");
 
         const children = this.$widget.children();
         this.$modalHeader.append(children[0]);
@@ -112,17 +120,27 @@ export default class PopupEditorDialog extends Container<BasicWidget> {
             }
         });
 
+        const colorClass = this.noteContext.note?.getColorClass();
+        const wrapperElement = this.$wrapper.get(0)!;
+
+        if (colorClass) {
+            wrapperElement.className = "quick-edit-dialog-wrapper " + colorClass;
+        } else {
+            wrapperElement.className = "quick-edit-dialog-wrapper";
+        }
+
+        const customHue = getComputedStyle(wrapperElement).getPropertyValue("--custom-color-hue");
+        if (customHue) {
+            /* Apply the tinted-dialog class only if the custom color CSS class specifies a hue */
+            wrapperElement.classList.add("tinted-quick-edit-dialog");
+        }
+
         const activeEl = document.activeElement;
         if (activeEl && "blur" in activeEl) {
             (activeEl as HTMLElement).blur();
         }
 
         $dialog.on("shown.bs.modal", async () => {
-            // Reduce the z-index of modals so that ckeditor popups are properly shown on top of it.
-            // The backdrop instance is not shared so it's OK to make a one-off modification.
-            $("body > .modal-backdrop").css("z-index", "998");
-            $dialog.css("z-index", "999");
-
             await this.handleEventInChildren("activeContextChanged", { noteContext: this.noteContext });
             this.setVisibility(true);
             await this.handleEventInChildren("focusOnDetail", { ntxId: this.noteContext.ntxId });
@@ -130,7 +148,7 @@ export default class PopupEditorDialog extends Container<BasicWidget> {
         $dialog.on("hidden.bs.modal", () => {
             const $typeWidgetEl = $dialog.find(".note-detail-printable");
             if ($typeWidgetEl.length) {
-                const typeWidget = glob.getComponentByEl($typeWidgetEl[0]) as TypeWidget;
+                const typeWidget = glob.getComponentByEl($typeWidgetEl[0]) as ReactWrappedWidget;
                 typeWidget.cleanup();
             }
 
@@ -143,9 +161,12 @@ export default class PopupEditorDialog extends Container<BasicWidget> {
         if (visible) {
             $bodyItems.fadeIn();
             this.$modalHeader.children().show();
+            document.body.classList.add("popup-editor-open");
+
         } else {
             $bodyItems.hide();
             this.$modalHeader.children().hide();
+            document.body.classList.remove("popup-editor-open");
         }
     }
 

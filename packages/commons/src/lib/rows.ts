@@ -12,7 +12,7 @@ export interface AttachmentRow {
     isProtected?: boolean;
     dateModified?: string;
     utcDateModified?: string;
-    utcDateScheduledForErasureSince?: string;
+    utcDateScheduledForErasureSince?: string | null;
     isDeleted?: boolean;
     deleteId?: string;
     contentLength?: number;

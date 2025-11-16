@@ -5,7 +5,7 @@ import type { RefObject } from "preact";
 import type { CSSProperties } from "preact/compat";
 import { useSyncedRef } from "./hooks";
 
-interface NoteAutocompleteProps {    
+interface NoteAutocompleteProps {
     id?: string;
     inputRef?: RefObject<HTMLInputElement>;
     text?: string;
@@ -15,13 +15,15 @@ interface NoteAutocompleteProps {
     opts?: Omit<Options, "container">;
     onChange?: (suggestion: Suggestion | null) => void;
     onTextChange?: (text: string) => void;
+    onKeyDown?: (e: KeyboardEvent) => void;
+    onBlur?: (newValue: string) => void;
     noteIdChanged?: (noteId: string) => void;
     noteId?: string;
 }
 
-export default function NoteAutocomplete({ id, inputRef: externalInputRef, text, placeholder, onChange, onTextChange, container, containerStyle, opts, noteId, noteIdChanged }: NoteAutocompleteProps) {
+export default function NoteAutocomplete({ id, inputRef: externalInputRef, text, placeholder, onChange, onTextChange, container, containerStyle, opts, noteId, noteIdChanged, onKeyDown, onBlur }: NoteAutocompleteProps) {
     const ref = useSyncedRef<HTMLInputElement>(externalInputRef);
-    
+
     useEffect(() => {
         if (!ref.current) return;
         const $autoComplete = $(ref.current);
@@ -56,6 +58,12 @@ export default function NoteAutocomplete({ id, inputRef: externalInputRef, text,
         }
         if (onTextChange) {
             $autoComplete.on("input", () => onTextChange($autoComplete[0].value));
+        }
+        if (onKeyDown) {
+            $autoComplete.on("keydown", (e) => e.originalEvent && onKeyDown(e.originalEvent));
+        }
+        if (onBlur) {
+            $autoComplete.on("blur", () => onBlur($autoComplete.getSelectedNoteId() ?? ""));
         }
     }, [opts, container?.current]);
 

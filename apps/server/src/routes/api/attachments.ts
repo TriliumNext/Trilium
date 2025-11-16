@@ -3,6 +3,7 @@ import blobService from "../../services/blob.js";
 import ValidationError from "../../errors/validation_error.js";
 import imageService from "../../services/image.js";
 import type { Request } from "express";
+import { ConvertAttachmentToNoteResponse } from "@triliumnext/commons";
 
 function getAttachmentBlob(req: Request) {
     const preview = req.query.preview === "true";
@@ -103,7 +104,7 @@ function convertAttachmentToNote(req: Request) {
     const { attachmentId } = req.params;
 
     const attachment = becca.getAttachmentOrThrow(attachmentId);
-    return attachment.convertToNote();
+    return attachment.convertToNote() satisfies ConvertAttachmentToNoteResponse;
 }
 
 export default {

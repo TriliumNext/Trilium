@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - hotfix
     paths-ignore:
       - "apps/website/**"
   pull_request:
@@ -13,8 +14,24 @@ permissions:
   contents: read
 
 jobs:
-  main:
-    runs-on: ubuntu-latest
+  e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x64
+            os: ubuntu-22.04
+            arch: x64
+          - name: linux-arm64
+            os: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.os }}
+    name: E2E tests on ${{ matrix.name }}
+    env:
+      TRILIUM_DOCKER: 1
+      TRILIUM_PORT: 8082
+      TRILIUM_DATA_DIR: "${{ github.workspace }}/apps/server/spec/db"
+      TRILIUM_INTEGRATION_TEST: memory
     steps:
       - uses: actions/checkout@v5
         with:
@@ -29,9 +46,34 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps
 
-      - run: pnpm --filter server-e2e e2e
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
+      - name: Build the server
+        uses: ./.github/actions/build-server
+        with:
+          os: linux
+          arch: ${{ matrix.arch }}
+
+      - name: Unpack and start the server
+        run: |
+          version=$(node --eval "console.log(require('./package.json').version)")
+          file=$(find ./upload -name '*.tar.xz' -print -quit)
+          name=$(basename "$file" .tar.xz)
+          mkdir -p ./server-dist
+          tar -xvf "$file" -C ./server-dist
+          server_dir="./server-dist/TriliumNotes-Server-$version-linux-${{ matrix.arch }}"
+          if [ ! -d "$server_dir" ]; then
+            echo Missing dir.
+            exit 1
+          fi
+          cd "$server_dir"
+          "./trilium.sh" &
+          sleep 10
+
+      - name: Server end-to-end tests
+        run: pnpm --filter server-e2e e2e
 
       - name: Upload test report
         if: failure()
@@ -39,3 +81,7 @@ jobs:
         with:
           name: e2e report
           path: apps/server-e2e/test-output
+
+      - name: Kill the server
+        if: always()
+        run: pkill -f trilium || true

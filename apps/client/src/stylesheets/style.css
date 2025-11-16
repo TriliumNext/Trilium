@@ -407,7 +407,7 @@ body.desktop .tabulator-popup-container,
 .dropdown-menu .disabled .disabled-tooltip {
     pointer-events: all;
     margin-inline-start: 8px;
-    font-size: 0.5em;
+    font-size: 0.75rem;
     color: var(--disabled-tooltip-icon-color);
     cursor: help;
     opacity: 0.75;
@@ -1104,7 +1104,6 @@ a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href
 
 .card {
     color: inherit !important;
-    background-color: inherit !important;
     border-color: var(--main-border-color) !important;
 }
 
@@ -1759,10 +1758,10 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
     flex-direction: column;
     margin-inline-start: 10px;
     margin-inline-end: 5px;
+    background: transparent;
 }
 
 #right-pane .card-header {
-    background: inherit;
     padding: 6px 0 3px 0;
     width: 99%; /* to give minimal right margin */
     background-color: var(--button-background-color);
@@ -1809,12 +1808,15 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 }
 
 .note-split {
+    /* Limits the maximum width of the note */
+    --max-content-width: var(--preferred-max-content-width);
+
     margin-inline-start: auto;
     margin-inline-end: auto;
 }
 
 .note-split.full-content-width {
-    max-width: 999999px;
+    --max-content-width: unset;
 }
 
 button.close:hover {
@@ -2034,13 +2036,16 @@ body.zen #right-pane,
 body.zen #mobile-sidebar-wrapper,
 body.zen .tab-row-container,
 body.zen .tab-row-widget,
+body.zen .shared-info-widget,
 body.zen .ribbon-container:not(:has(.classic-toolbar-widget)),
 body.zen .ribbon-container:has(.classic-toolbar-widget) .ribbon-top-row,
 body.zen .ribbon-container .ribbon-body:not(:has(.classic-toolbar-widget)),
 body.zen .note-icon-widget,
 body.zen .title-row .icon-action,
+body.zen .promoted-attributes-widget,
 body.zen .floating-buttons-children > *:not(.bx-edit-alt),
-body.zen .action-button {
+body.zen .action-button,
+body.zen .note-split:not(.type-book) .note-list-widget {
     display: none !important;
 }
 
@@ -2084,10 +2089,119 @@ body.zen .note-title-widget,
 body.zen .note-title-widget input {
     font-size: 1rem !important;
     background: transparent !important;
+    pointer-events: none;
 }
 
 body.zen #detail-container {
     width: 100%;
+}
+
+body.zen .note-split:not(.full-content-width) .scrolling-container {
+    display: flex;
+    flex-direction: column;
+    scroll-behavior: unset !important;
+}
+
+body.zen .note-split:not(.full-content-width) .note-detail {
+    margin: auto;
+    padding-bottom: 25vh;
+    max-width: var(--max-content-width);
+    width: 100%;
+}
+
+body.zen .note-split:not(.full-content-width) .scroll-padding-widget {
+    display: none;
+}
+
+body.zen .note-split.type-text {
+    position: relative;
+    font-size: 1.15em;
+}
+
+body.zen:not(.backdrop-effects-disabled) .note-split.type-text .title-row {
+    --start-color: var(--main-background-color);
+
+    position: absolute;
+    width: 100%;
+    background: linear-gradient(var(--start-color) 30%, transparent 100%);
+    z-index: 1000;
+}
+
+@supports (background: color-mix(in srgb, white, transparent)) {
+    body.zen .note-split.type-text .title-row {
+        --start-color: color-mix(in srgb, var(--main-background-color), transparent 10%);
+    }
+}
+
+body.zen .note-split.type-text .scrolling-container {
+    --padding-bottom: 130px; /* Should be enough to avoid caret being hidden by the formatting toolbar */
+
+    /* (Usually) keeps the caret above the fixed toolbar */
+    scroll-padding-bottom: var(--padding-bottom);
+}
+
+body.zen:not(.backdrop-effects-disabled) .note-split.type-text .scrolling-container {
+    --padding-top: 50px; /* Should be enough to cover the title row */
+    
+    padding-top: var(--padding-top);
+    scroll-padding-top: var(--padding-top);
+}
+
+/* Fixed formatting toolbar */
+
+body.zen .note-split .ribbon-container {
+    position: fixed;
+    left: 0;
+    bottom: 20px;
+    width: 100%;
+    z-index: 1000;
+    opacity: 0; /* Hidden unless the current note split is focused */
+    pointer-events: none;
+    transition: opacity 100ms linear;
+}
+
+body.zen .note-split:focus-within .ribbon-container {
+    opacity: 1; /* Show when the note split is focused */
+}
+
+body.zen .note-split .ribbon-container .ribbon-body {
+    border: 0;
+}
+
+body.zen .note-split .ribbon-container .classic-toolbar-widget {
+    margin: auto;
+    width: fit-content;
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, .1);
+    border-radius: 8px;
+    border: 1px solid var(--main-border-color);
+    padding: 4px;
+    background: var(--menu-background-color);
+}
+
+body.zen .note-split .ribbon-container .classic-toolbar-widget:not(:has(> .ck-toolbar)) {
+    /* Hide the toolbar wrapper if the toolbar is missing */
+    display: none;
+}
+
+body.zen .note-split:focus-within .ribbon-container .classic-toolbar-widget {
+    pointer-events: all;
+}
+
+@media (max-width: 1300px) {
+    body.zen .note-split .ribbon-container .classic-toolbar-widget {
+        /* Set the toolbar to full with */
+        width: 100%;
+    }
+
+    body.zen .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_se,
+    body.zen .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_sw,
+    body.zen .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_smw,
+    body.zen .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_sme,
+    body.zen .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_s {
+        /* Force toolbar items overflow dropdowns open upwards */
+        top: auto;
+        bottom: 100%;
+    }
 }
 
 /* Content renderer */
@@ -2406,7 +2520,7 @@ footer.webview-footer button {
     transform: rotate(180deg);
 }
 
-/* CK Edito */
+/* CK Editor */
 
 /* Insert text snippet: limit the width of the listed items to avoid overly long names */
 :root body.desktop div.ck-template-form li.ck-list__item .ck-template-form__text-part > span {
@@ -2436,4 +2550,18 @@ iframe.print-iframe {
 
 .excalidraw.theme--dark canvas {
     --theme-filter: invert(100%) hue-rotate(180deg);
+}
+
+/* Scrolling container */
+
+.scrolling-container:has(> :is(.note-detail.full-height, .note-list-widget.full-height)) {
+    display: flex;
+    flex-direction: column;
+}
+
+.scrolling-container > .note-detail.full-height,
+.scrolling-container > .note-list-widget.full-height {
+    position: relative;
+    flex-grow: 1;
+    width: 100%;
 }

@@ -331,6 +331,8 @@
     "calendar-title": "Calendar",
     "recent-changes-title": "Recent Changes",
     "bookmarks-title": "Bookmarks",
+    "command-palette": "Open Command Palette",
+    "zen-mode": "Zen Mode",
     "open-today-journal-note-title": "Open Today's Journal Note",
     "quick-search-title": "Quick Search",
     "protected-session-title": "Protected Session",

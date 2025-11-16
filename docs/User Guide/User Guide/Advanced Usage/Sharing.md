@@ -50,7 +50,7 @@ You can view a list of all shared notes by clicking on "Show Shared Notes Subtre
 
 *   Shared notes are published on the open internet and can be accessed by anyone with the URL unless the notes are password-protected.
 *   The URL's randomness does not provide security, so it is crucial not to share sensitive information through this feature.
-*   Trilium takes precautions to protect your publicly shared instance from leaking information for non-shared notes, including opening a separate read-only connection to the <a class="reference-link" href="Database.md">Database</a>. Depending on your threat model, it might make more sense to use <a class="reference-link" href="Sharing/Exporting%20HTML%20for%20web%20publish.md">Exporting HTML for web publishing</a> and use battle-tested web servers such as Nginx or Apache to serve static content.
+*   Trilium takes precautions to protect your publicly shared instance from leaking information for non-shared notes, including opening a separate read-only connection to the <a class="reference-link" href="Database.md">Database</a>. Depending on your threat model, it might make more sense to use <a class="reference-link" href="Sharing/Exporting%20static%20HTML%20for%20web%20.md">Exporting HTML for web publishing</a> and use battle-tested web servers such as Nginx or Apache to serve static content.
 
 ### Password protection
 

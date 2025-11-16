@@ -1,11 +1,21 @@
-import type { AttachmentRow, EtapiTokenRow, OptionNames } from "@triliumnext/commons";
+import type { AttachmentRow, EtapiTokenRow, NoteType, OptionNames } from "@triliumnext/commons";
 import type { AttributeType } from "../entities/fattribute.js";
 import type { EntityChange } from "../server_types.js";
 
 // TODO: Deduplicate with server.
 
 interface NoteRow {
+    blobId: string;
+    dateCreated: string;
+    dateModified: string;
     isDeleted?: boolean;
+    isProtected?: boolean;
+    mime: string;
+    noteId: string;
+    title: string;
+    type: NoteType;
+    utcDateCreated: string;
+    utcDateModified: string;
 }
 
 // TODO: Deduplicate with BranchRow from `rows.ts`/

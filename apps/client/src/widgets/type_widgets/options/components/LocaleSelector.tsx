@@ -13,7 +13,6 @@ export function LocaleSelector({ id, locales, currentValue, onChange, defaultLoc
     extraChildren?: ComponentChildren
 }) {
     const [ activeLocale, setActiveLocale ] = useState(defaultLocale?.id === currentValue ? defaultLocale : locales.find(l => l.id === currentValue));
-    console.log("defaultLocale ", defaultLocale, currentValue, activeLocale)
 
     const processedLocales = useMemo(() => {
         const leftToRightLanguages = locales.filter((l) => !l.rtl);

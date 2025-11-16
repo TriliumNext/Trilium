@@ -520,9 +520,7 @@
   "max_content_width": {
     "max_width_unit": "بكسل",
     "title": "عرض المحتوى",
-    "reload_button": "اعادة تحميل الواجهة",
-    "max_width_label": "اقصى عرض للمحتوى",
-    "reload_description": "تغييرات من خيارات المظهر"
+    "max_width_label": "اقصى عرض للمحتوى"
   },
   "native_title_bar": {
     "enabled": "مفعل",

@@ -6,6 +6,8 @@ import { BoardViewContext, TitleEditor } from ".";
 import { ContextMenuEvent } from "../../../menus/context_menu";
 import { openNoteContextMenu } from "./context_menu";
 import { t } from "../../../services/i18n";
+import UserAttributesDisplay from "../../attribute_widgets/UserAttributesList";
+import { useTriliumEvent } from "../../react/hooks";
 
 export const CARD_CLIPBOARD_TYPE = "trilium/board-card";
 
@@ -38,6 +40,13 @@ export default function Card({
     const isArchived = note.isArchived;
     const [ isVisible, setVisible ] = useState(true);
     const [ title, setTitle ] = useState(note.title);
+
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        const row = loadResults.getEntityRow("notes", note.noteId);
+        if (row) {
+            setTitle(row.title);
+        }
+    });
 
     const handleDragStart = useCallback((e: DragEvent) => {
         e.dataTransfer!.effectAllowed = 'move';
@@ -108,6 +117,7 @@ export default function Card({
                         title={t("board_view.edit-note-title")}
                         onClick={handleEdit}
                     />
+                    <UserAttributesDisplay note={note} ignoredAttributes={[api.statusAttribute]} />
                 </>
             ) : (
                 <TitleEditor
@@ -117,7 +127,7 @@ export default function Card({
                         setTitle(newTitle);
                     }}
                     dismiss={() => api.dismissEditingTitle()}
-                    multiline
+                    mode="multiline"
                 />
             )}
         </div>

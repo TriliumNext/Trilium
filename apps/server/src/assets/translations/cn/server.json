@@ -258,7 +258,9 @@
     "jump-to-note-title": "跳转至...",
     "llm-chat-title": "与笔记聊天",
     "ai-llm-title": "AI/LLM",
-    "inbox-title": "收件箱"
+    "inbox-title": "收件箱",
+    "command-palette": "打开命令面板",
+    "zen-mode": "禅模式"
   },
   "notes": {
     "new-note": "新建笔记",

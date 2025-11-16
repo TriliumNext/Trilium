@@ -36,57 +36,58 @@ export default function NoteInfoTab({ note }: TabContext) {
     return (
         <div className="note-info-widget">
             {note && (
-                <table className="note-info-widget-table">
-                    <tbody>
-                        <tr>
-                            <th>{t("note_info_widget.note_id")}:</th>
-                            <td class="note-info-id">{note.noteId}</td>
-                            <th>{t("note_info_widget.created")}:</th>
-                            <td>{formatDateTime(metadata?.dateCreated)}</td>
-                            <th>{t("note_info_widget.modified")}:</th>
-                            <td>{formatDateTime(metadata?.dateModified)}</td>
-                        </tr>
+                <>
+                    <div className="note-info-item">
+                        <span>{t("note_info_widget.note_id")}:</span>
+                        <span className="note-info-id">{note.noteId}</span>
+                    </div>
+                    <div className="note-info-item">
+                        <span>{t("note_info_widget.created")}:</span>
+                        <span>{formatDateTime(metadata?.dateCreated)}</span>
+                    </div>
+                    <div className="note-info-item">
+                        <span>{t("note_info_widget.modified")}:</span>
+                        <span>{formatDateTime(metadata?.dateModified)}</span>
+                    </div>
+                    <div className="note-info-item">
+                        <span>{t("note_info_widget.type")}:</span>
+                        <span>
+                            <span className="note-info-type">{note.type}</span>{' '}
+                            {note.mime && <span className="note-info-mime">({note.mime})</span>}
+                        </span>
+                    </div>
+                    <div className="note-info-item">
+                        <span title={t("note_info_widget.note_size_info")}>{t("note_info_widget.note_size")}:</span>
+                        <span className="note-info-size-col-span">
+                            {!isLoading && !noteSizeResponse && !subtreeSizeResponse && (
+                                <Button
+                                    className="calculate-button"
+                                    icon="bx bx-calculator"
+                                    text={t("note_info_widget.calculate")}
+                                    onClick={() => {
+                                        setIsLoading(true);
+                                        setTimeout(async () => {
+                                            await Promise.allSettled([
+                                                server.get<NoteSizeResponse>(`stats/note-size/${note.noteId}`).then(setNoteSizeResponse),
+                                                server.get<SubtreeSizeResponse>(`stats/subtree-size/${note.noteId}`).then(setSubtreeSizeResponse)
+                                            ]);
+                                            setIsLoading(false);
+                                        }, 0);
+                                    }}
+                                />
+                            )}
 
-                        <tr>
-                            <th>{t("note_info_widget.type")}:</th>
-                            <td>
-                                <span class="note-info-type">{note.type}</span>{' '}
-                                { note.mime && <span class="note-info-mime">({note.mime})</span> }
-                            </td>
-
-                            <th title={t("note_info_widget.note_size_info")}>{t("note_info_widget.note_size")}:</th>
-                            <td colSpan={3}>
-                                {!isLoading && !noteSizeResponse && !subtreeSizeResponse && (
-                                    <Button
-                                        className="calculate-button"
-                                        style={{ padding: "0px 10px 0px 10px" }}
-                                        icon="bx bx-calculator"
-                                        text={t("note_info_widget.calculate")}
-                                        onClick={() => {
-                                            setIsLoading(true);
-                                            setTimeout(async () => {
-                                                await Promise.allSettled([
-                                                    server.get<NoteSizeResponse>(`stats/note-size/${note.noteId}`).then(setNoteSizeResponse),
-                                                    server.get<SubtreeSizeResponse>(`stats/subtree-size/${note.noteId}`).then(setSubtreeSizeResponse)
-                                                ]);
-                                                setIsLoading(false);
-                                            }, 0);
-                                        }}
-                                    />
-                                )}
-
-                                <span className="note-sizes-wrapper">
-                                    <span class="note-size">{formatSize(noteSizeResponse?.noteSize)}</span>
-                                    {" "}
-                                    {subtreeSizeResponse && subtreeSizeResponse.subTreeNoteCount > 1 &&
-                                        <span class="subtree-size">{t("note_info_widget.subtree_size", { size: formatSize(subtreeSizeResponse.subTreeSize), count: subtreeSizeResponse.subTreeNoteCount })}</span>
-                                    }
-                                    {isLoading && <LoadingSpinner />}
-                                </span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                            <span className="note-sizes-wrapper">
+                                <span className="note-size">{formatSize(noteSizeResponse?.noteSize)}</span>
+                                {" "}
+                                {subtreeSizeResponse && subtreeSizeResponse.subTreeNoteCount > 1 &&
+                                    <span className="subtree-size">{t("note_info_widget.subtree_size", { size: formatSize(subtreeSizeResponse.subTreeSize), count: subtreeSizeResponse.subTreeNoteCount })}</span>
+                                }
+                                {isLoading && <LoadingSpinner />}
+                            </span>
+                        </span>
+                    </div>
+                </>
             )}
         </div>
     )

@@ -64,10 +64,35 @@ Not all <a class="reference-link" href="../../Note%20Types.md">Note Types</a> 
     *   Line numbers are not printed.
     *   Syntax highlighting is enabled, however a default theme (Visual Studio) is enforced.
 *   For <a class="reference-link" href="../../Collections.md">Collections</a>:
-    *   Only <a class="reference-link" href="../../Collections/Presentation.md">Presentation View</a> is currently supported.
+    *   Only <a class="reference-link" href="../../Collections/Presentation.md">Presentation</a> is currently supported.
     *   We plan to add support for all the collection types at some point.
 *   Using <a class="reference-link" href="../../Theme%20development/Custom%20app-wide%20CSS.md">Custom app-wide CSS</a> for printing is not longer supported, due to a more stable but isolated mechanism.
     *   We plan to introduce a new mechanism specifically for a print CSS.
+
+## Customizing the print CSS
+
+As an advanced use case, it's possible to customize the CSS used for printing such as adjusting the fonts, sizes or margins. Note that <a class="reference-link" href="../../Theme%20development/Custom%20app-wide%20CSS.md">Custom app-wide CSS</a> will not work for printing.
+
+To do so:
+
+*   Create a CSS [code note](../../Note%20Types/Code.md).
+*   On the note being printed, apply the `~printCss` relation to point to the newly created CSS code note.
+*   To apply the CSS to multiple notes, consider using [inheritable attributes](../../Advanced%20Usage/Attributes/Attribute%20Inheritance.md) or <a class="reference-link" href="../../Advanced%20Usage/Templates.md">Templates</a>.
+
+For example, to change the font of the document from the one defined by the theme or the user to a serif one:
+
+```
+body {
+	--main-font-family: serif !important;
+    --detail-font-family: var(--main-font-family) !important;
+}
+```
+
+To remark:
+
+*   Multiple CSS notes can be add by using multiple `~printCss` relations.
+*   If the note pointing to the `printCss` doesn't have the right note type or mime type, it will be ignored.
+*   If migrating from a previous version where <a class="reference-link" href="../../Theme%20development/Custom%20app-wide%20CSS.md">Custom app-wide CSS</a>, there's no need for `@media print {`  since the style-sheet is used only for printing.
 
 ## Under the hood
 

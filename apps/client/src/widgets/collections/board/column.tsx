@@ -12,6 +12,7 @@ import Card, { CARD_CLIPBOARD_TYPE, CardDragData } from "./card";
 import { JSX } from "preact/jsx-runtime";
 import froca from "../../../services/froca";
 import { DragData, TREE_CLIPBOARD_TYPE } from "../../note_tree";
+import NoteLink from "../../react/NoteLink";
 
 interface DragContext {
     column: string;
@@ -27,12 +28,14 @@ export default function Column({
     api,
     onColumnHover,
     isAnyColumnDragging,
+    isInRelationMode
 }: {
     columnItems?: { note: FNote, branch: FBranch }[];
     isDraggingColumn: boolean,
     api: BoardApi,
     onColumnHover?: (index: number, mouseX: number, rect: DOMRect) => void,
-    isAnyColumnDragging?: boolean
+    isAnyColumnDragging?: boolean,
+    isInRelationMode: boolean
 } & DragContext) {
     const [ isVisible, setVisible ] = useState(true);
     const { columnNameToEdit, setColumnNameToEdit, dropTarget, draggedCard, dropPosition } = useContext(BoardViewContext)!;
@@ -103,7 +106,13 @@ export default function Column({
             >
                 {!isEditing ? (
                     <>
-                        <span className="title">{column}</span>
+                        <span className="title">
+                            {isInRelationMode
+                            ? <NoteLink notePath={column} showNoteIcon />
+                            : column}
+                        </span>
+                        <span className="counter-badge">{columnItems?.length ?? 0}</span>
+                        <div className="spacer" />
                         <span
                             className="edit-icon icon bx bx-edit-alt"
                             title={t("board_view.edit-column-title")}
@@ -115,6 +124,7 @@ export default function Column({
                         currentValue={column}
                         save={newTitle => api.renameColumn(column, newTitle)}
                         dismiss={() => setColumnNameToEdit?.(undefined)}
+                        mode={isInRelationMode ? "relation" : "normal"}
                     />
                 )}
             </h3>
@@ -178,7 +188,7 @@ function AddNewItem({ column, api }: { column: string, api: BoardApi }) {
                     placeholder={t("board_view.new-item-placeholder")}
                     save={(title) => api.createNewItem(column, title)}
                     dismiss={() => setIsCreatingNewItem(false)}
-                    multiline isNewItem
+                    mode="multiline" isNewItem
                 />
             )}
         </div>

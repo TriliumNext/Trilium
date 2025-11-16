@@ -36,10 +36,13 @@
   },
   "branch_prefix": {
     "edit_branch_prefix": "Edit branch prefix",
+    "edit_branch_prefix_multiple": "Edit branch prefix for {{count}} branches",
     "help_on_tree_prefix": "Help on Tree prefix",
     "prefix": "Prefix: ",
     "save": "Save",
-    "branch_prefix_saved": "Branch prefix has been saved."
+    "branch_prefix_saved": "Branch prefix has been saved.",
+    "branch_prefix_saved_multiple": "Branch prefix has been saved for {{count}} branches.",
+    "affected_branches": "Affected branches ({{count}}):"
   },
   "bulk_actions": {
     "bulk_actions": "Bulk actions",
@@ -679,6 +682,7 @@
     "open_note_externally": "Open note externally",
     "open_note_externally_title": "File will be open in an external application and watched for changes. You'll then be able to upload the modified version back to Trilium.",
     "open_note_custom": "Open note custom",
+    "open_note_on_server": "Open note on server",
     "import_files": "Import files",
     "export_note": "Export note",
     "delete_note": "Delete note",
@@ -992,7 +996,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "Showing protected note requires entering your password:",
-    "start_session_button": "Start protected session <kbd>enter</kbd>",
+    "start_session_button": "Start protected session",
     "started": "Protected session has been started.",
     "wrong_password": "Wrong password.",
     "protecting-finished-successfully": "Protecting finished successfully.",
@@ -1108,9 +1112,7 @@
     "default_description": "Trilium by default limits max content width to improve readability for maximized screens on wide screens.",
     "max_width_label": "Max content width",
     "max_width_unit": "pixels",
-    "apply_changes_description": "To apply content width changes, click on",
-    "reload_button": "reload frontend",
-    "reload_description": "changes from appearance options"
+    "centerContent": "Keep content centered"
   },
   "native_title_bar": {
     "title": "Native Title Bar (requires app restart)",
@@ -1636,6 +1638,12 @@
     "shared_locally": "This note is shared locally on {{- link}}.",
     "help_link": "For help visit <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>."
   },
+  "read-only-info": {
+    "read-only-note": "Currently viewing a read-only note.",
+    "auto-read-only-note": "This note is shown in a read-only mode for faster loading.",
+    "auto-read-only-learn-more": "Learn more",
+    "edit-note": "Edit note"
+  },
   "note_types": {
     "text": "Text",
     "code": "Code",
@@ -2027,12 +2035,16 @@
     "add-column": "Add Column",
     "add-column-placeholder": "Enter column name...",
     "edit-note-title": "Click to edit note title",
-    "edit-column-title": "Click to edit column title"
+    "edit-column-title": "Click to edit column title",
+    "column-already-exists": "This column already exists on the board."
   },
   "presentation_view": {
     "edit-slide": "Edit this slide",
     "start-presentation": "Start presentation",
     "slide-overview": "Toggle an overview of the slides"
+  },
+  "calendar_view": {
+    "delete_note": "Delete note..."
   },
   "command_palette": {
     "tree-action-name": "Tree: {{name}}",

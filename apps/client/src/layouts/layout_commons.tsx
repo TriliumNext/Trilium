@@ -26,11 +26,11 @@ import PopupEditorDialog from "../widgets/dialogs/popup_editor.js";
 import FlexContainer from "../widgets/containers/flex_container.js";
 import NoteIconWidget from "../widgets/note_icon";
 import PromotedAttributesWidget from "../widgets/promoted_attributes.js";
-import NoteDetailWidget from "../widgets/note_detail.js";
 import CallToActionDialog from "../widgets/dialogs/call_to_action.jsx";
 import NoteTitleWidget from "../widgets/note_title.jsx";
 import FormattingToolbar from "../widgets/ribbon/FormattingToolbar.js";
 import NoteList from "../widgets/collections/NoteList.jsx";
+import NoteDetail from "../widgets/NoteDetail.jsx";
 import StandaloneRibbonAdapter from "../widgets/ribbon/components/StandaloneRibbonAdapter.jsx";
 
 export function applyModals(rootContainer: RootContainer) {
@@ -66,7 +66,7 @@ export function applyModals(rootContainer: RootContainer) {
                     .child(<NoteTitleWidget />))
                 .child(<StandaloneRibbonAdapter component={FormattingToolbar} />)
                 .child(new PromotedAttributesWidget())
-                .child(new NoteDetailWidget())
+                .child(<NoteDetail />)
                 .child(<NoteList media="screen" displayOnlyCollections />))
         .child(<CallToActionDialog />);
 }

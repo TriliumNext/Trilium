@@ -159,7 +159,7 @@ describe("shortcuts", () => {
             expect(matchesShortcut(event, "Shift+F1")).toBeTruthy();
 
             // Special keys
-            for (const keyCode of [ "Delete", "Enter" ]) {
+            for (const keyCode of [ "Delete", "Enter", "NumpadEnter" ]) {
                 event = createKeyboardEvent({ key: keyCode, code: keyCode });
                 expect(matchesShortcut(event, keyCode), `Key ${keyCode}`).toBeTruthy();
             }

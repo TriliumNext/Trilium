@@ -302,7 +302,10 @@
     "edit_branch_prefix": "Editează prefixul ramurii",
     "help_on_tree_prefix": "Informații despre prefixe de ierarhie",
     "prefix": "Prefix: ",
-    "save": "Salvează"
+    "save": "Salvează",
+    "edit_branch_prefix_multiple": "Editează prefixul pentru {{count}} ramuri",
+    "branch_prefix_saved_multiple": "Prefixul a fost modificat pentru {{count}} ramuri.",
+    "affected_branches": "Ramuri afectate ({{count}}):"
   },
   "bulk_actions": {
     "affected_notes": "Notițe afectate",
@@ -537,7 +540,8 @@
     "opml_version_1": "OPML v1.0 - text simplu",
     "opml_version_2": "OPML v2.0 - permite și HTML",
     "format_html": "HTML - recomandat deoarece păstrează toata formatarea",
-    "format_pdf": "PDF - cu scopul de printare sau partajare."
+    "format_pdf": "PDF - cu scopul de printare sau partajare.",
+    "share-format": "HTML pentru publicare web - folosește aceeași temă pentru notițele partajate, dar se pot publica într-un website static."
   },
   "fast_search": {
     "description": "Căutarea rapidă dezactivează căutarea la nivel de conținut al notițelor cu scopul de a îmbunătăți performanța de căutare pentru baze de date mari.",
@@ -753,7 +757,8 @@
       "placeholder": "Introduceți etichetele HTML, câte unul pe linie",
       "reset_button": "Resetează la lista implicită",
       "title": "Etichete HTML la importare"
-    }
+    },
+    "importZipRecommendation": "Când importați un fișier ZIP, ierarhia notițelor va reflecta structura subdirectoarelor din arhivă."
   },
   "include_archived_notes": {
     "include_archived_notes": "Include notițele arhivate"
@@ -796,13 +801,11 @@
     "modal_body_text": "Din cauza limitărilor la nivel de navigator, nu este posibilă citirea clipboard-ului din JavaScript. Inserați Markdown-ul pentru a-l importa în caseta de mai jos și dați clic pe butonul Import"
   },
   "max_content_width": {
-    "apply_changes_description": "Pentru a aplica schimbările de lățime a conținutului, dați click pe",
     "default_description": "În mod implicit Trilium limitează lățimea conținutului pentru a îmbunătăți lizibilitatea pentru ferestrele maximizate pe ecrane late.",
     "max_width_label": "Lungimea maximă a conținutului",
     "max_width_unit": "pixeli",
-    "reload_button": "reîncarcă interfața",
-    "reload_description": "schimbări din opțiunile de afișare",
-    "title": "Lățime conținut"
+    "title": "Lățime conținut",
+    "centerContent": "Centrează conținutul"
   },
   "mobile_detail_menu": {
     "delete_this_note": "Șterge această notiță",
@@ -859,7 +862,8 @@
     "convert_into_attachment_failed": "Nu s-a putut converti notița „{{title}}”.",
     "convert_into_attachment_successful": "Notița „{{title}}” a fost convertită în atașament.",
     "convert_into_attachment_prompt": "Doriți convertirea notiței „{{title}}” într-un atașament al notiței părinte?",
-    "print_pdf": "Exportare ca PDF..."
+    "print_pdf": "Exportare ca PDF...",
+    "open_note_on_server": "Deschide notița pe server"
   },
   "note_erasure_timeout": {
     "deleted_notes_erased": "Notițele șterse au fost eliminate permanent.",
@@ -985,7 +989,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "Afișarea notițelor protejate necesită introducerea parolei:",
-    "start_session_button": "Deschide sesiunea protejată <kbd>enter</kbd>",
+    "start_session_button": "Deschide sesiunea protejată",
     "started": "Sesiunea protejată este activă.",
     "wrong_password": "Parolă greșită.",
     "protecting-finished-successfully": "Protejarea a avut succes.",
@@ -1249,11 +1253,11 @@
     "timeout_unit": "milisecunde"
   },
   "table_of_contents": {
-    "description": "Tabela de conținut va apărea în notițele de tip text atunci când notița are un număr de titluri mai mare decât cel definit. Acest număr se poate personaliza:",
+    "description": "Cuprinsul va apărea în notițele de tip text atunci când notița are un număr de titluri mai mare decât cel definit. Acest număr se poate personaliza:",
     "unit": "titluri",
-    "disable_info": "De asemenea se poate dezactiva tabela de conținut setând o valoare foarte mare.",
-    "shortcut_info": "Se poate configura și o scurtatură pentru a comuta rapid vizibilitatea panoului din dreapta (inclusiv tabela de conținut) în Opțiuni -> Scurtături (denumirea „toggleRightPane”).",
-    "title": "Tabelă de conținut"
+    "disable_info": "De asemenea se poate dezactiva cuprinsul setând o valoare foarte mare.",
+    "shortcut_info": "Se poate configura și o scurtatură pentru a comuta rapid vizibilitatea panoului din dreapta (inclusiv cuprinsul) în Opțiuni -> Scurtături (denumirea „toggleRightPane”).",
+    "title": "Cuprins"
   },
   "text_auto_read_only_size": {
     "description": "Marchează pragul în care o notiță de o anumită dimensiune va fi afișată în mod de citire (pentru motive de performanță).",
@@ -1506,7 +1510,9 @@
     "window-on-top": "Menține fereastra mereu vizibilă"
   },
   "note_detail": {
-    "could_not_find_typewidget": "Nu s-a putut găsi widget-ul corespunzător tipului „{{type}}”"
+    "could_not_find_typewidget": "Nu s-a putut găsi widget-ul corespunzător tipului „{{type}}”",
+    "printing": "Imprimare în curs...",
+    "printing_pdf": "Exportare ca PDF în curs..."
   },
   "note_title": {
     "placeholder": "introduceți titlul notiței aici..."
@@ -2017,7 +2023,8 @@
     "new-item-placeholder": "Introduceți titlul notiței...",
     "add-column-placeholder": "Introduceți denumirea coloanei...",
     "edit-note-title": "Clic pentru a edita titlul notiței",
-    "edit-column-title": "Clic pentru a edita titlul coloanei"
+    "edit-column-title": "Clic pentru a edita titlul coloanei",
+    "column-already-exists": "Această coloană deja există."
   },
   "command_palette": {
     "tree-action-name": "Listă de notițe: {{name}}",
@@ -2079,5 +2086,14 @@
     "edit-slide": "Editați acest slide",
     "start-presentation": "Începeți prezentarea",
     "slide-overview": "Afișați o imagine de ansamblu a slide-urilor"
+  },
+  "read-only-info": {
+    "read-only-note": "Vizualizați o notiță în modul doar în citire.",
+    "auto-read-only-note": "Această notiță este afișată în modul doar în citire din motive de performanță.",
+    "auto-read-only-learn-more": "Mai multe detalii",
+    "edit-note": "Editează notița"
+  },
+  "calendar_view": {
+    "delete_note": "Șterge notița..."
   }
 }

@@ -9,9 +9,9 @@
   "keywords": [],
   "author": "Elian Doran <contact@eliandoran.me>",
   "license": "AGPL-3.0-only",
-  "packageManager": "pnpm@10.20.0",
+  "packageManager": "pnpm@10.22.0",
   "devDependencies": {
-    "@redocly/cli": "2.10.0",
+    "@redocly/cli": "2.11.1",
     "archiver": "7.0.1",
     "fs-extra": "11.3.2",
     "react": "19.2.0",

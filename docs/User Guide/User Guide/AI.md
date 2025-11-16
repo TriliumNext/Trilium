@@ -21,7 +21,7 @@ You will then need to set up the AI “provider” that you wish to use to creat
 
 In the following example, we're going to use our self-hosted Ollama instance to create the embeddings for our Notes. You can see additional documentation about installing your own Ollama locally in <a class="reference-link" href="AI/Providers/Ollama/Installing%20Ollama.md">Installing Ollama</a>.
 
-To see what embedding models Ollama has available, you can check out [this search](https://ollama.com/search?c=embedding)on their website, and then `pull` whichever one you want to try out. As of 4/15/25, my personal favorite is `mxbai-embed-large`.
+To see what embedding models Ollama has available, you can check out [this search](https://ollama.com/search?c=embedding) on their website, and then `pull` whichever one you want to try out. A popular choice is `mxbai-embed-large`.
 
 First, we'll need to select the Ollama provider from the tabs of providers, then we will enter in the Base URL for our Ollama. Since our Ollama is running on our local machine, our Base URL is `http://localhost:11434`. We will then hit the “refresh” button to have it fetch our models:
 
@@ -80,10 +80,10 @@ You don't need to tell the LLM to execute a certain tool, it should “smartly�
 
 ## Overview
 
-Now that you know about embeddings and tools, you can just go ahead and use the “Chat with Notes” button, where you can go ahead and start chatting!:
+To start, simply press the _Chat with Notes_ button in the <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>.
 
 <figure class="image image_resized" style="width:60.77%;"><img style="aspect-ratio:1378/539;" src="2_AI_image.png" width="1378" height="539"></figure>
 
-If you don't see the “Chat with Notes” button on your side launchbar, you might need to move it from the “Available Launchers” section to the “Visible Launchers” section:
+If you don't see the button in the <a class="reference-link" href="Basic%20Concepts%20and%20Features/UI%20Elements/Launch%20Bar.md">Launch Bar</a>, you might need to move it from the _Available Launchers_ section to the _Visible Launchers_ section:
 
 <figure class="image image_resized" style="width:69.81%;"><img style="aspect-ratio:1765/1287;" src="9_AI_image.png" width="1765" height="1287"></figure>

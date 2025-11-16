@@ -1,0 +1,23 @@
+.info-bar {
+    --link-color: currentColor;
+
+    margin-top: 4px;
+    contain: unset !important;
+    padding: 8px 20px;
+    color: var(--read-only-note-info-bar-color);
+    font-size: .9em;
+    cursor: default;
+    user-select: none;
+}
+
+.info-bar-prominent {
+    background: var(--alert-bar-background, var(--accented-background-color));
+}
+
+.info-bar-subtle {
+    color: var(--muted-text-color);
+    background: var(--main-background-color);
+    border-bottom: 1px solid var(--main-border-color);
+    margin-block: 0;
+    padding-inline: 22px;
+}

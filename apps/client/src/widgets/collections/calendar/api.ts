@@ -58,8 +58,6 @@ export async function changeEvent(note: FNote, { startDate, endDate, startTime, 
     startAttribute = note.getAttributes("label").filter(attr => attr.name == "calendar:startTime").shift()?.value||"startTime";
     endAttribute = note.getAttributes("label").filter(attr => attr.name == "calendar:endTime").shift()?.value||"endTime";
 
-    if (startTime && endTime) {
-        setAttribute(note, "label", startAttribute, startTime);
-        setAttribute(note, "label", endAttribute, endTime);
-    }
+    setAttribute(note, "label", startAttribute, startTime);
+    setAttribute(note, "label", endAttribute, endTime);
 }

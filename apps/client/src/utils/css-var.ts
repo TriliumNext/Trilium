@@ -23,6 +23,24 @@ export class CssVarReader {
         return (!isNaN(number.valueOf()) ? number.valueOf() : defaultValue)
     }
 
+    asBoolean(defaultValue?: boolean) {
+        let value = this.value.toLocaleLowerCase().trim();
+        let result: boolean | undefined;
+
+        switch (value) {
+            case "true":
+            case "1":
+                result = true;
+                break;
+            case "false":
+            case "0":
+                result = false;
+                break;
+        }
+
+        return (result !== undefined) ? result : defaultValue;
+    }
+
     asEnum<T>(enumType: T, defaultValue?: T[keyof T]): T[keyof T] | undefined {
         let result: T[keyof T] | undefined;
 

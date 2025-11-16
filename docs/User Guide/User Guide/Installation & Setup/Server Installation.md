@@ -32,7 +32,7 @@ export TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data
 
 ### Disabling / Modifying the Upload Limit
 
-If you're running into the 250MB limit imposed on the server by default, and you'd like to increase the upload limit, you can set the `TRILIUM_NO_UPLOAD_LIMIT` environment variable to `true` disable it completely:
+If you're running into the 250MB limit imposed on the server by default, and you'd like to increase the upload limit, you can set the `TRILIUM_NO_UPLOAD_LIMIT` environment variable to `true` to disable it completely:
 
 ```
 export TRILIUM_NO_UPLOAD_LIMIT=true 

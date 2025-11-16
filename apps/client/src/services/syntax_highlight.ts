@@ -24,7 +24,9 @@ export async function formatCodeBlocks($container: JQuery<HTMLElement>) {
             continue;
         }
 
-        applyCopyToClipboardButton($(codeBlock));
+        if (glob.device !== "print") {
+            applyCopyToClipboardButton($(codeBlock));
+        }
 
         if (syntaxHighlightingEnabled) {
             applySingleBlockSyntaxHighlight($(codeBlock), normalizedMimeType);

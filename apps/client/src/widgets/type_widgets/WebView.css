@@ -1,0 +1,11 @@
+.note-detail-web-view {
+    height: 100%;
+    position: relative;
+}
+
+.note-detail-web-view > * {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 100%;
+}

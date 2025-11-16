@@ -270,6 +270,38 @@ function setPrefix(req: Request) {
     branch.save();
 }
 
+function setPrefixBatch(req: Request) {
+    const { branchIds, prefix } = req.body;
+    
+    if (!Array.isArray(branchIds)) {
+        throw new ValidationError("branchIds must be an array");
+    }
+
+    // Validate that prefix is a string or null/undefined to prevent prototype pollution
+    if (prefix !== null && prefix !== undefined && typeof prefix !== 'string') {
+        throw new ValidationError("prefix must be a string or null");
+    }
+
+    const normalizedPrefix = utils.isEmptyOrWhitespace(prefix) ? null : prefix;
+    let updatedCount = 0;
+
+    for (const branchId of branchIds) {
+        const branch = becca.getBranch(branchId);
+        if (branch) {
+            branch.prefix = normalizedPrefix;
+            branch.save();
+            updatedCount++;
+        } else {
+            log.info(`Branch ${branchId} not found, skipping prefix update`);
+        }
+    }
+
+    return {
+        success: true,
+        count: updatedCount
+    };
+}
+
 export default {
     moveBranchToParent,
     moveBranchBeforeNote,
@@ -277,5 +309,6 @@ export default {
     setExpanded,
     setExpandedForSubtree,
     deleteBranch,
-    setPrefix
+    setPrefix,
+    setPrefixBatch
 };

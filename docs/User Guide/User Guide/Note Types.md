@@ -1,5 +1,5 @@
 # Note Types
-One core features of Trilium is that it supports multiple types of notes, depending on the need.
+One of the core features of Trilium is that it supports multiple types of notes, depending on the need.
 
 ## Creating a new note with a different type via the note tree
 

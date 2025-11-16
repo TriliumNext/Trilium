@@ -991,7 +991,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "L'affichage de la note protégée nécessite la saisie de votre mot de passe :",
-    "start_session_button": "Démarrer une session protégée <kbd>Entrée</kbd>",
+    "start_session_button": "Démarrer une session protégée",
     "started": "La session protégée a démarré.",
     "wrong_password": "Mot de passe incorrect.",
     "protecting-finished-successfully": "La protection de la note s'est terminée avec succès.",
@@ -1106,9 +1106,6 @@
     "title": "Largeur du contenu",
     "default_description": "Trilium limite par défaut la largeur maximale du contenu pour améliorer la lisibilité sur des écrans larges.",
     "max_width_label": "Largeur maximale du contenu en pixels",
-    "apply_changes_description": "Pour appliquer les modifications de largeur du contenu, cliquez sur",
-    "reload_button": "recharger l'interface",
-    "reload_description": "changements par rapport aux options d'apparence",
     "max_width_unit": "Pixels"
   },
   "native_title_bar": {

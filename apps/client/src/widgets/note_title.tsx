@@ -47,7 +47,9 @@ export default function NoteTitleWidget() {
 
     // Prevent user from navigating away if the spaced update is not done.
     useEffect(() => {
-        appContext.addBeforeUnloadListener(() => spacedUpdate.isAllSavedAndTriggerUpdate());
+        const listener = () => spacedUpdate.isAllSavedAndTriggerUpdate();
+        appContext.addBeforeUnloadListener(listener);
+        return () => appContext.removeBeforeUnloadListener(listener);
     }, []);
     useTriliumEvents([ "beforeNoteSwitch", "beforeNoteContextRemove" ], () => spacedUpdate.updateNowIfNecessary());
 

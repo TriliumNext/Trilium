@@ -1,4 +1,5 @@
 import type FNote from "../entities/fnote.js";
+import { applyReferenceLinks } from "../widgets/type_widgets/text/read_only_helper.js";
 import { getCurrentLanguage } from "./i18n.js";
 import { formatCodeBlocks } from "./syntax_highlight.js";
 
@@ -10,18 +11,18 @@ export default function renderDoc(note: FNote) {
         if (docName) {
             // find doc based on language
             const url = getUrl(docName, getCurrentLanguage());
-            $content.load(url, (response, status) => {
+            $content.load(url, async (response, status) => {
                 // fallback to english doc if no translation available
                 if (status === "error") {
                     const fallbackUrl = getUrl(docName, "en");
-                    $content.load(fallbackUrl, () => {
-                        processContent(fallbackUrl, $content)
+                    $content.load(fallbackUrl, async () => {
+                        await processContent(fallbackUrl, $content)
                         resolve($content);
                     });
                     return;
                 }
 
-                processContent(url, $content);
+                await processContent(url, $content);
                 resolve($content);
             });
         } else {
@@ -32,7 +33,7 @@ export default function renderDoc(note: FNote) {
     });
 }
 
-function processContent(url: string, $content: JQuery<HTMLElement>) {
+async function processContent(url: string, $content: JQuery<HTMLElement>) {
     const dir = url.substring(0, url.lastIndexOf("/"));
 
     // Images are relative to the docnote but that will not work when rendered in the application since the path breaks.
@@ -42,6 +43,9 @@ function processContent(url: string, $content: JQuery<HTMLElement>) {
     });
 
     formatCodeBlocks($content);
+
+    // Apply reference links.
+    await applyReferenceLinks($content[0]);
 }
 
 function getUrl(docNameValue: string, language: string) {

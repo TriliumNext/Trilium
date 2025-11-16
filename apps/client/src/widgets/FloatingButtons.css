@@ -6,7 +6,7 @@
 .floating-buttons-children,
 .show-floating-buttons {
     position: absolute;
-    top: var(--floating-buttons-vert-offset, 10px);
+    top: var(--floating-buttons-vert-offset, 14px);
     inset-inline-end: var(--floating-buttons-horiz-offset, 10px);
     display: flex;
     flex-direction: row;

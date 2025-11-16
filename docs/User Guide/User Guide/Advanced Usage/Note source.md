@@ -36,7 +36,7 @@ It is possible to view the source code of a note by pressing the contextual menu
 
 The source code will be displayed in a new tab.
 
-For some note types, such as text notes, the source code is also formatted in order to be more easily readable.
+For some note types, such as text notes and JSON notes, the source code is also formatted in order to be more easily readable.
 
 ## Modifying the source code
 

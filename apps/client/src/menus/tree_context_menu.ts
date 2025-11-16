@@ -137,7 +137,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                         command: "editBranchPrefix",
                         keyboardShortcut: "editBranchPrefix",
                         uiIcon: "bx bx-rename",
-                        enabled: isNotRoot && parentNotSearch && noSelectedNotes && notOptionsOrHelp
+                        enabled: isNotRoot && parentNotSearch && notOptionsOrHelp
                     },
                     { title: t("tree-context-menu.convert-to-attachment"), command: "convertNoteToAttachment", uiIcon: "bx bx-paperclip", enabled: isNotRoot && !isHoisted && notOptionsOrHelp },
 

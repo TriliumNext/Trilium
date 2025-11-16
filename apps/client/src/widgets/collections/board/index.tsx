@@ -13,6 +13,8 @@ import Column from "./column";
 import BoardApi from "./api";
 import FormTextArea from "../../react/FormTextArea";
 import FNote from "../../../entities/fnote";
+import NoteAutocomplete from "../../react/NoteAutocomplete";
+import toast from "../../../services/toast";
 
 export interface BoardViewData {
     columns?: BoardColumnData[];
@@ -42,10 +44,11 @@ interface BoardViewContextData {
 export const BoardViewContext = createContext<BoardViewContextData | undefined>(undefined);
 
 export default function BoardView({ note: parentNote, noteIds, viewConfig, saveConfig }: ViewModeProps<BoardViewData>) {
-    const [ statusAttribute ] = useNoteLabelWithDefault(parentNote, "board:groupBy", "status");
+    const [ statusAttributeWithPrefix ] = useNoteLabelWithDefault(parentNote, "board:groupBy", "status");
     const [ includeArchived ] = useNoteLabelBoolean(parentNote, "includeArchived");
     const [ byColumn, setByColumn ] = useState<ColumnMap>();
     const [ columns, setColumns ] = useState<string[]>();
+    const [ isInRelationMode, setIsRelationMode ] = useState(false);
     const [ draggedCard, setDraggedCard ] = useState<{ noteId: string, branchId: string, fromColumn: string, index: number } | null>(null);
     const [ dropTarget, setDropTarget ] = useState<string | null>(null);
     const [ dropPosition, setDropPosition ] = useState<{ column: string, index: number } | null>(null);
@@ -55,8 +58,8 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
     const [ branchIdToEdit, setBranchIdToEdit ] = useState<string>();
     const [ columnNameToEdit, setColumnNameToEdit ] = useState<string>();
     const api = useMemo(() => {
-        return new Api(byColumn, columns ?? [], parentNote, statusAttribute, viewConfig ?? {}, saveConfig, setBranchIdToEdit );
-    }, [ byColumn, columns, parentNote, statusAttribute, viewConfig, saveConfig, setBranchIdToEdit ]);
+        return new Api(byColumn, columns ?? [], parentNote, statusAttributeWithPrefix, viewConfig ?? {}, saveConfig, setBranchIdToEdit );
+    }, [ byColumn, columns, parentNote, statusAttributeWithPrefix, viewConfig, saveConfig, setBranchIdToEdit ]);
     const boardViewContext = useMemo<BoardViewContextData>(() => ({
         api,
         parentNote,
@@ -78,8 +81,9 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
     ]);
 
     function refresh() {
-        getBoardData(parentNote, statusAttribute, viewConfig ?? {}, includeArchived).then(({ byColumn, newPersistedData }) => {
+        getBoardData(parentNote, statusAttributeWithPrefix, viewConfig ?? {}, includeArchived).then(({ byColumn, newPersistedData, isInRelationMode }) => {
             setByColumn(byColumn);
+            setIsRelationMode(isInRelationMode);
 
             if (newPersistedData) {
                 viewConfig = { ...newPersistedData };
@@ -94,7 +98,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
         });
     }
 
-    useEffect(refresh, [ parentNote, noteIds, viewConfig ]);
+    useEffect(refresh, [ parentNote, noteIds, viewConfig, statusAttributeWithPrefix ]);
 
     const handleColumnDrop = useCallback((fromIndex: number, toIndex: number) => {
         const newColumns = api.reorderColumn(fromIndex, toIndex);
@@ -110,7 +114,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
         // Check if any changes affect our board
         const hasRelevantChanges =
             // React to changes in status attribute for notes in this board
-            loadResults.getAttributeRows().some(attr => attr.name === statusAttribute && noteIds.includes(attr.noteId!)) ||
+            loadResults.getAttributeRows().some(attr => attr.name === api.statusAttribute && noteIds.includes(attr.noteId!)) ||
             // React to changes in note title
             loadResults.getNoteIds().some(noteId => noteIds.includes(noteId)) ||
             // React to changes in branches for subchildren (e.g., moved, added, or removed notes)
@@ -171,6 +175,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
                                 <div className="column-drop-placeholder show" />
                             )}
                             <Column
+                                isInRelationMode={isInRelationMode}
                                 api={api}
                                 column={column}
                                 columnIndex={index}
@@ -185,14 +190,14 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
                         <div className="column-drop-placeholder show" />
                     )}
 
-                    <AddNewColumn api={api} />
+                    <AddNewColumn api={api} isInRelationMode={isInRelationMode} />
                 </div>
             </BoardViewContext.Provider>
         </div>
     )
 }
 
-function AddNewColumn({ api }: { api: BoardApi }) {
+function AddNewColumn({ api, isInRelationMode }: { api: BoardApi, isInRelationMode: boolean }) {
     const [ isCreatingNewColumn, setIsCreatingNewColumn ] = useState(false);
 
     const addColumnCallback = useCallback(() => {
@@ -209,22 +214,28 @@ function AddNewColumn({ api }: { api: BoardApi }) {
             : (
                 <TitleEditor
                     placeholder={t("board_view.add-column-placeholder")}
-                    save={(columnName) => api.addNewColumn(columnName)}
+                    save={async (columnName) => {
+                        const created = await api.addNewColumn(columnName);
+                        if (!created) {
+                            toast.showMessage(t("board_view.column-already-exists"), undefined, "bx bx-duplicate");
+                        }
+                    }}
                     dismiss={() => setIsCreatingNewColumn(false)}
                     isNewItem
+                    mode={isInRelationMode ? "relation" : "normal"}
                 />
             )}
         </div>
     )
 }
 
-export function TitleEditor({ currentValue, placeholder, save, dismiss, multiline, isNewItem }: {
+export function TitleEditor({ currentValue, placeholder, save, dismiss, mode, isNewItem }: {
     currentValue?: string;
     placeholder?: string;
     save: (newValue: string) => void;
     dismiss: () => void;
-    multiline?: boolean;
     isNewItem?: boolean;
+    mode?: "normal" | "multiline" | "relation";
 }) {
     const inputRef = useRef<any>(null);
     const focusElRef = useRef<Element>(null);
@@ -232,12 +243,10 @@ export function TitleEditor({ currentValue, placeholder, save, dismiss, multilin
     const shouldDismiss = useRef(false);
 
     useEffect(() => {
-        focusElRef.current = document.activeElement;
+        focusElRef.current = document.activeElement !== document.body ? document.activeElement : null;
         inputRef.current?.focus();
         inputRef.current?.select();
     }, [ inputRef ]);
-
-    const Element = multiline ? FormTextArea : FormTextBox;
 
     useEffect(() => {
         if (dismissOnNextRefreshRef.current) {
@@ -246,31 +255,62 @@ export function TitleEditor({ currentValue, placeholder, save, dismiss, multilin
         }
     });
 
-    return (
-        <Element
-            inputRef={inputRef}
-            currentValue={currentValue ?? ""}
-            placeholder={placeholder}
-            autoComplete="trilium-title-entry" // forces the auto-fill off better than the "off" value.
-            rows={multiline ? 4 : undefined}
-            onKeyDown={(e: TargetedKeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-                if (e.key === "Enter" || e.key === "Escape") {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    shouldDismiss.current = (e.key === "Escape");
-                    if (focusElRef.current instanceof HTMLElement) {
-                        focusElRef.current.focus();
+    const onKeyDown = (e: TargetedKeyboardEvent<HTMLInputElement | HTMLTextAreaElement> | KeyboardEvent) => {
+        if (e.key === "Enter" || e.key === "Escape") {
+            e.preventDefault();
+            e.stopPropagation();
+            if (focusElRef.current instanceof HTMLElement) {
+                shouldDismiss.current = (e.key === "Escape");
+                focusElRef.current.focus();
+            } else {
+                dismiss();
+            }
+        }
+    };
+
+    const onBlur = (newValue: string) => {
+        if (!shouldDismiss.current && newValue.trim() && (newValue !== currentValue || isNewItem)) {
+            save(newValue);
+            dismissOnNextRefreshRef.current = true;
+        } else {
+            dismiss();
+        }
+    };
+
+    if (mode !== "relation") {
+        const Element = mode === "multiline" ? FormTextArea : FormTextBox;
+
+        return (
+            <Element
+                inputRef={inputRef}
+                currentValue={currentValue ?? ""}
+                placeholder={placeholder}
+                autoComplete="trilium-title-entry" // forces the auto-fill off better than the "off" value.
+                rows={mode === "multiline" ? 4 : undefined}
+                onKeyDown={onKeyDown}
+                onBlur={onBlur}
+            />
+        );
+    } else {
+        return (
+            <NoteAutocomplete
+                inputRef={inputRef}
+                noteId={currentValue ?? ""}
+                opts={{
+                    hideAllButtons: true,
+                    allowCreatingNotes: true
+                }}
+                onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                        dismiss();
                     }
-                }
-            }}
-            onBlur={(newValue) => {
-                if (!shouldDismiss.current && newValue.trim() && (newValue !== currentValue || isNewItem)) {
+                }}
+                onBlur={() => dismiss()}
+                noteIdChanged={(newValue) => {
                     save(newValue);
-                    dismissOnNextRefreshRef.current = true;
-                } else {
                     dismiss();
-                }
-            }}
-        />
-    );
+                }}
+            />
+        );
+    }
 }

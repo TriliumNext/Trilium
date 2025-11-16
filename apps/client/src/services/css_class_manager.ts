@@ -76,6 +76,11 @@ function getHue(color: ColorInstance) {
     }
 }
 
+export function getReadableTextColor(bgColor: string) {
+    const colorInstance = Color(bgColor);
+    return colorInstance.isLight() ? "#000" : "#fff";
+}
+
 export default {
     createClassForColor
 };

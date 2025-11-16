@@ -1,0 +1,9 @@
+.scrolling-container {
+    overflow: auto;
+    scroll-behavior: smooth;
+    position: relative;
+}
+
+.note-split.type-code:not(.mime-text-x-sqlite) > .scrolling-container {
+    background-color: var(--code-background-color);
+}

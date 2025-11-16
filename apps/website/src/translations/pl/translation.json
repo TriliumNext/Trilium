@@ -26,7 +26,7 @@
     "productivity_benefits": {
         "title": "Produktywność i bezpieczeństwo",
         "revisions_title": "Historia zmian",
-        "revisions_content": "Notatki są regularnie zapisywane w tle, co pozwala to przeglądać i cofać wprowadzone zmiany. Zapisy można także wykonywać \"na życzenie\".",
+        "revisions_content": "Notatki są regularnie zapisywane w tle, pozwala to przeglądać i cofać wprowadzone zmiany. Zapisy można także wykonywać \"na życzenie\".",
         "sync_title": "Synchronizacja",
         "sync_content": "Używaj własnych lub chmurowych instancji do łatwiejszej synchronizacji notatek między wieloma urządzeniami, w tym twoim telefonem używając PWA.",
         "protected_notes_title": "Notatki chronione",
@@ -51,7 +51,8 @@
         "mermaid_description": "Twórz diagramy, takie jak schematy blokowe, diagramy klas i sekwencyjne, wykresy Gantta i wiele innych, korzystając z składni Mermaid.",
         "mindmap_title": "Mapy myśli",
         "mindmap_description": "Organizuj wizualnie swoje myśli albo przeprowadź sesję burzy mózgów.",
-        "others_list": "I wiele innych: <0>mapa notatek</0>, <1>mapa powiązań</1>, <2>zapisane wyszukiwania</2>, <3>renderowane notatki</3>, and <4>podgląd stron www</4>."
+        "others_list": "I wiele innych: <0>mapa notatek</0>, <1>mapa powiązań</1>, <2>zapisane wyszukiwania</2>, <3>renderowane notatki</3> i <4>podgląd stron www</4>.",
+        "title": "Wiele sposobów przedstawienia Twoich informacji"
     },
     "extensibility_benefits": {
         "title": "Udostępnianie i rozszerzenia",
@@ -69,10 +70,13 @@
         "calendar_description": "Organizuj swoje prywatne i służbowe wydarzenia używając kalendarza. Miej plany pod kontrolą z tygodniowym, miesięcznym i rocznym podglądem. Twórz i edytuj wydarzenia w prosty i intuicyjny sposób.",
         "table_title": "Tabele",
         "table_description": "Wyświetlaj i edytuj informacje o notatkach w tabelach na wiele sposobów dzięki wielu typom kolumn: Tekstowym, numerycznym, z polami wyboru, z datami i godzinami, zawierającym linki, z kolorowymi wypełnieniami i powiązaniami notatek. Możesz nawet wyświetlić całe drzewo hierarchii w tabeli.",
-        "board_title": "Tablice",
+        "board_title": "Tablice Kanban",
         "board_description": "Organizuj swoje zadania i postępy projektów w tablicach Kanban z prostym tworzeniem nowych elementów i kolumn, a możliwość graficznego ich przenoszenia ułatwi zmianę statusu i pozwoli zachować porządek.",
         "geomap_title": "Mapy",
-        "geomap_description": "Zaplanuj wakacje albo interesujące miejsca bezpośrednio na mapie, używaj personalizowanych pinezek. Dzięki możliwości importu plików GPX możesz wyświetlać przebyte trasy."
+        "geomap_description": "Zaplanuj wakacje albo interesujące miejsca bezpośrednio na mapie, używaj personalizowanych pinezek. Dzięki możliwości importu plików GPX możesz wyświetlać przebyte trasy.",
+        "title": "Kolekcje",
+        "presentation_title": "Prezentacje",
+        "presentation_description": "Zawrzyj informacje w slajdach i zaprezentuj je w pełnoekranowych prezentacjach, które możesz łatwo wyeksportować do plików PDF."
     },
     "faq": {
         "title": "Częste pytania",
@@ -128,7 +132,7 @@
         "title": "Inne sposoby wsparcia",
         "way_translate": "Przetłumacz aplikacja na swój natywny język przez <Link>Weblate</Link>.",
         "way_community": "Dołącz do społeczności na <Discussions>GitHub Discussions</Discussions> lub na <Matrix>Matrix</Matrix>.",
-        "way_reports": "Zgłoś błędy przez<Link>GitHub issues</Link>.",
+        "way_reports": "Zgłoś błędy przez <Link>GitHub issues</Link>.",
         "way_document": "Pomóż nam w doskonaleniu dokumentacji przez informowanie nas o lukach albo sam pomóż w tworzeniu treści (dokumentacja, FAQ, poradniki).",
         "way_market": "Powiedz o nas swoim znajomym, na blogu albo na social mediach."
     },
@@ -187,5 +191,10 @@
         "description": "Trilium Notes hostowane na PikaPods, płatnym serwisie dla łatwego dostępu i zarządzania. Bezpośrednio nie związanie z Trilium team.",
         "download_pikapod": "Konfiguruj na PikaPods",
         "download_triliumcc": "Alternatywnie patrz na trilium.cc"
+    },
+    "header": {
+        "get-started": "Start",
+        "documentation": "Dokumentacja",
+        "support-us": "Wesprzyj nas"
     }
 }

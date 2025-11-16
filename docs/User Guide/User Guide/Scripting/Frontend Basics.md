@@ -54,4 +54,4 @@ Conversely to scripts, widgets do have some specific requirements in order to wo
 
 ### Tutorial
 
-For more information on building widgets, take a look at [Widget Basics](Custom%20Widgets/Widget%20Basics.md).
+For more information on building widgets, take a look at [Widget Basics](Frontend%20Basics/Custom%20Widgets/Widget%20Basics.md).

@@ -1,4 +1,5 @@
-<p>As Trilium is currently in beta, encountering bugs is to be expected.</p>
+<p>While Trilium is actively maintained and stable, encountering bugs is
+  possible.</p>
 <h2>General Quick Fix</h2>
 <p>The first step in troubleshooting is often a restart.</p>
 <p>If you experience an UI issue, the frontend may have entered an inconsistent
@@ -15,7 +16,7 @@
   variable to reset the open tabs to a single specified note ID (e.g., <code>root</code>).
   In Linux, you can set it as follows:</p><pre><code class="language-text-x-trilium-auto">TRILIUM_START_NOTE_ID=root ./trilium</code></pre>
 <h2>Broken Script Prevents Application Startup</h2>
-<p>If a custom script causes Triliumto crash, and it is set as a startup
+<p>If a custom script causes Trilium to crash, and it is set as a startup
   script or in an active <a href="#root/_help_MgibgPcfeuGz">custom widget</a>, start
   Triliumin "safe mode" to prevent any custom scripts from executing:</p><pre><code class="language-text-x-trilium-auto">TRILIUM_SAFE_MODE=true ./trilium</code></pre>
 <p>Depending on your Trilium distribution, you may have pre-made scripts

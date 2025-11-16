@@ -1203,11 +1203,8 @@
   "max_content_width": {
     "max_width_unit": "пикселей",
     "title": "Ширина контентной области",
-    "reload_button": "перезагрузить интерфейс",
     "default_description": "Trilium по умолчанию ограничивает максимальную ширину контента, чтобы улучшить читаемость на широких экранах.",
-    "max_width_label": "Максимальная ширина контентной области",
-    "apply_changes_description": "Чтобы применить изменения, нажмите на",
-    "reload_description": "изменения в параметрах внешнего вида"
+    "max_width_label": "Максимальная ширина контентной области"
   },
   "native_title_bar": {
     "enabled": "включено",
@@ -1688,7 +1685,7 @@
     "unprotecting-title": "Статус снятия защиты",
     "protecting-finished-successfully": "Защита успешно завершена.",
     "unprotecting-finished-successfully": "Снятие защиты успешно завершено.",
-    "start_session_button": "Начать защищенный сеанс <kbd>enter</kbd>",
+    "start_session_button": "Начать защищенный сеанс",
     "protecting-in-progress": "Защита в процессе: {{count}}",
     "unprotecting-in-progress-count": "Снятие защиты в процессе: {{count}}",
     "started": "Защищенный сеанс запущен.",

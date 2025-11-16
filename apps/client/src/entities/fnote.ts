@@ -6,6 +6,7 @@ import type { Froca } from "../services/froca-interface.js";
 import type FAttachment from "./fattachment.js";
 import type { default as FAttribute, AttributeType } from "./fattribute.js";
 import utils from "../services/utils.js";
+import search from "../services/search.js";
 
 const LABEL = "label";
 const RELATION = "relation";
@@ -253,6 +254,23 @@ export default class FNote {
 
     getChildNoteIds() {
         return this.children;
+    }
+
+    async getChildNoteIdsWithArchiveFiltering(includeArchived = false) {
+        const isHiddenNote = this.noteId.startsWith("_");
+        const isSearchNote = this.type === "search";
+        if (!includeArchived && !isHiddenNote && !isSearchNote) {
+            const unorderedIds = new Set(await search.searchForNoteIds(`note.parents.noteId="${this.noteId}" #!archived`));
+            const results: string[] = [];
+            for (const id of this.children) {
+                if (unorderedIds.has(id)) {
+                    results.push(id);
+                }
+            }
+            return results;
+        } else {
+            return this.children;
+        }
     }
 
     async getSubtreeNoteIds(includeArchived = false) {
@@ -788,6 +806,16 @@ export default class FNote {
         return this.getAttributeValue(LABEL, name);
     }
 
+    getLabelOrRelation(nameWithPrefix: string) {
+        if (nameWithPrefix.startsWith("#")) {
+            return this.getLabelValue(nameWithPrefix.substring(1));
+        } else if (nameWithPrefix.startsWith("~")) {
+            return this.getRelationValue(nameWithPrefix.substring(1));
+        } else {
+            return this.getLabelValue(nameWithPrefix);
+        }
+    }
+
     /**
      * @param name - relation name
      * @returns relation value if relation exists, null otherwise
@@ -839,8 +867,7 @@ export default class FNote {
             return [];
         }
 
-        const promotedAttrs = this.getAttributes()
-            .filter((attr) => attr.isDefinition())
+        const promotedAttrs = this.getAttributeDefinitions()
             .filter((attr) => {
                 const def = attr.getDefinition();
 
@@ -858,6 +885,11 @@ export default class FNote {
         });
 
         return promotedAttrs;
+    }
+
+    getAttributeDefinitions() {
+        return this.getAttributes()
+            .filter((attr) => attr.isDefinition());
     }
 
     hasAncestor(ancestorNoteId: string, followTemplates = false, visitedNoteIds: Set<string> | null = null) {

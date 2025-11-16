@@ -1,1 +1,23 @@
-{}
+{
+    "get-started": {
+        "title": "Mulai",
+        "desktop_title": "Unduh aplikasi desktop (v{{version}})",
+        "architecture": "Arsitektur:",
+        "older_releases": "Lihat rilis sebelumnya",
+        "server_title": "Pasang server untuk akses dari lebih dari satu perangkat"
+    },
+    "hero_section": {
+        "title": "Rapikan pikiranmu. Bangunlah pusat pengetahuan pribadimu.",
+        "subtitle": "Trilium adalah solusi sumber terbuka untuk mencatat dan pengorganisasian sebuah pusat pengetahuan. Pakai offline di desktop, atau sinkronisasi dengan server pribadi untuk mengakses catatanmu di manapun kamu berada.",
+        "get_started": "Mulai",
+        "github": "GitHub",
+        "dockerhub": "Docker Hub",
+        "screenshot_alt": "Cuplikan layar aplikasi desktop Trilium Notes"
+    },
+    "organization_benefits": {
+        "title": "Organisasi",
+        "note_structure_title": "Struktur catatan",
+        "note_structure_description": "Catatan dapat disusun secara hirarkis. Tidak perlu folder, karena setiap catatan dapat mengandung catatan anak. Satu catatan dapat ditambah di beberapa tempat sekaligus dalam hirarki.",
+        "attributes_title": "Label dan hubungan catatan"
+    }
+}

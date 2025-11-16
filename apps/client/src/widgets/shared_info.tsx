@@ -1,11 +1,12 @@
-import { useEffect, useState } from "preact/hooks";
+import "./shared_info.css";
 import { t } from "../services/i18n";
-import Alert from "./react/Alert";
+import { useEffect, useState } from "preact/hooks";
 import { useNoteContext, useTriliumEvent, useTriliumOption } from "./react/hooks";
-import FNote from "../entities/fnote";
 import attributes from "../services/attributes";
-import RawHtml from "./react/RawHtml";
+import FNote from "../entities/fnote";
 import HelpButton from "./react/HelpButton";
+import InfoBar from "./react/InfoBar";
+import RawHtml from "./react/RawHtml";
 
 export default function SharedInfo() {
     const { note } = useNoteContext();
@@ -35,7 +36,7 @@ export default function SharedInfo() {
             link = `${location.protocol}//${host}${location.pathname}share/${shareId}`;
         }
 
-        setLink(`<a href="${link}" class="external">${link}</a>`);
+        setLink(`<a href="${link}" class="external tn-link">${link}</a>`);
     }
 
     useEffect(refresh, [ note ]);
@@ -48,20 +49,14 @@ export default function SharedInfo() {
     });
 
     return (
-        <Alert className="shared-info-widget" type="warning" style={{
-            contain: "none",
-            margin: "10px",
-            padding: "10px",
-            fontWeight: "bold",
-            display: !link ? "none" : undefined
-        }}>
+        <InfoBar className="shared-info-widget" type="subtle" style={{display: (!link) ? "none" : undefined}}>
             {link && (
                 <RawHtml html={syncServerHost
                 ? t("shared_info.shared_publicly", { link })
                 : t("shared_info.shared_locally", { link })} />                
             )}
             <HelpButton helpPage="R9pX4DGra2Vt" style={{ width: "24px", height: "24px" }} />
-        </Alert>
+        </InfoBar>
     )
 }
 

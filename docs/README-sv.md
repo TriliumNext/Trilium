@@ -28,14 +28,14 @@ status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted
 Trilium Notes is a free and open-source, cross-platform hierarchical note taking
 application with focus on building large personal knowledge bases.
 
-See [screenshots](https://triliumnext.github.io/Docs/Wiki/screenshot-tour) for
-quick overview:
+Se [screenshots](https://triliumnext.github.io/Docs/Wiki/screenshot-tour) för en
+snabb överblick:
 
 <a href="https://triliumnext.github.io/Docs/Wiki/screenshot-tour"><img src="./docs/app.png" alt="Trilium Screenshot" width="1000"></a>
 
-## ⏬ Download
+## Ladda ner
 - [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
-  stable version, recommended for most users.
+  stabil version, rekommenderas för dom flesta användare.
 - [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
   unstable development version, updated daily with the latest features and
   fixes.

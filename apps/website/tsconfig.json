@@ -10,7 +10,8 @@
 		"jsxImportSource": "preact",
 		"skipLibCheck": true,
 		"types": [
-			"vite/client"
+			"vite/client",
+			"vitest/config"
 		],
 		"paths": {
 			"react": ["../../node_modules/preact/compat/"],

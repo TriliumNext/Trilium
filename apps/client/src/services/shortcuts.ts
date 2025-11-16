@@ -3,7 +3,7 @@ import utils from "./utils.js";
 type ElementType = HTMLElement | Document;
 type Handler = (e: KeyboardEvent) => void;
 
-interface ShortcutBinding {
+export interface ShortcutBinding {
     element: HTMLElement | Document;
     shortcut: string;
     handler: Handler;
@@ -46,6 +46,7 @@ for (let i = 1; i <= 19; i++) {
 const KEYCODES_WITH_NO_MODIFIER = new Set([
     "Delete",
     "Enter",
+    "NumpadEnter",
     ...functionKeyCodes
 ]);
 
@@ -126,8 +127,18 @@ function bindElShortcut($el: JQuery<ElementType | Element>, keyboardShortcut: st
                 activeBindings.set(key, []);
             }
             activeBindings.get(key)!.push(binding);
+            return binding;
         }
     }
+}
+
+export function removeIndividualBinding(binding: ShortcutBinding) {
+    const key = binding.namespace ?? "global";
+    const activeBindingsInNamespace = activeBindings.get(key);
+    if (activeBindingsInNamespace) {
+        activeBindings.set(key, activeBindingsInNamespace.filter(aBinding => aBinding.handler === binding.handler));
+    }
+    binding.element.removeEventListener("keydown", binding.listener);
 }
 
 function removeNamespaceBindings(namespace: string) {

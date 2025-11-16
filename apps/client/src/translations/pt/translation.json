@@ -967,7 +967,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "É necessário digitar a sua palavra-passe para mostar notas protegidas:",
-    "start_session_button": "Iniciar sessão protegida <kbd>enter</kbd>",
+    "start_session_button": "Iniciar sessão protegida",
     "started": "A sessão protegida foi iniciada.",
     "wrong_password": "Palavra-passe incorreta.",
     "protecting-finished-successfully": "A proteção foi finalizada com sucesso.",
@@ -1082,10 +1082,7 @@
     "title": "Largura do Conteúdo",
     "default_description": "Por padrão, o Trilium limita a largura máxima do conteúdo para melhorar a legibilidade em janelas maximizadas em ecrãs largos.",
     "max_width_label": "Largura máxima do conteúdo",
-    "max_width_unit": "pixels",
-    "apply_changes_description": "Para aplicar as alterações de largura do conteúdo, clique em",
-    "reload_button": "recarregar frontend",
-    "reload_description": "alterações de opções de aparência"
+    "max_width_unit": "pixels"
   },
   "native_title_bar": {
     "title": "Barra de Título Nativa (requer recarregar a app)",

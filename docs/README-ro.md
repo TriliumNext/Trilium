@@ -34,12 +34,13 @@ ecran](https://triliumnext.github.io/Docs/Wiki/screenshot-tour):
 
 <a href="https://triliumnext.github.io/Docs/Wiki/screenshot-tour"><img src="./docs/app.png" alt="Trilium Screenshot" width="1000"></a>
 
-## ⏬ Download
+## ⏬ Descarcă
 - [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
-  stable version, recommended for most users.
-- [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  unstable development version, updated daily with the latest features and
-  fixes.
+  versiune stabilă, recomandată pentru majoritatea utilizatorilor.
+- [Versiune
+  periodică](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
+  versiune pentru dezvoltare și testare, actualizată zilnic și cu ultimele
+  funcționalități și buguri reparate.
 
 ## 📚 Documentație
 

@@ -343,7 +343,9 @@
     "etapi-title": "ETAPI",
     "visible-launchers-title": "可視化されたランチャー",
     "inbox-title": "Inbox",
-    "base-abstract-launcher-title": "ベース アブストラクトランチャー"
+    "base-abstract-launcher-title": "ベース アブストラクトランチャー",
+    "command-palette": "コマンドパレットを開く",
+    "zen-mode": "禅モード"
   },
   "notes": {
     "new-note": "新しいノート",

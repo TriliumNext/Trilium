@@ -34,6 +34,7 @@
 div.promoted-attributes-container {
     margin-top: 8px;
     margin-bottom: 8px;
+    margin-inline-start: 12px;
 }
 
 /*
@@ -41,7 +42,7 @@ div.promoted-attributes-container {
  */
 
  /* The property label */
-.note-info-widget-table th,
+.note-info-item > span:first-child,
 .file-properties-widget .file-table th,
 .image-properties > div:first-child > span > strong {
     opacity: 0.65;
@@ -49,7 +50,6 @@ div.promoted-attributes-container {
     vertical-align: top;
 }
 
-.note-info-widget-table td,
 .file-properties-widget .file-table td {
     vertical-align: top;
 }

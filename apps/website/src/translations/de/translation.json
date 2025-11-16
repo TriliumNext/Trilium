@@ -17,7 +17,9 @@
     "organization_benefits": {
         "title": "Organisation",
         "note_structure_title": "Notizstruktur",
-        "attributes_title": "Notiz Labels und Beziehungen"
+        "attributes_title": "Notiz Labels und Beziehungen",
+        "note_structure_description": "Notizen lassen sich hierarchisch anordnen. Ordner sind nicht nötig, da jede Notiz Unternotizen enthalten kann. Eine einzelne Notiz kann an mehreren Stellen in der Hierarchie hinzugefügt werden.",
+        "hoisting_description": "Trennen Sie Ihre persönlichen und beruflichen Notizen ganz einfach, indem Sie sie in einem Arbeitsbereich gruppieren. Dadurch wird Ihre Notizstruktur so fokussiert, dass nur ein bestimmter Satz von Notizen angezeigt wird."
     },
     "productivity_benefits": {
         "revisions_title": "Notizrevisionen",
@@ -26,7 +28,8 @@
         "protected_notes_title": "Geschützte Notizen",
         "jump_to_title": "Schnellsuche und Kommandos",
         "search_title": "Leistungsstarke Suche",
-        "web_clipper_title": "Web clipper"
+        "web_clipper_title": "Web clipper",
+        "revisions_content": "Notizen werden regelmäßig im Hintergrund gespeichert und Revisionen können zur Überprüfung oder zum Rückgängigmachen versehentlicher Änderungen verwendet werden. Revisionen können auch bei Bedarf erstellt werden."
     },
     "note_types": {
         "text_title": "Text Notizen",

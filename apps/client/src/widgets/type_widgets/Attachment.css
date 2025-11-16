@@ -1,0 +1,137 @@
+/* #region Attachment list */
+.attachment-list {
+    padding-inline-start: 15px;
+    padding-inline-end: 15px;
+}
+
+.attachment-list .links-wrapper {
+    font-size: larger;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+/* #endregion */
+
+/* #region Attachment info */
+.attachment-detail-widget {
+    height: 100%;
+}
+
+.attachment-detail-wrapper {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.attachment-title-line {
+    display: flex;
+    align-items: baseline;
+    gap: 1em;
+}
+
+.attachment-details {
+    margin-inline-start: 10px;
+}
+
+.attachment-content-wrapper {
+    flex-grow: 1;
+}
+
+.attachment-content-wrapper .rendered-content {
+    height: 100%;
+}
+
+.attachment-content-wrapper pre {
+    padding: 10px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.attachment-detail-wrapper.list-view .attachment-content-wrapper {
+    max-height: 300px;
+}
+
+.attachment-detail-wrapper.full-detail {
+    height: 100%;
+}
+
+.attachment-detail-wrapper.full-detail .attachment-content-wrapper {
+    height: 100%;
+}
+
+.attachment-detail-wrapper.list-view .attachment-content-wrapper pre {
+    max-height: 400px;
+}
+
+.attachment-content-wrapper img {
+    margin: 10px;
+}
+
+.attachment-detail-wrapper.list-view .attachment-content-wrapper img, .attachment-detail-wrapper.list-view .attachment-content-wrapper video {
+    max-height: 300px;
+    max-width: 90%;
+    object-fit: contain;
+}
+
+.attachment-detail-wrapper.full-detail .attachment-content-wrapper img {
+    max-width: 90%;
+    object-fit: contain;
+}
+
+.attachment-detail-wrapper.scheduled-for-deletion .attachment-content-wrapper img {
+    filter: contrast(10%);
+}
+
+.attachment-detail-wrapper .attachment-deletion-warning {
+    margin-top: 15px;
+}
+/* #endregion */
+
+/* #region Attachment detail */
+.attachment-detail {
+    padding-left: 15px;
+    padding-right: 15px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.attachment-detail .links-wrapper {
+    font-size: larger;
+    padding: 0 0 16px 0;
+}
+
+.attachment-detail .attachment-wrapper {
+    flex-grow: 1;
+}
+/* #endregion */
+
+/* #region Attachment actions */
+.attachment-actions {
+    width: 35px;
+    height: 35px;
+}
+
+.attachment-actions .select-button {
+    position: relative;
+    top: 3px;
+}
+
+.attachment-actions .dropdown-menu {
+    width: 20em;
+}
+
+.attachment-actions .dropdown-item .bx {
+    position: relative;
+    top: 3px;
+    font-size: 120%;
+    margin-inline-end: 5px;
+}
+
+.attachment-actions .dropdown-item[disabled], .attachment-actions .dropdown-item[disabled]:hover {
+    color: var(--muted-text-color) !important;
+    background-color: transparent !important;
+    pointer-events: none; /* makes it unclickable */
+}
+/* #endregion */

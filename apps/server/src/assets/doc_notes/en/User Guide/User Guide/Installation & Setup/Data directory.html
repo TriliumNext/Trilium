@@ -28,20 +28,27 @@
   - it contains everything you need.</p>
 <h3>Changing the location of data directory</h3>
 <p>If you want to use some other location for the data directory than the
-  default one, you may change it via TRILIUM_DATA_DIR environment variable
-  to some other location:</p>
+  default one, you may change it via <code>TRILIUM_DATA_DIR</code> environment
+  variable to some other location:</p>
+<h3>Windows</h3>
+<ol>
+  <li>Press the Windows key on your keyboard.</li>
+  <li>Search and select “Edit the system variables”.</li>
+  <li>Press the “Environment Variables…” button in the bottom-right of the newly
+    opened screen.</li>
+  <li>On the top section ("User variables for [user]"), press the “New…” button.</li>
+  <li>In the <em>Variable name</em> field insert <code>TRILIUM_DATA_DIR</code>.</li>
+  <li>Press the <em>Browse Directory…</em> button and select the new directory
+    where to store the database.</li>
+  <li>Close all the windows by pressing the <em>OK</em> button for each of them.</li>
+</ol>
 <h4>Linux</h4><pre><code class="language-text-x-trilium-auto">export TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data</code></pre>
 <h4>Mac OS X</h4>
 <p>You need to create a <code>.plist</code> file under <code>~/Library/LaunchAgents</code> to
   load it properly each login.</p>
 <p>To load it manually, you need to use <code>launchctl setenv TRILIUM_DATA_DIR &lt;yourpath&gt;</code>
 </p>
-<p>Here is a pre-defined template, where you just need to add your path to:</p><pre><code class="language-text-x-trilium-auto">
-
-
-
-    
-        Label
+<p>Here is a pre-defined template, where you just need to add your path to:</p><pre><code class="language-text-x-trilium-auto">        Label
         set.trilium.env
         RunAtLoad
         
@@ -50,16 +57,13 @@
             launchctl
             setenv
             TRILIUM_DATA_DIR
-            /Users/YourUserName/Library/Application Support/trilium-data
-        
-    
-</code></pre>
+            /Users/YourUserName/Library/Application Support/trilium-data    </code></pre>
 <h3>Create a script to run with specific data directory</h3>
 <p>An alternative to globally setting environment variable is to run only
   the Trilium Notes with this environment variable. This then allows for
   different setup styles like two <a href="#root/_help_wX4HbRucYSDD">database</a> instances
   or "portable" installation.</p>
-<p>To do this in unix based systems simply run trilium like this:</p><pre><code class="language-text-x-trilium-auto">TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data trilium</code></pre>
+<p>To do this in Unix-based systems simply run <code>trilium</code> like this:</p><pre><code class="language-text-x-trilium-auto">TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data trilium</code></pre>
 <p>You can then save the above command as a shell script on your path for
   convenience.</p>
 <h2>Fine-grained directory/path location</h2>

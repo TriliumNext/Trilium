@@ -1,5 +1,5 @@
 # Kanban Board
-<figure class="image"><img style="aspect-ratio:918/248;" src="Kanban Board_image.png" width="918" height="248"></figure>
+<figure class="image"><img style="aspect-ratio:918/248;" src="2_Kanban Board_image.png" width="918" height="248"></figure>
 
 The Board view presents sub-notes in columns for a Kanban-like experience. Each column represents a possible value for a status label, which can be adjusted.
 
@@ -41,7 +41,20 @@ Notes are displayed recursively, so even the child notes of the child notes will
     *   Delete the current note.
 *   If there are many notes within the column, move the mouse over the column and use the mouse wheel to scroll.
 
-## Keyboard interaction
+### Working with the note tree
+
+It's also possible to add items on the board using the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>.
+
+1.  Select the desired note in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>.
+2.  Hold the mouse on the note and drag it to the to the desired column.
+
+This works for:
+
+*   Notes that are not children of the board, case in which a [clone](../Basic%20Concepts%20and%20Features/Notes/Cloning%20Notes.md) will be created.
+*   Notes that are children of the board, but not yet assigned on the board.
+*   Notes that are children of the board, case in which they will be moved to the new column.
+
+### Keyboard interaction
 
 The board view has mild support for keyboard-based navigation:
 
@@ -52,13 +65,60 @@ The board view has mild support for keyboard-based navigation:
 
 ## Configuration
 
-### Grouping by another attribute
+### Displaying custom attributes
 
-By default, the label used to group the notes is `#status`. It is possible to use a different label if needed by defining a label named `#board:groupBy` with the value being the attribute to use (without `#` attribute prefix).
+<figure class="image image-style-align-center"><img style="aspect-ratio:531/485;" src="Kanban Board_image.png" width="531" height="485"></figure>
 
-> [!NOTE]
-> It's currently not possible to set a relation as the grouping criteria. There are plans to add support for it.
+Note attributes can be displayed on the board to enhance it with custom information such as adding a Due date for your tasks.
 
-## Limitations
+This feature works exclusively via attribute definitions (<a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a>). The easiest way to add these is:
 
-*   It is not possible yet to use group by a relation, only by label.
+1.  Go to board note.
+2.  In the ribbon select _Owned Attributes_ → plus button → _Add new label/relation definition_.
+3.  Configure the attribute as desired.
+4.  Check _Inheritable_ to make it applicable to child notes automatically.
+
+After creating the attribute, click on a note and fill in the promoted attributes which should then reflect inside the board.
+
+Of note:
+
+*   Both promoted and non-promoted attribute definitions are supported. The only difference is that non-promoted attributes don't have an “Alias” for assigning a custom name.
+*   Both “Single value” and “Multi value” attributes are supported. In case of multi-value, a badge is displayed for every instance of the attribute.
+*   All label types are supported, including dates, booleans and URLs.
+*   Relation attributes are also supported as well, showing a link with the target note title and icon.
+*   Currently, it's not possible to adjust which promoted attributes are displayed, since all promoted attributes will be displayed (except the `board:groupBy` one). There are plans to improve upon this being able to hide promoted attributes individually.
+
+### Grouping by another label
+
+By default, the label used to group the notes is `#status`. It is possible to use a different label if needed by defining a label named `#board:groupBy` with the value being the attribute to use (with or without `#` attribute prefix).
+
+### Grouping by relations
+
+<figure class="image image-style-align-right"><img style="aspect-ratio:535/245;" src="1_Kanban Board_image.png" width="535" height="245"></figure>
+
+A more advanced use-case is grouping by [Relations](../Advanced%20Usage/Attributes/Relations.md).
+
+During this mode:
+
+*   The columns represent the _target notes_ of a relation.
+*   When creating a new column, a note is selected instead of a column name.
+*   The column icon will match the target note.
+*   Moving notes between columns will change its relation.
+*   Renaming an existing column will change the target note of all the notes in that column.
+
+Using relations instead of labels has some benefits:
+
+*   The status/grouping of the notes is visible outside the Kanban board, for example on the <a class="reference-link" href="../Note%20Types/Note%20Map.md">Note Map</a>.
+*   Columns can have icons.
+*   Renaming columns is less intensive since it simply involves changing the note title of the target note instead of having to do a bulk rename.
+
+To do so:
+
+1.  First, create a Kanban board from scratch and not a template:
+2.  Assign `#viewType=board #hidePromotedAttributes` to emulate the default template.
+3.  Set `#board:groupBy` to the name of a relation to group by, **including the** `**~**` **prefix** (e.g. `~status`).
+4.  Optionally, use <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> for easy status change within the note:
+    
+    ```
+    #relation:status(inheritable)="promoted,alias=Status,single"
+    ```

@@ -4,7 +4,7 @@ import Calendar from "./calendar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import "./index.css";
 import { useNoteLabel, useNoteLabelBoolean, useResizeObserver, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
-import { DISPLAYABLE_LOCALE_IDS, LOCALE_IDS } from "@triliumnext/commons";
+import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { Calendar as FullCalendar } from "@fullcalendar/core";
 import { parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
 import dialog from "../../../services/dialog";
@@ -20,6 +20,7 @@ import Button, { ButtonGroup } from "../../react/Button";
 import ActionButton from "../../react/ActionButton";
 import { RefObject } from "preact";
 import TouchBar, { TouchBarButton, TouchBarLabel, TouchBarSegmentedControl, TouchBarSpacer } from "../../react/TouchBar";
+import { openCalendarContextMenu } from "./context_menu";
 
 interface CalendarViewData {
 
@@ -106,7 +107,7 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     const plugins = usePlugins(isEditable, isCalendarRoot);
     const locale = useLocale();
 
-    const { eventDidMount } = useEventDisplayCustomization();
+    const { eventDidMount } = useEventDisplayCustomization(note);
     const editingProps = useEditing(note, isEditable, isCalendarRoot);
 
     // React to changes.
@@ -196,11 +197,11 @@ function usePlugins(isEditable: boolean, isCalendarRoot: boolean) {
 }
 
 function useLocale() {
-    const [ locale ] = useTriliumOption("locale");
+    const [ formattingLocale ] = useTriliumOption("formattingLocale");
     const [ calendarLocale, setCalendarLocale ] = useState<LocaleInput>();
 
     useEffect(() => {
-        const correspondingLocale = LOCALE_MAPPINGS[locale];
+        const correspondingLocale = LOCALE_MAPPINGS[formattingLocale];
         if (correspondingLocale) {
             correspondingLocale().then((locale) => setCalendarLocale(locale.default));
         } else {
@@ -253,7 +254,7 @@ function useEditing(note: FNote, isEditable: boolean, isCalendarRoot: boolean) {
     };
 }
 
-function useEventDisplayCustomization() {
+function useEventDisplayCustomization(parentNote: FNote) {
     const eventDidMount = useCallback((e: EventMountArg) => {
         const { iconClass, promotedAttributes } = e.event.extendedProps;
 
@@ -302,6 +303,11 @@ function useEventDisplayCustomization() {
             }
             $(mainContainer ?? e.el).append($(promotedAttributesHtml));
         }
+
+        e.el.addEventListener("contextmenu", (contextMenuEvent) => {
+            const noteId = e.event.extendedProps.noteId;
+            openCalendarContextMenu(contextMenuEvent, noteId, parentNote);
+        });
     }, []);
     return { eventDidMount };
 }

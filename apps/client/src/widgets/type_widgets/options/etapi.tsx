@@ -97,7 +97,7 @@ function TokenList({ tokens }: { tokens: EtapiToken[] }) {
 
     return (
         tokens.length ? (
-            <div style={{ overflow: "auto", height: "500px"}}>
+            <div style={{ overflow: "auto"}}>
                 <table className="table table-stripped">
                     <thead>
                         <tr>

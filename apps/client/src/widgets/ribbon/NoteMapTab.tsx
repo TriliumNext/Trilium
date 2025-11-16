@@ -1,24 +1,19 @@
 import { TabContext } from "./ribbon-interface";
-import NoteMapWidget from "../note_map";
-import { useElementSize, useLegacyWidget, useWindowSize } from "../react/hooks";
+import { useElementSize, useWindowSize } from "../react/hooks";
 import ActionButton from "../react/ActionButton";
 import { t } from "../../services/i18n";
 import { useEffect, useRef, useState } from "preact/hooks";
+import NoteMap from "../note_map/NoteMap";
 
 const SMALL_SIZE_HEIGHT = "300px";
 
-export default function NoteMapTab({ noteContext }: TabContext) {
+export default function NoteMapTab({ note }: TabContext) {
     const [ isExpanded, setExpanded ] = useState(false);
     const [ height, setHeight ] = useState(SMALL_SIZE_HEIGHT);
     const containerRef = useRef<HTMLDivElement>(null);
     const { windowHeight } = useWindowSize();
     const containerSize = useElementSize(containerRef);
 
-    const [ noteMapContainer, noteMapWidget ] = useLegacyWidget(() => new NoteMapWidget("ribbon"), {
-        noteContext,
-        containerClassName: "note-map-container"
-    });
-    
     useEffect(() => {
         if (isExpanded && containerRef.current && containerSize) {
             const height = windowHeight - containerSize.top;
@@ -27,11 +22,10 @@ export default function NoteMapTab({ noteContext }: TabContext) {
             setHeight(SMALL_SIZE_HEIGHT);
         }
     }, [ isExpanded, containerRef, windowHeight, containerSize?.top ]);
-    useEffect(() => noteMapWidget.setDimensions(), [ containerSize?.width, height ]);    
 
     return (
         <div className="note-map-ribbon-widget" style={{ height }} ref={containerRef}>
-            {noteMapContainer}
+            {note && <NoteMap note={note} widgetMode="ribbon" parentRef={containerRef} />}
 
             {!isExpanded ? (
                 <ActionButton

@@ -4,7 +4,7 @@ import Component from "../components/component";
 import NoteContext from "../components/note_context";
 import FNote from "../entities/fnote";
 import ActionButton, { ActionButtonProps } from "./react/ActionButton";
-import { useNoteLabelBoolean, useTriliumEvent, useTriliumOption, useWindowSize } from "./react/hooks";
+import { useIsNoteReadOnly, useNoteLabelBoolean, useTriliumEvent, useTriliumOption, useWindowSize } from "./react/hooks";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 import { createImageSrcUrl, openInAppHelpFromUrl } from "../services/utils";
 import server from "../services/server";
@@ -13,8 +13,6 @@ import toast from "../services/toast";
 import { t } from "../services/i18n";
 import { copyImageReferenceToClipboard } from "../services/image";
 import tree from "../services/tree";
-import protected_session_holder from "../services/protected_session_holder";
-import options from "../services/options";
 import { getHelpUrlForNote } from "../services/in_app_help";
 import froca from "../services/froca";
 import NoteLink from "./react/NoteLink";
@@ -23,7 +21,7 @@ import { ViewTypeOptions } from "./collections/interface";
 
 export interface FloatingButtonContext {
     parentComponent: Component;
-    note: FNote;    
+    note: FNote;
     noteContext: NoteContext;
     isDefaultViewMode: boolean;
     isReadOnly: boolean;
@@ -65,11 +63,11 @@ export const MOBILE_FLOATING_BUTTONS: FloatingButtonsList = [
     EditButton,
     RelationMapButtons,
     ExportImageButtons,
-    Backlinks    
+    Backlinks
 ]
 
 function RefreshBackendLogButton({ note, parentComponent, noteContext, isDefaultViewMode }: FloatingButtonContext) {
-    const isEnabled = note.noteId === "_backendLog" && isDefaultViewMode;
+    const isEnabled = (note.noteId === "_backendLog" || note.type === "render") && isDefaultViewMode;
     return isEnabled && <FloatingButton
         text={t("backend_log.refresh")}
         icon="bx bx-refresh"
@@ -84,14 +82,14 @@ function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: F
 
     return isEnabled && <FloatingButton
         text={upcomingOrientation === "vertical" ? t("switch_layout_button.title_vertical") : t("switch_layout_button.title_horizontal")}
-        icon={upcomingOrientation === "vertical" ? "bx bxs-dock-bottom" : "bx bxs-dock-left"}        
+        icon={upcomingOrientation === "vertical" ? "bx bxs-dock-bottom" : "bx bxs-dock-left"}
         onClick={() => setSplitEditorOrientation(upcomingOrientation)}
     />
 }
 
 function ToggleReadOnlyButton({ note, viewType, isDefaultViewMode }: FloatingButtonContext) {
-    const [ isReadOnly, setReadOnly ] = useNoteLabelBoolean(note, "readOnly");    
-    const isEnabled = (note.type === "mermaid" || viewType === "geoMap")
+    const [ isReadOnly, setReadOnly ] = useNoteLabelBoolean(note, "readOnly");
+    const isEnabled = ([ "mermaid", "mindMap", "canvas" ].includes(note.type) || viewType === "geoMap")
             && note.isContentAvailable() && isDefaultViewMode;
 
     return isEnabled && <FloatingButton
@@ -101,48 +99,26 @@ function ToggleReadOnlyButton({ note, viewType, isDefaultViewMode }: FloatingBut
     />
 }
 
-function EditButton({ note, noteContext, isDefaultViewMode }: FloatingButtonContext) {
-    const [ animationClass, setAnimationClass ] = useState("");
-    const [ isEnabled, setIsEnabled ] = useState(false);
+function EditButton({ note, noteContext }: FloatingButtonContext) {
+    const [animationClass, setAnimationClass] = useState("");
+    const {isReadOnly, enableEditing} = useIsNoteReadOnly(note, noteContext);
+    
+    const isReadOnlyInfoBarDismissed = false; // TODO
 
     useEffect(() => {
-        noteContext.isReadOnly().then(isReadOnly => {
-            setIsEnabled(
-                isDefaultViewMode
-                && (!note.isProtected || protected_session_holder.isProtectedSessionAvailable())
-                && !options.is("databaseReadonly")
-                && isReadOnly
-            );
-        });
-    }, [ note ]);
-
-    useTriliumEvent("readOnlyTemporarilyDisabled", ({ noteContext: eventNoteContext }) => {
-        if (noteContext?.ntxId === eventNoteContext.ntxId) {
-            setIsEnabled(false);
-        }
-    });
-
-    // make the edit button stand out on the first display, otherwise
-    // it's difficult to notice that the note is readonly
-    useEffect(() => {
-        if (isEnabled) {
+        if (isReadOnly) {
             setAnimationClass("bx-tada bx-lg");
             setTimeout(() => {
                 setAnimationClass("");
             }, 1700);
         }
-    }, [ isEnabled ]);
+    }, [ isReadOnly ]);
 
-    return isEnabled && <FloatingButton
+    return !!isReadOnly && isReadOnlyInfoBarDismissed && <FloatingButton
         text={t("edit_button.edit_this_note")}
         icon="bx bx-pencil"
         className={animationClass}
-        onClick={() => {
-            if (noteContext.viewScope) {
-                noteContext.viewScope.readOnlyTemporarilyDisabled = true;
-                appContext.triggerEvent("readOnlyTemporarilyDisabled", { noteContext });
-            }
-        }}
+        onClick={() => enableEditing()}
     />
 }
 
@@ -264,7 +240,7 @@ function GeoMapButtons({ triggerEvent, viewType, isReadOnly }: FloatingButtonCon
 
 function CopyImageReferenceButton({ note, isDefaultViewMode }: FloatingButtonContext) {
     const hiddenImageCopyRef = useRef<HTMLDivElement>(null);
-    const isEnabled = ["mermaid", "canvas", "mindMap"].includes(note?.type ?? "")
+    const isEnabled = ["mermaid", "canvas", "mindMap", "image"].includes(note?.type ?? "")
             && note?.isContentAvailable() && isDefaultViewMode;
 
     return isEnabled && (
@@ -325,7 +301,7 @@ function Backlinks({ note, isDefaultViewMode }: FloatingButtonContext) {
     let [ backlinkCount, setBacklinkCount ] = useState(0);
     let [ popupOpen, setPopupOpen ] = useState(false);
     const backlinksContainerRef = useRef<HTMLDivElement>(null);
-    
+
     useEffect(() => {
         if (!isDefaultViewMode) return;
 
@@ -338,7 +314,7 @@ function Backlinks({ note, isDefaultViewMode }: FloatingButtonContext) {
     const { windowHeight } = useWindowSize();
     useLayoutEffect(() => {
         const el = backlinksContainerRef.current;
-        if (popupOpen && el) {            
+        if (popupOpen && el) {
             const box = el.getBoundingClientRect();
             const maxHeight = windowHeight - box.top - 10;
             el.style.maxHeight = `${maxHeight}px`;
@@ -374,7 +350,7 @@ function BacklinksList({ noteId }: { noteId: string }) {
                     .filter(bl => "noteId" in bl)
                     .map((bl) => bl.noteId);
             await froca.getNotes(noteIds);
-            setBacklinks(backlinks);       
+            setBacklinks(backlinks);
         });
     }, [ noteId ]);
 

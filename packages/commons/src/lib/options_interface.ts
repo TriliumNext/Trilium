@@ -82,6 +82,7 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     autoReadonlySizeText: number;
     autoReadonlySizeCode: number;
     maxContentWidth: number;
+    centerContent: boolean;
     minTocHeadings: number;
     eraseUnusedAttachmentsAfterSeconds: number;
     eraseUnusedAttachmentsAfterTimeScale: number;

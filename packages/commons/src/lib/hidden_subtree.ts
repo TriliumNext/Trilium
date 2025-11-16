@@ -6,7 +6,9 @@ enum Command {
     createNoteIntoInbox,
     showRecentChanges,
     showOptions,
-    createAiChat
+    createAiChat,
+    commandPalette,
+    toggleZenMode
 }
 
 export interface HiddenSubtreeAttribute {
@@ -41,7 +43,9 @@ export interface HiddenSubtreeItem {
         | "protectedSession"
         | "calendar"
         | "quickSearch"
-        | "aiChatLauncher";
+        | "aiChatLauncher"
+        | "commandPalette"
+        | "toggleZenMode";
     command?: keyof typeof Command;
     /**
      * If set to true, then branches will be enforced to be in the correct place.

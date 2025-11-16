@@ -22,8 +22,9 @@ async function main() {
     buildSwagger(context);
     buildScriptApi(context);
 
-    // Copy index file.
+    // Copy index and 404 files.
     cpSync(join(__dirname, "index.html"), join(context.baseDir, "index.html"));
+    cpSync(join(context.baseDir, "user-guide/404.html"), join(context.baseDir, "404.html"));
 }
 
 main();

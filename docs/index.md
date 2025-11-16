@@ -21,27 +21,27 @@ Trilium Notes is a powerful, feature-rich note-taking application designed for b
 
 <div class="grid cards" markdown>
 
-- :material-rocket-launch-outline: **[Quick Start Guide](User%20Guide/quick-start.md)**
+- :material-rocket-launch-outline: **[Quick Start Guide](User%20Guide/User%20Guide/Quick%20Start.md)**
     
     Get up and running with Trilium in minutes
 
-- :material-download: **[Installation](User%20Guide/installation.md)**
+- :material-download: **[Desktop Installation](User%20Guide/User%20Guide/Installation%20%26%20Setup/Desktop%20Installation.md)**
     
-    Download and install Trilium on your platform
+    Download and install Trilium on your desktop
 
-- :material-docker: **[Docker Setup](User%20Guide/docker.md)**
+- :material-server: **[Server Installation](User%20Guide/User%20Guide/Installation%20%26%20Setup/Server%20Installation.md)**
     
-    Deploy Trilium using Docker containers
+    Deploy Trilium as a server
 
-- :material-book-open-variant: **[User Guide](User%20Guide/index.md)**
+- :material-book-open-variant: **[User Guide](User%20Guide/User%20Guide.md)**
     
     Comprehensive guide to all features
 
-- :material-code-braces: **[Script API](Script%20API/index.md)**
+- :material-code-braces: **[Script API](Script%20API/index.html)**
     
     Automate and extend Trilium with scripting
 
-- :material-wrench: **[Developer Guide](Developer%20Guide/index.md)**
+- :material-wrench: **[Developer Guide](Developer%20Guide/Developer%20Guide/Environment%20Setup.md)**
     
     Contributing and development documentation
 
@@ -80,14 +80,14 @@ Trilium Notes is a powerful, feature-rich note-taking application designed for b
 
 ## Getting Help
 
-- **[FAQ](support/faq.md)** - Frequently asked questions
-- **[Troubleshooting](support/troubleshooting.md)** - Common issues and solutions
+- **[FAQ](User%20Guide/User%20Guide/FAQ.md)** - Frequently asked questions
+- **[Troubleshooting](User%20Guide/User%20Guide/Troubleshooting.md)** - Common issues and solutions
 - **[Community Forum](https://github.com/triliumnext/trilium/discussions)** - Ask questions and share tips
 - **[Issue Tracker](https://github.com/triliumnext/trilium/issues)** - Report bugs and request features
 
 ## Contributing
 
-Trilium is open-source and welcomes contributions! Check out our [Contributing Guide](Developer%20Guide/contributing.md) to get started.
+Trilium is open-source and welcomes contributions! Check out our [GitHub repository](https://github.com/triliumnext/trilium) to get started.
 
 ## License
 

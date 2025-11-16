@@ -70,7 +70,7 @@
         "calendar_description": "Organizza i tuoi eventi personali o professionali utilizzando un calendario, con supporto per eventi di un giorno intero o di più giorni. Visualizza i tuoi eventi a colpo d'occhio con le viste settimanale, mensile e annuale. Interazione semplice per aggiungere o trascinare eventi.",
         "table_title": "Tabella",
         "table_description": "Visualizza e modifica le informazioni relative alle note in una struttura tabellare, con vari tipi di colonne quali testo, numeri, caselle di controllo, data e ora, collegamenti e colori, oltre al supporto per le relazioni. Facoltativamente, è possibile visualizzare le note all'interno di una gerarchia ad albero all'interno della tabella.",
-        "board_title": "Board",
+        "board_title": "Kanban Board",
         "board_description": "Organizza le tue attività o lo stato dei tuoi progetti in una lavagna Kanban con un modo semplice per creare nuovi elementi e colonne e modificare facilmente il loro stato trascinandoli sulla lavagna.",
         "geomap_title": "Geomappa",
         "geomap_description": "Pianifica le tue vacanze o segna i tuoi punti di interesse direttamente su una mappa geografica utilizzando indicatori personalizzabili. Visualizza le tracce GPX registrate per seguire gli itinerari.",

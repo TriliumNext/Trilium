@@ -82,6 +82,7 @@
 
     /* Theme capabilities */
     --tab-note-icons: true;
+    --allow-background-effects: true;
 
     /* To ensure that a tree item's custom color remains sufficiently contrasted and readable,
      * the color is adjusted based on the current color scheme (light or dark). The lightness
@@ -131,7 +132,8 @@ body.mobile .dropdown-menu .dropdown-menu {
 
 body.desktop .dropdown-menu::before,
 :root .ck.ck-dropdown__panel::before,
-:root .excalidraw .popover::before {
+:root .excalidraw .popover::before,
+body.zen .note-split .ribbon-container .classic-toolbar-widget::before {
     content: "";
     backdrop-filter: var(--dropdown-backdrop-filter);
     border-radius: var(--dropdown-border-radius);
@@ -485,11 +487,19 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
     --note-list-vertical-padding: 15px;
     background-color: var(--card-background-color);
     border: 1px solid var(--card-border-color) !important;
-    box-shadow: 2px 3px 4px var(--card-shadow-color);
     border-radius: 12px;
     user-select: none;
     padding: 0;
     margin: 5px 10px 5px 0;
+}
+
+:root .note-list .note-book-card:hover {
+    background-color: var(--card-background-hover-color);
+    transition: background-color 200ms ease-out;
+}
+
+:root .note-list.grid-view .note-book-card:active {
+    transform: scale(.98);
 }
 
 .note-list.list-view .note-book-card {
@@ -498,10 +508,6 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
 
 .note-list.list-view .note-book-card .note-book-header .note-icon {
     vertical-align: middle;
-}
-
-.note-list-wrapper .note-book-card:active {
-    background-color: var(--card-background-press-color);
 }
 
 .note-list-wrapper .note-book-card a {
@@ -575,9 +581,14 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
     padding: 0;
 }
 
+.note-list-wrapper .note-book-card .note-book-content.type-code {
+    height: 100%;
+}
+
 .note-list-wrapper .note-book-card .note-book-content.type-code pre {
     height: 100%;
     padding: 1em;
+    margin-bottom: 0;
 }
 
 .note-list-wrapper .note-book-card .bx {
@@ -585,7 +596,6 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
 }
 
 .note-list.grid-view .note-book-card:hover {
-    background: var(--card-background-color) !important;
     filter: contrast(105%);
 }
 

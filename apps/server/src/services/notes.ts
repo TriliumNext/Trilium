@@ -97,6 +97,23 @@ function copyChildAttributes(parentNote: BNote, childNote: BNote) {
     }
 }
 
+function copyAttachments(origNote: BNote, newNote: BNote) {
+    for (const attachment of origNote.getAttachments()) {
+        if (attachment.role === "image") {
+            // Handled separately, see `checkImageAttachments`.
+            continue;
+        }
+
+        const newAttachment = new BAttachment({
+            ...attachment,
+            attachmentId: undefined,
+            ownerId: newNote.noteId
+        });
+
+        newAttachment.save();
+    }
+}
+
 function getNewNoteTitle(parentNote: BNote) {
     let title = t("notes.new-note");
 
@@ -230,14 +247,14 @@ function createNewNote(params: NoteParams): {
             }
         }
 
-        asyncPostProcessContent(note, params.content);
-
         if (params.templateNoteId) {
-            if (!becca.getNote(params.templateNoteId)) {
+            const templateNote = becca.getNote(params.templateNoteId);
+            if (!templateNote) {
                 throw new Error(`Template note '${params.templateNoteId}' does not exist.`);
             }
 
             note.addRelation("template", params.templateNoteId);
+            copyAttachments(templateNote, note);
 
             // no special handling for ~inherit since it doesn't matter if it's assigned with the note creation or later
         }
@@ -1025,6 +1042,8 @@ function duplicateSubtreeInner(origNote: BNote, origBranch: BBranch | null | und
                 duplicateSubtreeInner(childBranch.getNote(), childBranch, newNote.noteId, noteIdMapping);
             }
         }
+
+        asyncPostProcessContent(newNote, content);
 
         return newNote;
     }

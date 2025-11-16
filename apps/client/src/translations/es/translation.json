@@ -39,7 +39,10 @@
     "help_on_tree_prefix": "Ayuda sobre el prefijo del árbol",
     "prefix": "Prefijo: ",
     "save": "Guardar",
-    "branch_prefix_saved": "Se ha guardado el prefijo de rama."
+    "branch_prefix_saved": "Se ha guardado el prefijo de rama.",
+    "edit_branch_prefix_multiple": "Editar prefijo de rama para {{count}} ramas",
+    "branch_prefix_saved_multiple": "El prefijo de rama se ha guardado para {{count}} ramas.",
+    "affected_branches": "Ramas afectadas ({{count}}):"
   },
   "bulk_actions": {
     "bulk_actions": "Acciones en bloque",
@@ -992,7 +995,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "Para mostrar una nota protegida es necesario ingresar su contraseña:",
-    "start_session_button": "Iniciar sesión protegida <kbd>Enter</kbd>",
+    "start_session_button": "Iniciar sesión protegida",
     "started": "La sesión protegida ha iniciado.",
     "wrong_password": "Contraseña incorrecta.",
     "protecting-finished-successfully": "La protección finalizó exitosamente.",
@@ -1108,9 +1111,7 @@
     "default_description": "Trilium limita de forma predeterminada el ancho máximo del contenido para mejorar la legibilidad de ventanas maximizadas en pantallas anchas.",
     "max_width_label": "Ancho máximo del contenido en píxeles",
     "max_width_unit": "píxeles",
-    "apply_changes_description": "Para aplicar cambios en el ancho del contenido, haga clic en",
-    "reload_button": "recargar la interfaz",
-    "reload_description": "cambios desde las opciones de apariencia"
+    "centerContent": "Mantener el contenido centrado"
   },
   "native_title_bar": {
     "title": "Barra de título nativa (requiere reiniciar la aplicación)",
@@ -1592,7 +1593,7 @@
   "tree-context-menu": {
     "open-in-a-new-tab": "Abrir en nueva pestaña",
     "open-in-a-new-split": "Abrir en nueva división",
-    "insert-note-after": "Insertar nota después de",
+    "insert-note-after": "Insertar nota contigua",
     "insert-child-note": "Insertar subnota",
     "delete": "Eliminar",
     "search-in-subtree": "Buscar en subárbol",
@@ -2082,5 +2083,14 @@
   },
   "collections": {
     "rendering_error": "No se puede mostrar contenido debido a un error."
+  },
+  "read-only-info": {
+    "read-only-note": "Actualmente, está viendo una nota de solo lectura.",
+    "auto-read-only-note": "Esta nota se muestra en modo de solo lectura para una carga más rápida.",
+    "auto-read-only-learn-more": "Para saber más",
+    "edit-note": "Editar nota"
+  },
+  "calendar_view": {
+    "delete_note": "Eliminar nota..."
   }
 }

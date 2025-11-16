@@ -25,7 +25,7 @@ When you delete a note in Trilium, it is actually only marked for deletion (soft
 
 Within (by default) 7 days, it is possible to undelete these soft-deleted notes - open the <a class="reference-link" href="UI%20Elements/Recent%20Changes.md">Recent Changes</a> dialog, and you will see a list of all modified notes including the deleted ones. Notes available for undeletion have a link to do so. This is kind of "trash can" functionality known from e.g. Windows.
 
-Clicking an undelete will recover the note, it's content and attributes - note should be just as before being deleted. This action will also undelete note's children which have been deleted in the same action.
+Clicking an undelete will recover the note, its content and attributes - note should be just as before being deleted. This action will also undelete note's children which have been deleted in the same action.
 
 To be able to undelete a note, it is necessary that deleted note's parent must be undeleted (otherwise there's no place where we can undelete it to). This might become a problem when you delete more notes in succession - the solution is then undelete in the reverse order of your deletion.
 

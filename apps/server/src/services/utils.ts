@@ -229,27 +229,6 @@ export function timeLimit<T>(promise: Promise<T>, limitMs: number, errorMessage?
     });
 }
 
-export interface DeferredPromise<T> extends Promise<T> {
-    resolve: (value: T | PromiseLike<T>) => void;
-    reject: (reason?: any) => void;
-}
-
-export function deferred<T>(): DeferredPromise<T> {
-    return (() => {
-        let resolve!: (value: T | PromiseLike<T>) => void;
-        let reject!: (reason?: any) => void;
-
-        let promise = new Promise<T>((res, rej) => {
-            resolve = res;
-            reject = rej;
-        }) as DeferredPromise<T>;
-
-        promise.resolve = resolve;
-        promise.reject = reject;
-        return promise as DeferredPromise<T>;
-    })();
-}
-
 export function removeDiacritic(str: string) {
     if (!str) {
         return "";
@@ -508,7 +487,6 @@ function slugify(text: string) {
 export default {
     compareVersions,
     crash,
-    deferred,
     envToBoolean,
     escapeHtml,
     escapeRegExp,

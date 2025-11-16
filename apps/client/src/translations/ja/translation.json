@@ -39,7 +39,10 @@
     "edit_branch_prefix": "ブランチ接頭辞の編集",
     "help_on_tree_prefix": "ツリー接頭辞に関するヘルプ",
     "prefix": "接頭辞: ",
-    "branch_prefix_saved": "ブランチの接頭辞が保存されました。"
+    "branch_prefix_saved": "ブランチの接頭辞が保存されました。",
+    "edit_branch_prefix_multiple": "{{count}} ブランチのブランチ接頭辞を編集",
+    "branch_prefix_saved_multiple": "{{count}} ブランチのブランチ接頭辞が保存されました。",
+    "affected_branches": "影響を受けるブランチ {{count}}:"
   },
   "global_menu": {
     "menu": "メニュー",
@@ -453,7 +456,8 @@
     "convert_into_attachment_failed": "ノート '{{title}}' の変換に失敗しました。",
     "convert_into_attachment_successful": "ノート '{{title}}' は添付ファイルに変換されました。",
     "convert_into_attachment_prompt": "本当にノート '{{title}}' を親ノートの添付ファイルに変換しますか？",
-    "note_attachments": "ノートの添付ファイル"
+    "note_attachments": "ノートの添付ファイル",
+    "open_note_on_server": "サーバー上のノートを開く"
   },
   "command_palette": {
     "export_note_title": "ノートをエクスポート",
@@ -830,13 +834,11 @@
     "theme_defined": "テーマが定義されました"
   },
   "max_content_width": {
-    "reload_button": "フロントエンドをリロード",
     "title": "コンテンツ幅",
     "default_description": "Triliumは、ワイドスクリーンで最大化された画面での可読性を向上させるために、デフォルトでコンテンツの最大幅を制限しています。",
     "max_width_label": "最大コンテンツ幅",
     "max_width_unit": "ピクセル",
-    "apply_changes_description": "コンテンツ幅の変更を適用するには、クリックしてください",
-    "reload_description": "外観設定から変更"
+    "centerContent": "コンテンツを中央に配置"
   },
   "theme": {
     "title": "アプリのテーマ",
@@ -1783,7 +1785,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "保護されたノートを表示するにはパスワードを入力する必要があります:",
-    "start_session_button": "保護されたセッションを開始 <kbd>enter</kbd>",
+    "start_session_button": "保護されたセッションを開始",
     "started": "保護されたセッションが開始されました。",
     "wrong_password": "パスワードが間違っています。",
     "protecting-finished-successfully": "保護が正常に完了しました。",
@@ -2079,5 +2081,14 @@
     "edit-slide": "このスライドを編集",
     "start-presentation": "プレゼンテーションを開始",
     "slide-overview": "スライドの概要を切り替え"
+  },
+  "calendar_view": {
+    "delete_note": "ノートを削除..."
+  },
+  "read-only-info": {
+    "read-only-note": "現在、読み取り専用のノートを表示しています。",
+    "auto-read-only-note": "このノートは読み込みを高速化するために読み取り専用モードで表示されています。",
+    "auto-read-only-learn-more": "さらに詳しく",
+    "edit-note": "ノートを編集"
   }
 }

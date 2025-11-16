@@ -150,11 +150,16 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
     $container.append($noteLink);
 
     if (showNotePath) {
-        const resolvedPathSegments = (await treeService.resolveNotePathToSegments(notePath)) || [];
-        resolvedPathSegments.pop(); // Remove last element
+        let pathSegments: string[];
+        if (notePath == "root") {
+            pathSegments = ["⌂"];
+        } else {
+            const resolvedPathSegments = (await treeService.resolveNotePathToSegments(notePath)) || [];
+            resolvedPathSegments.pop(); // Remove last element
 
-        const resolvedPath = resolvedPathSegments.join("/");
-        const pathSegments = await treeService.getNotePathTitleComponents(resolvedPath);
+            const resolvedPath = resolvedPathSegments.join("/");
+            pathSegments = await treeService.getNotePathTitleComponents(resolvedPath);
+        }
 
         if (pathSegments) {
             if (pathSegments.length) {
@@ -280,7 +285,7 @@ function goToLink(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent) {
  * @param $link the jQuery element of the link that was clicked, used to determine if the link is an anchor link (e.g., `#fn1` or `#fnref1`) and to handle it accordingly.
  * @returns `true` if the link was handled (i.e., the element was found and scrolled to), or a falsy value otherwise.
  */
-function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent | React.PointerEvent<HTMLCanvasElement> | null, hrefLink: string | undefined, $link?: JQuery<HTMLElement> | null) {
+export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent | React.PointerEvent<HTMLCanvasElement> | null, hrefLink: string | undefined, $link?: JQuery<HTMLElement> | null) {
     if (hrefLink?.startsWith("data:")) {
         return true;
     }
@@ -302,7 +307,8 @@ function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent
     // Right click is handled separately.
     const isMiddleClick = evt && "which" in evt && evt.which === 2;
     const targetIsBlank = ($link?.attr("target") === "_blank");
-    const openInNewTab = (isLeftClick && ctrlKey) || isMiddleClick || targetIsBlank;
+    const isDoubleClick = isLeftClick && evt?.type === "dblclick";
+    const openInNewTab = (isLeftClick && ctrlKey) || isDoubleClick || isMiddleClick || targetIsBlank;
     const activate = (isLeftClick && ctrlKey && shiftKey) || (isMiddleClick && shiftKey);
     const openInNewWindow = isLeftClick && evt?.shiftKey && !ctrlKey;
 
@@ -323,16 +329,18 @@ function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent
         const withinEditLink = $link?.hasClass("ck-link-actions__preview");
         const outsideOfCKEditor = !$link || $link.closest("[contenteditable]").length === 0;
 
-        if (openInNewTab || (withinEditLink && (isLeftClick || isMiddleClick)) || (outsideOfCKEditor && (isLeftClick || isMiddleClick))) {
+        if (openInNewTab || openInNewWindow || (isLeftClick && (withinEditLink || outsideOfCKEditor))) {
             if (hrefLink.toLowerCase().startsWith("http") || hrefLink.startsWith("api/")) {
                 window.open(hrefLink, "_blank");
-            } else if ((hrefLink.toLowerCase().startsWith("file:") || hrefLink.toLowerCase().startsWith("geo:")) && utils.isElectron()) {
-                const electron = utils.dynamicRequire("electron");
-                electron.shell.openPath(hrefLink);
             } else {
                 // Enable protocols supported by CKEditor 5 to be clickable.
                 if (ALLOWED_PROTOCOLS.some((protocol) => hrefLink.toLowerCase().startsWith(protocol + ":"))) {
-                    window.open(hrefLink, "_blank");
+                    if ( utils.isElectron()) {
+                        const electron = utils.dynamicRequire("electron");
+                        electron.shell.openExternal(hrefLink);
+                    } else {
+                        window.open(hrefLink, "_blank");
+                    }
                 }
             }
         }
@@ -468,18 +476,9 @@ $(document).on("auxclick", "a", goToLink); // to handle the middle button
 // TODO: Check why the event is not supported.
 //@ts-ignore
 $(document).on("contextmenu", "a", linkContextMenu);
-$(document).on("dblclick", "a", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const $link = $(e.target).closest("a");
-
-    const address = $link.attr("href");
-
-    if (address && address.startsWith("http")) {
-        window.open(address, "_blank");
-    }
-});
+// TODO: Check why the event is not supported.
+//@ts-ignore
+$(document).on("dblclick", "a", goToLink);
 
 $(document).on("mousedown", "a", (e) => {
     if (e.which === 2) {

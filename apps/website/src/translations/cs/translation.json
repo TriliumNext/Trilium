@@ -1,1 +1,8 @@
-{}
+{
+    "get-started": {
+        "title": "Začínáme",
+        "desktop_title": "Stažení aplikace pro osobní počítače (v{{version}})",
+        "architecture": "Architektura:",
+        "older_releases": "Starší vydání"
+    }
+}

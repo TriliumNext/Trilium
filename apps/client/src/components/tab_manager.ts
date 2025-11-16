@@ -265,6 +265,7 @@ export default class TabManager extends Component {
         mainNtxId: string | null = null
     ): Promise<NoteContext> {
         const noteContext = new NoteContext(ntxId, hoistedNoteId, mainNtxId);
+        noteContext.setEmpty();
 
         const existingNoteContext = this.children.find((nc) => nc.ntxId === noteContext.ntxId);
 

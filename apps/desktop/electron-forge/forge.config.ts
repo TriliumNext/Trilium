@@ -108,6 +108,8 @@ const config: ForgeConfig = {
                         "--share=network",
                         // System notifications with libnotify
                         "--talk-name=org.freedesktop.Notifications",
+                        // System tray
+                        "--talk-name=org.kde.StatusNotifierWatcher"
                     ],
                     modules: [
                         {

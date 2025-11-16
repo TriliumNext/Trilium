@@ -8,12 +8,16 @@
 }
 
 :root {
-    --dropdown-backdrop-filter: blur(10px) saturate(6);
+    --dropdown-backdrop-filter: blur(20px) saturate(6);
     --dropdown-border-radius: 10px;
 }
 
 #root-widget {
     background-color: var(--root-background);
+}
+
+body.mobile #root-widget {
+    background-color: var(--main-background-color);
 }
 
 body {
@@ -35,30 +39,53 @@ body.mobile {
 }
 
 /* #region Mica */
+
 body.background-effects.platform-win32 {
+    /* Quirk: --background-material is read before "theme-supports-background-effects" class
+     * is applied. Apply the matterial even if the theme doesn't support it. */
     --background-material: tabbed;
+}
+
+body.background-effects.theme-supports-background-effects.platform-win32 {
     --launcher-pane-horiz-border-color: var(--launcher-pane-horiz-border-color-bgfx);
     --launcher-pane-horiz-background-color: var(--launcher-pane-horiz-background-color-bgfx);
     --launcher-pane-vert-background-color: var(--launcher-pane-vert-background-color-bgfx);
     --tab-background-color: var(--window-background-color-bgfx);
     --new-tab-button-background: var(--window-background-color-bgfx);
     --active-tab-background-color: var(--launcher-pane-horiz-background-color);
+    --root-background: transparent;
 }
 
 body.background-effects.platform-win32.layout-vertical {
-    --left-pane-background-color: var(--window-background-color-bgfx);
     --background-material: mica;
 }
 
-body.background-effects.platform-win32,
-body.background-effects.platform-win32 #root-widget {
+body.background-effects.theme-supports-background-effects.platform-win32.layout-vertical {
+    --left-pane-background-color: var(--window-background-color-bgfx);
+    --center-pane-background-color-bgfx: var(--center-pane-vert-layout-background-color-bgfx);
+    --right-pane-background-color: var(--right-pane-background-color-bgfx);
+}
+
+body.background-effects.theme-supports-background-effects.platform-win32.layout-horizontal {
+    --center-pane-background-color-bgfx: var(--center-pane-horiz-layout-background-color-bgfx);
+    --gutter-color: var(--left-pane-background-color);
+}
+
+body.background-effects.theme-supports-background-effects.platform-win32,
+body.background-effects.theme-supports-background-effects.platform-win32 #root-widget {
     background: var(--window-background-color-bgfx) !important;
 }
 
-body.background-effects.platform-win32.layout-horizontal #horizontal-main-container,
-body.background-effects.platform-win32.layout-vertical #vertical-main-container {
+body.background-effects.theme-supports-background-effects.platform-win32.layout-horizontal #horizontal-main-container,
+body.background-effects.theme-supports-background-effects.platform-win32.layout-vertical #vertical-main-container {
     background-color: var(--root-background);
 }
+
+/* Note split with background effects */
+body.background-effects.theme-supports-background-effects.platform-win32 #center-pane .note-split.bgfx {
+    --note-split-background-color: var(--center-pane-background-color-bgfx);
+}
+
 /* #endregion */
 
 /* Matches when the left pane is collapsed */
@@ -72,9 +99,21 @@ body.layout-vertical #horizontal-main-container.left-pane-hidden #launcher-pane.
     border-inline-end: 2px solid var(--left-pane-collapsed-border-color);
 }
 
-body.background-effects.zen #root-widget {
-    --main-background-color: transparent;
-    --root-background: transparent;
+/*
+ * Zen mode
+ */
+
+@keyframes zen-formatting-toolbar-entrance {
+    from {
+        transform: translateY(200%);
+    } to {
+        transform: translateY(0);
+    }
+}
+
+body.zen .note-split .ribbon-container .classic-toolbar-widget {
+    position: relative;
+    animation: zen-formatting-toolbar-entrance 300ms ease-out;
 }
 
 /*
@@ -1171,23 +1210,18 @@ body.layout-vertical .tab-row-widget-is-sorting .note-tab.note-tab-is-dragging .
  * CENTER PANE
  */
 
-#center-pane {
-    background: var(--main-background-color);
-}
-
-.vertical-layout #center-pane {
+ /* The first visible note split */
+.vertical-layout #center-pane .note-split:not(.visible ~ .visible) {
     border-radius: var(--center-pane-border-radius) 0 0 0;
 }
 
-.note-split {
+#center-pane .note-split {
     padding-top: 2px;
-    animation: note-entrance 100ms linear;
-    /* will-change: opacity; -- causes some weird artifacts to the note menu in split view */
+    background-color: var(--note-split-background-color, var(--main-background-color));
 }
 
-.split-note-container-widget > .gutter {
-    background: var(--root-background) !important;
-    transition: background 150ms ease-out;
+body:not(.background-effects) #center-pane .note-split {
+    animation: note-entrance 100ms linear;
 }
 
 /*
@@ -1200,9 +1234,9 @@ body.layout-vertical .tab-row-widget-is-sorting .note-tab.note-tab-is-dragging .
 
 @keyframes note-entrance {
     from {
-        opacity: 0;
+        filter: opacity(0);
     } to {
-        opacity: 1;
+        filter: opacity(1);
     }
 }
 
@@ -1328,8 +1362,7 @@ div.promoted-attribute-cell {
     --pa-card-padding-inline-end: 2px;
     --input-background-color: transparent;
 
-    box-shadow: 1px 1px 2px var(--promoted-attribute-card-shadow-color);
-
+    box-shadow: var(--promoted-attribute-card-shadow);
     display: inline-flex;
     margin: 0;
     border-radius: 8px;
@@ -1716,7 +1749,7 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
  */
 
 #right-pane {
-    background: var(--main-background-color);
+    background: var(--right-pane-background-color);
 }
 
 #right-pane div.card-header {

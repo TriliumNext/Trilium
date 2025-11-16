@@ -56,7 +56,7 @@ Right click either the _Available launchers_ or _Visible launchers_ sections and
     2.  Optionally, set a `keyboardShortcut` to trigger the launcher.
 3.  **Custom Widget**
     
-    Allows defining a custom widget to be rendered inside the launcher. See [Widget Basics](../../Scripting/Custom%20Widgets/Widget%20Basics.md) for more information.
+    Allows defining a custom widget to be rendered inside the launcher. See [Widget Basics](../../Scripting/Frontend%20Basics/Custom%20Widgets/Widget%20Basics.md) for more information.
 4.  **Spacers**  
     Launchers that create some distance between other launchers for better visual distinction.
 

@@ -989,7 +989,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "Um die geschützte Notiz anzuzeigen, musst du dein Passwort eingeben:",
-    "start_session_button": "Starte eine geschützte Sitzung <kbd>Eingabetaste</kbd>",
+    "start_session_button": "Starte eine geschützte Sitzung",
     "started": "Geschützte Sitzung gestartet.",
     "wrong_password": "Passwort falsch.",
     "protecting-finished-successfully": "Geschützt erfolgreich beendet.",
@@ -1104,9 +1104,6 @@
     "title": "Inhaltsbreite",
     "default_description": "Trilium begrenzt standardmäßig die maximale Inhaltsbreite, um die Lesbarkeit für maximierte Bildschirme auf Breitbildschirmen zu verbessern.",
     "max_width_label": "Maximale Inhaltsbreite in Pixel",
-    "apply_changes_description": "Um Änderungen an der Inhaltsbreite anzuwenden, klicke auf",
-    "reload_button": "Frontend neu laden",
-    "reload_description": "Änderungen an den Darstellungsoptionen",
     "max_width_unit": "Pixel"
   },
   "native_title_bar": {

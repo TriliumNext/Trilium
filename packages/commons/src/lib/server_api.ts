@@ -207,6 +207,11 @@ export interface ConvertToAttachmentResponse {
     attachment: AttachmentRow;
 }
 
+export interface ConvertAttachmentToNoteResponse {
+    note: NoteRow;
+    branch: BranchRow;
+}
+
 export type SaveSqlConsoleResponse = CloneResponse;
 
 export interface BacklinkCountResponse {
@@ -241,4 +246,30 @@ export interface SchemaResponse {
         name: string;
         type: string;
     }[];
+}
+
+export interface RelationMapRelation {
+    name: string;
+    attributeId: string;
+    sourceNoteId: string;
+    targetNoteId: string;
+}
+
+export interface RelationMapPostResponse {
+    noteTitles: Record<string, string>;
+    relations: RelationMapRelation[];
+    inverseRelations: Record<string, string>;
+}
+
+export interface NoteMapLink {
+    key: string;
+    sourceNoteId: string;
+    targetNoteId: string;
+    name: string;
+}
+
+export interface NoteMapPostResponse {
+    notes: string[];
+    links: NoteMapLink[];
+    noteIdToDescendantCountMap: Record<string, number>;
 }

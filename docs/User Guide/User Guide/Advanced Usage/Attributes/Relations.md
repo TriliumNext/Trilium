@@ -43,7 +43,7 @@ These relations are supported and used internally by Trilium.
 
 | Label | Description |
 | --- | --- |
-| `runOn*` | See <a class="reference-link" href="../../Scripting/Events.md">Events</a> |
+| `runOn*` | See <a class="reference-link" href="../../Scripting/Backend%20scripts/Events.md">Events</a> |
 | `template` | note's attributes will be inherited even without a parent-child relationship, note's content and subtree will be added to instance notes if empty. See documentation for details. |
 | `inherit` | note's attributes will be inherited even without a parent-child relationship. See <a class="reference-link" href="../Templates.md">Templates</a> for a similar concept. See <a class="reference-link" href="Attribute%20Inheritance.md">Attribute Inheritance</a> in the documentation. |
 | `renderNote` | notes of type <a class="reference-link" href="../../Note%20Types/Render%20Note.md">Render Note</a> will be rendered using a code note (HTML or script) and it is necessary to point using this relation to which note should be rendered |
