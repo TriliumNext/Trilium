@@ -25,6 +25,14 @@ function keywordResolvesToDate(dateStrOrKeyword: string, expectedDate: string) {
     });
 }
 
+function keywordDoesNotResolve(dateStrOrKeyword: string) {
+   cls.init(() => {
+        cls.set("localNowDateTime", clientDate);
+        const dateFilter = dateNoteLabelKeywordToDateFilter(dateStrOrKeyword);
+        expect(dateFilter.date).toBe(null);
+    });
+}
+
 describe("edited-notes::dateNoteLabelKeywordToDateFilter", () => {
     beforeEach(() => {
         vi.stubEnv('TZ', 'UTC');
@@ -70,16 +78,32 @@ describe("edited-notes::dateNoteLabelKeywordToDateFilter", () => {
         keywordResolvesToDate("2020-12", "2020-12");
     });
 
+    it("returns original string for partial month", () => {
+        keywordResolvesToDate("2020-1", "2020-1");
+    });
+
+    it("returns original string for partial month with trailing dash", () => {
+        keywordResolvesToDate("2020-", "2020-");
+    });
+
     it("returns original string for year", () => {
         keywordResolvesToDate("2020", "2020");
     });
 
-    it("returns original string for unrecognized keyword", () => {
-        keywordResolvesToDate("FOO", "FOO");
+    it("returns original string for potentially partial day", () => {
+        keywordResolvesToDate("2020-12-1", "2020-12-1");
     });
 
-    it("returns original string for partially recognized keyword", () => {
-        keywordResolvesToDate("TODAY-", "TODAY-");
+    it("returns null for partial year", () => {
+        keywordDoesNotResolve("202");
+    });
+
+    it("returns null for arbitrary string", () => {
+        keywordDoesNotResolve("FOO");
+    });
+
+    it("returns null for missing delta", () => {
+        keywordDoesNotResolve("TODAY-");
     });
 
     it("resolves 'today' (lowercase) to today's date", () => {

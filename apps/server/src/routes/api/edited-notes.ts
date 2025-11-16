@@ -24,6 +24,13 @@ interface NotePojoWithNotePath extends NotePojo {
 function getEditedNotesOnDate(req: Request) {
     const dateFilter = dateNoteLabelKeywordToDateFilter(req.params.date);
 
+    if (!dateFilter.date) {
+        return {
+            notes: [],
+            limit: 0,
+        } satisfies EditedNotesResponse;
+    }
+
     const sqlParams = { date: dateFilter.date + "%" };
     const limit = 50;
     const sqlQuery = /*sql*/`\
@@ -117,7 +124,7 @@ function formatDateFromKeywordAndDelta(
 
 interface DateValue {
     // kind: "date",
-    date: string,
+    date: string | null,
 }
 
 type DateFilter = DateValue;
@@ -146,22 +153,42 @@ type DateFilter = DateValue;
  * @returns A `DateFilter` object containing the resolved date string.
  */
 export function dateNoteLabelKeywordToDateFilter(dateStr: string): DateFilter {
-    const match = dateStr.match(/^(today|month|year)([+-]\d+)?$/i);
+    const keywordAndDelta = dateStr.match(/^(today|month|year)([+-]\d+)?$/i);
 
-    if (!match) {
+    if (keywordAndDelta) {
+        const keyword = keywordAndDelta[1].toLowerCase();
+        const delta = keywordAndDelta[2] ? parseInt(keywordAndDelta[2]) : 0;
+
+        const clientDate = dayjs(dateUtils.localNowDate());
+        const date = formatDateFromKeywordAndDelta(clientDate, keyword, delta);
+        return {
+            date: date
+        };
+    }
+
+    // Check if it's a valid date format (YYYY-MM-DD, YYYY-MM, or YYYY)
+    const isDatePrefix = isValidDatePrefix(dateStr);
+
+    if (isDatePrefix) {
         return {
             date: dateStr
+        };
+    } else {
+        // Not a keyword and not a valid date prefix
+        return {
+            date: null
         }
     }
+}
 
-    const keyword = match[1].toLowerCase();
-    const delta = match[2] ? parseInt(match[2]) : 0;
-
-    const clientDate = dayjs(dateUtils.localNowDate());
-    const date = formatDateFromKeywordAndDelta(clientDate, keyword, delta);
-    return {
-        date: date
+function isValidDatePrefix(dateStr: string): boolean {
+    // Check if it starts with YYYY format
+    if (/^\d{4}/.test(dateStr)) {
+        const year = parseInt(dateStr.substring(0, 4));
+        return !isNaN(year) && year > 0 && year < 10000;
     }
+
+    return false;
 }
 
 export default {
