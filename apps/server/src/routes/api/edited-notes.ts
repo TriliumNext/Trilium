@@ -22,9 +22,9 @@ interface NotePojoWithNotePath extends NotePojo {
 }
 
 function getEditedNotesOnDate(req: Request) {
-    const resolvedDateParams = resolveDateParams(req.params.date);
+    const dateFilter = dateNoteLabelKeywordToDateFilter(req.params.date);
 
-    const sqlParams = { date: resolvedDateParams.date + "%" };
+    const sqlParams = { date: dateFilter.date + "%" };
     const limit = 50;
     const sqlQuery = /*sql*/`\
         SELECT notes.*
@@ -145,7 +145,7 @@ type DateFilter = DateValue;
  *                (e.g., "2023-10-27", "2023-10", "2023").
  * @returns A `DateFilter` object containing the resolved date string.
  */
-export function resolveDateParams(dateStr: string): DateFilter {
+export function dateNoteLabelKeywordToDateFilter(dateStr: string): DateFilter {
     const match = dateStr.match(/^(today|month|year)([+-]\d+)?$/i);
 
     if (!match) {
