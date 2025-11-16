@@ -17,10 +17,10 @@ const expectedMonthMinus2  = "2024-11";
 const expectedYear =         "2025";
 const expectedYearMinus1 =   "2024";
 
-function runTest(dateStrToResolve: string, expectedDate: string) {
+function keywordResolvesToDate(dateStrOrKeyword: string, expectedDate: string) {
    cls.init(() => {
         cls.set("localNowDateTime", clientDate);
-        const dateFilter = dateNoteLabelKeywordToDateFilter(dateStrToResolve);
+        const dateFilter = dateNoteLabelKeywordToDateFilter(dateStrOrKeyword);
         expect(dateFilter.date).toBe(expectedDate);
     });
 }
@@ -39,51 +39,51 @@ describe("edited-notes::dateNoteLabelKeywordToDateFilter", () => {
     });
 
     it("resolves 'TODAY' to today's date", () => {
-        runTest("TODAY", expectedToday);
+        keywordResolvesToDate("TODAY", expectedToday);
     });
 
     it("resolves 'MONTH' to current month", () => {
-        runTest("MONTH", expectedMonth);
+        keywordResolvesToDate("MONTH", expectedMonth);
     });
 
     it("resolves 'YEAR' to current year", () => {
-        runTest("YEAR", expectedYear);
+        keywordResolvesToDate("YEAR", expectedYear);
     });
 
     it("resolves 'TODAY-1' to yesterday's date", () => {
-        runTest("TODAY-1", expectedTodayMinus1);
+        keywordResolvesToDate("TODAY-1", expectedTodayMinus1);
     });
 
     it("resolves 'MONTH-2' to 2 months ago", () => {
-        runTest("MONTH-2", expectedMonthMinus2);
+        keywordResolvesToDate("MONTH-2", expectedMonthMinus2);
     });
 
     it("resolves 'YEAR-1' to last year", () => {
-        runTest("YEAR-1", expectedYearMinus1);
+        keywordResolvesToDate("YEAR-1", expectedYearMinus1);
     });
 
     it("returns original string for day", () => {
-        runTest("2020-12-31", "2020-12-31");
+        keywordResolvesToDate("2020-12-31", "2020-12-31");
     });
 
     it("returns original string for month", () => {
-        runTest("2020-12", "2020-12");
+        keywordResolvesToDate("2020-12", "2020-12");
     });
 
     it("returns original string for year", () => {
-        runTest("2020", "2020");
+        keywordResolvesToDate("2020", "2020");
     });
 
     it("returns original string for unrecognized keyword", () => {
-        runTest("FOO", "FOO");
+        keywordResolvesToDate("FOO", "FOO");
     });
 
     it("returns original string for partially recognized keyword", () => {
-        runTest("TODAY-", "TODAY-");
+        keywordResolvesToDate("TODAY-", "TODAY-");
     });
 
     it("resolves 'today' (lowercase) to today's date", () => {
-        runTest("today", expectedToday);
+        keywordResolvesToDate("today", expectedToday);
     });
 
 });
