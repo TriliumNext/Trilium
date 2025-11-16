@@ -182,8 +182,8 @@ export function dateNoteLabelKeywordToDateFilter(dateStr: string): DateFilter {
 }
 
 function isValidDatePrefix(dateStr: string): boolean {
-    // Check if it starts with YYYY format
-    if (/^\d{4}/.test(dateStr)) {
+    // Check if it starts with YYYY format and only contains numbers and dashes afterwards
+    if (/^\d{4}[-\d]*$/.test(dateStr)) {
         const year = parseInt(dateStr.substring(0, 4));
         return !isNaN(year) && year > 0 && year < 10000;
     }
