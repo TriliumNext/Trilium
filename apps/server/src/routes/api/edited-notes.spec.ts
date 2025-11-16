@@ -62,6 +62,18 @@ describe("edited-notes::resolveDateParams", () => {
         runTest("YEAR-1", expectedYearMinus1);
     });
 
+    it("returns original string for day", () => {
+        runTest("2020-12-31", "2020-12-31");
+    });
+
+    it("returns original string for month", () => {
+        runTest("2020-12", "2020-12");
+    });
+
+    it("returns original string for year", () => {
+        runTest("2020", "2020");
+    });
+
     it("returns original string for unrecognized keyword", () => {
         runTest("FOO", "FOO");
     });
