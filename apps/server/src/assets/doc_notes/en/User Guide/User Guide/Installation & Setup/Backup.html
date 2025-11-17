@@ -17,6 +17,22 @@
 <p>Note that&nbsp;<a class="reference-link" href="#root/_help_cbkrhQjrkKrh">Synchronization</a>&nbsp;provides
   also some backup capabilities by its nature of distributing the data to
   other computers.</p>
+<h2>External Blob Storage and Backups</h2>
+<p>If you have enabled <a class="reference-link" href="#root/_help_xB9eL2mK8vWp">external blob storage</a>,
+  you must backup both the database and the <code>external-blobs</code> directory.
+  Without backing up <code>external-blobs</code> separately, you would lose
+  large attachments if restoring from backup.</p>
+<p>By default, external blob storage is disabled, meaning all attachments
+  are stored in the database and the automatic backup described above is
+  sufficient.</p>
+<h3>How to Backup with External Blobs</h3>
+<p>When external blob storage is enabled, backup the complete <a href="#root/_help_tAassRL4RSQL">data directory</a> which
+  includes both the database and <code>external-blobs</code>. This is the
+  simplest approach and ensures nothing is missed.</p>
+<p>To ensure consistency, either stop Trilium before backing up, or use a
+  filesystem snapshot tool (e.g., LVM snapshots, ZFS snapshots, or volume
+  shadow copy on Windows) to capture both the database and <code>external-blobs</code> directory
+  at the same point in time.</p>
 <h2>Restoring backup</h2>
 <p>Let's assume you want to restore the weekly backup, here's how to do it:</p>
 <ul>
@@ -37,6 +53,8 @@
   </li>
   <li>make sure that the file is writable, e.g. with <code>chmod 600 document.db</code>
   </li>
+  <li>if you have external blob storage enabled, also restore the <code>external-blobs</code> directory
+    from your backup</li>
   <li>start Trilium again</li>
 </ul>
 <p>If you have configured sync then you need to do it across all members

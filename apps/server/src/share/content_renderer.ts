@@ -28,7 +28,7 @@ const templateCache: Map<string, string> = new Map();
  */
 export interface Result {
     header: string;
-    content: string | Buffer | undefined;
+    content: string | Buffer | null | undefined;
     /** Set to `true` if the provided content should be rendered as empty. */
     isEmpty?: boolean;
 }

@@ -1639,9 +1639,16 @@
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "Gzjqa934BdH4",
+                                    "value": "xB9eL2mK8vWp",
                                     "isInheritable": false,
                                     "position": 40
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "Gzjqa934BdH4",
+                                    "isInheritable": false,
+                                    "position": 50
                                 },
                                 {
                                     "type": "label",
@@ -1694,23 +1701,30 @@
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "bnyigUA2UK7s",
+                                    "value": "xB9eL2mK8vWp",
                                     "isInheritable": false,
                                     "position": 30
                                 },
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "x59R8J8KV5Bp",
+                                    "value": "bnyigUA2UK7s",
                                     "isInheritable": false,
                                     "position": 40
                                 },
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "Gzjqa934BdH4",
+                                    "value": "x59R8J8KV5Bp",
                                     "isInheritable": false,
                                     "position": 50
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "Gzjqa934BdH4",
+                                    "isInheritable": false,
+                                    "position": 60
                                 },
                                 {
                                     "type": "label",
@@ -3622,23 +3636,30 @@
                                         {
                                             "type": "relation",
                                             "name": "internalLink",
-                                            "value": "W8vYD3Q1zjCR",
+                                            "value": "xB9eL2mK8vWp",
                                             "isInheritable": false,
                                             "position": 40
                                         },
                                         {
                                             "type": "relation",
                                             "name": "internalLink",
-                                            "value": "8YBEPzcpUgxw",
+                                            "value": "W8vYD3Q1zjCR",
                                             "isInheritable": false,
                                             "position": 50
                                         },
                                         {
                                             "type": "relation",
                                             "name": "internalLink",
-                                            "value": "oPVyFC7WL2Lp",
+                                            "value": "8YBEPzcpUgxw",
                                             "isInheritable": false,
                                             "position": 60
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "oPVyFC7WL2Lp",
+                                            "isInheritable": false,
+                                            "position": 70
                                         },
                                         {
                                             "type": "label",
@@ -12947,6 +12968,61 @@
                         },
                         {
                             "isClone": false,
+                            "noteId": "xB9eL2mK8vWp",
+                            "notePath": [
+                                "pOsGYCXsbNQG",
+                                "tC7s2alapj8V",
+                                "xB9eL2mK8vWp"
+                            ],
+                            "title": "External Blob Storage",
+                            "notePosition": 135,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/markdown",
+                            "attributes": [
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "tAassRL4RSQL",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "Gzjqa934BdH4",
+                                    "isInheritable": false,
+                                    "position": 20
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "ODY7qQn5m2FT",
+                                    "isInheritable": false,
+                                    "position": 30
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "external-blob-storage",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-hdd",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "External Blob Storage.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
                             "noteId": "47ZrP6FNuoG8",
                             "notePath": [
                                 "pOsGYCXsbNQG",
@@ -13025,23 +13101,30 @@
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "6tZeKvSHEUiB",
+                                    "value": "xB9eL2mK8vWp",
                                     "isInheritable": false,
                                     "position": 20
                                 },
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "oyIAJ9PvvwHX",
+                                    "value": "6tZeKvSHEUiB",
                                     "isInheritable": false,
                                     "position": 30
                                 },
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "Gzjqa934BdH4",
+                                    "value": "oyIAJ9PvvwHX",
                                     "isInheritable": false,
                                     "position": 40
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "Gzjqa934BdH4",
+                                    "isInheritable": false,
+                                    "position": 50
                                 },
                                 {
                                     "type": "label",

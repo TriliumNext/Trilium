@@ -7,6 +7,7 @@ import config from "./config.js";
 import syncMutexService from "./sync_mutex.js";
 import protectedSessionService from "./protected_session.js";
 import becca from "../becca/becca.js";
+import blobStorageService from "./blob-storage.js";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
 
 import type { IncomingMessage, Server as HttpServer } from "http";
@@ -153,8 +154,12 @@ function fillInAdditionalProperties(entityChange: EntityChange) {
         entityChange.entity = becca.getAttachment(entityChange.entityId);
 
         if (!entityChange.entity) {
+            const contentLengthColumn = blobStorageService.hasExternalContentColumns()
+                ? "blobs.contentLength"
+                : "LENGTH(COALESCE(blobs.content, ''))";
+
             entityChange.entity = sql.getRow(
-                /*sql*/`SELECT attachments.*, LENGTH(blobs.content) AS contentLength
+                /*sql*/`SELECT attachments.*, ${contentLengthColumn} AS contentLength
                                                     FROM attachments
                                                     JOIN blobs USING (blobId)
                                                     WHERE attachmentId = ?`,

@@ -1,6 +1,8 @@
 # Database
 Your Trilium data is stored in a [SQLite](https://www.sqlite.org) database which contains all notes, tree structure, metadata, and most of the configuration. The database file is named `document.db` and is stored in the application's default [Data directory](../Installation%20%26%20Setup/Data%20directory.md).
 
+By default, all note and attachment content is stored within the database. However, when [external blob storage](External%20Blob%20Storage.md) is enabled, large notes and attachments are stored separately in the `external-blobs` directory for better performance and backup flexibility.
+
 ## Demo Notes
 
 When first starting Trilium, it will provide a set of notes to showcase various features of the application.

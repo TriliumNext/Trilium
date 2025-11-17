@@ -5,6 +5,7 @@ import optionService from "./options.js";
 import dateUtils from "./date_utils.js";
 import sqlInit from "./sql_init.js";
 import cls from "./cls.js";
+import blobStorageService from "./blob-storage.js";
 import type { EntityChange } from "@triliumnext/commons";
 
 function eraseNotes(noteIdsToErase: string[]) {
@@ -92,26 +93,34 @@ function eraseRevisions(revisionIdsToErase: string[]) {
 }
 
 function eraseUnusedBlobs() {
-    const unusedBlobIds = sql.getColumn(`
-        SELECT blobs.blobId
+    const contentLocationColumn = blobStorageService.hasExternalContentColumns()
+        ? "blobs.contentLocation"
+        : "'internal' as contentLocation";
+
+    const unusedBlobRows = sql.getManyRows<{ blobId: string; contentLocation: string }>(/*sql*/`
+        SELECT blobs.blobId, ${contentLocationColumn}
         FROM blobs
         LEFT JOIN notes ON notes.blobId = blobs.blobId
         LEFT JOIN attachments ON attachments.blobId = blobs.blobId
         LEFT JOIN revisions ON revisions.blobId = blobs.blobId
         WHERE notes.noteId IS NULL
         AND attachments.attachmentId IS NULL
-        AND revisions.revisionId IS NULL`);
+        AND revisions.revisionId IS NULL`, []);
 
-    if (unusedBlobIds.length === 0) {
+    if (unusedBlobRows.length === 0) {
         return;
     }
 
-    sql.executeMany(/*sql*/`DELETE FROM blobs WHERE blobId IN (???)`, unusedBlobIds);
+    // Clean up external blob files before deleting from database
+    unusedBlobRows.forEach(row => blobStorageService.deleteExternal(row));
+
+    const blobIds = unusedBlobRows.map(row => row.blobId);
+    sql.executeMany(/*sql*/`DELETE FROM blobs WHERE blobId IN (???)`, blobIds);
     // blobs are not marked as erased in entity_changes, they are just purged completely
     // this is because technically every keystroke can create a new blob and there would be just too many
-    sql.executeMany(/*sql*/`DELETE FROM entity_changes WHERE entityName = 'blobs' AND entityId IN (???)`, unusedBlobIds);
+    sql.executeMany(/*sql*/`DELETE FROM entity_changes WHERE entityName = 'blobs' AND entityId IN (???)`, blobIds);
 
-    log.info(`Erased unused blobs: ${JSON.stringify(unusedBlobIds)}`);
+    log.info(`Erased unused blobs: ${JSON.stringify(blobIds)}`);
 }
 
 function eraseDeletedEntities(eraseEntitiesAfterTimeInSeconds: number | null = null) {

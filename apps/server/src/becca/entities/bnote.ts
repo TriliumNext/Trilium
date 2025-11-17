@@ -10,6 +10,7 @@ import dateUtils from "../../services/date_utils.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import BRevision from "./brevision.js";
 import BAttachment from "./battachment.js";
+import blobStorageService from "../../services/blob-storage.js";
 import TaskContext from "../../services/task_context.js";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc.js";
@@ -1107,8 +1108,12 @@ class BNote extends AbstractBeccaEntity<BNote> {
         // from testing, it looks like calculating length does not make a difference in performance even on large-ish DB
         // given that we're always fetching attachments only for a specific note, we might just do it always
 
+        const contentLengthColumn = blobStorageService.hasExternalContentColumns()
+            ? "blobs.contentLength"
+            : "LENGTH(COALESCE(blobs.content, ''))";
+
         const query = opts.includeContentLength
-            ? /*sql*/`SELECT attachments.*, LENGTH(blobs.content) AS contentLength
+            ? /*sql*/`SELECT attachments.*, ${contentLengthColumn} AS contentLength
                 FROM attachments
                 JOIN blobs USING (blobId)
                 WHERE ownerId = ? AND isDeleted = 0
@@ -1121,8 +1126,12 @@ class BNote extends AbstractBeccaEntity<BNote> {
     getAttachmentById(attachmentId: string, opts: AttachmentOpts = {}) {
         opts.includeContentLength = !!opts.includeContentLength;
 
+        const contentLengthColumn = blobStorageService.hasExternalContentColumns()
+            ? "blobs.contentLength"
+            : "LENGTH(COALESCE(blobs.content, ''))";
+
         const query = opts.includeContentLength
-            ? /*sql*/`SELECT attachments.*, LENGTH(blobs.content) AS contentLength
+            ? /*sql*/`SELECT attachments.*, ${contentLengthColumn} AS contentLength
                 FROM attachments
                 JOIN blobs USING (blobId)
                 WHERE ownerId = ? AND attachmentId = ? AND isDeleted = 0`

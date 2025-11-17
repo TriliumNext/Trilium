@@ -2,6 +2,7 @@ import becca from "../becca/becca.js";
 import NotFoundError from "../errors/not_found_error.js";
 import protectedSessionService from "./protected_session.js";
 import { hash } from "./utils.js";
+import blobStorageService from "./blob-storage.js";
 import type { Blob } from "./blob-interface.js";
 
 function getBlobPojo(entityName: string, entityId: string, opts?: { preview: boolean }) {
@@ -21,7 +22,8 @@ function getBlobPojo(entityName: string, entityId: string, opts?: { preview: boo
     if (!entity.hasStringContent()) {
         pojo.content = null;
     } else {
-        pojo.content = processContent(pojo.content, !!entity.isProtected, true);
+        const content = blobStorageService.getContent(pojo);
+        pojo.content = processContent(content, !!entity.isProtected, true);
     }
 
     return pojo;
@@ -50,12 +52,27 @@ function processContent(content: Buffer | string | null, isProtected: boolean, i
     }
 }
 
-function calculateContentHash({ blobId, content }: Blob) {
-    return hash(`${blobId}|${content.toString()}`);
+function calculateContentHash({ blobId, content, contentLocation }: Blob) {
+    const rawContent = blobStorageService.getContent({ content, contentLocation });
+    const contentString = Buffer.isBuffer(rawContent) ? rawContent.toString('base64') : rawContent;
+    return hash(`${blobId}|${contentLocation}|${contentString}`);
+}
+
+function getContentLength(content: Buffer | string | null) {
+    if (content === null) {
+        return 0;
+    }
+
+    if (Buffer.isBuffer(content)) {
+        return content.length;
+    }
+
+    return Buffer.byteLength(content, "utf8");
 }
 
 export default {
     getBlobPojo,
     processContent,
-    calculateContentHash
+    calculateContentHash,
+    getContentLength
 };

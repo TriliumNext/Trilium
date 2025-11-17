@@ -4,7 +4,8 @@ import entityChangesService from "./entity_changes.js";
 import eventService from "./events.js";
 import entityConstructor from "../becca/entity_constructor.js";
 import ws from "./ws.js";
-import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
+import blobStorageService from "./blob-storage.js";
+import type { EntityChange, EntityChangeRecord, EntityRow, BlobRow } from "@triliumnext/commons";
 
 interface UpdateContext {
     alreadyErased: number;
@@ -125,6 +126,14 @@ function preProcessContent(remoteEC: EntityChange, remoteEntityRow: EntityRow) {
                 // (possibly not a problem anymore with the newer better-sqlite3)
                 remoteEntityRow.content = "";
             }
+        }
+
+        // store external blobs on this instance too
+        const blobRow = remoteEntityRow as BlobRow;
+        if (blobRow.contentLocation && blobRow.contentLocation !== "internal" && remoteEntityRow.content) {
+            const newContentLocation = blobStorageService.saveExternal(blobRow.blobId, remoteEntityRow.content);
+            blobRow.contentLocation = newContentLocation;
+            blobRow.content = null;
         }
     }
 }

@@ -524,7 +524,8 @@ class ConsistencyChecks {
                         JOIN blobs USING (blobId)
                         WHERE isDeleted = 0
                         AND isProtected = 0
-                        AND content IS NULL`,
+                        AND content IS NULL
+                        AND (contentLocation IS NULL OR contentLocation = 'internal')`,
                 ({ noteId, type, mime }) => {
                     if (this.autoFix) {
                         const note = becca.getNote(noteId);

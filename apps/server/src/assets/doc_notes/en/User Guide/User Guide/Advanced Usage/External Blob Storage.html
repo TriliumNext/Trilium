@@ -1,0 +1,59 @@
+<p>External blob storage is an optional feature that stores large attachments
+  as separate files on the filesystem instead of embedding them in the SQLite
+  database. This feature is disabled by default to maintain backward compatibility
+  and simplicity for most users.</p>
+<h2>When to Enable External Blob Storage</h2>
+<h3>Benefits of enabling external storage:</h3>
+<ul>
+  <li><strong>Performance</strong>: Large attachments don't bloat the database,
+    which can improve query performance</li>
+  <li><strong>Backup flexibility</strong>: Large files can be backed up separately
+    from the database using different strategies or schedules</li>
+  <li><strong>Storage efficiency</strong>: Easier to manage and migrate large
+    files independently</li>
+</ul>
+<h3>When to keep it disabled (default):</h3>
+<ul>
+  <li><strong>Simplicity</strong>: All data in one database file makes backup
+    and migration straightforward</li>
+  <li><strong>Small attachments</strong>: If your attachments are mostly small,
+    database storage is more efficient</li>
+  <li><strong>Portability</strong>: Single-file database is easier to copy and
+    move between systems</li>
+</ul>
+<h2>How It Works</h2>
+<p>When external blob storage is enabled and a note or attachment exceeds
+  the configured threshold size the content is saved to the file system in
+  the <code>external-blobs</code> directory within your <a href="#root/_help_tAassRL4RSQL">data directory</a>.
+  The files are organized in a partitioned directory structure to prevent
+  excessive files in a single directory. The database stores a reference
+  to the external file and any additional metadata.</p>
+<p>Attachments below the threshold, or when external storage is disabled,
+  continue to be stored in the database.</p>
+<p>When you enable external blob storage, existing attachments in the database
+  remain there. Only new attachments that exceed the threshold will be stored
+  externally. Automatically migrating existing attachments is currently not
+  supported.</p>
+<p>If you disable external blob storage after using it, existing external
+  blobs remain in the <code>external-blobs</code> directory and continue to
+  work. New attachments will be stored in the database regardless of size.</p>
+<h2>Configuration</h2>
+<p>External blob storage can be configured via <code>config.ini</code> or environment
+  variables. See the <a href="#root/_help_Gzjqa934BdH4">Configuration</a> documentation
+  for all available options.</p>
+<h2>Threshold Size Recommendations</h2>
+<p>The default threshold of 100KB (102400 bytes) is based on <a href="https://www.sqlite.org/intern-v-extern-blob.html">SQLite's performance recommendations</a>.</p>
+<p>You can adjust the threshold based on your needs:</p>
+<ul>
+  <li><strong>Lower threshold (e.g., 50KB)</strong>: More files stored externally,
+    smaller database</li>
+  <li><strong>Higher threshold (e.g., 1MB)</strong>: Fewer external files, larger
+    database but simpler backup</li>
+</ul>
+<h2>Important Backup Considerations</h2>
+<p>When external blob storage is enabled, you must backup both the database
+  and the <code>external-blobs</code> directory.</p>
+<p>Without backing up the <code>external-blobs</code> directory, you would
+  lose large attachments if restoring from backup.</p>
+<p>See the <a href="#root/_help_ODY7qQn5m2FT">Backup</a> documentation for detailed
+  backup strategies with external blob storage.</p>
