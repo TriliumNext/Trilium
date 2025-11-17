@@ -155,11 +155,11 @@ type DateFilter = DateValue;
  * @returns A `DateFilter` object containing the resolved date string.
  */
 export function dateNoteLabelKeywordToDateFilter(dateStr: string): DateFilter {
-    const keywordAndDelta = dateStr.match(/^(today|month|year)([+-]\d+)?$/i);
+    const keywordAndDelta = dateStr.match(/^(today|month|year)\s*([+-]\s*\d+)?$/i);
 
     if (keywordAndDelta) {
         const keyword = keywordAndDelta[1].toLowerCase();
-        const delta = keywordAndDelta[2] ? parseInt(keywordAndDelta[2]) : 0;
+        const delta = parseInt(keywordAndDelta[2]?.replace(/\s/g, "") ?? "0");
 
         const clientDate = dayjs(dateUtils.localNowDate());
         const date = formatDateFromKeywordAndDelta(clientDate, keyword, delta);
