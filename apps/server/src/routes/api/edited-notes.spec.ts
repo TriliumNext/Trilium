@@ -19,7 +19,7 @@ const expectedYear =         "2025";
 const expectedYearMinus1 =   "2024";
 
 function keywordResolvesToDate(dateStrOrKeyword: string, expectedDate: string) {
-   cls.init(() => {
+    cls.init(() => {
         cls.set("localNowDateTime", clientDate);
         const dateFilter = dateNoteLabelKeywordToDateFilter(dateStrOrKeyword);
         expect(dateFilter.date).toBe(expectedDate);
@@ -27,7 +27,7 @@ function keywordResolvesToDate(dateStrOrKeyword: string, expectedDate: string) {
 }
 
 function keywordDoesNotResolve(dateStrOrKeyword: string) {
-   cls.init(() => {
+    cls.init(() => {
         cls.set("localNowDateTime", clientDate);
         const dateFilter = dateNoteLabelKeywordToDateFilter(dateStrOrKeyword);
         expect(dateFilter.date).toBe(null);
@@ -36,7 +36,7 @@ function keywordDoesNotResolve(dateStrOrKeyword: string) {
 
 describe("edited-notes::dateNoteLabelKeywordToDateFilter", () => {
     beforeEach(() => {
-        vi.stubEnv('TZ', 'UTC');
+        vi.stubEnv("TZ", "UTC");
         vi.useFakeTimers();
         vi.setSystemTime(new Date(serverDate));
     });
@@ -65,6 +65,12 @@ describe("edited-notes::dateNoteLabelKeywordToDateFilter", () => {
 
     it("resolves 'TODAY-1' to yesterday's date", () => {
         keywordResolvesToDate("TODAY-1", expectedTodayMinus1);
+    });
+
+    it("resolves 'TODAY - 1' (with spaces) to yesterday's date", () => {
+        keywordResolvesToDate("TODAY - 1", expectedTodayMinus1);
+        keywordResolvesToDate("TODAY- 1", expectedTodayMinus1);
+        keywordResolvesToDate("TODAY -1", expectedTodayMinus1);
     });
 
     it("resolves 'MONTH-2' to 2 months ago", () => {
