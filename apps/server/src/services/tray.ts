@@ -1,4 +1,4 @@
-import electron from "electron";
+import electron, { app } from "electron";
 import type { BrowserWindow, Tray } from "electron";
 import { default as i18next, t } from "i18next";
 import path from "path";
@@ -17,6 +17,7 @@ import windowService from "./window.js";
 let tray: Tray;
 // `mainWindow.isVisible` doesn't work with `mainWindow.show` and `mainWindow.hide` - it returns `false` when the window
 // is minimized
+
 const windowVisibilityMap: Record<number, boolean> = {};; // Dictionary for storing window ID and its visibility status
 
 function getTrayIconPath() {
@@ -107,7 +108,6 @@ function updateTrayMenu() {
     if (!tray) {
         return;
     }
-    const lastFocusedWindow = windowService.getLastFocusedWindow();
     const allWindows = windowService.getAllWindows();
     updateWindowVisibilityMap(allWindows);
 
@@ -119,19 +119,22 @@ function updateTrayMenu() {
     }
 
     function openNewWindow() {
+        const lastFocusedWindow = windowService.getLastFocusedWindow();
         if (lastFocusedWindow){
             lastFocusedWindow.webContents.send("globalShortcut", "openNewWindow");
         }
     }
 
-    function triggerKeyboardAction(actionName: KeyboardActionNames) {
-        if (lastFocusedWindow){
+    async function triggerKeyboardAction(actionName: KeyboardActionNames) {
+        const lastFocusedWindow = await getCurrentWindow();
+        if (lastFocusedWindow) {
             lastFocusedWindow.webContents.send("globalShortcut", actionName);
             ensureVisible(lastFocusedWindow);
         }
     }
 
-    function openInSameTab(note: BNote | BRecentNote) {
+    async function openInSameTab(note: BNote | BRecentNote) {
+        const lastFocusedWindow = await getCurrentWindow();
         if (lastFocusedWindow){
             lastFocusedWindow.webContents.send("openInSameTab", note.noteId);
             ensureVisible(lastFocusedWindow);
@@ -308,6 +311,16 @@ function createTray() {
     }
     electron.ipcMain.on("reload-tray", updateTrayMenu);
     i18next.on("languageChanged", updateTrayMenu);
+}
+
+async function getCurrentWindow(): Promise<BrowserWindow | null> {
+    if (!windowService.getMainWindow()) {
+        // If no windows are open, create a new main window
+        await windowService.createMainWindow(app);
+        return windowService.getMainWindow();
+    } else {
+        return windowService.getLastFocusedWindow();
+    }
 }
 
 export default {

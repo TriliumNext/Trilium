@@ -121,6 +121,7 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     downloadImagesAutomatically: boolean;
     checkForUpdates: boolean;
     disableTray: boolean;
+    persistantTray: boolean;
     promotedAttributesOpenInRibbon: boolean;
     editedNotesOpenInRibbon: boolean;
     codeBlockWordWrap: boolean;

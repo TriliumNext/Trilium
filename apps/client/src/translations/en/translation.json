@@ -1377,7 +1377,8 @@
   },
   "tray": {
     "title": "System Tray",
-    "enable_tray": "Enable tray (Trilium needs to be restarted for this change to take effect)"
+    "enable_tray": "Enable tray (Trilium needs to be restarted for this change to take effect)",
+    "persistant_tray": "Always show the tray icon, even if no windows are currently open"
   },
   "heading_style": {
     "title": "Heading Style",

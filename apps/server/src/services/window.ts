@@ -8,7 +8,7 @@ import sqlInit from "./sql_init.js";
 import cls from "./cls.js";
 import keyboardActionsService from "./keyboard_actions.js";
 import electron from "electron";
-import type { App, BrowserWindowConstructorOptions, BrowserWindow, WebContents, IpcMainEvent } from "electron";
+import { App, BrowserWindowConstructorOptions, BrowserWindow, WebContents, ipcMain, IpcMainEvent } from "electron";
 import { formatDownloadTitle, isDev, isMac, isWindows } from "./utils.js";
 import { t } from "i18next";
 import { RESOURCE_DIR } from "./resource_dir.js";
@@ -21,6 +21,7 @@ let setupWindow: BrowserWindow | null;
 let allWindows: BrowserWindow[] = []; // // Used to store all windows, sorted by the order of focus.
 
 function trackWindowFocus(win: BrowserWindow) {
+    
     // We need to get the last focused window from allWindows. If the last window is closed, we return the previous window.
     // Therefore, we need to push the window into the allWindows array every time it gets focused.
     win.on("focus", () => {
@@ -212,11 +213,14 @@ async function createMainWindow(app: App) {
     mainWindowState.manage(mainWindow);
 
     mainWindow.setMenuBarVisibility(false);
-    mainWindow.loadURL(`http://127.0.0.1:${port}`);
     mainWindow.on("closed", () => (mainWindow = null));
 
-    configureWebContents(mainWindow.webContents, spellcheckEnabled);
+    await mainWindow.loadURL(`http://127.0.0.1:${port}`);
+    await configureWebContents(mainWindow.webContents, spellcheckEnabled);
     trackWindowFocus(mainWindow);
+    
+    await waitForIpc(mainWindow);
+
 }
 
 function getWindowExtraOpts() {
@@ -383,6 +387,21 @@ function getLastFocusedWindow() {
 
 function getAllWindows() {
     return allWindows;
+}
+
+function waitForIpc(win: BrowserWindow) {
+    return new Promise((resolve, reject) => {
+        const handler = (ev: IpcMainEvent, ) => {
+            const senderWindow = BrowserWindow.fromWebContents(ev.sender);
+
+            if (senderWindow === win) {
+                ipcMain.off("ipcReady", handler);
+                resolve();
+            }
+        };
+
+        ipcMain.on("ipcReady", handler);
+    });
 }
 
 export default {

@@ -62,6 +62,8 @@ function initOnElectron() {
     if (options.get("nativeTitleBarVisible") !== "true") {
         initTitleBarButtons(style, currentWindow);
     }
+
+    electron.ipcRenderer.send("ipcReady");
 }
 
 function initTitleBarButtons(style: CSSStyleDeclaration, currentWindow: Electron.BrowserWindow) {

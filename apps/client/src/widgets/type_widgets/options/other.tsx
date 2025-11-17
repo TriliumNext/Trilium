@@ -87,6 +87,8 @@ function SearchEngineSettings() {
 
 function TrayOptionsSettings() {
     const [ disableTray, setDisableTray ] = useTriliumOptionBool("disableTray");
+    const [ persistantTray, setPersistantTray ] = useTriliumOptionBool("persistantTray");
+
 
     return (
         <OptionsSection title={t("tray.title")}>
@@ -95,6 +97,12 @@ function TrayOptionsSettings() {
                 label={t("tray.enable_tray")}
                 currentValue={!disableTray}
                 onChange={trayEnabled => setDisableTray(!trayEnabled)}
+            />
+            <FormCheckbox
+                name="persistant-tray"
+                label={t("tray.persistant_tray")}
+                currentValue={persistantTray}
+                onChange={enabled => setPersistantTray(enabled)}
             />
         </OptionsSection>
     )

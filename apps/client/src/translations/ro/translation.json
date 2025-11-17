@@ -1291,6 +1291,7 @@
   },
   "tray": {
     "enable_tray": "Activează system tray-ul (este necesară repornirea aplicației pentru a avea efect)",
+    "persistant-tray": "Afișează întotdeauna iconița, chiar dacă nu este deschisă nicio fereastră.",
     "title": "Tray-ul de sistem"
   },
   "update_available": {
