@@ -1320,3 +1320,184 @@ describe('searchWithLike - Substring Search with LIKE Queries', () => {
         });
     });
 });
+
+describe('Exact Match with Word Boundaries (= operator)', () => {
+    let ftsSearchService: any;
+    let mockSql: any;
+    let mockLog: any;
+    let mockProtectedSession: any;
+
+    beforeEach(async () => {
+        // Reset mocks
+        vi.resetModules();
+
+        // Setup mocks
+        mockSql = {
+            getValue: vi.fn(),
+            getRows: vi.fn(),
+            getColumn: vi.fn(),
+            execute: vi.fn(),
+            transactional: vi.fn((fn: Function) => fn()),
+            iterateRows: vi.fn()
+        };
+
+        mockLog = {
+            info: vi.fn(),
+            warn: vi.fn(),
+            error: vi.fn(),
+            debug: vi.fn(),
+            request: vi.fn()
+        };
+
+        mockProtectedSession = {
+            isProtectedSessionAvailable: vi.fn().mockReturnValue(false),
+            decryptString: vi.fn()
+        };
+
+        // Mock the modules
+        vi.doMock('../sql.js', () => ({ default: mockSql }));
+        vi.doMock('../log.js', () => ({ default: mockLog }));
+        vi.doMock('../protected_session.js', () => ({ default: mockProtectedSession }));
+
+        // Import the service after mocking
+        const module = await import('./fts_search.js');
+        ftsSearchService = module.ftsSearchService;
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    describe('Word boundary matching with trigram tokenizer', () => {
+        it('should NOT match "test123" when searching for "test1234" (exact match only)', () => {
+            // This test SHOULD FAIL initially because trigram FTS5 phrase queries
+            // don't respect word boundaries - "test123" matches "test1234" via shared trigrams
+            mockSql.getValue.mockReturnValue(1); // FTS5 available
+            mockSql.getColumn.mockReturnValue([]);
+
+            // Mock FTS5 returning BOTH notes (this is the bug)
+            mockSql.getRows.mockReturnValue([
+                { noteId: 'note1', title: 'Test', score: 1.0, content: '<p>test123</p>' },
+                { noteId: 'note2', title: 'Test 2', score: 1.0, content: '<p>test1234</p>' }
+            ]);
+
+            const results = ftsSearchService.searchSync(['test123'], '=');
+
+            // After the fix, we should post-filter and only return note1
+            // Currently this test will FAIL because we get 2 results
+            expect(results).toHaveLength(1);
+            expect(results[0].noteId).toBe('note1');
+            expect(results[0].content).toContain('test123');
+            expect(results[0].content).not.toContain('test1234');
+        });
+
+        it('should NOT match "abc" when searching for "abcd" (exact word boundary)', () => {
+            mockSql.getValue.mockReturnValue(1);
+            mockSql.getColumn.mockReturnValue([]);
+
+            // FTS5 returns both due to trigram overlap
+            mockSql.getRows.mockReturnValue([
+                { noteId: 'note1', title: 'ABC', score: 1.0, content: 'abc' },
+                { noteId: 'note2', title: 'ABCD', score: 1.0, content: 'abcd' }
+            ]);
+
+            const results = ftsSearchService.searchSync(['abc'], '=');
+
+            // Should only match exact word "abc", not "abcd"
+            expect(results).toHaveLength(1);
+            expect(results[0].noteId).toBe('note1');
+        });
+
+        it('should match "test123" in "test123 test1234" but still filter out "test1234" match', () => {
+            mockSql.getValue.mockReturnValue(1);
+            mockSql.getColumn.mockReturnValue([]);
+
+            mockSql.getRows.mockReturnValue([
+                { noteId: 'note1', title: 'Both', score: 1.0, content: 'test123 test1234' }
+            ]);
+
+            const results = ftsSearchService.searchSync(['test123'], '=');
+
+            // Should match because content contains "test123" as a complete word
+            expect(results).toHaveLength(1);
+            expect(results[0].noteId).toBe('note1');
+        });
+
+        it('should handle multi-word exact phrases with word boundaries', () => {
+            mockSql.getValue.mockReturnValue(1);
+            mockSql.getColumn.mockReturnValue([]);
+
+            mockSql.getRows.mockReturnValue([
+                { noteId: 'note1', title: 'Match', score: 1.0, content: 'hello world' },
+                { noteId: 'note2', title: 'No Match', score: 1.0, content: 'hello world2' }
+            ]);
+
+            const results = ftsSearchService.searchSync(['hello', 'world'], '=');
+
+            // Should only match exact phrase "hello world", not "hello world2"
+            expect(results).toHaveLength(1);
+            expect(results[0].noteId).toBe('note1');
+        });
+
+        it('should match word at start of content', () => {
+            mockSql.getValue.mockReturnValue(1);
+            mockSql.getColumn.mockReturnValue([]);
+
+            mockSql.getRows.mockReturnValue([
+                { noteId: 'note1', title: 'Start', score: 1.0, content: 'test123 other words' },
+                { noteId: 'note2', title: 'Not Start', score: 1.0, content: 'test1234 other words' }
+            ]);
+
+            const results = ftsSearchService.searchSync(['test123'], '=');
+
+            expect(results).toHaveLength(1);
+            expect(results[0].noteId).toBe('note1');
+        });
+
+        it('should match word at end of content', () => {
+            mockSql.getValue.mockReturnValue(1);
+            mockSql.getColumn.mockReturnValue([]);
+
+            mockSql.getRows.mockReturnValue([
+                { noteId: 'note1', title: 'End', score: 1.0, content: 'other words test123' },
+                { noteId: 'note2', title: 'Not End', score: 1.0, content: 'other words test1234' }
+            ]);
+
+            const results = ftsSearchService.searchSync(['test123'], '=');
+
+            expect(results).toHaveLength(1);
+            expect(results[0].noteId).toBe('note1');
+        });
+
+        it('should match word as entire content', () => {
+            mockSql.getValue.mockReturnValue(1);
+            mockSql.getColumn.mockReturnValue([]);
+
+            mockSql.getRows.mockReturnValue([
+                { noteId: 'note1', title: 'Exact', score: 1.0, content: 'test123' },
+                { noteId: 'note2', title: 'Not Exact', score: 1.0, content: 'test1234' }
+            ]);
+
+            const results = ftsSearchService.searchSync(['test123'], '=');
+
+            expect(results).toHaveLength(1);
+            expect(results[0].noteId).toBe('note1');
+        });
+
+        it('should also check title for exact matches with word boundaries', () => {
+            mockSql.getValue.mockReturnValue(1);
+            mockSql.getColumn.mockReturnValue([]);
+
+            mockSql.getRows.mockReturnValue([
+                { noteId: 'note1', title: 'test123', score: 1.0, content: 'other content' },
+                { noteId: 'note2', title: 'test1234', score: 1.0, content: 'other content' }
+            ]);
+
+            const results = ftsSearchService.searchSync(['test123'], '=');
+
+            // Should match based on title
+            expect(results).toHaveLength(1);
+            expect(results[0].noteId).toBe('note1');
+        });
+    });
+});

@@ -585,16 +585,20 @@ class FTSSearchService {
             }
 
             // Build snippet extraction if requested
-            const snippetSelect = includeSnippets 
+            const snippetSelect = includeSnippets
                 ? `, snippet(notes_fts, ${FTS_CONFIG.SNIPPET_COLUMN_CONTENT}, '${highlightTag}', '${highlightTag.replace('<', '</')}', '...', ${snippetLength}) as snippet`
                 : '';
 
+            // For exact match (=), include content for post-filtering word boundaries
+            const contentSelect = operator === "=" ? ', content' : '';
+
             const query = `
-                SELECT 
+                SELECT
                     noteId,
                     title,
                     rank as score
                     ${snippetSelect}
+                    ${contentSelect}
                 FROM notes_fts
                 WHERE ${whereConditions.join(' AND ')}
                 ORDER BY rank
@@ -603,12 +607,41 @@ class FTSSearchService {
 
             params.push(limit, offset);
 
-            const results = sql.getRows<{
+            let results = sql.getRows<{
                 noteId: string;
                 title: string;
                 score: number;
                 snippet?: string;
+                content?: string;
             }>(query, params);
+
+            // Post-filter for exact match operator (=) to handle word boundaries
+            // Trigram FTS5 doesn't respect word boundaries in phrase queries,
+            // so "test123" matches "test1234" due to shared trigrams.
+            // We need to post-filter results to only include exact word matches.
+            if (operator === "=") {
+                const phrase = tokens.join(" ");
+                results = results.filter(result => {
+                    // Use content from result if available, otherwise fetch it
+                    let noteContent = result.content;
+                    if (!noteContent) {
+                        noteContent = sql.getValue<string>(`
+                            SELECT b.content
+                            FROM notes n
+                            LEFT JOIN blobs b ON n.blobId = b.blobId
+                            WHERE n.noteId = ?
+                        `, [result.noteId]);
+                    }
+
+                    if (!noteContent) {
+                        return false;
+                    }
+
+                    // Check if phrase appears as exact words in content or title
+                    return this.containsExactPhrase(phrase, result.title) ||
+                           this.containsExactPhrase(phrase, noteContent);
+                });
+            }
 
             const searchTime = Date.now() - searchStartTime;
             log.info(`FTS5 MATCH search returned ${results.length} results in ${searchTime}ms`);
@@ -647,15 +680,164 @@ class FTSSearchService {
     private filterNonProtectedNoteIds(noteIds: Set<string>): string[] {
         const noteIdList = Array.from(noteIds);
         const placeholders = noteIdList.map(() => '?').join(',');
-        
+
         const nonProtectedNotes = sql.getColumn<string>(`
-            SELECT noteId 
-            FROM notes 
+            SELECT noteId
+            FROM notes
             WHERE noteId IN (${placeholders})
                 AND isProtected = 0
         `, noteIdList);
-        
+
         return nonProtectedNotes;
+    }
+
+    /**
+     * Checks if a phrase appears as exact words in text (respecting word boundaries)
+     * @param phrase - The phrase to search for (case-insensitive)
+     * @param text - The text to search in
+     * @returns true if the phrase appears as complete words, false otherwise
+     */
+    private containsExactPhrase(phrase: string, text: string | null | undefined): boolean {
+        if (!text || !phrase || typeof text !== 'string') {
+            return false;
+        }
+
+        // Normalize both to lowercase for case-insensitive comparison
+        const normalizedPhrase = phrase.toLowerCase().trim();
+        const normalizedText = text.toLowerCase();
+
+        // Strip HTML tags for content matching
+        const plainText = striptags(normalizedText);
+
+        // For single words, use word-boundary matching
+        if (!normalizedPhrase.includes(' ')) {
+            // Split text into words and check for exact match
+            const words = plainText.split(/\s+/);
+            return words.some(word => word === normalizedPhrase);
+        }
+
+        // For multi-word phrases, check if the phrase appears as consecutive words
+        // Split text into words, then check if the phrase appears in the word sequence
+        const textWords = plainText.split(/\s+/);
+        const phraseWords = normalizedPhrase.split(/\s+/);
+
+        // Sliding window to find exact phrase match
+        for (let i = 0; i <= textWords.length - phraseWords.length; i++) {
+            let match = true;
+            for (let j = 0; j < phraseWords.length; j++) {
+                if (textWords[i + j] !== phraseWords[j]) {
+                    match = false;
+                    break;
+                }
+            }
+            if (match) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Searches attributes using FTS5
+     * Returns noteIds of notes that have matching attributes
+     */
+    searchAttributesSync(
+        tokens: string[],
+        operator: string,
+        noteIds?: Set<string>
+    ): Set<string> {
+        const startTime = Date.now();
+
+        if (!this.checkFTS5Availability()) {
+            return new Set();
+        }
+
+        // Check if attributes_fts table exists
+        const tableExists = sql.getValue<number>(`
+            SELECT COUNT(*)
+            FROM sqlite_master
+            WHERE type='table' AND name='attributes_fts'
+        `);
+
+        if (!tableExists) {
+            log.info("attributes_fts table does not exist - skipping FTS attribute search");
+            return new Set();
+        }
+
+        try {
+            // Sanitize tokens to prevent FTS5 syntax injection
+            const sanitizedTokens = tokens.map(token => this.sanitizeFTS5Token(token));
+
+            // Check if any tokens became invalid after sanitization
+            if (sanitizedTokens.some(t => t === '__empty_token__' || t === '__invalid_token__')) {
+                return new Set();
+            }
+
+            const phrase = sanitizedTokens.join(" ");
+
+            // Build FTS5 query for exact match
+            const ftsQuery = operator === "=" ? `"${phrase}"` : phrase;
+
+            // Search both name and value columns
+            const whereConditions: string[] = [
+                `attributes_fts MATCH '${ftsQuery.replace(/'/g, "''")}'`
+            ];
+
+            const params: any[] = [];
+
+            // Filter by noteIds if provided
+            if (noteIds && noteIds.size > 0 && noteIds.size < 1000) {
+                const noteIdList = Array.from(noteIds);
+                whereConditions.push(`noteId IN (${noteIdList.map(() => '?').join(',')})`);
+                params.push(...noteIdList);
+            }
+
+            const query = `
+                SELECT DISTINCT noteId, name, value
+                FROM attributes_fts
+                WHERE ${whereConditions.join(' AND ')}
+            `;
+
+            const results = sql.getRows<{
+                noteId: string;
+                name: string;
+                value: string;
+            }>(query, params);
+
+            log.info(`[FTS5-ATTRIBUTES-RAW] FTS5 query returned ${results.length} raw attribute matches`);
+
+            // Post-filter for exact word matches when operator is "="
+            if (operator === "=") {
+                const matchingNoteIds = new Set<string>();
+                for (const result of results) {
+                    // Check if phrase matches attribute name or value with word boundaries
+                    // For attribute names, check exact match (attribute name "test125" matches search "test125")
+                    // For attribute values, check if phrase appears as exact words
+                    const nameMatch = result.name.toLowerCase() === phrase.toLowerCase();
+                    const valueMatch = result.value ? this.containsExactPhrase(phrase, result.value) : false;
+
+                    log.info(`[FTS5-ATTRIBUTES-FILTER] Checking attribute: name="${result.name}", value="${result.value}", phrase="${phrase}", nameMatch=${nameMatch}, valueMatch=${valueMatch}`);
+
+                    if (nameMatch || valueMatch) {
+                        matchingNoteIds.add(result.noteId);
+                    }
+                }
+                const filterTime = Date.now() - startTime;
+                log.info(`[FTS5-ATTRIBUTES-FILTERED] After post-filtering: ${matchingNoteIds.size} notes match (total time: ${filterTime}ms)`);
+                return matchingNoteIds;
+            }
+
+            // For other operators, return all matching noteIds
+            const searchTime = Date.now() - startTime;
+            const matchingNoteIds = new Set(results.map(r => r.noteId));
+            log.info(`[FTS5-ATTRIBUTES-TIME] Attribute search completed in ${searchTime}ms, found ${matchingNoteIds.size} notes`);
+            return matchingNoteIds;
+
+        } catch (error: any) {
+            log.error(`FTS5 attribute search error: ${error}`);
+            return new Set();
+        }
     }
 
     /**

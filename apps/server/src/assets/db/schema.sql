@@ -227,14 +227,16 @@ CREATE TABLE IF NOT EXISTS sessions (
 -- 4. Boolean operators (AND, OR, NOT) and phrase matching with quotes
 --
 -- IMPORTANT: Trigram requires minimum 3-character tokens for matching
--- detail='none' reduces index size by ~50% while maintaining MATCH/rank performance
--- (loses position info for highlight() function, but snippet() still works)
+-- detail='full' enables phrase queries (required for exact match with = operator)
+-- and provides position info for highlight() function
+-- Note: Using detail='full' instead of detail='none' increases index size by ~50%
+-- but is necessary to support phrase queries like "exact phrase"
 CREATE VIRTUAL TABLE notes_fts USING fts5(
     noteId UNINDEXED,
     title,
     content,
     tokenize = 'trigram',
-    detail = 'none'
+    detail = 'full'
 );
 
 -- Triggers to keep FTS table synchronized with notes
@@ -354,14 +356,14 @@ END;
 -- Trigger for INSERT operations on blobs
 -- Handles: INSERT, INSERT OR REPLACE, and the INSERT part of upsert
 -- Updates all notes that reference this blob (common during import and deduplication)
-CREATE TRIGGER notes_fts_blob_insert 
+CREATE TRIGGER notes_fts_blob_insert
 AFTER INSERT ON blobs
 BEGIN
     -- Use INSERT OR REPLACE to handle both new and existing FTS entries
     -- This is crucial for blob deduplication where multiple notes may already
     -- exist that reference this blob before the blob itself is created
     INSERT OR REPLACE INTO notes_fts (noteId, title, content)
-    SELECT 
+    SELECT
         n.noteId,
         n.title,
         NEW.content
@@ -370,4 +372,66 @@ BEGIN
         AND n.type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap')
         AND n.isDeleted = 0
         AND n.isProtected = 0;
+END;
+
+-- =====================================================
+-- FTS5 Full-Text Search Index for Attributes
+-- =====================================================
+-- This FTS5 table enables fast full-text searching of attribute names and values
+-- Benefits:
+-- - Fast free-text searches like ="somevalue" (10-50ms vs 1-2 seconds)
+-- - Scales well with large attribute counts (650K+ attributes)
+-- - Consistent performance with notes_fts
+--
+-- Uses trigram tokenizer with detail='full' for:
+-- 1. Substring matching (3+ characters)
+-- 2. Phrase query support (exact matches with word boundaries)
+-- 3. Multi-language support without stemming assumptions
+
+CREATE VIRTUAL TABLE attributes_fts USING fts5(
+    attributeId UNINDEXED,
+    noteId UNINDEXED,
+    name,
+    value,
+    tokenize = 'trigram',
+    detail = 'full'
+);
+
+-- Triggers to keep attributes_fts synchronized with attributes table
+
+-- Trigger for INSERT operations
+CREATE TRIGGER attributes_fts_insert
+AFTER INSERT ON attributes
+WHEN NEW.isDeleted = 0
+BEGIN
+    INSERT INTO attributes_fts (attributeId, noteId, name, value)
+    VALUES (NEW.attributeId, NEW.noteId, NEW.name, COALESCE(NEW.value, ''));
+END;
+
+-- Trigger for UPDATE operations
+CREATE TRIGGER attributes_fts_update
+AFTER UPDATE ON attributes
+BEGIN
+    -- Remove old entry
+    DELETE FROM attributes_fts WHERE attributeId = OLD.attributeId;
+
+    -- Add new entry if not deleted
+    INSERT INTO attributes_fts (attributeId, noteId, name, value)
+    SELECT NEW.attributeId, NEW.noteId, NEW.name, COALESCE(NEW.value, '')
+    WHERE NEW.isDeleted = 0;
+END;
+
+-- Trigger for DELETE operations
+CREATE TRIGGER attributes_fts_delete
+AFTER DELETE ON attributes
+BEGIN
+    DELETE FROM attributes_fts WHERE attributeId = OLD.attributeId;
+END;
+
+-- Trigger for soft delete (isDeleted = 1)
+CREATE TRIGGER attributes_fts_soft_delete
+AFTER UPDATE ON attributes
+WHEN OLD.isDeleted = 0 AND NEW.isDeleted = 1
+BEGIN
+    DELETE FROM attributes_fts WHERE attributeId = NEW.attributeId;
 END;

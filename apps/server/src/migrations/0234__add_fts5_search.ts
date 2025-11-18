@@ -1,12 +1,14 @@
 /**
  * Migration to add FTS5 full-text search support and strategic performance indexes
- * 
+ *
  * This migration:
- * 1. Creates an FTS5 virtual table for full-text searching
+ * 1. Creates an FTS5 virtual table for full-text searching of notes
  * 2. Populates it with existing note content
  * 3. Creates triggers to keep the FTS table synchronized with note changes
- * 4. Adds strategic composite and covering indexes for improved query performance
- * 5. Optimizes common query patterns identified through performance analysis
+ * 4. Creates an FTS5 virtual table for full-text searching of attributes
+ * 5. Populates it with existing attributes and creates synchronization triggers
+ * 6. Adds strategic composite and covering indexes for improved query performance
+ * 7. Optimizes common query patterns identified through performance analysis
  */
 
 import sql from "../services/sql.js";
@@ -46,14 +48,16 @@ export default function addFTS5SearchAndPerformanceIndexes() {
         -- 4. Boolean operators (AND, OR, NOT) and phrase matching with quotes
         --
         -- IMPORTANT: Trigram requires minimum 3-character tokens for matching
-        -- detail='none' reduces index size by ~50% while maintaining MATCH/rank performance
-        -- (loses position info for highlight() function, but snippet() still works)
+        -- detail='full' enables phrase queries (required for exact match with = operator)
+        -- and provides position info for highlight() function
+        -- Note: Using detail='full' instead of detail='none' increases index size by ~50%
+        -- but is necessary to support phrase queries like "exact phrase"
         CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts USING fts5(
             noteId UNINDEXED,
             title,
             content,
             tokenize = 'trigram',
-            detail = 'none'
+            detail = 'full'
         );
     `);
 
@@ -549,5 +553,100 @@ export default function addFTS5SearchAndPerformanceIndexes() {
         throw error;
     }
     
+    // ========================================
+    // Part 3: Attributes FTS5 Setup
+    // ========================================
+
+    log.info("Creating FTS5 index for attributes...");
+
+    sql.transactional(() => {
+        // Create FTS5 virtual table for attributes
+        // IMPORTANT: Trigram requires minimum 3-character tokens for matching
+        // detail='full' enables phrase queries (required for exact match with = operator)
+        // and provides position info for highlight() function
+        sql.execute(`
+            CREATE VIRTUAL TABLE IF NOT EXISTS attributes_fts USING fts5(
+                attributeId UNINDEXED,
+                noteId UNINDEXED,
+                name,
+                value,
+                tokenize = 'trigram',
+                detail = 'full'
+            )
+        `);
+
+        log.info("Populating attributes_fts table...");
+
+        // Populate FTS table with existing attributes (non-deleted only)
+        const attrStartTime = Date.now();
+        sql.execute(`
+            INSERT INTO attributes_fts (attributeId, noteId, name, value)
+            SELECT
+                attributeId,
+                noteId,
+                name,
+                COALESCE(value, '')
+            FROM attributes
+            WHERE isDeleted = 0
+        `);
+
+        const populateTime = Date.now() - attrStartTime;
+        const attrCount = sql.getValue<number>(`SELECT COUNT(*) FROM attributes_fts`) || 0;
+        log.info(`Populated ${attrCount} attributes in ${populateTime}ms`);
+
+        // Create triggers to keep FTS index synchronized with attributes table
+
+        // Trigger 1: INSERT - Add new attributes to FTS
+        sql.execute(`
+            CREATE TRIGGER attributes_fts_insert
+            AFTER INSERT ON attributes
+            WHEN NEW.isDeleted = 0
+            BEGIN
+                INSERT INTO attributes_fts (attributeId, noteId, name, value)
+                VALUES (NEW.attributeId, NEW.noteId, NEW.name, COALESCE(NEW.value, ''));
+            END
+        `);
+
+        // Trigger 2: UPDATE - Update FTS when attributes change
+        sql.execute(`
+            CREATE TRIGGER attributes_fts_update
+            AFTER UPDATE ON attributes
+            BEGIN
+                -- Remove old entry
+                DELETE FROM attributes_fts WHERE attributeId = OLD.attributeId;
+
+                -- Add new entry if not deleted
+                INSERT INTO attributes_fts (attributeId, noteId, name, value)
+                SELECT NEW.attributeId, NEW.noteId, NEW.name, COALESCE(NEW.value, '')
+                WHERE NEW.isDeleted = 0;
+            END
+        `);
+
+        // Trigger 3: DELETE - Remove from FTS
+        sql.execute(`
+            CREATE TRIGGER attributes_fts_delete
+            AFTER DELETE ON attributes
+            BEGIN
+                DELETE FROM attributes_fts WHERE attributeId = OLD.attributeId;
+            END
+        `);
+
+        // Trigger 4: Soft delete (isDeleted = 1) - Remove from FTS
+        sql.execute(`
+            CREATE TRIGGER attributes_fts_soft_delete
+            AFTER UPDATE ON attributes
+            WHEN OLD.isDeleted = 0 AND NEW.isDeleted = 1
+            BEGIN
+                DELETE FROM attributes_fts WHERE attributeId = NEW.attributeId;
+            END
+        `);
+
+        // Run ANALYZE to update query planner statistics
+        log.info("Running ANALYZE on attributes_fts...");
+        sql.execute(`ANALYZE attributes_fts`);
+
+        log.info("Attributes FTS5 setup completed successfully");
+    });
+
     log.info("FTS5 and performance optimization migration completed successfully");
 }
