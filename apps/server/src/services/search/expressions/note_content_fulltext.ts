@@ -135,6 +135,8 @@ class NoteContentFulltextExp extends Expression {
                     }
                 }
 
+                log.info(`[FTS5-CONTENT] Found ${ftsResults.length} notes matching content search`);
+
                 // If we need to search protected notes, use the separate method
                 if (searchProtected) {
                     const protectedResults = ftsSearchService.searchProtectedNotesSync(
@@ -155,9 +157,33 @@ class NoteContentFulltextExp extends Expression {
                 }
 
                 // Handle special cases that FTS5 doesn't support well
-                if (this.operator === "%=" || this.flatText) {
-                    // Fall back to original implementation for regex and flat text searches
+                if (this.operator === "%=") {
+                    // Fall back to original implementation for regex searches
                     return this.executeWithFallback(inputNoteSet, resultNoteSet, searchContext);
+                }
+
+                // If flatText search is enabled, also search attributes using FTS5
+                if (this.flatText) {
+                    try {
+                        const attributeNoteIds = ftsSearchService.searchAttributesSync(
+                            this.tokens,
+                            this.operator,
+                            noteIdSet.size > 0 ? noteIdSet : undefined
+                        );
+
+                        log.info(`[FTS5-ATTRIBUTES] Found ${attributeNoteIds.size} notes matching attribute search`);
+
+                        // Add notes with matching attributes
+                        for (const noteId of attributeNoteIds) {
+                            if (becca.notes[noteId]) {
+                                resultNoteSet.add(becca.notes[noteId]);
+                            }
+                        }
+                    } catch (error) {
+                        log.error(`FTS5 attribute search failed: ${error}`);
+                        // Fall back to traditional search for attributes only
+                        return this.executeWithFallback(inputNoteSet, resultNoteSet, searchContext);
+                    }
                 }
 
                 return resultNoteSet;
@@ -246,8 +272,8 @@ class NoteContentFulltextExp extends Expression {
             return false;
         }
 
-        // For now, we'll use FTS5 for most text searches
-        // but keep the original implementation for complex cases
+        // FTS5 now supports exact match (=) with post-filtering for word boundaries
+        // The FTS search service will filter results to ensure exact word matches
         return true;
     }
 
@@ -352,7 +378,27 @@ class NoteContentFulltextExp extends Expression {
         // e.g., "asd" should not match "asdfasdf"
         if (!phrase.includes(' ')) {
             // Single word: use exact word matching to avoid substring matches
-            return this.exactWordMatch(phrase, normalizedContent);
+            if (this.exactWordMatch(phrase, normalizedContent)) {
+                return true;
+            }
+
+            // For flatText, also check attribute names/values
+            // Attributes in flatText appear as "#name" or "#name=value" or "~name" or "~name=value"
+            if (checkFlatTextAttributes) {
+                // Check for attribute value: #something=phrase or ~something=phrase
+                if (normalizedContent.includes(`=${phrase}`)) {
+                    return true;
+                }
+                // Check for attribute name: #phrase or ~phrase (followed by space or =)
+                if (normalizedContent.includes(`#${phrase} `) ||
+                    normalizedContent.includes(`#${phrase}=`) ||
+                    normalizedContent.includes(`~${phrase} `) ||
+                    normalizedContent.includes(`~${phrase}=`)) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         // For multi-word phrases, check if the phrase appears as consecutive words
