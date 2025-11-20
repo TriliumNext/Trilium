@@ -165,7 +165,18 @@ export function CodeEditor({ parentComponent, ntxId, containerRef: externalConta
     useTriliumEvent("executeWithCodeEditor", async ({ resolve, ntxId: eventNtxId }) => {
         if (eventNtxId !== ntxId) return;
         await initialized.current.promise();
+        if (!codeEditorRef.current) return;
         resolve(codeEditorRef.current!);
+    });
+
+    useTriliumEvent("noteContextRemoved", async ({ ntxIds: eventNtxIds }) => {
+        if (!ntxId || !eventNtxIds.includes(ntxId)) return;
+
+        const cm = codeEditorRef.current;
+        if (cm) {
+            cm.destroy();
+            codeEditorRef.current = null;
+        }
     });
 
     useTriliumEvent("executeWithContentElement", async ({ resolve, ntxId: eventNtxId}) => {

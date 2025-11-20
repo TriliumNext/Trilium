@@ -50,6 +50,15 @@ export default function ReadOnlyText({ note, noteContext, ntxId }: TypeWidgetPro
         resolve($(contentRef.current));
     });
 
+    useTriliumEvent("noteContextRemoved", ({ ntxIds: eventNtxIds }) => {
+        if (!ntxId || !eventNtxIds.includes(ntxId)) return;
+
+        if (contentRef.current) {
+            contentRef.current.innerHTML = "";
+        }
+        contentRef.current = null;
+    });
+
     return (
         <div
             className={`note-detail-readonly-text note-detail-printable ${codeBlockWordWrap ? "word-wrap" : ""}`}

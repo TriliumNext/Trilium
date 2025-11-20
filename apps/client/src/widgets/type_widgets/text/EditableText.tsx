@@ -179,6 +179,16 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         resolve(editor);
     });
 
+    useTriliumEvent("noteContextRemoved", async ({ ntxIds: eventNtxIds }) => {
+        if (!ntxId || !eventNtxIds.includes(ntxId)) return;
+
+        const watchdog = watchdogRef.current;
+        if (!watchdog) return;
+
+        await watchdog.destroy();
+        watchdogRef.current = null;
+    });
+
     async function waitForEditor() {
         await initialized.current;
         const editor = watchdogRef.current?.editor;
