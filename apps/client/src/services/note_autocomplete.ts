@@ -6,6 +6,7 @@ import { t } from "./i18n.js";
 import commandRegistry from "./command_registry.js";
 import type { MentionFeedObjectItem } from "@triliumnext/ckeditor5";
 import { CreateNoteAction } from "@triliumnext/commons"
+import FNote from "../entities/fnote.js";
 
 /**
  * Extends CKEditor's MentionFeedObjectItem with extra fields used by Trilium.
@@ -463,20 +464,49 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
 
     // TODO: Types fail due to "autocomplete:selected" not being registered in type definitions.
     ($el as any).on("autocomplete:selected", async (event: Event, suggestion: Suggestion) => {
-        $el.setSelectedNotePath(suggestion.notePath);
-        $el.setSelectedExternalLink(null);
-        $el.autocomplete("val", suggestion.noteTitle);
+        async function doCommand() {
+            $el.autocomplete("close");
+            $el.trigger("autocomplete:commandselected", [suggestion]);
+        }
+
+        async function doExternalLink() {
+            $el.setSelectedNotePath(null);
+            $el.setSelectedExternalLink(suggestion.externalLink);
+            $el.autocomplete("val", suggestion.externalLink);
+            $el.autocomplete("close");
+            $el.trigger("autocomplete:externallinkselected", [suggestion]);
+        }
+
+        async function resolveSuggestionNotePathUnderCurrentHoist(note: FNote) {
+            const hoisted = appContext.tabManager.getActiveContext()?.hoistedNoteId;
+            suggestion.notePath = note.getBestNotePathString(hoisted);
+        }
+
+        async function doSearchNotes() {
+            const searchString = suggestion.noteTitle;
+            appContext.triggerCommand("searchNotes", { searchString });
+        }
+
+        async function selectNoteFromAutocomplete(suggestion: Suggestion) {
+            $el.setSelectedNotePath(suggestion.notePath);
+            $el.setSelectedExternalLink(null);
+
+            $el.autocomplete("val", suggestion.noteTitle);
+
+            $el.autocomplete("close");
+
+            $el.trigger("autocomplete:noteselected", [suggestion]);
+        }
 
         switch (suggestion.action) {
-            case SuggestionAction.Command: {
-                break;
-            }
+            case SuggestionAction.Command:
+                await doCommand();
+                return;
 
-            case SuggestionAction.ExternalLink: {
+            case SuggestionAction.ExternalLink:
+                await doExternalLink();
                 break;
-            }
 
-            // --- CREATE NOTE INTO INBOX ---
             case SuggestionAction.CreateNote: {
                 const { note } = await noteCreateService.createNote(
                     {
@@ -487,11 +517,10 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                     }
                 );
 
-                if (!note)
-                    break;
+                if (!note) break;
 
-                const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
-                suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
+                await resolveSuggestionNotePathUnderCurrentHoist(note);
+                await selectNoteFromAutocomplete(suggestion);
                 break;
             }
 
@@ -505,15 +534,11 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                     }
                 );
 
-                if (!note)
-                    break;
+                if (!note) break;
 
-                const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
-                suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
-
-                $el.autocomplete("close");
-                $el.trigger("autocomplete:noteselected", [suggestion]);
-                return;
+                await resolveSuggestionNotePathUnderCurrentHoist(note);
+                await selectNoteFromAutocomplete(suggestion);
+                break;
             }
 
             case SuggestionAction.CreateChildNote: {
@@ -521,6 +546,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                     console.warn("Missing parentNoteId for CreateNoteIntoPath");
                     return;
                 }
+
                 const { note } = await noteCreateService.createNote(
                     {
                         target: "into",
@@ -533,8 +559,8 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
 
                 if (!note) break;
 
-                const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
-                suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
+                await resolveSuggestionNotePathUnderCurrentHoist(note);
+                await selectNoteFromAutocomplete(suggestion);
                 break;
             }
 
@@ -543,6 +569,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                     console.warn("Missing parentNoteId for CreateNoteIntoPath");
                     return;
                 }
+
                 const { note } = await noteCreateService.createNote(
                     {
                         target: "into",
@@ -555,26 +582,18 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
 
                 if (!note) break;
 
-                const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
-                suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
-                $el.autocomplete("close");
-                $el.trigger("autocomplete:noteselected", [suggestion]);
-                return;
-            }
-
-            case SuggestionAction.SearchNotes: {
-                const searchString = suggestion.noteTitle;
-                appContext.triggerCommand("searchNotes", { searchString });
+                await resolveSuggestionNotePathUnderCurrentHoist(note);
+                await selectNoteFromAutocomplete(suggestion);
                 break;
             }
 
-            default: {
-            }
+            case SuggestionAction.SearchNotes:
+                await doSearchNotes();
+                break;
+
+            default:
+                await selectNoteFromAutocomplete(suggestion);
         }
-        if (suggestion.notePath) {
-            $el.trigger("autocomplete:noteselected", [suggestion]);
-        }
-        $el.autocomplete("close");
     });
 
     $el.on("autocomplete:closed", () => {
