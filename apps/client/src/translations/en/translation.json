@@ -1904,6 +1904,7 @@
     "insert-external-link": "Insert external link to \"{{term}}\"",
     "clear-text-field": "Clear text field",
     "show-recent-notes": "Show recent notes"
+    "full-text-search": "Full text search"
   },
   "note_tooltip": {
     "note-has-been-deleted": "Note has been deleted.",
