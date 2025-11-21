@@ -41,7 +41,7 @@ export default class BoardApi {
             // Create a new note as a child of the parent note
             const { note: newNote, branch: newBranch } = await note_create.createNote({
                 target: "into",
-                parentNoteUrl: parentNotePath,
+                parentNoteLink: parentNotePath,
                 activate: false,
                 title,
             });
@@ -146,7 +146,7 @@ export default class BoardApi {
         const { note, branch } = await note_create.createNote(
             {
                 target: direction,
-                parentNoteUrl: this.parentNote.noteId,
+                parentNoteLink: this.parentNote.noteId,
                 activate: false,
                 targetBranchId: relativeToBranchId,
                 title: t("board_view.new-item"),

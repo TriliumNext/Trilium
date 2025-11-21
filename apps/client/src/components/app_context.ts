@@ -360,7 +360,7 @@ export type CommandMappings = {
 
     // Table view
     addNewRow: CommandData & {
-        customOpts?: CreateNoteWithUrlOpts;
+        customOpts?: CreateNoteWithLinkOpts;
     };
     addNewTableColumn: CommandData & {
         columnToEdit?: ColumnComponent;
