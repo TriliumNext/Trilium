@@ -15,6 +15,7 @@ import FormTextArea from "../../react/FormTextArea";
 import FNote from "../../../entities/fnote";
 import NoteAutocomplete from "../../react/NoteAutocomplete";
 import toast from "../../../services/toast";
+import { CreateMode } from "../../../services/note_autocomplete";
 
 export interface BoardViewData {
     columns?: BoardColumnData[];
@@ -298,7 +299,7 @@ export function TitleEditor({ currentValue, placeholder, save, dismiss, mode, is
                 noteId={currentValue ?? ""}
                 opts={{
                     hideAllButtons: true,
-                    allowCreatingNotes: true
+                    createMode: CreateMode.CreateAndLink
                 }}
                 onKeyDown={(e) => {
                     if (e.key === "Escape") {
