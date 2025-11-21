@@ -6,7 +6,7 @@ import becca from "../../becca/becca.js";
 import type { Request } from "express";
 import { NotePojo } from "../../becca/becca-interface.js";
 import type BNote from "../../becca/entities/bnote.js";
-import { EditedNotes, EditedNotesResponse } from "@triliumnext/commons";
+import { EditedNotesResponse } from "@triliumnext/commons";
 import dateUtils from "../../services/date_utils.js";
 
 interface NotePath {

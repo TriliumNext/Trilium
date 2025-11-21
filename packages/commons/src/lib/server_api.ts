@@ -164,7 +164,7 @@ export type ToggleInParentResponse = {
 }
 
 export type EditedNotesResponse = {
-    notes: EditedNotes,
+    notes: EditedNote[],
     limit: number
 }
 
@@ -174,8 +174,6 @@ export type EditedNote = {
     title?: string;
     notePath?: string[] | null;
 };
-
-export type EditedNotes = EditedNote[];
 
 export interface MetadataResponse {
     dateCreated: string | undefined;
