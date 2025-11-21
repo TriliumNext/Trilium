@@ -253,43 +253,14 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
             parentNotePath: string | undefined,
             action: CreateNoteAction
         ): Promise<string> => {
-            switch (action) {
-                case CreateNoteAction.CreateNote:
-                case CreateNoteAction.CreateAndLinkNote: {
-                    const { note } = await note_create.createNote(
-                        {
-                            target: "inbox",
-                            title,
-                            activate: false,
-                            promptForType: true,
-                        }
-                    );
-                    return note?.getBestNotePathString() ?? "";
-                }
-
-                case CreateNoteAction.CreateChildNote:
-                case CreateNoteAction.CreateAndLinkChildNote: {
-                    if (!parentNotePath) {
-                        console.warn("Missing parentNotePath in createNoteFromCkEditor()");
-                        return "";
-                    }
-                    const resp = await note_create.createNote(
-                        {
-                            target: "into",
-                            parentNoteUrl: parentNotePath,
-                            title,
-                            activate: false,
-                            promptForType: true,
-                        },
-                    )
-                    return resp?.note?.getBestNotePathString() ?? "";
-                }
-
-                default:
-                    console.warn("Unknown CreateNoteAction:", action);
-                    return "";
+            const { note } = await note_create.createNoteFromAction(
+                action,
+                true,
+                parentNotePath,
+                title,
+            );
+            return note?.getBestNotePathString() ?? "";
         }
-            }
     }), [ notePath ]));
 
     // Keyboard shortcuts

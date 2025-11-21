@@ -349,6 +349,27 @@ function renderSuggestion(suggestion: Suggestion): string {
         : renderNoteSuggestion(suggestion);
 }
 
+function mapSuggestionToCreateNoteAction(
+    action: SuggestionAction
+): CreateNoteAction | null {
+    switch (action) {
+        case SuggestionAction.CreateNote:
+            return CreateNoteAction.CreateNote;
+
+        case SuggestionAction.CreateAndLinkNote:
+            return CreateNoteAction.CreateAndLinkNote;
+
+        case SuggestionAction.CreateChildNote:
+            return CreateNoteAction.CreateChildNote;
+
+        case SuggestionAction.CreateAndLinkChildNote:
+            return CreateNoteAction.CreateAndLinkChildNote;
+
+        default:
+            return null;
+    }
+}
+
 function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
     if ($el.hasClass("note-autocomplete-input")) {
         // clear any event listener added in previous invocation of this function
@@ -507,77 +528,18 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                 await doExternalLink();
                 break;
 
-            case SuggestionAction.CreateNote: {
-                const { note } = await noteCreateService.createNote(
-                    {
-                        target: "inbox",
-                        title: suggestion.noteTitle,
-                        activate: true,
-                        promptForType: true,
-                    }
-                );
-
-                if (!note) break;
-
-                await resolveSuggestionNotePathUnderCurrentHoist(note);
-                await selectNoteFromAutocomplete(suggestion);
-                break;
-            }
-
-            case SuggestionAction.CreateAndLinkNote: {
-                const { note } = await noteCreateService.createNote(
-                    {
-                        target: "inbox",
-                        title: suggestion.noteTitle,
-                        activate: false,
-                        promptForType: true,
-                    }
-                );
-
-                if (!note) break;
-
-                await resolveSuggestionNotePathUnderCurrentHoist(note);
-                await selectNoteFromAutocomplete(suggestion);
-                break;
-            }
-
-            case SuggestionAction.CreateChildNote: {
-                if (!suggestion.parentNoteId) {
-                    console.warn("Missing parentNoteId for CreateNoteIntoPath");
-                    return;
-                }
-
-                const { note } = await noteCreateService.createNote(
-                    {
-                        target: "into",
-                        parentNoteUrl: suggestion.parentNoteId,
-                        title: suggestion.noteTitle,
-                        activate: true,
-                        promptForType: true,
-                    },
-                );
-
-                if (!note) break;
-
-                await resolveSuggestionNotePathUnderCurrentHoist(note);
-                await selectNoteFromAutocomplete(suggestion);
-                break;
-            }
-
+            case SuggestionAction.CreateNote:
+            case SuggestionAction.CreateAndLinkNote:
+            case SuggestionAction.CreateChildNote:
             case SuggestionAction.CreateAndLinkChildNote: {
-                if (!suggestion.parentNoteId) {
-                    console.warn("Missing parentNoteId for CreateNoteIntoPath");
-                    return;
-                }
-
-                const { note } = await noteCreateService.createNote(
-                    {
-                        target: "into",
-                        parentNoteUrl: suggestion.parentNoteId,
-                        title: suggestion.noteTitle,
-                        activate: false,
-                        promptForType: true,
-                    }
+                const createNoteAction = mapSuggestionToCreateNoteAction(
+                    suggestion.action
+                )!;
+                const { note } = await noteCreateService.createNoteFromAction(
+                    createNoteAction,
+                    true,
+                    suggestion.noteTitle,
+                    suggestion.parentNoteId,
                 );
 
                 if (!note) break;
