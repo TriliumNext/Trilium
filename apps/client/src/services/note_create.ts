@@ -37,7 +37,7 @@ import { CreateNoteAction } from "@triliumnext/commons";
  * Hierarchy (general → specific):
  * - CreateNoteOpts
  *   - CreateNoteWithUrlOpts
- *   - CreateNoteIntoInboxOpts
+ *   - CreateNoteIntoDefaultOpts
  */
 
 /** enforces a truth rule:
@@ -97,12 +97,12 @@ export type CreateNoteWithUrlOpts =
           targetBranchId: string;
       });
 
-export type CreateNoteIntoInboxOpts = CreateNoteBase & {
-    target: "inbox";
+export type CreateNoteIntoDefaultOpts = CreateNoteBase & {
+    target: "default";
     parentNoteUrl?: never;
 };
 
-export type CreateNoteOpts = CreateNoteWithUrlOpts | CreateNoteIntoInboxOpts;
+export type CreateNoteOpts = CreateNoteWithUrlOpts | CreateNoteIntoDefaultOpts;
 
 interface Response {
     // TODO: Deduplicate with server once we have client/server architecture.
@@ -134,8 +134,8 @@ async function createNote(
 
 
     switch(resolvedOptions.target) {
-        case "inbox":
-            return createNoteIntoInbox(resolvedOptions);
+        case "default":
+            return createNoteIntoDefaultLocation(resolvedOptions);
         case "into":
         case "before":
         case "after":
@@ -154,7 +154,7 @@ async function createNoteFromAction(
         case CreateNoteAction.CreateNote: {
             const resp = await createNote(
                 {
-                    target: "inbox",
+                    target: "default",
                     title: title,
                     activate: true,
                     promptForType: promptForType,
@@ -165,7 +165,7 @@ async function createNoteFromAction(
         case CreateNoteAction.CreateAndLinkNote: {
             const resp = await createNote(
                 {
-                    target: "inbox",
+                    target: "default",
                     title,
                     activate: false,
                     promptForType: promptForType,
@@ -329,12 +329,12 @@ async function createNoteWithUrl(
 /**
  * Creates a new note inside the user's Inbox.
  *
- * @param {CreateNoteIntoInboxOpts} [options] - Optional settings such as title, type, template, or content.
+ * @param {CreateNoteIntoDefaultOpts} [options] - Optional settings such as title, type, template, or content.
  * @returns {Promise<{ note: FNote | null; branch: FBranch | undefined }>}
  * Resolves with the created note and its branch, or `{ note: null, branch: undefined }` if the inbox is missing.
  */
-async function createNoteIntoInbox(
-    options: CreateNoteIntoInboxOpts
+async function createNoteIntoDefaultLocation(
+    options: CreateNoteIntoDefaultOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
     const inboxNote = await dateNoteService.getInboxNote();
     if (!inboxNote) {
