@@ -256,8 +256,8 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
             const { note } = await note_create.createNoteFromAction(
                 action,
                 true,
-                parentNotePath,
                 title,
+                parentNotePath,
             );
             return note?.getBestNotePathString() ?? "";
         }
