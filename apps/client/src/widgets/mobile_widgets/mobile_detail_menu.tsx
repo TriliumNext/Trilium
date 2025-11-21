@@ -34,7 +34,7 @@ export default function MobileDetailMenu() {
                             if (parentNoteUrl) {
                                 note_create.createNote({
                                     target: "into",
-                                    parentNoteUrl,
+                                    parentNoteLink: parentNoteUrl,
                                 });
                             }
                         } else if (command === "delete") {

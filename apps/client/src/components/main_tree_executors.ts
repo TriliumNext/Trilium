@@ -51,7 +51,7 @@ export default class MainTreeExecutors extends Component {
         await noteCreateService.createNote(
             {
                 target: "into",
-                parentNoteUrl: activeNoteContext.notePath,
+                parentNoteLink: activeNoteContext.notePath,
                 isProtected: activeNoteContext.note.isProtected,
                 saveSelection: false,
                 promptForType: false,
@@ -80,7 +80,7 @@ export default class MainTreeExecutors extends Component {
         await noteCreateService.createNote(
             {
                 target: "after",
-                parentNoteUrl: parentNotePath,
+                parentNoteLink: parentNotePath,
                 targetBranchId: node.data.branchId,
                 isProtected: isProtected,
                 saveSelection: false
