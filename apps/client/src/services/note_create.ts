@@ -176,7 +176,7 @@ async function createNoteFromAction(
         }
         case CreateNoteAction.CreateChildNote: {
             if (!parentNoteLink) {
-                console.warn("Missing parentNotePath in createNoteFromCkEditor()");
+                console.warn("Missing parentNoteLink in createNoteFromCkEditor()");
                 return { note: null, branch: undefined };
             }
 
@@ -193,7 +193,7 @@ async function createNoteFromAction(
         }
         case CreateNoteAction.CreateAndLinkChildNote: {
             if (!parentNoteLink) {
-                console.warn("Missing parentNotePath in createNoteFromCkEditor()");
+                console.warn("Missing parentNoteLink in createNoteFromCkEditor()");
                 return { note: null, branch: undefined };
             }
             const resp = await createNote(
