@@ -22,6 +22,10 @@ export default function EditedNotes({ noteId, dateFilter } : EditedNotesProps) {
                 const noteIds = filteredNotes.flatMap((n) => n.noteId);
                 await froca.getNotes(noteIds, true); // preload all at once
                 setEditedNotes(filteredNotes);
+            })
+            .catch(err => {
+                console.error("Failed to fetch edited notes:", err);
+                setEditedNotes([]);
             });
     }, [noteId, dateFilter]);
 
