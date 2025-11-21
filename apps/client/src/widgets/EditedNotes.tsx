@@ -1,5 +1,5 @@
 import { useEffect, useState } from "preact/hooks";
-import { EditedNotesResponse, EditedNotes as EditedNotesList } from "@triliumnext/commons";
+import { EditedNotesResponse, EditedNote } from "@triliumnext/commons";
 import server from "../services/server";
 import { t } from "../services/i18n";
 import froca from "../services/froca";
@@ -12,7 +12,7 @@ interface EditedNotesProps {
 }
 
 export default function EditedNotes({ noteId, dateFilter } : EditedNotesProps) {
-   const [ editedNotes, setEditedNotes ] = useState<EditedNotesList>();
+   const [ editedNotes, setEditedNotes ] = useState<EditedNote[]>();
 
     useEffect(() => {
         if (!noteId || !dateFilter) return;
