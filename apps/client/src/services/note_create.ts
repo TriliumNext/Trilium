@@ -11,6 +11,7 @@ import type FBranch from "../entities/fbranch.js";
 import type { ChooseNoteTypeResponse } from "../widgets/dialogs/note_type_chooser.js";
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import dateNoteService from "../services/date_notes.js";
+import { CreateNoteAction } from "@triliumnext/commons";
 
 /**
  * Defines the type hierarchy and rules for valid argument combinations
@@ -114,6 +115,7 @@ interface DuplicateResponse {
     note: FNote;
 }
 
+// The low level note creation
 async function createNote(
   options: CreateNoteOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
@@ -138,6 +140,76 @@ async function createNote(
         case "before":
         case "after":
             return createNoteWithUrl(resolvedOptions);
+    }
+}
+
+// A wrapper to standardize note creation
+async function createNoteFromAction(
+    action: CreateNoteAction,
+    promptForType: boolean,
+    title: string | undefined,
+    parentNoteUrl: string | undefined,
+): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
+    switch (action) {
+        case CreateNoteAction.CreateNote: {
+            const resp = await createNote(
+                {
+                    target: "inbox",
+                    title: title,
+                    activate: true,
+                    promptForType: promptForType,
+                }
+            );
+            return resp;
+        }
+        case CreateNoteAction.CreateAndLinkNote: {
+            const resp = await createNote(
+                {
+                    target: "inbox",
+                    title,
+                    activate: false,
+                    promptForType: promptForType,
+                }
+            );
+            return resp;
+        }
+        case CreateNoteAction.CreateChildNote: {
+            if (!parentNoteUrl) {
+                console.warn("Missing parentNotePath in createNoteFromCkEditor()");
+                return { note: null, branch: undefined };
+            }
+
+            const resp = await createNote(
+                {
+                    target: "into",
+                    parentNoteUrl,
+                    title,
+                    activate: true,
+                    promptForType: true,
+                },
+            );
+            return resp
+        }
+        case CreateNoteAction.CreateAndLinkChildNote: {
+            if (!parentNoteUrl) {
+                console.warn("Missing parentNotePath in createNoteFromCkEditor()");
+                return { note: null, branch: undefined };
+            }
+            const resp = await createNote(
+                {
+                    target: "into",
+                    parentNoteUrl: parentNoteUrl,
+                    title,
+                    activate: false,
+                    promptForType: promptForType,
+                },
+            )
+            return resp;
+        }
+
+        default:
+            console.warn("Unknown CreateNoteAction:", action);
+            return { note: null, branch: undefined };
     }
 }
 
@@ -326,5 +398,6 @@ async function duplicateSubtree(noteId: string, parentNotePath: string) {
 
 export default {
     createNote,
+    createNoteFromAction,
     duplicateSubtree,
 };
