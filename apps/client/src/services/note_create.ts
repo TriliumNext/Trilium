@@ -353,7 +353,7 @@ async function createNoteIntoDefaultLocation(
         {
             ...options,
             target: "into",
-            parentNoteLink: inboxNote.noteId,
+            parentNoteLink: inboxNote.getBestNotePathString(),
         }
     );
 
