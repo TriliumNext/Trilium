@@ -1903,7 +1903,7 @@
     "create-and-link-note": "Create and link note \"{{term}}\"",
     "insert-external-link": "Insert external link to \"{{term}}\"",
     "clear-text-field": "Clear text field",
-    "show-recent-notes": "Show recent notes"
+    "show-recent-notes": "Show recent notes",
     "full-text-search": "Full text search"
   },
   "note_tooltip": {
