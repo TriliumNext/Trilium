@@ -157,7 +157,7 @@ content = content.replaceAll(headingRe, (...match) => {
                     <%
                     content = content
                         .replace(/<img /g, `<img alt="${t("share_theme.image_alt")}" loading="lazy" `)
-                        .replace(/src="(api\/[^"]+)"/g, (m, url) => `src="${url}${addContentAccessQuery(url.includes('?'))}"`);
+                        .replace(/src="(api\/[^"]+)"/g, (m, url) => `src="../${url}${addContentAccessQuery(url.includes('?'))}"`);
                     %>
                     <%- content %>
                 <% } %>

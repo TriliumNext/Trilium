@@ -20,6 +20,7 @@ const isCredentials = (attr: SAttribute) => attr.type === "label" && attr.name =
 
 class SNote extends AbstractShacaEntity {
     noteId: string;
+    parentId?: string | undefined;
     title: string;
     type: string;
     mime: string;
@@ -40,6 +41,7 @@ class SNote extends AbstractShacaEntity {
         super();
 
         this.noteId = noteId;
+        this.parentId = undefined;
         this.title = isProtected ? "[protected]" : title;
         this.type = type;
         this.mime = mime;
@@ -68,6 +70,10 @@ class SNote extends AbstractShacaEntity {
         if (this.contentAccessor) {
             this.contentAccessor.update()
         }
+    }
+
+    getParentId() {
+        return this.parentId;
     }
 
     getParentBranches() {
