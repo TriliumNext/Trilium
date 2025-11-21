@@ -158,7 +158,7 @@ async function createNoteFromAction(
                     target: "default",
                     title: title,
                     activate: true,
-                    promptForType: promptForType,
+                    promptForType,
                 }
             );
             return resp;
@@ -169,7 +169,7 @@ async function createNoteFromAction(
                     target: "default",
                     title,
                     activate: false,
-                    promptForType: promptForType,
+                    promptForType,
                 }
             );
             return resp;
@@ -186,7 +186,7 @@ async function createNoteFromAction(
                     parentNoteLink,
                     title,
                     activate: true,
-                    promptForType: true,
+                    promptForType,
                 },
             );
             return resp
@@ -202,7 +202,7 @@ async function createNoteFromAction(
                     parentNoteLink: parentNoteLink,
                     title,
                     activate: false,
-                    promptForType: promptForType,
+                    promptForType,
                 },
             )
             return resp;
