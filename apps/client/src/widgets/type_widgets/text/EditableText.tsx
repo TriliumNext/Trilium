@@ -155,7 +155,9 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             // without await as this otherwise causes deadlock through component mutex
             const parentNotePath = appContext.tabManager.getActiveContextNotePath();
             if (noteContext && parentNotePath) {
-                note_create.createNote(parentNotePath, {
+                note_create.createNote({
+                    parentNoteLink: parentNotePath,
+                    target: "into",
                     isProtected: note.isProtected,
                     saveSelection: true,
                     textEditor: await noteContext?.getTextEditor()
