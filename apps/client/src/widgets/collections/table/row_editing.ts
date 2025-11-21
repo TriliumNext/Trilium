@@ -21,9 +21,9 @@ export default function useRowTableEditing(api: RefObject<Tabulator>, attributeD
                 };
             }
 
-            const noteUrl = customOpts.parentNoteUrl ?? parentNotePath;
+            const noteUrl = customOpts.parentNoteLink ?? parentNotePath;
             if (noteUrl) {
-                customOpts.parentNoteUrl = noteUrl;
+                customOpts.parentNoteLink = noteUrl;
                 customOpts.activate = false;
                 note_create.createNote(customOpts).then(({ branch }) => {
                     if (branch) {

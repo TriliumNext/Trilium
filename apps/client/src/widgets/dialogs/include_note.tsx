@@ -70,8 +70,8 @@ export default function IncludeNoteDialog() {
     )
 }
 
-async function includeNote(notePath: string, editorApi: CKEditorApi, boxSize: BoxSize) {
-    const noteId = tree.getNoteIdFromUrl(notePath);
+async function includeNote(notePath: string, textTypeWidget: EditableTextTypeWidget, boxSize: BoxSize) {
+    const noteId = tree.getNoteIdFromLink(notePath);
     if (!noteId) {
         return;
     }

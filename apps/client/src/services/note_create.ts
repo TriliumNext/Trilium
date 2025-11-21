@@ -84,25 +84,26 @@ type CreateNoteBase = {
  * Serves as a base for "into", "before", and "after" variants,
  * sharing common URL-related fields.
  */
-export type CreateNoteWithUrlOpts =
+export type CreateNoteWithLinkOpts =
     | (CreateNoteBase & {
           target: "into";
-          parentNoteUrl?: string;
+          parentNoteLink?: string;
           // No branch ID needed for "into"
       })
     | (CreateNoteBase & {
           target: "before" | "after";
-          parentNoteUrl?: string;
+          // Either an Url or a Path
+          parentNoteLink?: string;
           // Required for "before"/"after"
           targetBranchId: string;
       });
 
 export type CreateNoteIntoDefaultOpts = CreateNoteBase & {
     target: "default";
-    parentNoteUrl?: never;
+    parentNoteLink?: never;
 };
 
-export type CreateNoteOpts = CreateNoteWithUrlOpts | CreateNoteIntoDefaultOpts;
+export type CreateNoteOpts = CreateNoteWithLinkOpts | CreateNoteIntoDefaultOpts;
 
 interface Response {
     // TODO: Deduplicate with server once we have client/server architecture.
@@ -139,7 +140,7 @@ async function createNote(
         case "into":
         case "before":
         case "after":
-            return createNoteWithUrl(resolvedOptions);
+            return createNoteWithLink(resolvedOptions);
     }
 }
 
@@ -148,7 +149,7 @@ async function createNoteFromAction(
     action: CreateNoteAction,
     promptForType: boolean,
     title: string | undefined,
-    parentNoteUrl: string | undefined,
+    parentNoteLink: string | undefined,
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
     switch (action) {
         case CreateNoteAction.CreateNote: {
@@ -174,7 +175,7 @@ async function createNoteFromAction(
             return resp;
         }
         case CreateNoteAction.CreateChildNote: {
-            if (!parentNoteUrl) {
+            if (!parentNoteLink) {
                 console.warn("Missing parentNotePath in createNoteFromCkEditor()");
                 return { note: null, branch: undefined };
             }
@@ -182,7 +183,7 @@ async function createNoteFromAction(
             const resp = await createNote(
                 {
                     target: "into",
-                    parentNoteUrl,
+                    parentNoteLink,
                     title,
                     activate: true,
                     promptForType: true,
@@ -191,14 +192,14 @@ async function createNoteFromAction(
             return resp
         }
         case CreateNoteAction.CreateAndLinkChildNote: {
-            if (!parentNoteUrl) {
+            if (!parentNoteLink) {
                 console.warn("Missing parentNotePath in createNoteFromCkEditor()");
                 return { note: null, branch: undefined };
             }
             const resp = await createNote(
                 {
                     target: "into",
-                    parentNoteUrl: parentNoteUrl,
+                    parentNoteLink: parentNoteLink,
                     title,
                     activate: false,
                     promptForType: promptForType,
@@ -233,7 +234,7 @@ async function promptForType(
         resolvedOptions = {
             ...resolvedOptions,
             target: "into",
-            parentNoteUrl: notePath,
+            parentNoteLink: notePath,
         };
     }
 
@@ -247,8 +248,8 @@ async function promptForType(
  * @param options - Note creation options
  * @returns A promise resolving with the created note and its branch.
  */
-async function createNoteWithUrl(
-    options: CreateNoteWithUrlOpts
+async function createNoteWithLink(
+    options: CreateNoteWithLinkOpts
 ): Promise<{ note: FNote | null; branch: FBranch | undefined }> {
     options = Object.assign(
         {
@@ -273,8 +274,8 @@ async function createNoteWithUrl(
         [options.title, options.content] = parseSelectedHtml(options.textEditor.getSelectedHtml());
     }
 
-    const parentNoteUrl = options.parentNoteUrl;
-    const parentNoteId = treeService.getNoteIdFromUrl(parentNoteUrl);
+    const parentNoteLink = options.parentNoteLink;
+    const parentNoteId = treeService.getNoteIdFromLink(parentNoteLink);
 
     if (options.type === "mermaid" && !options.content && !options.templateNoteId) {
         options.content = `graph TD;
@@ -348,11 +349,11 @@ async function createNoteIntoDefaultLocation(
             inboxNote.isProtected && protectedSessionHolder.isProtectedSessionAvailable();
     }
 
-    const result = await createNoteWithUrl(
+    const result = await createNoteWithLink(
         {
             ...options,
             target: "into",
-            parentNoteUrl: inboxNote.noteId,
+            parentNoteLink: inboxNote.noteId,
         }
     );
 
@@ -385,7 +386,7 @@ function parseSelectedHtml(selectedHtml: string) {
 }
 
 async function duplicateSubtree(noteId: string, parentNotePath: string) {
-    const parentNoteId = treeService.getNoteIdFromUrl(parentNotePath);
+    const parentNoteId = treeService.getNoteIdFromLink(parentNotePath);
     const { note } = await server.post<DuplicateResponse>(`notes/${noteId}/duplicate/${parentNoteId}`);
 
     await ws.waitForMaxKnownEntityChangeId();

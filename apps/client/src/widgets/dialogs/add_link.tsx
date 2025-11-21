@@ -58,7 +58,7 @@ export default function AddLinkDialog() {
         }
 
         if (suggestion.notePath) {
-            const noteId = tree.getNoteIdFromUrl(suggestion.notePath);
+            const noteId = tree.getNoteIdFromLink(suggestion.notePath);
             if (noteId) {
                 setDefaultLinkTitle(noteId);
             }

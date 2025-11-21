@@ -227,7 +227,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 noteCreateService.createNote(
                     {
                         target: "into",
-                        parentNoteUrl: parentNotePath,
+                        parentNoteLink: parentNotePath,
                         isProtected: node.data.isProtected
                     },
                 );
@@ -1409,10 +1409,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
         let node: Fancytree.FancytreeNode | null | undefined = await this.expandToNote(activeNotePath, false);
 
-        if (node && node.data.noteId !== treeService.getNoteIdFromUrl(activeNotePath)) {
+        if (node && node.data.noteId !== treeService.getNoteIdFromLink(activeNotePath)) {
             // if the active note has been moved elsewhere then it won't be found by the path,
             // so we switch to the alternative of trying to find it by noteId
-            const noteId = treeService.getNoteIdFromUrl(activeNotePath);
+            const noteId = treeService.getNoteIdFromLink(activeNotePath);
 
             if (noteId) {
                 const notesById = this.getNodesByNoteId(noteId);
@@ -1845,7 +1845,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     noteCreateService.createNote(
                         {
                             target: "into",
-                            parentNoteUrl: notePath,
+                            parentNoteLink: notePath,
                             isProtected: node.data.isProtected
                         }
                     )
