@@ -86,7 +86,7 @@ export default function SearchDefinitionTab({ note, ntxId, hidden, noteContext }
 
         await refreshResults();
 
-        if (noteContext?.viewScope?.viewMode === "default") {
+        if (noteContext?.viewScope?.viewMode === "default" && note.children.length > 0) {
           parentComponent?.triggerCommand("toggleRibbonTabBookProperties", {});
         }
       }
