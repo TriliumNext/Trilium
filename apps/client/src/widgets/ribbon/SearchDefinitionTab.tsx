@@ -26,7 +26,7 @@ import ResponsiveContainer from "../react/ResponsiveContainer";
 import { TabContext } from "./ribbon-interface";
 import { SEARCH_OPTIONS, SearchOption } from "./SearchDefinitionOptions";
 
-export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabContext, "note" | "ntxId" | "hidden">) {
+export default function SearchDefinitionTab({ note, ntxId, hidden, noteContext }: Pick<TabContext, "note" | "ntxId" | "hidden" | "noteContext">) {
     const parentComponent = useContext(ParentComponent);
     const [ searchOptions, setSearchOptions ] = useState<{ availableOptions: SearchOption[], activeOptions: SearchOption[] }>();
     const [ error, setError ] = useState<{ message: string }>();
@@ -98,7 +98,9 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabCon
 
                 await refreshResults();
 
-                parentComponent?.triggerCommand("toggleRibbonTabBookProperties", {});
+                if (noteContext?.viewScope?.viewMode === "default") {
+                    parentComponent?.triggerCommand("toggleRibbonTabBookProperties", {});
+                }
             }
         }
         autoExecute();
