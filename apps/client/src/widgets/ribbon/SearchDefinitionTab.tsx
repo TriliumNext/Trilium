@@ -6,7 +6,7 @@ import attributes from "../../services/attributes";
 import FNote from "../../entities/fnote";
 import toast from "../../services/toast";
 import froca from "../../services/froca";
-import { useContext, useEffect, useMemo, useState } from "preact/hooks";
+import { useContext, useEffect, useState } from "preact/hooks";
 import { ParentComponent } from "../react/react_utils";
 import { useTriliumEvent } from "../react/hooks";
 import appContext from "../../components/app_context";
@@ -75,7 +75,7 @@ export default function SearchDefinitionTab({ note, ntxId, hidden, noteContext }
 
   useEffect(() => {
     async function autoExecute() {
-      if (!note || note?.type !== "search" || !note?.hasLabel("autoExecuteSearch")) {
+      if (!note || note.type !== "search" || !note.hasLabel("autoExecuteSearch")) {
         executionState.save("");
         return;
       }
@@ -182,10 +182,10 @@ export default function SearchDefinitionTab({ note, ntxId, hidden, noteContext }
 }
 
 const executionState = function() {
-  let LAST_AUTO_EXECUTED_SEARCH_NOTE_ID = "";
+  let lastAutoExecutedSearchNoteId = "";
   return {
-    load: () => LAST_AUTO_EXECUTED_SEARCH_NOTE_ID,
-    save: (noteId: string) => LAST_AUTO_EXECUTED_SEARCH_NOTE_ID = noteId,
+    load: () => lastAutoExecutedSearchNoteId,
+    save: (noteId: string) => lastAutoExecutedSearchNoteId = noteId,
   };
 }();
 
