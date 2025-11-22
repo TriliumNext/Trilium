@@ -73,6 +73,17 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: TabContext)
     }
   });
 
+  useEffect(() => {
+    async function autoExecute() {
+      if (!hidden && note?.hasLabel("autoExecuteSearch")) {
+        await refreshResults();
+        parentComponent?.triggerCommand("toggleRibbonTabBookProperties", {});
+      }
+    }
+
+    autoExecute();
+  }, [note?.noteId, hidden]);
+
   return (
     <div className="search-definition-widget">
       <div className="search-settings">
