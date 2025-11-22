@@ -9,9 +9,10 @@ import { joinElements } from "./react/react_utils";
 interface EditedNotesProps {
     noteId?: string,
     dateFilter: string,
+    showNotePath?: boolean,
 }
 
-export default function EditedNotes({ noteId, dateFilter } : EditedNotesProps) {
+export default function EditedNotes({ noteId, dateFilter, showNotePath = true } : EditedNotesProps) {
    const [ editedNotes, setEditedNotes ] = useState<EditedNote[]>();
 
     useEffect(() => {
@@ -40,7 +41,7 @@ export default function EditedNotes({ noteId, dateFilter } : EditedNotesProps) {
                                     <i>{`${editedNote.title} ${t("edited_notes.deleted")}`}</i>
                                 ) : (
                                     <>
-                                        {editedNote.notePath ? <NoteLink notePath={editedNote.notePath} showNotePath /> : <span>{editedNote.title}</span>}
+                                        {editedNote.notePath ? <NoteLink notePath={editedNote.notePath} showNotePath={showNotePath} /> : <span>{editedNote.title}</span>}
                                     </>
                                 )}
                             </span>
