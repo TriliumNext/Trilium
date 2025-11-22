@@ -1076,8 +1076,7 @@
     "outside_hoisted": "Este caminho está fora de uma nota fixada e você teria que desafixar."
   },
   "note_properties": {
-    "this_note_was_originally_taken_from": "Esta nota foi originalmente obtida de:",
-    "info": "Informações"
+    "this_note_was_originally_taken_from": "Esta nota foi originalmente obtida de:"
   },
   "promoted_attributes": {
     "promoted_attributes": "Atributos Promovidos",
