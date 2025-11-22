@@ -6,7 +6,7 @@ import attributes from "../../services/attributes";
 import FNote from "../../entities/fnote";
 import toast from "../../services/toast";
 import froca from "../../services/froca";
-import { useContext, useEffect, useState } from "preact/hooks";
+import { useContext, useEffect, useRef, useState } from "preact/hooks";
 import { ParentComponent } from "../react/react_utils";
 import { useTriliumEvent } from "../react/hooks";
 import appContext from "../../components/app_context";
@@ -26,6 +26,7 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: TabContext)
   const parentComponent = useContext(ParentComponent);
   const [ searchOptions, setSearchOptions ] = useState<{ availableOptions: SearchOption[], activeOptions: SearchOption[] }>();
   const [ error, setError ] = useState<{ message: string }>();
+  const autoExecutedRef = useRef<string | null>(null);
 
   function refreshOptions() {
     if (!note) return;
@@ -75,14 +76,18 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: TabContext)
 
   useEffect(() => {
     async function autoExecute() {
-      if (!hidden && note?.hasLabel("autoExecuteSearch")) {
+      console.log('Effect running, noteId:', note?.noteId, 'ref:', autoExecutedRef.current);
+      if (autoExecutedRef.current !== note?.noteId && note?.hasLabel("autoExecuteSearch")) {
+        console.log('Setting ref to:', note.noteId);
+        autoExecutedRef.current = note.noteId;
+        console.log('Ref after setting:', autoExecutedRef.current);
         await refreshResults();
         parentComponent?.triggerCommand("toggleRibbonTabBookProperties", {});
       }
     }
 
     autoExecute();
-  }, [note?.noteId, hidden]);
+  }, [note?.noteId]);
 
   return (
     <div className="search-definition-widget">
