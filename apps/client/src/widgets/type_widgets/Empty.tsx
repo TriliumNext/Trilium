@@ -4,7 +4,7 @@ import FormGroup from "../react/FormGroup";
 import NoteAutocomplete from "../react/NoteAutocomplete";
 import "./Empty.css";
 import { ParentComponent, refToJQuerySelector } from "../react/react_utils";
-import note_autocomplete, { CreateMode } from "../../services/note_autocomplete";
+import note_autocomplete, { SuggestionMode } from "../../services/note_autocomplete";
 import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
 import search from "../../services/search";
@@ -38,7 +38,7 @@ function NoteSearch() {
                     inputRef={autocompleteRef}
                     opts={{
                         hideGoToSelectedNoteButton: true,
-                        createMode: CreateMode.CreateOnly,
+                        suggestionMode: SuggestionMode.SuggestCreateOnly,
                         allowJumpToSearchNotes: true,
                     }}
                     onChange={suggestion => {

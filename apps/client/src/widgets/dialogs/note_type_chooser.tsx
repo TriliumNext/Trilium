@@ -7,7 +7,7 @@ import { useEffect, useState } from "preact/hooks";
 import note_types from "../../services/note_types";
 import { MenuCommandItem, MenuItem } from "../../menus/context_menu";
 import { TreeCommandNames } from "../../menus/tree_context_menu";
-import { CreateMode, Suggestion } from "../../services/note_autocomplete.js";
+import { SuggestionMode, Suggestion } from "../../services/note_autocomplete.js";
 import Badge from "../react/Badge";
 import { useTriliumEvent } from "../react/hooks";
 
@@ -86,7 +86,7 @@ export default function NoteTypeChooserDialogComponent() {
                     onChange={setParentNote}
                     placeholder={t("note_type_chooser.search_placeholder")}
                     opts={{
-                        createMode: CreateMode.None,
+                        suggestionMode: SuggestionMode.SuggestNothing,
                         hideGoToSelectedNoteButton: true,
                         allowJumpToSearchNotes: false,
                     }}
