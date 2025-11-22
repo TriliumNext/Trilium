@@ -75,7 +75,7 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: TabContext)
 
   useEffect(() => {
     async function autoExecute() {
-      if (!note?.hasLabel('autoExecuteSearch')) {
+      if (note?.type !== 'search' || !note?.hasLabel('autoExecuteSearch')) {
         return;
       }
 
