@@ -1,7 +1,7 @@
 import "./SearchDefinitionTab.css";
 
 import { SaveSearchNoteResponse } from "@triliumnext/commons";
-import { useContext, useEffect, useRef, useState } from "preact/hooks";
+import { useContext, useEffect, useMemo, useState } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
 
 import appContext from "../../components/app_context";
@@ -77,23 +77,28 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabCon
         }
     });
 
+    const executionState = useMemo(() => {
+        const AUTO_EXEC_KEY = "lastAutoExecutedSearchNote";
+        return {
+            load: () => sessionStorage.getItem(AUTO_EXEC_KEY),
+            save: (noteId: string) => sessionStorage.setItem(AUTO_EXEC_KEY, noteId),
+        };
+    }, []);
+
     useEffect(() => {
         async function autoExecute() {
-            if (note?.type !== 'search' || !note?.hasLabel('autoExecuteSearch')) {
+            if (!note || note?.type !== "search" || !note?.hasLabel("autoExecuteSearch")) {
+                executionState.save("");
                 return;
             }
 
-            console.log('Executing search');
+            const lastExecutedNoteId = executionState.load();
+            if (lastExecutedNoteId !== note.noteId) {
+                executionState.save(note.noteId);
 
-            // Only execute if no results exist yet
-            await refreshResults();
+                await refreshResults();
 
-            console.log('Executed search');
-
-            const hasResults = note.children && note.children.length > 0;
-
-            if (hasResults) {
-                parentComponent?.triggerCommand('toggleRibbonTabBookProperties', { ntxId });
+                parentComponent?.triggerCommand("toggleRibbonTabBookProperties", {});
             }
         }
         autoExecute();
