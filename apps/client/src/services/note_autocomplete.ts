@@ -57,10 +57,10 @@ export enum SuggestionAction {
     Command = "command",
 }
 
-export enum CreateMode {
-    None = "none",
-    CreateOnly = "create-only",
-    CreateAndLink = "create-and-link"
+export enum SuggestionMode {
+    SuggestNothing = "nothing",
+    SuggestCreateOnly = "create-only",
+    SuggestCreateAndLink = "create-and-link"
 }
 
 // NOTE: Previously marked for deduplication with a server-side type,
@@ -86,7 +86,7 @@ export interface Suggestion {
 export interface Options {
     container?: HTMLElement | null;
     fastSearch?: boolean;
-    createMode?: CreateMode;
+    suggestionMode?: SuggestionMode;
     allowJumpToSearchNotes?: boolean;
     allowExternalLinks?: boolean;
     /** If set, hides the right-side button corresponding to go to selected note. */
@@ -99,7 +99,7 @@ export interface Options {
 
 async function autocompleteSourceForCKEditor(
     queryText: string,
-    createMode: CreateMode
+    suggestionMode: SuggestionMode
 ): Promise<MentionFeedObjectItem[]> {
     // Wrap the callback-based autocompleteSource in a Promise for async/await
     const rows = await new Promise<Suggestion[]>((resolve) => {
@@ -107,7 +107,7 @@ async function autocompleteSourceForCKEditor(
             queryText,
             (suggestions) => resolve(suggestions),
             {
-                createMode,
+                suggestionMode,
             }
         );
     });
@@ -179,8 +179,8 @@ async function autocompleteSource(
 
     // --- Create Note suggestions ---
     if (trimmedTerm.length >= 1) {
-        switch (options.createMode) {
-            case CreateMode.CreateOnly: {
+        switch (options.suggestionMode) {
+            case SuggestionMode.SuggestCreateOnly: {
                 results = [
                     {
                         action: SuggestionAction.CreateNote,
@@ -199,7 +199,7 @@ async function autocompleteSource(
                 break;
             }
 
-            case CreateMode.CreateAndLink: {
+            case SuggestionMode.SuggestCreateAndLink: {
                 results = [
                     {
                         action: SuggestionAction.CreateAndLinkNote,
