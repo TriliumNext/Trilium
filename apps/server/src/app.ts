@@ -60,6 +60,9 @@ export default async function buildApp() {
         helmet({
             hidePoweredBy: false, // errors out in electron
             contentSecurityPolicy: false,
+            crossOriginResourcePolicy: {
+                policy: config["Network"]["corsResourcePolicy"] || 'same-origin'
+            },
             crossOriginEmbedderPolicy: false
         })
     );

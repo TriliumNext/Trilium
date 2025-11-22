@@ -97,6 +97,8 @@ export interface TriliumConfig {
         corsAllowMethods: string;
         /** CORS allowed headers (comma-separated header names) */
         corsAllowHeaders: string;
+        /** CORS Resource Policy ('same-origin', 'same-site', 'cross-origin') */
+        corsResourcePolicy: 'same-origin' | 'same-site' | 'cross-origin' | undefined;
     };
     /** Session management configuration */
     Session: {
@@ -362,6 +364,12 @@ const configMapping = {
             aliasEnvVars: ['TRILIUM_NETWORK_CORS_ALLOW_HEADERS'],
             iniGetter: () => getIniSection("Network")?.corsAllowHeaders,
             defaultValue: ''
+        },
+        corsResourcePolicy: {
+            standardEnvVar: 'TRILIUM_NETWORK_CORSRESOURCEPOLICY',
+            aliasEnvVars: ['TRILIUM_NETWORK_CORS_RESOURCE_POLICY'],
+            iniGetter: () => getIniSection("Network")?.corsResourcePolicy,
+            defaultValue: 'same-origin'
         }
     },
     Session: {
@@ -482,7 +490,8 @@ const config: TriliumConfig = {
         trustedReverseProxy: getConfigValue(configMapping.Network.trustedReverseProxy),
         corsAllowOrigin: getConfigValue(configMapping.Network.corsAllowOrigin),
         corsAllowMethods: getConfigValue(configMapping.Network.corsAllowMethods),
-        corsAllowHeaders: getConfigValue(configMapping.Network.corsAllowHeaders)
+        corsAllowHeaders: getConfigValue(configMapping.Network.corsAllowHeaders),
+        corsResourcePolicy: getConfigValue(configMapping.Network.corsResourcePolicy)
     },
     Session: {
         cookieMaxAge: getConfigValue(configMapping.Session.cookieMaxAge)
@@ -539,6 +548,7 @@ const config: TriliumConfig = {
  * - TRILIUM_NETWORK_CORSALLOWORIGIN      : CORS allowed origins
  * - TRILIUM_NETWORK_CORSALLOWMETHODS     : CORS allowed HTTP methods
  * - TRILIUM_NETWORK_CORSALLOWHEADERS     : CORS allowed headers
+ * - TRILIUM_NETWORK_CORSRESOURCEPOLICY   : CORS Resource Policy
  * 
  * Session Section:
  * - TRILIUM_SESSION_COOKIEMAXAGE         : Cookie lifetime in seconds
@@ -566,6 +576,7 @@ const config: TriliumConfig = {
  * - TRILIUM_NETWORK_CORS_ALLOW_ORIGIN    : Same as TRILIUM_NETWORK_CORSALLOWORIGIN
  * - TRILIUM_NETWORK_CORS_ALLOW_METHODS   : Same as TRILIUM_NETWORK_CORSALLOWMETHODS
  * - TRILIUM_NETWORK_CORS_ALLOW_HEADERS   : Same as TRILIUM_NETWORK_CORSALLOWHEADERS
+ * - TRILIUM_NETWORK_CORS_RESOURCE_POLICY : Same as TRILIUM_NETWORK_CORSRESOURCEPOLICY
  * 
  * Sync (with SERVER prefix):
  * - TRILIUM_SYNC_SERVER_HOST             : Same as TRILIUM_SYNC_SYNCSERVERHOST
