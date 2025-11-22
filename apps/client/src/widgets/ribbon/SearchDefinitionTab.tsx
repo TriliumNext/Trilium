@@ -22,7 +22,7 @@ import RenameNoteBulkAction from "../bulk_actions/note/rename_note";
 import { getErrorMessage } from "../../services/utils";
 import "./SearchDefinitionTab.css";
 
-export default function SearchDefinitionTab({ note, ntxId, hidden }: TabContext) {
+export default function SearchDefinitionTab({ note, ntxId, hidden, noteContext }: TabContext) {
   const parentComponent = useContext(ParentComponent);
   const [ searchOptions, setSearchOptions ] = useState<{ availableOptions: SearchOption[], activeOptions: SearchOption[] }>();
   const [ error, setError ] = useState<{ message: string }>();
@@ -94,7 +94,9 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: TabContext)
 
         await refreshResults();
 
-        parentComponent?.triggerCommand("toggleRibbonTabBookProperties", {});
+        if (noteContext?.viewScope?.viewMode === "default") {
+          parentComponent?.triggerCommand("toggleRibbonTabBookProperties", {});
+        }
       }
     }
     autoExecute();
