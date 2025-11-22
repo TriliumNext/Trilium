@@ -73,14 +73,6 @@ export default function SearchDefinitionTab({ note, ntxId, hidden, noteContext }
     }
   });
 
-  const executionState = useMemo(() => {
-    const AUTO_EXEC_KEY = "lastAutoExecutedSearchNote";
-    return {
-      load: () => sessionStorage.getItem(AUTO_EXEC_KEY),
-      save: (noteId: string) => sessionStorage.setItem(AUTO_EXEC_KEY, noteId),
-    };
-  }, []);
-
   useEffect(() => {
     async function autoExecute() {
       if (!note || note?.type !== "search" || !note?.hasLabel("autoExecuteSearch")) {
@@ -188,6 +180,14 @@ export default function SearchDefinitionTab({ note, ntxId, hidden, noteContext }
     </div>
   )
 }
+
+const executionState = function() {
+  let LAST_AUTO_EXECUTED_SEARCH_NOTE_ID = "";
+  return {
+    load: () => LAST_AUTO_EXECUTED_SEARCH_NOTE_ID,
+    save: (noteId: string) => LAST_AUTO_EXECUTED_SEARCH_NOTE_ID = noteId,
+  };
+}();
 
 function BulkActionsList({ note }: { note: FNote }) {
   const [ bulkActions, setBulkActions ] = useState<RenameNoteBulkAction[]>();
