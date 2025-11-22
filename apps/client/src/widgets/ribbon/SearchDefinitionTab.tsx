@@ -30,7 +30,6 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabCon
     const parentComponent = useContext(ParentComponent);
     const [ searchOptions, setSearchOptions ] = useState<{ availableOptions: SearchOption[], activeOptions: SearchOption[] }>();
     const [ error, setError ] = useState<{ message: string }>();
-    const autoExecutedRef = useRef<string | null>(null);
 
     function refreshOptions() {
         if (!note) return;
@@ -80,18 +79,25 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabCon
 
     useEffect(() => {
         async function autoExecute() {
-            console.log('Effect running, noteId:', note?.noteId, 'ref:', autoExecutedRef.current);
-            if (autoExecutedRef.current !== note?.noteId && note?.hasLabel("autoExecuteSearch")) {
-                console.log('Setting ref to:', note.noteId);
-                autoExecutedRef.current = note.noteId;
-                console.log('Ref after setting:', autoExecutedRef.current);
-                await refreshResults();
-                parentComponent?.triggerCommand("toggleRibbonTabBookProperties", {});
+            if (!note?.hasLabel('autoExecuteSearch')) {
+                return;
+            }
+
+            console.log('Executing search');
+
+            // Only execute if no results exist yet
+            await refreshResults();
+
+            console.log('Executed search');
+
+            const hasResults = note.children && note.children.length > 0;
+
+            if (hasResults) {
+                parentComponent?.triggerCommand('toggleRibbonTabBookProperties', { ntxId });
             }
         }
-
         autoExecute();
-    }, [note?.noteId]);
+    }, [note]);
 
     return (
         <div className="search-definition-widget">
