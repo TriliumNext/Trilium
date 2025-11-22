@@ -3,7 +3,7 @@ import Button from "../react/Button";
 import NoteAutocomplete from "../react/NoteAutocomplete";
 import { t } from "../../services/i18n";
 import { useRef, useState } from "preact/hooks";
-import note_autocomplete, { CreateMode, Suggestion } from "../../services/note_autocomplete.js";
+import note_autocomplete, { SuggestionMode, Suggestion } from "../../services/note_autocomplete.js";
 import appContext from "../../components/app_context";
 import commandRegistry from "../../services/command_registry";
 import { refToJQuerySelector } from "../react/react_utils";
@@ -135,7 +135,7 @@ export default function JumpToNoteDialogComponent() {
                 container={containerRef}
                 text={initialText}
                 opts={{
-                    createMode: CreateMode.CreateOnly,
+                    suggestionMode: SuggestionMode.SuggestCreateOnly,
                     hideGoToSelectedNoteButton: true,
                     allowJumpToSearchNotes: true,
                     isCommandPalette: true

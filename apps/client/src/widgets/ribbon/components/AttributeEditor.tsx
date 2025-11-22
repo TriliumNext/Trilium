@@ -41,7 +41,7 @@ const HELP_TEXT = `
 const mentionSetup: MentionFeed[] = [
     {
         marker: "@",
-        feed: (queryText) => note_autocomplete.autocompleteSourceForCKEditor(queryText, CreateMode.CreateAndLink),
+        feed: (queryText) => note_autocomplete.autocompleteSourceForCKEditor(queryText, SuggestionMode.SuggestCreateAndLink),
         itemRenderer: (_item) => {
             const item = _item as Suggestion;
             const itemElement = document.createElement("button");

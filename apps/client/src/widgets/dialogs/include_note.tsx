@@ -5,7 +5,7 @@ import FormRadioGroup from "../react/FormRadioGroup";
 import Modal from "../react/Modal";
 import NoteAutocomplete from "../react/NoteAutocomplete";
 import Button from "../react/Button";
-import { CreateMode, Suggestion, triggerRecentNotes } from "../../services/note_autocomplete.js";
+import { SuggestionMode, Suggestion, triggerRecentNotes } from "../../services/note_autocomplete.js";
 import tree from "../../services/tree";
 import froca from "../../services/froca";
 import { useTriliumEvent } from "../react/hooks";
@@ -50,7 +50,7 @@ export default function IncludeNoteDialog() {
                     inputRef={autoCompleteRef}
                     opts={{
                         hideGoToSelectedNoteButton: true,
-                        createMode: CreateMode.CreateOnly,
+                        suggestionMode: SuggestionMode.SuggestCreateOnly,
                     }}
                 />
             </FormGroup>

@@ -86,7 +86,7 @@ export default function NoteTypeChooserDialogComponent() {
                     onChange={setParentNote}
                     placeholder={t("note_type_chooser.search_placeholder")}
                     opts={{
-                        createMode: CreateMode.None,
+                        suggestionMode: SuggestionMode.SuggestNothing,
                         hideGoToSelectedNoteButton: true,
                         allowJumpToSearchNotes: false,
                     }}
