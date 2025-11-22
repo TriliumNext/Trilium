@@ -219,6 +219,14 @@ function SearchButtonBar({ note, refreshResults }: {
     );
 }
 
+const executionState = function () {
+    let LAST_AUTO_EXECUTED_SEARCH_NOTE_ID = "";
+    return {
+        load: () => LAST_AUTO_EXECUTED_SEARCH_NOTE_ID,
+        save: (noteId: string) => LAST_AUTO_EXECUTED_SEARCH_NOTE_ID = noteId,
+    };
+}();
+
 function BulkActionsList({ note }: { note: FNote }) {
     const [ bulkActions, setBulkActions ] = useState<RenameNoteBulkAction[]>();
 
