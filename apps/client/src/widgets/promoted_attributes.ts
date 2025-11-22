@@ -2,7 +2,7 @@ import { t } from "../services/i18n.js";
 import server from "../services/server.js";
 import ws from "../services/ws.js";
 import treeService from "../services/tree.js";
-import noteAutocompleteService from "../services/note_autocomplete.js";
+import noteAutocompleteService, { SuggestionMode } from "../services/note_autocomplete.js";
 import NoteContextAwareWidget from "./note_context_aware_widget.js";
 import attributeService from "../services/attributes.js";
 import options from "../services/options.js";
@@ -341,7 +341,7 @@ export default class PromotedAttributesWidget extends NoteContextAwareWidget {
 
             if (utils.isDesktop()) {
                 // no need to wait for this
-                noteAutocompleteService.initNoteAutocomplete($input, { allowCreatingNotes: true });
+                noteAutocompleteService.initNoteAutocomplete($input, { suggestionMode: SuggestionMode.SuggestCreateOnly});
 
                 $input.on("autocomplete:noteselected", (event, suggestion, dataset) => {
                     this.promotedAttributeChanged(event);
@@ -429,7 +429,7 @@ export default class PromotedAttributesWidget extends NoteContextAwareWidget {
         } else if ($attr.attr("data-attribute-type") === "relation") {
             const selectedPath = $attr.getSelectedNotePath();
 
-            value = selectedPath ? treeService.getNoteIdFromUrl(selectedPath) : "";
+            value = selectedPath ? treeService.getNoteIdFromLink(selectedPath) : "";
         } else {
             value = $attr.val();
         }

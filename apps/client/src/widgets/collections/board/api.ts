@@ -7,7 +7,7 @@ import branches from "../../../services/branches";
 import { executeBulkActions } from "../../../services/bulk_action";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
-import note_create from "../../../services/note_create";
+import note_create from "../../../services/note_create.js";
 import server from "../../../services/server";
 import { ColumnMap } from "./data";
 
@@ -39,9 +39,11 @@ export default class BoardApi {
             const parentNotePath = this.parentNote.noteId;
 
             // Create a new note as a child of the parent note
-            const { note: newNote, branch: newBranch } = await note_create.createNote(parentNotePath, {
+            const { note: newNote, branch: newBranch } = await note_create.createNote({
+                target: "into",
+                parentNoteLink: parentNotePath,
                 activate: false,
-                title
+                title,
             });
 
             if (newNote && newBranch) {
@@ -139,13 +141,17 @@ export default class BoardApi {
     async insertRowAtPosition(
             column: string,
             relativeToBranchId: string,
-            direction: "before" | "after") {
-        const { note, branch } = await note_create.createNote(this.parentNote.noteId, {
-            activate: false,
-            targetBranchId: relativeToBranchId,
-            target: direction,
-            title: t("board_view.new-item")
-        });
+            direction: "before" | "after"
+    ) {
+        const { note, branch } = await note_create.createNote(
+            {
+                target: direction,
+                parentNoteLink: this.parentNote.noteId,
+                activate: false,
+                targetBranchId: relativeToBranchId,
+                title: t("board_view.new-item"),
+            }
+        );
 
         if (!note || !branch) {
             throw new Error("Failed to create note");
