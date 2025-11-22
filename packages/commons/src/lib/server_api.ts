@@ -164,11 +164,16 @@ export type ToggleInParentResponse = {
 }
 
 export type EditedNotesResponse = {
+    notes: EditedNote[],
+    limit: number
+}
+
+export type EditedNote = {
     noteId: string;
     isDeleted: boolean;
     title?: string;
     notePath?: string[] | null;
-}[];
+};
 
 export interface MetadataResponse {
     dateCreated: string | undefined;
