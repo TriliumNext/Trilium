@@ -79,7 +79,7 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabCon
 
     useEffect(() => {
         async function autoExecute() {
-            if (!note?.hasLabel('autoExecuteSearch')) {
+            if (note?.type !== 'search' || !note?.hasLabel('autoExecuteSearch')) {
                 return;
             }
 
