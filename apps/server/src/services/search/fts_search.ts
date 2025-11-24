@@ -25,12 +25,7 @@ export class FTSError extends Error {
     }
 }
 
-export class FTSNotAvailableError extends FTSError {
-    constructor(message: string = "FTS5 is not available") {
-        super(message, 'FTS_NOT_AVAILABLE', true);
-        this.name = 'FTSNotAvailableError';
-    }
-}
+// FTSNotAvailableError removed - FTS5 is now required and validated at startup
 
 export class FTSQueryError extends FTSError {
     constructor(message: string, public readonly query?: string) {
@@ -82,36 +77,32 @@ const FTS_CONFIG = {
 };
 
 class FTSSearchService {
-    private isFTS5Available: boolean | null = null;
+    /**
+     * Asserts that FTS5 is available. Should be called at application startup.
+     * Throws an error if FTS5 tables are not found.
+     */
+    assertFTS5Available(): void {
+        const result = sql.getValue<number>(`
+            SELECT COUNT(*)
+            FROM sqlite_master
+            WHERE type = 'table'
+            AND name = 'notes_fts'
+        `);
+
+        if (result === 0) {
+            throw new Error("CRITICAL: FTS5 table 'notes_fts' not found. Run database migration.");
+        }
+
+        log.info("FTS5 tables verified - full-text search is available");
+    }
 
     /**
-     * Checks if FTS5 is available in the current SQLite instance
+     * Checks if FTS5 is available.
+     * @returns Always returns true - FTS5 is required and validated at startup.
+     * @deprecated This method is kept for API compatibility. FTS5 is now required.
      */
     checkFTS5Availability(): boolean {
-        if (this.isFTS5Available !== null) {
-            return this.isFTS5Available;
-        }
-
-        try {
-            // Check if FTS5 module is available
-            const result = sql.getValue<number>(`
-                SELECT COUNT(*) 
-                FROM sqlite_master 
-                WHERE type = 'table' 
-                AND name = 'notes_fts'
-            `);
-            
-            this.isFTS5Available = result > 0;
-            
-            if (!this.isFTS5Available) {
-                log.info("FTS5 table not found. Full-text search will use fallback implementation.");
-            }
-        } catch (error) {
-            log.error(`Error checking FTS5 availability: ${error}`);
-            this.isFTS5Available = false;
-        }
-
-        return this.isFTS5Available;
+        return true;
     }
 
     /**
@@ -136,7 +127,7 @@ class FTSSearchService {
         if (shortTokens.length > 0) {
             const shortList = shortTokens.join(', ');
             log.info(`Tokens shorter than 3 characters detected (${shortList}) - cannot use trigram FTS5`);
-            throw new FTSNotAvailableError(
+            throw new FTSQueryError(
                 `Trigram tokenizer requires tokens of at least 3 characters. Short tokens: ${shortList}`
             );
         }
@@ -158,9 +149,8 @@ class FTSSearchService {
             case "~*":
                 return sanitizedTokens.join(" OR ");
 
-            case "%=": // Regex - fallback to custom function
-                log.error(`Regex search operator ${operator} not supported in FTS5`);
-                throw new FTSNotAvailableError("Regex search not supported in FTS5");
+            case "%=": // Regex - uses traditional SQL iteration fallback
+                throw new FTSQueryError("Regex search not supported in FTS5 - use traditional search path");
 
             default:
                 throw new FTSQueryError(`Unsupported MATCH operator: ${operator}`);
@@ -211,20 +201,14 @@ class FTSSearchService {
      * @param operator - Search operator (*=*, *=, =*)
      * @param noteIds - Optional set of note IDs to filter
      * @param options - Search options
-     * @param searchContext - Optional search context to track internal timing
      * @returns Array of search results (noteIds only, no scoring)
      */
     searchWithLike(
         tokens: string[],
         operator: string,
         noteIds?: Set<string>,
-        options: FTSSearchOptions = {},
-        searchContext?: any
+        options: FTSSearchOptions = {}
     ): FTSSearchResult[] {
-        if (!this.checkFTS5Availability()) {
-            throw new FTSNotAvailableError();
-        }
-
         // Handle empty tokens efficiently - return all notes without running diagnostics
         if (tokens.length === 0) {
             // Empty query means return all indexed notes (optionally filtered by noteIds)
@@ -418,12 +402,7 @@ class FTSSearchService {
                     }
 
                     const searchTime = Date.now() - searchStartTime;
-                    log.info(`FTS5 LIKE search (chunked) returned ${allResults.length} results in ${searchTime}ms (excluding diagnostics)`);
-
-                    // Track internal search time on context for performance comparison
-                    if (searchContext) {
-                        searchContext.ftsInternalSearchTime = searchTime;
-                    }
+                    log.info(`FTS5 LIKE search (chunked) returned ${allResults.length} results in ${searchTime}ms`);
 
                     return allResults;
                 }
@@ -449,12 +428,7 @@ class FTSSearchService {
             const rows = sql.getRows<{ noteId: string; title: string }>(query, params);
 
             const searchTime = Date.now() - searchStartTime;
-            log.info(`FTS5 LIKE search returned ${rows.length} results in ${searchTime}ms (excluding diagnostics)`);
-
-            // Track internal search time on context for performance comparison
-            if (searchContext) {
-                searchContext.ftsInternalSearchTime = searchTime;
-            }
+            log.info(`FTS5 LIKE search returned ${rows.length} results in ${searchTime}ms`);
 
             return rows.map(row => ({
                 noteId: row.noteId,
@@ -478,20 +452,14 @@ class FTSSearchService {
      * @param operator - Search operator
      * @param noteIds - Optional set of note IDs to search within
      * @param options - Search options
-     * @param searchContext - Optional search context to track internal timing
      * @returns Array of search results
      */
     searchSync(
         tokens: string[],
         operator: string,
         noteIds?: Set<string>,
-        options: FTSSearchOptions = {},
-        searchContext?: any
+        options: FTSSearchOptions = {}
     ): FTSSearchResult[] {
-        if (!this.checkFTS5Availability()) {
-            throw new FTSNotAvailableError();
-        }
-
         // Handle empty tokens efficiently - return all notes without MATCH query
         if (tokens.length === 0) {
             log.info('[FTS-OPTIMIZATION] Empty token array in searchSync - returning all indexed notes');
@@ -646,11 +614,6 @@ class FTSSearchService {
             const searchTime = Date.now() - searchStartTime;
             log.info(`FTS5 MATCH search returned ${results.length} results in ${searchTime}ms`);
 
-            // Track internal search time on context for performance comparison
-            if (searchContext) {
-                searchContext.ftsInternalSearchTime = searchTime;
-            }
-
             return results;
 
         } catch (error: any) {
@@ -747,12 +710,6 @@ class FTSSearchService {
         operator: string,
         noteIds?: Set<string>
     ): Set<string> {
-        const startTime = Date.now();
-
-        if (!this.checkFTS5Availability()) {
-            return new Set();
-        }
-
         // Check if attributes_fts table exists
         const tableExists = sql.getValue<number>(`
             SELECT COUNT(*)
@@ -960,10 +917,6 @@ class FTSSearchService {
      * @param content - The note content
      */
     updateNoteIndex(noteId: string, title: string, content: string): void {
-        if (!this.checkFTS5Availability()) {
-            return;
-        }
-
         try {
             sql.transactional(() => {
                 // Delete existing entry
@@ -986,10 +939,6 @@ class FTSSearchService {
      * @param noteId - The note ID to remove
      */
     removeNoteFromIndex(noteId: string): void {
-        if (!this.checkFTS5Availability()) {
-            return;
-        }
-
         try {
             sql.execute(`DELETE FROM notes_fts WHERE noteId = ?`, [noteId]);
         } catch (error) {
@@ -1005,11 +954,6 @@ class FTSSearchService {
      * @returns The number of notes that were synced
      */
     syncMissingNotes(noteIds?: string[]): number {
-        if (!this.checkFTS5Availability()) {
-            log.error("Cannot sync FTS index - FTS5 not available");
-            return 0;
-        }
-
         try {
             let syncedCount = 0;
             
@@ -1084,11 +1028,6 @@ class FTSSearchService {
      * This is useful for maintenance or after bulk operations
      */
     rebuildIndex(): void {
-        if (!this.checkFTS5Availability()) {
-            log.error("Cannot rebuild FTS index - FTS5 not available");
-            return;
-        }
-
         log.info("Rebuilding FTS5 index...");
 
         try {
@@ -1131,15 +1070,6 @@ class FTSSearchService {
         isOptimized: boolean;
         dbstatAvailable: boolean;
     } {
-        if (!this.checkFTS5Availability()) {
-            return {
-                totalDocuments: 0,
-                indexSize: 0,
-                isOptimized: false,
-                dbstatAvailable: false
-            };
-        }
-
         const totalDocuments = sql.getValue<number>(`
             SELECT COUNT(*) FROM notes_fts
         `) || 0;

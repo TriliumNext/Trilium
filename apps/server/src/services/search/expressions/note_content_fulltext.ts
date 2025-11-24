@@ -11,30 +11,21 @@ import protectedSessionService from "../../protected_session.js";
 import striptags from "striptags";
 import { normalize } from "../../utils.js";
 import sql from "../../sql.js";
-import { 
-    normalizeSearchText, 
-    calculateOptimizedEditDistance, 
-    validateFuzzySearchTokens, 
+import {
+    normalizeSearchText,
+    calculateOptimizedEditDistance,
+    validateFuzzySearchTokens,
     validateAndPreprocessContent,
     fuzzyMatchWord,
-    FUZZY_SEARCH_CONFIG 
+    getRegex,
+    FUZZY_SEARCH_CONFIG
 } from "../utils/text_utils.js";
-import ftsSearchService, { FTSError, FTSNotAvailableError, FTSQueryError } from "../fts_search.js";
+import ftsSearchService, { FTSError, FTSQueryError } from "../fts_search.js";
 
 const ALLOWED_OPERATORS = new Set(["=", "!=", "*=*", "*=", "=*", "%=", "~=", "~*"]);
 
 // Maximum content size for search processing (2MB)
 const MAX_SEARCH_CONTENT_SIZE = 2 * 1024 * 1024;
-
-const cachedRegexes: Record<string, RegExp> = {};
-
-function getRegex(str: string): RegExp {
-    if (!(str in cachedRegexes)) {
-        cachedRegexes[str] = new RegExp(str, "ms"); // multiline, dot-all
-    }
-
-    return cachedRegexes[str];
-}
 
 interface ConstructorOpts {
     tokens: string[];
@@ -111,8 +102,7 @@ class NoteContentFulltextExp extends Expression {
                             includeSnippets: false,
                             searchProtected: false
                             // No limit specified - return all results
-                        },
-                        searchContext // Pass context to track internal timing
+                        }
                     );
                 } else {
                     // Other operators use MATCH syntax
@@ -123,8 +113,7 @@ class NoteContentFulltextExp extends Expression {
                         {
                             includeSnippets: false,
                             searchProtected: false // FTS5 doesn't index protected notes
-                        },
-                        searchContext // Pass context to track internal timing
+                        }
                     );
                 }
 
@@ -186,11 +175,8 @@ class NoteContentFulltextExp extends Expression {
             } catch (error) {
                 // Handle structured errors from FTS service
                 if (error instanceof FTSError) {
-                    if (error instanceof FTSNotAvailableError) {
-                        log.info("FTS5 not available, using standard search");
-                    } else if (error instanceof FTSQueryError) {
-                        log.error(`FTS5 query error: ${error.message}`);
-                        searchContext.addError(`Search optimization failed: ${error.message}`);
+                    if (error instanceof FTSQueryError) {
+                        log.info(`FTS5 query error (falling back to traditional search): ${error.message}`);
                     } else {
                         log.error(`FTS5 error: ${error}`);
                     }
@@ -206,11 +192,15 @@ class NoteContentFulltextExp extends Expression {
                 } else {
                     log.error(`Unexpected error in FTS5 search: ${error}`);
                 }
-                // Fall back to original implementation
+                // Fall back to traditional SQL iteration below
             }
         }
 
-        // Original implementation for fallback or when FTS5 is not available
+        // Traditional SQL iteration search - used for:
+        // 1. Regex searches (%=) - FTS5 doesn't support regex, so we iterate all notes
+        // 2. Fallback when FTS5 queries fail (e.g., short tokens < 3 chars for trigram)
+        // 3. Empty token searches (returning all notes)
+        // This path must be preserved as it's the only way to support regex search.
         for (const row of sql.iterateRows<SearchRow>(`
                 SELECT noteId, type, mime, content, isProtected
                 FROM notes JOIN blobs USING (blobId)
@@ -260,16 +250,23 @@ class NoteContentFulltextExp extends Expression {
     }
 
     /**
-     * Determines if the current search can use FTS5
+     * Determines if the current search can use FTS5.
+     *
+     * Returns false for regex (%=) operator - regex searches MUST use traditional
+     * SQL iteration because FTS5 doesn't support regex matching. When this returns
+     * false, the execute() method falls through to the traditional search path below
+     * which iterates all notes and applies regex matching via getRegex().
      */
     private canUseFTS5(): boolean {
-        // FTS5 doesn't support regex searches well
+        // Regex operator requires traditional SQL iteration - FTS5 cannot support regex
         if (this.operator === "%=") {
             return false;
         }
 
-        // FTS5 now supports exact match (=) with post-filtering for word boundaries
-        // The FTS search service will filter results to ensure exact word matches
+        // All other operators can use FTS5:
+        // - Substring operators (*=*, *=, =*) use searchWithLike() optimized by trigram index
+        // - Exact match (=) uses FTS5 MATCH with post-filtering for word boundaries
+        // - Fuzzy operators (~=, ~*) use FTS5 OR queries + JS scoring
         return true;
     }
 
@@ -468,7 +465,7 @@ class NoteContentFulltextExp extends Expression {
                 (this.operator === "*=" && content.endsWith(token)) ||
                 (this.operator === "=*" && content.startsWith(token)) ||
                 (this.operator === "*=*" && content.includes(token)) ||
-                (this.operator === "%=" && getRegex(token).test(content)) ||
+                (this.operator === "%=" && getRegex(token, "ms").test(content)) ||
                 (this.operator === "~=" && this.matchesWithFuzzy(content, noteId)) ||
                 (this.operator === "~*" && this.fuzzyMatchToken(normalizeSearchText(token), normalizeSearchText(content)))
             ) {
