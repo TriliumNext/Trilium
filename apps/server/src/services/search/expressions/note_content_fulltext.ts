@@ -135,8 +135,6 @@ class NoteContentFulltextExp extends Expression {
                     }
                 }
 
-                log.info(`[FTS5-CONTENT] Found ${ftsResults.length} notes matching content search`);
-
                 // If we need to search protected notes, use the separate method
                 if (searchProtected) {
                     const protectedResults = ftsSearchService.searchProtectedNotesSync(
@@ -170,8 +168,6 @@ class NoteContentFulltextExp extends Expression {
                             this.operator,
                             noteIdSet.size > 0 ? noteIdSet : undefined
                         );
-
-                        log.info(`[FTS5-ATTRIBUTES] Found ${attributeNoteIds.size} notes matching attribute search`);
 
                         // Add notes with matching attributes
                         for (const noteId of attributeNoteIds) {

@@ -805,8 +805,6 @@ class FTSSearchService {
                 value: string;
             }>(query, params);
 
-            log.info(`[FTS5-ATTRIBUTES-RAW] FTS5 query returned ${results.length} raw attribute matches`);
-
             // Post-filter for exact word matches when operator is "="
             if (operator === "=") {
                 const matchingNoteIds = new Set<string>();
@@ -817,21 +815,15 @@ class FTSSearchService {
                     const nameMatch = result.name.toLowerCase() === phrase.toLowerCase();
                     const valueMatch = result.value ? this.containsExactPhrase(phrase, result.value) : false;
 
-                    log.info(`[FTS5-ATTRIBUTES-FILTER] Checking attribute: name="${result.name}", value="${result.value}", phrase="${phrase}", nameMatch=${nameMatch}, valueMatch=${valueMatch}`);
-
                     if (nameMatch || valueMatch) {
                         matchingNoteIds.add(result.noteId);
                     }
                 }
-                const filterTime = Date.now() - startTime;
-                log.info(`[FTS5-ATTRIBUTES-FILTERED] After post-filtering: ${matchingNoteIds.size} notes match (total time: ${filterTime}ms)`);
                 return matchingNoteIds;
             }
 
             // For other operators, return all matching noteIds
-            const searchTime = Date.now() - startTime;
             const matchingNoteIds = new Set(results.map(r => r.noteId));
-            log.info(`[FTS5-ATTRIBUTES-TIME] Attribute search completed in ${searchTime}ms, found ${matchingNoteIds.size} notes`);
             return matchingNoteIds;
 
         } catch (error: any) {

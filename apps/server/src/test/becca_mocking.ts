@@ -25,7 +25,7 @@ export class NoteBuilder {
             isInheritable,
             name,
             value
-        }).save();
+        });
 
         return this;
     }
@@ -37,7 +37,7 @@ export class NoteBuilder {
             type: "relation",
             name,
             value: targetNote.noteId
-        }).save();
+        });
 
         return this;
     }
@@ -49,7 +49,7 @@ export class NoteBuilder {
             parentNoteId: this.note.noteId,
             prefix,
             notePosition: 10
-        }).save();
+        });
 
         return this;
     }
@@ -70,7 +70,7 @@ export function note(title: string, extraParams: Partial<NoteRow> = {}) {
         extraParams
     );
 
-    const note = new BNote(row).save();
+    const note = new BNote(row);
 
     return new NoteBuilder(note);
 }

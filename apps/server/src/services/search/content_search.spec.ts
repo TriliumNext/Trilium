@@ -326,4 +326,74 @@ describe("Content Search", () => {
             expect(findNoteByTitle(searchResults, "The quick brown fox jumps")).toBeTruthy();
         });
     });
+
+    describe("Plain Text Search Matches Attribute Values", () => {
+        it("should find notes by searching for label value as plain text", () => {
+            // Note has a label with value "Tolkien", searching for "Tolkien" should find it
+            rootNote
+                .child(note("The Hobbit").label("author", "Tolkien"))
+                .child(note("Dune").label("author", "Herbert"))
+                .child(note("Random Note"));
+
+            const searchContext = new SearchContext();
+            const searchResults = searchService.findResultsWithQuery("Tolkien", searchContext);
+
+            expect(searchResults.length).toEqual(1);
+            expect(findNoteByTitle(searchResults, "The Hobbit")).toBeTruthy();
+        });
+
+        it("should find notes by searching for label name as plain text", () => {
+            // Note has a label named "important", searching for "important" should find it
+            rootNote
+                .child(note("Critical Task").label("important"))
+                .child(note("Regular Task"));
+
+            const searchContext = new SearchContext();
+            const searchResults = searchService.findResultsWithQuery("important", searchContext);
+
+            expect(searchResults.length).toEqual(1);
+            expect(findNoteByTitle(searchResults, "Critical Task")).toBeTruthy();
+        });
+
+        it("should find notes by searching for relation name as plain text", () => {
+            const author = note("J.R.R. Tolkien");
+
+            rootNote
+                .child(note("The Hobbit").relation("writtenBy", author.note))
+                .child(note("Random Book"))
+                .child(author);
+
+            const searchContext = new SearchContext();
+            const searchResults = searchService.findResultsWithQuery("writtenBy", searchContext);
+
+            expect(searchResults.length).toEqual(1);
+            expect(findNoteByTitle(searchResults, "The Hobbit")).toBeTruthy();
+        });
+
+        it("should find notes when label value contains the search term", () => {
+            rootNote
+                .child(note("Fantasy Book").label("genre", "Science Fiction"))
+                .child(note("History Book").label("genre", "Historical"));
+
+            const searchContext = new SearchContext();
+            const searchResults = searchService.findResultsWithQuery("Fiction", searchContext);
+
+            expect(searchResults.length).toEqual(1);
+            expect(findNoteByTitle(searchResults, "Fantasy Book")).toBeTruthy();
+        });
+
+        it("should combine plain text attribute search with title search", () => {
+            rootNote
+                .child(note("Programming Guide").label("language", "JavaScript"))
+                .child(note("Programming Tutorial").label("language", "Python"))
+                .child(note("Cooking Guide").label("cuisine", "Italian"));
+
+            const searchContext = new SearchContext();
+            // Search for notes with "Guide" in title AND "JavaScript" in attributes
+            const searchResults = searchService.findResultsWithQuery("Guide JavaScript", searchContext);
+
+            expect(searchResults.length).toEqual(1);
+            expect(findNoteByTitle(searchResults, "Programming Guide")).toBeTruthy();
+        });
+    });
 });
