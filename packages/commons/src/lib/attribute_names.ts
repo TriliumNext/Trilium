@@ -23,6 +23,7 @@ type Labels = {
     ancestorDepth: string;
     orderBy: string;
     orderDirection: string;
+    autoExecuteSearch: boolean;
 
     // Collection-specific
     viewType: string;
