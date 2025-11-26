@@ -385,6 +385,7 @@
     "workspace_template": "This note will appear in the selection of available template when creating new note, but only when hoisted into a workspace containing this template",
     "search_home": "new search notes will be created as children of this note",
     "workspace_search_home": "new search notes will be created as children of this note when hoisted to some ancestor of this workspace note",
+    "auto_execute_search": "Automatically executes the search defined in a saved search note and switches to the Collection Properties tab if any notes match the query",
     "inbox": "default inbox location for new notes - when you create a note using \"new note\" button in the sidebar, notes will be created as child notes in the note marked as with <code>#inbox</code> label.",
     "workspace_inbox": "default inbox location for new notes when hoisted to some ancestor of this workspace note",
     "sql_console_home": "default location of SQL console notes",
