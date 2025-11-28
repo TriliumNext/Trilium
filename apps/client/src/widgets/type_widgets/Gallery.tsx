@@ -51,6 +51,7 @@ export default function Gallery({ note }: TypeWidgetProps) {
         const directAttachments = await note.getAttachments();
         const directImageAttachments = directAttachments.filter(a => a.role === "image");
 
+        // Process direct attachments
         for (const attachment of directImageAttachments) {
             const size = attachment.contentLength || 0;
             calculatedTotalSize += size;
@@ -71,40 +72,57 @@ export default function Gallery({ note }: TypeWidgetProps) {
             const childNotes = await note.getChildNotes();
             const imageNotes = childNotes.filter(n => n.type === "image");
 
-            // Convert image notes to ImageItem format
-            for (const imageNote of imageNotes) {
+            // Process image notes in parallel
+            const imageBlobPromises = imageNotes.map(async (imageNote) => {
                 const blob = await imageNote.getBlob();
                 const size = blob?.contentLength || 0;
                 calculatedTotalSize += size;
 
-                imageItems.push({
+                return {
                     id: imageNote.noteId,
                     url: `api/images/${imageNote.noteId}/${encodeURIComponent(imageNote.title)}`,
                     title: imageNote.title,
                     type: 'note' as const,
                     size
-                });
-            }
+                };
+            });
 
-            // Also check for notes with image attachments
-            for (const childNote of childNotes) {
+            const imageNoteItems = await Promise.all(imageBlobPromises);
+            imageItems.push(...imageNoteItems);
+
+            // Recalculate total size from image note items
+            imageNoteItems.forEach(item => {
+                calculatedTotalSize += item.size || 0;
+            });
+
+            // Process child note attachments in parallel
+            const attachmentPromises = childNotes.map(async (childNote) => {
                 const attachments = await childNote.getAttachments();
                 const imageAttachments = attachments.filter(a => a.role === "image");
 
-                for (const attachment of imageAttachments) {
+                return imageAttachments.map(attachment => {
                     const size = attachment.contentLength || 0;
-                    calculatedTotalSize += size;
 
-                    imageItems.push({
+                    return {
                         id: attachment.attachmentId,
                         url: `api/attachments/${attachment.attachmentId}/image/${encodeURIComponent(attachment.title)}`,
                         title: attachment.title,
                         type: 'attachment' as const,
                         noteId: attachment.ownerId,
                         size
-                    });
-                }
-            }
+                    };
+                });
+            });
+
+            const attachmentArrays = await Promise.all(attachmentPromises);
+            const allAttachments = attachmentArrays.flat();
+
+            imageItems.push(...allAttachments);
+
+            // Calculate total size from attachments
+            allAttachments.forEach(item => {
+                calculatedTotalSize += item.size || 0;
+            });
         }
 
         setImages(imageItems);
@@ -118,32 +136,14 @@ export default function Gallery({ note }: TypeWidgetProps) {
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         const childNoteIds = images.map(img => img.noteId).filter(Boolean);
 
-        // Reload if branches change (child notes added/removed or share status changed)
-        const branchRows = loadResults.getBranchRows();
-        if (branchRows.some(b => b.parentNoteId === note.noteId || b.noteId === note.noteId)) {
-            loadImages();
-            return;
-        }
+        const shouldReload =
+            loadResults.getBranchRows().some(b => b.parentNoteId === note.noteId || b.noteId === note.noteId) ||
+            loadResults.getNoteIds().some(id => id === note.noteId || childNoteIds.includes(id)) ||
+            loadResults.getAttachmentRows().some(att => att.ownerId === note.noteId || childNoteIds.includes(att.ownerId)) ||
+            loadResults.getAttributeRows().some(attr => attr.noteId === note.noteId && attr.name === "hideChildAttachments");
 
-        // Reload if any child note changes
-        const noteIds = loadResults.getNoteIds();
-        if (noteIds.some(id => id === note.noteId || childNoteIds.includes(id))) {
+        if (shouldReload) {
             loadImages();
-            return;
-        }
-
-        // Reload if attachments change for this note or its children
-        const attachmentRows = loadResults.getAttachmentRows();
-        if (attachmentRows.some(att => att.ownerId === note.noteId || childNoteIds.includes(att.ownerId))) {
-            loadImages();
-            return;
-        }
-
-        // Reload if attributes change (for hideChildImages label)
-        const attributeRows = loadResults.getAttributeRows();
-        if (attributeRows.some(attr => attr.noteId === note.noteId && attr.name === "hideChildAttachments")) {
-            loadImages();
-            return;
         }
     });
 
@@ -173,24 +173,6 @@ export default function Gallery({ note }: TypeWidgetProps) {
             appContext.tabManager.getActiveContext()?.setNote(img.noteId);
         }
         // Note: No else clause - we don't do anything for gallery note attachments
-    }
-
-    async function handleToggleShare() {
-        if (isGalleryShared) {
-            const shareBranch = note.getParentBranches().find((b) => b.parentNoteId === "_share");
-            if (shareBranch?.branchId) {
-                await server.remove(`branches/${shareBranch.branchId}`);
-                toast.showMessage(t("gallery.unshared_success"));
-                sync.syncNow(true);
-                await loadImages();
-            }
-        } else {
-            // Share the gallery
-            await branches.cloneNoteToParentNote(note.noteId, "_share");
-            toast.showMessage(t("gallery.shared_success"));
-            sync.syncNow(true);
-            await loadImages();
-        }
     }
 
     // Your current handleCopyImageLink is actually fine for both Electron and web
@@ -243,20 +225,6 @@ export default function Gallery({ note }: TypeWidgetProps) {
         }
 
         await loadImages();
-    }
-
-    function getShareUrl(noteId: string, syncServerHost: string | null): string | null {
-        const shareId = note.getOwnedLabelValue("shareAlias") || noteId;
-
-        if (syncServerHost) {
-            return new URL(`/share/${shareId}`, syncServerHost).href;
-        } else {
-            let host = location.host;
-            if (host.endsWith("/")) {
-                host = host.substring(0, host.length - 1);
-            }
-            return `${location.protocol}//${host}${location.pathname}share/${shareId}`;
-        }
     }
 
     function getAbsoluteUrl(path: string): string {
@@ -369,22 +337,28 @@ export default function Gallery({ note }: TypeWidgetProps) {
         }
 
         const imagesToDelete = images.filter(img => selectedImages.has(img.id));
+
+        const deletePromises = imagesToDelete.map(img => {
+            if (img.type === 'note') {
+                return server.remove(`notes/${img.id}`);
+            } else {
+                return server.remove(`attachments/${img.id}`);
+            }
+        });
+
+        const results = await Promise.allSettled(deletePromises);
+
         let successCount = 0;
         let errorCount = 0;
 
-        for (const img of imagesToDelete) {
-            try {
-                if (img.type === 'note') {
-                    await server.remove(`notes/${img.id}`);
-                } else {
-                    await server.remove(`attachments/${img.id}`);
-                }
+        results.forEach((result, index) => {
+            if (result.status === 'fulfilled') {
                 successCount++;
-            } catch (error) {
-                console.error(`Failed to delete image ${img.id}:`, error);
+            } else {
                 errorCount++;
+                console.error(`Failed to delete image ${imagesToDelete[index].id}:`, result.reason);
             }
-        }
+        });
 
         if (successCount > 0) {
             toast.showMessage(t("gallery.delete_multiple_success", { count: successCount }));
@@ -483,7 +457,6 @@ export default function Gallery({ note }: TypeWidgetProps) {
                         <span className="bx bx-image-alt"></span>
                     </div>
                     <p>{t("gallery.no_images")}</p>
-                    <p className="gallery-empty-hint">{t("gallery.upload_hint")}</p>
                     <Button
                         icon="bx bx-upload"
                         text={t("gallery.upload_first_image")}
