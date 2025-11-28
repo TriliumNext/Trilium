@@ -8,6 +8,7 @@ import Color, { ColorInstance } from "color";
 import Debouncer from "../../utils/debouncer";
 import FNote from "../../entities/fnote";
 import froca from "../../services/froca";
+import { isMobile } from "../../services/utils";
 
 const COLOR_PALETTE = [
     "#e64d4d", "#e6994d", "#e5e64d", "#99e64d", "#4de64d", "#4de699",
@@ -62,13 +63,13 @@ export default function NoteColorPicker(props: NoteColorPickerProps) {
             } else {
                 attributes.removeOwnedLabelByName(note, "color");
             }
-            
+
             setCurrentColor(color);
         }
     }, [note, currentColor]);
 
     return <div className="note-color-picker">
-        
+
         <ColorCell className="color-cell-reset"
                    tooltip={t("note-color.clear-color")}
                    color={null}
@@ -81,8 +82,8 @@ export default function NoteColorPicker(props: NoteColorPickerProps) {
                 <path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
             </svg>
         </ColorCell>
-        
-        
+
+
         {COLOR_PALETTE.map((color) => (
             <ColorCell key={color}
                        tooltip={t("note-color.set-color")}
@@ -128,7 +129,6 @@ function CustomColorCell(props: ColorCellProps) {
     const colorInput = useRef<HTMLInputElement>(null);
     const colorInputDebouncer = useRef<Debouncer<string | null> | null>(null);
     const callbackRef = useRef(props.onSelect);
-    const isSafari = useRef(/^((?!chrome|android).)*safari/i.test(navigator.userAgent));
 
     useEffect(() => {
         colorInputDebouncer.current = new Debouncer(250, (color) => {
@@ -160,13 +160,13 @@ function CustomColorCell(props: ColorCellProps) {
     }, [pickedColor]);
 
     return <div style={`--foreground: ${getForegroundColor(props.color)};`}
-                onClick={(e) => {
-                    // The color picker dropdown will close on Safari if the parent context menu is
+                onClick={isMobile() ? (e) => {
+                    // The color picker dropdown will close on some browser if the parent context menu is
                     // dismissed, so stop the click propagation to prevent dismissing the menu.
-                    isSafari.current && e.stopPropagation();
-                }}>
+                    e.stopPropagation();
+                } : undefined}>
         <ColorCell {...props}
-                   color={pickedColor} 
+                   color={pickedColor}
                    className={clsx("custom-color-cell", {
                         "custom-color-cell-empty": (pickedColor === null)
                    })}

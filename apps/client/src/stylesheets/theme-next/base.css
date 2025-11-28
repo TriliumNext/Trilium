@@ -119,17 +119,6 @@ body.backdrop-effects-disabled {
     font-size: 0.9rem !important;
 }
 
-body.mobile .dropdown-menu {
-    backdrop-filter: var(--dropdown-backdrop-filter);
-    border-radius: var(--dropdown-border-radius);
-    position: relative;
-}
-
-body.mobile .dropdown-menu .dropdown-menu {
-    backdrop-filter: unset !important;
-    border-radius: unset !important;
-}
-
 body.desktop .dropdown-menu::before,
 :root .ck.ck-dropdown__panel::before,
 :root .excalidraw .popover::before,
@@ -157,17 +146,12 @@ body.desktop .dropdown-submenu .dropdown-menu::before {
     content: unset;
 }
 
-body.mobile .dropdown-submenu .dropdown-menu {
-    background: transparent !important;
-}
-
 body.desktop .dropdown-submenu .dropdown-menu {
     backdrop-filter: var(--dropdown-backdrop-filter);
     background: transparent;
 }
 
 .dropdown-item,
-body.mobile .dropdown-submenu .dropdown-toggle,
 .excalidraw .context-menu .context-menu-item {
     --menu-item-start-padding: 8px;
     --menu-item-end-padding: 22px;
@@ -199,10 +183,6 @@ body.mobile .dropdown-submenu {
 
 body.mobile .dropdown-item:not(:last-of-type) {
     margin-bottom: 0.5em;
-}
-
-body.mobile .dropdown-submenu:hover {
-    background: transparent !important;
 }
 
 html body .dropdown-item.disabled,
@@ -322,13 +302,25 @@ body.desktop .dropdown-menu.static .dropdown-item.active {
 }
 
 /* #region Mobile tweaks for dropdown menus */
+body.mobile #context-menu-cover {
+    transition: background-color 150ms ease-in;
+
+    &.show {
+        background: rgba(0, 0, 0, 0.7);
+    }
+}
+
 body.mobile .dropdown-menu {
     --dropdown-menu-padding-vertical: 0.7em;
     --dropdown-menu-padding-horizontal: 1em;
+    --hover-item-background-color: var(--card-background-color);
     font-size: 1em !important;
+    backdrop-filter: var(--dropdown-backdrop-filter);
+    border-radius: var(--dropdown-border-radius) var(--dropdown-border-radius) 0 0;
+    position: relative;
 
     .dropdown-toggle::after {
-        top: var(--dropdown-menu-padding-vertical);
+        top: 0.5em;
         right: var(--dropdown-menu-padding-horizontal);
         transform: translateX(50%) rotate(90deg);
     }
@@ -365,6 +357,37 @@ body.mobile .dropdown-menu {
 
     .dropdown-divider {
         visibility: hidden;
+    }
+
+    .dropdown-submenu {
+        padding: 0 !important;
+        backdrop-filter: unset !important;
+
+        .dropdown-toggle {
+            padding: var(--dropdown-menu-padding-vertical) var(--dropdown-menu-padding-horizontal);
+        }
+
+        .dropdown-menu {
+            --menu-background-color: rgba(0, 0, 0, 0.15);
+            border-radius: 0;
+            max-height: 0;            
+            transition: max-height 100ms ease-in;
+            display: block !important;
+
+            &.show {
+                max-height: 1000px;
+            }
+
+            .dropdown-item {
+                background: transparent;
+            }
+        }
+
+        &.submenu-open {
+            .dropdown-toggle {
+                padding-bottom: var(--dropdown-menu-padding-vertical);
+            }            
+        }
     }
 }
 /* #endregion */

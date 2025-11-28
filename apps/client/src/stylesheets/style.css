@@ -1316,7 +1316,7 @@ body.mobile #context-menu-container.mobile-bottom-menu {
     inset-inline-end: 0 !important;
     bottom: 0 !important;
     top: unset !important;
-    max-height: 70vh;
+    max-height: 90vh;
     overflow: auto !important;
     user-select: none;
     -webkit-user-select: none;
