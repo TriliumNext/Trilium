@@ -1673,7 +1673,8 @@
     "ai-chat": "AI Chat",
     "task-list": "Task List",
     "new-feature": "New",
-    "collections": "Collections"
+    "collections": "Collections",
+    "gallery": "Gallery"
   },
   "protect_note": {
     "toggle-on": "Protect the note",
@@ -2107,5 +2108,38 @@
     "clear-color": "Clear note color",
     "set-color": "Set note color",
     "set-custom-color": "Set custom note color"
+  },
+  "gallery": {
+    "no_images": "No Images",
+    "upload_first_image": "Upload First Image",
+    "image_count": "{{count}} Image",
+    "upload_images": "Upload Images",
+    "image_count_plural": "{{count}} Images",
+    "confirm_delete_note": "Are you sure you want to delete {{title}}",
+    "confirm_delete_attachment": "Are you sure you want to delete the attachment {{title}}",
+    "delete_note_success": "{{title}} deleted successfully",
+    "delete_attachment_success": "{{title}} deleted successfully",
+    "delete_error": "An error occurred while attempting to delete {{title}} - {{message}}",
+    "confirm_delete_multiple": "Are you sure you want to delete {{count}} items?",
+    "delete_multiple_success": "{{count}} items deleted successfully!",
+    "delete_multiple_error": "An error has occurred while attempting to delete {{count}} images.",
+    "cancel_selection": "Cancel Multi Selection",
+    "select": "Select Multiple",
+    "select_all": "Select All",
+    "deselect_all": "Deselect All",
+    "delete_selected": "Delete {{count}} Items",
+    "delete": "Delete",
+    "previous": "Previous",
+    "next": "Next",
+    "close": "close",
+    "goto_note": "Go To Parent Note",
+    "warning_delete_other_note": "This image belongs to another note, deleting it will remove it from that note!",
+    "cancel": "cancel",
+    "copy_image_link": "Image Link Copied to Clipboard",
+    "share_copy_failed": "Failed to copy image link to clipboard.",
+    "select_image": "Select Image",
+    "show_child_images_btn": "Show Child Images",
+    "hide_child_images_btn": "Hide Child Images",
+    "toggle_child_images_tooltip": "Toggle Child Images"
   }
 }

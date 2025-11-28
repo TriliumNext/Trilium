@@ -120,7 +120,8 @@ export const ALLOWED_NOTE_TYPES = [
     "webView",
     "code",
     "mindMap",
-    "aiChat"
+    "aiChat",
+    "gallery"
 ] as const;
 export type NoteType = (typeof ALLOWED_NOTE_TYPES)[number];
 

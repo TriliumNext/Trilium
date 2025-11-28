@@ -139,5 +139,10 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         view: () => import("./type_widgets/AiChat"),
         className: "ai-chat-widget-container",
         isFullHeight: true
+    },
+    gallery: {
+        view: () => import("./type_widgets/Gallery"),
+        className: "note-detail-gallery",
+        isFullHeight: true
     }
 };

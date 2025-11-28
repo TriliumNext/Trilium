@@ -4414,6 +4414,7 @@ components:
         - contentWidget
         - mindMap
         - geoMap
+        - gallery
         
     Branch:
       type: object

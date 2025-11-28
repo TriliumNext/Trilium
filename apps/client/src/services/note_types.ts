@@ -34,6 +34,9 @@ export const NOTE_TYPES: NoteTypeMapping[] = [
     { type: "canvas", mime: "application/json", title: t("note_types.canvas"), icon: "bx-pen" },
     { type: "mermaid", mime: "text/mermaid", title: t("note_types.mermaid-diagram"), icon: "bx-selection" },
 
+    // Media notes
+    { type: "gallery", mime: "", title: t("note_types.gallery"), icon: "bx-image-alt", reserved: false },
+
     // Map notes
     { type: "mindMap", mime: "application/json", title: t("note_types.mind-map"), icon: "bx-sitemap" },
     { type: "noteMap", mime: "", title: t("note_types.note-map"), icon: "bxs-network-chart", static: true },
