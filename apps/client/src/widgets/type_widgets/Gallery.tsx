@@ -9,6 +9,7 @@ import { t } from "../../services/i18n";
 import dialog from "../../services/dialog";
 import server from "../../services/server";
 import toast from "../../services/toast";
+import froca from "../../services/froca";
 import appContext from "../../components/app_context";
 import { formatSize } from "../../services/utils";
 import branches from "../../services/branches";
@@ -176,11 +177,6 @@ export default function Gallery({ note }: TypeWidgetProps) {
 
     async function handleToggleShare() {
         if (isGalleryShared) {
-            // Unshare the gallery
-            if (note.getParentBranches().length === 1 && !(await dialog.confirm(t("gallery.confirm_unshare_only_location")))) {
-                return;
-            }
-
             const shareBranch = note.getParentBranches().find((b) => b.parentNoteId === "_share");
             if (shareBranch?.branchId) {
                 await server.remove(`branches/${shareBranch.branchId}`);
@@ -197,6 +193,7 @@ export default function Gallery({ note }: TypeWidgetProps) {
         }
     }
 
+    // Your current handleCopyImageLink is actually fine for both Electron and web
     async function handleCopyImageLink(img: ImageItem, e: MouseEvent) {
         e.stopPropagation();
 
@@ -208,14 +205,12 @@ export default function Gallery({ note }: TypeWidgetProps) {
         let imageUrl: string;
 
         if (img.type === 'note') {
-            // For image notes, get their share URL
-            const imageNote = note.froca.getNoteFromCache(img.id);
+            const imageNote = froca.getNoteFromCache(img.id);
             if (!imageNote) return;
 
             const shareId = imageNote.getOwnedLabelValue("shareAlias") || img.id;
             imageUrl = getAbsoluteUrl(`/share/api/images/${shareId}/${encodeURIComponent(img.title)}`);
         } else {
-            // For attachments, use the attachment API
             imageUrl = getAbsoluteUrl(`/share/api/attachments/${img.id}/image/${encodeURIComponent(img.title)}`);
         }
 

@@ -2140,6 +2140,9 @@
     "select_image": "Select Image",
     "show_child_images_btn": "Show Child Images",
     "hide_child_images_btn": "Hide Child Images",
-    "toggle_child_images_tooltip": "Toggle Child Images"
+    "toggle_child_images_tooltip": "Toggle Child Images",
+    "not_shared": "The gallery is not shared",
+    "shared_success": "The gallery is now being shared",
+    "unshared_success": "The gallery has stopped being shared"
   }
 }
