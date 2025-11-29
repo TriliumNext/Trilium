@@ -66,9 +66,13 @@ interface ModalProps {
      * If true, the modal will remain in the DOM even when not shown. This can be useful for certain CSS transitions or when you want to avoid re-mounting the modal content.
      */
     keepInDom?: boolean;
+    /**
+     * If true, the modal will not focus itself after becoming visible.
+     */
+    noFocus?: boolean;
 }
 
-export default function Modal({ children, className, size, title, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden: onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom }: ModalProps) {
+export default function Modal({ children, className, size, title, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden: onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus }: ModalProps) {
     const modalRef = useSyncedRef<HTMLDivElement>(externalModalRef);
     const modalInstanceRef = useRef<BootstrapModal>();
     const elementToFocus = useRef<Element | null>();
@@ -100,13 +104,15 @@ export default function Modal({ children, className, size, title, header, footer
     useEffect(() => {
         if (show && modalRef.current) {
             elementToFocus.current = document.activeElement;
-            openDialog($(modalRef.current), !stackable).then(($widget) => {
+            openDialog($(modalRef.current), !stackable, {
+                focus: !noFocus
+            }).then(($widget) => {
                 modalInstanceRef.current = BootstrapModal.getOrCreateInstance($widget[0]);
             })
         } else {
             modalInstanceRef.current?.hide();
         }
-    }, [ show, modalRef.current ]);
+    }, [ show, modalRef.current, noFocus ]);
 
     // Memoize styles to prevent recreation on every render
     const dialogStyle = useMemo<CSSProperties>(() => {

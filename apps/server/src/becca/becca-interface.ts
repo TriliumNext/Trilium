@@ -13,10 +13,6 @@ import BBlob from "./entities/bblob.js";
 import BRecentNote from "./entities/brecent_note.js";
 import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
 
-interface AttachmentOpts {
-    includeContentLength?: boolean;
-}
-
 /**
  * Becca is a backend cache of all notes, branches, and attributes.
  * There's a similar frontend cache Froca, and share cache Shaca.
@@ -167,21 +163,18 @@ export default class Becca {
         return revision;
     }
 
-    getAttachment(attachmentId: string, opts: AttachmentOpts = {}): BAttachment | null {
-        opts.includeContentLength = !!opts.includeContentLength;
-
-        const query = opts.includeContentLength
-            ? /*sql*/`SELECT attachments.*, LENGTH(blobs.content) AS contentLength
-                FROM attachments
-                JOIN blobs USING (blobId)
-                WHERE attachmentId = ? AND isDeleted = 0`
-            : /*sql*/`SELECT * FROM attachments WHERE attachmentId = ? AND isDeleted = 0`;
+    getAttachment(attachmentId: string): BAttachment | null {
+        const query = /*sql*/`\
+            SELECT attachments.*, LENGTH(blobs.content) AS contentLength
+            FROM attachments
+            JOIN blobs USING (blobId)
+            WHERE attachmentId = ? AND isDeleted = 0`;
 
         return sql.getRows<AttachmentRow>(query, [attachmentId]).map((row) => new BAttachment(row))[0];
     }
 
-    getAttachmentOrThrow(attachmentId: string, opts: AttachmentOpts = {}): BAttachment {
-        const attachment = this.getAttachment(attachmentId, opts);
+    getAttachmentOrThrow(attachmentId: string): BAttachment {
+        const attachment = this.getAttachment(attachmentId);
         if (!attachment) {
             throw new NotFoundError(`Attachment '${attachmentId}' has not been found.`);
         }

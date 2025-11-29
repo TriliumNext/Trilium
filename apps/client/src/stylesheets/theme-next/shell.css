@@ -345,7 +345,7 @@ body[dir=ltr] #launcher-container {
  */
 
  .calendar-dropdown-widget {
-    padding: 12px;
+    padding: 18px;
     color: var(--calendar-color);
     user-select: none;
 }

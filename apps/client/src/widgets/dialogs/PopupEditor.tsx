@@ -1,7 +1,7 @@
 import { useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import Modal from "../react/Modal";
 import "./PopupEditor.css";
-import { useNoteContext, useTriliumEvent } from "../react/hooks";
+import { useNoteContext, useNoteLabel, useTriliumEvent } from "../react/hooks";
 import NoteTitleWidget from "../note_title";
 import NoteIcon from "../note_icon";
 import NoteContext from "../../components/note_context";
@@ -18,6 +18,7 @@ import utils from "../../services/utils";
 import tree from "../../services/tree";
 import froca from "../../services/froca";
 import ReadOnlyNoteInfoBar from "../ReadOnlyNoteInfoBar";
+import MobileEditorToolbar from "../type_widgets/text/mobile_editor_toolbar";
 
 export default function PopupEditor() {
     const [ shown, setShown ] = useState(false);
@@ -67,10 +68,15 @@ export default function PopupEditor() {
                     }}
                     onHidden={() => setShown(false)}
                     keepInDom // needed for faster loading
+                    noFocus // automatic focus breaks block popup
                 >
                     <ReadOnlyNoteInfoBar />
                     <PromotedAttributes />
-                    <StandaloneRibbonAdapter component={FormattingToolbar} />
+
+                    {isMobile
+                    ? <MobileEditorToolbar inPopupEditor />
+                    : <StandaloneRibbonAdapter component={FormattingToolbar} />}
+
                     <FloatingButtons items={items} />
                     <NoteDetail />
                     <NoteList media="screen" displayOnlyCollections />
@@ -83,17 +89,10 @@ export default function PopupEditor() {
 export function DialogWrapper({ children }: { children: ComponentChildren }) {
     const { note } = useNoteContext();
     const wrapperRef = useRef<HTMLDivElement>(null);
-    const [ hasTint, setHasTint ] = useState(false);
-
-    // Apply the tinted-dialog class only if the custom color CSS class specifies a hue
-    useEffect(() => {
-        if (!wrapperRef.current) return;
-        const customHue = getComputedStyle(wrapperRef.current).getPropertyValue("--custom-color-hue");
-        setHasTint(!!customHue);
-    }, [ note ]);
+    useNoteLabel(note, "color"); // to update color class
 
     return (
-        <div ref={wrapperRef} class={`quick-edit-dialog-wrapper ${note?.getColorClass() ?? ""} ${hasTint ? "tinted-quick-edit-dialog" : ""}`}>
+        <div ref={wrapperRef} class={`quick-edit-dialog-wrapper ${note?.getColorClass() ?? ""}`}>
             {children}
         </div>
     )

@@ -38,7 +38,13 @@
         "sync_title": "동기화",
         "sync_content": "자체 호스팅 또는 클라우드 인스턴스를 이용하여 여러 기기 사이에서 노트를 쉽게 동기화하고 PWA를 통해 모바일 폰에서 접근할 수 있습니다.",
         "protected_notes_title": "보호된 노트",
-        "protected_notes_content": "노트를 암호화하고 비밀번호로 보호되는 세션 뒤에 잠궈 민감한 개인 정보를 보호하세요."
+        "protected_notes_content": "노트를 암호화하고 비밀번호로 보호되는 세션 뒤에 잠궈 민감한 개인 정보를 보호하세요.",
+        "jump_to_title": "빠른 검색 및 명령어",
+        "jump_to_content": "제목을 검색하고 오타나 약간의 차이를 설명하기 위해 퍼지 매칭을 통해 계층 전반에 걸쳐 노트나 UI 명령으로 빠르게 이동하세요.",
+        "search_title": "상세 검색",
+        "search_content": "또는 노트 내부에서 문자를 검색하거나 부모 노트 또는 단계별로 필터링 하는 등 검색 범위를 조정하세요.",
+        "web_clipper_title": "웹 클리퍼",
+        "web_clipper_content": "웹 클리퍼 확장 프로그램을 사용하여 웹 페이지(또는 스크린샷)를 Trilium으로 가져와 문서에 사용하세요."
     },
     "header": {
         "get-started": "시작하기",
@@ -79,5 +85,8 @@
         "title_arm64": "ARM 기반 리눅스",
         "description_x64": "대부분의 리눅스 배포판에서 x86_64 아키텍처와 호환됩니다.",
         "description_arm64": "ARM 기반 리눅스 배포판에서 aarch64 아키텍처와 호환됩니다."
+    },
+    "note_types": {
+        "text_title": "텍스트 노트"
     }
 }

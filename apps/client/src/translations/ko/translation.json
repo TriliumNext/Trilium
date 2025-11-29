@@ -39,7 +39,9 @@
     "edit_branch_prefix": "브랜치 접두사 편집",
     "help_on_tree_prefix": "트리 접두사에 대한 도움말",
     "prefix": "접두사: ",
-    "branch_prefix_saved": "브랜치 접두사가 저장되었습니다."
+    "branch_prefix_saved": "브랜치 접두사가 저장되었습니다.",
+    "edit_branch_prefix_multiple": "{{count}}개의 지점 접두사 편집",
+    "branch_prefix_saved_multiple": "{{count}}개의 지점에 대해 지점 접두사가 저장되었습니다."
   },
   "bulk_actions": {
     "bulk_actions": "대량 작업",

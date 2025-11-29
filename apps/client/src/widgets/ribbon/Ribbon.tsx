@@ -8,6 +8,7 @@ import NoteActions from "./NoteActions";
 import { KeyboardActionNames } from "@triliumnext/commons";
 import { RIBBON_TAB_DEFINITIONS } from "./RibbonDefinition";
 import { TabConfiguration, TitleContext } from "./ribbon-interface";
+import clsx from "clsx";
 
 const TAB_CONFIGURATION = numberObjectsInPlace<TabConfiguration>(RIBBON_TAB_DEFINITIONS);
 
@@ -63,62 +64,61 @@ export default function Ribbon() {
     }, [ computedTabs, activeTabIndex ]));
 
     return (
-        <div className="ribbon-container" style={{ contain: "none" }}>
-            {noteContext?.viewScope?.viewMode === "default" && (
-                <>
-                    <div className="ribbon-top-row">
-                        <div className="ribbon-tab-container">
-                            {computedTabs && computedTabs.map(({ title, icon, index, toggleCommand, shouldShow }) => (
-                                shouldShow && <RibbonTab
-                                    icon={icon}
-                                    title={typeof title === "string" ? title : title(titleContext)}
-                                    active={index === activeTabIndex}
-                                    toggleCommand={toggleCommand}
-                                    onClick={() => {
-                                        if (activeTabIndex !== index) {
-                                            setActiveTabIndex(index);
-                                        } else {
-                                            // Collapse
-                                            setActiveTabIndex(undefined);
-                                        }
-                                    }}
-                                />
-                            ))}
+        <div
+            className={clsx("ribbon-container", noteContext?.viewScope?.viewMode !== "default" && "hidden-ext")}
+            style={{ contain: "none" }}
+        >
+            <div className="ribbon-top-row">
+                <div className="ribbon-tab-container">
+                    {computedTabs && computedTabs.map(({ title, icon, index, toggleCommand, shouldShow }) => (
+                        shouldShow && <RibbonTab
+                            icon={icon}
+                            title={typeof title === "string" ? title : title(titleContext)}
+                            active={index === activeTabIndex}
+                            toggleCommand={toggleCommand}
+                            onClick={() => {
+                                if (activeTabIndex !== index) {
+                                    setActiveTabIndex(index);
+                                } else {
+                                    // Collapse
+                                    setActiveTabIndex(undefined);
+                                }
+                            }}
+                        />
+                    ))}
+                </div>
+                <div className="ribbon-button-container">
+                    { note && <NoteActions note={note} noteContext={noteContext} /> }
+                </div>
+            </div>
+
+            <div className="ribbon-body-container">
+                {computedTabs && computedTabs.map(tab => {
+                    const isActive = tab.index === activeTabIndex;
+                    if (!isActive && !tab.stayInDom) {
+                        return;
+                    }
+
+                    const TabContent = tab.content;
+
+                    return (
+                        <div className={`ribbon-body ${!isActive ? "hidden-ext" : ""}`}>
+                            <TabContent
+                                note={note}
+                                hidden={!isActive}
+                                ntxId={ntxId}
+                                hoistedNoteId={hoistedNoteId}
+                                notePath={notePath}
+                                noteContext={noteContext}
+                                componentId={componentId}
+                                activate={useCallback(() => {
+                                    setActiveTabIndex(tab.index)
+                                }, [setActiveTabIndex])}
+                            />
                         </div>
-                        <div className="ribbon-button-container">
-                            { note && <NoteActions note={note} noteContext={noteContext} /> }
-                        </div>
-                    </div>
-
-                    <div className="ribbon-body-container">
-                        {computedTabs && computedTabs.map(tab => {
-                            const isActive = tab.index === activeTabIndex;
-                            if (!isActive && !tab.stayInDom) {
-                                return;
-                            }
-
-                            const TabContent = tab.content;
-
-                            return (
-                                <div className={`ribbon-body ${!isActive ? "hidden-ext" : ""}`}>
-                                    <TabContent
-                                        note={note}
-                                        hidden={!isActive}
-                                        ntxId={ntxId}
-                                        hoistedNoteId={hoistedNoteId}
-                                        notePath={notePath}
-                                        noteContext={noteContext}
-                                        componentId={componentId}
-                                        activate={useCallback(() => {
-                                            setActiveTabIndex(tab.index)
-                                        }, [setActiveTabIndex])}
-                                    />
-                                </div>
-                            );
-                        })}
-                    </div>
-                </>
-            )}
+                    );
+                })}
+            </div>
         </div>
     )
 }

@@ -4,19 +4,23 @@ import "./mobile_editor_toolbar.css";
 import { isIOS } from "../../../services/utils";
 import { CKTextEditor, ClassicEditor } from "@triliumnext/ckeditor5";
 
+interface MobileEditorToolbarProps {
+    inPopupEditor?: boolean;
+}
+
 /**
  * Handles the editing toolbar for CKEditor in mobile mode. The toolbar acts as a floating bar, with two different mechanism:
  *
  * - On iOS, because it does not respect the viewport meta value `interactive-widget=resizes-content`, we need to listen to window resizes and scroll and reposition the toolbar using absolute positioning.
  * - On Android, the viewport change makes the keyboard resize the content area, all we have to do is to hide the tab bar and global menu (handled in the global style).
  */
-export default function MobileEditorToolbar() {
+export default function MobileEditorToolbar({ inPopupEditor }: MobileEditorToolbarProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const { note, noteContext, ntxId } = useNoteContext();
     const [ shouldDisplay, setShouldDisplay ] = useState(false);
     const [ dropdownActive, setDropdownActive ] = useState(false);
 
-    usePositioningOniOS(containerRef);
+    usePositioningOniOS(!inPopupEditor, containerRef);
 
     useEffect(() => {
         noteContext?.isReadOnly().then(isReadOnly => {
@@ -29,7 +33,10 @@ export default function MobileEditorToolbar() {
         if (eventNtxId !== ntxId || !containerRef.current) return;
         const toolbar = editor.ui.view.toolbar?.element;
 
-        repositionDropdowns(editor);
+        if (!inPopupEditor) {
+            repositionDropdowns(editor);
+        }
+
         if (toolbar) {
             containerRef.current.replaceChildren(toolbar);
         } else {
@@ -60,7 +67,7 @@ export default function MobileEditorToolbar() {
     )
 }
 
-function usePositioningOniOS(wrapperRef: MutableRef<HTMLDivElement | null>) {
+function usePositioningOniOS(enabled: boolean, wrapperRef: MutableRef<HTMLDivElement | null>) {
     const adjustPosition = useCallback(() => {
         if (!wrapperRef.current) return;
         let bottom = window.innerHeight - (window.visualViewport?.height || 0);
@@ -68,7 +75,7 @@ function usePositioningOniOS(wrapperRef: MutableRef<HTMLDivElement | null>) {
     }, []);
 
     useEffect(() => {
-        if (!isIOS()) return;
+        if (!isIOS() || !enabled) return;
 
         window.visualViewport?.addEventListener("resize", adjustPosition);
         window.addEventListener("scroll", adjustPosition);
@@ -77,7 +84,7 @@ function usePositioningOniOS(wrapperRef: MutableRef<HTMLDivElement | null>) {
             window.visualViewport?.removeEventListener("resize", adjustPosition);
             window.removeEventListener("scroll", adjustPosition);
         };
-    }, []);
+    }, [ enabled ]);
 }
 
 /**

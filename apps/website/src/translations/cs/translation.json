@@ -18,8 +18,8 @@
         "title": "Organizace",
         "note_structure_title": "Struktura poznámek",
         "note_structure_description": "Poznámky lze uspořádat hierarchicky. Není třeba používat složky, protože každá poznámka může obsahovat podpoznámky. Jednu poznámku lze přidat na více míst v hierarchii.",
-        "attributes_title": "Poznámky k štítkům a vztahům",
-        "attributes_description": "Využijte vztahy mezi poznámkami nebo přidejte štítky pro snadnou kategorizaci. Pomocí propagovaných atributů zadejte strukturované informace, které lze použít v tabulkách.",
+        "attributes_title": "Poznámky k štítkům a vazbám",
+        "attributes_description": "Využijte vazby mezi poznámkami nebo přidejte štítky pro snadnou kategorizaci. Pomocí propagovaných atributů zadejte strukturované informace, které lze použít v různých tabulkách.",
         "hoisting_title": "Pracovní prostředí a hoisting",
         "hoisting_description": "Snadno oddělte své osobní a pracovní poznámky tím, že je seskupíte do pracovního prostoru, který zaměří strom poznámek tak, aby zobrazoval pouze konkrétní sadu poznámek."
     },

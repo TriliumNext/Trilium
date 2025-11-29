@@ -165,7 +165,7 @@ export default class TabManager extends Component {
         const activeNoteContext = this.getActiveContext();
         this.updateDocumentTitle(activeNoteContext);
 
-        this.triggerEvent("activeNoteChanged", {}); // trigger this even in on popstate event
+        this.triggerEvent("activeNoteChanged", {ntxId:activeNoteContext?.ntxId}); // trigger this even in on popstate event
     }
 
     calculateHash(): string {

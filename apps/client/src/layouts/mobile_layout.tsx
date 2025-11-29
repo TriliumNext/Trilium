@@ -32,6 +32,7 @@ import PromotedAttributes from "../widgets/PromotedAttributes.jsx";
 
 const MOBILE_CSS = `
 <style>
+span.keyboard-shortcut,
 kbd {
     display: none;
 }

@@ -25,7 +25,7 @@
     "docker-start-rootless-alpine": "pnpm docker-build-rootless-alpine && docker run -p 8081:8080 triliumnext-rootless-alpine"
   },
   "dependencies": {
-    "better-sqlite3": "12.4.6",
+    "better-sqlite3": "12.5.0",
     "html-to-text": "9.0.5",
     "node-html-parser": "7.0.1"
   },

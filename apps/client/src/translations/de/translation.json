@@ -21,7 +21,7 @@
     },
     "bundle-error": {
       "title": "Benutzerdefiniertes Skript konnte nicht geladen werden",
-      "message": "Skript von der Notiz mit der ID \"{{id}}\", und dem Titel \"{{title}}\" konnte nicht ausgeführt werden wegen:\n\n{{message}}"
+      "message": "Skript aus der Notiz \"{{title}}\" mit der ID \"{{id}}\", konnte nicht ausgeführt werden wegen:\n\n{{message}}"
     }
   },
   "add_link": {
@@ -41,7 +41,8 @@
     "save": "Speichern",
     "branch_prefix_saved": "Zweigpräfix wurde gespeichert.",
     "branch_prefix_saved_multiple": "Der Zweigpräfix wurde für {{count}} Zweige gespeichert.",
-    "edit_branch_prefix_multiple": "Präfix für {{count}} Zweige bearbeiten"
+    "edit_branch_prefix_multiple": "Branch-Präfix für {{count}} Zweige bearbeiten",
+    "affected_branches": "Betroffene Zweige ({{count}}):"
   },
   "bulk_actions": {
     "bulk_actions": "Massenaktionen",
@@ -770,7 +771,10 @@
     "board": "Tafel",
     "include_archived_notes": "Zeige archivierte Notizen",
     "presentation": "Präsentation",
-    "expand_all_levels": "Alle Ebenen erweitern"
+    "expand_all_levels": "Alle Ebenen erweitern",
+    "expand_tooltip": "Erweitert die direkten Unterelemente dieser Sammlung (eine Ebene tiefer). Für weitere Optionen auf den Pfeil rechts klicken.",
+    "expand_first_level": "Direkte Unterelemente erweitern",
+    "expand_nth_level": "{{depth}} Ebenen erweitern"
   },
   "edited_notes": {
     "no_edited_notes_found": "An diesem Tag wurden noch keine Notizen bearbeitet...",
@@ -1517,7 +1521,8 @@
     "refresh-saved-search-results": "Gespeicherte Suchergebnisse aktualisieren",
     "create-child-note": "Unternotiz anlegen",
     "unhoist": "Fokus verlassen",
-    "toggle-sidebar": "Seitenleiste ein-/ausblenden"
+    "toggle-sidebar": "Seitenleiste ein-/ausblenden",
+    "dropping-not-allowed": "Ablegen von Notizen an dieser Stelle ist nicht zulässig."
   },
   "title_bar_buttons": {
     "window-on-top": "Dieses Fenster immer oben halten"
@@ -1620,7 +1625,8 @@
     "duplicate-launcher": "Launcher duplizieren <kbd data-command=\"duplicateSubtree\">"
   },
   "editable-text": {
-    "auto-detect-language": "Automatisch erkannt"
+    "auto-detect-language": "Automatisch erkannt",
+    "keeps-crashing": "Die Bearbeitungskomponente stürzt immer wieder ab. Bitte starten Sie Trilium neu. Wenn das Problem weiterhin besteht, erstellen Sie einen Fehlerbericht."
   },
   "highlighting": {
     "description": "Steuert die Syntaxhervorhebung für Codeblöcke in Textnotizen, Code-Notizen sind nicht betroffen.",
@@ -2089,7 +2095,7 @@
     "slide-overview": "Übersicht der Folien ein-/ausblenden"
   },
   "read-only-info": {
-    "read-only-note": "Aktuell wird eine Notiz nur im Lese-Modus angezeigt.",
+    "read-only-note": "Aktuelle Notiz wird im Lese-Modus angezeigt.",
     "auto-read-only-note": "Diese Notiz wird im Nur-Lesen-Modus angezeigt, um ein schnelleres Laden zu ermöglichen.",
     "auto-read-only-learn-more": "Mehr erfahren",
     "edit-note": "Notiz bearbeiten"

@@ -208,7 +208,7 @@ function RevisionPreview({noteContent, revisionItem, showDiff, setShown, onRevis
                     }
                 </div>)}
             </div>
-            <div className="revision-content use-tn-links" style={{ overflow: "auto", wordBreak: "break-word" }}>
+            <div className="revision-content use-tn-links selectable-text" style={{ overflow: "auto", wordBreak: "break-word" }}>
                 <RevisionContent noteContent={noteContent} revisionItem={revisionItem} fullRevision={fullRevision} showDiff={showDiff}/>
             </div>
         </>

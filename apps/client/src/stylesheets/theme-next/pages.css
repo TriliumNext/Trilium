@@ -124,12 +124,8 @@
 
 /* The container */
 
-.note-split.empty-note {
-    --max-content-width: 70%;
-}
-
 .note-split.empty-note div.note-detail {
-    margin: 50px auto;
+    margin-inline: auto;
 }
 
 /* The search results list */

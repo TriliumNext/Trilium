@@ -110,7 +110,7 @@ export default class CalendarWidget extends RightDropdownButtonWidget {
     private weekNotes: string[] = [];
 
     constructor(title: string = "", icon: string = "") {
-        super(title, icon, DROPDOWN_TPL);
+        super(title, icon, DROPDOWN_TPL, "calendar-dropdown-menu");
     }
 
     doRender() {
@@ -211,8 +211,7 @@ export default class CalendarWidget extends RightDropdownButtonWidget {
             const $target = $(e.target);
 
             // Keep dropdown open when clicking on month select button or year selector area
-            if ($target.closest('.btn.dropdown-toggle.select-button').length ||
-                $target.closest('.calendar-year-selector').length) {
+            if ($target.closest('.btn.dropdown-toggle.select-button').length) {
                 e.stopPropagation();
                 return;
             }

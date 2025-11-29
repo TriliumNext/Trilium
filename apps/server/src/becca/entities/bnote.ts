@@ -61,10 +61,6 @@ interface ContentOpts {
     forceFrontendReload?: boolean;
 }
 
-interface AttachmentOpts {
-    includeContentLength?: boolean;
-}
-
 interface Relationship {
     parentNoteId: string;
     childNoteId: string;
@@ -1102,31 +1098,23 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return sql.getRows<RevisionRow>("SELECT * FROM revisions WHERE noteId = ? ORDER BY revisions.utcDateCreated ASC", [this.noteId]).map((row) => new BRevision(row));
     }
 
-    getAttachments(opts: AttachmentOpts = {}) {
-        opts.includeContentLength = !!opts.includeContentLength;
-        // from testing, it looks like calculating length does not make a difference in performance even on large-ish DB
-        // given that we're always fetching attachments only for a specific note, we might just do it always
-
-        const query = opts.includeContentLength
-            ? /*sql*/`SELECT attachments.*, LENGTH(blobs.content) AS contentLength
-                FROM attachments
-                JOIN blobs USING (blobId)
-                WHERE ownerId = ? AND isDeleted = 0
-                ORDER BY position`
-            : /*sql*/`SELECT * FROM attachments WHERE ownerId = ? AND isDeleted = 0 ORDER BY position`;
+    getAttachments() {
+        const query = /*sql*/`\
+            SELECT attachments.*, LENGTH(blobs.content) AS contentLength
+            FROM attachments
+            JOIN blobs USING (blobId)
+            WHERE ownerId = ? AND isDeleted = 0
+            ORDER BY position`;
 
         return sql.getRows<AttachmentRow>(query, [this.noteId]).map((row) => new BAttachment(row));
     }
 
-    getAttachmentById(attachmentId: string, opts: AttachmentOpts = {}) {
-        opts.includeContentLength = !!opts.includeContentLength;
-
-        const query = opts.includeContentLength
-            ? /*sql*/`SELECT attachments.*, LENGTH(blobs.content) AS contentLength
-                FROM attachments
-                JOIN blobs USING (blobId)
-                WHERE ownerId = ? AND attachmentId = ? AND isDeleted = 0`
-            : /*sql*/`SELECT * FROM attachments WHERE ownerId = ? AND attachmentId = ? AND isDeleted = 0`;
+    getAttachmentById(attachmentId: string) {
+        const query = /*sql*/`\
+            SELECT attachments.*, LENGTH(blobs.content) AS contentLength
+            FROM attachments
+            JOIN blobs USING (blobId)
+            WHERE ownerId = ? AND attachmentId = ? AND isDeleted = 0`;
 
         return sql.getRows<AttachmentRow>(query, [this.noteId, attachmentId]).map((row) => new BAttachment(row))[0];
     }

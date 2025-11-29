@@ -62,6 +62,7 @@
 
     --menu-padding-size: 8px;
     --menu-item-icon-vert-offset: -2px;
+    --menu-submenu-mobile-background-color: rgba(255, 255, 255, 0.15);
 
     --more-accented-background-color: var(--card-background-hover-color);
 
@@ -97,6 +98,14 @@
     
     /* The minimum perceptual lightness for the custom color in the dark theme (%): */
     --tree-item-dark-theme-min-color-lightness: 65;
+}
+
+body {
+    user-select: none;
+}
+
+.selectable-text {
+    user-select: text;
 }
 
 body.backdrop-effects-disabled {
@@ -308,6 +317,19 @@ body.mobile #context-menu-cover {
     &.show {
         background: rgba(0, 0, 0, 0.7);
     }
+
+    &.global-menu-cover {
+        bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-size));
+
+        @media (min-width: 992px) {
+            bottom: 0;
+        }
+    }
+}
+
+body.mobile .dropdown-menu.mobile-bottom-menu,
+body.mobile .dropdown.global-menu .dropdown-menu {
+    border-radius: var(--dropdown-border-radius) var(--dropdown-border-radius) 0 0;
 }
 
 body.mobile .dropdown-menu {
@@ -316,9 +338,8 @@ body.mobile .dropdown-menu {
     --hover-item-background-color: var(--card-background-color);
     font-size: 1em !important;
     backdrop-filter: var(--dropdown-backdrop-filter);
-    border-radius: var(--dropdown-border-radius) var(--dropdown-border-radius) 0 0;
     position: relative;
-
+    
     .dropdown-toggle::after {
         top: 0.5em;
         right: var(--dropdown-menu-padding-horizontal);
@@ -334,8 +355,8 @@ body.mobile .dropdown-menu {
         margin-bottom: 0;
         padding: var(--dropdown-menu-padding-vertical) var(--dropdown-menu-padding-horizontal) !important;
         background: var(--card-background-color);
-        border-bottom: 1px solid var(--main-border-color) !important;
-        border-radius: 0;
+        border-bottom: 1px solid var(--menu-item-delimiter-color) !important;
+        border-radius: 0;        
     }
 
     .dropdown-item:first-of-type,
@@ -368,18 +389,16 @@ body.mobile .dropdown-menu {
         }
 
         .dropdown-menu {
-            --menu-background-color: rgba(0, 0, 0, 0.15);
+            --menu-background-color: --menu-submenu-mobile-background-color;
+            --bs-dropdown-divider-margin-y: 0.25rem;
             border-radius: 0;
             max-height: 0;            
             transition: max-height 100ms ease-in;
-            display: block !important;
-
+            display: block !important;            
+            
             &.show {
                 max-height: 1000px;
-            }
-
-            .dropdown-item {
-                background: transparent;
+                padding: 0.5rem 0.75rem !important;
             }
         }
 
@@ -387,6 +406,20 @@ body.mobile .dropdown-menu {
             .dropdown-toggle {
                 padding-bottom: var(--dropdown-menu-padding-vertical);
             }            
+        }
+    }
+
+    .dropdown-custom-item:has(.note-color-picker) {
+        overflow-x: auto;
+    }
+
+    .note-color-picker {
+        padding: 0;
+        width: fit-content;
+
+        .color-cell {
+            --color-picker-cell-size: 26px;
+            flex-shrink: 0;
         }
     }
 }

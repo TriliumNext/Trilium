@@ -1647,7 +1647,6 @@
   "read-only-info": {
     "read-only-note": "Currently viewing a read-only note.",
     "auto-read-only-note": "This note is shown in a read-only mode for faster loading.",
-    "auto-read-only-learn-more": "Learn more",
     "edit-note": "Edit note"
   },
   "note_types": {

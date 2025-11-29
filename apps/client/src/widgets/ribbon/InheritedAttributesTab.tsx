@@ -37,7 +37,7 @@ export default function InheritedAttributesTab({ note, componentId }: TabContext
     
     return (
         <div className="inherited-attributes-widget">
-            <div className="inherited-attributes-container">
+            <div className="inherited-attributes-container selectable-text">
                 {inheritedAttributes?.length ? (
                     joinElements(inheritedAttributes.map(attribute => (
                         <InheritedAttribute

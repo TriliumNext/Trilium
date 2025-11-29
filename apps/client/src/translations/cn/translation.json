@@ -1557,7 +1557,8 @@
     "refresh-saved-search-results": "刷新保存的搜索结果",
     "create-child-note": "创建子笔记",
     "unhoist": "取消聚焦",
-    "toggle-sidebar": "切换侧边栏"
+    "toggle-sidebar": "切换侧边栏",
+    "dropping-not-allowed": "不允许移动笔记到此处。"
   },
   "title_bar_buttons": {
     "window-on-top": "保持此窗口置顶"
@@ -1660,7 +1661,8 @@
     "duplicate-launcher": "复制启动器 <kbd data-command=\"duplicateSubtree\">"
   },
   "editable-text": {
-    "auto-detect-language": "自动检测"
+    "auto-detect-language": "自动检测",
+    "keeps-crashing": "编辑组件时持续崩溃。请尝试重启 Trilium。如果问题仍然存在，请考虑提交错误报告。"
   },
   "highlighting": {
     "title": "代码块",

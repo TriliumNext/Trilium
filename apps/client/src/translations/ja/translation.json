@@ -1212,7 +1212,8 @@
     "unhoist": "ホイスト解除",
     "saved-search-note-refreshed": "保存した検索ノートが更新されました。",
     "refresh-saved-search-results": "保存した検索結果を更新",
-    "toggle-sidebar": "サイドバーを切り替え"
+    "toggle-sidebar": "サイドバーを切り替え",
+    "dropping-not-allowed": "この場所にノートをドロップすることはできません。"
   },
   "bulk_actions": {
     "bulk_actions": "一括操作",
@@ -1266,7 +1267,8 @@
     "reset_launcher_confirm": "本当に「{{title}}」をリセットしますか？ このノート（およびその子ノート）のすべてのデータと設定が失われ、ランチャーは元の場所に戻ります。"
   },
   "editable-text": {
-    "auto-detect-language": "自動検出"
+    "auto-detect-language": "自動検出",
+    "keeps-crashing": "編集コンポーネントがクラッシュし続けます。Trilium を再起動してください。問題が解決しない場合は、バグレポートの作成をご検討ください。"
   },
   "highlighting": {
     "title": "コードブロック",

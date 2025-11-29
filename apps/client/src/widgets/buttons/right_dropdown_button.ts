@@ -7,9 +7,9 @@ const TPL = /*html*/`
 <div class="dropdown right-dropdown-widget">
     <button type="button" data-bs-toggle="dropdown"
             aria-haspopup="true" aria-expanded="false"
-            class="bx right-dropdown-button launcher-button"></button>
-
-    <div class="tooltip-trigger"></div>
+            class="bx right-dropdown-button launcher-button">
+        <div class="tooltip-trigger"></div>
+    </button>
 
     <div class="dropdown-menu"></div>
 </div>
@@ -24,14 +24,16 @@ export default class RightDropdownButtonWidget extends BasicWidget {
     protected dropdown!: Dropdown;
     protected $tooltip!: JQuery<HTMLElement>;
     protected tooltip!: Tooltip;
+    private dropdownClass?: string;
     public $dropdownContent!: JQuery<HTMLElement>;
 
-    constructor(title: string, iconClass: string, dropdownTpl: string) {
+    constructor(title: string, iconClass: string, dropdownTpl: string, dropdownClass?: string) {
         super();
 
         this.iconClass = iconClass;
         this.title = title;
         this.dropdownTpl = dropdownTpl;
+        this.dropdownClass = dropdownClass;
 
         this.settings = {
             titlePlacement: "right"
@@ -41,15 +43,17 @@ export default class RightDropdownButtonWidget extends BasicWidget {
     doRender() {
         this.$widget = $(TPL);
         this.$dropdownMenu = this.$widget.find(".dropdown-menu");
+        if (this.dropdownClass) {
+            this.$dropdownMenu.addClass(this.dropdownClass);
+        }
         this.dropdown = Dropdown.getOrCreateInstance(this.$widget.find("[data-bs-toggle='dropdown']")[0], {
             popperConfig: {
                 placement: this.settings.titlePlacement,
             }
         });
 
-        this.$widget.attr("title", this.title);
-        this.tooltip = Tooltip.getOrCreateInstance(this.$widget[0], {
-            trigger: "hover",
+        this.$tooltip = this.$widget.find(".tooltip-trigger").attr("title", this.title);
+        this.tooltip = new Tooltip(this.$tooltip[0], {
             placement: handleRightToLeftPlacement(this.settings.titlePlacement),
             fallbackPlacements: [ handleRightToLeftPlacement(this.settings.titlePlacement) ]
         });
@@ -57,7 +61,9 @@ export default class RightDropdownButtonWidget extends BasicWidget {
         this.$widget
             .find(".right-dropdown-button")
             .addClass(this.iconClass)
-            .on("click", () => this.tooltip.hide());
+            .on("click", () => this.tooltip.hide())
+            .on("mouseenter", () => this.tooltip.show())
+            .on("mouseleave", () => this.tooltip.hide());
 
         this.$widget.on("show.bs.dropdown", async () => {
             await this.dropdownShown();

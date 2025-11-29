@@ -28,8 +28,9 @@ export default function NoteDetail() {
     const { note, type, mime, noteContext, parentComponent } = useNoteInfo();
     const { ntxId, viewScope } = noteContext ?? {};
     const isFullHeight = checkFullHeight(noteContext, type);
-    const noteTypesToRender = useRef<{ [ key in ExtendedNoteType ]?: (props: TypeWidgetProps) => VNode }>({});
+    const [ noteTypesToRender, setNoteTypesToRender ] = useState<{ [ key in ExtendedNoteType ]?: (props: TypeWidgetProps) => VNode }>({});
     const [ activeNoteType, setActiveNoteType ] = useState<ExtendedNoteType>();
+    const widgetRequestId = useRef(0);
 
     const props: TypeWidgetProps = {
         note: note!,
@@ -38,19 +39,28 @@ export default function NoteDetail() {
         parentComponent,
         noteContext
     };
+
     useEffect(() => {
         if (!type) return;
+        const requestId = ++widgetRequestId.current;
 
-        if (!noteTypesToRender.current[type]) {
+        if (!noteTypesToRender[type]) {
             getCorrespondingWidget(type).then((el) => {
                 if (!el) return;
-                noteTypesToRender.current[type] = el;
+
+                // Ignore stale requests
+                if (requestId !== widgetRequestId.current) return;
+
+                setNoteTypesToRender(prev => ({
+                    ...prev,
+                    [type]: el
+                }));
                 setActiveNoteType(type);
             });
         } else {
             setActiveNoteType(type);
         }
-    }, [ note, viewScope, type ]);
+    }, [ note, viewScope, type, noteTypesToRender ]);
 
     // Detect note type changes.
     useTriliumEvent("entitiesReloaded", async ({ loadResults }) => {
@@ -95,9 +105,11 @@ export default function NoteDetail() {
     });
 
     // Automatically focus the editor.
-    useTriliumEvent("activeNoteChanged", () => {
-        // Restore focus to the editor when switching tabs, but only if the note tree is not already focused.
-        if (!document.activeElement?.classList.contains("fancytree-title")) {
+    useTriliumEvent("activeNoteChanged", ({ ntxId: eventNtxId }) => {
+        if (eventNtxId != ntxId) return;
+        // Restore focus to the editor when switching tabs,
+        // but only if the note tree and the note panel (e.g., note title or note detail) are not focused.
+        if (!document.activeElement?.classList.contains("fancytree-title") && !parentComponent.$widget[0].closest(".note-split")?.contains(document.activeElement)) {
             parentComponent.triggerCommand("focusOnDetail", { ntxId });
         }
     });
@@ -192,7 +204,7 @@ export default function NoteDetail() {
             ref={containerRef}
             class={`note-detail ${isFullHeight ? "full-height" : ""}`}
         >
-            {Object.entries(noteTypesToRender.current).map(([ itemType, Element ]) => {
+            {Object.entries(noteTypesToRender).map(([ itemType, Element ]) => {
                 return <NoteDetailWrapper
                     Element={Element}
                     key={itemType}

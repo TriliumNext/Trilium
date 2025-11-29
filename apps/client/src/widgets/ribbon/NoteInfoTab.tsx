@@ -39,21 +39,21 @@ export default function NoteInfoTab({ note }: TabContext) {
                 <>
                     <div className="note-info-item">
                         <span>{t("note_info_widget.note_id")}:</span>
-                        <span className="note-info-id">{note.noteId}</span>
+                        <span className="note-info-id selectable-text">{note.noteId}</span>
                     </div>
                     <div className="note-info-item">
                         <span>{t("note_info_widget.created")}:</span>
-                        <span>{formatDateTime(metadata?.dateCreated)}</span>
+                        <span className="selectable-text">{formatDateTime(metadata?.dateCreated)}</span>
                     </div>
                     <div className="note-info-item">
                         <span>{t("note_info_widget.modified")}:</span>
-                        <span>{formatDateTime(metadata?.dateModified)}</span>
+                        <span className="selectable-text">{formatDateTime(metadata?.dateModified)}</span>
                     </div>
                     <div className="note-info-item">
                         <span>{t("note_info_widget.type")}:</span>
                         <span>
                             <span className="note-info-type">{note.type}</span>{' '}
-                            {note.mime && <span className="note-info-mime">({note.mime})</span>}
+                            {note.mime && <span className="note-info-mime selectable-text">({note.mime})</span>}
                         </span>
                     </div>
                     <div className="note-info-item">
@@ -77,7 +77,7 @@ export default function NoteInfoTab({ note }: TabContext) {
                                 />
                             )}
 
-                            <span className="note-sizes-wrapper">
+                            <span className="note-sizes-wrapper selectable-text">
                                 <span className="note-size">{formatSize(noteSizeResponse?.noteSize)}</span>
                                 {" "}
                                 {subtreeSizeResponse && subtreeSizeResponse.subTreeNoteCount > 1 &&

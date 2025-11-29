@@ -98,6 +98,14 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                 editorApi: editorApiRef.current,
             });
         },
+        insertDateTimeToTextCommand() {
+            if (!editorApiRef.current) return;
+            const date = new Date();
+            const customDateTimeFormat = options.get("customDateTimeFormat");
+            const dateString = utils.formatDateTime(date, customDateTimeFormat);
+
+            addTextToEditor(dateString);
+        },
         // Include note functionality note
         addIncludeNoteToTextCommand() {
             if (!editorApiRef.current) return;
@@ -197,14 +205,6 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         });
     }
 
-    useTriliumEvent("insertDateTimeToText", ({ ntxId: eventNtxId }) => {
-        if (eventNtxId !== ntxId) return;
-        const date = new Date();
-        const customDateTimeFormat = options.get("customDateTimeFormat");
-        const dateString = utils.formatDateTime(date, customDateTimeFormat);
-
-        addTextToEditor(dateString);
-    });
     useTriliumEvent("addTextToActiveEditor", ({ text }) => {
         if (!noteContext?.isActive()) return;
         addTextToEditor(text);

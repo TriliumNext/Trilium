@@ -104,7 +104,7 @@ export function BackupList({ backups }: { backups: DatabaseBackup[] }) {
                         backups.map(({ mtime, filePath }) => (
                             <tr>
                                 <td>{mtime ? formatDateTime(mtime) : "-"}</td>
-                                <td>{filePath}</td>
+                                <td className="selectable-text">{filePath}</td>
                             </tr>
                         ))
                     ) : (

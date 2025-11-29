@@ -23,17 +23,17 @@ export default function ImagePropertiesTab({ note, ntxId }: TabContext) {
                     <div style={{ display: "flex", justifyContent: "space-evenly", margin: "10px" }}>
                         <span>
                             <strong>{t("image_properties.original_file_name")}:</strong>{" "}
-                            <span>{originalFileName ?? "?"}</span>
+                            <span className="selectable-text">{originalFileName ?? "?"}</span>
                         </span>
 
                         <span>
                             <strong>{t("image_properties.file_type")}:</strong>{" "}
-                            <span>{note.mime}</span>
+                            <span className="selectable-text">{note.mime}</span>
                         </span>
 
                         <span>
                             <strong>{t("image_properties.file_size")}:</strong>{" "}
-                            <span>{formatSize(blob?.contentLength)}</span>
+                            <span className="selectable-text">{formatSize(blob?.contentLength)}</span>
                         </span>
                     </div>
 

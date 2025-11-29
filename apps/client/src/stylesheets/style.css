@@ -25,7 +25,8 @@
     --bs-body-font-weight: var(--main-font-weight) !important;
     --bs-body-color: var(--main-text-color) !important;
     --bs-body-bg: var(--main-background-color) !important;    
-    --ck-mention-list-max-height: 500px;
+    --ck-mention-list-max-height: 500px;    
+    --tn-modal-max-height: 90vh;
 }
 
 body#trilium-app.motion-disabled *,
@@ -210,6 +211,16 @@ input::placeholder,
 
 .modal-backdrop {
     background-color: var(--modal-backdrop-color) !important;
+}
+
+body.mobile .modal .modal-dialog {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+}
+
+body.mobile .modal .modal-content {
+    border-radius: var(--bs-modal-border-radius) var(--bs-modal-border-radius) 0 0;
 }
 
 .component {
@@ -706,11 +717,6 @@ table.promoted-attributes-in-tooltip th {
     z-index: 32767 !important;
 }
 
-.tooltip-trigger {
-    background: transparent;
-    pointer-events: none;
-}
-
 .bs-tooltip-bottom .tooltip-arrow::before {
     border-bottom-color: var(--main-border-color) !important;
 }
@@ -1006,9 +1012,17 @@ div[data-notify="container"] {
     font-family: var(--monospace-font-family);
 }
 
-svg.ck-icon .note-icon {
-    color: var(--main-text-color);
-    font-size: 20px;
+svg.ck-icon {
+    &.ck-icon_inherit-color {
+        * {
+            fill: currentColor;
+        }
+    }
+
+    &.note-icon {
+        color: var(--main-text-color);
+        font-size: 20px;
+    }
 }
 
 .ck-content {
@@ -1115,10 +1129,6 @@ a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href
 .bx-empty {
     width: 1em;
     display: inline-block;
-}
-
-.note-detail-empty {
-    margin: 50px;
 }
 
 .modal-header {
@@ -1316,7 +1326,7 @@ body.mobile #context-menu-container.mobile-bottom-menu {
     inset-inline-end: 0 !important;
     bottom: 0 !important;
     top: unset !important;
-    max-height: 90vh;
+    max-height: var(--tn-modal-max-height);
     overflow: auto !important;
     user-select: none;
     -webkit-user-select: none;
@@ -1377,6 +1387,20 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 
 .right-dropdown-widget {
     flex-shrink: 0;
+}
+
+.right-dropdown-widget .right-dropdown-button {
+    position: relative;
+}
+
+.tooltip-trigger {
+    background: transparent;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 #launcher-pane.horizontal .right-dropdown-widget {
@@ -1554,12 +1578,15 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 @media (max-width: 991px) {
     body.mobile #launcher-pane .dropdown.global-menu > .dropdown-menu.show,
     body.mobile #launcher-container .dropdown > .dropdown-menu.show {
+        --dropdown-bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-size));
         position: fixed !important;
-        bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-size)) !important;
+        bottom: var(--dropdown-bottom) !important;
         top: unset !important;
         inset-inline-start: 0 !important;
         inset-inline-end: 0 !important;
         transform: unset !important;
+        overflow-y: auto;
+        max-height: calc(var(--tn-modal-max-height) - var(--dropdown-bottom));
     }
 
     #mobile-sidebar-container {

@@ -4,6 +4,10 @@
     box-sizing: border-box;
 }
 
+.dropdown-menu:not(.static).calendar-dropdown-menu {
+    padding: 0 !important;
+}
+
 .calendar-dropdown-widget {
     margin: 0 auto;
     overflow: hidden;

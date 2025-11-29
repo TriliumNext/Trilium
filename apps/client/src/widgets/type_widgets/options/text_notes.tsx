@@ -226,7 +226,7 @@ function CodeBlockPreview({ theme, wordWrap }: { theme: string, wordWrap: boolea
 
     return (
         <div className="note-detail-readonly-text-content ck-content code-sample-wrapper">
-            <pre className="hljs" style={{ marginBottom: 0 }}>
+            <pre className="hljs selectable-text" style={{ marginBottom: 0 }}>
                 <code className="code-sample" style={codeStyle} dangerouslySetInnerHTML={getHtml(code)} />
             </pre>
         </div>

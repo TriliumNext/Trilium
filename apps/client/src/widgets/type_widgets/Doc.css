@@ -1,5 +1,6 @@
 .note-detail-doc-content {
     padding: 15px;
+    user-select: text;
 }
 
 .note-detail-doc-content pre {

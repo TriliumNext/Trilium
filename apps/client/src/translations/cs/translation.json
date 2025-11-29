@@ -70,7 +70,7 @@
     "cancel": "Zrušit",
     "ok": "OK",
     "confirmation": "Potvrzení",
-    "are_you_sure_remove_note": "Opravdu chcete odstranit poznámku „{{title}}“ z mapy vztahů?",
+    "are_you_sure_remove_note": "Opravdu chcete odstranit poznámku „{{title}}“ z mapy vztahů? ",
     "if_you_dont_check": "Pokud tuto možnost nezaškrtnete, poznámka bude odstraněna pouze z mapy vztahů.",
     "also_delete_note": "Odstraňte také poznámku"
   },

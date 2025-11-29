@@ -204,8 +204,19 @@ function AddNewColumn({ api, isInRelationMode }: { api: BoardApi, isInRelationMo
         setIsCreatingNewColumn(true);
     }, []);
 
+    const keydownCallback = useCallback((e: KeyboardEvent) => {
+        if (e.key === "Enter") {
+            setIsCreatingNewColumn(true);
+        }
+    }, []);
+
     return (
-        <div className={`board-add-column ${isCreatingNewColumn ? "editing" : ""}`} onClick={addColumnCallback}>
+        <div
+            className={`board-add-column ${isCreatingNewColumn ? "editing" : ""}`}
+            onClick={addColumnCallback}
+            onKeyDown={keydownCallback}
+            tabIndex={300}
+        >
             {!isCreatingNewColumn
             ? <>
                 <Icon icon="bx bx-plus" />{" "}

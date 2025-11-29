@@ -1516,7 +1516,8 @@
     "refresh-saved-search-results": "重新整理儲存的搜尋結果",
     "create-child-note": "建立子筆記",
     "unhoist": "取消聚焦",
-    "toggle-sidebar": "切換側邊欄"
+    "toggle-sidebar": "切換側邊欄",
+    "dropping-not-allowed": "不允許移動筆記至此處。"
   },
   "title_bar_buttons": {
     "window-on-top": "保持此視窗置頂"
@@ -1619,7 +1620,8 @@
     "duplicate-launcher": "複製啟動器 <kbd data-command=\"duplicateSubtree\">"
   },
   "editable-text": {
-    "auto-detect-language": "自動檢測"
+    "auto-detect-language": "自動檢測",
+    "keeps-crashing": "編輯元件持續發生崩潰。請嘗試重新啟動 Trilium。若問題仍存在，請考慮提交錯誤報告。"
   },
   "highlighting": {
     "description": "控制文字筆記程式碼區塊中的語法高亮，程式碼筆記不會受到影響。",

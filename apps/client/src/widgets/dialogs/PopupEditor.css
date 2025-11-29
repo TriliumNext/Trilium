@@ -5,12 +5,22 @@ body.popup-editor-open .ck-clipboard-drop-target-line { z-index: 1000; }
 
 body.desktop .modal.popup-editor-dialog .modal-dialog {
     max-width: 75vw;
-}
-
-.modal.popup-editor-dialog .modal-dialog {
     border-bottom-left-radius: var(--bs-modal-border-radius);
     border-bottom-right-radius: var(--bs-modal-border-radius);
+}
+
+body.desktop .modal.popup-editor-dialog .modal-dialog {
     overflow: hidden;
+}
+
+body.mobile .modal.popup-editor-dialog .modal-dialog {
+    max-width: min(var(--preferred-max-content-width), 95vw);
+    max-height: var(--tn-modal-max-height);
+    height: 100%;
+}
+
+.modal.popup-editor-dialog .modal-content {
+    transition: background-color 250ms ease-in;
 }
 
 .modal.popup-editor-dialog .modal-header .modal-title {
@@ -52,13 +62,18 @@ body.desktop .modal.popup-editor-dialog .modal-dialog {
     font-size: 1em;
 }
 
+.modal.popup-editor-dialog .classic-toolbar-outer-container.visible {
+    background-color: transparent;
+}
+
 .modal.popup-editor-dialog .classic-toolbar-widget {
     position: sticky;
     top: 0;
     inset-inline-start: 0;
     inset-inline-end: 0;
-    background: var(--modal-background-color);
+    background: transparent;
     z-index: 998;
+    align-items: flex-start;
 }
 
 .modal.popup-editor-dialog .note-detail.full-height {

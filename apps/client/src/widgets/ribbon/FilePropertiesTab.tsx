@@ -17,24 +17,24 @@ export default function FilePropertiesTab({ note }: { note?: FNote | null }) {
     return (
         <div className="file-properties-widget">
             {note && (
-                <table class="file-table">
+                <table className="file-table">
                     <tbody>
                         <tr>
-                            <th class="text-nowrap">{t("file_properties.note_id")}:</th>
-                            <td class="file-note-id">{note.noteId}</td>
-                            <th class="text-nowrap">{t("file_properties.original_file_name")}:</th>
-                            <td class="file-filename">{originalFileName ?? "?"}</td>
+                            <th className="text-nowrap">{t("file_properties.note_id")}:</th>
+                            <td className="file-note-id selectable-text">{note.noteId}</td>
+                            <th className="text-nowrap">{t("file_properties.original_file_name")}:</th>
+                            <td className="file-filename selectable-text">{originalFileName ?? "?"}</td>
                         </tr>
                         <tr>
-                            <th class="text-nowrap">{t("file_properties.file_type")}:</th>
-                            <td class="file-filetype">{note.mime}</td>
-                            <th class="text-nowrap">{t("file_properties.file_size")}:</th>
-                            <td class="file-filesize">{formatSize(blob?.contentLength ?? 0)}</td>
+                            <th className="text-nowrap">{t("file_properties.file_type")}:</th>
+                            <td className="file-filetype selectable-text">{note.mime}</td>
+                            <th className="text-nowrap">{t("file_properties.file_size")}:</th>
+                            <td className="file-filesize selectable-text">{formatSize(blob?.contentLength ?? 0)}</td>
                         </tr>
 
                         <tr>
                             <td colSpan={4}>
-                                <div class="file-buttons">
+                                <div className="file-buttons">
                                     <Button
                                         icon="bx bx-download"
                                         text={t("file_properties.download")}

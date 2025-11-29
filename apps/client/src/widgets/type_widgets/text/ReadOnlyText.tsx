@@ -41,7 +41,6 @@ export default function ReadOnlyText({ note, noteContext, ntxId }: TypeWidgetPro
 
     // React to included note changes.
     useTriliumEvent("refreshIncludedNote", ({ noteId }) => {
-        console.log("Refresh ", noteId);
         if (!contentRef.current) return;
         refreshIncludedNote(contentRef.current, noteId);
     });
@@ -56,7 +55,7 @@ export default function ReadOnlyText({ note, noteContext, ntxId }: TypeWidgetPro
         <>
             <RawHtmlBlock
                 containerRef={contentRef}
-                className={clsx("note-detail-readonly-text-content ck-content use-tn-links", codeBlockWordWrap && "word-wrap")}
+                className={clsx("note-detail-readonly-text-content ck-content use-tn-links selectable-text", codeBlockWordWrap && "word-wrap")}
                 tabindex={100}
                 dir={isRtl ? "rtl" : "ltr"}
                 html={blob?.content}

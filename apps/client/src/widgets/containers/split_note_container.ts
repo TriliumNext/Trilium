@@ -1,12 +1,8 @@
 import FlexContainer from "./flex_container.js";
 import appContext, { type CommandData, type CommandListenerData, type EventData, type EventNames, type NoteSwitchedContext } from "../../components/app_context.js";
 import type BasicWidget from "../basic_widget.js";
-import type NoteContext from "../../components/note_context.js";
 import Component from "../../components/component.js";
 import splitService from "../../services/resizer.js";
-interface NoteContextEvent {
-    noteContext: NoteContext;
-}
 
 interface SplitNoteWidget extends BasicWidget {
     hasBeenAlreadyShown?: boolean;

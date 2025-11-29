@@ -764,7 +764,7 @@ function updateNoteData(noteId: string, content: string, attachments: Attachment
     note.setContent(newContent, { forceFrontendReload });
 
     if (attachments?.length > 0) {
-        const existingAttachmentsByTitle = toMap(note.getAttachments({ includeContentLength: false }), "title");
+        const existingAttachmentsByTitle = toMap(note.getAttachments(), "title");
 
         for (const { attachmentId, role, mime, title, position, content } of attachments) {
             const existingAttachment = existingAttachmentsByTitle.get(title);
