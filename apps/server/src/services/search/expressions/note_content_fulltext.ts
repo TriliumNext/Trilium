@@ -20,7 +20,7 @@ import {
     getRegex,
     FUZZY_SEARCH_CONFIG
 } from "../utils/text_utils.js";
-import ftsSearchService, { FTSError, FTSQueryError } from "../fts_search.js";
+import { ftsSearchService, FTSError, FTSQueryError } from "../fts/index.js";
 
 const ALLOWED_OPERATORS = new Set(["=", "!=", "*=*", "*=", "=*", "%=", "~=", "~*"]);
 

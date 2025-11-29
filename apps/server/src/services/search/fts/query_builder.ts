@@ -77,12 +77,6 @@ export function sanitizeFTS5Token(token: string): string {
         return "__empty_token__";
     }
 
-    // Additional validation: ensure token doesn't contain SQL injection attempts
-    if (sanitized.includes(';') || sanitized.includes('--')) {
-        log.error(`Potential SQL injection attempt detected in token: "${token}"`);
-        return "__invalid_token__";
-    }
-
     return sanitized;
 }
 

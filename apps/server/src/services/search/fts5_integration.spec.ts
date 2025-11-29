@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { ftsSearchService } from "./fts_search.js";
+import { ftsSearchService } from "./fts/index.js";
 import searchService from "./services/search.js";
 import BNote from "../../becca/entities/bnote.js";
 import BBranch from "../../becca/entities/bbranch.js";

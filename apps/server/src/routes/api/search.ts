@@ -10,7 +10,7 @@ import cls from "../../services/cls.js";
 import attributeFormatter from "../../services/attribute_formatter.js";
 import ValidationError from "../../errors/validation_error.js";
 import type SearchResult from "../../services/search/search_result.js";
-import ftsSearchService from "../../services/search/fts_search.js";
+import { ftsSearchService } from "../../services/search/fts/index.js";
 import log from "../../services/log.js";
 import hoistedNoteService from "../../services/hoisted_note.js";
 import beccaService from "../../becca/becca_service.js";

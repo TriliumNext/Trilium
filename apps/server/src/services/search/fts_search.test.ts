@@ -55,7 +55,7 @@ describe('FTS5 Search Service Improvements', () => {
         vi.doMock('../protected_session.js', () => ({ default: mockProtectedSession }));
         
         // Import the service after mocking
-        const module = await import('./fts_search.js');
+        const module = await import('./fts/index.js');
         ftsSearchService = module.ftsSearchService;
     });
 
@@ -151,15 +151,15 @@ describe('FTS5 Search Service Improvements', () => {
             );
         });
 
-        it('should detect potential SQL injection attempts', () => {
+        it('should allow tokens with semicolons and dashes (valid search content)', () => {
             mockSql.getValue.mockReturnValue(1);
-            
+
+            // Users may search for SQL code snippets or other content containing these characters
             const query = ftsSearchService.convertToFTS5Query(['test; DROP TABLE'], '=');
-            
-            expect(query).toContain('__invalid_token__');
-            expect(mockLog.error).toHaveBeenCalledWith(
-                expect.stringContaining('Potential SQL injection attempt detected')
-            );
+
+            // Should preserve the content, not reject it
+            expect(query).toBe('"test; DROP TABLE"');
+            expect(query).not.toContain('__invalid_token__');
         });
 
         it('should properly sanitize valid tokens', () => {
@@ -268,7 +268,7 @@ describe('searchWithLike - Substring Search with LIKE Queries', () => {
         vi.doMock('../protected_session.js', () => ({ default: mockProtectedSession }));
 
         // Import the service after mocking
-        const module = await import('./fts_search.js');
+        const module = await import('./fts/index.js');
         ftsSearchService = module.ftsSearchService;
     });
 
@@ -1320,7 +1320,7 @@ describe('Exact Match with Word Boundaries (= operator)', () => {
         vi.doMock('../protected_session.js', () => ({ default: mockProtectedSession }));
 
         // Import the service after mocking
-        const module = await import('./fts_search.js');
+        const module = await import('./fts/index.js');
         ftsSearchService = module.ftsSearchService;
     });
 
