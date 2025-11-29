@@ -1,8 +1,6 @@
 import { TypeWidgetProps } from "./type_widget";
-import { useContext, useEffect, useRef, useState } from "preact/hooks";
+import { useContext, useEffect, useState } from "preact/hooks";
 import { useTriliumEvent, useTriliumOption } from "../react/hooks";
-import FNote from "../../entities/fnote";
-import FAttachment from "../../entities/fattachment";
 import { ParentComponent } from "../react/react_utils";
 import Button from "../react/Button";
 import { t } from "../../services/i18n";
@@ -38,7 +36,6 @@ export default function Gallery({ note }: TypeWidgetProps) {
 
     async function loadImages() {
         const imageItems: ImageItem[] = [];
-        let calculatedTotalSize = 0;
 
         // Check if the gallery note itself is shared
         const galleryIsShared = note.hasAncestor("_share");
@@ -53,16 +50,13 @@ export default function Gallery({ note }: TypeWidgetProps) {
 
         // Process direct attachments
         for (const attachment of directImageAttachments) {
-            const size = attachment.contentLength || 0;
-            calculatedTotalSize += size;
-
             imageItems.push({
                 id: attachment.attachmentId,
                 url: `api/attachments/${attachment.attachmentId}/image/${encodeURIComponent(attachment.title)}`,
                 title: attachment.title,
                 type: 'attachment' as const,
                 noteId: attachment.ownerId,
-                size
+                size: attachment.contentLength || 0
             });
         }
 
@@ -76,7 +70,6 @@ export default function Gallery({ note }: TypeWidgetProps) {
             const imageBlobPromises = imageNotes.map(async (imageNote) => {
                 const blob = await imageNote.getBlob();
                 const size = blob?.contentLength || 0;
-                calculatedTotalSize += size;
 
                 return {
                     id: imageNote.noteId,
@@ -90,45 +83,33 @@ export default function Gallery({ note }: TypeWidgetProps) {
             const imageNoteItems = await Promise.all(imageBlobPromises);
             imageItems.push(...imageNoteItems);
 
-            // Recalculate total size from image note items
-            imageNoteItems.forEach(item => {
-                calculatedTotalSize += item.size || 0;
-            });
-
             // Process child note attachments in parallel
             const attachmentPromises = childNotes.map(async (childNote) => {
                 const attachments = await childNote.getAttachments();
                 const imageAttachments = attachments.filter(a => a.role === "image");
 
-                return imageAttachments.map(attachment => {
-                    const size = attachment.contentLength || 0;
-
-                    return {
-                        id: attachment.attachmentId,
-                        url: `api/attachments/${attachment.attachmentId}/image/${encodeURIComponent(attachment.title)}`,
-                        title: attachment.title,
-                        type: 'attachment' as const,
-                        noteId: attachment.ownerId,
-                        size
-                    };
-                });
+                return imageAttachments.map(attachment => ({
+                    id: attachment.attachmentId,
+                    url: `api/attachments/${attachment.attachmentId}/image/${encodeURIComponent(attachment.title)}`,
+                    title: attachment.title,
+                    type: 'attachment' as const,
+                    noteId: attachment.ownerId,
+                    size: attachment.contentLength || 0
+                }));
             });
 
             const attachmentArrays = await Promise.all(attachmentPromises);
             const allAttachments = attachmentArrays.flat();
 
             imageItems.push(...allAttachments);
-
-            // Calculate total size from attachments
-            allAttachments.forEach(item => {
-                calculatedTotalSize += item.size || 0;
-            });
         }
+
+        // Calculate total size once at the end from all items
+        const calculatedTotalSize = imageItems.reduce((sum, item) => sum + (item.size || 0), 0);
 
         setImages(imageItems);
         setTotalSize(calculatedTotalSize);
     }
-
     useEffect(() => {
         loadImages();
     }, [note]);
@@ -175,7 +156,6 @@ export default function Gallery({ note }: TypeWidgetProps) {
         // Note: No else clause - we don't do anything for gallery note attachments
     }
 
-    // Your current handleCopyImageLink is actually fine for both Electron and web
     async function handleCopyImageLink(img: ImageItem, e: MouseEvent) {
         e.stopPropagation();
 
@@ -188,7 +168,10 @@ export default function Gallery({ note }: TypeWidgetProps) {
 
         if (img.type === 'note') {
             const imageNote = froca.getNoteFromCache(img.id);
-            if (!imageNote) return;
+            if (!imageNote) {
+                toast.showError(t("gallery.image_not_found"));
+                return;
+            }
 
             const shareId = imageNote.getOwnedLabelValue("shareAlias") || img.id;
             imageUrl = getAbsoluteUrl(`/share/api/images/${shareId}/${encodeURIComponent(img.title)}`);
@@ -230,13 +213,10 @@ export default function Gallery({ note }: TypeWidgetProps) {
     function getAbsoluteUrl(path: string): string {
         if (syncServerHost) {
             return new URL(path, syncServerHost).href;
-        } else {
-            let host = location.host;
-            if (host.endsWith("/")) {
-                host = host.substring(0, host.length - 1);
-            }
-            return `${location.protocol}//${host}${location.pathname.replace(/\/$/, '')}${path}`;
         }
+        const origin = `${location.protocol}//${location.host}`;
+        const pathname = location.pathname.replace(/\/$/, '');
+        return `${origin}${pathname}${path}`;
     }
 
     function toggleImageSelection(imageId: string) {
@@ -443,10 +423,7 @@ export default function Gallery({ note }: TypeWidgetProps) {
                 )}
 
                 <span className="gallery-count">
-                    {images.length === 1
-                        ? t("gallery.image_count", { count: images.length })
-                        : t("gallery.image_count_plural", { count: images.length })
-                    }
+                    {t("gallery.image_count", { count: images.length })}
                     {totalSize > 0 && ` (${formatSize(totalSize)})`}
                 </span>
             </div>

@@ -2113,8 +2113,8 @@
     "no_images": "No Images",
     "upload_first_image": "Upload First Image",
     "image_count": "{{count}} Image",
+    "image_count_other": "{{count}} Images",
     "upload_images": "Upload Images",
-    "image_count_plural": "{{count}} Images",
     "confirm_delete_note": "Are you sure you want to delete {{title}}",
     "confirm_delete_attachment": "Are you sure you want to delete the attachment {{title}}",
     "delete_note_success": "{{title}} deleted successfully",
@@ -2127,7 +2127,8 @@
     "select": "Select Multiple",
     "select_all": "Select All",
     "deselect_all": "Deselect All",
-    "delete_selected": "Delete {{count}} Items",
+    "delete_selected": "Delete {{count}} Item",
+    "delete_selected_other": "Delete {{count}} Items",
     "delete": "Delete",
     "previous": "Previous",
     "next": "Next",
@@ -2143,6 +2144,7 @@
     "toggle_child_images_tooltip": "Toggle Child Images",
     "not_shared": "The gallery is not shared",
     "shared_success": "The gallery is now being shared",
-    "unshared_success": "The gallery has stopped being shared"
+    "unshared_success": "The gallery has stopped being shared",
+    "image_not_found": "Image not found"
   }
 }
