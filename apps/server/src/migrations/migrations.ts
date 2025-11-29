@@ -6,11 +6,6 @@
 
 // Migrations should be kept in descending order, so the latest migration is first.
 const MIGRATIONS: (SqlMigration | JsMigration)[] = [
-    // Clean up custom SQLite search tables (replaced by FTS5 trigram)
-    {
-        version: 236,
-        module: async () => import("./0236__cleanup_sqlite_search.js")
-    },
     // Add FTS5 full-text search support and strategic performance indexes
     {
         version: 234,
