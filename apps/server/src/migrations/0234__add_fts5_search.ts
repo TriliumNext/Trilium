@@ -481,19 +481,10 @@ export default function addFTS5SearchAndPerformanceIndexes() {
         log.info("Creating composite index for entity changes sync...");
         sql.executeScript(`
             DROP INDEX IF EXISTS IDX_entity_changes_sync;
-            CREATE INDEX IF NOT EXISTS IDX_entity_changes_sync 
+            CREATE INDEX IF NOT EXISTS IDX_entity_changes_sync
             ON entity_changes (isSynced, utcDateChanged);
         `);
         indexesCreated.push("IDX_entity_changes_sync");
-
-        // Index for component-based queries
-        log.info("Creating index for component-based entity change queries...");
-        sql.executeScript(`
-            DROP INDEX IF EXISTS IDX_entity_changes_component;
-            CREATE INDEX IF NOT EXISTS IDX_entity_changes_component 
-            ON entity_changes (componentId, utcDateChanged DESC);
-        `);
-        indexesCreated.push("IDX_entity_changes_component");
 
         // ========================================
         // RECENT_NOTES TABLE INDEXES

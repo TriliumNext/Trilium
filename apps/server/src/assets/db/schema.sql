@@ -201,11 +201,8 @@ CREATE INDEX IDX_revisions_note_date
 ON revisions (noteId, utcDateCreated DESC);
 
 -- ENTITY_CHANGES TABLE INDEXES
-CREATE INDEX IDX_entity_changes_sync 
+CREATE INDEX IDX_entity_changes_sync
 ON entity_changes (isSynced, utcDateChanged);
-
-CREATE INDEX IDX_entity_changes_component 
-ON entity_changes (componentId, utcDateChanged DESC);
 
 -- RECENT_NOTES TABLE INDEXES
 CREATE INDEX IDX_recent_notes_date 
