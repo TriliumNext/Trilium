@@ -631,5 +631,22 @@ export default function addFTS5SearchAndPerformanceIndexes() {
         log.info("Attributes FTS5 setup completed successfully");
     });
 
+    // ========================================
+    // Part 4: Cleanup legacy custom search tables
+    // ========================================
+    // Remove tables from previous custom SQLite search implementation
+    // that has been replaced by FTS5
+
+    log.info("Cleaning up legacy custom search tables...");
+
+    sql.executeScript(`DROP TABLE IF EXISTS note_search_content`);
+    sql.executeScript(`DROP TABLE IF EXISTS note_tokens`);
+
+    // Clean up any entity changes for these tables
+    sql.execute(`
+        DELETE FROM entity_changes
+        WHERE entityName IN ('note_search_content', 'note_tokens')
+    `);
+
     log.info("FTS5 and performance optimization migration completed successfully");
 }
