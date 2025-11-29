@@ -11,7 +11,7 @@ import auth from "../services/auth.js";
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import { safeExtractMessageAndStackFromError } from "../services/utils.js";
 
-const MAX_ALLOWED_FILE_SIZE_MB = 2500;
+const MAX_ALLOWED_FILE_SIZE_MB = 250;
 export const router = express.Router();
 
 // TODO: Deduplicate with etapi_utils.ts afterwards.
@@ -183,7 +183,7 @@ export function createUploadMiddleware(): RequestHandler {
 
     if (!process.env.TRILIUM_NO_UPLOAD_LIMIT) {
         multerOptions.limits = {
-            fileSize: MAX_ALLOWED_FILE_SIZE_MB * 1024 * 1024 * 1024
+            fileSize: MAX_ALLOWED_FILE_SIZE_MB * 1024 * 1024
         };
     }
 

@@ -17,29 +17,12 @@ import log from "../services/log.js";
 export default function addFTS5SearchAndPerformanceIndexes() {
     log.info("Starting FTS5 and performance optimization migration...");
 
-    // Verify SQLite version supports trigram tokenizer (requires 3.34.0+)
-    const sqliteVersion = sql.getValue<string>(`SELECT sqlite_version()`);
-    const [major, minor, patch] = sqliteVersion.split('.').map(Number);
-    const versionNumber = major * 10000 + minor * 100 + (patch || 0);
-    const requiredVersion = 3 * 10000 + 34 * 100 + 0; // 3.34.0
-
-    if (versionNumber < requiredVersion) {
-        log.error(`SQLite version ${sqliteVersion} does not support trigram tokenizer (requires 3.34.0+)`);
-        log.info("Skipping FTS5 trigram migration - will use fallback search implementation");
-        return; // Skip FTS5 setup, rely on fallback search
-    }
-
-    log.info(`SQLite version ${sqliteVersion} confirmed - trigram tokenizer available`);
-
     // Part 1: FTS5 Setup
     log.info("Creating FTS5 virtual table for full-text search...");
 
     // Create FTS5 virtual table
     // We store noteId, title, and content for searching
     sql.executeScript(`
-        -- Drop existing FTS table if it exists (for re-running migration in dev)
-        DROP TABLE IF EXISTS notes_fts;
-        
         -- Create FTS5 virtual table with trigram tokenizer
         -- Trigram tokenizer provides language-agnostic substring matching:
         -- 1. Fast substring matching (50-100x speedup for LIKE queries without wildcards)
