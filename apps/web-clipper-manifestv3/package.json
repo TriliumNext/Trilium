@@ -1,0 +1,48 @@
+{
+  "name": "trilium-web-clipper-v3",
+  "version": "1.0.0",
+  "description": "Modern Trilium Web Clipper extension built with Manifest V3 best practices",
+  "type": "module",
+  "scripts": {
+    "dev": "node build.mjs --watch",
+    "build": "node build.mjs",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,css,md}\"",
+    "clean": "rimraf dist",
+    "zip": "npm run build && node scripts/zip.js"
+  },
+  "dependencies": {
+    "@mozilla/readability": "^0.5.0",
+    "@types/turndown": "^5.0.5",
+    "cheerio": "^1.0.0",
+    "dompurify": "^3.0.6",
+    "turndown": "^7.2.1",
+    "turndown-plugin-gfm": "^1.0.2",
+    "webextension-polyfill": "^0.10.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.246",
+    "@types/dompurify": "^3.0.5",
+    "@types/node": "^20.8.0",
+    "@types/webextension-polyfill": "^0.10.4",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "esbuild": "^0.25.10",
+    "eslint": "^8.50.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "prettier": "^3.0.3",
+    "rimraf": "^5.0.1",
+    "typescript": "^5.2.2"
+  },
+  "keywords": [
+    "trilium",
+    "web-clipper",
+    "chrome-extension",
+    "manifest-v3",
+    "typescript"
+  ],
+  "author": "Trilium Community",
+  "license": "MIT"
+}
