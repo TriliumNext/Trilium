@@ -1009,7 +1009,7 @@ div[data-notify="container"] {
 
 svg.ck-icon {
     &.ck-icon_inherit-color {
-        * {
+        path {
             fill: currentColor;
         }
     }
