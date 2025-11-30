@@ -56,7 +56,7 @@ export default class MathUI extends Plugin {
 		this._balloon.showStack( 'main' );
 
 		requestAnimationFrame(() => {
-			this.formView?.mathInputView.fieldView.element?.focus();
+			this.formView?.mathLiveInputView.focus();
 		});
 	}
 
@@ -71,31 +71,38 @@ export default class MathUI extends Plugin {
 			throw new CKEditorError( 'math-command' );
 		}
 
-		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
 		const mathConfig = editor.config.get( 'math' )!;
 
 		const formView = new MainFormView(
 			editor.locale,
-			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			mathConfig.engine!,
-			mathConfig.lazyLoad,
+			{
+				engine: mathConfig.engine!,
+				lazyLoad: mathConfig.lazyLoad,
+				previewUid: this._previewUid,
+				previewClassName: mathConfig.previewClassName!,
+				katexRenderOptions: mathConfig.katexRenderOptions!
+			},
 			mathConfig.enablePreview,
-			this._previewUid,
-			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			mathConfig.previewClassName!,
-			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			mathConfig.popupClassName!,
-			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			mathConfig.katexRenderOptions!
+			mathConfig.popupClassName!
 		);
 
-		formView.mathInputView.bind( 'value' ).to( mathCommand, 'value' );
+		formView.mathLiveInputView.bind( 'value' ).to( mathCommand, 'value' );
 		formView.displayButtonView.bind( 'isOn' ).to( mathCommand, 'display' );
 
 		// Form elements should be read-only when corresponding commands are disabled.
-		formView.mathInputView.bind( 'isReadOnly' ).to( mathCommand, 'isEnabled', value => !value );
-		formView.saveButtonView.bind( 'isEnabled' ).to( mathCommand );
-		formView.displayButtonView.bind( 'isEnabled' ).to( mathCommand );
+		formView.mathLiveInputView.bind( 'isReadOnly' ).to( mathCommand, 'isEnabled', value => !value );
+		formView.saveButtonView.bind( 'isEnabled' ).to(
+			mathCommand,
+			'isEnabled',
+			formView.mathLiveInputView,
+			'value',
+			( commandEnabled, equation ) => {
+				const normalizedEquation = ( equation ?? '' ).trim();
+				return commandEnabled && normalizedEquation.length > 0;
+			}
+		);
+		formView.displayButtonView.bind( 'isEnabled' ).to( mathCommand, 'isEnabled' );
 
 		// Listen to submit button click
 		this.listenTo( formView, 'submit', () => {
@@ -120,18 +127,6 @@ export default class MathUI extends Plugin {
 				formView.fire('submit');
 				cancel();
 			}
-		});
-
-		// Allow the textarea to be resizable
-		formView.mathInputView.fieldView.once('render', () => {
-			const textarea = formView.mathInputView.fieldView.element;
-			if (!textarea) return;
-			Object.assign(textarea.style, {
-				resize: 'both',
-				height: '100px',
-				width: '400px',
-				minWidth: '100%',
-			});
 		});
 
 		return formView;
@@ -162,14 +157,14 @@ export default class MathUI extends Plugin {
 		} );
 
 		if ( this._balloon.visibleView === this.formView ) {
-			this.formView.mathInputView.fieldView.element?.select();
+			this.formView.mathLiveInputView.focus();
 		}
 
 		// Show preview element
 		const previewEl = document.getElementById( this._previewUid );
-		if ( previewEl && this.formView.previewEnabled ) {
+		if ( previewEl && this.formView.mathView ) {
 			// Force refresh preview
-			this.formView.mathView?.updateMath();
+			this.formView.mathView.updateMath();
 		}
 
 		this.formView.equation = mathCommand.value ?? '';
