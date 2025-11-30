@@ -39,7 +39,7 @@
     "typescript": "5.9.3",
     "vite-plugin-svgo": "~2.0.0",
     "vitest": "4.0.14",
-    "webdriverio": "9.20.1"
+    "webdriverio": "9.21.0"
   },
   "peerDependencies": {
     "ckeditor5": "47.2.0"
