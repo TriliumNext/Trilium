@@ -62,6 +62,10 @@ class NoteSet {
 
         return newNoteSet;
     }
+
+    getNoteIds(): Set<string> {
+        return new Set(this.noteIdSet);
+    }
 }
 
 export default NoteSet;
