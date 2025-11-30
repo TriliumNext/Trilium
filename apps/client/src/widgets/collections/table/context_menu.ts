@@ -181,8 +181,8 @@ export function showRowContextMenu(parentComponent: Component, e: MouseEvent, ro
                 uiIcon: "bx bx-horizontal-left bx-rotate-90",
                 enabled: !sorters.length,
                 handler: () => parentComponent?.triggerCommand("addNewRow", {
-                    parentNotePath: parentNoteId,
                     customOpts: {
+                        parentNoteLink: parentNoteId,
                         target: "before",
                         targetBranchId: rowData.branchId,
                     }
@@ -194,9 +194,12 @@ export function showRowContextMenu(parentComponent: Component, e: MouseEvent, ro
                 handler: async () => {
                     const branchId = row.getData().branchId;
                     const note = await froca.getBranch(branchId)?.getNote();
+                    if (!note) {
+                        return;
+                    }
                     parentComponent?.triggerCommand("addNewRow", {
-                        parentNotePath: note?.noteId,
                         customOpts: {
+                            parentNoteLink: note.noteId,
                             target: "after",
                             targetBranchId: branchId,
                         }
@@ -208,8 +211,8 @@ export function showRowContextMenu(parentComponent: Component, e: MouseEvent, ro
                 uiIcon: "bx bx-horizontal-left bx-rotate-270",
                 enabled: !sorters.length,
                 handler: () => parentComponent?.triggerCommand("addNewRow", {
-                    parentNotePath: parentNoteId,
                     customOpts: {
+                        parentNoteLink: parentNoteId,
                         target: "after",
                         targetBranchId: rowData.branchId,
                     }

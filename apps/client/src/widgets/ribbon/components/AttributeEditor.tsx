@@ -2,7 +2,7 @@ import { MutableRef, useEffect, useImperativeHandle, useMemo, useRef, useState }
 import { AttributeEditor as CKEditorAttributeEditor, MentionFeed, ModelElement, ModelNode, ModelPosition } from "@triliumnext/ckeditor5";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
-import note_autocomplete, { Suggestion } from "../../../services/note_autocomplete";
+import note_autocomplete, { SuggestionMode, Suggestion } from "../../../services/note_autocomplete.js";
 import CKEditor, { CKEditorApi } from "../../react/CKEditor";
 import { useLegacyImperativeHandlers, useLegacyWidget, useTooltip, useTriliumEvent, useTriliumOption } from "../../react/hooks";
 import FAttribute from "../../../entities/fattribute";
@@ -20,6 +20,7 @@ import type { CommandData, FilteredCommandNames } from "../../../components/app_
 import { AttributeType } from "@triliumnext/commons";
 import attributes from "../../../services/attributes";
 import note_create from "../../../services/note_create";
+import { CreateNoteAction } from "@triliumnext/commons";
 
 type AttributeCommandNames = FilteredCommandNames<CommandData>;
 
@@ -33,7 +34,7 @@ const HELP_TEXT = `
 const mentionSetup: MentionFeed[] = [
     {
         marker: "@",
-        feed: (queryText) => note_autocomplete.autocompleteSourceForCKEditor(queryText),
+        feed: (queryText) => note_autocomplete.autocompleteSourceForCKEditor(queryText, SuggestionMode.SuggestCreateAndLink),
         itemRenderer: (_item) => {
             const item = _item as Suggestion;
             const itemElement = document.createElement("button");
@@ -247,16 +248,18 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
 
             $el.text(title);
         },
-        createNoteForReferenceLink: async (title: string) => {
-            let result;
-            if (notePath) {
-                result = await note_create.createNoteWithTypePrompt(notePath, {
-                    activate: false,
-                    title: title
-                });
-            }
-
-            return result?.note?.getBestNotePathString();
+        createNoteFromCkEditor: async (
+            title: string,
+            parentNotePath: string | undefined,
+            action: CreateNoteAction
+        ): Promise<string> => {
+            const { note } = await note_create.createNoteFromAction(
+                action,
+                true,
+                title,
+                parentNotePath,
+            );
+            return note?.getBestNotePathString() ?? "";
         }
     }), [ notePath ]));
 

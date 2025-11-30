@@ -50,7 +50,7 @@ async function checkNoteAccess(notePath: string, noteContext: NoteContext) {
     const hoistedNoteId = noteContext.hoistedNoteId;
 
     if (!resolvedNotePath.includes(hoistedNoteId) && (!resolvedNotePath.includes("_hidden") || resolvedNotePath.includes("_lbBookmarks"))) {
-        const noteId = treeService.getNoteIdFromUrl(resolvedNotePath);
+        const noteId = treeService.getNoteIdFromLink(resolvedNotePath);
         if (!noteId) {
             return false;
         }
