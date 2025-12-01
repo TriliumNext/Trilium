@@ -84,7 +84,7 @@
     "electron-debug": "4.1.0",
     "electron-window-state": "5.0.3",
     "escape-html": "1.0.3",
-    "express": "5.1.0",
+    "express": "5.2.0",
     "express-http-proxy": "2.1.2",
     "express-openid-connect": "2.19.3",
     "express-rate-limit": "8.2.1",
