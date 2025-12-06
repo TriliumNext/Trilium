@@ -8,7 +8,7 @@ import searchService from "../services/search/services/search.js";
 import SearchContext from "../services/search/search_context.js";
 import type SNote from "./shaca/entities/snote.js";
 import type SAttachment from "./shaca/entities/sattachment.js";
-import { getDefaultTemplatePath, renderNoteContent } from "./content_renderer.js";
+import { getDefaultTemplatePath, getSharedSubTreeRoot, renderNoteContent } from "./content_renderer.js";
 import utils from "../services/utils.js";
 
 function addNoIndexHeader(note: SNote, res: Response) {
@@ -60,6 +60,20 @@ function checkNoteAccess(noteId: string, req: Request, res: Response) {
     const header = req.header("Authorization");
 
     if (!header?.startsWith("Basic ")) {
+        if (req.path.startsWith("/share/api") && note.contentAccessor) {
+            let contentAccessToken = "" 
+            if (note.contentAccessor.type === "cookie") contentAccessToken += req.cookies["trilium.cat"] || ""
+            else if (note.contentAccessor.type === "query") contentAccessToken += req.query['cat'] || ""
+
+            if (contentAccessToken){
+                if (note.contentAccessor.isTokenValid(contentAccessToken)){
+                    return note
+                }
+                res.status(401).send("Access is expired. Return back and update the page.");
+
+                return false;
+            }
+        }
         return false;
     }
 
@@ -124,9 +138,14 @@ function register(router: Router) {
             return;
         }
 
+        if (note.isLabelTruthy("shareExclude")) {
+            res.status(404);
+            render404(res);
+            return;
+        }
+
         if (!checkNoteAccess(note.noteId, req, res)) {
             requestCredentials(res);
-
             return;
         }
 
@@ -136,6 +155,10 @@ function register(router: Router) {
             res.setHeader("Content-Type", note.mime).send(note.getContent());
 
             return;
+        }
+
+        if (note.contentAccessor && note.contentAccessor.type === "cookie") {
+            res.cookie('trilium.cat', note.contentAccessor.getToken(), { maxAge: note.contentAccessor.getTokenExpiration() * 1000, httpOnly: true })
         }
 
         res.send(renderNoteContent(note));
@@ -157,14 +180,29 @@ function register(router: Router) {
         renderNote(shaca.shareRootNote, req, res);
     });
 
+    router.get("/share/:parentShareId/:shareId", (req, res) => {
+        shacaLoader.ensureLoad();
+
+        const { parentShareId, shareId } = req.params;
+
+        const note = shaca.aliasToNote[shareId] || shaca.notes[shareId];
+        if (note){
+            note.parentId = parentShareId
+            note.initContentAccessor()
+        }
+
+        renderNote(note, req, res);
+    });
+
     router.get("/share/:shareId", (req, res) => {
         shacaLoader.ensureLoad();
 
         const { shareId } = req.params;
 
         const note = shaca.aliasToNote[shareId] || shaca.notes[shareId];
+        const parent = getSharedSubTreeRoot(note)
 
-        renderNote(note, req, res);
+        res.redirect(`${parent?.note?.noteId}/${shareId}`)
     });
 
     router.get("/share/api/notes/:noteId", (req, res) => {
