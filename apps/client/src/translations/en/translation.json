@@ -1968,7 +1968,8 @@
     "button_title": "Export diagram as PNG"
   },
   "svg": {
-    "export_to_png": "The diagram could not be exported to PNG."
+    "export_to_png": "The diagram could not be exported to PNG.",
+    "export_to_svg": "The diagram could not be exported to SVG."
   },
   "code_theme": {
     "title": "Appearance",

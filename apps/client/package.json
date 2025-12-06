@@ -33,6 +33,7 @@
     "@triliumnext/highlightjs": "workspace:*",
     "@triliumnext/share-theme": "workspace:*",
     "@triliumnext/split.js": "workspace:*",
+    "@zumer/snapdom": "2.0.1",
     "autocomplete.js": "0.38.1",
     "bootstrap": "5.3.8",
     "boxicons": "2.1.4",

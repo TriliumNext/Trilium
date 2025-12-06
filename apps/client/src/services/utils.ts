@@ -1,6 +1,7 @@
 import { dayjs } from "@triliumnext/commons";
 import type { ViewScope } from "./link.js";
 import FNote from "../entities/fnote";
+import { snapdom } from "@zumer/snapdom";
 
 const SVG_MIME = "image/svg+xml";
 
@@ -628,16 +629,69 @@ export function createImageSrcUrl(note: FNote) {
     return `api/images/${note.noteId}/${encodeURIComponent(note.title)}?timestamp=${Date.now()}`;
 }
 
+
+
+
+
 /**
- * Given a string representation of an SVG, triggers a download of the file on the client device.
+ * Helper function to prepare an element for snapdom rendering.
+ * Handles string parsing and temporary DOM attachment for style computation.
+ *
+ * @param source - Either an SVG/HTML string to be parsed, or an existing SVG/HTML element.
+ * @returns An object containing the prepared element and a cleanup function.
+ *          The cleanup function removes temporarily attached elements from the DOM,
+ *          or is a no-op if the element was already in the DOM.
+ */
+function prepareElementForSnapdom(source: string | SVGElement | HTMLElement): {
+    element: SVGElement | HTMLElement;
+    cleanup: () => void;
+} {
+    if (typeof source === 'string') {
+        const parser = new DOMParser();
+
+        // Detect if content is SVG or HTML
+        const isSvg = source.trim().startsWith('<svg');
+        const mimeType = isSvg ? SVG_MIME : 'text/html';
+
+        const doc = parser.parseFromString(source, mimeType);
+        const element = doc.documentElement;
+
+        // Temporarily attach to DOM for proper style computation
+        element.style.position = 'absolute';
+        element.style.left = '-9999px';
+        element.style.top = '-9999px';
+        document.body.appendChild(element);
+
+        return {
+            element,
+            cleanup: () => document.body.removeChild(element)
+        };
+    }
+
+    return {
+        element: source,
+        cleanup: () => {} // No-op for existing elements
+    };
+}
+
+/**
+ * Downloads an SVG using snapdom for proper rendering. Can accept either an SVG string, an SVG element, or an HTML element.
  *
  * @param nameWithoutExtension the name of the file. The .svg suffix is automatically added to it.
- * @param svgContent the content of the SVG file download.
+ * @param svgSource either an SVG string, an SVGElement, or an HTMLElement to be downloaded.
  */
-function downloadSvg(nameWithoutExtension: string, svgContent: string) {
-    const filename = `${nameWithoutExtension}.svg`;
-    const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
-    triggerDownload(filename, dataUrl);
+async function downloadAsSvg(nameWithoutExtension: string, svgSource: string | SVGElement | HTMLElement) {
+    const { element, cleanup } = prepareElementForSnapdom(svgSource);
+
+    try {
+        const result = await snapdom(element, {
+                backgroundColor: "transparent",
+                scale: 2
+            });
+        triggerDownload(`${nameWithoutExtension}.svg`, result.url);
+    } finally {
+        cleanup();
+    }
 }
 
 /**
@@ -658,62 +712,26 @@ function triggerDownload(fileName: string, dataUrl: string) {
 
     document.body.removeChild(element);
 }
-
 /**
- * Given a string representation of an SVG, renders the SVG to PNG and triggers a download of the file on the client device.
- *
- * Note that the SVG must specify its width and height as attributes in order for it to be rendered.
+ * Downloads an SVG as PNG using snapdom. Can accept either an SVG string, an SVG element, or an HTML element.
  *
  * @param nameWithoutExtension the name of the file. The .png suffix is automatically added to it.
- * @param svgContent the content of the SVG file download.
- * @returns a promise which resolves if the operation was successful, or rejects if it failed (permissions issue or some other issue).
+ * @param svgSource either an SVG string, an SVGElement, or an HTMLElement to be converted to PNG.
  */
-function downloadSvgAsPng(nameWithoutExtension: string, svgContent: string) {
-    return new Promise<void>((resolve, reject) => {
-        // First, we need to determine the width and the height from the input SVG.
-        const result = getSizeFromSvg(svgContent);
-        if (!result) {
-            reject();
-            return;
-        }
+async function downloadAsPng(nameWithoutExtension: string, svgSource: string | SVGElement | HTMLElement) {
+    const { element, cleanup } = prepareElementForSnapdom(svgSource);
 
-        // Convert the image to a blob.
-        const { width, height } = result;
-
-        // Create an image element and load the SVG.
-        const imageEl = new Image();
-        imageEl.width = width;
-        imageEl.height = height;
-        imageEl.crossOrigin = "anonymous";
-        imageEl.onload = () => {
-            try {
-                // Draw the image with a canvas.
-                const canvasEl = document.createElement("canvas");
-                canvasEl.width = imageEl.width;
-                canvasEl.height = imageEl.height;
-                document.body.appendChild(canvasEl);
-
-                const ctx = canvasEl.getContext("2d");
-                if (!ctx) {
-                    reject();
-                }
-
-                ctx?.drawImage(imageEl, 0, 0);
-
-                const imgUri = canvasEl.toDataURL("image/png")
-                triggerDownload(`${nameWithoutExtension}.png`, imgUri);
-                document.body.removeChild(canvasEl);
-                resolve();
-            } catch (e) {
-                console.warn(e);
-                reject();
-            }
-        };
-        imageEl.onerror = (e) => reject(e);
-        imageEl.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
-    });
+    try {
+        const result = await snapdom(element, {
+                backgroundColor: "transparent",
+                scale: 2
+            });
+        const pngImg = await result.toPng();
+        await triggerDownload(`${nameWithoutExtension}.png`, pngImg.src);
+    } finally {
+        cleanup();
+    }
 }
-
 export function getSizeFromSvg(svgContent: string) {
     const svgDocument = (new DOMParser()).parseFromString(svgContent, SVG_MIME);
 
@@ -925,8 +943,8 @@ export default {
     areObjectsEqual,
     copyHtmlToClipboard,
     createImageSrcUrl,
-    downloadSvg,
-    downloadSvgAsPng,
+    downloadAsSvg,
+    downloadAsPng,
     compareVersions,
     isUpdateAvailable,
     isLaunchBarConfig

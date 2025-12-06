@@ -208,6 +208,9 @@ importers:
       '@triliumnext/split.js':
         specifier: workspace:*
         version: link:../../packages/splitjs
+      '@zumer/snapdom':
+        specifier: 2.0.1
+        version: 2.0.1
       autocomplete.js:
         specifier: 0.38.1
         version: 0.38.1
@@ -5870,6 +5873,9 @@ packages:
   '@zip.js/zip.js@2.8.2':
     resolution: {integrity: sha512-PI6UdgpSeVoGvzguKHmy2bwOqI3UYkntLZOCpyJSKIi7234c5aJmQYkJB/P4P2YUJkqhbqvu7iM2/0eJZ178nA==}
     engines: {bun: '>=0.7.0', deno: '>=1.0.0', node: '>=16.5.0'}
+
+  '@zumer/snapdom@2.0.1':
+    resolution: {integrity: sha512-78/qbYl2FTv4H6qaXcNfAujfIOSzdvs83NW63VbyC9QA3sqNPfPvhn4xYMO6Gy11hXwJUEhd0z65yKiNzDwy9w==}
 
   abab@2.0.6:
     resolution: {integrity: sha512-j2afSsaIENvHZN2B8GOpF566vZ5WVk5opAiMTvWgaQT8DkbOqsTfvNAvHoRGU2zzP8cPoqys+xHTRDWW8L+/BA==}
@@ -20820,6 +20826,8 @@ snapshots:
   '@zip.js/zip.js@2.8.11': {}
 
   '@zip.js/zip.js@2.8.2': {}
+
+  '@zumer/snapdom@2.0.1': {}
 
   abab@2.0.6: {}
 

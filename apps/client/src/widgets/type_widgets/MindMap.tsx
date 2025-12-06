@@ -11,6 +11,7 @@ import { useEditorSpacedUpdate, useNoteLabelBoolean, useSyncedRef, useTriliumEve
 import { refToJQuerySelector } from "../react/react_utils";
 import utils from "../../services/utils";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import { snapdom, SnapdomOptions } from "@zumer/snapdom";
 
 const NEW_TOPIC_NAME = "";
 
@@ -45,11 +46,24 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
     const apiRef = useRef<MindElixirInstance>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [ isReadOnly ] = useNoteLabelBoolean(note, "readOnly");
+
+
     const spacedUpdate = useEditorSpacedUpdate({
         note,
         noteContext,
         getData: async () => {
             if (!apiRef.current) return;
+
+            const result = await snapdom(apiRef.current.nodes, {
+                backgroundColor: "transparent",
+                scale: 2
+            });
+
+            // a data URL in the format: "data:image/svg+xml;charset=utf-8,<url-encoded-svg>"
+            // We need to extract the content after the comma and decode the URL encoding (%3C to <, %20 to space, etc.)
+            // to get raw SVG content that Trilium's backend can store as an attachment
+            const svgContent = decodeURIComponent(result.url.split(',')[1]);
+
             return {
                 content: apiRef.current.getDataString(),
                 attachments: [
@@ -57,7 +71,7 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
                         role: "image",
                         title: "mindmap-export.svg",
                         mime: "image/svg+xml",
-                        content: await apiRef.current.exportSvg().text(),
+                        content: svgContent,
                         position: 0
                     }
                 ]
@@ -88,13 +102,13 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
     // Export as PNG or SVG.
     useTriliumEvents([ "exportSvg", "exportPng" ], async ({ ntxId: eventNtxId }, eventName) => {
         if (eventNtxId !== ntxId || !apiRef.current) return;
-        const title = note.title;
-        const svg = await apiRef.current.exportSvg().text();
+        const nodes = apiRef.current.nodes;
         if (eventName === "exportSvg") {
-            utils.downloadSvg(title, svg);
+            await utils.downloadAsSvg(note.title, nodes);
         } else {
-            utils.downloadSvgAsPng(title, svg);
+            await utils.downloadAsPng(note.title, nodes);
         }
+
     });
 
     const onKeyDown = useCallback((e: KeyboardEvent) => {

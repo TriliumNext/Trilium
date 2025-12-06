@@ -77,14 +77,25 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
     }, [ note ]);
 
     // Import/export
-    useTriliumEvent("exportSvg", ({ ntxId: eventNtxId }) => {
+    useTriliumEvent("exportSvg", async({ ntxId: eventNtxId }) => {
         if (eventNtxId !== ntxId || !svg) return;
-        utils.downloadSvg(note.title, svg);
+
+        try {
+            const svgEl = containerRef.current?.querySelector("svg");
+            if (!svgEl) throw new Error("SVG element not found");
+            await utils.downloadAsSvg(note.title, svgEl);
+        } catch (e) {
+            console.warn(e);
+            toast.showError(t("svg.export_to_svg"));
+        }
     });
+
     useTriliumEvent("exportPng", async ({ ntxId: eventNtxId }) => {
         if (eventNtxId !== ntxId || !svg) return;
         try {
-            await utils.downloadSvgAsPng(note.title, svg);
+            const svgEl = containerRef.current?.querySelector("svg");
+            if (!svgEl) throw new Error("SVG element not found");
+            await utils.downloadAsPng(note.title, svgEl);
         } catch (e) {
             console.warn(e);
             toast.showError(t("svg.export_to_png"));
