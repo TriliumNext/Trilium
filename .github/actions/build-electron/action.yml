@@ -21,7 +21,7 @@ runs:
   # Certificate setup
   - name: Import Apple certificates
     if: inputs.os == 'macos'
-    uses: apple-actions/import-codesign-certs@v5
+    uses: apple-actions/import-codesign-certs@v6
     with:
       p12-file-base64: ${{ env.APPLE_APP_CERTIFICATE_BASE64 }}
       p12-password: ${{ env.APPLE_APP_CERTIFICATE_PASSWORD }}
@@ -30,7 +30,7 @@ runs:
 
   - name: Install Installer certificate
     if: inputs.os == 'macos'
-    uses: apple-actions/import-codesign-certs@v5
+    uses: apple-actions/import-codesign-certs@v6
     with:
       p12-file-base64: ${{ env.APPLE_INSTALLER_CERTIFICATE_BASE64 }}
       p12-password: ${{ env.APPLE_INSTALLER_CERTIFICATE_PASSWORD }}

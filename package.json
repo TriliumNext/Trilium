@@ -93,7 +93,7 @@
     },
     "overrides": {
       "mermaid": "11.12.1",
-      "preact": "10.27.2",
+      "preact": "10.28.0",
       "roughjs": "4.6.6",
       "@types/express-serve-static-core": "5.1.0",
       "flat@<5.0.1": ">=5.0.1",
