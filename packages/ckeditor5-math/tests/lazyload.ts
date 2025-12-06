@@ -37,6 +37,7 @@ describe( 'Lazy load', () => {
 		await buildEditor( {
 			math: {
 				engine: 'katex',
+				enablePreview: true,
 				lazyLoad: async () => {
 					lazyLoadInvoked = true;
 				}
@@ -44,6 +45,15 @@ describe( 'Lazy load', () => {
 		} );
 
 		mathUIFeature._showUI();
+
+		// Trigger render with a non-empty value to bypass empty check optimization
+		if ( mathUIFeature.formView ) {
+			mathUIFeature.formView.equation = 'x^2';
+		}
+
+		// Wait for async rendering and lazy loading
+		await new Promise( resolve => setTimeout( resolve, 100 ) );
+
 		expect( lazyLoadInvoked ).to.be.true;
 	} );
 } );

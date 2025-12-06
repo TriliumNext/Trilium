@@ -1,35 +1,224 @@
+/**
+ * Math equation editor dialog styles
+ * Supports MathLive input, raw LaTeX textarea, and equation preview
+ */
+
+/* ============================================================================
+   Main Dialog Container
+   ========================================================================= */
+
 .ck.ck-math-form {
-	display: flex;
-	align-items: flex-start;
-	flex-direction: row;
-	flex-wrap: nowrap;
-	padding: var(--ck-spacing-standard);
-
-	@media screen and (max-width: 600px) {
-		flex-wrap: wrap;
-
-		& .ck-math-view {
-			flex-basis: 100%;
-
-			& .ck-labeled-view {
-				flex-basis: 100%;
-			}
-
-			& .ck-label {
-				flex-basis: 100%;
-			}
-		}
-
-		& .ck-button {
-			flex-basis: 50%;
-		}
-	}
+    display: flex;
+    flex-direction: column;
+    padding: var(--ck-spacing-standard);
+    box-sizing: border-box;
+    max-width: 80vw;
+    max-height: 80vh;
+    height: 100%;
+    overflow-x: hidden;
 }
 
-.ck-math-tex.ck-placeholder::before {
-	display: none !important;
+/* Mobile responsiveness */
+@media screen and (max-width: 600px) {
+    .ck.ck-math-form {
+        flex-wrap: wrap;
+    }
 }
 
-.ck.ck-toolbar-container {
-	z-index: calc(var(--ck-z-panel) + 2);
+/* ============================================================================
+   Content Layout
+   ========================================================================= */
+
+.ck-math-view {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    gap: var(--ck-spacing-standard);
+    min-height: fit-content;
+    min-width: 0;
+    width: 100%;
+}
+
+/* LaTeX section heading */
+.ck-math-view > .ck-labeled-field-view::before {
+    content: "LaTeX";
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ck-color-text, #333);
+    margin-bottom: 4px;
+    padding-left: 2px;
+    opacity: 0.8;
+}
+
+/* Equation preview section heading */
+.ck-math-view > math-field::before {
+    content: "Equation preview";
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ck-color-text, #333);
+    margin-bottom: 4px;
+    padding-left: 2px;
+    opacity: 0.8;
+}
+
+/* Add spacing between preview and action buttons */
+.ck-math-view > math-field {
+    margin-bottom: var(--ck-spacing-large, 16px);
+}
+
+/* Action buttons row (Save/Cancel) */
+.ck-math-button-row {
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--ck-spacing-standard);
+    margin-top: var(--ck-spacing-standard);
+    width: fit-content;
+    max-width: 100%;
+    flex-wrap: wrap;
+}
+
+/* ============================================================================
+   Shared Styles for Input Fields
+   ========================================================================= */
+
+/* Base styling for both MathLive fields and textareas */
+.ck.ck-math-form math-field,
+.ck.ck-math-form textarea {
+    box-sizing: border-box;
+    padding: var(--ck-spacing-small);
+    background: var(--ck-color-input-background) !important;
+    color: var(--ck-color-input-text, inherit);
+    font-size: var(--ck-font-size-base);
+    border: none !important;
+    border-radius: var(--ck-border-radius, 6px);
+    outline: 3px solid transparent;
+    outline-offset: 6px;
+}
+
+/* MathLive-specific configuration */
+.ck.ck-math-form math-field {
+    display: block !important;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto !important;
+
+    /* MathLive theme customization */
+    --selection-background-color: rgba(33, 150, 243, 0.2);
+    --selection-color: inherit;
+    --contains-highlight-background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* ============================================================================
+   MathLive Visual Editor (Top Input)
+   ========================================================================= */
+
+.ck.ck-mathlive-input {
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 100%;
+    max-width: 100%;
+    min-height: fit-content;
+    max-height: 80vh;
+    overflow: auto;
+    padding-bottom: var(--ck-spacing-small);
+    resize: none;
+}
+
+/* Configure MathLive shadow DOM layout */
+.ck.ck-math-form math-field::part(container),
+.ck.ck-math-form math-field::part(content),
+.ck.ck-math-form math-field::part(field) {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    height: 100%;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+/* Position MathLive UI controls */
+.ck.ck-math-form math-field::part(virtual-keyboard-toggle),
+.ck.ck-math-form math-field::part(menu-toggle) {
+    position: absolute;
+    top: 8px;
+}
+
+.ck.ck-math-form math-field::part(virtual-keyboard-toggle) {
+    right: 40px;
+}
+
+.ck.ck-math-form math-field::part(menu-toggle) {
+    right: 8px;
+    display: flex !important;
+    visibility: visible !important;
+}
+
+/* ============================================================================
+   Raw LaTeX Textarea (Middle Input)
+   ========================================================================= */
+
+.ck-math-view .ck-labeled-field-view {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+    min-width: 100%;
+    width: 100%;
+    max-width: 100%;
+    min-height: 60px;
+    max-height: 65vh;
+    resize: both;
+    overflow: auto;
+    background: transparent;
+}
+
+/* Hide the default label (we use ::before for custom heading) */
+.ck-math-view .ck-labeled-field-view .ck-label {
+    display: none !important;
+}
+
+/* Textarea wrapper */
+.ck-math-view .ck-labeled-field-view .ck-labeled-field-view__input-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    width: 100%;
+    min-height: 100px;
+    height: auto;
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+}
+
+/* Raw LaTeX textarea styling */
+.ck-math-view .ck-labeled-field-view textarea {
+    display: block;
+    flex: 1 1 auto;
+    width: 100% !important;
+    height: 100%;
+    min-height: 140px;
+    resize: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    transition: none !important;
+}
+
+/* Textarea hover and focus states */
+.ck-math-view .ck-labeled-field-view textarea:hover,
+.ck-math-view .ck-labeled-field-view textarea:focus {
+    background: var(--ck-color-input-background) !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.ck-math-render-error {
+    color: var(--ck-color-error-text, #db1d1d);
+    padding: var(--ck-spacing-small);
+    font-style: italic;
+    font-size: 0.9em;
+    border: 1px dashed var(--ck-color-error-text, #db1d1d);
+    border-radius: 2px;
+    background: var(--ck-color-base-background, #fff);
 }
