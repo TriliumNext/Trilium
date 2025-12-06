@@ -7,7 +7,7 @@ import { useEffect, useState } from "preact/hooks";
 import note_types from "../../services/note_types";
 import { MenuCommandItem, MenuItem } from "../../menus/context_menu";
 import { TreeCommandNames } from "../../menus/tree_context_menu";
-import { Suggestion } from "../../services/note_autocomplete";
+import { SuggestionMode, Suggestion } from "../../services/note_autocomplete.js";
 import Badge from "../react/Badge";
 import { useTriliumEvent } from "../react/hooks";
 
@@ -76,6 +76,7 @@ export default function NoteTypeChooserDialogComponent() {
             onHidden={() => {
                 callback?.({ success: false });
                 setShown(false);
+                setParentNote(null);
             }}
             show={shown}
             stackable
@@ -85,7 +86,7 @@ export default function NoteTypeChooserDialogComponent() {
                     onChange={setParentNote}
                     placeholder={t("note_type_chooser.search_placeholder")}
                     opts={{
-                        allowCreatingNotes: false,
+                        suggestionMode: SuggestionMode.SuggestNothing,
                         hideGoToSelectedNoteButton: true,
                         allowJumpToSearchNotes: false,
                     }}

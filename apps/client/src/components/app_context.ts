@@ -25,7 +25,7 @@ import TouchBarComponent from "./touch_bar.js";
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
 import { StartupChecks } from "./startup_checks.js";
-import type { CreateNoteOpts } from "../services/note_create.js";
+import type { CreateNoteOpts, CreateNoteWithLinkOpts } from "../services/note_create.js";
 import { ColumnComponent } from "tabulator-tables";
 import { ChooseNoteTypeCallback } from "../widgets/dialogs/note_type_chooser.jsx";
 import type RootContainer from "../widgets/containers/root_container.js";
@@ -359,8 +359,7 @@ export type CommandMappings = {
 
     // Table view
     addNewRow: CommandData & {
-        customOpts: CreateNoteOpts;
-        parentNotePath?: string;
+        customOpts?: CreateNoteWithLinkOpts;
     };
     addNewTableColumn: CommandData & {
         columnToEdit?: ColumnComponent;

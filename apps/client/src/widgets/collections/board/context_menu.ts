@@ -46,12 +46,18 @@ export function openNoteContextMenu(api: Api, event: ContextMenuEvent, note: FNo
             {
                 title: t("board_view.insert-above"),
                 uiIcon: "bx bx-list-plus",
-                handler: () => api.insertRowAtPosition(column, branchId, "before")
+                handler: () => api.insertRowAtPosition(
+                    column,
+                    branchId,
+                    "before")
             },
             {
                 title: t("board_view.insert-below"),
                 uiIcon: "bx bx-empty",
-                handler: () => api.insertRowAtPosition(column, branchId, "after")
+                handler: () => api.insertRowAtPosition(
+                    column,
+                    branchId,
+                    "after")
             },
             { kind: "separator" },
             {
