@@ -155,7 +155,8 @@ export function CodeMimeTypesList() {
         placement: "left",
         fallbackPlacements: [ "left" ],
         animation: false,
-        html: true
+        html: true,
+        trigger: "hover"
     });
     const [ codeNotesMimeTypes, setCodeNotesMimeTypes ] = useTriliumOptionJson<string[]>("codeNotesMimeTypes");
     const groupedMimeTypes: Record<string, MimeType[]> = useMemo(() => {

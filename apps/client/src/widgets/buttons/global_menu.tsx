@@ -158,7 +158,8 @@ function ZoomControls({ parentComponent }: { parentComponent?: Component | null 
         const linkRef = useRef<HTMLAnchorElement>(null);
         useStaticTooltipWithKeyboardShortcut(linkRef, title, command, {
             placement: "bottom",
-            fallbackPlacements: [ "bottom" ]
+            fallbackPlacements: [ "bottom" ],
+            trigger: "hover"
         });
         return (
             <a

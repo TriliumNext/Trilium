@@ -27,6 +27,7 @@ const FormCheckbox = memo(({ name, disabled, label, currentValue, onChange, hint
         
         const tooltipInstance = Tooltip.getOrCreateInstance(labelRef.current, {
             html: true,
+            trigger: "hover",
             template: '<div class="tooltip tooltip-top" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'
         });
         

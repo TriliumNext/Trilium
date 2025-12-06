@@ -23,7 +23,8 @@ export default function ActionButton({ text, icon, className, onClick, triggerCo
     useStaticTooltip(buttonRef, {
         title: keyboardShortcut?.length ? `${text} (${keyboardShortcut?.join(",")})` : text,
         placement: titlePosition ?? "bottom",
-        fallbackPlacements: [ titlePosition ?? "bottom" ]
+        fallbackPlacements: [ titlePosition ?? "bottom" ],
+        trigger: "hover"
     });
 
     useEffect(() => {
