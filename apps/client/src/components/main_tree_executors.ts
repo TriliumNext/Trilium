@@ -48,10 +48,15 @@ export default class MainTreeExecutors extends Component {
             return;
         }
 
-        await noteCreateService.createNote(activeNoteContext.notePath, {
-            isProtected: activeNoteContext.note.isProtected,
-            saveSelection: false
-        });
+        await noteCreateService.createNote(
+            {
+                target: "into",
+                parentNoteLink: activeNoteContext.notePath,
+                isProtected: activeNoteContext.note.isProtected,
+                saveSelection: false,
+                promptForType: false,
+            }
+        );
     }
 
     async createNoteAfterCommand() {
@@ -72,11 +77,14 @@ export default class MainTreeExecutors extends Component {
             return;
         }
 
-        await noteCreateService.createNote(parentNotePath, {
-            target: "after",
-            targetBranchId: node.data.branchId,
-            isProtected: isProtected,
-            saveSelection: false
-        });
+        await noteCreateService.createNote(
+            {
+                target: "after",
+                parentNoteLink: parentNotePath,
+                targetBranchId: node.data.branchId,
+                isProtected: isProtected,
+                saveSelection: false
+            }
+        );
     }
 }

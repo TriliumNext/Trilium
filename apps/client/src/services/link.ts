@@ -261,7 +261,7 @@ export function parseNavigationStateFromUrl(url: string | undefined) {
 
     return {
         notePath,
-        noteId: treeService.getNoteIdFromUrl(notePath),
+        noteId: treeService.getNoteIdFromLink(notePath),
         ntxId,
         hoistedNoteId,
         viewScope,

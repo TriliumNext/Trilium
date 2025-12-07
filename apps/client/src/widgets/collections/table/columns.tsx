@@ -6,6 +6,7 @@ import Icon from "../../react/Icon.jsx";
 import { useEffect, useRef, useState } from "preact/hooks";
 import froca from "../../../services/froca.js";
 import NoteAutocomplete from "../../react/NoteAutocomplete.jsx";
+import { SuggestionMode } from "../../../services/note_autocomplete.js";
 
 type ColumnType = LabelType | "relation";
 
@@ -227,7 +228,7 @@ function RelationEditor({ cell, success }: EditorOpts) {
         inputRef={inputRef}
         noteId={cell.getValue()}
         opts={{
-            allowCreatingNotes: true,
+            suggestionMode: SuggestionMode.SuggestCreateAndLink,
             hideAllButtons: true
         }}
         noteIdChanged={success}

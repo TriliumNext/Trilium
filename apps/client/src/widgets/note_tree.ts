@@ -224,7 +224,13 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             } else if (target.classList.contains("add-note-button")) {
                 const node = $.ui.fancytree.getNode(e as unknown as Event);
                 const parentNotePath = treeService.getNotePath(node);
-                noteCreateService.createNote(parentNotePath, { isProtected: node.data.isProtected });
+                noteCreateService.createNote(
+                    {
+                        target: "into",
+                        parentNoteLink: parentNotePath,
+                        isProtected: node.data.isProtected
+                    },
+                );
             } else if (target.classList.contains("enter-workspace-button")) {
                 const node = $.ui.fancytree.getNode(e as unknown as Event);
                 this.triggerCommand("hoistNote", { noteId: node.data.noteId });
@@ -1405,10 +1411,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
         let node: Fancytree.FancytreeNode | null | undefined = await this.expandToNote(activeNotePath, false);
 
-        if (node && node.data.noteId !== treeService.getNoteIdFromUrl(activeNotePath)) {
+        if (node && node.data.noteId !== treeService.getNoteIdFromLink(activeNotePath)) {
             // if the active note has been moved elsewhere then it won't be found by the path,
             // so we switch to the alternative of trying to find it by noteId
-            const noteId = treeService.getNoteIdFromUrl(activeNotePath);
+            const noteId = treeService.getNoteIdFromLink(activeNotePath);
 
             if (noteId) {
                 const notesById = this.getNodesByNoteId(noteId);
@@ -1838,9 +1844,13 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     const node = this.getActiveNode();
                     if (!node) return;
                     const notePath = treeService.getNotePath(node);
-                    noteCreateService.createNote(notePath, {
-                        isProtected: node.data.isProtected
-                    });
+                    noteCreateService.createNote(
+                        {
+                            target: "into",
+                            parentNoteLink: notePath,
+                            isProtected: node.data.isProtected
+                        }
+                    )
                 }
             }),
             new TouchBar.TouchBarButton({

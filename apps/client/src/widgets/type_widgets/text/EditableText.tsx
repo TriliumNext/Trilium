@@ -16,7 +16,7 @@ import note_create from "../../../services/note_create";
 import TouchBar, { TouchBarButton, TouchBarGroup, TouchBarSegmentedControl } from "../../react/TouchBar";
 import { RefObject } from "preact";
 import { buildSelectedBackgroundColor } from "../../../components/touch_bar";
-import { deferred } from "@triliumnext/commons";
+import { CreateNoteAction, deferred } from "@triliumnext/commons";
 import { t } from "../../../services/i18n";
 
 /**
@@ -115,17 +115,18 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         },
         loadIncludedNote,
         // Creating notes in @-completion
-        async createNoteForReferenceLink(title: string) {
-            const notePath = noteContext?.notePath;
-            if (!notePath) return;
-
-            const resp = await note_create.createNoteWithTypePrompt(notePath, {
-                activate: false,
-                title: title
-            });
-
-            if (!resp || !resp.note) return;
-            return resp.note.getBestNotePathString();
+        async createNoteFromCkEditor (
+            title: string,
+            parentNotePath: string | undefined,
+            action: CreateNoteAction
+        ): Promise<string> {
+            const { note }= await note_create.createNoteFromAction(
+                action,
+                true,
+                title,
+                parentNotePath,
+            )
+            return note?.getBestNotePathString() ?? "";
         },
         // Keyboard shortcut
         async followLinkUnderCursorCommand() {
@@ -162,7 +163,9 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             // without await as this otherwise causes deadlock through component mutex
             const parentNotePath = appContext.tabManager.getActiveContextNotePath();
             if (noteContext && parentNotePath) {
-                note_create.createNote(parentNotePath, {
+                note_create.createNote({
+                    parentNoteLink: parentNotePath,
+                    target: "into",
                     isProtected: note.isProtected,
                     saveSelection: true,
                     textEditor: await noteContext?.getTextEditor()

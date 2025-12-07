@@ -1,4 +1,5 @@
 import { Command, Mention, Plugin, ModelRange, type ModelSelectable } from "ckeditor5";
+import { CreateNoteAction } from "@triliumnext/commons"
 
 /**
  * Overrides the actions taken by the Mentions plugin (triggered by `@` in the text editor, or `~` & `#` in the attribute editor):
@@ -9,11 +10,11 @@ import { Command, Mention, Plugin, ModelRange, type ModelSelectable } from "cked
  */
 export default class MentionCustomization extends Plugin {
 
-    static get requires() {
+	static get requires() {
 		return [ Mention ];
 	}
 
-    public static get pluginName() {
+	public static get pluginName() {
 		return "MentionCustomization" as const;
 	}
 
@@ -25,20 +26,21 @@ export default class MentionCustomization extends Plugin {
 }
 
 interface MentionOpts {
-    mention: string | {
-        id: string;
-        [key: string]: unknown;
-    };
-    marker: string;
-    text?: string;
-    range?: ModelRange;
+	mention: string | {
+	    id: string;
+	    [key: string]: unknown;
+	};
+	marker: string;
+	text?: string;
+	range?: ModelRange;
 }
 
 interface MentionAttribute {
-    id: string;
-    action?: "create-note";
-    noteTitle: string;
-    notePath: string;
+	id: string;
+	action?: CreateNoteAction;
+	noteTitle: string;
+	notePath: string;
+	parentNoteId?: string;
 }
 
 class CustomMentionCommand extends Command {
@@ -56,14 +58,27 @@ class CustomMentionCommand extends Command {
 				model.insertContent( writer.createText( mention.id, {} ), range );
 			});
 		}
-		else if (mention.action === 'create-note') {
-			const editorEl = this.editor.editing.view.getDomRoot();
-			const component = glob.getComponentByEl<EditorComponent>(editorEl);
+	    else if (
+	        mention.action === CreateNoteAction.CreateNote ||
+	            mention.action === CreateNoteAction.CreateChildNote ||
+	            mention.action === CreateNoteAction.CreateAndLinkNote ||
+	            mention.action === CreateNoteAction.CreateAndLinkChildNote
+	    ) {
+	        const editorEl = this.editor.editing.view.getDomRoot();
+	        const component = glob.getComponentByEl<EditorComponent>(editorEl);
 
-			component.createNoteForReferenceLink(mention.noteTitle).then(notePath => {
-				this.insertReference(range, notePath);
-			});
-		}
+	        // use parentNoteId as fallback when notePath is missing
+	        const parentNotePath = mention.notePath || mention.parentNoteId;
+
+	        component
+	            .createNoteFromCkEditor(mention.noteTitle, parentNotePath, mention.action)
+	            .then(notePath => {
+	                if (notePath) {
+	                    this.insertReference(range, notePath);
+	                }
+	            })
+	            .catch(err => console.error("Error creating note from CKEditor mention:", err));
+	    }
 		else {
 			this.insertReference(range, mention.notePath);
 		}

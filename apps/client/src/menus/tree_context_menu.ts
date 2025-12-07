@@ -289,21 +289,31 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
             const parentNotePath = treeService.getNotePath(this.node.getParent());
             const isProtected = treeService.getParentProtectedStatus(this.node);
 
-            noteCreateService.createNote(parentNotePath, {
-                target: "after",
-                targetBranchId: this.node.data.branchId,
-                type: type,
-                isProtected: isProtected,
-                templateNoteId: templateNoteId
-            });
+
+            noteCreateService.createNote(
+                {
+                    target: "after",
+                    parentNoteLink: parentNotePath,
+                    targetBranchId: this.node.data.branchId,
+                    type: type,
+                    isProtected: isProtected,
+                    templateNoteId: templateNoteId,
+                    promptForType: false,
+                }
+            );
         } else if (command === "insertChildNote") {
             const parentNotePath = treeService.getNotePath(this.node);
 
-            noteCreateService.createNote(parentNotePath, {
-                type: type,
-                isProtected: this.node.data.isProtected,
-                templateNoteId: templateNoteId
-            });
+            noteCreateService.createNote(
+                {
+                    target: "into",
+                    parentNoteLink: parentNotePath,
+                    type: type,
+                    isProtected: this.node.data.isProtected,
+                    templateNoteId: templateNoteId,
+                    promptForType: false,
+                }
+            );
         } else if (command === "openNoteInSplit") {
             const subContexts = appContext.tabManager.getActiveContext()?.getSubContexts();
             const { ntxId } = subContexts?.[subContexts.length - 1] ?? {};

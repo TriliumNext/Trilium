@@ -5,7 +5,7 @@ import FormRadioGroup from "../react/FormRadioGroup";
 import NoteAutocomplete from "../react/NoteAutocomplete";
 import { useRef, useState, useEffect } from "preact/hooks";
 import tree from "../../services/tree";
-import note_autocomplete, { Suggestion } from "../../services/note_autocomplete";
+import note_autocomplete, { SuggestionMode, Suggestion } from "../../services/note_autocomplete";
 import { logError } from "../../services/ws";
 import FormGroup from "../react/FormGroup.js";
 import { refToJQuerySelector } from "../react/react_utils";
@@ -58,7 +58,7 @@ export default function AddLinkDialog() {
         }
 
         if (suggestion.notePath) {
-            const noteId = tree.getNoteIdFromUrl(suggestion.notePath);
+            const noteId = tree.getNoteIdFromLink(suggestion.notePath);
             if (noteId) {
                 setDefaultLinkTitle(noteId);
             }
@@ -133,7 +133,7 @@ export default function AddLinkDialog() {
                     onChange={setSuggestion}
                     opts={{
                         allowExternalLinks: true,
-                        allowCreatingNotes: true
+                        suggestionMode: SuggestionMode.SuggestCreateAndLink,
                     }}
                 />
             </FormGroup>

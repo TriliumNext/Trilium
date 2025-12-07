@@ -1,6 +1,6 @@
 import { EventCallBackMethods, RowComponent, Tabulator } from "tabulator-tables";
 import { CommandListenerData } from "../../../components/app_context";
-import note_create, { CreateNoteOpts } from "../../../services/note_create";
+import note_create from "../../../services/note_create";
 import { useLegacyImperativeHandlers } from "../../react/hooks";
 import { RefObject } from "preact";
 import { setAttribute, setLabel } from "../../../services/attributes";
@@ -9,17 +9,23 @@ import server from "../../../services/server";
 import branches from "../../../services/branches";
 import AttributeDetailWidget from "../../attribute_widgets/attribute_detail";
 
+/**
+ * Hook for handling row table editing, including adding new rows.
+ */
 export default function useRowTableEditing(api: RefObject<Tabulator>, attributeDetailWidget: AttributeDetailWidget, parentNotePath: string): Partial<EventCallBackMethods> {
-    // Adding new rows
     useLegacyImperativeHandlers({
-        addNewRowCommand({ customOpts, parentNotePath: customNotePath }: CommandListenerData<"addNewRow">) {
-            const notePath = customNotePath ?? parentNotePath;
-            if (notePath) {
-                const opts: CreateNoteOpts = {
-                    activate: false,
-                    ...customOpts
-                }
-                note_create.createNote(notePath, opts).then(({ branch }) => {
+        addNewRowCommand({ customOpts }: CommandListenerData<"addNewRow">) {
+            if (!customOpts) {
+                customOpts = {
+                    target: "into",
+                };
+            }
+
+            const noteUrl = customOpts.parentNoteLink ?? parentNotePath;
+            if (noteUrl) {
+                customOpts.parentNoteLink = noteUrl;
+                customOpts.activate = false;
+                note_create.createNote(customOpts).then(({ branch }) => {
                     if (branch) {
                         setTimeout(() => {
                             if (!api.current) return;
@@ -27,6 +33,7 @@ export default function useRowTableEditing(api: RefObject<Tabulator>, attributeD
                         }, 100);
                     }
                 })
+
             }
         }
     });
