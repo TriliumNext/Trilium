@@ -1937,10 +1937,6 @@
     "move-to-available-launchers": "Passa ai launcher disponibili",
     "duplicate-launcher": "Duplica il launcher <kbd data-command=\"duplicateSubtree\">"
   },
-  "editable-text": {
-    "auto-detect-language": "Rilevato automaticamente",
-    "keeps-crashing": "Il componente di modifica continua a bloccarsi. Prova a riavviare Trilium. Se il problema persiste, valuta la possibilità di creare una segnalazione di bug."
-  },
   "highlighting": {
     "title": "Blocchi di codice",
     "description": "Controlla l'evidenziazione della sintassi per i blocchi di codice all'interno delle note di testo; le note di codice non saranno interessate.",

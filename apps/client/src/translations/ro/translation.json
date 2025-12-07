@@ -1626,10 +1626,6 @@
     "move-to-visible-launchers": "Mută în Lansatoare vizibile",
     "reset": "Resetează"
   },
-  "editable-text": {
-    "auto-detect-language": "Automat",
-    "keeps-crashing": "Componenta de editare se blochează în continuu. Încercați să reporniți Trilium. Dacă problema persistă, luați în considerare să raportați această problemă."
-  },
   "highlighting": {
     "color-scheme": "Temă de culori",
     "description": "Controlează evidențierea de sintaxă pentru blocurile de cod în interiorul notițelor text, notițele de tip cod nu vor fi afectate de aceste setări.",

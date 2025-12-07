@@ -1689,9 +1689,6 @@
     "move-to-available-launchers": "Mover para lançadores disponíveis",
     "duplicate-launcher": "Duplicar o lançador <kbd data-command=\"duplicateSubtree\">"
   },
-  "editable-text": {
-    "auto-detect-language": "Detectado automaticamente"
-  },
   "highlighting": {
     "title": "Blocos de Código",
     "description": "Controla o destaque de sintaxe para blocos de código dentro de notas de texto, notas de código não serão afetadas.",

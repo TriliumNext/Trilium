@@ -1268,10 +1268,6 @@
     "duplicate-launcher": "ランチャーの複製 <kbd data-command=\"duplicateSubtree\">",
     "reset_launcher_confirm": "本当に「{{title}}」をリセットしますか？ このノート（およびその子ノート）のすべてのデータと設定が失われ、ランチャーは元の場所に戻ります。"
   },
-  "editable-text": {
-    "auto-detect-language": "自動検出",
-    "keeps-crashing": "編集コンポーネントがクラッシュし続けます。Trilium を再起動してください。問題が解決しない場合は、バグレポートの作成をご検討ください。"
-  },
   "highlighting": {
     "title": "コードブロック",
     "description": "テキストノート内のコードブロックのシンタックスハイライトを制御します。コードノートには影響しません。",

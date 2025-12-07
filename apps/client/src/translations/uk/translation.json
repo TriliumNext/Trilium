@@ -130,9 +130,6 @@
     "move-to-available-launchers": "Перейти до доступних лаунчерів",
     "duplicate-launcher": "Дублікат програми запуску <kbd data-command=\"duplicateSubtree\">"
   },
-  "editable-text": {
-    "auto-detect-language": "Автовизначено"
-  },
   "highlighting": {
     "color-scheme": "Схема кольорів",
     "title": "Блоки коду",

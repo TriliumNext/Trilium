@@ -1660,10 +1660,6 @@
     "move-to-available-launchers": "移动到可用启动器",
     "duplicate-launcher": "复制启动器 <kbd data-command=\"duplicateSubtree\">"
   },
-  "editable-text": {
-    "auto-detect-language": "自动检测",
-    "keeps-crashing": "编辑组件时持续崩溃。请尝试重启 Trilium。如果问题仍然存在，请考虑提交错误报告。"
-  },
   "highlighting": {
     "title": "代码块",
     "description": "控制文本笔记中代码块的语法高亮，代码笔记不会受到影响。",

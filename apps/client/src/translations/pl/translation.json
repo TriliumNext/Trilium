@@ -2014,9 +2014,6 @@
     "move-to-available-launchers": "Przenieś do dostępnych programów uruchamiających",
     "duplicate-launcher": "Duplikuj program uruchamiający <kbd data-command=\"duplicateSubtree\">"
   },
-  "editable-text": {
-    "auto-detect-language": "Wykryto automatycznie"
-  },
   "highlighting": {
     "title": "Bloki kodu",
     "description": "Kontroluje podświetlanie składni dla bloków kodu w notatkach tekstowych, notatki kodowe nie będą miały wpływu.",

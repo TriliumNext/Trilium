@@ -1624,10 +1624,6 @@
     "move-to-available-launchers": "Zu verfügbaren Launchern verschieben",
     "duplicate-launcher": "Launcher duplizieren <kbd data-command=\"duplicateSubtree\">"
   },
-  "editable-text": {
-    "auto-detect-language": "Automatisch erkannt",
-    "keeps-crashing": "Die Bearbeitungskomponente stürzt immer wieder ab. Bitte starten Sie Trilium neu. Wenn das Problem weiterhin besteht, erstellen Sie einen Fehlerbericht."
-  },
   "highlighting": {
     "description": "Steuert die Syntaxhervorhebung für Codeblöcke in Textnotizen, Code-Notizen sind nicht betroffen.",
     "color-scheme": "Farbschema",

@@ -948,9 +948,6 @@
     "move-to-available-launchers": "نقل الى المشغلات المتوفرة",
     "duplicate-launcher": "تكرار المشغل <kbd data-command=\"duplicateSubtree\">"
   },
-  "editable-text": {
-    "auto-detect-language": "تم اكتشافه تلقائيا"
-  },
   "classic_editor_toolbar": {
     "title": "تنسيق"
   },

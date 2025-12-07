@@ -1812,9 +1812,6 @@
     "move-to-available-launchers": "Mover a lanzadores disponibles",
     "duplicate-launcher": "Duplicar lanzador <kbd data-command=\"duplicateSubtree\">"
   },
-  "editable-text": {
-    "auto-detect-language": "Detectado automáticamente"
-  },
   "highlighting": {
     "title": "Bloques de código",
     "description": "Controla el resaltado de sintaxis para bloques de código dentro de las notas de texto, las notas de código no serán afectadas.",
