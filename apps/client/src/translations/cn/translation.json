@@ -2106,5 +2106,10 @@
   },
   "popup-editor": {
     "maximize": "切换至完整编辑器"
+  },
+  "server": {
+    "unknown_http_error_title": "与服务器通讯错误",
+    "unknown_http_error_content": "状态码: {{statusCode}}\n地址: {{method}} {{url}}\n信息: {{message}}",
+    "traefik_blocks_requests": "如果您使用 Traefik 反向代理，它引入了一项影响与服务器的通信重大更改。"
   }
 }
