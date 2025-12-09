@@ -23,15 +23,21 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         this.refresh();
     }
 
-    noteSwitchedAndActivatedEvent() {
+    noteSwitchedAndActivatedEvent({ noteContext }: EventData<"setNoteContext">) {
+        this.noteContext = noteContext;
+
         this.refresh();
     }
 
-    noteSwitchedEvent() {
+    noteSwitchedEvent({ noteContext }: EventData<"setNoteContext">) {
+        this.noteContext = noteContext;
+
         this.refresh();
     }
 
-    activeContextChangedEvent() {
+    activeContextChangedEvent({ noteContext }: EventData<"setNoteContext">) {
+        this.noteContext = noteContext;
+
         this.refresh();
     }
 
@@ -46,6 +52,7 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
 
         const note = this.noteContext?.note;
         if (!note) {
+            this.$widget.addClass("bgfx empty-note");
             return;
         }
 
@@ -55,7 +62,7 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
 
         this.$widget.addClass(utils.getNoteTypeClass(note.type));
         this.$widget.addClass(utils.getMimeTypeClass(note.mime));
-
+        this.$widget.toggleClass(["bgfx", "options"], note.isOptions());
         this.$widget.toggleClass("protected", note.isProtected);
 
         const noteLanguage = note?.getLabelValue("language");
@@ -64,11 +71,15 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
     }
 
     #isFullWidthNote(note: FNote) {
-        if (["image", "mermaid", "book", "render", "canvas", "webView", "mindMap"].includes(note.type)) {
+        if (["code", "image", "mermaid", "book", "render", "canvas", "webView", "mindMap"].includes(note.type)) {
             return true;
         }
 
         if (note.type === "file" && (note.mime === "application/pdf" || note.mime.startsWith("video/"))) {
+            return true;
+        }
+
+        if (note.type === "search" && ![ "grid", "list" ].includes(note.getLabelValue("viewType") ?? "list")) {
             return true;
         }
 
@@ -81,7 +92,7 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         const noteId = this.noteContext?.noteId;
         if (
             loadResults.isNoteReloaded(noteId) ||
-            loadResults.getAttributeRows().find((attr) => attr.type === "label" && ["cssClass", "language"].includes(attr.name ?? "") && attributeService.isAffecting(attr, this.noteContext?.note))
+            loadResults.getAttributeRows().find((attr) => attr.type === "label" && ["cssClass", "language", "viewType"].includes(attr.name ?? "") && attributeService.isAffecting(attr, this.noteContext?.note))
         ) {
             this.refresh();
         }

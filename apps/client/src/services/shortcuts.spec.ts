@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import shortcuts, { keyMatches, matchesShortcut } from "./shortcuts.js";
+import shortcuts, { keyMatches, matchesShortcut, isIMEComposing } from "./shortcuts.js";
 
 // Mock utils module
 vi.mock("./utils.js", () => ({
@@ -119,11 +119,6 @@ describe("shortcuts", () => {
             metaKey: options.metaKey || false
         } as KeyboardEvent);
 
-        it("should match simple key shortcuts", () => {
-            const event = createKeyboardEvent({ key: "a", code: "KeyA" });
-            expect(matchesShortcut(event, "a")).toBe(true);
-        });
-
         it("should match shortcuts with modifiers", () => {
             const event = createKeyboardEvent({ key: "a", code: "KeyA", ctrlKey: true });
             expect(matchesShortcut(event, "ctrl+a")).toBe(true);
@@ -146,6 +141,28 @@ describe("shortcuts", () => {
             const event = createKeyboardEvent({ key: "a", code: "KeyA", ctrlKey: true });
             expect(matchesShortcut(event, "alt+a")).toBe(false);
             expect(matchesShortcut(event, "a")).toBe(false);
+        });
+
+        it("should not match when no modifiers are used", () => {
+            const event = createKeyboardEvent({ key: "a", code: "KeyA" });
+            expect(matchesShortcut(event, "a")).toBe(false);
+        });
+
+        it("should match some keys even with no modifiers", () => {
+            // Bare function keys
+            let event = createKeyboardEvent({ key: "F1", code: "F1" });
+            expect(matchesShortcut(event, "F1")).toBeTruthy();
+            expect(matchesShortcut(event, "f1")).toBeTruthy();
+
+            // Function keys with shift
+            event = createKeyboardEvent({ key: "F1", code: "F1", shiftKey: true });
+            expect(matchesShortcut(event, "Shift+F1")).toBeTruthy();
+
+            // Special keys
+            for (const keyCode of [ "Delete", "Enter", "NumpadEnter" ]) {
+                event = createKeyboardEvent({ key: keyCode, code: keyCode });
+                expect(matchesShortcut(event, keyCode), `Key ${keyCode}`).toBeTruthy();
+            }
         });
 
         it("should handle alternative modifier names", () => {
@@ -318,6 +335,38 @@ describe("shortcuts", () => {
 
             expect(handler).not.toHaveBeenCalled();
             expect(event.preventDefault).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('isIMEComposing', () => {
+        it('should return true when event.isComposing is true', () => {
+            const event = { isComposing: true, keyCode: 65 } as KeyboardEvent;
+            expect(isIMEComposing(event)).toBe(true);
+        });
+
+        it('should return true when keyCode is 229', () => {
+            const event = { isComposing: false, keyCode: 229 } as KeyboardEvent;
+            expect(isIMEComposing(event)).toBe(true);
+        });
+
+        it('should return true when both isComposing is true and keyCode is 229', () => {
+            const event = { isComposing: true, keyCode: 229 } as KeyboardEvent;
+            expect(isIMEComposing(event)).toBe(true);
+        });
+
+        it('should return false for normal keys', () => {
+            const event = { isComposing: false, keyCode: 65 } as KeyboardEvent;
+            expect(isIMEComposing(event)).toBe(false);
+        });
+
+        it('should return false when isComposing is undefined and keyCode is not 229', () => {
+            const event = { keyCode: 13 } as KeyboardEvent;
+            expect(isIMEComposing(event)).toBe(false);
+        });
+
+        it('should handle null/undefined events gracefully', () => {
+            expect(isIMEComposing(null as any)).toBe(false);
+            expect(isIMEComposing(undefined as any)).toBe(false);
         });
     });
 });

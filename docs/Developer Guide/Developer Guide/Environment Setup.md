@@ -26,8 +26,11 @@ As a quick heads-up of some differences when compared to `npm`:
 
 Run `pnpm i` at the top of the `Notes` repository to install the dependencies.
 
+> [!NOTE]
+> Dependencies are kept up to date periodically in the project. Generally it's a good rule to do `pnpm i` after each `git pull` on the main branch.
+
 ## IDE
 
-Our recommended IDE for working on TriliumNext is Visual Studio Code (or VSCodium if you are looking for a fully open-source alternative).
+Our recommended IDE for working on Trilium is Visual Studio Code (or VSCodium if you are looking for a fully open-source alternative).
 
-By default we include a number of suggested extensions which should appear when opening the repository in VS Code. Most of the extensions are for integrating various technologies we are using such as Playwright and Vitest for testing and NX for mono-repo management.
+By default we include a number of suggested extensions which should appear when opening the repository in VS Code. Most of the extensions are for integrating various technologies we are using such as Playwright and Vitest for testing or for <a class="reference-link" href="Concepts/Internationalisation%20%20Translat.md">Internationalisation / Translations</a>.

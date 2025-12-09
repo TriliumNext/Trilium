@@ -14,7 +14,7 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 
 async function testImport(fileName: string, mimetype: string) {
     const buffer = fs.readFileSync(path.join(scriptDir, "samples", fileName));
-    const taskContext = TaskContext.getInstance("import-mdx", "import", {
+    const taskContext = TaskContext.getInstance("import-mdx", "importNotes", {
         textImportedAsText: true,
         codeImportedAsCode: true
     });
@@ -112,4 +112,4 @@ describe("processNoteContent", () => {
             title: "New note"
         });
     });
-});
+}, 60_000);

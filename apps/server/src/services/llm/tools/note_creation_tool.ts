@@ -9,7 +9,7 @@ import log from '../../log.js';
 import becca from '../../../becca/becca.js';
 import notes from '../../notes.js';
 import attributes from '../../attributes.js';
-import type { BNote } from '../../backend_script_entrypoint.js';
+import BNote from '../../../becca/entities/bnote.js';
 
 /**
  * Definition of the note creation tool

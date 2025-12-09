@@ -12,7 +12,7 @@ import ValidationError from "../../errors/validation_error.js";
 import blobService from "../../services/blob.js";
 import type { Request } from "express";
 import type BBranch from "../../becca/entities/bbranch.js";
-import type { AttributeRow, DeleteNotesPreview } from "@triliumnext/commons";
+import type { AttributeRow, CreateChildrenResponse, DeleteNotesPreview, MetadataResponse } from "@triliumnext/commons";
 
 /**
  * @swagger
@@ -101,7 +101,7 @@ function getNoteMetadata(req: Request) {
         utcDateCreated: note.utcDateCreated,
         dateModified: note.dateModified,
         utcDateModified: note.utcDateModified
-    };
+    } satisfies MetadataResponse;
 }
 
 function createNote(req: Request) {
@@ -123,7 +123,7 @@ function createNote(req: Request) {
     return {
         note,
         branch
-    };
+    } satisfies CreateChildrenResponse;
 }
 
 function updateNoteData(req: Request) {
@@ -184,7 +184,7 @@ function deleteNote(req: Request) {
     if (typeof taskId !== "string") {
         throw new ValidationError("Missing or incorrect type for task ID.");
     }
-    const taskContext = TaskContext.getInstance(taskId, "deleteNotes");
+    const taskContext = TaskContext.getInstance(taskId, "deleteNotes", null);
 
     note.deleteNote(deleteId, taskContext);
 
@@ -193,16 +193,16 @@ function deleteNote(req: Request) {
     }
 
     if (last) {
-        taskContext.taskSucceeded();
+        taskContext.taskSucceeded(null);
     }
 }
 
 function undeleteNote(req: Request) {
-    const taskContext = TaskContext.getInstance(utils.randomString(10), "undeleteNotes");
+    const taskContext = TaskContext.getInstance(utils.randomString(10), "undeleteNotes", null);
 
     noteService.undeleteNote(req.params.noteId, taskContext);
 
-    taskContext.taskSucceeded();
+    taskContext.taskSucceeded(null);
 }
 
 function sortChildNotes(req: Request) {
@@ -226,7 +226,7 @@ function protectNote(req: Request) {
 
     noteService.protectNoteRecursively(note, protect, includingSubTree, taskContext);
 
-    taskContext.taskSucceeded();
+    taskContext.taskSucceeded(null);
 }
 
 function setNoteTypeMime(req: Request) {

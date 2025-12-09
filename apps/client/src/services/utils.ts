@@ -1,5 +1,7 @@
-import dayjs from "dayjs";
+import { dayjs } from "@triliumnext/commons";
 import type { ViewScope } from "./link.js";
+import FNote from "../entities/fnote";
+import { snapdom } from "@zumer/snapdom";
 
 const SVG_MIME = "image/svg+xml";
 
@@ -10,7 +12,11 @@ export function reloadFrontendApp(reason?: string) {
         logInfo(`Frontend app reload: ${reason}`);
     }
 
-    window.location.reload();
+    if (isElectron()) {
+        dynamicRequire("@electron/remote").BrowserWindow.getFocusedWindow()?.reload();
+    } else {
+        window.location.reload();
+    }
 }
 
 export function restartDesktopApp() {
@@ -44,27 +50,6 @@ function parseDate(str: string) {
     } catch (e: any) {
         throw new Error(`Can't parse date from '${str}': ${e.message} ${e.stack}`);
     }
-}
-
-// Source: https://stackoverflow.com/a/30465299/4898894
-function getMonthsInDateRange(startDate: string, endDate: string) {
-    const start = startDate.split("-");
-    const end = endDate.split("-");
-    const startYear = parseInt(start[0]);
-    const endYear = parseInt(end[0]);
-    const dates: string[] = [];
-
-    for (let i = startYear; i <= endYear; i++) {
-        const endMonth = i != endYear ? 11 : parseInt(end[1]) - 1;
-        const startMon = i === startYear ? parseInt(start[1]) - 1 : 0;
-
-        for (let j = startMon; j <= endMonth; j = j > 12 ? j % 12 || 11 : j + 1) {
-            const month = j + 1;
-            const displayMonth = month < 10 ? "0" + month : month;
-            dates.push([i, displayMonth].join("-"));
-        }
-    }
-    return dates;
 }
 
 function padNum(num: number) {
@@ -148,13 +133,25 @@ export function isElectron() {
     return !!(window && window.process && window.process.type);
 }
 
-function isMac() {
+/**
+ * Returns `true` if the client is running as a PWA, otherwise `false`.
+ */
+export function isPWA() {
+    return (
+        window.matchMedia('(display-mode: standalone)').matches
+        || window.matchMedia('(display-mode: window-controls-overlay)').matches
+        || window.navigator.standalone
+        || window.navigator.windowControlsOverlay
+    );
+}
+
+export function isMac() {
     return navigator.platform.indexOf("Mac") > -1;
 }
 
 export const hasTouchBar = (isMac() && isElectron());
 
-function isCtrlKey(evt: KeyboardEvent | MouseEvent | JQuery.ClickEvent | JQuery.ContextMenuEvent | JQuery.TriggeredEvent | React.PointerEvent<HTMLCanvasElement> | JQueryEventObject) {
+export function isCtrlKey(evt: KeyboardEvent | MouseEvent | JQuery.ClickEvent | JQuery.ContextMenuEvent | JQuery.TriggeredEvent | React.PointerEvent<HTMLCanvasElement> | JQueryEventObject) {
     return (!isMac() && evt.ctrlKey) || (isMac() && evt.metaKey);
 }
 
@@ -177,7 +174,7 @@ const entityMap: Record<string, string> = {
     "=": "&#x3D;"
 };
 
-function escapeHtml(str: string) {
+export function escapeHtml(str: string) {
     return str.replace(/[&<>"'`=\/]/g, (s) => entityMap[s]);
 }
 
@@ -185,7 +182,11 @@ export function escapeQuotes(value: string) {
     return value.replaceAll('"', "&quot;");
 }
 
-function formatSize(size: number) {
+export function formatSize(size: number | null | undefined) {
+    if (size === null || size === undefined) {
+        return "";
+    }
+
     size = Math.max(Math.round(size / 1024), 1);
 
     if (size < 1024) {
@@ -207,7 +208,7 @@ function toObject<T, R>(array: T[], fn: (arg0: T) => [key: string, value: R]) {
     return obj;
 }
 
-function randomString(len: number) {
+export function randomString(len: number) {
     let text = "";
     const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
@@ -236,7 +237,7 @@ export function isIOS() {
     return /iPad|iPhone|iPod/.test(navigator.userAgent);
 }
 
-function isDesktop() {
+export function isDesktop() {
     return (
         window.glob?.device === "desktop" ||
         // window.glob.device is not available in setup
@@ -274,7 +275,7 @@ function getMimeTypeClass(mime: string) {
     return `mime-${mime.toLowerCase().replace(/[\W_]+/g, "-")}`;
 }
 
-function isHtmlEmpty(html: string) {
+export function isHtmlEmpty(html: string) {
     if (!html) {
         return true;
     } else if (typeof html !== "string") {
@@ -292,7 +293,55 @@ function isHtmlEmpty(html: string) {
     );
 }
 
-async function clearBrowserCache() {
+function formatHtml(html: string) {
+    let indent = "\n";
+    const tab = "\t";
+    let i = 0;
+    let pre: { indent: string; tag: string }[] = [];
+
+    html = html
+        .replace(new RegExp("<pre>([\\s\\S]+?)?</pre>"), function (x) {
+            pre.push({ indent: "", tag: x });
+            return "<--TEMPPRE" + i++ + "/-->";
+        })
+        .replace(new RegExp("<[^<>]+>[^<]?", "g"), function (x) {
+            let ret;
+            const tagRegEx = /<\/?([^\s/>]+)/.exec(x);
+            let tag = tagRegEx ? tagRegEx[1] : "";
+            let p = new RegExp("<--TEMPPRE(\\d+)/-->").exec(x);
+
+            if (p) {
+                const pInd = parseInt(p[1]);
+                pre[pInd].indent = indent;
+            }
+
+            if (["area", "base", "br", "col", "command", "embed", "hr", "img", "input", "keygen", "link", "menuitem", "meta", "param", "source", "track", "wbr"].indexOf(tag) >= 0) {
+                // self closing tag
+                ret = indent + x;
+            } else {
+                if (x.indexOf("</") < 0) {
+                    //open tag
+                    if (x.charAt(x.length - 1) !== ">") ret = indent + x.substr(0, x.length - 1) + indent + tab + x.substr(x.length - 1, x.length);
+                    else ret = indent + x;
+                    !p && (indent += tab);
+                } else {
+                    //close tag
+                    indent = indent.substr(0, indent.length - 1);
+                    if (x.charAt(x.length - 1) !== ">") ret = indent + x.substr(0, x.length - 1) + indent + x.substr(x.length - 1, x.length);
+                    else ret = indent + x;
+                }
+            }
+            return ret;
+        });
+
+    for (i = pre.length; i--;) {
+        html = html.replace("<--TEMPPRE" + i + "/-->", pre[i].tag.replace("<pre>", "<pre>\n").replace("</pre>", pre[i].indent + "</pre>"));
+    }
+
+    return html.charAt(0) === "\n" ? html.substr(1, html.length - 1) : html;
+}
+
+export async function clearBrowserCache() {
     if (isElectron()) {
         const win = dynamicRequire("@electron/remote").getCurrentWindow();
         await win.webContents.session.clearCache();
@@ -306,7 +355,13 @@ function copySelectionToClipboard() {
     }
 }
 
-export function dynamicRequire(moduleName: string) {
+type dynamicRequireMappings = {
+    "@electron/remote": typeof import("@electron/remote"),
+    "electron": typeof import("electron"),
+    "child_process": typeof import("child_process")
+};
+
+export function dynamicRequire<T extends keyof dynamicRequireMappings>(moduleName: T): Awaited<dynamicRequireMappings[T]>{
     if (typeof __non_webpack_require__ !== "undefined") {
         return __non_webpack_require__(moduleName);
     } else {
@@ -437,7 +492,7 @@ function sleep(time_ms: number) {
     });
 }
 
-function escapeRegExp(str: string) {
+export function escapeRegExp(str: string) {
     return str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
 }
 
@@ -570,21 +625,73 @@ function copyHtmlToClipboard(content: string) {
     document.removeEventListener("copy", listener);
 }
 
-// TODO: Set to FNote once the file is ported.
-function createImageSrcUrl(note: { noteId: string; title: string }) {
+export function createImageSrcUrl(note: FNote) {
     return `api/images/${note.noteId}/${encodeURIComponent(note.title)}?timestamp=${Date.now()}`;
 }
 
+
+
+
+
 /**
- * Given a string representation of an SVG, triggers a download of the file on the client device.
+ * Helper function to prepare an element for snapdom rendering.
+ * Handles string parsing and temporary DOM attachment for style computation.
+ *
+ * @param source - Either an SVG/HTML string to be parsed, or an existing SVG/HTML element.
+ * @returns An object containing the prepared element and a cleanup function.
+ *          The cleanup function removes temporarily attached elements from the DOM,
+ *          or is a no-op if the element was already in the DOM.
+ */
+function prepareElementForSnapdom(source: string | SVGElement | HTMLElement): {
+    element: SVGElement | HTMLElement;
+    cleanup: () => void;
+} {
+    if (typeof source === 'string') {
+        const parser = new DOMParser();
+
+        // Detect if content is SVG or HTML
+        const isSvg = source.trim().startsWith('<svg');
+        const mimeType = isSvg ? SVG_MIME : 'text/html';
+
+        const doc = parser.parseFromString(source, mimeType);
+        const element = doc.documentElement;
+
+        // Temporarily attach to DOM for proper style computation
+        element.style.position = 'absolute';
+        element.style.left = '-9999px';
+        element.style.top = '-9999px';
+        document.body.appendChild(element);
+
+        return {
+            element,
+            cleanup: () => document.body.removeChild(element)
+        };
+    }
+
+    return {
+        element: source,
+        cleanup: () => {} // No-op for existing elements
+    };
+}
+
+/**
+ * Downloads an SVG using snapdom for proper rendering. Can accept either an SVG string, an SVG element, or an HTML element.
  *
  * @param nameWithoutExtension the name of the file. The .svg suffix is automatically added to it.
- * @param svgContent the content of the SVG file download.
+ * @param svgSource either an SVG string, an SVGElement, or an HTMLElement to be downloaded.
  */
-function downloadSvg(nameWithoutExtension: string, svgContent: string) {
-    const filename = `${nameWithoutExtension}.svg`;
-    const dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
-    triggerDownload(filename, dataUrl);
+async function downloadAsSvg(nameWithoutExtension: string, svgSource: string | SVGElement | HTMLElement) {
+    const { element, cleanup } = prepareElementForSnapdom(svgSource);
+
+    try {
+        const result = await snapdom(element, {
+                backgroundColor: "transparent",
+                scale: 2
+            });
+        triggerDownload(`${nameWithoutExtension}.svg`, result.url);
+    } finally {
+        cleanup();
+    }
 }
 
 /**
@@ -605,62 +712,26 @@ function triggerDownload(fileName: string, dataUrl: string) {
 
     document.body.removeChild(element);
 }
-
 /**
- * Given a string representation of an SVG, renders the SVG to PNG and triggers a download of the file on the client device.
- *
- * Note that the SVG must specify its width and height as attributes in order for it to be rendered.
+ * Downloads an SVG as PNG using snapdom. Can accept either an SVG string, an SVG element, or an HTML element.
  *
  * @param nameWithoutExtension the name of the file. The .png suffix is automatically added to it.
- * @param svgContent the content of the SVG file download.
- * @returns a promise which resolves if the operation was successful, or rejects if it failed (permissions issue or some other issue).
+ * @param svgSource either an SVG string, an SVGElement, or an HTMLElement to be converted to PNG.
  */
-function downloadSvgAsPng(nameWithoutExtension: string, svgContent: string) {
-    return new Promise<void>((resolve, reject) => {
-        // First, we need to determine the width and the height from the input SVG.
-        const result = getSizeFromSvg(svgContent);
-        if (!result) {
-            reject();
-            return;
-        }
+async function downloadAsPng(nameWithoutExtension: string, svgSource: string | SVGElement | HTMLElement) {
+    const { element, cleanup } = prepareElementForSnapdom(svgSource);
 
-        // Convert the image to a blob.
-        const { width, height } = result;
-
-        // Create an image element and load the SVG.
-        const imageEl = new Image();
-        imageEl.width = width;
-        imageEl.height = height;
-        imageEl.crossOrigin = "anonymous";
-        imageEl.onload = () => {
-            try {
-                // Draw the image with a canvas.
-                const canvasEl = document.createElement("canvas");
-                canvasEl.width = imageEl.width;
-                canvasEl.height = imageEl.height;
-                document.body.appendChild(canvasEl);
-
-                const ctx = canvasEl.getContext("2d");
-                if (!ctx) {
-                    reject();
-                }
-
-                ctx?.drawImage(imageEl, 0, 0);
-
-                const imgUri = canvasEl.toDataURL("image/png")
-                triggerDownload(`${nameWithoutExtension}.png`, imgUri);
-                document.body.removeChild(canvasEl);
-                resolve();
-            } catch (e) {
-                console.warn(e);
-                reject();
-            }
-        };
-        imageEl.onerror = (e) => reject(e);
-        imageEl.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgContent)}`;
-    });
+    try {
+        const result = await snapdom(element, {
+                backgroundColor: "transparent",
+                scale: 2
+            });
+        const pngImg = await result.toPng();
+        await triggerDownload(`${nameWithoutExtension}.png`, pngImg.src);
+    } finally {
+        cleanup();
+    }
 }
-
 export function getSizeFromSvg(svgContent: string) {
     const svgDocument = (new DOMParser()).parseFromString(svgContent, SVG_MIME);
 
@@ -740,7 +811,7 @@ function isUpdateAvailable(latestVersion: string | null | undefined, currentVers
     return compareVersions(latestVersion, currentVersion) > 0;
 }
 
-function isLaunchBarConfig(noteId: string) {
+export function isLaunchBarConfig(noteId: string) {
     return ["_lbRoot", "_lbAvailableLaunchers", "_lbVisibleLaunchers", "_lbMobileRoot", "_lbMobileAvailableLaunchers", "_lbMobileVisibleLaunchers"].includes(noteId);
 }
 
@@ -788,12 +859,55 @@ export function arrayEqual<T>(a: T[], b: T[]) {
     return true;
 }
 
+export type Indexed<T extends object> = T & { index: number };
+
+/**
+ * Given an object array, alters every object in the array to have an index field assigned to it.
+ *
+ * @param items the objects to be numbered.
+ * @returns the same object for convenience, with the type changed to indicate the new index field.
+ */
+export function numberObjectsInPlace<T extends object>(items: T[]): Indexed<T>[] {
+    let index = 0;
+    for (const item of items) {
+        (item as Indexed<T>).index = index++;
+    }
+    return items as Indexed<T>[];
+}
+
+export function mapToKeyValueArray<K extends string | number | symbol, V>(map: Record<K, V>) {
+    const values: { key: K, value: V }[] = [];
+    for (const [ key, value ] of Object.entries(map)) {
+        values.push({ key: key as K, value: value as V });
+    }
+    return values;
+}
+
+export function getErrorMessage(e: unknown) {
+    if (e && typeof e === "object" && "message" in e && typeof e.message === "string") {
+        return e.message;
+    } else {
+        return "Unknown error";
+    }
+}
+
+/**
+ * Handles left or right placement of e.g. tooltips in case of right-to-left languages. If the current language is a RTL one, then left and right are swapped. Other directions are unaffected.
+ * @param placement a string optionally containing a "left" or "right" value.
+ * @returns a left/right value swapped if needed, or the same as input otherwise.
+ */
+export function handleRightToLeftPlacement<T extends string>(placement: T) {
+    if (!glob.isRtl) return placement;
+    if (placement === "left") return "right";
+    if (placement === "right") return "left";
+    return placement;
+}
+
 export default {
     reloadFrontendApp,
     restartDesktopApp,
     reloadTray,
     parseDate,
-    getMonthsInDateRange,
     formatDateISO,
     formatDateTime,
     formatTimeInterval,
@@ -801,6 +915,7 @@ export default {
     localNowDateTime,
     now,
     isElectron,
+    isPWA,
     isMac,
     isCtrlKey,
     assertArguments,
@@ -813,6 +928,7 @@ export default {
     getNoteTypeClass,
     getMimeTypeClass,
     isHtmlEmpty,
+    formatHtml,
     clearBrowserCache,
     copySelectionToClipboard,
     dynamicRequire,
@@ -827,8 +943,8 @@ export default {
     areObjectsEqual,
     copyHtmlToClipboard,
     createImageSrcUrl,
-    downloadSvg,
-    downloadSvgAsPng,
+    downloadAsSvg,
+    downloadAsPng,
     compareVersions,
     isUpdateAvailable,
     isLaunchBarConfig

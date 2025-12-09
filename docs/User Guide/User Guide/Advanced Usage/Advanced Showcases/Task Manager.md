@@ -15,7 +15,7 @@ New tasks are created in the TODO note which has `~child:template` [relation](..
 
 ### Attributes
 
-Task template defines several [promoted attributes](../Attributes/Promoted%20Attributes.md) - todoDate, doneDate, tags, location. Importantly it also defines `~runOnAttributeChange` relation - [event](../../Scripting/Events.md) handler which is run on attribute change. This [script](../../Scripting.md) handles when e.g. we fill out the doneDate attribute - meaning the task is done and should be moved to "Done" note and removed from TODO, locations and tags.
+Task template defines several [promoted attributes](../Attributes/Promoted%20Attributes.md) - todoDate, doneDate, tags, location. Importantly it also defines `~runOnAttributeChange` relation - [event](../../Scripting/Backend%20scripts/Events.md) handler which is run on attribute change. This [script](../../Scripting.md) handles when e.g. we fill out the doneDate attribute - meaning the task is done and should be moved to "Done" note and removed from TODO, locations and tags.
 
 ### New task button
 

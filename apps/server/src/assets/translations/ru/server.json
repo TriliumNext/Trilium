@@ -71,10 +71,10 @@
     "add-new-label": "Создать новую заметку",
     "create-new-relation": "Создать новое отношение",
     "ribbon-tabs": "Вкладки ленты",
-    "toggle-basic-properties": "Перейти к основным свойствам",
+    "toggle-basic-properties": "Перейти к общим параметрам",
     "toggle-file-properties": "Перейти к свойствам файла",
     "toggle-image-properties": "Перейти к свойствам изображения",
-    "toggle-owned-attributes": "Перейти к собственным атрибутами",
+    "toggle-owned-attributes": "Перейти к атрибутам",
     "toggle-inherited-attributes": "Перейти к унаследованным атрибутам",
     "toggle-promoted-attributes": "Перейти к продвигаемым атрибутам",
     "toggle-link-map": "Перейти к картуессылок",
@@ -100,7 +100,10 @@
     "toggle-book-properties": "Перейти к свойствам коллекции",
     "toggle-classic-editor-toolbar": "Перейти на вкладку «Форматирование» для редактора с фиксированной панелью инструментов",
     "export-as-pdf": "Экспортировать текущую заметку в формате PDF",
-    "toggle-zen-mode": "Включает/отключает режим дзен (минимальный пользовательский интерфейс для фокусирования)"
+    "toggle-zen-mode": "Включает/отключает режим дзен (минимальный пользовательский интерфейс для фокусирования)",
+    "toggle-note-hoisting": "Переключить закрепление активной заметки",
+    "unhoist": "Убрать закрепление везде",
+    "force-save-revision": "Принудительное создать/сохранить снимок версии активной заметки"
   },
   "hidden-subtree": {
     "localization": "Язык и регион",
@@ -147,12 +150,13 @@
     "visible-launchers-title": "Видимые лаунчеры",
     "user-guide": "Руководство пользователя",
     "sql-console-history-title": "История консоли SQL",
-    "user-hidden-title": "Пользователь скрыт",
+    "user-hidden-title": "Скрытый пользователь",
     "launch-bar-templates-title": "Шаблоны панели запуска",
     "base-abstract-launcher-title": "Базовый абстрактный лаунчер",
     "go-to-previous-note-title": "К предыдущей заметке",
     "go-to-next-note-title": "К следующей заметке",
-    "open-today-journal-note-title": "Открыть сегодняшнюю заметку в журнале"
+    "open-today-journal-note-title": "Открыть сегодняшнюю заметку в журнале",
+    "llm-chat-title": "ИИ чат с заметками"
   },
   "tray": {
     "bookmarks": "Закладки",
@@ -160,7 +164,9 @@
     "close": "Выйти из Trilium",
     "recents": "Последние заметки",
     "new-note": "Новая заметка",
-    "show-windows": "Показать окна"
+    "show-windows": "Показать окна",
+    "open_new_window": "Открыть новое окно",
+    "today": "Открыть заметку дня"
   },
   "keyboard_action_names": {
     "scroll-to-active-note": "Прокрутить к активной заметке",
@@ -238,7 +244,26 @@
     "toggle-full-screen": "Переключить на полный экран",
     "reset-zoom-level": "Сбросить уровень масштабирования",
     "copy-without-formatting": "Копировать без форматирования",
-    "force-save-revision": "Принудительное сохранение версии"
+    "force-save-revision": "Принудительное сохранение версии",
+    "unhoist-note": "Открепить заметку",
+    "toggle-right-pane": "Переключить правую панель",
+    "print-active-note": "Печать активной заметки",
+    "render-active-note": "Рендеринг активной заметки",
+    "run-active-note": "Запуск активной заметки",
+    "add-include-note-to-text": "Добавить включение другой заметки в текст",
+    "toggle-ribbon-tab-basic-properties": "Переключить на вкладку \"Общее\"",
+    "toggle-ribbon-tab-book-properties": "Переключить на вкладку \"Свойства книги\"",
+    "toggle-ribbon-tab-file-properties": "Переключить на вкладку \"Свойства файла\"",
+    "toggle-ribbon-tab-image-properties": "Переключить на вкладку \"Свойства изображения\"",
+    "toggle-ribbon-tab-owned-attributes": "Переключить на вкладку \"Атрибуты\"",
+    "toggle-ribbon-tab-inherited-attributes": "Переключить на вкладку \"Унаследованные атрибуты\"",
+    "toggle-ribbon-tab-promoted-attributes": "Переключить на вкладку \"Продвигаемые атрибуты\"",
+    "toggle-ribbon-tab-note-map": "Переключить на вкладку \"Карта заметок\"",
+    "toggle-ribbon-tab-note-info": "Переключить на вкладку \"Информация о заметке\"",
+    "toggle-ribbon-tab-note-paths": "Переключить на вкладку \"Пути к заметке\"",
+    "toggle-ribbon-tab-similar-notes": "Переключить на вкладку \"Похожие заметки\"",
+    "export-active-note-as-pdf": "Экспортировать активную заметку в формате PDF",
+    "toggle-note-hoisting": "Переключить закрепление заметки"
   },
   "months": {
     "august": "Август",
@@ -318,7 +343,8 @@
   },
   "notes": {
     "duplicate-note-suffix": "(дубликат)",
-    "new-note": "Новая заметка"
+    "new-note": "Новая заметка",
+    "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
   },
   "modals": {
     "error_title": "Ошибка"
@@ -328,7 +354,9 @@
     "subpages": "Подстраницы:",
     "expand": "Развернуть",
     "site-theme": "Тема оформления сайта",
-    "image_alt": "Изображение статьи"
+    "image_alt": "Изображение статьи",
+    "on-this-page": "На текущей странице",
+    "last-updated": "Последнее обновление: {{- date}}"
   },
   "hidden_subtree_templates": {
     "description": "Описание",
@@ -359,12 +387,14 @@
   },
   "share_page": {
     "child-notes": "Дочерние заметки:",
-    "no-content": "Эта заметка пуста."
+    "no-content": "Эта заметка пуста.",
+    "parent": "родитель:",
+    "clipped-from": "Эта заметка изначально была вырезана из {{- url}}"
   },
   "javascript-required": "Для работы Trilium требуется JavaScript.",
   "setup_sync-from-desktop": {
     "heading": "Синхронизация с приложения ПК",
-    "description": "Эту настройку необходимо инициировать из приложения для ПК.",
+    "description": "Эту настройку необходимо инициировать из приложения для ПК:",
     "step1": "Откройте приложение Trilium Notes на ПК.",
     "step2": "В меню Trilium выберите «Параметры».",
     "step3": "Нажмите на категорию «Синхронизация».",
@@ -376,5 +406,30 @@
   "test_sync": {
     "not-configured": "Адрес сервера синхронизации не установлен. Сначала настройте синхронизацию.",
     "successful": "Установление связи с сервером синхронизации прошло успешно, синхронизация начата."
+  },
+  "pdf": {
+    "export_filter": "Документ PDF (*.pdf)",
+    "unable-to-save-message": "Не удалось записать выбранный файл. Попробуйте ещё раз или выберите другой путь.",
+    "unable-to-export-message": "Текущую заметку невозможно экспортировать в формате PDF.",
+    "unable-to-export-title": "Невозможно экспортировать в PDF"
+  },
+  "migration": {
+    "wrong_db_version": "Версия базы данных ({{version}}) новее, чем та, которую ожидает приложение ({{targetVersion}}). Это означает, что она была создана более новой и несовместимой версией Trilium. Для решения этой проблемы обновите Trilium до последней версии.",
+    "old_version": "Прямая миграция с текущей версии не поддерживается. Сначала обновитесь до последней версии 0.60.4, а затем — до этой.",
+    "error_message": "Ошибка при миграции на версию {{version}}: {{stack}}"
+  },
+  "backend_log": {
+    "reading-log-failed": "Не удалось прочитать файл лога бэкенда '{{ fileName }}'.",
+    "log-does-not-exist": "Файл лога бэкенда '{{ fileName }}' (пока) не существует."
+  },
+  "content_renderer": {
+    "note-cannot-be-displayed": "Этот тип заметки не может быть отображен."
+  },
+  "sql_init": {
+    "db_not_initialized_desktop": "База данных не инициализирована, следуйте инструкциям на экране.",
+    "db_not_initialized_server": "База данных не инициализирована, пожалуйста, посетите страницу настройки - http://[your-server-host]:{{port}}, чтобы увидеть инструкции по инициализации Trilium."
+  },
+  "desktop": {
+    "instance_already_running": "Приложение уже запущено, фокус переключен на него."
   }
 }

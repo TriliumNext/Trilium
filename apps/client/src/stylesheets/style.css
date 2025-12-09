@@ -24,8 +24,34 @@
     --bs-body-font-family: var(--main-font-family) !important;
     --bs-body-font-weight: var(--main-font-weight) !important;
     --bs-body-color: var(--main-text-color) !important;
-    --bs-body-bg: var(--main-background-color) !important;    
+    --bs-body-bg: var(--main-background-color) !important;
     --ck-mention-list-max-height: 500px;
+    --tn-modal-max-height: 90vh;
+
+    --tree-item-light-theme-max-color-lightness: 50;
+    --tree-item-dark-theme-min-color-lightness: 75;
+}
+
+body#trilium-app.motion-disabled *,
+body#trilium-app.motion-disabled *::before,
+body#trilium-app.motion-disabled *::after {
+    /* Disable transitions and animations */
+    transition: none !important;
+    animation: none !important;
+}
+
+body#trilium-app.shadows-disabled *,
+body#trilium-app.shadows-disabled *::before,
+body#trilium-app.shadows-disabled *::after {
+    /* Disable shadows */
+    box-shadow: none !important;
+}
+
+body#trilium-app.backdrop-effects-disabled *,
+body#trilium-app.backdrop-effects-disabled *::before,
+body#trilium-app.backdrop-effects-disabled *::after {
+    /* Disable backdrop effects */
+    backdrop-filter: none !important;
 }
 
 .table {
@@ -139,7 +165,8 @@ textarea,
     color: var(--muted-text-color);
 }
 
-.form-group.disabled {
+.form-group.disabled,
+.form-checkbox.disabled {
     opacity: 0.5;
     pointer-events: none;
 }
@@ -151,7 +178,12 @@ textarea,
 /* Add a gap between consecutive radios / check boxes */
 label.tn-radio + label.tn-radio,
 label.tn-checkbox + label.tn-checkbox {
-    margin-left: 12px;
+    margin-inline-start: 12px;
+}
+
+label.tn-radio input[type="radio"],
+label.tn-checkbox input[type="checkbox"] {
+    margin-inline-end: .5em;
 }
 
 #left-pane input,
@@ -184,6 +216,16 @@ input::placeholder,
     background-color: var(--modal-backdrop-color) !important;
 }
 
+body.mobile .modal .modal-dialog {
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+}
+
+body.mobile .modal .modal-content {
+    border-radius: var(--bs-modal-border-radius) var(--bs-modal-border-radius) 0 0;
+}
+
 .component {
     contain: size;
 }
@@ -198,7 +240,7 @@ samp {
 .badge {
     --bs-badge-color: var(--muted-text-color);
 
-    margin-left: 8px;
+    margin-inline-start: 8px;
     background: var(--accented-background-color);
 }
 
@@ -215,6 +257,11 @@ button.close:hover {
     color: var(--hover-item-text-color);
 }
 
+button.custom-title-bar-button {
+    background: transparent;
+    border: unset;
+}
+
 .modal-content {
     background-color: var(--modal-background-color) !important;
 }
@@ -222,10 +269,6 @@ button.close:hover {
 .nav-link.active {
     background-color: inherit !important;
     color: var(--main-text-color) !important;
-}
-
-.note-title[readonly] {
-    background: inherit;
 }
 
 .tdialog {
@@ -264,6 +307,11 @@ button.close:hover {
     color: var(--muted-text-color) !important;
     cursor: not-allowed;
     pointer-events: none;
+}
+
+.icon-action.btn {
+    padding: 0 8px;
+    min-width: unset !important;
 }
 
 .ui-widget-content a:not(.ui-tabs-anchor) {
@@ -309,8 +357,8 @@ button kbd {
 }
 
 .ui-menu kbd {
-    margin-left: 30px;
-    float: right;
+    margin-inline-start: 30px;
+    float: inline-end;
 }
 
 .suppressed {
@@ -331,31 +379,30 @@ button kbd {
 }
 
 .dropdown-menu,
-.tabulator-popup-container {
+.tabulator-popup-container,
+:root .excalidraw .popover {
     color: var(--menu-text-color) !important;
     font-size: inherit;
-    background-color: var(--menu-background-color) !important;
+    background: var(--menu-background-color) !important;
     user-select: none;
     -webkit-user-select: none;
     --bs-dropdown-zindex: 999;
     --bs-dropdown-link-active-bg: var(--active-item-background-color) !important;
 }
 
-.dropdown-menu .dropdown-divider {
-    break-before: avoid;
-    break-after: avoid;
-}
-
 body.desktop .dropdown-menu,
-body.desktop .tabulator-popup-container {
+body.desktop .tabulator-popup-container,
+:root .excalidraw .dropdown-menu .dropdown-menu-container,
+:root .excalidraw .popover {
     border: 1px solid var(--dropdown-border-color);
+    column-rule: 1px solid var(--dropdown-border-color);
     box-shadow: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
     animation: dropdown-menu-opening 100ms ease-in;
 }
 
 @supports (animation-fill-mode: forwards) {
     /* Delay the opening of submenus */
-    body.desktop .dropdown-submenu .dropdown-menu {
+    body.desktop:not(.motion-disabled) .dropdown-submenu .dropdown-menu {
         opacity: 0;
         animation-fill-mode: forwards;
         animation-delay: var(--submenu-opening-delay);
@@ -367,7 +414,7 @@ body.desktop .tabulator-popup-container {
 }
 
 .dropend .dropdown-toggle::after {
-    margin-left: 0.5em;
+    margin-inline-start: 0.5em;
     color: var(--muted-text-color);
 }
 
@@ -378,8 +425,8 @@ body.desktop .tabulator-popup-container {
 
 .dropdown-menu .disabled .disabled-tooltip {
     pointer-events: all;
-    margin-left: 8px;
-    font-size: 0.5em;
+    margin-inline-start: 8px;
+    font-size: 0.75rem;
     color: var(--disabled-tooltip-icon-color);
     cursor: help;
     opacity: 0.75;
@@ -390,17 +437,18 @@ body.desktop .tabulator-popup-container {
 }
 
 .dropdown-menu a:hover:not(.disabled),
-.dropdown-item:hover:not(.disabled, .dropdown-item-container),
-.tabulator-menu-item:hover {
+.dropdown-item:hover:not(.disabled, .dropdown-container-item),
+.tabulator-menu-item:hover,
+:root .excalidraw .context-menu .context-menu-item:hover {
     color: var(--hover-item-text-color) !important;
     background-color: var(--hover-item-background-color) !important;
     border-color: var(--hover-item-border-color) !important;
     cursor: pointer;
 }
 
-.dropdown-item-container,
-.dropdown-item-container:hover,
-.dropdown-item-container:active {
+.dropdown-container-item,
+.dropdown-item.dropdown-container-item:hover,
+.dropdown-container-item:active {
     background: transparent;
     cursor: default;
 }
@@ -410,25 +458,39 @@ body.desktop .tabulator-popup-container {
 }
 
 body.desktop .dropdown-menu:not(#context-menu-container) .dropdown-item,
-body #context-menu-container .dropdown-item > span {
+body #context-menu-container .dropdown-item > span,
+body.mobile .dropdown .dropdown-submenu > span {
     display: flex;
     align-items: center;
 }
 
-.dropdown-menu kbd {
+.dropdown-item span.keyboard-shortcut,
+.dropdown-item *:not(.keyboard-shortcut) > kbd {
     flex-grow: 1;
-    text-align: right;
+    text-align: end;
+    padding-inline-start: 12px;
+}
+
+.dropdown-menu kbd {
     color: var(--muted-text-color);
     border: none;
     background-color: transparent;
     box-shadow: none;
     padding-bottom: 0;
+    padding: 0;
 }
 
 .dropdown-item,
-.dropdown-header {
+.dropdown-header,
+:root .excalidraw .context-menu .context-menu-item:hover {
     color: var(--menu-text-color) !important;
     border: 1px solid transparent !important;
+}
+
+/*  This is a workaround for Firefox not supporting break-before / break-after: avoid on columns.
+ *  It usually wraps a menu item followed by a separator / header and another menu item. */
+.dropdown-no-break {
+    break-inside: avoid;
 }
 
 .dropdown-item.disabled,
@@ -438,9 +500,9 @@ body #context-menu-container .dropdown-item > span {
 
 .dropdown-item.active,
 .dropdown-item:focus {
-    color: var(--active-item-text-color) !important;
-    background-color: var(--active-item-background-color) !important;
-    border-color: var(--active-item-border-color) !important;
+    color: var(--active-item-text-color);
+    background-color: var(--active-item-background-color);
+    border-color: var(--active-item-border-color);
     outline: none;
 }
 
@@ -450,6 +512,10 @@ body #context-menu-container .dropdown-item > span {
 
 .dropdown-item > span:not([class]) {
     width: 100%;
+}
+
+.dropdown-menu .note-color-picker {
+    padding: 4px 12px 8px 12px;
 }
 
 .cm-editor {
@@ -467,7 +533,7 @@ body #context-menu-container .dropdown-item > span {
 
 body .cm-editor .cm-gutters {
     background-color: inherit !important;
-    border-right: none;
+    border-inline-end: none;
 }
 
 body .cm-editor .cm-placeholder {
@@ -534,11 +600,6 @@ button.btn-sm {
     color: var(--left-pane-text-color);
 }
 
-.btn.active:not(.btn-primary) {
-    background-color: var(--button-disabled-background-color) !important;
-    opacity: 0.4;
-}
-
 .ck.ck-block-toolbar-button {
     transform: translateX(7px);
     color: var(--muted-text-color);
@@ -547,6 +608,10 @@ button.btn-sm {
     min-width: 0;
     padding: 0;
     z-index: 1000;
+}
+
+body[dir=rtl] .ck.ck-block-toolbar-button {
+    transform: translateX(-7px);
 }
 
 pre:not(.hljs) {
@@ -567,11 +632,11 @@ pre:not(.hljs) {
 pre > button.copy-button {
     position: absolute;
     top: var(--copy-button-margin-size);
-    right: var(--copy-button-margin-size);
+    inset-inline-end: var(--copy-button-margin-size);
 }
 
 :root pre:has(> button.copy-button) {
-    padding-right: calc(var(--copy-button-width) + (var(--copy-button-margin-size) * 2));
+    padding-inline-end: calc(var(--copy-button-width) + (var(--copy-button-margin-size) * 2));
 }
 
 pre > button.copy-button:hover {
@@ -597,31 +662,31 @@ pre > button.copy-button:active {
 .full-text-search-button {
     cursor: pointer;
     font-size: 1.3em;
-    padding-left: 5px;
-    padding-right: 5px;
+    padding-inline-start: 5px;
+    padding-inline-end: 5px;
 }
 
 .input-clearer-button {
     cursor: pointer;
     font-size: 1.3em;
     background: inherit !important;
-    padding-left: 5px;
-    padding-right: 5px;
+    padding-inline-start: 5px;
+    padding-inline-end: 5px;
 }
 
 .open-external-link-button {
     cursor: pointer;
     font-size: 1.3em;
-    padding-left: 5px;
-    padding-right: 5px;
+    padding-inline-start: 5px;
+    padding-inline-end: 5px;
     padding-top: 8px;
 }
 
 .go-to-selected-note-button {
     cursor: pointer;
     font-size: 1.3em;
-    padding-left: 4px;
-    padding-right: 3px;
+    padding-inline-start: 4px;
+    padding-inline-end: 3px;
 }
 
 .go-to-selected-note-button.disabled,
@@ -634,7 +699,7 @@ pre > button.copy-button:active {
 
 .note-autocomplete-input {
     /* this is for seamless integration of "input clearer" button */
-    border-right: 0;
+    border-inline-end: 0;
 }
 
 table.promoted-attributes-in-tooltip {
@@ -655,11 +720,6 @@ table.promoted-attributes-in-tooltip th {
     z-index: 32767 !important;
 }
 
-.tooltip-trigger {
-    background: transparent;
-    pointer-events: none;
-}
-
 .bs-tooltip-bottom .tooltip-arrow::before {
     border-bottom-color: var(--main-border-color) !important;
 }
@@ -667,10 +727,10 @@ table.promoted-attributes-in-tooltip th {
     border-top-color: var(--main-border-color) !important;
 }
 .bs-tooltip-left .tooltip-arrow::before {
-    border-left-color: var(--main-border-color) !important;
+    border-inline-start-color: var(--main-border-color) !important;
 }
 .bs-tooltip-right .tooltip-arrow::before {
-    border-right-color: var(--main-border-color) !important;
+    border-inline-end-color: var(--main-border-color) !important;
 }
 
 .bs-tooltip-bottom .tooltip-arrow::after {
@@ -680,17 +740,17 @@ table.promoted-attributes-in-tooltip th {
     border-top-color: var(--tooltip-background-color) !important;
 }
 .bs-tooltip-left .tooltip-arrow::after {
-    border-left-color: var(--tooltip-background-color) !important;
+    border-inline-start-color: var(--tooltip-background-color) !important;
 }
 .bs-tooltip-right .tooltip-arrow::after {
-    border-right-color: var(--tooltip-background-color) !important;
+    border-inline-end-color: var(--tooltip-background-color) !important;
 }
 
 .bs-tooltip-auto[data-popper-placement^="left"] .tooltip-arrow::before,
 .bs-tooltip-left .tooltip-arrow::before {
-    left: -1px;
+    inset-inline-start: -1px;
     border-width: 0.4rem 0 0.4rem 0.4rem;
-    border-left-color: var(--main-border-color) !important;
+    border-inline-start-color: var(--main-border-color) !important;
 }
 
 .bs-tooltip-auto[data-popper-placement^="bottom"] .tooltip-arrow::before,
@@ -702,9 +762,9 @@ table.promoted-attributes-in-tooltip th {
 
 .bs-tooltip-auto[data-popper-placement^="right"] .tooltip-arrow::before,
 .bs-tooltip-right .tooltip-arrow::before {
-    right: -1px;
+    inset-inline-end: -1px;
     border-width: 0.4rem 0.4rem 0.4rem 0;
-    border-right-color: var(--main-border-color) !important;
+    border-inline-end-color: var(--main-border-color) !important;
 }
 
 .bs-tooltip-auto[data-popper-placement^="top"] .tooltip-arrow::before,
@@ -716,9 +776,9 @@ table.promoted-attributes-in-tooltip th {
 
 .bs-tooltip-auto[data-popper-placement^="left"] .tooltip-arrow::after,
 .bs-tooltip-left .tooltip-arrow::after {
-    left: -1px;
+    inset-inline-start: -1px;
     border-width: 0.4rem 0 0.4rem 0.4rem;
-    border-left-color: var(--tooltip-background-color) !important;
+    border-inline-start-color: var(--tooltip-background-color) !important;
 }
 
 .bs-tooltip-auto[data-popper-placement^="bottom"] .tooltip-arrow::after,
@@ -730,9 +790,9 @@ table.promoted-attributes-in-tooltip th {
 
 .bs-tooltip-auto[data-popper-placement^="right"] .tooltip-arrow::after,
 .bs-tooltip-right .tooltip-arrow::after {
-    right: -1px;
+    inset-inline-end: -1px;
     border-width: 0.4rem 0.4rem 0.4rem 0;
-    border-right-color: var(--tooltip-background-color) !important;
+    border-inline-end-color: var(--tooltip-background-color) !important;
 }
 
 .bs-tooltip-auto[data-popper-placement^="top"] .tooltip-arrow::after,
@@ -751,7 +811,7 @@ table.promoted-attributes-in-tooltip th {
     background-color: var(--tooltip-background-color) !important;
     border: 1px solid var(--main-border-color);
     border-radius: 5px;
-    text-align: left;
+    text-align: start;
     color: var(--main-text-color) !important;
     max-width: 500px;
     box-shadow: 10px 10px 93px -25px #aaaaaa;
@@ -784,7 +844,7 @@ table.promoted-attributes-in-tooltip th {
 
 .note-tooltip-content .open-popup-button {
     position: absolute;
-    right: 15px;
+    inset-inline-end: 15px;
     bottom: 8px;
     font-size: 1.2em;
     color: inherit;
@@ -804,7 +864,7 @@ table.promoted-attributes-in-tooltip th {
 }
 
 .tooltip-inner figure.image-style-side {
-    float: right;
+    float: inline-end;
 }
 
 .tooltip.show {
@@ -840,8 +900,32 @@ table.promoted-attributes-in-tooltip th {
 
 .aa-dropdown-menu .aa-suggestion {
     cursor: pointer;
-    padding: 5px;
+    padding: 6px 16px;
     margin: 0;
+}
+
+.aa-dropdown-menu .aa-suggestion .icon {
+    display: inline-block;
+    line-height: inherit;
+    vertical-align: top;
+}
+
+.aa-dropdown-menu .aa-suggestion .text {
+    display: inline-block;
+    width: calc(100% - 20px);
+    padding-inline-start: 4px;
+}
+
+.aa-dropdown-menu .aa-suggestion .search-result-title {
+    display: block;
+}
+
+.aa-dropdown-menu .aa-suggestion .search-result-attributes {
+    display: block;
+    font-size: 0.8em;
+    color: var(--muted-text-color);
+    opacity: 0.6;
+    line-height: 1;
 }
 
 .aa-dropdown-menu .aa-suggestion p {
@@ -855,7 +939,7 @@ table.promoted-attributes-in-tooltip th {
 }
 
 .help-button {
-    float: right;
+    float: inline-end;
     background: none;
     font-weight: 900;
     color: orange;
@@ -931,6 +1015,11 @@ div[data-notify="container"] {
     font-family: var(--monospace-font-family);
 }
 
+svg.ck-icon.note-icon {
+    color: var(--main-text-color);
+    font-size: 20px;
+}
+
 .ck-content {
     --ck-content-font-family: var(--detail-font-family);
     --ck-content-font-size: 1.1em;
@@ -938,7 +1027,7 @@ div[data-notify="container"] {
     --ck-content-line-height: var(--bs-body-line-height);
 }
 
-.ck-content .table table th {
+:root .ck-content .table table:not(.layout-table) th {
     background-color: var(--accented-background-color);
 }
 
@@ -967,7 +1056,7 @@ div[data-notify="container"] {
     counter-increment: footnote-counter;
     display: flex;
     list-style: none;
-    margin-left: 0.5em;
+    margin-inline-start: 0.5em;
 }
 
 .ck-content .footnote-item > * {
@@ -975,13 +1064,13 @@ div[data-notify="container"] {
 }
 
 .ck-content .footnote-back-link {
-    margin-right: 0.1em;
+    margin-inline-end: 0.1em;
     position: relative;
     top: -0.2em;
 }
 
 .ck-content .footnotes .footnote-back-link > sup {
-    margin-right: 0;
+    margin-inline-end: 0;
 }
 
 .ck-content .footnote-item:before {
@@ -989,8 +1078,8 @@ div[data-notify="container"] {
     display: inline-block;
     min-width: fit-content;
     position: relative;
-    right: 0.2em;
-    text-align: right;
+    inset-inline-end: 0.2em;
+    text-align: end;
 }
 
 .ck-content .footnote-content {
@@ -1006,11 +1095,11 @@ div[data-notify="container"] {
 }
 
 #options-dialog input[type="number"] {
-    text-align: right;
+    text-align: end;
 }
 
 .help-cards ul {
-    padding-left: 20px;
+    padding-inline-start: 20px;
 }
 
 .help-cards kbd {
@@ -1029,17 +1118,12 @@ a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href
 
 .card {
     color: inherit !important;
-    background-color: inherit !important;
     border-color: var(--main-border-color) !important;
 }
 
 .bx-empty {
     width: 1em;
     display: inline-block;
-}
-
-.note-detail-empty {
-    margin: 50px;
 }
 
 .modal-header {
@@ -1049,29 +1133,6 @@ a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href
 .modal-header .help-button {
     padding: 6px;
     margin: 0 12px;
-}
-
-#toast-container {
-    position: absolute;
-    width: 100%;
-    top: 20px;
-    pointer-events: none;
-}
-
-.toast {
-    --bs-toast-bg: var(--accented-background-color);
-    --bs-toast-color: var(--main-text-color);
-    z-index: 9999999999 !important;
-    pointer-events: all;
-}
-
-.toast-header {
-    background-color: var(--more-accented-background-color) !important;
-    color: var(--main-text-color) !important;
-}
-
-.toast-body {
-    white-space: preserve-breaks;
 }
 
 .ck-mentions .ck-button {
@@ -1180,11 +1241,15 @@ a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href
     cursor: row-resize;
 }
 
+.hidden-ext.note-split + .gutter {
+    display: none;
+}
+
 #context-menu-cover.show {
     position: fixed;
     top: 0;
-    left: 0;
-    right: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
     bottom: 0;
     z-index: 1000;
     background: rgba(0, 0, 0, 0.1);
@@ -1197,15 +1262,15 @@ a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href
 
 body.mobile #context-menu-container.mobile-bottom-menu {
     position: fixed !important;
-    left: 0 !important;
-    right: 0 !important;
+    inset-inline-start: 0 !important;
+    inset-inline-end: 0 !important;
     bottom: 0 !important;
     top: unset !important;
-    max-height: 70vh;
+    max-height: var(--tn-modal-max-height);
     overflow: auto !important;
     user-select: none;
     -webkit-user-select: none;
-    padding-bottom: env(safe-area-inset-bottom) !important;
+    padding-bottom: max(env(safe-area-inset-bottom), var(--padding, var(--menu-padding-size))) !important;
 }
 
 body.mobile .dropdown-menu {
@@ -1248,7 +1313,7 @@ body.desktop li.dropdown-submenu:hover > ul.dropdown-menu {
 
 .dropdown-submenu > .dropdown-menu {
     top: 0;
-    left: calc(100% - 2px); /* -2px, otherwise there's a small gap between menu and submenu where the hover can disappear */
+    inset-inline-start: calc(100% - 2px); /* -2px, otherwise there's a small gap between menu and submenu where the hover can disappear */
     margin-top: -10px;
     min-width: 15rem;
     /* to make submenu scrollable https://github.com/zadam/trilium/issues/3136 */
@@ -1257,11 +1322,25 @@ body.desktop li.dropdown-submenu:hover > ul.dropdown-menu {
 }
 
 body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
-    left: calc(-100% + 10px);
+    inset-inline-start: calc(-100% + 10px);
 }
 
 .right-dropdown-widget {
     flex-shrink: 0;
+}
+
+.right-dropdown-widget .right-dropdown-button {
+    position: relative;
+}
+
+.tooltip-trigger {
+    background: transparent;
+    pointer-events: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
 
 #launcher-pane.horizontal .right-dropdown-widget {
@@ -1286,6 +1365,10 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
     border-radius: 5px;
     border: 1px solid var(--scrollbar-border-color);
     background-color: var(--scrollbar-background-color);
+}
+
+::-webkit-scrollbar-button {
+    display: none;
 }
 
 ::-webkit-scrollbar-corner {
@@ -1323,7 +1406,7 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 
 .ck.ck-slash-command-button__text-part,
 .ck.ck-template-form__text-part {
-    margin-left: 0.5em;
+    margin-inline-start: 0.5em;
     line-height: 1.2em !important;
 }
 
@@ -1354,8 +1437,8 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 }
 
 .area-expander-text {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-inline-start: 20px;
+    padding-inline-end: 20px;
     white-space: nowrap;
 }
 
@@ -1401,7 +1484,7 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
     cursor: pointer;
     border: none;
     color: var(--launcher-pane-text-color);
-    background-color: var(--launcher-pane-background-color);
+    background-color: transparent;
     flex-shrink: 0;
 }
 
@@ -1439,19 +1522,22 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 @media (max-width: 991px) {
     body.mobile #launcher-pane .dropdown.global-menu > .dropdown-menu.show,
     body.mobile #launcher-container .dropdown > .dropdown-menu.show {
+        --dropdown-bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-size));
         position: fixed !important;
-        bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-size)) !important;
+        bottom: var(--dropdown-bottom) !important;
         top: unset !important;
-        left: 0 !important;
-        right: 0 !important;
+        inset-inline-start: 0 !important;
+        inset-inline-end: 0 !important;
         transform: unset !important;
+        overflow-y: auto;
+        max-height: calc(var(--tn-modal-max-height) - var(--dropdown-bottom));
     }
 
     #mobile-sidebar-container {
         position: fixed;
         top: 0;
-        left: 0;
-        right: 0;
+        inset-inline-start: 0;
+        inset-inline-end: 0;
         bottom: 0;
         z-index: 1000;
         transition: background-color 250ms ease-in-out;
@@ -1466,7 +1552,7 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
     #mobile-sidebar-wrapper {
         position: absolute;
         top: 0;
-        left: 0;
+        inset-inline-start: 0;
         bottom: 0;
         width: 85vw;
         padding-top: env(safe-area-inset-top);
@@ -1477,6 +1563,14 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 
     #detail-container {
         width: 100%;
+    }
+
+    .note-split.empty-note {
+        --max-content-width: var(--preferred-max-content-width);
+    }
+
+    .note-detail-empty {
+        margin: 15px;
     }
 
     #mobile-sidebar-container.show #mobile-sidebar-wrapper {
@@ -1498,10 +1592,10 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
     body.mobile .modal-dialog {
         position: fixed;
         bottom: 0;
-        left: 0;
-        right: 0;
+        inset-inline-start: 0;
+        inset-inline-end: 0;
         margin: 0 !important;
-        max-height: 85vh;        
+        max-height: 85vh;
         display: flex;
     }
 
@@ -1540,46 +1634,6 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 
     body.mobile .modal-dialog.modal-dialog-scrollable {
         height: unset;
-    }
-
-    body.mobile .revisions-dialog .modal-dialog {
-        height: 95vh;
-    }
-
-    body.mobile .revisions-dialog .modal-body {
-        height: 100% !important;
-        flex-direction: column;
-        padding: 0;
-    }
-
-    body.mobile .revisions-dialog .revision-list {
-        height: unset;
-        max-height: 20vh;
-        border-bottom: 1px solid var(--main-border-color) !important;
-        padding: 0 1em;
-    }
-
-    body.mobile .revisions-dialog .modal-body > .revision-content-wrapper {
-        flex-grow: 1;
-        height: 100%;
-        overflow: auto;
-        margin: 0;
-    }
-
-    body.mobile .revisions-dialog .modal-body > .revision-content-wrapper > div:first-of-type {
-        flex-direction: column;
-    }
-
-    body.mobile .revisions-dialog .revision-title {
-        font-size: 1rem;
-    }
-
-    body.mobile .revisions-dialog .revision-title-buttons {
-        text-align: center;
-    }
-
-    body.mobile .revisions-dialog .revision-content {
-        padding: 0.5em;
     }
 }
 
@@ -1657,12 +1711,12 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
     display: flex;
     flex-shrink: 0;
     flex-direction: column;
-    margin-left: 10px;
-    margin-right: 5px;
+    margin-inline-start: 10px;
+    margin-inline-end: 5px;
+    background: transparent;
 }
 
 #right-pane .card-header {
-    background: inherit;
     padding: 6px 0 3px 0;
     width: 99%; /* to give minimal right margin */
     background-color: var(--button-background-color);
@@ -1698,7 +1752,7 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 }
 
 #right-pane .card-body ul {
-    padding-left: 25px;
+    padding-inline-start: 25px;
     margin-bottom: 5px;
 }
 
@@ -1709,13 +1763,15 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
 }
 
 .note-split {
-    flex-basis: 0; /* so that each split has same width */
-    margin-left: auto;
-    margin-right: auto;
+    /* Limits the maximum width of the note */
+    --max-content-width: var(--preferred-max-content-width);
+
+    margin-inline-start: auto;
+    margin-inline-end: auto;
 }
 
 .note-split.full-content-width {
-    max-width: 999999px;
+    --max-content-width: unset;
 }
 
 button.close:hover {
@@ -1730,7 +1786,7 @@ button.close:hover {
 .reference-link .bx {
     position: relative;
     top: 1px;
-    margin-right: 3px;
+    margin-inline-end: 3px;
 }
 
 .options-section:first-of-type h4 {
@@ -1768,9 +1824,14 @@ textarea {
 
 .attachment-help-button {
     display: inline-block;
-    margin-left: 10px;
+    margin-inline-start: 10px;
     vertical-align: middle;
     font-size: 1em;
+}
+
+.jump-to-note-dialog .modal-dialog {
+    max-width: 900px;
+    width: 90%;
 }
 
 .jump-to-note-dialog .modal-header {
@@ -1779,14 +1840,26 @@ textarea {
 
 .jump-to-note-dialog .modal-body {
     padding: 0;
+    min-height: 200px;
 }
 
 .jump-to-note-results .aa-dropdown-menu {
-    max-height: 40vh;
+    max-height: calc(80vh - 200px);
+    width: 100%;
+    max-width: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
+    box-shadow: none;
+}
+
+.jump-to-note-results {
+    width: 100%;
 }
 
 .jump-to-note-results .aa-suggestions {
-    padding: 1rem;
+    padding: 0;
+    width: 100%;
 }
 
 /* Command palette styling */
@@ -1804,8 +1877,24 @@ textarea {
 
 .jump-to-note-dialog .aa-cursor .command-suggestion,
 .jump-to-note-dialog .aa-suggestion:hover .command-suggestion {
-    border-left-color: var(--link-color);
-    background-color: var(--hover-background-color);
+    background-color: transparent;
+}
+
+.jump-to-note-dialog .show-in-full-search,
+.jump-to-note-results .show-in-full-search {
+    border-top: 1px solid var(--main-border-color);
+    padding-top: 12px;
+    margin-top: 12px;
+}
+
+.jump-to-note-results .aa-suggestion .search-notes-action {
+    border-top: 1px solid var(--main-border-color);
+    margin-top: 8px;
+    padding-top: 8px;
+}
+
+.jump-to-note-results .aa-suggestion:has(.search-notes-action)::after {
+    display: none;
 }
 
 .jump-to-note-dialog .command-icon {
@@ -1843,7 +1932,7 @@ textarea {
 }
 
 body.electron.platform-darwin:not(.native-titlebar) .tab-row-container {
-    padding-left: 1em;
+    padding-inline-start: 1em;
 }
 
 #tab-row-left-spacer {
@@ -1851,8 +1940,12 @@ body.electron.platform-darwin:not(.native-titlebar) .tab-row-container {
     -webkit-app-region: drag;
 }
 
+body.electron.platform-darwin:not(.native-titlebar):not(.full-screen) #tab-row-left-spacer {
+    width: 80px;
+}
+
 .tab-row-widget {
-    padding-right: calc(100vw - env(titlebar-area-width, 100vw));
+    padding-inline-end: calc(100vw - env(titlebar-area-width, 100vw));
 }
 
 .tab-row-container .toggle-button {
@@ -1898,20 +1991,27 @@ body.zen #right-pane,
 body.zen #mobile-sidebar-wrapper,
 body.zen .tab-row-container,
 body.zen .tab-row-widget,
-body.zen .ribbon-container:not(:has(.classic-toolbar-widget.visible)),
-body.zen .ribbon-container:has(.classic-toolbar-widget.visible) .ribbon-top-row,
-body.zen .ribbon-container .ribbon-body:not(:has(.classic-toolbar-widget.visible)),
+body.zen .shared-info-widget,
+body.zen .ribbon-container:not(:has(.classic-toolbar-widget)),
+body.zen .ribbon-container:has(.classic-toolbar-widget) .ribbon-top-row,
+body.zen .ribbon-container .ribbon-body:not(:has(.classic-toolbar-widget)),
 body.zen .note-icon-widget,
-body.zen .title-row .button-widget,
+body.zen .title-row .icon-action,
+body.zen .promoted-attributes-widget,
 body.zen .floating-buttons-children > *:not(.bx-edit-alt),
-body.zen .action-button {
+body.zen .action-button,
+body.zen .note-split:not(.type-book) .note-list-widget {
     display: none !important;
+}
+
+body.zen .split-note-container-widget > .gutter {
+    display: unset !important;
 }
 
 body.zen #launcher-pane {
     position: absolute !important;
     top: 0 !important;
-    right: 0 !important;
+    inset-inline-end: 0 !important;
     width: 64px !important;
     height: 64px !important;
     background: transparent !important;
@@ -1922,8 +2022,8 @@ body.zen .title-row {
     display: block !important;
     height: unset !important;
     -webkit-app-region: drag;
-    padding-left: env(titlebar-area-x);
-    padding-right: calc(100vw - env(titlebar-area-width, 100vw) + 2.5em);
+    padding-inline-start: env(titlebar-area-x);
+    padding-inline-end: calc(100vw - env(titlebar-area-width, 100vw) + 2.5em);
 }
 
 body.zen .floating-buttons {
@@ -1931,7 +2031,7 @@ body.zen .floating-buttons {
 }
 
 body.zen .floating-buttons-children {
-    right: 0;
+    inset-inline-end: 0;
 }
 
 body.zen .floating-buttons-children .button-widget {
@@ -1944,10 +2044,119 @@ body.zen .note-title-widget,
 body.zen .note-title-widget input {
     font-size: 1rem !important;
     background: transparent !important;
+    pointer-events: none;
 }
 
 body.zen #detail-container {
     width: 100%;
+}
+
+body.zen .note-split:not(.full-content-width) .scrolling-container {
+    display: flex;
+    flex-direction: column;
+    scroll-behavior: unset !important;
+}
+
+body.zen .note-split:not(.full-content-width) .note-detail {
+    margin: auto;
+    padding-bottom: 25vh;
+    max-width: var(--max-content-width);
+    width: 100%;
+}
+
+body.zen .note-split:not(.full-content-width) .scroll-padding-widget {
+    display: none;
+}
+
+body.zen .note-split.type-text {
+    position: relative;
+    font-size: 1.15em;
+}
+
+body.zen:not(.backdrop-effects-disabled) .note-split.type-text .title-row {
+    --start-color: var(--main-background-color);
+
+    position: absolute;
+    width: 100%;
+    background: linear-gradient(var(--start-color) 30%, transparent 100%);
+    z-index: 1000;
+}
+
+@supports (background: color-mix(in srgb, white, transparent)) {
+    body.zen .note-split.type-text .title-row {
+        --start-color: color-mix(in srgb, var(--main-background-color), transparent 10%);
+    }
+}
+
+body.zen .note-split.type-text .scrolling-container {
+    --padding-bottom: 130px; /* Should be enough to avoid caret being hidden by the formatting toolbar */
+
+    /* (Usually) keeps the caret above the fixed toolbar */
+    scroll-padding-bottom: var(--padding-bottom);
+}
+
+body.zen:not(.backdrop-effects-disabled) .note-split.type-text .scrolling-container {
+    --padding-top: 50px; /* Should be enough to cover the title row */
+
+    padding-top: var(--padding-top);
+    scroll-padding-top: var(--padding-top);
+}
+
+/* Fixed formatting toolbar */
+
+body.zen .note-split .ribbon-container {
+    position: fixed;
+    left: 0;
+    bottom: 20px;
+    width: 100%;
+    z-index: 1000;
+    opacity: 0; /* Hidden unless the current note split is focused */
+    pointer-events: none;
+    transition: opacity 100ms linear;
+}
+
+body.zen .note-split:focus-within .ribbon-container {
+    opacity: 1; /* Show when the note split is focused */
+}
+
+body.zen .note-split .ribbon-container .ribbon-body {
+    border: 0;
+}
+
+body.zen .note-split .ribbon-container .classic-toolbar-widget {
+    margin: auto;
+    width: fit-content;
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, .1);
+    border-radius: 8px;
+    border: 1px solid var(--main-border-color);
+    padding: 4px;
+    background: var(--menu-background-color);
+}
+
+body.zen .note-split .ribbon-container .classic-toolbar-widget:not(:has(> .ck-toolbar)) {
+    /* Hide the toolbar wrapper if the toolbar is missing */
+    display: none;
+}
+
+body.zen .note-split:focus-within .ribbon-container .classic-toolbar-widget {
+    pointer-events: all;
+}
+
+@media (max-width: 1300px) {
+    body.zen .note-split .ribbon-container .classic-toolbar-widget {
+        /* Set the toolbar to full with */
+        width: 100%;
+    }
+
+    body.zen .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_se,
+    body.zen .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_sw,
+    body.zen .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_smw,
+    body.zen .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_sme,
+    body.zen .classic-toolbar-widget .ck.ck-dropdown .ck-dropdown__panel.ck-dropdown__panel_s {
+        /* Force toolbar items overflow dropdowns open upwards */
+        top: auto;
+        bottom: 100%;
+    }
 }
 
 /* Content renderer */
@@ -2090,7 +2299,7 @@ footer.webview-footer button {
 .chat-input {
     width: 100%;
     resize: none;
-    padding-right: 40px;
+    padding-inline-end: 40px;
 }
 
 .chat-buttons {
@@ -2146,14 +2355,13 @@ footer.webview-footer button {
 
 .admonition {
     --accent-color: var(--card-border-color);
+    background: color-mix(in srgb, var(--accent-color) 15%, transparent);
     border: 1px solid var(--accent-color);
-    box-shadow: var(--card-box-shadow);
-    background: var(--card-background-color);
     border-radius: 0.5em;
     padding: 1em;
     margin: 1.25em 0;
     position: relative;
-    padding-left: 2.5em;
+    padding-inline-start: 2.5em;
     overflow: hidden;
 }
 
@@ -2161,12 +2369,12 @@ footer.webview-footer button {
     margin-bottom: 0;
 }
 
-.admonition::before {  
+.admonition::before {
     color: var(--accent-color);
     font-family: boxicons !important;
     position: absolute;
     top: 1em;
-    left: 1em;
+    inset-inline-start: 1em;
 }
 
 .admonition.note { --accent-color: var(--admonition-note-accent-color); }
@@ -2181,6 +2389,15 @@ footer.webview-footer button {
 .admonition.caution::before { content: "\eac7"; }
 .admonition.warning::before { content: "\eac5"; }
 
+.ck-content ul.todo-list li span.todo-list__label__description {
+    transition: opacity 200ms ease;
+}
+
+.ck-content ul.todo-list li:has(> span.todo-list__label input[type="checkbox"]:checked) > span.todo-list__label span.todo-list__label__description {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
 .chat-options-container {
     display: flex;
     margin: 5px 0;
@@ -2192,18 +2409,18 @@ footer.webview-footer button {
     display: flex;
     align-items: center;
     font-size: 0.9em;
-    margin-right: 15px;
+    margin-inline-end: 15px;
     cursor: pointer;
 }
 
 .chat-option input[type="checkbox"] {
-    margin-right: 5px;
+    margin-inline-end: 5px;
 }
 
 /* Style for thinking process in chat responses */
 .thinking-process {
     background-color: rgba(0, 0, 0, 0.05);
-    border-left: 3px solid var(--main-text-color);
+    border-inline-start: 3px solid var(--main-text-color);
     padding: 10px;
     margin: 10px 0;
     border-radius: 4px;
@@ -2211,23 +2428,23 @@ footer.webview-footer button {
 
 .thinking-step {
     margin-bottom: 8px;
-    padding-left: 10px;
+    padding-inline-start: 10px;
 }
 
 .thinking-step.observation {
-    border-left: 2px solid #69c7ff;
+    border-inline-start: 2px solid #69c7ff;
 }
 
 .thinking-step.hypothesis {
-    border-left: 2px solid #9839f7;
+    border-inline-start: 2px solid #9839f7;
 }
 
 .thinking-step.evidence {
-    border-left: 2px solid #40c025;
+    border-inline-start: 2px solid #40c025;
 }
 
 .thinking-step.conclusion {
-    border-left: 2px solid #e2aa03;
+    border-inline-start: 2px solid #e2aa03;
     font-weight: bold;
 }
 
@@ -2242,17 +2459,17 @@ footer.webview-footer button {
 
 .content-floating-buttons.top-left {
     top: 10px;
-    left: 10px;
+    inset-inline-start: 10px;
 }
 
 .content-floating-buttons.bottom-left {
     bottom: 10px;
-    left: 10px;
+    inset-inline-start: 10px;
 }
 
 .content-floating-buttons.bottom-right {
     bottom: 10px;
-    right: 10px;
+    inset-inline-end: 10px;
 }
 
 .content-floating-buttons button.bx {
@@ -2260,16 +2477,91 @@ footer.webview-footer button {
     padding: 1px 10px 1px 10px;
 }
 
-/* Search result highlighting */
-.search-result-title b,
-.search-result-content b {
-    font-weight: 900;
-    color: var(--admonition-warning-accent-color);
-}
-
 /* Customized icons */
 
 .bx-tn-toc::before {
     content: "\ec24";
     transform: rotate(180deg);
+}
+
+/* CK Editor */
+
+/* Insert text snippet: limit the width of the listed items to avoid overly long names */
+:root body.desktop div.ck-template-form li.ck-list__item .ck-template-form__text-part > span {
+    max-width: 25vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.revision-diff-added {
+    background: rgba(100, 200, 100, 0.5);
+}
+
+.revision-diff-removed {
+    background: rgba(255, 100, 100, 0.5);
+    text-decoration: line-through;
+}
+
+iframe.print-iframe {
+    position: absolute;
+    top: 0;
+    left: -600px;
+    right: -600px;
+    bottom: 0;
+    width: 0;
+    height: 0;
+}
+
+.excalidraw.theme--dark canvas {
+    --theme-filter: invert(100%) hue-rotate(180deg);
+}
+
+/* Scrolling container */
+
+.scrolling-container:has(> :is(.note-detail.full-height, .note-list-widget.full-height)) {
+    display: flex;
+    flex-direction: column;
+}
+
+.note-detail.full-height,
+.scrolling-container > .note-list-widget.full-height {
+    position: relative;
+    flex-grow: 1;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* Calendar collection */
+
+.calendar-view a.fc-timegrid-event,
+.calendar-view a.fc-daygrid-event {
+    /* Workaround: set font weight only if the theme-next is not active */
+    font-weight: var(--root-background, 800);
+}
+
+@media (max-width: 991px) {
+    body.mobile {
+        .split-note-container-widget {
+            flex-direction: column !important;
+
+            .note-split {
+                width: 100%;
+            }
+
+            .note-split.visible + .note-split.visible {
+                border-top: 1px solid var(--main-border-color);
+            }
+        }
+
+        #root-widget.virtual-keyboard-opened .note-split:not(:focus-within) {
+            max-height: 80px;
+            opacity: 0.4;
+        }
+    }
+}
+
+body.desktop .title-row {
+    height: 50px;
+    min-height: 50px;
+    align-items: center;
 }

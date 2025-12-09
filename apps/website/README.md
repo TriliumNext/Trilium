@@ -1,11 +1,15 @@
-# apps/website
+# `create-preact`
 
-Landing page for Trilium Notes powered by [Svelte](https://github.com/sveltejs/cli) and [Tailwind CSS](https://tailwindcss.com/).
+<h2 align="center">
+  <img height="256" width="256" src="./src/assets/preact.svg">
+</h2>
 
-## Developing
+<h3 align="center">Get started using Preact and Vite!</h3>
 
-To run a dev server that will hot-reload changes: `pnpm nx run website:dev`
+## Getting Started
 
-## Building
+-   `npm run dev` - Starts a dev server at http://localhost:5173/
 
-To create a production build: `pnpm nx run website:build`
+-   `npm run build` - Builds for production, emitting to `dist/`. Prerenders all found routes in app to static HTML
+
+-   `npm run preview` - Starts a server at http://localhost:4173/ to test production build locally

@@ -5,12 +5,10 @@
     "lokalise.i18n-ally",
     "ms-azuretools.vscode-docker",
     "ms-playwright.playwright",
-    "nrwl.angular-console",
     "redhat.vscode-yaml",
     "tobermory.es6-string-html",
     "vitest.explorer",
     "yzhang.markdown-all-in-one",
-    "svelte.svelte-vscode",
-    "bradlc.vscode-tailwindcss"
+    "usernamehw.errorlens"
   ]
 }

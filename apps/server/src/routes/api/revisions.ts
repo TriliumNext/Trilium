@@ -12,7 +12,7 @@ import type { Request, Response } from "express";
 import type BRevision from "../../becca/entities/brevision.js";
 import type BNote from "../../becca/entities/bnote.js";
 import type { NotePojo } from "../../becca/becca-interface.js";
-import { RevisionItem, RevisionPojo, RevisionRow } from "@triliumnext/commons";
+import { EditedNotesResponse, RevisionItem, RevisionPojo, RevisionRow } from "@triliumnext/commons";
 
 interface NotePath {
     noteId: string;
@@ -152,17 +152,17 @@ function restoreRevision(req: Request) {
 }
 
 function getEditedNotesOnDate(req: Request) {
-    const noteIds = sql.getColumn<string>(
-        `
+    const noteIds = sql.getColumn<string>(/*sql*/`\
         SELECT notes.*
         FROM notes
         WHERE noteId IN (
                 SELECT noteId FROM notes
-                WHERE notes.dateCreated LIKE :date
-                    OR notes.dateModified LIKE :date
+                WHERE
+                    (notes.dateCreated LIKE :date OR notes.dateModified LIKE :date)
+                    AND (notes.noteId NOT LIKE  '\\_%' ESCAPE '\\')
             UNION ALL
                 SELECT noteId FROM revisions
-                WHERE revisions.dateLastEdited LIKE :date
+                WHERE revisions.dateCreated LIKE :date
         )
         ORDER BY isDeleted
         LIMIT 50`,
@@ -184,7 +184,7 @@ function getEditedNotesOnDate(req: Request) {
         notePojo.notePath = notePath ? notePath.notePath : null;
 
         return notePojo;
-    });
+    }) satisfies EditedNotesResponse;
 }
 
 function getNotePathData(note: BNote): NotePath | undefined {

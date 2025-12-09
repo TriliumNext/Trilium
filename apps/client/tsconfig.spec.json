@@ -8,6 +8,9 @@
       "node",
       "vitest"
     ],
+    "jsx": "preserve",
+    "jsxFactory": "h",
+		"jsxImportSource": "preact",
     "module": "esnext",
     "moduleResolution": "bundler"
   },

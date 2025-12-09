@@ -7,7 +7,10 @@ import sql_init from "../services/sql_init.js";
 let dbConnection!: Database.Database;
 
 sql_init.dbReady.then(() => {
-    dbConnection = new Database(dataDir.DOCUMENT_PATH, { readonly: true });
+    dbConnection = new Database(dataDir.DOCUMENT_PATH, {
+        readonly: true,
+        nativeBinding: process.env.BETTERSQLITE3_NATIVE_PATH || undefined
+    });
 
     [`exit`, `SIGINT`, `SIGUSR1`, `SIGUSR2`, `SIGTERM`].forEach((eventType) => {
         process.on(eventType, () => {

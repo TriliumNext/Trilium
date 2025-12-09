@@ -137,13 +137,13 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
      *
      * @returns true if note has been deleted, false otherwise
      */
-    deleteBranch(deleteId?: string, taskContext?: TaskContext): boolean {
+    deleteBranch(deleteId?: string, taskContext?: TaskContext<"deleteNotes">): boolean {
         if (!deleteId) {
             deleteId = utils.randomString(10);
         }
 
         if (!taskContext) {
-            taskContext = new TaskContext("no-progress-reporting");
+            taskContext = new TaskContext("no-progress-reporting", "deleteNotes", null);
         }
 
         taskContext.increaseProgressCount();
@@ -278,6 +278,11 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
             });
         }
     }
+
+    getParentNote() {
+        return this.parentNote;
+    }
+
 }
 
 export default BBranch;

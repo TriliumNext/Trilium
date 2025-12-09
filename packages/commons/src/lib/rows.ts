@@ -12,7 +12,7 @@ export interface AttachmentRow {
     isProtected?: boolean;
     dateModified?: string;
     utcDateModified?: string;
-    utcDateScheduledForErasureSince?: string;
+    utcDateScheduledForErasureSince?: string | null;
     isDeleted?: boolean;
     deleteId?: string;
     contentLength?: number;
@@ -119,7 +119,8 @@ export const ALLOWED_NOTE_TYPES = [
     "book",
     "webView",
     "code",
-    "mindMap"
+    "mindMap",
+    "aiChat"
 ] as const;
 export type NoteType = (typeof ALLOWED_NOTE_TYPES)[number];
 

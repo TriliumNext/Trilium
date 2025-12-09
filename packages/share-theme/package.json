@@ -2,8 +2,10 @@
   "name": "@triliumnext/share-theme",
   "version": "1.0.3",
   "description": "Adaptation of the trilium.rocks share theme",
+  "type": "module",
   "main": "index.js",
   "scripts": {
+    "dev": "esrun scripts/build.ts -- --watch",
     "build": "esrun scripts/build.ts",
     "build-scripts": "esrun scripts/build.ts -- --module=scripts",
     "build-styles": "esrun scripts/build.ts -- --module=styles",
@@ -21,18 +23,21 @@
     "Zerebos <me@zerebos.com>"
   ],
   "license": "Apache-2.0",
-  "devDependencies": {
-    "@digitak/esrun": "^3.2.24",
-    "@types/swagger-ui": "^5.0.0",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
-    "dotenv": "^17.0.0",
-    "esbuild": "^0.25.0",
-    "eslint": "^9.0.0",
-    "highlight.js": "^11.8.0",
-    "typescript": "^5.2.2"
+  "dependencies": {
+    "boxicons": "2.1.4",
+    "fuse.js": "7.1.0",
+    "katex": "0.16.27",
+    "mermaid": "11.12.2"
   },
-  "nx": {
-    "name": "share-theme"
+  "devDependencies": {
+    "@digitak/esrun": "3.2.26",
+    "@triliumnext/ckeditor5": "workspace:*",
+    "@typescript-eslint/eslint-plugin": "8.48.1",
+    "@typescript-eslint/parser": "8.48.1",
+    "dotenv": "17.2.3",
+    "esbuild": "0.27.1",
+    "eslint": "9.39.1",
+    "highlight.js": "11.11.1",
+    "typescript": "5.9.3"
   }
 }

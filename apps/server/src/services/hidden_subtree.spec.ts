@@ -4,18 +4,17 @@ import hiddenSubtreeService from "./hidden_subtree.js";
 import sql_init from "./sql_init.js";
 import branches from "./branches.js";
 import becca from "../becca/becca.js";
-import { LOCALES } from "@triliumnext/commons";
+import { deferred, LOCALES } from "@triliumnext/commons";
 import { changeLanguage } from "./i18n.js";
-import { deferred } from "./utils.js";
 
 describe("Hidden Subtree", () => {
-    describe("Launcher movement persistence", () => {
-        beforeAll(async () => {
-            sql_init.initializeDb();
-            await sql_init.dbReady;
-            cls.init(() => hiddenSubtreeService.checkHiddenSubtree());
-        });
+    beforeAll(async () => {
+        sql_init.initializeDb();
+        await sql_init.dbReady;
+        cls.init(() => hiddenSubtreeService.checkHiddenSubtree());
+    });
 
+    describe("Launcher movement persistence", () => {
         it("should persist launcher movement between visible and available after integrity check", () => {
             // Move backend log to visible launchers.
             const backendLogBranch = becca.getBranchFromChildAndParent("_lbBackendLog", "_lbAvailableLaunchers");
@@ -83,6 +82,36 @@ describe("Hidden Subtree", () => {
             expect(updatedJumpToNote?.title).not.toBe("Renamed");
         });
 
+        it("enforces renames of templates", () => {
+            const boardTemplate = becca.getNote("_template_board");
+            expect(boardTemplate).toBeDefined();
+            boardTemplate!.title = "My renamed board";
+
+            cls.init(() => {
+                boardTemplate!.save();
+                hiddenSubtreeService.checkHiddenSubtree(true);
+            });
+
+            const updatedBoardTemplate = becca.getNote("_template_board");
+            expect(updatedBoardTemplate).toBeDefined();
+            expect(updatedBoardTemplate?.title).not.toBe("My renamed board");
+        });
+
+        it("enforces webviewSrc of templates", () => {
+            const apiRefNote = becca.getNote("_help_9qPsTWBorUhQ");
+            expect(apiRefNote).toBeDefined();
+
+            cls.init(() => {
+                apiRefNote!.setAttribute("label", "webViewSrc", "foo");
+                apiRefNote!.save();
+                hiddenSubtreeService.checkHiddenSubtree(true);
+            });
+
+            const updatedApiRefNote = becca.getNote("_help_9qPsTWBorUhQ");
+            expect(updatedApiRefNote).toBeDefined();
+            expect(updatedApiRefNote?.getLabelValue("webViewSrc")).not.toBe("foo");
+        });
+
         it("maintains launchers hidden, if they were shown by default but moved by the user", () => {
             const launcher = becca.getNote("_lbLlmChat");
             const branch = launcher?.getParentBranches()[0];
@@ -117,6 +146,16 @@ describe("Hidden Subtree", () => {
                 done.resolve();
             })();
             await done;
+        });
+    });
+
+    describe("Hidden subtree", () => {
+        it("cleans up exclude from note map at the root", async () => {
+            const hiddenSubtree = becca.getNoteOrThrow("_hidden");
+            cls.init(() => hiddenSubtree.addLabel("excludeFromNoteMap"));
+            expect(hiddenSubtree.hasLabel("excludeFromNoteMap")).toBeTruthy();
+            cls.init(() => hiddenSubtreeService.checkHiddenSubtree());
+            expect(hiddenSubtree.hasLabel("excludeFromNoteMap")).toBeFalsy();
         });
     });
 });

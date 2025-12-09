@@ -1,0 +1,55 @@
+.breadcrumb-row {
+    position: relative;
+}
+
+.component.breadcrumb {
+    contain: none;
+    display: flex;
+    margin: 0;
+    align-items: center;
+    font-size: 0.9em;
+    gap: 0.25em;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    max-width: 85%;
+
+    > span,
+    > span > span {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+
+        a {
+            color: inherit;
+            text-decoration: none;
+            min-width: 0;
+            max-width: 150px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            display: block;
+            flex-shrink: 2;
+        }
+    }
+
+    > span:last-of-type a {
+        max-width: 300px;
+        flex-shrink: 1;
+    }
+
+    ul {
+        flex-direction: column;
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .dropdown-item span,
+    .dropdown-item strong {
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        display: block;
+        max-width: 300px;
+    }
+}

@@ -15,6 +15,10 @@ import becca_loader from "../becca/becca_loader.js";
 import entity_changes from "./entity_changes.js";
 import config from "./config.js";
 
+const dbOpts: Database.Options = {
+    nativeBinding: process.env.BETTERSQLITE3_NATIVE_PATH || undefined
+};
+
 let dbConnection: DatabaseType = buildDatabase();
 let statementCache: Record<string, Statement> = {};
 
@@ -23,15 +27,18 @@ function buildDatabase() {
     if (process.env.TRILIUM_INTEGRATION_TEST === "memory") {
         return buildIntegrationTestDatabase();
     } else if (process.env.TRILIUM_INTEGRATION_TEST === "memory-no-store") {
-        return new Database(":memory:");
+        return new Database(":memory:", dbOpts);
     }
 
-    return new Database(dataDir.DOCUMENT_PATH, { readonly: config.General.readOnly });
+    return new Database(dataDir.DOCUMENT_PATH, {
+        ...dbOpts,
+        readonly: config.General.readOnly
+    });
 }
 
 function buildIntegrationTestDatabase(dbPath?: string) {
     const dbBuffer = fs.readFileSync(dbPath ?? dataDir.DOCUMENT_PATH);
-    return new Database(dbBuffer);
+    return new Database(dbBuffer, dbOpts);
 }
 
 function rebuildIntegrationTestDatabase(dbPath?: string) {

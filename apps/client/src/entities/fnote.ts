@@ -1,12 +1,12 @@
 import server from "../services/server.js";
 import noteAttributeCache from "../services/note_attribute_cache.js";
-import ws from "../services/ws.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import cssClassManager from "../services/css_class_manager.js";
 import type { Froca } from "../services/froca-interface.js";
 import type FAttachment from "./fattachment.js";
 import type { default as FAttribute, AttributeType } from "./fattribute.js";
 import utils from "../services/utils.js";
+import search from "../services/search.js";
 
 const LABEL = "label";
 const RELATION = "relation";
@@ -64,7 +64,7 @@ export interface NoteMetaData {
 /**
  * Note is the main node and concept in Trilium.
  */
-class FNote {
+export default class FNote {
     private froca: Froca;
 
     noteId!: string;
@@ -240,7 +240,7 @@ class FNote {
 
             const aNote = this.froca.getNoteFromCache(aNoteId);
 
-            if (aNote.isArchived || aNote.isHiddenCompletely()) {
+            if (!aNote || aNote.isArchived || aNote.isHiddenCompletely()) {
                 return 1;
             }
 
@@ -256,18 +256,37 @@ class FNote {
         return this.children;
     }
 
-    async getSubtreeNoteIds() {
+    async getChildNoteIdsWithArchiveFiltering(includeArchived = false) {
+        const isHiddenNote = this.noteId.startsWith("_");
+        const isSearchNote = this.type === "search";
+        if (!includeArchived && !isHiddenNote && !isSearchNote) {
+            const unorderedIds = new Set(await search.searchForNoteIds(`note.parents.noteId="${this.noteId}" #!archived`));
+            const results: string[] = [];
+            for (const id of this.children) {
+                if (unorderedIds.has(id)) {
+                    results.push(id);
+                }
+            }
+            return results;
+        } else {
+            return this.children;
+        }
+    }
+
+    async getSubtreeNoteIds(includeArchived = false) {
         let noteIds: (string | string[])[] = [];
         for (const child of await this.getChildNotes()) {
+            if (child.isArchived && !includeArchived) continue;
+
             noteIds.push(child.noteId);
-            noteIds.push(await child.getSubtreeNoteIds());
+            noteIds.push(await child.getSubtreeNoteIds(includeArchived));
         }
         return noteIds.flat();
     }
 
     async getSubtreeNotes() {
         const noteIds = await this.getSubtreeNoteIds();
-        return this.froca.getNotes(noteIds);
+        return (await this.froca.getNotes(noteIds));
     }
 
     async getChildNotes() {
@@ -416,7 +435,7 @@ class FNote {
         return notePaths;
     }
 
-    getSortedNotePathRecords(hoistedNoteId = "root"): NotePathRecord[] {
+    getSortedNotePathRecords(hoistedNoteId = "root", activeNotePath: string | null = null): NotePathRecord[] {
         const isHoistedRoot = hoistedNoteId === "root";
 
         const notePaths: NotePathRecord[] = this.getAllNotePaths().map((path) => ({
@@ -427,7 +446,23 @@ class FNote {
             isHidden: path.includes("_hidden")
         }));
 
+        // Calculate the length of the prefix match between two arrays
+        const prefixMatchLength = (path: string[], target: string[]) => {
+            const diffIndex = path.findIndex((seg, i) => seg !== target[i]);
+            return diffIndex === -1 ? Math.min(path.length, target.length) : diffIndex;
+        };
+
         notePaths.sort((a, b) => {
+            if (activeNotePath) {
+                const activeSegments = activeNotePath.split('/');
+                const aOverlap = prefixMatchLength(a.notePath, activeSegments);
+                const bOverlap = prefixMatchLength(b.notePath, activeSegments);
+                // Paths with more matching prefix segments are prioritized
+                // when the match count is equal, other criteria are used for sorting
+                if (bOverlap !== aOverlap) {
+                    return bOverlap - aOverlap;
+                }
+            }
             if (a.isInHoistedSubTree !== b.isInHoistedSubTree) {
                 return a.isInHoistedSubTree ? -1 : 1;
             } else if (a.isArchived !== b.isArchived) {
@@ -448,10 +483,11 @@ class FNote {
      * Returns the note path considered to be the "best"
      *
      * @param {string} [hoistedNoteId='root']
+     * @param {string|null} [activeNotePath=null]
      * @return {string[]} array of noteIds constituting the particular note path
      */
-    getBestNotePath(hoistedNoteId = "root") {
-        return this.getSortedNotePathRecords(hoistedNoteId)[0]?.notePath;
+    getBestNotePath(hoistedNoteId = "root", activeNotePath: string | null = null) {
+        return this.getSortedNotePathRecords(hoistedNoteId, activeNotePath)[0]?.notePath;
     }
 
     /**
@@ -584,7 +620,7 @@ class FNote {
         let childBranches = this.getChildBranches();
 
         if (!childBranches) {
-            ws.logError(`No children for '${this.noteId}'. This shouldn't happen.`);
+            console.error(`No children for '${this.noteId}'. This shouldn't happen.`);
             return [];
         }
 
@@ -770,6 +806,16 @@ class FNote {
         return this.getAttributeValue(LABEL, name);
     }
 
+    getLabelOrRelation(nameWithPrefix: string) {
+        if (nameWithPrefix.startsWith("#")) {
+            return this.getLabelValue(nameWithPrefix.substring(1));
+        } else if (nameWithPrefix.startsWith("~")) {
+            return this.getRelationValue(nameWithPrefix.substring(1));
+        } else {
+            return this.getLabelValue(nameWithPrefix);
+        }
+    }
+
     /**
      * @param name - relation name
      * @returns relation value if relation exists, null otherwise
@@ -821,8 +867,7 @@ class FNote {
             return [];
         }
 
-        const promotedAttrs = this.getAttributes()
-            .filter((attr) => attr.isDefinition())
+        const promotedAttrs = this.getAttributeDefinitions()
             .filter((attr) => {
                 const def = attr.getDefinition();
 
@@ -840,6 +885,11 @@ class FNote {
         });
 
         return promotedAttrs;
+    }
+
+    getAttributeDefinitions() {
+        return this.getAttributes()
+            .filter((attr) => attr.isDefinition());
     }
 
     hasAncestor(ancestorNoteId: string, followTemplates = false, visitedNoteIds: Set<string> | null = null) {
@@ -905,8 +955,8 @@ class FNote {
         return this.getBlob();
     }
 
-    async getBlob() {
-        return await this.froca.getBlob("notes", this.noteId);
+    getBlob() {
+        return this.froca.getBlob("notes", this.noteId);
     }
 
     toString() {
@@ -1020,6 +1070,14 @@ class FNote {
         return this.noteId.startsWith("_options");
     }
 
+    isTriliumSqlite() {
+        return this.mime === "text/x-sqlite;schema=trilium";
+    }
+
+    isTriliumScript() {
+        return this.mime.startsWith("application/javascript");
+    }
+
     /**
      * Provides note's date metadata.
      */
@@ -1027,5 +1085,3 @@ class FNote {
         return await server.get<NoteMetaData>(`notes/${this.noteId}/metadata`);
     }
 }
-
-export default FNote;

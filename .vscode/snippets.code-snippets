@@ -20,5 +20,10 @@
         "scope": "typescript",
         "prefix": "jqf",
         "body": ["private $${1:name}!: JQuery<HTMLElement>;"]
+    },
+    "region": {
+        "scope": "css",
+        "prefix": "region",
+        "body": ["/* #region ${1:name} */\n$0\n/* #endregion */"]
     }
 }

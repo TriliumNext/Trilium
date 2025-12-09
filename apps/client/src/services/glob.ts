@@ -20,9 +20,6 @@ function setupGlobs() {
     window.glob.froca = froca;
     window.glob.treeCache = froca; // compatibility for CKEditor builds for a while
 
-    // for CKEditor integration (button on block toolbar)
-    window.glob.importMarkdownInline = async () => appContext.triggerCommand("importMarkdownInline");
-
     window.onerror = function (msg, url, lineNo, columnNo, error) {
         const string = String(msg).toLowerCase();
 

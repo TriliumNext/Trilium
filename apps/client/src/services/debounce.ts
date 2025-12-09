@@ -12,7 +12,7 @@
  * @param whether to execute at the beginning (`false`)
  * @api public
  */
-function debounce<T>(func: (...args: unknown[]) => T, waitMs: number, immediate: boolean = false) {
+function debounce<T>(func: (...args: any[]) => T, waitMs: number, immediate: boolean = false) {
     let timeout: any; // TODO: fix once we split client and server.
     let args: unknown[] | null;
     let context: unknown;

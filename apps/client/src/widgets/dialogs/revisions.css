@@ -1,0 +1,63 @@
+body.mobile .revisions-dialog {
+    .modal-dialog {
+        height: 95vh;
+    }
+
+    .modal-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25em;
+        font-size: 0.9em;
+    }
+
+    .modal-title {
+        flex-grow: 1;
+        width: 100%;
+    }
+    
+    .modal-body {
+        height: fit-content !important;
+        flex-direction: column;
+        padding: 0;
+    }
+
+    .modal-footer {
+        font-size: 0.9em;
+    }
+    
+    .revision-list {
+        height: fit-content !important;
+        max-height: 20vh;
+        border-bottom: 1px solid var(--main-border-color) !important;
+        padding: 0 1em;
+        flex-shrink: 0;
+    }
+    
+    .modal-body > .revision-content-wrapper {
+        flex-grow: 1;
+        max-width: unset !important;
+        height: 100%;
+        margin: 0;
+        display: block !important;
+    }
+    
+    .modal-body > .revision-content-wrapper > div:first-of-type {
+        flex-direction: column;
+    }
+    
+    .revision-title {
+        font-size: 1rem;
+    }
+    
+    .revision-title-buttons {
+        text-align: center;
+        display: flex;
+        gap: 0.25em;
+        flex-wrap: wrap;
+    }
+    
+    .revision-content {
+        padding: 0.5em;
+        height: fit-content;
+    }
+}

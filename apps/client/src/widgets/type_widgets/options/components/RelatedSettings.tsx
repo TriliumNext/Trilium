@@ -1,5 +1,5 @@
 import OptionsSection from "./OptionsSection";
-import type { OptionPages } from "../../content_widget";
+import type { OptionPages } from "../../ContentWidget";
 import { t } from "../../../../services/i18n";
 
 interface RelatedSettingsProps {

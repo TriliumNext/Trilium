@@ -1,0 +1,103 @@
+name: "Deploy to Cloudflare Pages"
+description: "Deploys to Cloudflare Pages on either a temporary branch with preview comment, or on the production version if on the main branch."
+inputs:
+  project_name:
+    description: "CloudFlare Pages project name"
+  comment_body:
+    description: "The message to display when deployment is ready"
+    default: "Deployment is ready."
+    required: false
+  production_url:
+    description: "The URL to mention as the production URL."
+    required: true
+  deploy_dir:
+    description: "The directory from which to deploy."
+    required: true
+  cloudflare_api_token:
+    description: "The Cloudflare API token to use for deployment."
+    required: true
+  cloudflare_account_id:
+    description: "The Cloudflare account ID to use for deployment."
+    required: true
+  github_token:
+    description: "The GitHub token to use for posting PR comments."
+    required: true
+runs:
+  using: composite
+  steps:
+    # Install wrangler globally to avoid workspace issues
+    - name: Install Wrangler
+      shell: bash
+      run: npm install -g wrangler
+
+    # Deploy using Wrangler (use pre-installed wrangler)
+    - name: Deploy to Cloudflare Pages
+      id: deploy
+      if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ inputs.cloudflare_api_token }}
+        accountId: ${{ inputs.cloudflare_account_id }}
+        command: pages deploy ${{ inputs.deploy_dir }} --project-name=${{ inputs.project_name}} --branch=${{ github.ref_name }}
+        wranglerVersion: ''  # Use pre-installed version
+
+    # Deploy preview for PRs
+    - name: Deploy Preview to Cloudflare Pages
+      id: preview-deployment
+      if: github.event_name == 'pull_request'
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ inputs.cloudflare_api_token }}
+        accountId: ${{ inputs.cloudflare_account_id }}
+        command: pages deploy ${{ inputs.deploy_dir }} --project-name=${{ inputs.project_name}} --branch=pr-${{ github.event.pull_request.number }}
+        wranglerVersion: ''  # Use pre-installed version
+
+    # Post deployment URL as PR comment
+    - name: Comment PR with Preview URL
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v8
+      env:
+        COMMENT_BODY: ${{ inputs.comment_body }}
+        PRODUCTION_URL: ${{ inputs.production_url }}
+        PROJECT_NAME: ${{ inputs.project_name }}
+      with:
+        github-token: ${{ inputs.github_token }}
+        script: |
+          const prNumber = context.issue.number;
+          // Construct preview URL based on Cloudflare Pages pattern
+          const projectName = process.env.PROJECT_NAME;
+          const previewUrl = `https://pr-${prNumber}.${projectName}.pages.dev`;
+
+          // Check if we already commented
+          const comments = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: prNumber
+          });
+
+          const customMessage = process.env.COMMENT_BODY;
+          const botComment = comments.data.find(comment =>
+            comment.user.type === 'Bot' &&
+            comment.body.includes(customMessage)
+          );
+
+          const mainUrl = process.env.PRODUCTION_URL;
+          const commentBody = `${customMessage}!\n\n🔗 Preview URL: ${previewUrl}\n📖 Production URL: ${mainUrl}\n\n✅ All checks passed\n\n_This preview will be updated automatically with new commits._`;
+
+          if (botComment) {
+            // Update existing comment
+            await github.rest.issues.updateComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+              body: commentBody
+            });
+          } else {
+            // Create new comment
+            await github.rest.issues.createComment({
+              issue_number: prNumber,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            });
+          }

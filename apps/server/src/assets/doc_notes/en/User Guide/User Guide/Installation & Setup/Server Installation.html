@@ -27,8 +27,8 @@
 <p>After setting up your server installation, you may want to configure settings
   such as the port or enable <a href="#root/_help_l2VkvOwUNfZj">TLS</a>. Configuration
   is managed via the Trilium <code>config.ini</code> file, which is located
-  in the <a href="#root/_help_tAassRL4RSQL">data directory</a> by default.
-  To begin customizing your setup, copy the provided <code>config-sample.ini</code> file
+  in the <a href="#root/_help_tAassRL4RSQL">data directory</a> by default. To begin
+  customizing your setup, copy the provided <code>config-sample.ini</code> file
   with default values to <code>config.ini</code>.</p>
 <p>You can also review the <a href="#root/_help_Gzjqa934BdH4">configuration</a> file
   to provide all <code>config.ini</code> values as environment variables instead.</p>
@@ -40,7 +40,7 @@
 <h3>Disabling / Modifying the Upload Limit</h3>
 <p>If you're running into the 250MB limit imposed on the server by default,
   and you'd like to increase the upload limit, you can set the <code>TRILIUM_NO_UPLOAD_LIMIT</code> environment
-  variable to <code>true</code> disable it completely:</p><pre><code class="language-text-x-trilium-auto">export TRILIUM_NO_UPLOAD_LIMIT=true </code></pre>
+  variable to <code>true</code> to disable it completely:</p><pre><code class="language-text-x-trilium-auto">export TRILIUM_NO_UPLOAD_LIMIT=true </code></pre>
 <p>Or, if you'd simply like to <em>increase</em> the upload limit size to something
   beyond 250MB, you can set the <code>MAX_ALLOWED_FILE_SIZE_MB</code> environment
   variable to something larger than the integer <code>250</code> (e.g. <code>450</code> in

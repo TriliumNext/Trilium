@@ -3,15 +3,16 @@ import { getAvailableLocales, t } from "../../../services/i18n";
 import FormSelect from "../../react/FormSelect";
 import OptionsRow from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
-import { useTriliumOption, useTriliumOptionInt, useTriliumOptionJson } from "../../react/hooks";
+import { useTriliumOption, useTriliumOptionJson } from "../../react/hooks";
 import type { Locale } from "@triliumnext/commons";
-import { isElectron, restartDesktopApp } from "../../../services/utils";
-import FormRadioGroup, { FormInlineRadioGroup } from "../../react/FormRadioGroup";
+import { restartDesktopApp } from "../../../services/utils";
+import FormRadioGroup from "../../react/FormRadioGroup";
 import FormText from "../../react/FormText";
 import RawHtml from "../../react/RawHtml";
 import Admonition from "../../react/Admonition";
 import Button from "../../react/Button";
 import CheckboxList from "./components/CheckboxList";
+import { LocaleSelector } from "./components/LocaleSelector";
 
 export default function InternationalizationOptions() {
     return (
@@ -23,11 +24,21 @@ export default function InternationalizationOptions() {
 }
 
 function LocalizationOptions() {
-    const { uiLocales, formattingLocales: contentLocales } = useMemo(() => {
-        const allLocales = getAvailableLocales();        
+    const { uiLocales, formattingLocales: contentLocales } = useMemo<{ uiLocales: Locale[], formattingLocales: Locale[] }>(() => {
+        const allLocales = getAvailableLocales();
         return {
-            uiLocales: allLocales.filter(locale => !locale.contentOnly),
-            formattingLocales: allLocales.filter(locale => locale.electronLocale),
+            uiLocales: allLocales.filter(locale => {
+                if (locale.contentOnly) return false;
+                if (locale.devOnly && !glob.isDev) return false;
+                return true;
+            }),
+            formattingLocales: [
+                ...allLocales.filter(locale => {
+                    if (!locale.electronLocale) return false;
+                    if (locale.devOnly && !glob.isDev) return false;
+                    return true;
+                })
+            ]
         }
     }, []);
 
@@ -40,22 +51,13 @@ function LocalizationOptions() {
                 <LocaleSelector locales={uiLocales} currentValue={locale} onChange={setLocale} />
             </OptionsRow>
 
-            {isElectron() && <OptionsRow name="formatting-locale" label={t("i18n.formatting-locale")}>
-                <LocaleSelector locales={contentLocales} currentValue={formattingLocale} onChange={setFormattingLocale} />
+            {<OptionsRow name="formatting-locale" label={t("i18n.formatting-locale")}>
+                <LocaleSelector locales={contentLocales} currentValue={formattingLocale} onChange={setFormattingLocale} defaultLocale={{ id: "", name: t("i18n.formatting-locale-auto") }} />
             </OptionsRow>}
 
             <DateSettings />
         </OptionsSection>
     )
-}
-
-function LocaleSelector({ id, locales, currentValue, onChange }: { id?: string; locales: Locale[], currentValue: string, onChange: (newLocale: string) => void }) {
-    return <FormSelect
-        id={id}
-        values={locales}
-        keyProperty="id" titleProperty="name"                
-        currentValue={currentValue} onChange={onChange}
-    />;
 }
 
 function DateSettings() {
@@ -66,15 +68,23 @@ function DateSettings() {
     return (
         <>
             <OptionsRow name="first-day-of-week" label={t("i18n.first-day-of-the-week")}>
-                <FormInlineRadioGroup
+                <FormSelect
                     name="first-day-of-week"
+                    currentValue={firstDayOfWeek}
+                    onChange={setFirstDayOfWeek}
+                    keyProperty="value"
+                    titleProperty="label"
                     values={[
-                        { value: "0", label: t("i18n.sunday") },
-                        { value: "1", label: t("i18n.monday") }
+                        { value: "1", label: t("i18n.monday") },
+                        { value: "2", label: t("i18n.tuesday") },
+                        { value: "3", label: t("i18n.wednesday") },
+                        { value: "4", label: t("i18n.thursday") },
+                        { value: "5", label: t("i18n.friday") },
+                        { value: "6", label: t("i18n.saturday") },
+                        { value: "7", label: t("i18n.sunday") },
                     ]}
-                    currentValue={firstDayOfWeek} onChange={setFirstDayOfWeek}
                 />
-            </OptionsRow>  
+            </OptionsRow>
 
             <OptionsRow name="first-week-of-year" label={t("i18n.first-week-of-the-year")}>
                 <FormRadioGroup
@@ -93,7 +103,7 @@ function DateSettings() {
                     keyProperty="days"
                     currentValue={minDaysInFirstWeek} onChange={setMinDaysInFirstWeek}
                     values={Array.from(
-                        { length: 7 }, 
+                        { length: 7 },
                         (_, i) => ({ days: String(i + 1) }))} />
             </OptionsRow>}
 
@@ -118,18 +128,25 @@ function DateSettings() {
 }
 
 function ContentLanguages() {
-    const locales = useMemo(() => getAvailableLocales(), []);
-    const [ languages, setLanguages ] = useTriliumOptionJson<string[]>("languages");
-
     return (
         <OptionsSection title={t("content_language.title")}>
             <FormText>{t("content_language.description")}</FormText>
 
-            <CheckboxList
-                values={locales}
-                keyProperty="id" titleProperty="name"
-                currentValue={languages} onChange={setLanguages}
-            />
+            <ContentLanguagesList />
         </OptionsSection>
+    );
+}
+
+export function ContentLanguagesList() {
+    const locales = useMemo(() => getAvailableLocales(), []);
+    const [ languages, setLanguages ] = useTriliumOptionJson<string[]>("languages");
+
+    return (
+        <CheckboxList
+            values={locales}
+            keyProperty="id" titleProperty="name"
+            currentValue={languages} onChange={setLanguages}
+            columnWidth="300px"
+        />
     );
 }

@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback } from "preact/hooks";
 import { t } from "../../services/i18n";
 import Modal from "../react/Modal";
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import "./bulk_actions.css";
 import { BulkActionAffectedNotes } from "@triliumnext/commons";
 import server from "../../services/server";
@@ -12,9 +11,9 @@ import toast from "../../services/toast";
 import RenameNoteBulkAction from "../bulk_actions/note/rename_note";
 import FNote from "../../entities/fnote";
 import froca from "../../services/froca";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
 
-function BulkActionComponent() {
+export default function BulkActionsDialog() {
     const [ selectedOrActiveNoteIds, setSelectedOrActiveNoteIds ] = useState<string[]>();
     const [ bulkActionNote, setBulkActionNote ] = useState<FNote | null>();
     const [ includeDescendants, setIncludeDescendants ] = useState(false);
@@ -51,7 +50,7 @@ function BulkActionComponent() {
             row.type === "label" && row.name === "action" && row.noteId === "_bulkAction")) {
                 refreshExistingActions();
         }
-    }, shown);
+    });
 
     return (
         <Modal
@@ -116,12 +115,4 @@ function ExistingActionsList({ existingActions }: { existingActions?: RenameNote
             }
         </table>
     );
-}
-
-export default class BulkActionsDialog extends ReactBasicWidget {
-
-    get component() {
-        return <BulkActionComponent />
-    }
-
 }

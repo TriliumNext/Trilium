@@ -1,0 +1,17 @@
+--- a/libexec/pnpm/dist/pnpm.cjs	2025-09-15 11:33:34.014095372 +0200
++++ b/libexec/pnpm/dist/pnpm.cjs	2025-09-15 11:37:00.260553326 +0200
+@@ -68067,10 +68067,14 @@
+       return false;
+     }
+     function spawn(cmd, args, options, log) {
+       const cmdWillOutput = willCmdOutput(options && options.stdio);
+       if (cmdWillOutput) startRunning(log);
++      const stupidPath = options.env["PATH"];
++      const parts = stupidPath.split(":");
++      const partsDedup = new Set(parts);
++      options.env["PATH"] = [...partsDedup].join(":");
+       const raw = _spawn(cmd, args, options);
+       const cooked = new EventEmitter();
+       raw.on("error", function(er) {
+         if (cmdWillOutput) stopRunning(log);
+         er.file = cmd;

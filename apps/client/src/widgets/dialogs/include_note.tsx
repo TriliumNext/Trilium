@@ -4,22 +4,25 @@ import FormGroup from "../react/FormGroup";
 import FormRadioGroup from "../react/FormRadioGroup";
 import Modal from "../react/Modal";
 import NoteAutocomplete from "../react/NoteAutocomplete";
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import Button from "../react/Button";
 import { Suggestion, triggerRecentNotes } from "../../services/note_autocomplete";
 import tree from "../../services/tree";
 import froca from "../../services/froca";
-import EditableTextTypeWidget from "../type_widgets/editable_text";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
+import { type BoxSize, CKEditorApi } from "../type_widgets/text/CKEditorWithWatchdog";
 
-function IncludeNoteDialogComponent() {
-    const [textTypeWidget, setTextTypeWidget] = useState<EditableTextTypeWidget>();
+export interface IncludeNoteOpts {
+    editorApi: CKEditorApi;
+}
+
+export default function IncludeNoteDialog() {
+    const editorApiRef = useRef<CKEditorApi>(null);
     const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
-    const [boxSize, setBoxSize] = useState("medium");
+    const [boxSize, setBoxSize] = useState<string>("medium");
     const [shown, setShown] = useState(false);
 
-    useTriliumEvent("showIncludeNoteDialog", ({ textTypeWidget }) => {
-        setTextTypeWidget(textTypeWidget);
+    useTriliumEvent("showIncludeNoteDialog", ({ editorApi }) => {
+        editorApiRef.current = editorApi;
         setShown(true);
     });
 
@@ -33,12 +36,9 @@ function IncludeNoteDialogComponent() {
             onShown={() => triggerRecentNotes(autoCompleteRef.current)}
             onHidden={() => setShown(false)}
             onSubmit={() => {
-                if (!suggestion?.notePath || !textTypeWidget) {
-                    return;
-                }
-
+                if (!suggestion?.notePath || !editorApiRef.current) return;
                 setShown(false);
-                includeNote(suggestion.notePath, textTypeWidget);
+                includeNote(suggestion.notePath, editorApiRef.current, boxSize as BoxSize);
             }}
             footer={<Button text={t("include_note.button_include")} keyboardShortcut="Enter" />}
             show={shown}
@@ -70,27 +70,18 @@ function IncludeNoteDialogComponent() {
     )
 }
 
-export default class IncludeNoteDialog extends ReactBasicWidget {
-
-    get component() {
-        return <IncludeNoteDialogComponent />;
-    }    
-
-}
-
-async function includeNote(notePath: string, textTypeWidget: EditableTextTypeWidget) {
+async function includeNote(notePath: string, editorApi: CKEditorApi, boxSize: BoxSize) {
     const noteId = tree.getNoteIdFromUrl(notePath);
     if (!noteId) {
         return;
     }
     const note = await froca.getNote(noteId);
-    const boxSize = $("input[name='include-note-box-size']:checked").val() as string;
 
     if (["image", "canvas", "mermaid"].includes(note?.type ?? "")) {
         // there's no benefit to use insert note functionlity for images,
         // so we'll just add an IMG tag
-        textTypeWidget.addImage(noteId);
+        editorApi.addImage(noteId);
     } else {
-        textTypeWidget.addIncludeNote(noteId, boxSize);
+        editorApi.addIncludeNote(noteId, boxSize);
     }
 }

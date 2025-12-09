@@ -43,12 +43,13 @@ These relations are supported and used internally by Trilium.
 
 | Label | Description |
 | --- | --- |
-| `runOn*` | See <a class="reference-link" href="../../Scripting/Events.md">Events</a> |
+| `runOn*` | See <a class="reference-link" href="../../Scripting/Backend%20scripts/Events.md">Events</a> |
 | `template` | note's attributes will be inherited even without a parent-child relationship, note's content and subtree will be added to instance notes if empty. See documentation for details. |
 | `inherit` | note's attributes will be inherited even without a parent-child relationship. See <a class="reference-link" href="../Templates.md">Templates</a> for a similar concept. See <a class="reference-link" href="Attribute%20Inheritance.md">Attribute Inheritance</a> in the documentation. |
 | `renderNote` | notes of type <a class="reference-link" href="../../Note%20Types/Render%20Note.md">Render Note</a> will be rendered using a code note (HTML or script) and it is necessary to point using this relation to which note should be rendered |
 | `widget_relation` | target of this relation will be executed and rendered as a widget in the sidebar |
 | `shareCss` | CSS note which will be injected into the share page. CSS note must be in the shared sub-tree as well. Consider using `share_hidden_from_tree` and `share_omit_default_css` as well. |
 | `shareJs` | JavaScript note which will be injected into the share page. JS note must be in the shared sub-tree as well. Consider using `share_hidden_from_tree`. |
+| `shareHtml` | HTML note which will be injected into the share page at locations specified by the `shareHtmlLocation` label. HTML note must be in the shared sub-tree as well. Consider using `share_hidden_from_tree`. |
 | `shareTemplate` | Embedded JavaScript note that will be used as the template for displaying the shared note. Falls back to the default template. Consider using `share_hidden_from_tree`. |
 | `shareFavicon` | Favicon note to be set in the shared page. Typically you want to set it to share root and make it inheritable. Favicon note must be in the shared sub-tree as well. Consider using `share_hidden_from_tree`. |

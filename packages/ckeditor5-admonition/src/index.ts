@@ -1,4 +1,4 @@
-import admonitionIcon from '../theme/icons/admonition.svg';
+import admonitionIcon from '../theme/icons/admonition.svg?raw';
 import './augmentation.js';
 import "../theme/blockquote.css";
 

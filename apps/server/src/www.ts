@@ -6,15 +6,26 @@ import config from "./services/config.js";
 import log from "./services/log.js";
 import appInfo from "./services/app_info.js";
 import ws from "./services/ws.js";
-import utils from "./services/utils.js";
+import utils, { formatSize, formatUtcTime } from "./services/utils.js";
 import port from "./services/port.js";
 import host from "./services/host.js";
 import buildApp from "./app.js";
 import type { Express } from "express";
+import { getDbSize } from "./services/sql_init.js";
 
 const MINIMUM_NODE_VERSION = "20.0.0";
 
+const LOGO = `\
+ _____     _ _ _
+|_   _| __(_) (_)_   _ _ __ ___   | \\ | | ___ | |_ ___  ___
+  | || '__| | | | | | | '_ \` _ \\  |  \\| |/ _ \\| __/ _ \\/ __|
+  | || |  | | | | |_| | | | | | | | |\\  | (_) | ||  __/\\__ \\
+  |_||_|  |_|_|_|\\__,_|_| |_| |_| |_| \\_|\\___/ \\__\\___||___/ [version]
+`;
+
 export default async function startTriliumServer() {
+    await displayStartupMessage();
+
     // setup basic error handling even before requiring dependencies, since those can produce errors as well
     process.on("unhandledRejection", (error: Error) => {
         // this makes sure that stacktrace of failed promise is printed out
@@ -44,34 +55,6 @@ export default async function startTriliumServer() {
     tmp.setGracefulCleanup();
 
     const app = await buildApp();
-
-    /**
-     * The intended behavior is to detect when a second instance is running, in that case open the old instance
-     * instead of the new one. This is complicated by the fact that it is possible to run multiple instances of Trilium
-     * if port and data dir are configured separately. This complication is the source of the following weird usage.
-     *
-     * The line below makes sure that the "second-instance" (process in window.ts) is fired. Normally it returns a boolean
-     * indicating whether another instance is running or not, but we ignore that and kill the app only based on the port conflict.
-     *
-     * A bit weird is that "second-instance" is triggered also on the valid usecases (different port/data dir) and
-     * focuses the existing window. But the new process is start as well and will steal the focus too, it will win, because
-     * its startup is slower than focusing the existing process/window. So in the end, it works out without having
-     * to do a complex evaluation.
-     */
-    if (utils.isElectron) {
-        (await import("electron")).app.requestSingleInstanceLock();
-    }
-
-    log.info(JSON.stringify(appInfo, null, 2));
-
-    // for perf. issues it's good to know the rough configuration
-    const cpuInfos = (await import("os")).cpus();
-    if (cpuInfos && cpuInfos[0] !== undefined) {
-        // https://github.com/zadam/trilium/pull/3957
-        const cpuModel = (cpuInfos[0].model || "").trimEnd();
-        log.info(`CPU model: ${cpuModel}, logical cores: ${cpuInfos.length}, freq: ${cpuInfos[0].speed} Mhz`);
-    }
-
     const httpServer = startHttpServer(app);
 
     const sessionParser = (await import("./routes/session_parser.js")).default;
@@ -81,6 +64,24 @@ export default async function startTriliumServer() {
         const electronRouting = await import("./routes/electron.js");
         electronRouting.default(app);
     }
+}
+
+async function displayStartupMessage() {
+    log.info("\n" + LOGO.replace("[version]", appInfo.appVersion));
+    log.info(`📦 Versions:    app=${appInfo.appVersion} db=${appInfo.dbVersion} sync=${appInfo.syncVersion} clipper=${appInfo.clipperProtocolVersion}`)
+    log.info(`🔧 Build:       ${formatUtcTime(appInfo.buildDate)} (${appInfo.buildRevision.substring(0, 10)})`);
+    log.info(`📂 Data dir:    ${appInfo.dataDirectory}`);
+    log.info(`⏰ UTC time:    ${formatUtcTime(appInfo.utcDateTime)}`);
+
+    // for perf. issues it's good to know the rough configuration
+    const cpuInfos = (await import("os")).cpus();
+    if (cpuInfos && cpuInfos[0] !== undefined) {
+        // https://github.com/zadam/trilium/pull/3957
+        const cpuModel = (cpuInfos[0].model || "").trimEnd();
+        log.info(`💻 CPU:         ${cpuModel} (${cpuInfos.length}-core @ ${cpuInfos[0].speed} Mhz)`);
+    }
+    log.info(`💾 DB size:     ${formatSize(getDbSize() * 1024)}`);
+    log.info("");
 }
 
 function startHttpServer(app: Express) {
@@ -157,13 +158,11 @@ function startHttpServer(app: Express) {
                 // Not all situations require showing an error dialog. When Trilium is already open,
                 // clicking the shortcut, the software icon, or the taskbar icon, or when creating a new window,
                 // should simply focus on the existing window or open a new one, without displaying an error message.
-                if ("code" in error && error.code == "EADDRINUSE") {
-                    if (process.argv.includes("--new-window") || !app.requestSingleInstanceLock()) {
-                        console.error(message);
-                        process.exit(1);
-                    }
+                if ("code" in error && error.code === "EADDRINUSE" && (process.argv.includes("--new-window") || !app.requestSingleInstanceLock())) {
+                    console.error(message);
+                } else {
+                    dialog.showErrorBox("Error while initializing the server", message);
                 }
-                dialog.showErrorBox("Error while initializing the server", message);
                 process.exit(1);
             });
         } else {

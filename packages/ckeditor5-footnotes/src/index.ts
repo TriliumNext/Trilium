@@ -1,4 +1,4 @@
-import insertFootnoteIcon from './../theme/icons/insert-footnote.svg';
+import insertFootnoteIcon from './../theme/icons/insert-footnote.svg?raw';
 import './augmentation.js';
 import "../theme/footnote.css";
 

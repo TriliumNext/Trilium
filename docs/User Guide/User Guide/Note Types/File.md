@@ -33,7 +33,9 @@ Interaction:
 
 Interaction:
 
-*   _Copy reference to clipboard_, for embedding the image within <a class="reference-link" href="Text.md">Text</a> notes. See <a class="reference-link" href="Text/Images/Image%20references.md">Image references</a> for more information.
+*   _Copy reference to clipboard_, for embedding the image within <a class="reference-link" href="Text.md">Text</a> notes.
+    *   See <a class="reference-link" href="Text/Images/Image%20references.md">Image references</a> for more information.
+    *   Alternatively, press the corresponding button from the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a>.
 
 ### Videos
 
@@ -46,7 +48,7 @@ Video files can be added in as well. The file is streamed directly, so when acce
 
 ### Audio
 
-<figure class="image image_resized image-style-align-center" style="width:50%;"><img style="aspect-ratio:850/243;" src="3_File_image.png" width="850" height="243"></figure>
+<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:850/243;" src="3_File_image.png" width="850" height="243"></figure>
 
 Adding a supported audio file will reveal a basic audio player that can be used to play it.
 
@@ -63,13 +65,13 @@ Interactions:
 
 Files that are identified as containing text will show a preview of their content. One common use case for this type of file is to embed text files whose content is not necessarily of interest to the user, such as third-party libraries or generated content, that can then be downloaded if needed.
 
-Note that generally text files will be [imported](../Basic%20Concepts%20and%20Features/Import%20%26%20Export) as either <a class="reference-link" href="Text.md">Text</a> or <a class="reference-link" href="Code.md">Code</a> notes. To bypass this behavior and create a _File_ note type, use the _Import into note_ feature and uncheck _Import HTML, Markdown and TXT as text notes_, as well as _Import recognized code files as code notes_. 
+Note that generally text files will be [imported](../Basic%20Concepts%20and%20Features/Import%20%26%20Export.md) as either <a class="reference-link" href="Text.md">Text</a> or <a class="reference-link" href="Code.md">Code</a> notes. To bypass this behavior and create a _File_ note type, use the _Import into note_ feature and uncheck _Import HTML, Markdown and TXT as text notes_, as well as _Import recognized code files as code notes_. 
 
 Since one of the use cases for having files instead of notes is to display large files, the content preview is limited to a relatively small amount of characters. To view the full file, consider opening it in an external application.
 
 ### Unknown file types
 
-<figure class="image image_resized image-style-align-center" style="width:50%;"><img style="aspect-ratio:532/240;" src="5_File_image.png" width="532" height="240"></figure>
+<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:532/240;" src="5_File_image.png" width="532" height="240"></figure>
 
 If the file could not be identified as any of the supported file types from above, it will be treated as an unknown file. In this case, all the default interactions will be available such as downloading or opening the file externally, but there will be no preview of the content.
 

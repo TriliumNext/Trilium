@@ -1,9 +1,10 @@
 # Mermaid Diagrams
+> [!TIP]
+> For a quick understanding of the Mermaid syntax, see <a class="reference-link" href="Mermaid%20Diagrams/Syntax%20reference.dat">Syntax reference</a> (official documentation).
+
 <figure class="image image-style-align-center"><img style="aspect-ratio:886/663;" src="2_Mermaid Diagrams_image.png" width="886" height="663"></figure>
 
 Trilium supports Mermaid, which adds support for various diagrams such as flowchart, sequence diagram, class diagram, state diagram, pie charts, etc., all using a text description of the chart instead of manually drawing the diagram.
-
-For the official documentation of Mermaid.js see [mermaid.js.org/intro/](https://mermaid.js.org/intro/).
 
 ## Layouts
 

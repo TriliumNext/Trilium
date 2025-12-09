@@ -14,7 +14,7 @@ const scriptDir = dirname(fileURLToPath(import.meta.url));
 
 async function testImport(fileName: string) {
     const mdxSample = fs.readFileSync(path.join(scriptDir, "samples", fileName));
-    const taskContext = TaskContext.getInstance("import-mdx", "import", {
+    const taskContext = TaskContext.getInstance("import-mdx", "importNotes", {
         textImportedAsText: true
     });
 
@@ -83,7 +83,7 @@ describe("processNoteContent", () => {
         const content = attachment.getContent();
         expect(content).toStrictEqual(`{"view":{"center":{"lat":49.19598332223546,"lng":-2.1414576506668808},"zoom":12}}`);
     });
-});
+}, 60_000);
 
 function getNoteByTitlePath(parentNote: BNote, ...titlePath: string[]) {
     let cursor = parentNote;

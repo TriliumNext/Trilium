@@ -22,8 +22,16 @@
       let
         pkgs = import nixpkgs { inherit system; };
         electron = pkgs."electron_${lib.versions.major packageJsonDesktop.devDependencies.electron}";
-        nodejs = pkgs.nodejs_22;
-        pnpm = pkgs.pnpm_10;
+        nodejs = pkgs.nodejs_24;
+        # pnpm creates an overly long PATH env variable for child processes.
+        # This patch deduplicates entries in PATH, which results in an equivalent but shorter entry.
+        # https://github.com/pnpm/pnpm/issues/6106
+        # https://github.com/pnpm/pnpm/issues/8552
+        pnpm = (pkgs.pnpm_10.overrideAttrs (prev: {
+          postInstall = prev.postInstall + ''
+            patch $out/libexec/pnpm/dist/pnpm.cjs ${./patches/pnpm-PATH-reduction.patch}
+          '';
+        }));
         inherit (pkgs)
           copyDesktopItems
           darwin
@@ -36,6 +44,7 @@
           stdenv
           wrapGAppsHook3
           xcodebuild
+          which
           ;
 
         fullCleanSourceFilter =
@@ -46,8 +55,8 @@
               baseName = baseNameOf (toString name);
             in
             # No need to copy the flake.
-            # Don't copy local development instance of NX cache.
-            baseName != "flake.nix" && baseName != "flake.lock" && baseName != ".nx"
+            # No need to copy local copy of node_modules.
+            baseName != "flake.nix" && baseName != "flake.lock" && baseName != "node_modules"
           );
         fullCleanSource =
           src:
@@ -67,7 +76,7 @@
             preBuildCommands ? "",
           }:
           pnpm2nix.packages.${system}.mkPnpmPackage rec {
-            pname = "triliumnext-${app}";
+            pname = "trilium-${app}";
             version = packageJson.version + (lib.optionalString (self ? shortRev) "-${self.shortRev}");
 
             src = fullCleanSource ./.;
@@ -93,19 +102,15 @@
 
             postConfigure =
               ''
-                chmod +x node_modules/.pnpm/electron@*/node_modules/electron/install.js
+                chmod +x node_modules/electron/install.js
                 patchShebangs --build node_modules
-              ''
-              + lib.optionalString stdenv.hostPlatform.isLinux ''
-                patchelf --set-interpreter $(cat $NIX_CC/nix-support/dynamic-linker) \
-                  node_modules/.pnpm/sass-embedded-linux-x64@*/node_modules/sass-embedded-linux-x64/dart-sass/src/dart
               '';
 
             extraNativeBuildInputs =
               [
                 moreutils # sponge
                 nodejs.python
-                removeReferencesTo
+                removeReferencesTo                
               ]
               ++ lib.optionals (app == "desktop") [
                 copyDesktopItems
@@ -113,6 +118,10 @@
                 # https://github.com/NixOS/nixpkgs/issues/172583
                 makeShellWrapper
                 wrapGAppsHook3
+
+                # For determining the Electron version to rebuild for:
+                which
+                electron
               ]
               ++ lib.optionals (app == "server") [
                 makeBinaryWrapper
@@ -129,7 +138,7 @@
               ${preBuildCommands}
             '';
 
-            scriptFull = "pnpm nx ${buildTask} --outputStyle stream --verbose";
+            scriptFull = "pnpm run ${buildTask}";
 
             installPhase = ''
               runHook preInstall
@@ -137,6 +146,11 @@
               ${installCommands}
 
               runHook postInstall
+            '';
+
+            # This file is a symlink into /build which is not allowed.
+            postFixup = ''
+              rm $out/opt/trilium*/node_modules/better-sqlite3/node_modules/.bin/prebuild-install || true
             '';
 
             components = [
@@ -181,12 +195,18 @@
 
         desktop = makeApp {
           app = "desktop";
-          preBuildCommands = "export npm_config_nodedir=${electron.headers}";
-          buildTask = "run desktop:rebuild-deps";
+          # pnpm throws an error at the end of `pnpm postinstall`, but it doesn't seem to matter:
+          # ENOENT: no such file or directory, lstat
+          # '/build/source/apps/desktop/node_modules/better-sqlite3/build/node_gyp_bins'
+          preBuildCommands = ''
+            export npm_config_nodedir=${electron.headers}
+            pnpm postinstall
+          '';
+          buildTask = "desktop:build";
           mainProgram = "trilium";
           installCommands = ''
-            remove-references-to -t ${electron.headers} apps/desktop/dist/node_modules/better-sqlite3/build/config.gypi
-            remove-references-to -t ${nodejs.python} apps/desktop/dist/node_modules/better-sqlite3/build/config.gypi
+            #remove-references-to -t ${electron.headers} apps/desktop/dist/node_modules/better-sqlite3/build/config.gypi
+            #remove-references-to -t ${nodejs.python} apps/desktop/dist/node_modules/better-sqlite3/build/config.gypi
 
             mkdir -p $out/{bin,share/icons/hicolor/512x512/apps,opt/trilium}
             cp --archive apps/desktop/dist/* $out/opt/trilium
@@ -202,12 +222,21 @@
 
         server = makeApp {
           app = "server";
-          preBuildCommands = "pushd apps/server; pnpm rebuild; popd";
-          buildTask = "--project=server build";
+          # pnpm throws an error at the end of `pnpm rebuild`, but it doesn't seem to matter:
+          # ERR_PNPM_MISSING_HOISTED_LOCATIONS
+          # vite@7.1.5(@types/node@24.3.0)(jiti@2.5.1)(less@4.1.3)(lightningcss@1.30.1)
+          # (sass-embedded@1.91.0)(sass@1.91.0)(terser@5.43.1)(tsx@4.20.5)(yaml@2.8.1)
+          # is not found in hoistedLocations inside node_modules/.modules.yaml
+          preBuildCommands = ''
+            pushd apps/server
+            pnpm rebuild || true
+            popd
+          '';
+          buildTask = "server:build";
           mainProgram = "trilium-server";
           installCommands = ''
-            remove-references-to -t ${nodejs.python} apps/server/dist/node_modules/better-sqlite3/build/config.gypi
-            remove-references-to -t ${pnpm} apps/server/dist/node_modules/better-sqlite3/build/config.gypi
+            #remove-references-to -t ${nodejs.python} apps/server/dist/node_modules/better-sqlite3/build/config.gypi
+            #remove-references-to -t ${pnpm} apps/server/dist/node_modules/better-sqlite3/build/config.gypi
 
             pushd apps/server/dist
             rm -rf node_modules/better-sqlite3/build/Release/obj \

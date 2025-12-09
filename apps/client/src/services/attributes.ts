@@ -2,6 +2,7 @@ import server from "./server.js";
 import froca from "./froca.js";
 import type FNote from "../entities/fnote.js";
 import type { AttributeRow } from "./load_results.js";
+import { AttributeType } from "@triliumnext/commons";
 
 async function addLabel(noteId: string, name: string, value: string = "", isInheritable = false) {
     await server.put(`notes/${noteId}/attribute`, {
@@ -21,8 +22,25 @@ export async function setLabel(noteId: string, name: string, value: string = "",
     });
 }
 
+export async function setRelation(noteId: string, name: string, value: string = "", isInheritable = false) {
+    await server.put(`notes/${noteId}/set-attribute`, {
+        type: "relation",
+        name: name,
+        value: value,
+        isInheritable
+    });
+}
+
 async function removeAttributeById(noteId: string, attributeId: string) {
     await server.remove(`notes/${noteId}/attributes/${attributeId}`);
+}
+
+export async function removeOwnedAttributesByNameOrType(note: FNote, type: AttributeType, name: string) {
+    for (const attr of note.getOwnedAttributes()) {
+        if (attr.type === type && attr.name === name) {
+            await server.remove(`notes/${note.noteId}/attributes/${attr.attributeId}`);
+        }
+    }
 }
 
 /**
@@ -43,6 +61,23 @@ function removeOwnedLabelByName(note: FNote, labelName: string) {
 }
 
 /**
+ * Removes a relation identified by its name from the given note, if it exists. Note that the relation must be owned, i.e.
+ * it will not remove inherited attributes.
+ *
+ * @param note the note from which to remove the relation.
+ * @param relationName the name of the relation to remove.
+ * @returns `true` if an attribute was identified and removed, `false` otherwise.
+ */
+function removeOwnedRelationByName(note: FNote, relationName: string) {
+    const relation = note.getOwnedRelation(relationName);
+    if (relation) {
+        removeAttributeById(note.noteId, relation.attributeId);
+        return true;
+    }
+    return false;
+}
+
+/**
  * Sets the attribute of the given note to the provided value if its truthy, or removes the attribute if the value is falsy.
  * For an attribute with an empty value, pass an empty string instead.
  *
@@ -52,7 +87,7 @@ function removeOwnedLabelByName(note: FNote, labelName: string) {
  * @param value the value of the attribute to set.
  */
 export async function setAttribute(note: FNote, type: "label" | "relation", name: string, value: string | null | undefined) {
-    if (value) {
+    if (value !== null && value !== undefined) {
         // Create or update the attribute.
         await server.put(`notes/${note.noteId}/set-attribute`, { type, name, value });
     } else {
@@ -91,9 +126,7 @@ function isAffecting(attrRow: AttributeRow, affectedNote: FNote | null | undefin
         }
     }
 
-    // TODO: This doesn't seem right.
-    //@ts-ignore
-    if (this.isInheritable) {
+    if (attrRow.isInheritable) {
         for (const owningNote of owningNotes) {
             if (owningNote.hasAncestor(attrNote.noteId, true)) {
                 return true;
@@ -107,8 +140,10 @@ function isAffecting(attrRow: AttributeRow, affectedNote: FNote | null | undefin
 export default {
     addLabel,
     setLabel,
+    setRelation,
     setAttribute,
     removeAttributeById,
     removeOwnedLabelByName,
+    removeOwnedRelationByName,
     isAffecting
 };

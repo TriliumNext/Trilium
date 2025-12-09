@@ -39,7 +39,10 @@
     "help_on_tree_prefix": "Ayuda sobre el prefijo del árbol",
     "prefix": "Prefijo: ",
     "save": "Guardar",
-    "branch_prefix_saved": "Se ha guardado el prefijo de rama."
+    "branch_prefix_saved": "Se ha guardado el prefijo de rama.",
+    "edit_branch_prefix_multiple": "Editar prefijo de rama para {{count}} ramas",
+    "branch_prefix_saved_multiple": "El prefijo de rama se ha guardado para {{count}} ramas.",
+    "affected_branches": "Ramas afectadas ({{count}}):"
   },
   "bulk_actions": {
     "bulk_actions": "Acciones en bloque",
@@ -104,7 +107,8 @@
     "export_status": "Estado de exportación",
     "export_in_progress": "Exportación en curso: {{progressCount}}",
     "export_finished_successfully": "La exportación finalizó exitosamente.",
-    "format_pdf": "PDF - para propósitos de impresión o compartición."
+    "format_pdf": "PDF - para propósitos de impresión o compartición.",
+    "share-format": "HTML para publicación web: utiliza el mismo tema que se utiliza en las notas compartidas, pero se puede publicar como un sitio web estático."
   },
   "help": {
     "noteNavigation": "Navegación de notas",
@@ -184,7 +188,8 @@
     },
     "import-status": "Estado de importación",
     "in-progress": "Importación en progreso: {{progress}}",
-    "successful": "Importación finalizada exitosamente."
+    "successful": "Importación finalizada exitosamente.",
+    "importZipRecommendation": "Al importar un archivo ZIP, la jerarquía de notas reflejará la estructura de subdirectorios dentro del archivo comprimido."
   },
   "include_note": {
     "dialog_title": "Incluir nota",
@@ -259,7 +264,6 @@
     "delete_all_revisions": "Eliminar todas las revisiones de esta nota",
     "delete_all_button": "Eliminar todas las revisiones",
     "help_title": "Ayuda sobre revisiones de notas",
-    "revision_last_edited": "Esta revisión se editó por última vez en {{date}}",
     "confirm_delete_all": "¿Quiere eliminar todas las revisiones de esta nota?",
     "no_revisions": "Aún no hay revisiones para esta nota...",
     "restore_button": "Restaurar",
@@ -276,7 +280,12 @@
     "mime": "MIME: ",
     "file_size": "Tamaño del archivo:",
     "preview": "Vista previa:",
-    "preview_not_available": "La vista previa no está disponible para este tipo de notas."
+    "preview_not_available": "La vista previa no está disponible para este tipo de notas.",
+    "diff_off": "Mostrar contenido",
+    "diff_on": "Mostrar diferencia",
+    "diff_off_hint": "Haga clic para mostrar el contenido de la nota",
+    "diff_not_available": "Diferencias no disponibles.",
+    "diff_on_hint": "Haga clic para ver las diferencias"
   },
   "sort_child_notes": {
     "sort_children_by": "Ordenar hijos por...",
@@ -349,7 +358,7 @@
     "calendar_root": "marca la nota que debe usarse como raíz para las notas del día. Sólo uno debe estar marcado como tal.",
     "archived": "las notas con esta etiqueta no serán visibles de forma predeterminada en los resultados de búsqueda (tampoco en los cuadros de diálogo Saltar a, Agregar vínculo, etc.).",
     "exclude_from_export": "las notas (con su subárbol) no se incluirán en ninguna exportación de notas",
-    "run": "define en qué eventos debe ejecutarse el script. Los valores posibles son:\n<ul>\n<li>frontendStartup - cuando el frontend de Trilium inicia (o es recargado), pero no en dispositivos móviles. </li>\n<li>backendStartup - cuando el backend de Trilium se inicia </li>\n<li>hourly - se ejecuta una vez cada hora. Puede usar etiqueta adicional <code>runAtHour</code> para especificar a la hora. </li>\n<li>daily - ejecutar una vez al día </li>\n</ul>",
+    "run": "define en qué eventos debe ejecutarse el script. Los valores posibles son:\n<ul>\n<li>frontendStartup - cuando Trilium frontend se inicia (o se actualiza), pero no en móvil.</li>\n<li>mobileStartup - cuando Trilium frontend se inicia (o se actualiza), en móvil.</li>\n<li>backendStartup - cuando Trilium backend se inicia</li>\n<li>hourly - se ejecuta una vez por hora. Se puede usar la etiqueta adicional <code>runAtHour</code> para especificar a qué hora.</li>\n<li>daily - se ejecuta una vez al día</li>\n</ul>",
     "run_on_instance": "Definir en qué instancia de Trilium se debe ejecutar esto. Predeterminado para todas las instancias.",
     "run_at_hour": "¿A qué hora debería funcionar? Debe usarse junto con <code>#run=hourly</code>. Se puede definir varias veces para varias ejecuciones durante el día.",
     "disable_inclusion": "los scripts con esta etiqueta no se incluirán en la ejecución del script principal.",
@@ -379,7 +388,7 @@
     "inbox": "ubicación predeterminada de la bandeja de entrada para nuevas notas - cuando crea una nota usando el botón \"nueva nota\" en la barra lateral, las notas serán creadas como subnotas de la nota marcada con la etiqueta <code>#inbox</code>.",
     "workspace_inbox": "ubicación predeterminada de la bandeja de entrada para nuevas notas cuando se anclan a algún antecesor de esta nota del espacio de trabajo",
     "sql_console_home": "ubicación predeterminada de las notas de la consola SQL",
-    "bookmark_folder": "la nota con esta etiqueta aparecerá en los marcadores como carpeta (permitiendo el acceso a sus elementos hijos).",
+    "bookmark_folder": "la nota con esta etiqueta aparecerá en los marcadores como carpeta (permitiendo el acceso a sus elementos hijos)",
     "share_hidden_from_tree": "esta nota está oculta en el árbol de navegación izquierdo, pero aún se puede acceder a ella con su URL",
     "share_external_link": "la nota actuará como un enlace a un sitio web externo en el árbol compartido",
     "share_alias": "define un alias que al usar la nota va a estar disponible en https://your_trilium_host/share/[tu_alias]",
@@ -577,7 +586,7 @@
     "cannot_find_day_note": "No se puede encontrar la nota del día",
     "cannot_find_week_note": "No se puede encontrar la nota de la semana",
     "january": "Enero",
-    "febuary": "Febrero",
+    "february": "Febrero",
     "march": "Marzo",
     "april": "Abril",
     "may": "Mayo",
@@ -587,7 +596,18 @@
     "september": "Septiembre",
     "october": "Octubre",
     "november": "Noviembre",
-    "december": "Diciembre"
+    "december": "Diciembre",
+    "week": "Semana",
+    "week_previous": "Semana anterior",
+    "week_next": "Semana siguiente",
+    "month": "Mes",
+    "month_previous": "Mes anterior",
+    "month_next": "Mes siguiente",
+    "year": "Año",
+    "year_previous": "Año anterior",
+    "year_next": "Año siguiente",
+    "list": "Lista",
+    "today": "Hoy"
   },
   "close_pane_button": {
     "close_this_pane": "Cerrar este panel"
@@ -630,7 +650,9 @@
     "about": "Acerca de Trilium Notes",
     "logout": "Cerrar sesión",
     "show-cheatsheet": "Mostrar hoja de trucos",
-    "toggle-zen-mode": "Modo Zen"
+    "toggle-zen-mode": "Modo Zen",
+    "new-version-available": "Nueva actualización disponible",
+    "download-update": "Obtener versión {{latestVersion}}"
   },
   "zen_mode": {
     "button_exit": "Salir del modo Zen"
@@ -668,7 +690,8 @@
     "convert_into_attachment_failed": "La conversión de nota '{{title}}' falló.",
     "convert_into_attachment_successful": "La nota '{{title}}' ha sido convertida a un archivo adjunto.",
     "convert_into_attachment_prompt": "¿Está seguro que desea convertir la nota '{{title}}' en un archivo adjunto de la nota padre?",
-    "print_pdf": "Exportar como PDF..."
+    "print_pdf": "Exportar como PDF...",
+    "open_note_on_server": "Abrir nota en el servidor"
   },
   "onclick_button": {
     "no_click_handler": "El widget de botón '{{componentId}}' no tiene un controlador de clics definido"
@@ -712,15 +735,17 @@
     "zoom_out_title": "Alejar"
   },
   "zpetne_odkazy": {
-    "backlink": "{{count}} Vínculo de retroceso",
-    "backlinks": "{{count}} vínculos de retroceso",
-    "relation": "relación"
+    "relation": "relación",
+    "backlink_one": "{{count}} Vínculo de retroceso",
+    "backlink_many": "",
+    "backlink_other": "{{count}} vínculos de retroceso"
   },
   "mobile_detail_menu": {
     "insert_child_note": "Insertar subnota",
     "delete_this_note": "Eliminar esta nota",
     "error_cannot_get_branch_id": "No se puede obtener el branchID del notePath '{{notePath}}'",
-    "error_unrecognized_command": "Comando no reconocido {{command}}"
+    "error_unrecognized_command": "Comando no reconocido {{command}}",
+    "note_revisions": "Revisiones de notas"
   },
   "note_icon": {
     "change_note_icon": "Cambiar icono de nota",
@@ -732,14 +757,14 @@
     "note_type": "Tipo de nota",
     "editable": "Editable",
     "basic_properties": "Propiedades básicas",
-    "language": "Idioma"
+    "language": "Idioma",
+    "configure_code_notes": "Configurar notas de código..."
   },
   "book_properties": {
     "view_type": "Tipo de vista",
     "grid": "Cuadrícula",
     "list": "Lista",
     "collapse_all_notes": "Contraer todas las notas",
-    "expand_all_children": "Ampliar todas las subnotas",
     "collapse": "Colapsar",
     "expand": "Expandir",
     "invalid_view_type": "Tipo de vista inválida '{{type}}'",
@@ -747,7 +772,13 @@
     "book_properties": "Propiedades de colección",
     "table": "Tabla",
     "geo-map": "Mapa Geo",
-    "board": "Tablero"
+    "board": "Tablero",
+    "include_archived_notes": "Mostrar notas archivadas",
+    "presentation": "Presentación",
+    "expand_tooltip": "Expande las notas hijas inmediatas de esta colección (un nivel). Para más opciones, pulsa la flecha a la derecha.",
+    "expand_first_level": "Expandir hijos inmediatos",
+    "expand_nth_level": "Expandir {{depth}} niveles",
+    "expand_all_levels": "Expandir todos los niveles"
   },
   "edited_notes": {
     "no_edited_notes_found": "Aún no hay notas editadas en este día...",
@@ -848,7 +879,7 @@
     "debug": "depurar",
     "debug_description": "La depuración imprimirá información de depuración adicional en la consola para ayudar a depurar consultas complejas",
     "action": "acción",
-    "search_button": "Buscar <kbd>Enter</kbd>",
+    "search_button": "Buscar",
     "search_execute": "Buscar y ejecutar acciones",
     "save_to_note": "Guardar en nota",
     "search_parameters": "Parámetros de búsqueda",
@@ -948,13 +979,16 @@
     "no_attachments": "Esta nota no tiene archivos adjuntos."
   },
   "book": {
-    "no_children_help": "Esta nota de tipo libro no tiene ninguna subnota así que no hay nada que mostrar. Véa la <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> para más detalles."
+    "no_children_help": "Esta nota de tipo libro no tiene ninguna subnota así que no hay nada que mostrar. Véa la <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> para más detalles.",
+    "drag_locked_title": "Bloqueado para edición",
+    "drag_locked_message": "No se permite Arrastrar pues la colección está bloqueada para edición."
   },
   "editable_code": {
     "placeholder": "Escriba el contenido de su nota de código aquí..."
   },
   "editable_text": {
-    "placeholder": "Escribe aquí el contenido de tu nota..."
+    "placeholder": "Escribe aquí el contenido de tu nota...",
+    "auto-detect-language": "Detectado automáticamente"
   },
   "empty": {
     "open_note_instruction": "Abra una nota escribiendo el título de la nota en la entrada a continuación o elija una nota en el árbol.",
@@ -967,7 +1001,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "Para mostrar una nota protegida es necesario ingresar su contraseña:",
-    "start_session_button": "Iniciar sesión protegida <kbd>Enter</kbd>",
+    "start_session_button": "Iniciar sesión protegida",
     "started": "La sesión protegida ha iniciado.",
     "wrong_password": "Contraseña incorrecta.",
     "protecting-finished-successfully": "La protección finalizó exitosamente.",
@@ -990,7 +1024,7 @@
     "start_dragging_relations": "Empiece a arrastrar relaciones desde aquí y suéltelas en otra nota.",
     "note_not_found": "¡Nota {{noteId}} no encontrada!",
     "cannot_match_transform": "No se puede coincidir con la transformación: {{transform}}",
-    "note_already_in_diagram": "Note \"{{title}}\" is already in the diagram.",
+    "note_already_in_diagram": "La nota \"{{title}}\" ya está en el diagrama.",
     "enter_title_of_new_note": "Ingrese el título de la nueva nota",
     "default_new_note_title": "nueva nota",
     "click_on_canvas_to_place_new_note": "Haga clic en el lienzo para colocar una nueva nota"
@@ -1083,9 +1117,7 @@
     "default_description": "Trilium limita de forma predeterminada el ancho máximo del contenido para mejorar la legibilidad de ventanas maximizadas en pantallas anchas.",
     "max_width_label": "Ancho máximo del contenido en píxeles",
     "max_width_unit": "píxeles",
-    "apply_changes_description": "Para aplicar cambios en el ancho del contenido, haga clic en",
-    "reload_button": "recargar la interfaz",
-    "reload_description": "cambios desde las opciones de apariencia"
+    "centerContent": "Mantener el contenido centrado"
   },
   "native_title_bar": {
     "title": "Barra de título nativa (requiere reiniciar la aplicación)",
@@ -1232,11 +1264,7 @@
     "indexing_stopped": "Indexado detenido",
     "indexing_in_progress": "Indexado en progreso...",
     "last_indexed": "Último indexado",
-    "n_notes_queued": "{{ count }} nota agregada a la cola para indexado",
-    "n_notes_queued_plural": "{{ count }} notas agregadas a la cola para indexado",
     "note_chat": "Chat de nota",
-    "notes_indexed": "{{ count }} nota indexada",
-    "notes_indexed_plural": "{{ count }} notas indexadas",
     "sources": "Fuentes",
     "start_indexing": "Comenzar indexado",
     "use_advanced_context": "Usar contexto avanzado",
@@ -1253,7 +1281,12 @@
     "selected_provider": "Proveedor seleccionado",
     "selected_provider_description": "Elija el proveedor de IA para el chat y características de completado",
     "select_model": "Seleccionar modelo...",
-    "select_provider": "Seleccionar proveedor..."
+    "select_provider": "Seleccionar proveedor...",
+    "ai_enabled": "Características de IA activadas",
+    "ai_disabled": "Características de IA desactivadas",
+    "no_models_found_online": "No se encontraron modelos. Por favor, comprueba tu clave de API y la configuración.",
+    "no_models_found_ollama": "No se encontraron modelos de Ollama. Por favor, comprueba si Ollama se está ejecutando.",
+    "error_fetching": "Error al obtener los modelos: {{error}}"
   },
   "zoom_factor": {
     "title": "Factor de zoom (solo versión de escritorio)",
@@ -1269,7 +1302,10 @@
     "title": "Editor"
   },
   "code_mime_types": {
-    "title": "Tipos MIME disponibles en el menú desplegable"
+    "title": "Tipos MIME disponibles en el menú desplegable",
+    "tooltip_syntax_highlighting": "Resaltado de sintaxis",
+    "tooltip_code_block_syntax": "Bloques de código en notas de texto",
+    "tooltip_code_note_syntax": "Notas de código"
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "Atajos de teclas de Vim",
@@ -1389,7 +1425,13 @@
     "min-days-in-first-week": "Días mínimos en la primer semana",
     "first-week-info": "Primer semana que contiene al primer jueves del año está basado en el estándar<a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a>.",
     "first-week-warning": "Cambiar las opciones de primer semana puede causar duplicados con las Notas Semanales existentes y las Notas Semanales existentes no serán actualizadas respectivamente.",
-    "formatting-locale": "Fecha y formato de número"
+    "formatting-locale": "Fecha y formato de número",
+    "tuesday": "Martes",
+    "wednesday": "Miércoles",
+    "thursday": "Jueves",
+    "friday": "Viernes",
+    "saturday": "Sábado",
+    "formatting-locale-auto": "Basado en el idioma de la aplicación"
   },
   "backup": {
     "automatic_backup": "Copia de seguridad automática",
@@ -1409,10 +1451,6 @@
   "etapi": {
     "title": "ETAPI",
     "description": "ETAPI es una REST API que se utiliza para acceder a la instancia de Trilium mediante programación, sin interfaz de usuario.",
-    "see_more": "Véa más detalles en el {{- link_to_wiki}} y el {{- link_to_openapi_spec}} o el {{- link_to_swagger_ui }}.",
-    "wiki": "wiki",
-    "openapi_spec": "Especificación ETAPI OpenAPI",
-    "swagger_ui": "ETAPI Swagger UI",
     "create_token": "Crear nuevo token ETAPI",
     "existing_tokens": "Tokens existentes",
     "no_tokens_yet": "Aún no hay tokens. Dé clic en el botón de arriba para crear uno.",
@@ -1482,9 +1520,9 @@
     "recovery_keys_used": "Usado: {{date}}",
     "recovery_keys_unused": "El código de recuperación {{index}} está sin usar",
     "oauth_title": "OAuth/OpenID",
-    "oauth_description": "OpenID es una forma estandarizada de permitirle iniciar sesión en sitios web utilizando una cuenta de otro servicio, como Google, para verificar su identidad. Siga estas <a href = \"https://developers.google.com/identity/openid-connect/openid-connect\">instrucciones</a> para configurar un servicio OpenID a través de Google.",
+    "oauth_description": "OpenID es un método estandarizado que permite iniciar sesión en sitios web usando una cuenta de otro servicio, como Google, para verificar tu identidad. El emisor predeterminado es Google, pero se puede cambiar a cualquier otro proveedor de OpenID. Consulta <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">aquí</a> para más información. Sigue estas <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instrucciones</a> para configurar un servicio OpenID a través de Google.",
     "oauth_description_warning": "Para habilitar OAuth/OpenID, necesita establecer la URL base de OAuth/OpenID, ID de cliente y secreto de cliente en el archivo config.ini y reiniciar la aplicación. Si desea establecerlas desde variables de ambiente, por favor establezca TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID y TRILIUM_OAUTH_CLIENT_SECRET.",
-    "oauth_missing_vars": "Ajustes faltantes: {{variables}}",
+    "oauth_missing_vars": "Ajustes faltantes: {{-variables}}",
     "oauth_user_account": "Cuenta de usuario: ",
     "oauth_user_email": "Correo electrónico de usuario: ",
     "oauth_user_not_logged_in": "¡No ha iniciado sesión!"
@@ -1557,9 +1595,9 @@
     "button-tree-map": "Mapa de Árbol"
   },
   "tree-context-menu": {
-    "open-in-a-new-tab": "Abrir en nueva pestaña <kbd>Ctrl+Click</kbd>",
+    "open-in-a-new-tab": "Abrir en nueva pestaña",
     "open-in-a-new-split": "Abrir en nueva división",
-    "insert-note-after": "Insertar nota después de",
+    "insert-note-after": "Insertar nota contigua",
     "insert-child-note": "Insertar subnota",
     "delete": "Eliminar",
     "search-in-subtree": "Buscar en subárbol",
@@ -1587,11 +1625,13 @@
     "apply-bulk-actions": "Aplicar acciones en lote",
     "converted-to-attachments": "{{count}} notas han sido convertidas en archivos adjuntos.",
     "convert-to-attachment-confirm": "¿Está seguro que desea convertir las notas seleccionadas en archivos adjuntos de sus notas padres?",
-    "open-in-popup": "Edición rápida"
+    "open-in-popup": "Edición rápida",
+    "archive": "Archivar",
+    "unarchive": "Desarchivar"
   },
   "shared_info": {
-    "shared_publicly": "Esta nota está compartida públicamente en",
-    "shared_locally": "Esta nota está compartida localmente en",
+    "shared_publicly": "Esta nota está compartida públicamente en {{- link}}.",
+    "shared_locally": "Esta nota está compartida localmente en {{- link}}.",
     "help_link": "Para obtener ayuda visite <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>."
   },
   "note_types": {
@@ -1670,13 +1710,16 @@
     "hoist-this-note-workspace": "Anclar esta nota (espacio de trabajo)",
     "refresh-saved-search-results": "Refrescar resultados de búsqueda guardados",
     "create-child-note": "Crear subnota",
-    "unhoist": "Desanclar"
+    "unhoist": "Desanclar",
+    "toggle-sidebar": "Alternar barra lateral"
   },
   "title_bar_buttons": {
     "window-on-top": "Mantener esta ventana en la parte superior"
   },
   "note_detail": {
-    "could_not_find_typewidget": "No se pudo encontrar typeWidget para el tipo '{{type}}'"
+    "could_not_find_typewidget": "No se pudo encontrar typeWidget para el tipo '{{type}}'",
+    "printing": "Impresión en curso...",
+    "printing_pdf": "Exportando a PDF en curso.."
   },
   "note_title": {
     "placeholder": "escriba el título de la nota aquí..."
@@ -1745,13 +1788,15 @@
     "undeleting-notes-finished-successfully": "La recuperación de notas finalizó exitosamente."
   },
   "frontend_script_api": {
-    "async_warning": "Está pasando una función asíncrona a `api.runOnBackend ()` que probablemente no funcionará como pretendía.",
-    "sync_warning": "Estás pasando una función sincrónica a `api.runasynconbackendwithmanualTransactionHandling ()`, \\ n while debería usar `api.runonbackend ()` en su lugar."
+    "async_warning": "Está pasando una función asíncrona a `api.runOnBackend ()` que probablemente no funcionará como pretendía.\\nO haga la función sincrónica (removiendo la palabra `async`), o use `api.runAsyncOnBackendWithManualTransactionHandling()`.",
+    "sync_warning": "Estás pasando una función sincrónica a `api.runasynconbackendwithmanualTransactionHandling ()`, \\n while debería usar `api.runonbackend ()` en su lugar."
   },
   "ws": {
     "sync-check-failed": "¡La comprobación de sincronización falló!",
     "consistency-checks-failed": "¡Las comprobaciones de consistencia fallaron! Vea los registros para más detalles.",
-    "encountered-error": "Error encontrado \"{{message}}\", compruebe la consola."
+    "encountered-error": "Error encontrado \"{{message}}\", compruebe la consola.",
+    "lost-websocket-connection-title": "Se ha perdido la conexión con el servidor",
+    "lost-websocket-connection-message": "Compruebe la configuración de su proxy inverso (por ejemplo, nginx o Apache) para asegurarse de que las conexiones WebSocket están correctamente permitidas y no están bloqueadas."
   },
   "hoisted_note": {
     "confirm_unhoisting": "La nota requerida '{{requestedNote}}' está fuera del subárbol de la nota anclada '{{hoistedNote}}' y debe desanclarla para acceder a la nota. ¿Desea proceder con el desanclaje?"
@@ -1767,9 +1812,6 @@
     "move-to-visible-launchers": "Mover a lanzadores visibles",
     "move-to-available-launchers": "Mover a lanzadores disponibles",
     "duplicate-launcher": "Duplicar lanzador <kbd data-command=\"duplicateSubtree\">"
-  },
-  "editable-text": {
-    "auto-detect-language": "Detectado automáticamente"
   },
   "highlighting": {
     "title": "Bloques de código",
@@ -1810,7 +1852,8 @@
     "copy-link": "Copiar enlace",
     "paste": "Pegar",
     "paste-as-plain-text": "Pegar como texto plano",
-    "search_online": "Buscar \"{{term}}\" con {{searchEngine}}"
+    "search_online": "Buscar \"{{term}}\" con {{searchEngine}}",
+    "search_in_trilium": "Buscar \"{{term}}\" en Trilium"
   },
   "image_context_menu": {
     "copy_reference_to_clipboard": "Copiar referencia al portapapeles",
@@ -1827,7 +1870,7 @@
     "native-title-bar": "Barra de título nativa",
     "native-title-bar-description": "Para Windows y macOS, quitar la barra de título nativa hace que la aplicación se vea más compacta. En Linux, mantener la barra de título nativa hace que se integre mejor con el resto del sistema.",
     "background-effects": "Habilitar efectos de fondo (sólo en Windows 11)",
-    "background-effects-description": "El efecto Mica agrega un fondo borroso y elegante a las ventanas de aplicaciones, creando profundidad y un aspecto moderno.",
+    "background-effects-description": "El efecto Mica agrega un fondo borroso y elegante a las ventanas de la aplicación, creando profundidad y un aspecto moderno. \"Título nativo de la barra\" debe deshabilitarse.",
     "restart-app-button": "Reiniciar la aplicación para ver los cambios",
     "zoom-factor": "Factor de zoom"
   },
@@ -1937,14 +1980,22 @@
     "delete_row": "Eliminar fila"
   },
   "board_view": {
-    "delete-note": "Eliminar nota",
+    "delete-note": "Eliminar nota...",
     "move-to": "Mover a",
     "insert-above": "Insertar arriba",
     "insert-below": "Insertar abajo",
     "delete-column": "Eliminar columna",
     "delete-column-confirmation": "¿Seguro que desea eliminar esta columna? El atributo correspondiente también se eliminará de las notas de esta columna.",
     "add-column": "Añadir columna",
-    "new-item": "Nuevo elemento"
+    "new-item": "Nuevo elemento",
+    "archive-note": "Archivar nota",
+    "unarchive-note": "Desarchivar nota",
+    "new-item-placeholder": "Ingresar título de la nota...",
+    "add-column-placeholder": "Ingresar título de la columna...",
+    "edit-note-title": "Haga clic para editar el título de la nota",
+    "edit-column-title": "Haga clic para editar el título de la columna",
+    "remove-from-board": "Eliminar del tablero",
+    "column-already-exists": "Esta columna ya existe en el tablero."
   },
   "content_renderer": {
     "open_externally": "Abrir externamente"
@@ -1972,7 +2023,11 @@
   "editorfeatures": {
     "note_completion_enabled": "Activar autocompletado de notas",
     "emoji_completion_enabled": "Activar autocompletado de emojis",
-    "title": "Funciones"
+    "title": "Funciones",
+    "emoji_completion_description": "Si está habilitado, los emojis pueden fácilmente insertarse en el texto escribiendo `:`, seguido del nombre de un emoji.",
+    "note_completion_description": "Si está habilitado, los vínculos a notas pueden crearse escribiendo `@` seguido del título de una nota.",
+    "slash_commands_enabled": "Habilitar comandos de barra",
+    "slash_commands_description": "Si está habilitado, editar comandos como insertar saltos de línea o títulos, puede alternarse escribiendo `/`."
   },
   "command_palette": {
     "tree-action-name": "Árbol:{{name}}",
@@ -1995,11 +2050,54 @@
   },
   "call_to_action": {
     "next_theme_title": "Prueba el nuevo tema de Trilium",
-    "next_theme_message": "Estas usando actualmente el tema heredado,  ¿Te gustaría probar el nuevo tema?",
+    "next_theme_message": "Estás usando actualmente el tema heredado. ¿Te gustaría probar el nuevo tema?",
     "next_theme_button": "Prueba el nuevo tema",
     "background_effects_title": "Los efectos de fondo son ahora estables",
     "background_effects_message": "En los dispositivos Windows, los efectos de fondo ya son totalmente estables. Los efectos de fondo añaden un toque de color a la interfaz de usuario difuminando el fondo que hay detrás. Esta técnica también se utiliza en otras aplicaciones como el Explorador de Windows.",
     "background_effects_button": "Activar efectos de fondo",
     "dismiss": "Desestimar"
+  },
+  "ui-performance": {
+    "title": "Rendimiento",
+    "enable-motion": "Habilitar transiciones y animaciones",
+    "enable-shadows": "Activar sombras",
+    "enable-backdrop-effects": "Habilitar efectos de fondo para menús, ventanas emergentes y paneles",
+    "enable-smooth-scroll": "Habilitar desplazamiento suave",
+    "app-restart-required": "(es necesario reiniciar la aplicación para que el cambio surta efecto)"
+  },
+  "settings": {
+    "related_settings": "Configuración relacionada"
+  },
+  "settings_appearance": {
+    "related_code_blocks": "Esquema de colores para bloques de código en notas de texto",
+    "related_code_notes": "Esquema de colores para notas de código"
+  },
+  "units": {
+    "percentage": "%"
+  },
+  "pagination": {
+    "total_notes": "{{count}} notas",
+    "page_title": "Página de {{startIndex}} - {{endIndex}}"
+  },
+  "presentation_view": {
+    "edit-slide": "Editar este slide",
+    "start-presentation": "Iniciar presentación",
+    "slide-overview": "Alternar vista general de los slides"
+  },
+  "collections": {
+    "rendering_error": "No se puede mostrar contenido debido a un error."
+  },
+  "read-only-info": {
+    "read-only-note": "Actualmente, está viendo una nota de solo lectura.",
+    "auto-read-only-note": "Esta nota se muestra en modo de solo lectura para una carga más rápida.",
+    "edit-note": "Editar nota"
+  },
+  "calendar_view": {
+    "delete_note": "Eliminar nota..."
+  },
+  "note-color": {
+    "clear-color": "Borrar color de nota",
+    "set-color": "Asignar color de nota",
+    "set-custom-color": "Asignar color de nota personalizado"
   }
 }

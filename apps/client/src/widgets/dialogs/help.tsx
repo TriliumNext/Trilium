@@ -1,20 +1,20 @@
-import ReactBasicWidget from "../react/ReactBasicWidget.js";
 import Modal from "../react/Modal.jsx";
 import { t } from "../../services/i18n.js";
 import { ComponentChildren } from "preact";
-import { CommandNames } from "../../components/app_context.js";
+import appContext, { CommandNames } from "../../components/app_context.js";
 import RawHtml from "../react/RawHtml.jsx";
 import { useEffect, useState } from "preact/hooks";
 import keyboard_actions from "../../services/keyboard_actions.js";
-import useTriliumEvent from "../react/hooks.jsx";
+import { useTriliumEvent } from "../react/hooks.jsx";
 
-function HelpDialogComponent() {
+export default function HelpDialog() {
     const [ shown, setShown ] = useState(false);
     useTriliumEvent("showCheatsheet", () => setShown(true));
 
     return (
         <Modal
             title={t("help.title")} className="help-dialog use-tn-links" minWidth="90%" size="lg" scrollable
+            customTitleBarButtons={[{title: t("help.editShortcuts"), iconClassName: "bxs-pencil", onClick: editShortcuts}]}
             onHidden={() => setShown(false)}
             show={shown}
         >
@@ -162,10 +162,6 @@ function Card({ title, children }: { title: string, children: ComponentChildren 
     )
 }
 
-export default class HelpDialog extends ReactBasicWidget {
-    
-    get component() {
-        return <HelpDialogComponent />;
-    }
-
+function editShortcuts() {
+    appContext.tabManager.openContextWithNote("_optionsShortcuts", { activate: true });
 }

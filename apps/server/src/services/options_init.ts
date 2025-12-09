@@ -111,16 +111,17 @@ const defaultOptions: DefaultOption[] = [
     { name: "debugModeEnabled", value: "false", isSynced: false },
     { name: "headingStyle", value: "underline", isSynced: true },
     { name: "autoCollapseNoteTree", value: "true", isSynced: true },
-    { name: "autoReadonlySizeText", value: "10000", isSynced: false },
-    { name: "autoReadonlySizeCode", value: "30000", isSynced: false },
+    { name: "autoReadonlySizeText", value: "32000", isSynced: false },
+    { name: "autoReadonlySizeCode", value: "64000", isSynced: false },
     { name: "dailyBackupEnabled", value: "true", isSynced: false },
     { name: "weeklyBackupEnabled", value: "true", isSynced: false },
     { name: "monthlyBackupEnabled", value: "true", isSynced: false },
     { name: "maxContentWidth", value: "1200", isSynced: false },
+    { name: "centerContent", value: "false", isSynced: false },
     { name: "compressImages", value: "true", isSynced: true },
     { name: "downloadImagesAutomatically", value: "true", isSynced: true },
     { name: "minTocHeadings", value: "5", isSynced: true },
-    { name: "highlightsList", value: '["bold","italic","underline","color","bgColor"]', isSynced: true },
+    { name: "highlightsList", value: '["underline","color","bgColor"]', isSynced: true },
     { name: "checkForUpdates", value: "true", isSynced: true },
     { name: "disableTray", value: "false", isSynced: false },
     { name: "eraseUnusedAttachmentsAfterSeconds", value: "2592000", isSynced: true }, // default 30 days
@@ -128,7 +129,6 @@ const defaultOptions: DefaultOption[] = [
     { name: "logRetentionDays", value: "90", isSynced: false }, // default 90 days
     { name: "customSearchEngineName", value: "DuckDuckGo", isSynced: true },
     { name: "customSearchEngineUrl", value: "https://duckduckgo.com/?q={keyword}", isSynced: true },
-    { name: "promotedAttributesOpenInRibbon", value: "true", isSynced: true },
     { name: "editedNotesOpenInRibbon", value: "true", isSynced: true },
     { name: "mfaEnabled", value: "false", isSynced: false },
     { name: "mfaMethod", value: "totp", isSynced: false },
@@ -152,10 +152,14 @@ const defaultOptions: DefaultOption[] = [
         },
         isSynced: false
     },
+    { name: "motionEnabled", value: "true", isSynced: false },
+    { name: "shadowsEnabled", value: "true", isSynced: false },
+    { name: "backdropEffectsEnabled", value: "true", isSynced: false },
+    { name: "smoothScrollEnabled", value: "true", isSynced: false },
 
     // Internationalization
     { name: "locale", value: "en", isSynced: true },
-    { name: "formattingLocale", value: "en", isSynced: true },
+    { name: "formattingLocale", value: "", isSynced: true }, // no value means auto-detect
     { name: "firstDayOfWeek", value: "1", isSynced: true },
     { name: "firstWeekOfYear", value: "0", isSynced: true },
     { name: "minDaysInFirstWeek", value: "4", isSynced: true },
@@ -180,6 +184,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "textNoteEditorMultilineToolbar", value: "false", isSynced: true },
     { name: "textNoteEmojiCompletionEnabled", value: "true", isSynced: true },
     { name: "textNoteCompletionEnabled", value: "true", isSynced: true },
+    { name: "textNoteSlashCommandsEnabled", value: "true", isSynced: true },
 
     // HTML import configuration
     { name: "layoutOrientation", value: "vertical", isSynced: false },

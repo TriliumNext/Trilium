@@ -6,7 +6,7 @@ WHERE powershell.exe > NUL 2>&1
 IF %ERRORLEVEL% NEQ 0 GOTO BATCH ELSE GOTO POWERSHELL
 
 :POWERSHELL
-powershell -ExecutionPolicy Bypass -NonInteractive -NoLogo "Set-Item -Path Env:TRILIUM_SAFE_MODE -Value 1; ./trilium.exe --disable-gpu"
+powershell -ExecutionPolicy Bypass -NonInteractive -NoLogo -Command "Set-Item -Path Env:TRILIUM_SAFE_MODE -Value 1; ./trilium.exe --disable-gpu"
 GOTO END
 
 :BATCH

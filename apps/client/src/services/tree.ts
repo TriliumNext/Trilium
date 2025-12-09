@@ -4,9 +4,8 @@ import froca from "./froca.js";
 import hoistedNoteService from "./hoisted_note.js";
 import appContext from "../components/app_context.js";
 
-/**
- * @returns {string|null}
- */
+export const NOTE_PATH_TITLE_SEPARATOR = " › ";
+
 async function resolveNotePath(notePath: string, hoistedNoteId = "root") {
     const runPath = await resolveNotePathToSegments(notePath, hoistedNoteId);
 
@@ -29,21 +28,12 @@ async function resolveNotePathToSegments(notePath: string, hoistedNoteId = "root
     }
 
     const path = notePath.split("/").reverse();
-
-    if (!path.includes("root")) {
-        path.push("root");
-    }
-
     const effectivePathSegments: string[] = [];
     let childNoteId: string | null = null;
     let i = 0;
 
-    while (true) {
-        if (i >= path.length) {
-            break;
-        }
-
-        const parentNoteId = path[i++];
+    for (let i = 0; i < path.length; i++) {
+        const parentNoteId = path[i];
 
         if (childNoteId !== null) {
             const child = await froca.getNote(childNoteId, !logErrors);
@@ -68,7 +58,7 @@ async function resolveNotePathToSegments(notePath: string, hoistedNoteId = "root
                 return null;
             }
 
-            if (!parents.some((p) => p.noteId === parentNoteId)) {
+            if (!parents.some(p => p.noteId === parentNoteId) || (i === path.length - 1 && parentNoteId !== 'root')) {
                 if (logErrors) {
                     const parent = froca.getNoteFromCache(parentNoteId);
 
@@ -80,7 +70,8 @@ async function resolveNotePathToSegments(notePath: string, hoistedNoteId = "root
                     );
                 }
 
-                const bestNotePath = child.getBestNotePath(hoistedNoteId);
+                const activeNotePath = appContext.tabManager.getActiveContextNotePath();
+                const bestNotePath = child.getBestNotePath(hoistedNoteId, activeNotePath);
 
                 if (bestNotePath) {
                     const pathToRoot = bestNotePath.reverse().slice(1);
@@ -100,7 +91,7 @@ async function resolveNotePathToSegments(notePath: string, hoistedNoteId = "root
 
     effectivePathSegments.reverse();
 
-    if (effectivePathSegments.includes(hoistedNoteId)) {
+    if (effectivePathSegments.includes(hoistedNoteId) && effectivePathSegments.includes('root')) {
         return effectivePathSegments;
     } else {
         const noteId = getNoteIdFromUrl(notePath);
@@ -111,7 +102,9 @@ async function resolveNotePathToSegments(notePath: string, hoistedNoteId = "root
         if (!note) {
             throw new Error(`Unable to find note: ${notePath}.`);
         }
-        const bestNotePath = note.getBestNotePath(hoistedNoteId);
+
+        const activeNotePath = appContext.tabManager.getActiveContextNotePath();
+        const bestNotePath = note.getBestNotePath(hoistedNoteId, activeNotePath);
 
         if (!bestNotePath) {
             throw new Error(`Did not find any path segments for '${note.toString()}', hoisted note '${hoistedNoteId}'`);
@@ -263,7 +256,7 @@ async function getNotePathTitle(notePath: string) {
 
     const titlePath = await getNotePathTitleComponents(notePath);
 
-    return titlePath.join(" / ");
+    return titlePath.join(NOTE_PATH_TITLE_SEPARATOR);
 }
 
 async function getNoteTitleWithPathAsSuffix(notePath: string) {

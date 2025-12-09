@@ -1,0 +1,7 @@
+.shared-info-widget {
+    display: flex;
+}
+
+.shared-info-widget button {
+    margin-inline-start: 8px;
+}

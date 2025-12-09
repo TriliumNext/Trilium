@@ -1,1 +1,50 @@
-{}
+{
+  "about": {
+    "title": "A Trilium Notes-ról",
+    "homepage": "Kezdőlap:",
+    "app_version": "Alkalmazás verziója:",
+    "db_version": "Adatbázis verzió:",
+    "sync_version": "Verzió szinkronizálás :",
+    "build_revision": "Build revízió:",
+    "data_directory": "Adatkönyvtár:",
+    "build_date": "Build dátum:"
+  },
+  "toast": {
+    "critical-error": {
+      "title": "Kritikus hiba",
+      "message": "Kritikus hiba történt, amely megakadályozza a kliensalkalmazás indítását:\n\n{{message}}\n\nEzt valószínűleg egy váratlan szkripthiba okozza. Próbálja meg biztonságos módban elindítani az alkalmazást, és hárítsa el a problémát."
+    },
+    "widget-error": {
+      "title": "Nem sikerült inicializálni egy widgetet",
+      "message-custom": "A(z) \"{{id}}\" azonosítójú, \"{{title}}\" című jegyzetből származó egyéni widget inicializálása sikertelen volt a következő ok miatt:\n\n{{message}}",
+      "message-unknown": "Ismeretlen widget inicializálása sikertelen volt a következő ok miatt:\n\n{{message}}"
+    },
+    "bundle-error": {
+      "title": "Nem sikerült betölteni az egyéni szkriptet",
+      "message": "A(z) \"{{id}}\" azonosítójú, \"{{title}}\" című jegyzetből származó szkript nem hajtható végre a következő ok miatt:\n\n{{message}}"
+    }
+  },
+  "add_link": {
+    "add_link": "Link hozzáadása",
+    "help_on_links": "Segítség a linkekhez",
+    "note": "Jegyzet",
+    "search_note": "név szerinti jegyzetkeresés",
+    "link_title_mirrors": "A link cím tükrözi a jegyzet aktuális címét",
+    "link_title_arbitrary": "link cím önkényesen módosítható",
+    "link_title": "Link cím",
+    "button_add_link": "Link hozzáadása"
+  },
+  "branch_prefix": {
+    "edit_branch_prefix": "Az elágazás előtagjának szerkesztése",
+    "help_on_tree_prefix": "Segítség a fa előtagján",
+    "prefix": "Az előtag: ",
+    "save": "Mentés"
+  },
+  "bulk_actions": {
+    "bulk_actions": "Tömeges akciók",
+    "affected_notes": "Érintett jegyzetek",
+    "labels": "Címkék",
+    "relations": "Kapcsolatok",
+    "notes": "Jegyzetek"
+  }
+}

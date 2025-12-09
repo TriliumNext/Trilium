@@ -1,0 +1,225 @@
+section.hero-section {
+    position: relative;
+
+    &::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+            radial-gradient(40vmax 40vmax at 15% 25%, rgba(228, 123, 25, 0.25), transparent 70%),
+            radial-gradient(35vmax 35vmax at 75% 20%, rgba(79, 165, 43, 0.22), transparent 70%),
+            radial-gradient(28vmax 28vmax at 60% 75%, rgba(227, 63, 59, 0.22), transparent 70%),
+            radial-gradient(20vmax 20vmax at 85% 65%, rgba(228, 123, 25, 0.18), transparent 70%),
+            radial-gradient(15vmax 15vmax at 40% 50%, rgba(79, 165, 43, 0.15), transparent 70%);
+
+        @media (prefers-color-scheme: dark) {
+            background:
+            radial-gradient(40vmax 40vmax at 20% 30%, rgba(228, 123, 25, 0.25), transparent 70%),
+            radial-gradient(30vmax 30vmax at 75% 25%, rgba(79, 165, 43, 0.25), transparent 70%),
+            radial-gradient(25vmax 25vmax at 60% 75%, rgba(227, 63, 59, 0.25), transparent 70%),
+            radial-gradient(20vmax 20vmax at 85% 65%, rgba(228, 123, 25, 0.15), transparent 70%);
+        }
+    }
+    &::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle, rgba(255, 255, 255, 0) 60%, rgba(0, 0, 0, 0.06) 100%);
+        pointer-events: none;
+
+        @media (prefers-color-scheme: dark) {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            opacity: 0.04;
+            pointer-events: none;
+        }
+    }
+    
+    &>.content-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        min-width: 80vw;    
+    }
+
+    .title-section {
+        flex-basis: 30%;
+        flex-shrink: 0;
+        color: var(--muted-color);
+
+        h1 {
+            background-image: linear-gradient(150deg, var(--brand-1), var(--brand-3));
+            background-clip: text;
+            color: transparent;
+            line-height: 1.1;
+            font-weight: 400;
+            font-size: 2em;
+            margin-block: 0.65em;
+        }
+    }
+
+    .screenshot-container {
+        flex-grow: 1;
+    }
+
+    .screenshot {
+        position: relative;
+        width: 100%;
+        height: auto;
+        margin-bottom: 0;
+    }
+
+    .download-wrapper {    
+        display: flex;
+        flex-direction: column;
+        align-content: center;
+    }
+
+    .download-button {
+        margin-bottom: 0.25em;
+    }
+
+    .more-download-options {
+        display: inline-block;
+        margin-top: 1em;
+        color: var(--brand-1);
+        font-size: 0.8em;
+        text-align: center;
+    }
+
+    .additional-options {
+        margin-top: 1em;
+        display: flex;
+        gap: 1em;
+        font-size: 0.85em;
+        align-items: center;
+
+        a {
+            flex-grow: 1;
+        }
+    }
+}
+
+@media (max-width: 719px) {
+    section.hero-section {
+        padding-bottom: 0; 
+        
+        .content-wrapper {
+            width: 100%;
+        }
+
+        .title-section {
+            max-width: 90%;
+        }    
+
+        .screenshot {
+            margin-top: 2em;
+        }
+    }
+}
+
+@media (min-width: 720px) {
+    section.hero-section > .content-wrapper {
+        flex-direction: row;
+        gap: 3em;
+        padding: 3em;
+    }
+
+    section.hero-section .download-wrapper {
+        display: inline-flex;
+    }
+}
+
+section.accented {
+    background: linear-gradient(135deg, rgba(228, 123, 25, 0.08), rgba(79, 165, 43, 0.08));
+}
+
+.benefits-container .card {
+    padding: 1em;
+}
+
+section.final-cta {
+    text-align: center;
+    padding: 6em 0;
+
+    h2 {
+        margin-bottom: 0;
+    }
+
+    p {
+        color: var(--muted-color);
+    }
+
+    .buttons {
+        display: flex;
+        align-items: center;
+        gap: 1em;
+        justify-content: center;
+        margin-top: 2em;
+
+        .button {
+            padding: 0.75em 2em;
+        }
+    }
+}
+
+section.faq {
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.15);
+
+    @media (prefers-color-scheme: dark) {
+        box-shadow: unset;
+        border-top: 1px solid var(--brand-1);
+    }
+}
+
+.list-with-screenshot {
+    gap: 2em;
+
+    @media (min-width: 720px) {
+        display: flex;
+    }
+
+    h3 {
+        color: var(--brand-1);
+    }
+
+    ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        gap: 1em;
+        display: grid;
+        
+        @media (min-width: 720px) {
+            grid-template-columns: 1fr 1fr 1fr;                
+        }
+
+        li {
+            margin: 0;        
+
+            .card {
+                border: 1px solid transparent;
+                height: 100%;
+            }     
+        }
+    }
+
+    .details {
+        max-height: 35vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+
+        @media (max-width: 719px) {
+            margin-top: 1em;
+        }
+    }
+
+    img {
+        object-fit: contain;
+    }
+}

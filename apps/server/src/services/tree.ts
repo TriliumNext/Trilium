@@ -92,7 +92,10 @@ function sortNotes(parentNoteId: string, customSortBy: string = "title", reverse
         }
 
         const notes = note.getChildNotes();
-        const normalize = (obj: any) => (obj && typeof obj === "string" ? obj.toLowerCase() : obj);
+
+        function normalize<T>(obj: T | string) {
+            return obj && typeof obj === "string" ? obj.toLowerCase() : obj;
+        }
 
         notes.sort((a, b) => {
             if (foldersFirst) {
@@ -106,7 +109,7 @@ function sortNotes(parentNoteId: string, customSortBy: string = "title", reverse
             }
 
             function fetchValue(note: BNote, key: string) {
-                let rawValue;
+                let rawValue: string | null;
 
                 if (key === "title") {
                     const branch = note.getParentBranches().find((branch) => branch.parentNoteId === parentNoteId);
@@ -133,6 +136,9 @@ function sortNotes(parentNoteId: string, customSortBy: string = "title", reverse
             const topBEl = fetchValue(b, "top");
 
             if (topAEl !== topBEl) {
+                if (topAEl === null) return reverse ? -1 : 1;
+                if (topBEl === null) return reverse ? 1 : -1;
+
                 // since "top" should not be reversible, we'll reverse it once more to nullify this effect
                 return compare(topAEl, topBEl) * (reverse ? -1 : 1);
             }
@@ -141,19 +147,22 @@ function sortNotes(parentNoteId: string, customSortBy: string = "title", reverse
             const bottomBEl = fetchValue(b, "bottom");
 
             if (bottomAEl !== bottomBEl) {
+                if (bottomAEl === null) return reverse ? 1 : -1;
+                if (bottomBEl === null) return reverse ? -1 : 1;
+
                 // since "bottom" should not be reversible, we'll reverse it once more to nullify this effect
                 return compare(bottomBEl, bottomAEl) * (reverse ? -1 : 1);
             }
 
-            const customAEl = fetchValue(a, customSortBy) ?? fetchValue(a, "title");
-            const customBEl = fetchValue(b, customSortBy) ?? fetchValue(b, "title");
+            const customAEl = fetchValue(a, customSortBy) ?? fetchValue(a, "title") as string;
+            const customBEl = fetchValue(b, customSortBy) ?? fetchValue(b, "title")  as string;
 
             if (customAEl !== customBEl) {
                 return compare(customAEl, customBEl);
             }
 
-            const titleAEl = fetchValue(a, "title");
-            const titleBEl = fetchValue(b, "title");
+            const titleAEl = fetchValue(a, "title") as string;
+            const titleBEl = fetchValue(b, "title") as string;
 
             return compare(titleAEl, titleBEl);
         });

@@ -8,7 +8,7 @@
 }
 
 :root {
-    --dropdown-backdrop-filter: blur(10px) saturate(6);
+    --dropdown-backdrop-filter: blur(20px) saturate(6);
     --dropdown-border-radius: 10px;
 }
 
@@ -16,9 +16,13 @@
     background-color: var(--root-background);
 }
 
+body.mobile #root-widget {
+    background-color: var(--main-background-color);
+}
+
 body {
     --native-titlebar-darwin-x-offset: 10;
-    --native-titlebar-darwin-y-offset: 17 !important;
+    --native-titlebar-darwin-y-offset: 12 !important;
 }
 
 body.layout-horizontal {
@@ -35,39 +39,53 @@ body.mobile {
 }
 
 /* #region Mica */
+
 body.background-effects.platform-win32 {
-    --launcher-pane-horiz-border-color: rgba(0, 0, 0, 0.15);
-    --launcher-pane-horiz-background-color: rgba(255, 255, 255, 0.7);
-    --launcher-pane-vert-background-color: rgba(255, 255, 255, 0.055);
-    --tab-background-color: transparent;
-    --new-tab-button-background: transparent;
-    --active-tab-background-color: var(--launcher-pane-horiz-background-color);
+    /* Quirk: --background-material is read before "theme-supports-background-effects" class
+     * is applied. Apply the matterial even if the theme doesn't support it. */
     --background-material: tabbed;
 }
 
-@media (prefers-color-scheme: dark) {
-    body.background-effects.platform-win32 {
-        --launcher-pane-horiz-border-color: rgba(0, 0, 0, 0.5);
-        --launcher-pane-horiz-background-color: rgba(255, 255, 255, 0.09);
-    }
+body.background-effects.theme-supports-background-effects.platform-win32 {
+    --launcher-pane-horiz-border-color: var(--launcher-pane-horiz-border-color-bgfx);
+    --launcher-pane-horiz-background-color: var(--launcher-pane-horiz-background-color-bgfx);
+    --launcher-pane-vert-background-color: var(--launcher-pane-vert-background-color-bgfx);
+    --tab-background-color: var(--window-background-color-bgfx);
+    --new-tab-button-background: var(--window-background-color-bgfx);
+    --active-tab-background-color: var(--launcher-pane-horiz-background-color);
+    --root-background: transparent;
 }
 
 body.background-effects.platform-win32.layout-vertical {
-    --left-pane-background-color: transparent;
-    --left-pane-item-hover-background: rgba(127, 127, 127, 0.05);
     --background-material: mica;
 }
 
-body.background-effects.platform-win32,
-body.background-effects.platform-win32 #root-widget,
-body.background-effects.platform-win32 #launcher-pane .launcher-button {
-    background: transparent !important;
+body.background-effects.theme-supports-background-effects.platform-win32.layout-vertical {
+    --left-pane-background-color: var(--window-background-color-bgfx);
+    --center-pane-background-color-bgfx: var(--center-pane-vert-layout-background-color-bgfx);
+    --right-pane-background-color: var(--right-pane-background-color-bgfx);
 }
 
-body.background-effects.platform-win32.layout-horizontal #horizontal-main-container,
-body.background-effects.platform-win32.layout-vertical #vertical-main-container {
+body.background-effects.theme-supports-background-effects.platform-win32.layout-horizontal {
+    --center-pane-background-color-bgfx: var(--center-pane-horiz-layout-background-color-bgfx);
+    --gutter-color: var(--left-pane-background-color);
+}
+
+body.background-effects.theme-supports-background-effects.platform-win32,
+body.background-effects.theme-supports-background-effects.platform-win32 #root-widget {
+    background: var(--window-background-color-bgfx) !important;
+}
+
+body.background-effects.theme-supports-background-effects.platform-win32.layout-horizontal #horizontal-main-container,
+body.background-effects.theme-supports-background-effects.platform-win32.layout-vertical #vertical-main-container {
     background-color: var(--root-background);
 }
+
+/* Note split with background effects */
+body.background-effects.theme-supports-background-effects.platform-win32 #center-pane .note-split.bgfx {
+    --note-split-background-color: var(--center-pane-background-color-bgfx);
+}
+
 /* #endregion */
 
 /* Matches when the left pane is collapsed */
@@ -78,19 +96,31 @@ body.background-effects.platform-win32.layout-vertical #vertical-main-container 
 
 /* Add a border to the vertical launch bar if collapsed. */
 body.layout-vertical #horizontal-main-container.left-pane-hidden #launcher-pane.vertical {
-    border-right: 2px solid var(--left-pane-collapsed-border-color);
+    border-inline-end: 2px solid var(--left-pane-collapsed-border-color);
 }
 
-body.background-effects.zen #root-widget {
-    --main-background-color: transparent;
-    --root-background: transparent;
+/*
+ * Zen mode
+ */
+
+@keyframes zen-formatting-toolbar-entrance {
+    from {
+        transform: translateY(200%);
+    } to {
+        transform: translateY(0);
+    }
+}
+
+body.zen .note-split .ribbon-container .classic-toolbar-widget {
+    position: relative;
+    animation: zen-formatting-toolbar-entrance 300ms ease-out;
 }
 
 /*
  * Gutter
  */
 
- .gutter {
+.gutter {
     background: var(--gutter-color) !important;
     transition: background 150ms ease-out;
 }
@@ -109,7 +139,7 @@ body.layout-horizontal > .horizontal {
     align-items: center;
 }
 
-#launcher-container {
+body[dir=ltr] #launcher-container {
     scrollbar-gutter: stable both-edges;
 }
 
@@ -182,7 +212,8 @@ body.layout-horizontal > .horizontal {
 }
 
 #launcher-pane .launcher-button,
-#launcher-pane .dropdown {
+#launcher-pane .right-dropdown-widget,
+#launcher-pane .global-menu {
     width: calc(var(--launcher-pane-size) - (var(--launcher-pane-button-margin) * 2)) !important;
     height: calc(var(--launcher-pane-size) - (var(--launcher-pane-button-margin) * 2)) !important;
     margin: var(--launcher-pane-button-gap) var(--launcher-pane-button-margin);
@@ -232,7 +263,7 @@ body.layout-horizontal > .horizontal {
 }
 
 #launcher-pane .launcher-button:focus,
-#launcher-pane .global-menu button:focus {
+#launcher-pane .global-menu :focus {
     outline: none;
 }
 
@@ -288,14 +319,11 @@ body.layout-horizontal > .horizontal {
     animation: sync-status-pulse 1s ease-in-out alternate-reverse infinite;
 }
 
-#launcher-pane .global-menu-button {
-    --hover-item-background-color: transparent;
-}
+#launcher-pane button.global-menu-button {
+    --update-badge-x-offset: 3%;
+    --update-badge-y-offset: -12%;
 
-#launcher-pane.horizontal .global-menu-button .global-menu-button-update-available {
-    right: -23px;
-    bottom: -22px;
-    transform: scale(0.85);
+    --hover-item-background-color: transparent;
 }
 
 .tooltip .tooltip-arrow {
@@ -314,24 +342,11 @@ body.layout-horizontal > .horizontal {
 }
 
 /*
- * Global menu
- */
-
- .global-menu div.zoom-buttons a {
-    border: unset;
-}
-
-.global-menu div.zoom-buttons a.bx {
-    color: var(--menu-text-color) !important;
-}
-
-/*
  * Calendar
  */
 
  .calendar-dropdown-widget {
-    width: unset !important;
-    padding: 12px;
+    padding: 18px;
     color: var(--calendar-color);
     user-select: none;
 }
@@ -356,6 +371,21 @@ body.layout-horizontal > .horizontal {
 
 .calendar-dropdown-widget .calendar-header .calendar-month-selector .select-button {
     --select-arrow-svg: initial; /* Disable the dropdown arrow */
+}
+
+/* Week number column */
+.calendar-dropdown-widget .calendar-week-number {
+    transform: rotate(270deg);
+    justify-content: center;
+    padding: 0;
+    opacity: 0.5;
+    font-size: 1em;
+    font-weight: 700;
+    letter-spacing: .5pt;
+}
+
+.calendar-dropdown-widget .calendar-week-number::after {
+    display: none;
 }
 
 @media (max-width: 992px) {
@@ -407,9 +437,9 @@ body.layout-horizontal > .horizontal {
     content: "";
     position: absolute;
     top: var(--vertical-margin);
-    right: var(--horiz-margin);
+    inset-inline-end: var(--horiz-margin);
     bottom: var(--vertical-margin);
-    left: var(--horiz-margin);
+    inset-inline-start: var(--horiz-margin);
     border-radius: 6px;
     background: var(--calendar-day-highlight-background);
     z-index: -1;
@@ -457,7 +487,7 @@ div.bookmark-folder-widget .note-link:hover {
 }
 
 div.bookmark-folder-widget .note-link a {
-    padding-left: 8px;
+    padding-inline-start: 8px;
     color: var(--menu-text-color);
     cursor: default;
 }
@@ -472,14 +502,14 @@ div.bookmark-folder-widget .note-link .bx {
     font-size: 1.2em;
 }
 
-/* 
+/*
  * QUICK SEARCH BOX
  */
 
 div.quick-search {
     --padding-top: 8px;
-    --padding-left: 8px;
-    --padding-right: 8px;
+    --padding-inline-start: 8px;
+    --padding-inline-end: 8px;
     --padding-bottom: 8px;
 
     position: relative;
@@ -487,7 +517,7 @@ div.quick-search {
     align-items: center;
     height: unset;
     contain: unset;
-    padding: var(--padding-top) var(--padding-right) var(--padding-bottom) var(--padding-left);
+    padding: var(--padding-top) var(--padding-inline-end) var(--padding-bottom) var(--padding-inline-start);
 }
 
 div.quick-search,
@@ -503,9 +533,9 @@ div.quick-search::before {
     position: absolute;
     content: "";
     top: var(--padding-top);
-    left: var(--padding-left);
+    inset-inline-start: var(--padding-inline-start);
     bottom: var(--padding-bottom);
-    right: var(--padding-right);
+    inset-inline-end: var(--padding-inline-end);
     z-index: 0;
     border: 2px solid transparent;
     border-radius: 6px;
@@ -527,7 +557,7 @@ div.quick-search:focus-within:before {
 }
 
 div.quick-search input {
-    padding-left: 15px !important;
+    padding-inline-start: 15px !important;
     box-shadow: unset !important;
     background: transparent !important;
 }
@@ -546,7 +576,7 @@ div.quick-search .search-button {
     justify-content: center;
     width: 25px;
     height: 25px;
-    margin-right: 8px;
+    margin-inline-end: 8px;
     border-radius: 50%;
     padding: 0;
     color: var(--quick-search-color) !important;
@@ -572,29 +602,28 @@ div.quick-search .search-button.show {
     transition: background-color 100ms ease-out !important;
 }
 
+div.quick-search .dropdown-menu {
+    --quick-search-item-delimiter-color: transparent;
+    --menu-item-icon-vert-offset: -.065em;
+}
+
 /*
- * Quick search results
+ * TO FIX: The quick search results dropdown has a backdrop issue with the tree panel
+ * when background effects are enabled in Electron.
+ * As a temporary workaround, the backdrop and transparency are disabled for the
+ * vertical layout.
  */
+body.layout-vertical.background-effects div.quick-search .dropdown-menu {
+    --menu-background-color: var(--menu-background-color-no-backdrop) !important;
+}
 
 /* Item */
 .quick-search .dropdown-menu *.dropdown-item {
     padding: 8px 12px !important;
 }
 
-/* Note icon */
-.quick-search .dropdown-menu .dropdown-item > .bx {
-    position: relative;
-    top: 1px;
-}
-
-/* Note title */
-.quick-search .dropdown-menu .dropdown-item > a {
-    color: var(--menu-text-color);
-}
-
-.quick-search .dropdown-menu .dropdown-item > a:hover {
-    --hover-item-background-color: transparent;
-    text-decoration: underline;
+.quick-search .quick-search-item-icon {
+    vertical-align: text-bottom;
 }
 
 /* Note path */
@@ -603,6 +632,24 @@ div.quick-search .search-button.show {
     opacity: 0.5;
     font-size: 0.75em;
     overflow: hidden;
+}
+
+/* Note content snippet */
+:root .quick-search .search-result-content {
+    background-color: var(--quick-search-result-content-background);
+    border-radius: 4px;
+}
+
+/* Highlighted search terms */
+:root .quick-search .search-result-title b,
+:root .quick-search .search-result-content b,
+:root .quick-search .search-result-attributes b {
+    color: var(--quick-search-result-highlight-color);
+    font-weight: 600;
+}
+
+.quick-search div.dropdown-divider {
+    margin: 8px 0;
 }
 
 /*
@@ -621,18 +668,18 @@ div.quick-search .search-button.show {
 }
 
 #left-pane .ui-fancytree ul {
-    padding-left: 10px;
+    padding-inline-start: 10px;
 }
 
 /* The root element of the tree */
 #left-pane .fancytree-container > li:first-child > span {
-    padding-left: 12px;
+    padding-inline-start: 12px;
 }
 
 #left-pane span.fancytree-node.fancytree-active {
     position: relative;
     background: transparent !important;
-    color: var(--left-pane-item-selected-color) !important;
+    color: var(--custom-color, var(--left-pane-item-selected-color));
 }
 
 @keyframes left-pane-item-select {
@@ -648,10 +695,10 @@ div.quick-search .search-button.show {
     position: absolute;
     content: "";
     top: var(--left-pane-item-selected-shadow-size);
-    left: var(--left-pane-item-selected-shadow-size);
+    inset-inline-start: var(--left-pane-item-selected-shadow-size);
     bottom: var(--left-pane-item-selected-shadow-size);
-    right: var(--left-pane-item-selected-shadow-size);
-    background: var(--left-pane-item-selected-background) !important;
+    inset-inline-end: var(--left-pane-item-selected-shadow-size);
+    background: var(--custom-bg-color, var(--left-pane-item-selected-background)) !important;
     box-shadow: var(--left-pane-item-selected-shadow);
     border-radius: 6px;
     animation: left-pane-item-select 200ms ease-out;
@@ -666,13 +713,17 @@ div.quick-search .search-button.show {
 #left-pane span.fancytree-node.protected > span.fancytree-custom-icon:after {
     position: absolute;
     bottom: 0;
-    right: 0;
+    inset-inline-end: 0;
     font-size: 14px;
     content: "\eb4a";
     font-family: "boxicons";
     transform: translateX(25%);
     background: var(--left-pane-background-color);
     border-radius: 50%;
+}
+
+body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-icon:after {
+    transform: translateX(-25%);
 }
 
 body.mobile .fancytree-expander::before,
@@ -689,7 +740,7 @@ body.mobile .fancytree-node > span {
     body.mobile:not(.force-fixed-tree) #mobile-sidebar-wrapper {
         border-top-right-radius: 12px;
         border-bottom-right-radius: 12px;
-        border-right: 1px solid var(--subtle-border-color);
+        border-inline-end: 1px solid var(--subtle-border-color);
     }
 }
 
@@ -707,9 +758,6 @@ body.mobile .fancytree-node > span {
     margin-top: 0; /* Use this to align the icon with the tree view item's caption */
 }
 
-#left-pane span .fancytree-title {
-    margin-top: -5px;
-}
 
 #left-pane span.fancytree-active .fancytree-title {
     font-weight: normal;
@@ -724,7 +772,7 @@ body.mobile .fancytree-node > span {
 }
 
 #left-pane .tree-item-button {
-    margin-right: 6px;
+    margin-inline-end: 6px;
     border: unset;
     border-radius: 50%;
     background: var(--left-pane-item-action-button-background);
@@ -758,12 +806,12 @@ body.mobile .fancytree-node > span {
 /* Toolbar container (collapsed state) */
 #left-pane .tree-actions {
     max-width: var(--tree-actions-toolbar-collapsed-width);
-    right: var(--tree-actions-toolbar-horizontal-margin);
+    inset-inline-end: var(--tree-actions-toolbar-horizontal-margin);
     bottom: var(--tree-actions-toolbar-vertical-margin);
     overflow: hidden;
     border: 1px solid transparent;
     padding: var(--tree-actions-toolbar-padding-size);
-    padding-right: var(--tree-actions-toolbar-collapsed-width);
+    padding-inline-end: var(--tree-actions-toolbar-collapsed-width);
     background: transparent;
     transition:
         max-width 400ms ease-out,
@@ -807,7 +855,7 @@ body.mobile .fancytree-node > span {
     justify-content: center;
     align-items: center;
     top: 50%;
-    right: calc((var(--tree-actions-toolbar-collapsed-width) - var(--tree-actions-toolbar-expand-button-size)) / 2);
+    inset-inline-end: calc((var(--tree-actions-toolbar-collapsed-width) - var(--tree-actions-toolbar-expand-button-size)) / 2);
     width: var(--tree-actions-toolbar-expand-button-size);
     height: var(--tree-actions-toolbar-expand-button-size);
     box-shadow: 2px 2px 6px var(--left-pane-background-color);
@@ -865,7 +913,10 @@ body.mobile .fancytree-node > span {
 }
 
 .tab-row-container .toggle-button {
-    margin: 6px 10px !important;
+    --icon-button-size: 30px;
+    --icon-button-icon-ratio: .6;
+
+    margin: 3px 6px auto 8px !important;
 }
 
 .tab-row-container {
@@ -874,6 +925,94 @@ body.mobile .fancytree-node > span {
 
 /* Apply a border to the tab bar that avoids the current tab but also allows a transparent active tab. */
 body.layout-horizontal .tab-row-container {
+    border-bottom: 1px solid var(--launcher-pane-horiz-border-color);
+}
+
+body.electron.background-effects.layout-horizontal .tab-row-container {
+    border-bottom: unset !important;
+}
+
+body.electron.background-effects.layout-horizontal .note-tab-wrapper {
+    top: 1px;
+}
+
+body.electron.background-effects.layout-horizontal .tab-row-container .toggle-button {
+    position: relative;
+}
+
+body.electron.background-effects.layout-horizontal .tab-row-container .toggle-button:after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    inset-inline-start: -10px;
+    inset-inline-end: -6px;
+    top: 32px;
+    height: 1px;
+    border-bottom: 1px solid var(--launcher-pane-horiz-border-color);
+}
+
+body.electron.background-effects.layout-horizontal .tab-row-container .tab-history-navigation-buttons {
+    position: relative;
+
+    &:after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        inset-inline-start: 0;
+        inset-inline-end: -7px;
+        height: 1px;
+        border-bottom: 1px solid var(--launcher-pane-horiz-border-color);
+    }
+}
+
+body.electron.background-effects.layout-horizontal .tab-row-container .tab-scroll-button-left,
+body.electron.background-effects.layout-horizontal .tab-row-container .tab-scroll-button-right {
+    position: relative;
+}
+
+body.electron.background-effects.layout-horizontal .tab-row-container .tab-scroll-button-inset-inline-start:after,
+body.electron.background-effects.layout-horizontal .tab-row-container .tab-scroll-button-inset-inline-end:after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    inset-inline-start: 0px;
+    inset-inline-end: 0px;
+    height: 1px;
+    border-bottom: 1px solid var(--launcher-pane-horiz-border-color);
+}
+
+body.electron.background-effects.layout-horizontal .tab-row-container .note-tab[active]:before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    inset-inline-start: -32768px;
+    top: var(--tab-height);
+    inset-inline-end: calc(100% - 1px);
+    height: 1px;
+    border-bottom: 1px solid var(--launcher-pane-horiz-border-color);
+}
+
+body.electron.background-effects.layout-horizontal .tab-row-container .note-tab[active]:after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    inset-inline-start: 100%;
+    top: var(--tab-height);
+    inset-inline-end: 0;
+    width: 100vw;
+    height: 1px;
+    border-bottom: 1px solid var(--launcher-pane-horiz-border-color);
+}
+
+body.electron.background-effects.layout-horizontal .tab-row-container .note-new-tab:before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    inset-inline-start: -4px;
+    top: calc(var(--tab-height), -1);
+    inset-inline-end: 0;
+    width: 100vw;
+    height: 1px;
     border-bottom: 1px solid var(--launcher-pane-horiz-border-color);
 }
 
@@ -958,14 +1097,22 @@ body.layout-horizontal .tab-row-widget .note-tab .note-tab-wrapper {
     content: "";
     position: absolute;
     top: 0;
-    left: 0;
-    right: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
     height: 3px;
     background-color: var(--workspace-tab-background-color);
 }
 
-.tab-row-widget .note-tab:nth-child(1) {
+body:not([dir=rtl]) .tab-row-widget .note-tab:nth-child(1) {
     transform: translate3d(var(--tab-first-item-horiz-offset), 0, 0);
+}
+
+:root .tab-row-widget .note-tab .note-tab-icon {
+    padding-inline-end: 5px; /* The gap between the icon and the title */
+}
+
+.tab-row-widget .note-tab[active] .note-tab-icon {
+    color: var(--active-tab-icon-color);
 }
 
 .tab-row-widget .note-tab .note-tab-title {
@@ -1006,7 +1153,7 @@ body.layout-vertical .tab-row-widget-is-sorting .note-tab.note-tab-is-dragging .
 
 .tab-row-widget .note-new-tab {
     position: relative;
-    margin-left: 3px;
+    margin-inline-start: 3px;
     color: transparent; /* Prevent the original "+" from being displayed */
 }
 
@@ -1019,7 +1166,7 @@ body.layout-vertical .tab-row-widget-is-sorting .note-tab.note-tab-is-dragging .
     position: absolute;
     content: "";
     top: calc((var(--tab-height) - var(--new-tab-button-size)) / 2);
-    left: calc((var(--tab-height) - var(--new-tab-button-size)) / 2);
+    inset-inline-start: calc((var(--tab-height) - var(--new-tab-button-size)) / 2);
     width: var(--new-tab-button-size);
     height: var(--new-tab-button-size);
     background: var(--new-tab-button-background);
@@ -1044,7 +1191,7 @@ body.layout-vertical .tab-row-widget-is-sorting .note-tab.note-tab-is-dragging .
     display: flex;
     position: absolute;
     content: "\ebc0";
-    left: 0;
+    inset-inline-start: 0;
     top: 0;
     width: 100%;
     height: 100%;
@@ -1078,18 +1225,18 @@ body.layout-vertical .tab-row-widget-is-sorting .note-tab.note-tab-is-dragging .
  * CENTER PANE
  */
 
-#center-pane {
-    background: var(--main-background-color);
-}
-
-.vertical-layout #center-pane {
+ /* The first visible note split */
+.vertical-layout #center-pane .note-split:not(.visible ~ .visible) {
     border-radius: var(--center-pane-border-radius) 0 0 0;
 }
 
-.note-split {
+#center-pane .note-split {
     padding-top: 2px;
+    background-color: var(--note-split-background-color, var(--main-background-color));
+}
+
+body:not(.background-effects) #center-pane .note-split {
     animation: note-entrance 100ms linear;
-    /* will-change: opacity; -- causes some weird artifacts to the note menu in split view */
 }
 
 /*
@@ -1100,15 +1247,11 @@ body.layout-vertical .tab-row-widget-is-sorting .note-tab.note-tab-is-dragging .
     margin-bottom: 0 !important;
 }
 
-.note-split:not(.hidden-ext) + .note-split:not(.hidden-ext) {
-    border-left: 4px solid var(--root-background);
-}
-
 @keyframes note-entrance {
     from {
-        opacity: 0;
+        filter: opacity(0);
     } to {
-        opacity: 1;
+        filter: opacity(1);
     }
 }
 
@@ -1125,23 +1268,23 @@ body.mobile .note-title {
 }
 
 .title-row > *:first-child {
-    margin-right: 0;
+    margin-inline-end: 0;
 }
 
 .title-row > *:nth-child(2) {
-    margin-left: 0;
+    margin-inline-start: 0;
 }
 
 .title-row {
     /* Aligns the "Create new split" button with the note menu button (the three dots button) */
-    padding-right: 3px;
+    padding-inline-end: 3px;
 }
 
 .note-title-widget input {
     --input-background-color: transparent;
 
     border-radius: 8px;
-    padding-left: 12px;
+    padding-inline-start: 12px;
 }
 
 /* The "Change note icon" button */
@@ -1216,7 +1359,7 @@ body.mobile .note-title {
 /* The promoted attributes section */
 div.promoted-attributes-container {
     display: flex;
-    margin-right: 10%;
+    margin-inline-end: 10%;
     padding: 6px 0;
     gap: 8px;
     align-items: stretch;
@@ -1230,16 +1373,15 @@ div.promoted-attributes-container input {
 
 /* A promoted attribute card */
 div.promoted-attribute-cell {
-    --pa-card-padding-left: 16px;
-    --pa-card-padding-right: 2px;
+    --pa-card-padding-inline-start: 16px;
+    --pa-card-padding-inline-end: 2px;
     --input-background-color: transparent;
 
-    box-shadow: 1px 1px 2px var(--promoted-attribute-card-shadow-color);
-
+    box-shadow: var(--promoted-attribute-card-shadow);
     display: inline-flex;
     margin: 0;
     border-radius: 8px;
-    padding: 2px var(--pa-card-padding-right) 2px var(--pa-card-padding-left);
+    padding: 2px var(--pa-card-padding-inline-end) 2px var(--pa-card-padding-inline-start);
     background: var(--promoted-attribute-card-background-color);
     overflow-y: visible;
 }
@@ -1254,7 +1396,7 @@ div.promoted-attribute-cell {
 /* A promoted attribute card (boolean attribute) */
 div.promoted-attribute-cell:has(input[type="checkbox"]):not(:has(.multiplicity > span)) {
     /* Checbox attribute, without multiplicity */
-    padding-right: var(--pa-card-padding-left);
+    padding-inline-end: var(--pa-card-padding-inline-start);
 }
 
 div.promoted-attribute-cell > * {
@@ -1301,19 +1443,32 @@ div.promoted-attribute-cell .tn-checkbox {
     height: 1cap;
 }
 
-/* Relocate the checkbox before the label */
 div.promoted-attribute-cell.promoted-attribute-label-boolean > div:first-of-type {
-    order: -1;
-    margin-right: 1.5em;
+    margin-inline-end: 1.5em;
 }
 
 /* The element containing the "new attribute" and "remove this attribute button" */
 div.promoted-attribute-cell .multiplicity:has(span) {
     --icon-button-size: 24px;
 
-    margin-left: 8px;
-    margin-right: calc(var(--pa-card-padding-left) - var(--pa-card-padding-right));
+    margin-inline-start: 8px;
+    margin-inline-end: calc(var(--pa-card-padding-inline-start) - var(--pa-card-padding-inline-end));
     font-size: 0; /* Prevent whitespaces creating a gap between buttons */
+    display: flex;
+}
+
+div.promoted-attribute-cell .multiplicity:has(span) span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+div.promoted-attribute-cell.promoted-attribute-label-color {
+    justify-content: space-between;
+}
+
+div.promoted-attribute-cell.promoted-attribute-label-color .input-group {
+    width: auto;
 }
 
 /*
@@ -1321,7 +1476,7 @@ div.promoted-attribute-cell .multiplicity:has(span) {
  */
 
  /* Floating buttons container */
-div#center-pane .floating-buttons-children {
+.floating-buttons-children {
     opacity: 1;
     min-height: var(--floating-button-height);
     transform-origin: right;
@@ -1333,8 +1488,12 @@ div#center-pane .floating-buttons-children {
                 opacity 250ms ease-out;
 }
 
+body[dir=rtl] .floating-buttons-children {
+    transform-origin: left;
+}
+
  /* Floating buttons container (collapsed) */
- div#center-pane .floating-buttons-children.temporarily-hidden {
+ .floating-buttons-children.temporarily-hidden {
     display: flex !important;
     opacity: 0;
     transform: scaleX(0);
@@ -1375,7 +1534,7 @@ div.floating-buttons-children .floating-button:active {
 }
 
 /* The first visible floating button */
-div.floating-buttons-children > *:nth-child(1 of .visible) {
+div.floating-buttons-children > *:first-child {
     --border-radius: var(--border-radius-size) 0 0 var(--border-radius-size);
     border-radius: var(--border-radius);
 }
@@ -1424,7 +1583,7 @@ div.floating-buttons .show-floating-buttons-button {
 div.floating-buttons .show-floating-buttons-button::before {
     animation: floating-buttons-show-hide-button-animation 400ms ease-out;
 }
- 
+
 div.floating-buttons .show-floating-buttons-button:hover,
 div.floating-buttons .show-floating-buttons-button:active {
     box-shadow: var(--floating-button-show-button-hover-shadow);
@@ -1444,7 +1603,7 @@ div.floating-buttons-children .close-floating-buttons {
 }
 
 div.floating-buttons-children .close-floating-buttons {
-    margin-left: 0 !important;
+    margin-inline-start: 0 !important;
     background: var(--floating-button-hide-button-background);
     color: var(--floating-button-hide-button-color);
 }
@@ -1475,13 +1634,6 @@ div.floating-buttons-children .close-floating-buttons:has(.close-floating-button
 /* TODO: Restyle the path */
 .backlinks-widget .backlinks-items .note-path {
     padding-inline-start: 8px;
-}
-
-/* Copy image reference */
-
-.floating-buttons .copy-image-reference-button .hidden-image-copy {
-    /* Take out of the the hidden image from flexbox to prevent the layout being affected */
-    position: absolute;
 }
 
 /* Code, relation map buttons */
@@ -1541,12 +1693,12 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
 }
 
 .find-replace-widget .form-check {
-    padding-left: 0;
+    padding-inline-start: 0;
     white-space: nowrap;
 }
 
 .find-replace-widget .form-check .form-check-input {
-    margin-left: 0;
+    margin-inline-start: 0;
 }
 
 /* Narrow version */
@@ -1566,13 +1718,13 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
 
     .find-widget-box,
     .replace-widget-box {
-        padding-right: 3em !important;
+        padding-inline-end: 3em !important;
     }
 
     .find-widget-close-button {
         position: absolute;
         top: .85em;
-        right: .5em;
+        inset-inline-end: .5em;
     }
 
     .find-widget-box > * {
@@ -1604,7 +1756,7 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
     }
 
     .replace-widget-box > * {
-        margin-right: unset !important;
+        margin-inline-end: unset !important;
     }
 
     div.replace-widget-box button.btn.btn-sm {
@@ -1618,7 +1770,7 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
  */
 
 #right-pane {
-    background: var(--main-background-color);
+    background: var(--right-pane-background-color);
 }
 
 #right-pane div.card-header {
@@ -1647,7 +1799,7 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
 #right-pane .toc li,
 #right-pane .highlights-list li {
     padding-top: 2px;
-    padding-right: 8px;
+    padding-inline-end: 8px;
     padding-bottom: 2px;
     border-radius: 4px;
     text-align: unset;
@@ -1686,10 +1838,6 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
     --border-radius-lg: 6px;
 }
 
-.excalidraw .Island {
-    backdrop-filter: var(--dropdown-backdrop-filter);
-}
-
 .excalidraw .Island.App-toolbar {
     --island-bg-color: var(--floating-button-background-color);
     --shadow-island: 1px 1px 1px var(--floating-button-shadow-color);
@@ -1697,7 +1845,7 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
 
 .excalidraw .dropdown-menu {
     border: unset !important;
-    box-shadow: unset !important;    
+    box-shadow: unset !important;
     background-color: transparent !important;
     --island-bg-color: var(--menu-background-color);
     --shadow-island: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));
@@ -1710,8 +1858,8 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
 }
 
 .excalidraw .dropdown-menu .dropdown-menu-container > div:not([class]):not(:last-child) {
-    margin-left: calc(var(--padding) * var(--space-factor) * -1) !important;
-    margin-right: calc(var(--padding) * var(--space-factor) * -1) !important;
+    margin-inline-start: calc(var(--padding) * var(--space-factor) * -1) !important;
+    margin-inline-end: calc(var(--padding) * var(--space-factor) * -1) !important;
 }
 
 .excalidraw .dropdown-menu:before {

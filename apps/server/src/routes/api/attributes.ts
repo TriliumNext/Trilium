@@ -7,6 +7,7 @@ import BAttribute from "../../becca/entities/battribute.js";
 import becca from "../../becca/becca.js";
 import ValidationError from "../../errors/validation_error.js";
 import type { Request } from "express";
+import { UpdateAttributeResponse } from "@triliumnext/commons";
 
 function getEffectiveNoteAttributes(req: Request) {
     const note = becca.getNote(req.params.noteId);
@@ -18,7 +19,7 @@ function updateNoteAttribute(req: Request) {
     const noteId = req.params.noteId;
     const body = req.body;
 
-    let attribute;
+    let attribute: BAttribute;
     if (body.attributeId) {
         attribute = becca.getAttributeOrThrow(body.attributeId);
 
@@ -64,7 +65,7 @@ function updateNoteAttribute(req: Request) {
 
     return {
         attributeId: attribute.attributeId
-    };
+    } satisfies UpdateAttributeResponse;
 }
 
 function setNoteAttribute(req: Request) {

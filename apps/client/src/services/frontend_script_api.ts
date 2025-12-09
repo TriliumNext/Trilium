@@ -11,16 +11,16 @@ import RightPanelWidget from "../widgets/right_panel_widget.js";
 import ws from "./ws.js";
 import appContext from "../components/app_context.js";
 import NoteContextAwareWidget from "../widgets/note_context_aware_widget.js";
-import BasicWidget from "../widgets/basic_widget.js";
+import BasicWidget, { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import SpacedUpdate from "./spaced_update.js";
 import shortcutService from "./shortcuts.js";
 import dialogService from "./dialog.js";
 import type FNote from "../entities/fnote.js";
 import { t } from "./i18n.js";
-import dayjs from "dayjs";
+import { dayjs } from "@triliumnext/commons";
 import type NoteContext from "../components/note_context.js";
-import type NoteDetailWidget from "../widgets/note_detail.js";
 import type Component from "../components/component.js";
+import { formatLogMessage } from "@triliumnext/commons";
 
 /**
  * A whole number
@@ -77,6 +77,10 @@ export interface Api {
 
     /**
      * Entity whose event triggered this execution.
+     *
+     * <p>
+     * For front-end scripts, generally there's no origin entity specified since the scripts are run by the user or automatically by the UI (widgets).
+     * If there is an origin entity specified, then it's going to be a note entity.
      */
     originEntity: unknown | null;
 
@@ -278,12 +282,16 @@ export interface Api {
     getActiveContextNote(): FNote;
 
     /**
-     * @returns returns active context (split)
+     * Obtains the currently active/focused split in the current tab.
+     *
+     * Note that this method does not return the note context of the "Quick edit" panel, it will return the note context behind it.
      */
     getActiveContext(): NoteContext;
 
     /**
-     * @returns returns active main context (first split in a tab, represents the tab as a whole)
+     * Obtains the main context of the current tab. This is the left-most split.
+     *
+     * Note that this method does not return the note context of the "Quick edit" panel, it will return the note context behind it.
      */
     getActiveMainContext(): NoteContext;
 
@@ -316,7 +324,7 @@ export interface Api {
      * Get access to the widget handling note detail. Methods like `getWidgetType()` and `getTypeWidget()` to get to the
      * implementation of actual widget type.
      */
-    getActiveNoteDetailWidget(): Promise<NoteDetailWidget>;
+    getActiveNoteDetailWidget(): Promise<ReactWrappedWidget>;
     /**
      * @returns returns a note path of active note or null if there isn't active note
      */
@@ -455,7 +463,7 @@ export interface Api {
     /**
      * Log given message to the log pane in UI
      */
-    log(message: string): void;
+    log(message: string | object): void;
 }
 
 /**
@@ -696,7 +704,7 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
     this.log = (message) => {
         const { noteId } = this.startNote;
 
-        message = `${utils.now()}: ${message}`;
+        message = `${utils.now()}: ${formatLogMessage(message)}`;
 
         console.log(`Script ${noteId}: ${message}`);
 

@@ -5,16 +5,16 @@ html {
     /* either light or dark, colored theme with darker tones are also dark, used e.g. for note map node colors */
     --theme-style: light;
 
-    --main-font-family: Montserrat;
+    --main-font-family: Montserrat, sans-serif;
     --main-font-size: normal;
 
-    --tree-font-family: Montserrat;
+    --tree-font-family: Montserrat, sans-serif;
     --tree-font-size: normal;
 
-    --detail-font-family: Montserrat;
+    --detail-font-family: Montserrat, sans-serif;
     --detail-font-size: normal;
 
-    --monospace-font-family: JetBrainsLight;
+    --monospace-font-family: JetBrainsLight, monospace;
     --monospace-font-size: normal;
 
     --main-background-color: white;
@@ -80,4 +80,22 @@ html {
 
     --mermaid-theme: default;
     --native-titlebar-background: #ffffff00;
+
+    --calendar-coll-event-background-lightness: 95%;
+    --calendar-coll-event-background-saturation: 80%;
+}
+
+#left-pane .fancytree-node.tinted {
+    --custom-color: var(--light-theme-custom-color);
+}
+
+:root .reference-link,
+:root .reference-link:hover,
+.ck-content a.reference-link > span,
+.board-note {
+    color: var(--light-theme-custom-color, inherit);
+}
+
+.use-note-color {
+    --custom-color: var(--light-theme-custom-color);
 }

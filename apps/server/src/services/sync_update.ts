@@ -4,7 +4,7 @@ import entityChangesService from "./entity_changes.js";
 import eventService from "./events.js";
 import entityConstructor from "../becca/entity_constructor.js";
 import ws from "./ws.js";
-import type { EntityChange, EntityChangeRecord, EntityRow } from "./entity_changes_interface.js";
+import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
 
 interface UpdateContext {
     alreadyErased: number;

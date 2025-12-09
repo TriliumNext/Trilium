@@ -4,11 +4,11 @@
 }
 
 .export-dialog form .format-choice {
-    padding-left: 40px;
+    padding-inline-start: 40px;
 }
 
 .export-dialog form .opml-versions {
-    padding-left: 60px;
+    padding-inline-start: 60px;
 }
 
 .export-dialog form .form-check-label {

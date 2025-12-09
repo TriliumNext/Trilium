@@ -1,5 +1,5 @@
 # Troubleshooting
-As Trilium is currently in beta, encountering bugs is to be expected.
+While Trilium is actively maintained and stable, encountering bugs is possible.
 
 ## General Quick Fix
 
@@ -21,7 +21,7 @@ TRILIUM_START_NOTE_ID=root ./trilium
 
 ## Broken Script Prevents Application Startup
 
-If a custom script causes Triliumto crash, and it is set as a startup script or in an active [custom widget](Scripting/Custom%20Widgets.md), start Triliumin "safe mode" to prevent any custom scripts from executing:
+If a custom script causes Trilium to crash, and it is set as a startup script or in an active [custom widget](Scripting/Frontend%20Basics/Custom%20Widgets.md), start Triliumin "safe mode" to prevent any custom scripts from executing:
 
 ```
 TRILIUM_SAFE_MODE=true ./trilium

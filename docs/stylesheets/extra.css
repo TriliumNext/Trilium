@@ -1,0 +1,121 @@
+/* Custom styles for Trilium Notes documentation */
+
+/* Grid cards for homepage */
+.md-typeset .grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  margin-top: 1rem;
+}
+
+.md-typeset .grid.cards > ul {
+  display: contents;
+}
+
+.md-typeset .grid.cards > ul > li {
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: .25rem;
+  display: flex;
+  flex-direction: column;
+  padding: 1rem;
+  transition: border-color .25s, box-shadow .25s;
+}
+
+.md-typeset .grid.cards > ul > li:hover {
+  border-color: var(--md-accent-fg-color);
+  box-shadow: 0 0 0 .1rem var(--md-accent-fg-color--transparent);
+}
+
+/* Improve code block appearance */
+.md-typeset pre > code {
+  font-size: .85rem;
+}
+
+/* Better admonition spacing */
+.md-typeset .admonition {
+  margin: 1.5rem 0;
+}
+
+/* Trilium brand colors */
+:root {
+  --trilium-primary: #4a5568;
+  --trilium-accent: #805ad5;
+}
+
+/* Custom badge styles */
+.badge {
+  background-color: var(--md-accent-fg-color);
+  border-radius: .125rem;
+  color: var(--md-accent-bg-color);
+  display: inline-block;
+  font-size: .75rem;
+  font-weight: 700;
+  padding: .125rem .375rem;
+  text-transform: uppercase;
+}
+
+/* Version badge */
+.version-badge {
+  background-color: var(--md-primary-fg-color);
+  margin-left: .5rem;
+}
+
+/* Platform badges */
+.platform-badge {
+  margin: 0 .25rem;
+}
+
+.platform-badge.windows {
+  background-color: #0078d4;
+}
+
+.platform-badge.macos {
+  background-color: #000000;
+}
+
+.platform-badge.linux {
+  background-color: #fcc624;
+  color: #000000;
+}
+
+/* Improve table readability */
+.md-typeset table:not([class]) {
+  font-size: .85rem;
+}
+
+.md-typeset table:not([class]) th {
+  background-color: var(--md-default-bg-color);
+  font-weight: 700;
+}
+
+/* API reference styling */
+.api-method {
+  background-color: var(--md-code-bg-color);
+  border-radius: .125rem;
+  font-family: var(--md-code-font-family);
+  font-weight: 600;
+  padding: .125rem .25rem;
+}
+
+.api-method.get {
+  color: #10b981;
+}
+
+.api-method.post {
+  color: #3b82f6;
+}
+
+.api-method.put {
+  color: #f59e0b;
+}
+
+.api-method.delete {
+  color: #ef4444;
+}
+
+/* Responsive improvements */
+@media screen and (max-width: 76.1875em) {
+  .md-typeset .grid {
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  }
+}

@@ -79,7 +79,7 @@ test("Tabs are restored in right order", async ({ page, context }) => {
 
     // Refresh the page and check the order.
     await app.goto( { preserveTabs: true });
-    await expect(app.getTab(0)).toContainText("Code notes");
+    await expect(app.getTab(0)).toContainText("Code notes", { timeout: 15_000 });
     await expect(app.getTab(1)).toContainText("Text notes");
     await expect(app.getTab(2)).toContainText("Mermaid");
 

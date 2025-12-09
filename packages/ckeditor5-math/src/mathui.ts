@@ -1,6 +1,6 @@
 import MathEditing from './mathediting.js';
 import MainFormView from './ui/mainformview.js';
-import mathIcon from '../theme/icons/math.svg';
+import mathIcon from '../theme/icons/math.svg?raw';
 import { Plugin, ClickObserver, ButtonView, ContextualBalloon, clickOutsideHandler, CKEditorError, uid } from 'ckeditor5';
 import { getBalloonPositionData } from './utils.js';
 import MathCommand from './mathcommand.js';
@@ -54,10 +54,10 @@ export default class MathUI extends Plugin {
 		this._addFormView();
 
 		this._balloon.showStack( 'main' );
-		
+
 		requestAnimationFrame(() => {
 			this.formView?.mathInputView.fieldView.element?.focus();
-		}); 
+		});
 	}
 
 	private _createFormView() {

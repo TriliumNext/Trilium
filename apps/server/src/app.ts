@@ -27,27 +27,6 @@ export default async function buildApp() {
     // Initialize DB
     sql_init.initializeDb();
 
-    // Listen for database initialization event
-    eventService.subscribe(eventService.DB_INITIALIZED, async () => {
-        try {
-            log.info("Database initialized, LLM features available");
-            log.info("LLM features ready");
-        } catch (error) {
-            console.error("Error initializing LLM features:", error);
-        }
-    });
-
-    // Initialize LLM features only if database is already initialized
-    if (sql_init.isDbInitialized()) {
-        try {
-            log.info("LLM features ready");
-        } catch (error) {
-            console.error("Error initializing LLM features:", error);
-        }
-    } else {
-        console.log("Database not initialized yet. LLM features will be initialized after setup.");
-    }
-
     const publicDir = isDev ? path.join(getResourceDir(), "../dist/public") : path.join(getResourceDir(), "public");
     const publicAssetsDir = path.join(publicDir, "assets");
     const assetsDir = RESOURCE_DIR;
@@ -77,10 +56,19 @@ export default async function buildApp() {
         app.use(compression()); // HTTP compression
     }
 
+    let resourcePolicy = config["Network"]["corsResourcePolicy"] as 'same-origin' | 'same-site' | 'cross-origin' | undefined;
+    if(resourcePolicy !== 'same-origin' && resourcePolicy !== 'same-site' && resourcePolicy !== 'cross-origin') {
+        log.error(`Invalid CORS Resource Policy value: '${resourcePolicy}', defaulting to 'same-origin'`);
+        resourcePolicy = 'same-origin';
+    }
+
     app.use(
         helmet({
             hidePoweredBy: false, // errors out in electron
             contentSecurityPolicy: false,
+            crossOriginResourcePolicy: {
+                policy: resourcePolicy
+            },
             crossOriginEmbedderPolicy: false
         })
     );

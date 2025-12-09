@@ -1,19 +1,20 @@
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import Modal from "../react/Modal";
 import Button from "../react/Button";
 import { t } from "../../services/i18n";
 import { useState } from "preact/hooks";
 import FormCheckbox from "../react/FormCheckbox";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
+import { isValidElement, type VNode } from "preact";
+import { RawHtmlBlock } from "../react/RawHtml";
 
 interface ConfirmDialogProps {
     title?: string;
-    message?: string | HTMLElement;
+    message?: MessageType;
     callback?: ConfirmDialogCallback;
-    isConfirmDeleteNoteBox?: boolean;   
+    isConfirmDeleteNoteBox?: boolean;
 }
 
-function ConfirmDialogComponent() {
+export default function ConfirmDialog() {
     const [ opts, setOpts ] = useState<ConfirmDialogProps>();
     const [ isDeleteNoteChecked, setIsDeleteNoteChecked ] = useState(false);
     const [ shown, setShown ] = useState(false);
@@ -21,7 +22,7 @@ function ConfirmDialogComponent() {
     function showDialog(title: string | null, message: MessageType, callback: ConfirmDialogCallback, isConfirmDeleteNoteBox: boolean) {
         setOpts({
             title: title ?? undefined,
-            message: (typeof message === "object" && "length" in message ? message[0] : message),
+            message,
             callback,
             isConfirmDeleteNoteBox
         });
@@ -31,7 +32,7 @@ function ConfirmDialogComponent() {
     useTriliumEvent("showConfirmDialog", ({ message, callback }) => showDialog(null, message, callback, false));
     useTriliumEvent("showConfirmDeleteNoteBoxWithNoteDialog", ({ title, callback }) => showDialog(title, t("confirm.are_you_sure_remove_note", { title: title }), callback, true));
 
-    return ( 
+    return (
         <Modal
             className="confirm-dialog"
             title={opts?.title ?? t("confirm.confirmation")}
@@ -58,9 +59,10 @@ function ConfirmDialogComponent() {
             show={shown}
             stackable
         >
-            {!opts?.message || typeof opts?.message === "string"
-                ? <div>{(opts?.message as string) ?? ""}</div>
-                : <div dangerouslySetInnerHTML={{ __html: opts?.message.outerHTML ?? "" }} />}
+            {isValidElement(opts?.message)
+            ? opts?.message
+            : <RawHtmlBlock html={opts?.message} />
+            }
 
             {opts?.isConfirmDeleteNoteBox && (
                 <FormCheckbox
@@ -75,7 +77,7 @@ function ConfirmDialogComponent() {
 
 export type ConfirmDialogResult = false | ConfirmDialogOptions;
 export type ConfirmDialogCallback = (val?: ConfirmDialogResult) => void;
-type MessageType = string | HTMLElement | JQuery<HTMLElement>;
+export type MessageType = string | HTMLElement | JQuery<HTMLElement> | VNode;
 
 export interface ConfirmDialogOptions {
     confirmed: boolean;
@@ -91,12 +93,4 @@ export interface ConfirmWithMessageOptions {
 export interface ConfirmWithTitleOptions {
     title: string;
     callback: ConfirmDialogCallback;
-}
-
-export default class ConfirmDialog extends ReactBasicWidget {
-
-    get component() {
-        return <ConfirmDialogComponent />;
-    }
-
 }

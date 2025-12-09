@@ -8,8 +8,13 @@
 	  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
     <link rel="manifest" crossorigin="use-credentials" href="manifest.webmanifest">
     <title>Trilium Notes</title>
+    <script src="<%= appPath %>/runtime.js" crossorigin type="module"></script>
 </head>
-<body class="desktop heading-style-<%= headingStyle %> layout-<%= layoutOrientation %> platform-<%= platform %> <%= isElectron ? 'electron' : '' %> <%= hasNativeTitleBar ? 'native-titlebar' : '' %> <%= hasBackgroundEffects ? 'background-effects' : '' %>">
+<body
+  id="trilium-app"
+  class="desktop heading-style-<%= headingStyle %> layout-<%= layoutOrientation %> platform-<%= platform %> <%= isElectron ? 'electron' : '' %> <%= hasNativeTitleBar ? 'native-titlebar' : '' %> <%= hasBackgroundEffects ? 'background-effects' : '' %>"
+  lang="<%= currentLocale.id %>" dir="<%= currentLocale.rtl ? 'rtl' : 'ltr' %>"
+>
 <noscript><%= t("javascript-required") %></noscript>
 
 <script>
@@ -17,22 +22,17 @@
     document.getElementsByTagName("body")[0].style.display = "none";
 </script>
 
-<div id="toast-container" class="d-flex flex-column justify-content-center align-items-center"></div>
-
 <div class="dropdown-menu dropdown-menu-sm" id="context-menu-container" style="display: none"></div>
 
 <%- include("./partials/windowGlobal.ejs", locals) %>
 
-<style>
-    .note-split {
-        max-width: <%= maxContentWidth %>px;
-    }
-</style>
+<!-- Required for match the PWA's top bar color with the theme -->
+<!-- This works even when the user directly changes --root-background in CSS -->
+<div id="background-color-tracker" style="position: absolute; visibility: hidden; color: var(--root-background); transition: color 1ms;"></div>
 
 <!-- Required for correct loading of scripts in Electron -->
 <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
 
-<link href="<%= appPath %>/bootstrap.css" rel="stylesheet">
 <link href="<%= assetPath %>/stylesheets/ckeditor-theme.css" rel="stylesheet">
 <link href="api/fonts" rel="stylesheet">
 <link href="<%= assetPath %>/stylesheets/theme-light.css" rel="stylesheet">
@@ -51,9 +51,7 @@
 
 <link href="<%= assetPath %>/stylesheets/style.css" rel="stylesheet">
 <link href="<%= assetPath %>/src/boxicons.css" rel="stylesheet">
-<link href="<%= assetPath %>/stylesheets/print.css" rel="stylesheet" media="print">
 
-<script src="<%= appPath %>/runtime.js" crossorigin type="module"></script>
 <script src="<%= appPath %>/desktop.js" crossorigin type="module"></script>
 
 </body>

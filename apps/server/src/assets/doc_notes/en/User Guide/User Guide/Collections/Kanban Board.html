@@ -1,0 +1,177 @@
+<figure class="image">
+  <img style="aspect-ratio:918/248;" src="2_Kanban Board_image.png"
+  width="918" height="248">
+</figure>
+<p>The Board view presents sub-notes in columns for a Kanban-like experience.
+  Each column represents a possible value for a status label, which can be
+  adjusted.</p>
+<h2>How it works</h2>
+<p>When first creating a collection of <em>Board</em> type, a few subnotes
+  will be created, each having a <code>#status</code> label set. The board
+  then groups each note by the value of the status attribute.</p>
+<p>Notes are displayed recursively, so even the child notes of the child
+  notes will be displayed. However, unlike the&nbsp;<a class="reference-link"
+  href="#root/_help_2FvYrpmOXm29">Table</a>, the notes are not displayed in a hierarchy.</p>
+<h2>Interaction</h2>
+<h3>Working with columns</h3>
+<ul>
+  <li>Create a new column by pressing <em>Add Column</em> near the last column.
+    <ul>
+      <li>Once pressed, a text box will be displayed to set the name of the column.
+        Press <kbd>Enter</kbd> to confirm, or <kbd>Escape</kbd> to dismiss.</li>
+    </ul>
+  </li>
+  <li>To reorder a column, simply hold the mouse over the title and drag it
+    to the desired position.</li>
+  <li>To delete a column, right click on its title and select <em>Delete column</em>.</li>
+  <li>To rename a column, click on the note title.
+    <ul>
+      <li>Press Enter to confirm.</li>
+      <li>Upon renaming a column, the corresponding status attribute of all its
+        notes will be changed in bulk.</li>
+    </ul>
+  </li>
+  <li>If there are many columns, use the mouse wheel to scroll.</li>
+</ul>
+<h3>Working with notes</h3>
+<ul>
+  <li>Create a new note in any column by pressing <em>New item</em>
+    <ul>
+      <li>Enter the name of the note and press <kbd>Enter</kbd> or click away. To
+        dismiss the creation of a new note, simply press <kbd>Escape</kbd> or leave
+        the name empty.</li>
+      <li>Once created, the new note will have an attribute (<code>status</code> label
+        by default) set to the name of the column.</li>
+    </ul>
+  </li>
+  <li>To open the note, simply click on it.</li>
+  <li>To change the title of the note directly from the board, hover the mouse
+    over its card and press the edit button on the right.</li>
+  <li>To change the state of a note, simply drag a note from one column to the
+    other to change its state.</li>
+  <li>The order of the notes in each column corresponds to their position in
+    the tree.
+    <ul>
+      <li>It's possible to reorder notes simply by dragging them to the desired
+        position within the same columns.</li>
+      <li>It's also possible to drag notes across columns, at the desired position.</li>
+    </ul>
+  </li>
+  <li>For more options, right click on a note to display a context menu with
+    the following options:
+    <ul>
+      <li>Open the note in a new tab/split/window or quick edit.</li>
+      <li>Move the note to any column.</li>
+      <li>Insert a new note above/below the current one.</li>
+      <li>Archive/unarchive the current note.</li>
+      <li>Delete the current note.</li>
+    </ul>
+  </li>
+  <li>If there are many notes within the column, move the mouse over the column
+    and use the mouse wheel to scroll.</li>
+</ul>
+<h3>Working with the note tree</h3>
+<p>It's also possible to add items on the board using the&nbsp;<a class="reference-link"
+  href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>.</p>
+<ol>
+  <li>Select the desired note in the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>.</li>
+  <li>Hold the mouse on the note and drag it to the to the desired column.</li>
+</ol>
+<p>This works for:</p>
+<ul>
+  <li>Notes that are not children of the board, case in which a <a href="#root/_help_IakOLONlIfGI">clone</a> will
+    be created.</li>
+  <li>Notes that are children of the board, but not yet assigned on the board.</li>
+  <li>Notes that are children of the board, case in which they will be moved
+    to the new column.</li>
+</ul>
+<h3>Keyboard interaction</h3>
+<p>The board view has mild support for keyboard-based navigation:</p>
+<ul>
+  <li>Use <kbd>Tab</kbd> and <kbd>Shift</kbd>+<kbd>Tab</kbd> to navigate between
+    column titles, notes and the “New item” button for each of the columns,
+    in sequential order.</li>
+  <li>To rename a column or a note, press <kbd>F2</kbd> while it is focused.</li>
+  <li>To open a specific note or create a new item, press <kbd>Enter</kbd> while
+    it is focused.</li>
+  <li>To dismiss a rename of a note or a column, press <kbd>Escape</kbd>.</li>
+</ul>
+<h2>Configuration</h2>
+<h3>Displaying custom attributes</h3>
+<figure class="image image-style-align-center">
+  <img style="aspect-ratio:531/485;" src="Kanban Board_image.png"
+  width="531" height="485">
+</figure>
+<p>Note attributes can be displayed on the board to enhance it with custom
+  information such as adding a Due date for your tasks.</p>
+<p>This feature works exclusively via attribute definitions (<a class="reference-link"
+  href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>). The easiest way to
+  add these is:</p>
+<ol>
+  <li>Go to board note.</li>
+  <li>In the ribbon select <em>Owned Attributes</em> → plus button → <em>Add new label/relation definition</em>.</li>
+  <li>Configure the attribute as desired.</li>
+  <li>Check <em>Inheritable</em> to make it applicable to child notes automatically.</li>
+</ol>
+<p>After creating the attribute, click on a note and fill in the promoted
+  attributes which should then reflect inside the board.</p>
+<p>Of note:</p>
+<ul>
+  <li>Both promoted and non-promoted attribute definitions are supported. The
+    only difference is that non-promoted attributes don't have an “Alias” for
+    assigning a custom name.</li>
+  <li>Both “Single value” and “Multi value” attributes are supported. In case
+    of multi-value, a badge is displayed for every instance of the attribute.</li>
+  <li>All label types are supported, including dates, booleans and URLs.</li>
+  <li>Relation attributes are also supported as well, showing a link with the
+    target note title and icon.</li>
+  <li>Currently, it's not possible to adjust which promoted attributes are displayed,
+    since all promoted attributes will be displayed (except the <code>board:groupBy</code> one).
+    There are plans to improve upon this being able to hide promoted attributes
+    individually.</li>
+</ul>
+<h3>Grouping by another label</h3>
+<p>By default, the label used to group the notes is <code>#status</code>.
+  It is possible to use a different label if needed by defining a label named <code>#board:groupBy</code> with
+  the value being the attribute to use (with or without <code>#</code> attribute
+  prefix).</p>
+<h3>Grouping by relations</h3>
+<figure class="image image-style-align-right">
+  <img style="aspect-ratio:535/245;" src="1_Kanban Board_image.png"
+  width="535" height="245">
+</figure>
+<p>A more advanced use-case is grouping by <a href="#root/_help_Cq5X6iKQop6R">Relations</a>.</p>
+<p>During this mode:</p>
+<ul>
+  <li>The columns represent the <em>target notes</em> of a relation.</li>
+  <li>When creating a new column, a note is selected instead of a column name.</li>
+  <li>The column icon will match the target note.</li>
+  <li>Moving notes between columns will change its relation.</li>
+  <li>Renaming an existing column will change the target note of all the notes
+    in that column.</li>
+</ul>
+<p>Using relations instead of labels has some benefits:</p>
+<ul>
+  <li>The status/grouping of the notes is visible outside the Kanban board,
+    for example on the&nbsp;<a class="reference-link" href="#root/_help_bdUJEHsAPYQR">Note Map</a>.</li>
+  <li>Columns can have icons.</li>
+  <li>Renaming columns is less intensive since it simply involves changing the
+    note title of the target note instead of having to do a bulk rename.</li>
+</ul>
+<p>To do so:</p>
+<ol>
+  <li>
+    <p>First, create a Kanban board from scratch and not a template:</p>
+  </li>
+  <li>
+    <p>Assign <code>#viewType=board #hidePromotedAttributes</code> to emulate the
+      default template.</p>
+  </li>
+  <li>
+    <p>Set <code>#board:groupBy</code> to the name of a relation to group by, <strong>including the</strong>  <code>**~**</code>  <strong>prefix</strong> (e.g. <code>~status</code>).</p>
+  </li>
+  <li>
+    <p>Optionally, use&nbsp;<a class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;for
+      easy status change within the note:</p><pre><code class="language-text-x-trilium-auto">#relation:status(inheritable)="promoted,alias=Status,single"</code></pre>
+  </li>
+</ol>

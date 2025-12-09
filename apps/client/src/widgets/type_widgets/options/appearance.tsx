@@ -79,7 +79,7 @@ const FONT_FAMILIES: FontGroup[] = [
     }
 ];
 
-export default function AppearanceSettings() {    
+export default function AppearanceSettings() {
     const [ overrideThemeFonts ] = useTriliumOption("overrideThemeFonts");
 
     return (
@@ -88,7 +88,9 @@ export default function AppearanceSettings() {
             <ApplicationTheme />
             {overrideThemeFonts === "true" && <Fonts />}
             {isElectron() && <ElectronIntegration /> }
+            <Performance />
             <MaxContentWidth />
+            <RibbonOptions />
             <RelatedSettings items={[
                 {
                     title: t("settings_appearance.related_code_blocks"),
@@ -105,7 +107,7 @@ export default function AppearanceSettings() {
 
 function LayoutOrientation() {
     const [ layoutOrientation, setLayoutOrientation ] = useTriliumOption("layoutOrientation", true);
-    
+
     return (
         <OptionsSection title={t("theme.layout")}>
             <FormRadioGroup
@@ -154,7 +156,7 @@ function ApplicationTheme() {
                 </FormGroup>
 
                 <FormGroup className="side-checkbox col-md-6" name="override-theme-fonts">
-                    <FormCheckbox                        
+                    <FormCheckbox
                         label={t("theme.override_theme_fonts_label")}
                         currentValue={overrideThemeFonts} onChange={setOverrideThemeFonts} />
                 </FormGroup>
@@ -163,7 +165,7 @@ function ApplicationTheme() {
     )
 }
 
-function Fonts() {    
+function Fonts() {
     return (
         <OptionsSection title={t("fonts.fonts")}>
             <Font title={t("fonts.main_font")} fontFamilyOption="mainFontFamily" fontSizeOption="mainFontSize" />
@@ -181,8 +183,8 @@ function Fonts() {
     );
 }
 
-function Font({ title, fontFamilyOption, fontSizeOption }: { title: string, fontFamilyOption: OptionNames, fontSizeOption: OptionNames }) {    
-    const [ fontFamily, setFontFamily ] = useTriliumOption(fontFamilyOption);    
+function Font({ title, fontFamilyOption, fontSizeOption }: { title: string, fontFamilyOption: OptionNames, fontSizeOption: OptionNames }) {
+    const [ fontFamily, setFontFamily ] = useTriliumOption(fontFamilyOption);
     const [ fontSize, setFontSize ] = useTriliumOption(fontSizeOption);
 
     return (
@@ -193,7 +195,7 @@ function Font({ title, fontFamilyOption, fontSizeOption }: { title: string, font
                     <FormSelectWithGroups
                         values={FONT_FAMILIES}
                         currentValue={fontFamily} onChange={setFontFamily}
-                        keyProperty="value" titleProperty="label"                    
+                        keyProperty="value" titleProperty="label"
                     />
                 </FormGroup>
 
@@ -201,11 +203,11 @@ function Font({ title, fontFamilyOption, fontSizeOption }: { title: string, font
                     <FormTextBoxWithUnit
                         name="tree-font-size"
                         type="number" min={50} max={200} step={10}
-                        currentValue={fontSize} onChange={setFontSize}
+                        currentValue={fontSize} onBlur={setFontSize}
                         unit={t("units.percentage")}
                     />
                 </FormGroup>
-            </div>            
+            </div>
         </>
     );
 }
@@ -220,7 +222,7 @@ function ElectronIntegration() {
             <FormGroup name="zoom-factor" label={t("electron_integration.zoom-factor")} description={t("zoom_factor.description")}>
                 <FormTextBox
                     type="number"
-                    min="0.3" max="2.0" step="0.1"                    
+                    min="0.3" max="2.0" step="0.1"
                     currentValue={zoomFactor} onChange={setZoomFactor}
                 />
             </FormGroup>
@@ -237,6 +239,7 @@ function ElectronIntegration() {
                 <FormCheckbox
                     label={t("electron_integration.background-effects")}
                     currentValue={backgroundEffects} onChange={setBackgroundEffects}
+                    disabled={nativeTitleBarVisible}
                 />
             </FormGroup>
 
@@ -245,8 +248,44 @@ function ElectronIntegration() {
     )
 }
 
+function Performance() {
+    const [ motionEnabled, setMotionEnabled ] = useTriliumOptionBool("motionEnabled");
+    const [ shadowsEnabled, setShadowsEnabled ] = useTriliumOptionBool("shadowsEnabled");
+    const [ backdropEffectsEnabled, setBackdropEffectsEnabled ] = useTriliumOptionBool("backdropEffectsEnabled");
+
+    return <OptionsSection title={t("ui-performance.title")}>
+        <FormCheckbox
+            label={t("ui-performance.enable-motion")}
+            currentValue={motionEnabled} onChange={setMotionEnabled}
+        />
+
+        <FormCheckbox
+            label={t("ui-performance.enable-shadows")}
+            currentValue={shadowsEnabled} onChange={setShadowsEnabled}
+        />
+
+        <FormCheckbox
+            label={t("ui-performance.enable-backdrop-effects")}
+            currentValue={backdropEffectsEnabled} onChange={setBackdropEffectsEnabled}
+        />
+
+        {isElectron() && <SmoothScrollEnabledOption />}
+
+    </OptionsSection>
+}
+
+function SmoothScrollEnabledOption() {
+    const [ smoothScrollEnabled, setSmoothScrollEnabled ] = useTriliumOptionBool("smoothScrollEnabled");
+
+    return <FormCheckbox
+        label={`${t("ui-performance.enable-smooth-scroll")} ${t("ui-performance.app-restart-required")}`}
+        currentValue={smoothScrollEnabled} onChange={setSmoothScrollEnabled}
+    />
+}
+
 function MaxContentWidth() {
-    const [ maxContentWidth, setMaxContentWidth ] = useTriliumOption("maxContentWidth");
+    const [maxContentWidth, setMaxContentWidth] = useTriliumOption("maxContentWidth");
+    const [centerContent, setCenterContent] = useTriliumOptionBool("centerContent");
 
     return (
         <OptionsSection title={t("max_content_width.title")}>
@@ -254,17 +293,30 @@ function MaxContentWidth() {
 
             <Column md={6}>
                 <FormGroup name="max-content-width" label={t("max_content_width.max_width_label")}>
-                    <FormTextBoxWithUnit                        
-                        type="number" min={MIN_CONTENT_WIDTH} step="10" 
-                        currentValue={maxContentWidth} onChange={setMaxContentWidth}
+                    <FormTextBoxWithUnit
+                        type="number" min={MIN_CONTENT_WIDTH} step="10"
+                        currentValue={maxContentWidth} onBlur={setMaxContentWidth}
                         unit={t("max_content_width.max_width_unit")}
                     />
                 </FormGroup>
             </Column>
 
-            <p>
-                {t("max_content_width.apply_changes_description")} <Button text={t("max_content_width.reload_button")} size="micro" onClick={reloadFrontendApp} />
-            </p>
+            <FormCheckbox label={t("max_content_width.centerContent")}
+                          currentValue={centerContent}
+                          onChange={setCenterContent} />
+        </OptionsSection>
+    )
+}
+
+function RibbonOptions() {
+    const [ editedNotesOpenInRibbon, setEditedNotesOpenInRibbon ] = useTriliumOptionBool("editedNotesOpenInRibbon");
+
+    return (
+        <OptionsSection title={t('ribbon.widgets')}>
+            <FormCheckbox
+                label={t('ribbon.edited_notes_message')}
+                currentValue={editedNotesOpenInRibbon} onChange={setEditedNotesOpenInRibbon}
+            />
         </OptionsSection>
     )
 }

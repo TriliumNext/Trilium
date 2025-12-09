@@ -1,5 +1,6 @@
 import { Tooltip } from "bootstrap";
 import NoteContextAwareWidget from "../note_context_aware_widget.js";
+import { handleRightToLeftPlacement } from "../../services/utils.js";
 
 const TPL = /*html*/`<button class="button-widget bx"
       data-bs-toggle="tooltip"
@@ -26,13 +27,14 @@ export default class AbstractButtonWidget<SettingsT extends AbstractButtonWidget
 
     doRender() {
         this.$widget = $(TPL);
+
         this.tooltip = new Tooltip(this.$widget[0], {
             html: true,
             // in case getTitle() returns null -> use empty string as fallback
             title: () => this.getTitle() || "",
             trigger: "hover",
-            placement: this.settings.titlePlacement,
-            fallbackPlacements: [this.settings.titlePlacement]
+            placement: handleRightToLeftPlacement(this.settings.titlePlacement),
+            fallbackPlacements: [ handleRightToLeftPlacement(this.settings.titlePlacement) ]
         });
 
         if (this.settings.onContextMenu) {

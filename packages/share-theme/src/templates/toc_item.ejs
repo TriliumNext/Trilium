@@ -1,12 +1,11 @@
 <%
-const slugify = (text) => text.toLowerCase().replace(/[^\w]/g, "-");
-const slug = slugify(entry.name);
+const strippedName = utils.stripTags(entry.name);
+const slug = utils.slugify(strippedName);
 %>
-
 
 <li>
     <a href="#<%= slug %>">
-        <span><%= entry.name %></span>
+        <span><%= strippedName %></span>
     </a>
 
     <% if (entry.children.length) { %>

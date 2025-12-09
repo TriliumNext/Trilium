@@ -7,7 +7,7 @@ For example:
 
 *   <a class="reference-link" href="../Note%20Types/Text.md">Text</a> notes are represented internally as HTML, using the <a class="reference-link" href="Technologies%20used/CKEditor.md">CKEditor</a> representation. Note that due to the custom plugins, some HTML elements are specific to Trilium only, for example the admonitions.
 *   <a class="reference-link" href="../Note%20Types/Code.md">Code</a> notes are plain text and are represented internally as-is.
-*   <a class="reference-link" href="../Note%20Types/Collections/Geo%20Map%20View.md">Geo Map</a> notes contain only minimal information (viewport, zoom) as a JSON.
+*   <a class="reference-link" href="../Collections/Geo%20Map.md">Geo Map</a> notes contain only minimal information (viewport, zoom) as a JSON.
 *   <a class="reference-link" href="../Note%20Types/Canvas.md">Canvas</a> notes are represented as JSON, with Trilium's own information alongside with <a class="reference-link" href="Technologies%20used/Excalidraw.md">Excalidraw</a>'s internal JSON representation format.
 *   <a class="reference-link" href="../Note%20Types/Mind%20Map.md">Mind Map</a> notes are represented as JSON, with the internal format of <a class="reference-link" href="Technologies%20used/MindElixir.md">MindElixir</a>.
 
@@ -36,7 +36,7 @@ It is possible to view the source code of a note by pressing the contextual menu
 
 The source code will be displayed in a new tab.
 
-For some note types, such as text notes, the source code is also formatted in order to be more easily readable.
+For some note types, such as text notes and JSON notes, the source code is also formatted in order to be more easily readable.
 
 ## Modifying the source code
 

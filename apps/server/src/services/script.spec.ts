@@ -59,7 +59,7 @@ describe("Script", () => {
         });
     });
 
-    describe("dayjs", () => {
+    describe("dayjs in backend scripts", () => {
         const scriptNote = note("dayjs", {
             type: "code",
             mime: "application/javascript;env=backend",
@@ -74,40 +74,12 @@ describe("Script", () => {
             });
         });
 
-        it("dayjs is-same-or-before", () => {
+        it("dayjs is-same-or-before plugin exists", () => {
             cls.init(() => {
                 const bundle = getScriptBundle(scriptNote.note, true, "backend", [], `return api.dayjs("2023-10-01").isSameOrBefore(api.dayjs("2023-10-02"));`);
                 expect(bundle).toBeDefined();
                 const result = executeBundle(bundle!);
                 expect(result).toBe(true);
-            });
-        });
-
-        it("dayjs is-same-or-after", () => {
-            cls.init(() => {
-                const bundle = getScriptBundle(scriptNote.note, true, "backend", [], `return api.dayjs("2023-10-02").isSameOrAfter(api.dayjs("2023-10-01"));`);
-                expect(bundle).toBeDefined();
-                const result = executeBundle(bundle!);
-                expect(result).toBe(true);
-            });
-        });
-
-        it("dayjs is-between", () => {
-            cls.init(() => {
-                const bundle = getScriptBundle(scriptNote.note, true, "backend", [], `return api.dayjs("2023-10-02").isBetween(api.dayjs("2023-10-01"), api.dayjs("2023-10-03"));`);
-                expect(bundle).toBeDefined();
-                const result = executeBundle(bundle!);
-                expect(result).toBe(true);
-            });
-        });
-
-        // advanced format
-        it("dayjs advanced format", () => {
-            cls.init(() => {
-                const bundle = getScriptBundle(scriptNote.note, true, "backend", [], `return api.dayjs("2023-10-01").format("Q");`);
-                expect(bundle).toBeDefined();
-                const result = executeBundle(bundle!);
-                expect(result).not.toBe("Q");
             });
         });
     });

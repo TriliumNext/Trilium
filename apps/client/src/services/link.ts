@@ -3,16 +3,8 @@ import linkContextMenuService from "../menus/link_context_menu.js";
 import appContext, { type NoteCommandData } from "../components/app_context.js";
 import froca from "./froca.js";
 import utils from "./utils.js";
-
-// Be consistent with `allowedSchemes` in `src\services\html_sanitizer.ts`
-// TODO: Deduplicate with server once we can.
-export const ALLOWED_PROTOCOLS = [
-    'http', 'https', 'ftp', 'ftps', 'mailto', 'data', 'evernote', 'file', 'facetime', 'gemini', 'git',
-    'gopher', 'imap', 'irc', 'irc6', 'jabber', 'jar', 'lastfm', 'ldap', 'ldaps', 'magnet', 'message',
-    'mumble', 'nfs', 'onenote', 'pop', 'rmi', 's3', 'sftp', 'skype', 'sms', 'spotify', 'steam', 'svn', 'udp',
-    'view-source', 'vlc', 'vnc', 'ws', 'wss', 'xmpp', 'jdbc', 'slack', 'tel', 'smb', 'zotero', 'geo',
-    'mid'
-];
+import { ALLOWED_PROTOCOLS } from "@triliumnext/commons";
+import { openInCurrentNoteContext } from "../components/note_context.js";
 
 function getNotePathFromUrl(url: string) {
     const notePathMatch = /#(root[A-Za-z0-9_/]*)$/.exec(url);
@@ -35,8 +27,7 @@ async function getLinkIcon(noteId: string, viewMode: ViewMode | undefined) {
     return icon;
 }
 
-// TODO: Remove `string` once all the view modes have been mapped.
-type ViewMode = "default" | "source" | "attachments" | "contextual-help" | string;
+export type ViewMode = "default" | "source" | "attachments" | "contextual-help";
 
 export interface ViewScope {
     /**
@@ -108,7 +99,7 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
     const viewMode = viewScope.viewMode || "default";
     let linkTitle = options.title;
 
-    if (!linkTitle) {
+    if (linkTitle === undefined) {
         if (viewMode === "attachments" && viewScope.attachmentId) {
             const attachment = await froca.getAttachment(viewScope.attachmentId);
 
@@ -159,11 +150,16 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
     $container.append($noteLink);
 
     if (showNotePath) {
-        const resolvedPathSegments = (await treeService.resolveNotePathToSegments(notePath)) || [];
-        resolvedPathSegments.pop(); // Remove last element
+        let pathSegments: string[];
+        if (notePath == "root") {
+            pathSegments = ["⌂"];
+        } else {
+            const resolvedPathSegments = (await treeService.resolveNotePathToSegments(notePath)) || [];
+            resolvedPathSegments.pop(); // Remove last element
 
-        const resolvedPath = resolvedPathSegments.join("/");
-        const pathSegments = await treeService.getNotePathTitleComponents(resolvedPath);
+            const resolvedPath = resolvedPathSegments.join("/");
+            pathSegments = await treeService.getNotePathTitleComponents(resolvedPath);
+        }
 
         if (pathSegments) {
             if (pathSegments.length) {
@@ -289,7 +285,7 @@ function goToLink(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent) {
  * @param $link the jQuery element of the link that was clicked, used to determine if the link is an anchor link (e.g., `#fn1` or `#fnref1`) and to handle it accordingly.
  * @returns `true` if the link was handled (i.e., the element was found and scrolled to), or a falsy value otherwise.
  */
-function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent | React.PointerEvent<HTMLCanvasElement> | null, hrefLink: string | undefined, $link?: JQuery<HTMLElement> | null) {
+export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent | React.PointerEvent<HTMLCanvasElement> | null, hrefLink: string | undefined, $link?: JQuery<HTMLElement> | null) {
     if (hrefLink?.startsWith("data:")) {
         return true;
     }
@@ -311,7 +307,8 @@ function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent
     // Right click is handled separately.
     const isMiddleClick = evt && "which" in evt && evt.which === 2;
     const targetIsBlank = ($link?.attr("target") === "_blank");
-    const openInNewTab = (isLeftClick && ctrlKey) || isMiddleClick || targetIsBlank;
+    const isDoubleClick = isLeftClick && evt?.type === "dblclick";
+    const openInNewTab = (isLeftClick && ctrlKey) || isDoubleClick || isMiddleClick || targetIsBlank;
     const activate = (isLeftClick && ctrlKey && shiftKey) || (isMiddleClick && shiftKey);
     const openInNewWindow = isLeftClick && evt?.shiftKey && !ctrlKey;
 
@@ -326,36 +323,24 @@ function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent
                 viewScope
             });
         } else if (isLeftClick) {
-            const ntxId = $(evt?.target as any)
-                .closest("[data-ntx-id]")
-                .attr("data-ntx-id");
-
-            const noteContext = ntxId ? appContext.tabManager.getNoteContextById(ntxId) : appContext.tabManager.getActiveContext();
-
-            if (noteContext) {
-                noteContext.setNote(notePath, { viewScope }).then(() => {
-                    if (noteContext !== appContext.tabManager.getActiveContext()) {
-                        appContext.tabManager.activateNoteContext(noteContext.ntxId);
-                    }
-                });
-            } else {
-                appContext.tabManager.openContextWithNote(notePath, { viewScope, activate: true });
-            }
+            openInCurrentNoteContext(evt, notePath, viewScope);
         }
     } else if (hrefLink) {
         const withinEditLink = $link?.hasClass("ck-link-actions__preview");
         const outsideOfCKEditor = !$link || $link.closest("[contenteditable]").length === 0;
 
-        if (openInNewTab || (withinEditLink && (isLeftClick || isMiddleClick)) || (outsideOfCKEditor && (isLeftClick || isMiddleClick))) {
+        if (openInNewTab || openInNewWindow || (isLeftClick && (withinEditLink || outsideOfCKEditor))) {
             if (hrefLink.toLowerCase().startsWith("http") || hrefLink.startsWith("api/")) {
                 window.open(hrefLink, "_blank");
-            } else if ((hrefLink.toLowerCase().startsWith("file:") || hrefLink.toLowerCase().startsWith("geo:")) && utils.isElectron()) {
-                const electron = utils.dynamicRequire("electron");
-                electron.shell.openPath(hrefLink);
             } else {
                 // Enable protocols supported by CKEditor 5 to be clickable.
                 if (ALLOWED_PROTOCOLS.some((protocol) => hrefLink.toLowerCase().startsWith(protocol + ":"))) {
-                    window.open(hrefLink, "_blank");
+                    if ( utils.isElectron()) {
+                        const electron = utils.dynamicRequire("electron");
+                        electron.shell.openExternal(hrefLink);
+                    } else {
+                        window.open(hrefLink, "_blank");
+                    }
                 }
             }
         }
@@ -482,37 +467,30 @@ function getReferenceLinkTitleSync(href: string) {
     }
 }
 
-// TODO: Check why the event is not supported.
-//@ts-ignore
-$(document).on("click", "a", goToLink);
-// TODO: Check why the event is not supported.
-//@ts-ignore
-$(document).on("auxclick", "a", goToLink); // to handle the middle button
-// TODO: Check why the event is not supported.
-//@ts-ignore
-$(document).on("contextmenu", "a", linkContextMenu);
-$(document).on("dblclick", "a", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+if (glob.device !== "print") {
+    // TODO: Check why the event is not supported.
+    //@ts-ignore
+    $(document).on("click", "a", goToLink);
+    // TODO: Check why the event is not supported.
+    //@ts-ignore
+    $(document).on("auxclick", "a", goToLink); // to handle the middle button
+    // TODO: Check why the event is not supported.
+    //@ts-ignore
+    $(document).on("contextmenu", "a", linkContextMenu);
+    // TODO: Check why the event is not supported.
+    //@ts-ignore
+    $(document).on("dblclick", "a", goToLink);
 
-    const $link = $(e.target).closest("a");
-
-    const address = $link.attr("href");
-
-    if (address && address.startsWith("http")) {
-        window.open(address, "_blank");
-    }
-});
-
-$(document).on("mousedown", "a", (e) => {
-    if (e.which === 2) {
-        // prevent paste on middle click
-        // https://github.com/zadam/trilium/issues/2995
-        // https://developer.mozilla.org/en-US/docs/Web/API/Element/auxclick_event#preventing_default_actions
-        e.preventDefault();
-        return false;
-    }
-});
+    $(document).on("mousedown", "a", (e) => {
+        if (e.which === 2) {
+            // prevent paste on middle click
+            // https://github.com/zadam/trilium/issues/2995
+            // https://developer.mozilla.org/en-US/docs/Web/API/Element/auxclick_event#preventing_default_actions
+            e.preventDefault();
+            return false;
+        }
+    });
+}
 
 export default {
     getNotePathFromUrl,

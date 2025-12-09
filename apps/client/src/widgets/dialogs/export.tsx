@@ -4,14 +4,13 @@ import tree from "../../services/tree";
 import Button from "../react/Button";
 import FormRadioGroup from "../react/FormRadioGroup";
 import Modal from "../react/Modal";
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import "./export.css";
 import ws from "../../services/ws";
-import toastService, { ToastOptions } from "../../services/toast";
+import toastService, { type ToastOptionsWithRequiredId } from "../../services/toast";
 import utils from "../../services/utils";
 import open from "../../services/open";
 import froca from "../../services/froca";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
 
 interface ExportDialogProps {
     branchId?: string | null;
@@ -19,7 +18,7 @@ interface ExportDialogProps {
     defaultType?: "subtree" | "single";
 }
 
-function ExportDialogComponent() {
+export default function ExportDialog() {
     const [ opts, setOpts ] = useState<ExportDialogProps>();
     const [ exportType, setExportType ] = useState<string>(opts?.defaultType ?? "subtree");
     const [ subtreeFormat, setSubtreeFormat ] = useState("html");
@@ -80,6 +79,7 @@ function ExportDialogComponent() {
                         values={[
                             { value: "html", label: t("export.format_html_zip") },
                             { value: "markdown", label: t("export.format_markdown") },
+                            { value: "share", label: t("export.share-format") },
                             { value: "opml", label: t("export.format_opml") }
                         ]}
                     />
@@ -125,14 +125,6 @@ function ExportDialogComponent() {
     );
 }
 
-export default class ExportDialog extends ReactBasicWidget {
-
-    get component() {
-        return <ExportDialogComponent />
-    }    
-
-}
-
 function exportBranch(branchId: string, type: string, format: string, version: string) {
     const taskId = utils.randomString(10);
     const url = open.getUrlForDownload(`api/branches/${branchId}/export/${type}/${format}/${version}/${taskId}`);
@@ -140,16 +132,16 @@ function exportBranch(branchId: string, type: string, format: string, version: s
 }
 
 ws.subscribeToMessages(async (message) => {
-    function makeToast(id: string, message: string): ToastOptions {
+    function makeToast(id: string, message: string): ToastOptionsWithRequiredId {
         return {
-            id: id,
+            id,
             title: t("export.export_status"),
-            message: message,
-            icon: "arrow-square-up-right"
+            message,
+            icon: "export"
         };
     }
 
-    if (message.taskType !== "export") {
+    if (!("taskType" in message) || message.taskType !== "export") {
         return;
     }
 
@@ -160,7 +152,7 @@ ws.subscribeToMessages(async (message) => {
         toastService.showPersistent(makeToast(message.taskId, t("export.export_in_progress", { progressCount: message.progressCount })));
     } else if (message.type === "taskSucceeded") {
         const toast = makeToast(message.taskId, t("export.export_finished_successfully"));
-        toast.closeAfter = 5000;
+        toast.timeout = 5000;
 
         toastService.showPersistent(toast);
     }

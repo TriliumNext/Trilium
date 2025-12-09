@@ -27,7 +27,7 @@ async function getAndExecuteBundle(noteId: string, originEntity = null, script =
     return await executeBundle(bundle, originEntity);
 }
 
-async function executeBundle(bundle: Bundle, originEntity?: Entity | null, $container?: JQuery<HTMLElement>) {
+export async function executeBundle(bundle: Bundle, originEntity?: Entity | null, $container?: JQuery<HTMLElement>) {
     const apiContext = await ScriptContext(bundle.noteId, bundle.allNoteIds, originEntity, $container);
 
     try {
@@ -36,10 +36,17 @@ async function executeBundle(bundle: Bundle, originEntity?: Entity | null, $cont
         }.call(apiContext);
     } catch (e: any) {
         const note = await froca.getNote(bundle.noteId);
-
-        const message = `Execution of JS note "${note?.title}" with ID ${bundle.noteId} failed with error: ${e?.message}`;
-        showError(message);
-        logError(message);
+        toastService.showPersistent({
+            id: `custom-script-failure-${note?.noteId}`,
+            title: t("toast.bundle-error.title"),
+            icon: "bx bx-error-circle",
+            message: t("toast.bundle-error.message", {
+                id: note?.noteId,
+                title: note?.title,
+                message: e.message
+            })
+        });
+        logError("Widget initialization failed: ", e);
     }
 }
 
@@ -102,8 +109,9 @@ async function getWidgetBundlesByParent() {
             const noteId = bundle.noteId;
             const note = await froca.getNote(noteId);
             toastService.showPersistent({
+                id: `custom-script-failure-${noteId}`,
                 title: t("toast.bundle-error.title"),
-                icon: "alert",
+                icon: "bx bx-error-circle",
                 message: t("toast.bundle-error.message", {
                     id: noteId,
                     title: note?.title,

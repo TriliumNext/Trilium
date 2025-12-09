@@ -6,7 +6,7 @@ WHERE powershell.exe > NUL 2>&1
 IF %ERRORLEVEL% NEQ 0 GOTO BATCH ELSE GOTO POWERSHELL
 
 :POWERSHELL
-powershell -ExecutionPolicy Bypass -NonInteractive -NoLogo "Set-Item -Path Env:NODE_TLS_REJECT_UNAUTHORIZED -Value 0; ./trilium.exe"
+powershell -ExecutionPolicy Bypass -NonInteractive -NoLogo -Command "Set-Item -Path Env:NODE_TLS_REJECT_UNAUTHORIZED -Value 0; ./trilium.exe"
 GOTO END
 
 :BATCH

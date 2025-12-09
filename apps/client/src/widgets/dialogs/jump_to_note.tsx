@@ -1,4 +1,3 @@
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import Modal from "../react/Modal";
 import Button from "../react/Button";
 import NoteAutocomplete from "../react/NoteAutocomplete";
@@ -8,13 +7,14 @@ import note_autocomplete, { Suggestion } from "../../services/note_autocomplete"
 import appContext from "../../components/app_context";
 import commandRegistry from "../../services/command_registry";
 import { refToJQuerySelector } from "../react/react_utils";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
+import shortcutService from "../../services/shortcuts";
 
 const KEEP_LAST_SEARCH_FOR_X_SECONDS = 120;
 
 type Mode = "last-search" | "recent-notes" | "commands";
 
-function JumpToNoteDialogComponent() {
+export default function JumpToNoteDialogComponent() {
     const [ mode, setMode ] = useState<Mode>();
     const [ lastOpenedTs, setLastOpenedTs ] = useState<number>(0);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -26,12 +26,12 @@ function JumpToNoteDialogComponent() {
     
     async function openDialog(commandMode: boolean) {        
         let newMode: Mode;
-        let initialText: string = "";
+        let initialText = "";
 
         if (commandMode) {
             newMode = "commands";
             initialText = ">";            
-        } else if (Date.now() - lastOpenedTs <= KEEP_LAST_SEARCH_FOR_X_SECONDS * 1000 && actualText) {
+        } else if (Date.now() - lastOpenedTs <= KEEP_LAST_SEARCH_FOR_X_SECONDS * 1000 && actualText.current) {
             // if you open the Jump To dialog soon after using it previously, it can often mean that you
             // actually want to search for the same thing (e.g., you opened the wrong note at first try)
             // so we'll keep the content.
@@ -83,6 +83,27 @@ function JumpToNoteDialogComponent() {
         $autoComplete
             .trigger("focus")
             .trigger("select");
+            
+        // Add keyboard shortcut for full search
+        shortcutService.bindElShortcut($autoComplete, "ctrl+return", () => {
+            if (!isCommandMode) {
+                showInFullSearch();
+            }
+        });
+    }
+    
+    async function showInFullSearch() {
+        try {
+            setShown(false);
+            const searchString = actualText.current?.trim();
+            if (searchString && !searchString.startsWith(">")) {
+                await appContext.triggerCommand("searchNotes", {
+                    searchString
+                });
+            }
+        } catch (error) {
+            console.error("Failed to trigger full search:", error);
+        }
     }
 
     return (
@@ -108,18 +129,15 @@ function JumpToNoteDialogComponent() {
                 />}
             onShown={onShown}
             onHidden={() => setShown(false)}
-            footer={!isCommandMode && <Button className="show-in-full-text-button" text={t("jump_to_note.search_button")} keyboardShortcut="Ctrl+Enter" />}
+            footer={!isCommandMode && <Button 
+                className="show-in-full-text-button" 
+                text={t("jump_to_note.search_button")} 
+                keyboardShortcut="Ctrl+Enter"
+                onClick={showInFullSearch}
+            />}
             show={shown}
         >
             <div className="algolia-autocomplete-container jump-to-note-results" ref={containerRef}></div>
         </Modal>
     );
-}
-
-export default class JumpToNoteDialog extends ReactBasicWidget {
-
-    get component() {
-        return <JumpToNoteDialogComponent />;
-    }
-
 }

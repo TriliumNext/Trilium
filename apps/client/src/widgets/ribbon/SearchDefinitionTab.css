@@ -1,0 +1,174 @@
+.search-setting-table {
+    margin-top: 0;
+    margin-bottom: 7px;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 10px;
+}
+
+.search-setting-table div {
+    white-space: nowrap;
+}
+
+.search-setting-table .title-column {
+    /* minimal width so that table remains static sized and most space remains for middle column with settings */
+    width: 50px;
+    white-space: nowrap;
+}
+
+.search-setting-table .button-column {
+    /* minimal width so that table remains static sized and most space remains for middle column with settings */
+    width: 50px;
+    white-space: nowrap;
+    text-align: end;
+    vertical-align: middle;
+}
+
+.search-setting-table .button-column .dropdown {
+    display: inline-block !important;
+}
+
+.search-setting-table .button-column .dropdown-menu {
+    white-space: normal;
+}
+
+.search-setting-table .button-column > * {
+    vertical-align: middle;
+}
+
+.attribute-list hr {
+    height: 1px;
+    border-color: var(--main-border-color);
+    position: relative;
+    top: 4px;
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.search-definition-widget input:invalid {
+    border: 3px solid red;
+}
+
+.add-search-option button {
+    margin: 3px;
+}
+
+.dropdown-header {
+    background-color: var(--accented-background-color);
+}
+
+.search-actions-container {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+body.mobile .search-definition-widget {
+    contain: none;
+}
+
+@media (max-width: 720px) {
+
+    .search-setting-table {
+        display: block;
+        font-size: 0.9em;
+    }
+
+    .search-setting-table tr {
+        padding: 0.5em 0;
+        border-bottom: 1px solid var(--main-border-color);
+    }
+
+    .search-setting-table tr,
+    .search-setting-table td {
+        display: block;
+    }
+
+    .search-setting-table tbody {
+        display: block;
+        padding: 0 1em;
+    }
+
+    .search-setting-table tbody:first-of-type {
+        display: block;
+        overflow: auto;
+    }
+
+    .search-setting-table .add-search-option {
+        display: flex;
+    }
+
+    .search-setting-table .add-search-option button {
+        font-size: 0.75em;
+    }
+
+    .search-options tr,
+    .action-options tr {
+        display: flex;
+        align-items: center;
+    }
+
+    .action-options tr > td > div {
+        flex-wrap: wrap;
+        gap: 0.5em 0;
+    }
+
+    .action-options input {
+        max-width: 75vw;
+    }
+
+    .search-setting-table .title-column {
+        width: unset;
+        margin-right: 0.5em;
+        min-width: 30%;
+        flex-shrink: 0;
+    }
+
+    .search-setting-table .button-column {
+        flex-grow: 1;
+        justify-content: end;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .search-setting-table .button-column .bx-help-circle {
+        display: none;
+    }
+
+    .search-setting-table tr.orderBy td:nth-of-type(2) {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        gap: 0.5em;
+    }
+
+    .search-setting-table tr.searchString td:nth-of-type(2) {
+        flex-grow: 1;
+    }
+
+    .search-setting-table tr.searchString .button-column {
+        flex-grow: 0;
+        flex-shrink: 0;
+        width: 64px;
+    }
+
+    .search-setting-table tr.ancestor > td > div {
+        flex-direction: column;
+        align-items: flex-start !important;
+    } 
+
+    .search-actions tr {
+        border-bottom: 0;
+    }
+
+    .search-actions-container {
+        align-items: center;
+        justify-content: center !important;
+    }
+
+    .search-result-widget,
+    .note-list.list-view,
+    .note-list-wrapper {
+        overflow: unset;
+        height: unset !important;
+    }
+}

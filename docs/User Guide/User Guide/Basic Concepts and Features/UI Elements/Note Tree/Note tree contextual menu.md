@@ -52,15 +52,19 @@ The contextual menu can operate:
     *   Creates a copy of the note and its descendants.
     *   This process is different from <a class="reference-link" href="../../Notes/Cloning%20Notes.md">Cloning Notes</a> since the duplicated note can be edited independently from the original.
     *   An alternative to this, if done regularly, would be <a class="reference-link" href="../../../Advanced%20Usage/Templates.md">Templates</a>.
+*   **Archive/Unarchive**
+    *   Marks a note as [archived](../../Notes/Archived%20Notes.md).
+    *   If the note is already archived, it will be unarchived instead.
+    *   Multiple notes can be selected as well. However, all the selected notes must be in the same state (archived or not), otherwise the option will be disabled.
 *   **Delete**
     *   Will delete the given notes, asking for confirmation first.
     *   In the dialog, the following options can be configured:
         *   _Delete also all clones_ to ensure that the note will be deleted everywhere if it has been placed into multiple locations (see <a class="reference-link" href="../../Notes/Cloning%20Notes.md">Cloning Notes</a>).
         *   _Erase notes permanently_ will ensure that the note cannot be recovered from <a class="reference-link" href="../Recent%20Changes.md">Recent Changes</a>.
 *   **Import into note**
-    *   Opens the [import](../../Import%20%26%20Export) dialog and places the imported notes as child notes of the selected one.
+    *   Opens the [import](../../Import%20%26%20Export.md) dialog and places the imported notes as child notes of the selected one.
 *   **Export**
-    *   Opens the [export](../../Import%20%26%20Export) dialog for the selected notes.
+    *   Opens the [export](../../Import%20%26%20Export.md) dialog for the selected notes.
 *   **Search in subtree**
     *   Opens a full <a class="reference-link" href="../../Navigation/Search.md">Search</a> with it preconfigured to only look into this note and its descendants (the _Ancestor_ field).
 

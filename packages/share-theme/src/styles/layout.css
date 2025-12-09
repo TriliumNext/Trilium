@@ -1,13 +1,21 @@
+html,
+body {
+    width: 100vw;
+    height: 100vh;
+}
+
 #split-pane {
     display: flex;
     flex-direction: row;
-    gap: 50px;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
 }
 
 #left-pane {
     display: flex;
-    width: calc((100vw - 900px) / 2);
     min-width: fit-content;
+    max-width: 20vw;
     height: calc(100vh);
     background: var(--background-secondary);
     border-right: 5px solid var(--background-highlight);
@@ -15,18 +23,27 @@
     position: sticky;
     top: 0;
     overflow-y: auto;
+    flex-shrink: 0;
 }
 
 #right-pane {
     display: flex;
     margin: 0 auto;
-    gap: 40px;
     flex: 1;
-    padding-right: 50px;
+    overflow: auto;
 }
 
 #main {
     order: 2;
     max-width: 900px;
     flex: 1;
+    padding: 0 20px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+@media (min-width: 1200px) {
+    #main {
+        padding: 0 50px;
+    }
 }

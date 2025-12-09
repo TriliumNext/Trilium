@@ -10,7 +10,7 @@
 import { Plugin, addListToDropdown, createDropdown, ListDropdownItemDefinition, SplitButtonView, ViewModel } from 'ckeditor5';
 
 import '../theme/blockquote.css';
-import admonitionIcon from '../theme/icons/admonition.svg';
+import admonitionIcon from '../theme/icons/admonition.svg?raw';
 import { AdmonitionType } from './admonitioncommand.js';
 import { Collection } from 'ckeditor5';
 

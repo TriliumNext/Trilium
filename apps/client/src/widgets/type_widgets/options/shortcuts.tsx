@@ -11,12 +11,12 @@ import { useCallback, useEffect, useState } from "preact/hooks";
 import server from "../../../services/server";
 import options from "../../../services/options";
 import dialog from "../../../services/dialog";
-import useTriliumEvent from "../../react/hooks";
+import { useTriliumEvent } from "../../react/hooks";
 
 export default function ShortcutSettings() {
-    const [ keyboardShortcuts, setKeyboardShortcuts ] = useState<KeyboardShortcut[]>([]);    
+    const [ keyboardShortcuts, setKeyboardShortcuts ] = useState<KeyboardShortcut[]>([]);
     const [ filter, setFilter ] = useState<string>();
-    
+
     useEffect(() => {
         server.get<KeyboardShortcut[]>("keyboard-actions").then(setKeyboardShortcuts);
     }, [])
@@ -82,7 +82,7 @@ export default function ShortcutSettings() {
             </FormText>
 
             <FormGroup name="keyboard-shortcut-filter">
-                <FormTextBox                    
+                <FormTextBox
                     placeholder={t("shortcuts.type_text_to_filter")}
                     currentValue={filter} onChange={(value) => setFilter(value.toLowerCase())}
                 />
@@ -136,7 +136,7 @@ function KeyboardShortcutTable({ filter, keyboardShortcuts }: { filter?: string,
                             }}>
                                 {action.separator}
                             </td>
-                        ) : ( (!filter || filterKeyboardAction(action, filter)) && 
+                        ) : ( (!filter || filterKeyboardAction(action, filter)) &&
                             <>
                                 <td>{action.friendlyName}</td>
                                 <td>

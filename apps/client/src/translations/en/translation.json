@@ -36,10 +36,13 @@
   },
   "branch_prefix": {
     "edit_branch_prefix": "Edit branch prefix",
+    "edit_branch_prefix_multiple": "Edit branch prefix for {{count}} branches",
     "help_on_tree_prefix": "Help on Tree prefix",
     "prefix": "Prefix: ",
     "save": "Save",
-    "branch_prefix_saved": "Branch prefix has been saved."
+    "branch_prefix_saved": "Branch prefix has been saved.",
+    "branch_prefix_saved_multiple": "Branch prefix has been saved for {{count}} branches.",
+    "affected_branches": "Affected branches ({{count}}):"
   },
   "bulk_actions": {
     "bulk_actions": "Bulk actions",
@@ -104,10 +107,12 @@
     "export_status": "Export status",
     "export_in_progress": "Export in progress: {{progressCount}}",
     "export_finished_successfully": "Export finished successfully.",
-    "format_pdf": "PDF - for printing or sharing purposes."
+    "format_pdf": "PDF - for printing or sharing purposes.",
+    "share-format": "HTML for web publishing - uses the same theme that is used shared notes, but can be published as a static website."
   },
   "help": {
     "title": "Cheatsheet",
+    "editShortcuts": "Edit keyboard shortcuts",
     "noteNavigation": "Note navigation",
     "goUpDown": "go up/down in the list of notes",
     "collapseExpand": "collapse/expand node",
@@ -164,6 +169,7 @@
     "importIntoNote": "Import into note",
     "chooseImportFile": "Choose import file",
     "importDescription": "Content of the selected file(s) will be imported as child note(s) into",
+    "importZipRecommendation": "When importing a ZIP file, the note hierarchy will reflect the subdirectory structure within the archive.",
     "options": "Options",
     "safeImportTooltip": "Trilium <code>.zip</code> export files can contain executable scripts which may contain harmful behavior. Safe import will deactivate automatic execution of all imported scripts. Uncheck \"Safe import\" only if the imported archive is supposed to contain executable scripts and you completely trust the contents of the import file.",
     "safeImport": "Safe import",
@@ -199,7 +205,8 @@
   "info": {
     "modalTitle": "Info message",
     "closeButton": "Close",
-    "okButton": "OK"
+    "okButton": "OK",
+    "copy_to_clipboard": "Copy to clipboard"
   },
   "jump_to_note": {
     "search_placeholder": "Search for note by its name or type > for commands...",
@@ -259,10 +266,14 @@
     "delete_all_revisions": "Delete all revisions of this note",
     "delete_all_button": "Delete all revisions",
     "help_title": "Help on Note Revisions",
-    "revision_last_edited": "This revision was last edited on {{date}}",
     "confirm_delete_all": "Do you want to delete all revisions of this note?",
     "no_revisions": "No revisions for this note yet...",
     "restore_button": "Restore",
+    "diff_on": "Show diff",
+    "diff_off": "Show content",
+    "diff_on_hint": "Click to show note source diff",
+    "diff_off_hint": "Click to show note content",
+    "diff_not_available": "Diff isn't available.",
     "confirm_restore": "Do you want to restore this revision? This will overwrite the current title and content of the note with this revision.",
     "delete_button": "Delete",
     "confirm_delete": "Do you want to delete this revision?",
@@ -577,7 +588,7 @@
     "cannot_find_day_note": "Cannot find day note",
     "cannot_find_week_note": "Cannot find week note",
     "january": "January",
-    "febuary": "February",
+    "february": "February",
     "march": "March",
     "april": "April",
     "may": "May",
@@ -587,7 +598,18 @@
     "september": "September",
     "october": "October",
     "november": "November",
-    "december": "December"
+    "december": "December",
+    "week": "Week",
+    "week_previous": "Previous week",
+    "week_next": "Next week",
+    "month": "Month",
+    "month_previous": "Previous month",
+    "month_next": "Next month",
+    "year": "Year",
+    "year_previous": "Previous year",
+    "year_next": "Next year",
+    "list": "List",
+    "today": "Today"
   },
   "close_pane_button": {
     "close_this_pane": "Close this pane"
@@ -630,7 +652,9 @@
     "about": "About Trilium Notes",
     "logout": "Logout",
     "show-cheatsheet": "Show Cheatsheet",
-    "toggle-zen-mode": "Zen Mode"
+    "toggle-zen-mode": "Zen Mode",
+    "new-version-available": "New Update Available",
+    "download-update": "Get Version {{latestVersion}}"
   },
   "zen_mode": {
     "button_exit": "Exit Zen Mode"
@@ -660,6 +684,7 @@
     "open_note_externally": "Open note externally",
     "open_note_externally_title": "File will be open in an external application and watched for changes. You'll then be able to upload the modified version back to Trilium.",
     "open_note_custom": "Open note custom",
+    "open_note_on_server": "Open note on server",
     "import_files": "Import files",
     "export_note": "Export note",
     "delete_note": "Delete note",
@@ -712,13 +737,14 @@
     "zoom_out_title": "Zoom Out"
   },
   "zpetne_odkazy": {
-    "backlink": "{{count}} Backlink",
-    "backlinks": "{{count}} Backlinks",
+    "backlink_one": "{{count}} Backlink",
+    "backlink_other": "{{count}} Backlinks",
     "relation": "relation"
   },
   "mobile_detail_menu": {
     "insert_child_note": "Insert child note",
     "delete_this_note": "Delete this note",
+    "note_revisions": "Note revisions",
     "error_cannot_get_branch_id": "Cannot get branchId for notePath '{{notePath}}'",
     "error_unrecognized_command": "Unrecognized command {{command}}"
   },
@@ -732,22 +758,28 @@
     "note_type": "Note type",
     "editable": "Editable",
     "basic_properties": "Basic Properties",
-    "language": "Language"
+    "language": "Language",
+    "configure_code_notes": "Configure code notes..."
   },
   "book_properties": {
     "view_type": "View type",
     "grid": "Grid",
     "list": "List",
     "collapse_all_notes": "Collapse all notes",
-    "expand_all_children": "Expand all children",
+    "expand_tooltip": "Expands the direct children of this collection (one level deep). For more options, press the arrow on the right.",
     "collapse": "Collapse",
     "expand": "Expand",
+    "expand_first_level": "Expand direct children",
+    "expand_nth_level": "Expand {{depth}} levels",
+    "expand_all_levels": "Expand all levels",
     "book_properties": "Collection Properties",
     "invalid_view_type": "Invalid view type '{{type}}'",
     "calendar": "Calendar",
     "table": "Table",
     "geo-map": "Geo Map",
-    "board": "Board"
+    "board": "Board",
+    "presentation": "Presentation",
+    "include_archived_notes": "Show archived notes"
   },
   "edited_notes": {
     "no_edited_notes_found": "No edited notes on this day yet...",
@@ -848,7 +880,7 @@
     "debug": "debug",
     "debug_description": "Debug will print extra debugging information into the console to aid in debugging complex queries",
     "action": "action",
-    "search_button": "Search <kbd>enter</kbd>",
+    "search_button": "Search",
     "search_execute": "Search & Execute actions",
     "save_to_note": "Save to note",
     "search_parameters": "Search Parameters",
@@ -948,13 +980,22 @@
     "no_attachments": "This note has no attachments."
   },
   "book": {
-    "no_children_help": "This collection doesn't have any child notes so there's nothing to display. See <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> for details."
+    "no_children_help": "This collection doesn't have any child notes so there's nothing to display. See <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> for details.",
+    "drag_locked_title": "Locked for editing",
+    "drag_locked_message": "Dragging not allowed since the collection is locked for editing."
   },
   "editable_code": {
     "placeholder": "Type the content of your code note here..."
   },
   "editable_text": {
-    "placeholder": "Type the content of your note here..."
+    "placeholder": "Type the content of your note here...",
+    "editor_crashed_title": "The text editor crashed",
+    "editor_crashed_content": "Your content was recovered successfully, but a few of your most recent changes may not have been saved.",
+    "editor_crashed_details_button": "View more details...",
+    "editor_crashed_details_intro": "If you experience this error several times, consider reporting it on GitHub by pasting the information below.",
+    "editor_crashed_details_title": "Technical information",
+    "auto-detect-language": "Auto-detected",
+    "keeps-crashing": "Editing component keeps crashing. Please try restarting Trilium. If problem persists, consider creating a bug report."
   },
   "empty": {
     "open_note_instruction": "Open a note by typing the note's title into the input below or choose a note in the tree.",
@@ -967,7 +1008,7 @@
   },
   "protected_session": {
     "enter_password_instruction": "Showing protected note requires entering your password:",
-    "start_session_button": "Start protected session <kbd>enter</kbd>",
+    "start_session_button": "Start protected session",
     "started": "Protected session has been started.",
     "wrong_password": "Wrong password.",
     "protecting-finished-successfully": "Protecting finished successfully.",
@@ -1083,9 +1124,7 @@
     "default_description": "Trilium by default limits max content width to improve readability for maximized screens on wide screens.",
     "max_width_label": "Max content width",
     "max_width_unit": "pixels",
-    "apply_changes_description": "To apply content width changes, click on",
-    "reload_button": "reload frontend",
-    "reload_description": "changes from appearance options"
+    "centerContent": "Keep content centered"
   },
   "native_title_bar": {
     "title": "Native Title Bar (requires app restart)",
@@ -1112,6 +1151,14 @@
     "layout-horizontal-title": "Horizontal",
     "layout-vertical-description": "launcher bar is on the left (default)",
     "layout-horizontal-description": "launcher bar is underneath the tab bar, the tab bar is now full width."
+  },
+  "ui-performance": {
+    "title": "Performance",
+    "enable-motion": "Enable transitions and animations",
+    "enable-shadows": "Enable shadows",
+    "enable-backdrop-effects": "Enable background effects for menus, popups and panels",
+    "enable-smooth-scroll": "Enable smooth scrolling",
+    "app-restart-required": "(a restart of the application is required for the change to take effect)"
   },
   "ai_llm": {
     "not_started": "Not started",
@@ -1232,11 +1279,7 @@
     "indexing_stopped": "Indexing stopped",
     "indexing_in_progress": "Indexing in progress...",
     "last_indexed": "Last Indexed",
-    "n_notes_queued": "{{ count }} note queued for indexing",
-    "n_notes_queued_plural": "{{ count }} notes queued for indexing",
     "note_chat": "Note Chat",
-    "notes_indexed": "{{ count }} note indexed",
-    "notes_indexed_plural": "{{ count }} notes indexed",
     "sources": "Sources",
     "start_indexing": "Start Indexing",
     "use_advanced_context": "Use Advanced Context",
@@ -1274,7 +1317,10 @@
     "title": "Editor"
   },
   "code_mime_types": {
-    "title": "Available MIME types in the dropdown"
+    "title": "Available MIME types in the dropdown",
+    "tooltip_syntax_highlighting": "Syntax highlighting",
+    "tooltip_code_block_syntax": "Code blocks in Text notes",
+    "tooltip_code_note_syntax": "Code notes"
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "Vim keybindings",
@@ -1385,8 +1431,13 @@
     "title": "Localization",
     "language": "Language",
     "first-day-of-the-week": "First day of the week",
-    "sunday": "Sunday",
     "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday",
+    "sunday": "Sunday",
     "first-week-of-the-year": "First week of the year",
     "first-week-contains-first-day": "First week contains first day of the year",
     "first-week-contains-first-thursday": "First week contains first Thursday of the year",
@@ -1394,7 +1445,8 @@
     "min-days-in-first-week": "Minimum days in first week",
     "first-week-info": "First week contains first Thursday of the year is based on <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a> standard.",
     "first-week-warning": "Changing first week options may cause duplicate with existing Week Notes and the existing Week Notes will not be updated accordingly.",
-    "formatting-locale": "Date & number format"
+    "formatting-locale": "Date & number format",
+    "formatting-locale-auto": "Based on the application's language"
   },
   "backup": {
     "automatic_backup": "Automatic backup",
@@ -1414,10 +1466,6 @@
   "etapi": {
     "title": "ETAPI",
     "description": "ETAPI is a REST API used to access Trilium instance programmatically, without UI.",
-    "see_more": "See more details in the {{- link_to_wiki}} and the {{- link_to_openapi_spec}} or the {{- link_to_swagger_ui }}.",
-    "wiki": "wiki",
-    "openapi_spec": "ETAPI OpenAPI spec",
-    "swagger_ui": "ETAPI Swagger UI",
     "create_token": "Create new ETAPI token",
     "existing_tokens": "Existing tokens",
     "no_tokens_yet": "There are no tokens yet. Click on the button above to create one.",
@@ -1489,7 +1537,7 @@
     "oauth_title": "OAuth/OpenID",
     "oauth_description": "OpenID is a standardized way to let you log into websites using an account from another service, like Google, to verify your identity. The default issuer is Google, but you can change it to any other OpenID provider. Check <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">here</a> for more information. Follow these <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instructions</a> to setup an OpenID service through Google.",
     "oauth_description_warning": "To enable OAuth/OpenID, you need to set the OAuth/OpenID base URL, client ID and client secret in the config.ini file and restart the application. If you want to set from environment variables, please set TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID and TRILIUM_OAUTH_CLIENT_SECRET.",
-    "oauth_missing_vars": "Missing settings: {{variables}}",
+    "oauth_missing_vars": "Missing settings: {{-variables}}",
     "oauth_user_account": "User Account: ",
     "oauth_user_email": "User Email: ",
     "oauth_user_not_logged_in": "Not logged in!"
@@ -1562,10 +1610,12 @@
     "button-tree-map": "Tree map"
   },
   "tree-context-menu": {
-    "open-in-a-new-tab": "Open in a new tab <kbd>Ctrl+Click</kbd>",
+    "open-in-a-new-tab": "Open in a new tab",
     "open-in-a-new-split": "Open in a new split",
     "insert-note-after": "Insert note after",
     "insert-child-note": "Insert child note",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
     "delete": "Delete",
     "search-in-subtree": "Search in subtree",
     "hoist-note": "Hoist note",
@@ -1591,13 +1641,18 @@
     "import-into-note": "Import into note",
     "apply-bulk-actions": "Apply bulk actions",
     "converted-to-attachments": "{{count}} notes have been converted to attachments.",
-    "convert-to-attachment-confirm": "Are you sure you want to convert note selected notes into attachments of their parent notes?",
+    "convert-to-attachment-confirm": "Are you sure you want to convert the selected notes into attachments of their parent notes? This operation only applies to Image notes, other notes will be skipped.",
     "open-in-popup": "Quick edit"
   },
   "shared_info": {
-    "shared_publicly": "This note is shared publicly on",
-    "shared_locally": "This note is shared locally on",
+    "shared_publicly": "This note is shared publicly on {{- link}}.",
+    "shared_locally": "This note is shared locally on {{- link}}.",
     "help_link": "For help visit <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>."
+  },
+  "read-only-info": {
+    "read-only-note": "Currently viewing a read-only note.",
+    "auto-read-only-note": "This note is shown in a read-only mode for faster loading.",
+    "edit-note": "Edit note"
   },
   "note_types": {
     "text": "Text",
@@ -1675,13 +1730,17 @@
     "hoist-this-note-workspace": "Hoist this note (workspace)",
     "refresh-saved-search-results": "Refresh saved search results",
     "create-child-note": "Create child note",
-    "unhoist": "Unhoist"
+    "unhoist": "Unhoist",
+    "toggle-sidebar": "Toggle sidebar",
+    "dropping-not-allowed": "Dropping notes into this location is not allowed."
   },
   "title_bar_buttons": {
     "window-on-top": "Keep Window on Top"
   },
   "note_detail": {
-    "could_not_find_typewidget": "Could not find typeWidget for type '{{type}}'"
+    "could_not_find_typewidget": "Could not find typeWidget for type '{{type}}'",
+    "printing": "Printing in progress...",
+    "printing_pdf": "Exporting to PDF in progress..."
   },
   "note_title": {
     "placeholder": "type note's title here..."
@@ -1756,7 +1815,9 @@
   "ws": {
     "sync-check-failed": "Sync check failed!",
     "consistency-checks-failed": "Consistency checks failed! See logs for details.",
-    "encountered-error": "Encountered error \"{{message}}\", check out the console."
+    "encountered-error": "Encountered error \"{{message}}\", check out the console.",
+    "lost-websocket-connection-title": "Lost connection to the server",
+    "lost-websocket-connection-message": "Check your reverse proxy (e.g. nginx or Apache) configuration to ensure WebSocket connections are properly allowed and not being blocked."
   },
   "hoisted_note": {
     "confirm_unhoisting": "Requested note '{{requestedNote}}' is outside of hoisted note '{{hoistedNote}}' subtree and you must unhoist to access the note. Do you want to proceed with unhoisting?"
@@ -1772,9 +1833,6 @@
     "move-to-visible-launchers": "Move to visible launchers",
     "move-to-available-launchers": "Move to available launchers",
     "duplicate-launcher": "Duplicate launcher <kbd data-command=\"duplicateSubtree\">"
-  },
-  "editable-text": {
-    "auto-detect-language": "Auto-detected"
   },
   "highlighting": {
     "title": "Code Blocks",
@@ -1815,6 +1873,7 @@
     "copy-link": "Copy link",
     "paste": "Paste",
     "paste-as-plain-text": "Paste as plain text",
+    "search_in_trilium": "Search for \"{{term}}\" in Trilium",
     "search_online": "Search for \"{{term}}\" with {{searchEngine}}"
   },
   "image_context_menu": {
@@ -1824,6 +1883,7 @@
   "link_context_menu": {
     "open_note_in_new_tab": "Open note in a new tab",
     "open_note_in_new_split": "Open note in a new split",
+    "open_note_in_other_split": "Open note in the other split",
     "open_note_in_new_window": "Open note in a new window",
     "open_note_in_popup": "Quick edit"
   },
@@ -1832,7 +1892,7 @@
     "native-title-bar": "Native title bar",
     "native-title-bar-description": "For Windows and macOS, keeping the native title bar off makes the application look more compact. On Linux, keeping the native title bar on integrates better with the rest of the system.",
     "background-effects": "Enable background effects (Windows 11 only)",
-    "background-effects-description": "The Mica effect adds a blurred, stylish background to app windows, creating depth and a modern look.",
+    "background-effects-description": "The Mica effect adds a blurred, stylish background to app windows, creating depth and a modern look. \"Native title bar\" must be disabled.",
     "restart-app-button": "Restart the application to view the changes",
     "zoom-factor": "Zoom factor"
   },
@@ -1912,7 +1972,8 @@
     "button_title": "Export diagram as PNG"
   },
   "svg": {
-    "export_to_png": "The diagram could not be exported to PNG."
+    "export_to_png": "The diagram could not be exported to PNG.",
+    "export_to_svg": "The diagram could not be exported to SVG."
   },
   "code_theme": {
     "title": "Appearance",
@@ -1931,7 +1992,11 @@
   "editorfeatures": {
     "title": "Features",
     "emoji_completion_enabled": "Enable Emoji auto-completion",
-    "note_completion_enabled": "Enable note auto-completion"
+    "emoji_completion_description": "If enabled, emojis can be easily inserted into text by typing `:`, followed by the name of an emoji.",
+    "note_completion_enabled": "Enable note auto-completion",
+    "note_completion_description": "If enabled, links to notes can be created by typing `@` followed by the title of a note.",
+    "slash_commands_enabled": "Enable slash commands",
+    "slash_commands_description": "If enabled, editing commands such as inserting line breaks or headings can be toggled by typing `/`."
   },
   "table_view": {
     "new-row": "New row",
@@ -1967,14 +2032,30 @@
     "delete_row": "Delete row"
   },
   "board_view": {
-    "delete-note": "Delete Note",
+    "delete-note": "Delete note...",
+    "remove-from-board": "Remove from board",
+    "archive-note": "Archive note",
+    "unarchive-note": "Unarchive note",
     "move-to": "Move to",
     "insert-above": "Insert above",
     "insert-below": "Insert below",
     "delete-column": "Delete column",
     "delete-column-confirmation": "Are you sure you want to delete this column? The corresponding attribute will be deleted in the notes under this column as well.",
     "new-item": "New item",
-    "add-column": "Add Column"
+    "new-item-placeholder": "Enter note title...",
+    "add-column": "Add Column",
+    "add-column-placeholder": "Enter column name...",
+    "edit-note-title": "Click to edit note title",
+    "edit-column-title": "Click to edit column title",
+    "column-already-exists": "This column already exists on the board."
+  },
+  "presentation_view": {
+    "edit-slide": "Edit this slide",
+    "start-presentation": "Start presentation",
+    "slide-overview": "Toggle an overview of the slides"
+  },
+  "calendar_view": {
+    "delete_note": "Delete note..."
   },
   "command_palette": {
     "tree-action-name": "Tree: {{name}}",
@@ -2016,5 +2097,29 @@
   },
   "units": {
     "percentage": "%"
+  },
+  "pagination": {
+    "page_title": "Page of {{startIndex}} - {{endIndex}}",
+    "total_notes": "{{count}} notes"
+  },
+  "collections": {
+    "rendering_error": "Unable to show content due to an error."
+  },
+  "note-color": {
+    "clear-color": "Clear note color",
+    "set-color": "Set note color",
+    "set-custom-color": "Set custom note color"
+  },
+  "popup-editor": {
+    "maximize": "Switch to full editor"
+  },
+  "server": {
+    "unknown_http_error_title": "Communication error with the server",
+    "unknown_http_error_content": "Status code: {{statusCode}}\nURL: {{method}} {{url}}\nMessage: {{message}}",
+    "traefik_blocks_requests": "If you are using the Traefik reverse proxy, it introduced a breaking change which affects the communication with the server."
+  },
+  "tab_history_navigation_buttons": {
+    "go-back": "Go back to previous note",
+    "go-forward": "Go forward to next note"
   }
 }

@@ -1,0 +1,31 @@
+.user-attributes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.user-attributes .user-attribute {
+    padding: 2px 10px;
+    border-radius: 9999px;
+    white-space: nowrap;
+    background-color: var(--chip-bg, rgba(0, 0, 0, 0.08));
+    color: var(--chip-fg, inherit);
+    border: 1px solid var(--chip-border, rgba(0, 0, 0, 0.15));
+    font-size: 12px;
+    line-height: 1.2;
+}
+
+.user-attributes .user-attribute:hover {
+    background-color: var(--chip-bg-hover, rgba(0, 0, 0, 0.12));
+    border-color: var(--chip-border-hover, rgba(0, 0, 0, 0.22));
+}
+
+.user-attributes .user-attribute .name {
+    font-weight: 600;
+}
+
+.user-attributes .user-attribute .value {
+    opacity: 0.9;
+}

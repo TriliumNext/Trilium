@@ -1,0 +1,124 @@
+.note-detail-mind-map {
+    height: 100%;
+    overflow: hidden !important;
+}
+
+.note-detail-mind-map .mind-map-container {
+    height: 100%;
+}
+
+.map-container .node-menu {
+    position: absolute;
+    top: 60px;
+    inset-inline-end: 20px;
+    bottom: 80px;
+    overflow: auto;
+    background: var(--panel-bgcolor);
+    color: var(--main-color);
+    border-radius: 5px;
+    box-shadow: 0 1px 2px #0003;
+    width: 240px;
+    box-sizing: border-box;
+    padding: 0 15px 15px;
+    transition: .3s all
+}
+
+.map-container .node-menu.close {
+    height: 29px;
+    width: 46px;
+    overflow: hidden
+}
+
+.map-container .node-menu .button-container {
+    padding: 3px 0;
+    direction: rtl
+}
+
+.map-container .node-menu #nm-tag {
+    margin-top: 20px
+}
+
+.map-container .node-menu .nm-fontsize-container {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 20px
+}
+
+.map-container .node-menu .nm-fontsize-container div {
+    height: 36px;
+    width: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 2px #0003;
+    background-color: #fff;
+    color: tomato;
+    border-radius: 100%
+}
+
+.map-container .node-menu .nm-fontcolor-container {
+    margin-bottom: 10px
+}
+
+.map-container .node-menu input,
+.map-container .node-menu textarea {
+    background: var(--input-background-color);
+    border: 1px solid var(--panel-border-color);
+    border-radius: var(--bs-border-radius);
+    color: var(--main-color);
+    padding: 5px;
+    margin: 10px 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.map-container .node-menu textarea {
+    resize: none
+}
+
+.map-container .node-menu .split6 {
+    display: inline-block;
+    width: 16.66%;
+    margin-bottom: 5px
+}
+
+.map-container .node-menu .palette {
+    border-radius: 100%;
+    width: 21px;
+    height: 21px;
+    border: 1px solid #edf1f2;
+    margin: auto
+}
+
+.map-container .node-menu .nmenu-selected,
+.map-container .node-menu .palette:hover {
+    box-shadow: tomato 0 0 0 2px;
+    background-color: #c7e9fa
+}
+
+.map-container .node-menu .size-selected {
+    background-color: tomato !important;
+    border-color: tomato;
+    fill: #fff;
+    color: #fff
+}
+
+.map-container .node-menu .size-selected svg {
+    color: #fff
+}
+
+.map-container .node-menu .bof {
+    text-align: center
+}
+
+.map-container .node-menu .bof span {
+    display: inline-block;
+    font-size: 14px;
+    border-radius: 4px;
+    padding: 2px 5px
+}
+
+.map-container .node-menu .bof .selected {
+    background-color: tomato;
+    color: #fff
+}

@@ -22,3 +22,21 @@ It is possible for each of the splits to have their own <a class="reference-lin
 When a new split is created, it will share the same note hoisting as the previous one. An easy solution to this is to simply hoist the notes after the split is created.
 
 This is generally quite useful for reorganizing notes from one place to the other, by hoisting the old place in the first split and hoisting the new place to the second one. This will allow easy cut and paste without the tree jumping around from switching between notes.
+
+## Mobile support
+
+Since v0.100.0, it's possible to have a split view on the mobile view as well, with the following differences from the desktop version of the split:
+
+*   On smartphones, the split views are laid out vertically (one on the top and one on the bottom), instead of horizontally as on the desktop.
+*   There can be only one split open per tab.
+*   It's not possible to resize the two split panes.
+*   When the keyboard is opened, the active note will be “maximized”, thus allowing for more space even when a split is open. When the keyboard is closed, the splits become equal in size again.
+
+Interaction:
+
+*   To create a new split, click the three dots button on the right of the note title and select _Create new split_.
+    *   This option will only be available if there is no split already open in the current tab.
+*   To close a split, click the three dots button on the right of the note title and select _Close this pane_.
+    *   Note that this option will only be available on the second note in the split (the one at the bottom on smartphones, the one on the right on tablets).
+*   When long-pressing a link, a contextual menu will show up with an option to _Open note in a new split_.
+    *   If there's already a split, the option will replace the existing split instead.

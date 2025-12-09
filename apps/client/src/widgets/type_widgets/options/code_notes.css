@@ -1,0 +1,16 @@
+/* #region CodeMimeTypesList */
+.options-mime-types {
+    list-style-type: none;
+    column-width: 250px;
+    padding-inline-start: 0;
+}
+
+.options-mime-types > section {
+    margin-bottom: 1em;
+    break-inside: avoid-column;
+}
+
+.options-mime-types ul {
+    padding-inline-start: 0;
+}
+/* #endregion */

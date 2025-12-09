@@ -30,13 +30,26 @@ export default class MathCommand extends Command {
 
 				mathtex = writer.createElement(
 					display ? 'mathtex-display' : 'mathtex-inline',
-					{ equation, type, display }
+					{
+						...Object.fromEntries(selection.getAttributes()),
+						equation,
+						type,
+						display
+					}
 				);
 			} else {
+				const selection = this.editor.model.document.selection;
+
 				// Create new model element
 				mathtex = writer.createElement(
 					display ? 'mathtex-display' : 'mathtex-inline',
-					{ equation, type: outputType, display }
+					{
+						// Inherit all attributes from selection (e.g. color, background color, size).
+						...Object.fromEntries(selection.getAttributes()),
+						equation,
+						type: outputType,
+						display,
+					}
 				);
 			}
 			model.insertContent( mathtex );

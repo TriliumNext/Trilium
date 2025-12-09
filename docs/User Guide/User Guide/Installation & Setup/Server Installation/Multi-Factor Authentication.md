@@ -37,7 +37,9 @@ MFA can only be set up on a server instance.
 In order to setup OpenID, you will need to setup a authentication provider. This requires a bit of extra setup. Follow [these instructions](https://developers.google.com/identity/openid-connect/openid-connect) to setup an OpenID service through google. The Redirect URL of Trilium is `https://<your-trilium-domain>/callback`.
 
 1.  Set the `oauthBaseUrl`, `oauthClientId` and `oauthClientSecret` in the `config.ini` file (check <a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20e.md">Configuration (config.ini or environment variables)</a> for more information).
-    1.  You can also setup through environment variables (`TRILIUM_OAUTH_BASE_URL`, `TRILIUM_OAUTH_CLIENT_ID` and `TRILIUM_OAUTH_CLIENT_SECRET`).
+    1.  You can also setup through environment variables:
+        *   Standard: `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL`, `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID`, `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET`
+        *   Legacy (still supported): `TRILIUM_OAUTH_BASE_URL`, `TRILIUM_OAUTH_CLIENT_ID`, `TRILIUM_OAUTH_CLIENT_SECRET`
     2.  `oauthBaseUrl` should be the link of your Trilium instance server, for example, `https://<your-trilium-domain>`.
 2.  Restart the server
 3.  Go to "Menu" -> "Options" -> "MFA"
@@ -46,7 +48,12 @@ In order to setup OpenID, you will need to setup a authentication provider. This
 6.  Refresh the page and login through OpenID provider
 
 > [!NOTE]
-> The default OAuth issuer is Google. To use other services such as Authentik or Auth0, you can configure the settings via `oauthIssuerBaseUrl`, `oauthIssuerName`, and `oauthIssuerIcon` in the `config.ini` file. Alternatively, these values can be set using environment variables: `TRILIUM_OAUTH_ISSUER_BASE_URL`, `TRILIUM_OAUTH_ISSUER_NAME`, and `TRILIUM_OAUTH_ISSUER_ICON`. `oauthIssuerName` and `oauthIssuerIcon` are required for displaying correct issuer information at the Login page.
+> The default OAuth issuer is Google. To use other services such as Authentik or Auth0, you can configure the settings via `oauthIssuerBaseUrl`, `oauthIssuerName`, and `oauthIssuerIcon` in the `config.ini` file. Alternatively, these values can be set using environment variables:
+> 
+> *   Standard: `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL`, `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME`, `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON`
+> *   Legacy (still supported): `TRILIUM_OAUTH_ISSUER_BASE_URL`, `TRILIUM_OAUTH_ISSUER_NAME`, `TRILIUM_OAUTH_ISSUER_ICON`
+> 
+> `oauthIssuerName` and `oauthIssuerIcon` are required for displaying correct issuer information at the Login page.
 
 #### Authentik
 

@@ -1,8 +1,8 @@
 :root {
-    --ck-content-font-family: inherit;
-    --ck-content-font-size: inherit;
-    --ck-content-font-color: inherit;
-    --ck-content-line-height: inherit;
+    --ck-content-font-family: inherit !important;
+    --ck-content-font-size: inherit !important;
+    --ck-content-font-color: inherit !important;
+    --ck-content-line-height: inherit !important;
 }
 
 .ck-content code,
@@ -25,6 +25,7 @@
 .ck-content pre {
     overflow: auto;
     position: relative;
+    min-width: unset !important;
 }
 
 .ck-content pre .copy-button {
@@ -46,4 +47,36 @@
 
 #content img {
     max-width: 100%;
+    height: auto;
+}
+
+a.reference-link > span > .bx {
+    margin-inline-end: 3px;
+}
+
+body:not(.math-loaded) .math-tex {
+    visibility: hidden;
+}
+
+body.type-webView {
+    #main {
+        max-width: unset;
+        padding: 0;
+    }
+
+    #content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+
+        h1 {
+            display: none;
+        }
+
+        iframe.webview {
+            width: 100%;
+            flex-grow: 1;
+            border: 0;
+        }
+    }
 }

@@ -6,13 +6,7 @@ import treeService from "./tree.js";
 import BBranch from "../becca/entities/bbranch.js";
 import becca from "../becca/becca.js";
 import log from "./log.js";
-
-export interface CloneResponse {
-    success: boolean;
-    message?: string;
-    branchId?: string;
-    notePath?: string;
-}
+import { CloneResponse } from "@triliumnext/commons";
 
 function cloneNoteToParentNote(noteId: string, parentNoteId: string, prefix: string | null = null): CloneResponse {
     if (!(noteId in becca.notes) || !(parentNoteId in becca.notes)) {

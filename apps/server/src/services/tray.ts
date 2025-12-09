@@ -29,12 +29,21 @@ function getTrayIconPath() {
         name = "icon-color";
     }
 
-    return path.resolve(path.join(getResourceDir(), "assets", "images", "tray", `${name}.png`));
+    if (process.env.NODE_ENV === "development") {
+        return path.join(__dirname, "../../../desktop/src/assets/images/tray", `${name}.png`);
+    } else {
+        return path.resolve(path.join(getResourceDir(), "assets", "images", "tray", `${name}.png`));
+    }
 }
 
 function getIconPath(name: string) {
     const suffix = !isMac && electron.nativeTheme.shouldUseDarkColors ? "-inverted" : "";
-    return path.resolve(path.join(getResourceDir(), "assets", "images", "tray", `${name}Template${suffix}.png`));
+
+    if (process.env.NODE_ENV === "development") {
+        return path.join(__dirname, "../../../desktop/src/assets/images/tray", `${name}Template${suffix}.png`);
+    } else {
+        return path.resolve(path.join(getResourceDir(), "assets", "images", "tray", `${name}Template${suffix}.png`));
+    }
 }
 
 function registerVisibilityListener(window: BrowserWindow) {

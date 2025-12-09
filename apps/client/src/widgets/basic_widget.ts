@@ -1,7 +1,9 @@
+import { isValidElement, VNode } from "preact";
 import Component, { TypedComponent } from "../components/component.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
 import toastService from "../services/toast.js";
+import { renderReactWidget } from "./react/react_utils.jsx";
 
 export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedComponent<T> {
     protected attrs: Record<string, string>;
@@ -22,10 +24,13 @@ export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedCompon
         this.childPositionCounter = 10;
     }
 
-    child(...components: T[]) {
-        if (!components) {
+    child(..._components: (T | VNode)[]) {
+        if (!_components) {
             return this;
         }
+
+        // Convert any React components to legacy wrapped components.
+        const components = wrapReactWidgets(_components);
 
         super.child(...components);
 
@@ -48,7 +53,7 @@ export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedCompon
      * @param components the components to be added as children to this component provided the condition is truthy.
      * @returns self for chaining.
      */
-    optChild(condition: boolean, ...components: T[]) {
+    optChild(condition: boolean, ...components: (T | VNode)[]) {
         if (condition) {
             return this.child(...components);
         } else {
@@ -69,7 +74,7 @@ export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedCompon
     /**
      * Sets the CSS attribute of the given name to the given value.
      *
-     * @param name the name of the CSS attribute to set (e.g. `padding-left`).
+     * @param name the name of the CSS attribute to set (e.g. `padding-inline-start`).
      * @param value the value of the CSS attribute to set (e.g. `12px`).
      * @returns self for chaining.
      */
@@ -82,7 +87,7 @@ export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedCompon
      * Sets the CSS attribute of the given name to the given value, but only if the condition provided is truthy.
      *
      * @param condition `true` in order to apply the CSS, `false` to ignore it.
-     * @param name the name of the CSS attribute to set (e.g. `padding-left`).
+     * @param name the name of the CSS attribute to set (e.g. `padding-inline-start`).
      * @param value the value of the CSS attribute to set (e.g. `12px`).
      * @returns self for chaining.
      */
@@ -164,29 +169,30 @@ export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedCompon
         console.log("Got issue in widget ", this);
         console.error(e);
 
-        let noteId = this._noteId;
+        const noteId = this._noteId;
         if (this._noteId) {
             froca.getNote(noteId, true).then((note) => {
                 toastService.showPersistent({
+                    id: `custom-widget-failure-${noteId}`,
                     title: t("toast.widget-error.title"),
-                    icon: "alert",
+                    icon: "bx bx-error-circle",
                     message: t("toast.widget-error.message-custom", {
                         id: noteId,
                         title: note?.title,
-                        message: e.message
+                        message: e.message || e.toString()
                     })
                 });
             });
-            return;
+        } else {
+            toastService.showPersistent({
+                id: `custom-widget-failure-unknown-${crypto.randomUUID()}`,
+                title: t("toast.widget-error.title"),
+                icon: "bx bx-error-circle",
+                message: t("toast.widget-error.message-unknown", {
+                    message: e.message || e.toString()
+                })
+            });
         }
-
-        toastService.showPersistent({
-            title: t("toast.widget-error.title"),
-            icon: "alert",
-            message: t("toast.widget-error.message-unknown", {
-                message: e.message
-            })
-        });
     }
 
     /**
@@ -258,3 +264,30 @@ export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedCompon
  * For information on using widgets, see the tutorial {@tutorial widget_basics}.
  */
 export default class BasicWidget extends TypedBasicWidget<Component> {}
+
+export function wrapReactWidgets<T extends TypedComponent<any>>(components: (T | VNode)[]) {
+    const wrappedResult: T[] = [];
+    for (const component of components) {
+        if (isValidElement(component)) {
+            wrappedResult.push(new ReactWrappedWidget(component) as unknown as T);
+        } else {
+            wrappedResult.push(component);
+        }
+    }
+    return wrappedResult;
+}
+
+export class ReactWrappedWidget extends BasicWidget {
+
+    private el: VNode;
+
+    constructor(el: VNode) {
+        super();
+        this.el = el;
+    }
+
+    doRender() {
+        this.$widget = renderReactWidget(this, this.el);
+    }
+
+}

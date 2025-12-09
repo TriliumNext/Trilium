@@ -1,0 +1,15 @@
+.content-header-widget {
+    position: relative;
+    z-index: 998;
+    background-color: var(--main-background-color);
+}
+
+.note-split.bgfx .content-header-widget {
+    background-color: transparent;
+}
+
+.content-header-widget.floating {
+    position: sticky;
+    top: 0;
+    background-color: var(--main-background-color, #fff) !important;
+}

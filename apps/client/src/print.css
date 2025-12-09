@@ -1,0 +1,157 @@
+@import "boxicons/css/boxicons.min.css";
+
+:root {
+    --print-font-size: 11pt;
+    --ck-content-color-image-caption-background: transparent !important;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    color: black;
+}
+
+@page {
+    margin: 2cm;
+}
+
+.note-list-widget.full-height,
+.note-list-widget.full-height .note-list-widget-content {
+    height: unset !important;
+}
+
+.component {
+    contain: none !important;
+}
+
+body[data-note-type="text"] .ck-content {
+    font-size: var(--print-font-size);
+    text-align: justify;
+}
+
+.ck-content figcaption {
+    font-style: italic;
+}
+
+.ck-content a {
+    text-decoration: none;
+}
+
+.ck-content a:not([href^="#root/"]) {
+    text-decoration: underline;
+    color: #374a75;
+}
+
+.ck-content .todo-list__label * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+
+@supports selector(.todo-list__label__description:has(*)) and (height: 1lh) {
+    .ck-content .todo-list__label__description {
+        /* The percentage of the line height that the check box occupies */
+        --box-ratio: 0.75;
+        /* The size of the gap between the check box and the caption */
+        --box-text-gap: 0.25em;
+
+        --box-size: calc(1lh * var(--box-ratio));
+        --box-vert-offset: calc((1lh - var(--box-size)) / 2);
+
+        display: inline-block;
+        padding-inline-start: calc(var(--box-size) + var(--box-text-gap));
+        /* Source: https://pictogrammers.com/library/mdi/icon/checkbox-blank-outline/ */
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3e%3cpath d='M19%2c3H5C3.89%2c3 3%2c3.89 3%2c5V19A2%2c2 0 0%2c0 5%2c21H19A2%2c2 0 0%2c0 21%2c19V5C21%2c3.89 20.1%2c3 19%2c3M19%2c5V19H5V5H19Z' /%3e%3c/svg%3e");
+        background-position: 0 var(--box-vert-offset);
+        background-size: var(--box-size);
+        background-repeat: no-repeat;
+    }
+
+    .ck-content .todo-list__label:has(input[type="checkbox"]:checked) .todo-list__label__description {
+        /* Source: https://pictogrammers.com/library/mdi/icon/checkbox-outline/ */
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='currentColor'%3e%3cpath d='M19%2c3H5A2%2c2 0 0%2c0 3%2c5V19A2%2c2 0 0%2c0 5%2c21H19A2%2c2 0 0%2c0 21%2c19V5A2%2c2 0 0%2c0 19%2c3M19%2c5V19H5V5H19M10%2c17L6%2c13L7.41%2c11.58L10%2c14.17L16.59%2c7.58L18%2c9' /%3e%3c/svg%3e");
+    }
+
+    .ck-content .todo-list__label input[type="checkbox"] {
+        display: none !important;
+    }
+}
+
+/* #region Footnotes */
+.footnote-reference a,
+.footnote-back-link a {
+    text-decoration: none !important;
+}
+
+li.footnote-item {
+    position: relative;
+    width: fit-content;
+}
+
+.ck-content .footnote-back-link {
+    margin-right: 0.25em;
+}
+
+.ck-content .footnote-content {
+    display: inline-block;
+    width: unset;
+}
+/* #endregion */
+
+/* #region Widows and orphans */
+p,
+blockquote {
+    widows: 4;
+    orphans: 4;
+}
+
+pre > code {
+    widows: 6;
+    orphans: 6;
+    overflow: auto;
+    white-space: pre-wrap !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+}
+/* #endregion */
+
+/* #region Tables */
+.table thead th,
+.table td,
+.table th {
+    /* Fix center vertical alignment of table cells */
+    vertical-align: middle;
+}
+
+pre {
+    box-shadow: unset !important;
+    border: 0.75pt solid gray !important;
+    border-radius: 2pt !important;
+}
+
+th,
+span[style] {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+}
+/* #endregion */
+
+/* #region Page breaks */
+.page-break {
+    page-break-after: always;
+    break-after: always;
+}
+
+.page-break > *,
+.page-break::after {
+    display: none !important;
+}
+/* #endregion */

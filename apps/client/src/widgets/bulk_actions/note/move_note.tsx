@@ -1,11 +1,11 @@
 import { t } from "../../../services/i18n.js";
-import AbstractBulkAction, { ActionDefinition } from "../abstract_bulk_action.js";
+import AbstractBulkAction from "../abstract_bulk_action.js";
 import BulkAction, { BulkActionText } from "../BulkAction.jsx";
 import NoteAutocomplete from "../../react/NoteAutocomplete.jsx";
 import { useEffect, useState } from "preact/hooks";
 import { useSpacedUpdate } from "../../react/hooks.jsx";
 
-function MoveNoteBulkActionComponent({ bulkAction, actionDef }: { bulkAction: AbstractBulkAction, actionDef: ActionDefinition }) {
+function MoveNoteBulkActionComponent({ bulkAction }: { bulkAction: AbstractBulkAction }) {
     const [ targetParentNoteId, setTargetParentNoteId ] = useState<string>();
     const spacedUpdate = useSpacedUpdate(() => {
         return bulkAction.saveAction({ targetParentNoteId: targetParentNoteId })
@@ -45,6 +45,6 @@ export default class MoveNoteBulkAction extends AbstractBulkAction {
     }
 
     doRender() {
-        return <MoveNoteBulkActionComponent bulkAction={this} actionDef={this.actionDef} />
+        return <MoveNoteBulkActionComponent bulkAction={this} />
     }
 }

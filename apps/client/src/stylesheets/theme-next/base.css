@@ -4,6 +4,7 @@
 @import url(./pages.css);
 @import url(./ribbon.css);
 @import url(./notes/text.css);
+@import url(./notes/canvas.css);
 @import url(./notes/collections/table.css);
 
 @font-face {
@@ -26,7 +27,7 @@
     --detail-font-family: var(--main-font-family);
     --detail-font-size: normal;
 
-    --monospace-font-family: JetBrainsLight;
+    --monospace-font-family: JetBrainsLight, monospace;
     --monospace-font-size: normal;
 
     --left-pane-item-selected-shadow-size: 2px;
@@ -61,6 +62,7 @@
 
     --menu-padding-size: 8px;
     --menu-item-icon-vert-offset: -2px;
+    --menu-submenu-mobile-background-color: rgba(255, 255, 255, 0.15);
 
     --more-accented-background-color: var(--card-background-hover-color);
 
@@ -81,6 +83,35 @@
 
     /* Theme capabilities */
     --tab-note-icons: true;
+    --allow-background-effects: true;
+
+    /* To ensure that a tree item's custom color remains sufficiently contrasted and readable,
+     * the color is adjusted based on the current color scheme (light or dark). The lightness
+     * component of the color represented in the CIELAB color space, will be
+     * constrained to a certain percentage defined below.
+     * 
+     * Note: the tree background may vary when background effects are enabled, so it is recommended
+     * to maintain a higher contrast margin than on the usual note tree solid background. */
+
+    /* The maximum perceptual lightness for the custom color in the light theme (%): */
+    --tree-item-light-theme-max-color-lightness: 60;
+    
+    /* The minimum perceptual lightness for the custom color in the dark theme (%): */
+    --tree-item-dark-theme-min-color-lightness: 65;
+}
+
+body {
+    user-select: none;
+}
+
+.selectable-text {
+    user-select: text;
+}
+
+body.backdrop-effects-disabled {
+    /* Backdrop effects are disabled, replace the menu background color with the
+     * no-backdrop fallback color */
+    --menu-background-color: var(--menu-background-color-no-backdrop);
 }
 
 /*
@@ -90,36 +121,24 @@
  * supported when this class is used.
  */
 
- .dropdown-menu:not(.static) {
+ .dropdown-menu:not(.static),
+ :root .excalidraw .popover {
     border-radius: var(--dropdown-border-radius);
-    padding: var(--menu-padding-size) !important;
+    padding: var(--padding, var(--menu-padding-size)) !important;
     font-size: 0.9rem !important;
 }
 
-.dropdown-menu {
-    --scrollbar-background-color: var(--menu-background-color);
-}
-
-body.mobile .dropdown-menu {
-    backdrop-filter: var(--dropdown-backdrop-filter);
-    border-radius: var(--dropdown-border-radius);
-    position: relative;
-}
-
-body.mobile .dropdown-menu .dropdown-menu {
-    backdrop-filter: unset !important;
-    border-radius: unset !important;
-}
-
 body.desktop .dropdown-menu::before,
-:root .ck.ck-dropdown__panel::before {
+:root .ck.ck-dropdown__panel::before,
+:root .excalidraw .popover::before,
+body.zen .note-split .ribbon-container .classic-toolbar-widget::before {
     content: "";
     backdrop-filter: var(--dropdown-backdrop-filter);
     border-radius: var(--dropdown-border-radius);
     position: absolute;
     top: 0;
-    left: 0;
-    right: 0;
+    inset-inline-start: 0;
+    inset-inline-end: 0;
     bottom: 0;
     z-index: -1;
 }
@@ -136,22 +155,35 @@ body.desktop .dropdown-submenu .dropdown-menu::before {
     content: unset;
 }
 
-body.mobile .dropdown-submenu .dropdown-menu {
-    background: transparent !important;
-}
-
 body.desktop .dropdown-submenu .dropdown-menu {
     backdrop-filter: var(--dropdown-backdrop-filter);
     background: transparent;
 }
 
 .dropdown-item,
-body.mobile .dropdown-submenu .dropdown-toggle {
-    padding: 2px 2px 2px 8px !important;
-    padding-inline-end: 16px !important;
+.excalidraw .context-menu .context-menu-item {
+    --menu-item-start-padding: 8px;
+    --menu-item-end-padding: 22px;
+    --menu-item-vertical-padding: 2px;
+    
+    padding-top: var(--menu-item-vertical-padding) !important;
+    padding-bottom: var(--menu-item-vertical-padding) !important;
+    padding-inline-start: var(--menu-item-start-padding) !important;
+    padding-inline-end: var(--menu-item-end-padding) !important;
+
     /* Note: the right padding should also accommodate the submenu arrow. */
     border-radius: 6px;
     cursor: default !important;
+}
+
+:root .dropdown-item:focus-visible {
+    outline: 2px solid var(--input-focus-outline-color) !important;
+    background-color: transparent;
+    color: unset;
+}
+
+:root .dropdown-item:active {
+    background: unset;
 }
 
 body.mobile .dropdown-submenu {
@@ -160,10 +192,6 @@ body.mobile .dropdown-submenu {
 
 body.mobile .dropdown-item:not(:last-of-type) {
     margin-bottom: 0.5em;
-}
-
-body.mobile .dropdown-submenu:hover {
-    background: transparent !important;
 }
 
 html body .dropdown-item.disabled,
@@ -190,26 +218,33 @@ html body .dropdown-item[disabled] {
 }
 
 /* Menu item keyboard shortcut */
-.dropdown-item kbd {
-    margin-left: 16px;
+.dropdown-item kbd,
+.excalidraw .context-menu-item__shortcut {
     font-family: unset !important;
     font-size: unset !important;
     color: var(--menu-item-keyboard-shortcut-color) !important;
     padding-top: 0;
 }
 
-.dropdown-divider {
+.dropdown-item span.keyboard-shortcut {
+    color: var(--menu-item-keyboard-shortcut-color) !important;
+    margin-inline-start: 16px;
+}
+
+.dropdown-divider,
+.excalidraw .context-menu hr {
     position: relative;
     border-color: transparent !important;
     overflow: visible;
 }
 
-.dropdown-divider::after {
+.dropdown-divider::after,
+.excalidraw .context-menu hr::before {
     position: absolute;
     content: "";
     top: -1px;
-    left: calc(0px - var(--menu-padding-size));
-    right: calc(0px - var(--menu-padding-size));
+    inset-inline-start: calc(0px - var(--menu-padding-size));
+    inset-inline-end: calc(0px - var(--menu-padding-size));
     border-top: 1px solid var(--menu-item-delimiter-color);
 }
 
@@ -221,7 +256,7 @@ html body .dropdown-item[disabled] {
     align-items: center;
     justify-content: center;
     top: 0;
-    right: 0;
+    inset-inline-end: 0;
     margin: unset !important;
     border: unset !important;
     padding: 0 4px;
@@ -230,10 +265,16 @@ html body .dropdown-item[disabled] {
     color: var(--menu-item-arrow-color) !important;
 }
 
+body[dir=rtl] .dropdown-menu:not([data-popper-placement="bottom-start"]) .dropdown-toggle::after {
+    content: "\ea4d" !important;
+}
+
 /* Menu item group heading */
 
 /* The heading body */
-.dropdown-menu h6 {
+.dropdown-menu h6,
+.excalidraw .dropdown-menu-container .dropdown-menu-group-title,
+.excalidraw .dropdown-menu-container div[data-testid="canvas-background-label"] {
     position: relative;
     background: transparent;
     padding: 1em 8px 14px 8px;
@@ -244,12 +285,14 @@ html body .dropdown-item[disabled] {
 }
 
 /* The delimiter line */
-.dropdown-menu h6::before {
+.dropdown-menu h6::before,
+.excalidraw .dropdown-menu-container .dropdown-menu-group-title::before,
+.excalidraw .dropdown-menu-container div[data-testid="canvas-background-label"]::before {
     content: "";
     position: absolute;
     bottom: 8px;
-    left: calc(0px - var(--menu-padding-size));
-    right: calc(0px - var(--menu-padding-size));
+    inset-inline-start: calc(0px - var(--menu-padding-size));
+    inset-inline-end: calc(0px - var(--menu-padding-size));
     border-top: 1px solid var(--menu-item-delimiter-color);
 }
 
@@ -267,16 +310,145 @@ body.desktop .dropdown-menu.static .dropdown-item.active {
     --active-item-text-color: var(--menu-text-color);
 }
 
+/* #region Mobile tweaks for dropdown menus */
+body.mobile #context-menu-cover {
+    transition: background-color 150ms ease-in;
+
+    &.show {
+        background: rgba(0, 0, 0, 0.7);
+    }
+
+    &.global-menu-cover {
+        bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-size));
+
+        @media (min-width: 992px) {
+            bottom: 0;
+        }
+    }
+}
+
+body.mobile .dropdown-menu.mobile-bottom-menu,
+body.mobile .dropdown.global-menu .dropdown-menu {
+    border-radius: var(--dropdown-border-radius) var(--dropdown-border-radius) 0 0;
+}
+
+body.mobile .dropdown-menu {
+    --dropdown-menu-padding-vertical: 0.7em;
+    --dropdown-menu-padding-horizontal: 1em;
+    --hover-item-background-color: var(--card-background-color);
+    font-size: 1em !important;
+    backdrop-filter: var(--dropdown-backdrop-filter);
+    position: relative;
+    
+    .dropdown-toggle::after {
+        top: 0.5em;
+        right: var(--dropdown-menu-padding-horizontal);
+        transform: translateX(50%) rotate(90deg);
+    }
+
+    .dropdown-item.submenu-open .dropdown-toggle::after {
+        transform: rotate(270deg);
+    }
+
+    .dropdown-item,
+    .dropdown-custom-item {
+        margin-bottom: 0;
+        padding: var(--dropdown-menu-padding-vertical) var(--dropdown-menu-padding-horizontal) !important;
+        background: var(--card-background-color);
+        border-bottom: 1px solid var(--menu-item-delimiter-color) !important;
+        border-radius: 0;        
+    }
+
+    .dropdown-item:first-of-type,
+    .dropdown-divider + .dropdown-item,
+    .dropdown-custom-item:first-of-type,
+    .dropdown-divider + .dropdown-custom-item {
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+    }
+
+    .dropdown-item:last-of-type,    
+    .dropdown-item:has(+ .dropdown-divider),
+    .dropdown-custom-item:last-of-type,    
+    .dropdown-custom-item:has(+ .dropdown-divider) {
+        border-bottom-left-radius: 6px;
+        border-bottom-right-radius: 6px;
+        border-bottom: 0 !important;
+    }
+
+    .dropdown-divider {
+        visibility: hidden;
+    }
+
+    .dropdown-submenu {
+        padding: 0 !important;
+        backdrop-filter: unset !important;
+
+        .dropdown-toggle {
+            padding: var(--dropdown-menu-padding-vertical) var(--dropdown-menu-padding-horizontal);
+        }
+
+        .dropdown-menu {
+            --menu-background-color: --menu-submenu-mobile-background-color;
+            --bs-dropdown-divider-margin-y: 0.25rem;
+            border-radius: 0;
+            max-height: 0;            
+            transition: max-height 100ms ease-in;
+            display: block !important;            
+            
+            &.show {
+                max-height: 1000px;
+                padding: 0.5rem 0.75rem !important;
+            }
+        }
+
+        &.submenu-open {
+            .dropdown-toggle {
+                padding-bottom: var(--dropdown-menu-padding-vertical);
+            }            
+        }
+    }
+
+    .dropdown-custom-item:has(.note-color-picker) {
+        overflow-x: auto;
+    }
+
+    .note-color-picker {
+        padding: 0;
+        width: fit-content;
+
+        .color-cell {
+            --color-picker-cell-size: 26px;
+            flex-shrink: 0;
+        }
+    }
+}
+/* #endregion */
+
 body.desktop .dropdown-menu .dropdown-toggle::after {
     height: 100%;
 }
 
-body.mobile .dropdown-menu .dropdown-toggle::after {
-    transform: rotate(90deg);
+
+
+/* Dropdown item button (used in zoom buttons in global menu) */
+
+li.dropdown-item a.dropdown-item-button {
+    border: unset;
 }
 
-body.mobile .dropdown-menu .dropdown-item.submenu-open .dropdown-toggle::after {
-    transform: rotate(270deg);
+li.dropdown-item a.dropdown-item-button.bx {
+    color: var(--menu-text-color) !important;
+}
+
+li.dropdown-item a.dropdown-item-button:focus-visible {
+    outline: 2px solid var(--input-focus-outline-color) !important;
+}
+
+:root .dropdown-menu .note-color-picker {
+    padding: 4px 10px;
+    --note-color-picker-clear-color-cell-background: var(--main-text-color);
+    --note-color-picker-clear-color-cell-selection-outline-color: var(--main-text-color);
 }
 
 /*
@@ -297,28 +469,49 @@ body.mobile .dropdown-menu .dropdown-item.submenu-open .dropdown-toggle::after {
     --modal-control-button-color: var(--bs-toast-color);
 
     display: flex;
-    flex-direction: row-reverse;
+    flex-direction: column;
     backdrop-filter: blur(6px);
 }
 
 #toast-container .toast .toast-header {
-    padding: 0 !important;
     background: transparent !important;
     border-bottom: none;
+    color: var(--toast-text-color) !important;
 }
 
-#toast-container .toast .toast-header strong {
-    /* The title of the toast is no longer displayed */
-    display: none;
+#toast-container .toast .toast-header strong > * {
+    vertical-align: middle;
 }
 
 #toast-container .toast .toast-header .btn-close {
-    margin: 0 var(--bs-toast-padding-x) 0 12px;
+    margin: 0 0 0 12px;
+}
 
+#toast-container .toast.no-title {
+    flex-direction: row;
 }
 
 #toast-container .toast .toast-body {
     flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-top: 0;
+}
+
+#toast-container .toast:not(.no-title) .bx {
+    margin-inline-end: 0.5em;
+    font-size: 1.1em;
+    opacity: 0.85;
+}
+
+#toast-container .toast.no-title .bx {
+    margin-inline-end: 0;
+    font-size: 1.3em;
+}
+
+#toast-container .toast.no-title .toast-body {
+    padding-top: var(--bs-toast-padding-x);
+    color: var(--toast-text-color);
 }
 
 /*
@@ -398,11 +591,19 @@ body.mobile .dropdown-menu .dropdown-item.submenu-open .dropdown-toggle::after {
     --note-list-vertical-padding: 15px;
     background-color: var(--card-background-color);
     border: 1px solid var(--card-border-color) !important;
-    box-shadow: 2px 3px 4px var(--card-shadow-color);
     border-radius: 12px;
     user-select: none;
     padding: 0;
     margin: 5px 10px 5px 0;
+}
+
+:root .note-list .note-book-card:hover {
+    background-color: var(--card-background-hover-color);
+    transition: background-color 200ms ease-out;
+}
+
+:root .note-list.grid-view .note-book-card:active {
+    transform: scale(.98);
 }
 
 .note-list.list-view .note-book-card {
@@ -411,10 +612,6 @@ body.mobile .dropdown-menu .dropdown-item.submenu-open .dropdown-toggle::after {
 
 .note-list.list-view .note-book-card .note-book-header .note-icon {
     vertical-align: middle;
-}
-
-.note-list-wrapper .note-book-card:active {
-    background-color: var(--card-background-press-color);
 }
 
 .note-list-wrapper .note-book-card a {
@@ -488,9 +685,14 @@ body.mobile .dropdown-menu .dropdown-item.submenu-open .dropdown-toggle::after {
     padding: 0;
 }
 
+.note-list-wrapper .note-book-card .note-book-content.type-code {
+    height: 100%;
+}
+
 .note-list-wrapper .note-book-card .note-book-content.type-code pre {
     height: 100%;
     padding: 1em;
+    margin-bottom: 0;
 }
 
 .note-list-wrapper .note-book-card .bx {
@@ -498,7 +700,6 @@ body.mobile .dropdown-menu .dropdown-item.submenu-open .dropdown-toggle::after {
 }
 
 .note-list.grid-view .note-book-card:hover {
-    background: var(--card-background-color) !important;
     filter: contrast(105%);
 }
 
@@ -530,10 +731,9 @@ body.mobile .dropdown-menu .dropdown-item.submenu-open .dropdown-toggle::after {
 }
 
 /* List item */
-.jump-to-note-dialog .aa-suggestions div,
-.note-detail-empty .aa-suggestions div {
+.jump-to-note-dialog .aa-suggestion,
+.note-detail-empty .aa-suggestion {
     border-radius: 6px;
-    padding: 6px 12px;
     color: var(--menu-text-color);
     cursor: default;
 }

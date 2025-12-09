@@ -1,0 +1,24 @@
+.type-image .note-detail {
+    height: 100%;
+}
+
+.note-detail-image {
+    height: 100%;
+}
+
+.note-detail-image-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    justify-content: center;
+    height: 100%;
+}
+
+.note-detail-image-view {
+    display: block;
+    width: auto;
+    height: auto;
+    align-self: center;
+    flex-shrink: 0;
+}

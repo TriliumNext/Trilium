@@ -1,0 +1,11 @@
+{
+  "keyboard_actions": {
+    "back-in-note-history": "Naviger til forrige notat i historikken",
+    "forward-in-note-history": "Naviger til neste notat i historikken",
+    "open-jump-to-note-dialog": "Åpne \"gå til notat\"-dialogboksen",
+    "open-command-palette": "Åpne kommandopalett",
+    "scroll-to-active-note": "Skroll notat-treet til aktivt notat",
+    "quick-search": "Aktiver hurtigsøk-feltet",
+    "search-in-subtree": "Søk etter notater i det aktive notatets understruktur"
+  }
+}

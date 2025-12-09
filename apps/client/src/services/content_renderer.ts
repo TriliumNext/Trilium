@@ -2,32 +2,31 @@ import renderService from "./render.js";
 import protectedSessionService from "./protected_session.js";
 import protectedSessionHolder from "./protected_session_holder.js";
 import openService from "./open.js";
-import froca from "./froca.js";
 import utils from "./utils.js";
-import linkService from "./link.js";
-import treeService from "./tree.js";
 import FNote from "../entities/fnote.js";
 import FAttachment from "../entities/fattachment.js";
 import imageContextMenuService from "../menus/image_context_menu.js";
-import { applySingleBlockSyntaxHighlight, formatCodeBlocks } from "./syntax_highlight.js";
+import { applySingleBlockSyntaxHighlight } from "./syntax_highlight.js";
 import { loadElkIfNeeded, postprocessMermaidSvg } from "./mermaid.js";
 import renderDoc from "./doc_renderer.js";
 import { t } from "../services/i18n.js";
 import WheelZoom from 'vanilla-js-wheel-zoom';
-import { renderMathInElement } from "./math.js";
 import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import renderText from "./content_renderer_text.js";
 
 let idCounter = 1;
 
-interface Options {
+export interface RenderOptions {
     tooltip?: boolean;
     trim?: boolean;
     imageHasZoom?: boolean;
+    /** If enabled, it will prevent the default behavior in which an empty note would display a list of children. */
+    noChildrenList?: boolean;
 }
 
 const CODE_MIME_TYPES = new Set(["application/json"]);
 
-async function getRenderedContent(this: {} | { ctx: string }, entity: FNote | FAttachment, options: Options = {}) {
+export async function getRenderedContent(this: {} | { ctx: string }, entity: FNote | FAttachment, options: RenderOptions = {}) {
 
     options = Object.assign(
         {
@@ -42,7 +41,7 @@ async function getRenderedContent(this: {} | { ctx: string }, entity: FNote | FA
     const $renderedContent = $('<div class="rendered-content">');
 
     if (type === "text" || type === "book") {
-        await renderText(entity, $renderedContent);
+        await renderText(entity, $renderedContent, options);
     } else if (type === "code") {
         await renderCode(entity, $renderedContent);
     } else if (["image", "canvas", "mindMap"].includes(type)) {
@@ -114,32 +113,6 @@ async function getRenderedContent(this: {} | { ctx: string }, entity: FNote | FA
     };
 }
 
-async function renderText(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>) {
-    // entity must be FNote
-    const blob = await note.getBlob();
-
-    if (blob && !utils.isHtmlEmpty(blob.content)) {
-        $renderedContent.append($('<div class="ck-content">').html(blob.content));
-
-        if ($renderedContent.find("span.math-tex").length > 0) {
-            renderMathInElement($renderedContent[0], { trust: true });
-        }
-
-        const getNoteIdFromLink = (el: HTMLElement) => treeService.getNoteIdFromUrl($(el).attr("href") || "");
-        const referenceLinks = $renderedContent.find("a.reference-link");
-        const noteIdsToPrefetch = referenceLinks.map((i, el) => getNoteIdFromLink(el));
-        await froca.getNotes(noteIdsToPrefetch);
-
-        for (const el of referenceLinks) {
-            await linkService.loadReferenceLinkTitle($(el));
-        }
-
-        await formatCodeBlocks($renderedContent);
-    } else if (note instanceof FNote) {
-        await renderChildrenList($renderedContent, note);
-    }
-}
-
 /**
  * Renders a code note, by displaying its content and applying syntax highlighting based on the selected MIME type.
  */
@@ -161,7 +134,7 @@ async function renderCode(note: FNote | FAttachment, $renderedContent: JQuery<HT
     await applySingleBlockSyntaxHighlight($codeBlock, normalizeMimeTypeForCKEditor(note.mime));
 }
 
-function renderImage(entity: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: Options = {}) {
+function renderImage(entity: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
     const encodedTitle = encodeURIComponent(entity.title);
 
     let url;
@@ -256,8 +229,19 @@ function renderFile(entity: FNote | FAttachment, type: string, $renderedContent:
             </button>
         `);
 
-        $downloadButton.on("click", () => openService.downloadFileNote(entity.noteId));
-        $openButton.on("click", () => openService.openNoteExternally(entity.noteId, entity.mime));
+        $downloadButton.on("click", (e) => {
+            e.stopPropagation();
+            openService.downloadFileNote(entity.noteId)
+        });
+        $openButton.on("click", async (e) => {
+            const iconEl = $openButton.find("> .bx");
+            iconEl.removeClass("bx bx-link-external");
+            iconEl.addClass("bx bx-loader spin");
+            e.stopPropagation();
+            await openService.openNoteExternally(entity.noteId, entity.mime)
+            iconEl.removeClass("bx bx-loader spin");
+            iconEl.addClass("bx bx-link-external");
+        });
         // open doesn't work for protected notes since it works through a browser which isn't in protected session
         $openButton.toggle(!entity.isProtected);
 
@@ -289,40 +273,6 @@ async function renderMermaid(note: FNote | FAttachment, $renderedContent: JQuery
         const $error = $("<p>The diagram could not displayed.</p>");
 
         $renderedContent.append($error);
-    }
-}
-
-/**
- * @param {jQuery} $renderedContent
- * @param {FNote} note
- * @returns {Promise<void>}
- */
-async function renderChildrenList($renderedContent: JQuery<HTMLElement>, note: FNote) {
-    let childNoteIds = note.getChildNoteIds();
-
-    if (!childNoteIds.length) {
-        return;
-    }
-
-    $renderedContent.css("padding", "10px");
-    $renderedContent.addClass("text-with-ellipsis");
-
-    if (childNoteIds.length > 10) {
-        childNoteIds = childNoteIds.slice(0, 10);
-    }
-
-    // just load the first 10 child notes
-    const childNotes = await froca.getNotes(childNoteIds);
-
-    for (const childNote of childNotes) {
-        $renderedContent.append(
-            await linkService.createLink(`${note.noteId}/${childNote.noteId}`, {
-                showTooltip: false,
-                showNoteIcon: true
-            })
-        );
-
-        $renderedContent.append("<br>");
     }
 }
 

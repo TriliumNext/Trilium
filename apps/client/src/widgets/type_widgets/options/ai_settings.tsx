@@ -132,7 +132,7 @@ interface SingleProviderSettingsProps {
 }
 
 function SingleProviderSettings({ provider, title, apiKeyDescription, baseUrlDescription, modelDescription, validationErrorMessage, apiKeyOption, baseUrlOption, modelOption }: SingleProviderSettingsProps) {
-    const [ apiKey, setApiKey ] = apiKeyOption ? useTriliumOption(apiKeyOption) : [];
+    const [ apiKey, setApiKey ] = useTriliumOption(apiKeyOption ?? baseUrlOption);
     const [ baseUrl, setBaseUrl ] = useTriliumOption(baseUrlOption);
     const isValid = (apiKeyOption ? !!apiKey : !!baseUrl);
 

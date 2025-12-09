@@ -1,89 +1,68 @@
-/**
- * @module
- *
- * This script is used internally by the `rebuild-deps` target of the `desktop`. Normally we could use
- * `electron-rebuild` CLI directly, but it would rebuild the monorepo-level dependencies and breaks
- * the server build (and it doesn't expose a CLI option to override this).
- * 
- * A side purpose is to generate a fake `package.json` file in the `dist` directory
- * that contains only the native dependencies. This is used by `electron-forge`.
- */
-
 import { join, resolve } from "path";
+import { cpSync, exists, existsSync, mkdirSync, readFileSync, rmSync } from "fs";
+import { execSync } from "child_process";
 import { rebuild } from "@electron/rebuild"
-import { readFileSync, rmSync, writeFileSync } from "fs";
+import { getElectronPath, isNixOS } from "./utils.mjs";
 
-const nativeDependencies = [
-    "better-sqlite3"
-];
+const workspaceRoot = join(import.meta.dirname, "..");
 
-function parsePackageJson(distDir: string) {
-    const packageJsonPath = join(distDir, "../package.json");
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
-    let electronVersion: string;
-
-    if (process.argv[3]) {
-        electronVersion = process.argv[3];
-    } else {
-        electronVersion = packageJson?.devDependencies?.electron ?? packageJson?.dependencies?.electron;
-        if (!electronVersion) {
-            console.error(`Unable to retrieve Electron version in '${resolve(packageJsonPath)}'.`);
-            process.exit(3);
-        }
-    }
+function copyNativeDependencies(projectRoot: string) {
+    const destPath = join(projectRoot, "node_modules/better-sqlite3");
     
-    return {
-        electronVersion,
-        packageJson
-    };
+    if (existsSync(destPath)) {
+        rmSync(destPath, { recursive: true });
+    }
+    mkdirSync(destPath, { recursive: true });
+
+    const sourcePath = join(workspaceRoot, "node_modules/better-sqlite3");
+    if (!existsSync(sourcePath)) {
+        console.warn("Nothing to rebuild as source path is missing:", sourcePath);
+        console.info("For CI builds with filtered package installs, this is normal. For normal development, it's not.");
+        process.exit(0);
+    }
+    cpSync(sourcePath, destPath, { recursive: true, dereference: true });
 }
 
-function createFakePackageJson(distPath: string, packageJson: any) {
-    const finalDependencies = {};
-    for (const dep of nativeDependencies) {
-        finalDependencies[dep] = packageJson.dependencies[dep];
-    }
+async function rebuildNativeDependencies(projectRoot: string) {
+    const electronVersion = determineElectronVersion(projectRoot);
 
-    const fakePackageJson: any = {
-        name: "trilium",
-        version: packageJson.version,
-        main: packageJson.main,
-        author: packageJson.author,
-        license: packageJson.license,
-        description: packageJson.description,
-        dependencies: finalDependencies,
-        devDependencies: {
-            "electron": packageJson.devDependencies?.electron || packageJson.dependencies?.electron,
-        }
-    };
-    if (packageJson?.config?.forge) {
-        fakePackageJson.config = {
-            forge: join("..", packageJson.config.forge)
-        };
-    }
-    writeFileSync(distPath, JSON.stringify(fakePackageJson, null, 2), "utf-8");
-}
-
-function main() {
-    const distDir = resolve(process.argv[2]);
-    if (!distDir) {
-        console.error("Missing root dir as argument.");
+    if (!electronVersion) {
+        console.error("Unable to determine Electron version.");
         process.exit(1);
     }
 
-    const { electronVersion, packageJson } = parsePackageJson(distDir);
-    const packageJsonPath = join(distDir, "package.json");
-    createFakePackageJson(packageJsonPath, packageJson);
+    const targetArch = process.env.TARGET_ARCH || process.arch;
+    console.log(`Rebuilding ${projectRoot} with ${electronVersion} for ${targetArch}...`);
 
-    console.log(`Rebuilding ${distDir} with version ${electronVersion}...`);
-
-    rebuild({
-        // We force the project root path to avoid electron-rebuild from rebuilding the monorepo-level dependency and breaking the server.
-        projectRootPath: distDir,
-        buildPath: distDir,
-        force: true,
+    const resolvedPath = resolve(projectRoot);
+    await rebuild({
+        projectRootPath: resolvedPath,
+        buildPath: resolvedPath,
         electronVersion,
+        arch: targetArch,
+        force: true
     });
 }
 
-main();
+function determineElectronVersion(projectRoot: string) {
+    const packageJson = JSON.parse(readFileSync(join(projectRoot, "package.json"), "utf-8"));
+
+    if (isNixOS()) {
+        console.log("Detected NixOS, reading Electron version from PATH");
+
+        try {
+            return execSync(`${getElectronPath()} --version`, { }).toString("utf-8");
+        } catch (e) {
+            console.error("Got error while trying to read the Electron version from shell. Make sure that an Electron version is in the PATH (e.g. `nix-shell -p electron`)");
+            process.exit(1);
+        }
+    } else {
+        console.log("Using Electron version from package.json");
+        return packageJson.devDependencies.electron;
+    }
+}
+
+for (const projectRoot of [ "apps/desktop", "apps/edit-docs" ]) {
+    copyNativeDependencies(projectRoot);
+    await rebuildNativeDependencies(projectRoot);
+}

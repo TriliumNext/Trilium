@@ -1,0 +1,417 @@
+.ribbon-container {
+    margin-bottom: 5px;
+    position: relative;
+    z-index: 998;
+}
+
+/* When content header is floating, ribbon sticks below it */
+.scrolling-container:has(.content-header-widget.floating) .ribbon-container {
+    position: sticky;
+    top: var(--content-header-height, 100px);
+}
+
+.ribbon-top-row {
+    display: flex;
+    min-height: 36px;
+}
+
+.ribbon-tab-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    margin-inline-start: 10px;
+    flex-grow: 1;
+    flex-flow: row wrap;
+}
+
+.ribbon-tab-title {
+    color: var(--muted-text-color);
+    border-bottom: 1px solid var(--main-border-color);
+    min-width: 24px;
+    flex-basis: 24px;
+    max-width: max-content;
+    flex-grow: 10;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    font-size: 0.9em;
+    padding-top: 2px;
+}
+
+.ribbon-tab-title .bx {
+    font-size: 150%;
+    position: relative;
+}
+
+.ribbon-tab-title.active {
+    color: var(--main-text-color);
+    border-bottom: 3px solid var(--main-text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ribbon-tab-title:hover {
+    cursor: pointer;
+}
+
+.ribbon-tab-title:hover {
+    color: var(--main-text-color);
+}
+
+.ribbon-tab-title:first-of-type {
+    padding-inline-start: 10px;
+}
+
+.ribbon-tab-spacer {
+    flex-basis: 0;
+    min-width: 0;
+    max-width: 35px;
+    flex-grow: 1;
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+.ribbon-tab-spacer:last-of-type {
+    flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
+    max-width: 10000px;
+}
+
+.ribbon-button-container {
+    display: flex;
+    border-bottom: 1px solid var(--main-border-color);
+    margin-inline-end: 5px;
+    align-items: center;
+    height: 36px;
+    gap: 10px;
+}
+
+.ribbon-body {
+    border-bottom: 1px solid var(--main-border-color);
+    margin-inline-start: 10px;
+    margin-inline-end: 5px; /* needs to have this value so that the bottom border is the same width as the top one */
+}
+
+.ribbon-body.active {
+    display: block;
+}
+
+.ribbon-tab-title.active .ribbon-tab-title-label {
+    display: inline;
+}
+
+/* #region Basic Properties */
+
+.basic-properties-widget {
+    padding: 0px 12px 6px 12px;
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+}
+
+.basic-properties-widget > * {
+    margin-top: 9px;
+    margin-bottom: 2px;
+    margin-inline-end: 30px;
+}
+
+.note-type-container,
+.editability-select-container,
+.note-language-container {
+    display: flex;
+    align-items: center;
+}
+
+.note-type-dropdown {
+    max-height: 500px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.editability-dropdown {
+    width: 300px;
+}
+
+/* #endregion */
+
+/* #region Formatting Toolbar */
+
+.classic-toolbar-widget {
+    --ck-color-toolbar-background: transparent;
+    --ck-color-button-default-background: transparent;
+    --ck-color-button-default-disabled-background: transparent;
+    min-height: 39px;
+}
+
+.classic-toolbar-widget .ck.ck-toolbar {
+    border: none;
+}
+
+.classic-toolbar-widget .ck.ck-button.ck-disabled {
+    opacity: 0.3;
+}
+
+/* #endregion */
+
+/* #region Script Tab */
+.script-runner-widget {
+    padding: 12px;
+    color: var(--muted-text-color);
+}
+
+.execute-description {
+    margin-bottom: 10px;
+}
+/* #endregion */
+
+/* #region Note info */
+.note-info-widget {
+    padding: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+}
+
+.note-info-item {
+    display: flex;
+    align-items: baseline;
+    padding-inline-end: 15px;
+    padding-block: 5px;
+}
+
+.note-info-item > span:first-child {
+    padding-inline-end: 5px;
+}
+
+.note-info-mime {
+    max-width: 13em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.note-info-id {
+    font-variant: none;
+    font-family: var(--monospace-font-family);
+    font-size: 0.8em;
+    vertical-align: middle !important;
+}
+
+.note-info-widget .calculate-button {
+    padding: 0 10px;
+}
+/* #endregion */
+
+/* #region Similar Notes */
+.similar-notes-wrapper {
+    max-height: 200px;
+    overflow: auto;
+    padding: 12px;
+}
+
+.similar-notes-wrapper a {
+    display: inline-block;
+    border: 1px dotted var(--main-border-color);
+    border-radius: 20px;
+    background-color: var(--accented-background-color);
+    padding: 0 10px 0 10px;
+    margin: 0 3px 0 3px;
+    max-width: 10em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+/* #endregion */
+
+/* #region File Properties */
+.file-table {
+    width: 100%;
+    margin-top: 10px;
+}
+
+.file-table th, .file-table td {
+    padding: 5px;
+    overflow-wrap: anywhere;
+}
+
+.file-buttons {
+    padding: 10px;
+    display: flex;
+    justify-content: space-evenly;
+}
+/* #endregion */
+
+/* #region Note paths */
+.note-paths-widget {
+    padding: 12px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.note-path-list {
+    margin-top: 10px;
+}
+
+.note-path-list .path-current a {
+    font-weight: bold;
+}
+
+.note-path-list .path-archived a {
+    color: var(--muted-text-color) !important;
+}
+
+.note-path-list .path-search a {
+    font-style: italic;
+}
+/* #endregion */
+
+/* #region Note map */
+.note-map-ribbon-widget {
+    position: relative;
+}
+
+.note-map-ribbon-widget .note-map-container {
+    height: 100%;
+}
+
+.note-map-ribbon-widget .open-full-button, .note-map-ribbon-widget .collapse-button {
+    position: absolute;
+    inset-inline-end: 5px;
+    bottom: 5px;
+}
+
+.style-resolver {
+    color: var(--muted-text-color);
+    display: none;
+}
+/* #endregion */
+
+/* #region Attribute editor */
+.attribute-list-editor {
+    border: 0 !important;
+    outline: 0 !important;
+    box-shadow: none !important;
+    padding: 0 100px 0 5px !important;
+    margin: 0 !important;
+    max-height: 100px;
+    overflow: auto;
+    transition: opacity .1s linear;
+}
+
+body[dir=rtl] .attribute-list-editor {
+    padding: 0 5px 0 100px !important;
+    text-align: right !important;
+}
+
+.attribute-list-editor.ck-content .mention {
+    color: var(--muted-text-color) !important;
+    background: transparent !important;
+}
+
+.attribute-editor-buttons {
+    display: flex;
+    position: absolute;
+    top: 0;
+    inset-inline-end: 0;
+    bottom: 0;
+    align-items: center;
+    gap: 10px;
+}
+
+.attribute-errors {
+    color: red;
+    padding: 5px 100px 0px 5px; /* large right padding to avoid buttons */
+}
+/* #endregion */
+
+/* #region Owned Attributes */
+.attribute-list {
+    margin-inline-start: 7px;
+    margin-inline-end: 7px;
+    margin-top: 5px;
+    margin-bottom: 2px;
+    position: relative;
+}
+
+.attribute-list-editor p {
+    margin: 0 !important;
+}
+
+.attribute-list .attr-detail,
+.inherited-attributes-widget .attr-detail {
+    contain: none;
+}
+
+/* #endregion */
+
+/* #region Inherited attributes */
+.inherited-attributes-widget {
+    position: relative;
+}
+
+.inherited-attributes-container {
+    color: var(--muted-text-color);
+    max-height: 200px;
+    overflow: auto;
+    padding: 14px 12px 13px 12px;
+}
+/* #endregion */
+
+/* #region Book properties */
+.book-properties-widget {
+    padding: 12px 12px 6px 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    overflow: visible;
+    align-items: center;
+}
+
+.book-properties-widget > * {
+    flex-shrink: 0;
+}
+
+.book-properties-widget > .type-number > label {
+    display: flex;
+    align-items: baseline;
+}
+
+.book-properties-widget input[type="checkbox"] {
+    margin-inline-end: 5px;
+}
+
+.book-properties-widget label {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-overflow: clip;
+    white-space: nowrap;
+}
+/* #endregion */
+
+/* #region Note actions */
+.note-actions {
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+}
+
+.note-actions .dropdown-menu {
+    min-width: 15em;
+}
+
+.note-actions .dropdown-item .bx {
+    position: relative;
+    top: 3px;
+    font-size: 120%;
+    margin-inline-end: 5px;
+}
+
+.note-actions .dropdown-item[disabled], .note-actions .dropdown-item[disabled]:hover {
+    color: var(--muted-text-color) !important;
+    background-color: transparent !important;
+    pointer-events: none; /* makes it unclickable */
+}
+/* #endregion */

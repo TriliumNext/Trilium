@@ -5,18 +5,7 @@
   "author": "Dom Christie",
   "private": true,
   "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    "./package.json": "./package.json",
-    ".": {
-      "development": "./src/index.js",
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
-    }
-  },
+  "main": "./src/index.js",
   "gitHead": "05a29b450962bf05a8642bbd39446a1f679a96ba",
   "license": "MIT",
   "repository": {
@@ -32,32 +21,8 @@
     "github-flavored-markdown",
     "gfm"
   ],
-  "nx": {
-    "name": "turndown-plugin-gfm",
-    "sourceRoot": "packages/turndown-plugin-gfm/src",
-    "targets": {
-      "build": {
-        "executor": "@nx/esbuild:esbuild",
-        "outputs": [
-          "{options.outputPath}"
-        ],
-        "options": {
-          "outputPath": "packages/turndown-plugin-gfm/dist",
-          "main": "packages/turndown-plugin-gfm/src/index.js",
-          "tsConfig": "packages/turndown-plugin-gfm/tsconfig.lib.json",
-          "format": [
-            "esm"
-          ],
-          "declarationRootDir": "packages/turndown-plugin-gfm/src"
-        }
-      },
-      "test": {
-        "command": "node packages/turndown-plugin-gfm/test/turndown-plugin-gfm-test.js"
-      }
-    }
-  },
   "devDependencies": {
-    "turndown": "7.2.1",
+    "turndown": "7.2.2",
     "turndown-attendant": "0.0.3"
   }
 }

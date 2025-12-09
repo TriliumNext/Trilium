@@ -2,21 +2,10 @@
   "name": "@triliumnext/server-e2e",
   "version": "0.0.1",
   "private": true,
-  "nx": {
-    "name": "server-e2e",
-    "implicitDependencies": [
-      "client",
-      "server"
-    ],
-    "targets": {
-      "e2e": {
-        "dependsOn": [
-          "server:build"
-        ]
-      }
-    }
+  "scripts": {
+    "e2e": "playwright test"
   },
   "devDependencies": {
-    "dotenv": "17.2.1"
+    "dotenv": "17.2.3"
   }
 }

@@ -1,0 +1,9 @@
+.dropdown-item .description {
+    font-size: small;
+    color: var(--muted-text-color);
+    white-space: normal;
+}
+
+.dropdown-item span.bx {
+    flex-shrink: 0;
+}

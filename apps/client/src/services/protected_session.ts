@@ -1,7 +1,7 @@
 import server from "./server.js";
 import protectedSessionHolder from "./protected_session_holder.js";
 import toastService from "./toast.js";
-import type { ToastOptions } from "./toast.js";
+import type { ToastOptionsWithRequiredId } from "./toast.js";
 import ws from "./ws.js";
 import appContext from "../components/app_context.js";
 import froca from "./froca.js";
@@ -97,7 +97,7 @@ async function protectNote(noteId: string, protect: boolean, includingSubtree: b
     await server.put(`notes/${noteId}/protect/${protect ? 1 : 0}?subtree=${includingSubtree ? 1 : 0}`);
 }
 
-function makeToast(message: Message, title: string, text: string): ToastOptions {
+function makeToast(message: Message, title: string, text: string): ToastOptionsWithRequiredId {
     return {
         id: message.taskId,
         title,
@@ -107,11 +107,11 @@ function makeToast(message: Message, title: string, text: string): ToastOptions 
 }
 
 ws.subscribeToMessages(async (message) => {
-    if (message.taskType !== "protectNotes") {
+    if (!("taskType" in message) || message.taskType !== "protectNotes") {
         return;
     }
 
-    const isProtecting = message.data.protect;
+    const isProtecting = message.data?.protect;
     const title = isProtecting ? t("protected_session.protecting-title") : t("protected_session.unprotecting-title");
 
     if (message.type === "taskError") {
@@ -124,7 +124,7 @@ ws.subscribeToMessages(async (message) => {
     } else if (message.type === "taskSucceeded") {
         const text = isProtecting ? t("protected_session.protecting-finished-successfully") : t("protected_session.unprotecting-finished-successfully");
         const toast = makeToast(message, title, text);
-        toast.closeAfter = 3000;
+        toast.timeout = 3000;
 
         toastService.showPersistent(toast);
     }

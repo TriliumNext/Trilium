@@ -92,7 +92,7 @@ function getAndCheckNote(noteId: string) {
 }
 
 function getAndCheckAttachment(attachmentId: string) {
-    const attachment = becca.getAttachment(attachmentId, { includeContentLength: true });
+    const attachment = becca.getAttachment(attachmentId);
 
     if (attachment) {
         return attachment;

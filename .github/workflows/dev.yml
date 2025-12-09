@@ -19,44 +19,23 @@ permissions:
   pull-requests: write  # for PR comments
 
 jobs:
-  check-affected:
-    name: Check affected jobs (NX)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout the repository
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0  # needed for https://github.com/marketplace/actions/nx-set-shas
-
-      - uses: pnpm/action-setup@v4
-      - name: Set up node & dependencies
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: 'pnpm'
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - uses: nrwl/nx-set-shas@v4
-      - name: Check affected
-        run: pnpm nx affected --verbose -t typecheck build rebuild-deps test-build
-
   test_dev:
     name: Test development
     runs-on: ubuntu-latest
-    needs:
-      - check-affected
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - uses: pnpm/action-setup@v4
       - name: Set up node & dependencies
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
 
       - name: Run the unit tests
         run: pnpm run test:all
@@ -66,16 +45,15 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - test_dev
-      - check-affected
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Update build info
         run: pnpm run chore:update-build-info
       - name: Trigger client build
-        run: pnpm nx run client:build
+        run: pnpm client:build
       - name: Send client bundle stats to RelativeCI
         if: false
         uses: relative-ci/agent-action@v3
@@ -83,7 +61,7 @@ jobs:
           webpackStatsFile: ./apps/client/dist/webpack-stats.json
           key: ${{ secrets.RELATIVE_CI_CLIENT_KEY }}
       - name: Trigger server build
-        run: pnpm nx run server:build
+        run: pnpm run server:build
       - uses: docker/setup-buildx-action@v3
       - uses: docker/build-push-action@v6
         with:
@@ -95,7 +73,6 @@ jobs:
     runs-on: ubuntu-latest
     needs:
       - build_docker
-      - check-affected
     strategy:
       matrix:
         include:
@@ -103,7 +80,7 @@ jobs:
           - dockerfile: Dockerfile
     steps:
       - name: Checkout the repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - uses: pnpm/action-setup@v4
       - name: Install dependencies
@@ -112,7 +89,7 @@ jobs:
       - name: Update build info
         run: pnpm run chore:update-build-info
       - name: Trigger build
-        run: pnpm nx run server:build
+        run: pnpm server:build
 
       - name: Set IMAGE_NAME to lowercase
         run: echo "IMAGE_NAME=${IMAGE_NAME,,}" >> $GITHUB_ENV

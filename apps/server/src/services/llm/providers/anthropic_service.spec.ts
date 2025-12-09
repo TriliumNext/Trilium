@@ -10,7 +10,11 @@ import { PROVIDER_CONSTANTS } from '../constants/provider_constants.js';
 vi.mock('../../options.js', () => ({
     default: {
         getOption: vi.fn(),
-        getOptionBool: vi.fn()
+        getOptionBool: vi.fn(),
+        getOptionInt: vi.fn(name => {
+            if (name === "protectedSessionTimeout") return Number.MAX_SAFE_INTEGER;
+            return 0;
+        })
     }
 }));
 
@@ -27,50 +31,8 @@ vi.mock('./providers.js', () => ({
 }));
 
 vi.mock('@anthropic-ai/sdk', () => {
-    const mockStream = {
-        [Symbol.asyncIterator]: async function* () {
-            yield {
-                type: 'content_block_delta',
-                delta: { text: 'Hello' }
-            };
-            yield {
-                type: 'content_block_delta',
-                delta: { text: ' world' }
-            };
-            yield {
-                type: 'message_delta',
-                delta: { stop_reason: 'end_turn' }
-            };
-        }
-    };
-
-    const mockAnthropic = vi.fn().mockImplementation(() => ({
-        messages: {
-            create: vi.fn().mockImplementation((params) => {
-                if (params.stream) {
-                    return Promise.resolve(mockStream);
-                }
-                return Promise.resolve({
-                    id: 'msg_123',
-                    type: 'message',
-                    role: 'assistant',
-                    content: [{
-                        type: 'text',
-                        text: 'Hello! How can I help you today?'
-                    }],
-                    model: 'claude-3-opus-20240229',
-                    stop_reason: 'end_turn',
-                    stop_sequence: null,
-                    usage: {
-                        input_tokens: 10,
-                        output_tokens: 25
-                    }
-                });
-            })
-        }
-    }));
-
-    return { default: mockAnthropic };
+    const MockAnthropic = vi.fn();
+    return { default: MockAnthropic };
 });
 
 describe('AnthropicService', () => {
@@ -79,9 +41,8 @@ describe('AnthropicService', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        
+
         // Get the mocked Anthropic instance before creating the service
-        const AnthropicMock = vi.mocked(Anthropic);
         mockAnthropicInstance = {
             messages: {
                 create: vi.fn().mockImplementation((params) => {
@@ -122,9 +83,11 @@ describe('AnthropicService', () => {
                 })
             }
         };
-        
-        AnthropicMock.mockImplementation(() => mockAnthropicInstance);
-        
+
+        (Anthropic as any).mockImplementation(function(this: any) {
+            return mockAnthropicInstance;
+        });
+
         service = new AnthropicService();
     });
 
@@ -144,26 +107,26 @@ describe('AnthropicService', () => {
         it('should return true when AI is enabled and API key exists', () => {
             vi.mocked(options.getOptionBool).mockReturnValueOnce(true); // AI enabled
             vi.mocked(options.getOption).mockReturnValueOnce('test-api-key'); // API key
-            
+
             const result = service.isAvailable();
-            
+
             expect(result).toBe(true);
         });
 
         it('should return false when AI is disabled', () => {
             vi.mocked(options.getOptionBool).mockReturnValueOnce(false); // AI disabled
-            
+
             const result = service.isAvailable();
-            
+
             expect(result).toBe(false);
         });
 
         it('should return false when no API key', () => {
             vi.mocked(options.getOptionBool).mockReturnValueOnce(true); // AI enabled
             vi.mocked(options.getOption).mockReturnValueOnce(''); // No API key
-            
+
             const result = service.isAvailable();
-            
+
             expect(result).toBe(false);
         });
     });
@@ -190,9 +153,9 @@ describe('AnthropicService', () => {
                 stream: false
             };
             vi.mocked(providers.getAnthropicOptions).mockReturnValueOnce(mockOptions);
-            
+
             const result = await service.generateChatCompletion(messages);
-            
+
             expect(result).toEqual({
                 text: 'Hello! How can I help you today?',
                 provider: 'Anthropic',
@@ -214,11 +177,11 @@ describe('AnthropicService', () => {
                 stream: false
             };
             vi.mocked(providers.getAnthropicOptions).mockReturnValueOnce(mockOptions);
-            
+
             const createSpy = vi.spyOn(mockAnthropicInstance.messages, 'create');
-            
+
             await service.generateChatCompletion(messages);
-            
+
             const calledParams = createSpy.mock.calls[0][0] as any;
             expect(calledParams.messages).toEqual([
                 { role: 'user', content: 'Hello' }
@@ -235,12 +198,12 @@ describe('AnthropicService', () => {
                 onChunk: vi.fn()
             };
             vi.mocked(providers.getAnthropicOptions).mockReturnValueOnce(mockOptions);
-            
+
             const result = await service.generateChatCompletion(messages);
-            
+
             // Wait for chunks to be processed
             await new Promise(resolve => setTimeout(resolve, 100));
-            
+
             // Check that the result exists (streaming logic is complex, so we just verify basic structure)
             expect(result).toBeDefined();
             expect(result).toHaveProperty('text');
@@ -256,7 +219,7 @@ describe('AnthropicService', () => {
                     properties: {}
                 }
             }];
-            
+
             const mockOptions = {
                 apiKey: 'test-key',
                 baseUrl: 'https://api.anthropic.com',
@@ -267,7 +230,7 @@ describe('AnthropicService', () => {
                 tool_choice: { type: 'any' }
             };
             vi.mocked(providers.getAnthropicOptions).mockReturnValueOnce(mockOptions);
-            
+
             // Mock response with tool use
             mockAnthropicInstance.messages.create.mockResolvedValueOnce({
                 id: 'msg_123',
@@ -287,9 +250,9 @@ describe('AnthropicService', () => {
                     output_tokens: 25
                 }
             });
-            
+
             const result = await service.generateChatCompletion(messages);
-            
+
             expect(result).toEqual({
                 text: '',
                 provider: 'Anthropic',
@@ -312,7 +275,7 @@ describe('AnthropicService', () => {
 
         it('should throw error if service not available', async () => {
             vi.mocked(options.getOptionBool).mockReturnValueOnce(false); // AI disabled
-            
+
             await expect(service.generateChatCompletion(messages)).rejects.toThrow(
                 'Anthropic service is not available'
             );
@@ -326,12 +289,12 @@ describe('AnthropicService', () => {
                 stream: false
             };
             vi.mocked(providers.getAnthropicOptions).mockReturnValueOnce(mockOptions);
-            
+
             // Mock API error
             mockAnthropicInstance.messages.create.mockRejectedValueOnce(
                 new Error('API Error: Invalid API key')
             );
-            
+
             await expect(service.generateChatCompletion(messages)).rejects.toThrow(
                 'API Error: Invalid API key'
             );
@@ -347,16 +310,15 @@ describe('AnthropicService', () => {
                 stream: false
             };
             vi.mocked(providers.getAnthropicOptions).mockReturnValueOnce(mockOptions);
-            
+
             // Spy on Anthropic constructor
-            const AnthropicMock = vi.mocked(Anthropic);
-            AnthropicMock.mockClear();
-            
+            (Anthropic as any).mockClear();
+
             // Create new service to trigger client creation
             const newService = new AnthropicService();
             await newService.generateChatCompletion(messages);
-            
-            expect(AnthropicMock).toHaveBeenCalledWith({
+
+            expect(Anthropic).toHaveBeenCalledWith({
                 apiKey: 'test-key',
                 baseURL: 'https://api.anthropic.com',
                 defaultHeaders: {
@@ -374,16 +336,15 @@ describe('AnthropicService', () => {
                 stream: false
             };
             vi.mocked(providers.getAnthropicOptions).mockReturnValueOnce(mockOptions);
-            
+
             // Spy on Anthropic constructor
-            const AnthropicMock = vi.mocked(Anthropic);
-            AnthropicMock.mockClear();
-            
+            (Anthropic as any).mockClear();
+
             // Create new service to trigger client creation
             const newService = new AnthropicService();
             await newService.generateChatCompletion(messages);
-            
-            expect(AnthropicMock).toHaveBeenCalledWith({
+
+            expect(Anthropic).toHaveBeenCalledWith({
                 apiKey: 'test-key',
                 baseURL: 'https://api.anthropic.com',
                 defaultHeaders: {
@@ -401,7 +362,7 @@ describe('AnthropicService', () => {
                 stream: false
             };
             vi.mocked(providers.getAnthropicOptions).mockReturnValueOnce(mockOptions);
-            
+
             // Mock response with mixed content
             mockAnthropicInstance.messages.create.mockResolvedValueOnce({
                 id: 'msg_123',
@@ -420,9 +381,9 @@ describe('AnthropicService', () => {
                     output_tokens: 25
                 }
             });
-            
+
             const result = await service.generateChatCompletion(messages);
-            
+
             expect(result.text).toBe('Here is the result:  The calculation is complete.');
             expect(result.tool_calls).toHaveLength(1);
             expect(result.tool_calls![0].function.name).toBe('calculate');
@@ -431,8 +392,8 @@ describe('AnthropicService', () => {
         it('should handle tool results in messages', async () => {
             const messagesWithToolResult: Message[] = [
                 { role: 'user', content: 'Calculate 5 + 3' },
-                { 
-                    role: 'assistant', 
+                {
+                    role: 'assistant',
                     content: '',
                     tool_calls: [{
                         id: 'call_123',
@@ -440,13 +401,13 @@ describe('AnthropicService', () => {
                         function: { name: 'calculate', arguments: '{"x": 5, "y": 3}' }
                     }]
                 },
-                { 
-                    role: 'tool', 
+                {
+                    role: 'tool',
                     content: '8',
                     tool_call_id: 'call_123'
                 }
             ];
-            
+
             const mockOptions = {
                 apiKey: 'test-key',
                 baseUrl: 'https://api.anthropic.com',
@@ -454,11 +415,11 @@ describe('AnthropicService', () => {
                 stream: false
             };
             vi.mocked(providers.getAnthropicOptions).mockReturnValueOnce(mockOptions);
-            
+
             const createSpy = vi.spyOn(mockAnthropicInstance.messages, 'create');
-            
+
             await service.generateChatCompletion(messagesWithToolResult);
-            
+
             const formattedMessages = (createSpy.mock.calls[0][0] as any).messages;
             expect(formattedMessages).toHaveLength(3);
             expect(formattedMessages[2]).toEqual({

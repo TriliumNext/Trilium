@@ -1,0 +1,51 @@
+.note-detail-doc-content {
+    padding: 15px;
+    user-select: text;
+}
+
+.note-detail-doc-content pre {
+    border: 0;
+    box-shadow: var(--code-block-box-shadow);
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.note-detail-doc-content code {
+    font-variant: none;
+}
+
+.note-detail-doc-content pre:not(.hljs) {
+    background-color: var(--accented-background-color);
+    border: 1px solid var(--main-border-color);
+}
+
+.note-detail-doc-content.contextual-help {
+    padding-bottom: 0;
+}
+
+.note-detail-doc-content.contextual-help h2,
+.note-detail-doc-content.contextual-help h3,
+.note-detail-doc-content.contextual-help h4,
+.note-detail-doc-content.contextual-help h5,
+.note-detail-doc-content.contextual-help h6 {
+    font-size: 1.25rem;
+    background-color: var(--main-background-color);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    margin: 0;
+    padding-bottom: 0.25em;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+td img {
+    max-width: 40vw;
+}
+
+figure.table {
+    overflow: auto !important;
+}

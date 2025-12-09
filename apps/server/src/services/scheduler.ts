@@ -4,9 +4,11 @@ import sqlInit from "./sql_init.js";
 import config from "./config.js";
 import log from "./log.js";
 import attributeService from "../services/attributes.js";
-import protectedSessionService from "../services/protected_session.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
 import type BNote from "../becca/entities/bnote.js";
+import options from "./options.js";
+import { getLastProtectedSessionOperationDate, isProtectedSessionAvailable, resetDataKey } from "./protected_session.js";
+import ws from "./ws.js";
 
 function getRunAtHours(note: BNote): number[] {
     try {
@@ -33,11 +35,15 @@ function runNotesWithLabel(runAttrValue: string) {
     }
 }
 
-sqlInit.dbReady.then(() => {
-    cls.init(() => {
-        hiddenSubtreeService.checkHiddenSubtree();
-    });
+// If the database is already initialized, we need to check the hidden subtree. Otherwise, hidden subtree
+// is also checked before importing the demo.zip, so no need to do it again.
+if (sqlInit.isDbInitialized()) {
+    console.log("Checking hidden subtree.");
+    sqlInit.dbReady.then(() => cls.init(() => hiddenSubtreeService.checkHiddenSubtree()));
+}
 
+// Periodic checks.
+sqlInit.dbReady.then(() => {
     if (!process.env.TRILIUM_SAFE_MODE) {
         setTimeout(
             cls.wrap(() => runNotesWithLabel("backendStartup")),
@@ -60,5 +66,15 @@ sqlInit.dbReady.then(() => {
         );
     }
 
-    setInterval(() => protectedSessionService.checkProtectedSessionExpiration(), 30000);
+    setInterval(() => checkProtectedSessionExpiration(), 30000);
 });
+
+function checkProtectedSessionExpiration() {
+    const protectedSessionTimeout = options.getOptionInt("protectedSessionTimeout");
+    const lastProtectedSessionOperationDate = getLastProtectedSessionOperationDate();
+    if (isProtectedSessionAvailable() && lastProtectedSessionOperationDate && Date.now() - lastProtectedSessionOperationDate > protectedSessionTimeout * 1000) {
+        resetDataKey();
+        log.info("Expiring protected session");
+        ws.reloadFrontend("leaving protected session");
+    }
+}

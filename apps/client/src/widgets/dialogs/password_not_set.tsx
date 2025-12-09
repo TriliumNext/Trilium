@@ -1,12 +1,11 @@
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import Modal from "../react/Modal";
 import { t } from "../../services/i18n";
 import Button from "../react/Button";
 import appContext from "../../components/app_context";
 import { useState } from "preact/hooks";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
 
-function PasswordNotSetDialogComponent() {
+export default function PasswordNotSetDialog() {
     const [ shown, setShown ] = useState(false);
     useTriliumEvent("showPasswordNotSet", () => setShown(true));
 
@@ -27,10 +26,3 @@ function PasswordNotSetDialogComponent() {
     );
 }
 
-export default class PasswordNotSetDialog extends ReactBasicWidget {
-
-    get component() {
-        return <PasswordNotSetDialogComponent />;
-    }
-
-}

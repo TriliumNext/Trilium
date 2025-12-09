@@ -1,0 +1,150 @@
+.download-card {
+    padding: 1em;
+}
+
+.download-server .download-card:first-of-type {
+    grid-column: 1 / 4;
+}
+
+.download-card {    
+    h3 {
+        color: var(--accent-color);
+        font-size: 1.5em;
+        position: relative;
+
+        a.more-info {
+            margin-left: 0.5em;
+            right: 0;
+
+            .bx {
+                vertical-align: sub;
+            }
+        }
+    }
+
+    .card-content-inner {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    a:not(.button) {
+        color: var(--accent-color);
+    }
+
+    .quick-start-title {
+        margin-bottom: 0;
+        font-size: 0.9em;
+        color: var(--muted-color);
+    }
+
+    .quick-start {
+        background-color: #ececec;
+        padding: 0.75em;
+        border-radius: 6px;
+        margin-top: 0.5em;
+
+        @media (prefers-color-scheme: dark) {
+            background-color: black;
+        }
+
+        code {
+            text-wrap: wrap;
+            color: var(--muted-color);
+        }
+    }
+}
+
+.download-options {
+    justify-content: center;
+    align-items: stretch;
+    flex-grow: 1;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+
+    .recommended-options {
+        align-self: stretch;
+        display: flex;
+        gap: 1em;
+
+        a.recommended {
+            display: block;
+            background: var(--accent-color);
+            color: var(--brand-foreground-color);
+            border-radius: calc(infinity * 1px);
+            margin: 1em 0;
+            flex-grow: 1;
+        }
+    }
+
+    .other-options {
+        display: flex;
+        gap: 0.5em 1em;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}
+
+.download-desktop {
+    .download-card {
+        @media (min-width: 720px) {
+            transform: scale(0.9);
+        
+            &.recommended {
+                transform: scale(1);
+            }
+        }
+
+        &.windows { --accent-color: var(--brand-1); }
+        &.linux { --accent-color: var(--brand-2); }
+        &.macos { --accent-color: var(--brand-3); }
+    }
+
+    .download-footer {
+        text-align: center;
+        margin-top: 1em;
+        font-size: 0.9em;
+
+        a {
+            color: var(--muted-color);
+        }
+    }
+}
+
+.download-server .download-card {
+    --accent-color: var(--foreground-color);
+    --brand-foreground-color: var(--background-color);
+}
+
+.architecture-switch {
+    display: flex;
+    gap: 1em;
+    justify-content: center;
+    align-items: center;
+    margin: 1em 0;
+
+    a {
+        display: inline-block;
+        background: var(--card-background-color);
+        padding: 0.25em 0.5em;
+        text-decoration: none;
+        text-align: center;
+        min-width: 3em;
+        color: inherit;
+
+        &.active {
+            background-color: var(--brand-1);
+            color: var(--brand-foreground-color);
+        }
+
+        &:hover {
+            text-decoration: none;
+        }
+    }
+
+    .toggle-wrapper {
+        border-radius: calc(infinity * 1px);
+        overflow: hidden;
+    }
+}

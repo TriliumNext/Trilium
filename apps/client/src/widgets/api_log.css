@@ -1,0 +1,28 @@
+.api-log-widget {
+    flex-grow: 1;
+    max-height: 40%;
+    position: relative;
+    border-top: 1px solid var(--main-border-color);
+    background-color: var(--accented-background-color);
+}
+
+.api-log-container {
+    overflow: auto;
+    height: 100%;
+    font-family: var(--monospace-font-family);
+    font-size: 0.8em;
+    white-space: pre;
+    padding: 15px;
+}
+
+.close-api-log-button {
+    padding: 5px;
+    border: 1px solid var(--button-border-color);
+    background-color: var(--button-background-color);
+    border-radius: var(--button-border-radius);
+    color: var(--button-text-color);
+    position: absolute;
+    top: 10px;
+    inset-inline-end: 10px;
+    cursor: pointer;
+}

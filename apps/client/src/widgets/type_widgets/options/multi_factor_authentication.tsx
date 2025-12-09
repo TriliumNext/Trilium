@@ -6,7 +6,7 @@ import FormCheckbox from "../../react/FormCheckbox"
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks"
 import { FormInlineRadioGroup } from "../../react/FormRadioGroup"
 import Admonition from "../../react/Admonition"
-import { useCallback, useEffect, useMemo, useState } from "preact/hooks"
+import { useCallback, useEffect, useState } from "preact/hooks"
 import { OAuthStatus, TOTPGenerate, TOTPRecoveryKeysResponse, TOTPStatus } from "@triliumnext/commons"
 import server from "../../../services/server"
 import Button from "../../react/Button"
@@ -30,7 +30,7 @@ export default function MultiFactorAuthenticationSettings() {
     )
 }
 
-function EnableMultiFactor({ mfaEnabled, setMfaEnabled }: { mfaEnabled: boolean, setMfaEnabled: (newValue: boolean) => Promise<void>}) {    
+function EnableMultiFactor({ mfaEnabled, setMfaEnabled }: { mfaEnabled: boolean, setMfaEnabled: (newValue: boolean) => Promise<void>}) {
     return (
         <OptionsSection title={t("multi_factor_authentication.title")}>
             <FormText><Trans i18nKey="multi_factor_authentication.description" /></FormText>
@@ -63,7 +63,7 @@ function MultiFactorMethod() {
                     { mfaMethod === "totp"
                     ? t("multi_factor_authentication.totp_description")
                     : <RawHtml html={t("multi_factor_authentication.oauth_description")} /> }
-                </FormText>                
+                </FormText>
             </OptionsSection>
 
             { mfaMethod === "totp"
@@ -159,7 +159,7 @@ function TotpSettings() {
 
 function TotpRecoveryKeys({ values, generateRecoveryKeys }: { values?: string[], generateRecoveryKeys: () => Promise<void> }) {
     return (
-        <OptionsSection title={t("multi_factor_authentication.recovery_keys_title")}>            
+        <OptionsSection title={t("multi_factor_authentication.recovery_keys_title")}>
             <FormText>{t("multi_factor_authentication.recovery_keys_description")}</FormText>
 
             {values ? (
@@ -182,7 +182,7 @@ function TotpRecoveryKeys({ values, generateRecoveryKeys }: { values?: string[],
                             } else {
                                 text = t("multi_factor_authentication.recovery_keys_unused", { index: key });
                             }
-                            
+
                             return <li>{text}</li>
                         })}
                     </ol>
@@ -206,8 +206,8 @@ function OAuthSettings() {
     const [ status, setStatus ] = useState<OAuthStatus>();
 
     useEffect(() => {
-        server.get<OAuthStatus>("oauth/status").then((result) => setStatus);
-    });
+        server.get<OAuthStatus>("oauth/status").then(setStatus);
+    }, []);
 
     return (
         <OptionsSection title={t("multi_factor_authentication.oauth_title")}>

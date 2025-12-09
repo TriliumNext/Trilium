@@ -6,12 +6,12 @@
 To build and run manually:
 
 ```sh
-nx build db-compare
+pnpm build db-compare
 node ./apps/db-compare/dist/compare.js
 ```
 
 To serve development build with arguments:
 
 ```sh
-nx serve db-compare --args "apps/server/spec/db/document_v214.db" --args "apps/server/spec/db/document_v214_migrated.db"
+pnpm dev --args "apps/server/spec/db/document_v214.db" --args "apps/server/spec/db/document_v214_migrated.db"
 ```

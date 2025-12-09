@@ -4,6 +4,7 @@
 
  :root {
     --ck-font-face: var(--main-font-family);
+    --ck-input-label-height: 1.5em;
  }
 
 /*
@@ -116,9 +117,9 @@
     content: "";
     position: absolute;
     top: var(--negative-padding);
-    right: var(--negative-padding);
+    inset-inline-end: var(--negative-padding);
     bottom: var(--negative-padding);
-    left: var(--negative-padding);
+    inset-inline-start: var(--negative-padding);
     border-radius: var(--dropdown-border-radius);
     backdrop-filter: var(--dropdown-backdrop-filter);
     z-index: -1;
@@ -209,7 +210,7 @@
 /* Separator */
 :root .ck .ck-list__separator {
     margin: .5em 0;
-    margin-left: calc(0px - var(--ck-editor-popup-padding));
+    margin-inline-start: calc(0px - var(--ck-editor-popup-padding));
     width: calc(100% + (var(--ck-editor-popup-padding) * 2));
     background: var(--menu-item-delimiter-color);
 }
@@ -232,8 +233,8 @@
     position: absolute;
     top: 0;
     bottom: var(--negative-padding);
-    left: var(--negative-padding);
-    right: var(--negative-padding);
+    inset-inline-start: var(--negative-padding);
+    inset-inline-end: var(--negative-padding);
     border-top: 1px solid var(--ck-editor-popup-border-color);
     background: var(--menu-section-background-color);
 }
@@ -254,12 +255,7 @@
 
 :root .ck.ck-toolbar .ck.ck-toolbar__separator {
     background: transparent;
-    border-left: 1px solid var(--ck-color-toolbar-border);
-}
-
-/* The last separator of the toolbar */
-:root .classic-toolbar-widget .ck.ck-toolbar__separator:last-of-type {
-    flex-grow: 1;
+    border-inline-start: 1px solid var(--ck-color-toolbar-border);
 }
 
 /* Heading dropdown */
@@ -307,6 +303,11 @@
     fill: black !important;
 }
 
+/* Hex color input box prefix */
+:root .ck.ck-color-selector .ck-color-picker__hash-view {
+    margin-top: var(--ck-input-label-height);
+}
+
 /* Numbered list */
 
 :root .ck.ck-list-properties_with-numbered-properties .ck.ck-list-styles-list {
@@ -348,7 +349,8 @@
     align-items: center;
     width: 100%;
     margin: 4px;
-    padding-right: 2em;
+    background: color-mix(in srgb, var(--accent) 15%, var(--main-background-color));
+    padding-inline-end: 2em;
     border: 1px solid var(--accent);
     border-radius: 6px;
 }
@@ -363,19 +365,86 @@
     color: var(--accent);
 }
 
-/* Action buttons */
+/* Text snippet dropdown */
 
-:root .ck-link-actions button.ck-button,
-:root .ck-link-form button.ck-button {
-    --ck-border-radius: 6px;
-    
-    background: transparent;
-    box-shadow: unset;
+div.ck-template-form {
+    padding: 8px;
 }
 
-:root .ck-link-actions button.ck-button:hover,
-:root .ck-link-form button.ck-button:hover {
-    background: var(--hover-item-background-color);
+div.ck-template-form .ck-labeled-field-view {
+    margin-bottom: 8px;
+}
+
+/* Template item */
+
+:root div.ck-template-form li.ck-list__item button.ck-template-button {
+    padding: 4px 8px;
+}
+
+/* Template icon */
+:root .ck-template-form .ck-button__icon {
+    --ck-spacing-medium: 2px;
+}
+
+:root div.ck-template-form  .note-icon {
+    color: var(--menu-item-icon-color);
+}
+
+/* Template name */
+div.ck-template-form .ck-template-form__text-part {
+    color: var(--hover-item-text-color);
+    font-size: .9rem;
+}
+
+div.ck-template-form .ck-template-form__text-part mark {
+    background: unset;
+    color: var(--quick-search-result-highlight-color);
+    font-weight: bold;
+}
+
+/* Template description */
+:root div.ck-template-form .ck-template-form__description {
+    opacity: .5;
+    font-size: .9em;
+}
+
+/* Messages */
+div.ck-template-form .ck-search__info > span {
+    line-height: initial;
+    color: var(--muted-text-color);
+}
+
+div.ck-template-form .ck-search__info span:nth-child(2) {
+    display: block;
+    opacity: .5;
+    margin-top: 8px;
+    font-size: .9em;
+}
+
+/* Link dropdown */
+
+:root .ck.ck-form.ck-link-form ul.ck-link-form__providers-list {
+    border-top: none;
+}
+
+/* Math popup */
+
+.ck-math-form .ck-labeled-field-view {
+    --ck-input-label-height: 0;
+
+    margin-inline-end: 8px;
+}
+
+/* Emoji dropdown */
+
+.ck-emoji-picker-form .ck-emoji__search .ck-button_with-text:not(.ck-list-item-button) {
+    margin-top: var(--ck-input-label-height);
+}
+
+/* Find and replace dialog */
+
+.ck-find-and-replace-form .ck-find-and-replace-form__inputs button {
+    margin-top: var(--ck-input-label-height);
 }
 
 /* Mention list (the autocompletion list for emojis, labels and relations)  */
@@ -393,6 +462,58 @@
 }
 
 /*
+ * FORMS
+ */
+
+/*
+ * Buttons
+ */
+
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck-button_with-text {
+    --ck-color-text: var(--cmd-button-text-color);
+
+    min-width: 60px;
+    font-weight: 500;
+}
+
+/*
+ * Text boxes
+ */
+
+.ck.ck-labeled-field-view {
+    padding-top: var(--ck-input-label-height) !important; /* Create space for the label */
+}
+
+.ck.ck-labeled-field-view > .ck.ck-labeled-field-view__input-wrapper > label.ck.ck-label {
+    /* Move the label above the text box regardless of the text box state */
+    transform: translate(0, calc(-.2em - var(--ck-input-label-height))) !important;
+    
+    padding-inline-start: 0 !important;
+    background: transparent;
+    font-size: .85em;
+    font-weight: 600;
+}
+
+:root input.ck.ck-input-text[readonly="true"] {
+    cursor: not-allowed;
+    background: var(--input-background-color);
+}
+
+/* Forms */
+
+:root .ck.ck-form__row.ck-form__row_with-submit > :not(:first-child) {
+    margin-inline-start: 16px;
+}
+
+.ck.ck-form__row_with-submit button {
+    margin-top: var(--ck-input-label-height);
+}
+
+.ck.ck-form__header {
+    border-bottom: none;
+}
+
+/*
  * EDITOR'S CONTENT
  */
 
@@ -405,9 +526,12 @@
 .ck-mermaid__editing-view {
     border: 0;
     border-radius: 6px;
-    box-shadow: var(--code-block-box-shadow);
-    padding: 0;
+    box-shadow: var(--code-block-box-shadow);    
     margin-top: 2px !important;
+}
+
+:root .ck-content pre:has(> code) {
+    padding: 0;
 }
 
 :root .ck-content pre {
@@ -431,7 +555,7 @@ pre button.copy-button.icon-action {
 }
 
 :root pre:has(> button.copy-button) {
-    padding-right: calc(var(--icon-button-size) + (var(--copy-button-margin-size) * 2));
+    padding-inline-end: calc(var(--icon-button-size) + (var(--copy-button-margin-size) * 2));
 }
 
 html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
@@ -490,12 +614,12 @@ html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
 
 .ck-content blockquote:before {
     content: "“";
-    left: 0.2em;
+    inset-inline-start: 0.2em;
 }
 
 .ck-content blockquote:after {
     content: "”";
-    right: 0.35em;
+    inset-inline-end: 0.35em;
 }
 
 .ck-content h2,
@@ -522,7 +646,7 @@ html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
     }
 }
 
-.note-detail-printable:not(.word-wrap) pre code {
+.ck-content:not(.word-wrap) pre code {
     white-space: pre;
 }
 
@@ -540,4 +664,30 @@ html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
 .ck-content .table > figcaption {
     background: var(--accented-background-color);
     color: var(--main-text-color);
+}
+
+/* Reference link */
+
+.ck-content a.reference-link,
+.ck-content a.reference-link:hover {
+    /* Apply underline only to the span inside the link so it can follow the
+     * target note's user defined color */
+    text-decoration: none;
+}
+
+.ck-content a.reference-link > span {
+    text-decoration: underline;
+}
+
+/*
+ * Read-only text content
+ */
+
+.note-detail-readonly-text:focus-visible {
+    outline: 2px solid var(--input-focus-outline-color);
+    border-radius: 4px;
+}
+
+.note-list-widget {
+    outline: 0 !important;
 }

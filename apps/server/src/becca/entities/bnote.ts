@@ -11,18 +11,16 @@ import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import BRevision from "./brevision.js";
 import BAttachment from "./battachment.js";
 import TaskContext from "../../services/task_context.js";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc.js";
+import { dayjs } from "@triliumnext/commons";
 import eventService from "../../services/events.js";
-import type { AttachmentRow, AttributeType, NoteRow, NoteType, RevisionRow } from "@triliumnext/commons";
+import type { AttachmentRow, AttributeType, CloneResponse, NoteRow, NoteType, RevisionRow } from "@triliumnext/commons";
 import type BBranch from "./bbranch.js";
 import BAttribute from "./battribute.js";
 import type { NotePojo } from "../becca-interface.js";
 import searchService from "../../services/search/services/search.js";
-import cloningService, { type CloneResponse } from "../../services/cloning.js";
+import cloningService from "../../services/cloning.js";
 import noteService from "../../services/notes.js";
 import handlers from "../../services/handlers.js";
-dayjs.extend(utc);
 
 const LABEL = "label";
 const RELATION = "relation";
@@ -59,10 +57,6 @@ interface ContentOpts {
     forceSave?: boolean;
     /** override frontend heuristics on when to reload, instruct to reload */
     forceFrontendReload?: boolean;
-}
-
-interface AttachmentOpts {
-    includeContentLength?: boolean;
 }
 
 interface Relationship {
@@ -1102,31 +1096,23 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return sql.getRows<RevisionRow>("SELECT * FROM revisions WHERE noteId = ? ORDER BY revisions.utcDateCreated ASC", [this.noteId]).map((row) => new BRevision(row));
     }
 
-    getAttachments(opts: AttachmentOpts = {}) {
-        opts.includeContentLength = !!opts.includeContentLength;
-        // from testing, it looks like calculating length does not make a difference in performance even on large-ish DB
-        // given that we're always fetching attachments only for a specific note, we might just do it always
-
-        const query = opts.includeContentLength
-            ? /*sql*/`SELECT attachments.*, LENGTH(blobs.content) AS contentLength
-                FROM attachments
-                JOIN blobs USING (blobId)
-                WHERE ownerId = ? AND isDeleted = 0
-                ORDER BY position`
-            : /*sql*/`SELECT * FROM attachments WHERE ownerId = ? AND isDeleted = 0 ORDER BY position`;
+    getAttachments() {
+        const query = /*sql*/`\
+            SELECT attachments.*, LENGTH(blobs.content) AS contentLength
+            FROM attachments
+            JOIN blobs USING (blobId)
+            WHERE ownerId = ? AND isDeleted = 0
+            ORDER BY position`;
 
         return sql.getRows<AttachmentRow>(query, [this.noteId]).map((row) => new BAttachment(row));
     }
 
-    getAttachmentById(attachmentId: string, opts: AttachmentOpts = {}) {
-        opts.includeContentLength = !!opts.includeContentLength;
-
-        const query = opts.includeContentLength
-            ? /*sql*/`SELECT attachments.*, LENGTH(blobs.content) AS contentLength
-                FROM attachments
-                JOIN blobs USING (blobId)
-                WHERE ownerId = ? AND attachmentId = ? AND isDeleted = 0`
-            : /*sql*/`SELECT * FROM attachments WHERE ownerId = ? AND attachmentId = ? AND isDeleted = 0`;
+    getAttachmentById(attachmentId: string) {
+        const query = /*sql*/`\
+            SELECT attachments.*, LENGTH(blobs.content) AS contentLength
+            FROM attachments
+            JOIN blobs USING (blobId)
+            WHERE ownerId = ? AND attachmentId = ? AND isDeleted = 0`;
 
         return sql.getRows<AttachmentRow>(query, [this.noteId, attachmentId]).map((row) => new BAttachment(row))[0];
     }
@@ -1512,7 +1498,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
      *
      * @param deleteId - optional delete identified
      */
-    deleteNote(deleteId: string | null = null, taskContext: TaskContext | null = null) {
+    deleteNote(deleteId: string | null = null, taskContext: TaskContext<"deleteNotes"> | null = null) {
         if (this.isDeleted) {
             return;
         }
@@ -1522,7 +1508,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         }
 
         if (!taskContext) {
-            taskContext = new TaskContext("no-progress-reporting");
+            taskContext = new TaskContext("no-progress-reporting", "deleteNotes", null);
         }
 
         // needs to be run before branches and attributes are deleted and thus attached relations disappear
@@ -1756,6 +1742,26 @@ class BNote extends AbstractBeccaEntity<BNote> {
         // note may appear as a folder but not contain any children when all of them are archived
 
         return childBranches;
+    }
+
+    get encodedTitle() {
+        return encodeURIComponent(this.title);
+    }
+
+    getVisibleChildBranches() {
+        return this.getChildBranches().filter((branch) => !branch.getNote().isLabelTruthy("shareHiddenFromTree"));
+    }
+
+    getVisibleChildNotes() {
+        return this.getVisibleChildBranches().map((branch) => branch.getNote());
+    }
+
+    hasVisibleChildren() {
+        return this.getVisibleChildNotes().length > 0;
+    }
+
+    get shareId() {
+        return this.noteId;
     }
 
     /**

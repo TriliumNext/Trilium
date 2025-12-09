@@ -34,6 +34,13 @@ Now create a render note at any place and set its `~renderNote` relation to poin
 > **Current date & time**  
 > The current date & time is Sun Apr 06 2025 15:26:29 GMT+0300 (Eastern European Summer Time)
 
+## Refreshing the note
+
+It's possible to refresh the note via:
+
+*   The corresponding button in <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a>.
+*   The “Render active note” [keyboard shortcut](../Basic%20Concepts%20and%20Features/Keyboard%20Shortcuts.md) (not assigned by default).
+
 ## Examples
 
 *   <a class="reference-link" href="../Advanced%20Usage/Advanced%20Showcases/Weight%20Tracker.md">Weight Tracker</a> which is present in the <a class="reference-link" href="../Advanced%20Usage/Database/Demo%20Notes.md">Demo Notes</a>.

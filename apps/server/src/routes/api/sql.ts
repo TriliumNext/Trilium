@@ -18,7 +18,7 @@ function getSchema() {
     for (const tableName of tableNames) {
         tables.push({
             name: tableName,
-            columns: sql.getRows(`PRAGMA table_info(${tableName})`)
+            columns: sql.getRows<{ name: string; type: string; }>(`PRAGMA table_info(${tableName})`)
         });
     }
 

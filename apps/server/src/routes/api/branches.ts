@@ -163,6 +163,7 @@ function setExpandedForSubtree(req: Request) {
             SELECT branches.branchId, branches.noteId FROM branches
                 JOIN tree ON branches.parentNoteId = tree.noteId
             WHERE branches.isDeleted = 0
+                AND branches.isExpanded = 1
         )
         SELECT branchId FROM tree`,
         [branchId]
@@ -236,7 +237,7 @@ function deleteBranch(req: Request) {
     const eraseNotes = req.query.eraseNotes === "true";
     const branch = becca.getBranchOrThrow(req.params.branchId);
 
-    const taskContext = TaskContext.getInstance(req.query.taskId as string, "deleteNotes");
+    const taskContext = TaskContext.getInstance(req.query.taskId as string, "deleteNotes", null);
 
     const deleteId = utils.randomString(10);
     let noteDeleted;
@@ -251,7 +252,7 @@ function deleteBranch(req: Request) {
     }
 
     if (last) {
-        taskContext.taskSucceeded();
+        taskContext.taskSucceeded(null);
     }
 
     return {
@@ -269,6 +270,38 @@ function setPrefix(req: Request) {
     branch.save();
 }
 
+function setPrefixBatch(req: Request) {
+    const { branchIds, prefix } = req.body;
+    
+    if (!Array.isArray(branchIds)) {
+        throw new ValidationError("branchIds must be an array");
+    }
+
+    // Validate that prefix is a string or null/undefined to prevent prototype pollution
+    if (prefix !== null && prefix !== undefined && typeof prefix !== 'string') {
+        throw new ValidationError("prefix must be a string or null");
+    }
+
+    const normalizedPrefix = utils.isEmptyOrWhitespace(prefix) ? null : prefix;
+    let updatedCount = 0;
+
+    for (const branchId of branchIds) {
+        const branch = becca.getBranch(branchId);
+        if (branch) {
+            branch.prefix = normalizedPrefix;
+            branch.save();
+            updatedCount++;
+        } else {
+            log.info(`Branch ${branchId} not found, skipping prefix update`);
+        }
+    }
+
+    return {
+        success: true,
+        count: updatedCount
+    };
+}
+
 export default {
     moveBranchToParent,
     moveBranchBeforeNote,
@@ -276,5 +309,6 @@ export default {
     setExpanded,
     setExpandedForSubtree,
     deleteBranch,
-    setPrefix
+    setPrefix,
+    setPrefixBatch
 };

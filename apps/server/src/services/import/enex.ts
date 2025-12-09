@@ -1,8 +1,10 @@
+import { dayjs } from "@triliumnext/commons";
 import sax from "sax";
 import stream from "stream";
 import { Throttle } from "stream-throttle";
 import log from "../log.js";
 import { md5, escapeHtml, fromBase64 } from "../utils.js";
+import date_utils from "../date_utils.js";
 import sql from "../sql.js";
 import noteService from "../notes.js";
 import imageService from "../image.js";
@@ -55,7 +57,7 @@ interface Note {
 let note: Partial<Note> = {};
 let resource: Resource;
 
-function importEnex(taskContext: TaskContext, file: File, parentNote: BNote): Promise<BNote> {
+function importEnex(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote): Promise<BNote> {
     const saxStream = sax.createStream(true);
 
     const rootNoteTitle = file.originalname.toLowerCase().endsWith(".enex") ? file.originalname.substr(0, file.originalname.length - 5) : file.originalname;
@@ -235,6 +237,8 @@ function importEnex(taskContext: TaskContext, file: File, parentNote: BNote): Pr
 
     function updateDates(note: BNote, utcDateCreated?: string, utcDateModified?: string) {
         // it's difficult to force custom dateCreated and dateModified to Note entity, so we do it post-creation with SQL
+        const dateCreated = formatDateTimeToLocalDbFormat(utcDateCreated, false);
+        const dateModified = formatDateTimeToLocalDbFormat(utcDateModified, false);
         sql.execute(
             `
                 UPDATE notes
@@ -243,7 +247,7 @@ function importEnex(taskContext: TaskContext, file: File, parentNote: BNote): Pr
                     dateModified = ?,
                     utcDateModified = ?
                 WHERE noteId = ?`,
-            [utcDateCreated, utcDateCreated, utcDateModified, utcDateModified, note.noteId]
+            [dateCreated, utcDateCreated, dateModified, utcDateModified, note.noteId]
         );
 
         sql.execute(
@@ -405,6 +409,23 @@ function importEnex(taskContext: TaskContext, file: File, parentNote: BNote): Pr
             .pipe(new Throttle({ rate: 500000 }))
             .pipe(saxStream);
     });
+}
+
+function formatDateTimeToLocalDbFormat(
+    utcDateFromEnex: Date | string | null | undefined,
+    keepUtc: boolean
+): string | undefined {
+    if (!utcDateFromEnex) {
+        return undefined;
+    }
+
+    const parsedDate = dayjs(utcDateFromEnex);
+
+    if (!parsedDate.isValid()) {
+        return undefined;
+    }
+
+    return (keepUtc ? parsedDate.utc() : parsedDate).format(date_utils.LOCAL_DATETIME_FORMAT);
 }
 
 export default { importEnex };

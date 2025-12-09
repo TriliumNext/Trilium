@@ -1,11 +1,19 @@
 {
   "about": {
     "homepage": "Trang chủ:",
-    "title": "Về Trilium Notes"
+    "title": "Về Trilium Notes",
+    "app_version": "Phiên bản:",
+    "db_version": "Phiên bản DB:",
+    "sync_version": "Phiên bản liên kết:",
+    "build_date": "Ngày build:",
+    "build_revision": "Xây dựng bản sửa đổi:",
+    "data_directory": "Đường dẫn dữ liệu:"
   },
   "add_link": {
     "add_link": "Thêm liên kết",
-    "button_add_link": "Thêm liên kết"
+    "button_add_link": "Thêm liên kết",
+    "help_on_links": "Trợ giúp về các liên kết",
+    "link_title": "Đề mục liên kết"
   },
   "bulk_actions": {
     "other": "Khác"
@@ -23,14 +31,27 @@
     "cancel": "Huỷ"
   },
   "export": {
-    "close": "Đóng"
+    "close": "Đóng",
+    "export": "Xuất",
+    "choose_export_type": "Xin hãy chọn cách xuất trước"
   },
   "help": {
-    "other": "Khác"
+    "other": "Khác",
+    "notSet": "chưa được đặt"
   },
   "toast": {
     "critical-error": {
-      "title": "Lỗi nghiêm trọng"
+      "title": "Lỗi nghiêm trọng",
+      "message": "Đã xảy ra lỗi nghiêm trọng ngăn ứng dụng client khởi động\n\n{{message}}\n\nĐiều này có khả năng bị gây ra bởi một script hoạt động không như mong đợi. Hãy thử khởi động ứng dụng ở chế độ an toàn và giải quyết vấn đề."
+    },
+    "widget-error": {
+      "title": "Khởi tạo widget thất bại",
+      "message-custom": "Tiện ích tùy chỉnh từ ghi chú với ID \"{{id}}\", tiêu đề \"{{title}}\" không thể khởi tạo vì:\n\n{{message}}",
+      "message-unknown": "Tiện ích chưa biết không thể được khởi tạo vì:\n\n{{message}}"
+    },
+    "bundle-error": {
+      "title": "Tải script tùy chọn thất bại",
+      "message": "Script từ ghi chú ID \"{{id}}\", tiêu đề \"{{title}}\" không thể chạy được vì:\n\n{{message}}"
     }
   },
   "import": {
@@ -69,12 +90,22 @@
   "add_label": {
     "add_label": "Thêm nhãn",
     "label_name_placeholder": "tên nhãn",
-    "help_text_item2": "hoặc thay đổi giá trị của nhãn có sẵn"
+    "help_text_item2": "hoặc thay đổi giá trị của nhãn có sẵn",
+    "new_value_placeholder": "giá trị mới"
   },
   "rename_label": {
     "rename_label": "Đặt lại tên nhãn"
   },
   "call_to_action": {
     "dismiss": "Bỏ qua"
+  },
+  "abstract_search_option": {
+    "remove_this_search_option": "Xoá lựa chọn tìm kiếm này"
+  },
+  "add_relation": {
+    "to": "tới"
+  },
+  "abstract_bulk_action": {
+    "remove_this_search_action": "Xoá hành động tìm kiếm này"
   }
 }

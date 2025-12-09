@@ -1,6 +1,6 @@
 import froca from "../services/froca.js";
 import RootCommandExecutor from "./root_command_executor.js";
-import Entrypoints, { type SqlExecuteResults } from "./entrypoints.js";
+import Entrypoints from "./entrypoints.js";
 import options from "../services/options.js";
 import utils, { hasTouchBar } from "../services/utils.js";
 import zoomComponent from "./zoom.js";
@@ -13,7 +13,6 @@ import MainTreeExecutors from "./main_tree_executors.js";
 import toast from "../services/toast.js";
 import ShortcutComponent from "./shortcut_component.js";
 import { t, initLocale } from "../services/i18n.js";
-import type NoteDetailWidget from "../widgets/note_detail.js";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
 import type { PromptDialogOptions } from "../widgets/dialogs/prompt.js";
 import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
@@ -21,8 +20,6 @@ import type LoadResults from "../services/load_results.js";
 import type { Attribute } from "../services/attribute_parser.js";
 import type NoteTreeWidget from "../widgets/note_tree.js";
 import type { default as NoteContext, GetTextEditorCallback } from "./note_context.js";
-import type TypeWidget from "../widgets/type_widgets/type_widget.js";
-import type EditableTextTypeWidget from "../widgets/type_widgets/editable_text.js";
 import type { NativeImage, TouchBar } from "electron";
 import TouchBarComponent from "./touch_bar.js";
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
@@ -31,16 +28,19 @@ import { StartupChecks } from "./startup_checks.js";
 import type { CreateNoteOpts } from "../services/note_create.js";
 import { ColumnComponent } from "tabulator-tables";
 import { ChooseNoteTypeCallback } from "../widgets/dialogs/note_type_chooser.jsx";
+import type RootContainer from "../widgets/containers/root_container.js";
+import { SqlExecuteResults } from "@triliumnext/commons";
+import { AddLinkOpts } from "../widgets/dialogs/add_link.jsx";
+import { IncludeNoteOpts } from "../widgets/dialogs/include_note.jsx";
+import { ReactWrappedWidget } from "../widgets/basic_widget.js";
+import type { MarkdownImportOpts } from "../widgets/dialogs/markdown_import.jsx";
+import type { InfoProps } from "../widgets/dialogs/info.jsx";
 
 interface Layout {
-    getRootWidget: (appContext: AppContext) => RootWidget;
+    getRootWidget: (appContext: AppContext) => RootContainer;
 }
 
-interface RootWidget extends Component {
-    render: () => JQuery<HTMLElement>;
-}
-
-interface BeforeUploadListener extends Component {
+export interface BeforeUploadListener extends Component {
     beforeUnloadEvent(): boolean;
 }
 
@@ -85,7 +85,6 @@ export type CommandMappings = {
     focusTree: CommandData;
     focusOnTitle: CommandData;
     focusOnDetail: CommandData;
-    focusOnSearchDefinition: Required<CommandData>;
     searchNotes: CommandData & {
         searchString?: string;
         ancestorNoteId?: string | null;
@@ -93,6 +92,11 @@ export type CommandMappings = {
     closeTocCommand: CommandData;
     closeHlt: CommandData;
     showLaunchBarSubtree: CommandData;
+    showHiddenSubtree: CommandData;
+    showSQLConsoleHistory: CommandData;
+    logout: CommandData;
+    switchToMobileVersion: CommandData;
+    switchToDesktopVersion: CommandData;
     showRevisions: CommandData & {
         noteId?: string | null;
     };
@@ -114,14 +118,14 @@ export type CommandMappings = {
     openedFileUpdated: CommandData & {
         entityType: string;
         entityId: string;
-        lastModifiedMs: number;
+        lastModifiedMs?: number;
         filePath: string;
     };
     focusAndSelectTitle: CommandData & {
         isNewNote?: boolean;
     };
     showPromptDialog: PromptDialogOptions;
-    showInfoDialog: ConfirmWithMessageOptions;
+    showInfoDialog: InfoProps;
     showConfirmDialog: ConfirmWithMessageOptions;
     showRecentChanges: CommandData & { ancestorNoteId: string };
     showImportDialog: CommandData & { noteId: string };
@@ -138,6 +142,7 @@ export type CommandMappings = {
     showLeftPane: CommandData;
     showAttachments: CommandData;
     showSearchHistory: CommandData;
+    showShareSubtree: CommandData;
     hoistNote: CommandData & { noteId: string };
     leaveProtectedSession: CommandData;
     enterProtectedSession: CommandData;
@@ -196,7 +201,7 @@ export type CommandMappings = {
     resetLauncher: ContextMenuCommandData;
 
     executeInActiveNoteDetailWidget: CommandData & {
-        callback: (value: NoteDetailWidget | PromiseLike<NoteDetailWidget>) => void;
+        callback: (value: ReactWrappedWidget) => void;
     };
     executeWithTextEditor: CommandData &
     ExecuteCommandData<CKTextEditor> & {
@@ -208,19 +213,19 @@ export type CommandMappings = {
      * Generally should not be invoked manually, as it is used by {@link NoteContext.getContentElement}.
      */
     executeWithContentElement: CommandData & ExecuteCommandData<JQuery<HTMLElement>>;
-    executeWithTypeWidget: CommandData & ExecuteCommandData<TypeWidget | null>;
+    executeWithTypeWidget: CommandData & ExecuteCommandData<ReactWrappedWidget | null>;
     addTextToActiveEditor: CommandData & {
         text: string;
     };
     /** Works only in the electron context menu. */
     replaceMisspelling: CommandData;
 
-    importMarkdownInline: CommandData;
     showPasswordNotSet: CommandData;
     showProtectedSessionPasswordDialog: CommandData;
     showUploadAttachmentsDialog: CommandData & { noteId: string };
-    showIncludeNoteDialog: CommandData & { textTypeWidget: EditableTextTypeWidget };
-    showAddLinkDialog: CommandData & { textTypeWidget: EditableTextTypeWidget, text: string };
+    showIncludeNoteDialog: CommandData & IncludeNoteOpts;
+    showAddLinkDialog: CommandData & AddLinkOpts;
+    showPasteMarkdownDialog: CommandData & MarkdownImportOpts;
     closeProtectedSessionPasswordDialog: CommandData;
     copyImageReferenceToClipboard: CommandData;
     copyImageToClipboard: CommandData;
@@ -267,6 +272,7 @@ export type CommandMappings = {
     closeThisNoteSplit: CommandData;
     moveThisNoteSplit: CommandData & { isMovingLeft: boolean };
     jumpToNote: CommandData;
+    openTodayNote: CommandData;
     commandPalette: CommandData;
 
     // Keyboard shortcuts
@@ -323,6 +329,8 @@ export type CommandMappings = {
     printActiveNote: CommandData;
     exportAsPdf: CommandData;
     openNoteExternally: CommandData;
+    openNoteCustom: CommandData;
+    openNoteOnServer: CommandData;
     renderActiveNote: CommandData;
     unhoist: CommandData;
     reloadFrontendApp: CommandData;
@@ -438,6 +446,7 @@ type EventMappings = {
         error: string;
     };
     searchRefreshed: { ntxId?: string | null };
+    textEditorRefreshed: { ntxId?: string | null, editor: CKTextEditor };
     hoistedNoteChanged: {
         noteId: string;
         ntxId: string | null;
@@ -479,14 +488,9 @@ type EventMappings = {
     relationMapResetPanZoom: { ntxId: string | null | undefined };
     relationMapResetZoomIn: { ntxId: string | null | undefined };
     relationMapResetZoomOut: { ntxId: string | null | undefined };
-    activeNoteChanged: {};
-    showAddLinkDialog: {
-        textTypeWidget: EditableTextTypeWidget;
-        text: string;
-    };
-    showIncludeDialog: {
-        textTypeWidget: EditableTextTypeWidget;
-    };
+    activeNoteChanged: {ntxId: string | null | undefined};
+    showAddLinkDialog: AddLinkOpts;
+    showIncludeDialog: IncludeNoteOpts;
     openBulkActionsDialog: {
         selectedOrActiveNoteIds: string[];
     };
@@ -526,7 +530,7 @@ export type FilteredCommandNames<T extends CommandData> = keyof Pick<CommandMapp
 export class AppContext extends Component {
     isMainWindow: boolean;
     components: Component[];
-    beforeUnloadListeners: WeakRef<BeforeUploadListener>[];
+    beforeUnloadListeners: (WeakRef<BeforeUploadListener> | (() => boolean))[];
     tabManager!: TabManager;
     layout?: Layout;
     noteTreeWidget?: NoteTreeWidget;
@@ -619,7 +623,7 @@ export class AppContext extends Component {
             component.triggerCommand(commandName, { $el: $(this) });
         });
 
-        this.child(rootWidget);
+        this.child(rootWidget as Component);
 
         this.triggerEvent("initialRenderComplete", {});
     }
@@ -646,16 +650,24 @@ export class AppContext extends Component {
     }
 
     getComponentByEl(el: HTMLElement) {
-        return $(el).closest(".component").prop("component");
+        return $(el).closest("[data-component-id]").prop("component");
     }
 
-    addBeforeUnloadListener(obj: BeforeUploadListener) {
+    addBeforeUnloadListener(obj: BeforeUploadListener | (() => boolean)) {
         if (typeof WeakRef !== "function") {
             // older browsers don't support WeakRef
             return;
         }
 
-        this.beforeUnloadListeners.push(new WeakRef<BeforeUploadListener>(obj));
+        if (typeof obj === "object") {
+            this.beforeUnloadListeners.push(new WeakRef<BeforeUploadListener>(obj));
+        } else {
+            this.beforeUnloadListeners.push(obj);
+        }
+    }
+
+    removeBeforeUnloadListener(listener: (() => boolean)) {
+        this.beforeUnloadListeners = this.beforeUnloadListeners.filter(l => l !== listener);
     }
 }
 
@@ -665,25 +677,29 @@ const appContext = new AppContext(window.glob.isMainWindow);
 $(window).on("beforeunload", () => {
     let allSaved = true;
 
-    appContext.beforeUnloadListeners = appContext.beforeUnloadListeners.filter((wr) => !!wr.deref());
+    appContext.beforeUnloadListeners = appContext.beforeUnloadListeners.filter((wr) => typeof wr === "function" || !!wr.deref());
 
-    for (const weakRef of appContext.beforeUnloadListeners) {
-        const component = weakRef.deref();
+    for (const listener of appContext.beforeUnloadListeners) {
+        if (typeof listener === "object") {
+            const component = listener.deref();
 
-        if (!component) {
-            continue;
-        }
+            if (!component) {
+                continue;
+            }
 
-        if (!component.beforeUnloadEvent()) {
-            console.log(`Component ${component.componentId} is not finished saving its state.`);
-
-            toast.showMessage(t("app_context.please_wait_for_save"), 10000);
-
-            allSaved = false;
+            if (!component.beforeUnloadEvent()) {
+                console.log(`Component ${component.componentId} is not finished saving its state.`);
+                allSaved = false;
+            }
+        } else {
+            if (!listener()) {
+                allSaved = false;
+            }
         }
     }
 
     if (!allSaved) {
+        toast.showMessage(t("app_context.please_wait_for_save"), 10000);
         return "some string";
     }
 });

@@ -15,7 +15,11 @@ vi.mock('../../log.js', () => ({
 vi.mock('../../options.js', () => ({
     default: {
         getOption: vi.fn(),
-        getOptionBool: vi.fn()
+        getOptionBool: vi.fn(),
+        getOptionInt: vi.fn(name => {
+            if (name === "protectedSessionTimeout") return Number.MAX_SAFE_INTEGER;
+            return 0;
+        })
     }
 }));
 
@@ -34,11 +38,12 @@ vi.mock('../pipeline/chat_pipeline.js', () => ({
     }))
 }));
 
-vi.mock('./handlers/tool_handler.js', () => ({
-    ToolHandler: vi.fn().mockImplementation(() => ({
-        handleToolCalls: vi.fn()
-    }))
-}));
+vi.mock('./handlers/tool_handler.js', () => {
+    class ToolHandler {
+        handleToolCalls = vi.fn()
+    }
+    return { ToolHandler };
+});
 
 vi.mock('../chat_storage_service.js', () => ({
     default: {
@@ -66,14 +71,14 @@ describe('RestChatService', () => {
 
     beforeEach(async () => {
         vi.clearAllMocks();
-        
+
         // Get mocked modules
         mockOptions = (await import('../../options.js')).default;
         mockAiServiceManager = (await import('../ai_service_manager.js')).default;
         mockChatStorageService = (await import('../chat_storage_service.js')).default;
-        
+
         restChatService = (await import('./rest_chat_service.js')).default;
-        
+
         // Setup mock request and response
         mockReq = {
             params: {},
@@ -81,7 +86,7 @@ describe('RestChatService', () => {
             query: {},
             method: 'POST'
         };
-        
+
         mockRes = {
             status: vi.fn().mockReturnThis(),
             json: vi.fn().mockReturnThis(),
@@ -240,7 +245,7 @@ describe('RestChatService', () => {
 
         it('should handle GET request with stream parameter', async () => {
             mockReq.method = 'GET';
-            mockReq.query = { 
+            mockReq.query = {
                 stream: 'true',
                 useAdvancedContext: 'true',
                 showThinking: 'false'

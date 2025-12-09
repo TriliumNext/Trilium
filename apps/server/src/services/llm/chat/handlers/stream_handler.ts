@@ -4,7 +4,6 @@
 import log from "../../../log.js";
 import type { Response } from "express";
 import type { StreamChunk } from "../../ai_interface.js";
-import type { LLMStreamMessage } from "../../interfaces/chat_ws_messages.js";
 import type { ChatSession } from "../../interfaces/chat_session.js";
 
 /**
@@ -46,7 +45,7 @@ export class StreamHandler {
             type: 'llm-stream',
             chatNoteId,
             thinking: 'Preparing response...'
-        } as LLMStreamMessage);
+        });
 
         try {
             // Import the tool handler
@@ -66,7 +65,7 @@ export class StreamHandler {
                     type: 'llm-stream',
                     chatNoteId,
                     thinking: 'Analyzing tools needed for this request...'
-                } as LLMStreamMessage);
+                });
 
                 try {
                     // Execute the tools
@@ -82,7 +81,7 @@ export class StreamHandler {
                                 tool: toolResult.name,
                                 result: toolResult.content.substring(0, 100) + (toolResult.content.length > 100 ? '...' : '')
                             }
-                        } as LLMStreamMessage);
+                        });
                     }
 
                     // Make follow-up request with tool results
@@ -123,7 +122,7 @@ export class StreamHandler {
                         chatNoteId,
                         error: `Error executing tools: ${toolError instanceof Error ? toolError.message : 'Unknown error'}`,
                         done: true
-                    } as LLMStreamMessage);
+                    });
                 }
             } else if (response.stream) {
                 // Handle standard streaming through the stream() method
@@ -152,7 +151,7 @@ export class StreamHandler {
                     chatNoteId,
                     content: messageContent,
                     done: true
-                } as LLMStreamMessage);
+                });
 
                 log.info(`Complete response sent`);
 
@@ -174,14 +173,14 @@ export class StreamHandler {
                 type: 'llm-stream',
                 chatNoteId,
                 error: `Error generating response: ${streamingError instanceof Error ? streamingError.message : 'Unknown error'}`
-            } as LLMStreamMessage);
+            });
 
             // Signal completion
             wsService.sendMessageToAllClients({
                 type: 'llm-stream',
                 chatNoteId,
                 done: true
-            } as LLMStreamMessage);
+            });
         }
     }
 
@@ -218,7 +217,7 @@ export class StreamHandler {
                         done: !!chunk.done, // Include done flag with each chunk
                         // Include any raw data from the provider that might contain thinking/tool info
                         ...(chunk.raw ? { raw: chunk.raw } : {})
-                    } as LLMStreamMessage);
+                    });
 
                     // Log the first chunk (useful for debugging)
                     if (messageContent.length === chunk.text.length) {
@@ -232,7 +231,7 @@ export class StreamHandler {
                         type: 'llm-stream',
                         chatNoteId,
                         thinking: chunk.raw.thinking
-                    } as LLMStreamMessage);
+                    });
                 }
 
                 // If the provider indicates tool execution, relay that
@@ -241,7 +240,7 @@ export class StreamHandler {
                         type: 'llm-stream',
                         chatNoteId,
                         toolExecution: chunk.raw.toolExecution
-                    } as LLMStreamMessage);
+                    });
                 }
 
                 // Handle direct tool_calls in the response (for OpenAI)
@@ -252,7 +251,7 @@ export class StreamHandler {
                     wsService.sendMessageToAllClients({
                         type: 'tool_execution_start',
                         chatNoteId
-                    } as LLMStreamMessage);
+                    });
 
                     // Process each tool call
                     for (const toolCall of chunk.tool_calls) {
@@ -277,7 +276,7 @@ export class StreamHandler {
                                 toolCallId: toolCall.id,
                                 args: args
                             }
-                        } as LLMStreamMessage);
+                        });
                     }
                 }
 
@@ -337,7 +336,7 @@ export class StreamHandler {
                                 type: 'llm-stream',
                                 chatNoteId,
                                 done: true
-                            } as LLMStreamMessage);
+                            });
                         }
 
                         // Store the full response in the session
@@ -360,7 +359,7 @@ export class StreamHandler {
                 chatNoteId,
                 error: `Error during streaming: ${streamError instanceof Error ? streamError.message : 'Unknown error'}`,
                 done: true
-            } as LLMStreamMessage);
+            });
 
             throw streamError;
         }

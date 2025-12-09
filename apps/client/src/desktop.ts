@@ -8,10 +8,8 @@ import electronContextMenu from "./menus/electron_context_menu.js";
 import glob from "./services/glob.js";
 import { t } from "./services/i18n.js";
 import options from "./services/options.js";
-import server from "./services/server.js";
 import type ElectronRemote from "@electron/remote";
 import type Electron from "electron";
-import "./stylesheets/bootstrap.scss";
 import "boxicons/css/boxicons.min.css";
 import "autocomplete.js/index_jquery.js";
 
@@ -24,6 +22,7 @@ bundleService.getWidgetBundlesByParent().then(async (widgetBundles) => {
     appContext.setLayout(new DesktopLayout(widgetBundles));
     appContext.start().catch((e) => {
         toastService.showPersistent({
+            id: "critical-error",
             title: t("toast.critical-error.title"),
             icon: "alert",
             message: t("toast.critical-error.message", { message: e.message })
@@ -46,6 +45,10 @@ if (utils.isElectron()) {
     electronContextMenu.setupContextMenu();
 }
 
+if (utils.isPWA()) {
+    initPWATopbarColor();
+}
+
 function initOnElectron() {
     const electron: typeof Electron = utils.dynamicRequire("electron");
     electron.ipcRenderer.on("globalShortcut", async (event, actionName) => appContext.triggerCommand(actionName));
@@ -56,10 +59,14 @@ function initOnElectron() {
 
     initDarkOrLightMode(style);
     initTransparencyEffects(style, currentWindow);
+    initFullScreenDetection(currentWindow);
 
     if (options.get("nativeTitleBarVisible") !== "true") {
         initTitleBarButtons(style, currentWindow);
     }
+
+    // Clear navigation history on frontend refresh.
+    currentWindow.webContents.navigationHistory.clear();
 }
 
 function initTitleBarButtons(style: CSSStyleDeclaration, currentWindow: Electron.BrowserWindow) {
@@ -83,6 +90,11 @@ function initTitleBarButtons(style: CSSStyleDeclaration, currentWindow: Electron
         const yOffset = parseInt(style.getPropertyValue("--native-titlebar-darwin-y-offset"), 10);
         currentWindow.setWindowButtonPosition({ x: xOffset, y: yOffset });
     }
+}
+
+function initFullScreenDetection(currentWindow: Electron.BrowserWindow) {
+    currentWindow.on("enter-full-screen", () => document.body.classList.add("full-screen"));
+    currentWindow.on("leave-full-screen", () => document.body.classList.remove("full-screen"));
 }
 
 function initTransparencyEffects(style: CSSStyleDeclaration, currentWindow: Electron.BrowserWindow) {
@@ -113,4 +125,21 @@ function initDarkOrLightMode(style: CSSStyleDeclaration) {
 
     const { nativeTheme } = utils.dynamicRequire("@electron/remote") as typeof ElectronRemote;
     nativeTheme.themeSource = themeSource;
+}
+
+function initPWATopbarColor() {
+    const tracker = $("#background-color-tracker");
+
+    if (tracker.length) {
+        const applyThemeColor = () => {
+            let meta = $("meta[name='theme-color']");
+            if (!meta.length) {
+                meta = $(`<meta name="theme-color">`).appendTo($("head"));
+            }
+            meta.attr("content", tracker.css("color"));
+        };
+
+        tracker.on("transitionend", applyThemeColor);
+        applyThemeColor();
+    }
 }

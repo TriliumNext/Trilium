@@ -331,6 +331,8 @@
     "calendar-title": "Calendar",
     "recent-changes-title": "Recent Changes",
     "bookmarks-title": "Bookmarks",
+    "command-palette": "Open Command Palette",
+    "zen-mode": "Zen Mode",
     "open-today-journal-note-title": "Open Today's Journal Note",
     "quick-search-title": "Quick Search",
     "protected-session-title": "Protected Session",
@@ -373,7 +375,8 @@
     "export_filter": "PDF Document (*.pdf)",
     "unable-to-export-message": "The current note could not be exported as a PDF.",
     "unable-to-export-title": "Unable to export as PDF",
-    "unable-to-save-message": "The selected file could not be written to. Try again or select another destination."
+    "unable-to-save-message": "The selected file could not be written to. Try again or select another destination.",
+    "unable-to-print": "Unable to print the note"
   },
   "tray": {
     "tooltip": "Trilium Notes",
@@ -416,13 +419,25 @@
     "end-time": "End Time",
     "geolocation": "Geolocation",
     "built-in-templates": "Built-in templates",
-    "board": "Board",
+    "board": "Kanban Board",
     "status": "Status",
     "board_note_first": "First note",
     "board_note_second": "Second note",
     "board_note_third": "Third note",
     "board_status_todo": "To Do",
     "board_status_progress": "In Progress",
-    "board_status_done": "Done"
+    "board_status_done": "Done",
+    "presentation": "Presentation",
+    "presentation_slide": "Presentation slide",
+    "presentation_slide_first": "First slide",
+    "presentation_slide_second": "Second slide",
+    "background": "Background"
+  },
+  "sql_init": {
+    "db_not_initialized_desktop": "DB not initialized, please follow on-screen instructions.",
+    "db_not_initialized_server": "DB not initialized, please visit setup page - http://[your-server-host]:{{port}} to see instructions on how to initialize Trilium."
+  },
+  "desktop": {
+    "instance_already_running": "There's already an instance running, focusing that instance instead."
   }
 }

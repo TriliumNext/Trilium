@@ -1,0 +1,1168 @@
+openapi: "3.0.3"
+info:
+    version: 1.0.0
+    title: ETAPI
+    description: External Trilium API
+    contact:
+        name: Trilium Notes Team
+        email: contact@eliandoran.me
+        url: https://triliumnotes.org
+    license:
+        name: GNU Affero General Public License v3.0 only
+        url: https://www.gnu.org/licenses/agpl-3.0.en.html
+servers:
+    - url: http://localhost:37740/etapi
+    - url: http://localhost:8080/etapi
+security:
+    - EtapiTokenAuth: []
+    - EtapiBasicAuth: []
+paths:
+    /create-note:
+        post:
+            description: Create a note and place it into the note tree
+            operationId: createNote
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/CreateNoteDef"
+            responses:
+                "201":
+                    description: note created
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/NoteWithBranch"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /notes:
+        get:
+            description: Search notes
+            operationId: searchNotes
+            parameters:
+                - name: search
+                  in: query
+                  required: true
+                  description: search query string as described in https://triliumnext.github.io/Docs/Wiki/search.html
+                  schema:
+                      type: string
+                  examples:
+                      fulltext:
+                          summary: Fulltext search for keywords (not exact match)
+                          value: "towers tolkien"
+                      fulltextExactMatch:
+                          summary: Fulltext search for exact match (notice the double quotes)
+                          value: '"Two Towers"'
+                      fulltextWithLabel:
+                          summary: Fulltext search for keyword AND matching label
+                          value: "towers #book"
+                - name: fastSearch
+                  in: query
+                  required: false
+                  description: enable fast search (fulltext doesn't look into content)
+                  schema:
+                      type: boolean
+                      default: false
+                - name: includeArchivedNotes
+                  in: query
+                  required: false
+                  description: search by default ignores archived notes. Set to 'true' to includes archived notes into search results.
+                  schema:
+                      type: boolean
+                      default: false
+                - name: ancestorNoteId
+                  in: query
+                  required: false
+                  description: search only in a subtree identified by the subtree noteId. By default whole tree is searched.
+                  schema:
+                      $ref: "#/components/schemas/EntityId"
+                - name: ancestorDepth
+                  in: query
+                  required: false
+                  description: define how deep in the tree should the notes be searched
+                  schema:
+                      type: string
+                  examples:
+                      directChildren:
+                          summary: depth of exactly 1 (direct children) to the ancestor (root if not set)
+                          value: eq1
+                      grandGrandChildren:
+                          summary: depth of exactly 3 to the ancestor (root if not set)
+                          value: eq3
+                      lessThan4:
+                          summary: depth less than 4 (so 1, 2, 3) to the ancestor (root if not set)
+                          value: lt4
+                      greaterThan2:
+                          summary: depth greater than 2 (so 3, 4, 5, 6...) to the ancestor (root if not set)
+                          value: gt4
+                - name: orderBy
+                  in: query
+                  required: false
+                  description: name of the property/label to order search results by
+                  schema:
+                      type: string
+                  example:
+                      - title
+                      - "#publicationDate"
+                      - isProtected
+                      - isArchived
+                      - dateCreated
+                      - dateModified
+                      - utcDateCreated
+                      - utcDateModified
+                      - parentCount
+                      - childrenCount
+                      - attributeCount
+                      - labelCount
+                      - ownedLabelCount
+                      - relationCount
+                      - ownedRelationCount
+                      - relationCountIncludingLinks
+                      - ownedRelationCountIncludingLinks
+                      - targetRelationCount
+                      - targetRelationCountIncludingLinks
+                      - contentSize
+                      - contentAndAttachmentsSize
+                      - contentAndAttachmentsAndRevisionsSize
+                      - revisionCount
+                - name: orderDirection
+                  in: query
+                  required: false
+                  description: order direction, ascending or descending
+                  schema:
+                      type: string
+                      default: asc
+                      enum:
+                          - asc
+                          - desc
+                - name: limit
+                  in: query
+                  required: false
+                  description: limit the number of results you want to receive
+                  schema:
+                      type: integer
+                  example: 10
+                - name: debug
+                  in: query
+                  required: false
+                  description: set to true to get debug information in the response (search query parsing)
+                  schema:
+                      type: boolean
+                      default: false
+            responses:
+                "200":
+                    description: search response
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/SearchResponse"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /notes/{noteId}:
+        parameters:
+            - name: noteId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/EntityId"
+        get:
+            description: Returns a note identified by its ID
+            operationId: getNoteById
+            responses:
+                "200":
+                    description: note response
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Note"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+        patch:
+            description: patch a note identified by the noteId with changes in the body
+            operationId: patchNoteById
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Note"
+            responses:
+                "200":
+                    description: note updated
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Note"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+        delete:
+            description: deletes a single note based on the noteId supplied
+            operationId: deleteNoteById
+            responses:
+                "204":
+                    description: note deleted
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /notes/{noteId}/content:
+        parameters:
+            - name: noteId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/EntityId"
+        get:
+            description: Returns note content identified by its ID
+            operationId: getNoteContent
+            responses:
+                "200":
+                    description: note content response
+                    content:
+                        text/html:
+                            schema:
+                                type: string
+        put:
+            description: Updates note content identified by its ID
+            operationId: putNoteContentById
+            requestBody:
+                description: html content of note
+                required: true
+                content:
+                    text/plain:
+                        schema:
+                            type: string
+            responses:
+                "204":
+                    description: note content updated
+    /notes/{noteId}/export:
+        parameters:
+            - name: noteId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/EntityId"
+            - name: format
+              in: query
+              required: false
+              schema:
+                  enum:
+                      - html
+                      - markdown
+                  default: html
+        get:
+            description: Exports ZIP file export of a given note subtree. To export whole document, use "root" for noteId
+            operationId: exportNoteSubtree
+            responses:
+                "200":
+                    description: export ZIP file
+                    content:
+                        application/zip:
+                            schema:
+                                type: string
+                                format: binary
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /notes/{noteId}/import:
+        parameters:
+            - name: noteId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/EntityId"
+        post:
+            description: Imports ZIP file into a given note.
+            operationId: importZip
+            responses:
+                "201":
+                    description: note created
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/NoteWithBranch"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /notes/{noteId}/revision:
+        parameters:
+            - name: noteId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/EntityId"
+            - name: format
+              in: query
+              required: false
+              schema:
+                  enum:
+                      - html
+                      - markdown
+                  default: html
+        post:
+            description: Create a note revision for the given note
+            operationId: createRevision
+            responses:
+                "204":
+                    description: revision has been created
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /branches:
+        post:
+            description: >
+                Create a branch (clone a note to a different location in the tree).
+                In case there is a branch between parent note and child note already, 
+                then this will update the existing branch with prefix, notePosition and isExpanded.
+            operationId: postBranch
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Branch"
+            responses:
+                "200":
+                    description: branch updated (branch between parent note and child note already existed)
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Branch"
+                "201":
+                    description: branch created
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Branch"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /branches/{branchId}:
+        parameters:
+            - name: branchId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/EntityId"
+        get:
+            description: Returns a branch identified by its ID
+            operationId: getBranchById
+            responses:
+                "200":
+                    description: branch response
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Branch"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+        patch:
+            description: patch a branch identified by the branchId with changes in the body. Only prefix and notePosition can be updated. If you want to update other properties, you need to delete the old branch and create a new one.
+            operationId: patchBranchById
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Branch"
+            responses:
+                "200":
+                    description: branch updated
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Branch"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+        delete:
+            description: >
+                deletes a branch based on the branchId supplied. If this is the last branch of the (child) note, 
+                then the note is deleted as well.
+            operationId: deleteBranchById
+            responses:
+                "204":
+                    description: branch deleted
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /attachments:
+        post:
+            description: create an attachment
+            operationId: postAttachment
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/CreateAttachment"
+            responses:
+                "201":
+                    description: attachment created
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Attachment"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /attachments/{attachmentId}:
+        parameters:
+            - name: attachmentId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/EntityId"
+        get:
+            description: Returns an attachment identified by its ID
+            operationId: getAttachmentById
+            responses:
+                "200":
+                    description: attachment response
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Attachment"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+        patch:
+            description: patch an attachment identified by the attachmentId with changes in the body. Only role, mime, title, and position are patchable.
+            operationId: patchAttachmentById
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Attachment"
+            responses:
+                "200":
+                    description: attribute updated
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Attachment"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+        delete:
+            description: deletes an attachment based on the attachmentId supplied.
+            operationId: deleteAttachmentById
+            responses:
+                "204":
+                    description: attachment deleted
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /attachments/{attachmentId}/content:
+        parameters:
+            - name: attachmentId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/EntityId"
+        get:
+            description: Returns attachment content identified by its ID
+            operationId: getAttachmentContent
+            responses:
+                "200":
+                    description: attachment content response
+                    content:
+                        text/html:
+                            schema:
+                                type: string
+        put:
+            description: Updates attachment content identified by its ID
+            operationId: putAttachmentContentById
+            requestBody:
+                description: html content of attachment
+                required: true
+                content:
+                    text/plain:
+                        schema:
+                            type: string
+            responses:
+                "204":
+                    description: attachment content updated
+    /attributes:
+        post:
+            description: create an attribute for a given note
+            operationId: postAttribute
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Attribute"
+            responses:
+                "201":
+                    description: attribute created
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Attribute"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /attributes/{attributeId}:
+        parameters:
+            - name: attributeId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/EntityId"
+        get:
+            description: Returns an attribute identified by its ID
+            operationId: getAttributeById
+            responses:
+                "200":
+                    description: attribute response
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Attribute"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+        patch:
+            description: patch an attribute identified by the attributeId with changes in the body. For labels, only value and position can be updated. For relations, only position can be updated. If you want to modify other properties, you need to delete the old attribute and create a new one.
+            operationId: patchAttributeById
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            $ref: "#/components/schemas/Attribute"
+            responses:
+                "200":
+                    description: attribute updated
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Attribute"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+        delete:
+            description: deletes an attribute based on the attributeId supplied.
+            operationId: deleteAttributeById
+            responses:
+                "204":
+                    description: attribute deleted
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /refresh-note-ordering/{parentNoteId}:
+        parameters:
+            - name: parentNoteId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/EntityId"
+        post:
+            description: >
+                notePositions in branches are not automatically pushed to connected clients and need a specific instruction. 
+                If you want your changes to be in effect immediately, call this service after setting branches' notePosition. 
+                Note that you need to supply "parentNoteId" of branch(es) with changed positions.
+            operationId: postRefreshNoteOrdering
+            responses:
+                "204":
+                    description: note ordering will be asynchronously updated in all connected clients
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /inbox/{date}:
+        get:
+            description: >
+                returns an "inbox" note, into which note can be created. Date will be used depending on whether the inbox
+                is a fixed note (identified with #inbox label) or a day note in a journal.
+            operationId: getInboxNote
+            parameters:
+                - name: date
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: date
+                  example: 2022-02-22
+            responses:
+                "200":
+                    description: inbox note
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Note"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /calendar/days/{date}:
+        get:
+            description: returns a day note for a given date. Gets created if doesn't exist.
+            operationId: getDayNote
+            parameters:
+                - name: date
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: date
+                  example: 2022-02-22
+            responses:
+                "200":
+                    description: day note
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Note"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /calendar/weeks/{date}:
+        get:
+            description: returns a week note for a given date. Gets created if doesn't exist.
+            operationId: getWeekFirstDayNote
+            parameters:
+                - name: date
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: date
+                  example: 2022-02-22
+            responses:
+                "200":
+                    description: week note
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Note"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /calendar/months/{month}:
+        get:
+            description: returns a week note for a given date. Gets created if doesn't exist.
+            operationId: getMonthNote
+            parameters:
+                - name: month
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      pattern: "[0-9]{4}-[0-9]{2}"
+                  example: 2022-02
+            responses:
+                "200":
+                    description: month note
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Note"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /calendar/years/{year}:
+        get:
+            description: returns a week note for a given date. Gets created if doesn't exist.
+            operationId: getYearNote
+            parameters:
+                - name: year
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      pattern: "[0-9]{4}-[0-9]{2}"
+                  example: 2022-02
+            responses:
+                "200":
+                    description: year note
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Note"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /auth/login:
+        post:
+            description: get an ETAPI token based on password for further use with ETAPI
+            operationId: login
+            security: [] # no token based auth for login endpoint
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            properties:
+                                password:
+                                    type: string
+                                    description: user's password used to e.g. login to Trilium server and/or protect notes
+            responses:
+                "201":
+                    description: auth token
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                properties:
+                                    authToken:
+                                        type: string
+                                        example: Bc4bFn0Ffiok_4NpbVCDnFz7B2WU+pdhW8B5Ne3DiR5wXrEyqdjgRIsk=
+                "429":
+                    description: Client IP has been blacklisted because too many requests (possibly failed authentications) were made within a short time frame, try again later
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /auth/logout:
+        post:
+            description: logout (delete/deactivate) an ETAPI token
+            operationId: logout
+            responses:
+                "204":
+                    description: logout successful
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /app-info:
+        get:
+            description: returns information about the running Trilium instance
+            operationId: getAppInfo
+            responses:
+                "200":
+                    description: app info
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/AppInfo"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /backup/{backupName}:
+        parameters:
+            - name: backupName
+              in: path
+              required: true
+              description: If the backupName is e.g. "now", then the backup will be written to "backup-now.db" file
+              schema:
+                  $ref: "#/components/schemas/StringId"
+        put:
+            description: Create a database backup under a given name
+            operationId: createBackup
+            responses:
+                "204":
+                    description: backup has been created
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+components:
+    securitySchemes:
+        EtapiTokenAuth:
+            type: apiKey
+            in: header
+            name: Authorization
+        EtapiBasicAuth:
+            type: http
+            scheme: basic
+            description: >
+                Basic Auth where username is arbitrary string (e.g. "trilium", not checked), 
+                username is the ETAPI token. 
+                To emphasize, do not use Trilium password here (won't work), only the generated
+                ETAPI token (from Options -> ETAPI)
+    schemas:
+        CreateNoteDef:
+            type: object
+            required:
+                - parentNoteId
+                - title
+                - type
+                - content
+            properties:
+                parentNoteId:
+                    $ref: "#/components/schemas/EntityId"
+                    description: Note ID of the parent note in the tree
+                title:
+                    type: string
+                type:
+                    type: string
+                    enum:
+                        - text
+                        - code
+                        - file
+                        - image
+                        - search
+                        - book
+                        - relationMap
+                        - render
+                mime:
+                    type: string
+                    description: this needs to be specified only for note types 'code', 'file', 'image'.
+                    example: application/json
+                content:
+                    type: string
+                notePosition:
+                    type: integer
+                    description: >
+                        Position of the note in the parent. Normal ordering is 10, 20, 30 ... 
+                        So if you want to create a note on the first position, use e.g. 5, for second position 15, for last e.g. 1000000
+                prefix:
+                    type: string
+                    description: >
+                        Prefix is branch (placement) specific title prefix for the note. 
+                        Let's say you have your note placed into two different places in the tree, 
+                        but you want to change the title a bit in one of the placements. For this you can use prefix.
+                isExpanded:
+                    type: boolean
+                    description: true if this note (as a folder) should appear expanded
+                noteId:
+                    $ref: "#/components/schemas/EntityId"
+                    description: DON'T specify unless you want to force a specific noteId
+                branchId:
+                    $ref: "#/components/schemas/EntityId"
+                    description: DON'T specify unless you want to force a specific branchId
+                dateCreated:
+                    $ref: "#/components/schemas/LocalDateTime"
+                    description: Local timestap of the note creation. Specify only if you want to override the default (current datetime in the current timezone/offset).
+                utcDateCreated:
+                    $ref: "#/components/schemas/UtcDateTime"
+                    description: UTC timestap of the note creation. Specify only if you want to override the default (current datetime).
+        Note:
+            type: object
+            properties:
+                noteId:
+                    $ref: "#/components/schemas/EntityId"
+                    readOnly: true
+                title:
+                    type: string
+                type:
+                    type: string
+                    enum: [text, code, render, file, image, search, relationMap, book, noteMap, mermaid, webView, shortcut, doc, contentWidget, launcher]
+                mime:
+                    type: string
+                isProtected:
+                    type: boolean
+                    readOnly: true
+                blobId:
+                    type: string
+                    description: ID of the blob object which effectively serves as a content hash
+                attributes:
+                    $ref: "#/components/schemas/AttributeList"
+                    readOnly: true
+                parentNoteIds:
+                    $ref: "#/components/schemas/EntityIdList"
+                    readOnly: true
+                childNoteIds:
+                    $ref: "#/components/schemas/EntityIdList"
+                    readOnly: true
+                parentBranchIds:
+                    $ref: "#/components/schemas/EntityIdList"
+                    readOnly: true
+                childBranchIds:
+                    $ref: "#/components/schemas/EntityIdList"
+                    readOnly: true
+                dateCreated:
+                    $ref: "#/components/schemas/LocalDateTime"
+                dateModified:
+                    $ref: "#/components/schemas/LocalDateTime"
+                    readOnly: true
+                utcDateCreated:
+                    $ref: "#/components/schemas/UtcDateTime"
+                utcDateModified:
+                    $ref: "#/components/schemas/UtcDateTime"
+                    readOnly: true
+        Branch:
+            type: object
+            description: Branch places the note into the tree, it represents the relationship between a parent note and child note
+            properties:
+                branchId:
+                    $ref: "#/components/schemas/EntityId"
+                noteId:
+                    $ref: "#/components/schemas/EntityId"
+                    readOnly: true
+                    description: identifies the child note
+                parentNoteId:
+                    $ref: "#/components/schemas/EntityId"
+                    readOnly: true
+                    description: identifies the parent note
+                prefix:
+                    type: string
+                notePosition:
+                    type: integer
+                    format: int32
+                isExpanded:
+                    type: boolean
+                utcDateModified:
+                    $ref: "#/components/schemas/UtcDateTime"
+                    readOnly: true
+        NoteWithBranch:
+            type: object
+            properties:
+                note:
+                    $ref: "#/components/schemas/Note"
+                branch:
+                    $ref: "#/components/schemas/Branch"
+        Attachment:
+            type: object
+            description: Attachment is owned by a note, has title and content
+            properties:
+                attachmentId:
+                    $ref: "#/components/schemas/EntityId"
+                    readOnly: true
+                ownerId:
+                    $ref: "#/components/schemas/EntityId"
+                    description: identifies the owner of the attachment, is either noteId or revisionId
+                role:
+                    type: string
+                mime:
+                    type: string
+                title:
+                    type: string
+                position:
+                    type: integer
+                    format: int32
+                blobId:
+                    type: string
+                    description: ID of the blob object which effectively serves as a content hash
+                dateModified:
+                    $ref: "#/components/schemas/LocalDateTime"
+                    readOnly: true
+                utcDateModified:
+                    $ref: "#/components/schemas/UtcDateTime"
+                    readOnly: true
+                utcDateScheduledForErasureSince:
+                    $ref: "#/components/schemas/UtcDateTime"
+                    readOnly: true
+                contentLength:
+                    type: integer
+                    format: int32
+        CreateAttachment:
+            type: object
+            properties:
+                ownerId:
+                    $ref: "#/components/schemas/EntityId"
+                    description: identifies the owner of the attachment, is either noteId or revisionId
+                role:
+                    type: string
+                mime:
+                    type: string
+                title:
+                    type: string
+                content:
+                    type: string
+                position:
+                    type: integer
+                    format: int32
+        Attribute:
+            type: object
+            description: Attribute (Label, Relation) is a key-value record attached to a note.
+            properties:
+                attributeId:
+                    $ref: "#/components/schemas/EntityId"
+                noteId:
+                    $ref: "#/components/schemas/EntityId"
+                    readOnly: true
+                    description: identifies the child note
+                type:
+                    type: string
+                    enum: [label, relation]
+                name:
+                    type: string
+                    pattern: '^[^\s]+'
+                    example: shareCss
+                value:
+                    type: string
+                position:
+                    type: integer
+                    format: int32
+                isInheritable:
+                    type: boolean
+                utcDateModified:
+                    $ref: "#/components/schemas/UtcDateTime"
+                    readOnly: true
+        AttributeList:
+            type: array
+            items:
+                $ref: "#/components/schemas/Attribute"
+        SearchResponse:
+            type: object
+            required:
+                - results
+            properties:
+                results:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/Note"
+                debugInfo:
+                    type: object
+                    description: debugging info on parsing the search query enabled with &debug=true parameter
+        EntityId:
+            type: string
+            pattern: "[a-zA-Z0-9_]{4,32}"
+            example: evnnmvHTCgIn
+        StringId:
+            type: string
+            pattern: "[a-zA-Z0-9_]{1,32}"
+            example: my_ID
+        EntityIdList:
+            type: array
+            items:
+                $ref: "#/components/schemas/EntityId"
+        LocalDateTime:
+            type: string
+            pattern: '[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}[\+\-][0-9]{4}'
+            example: 2021-12-31 20:18:11.930+0100
+        UtcDateTime:
+            type: string
+            pattern: '[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z'
+            example: 2021-12-31 19:18:11.930Z
+        AppInfo:
+            type: object
+            properties:
+                appVersion:
+                    type: string
+                    description: Trilium version
+                    example: 0.50.2
+                dbVersion:
+                    type: integer
+                    format: int32
+                    description: DB version
+                    example: 194
+                syncVersion:
+                    type: integer
+                    format: int32
+                    description: Sync protocol version
+                    example: 25
+                buildDate:
+                    type: string
+                    format: date-time
+                    description: build date
+                    example: 2022-02-09T22:52:36+01:00
+                buildRevision:
+                    type: string
+                    description: git build revision
+                    example: 23daaa2387a0655685377f0a541d154aeec2aae8
+                dataDirectory:
+                    type: string
+                    description: data directory where Trilium stores files
+                    example: /home/user/data
+                clipperProtocolVersion:
+                    type: string
+                    description: version of the supported Trilium Web Clipper protocol
+                    example: 1.0
+                utcDateTime:
+                    type: string
+                    description: current UTC date time
+                    example: 2022-03-07T21:54:25.277Z
+        Error:
+            type: object
+            required:
+                - status
+                - code
+                - message
+            properties:
+                status:
+                    type: integer
+                    format: int32
+                    description: HTTP status, identical to the one given in HTTP response
+                    example: 400
+                code:
+                    type: string
+                    description: stable string constant
+                    example: NOTE_IS_PROTECTED
+                message:
+                    type: string
+                    description: Human readable error, potentially with more details,
+                    example: Note 'evnnmvHTCgIn' is protected and cannot be modified through ETAPI

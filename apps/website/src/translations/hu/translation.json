@@ -1,0 +1,44 @@
+{
+    "get-started": {
+        "title": "Kezdés",
+        "desktop_title": "Töltsd le az asztali alkalmazást (v{{version}})",
+        "architecture": "Szerkezet:",
+        "older_releases": "Régebbi kiadások megtekintése",
+        "server_title": "Szerver beállítása több eszközről történő hozzáféréshez"
+    },
+    "hero_section": {
+        "title": "Rendszerezd a gondolataidat. Építsd fel a személyes tudásbázisodat.",
+        "subtitle": "A Trilium egy nyílt forráskódú megoldás jegyzeteléshez és személyes tudásbázis rendszerezéséhez. Használd helyben az asztali gépeden, vagy szinkronizáld a saját szervereddel, hogy jegyzeteid mindenhol elérhetőek legyenek.",
+        "get_started": "Kezdés",
+        "github": "GitHub",
+        "dockerhub": "Docker Hub",
+        "screenshot_alt": "A Trilium Notes asztali alkalmazás képernyőképe"
+    },
+    "organization_benefits": {
+        "title": "Szervezet",
+        "note_structure_title": "Jegyzet szerkezet",
+        "note_structure_description": "A jegyzetek hierarchikusan rendezhetők. Nincs szükség mappákra, mivel minden jegyzet tartalmazhat aljegyzeteket. Egyetlen jegyzet több helyre is hozzáadható a hierarchiában.",
+        "attributes_title": "Jegyzetcímkék és kapcsolatok",
+        "attributes_description": "Használjon kapcsolatokat a jegyzetek között, vagy adjon hozzá címkéket az egyszerű kategorizálás érdekében. Használjon kiemelt attribútumokat strukturált információk beviteléhez, amelyek táblázatokban és táblákon használhatók.",
+        "hoisting_title": "Munkaterületek és kiemelés",
+        "hoisting_description": "Könnyedén különítse el a személyes és munkahelyi jegyzeteit úgy, hogy csoportosítja őket egy munkaterület alatt, amely a jegyzetfát csak egy adott jegyzetkészlet megjelenítésére összpontosítja."
+    },
+    "productivity_benefits": {
+        "title": "Termelékenység és biztonság",
+        "revisions_title": "Megjegyzés felülvizsgálatai",
+        "revisions_content": "A jegyzetek rendszeresen tárolódnak a háttérben, és a revíziók felhasználhatók felülvizsgálatra vagy véletlen változások visszavonására. A revíziók igény szerint is létrehozhatók.",
+        "sync_title": "Szinkronizálás",
+        "sync_content": "Használjon saját maga által üzemeltetett vagy felhő alapu példányt, hogy könnyen szinkronizálja a jegyzeteket több eszközön keresztül, és hozzáférjen a mobiltelefonjáról egy PWA segítségével.",
+        "protected_notes_title": "Védett jegyzetek",
+        "protected_notes_content": "Védje az érzékeny személyes adatokat a jegyzetek titkosításával és a jelszóval védett munkamenet mögötti zárolással.",
+        "jump_to_title": "Gyors keresés és parancsok",
+        "jump_to_content": "Ugorj gyorsan a jegyzetekhez vagy a felhasználói felület parancsaihoz a hierarchia területén, keresve a címüket, a fuzzy illesztéssel, hogy megmagyarázza az elírásokat vagy az enyhe különbségeket.",
+        "search_title": "Erőteljes keresés",
+        "search_content": "Vagy keressen szöveget a jegyzetekben, és szűkítse le a keresést a szülői jegyzet szűrésével vagy mélységével."
+    },
+    "note_types": {
+        "file_description": "Beágyazott multimédiás fájlokat, például PDF-eket, képeket, videókat, alkalmazáson belüli előnézettel.",
+        "canvas_title": "Vászon",
+        "canvas_description": "Rendezzen formákat, képeket és szöveget egy végtelen vászonra, ugyanazzal a technológiával mint ami excalidraw.com mögött van. Ideális diagramokhoz, vázlatokhoz és vizuális tervezéshez."
+    }
+}

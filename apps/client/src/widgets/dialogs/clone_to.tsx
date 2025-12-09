@@ -2,7 +2,6 @@ import { useRef, useState } from "preact/hooks";
 import appContext from "../../components/app_context";
 import { t } from "../../services/i18n";
 import Modal from "../react/Modal";
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import NoteAutocomplete from "../react/NoteAutocomplete";
 import froca from "../../services/froca";
 import FormGroup from "../react/FormGroup";
@@ -14,9 +13,9 @@ import tree from "../../services/tree";
 import branches from "../../services/branches";
 import toast from "../../services/toast";
 import NoteList from "../react/NoteList";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
 
-function CloneToDialogComponent() {
+export default function CloneToDialog() {
     const [ clonedNoteIds, setClonedNoteIds ] = useState<string[]>();
     const [ prefix, setPrefix ] = useState("");
     const [ suggestion, setSuggestion ] = useState<Suggestion | null>(null);
@@ -81,14 +80,6 @@ function CloneToDialogComponent() {
             </FormGroup>
         </Modal>
     )
-}
-
-export default class CloneToDialog extends ReactBasicWidget {
-
-    get component() {
-        return <CloneToDialogComponent />;
-    }
-
 }
 
 async function cloneNotesTo(notePath: string, clonedNoteIds: string[], prefix?: string) {

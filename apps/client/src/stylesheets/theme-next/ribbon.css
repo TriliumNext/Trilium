@@ -34,6 +34,7 @@
 div.promoted-attributes-container {
     margin-top: 8px;
     margin-bottom: 8px;
+    margin-inline-start: 12px;
 }
 
 /*
@@ -41,7 +42,7 @@ div.promoted-attributes-container {
  */
 
  /* The property label */
-.note-info-widget-table th,
+.note-info-item > span:first-child,
 .file-properties-widget .file-table th,
 .image-properties > div:first-child > span > strong {
     opacity: 0.65;
@@ -49,7 +50,6 @@ div.promoted-attributes-container {
     vertical-align: top;
 }
 
-.note-info-widget-table td,
 .file-properties-widget .file-table td {
     vertical-align: top;
 }
@@ -94,19 +94,18 @@ div.promoted-attributes-container {
 
 /* Note type dropdown */
 
-div.note-type-dropdown .check {
-    margin-right: 6px;
+ul.note-type-dropdown .check {
+    margin-inline-end: 6px;
+}
+
+ul.note-type-dropdown li.dropdown-item {
+    --menu-item-icon-vert-offset: 0;
 }
 
 /* Editability dropdown */
 
-div.editability-dropdown a.dropdown-item {
-    padding: 4px 16px 4px 0;
-    align-items: start !important;
-}
-
-.editability-dropdown .dropdown-item .check {
-    margin-left: 4px;
+ul.editability-dropdown li.dropdown-item > div {
+    margin-inline-start: 4px;
 }
 
 .editability-dropdown .dropdown-item .description {
@@ -143,12 +142,12 @@ div.editability-dropdown a.dropdown-item {
 }
 
 .attribute-list .save-attributes-button {
-    right: 30px;
+    inset-inline-end: 30px;
 }
 
 /* Note path in attribute detail dialog */
 .attr-detail .note-path {
-    margin-left: 8px;
+    margin-inline-start: 8px;
 }
 
 /*
@@ -165,7 +164,7 @@ div.editability-dropdown a.dropdown-item {
     background: var(--cmd-button-hover-background-color);
 }
 
-/* 
+/*
  * Note info
  */
 
@@ -178,4 +177,16 @@ div.editability-dropdown a.dropdown-item {
 /* Narrow width layout */
 .note-info-widget {
     container: info-section / inline-size;
+}
+
+/*
+ * Styling as a floating toolbar
+ */
+.ribbon-container {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--main-background-color);
+    z-index: 997;
 }

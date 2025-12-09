@@ -1,0 +1,26 @@
+:root {
+    --zen-button-size: 32px;
+}
+
+.close-zen-container {
+    width: var(--zen-button-size);
+    height: var(--zen-button-size);
+}
+
+body.zen .close-zen-container {
+    display: block;
+    position: fixed;
+    top: 2px;
+    inset-inline-end: 2px;
+    z-index: 9999;
+    -webkit-app-region: no-drag;
+}
+
+body.zen.mobile .close-zen-container {
+    top: -2px;
+}
+
+body.zen.electron:not(.platform-darwin):not(.native-titlebar) .close-zen-container {
+    inset-inline-start: calc(env(titlebar-area-width) - var(--zen-button-size) - 2px);
+    inset-inline-end: unset;
+}

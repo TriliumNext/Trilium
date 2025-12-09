@@ -34,10 +34,10 @@ export async function validateProviders(validationWarning: HTMLElement): Promise
                 precedenceList = [precedenceStr];
             }
         }
-        
+
         // Check for configuration issues with providers in the precedence list
         const configIssues: string[] = [];
-        
+
         // Always add experimental warning as the first item
         configIssues.push(t("ai_llm.experimental_warning"));
 

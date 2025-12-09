@@ -16,7 +16,7 @@ interface ElectronProcess {
 interface CustomGlobals {
     isDesktop: typeof utils.isDesktop;
     isMobile: typeof utils.isMobile;
-    device: "mobile" | "desktop";
+    device: "mobile" | "desktop" | "print";
     getComponentByEl: typeof appContext.getComponentByEl;
     getHeaders: typeof server.getHeaders;
     getReferenceLinkTitle: (href: string) => Promise<string>;
@@ -26,7 +26,6 @@ interface CustomGlobals {
     appContext: AppContext;
     froca: Froca;
     treeCache: Froca;
-    importMarkdownInline: () => Promise<unknown>;
     SEARCH_HELP_TEXT: string;
     activeDialog: JQuery<HTMLElement> | null;
     componentId: string;
@@ -46,6 +45,7 @@ interface CustomGlobals {
     platform?: typeof process.platform;
     linter: typeof lint;
     hasNativeTitleBar: boolean;
+    isRtl: boolean;
 }
 
 type RequireMethod = (moduleName: string) => any;
@@ -58,7 +58,15 @@ declare global {
         process?: ElectronProcess;
         glob?: CustomGlobals;
 
+        /** On the printing endpoint, set to true when the note has fully loaded and is ready to be printed/exported as PDF. */
+        _noteReady?: boolean;
+
         EXCALIDRAW_ASSET_PATH?: string;
+    }
+
+    interface WindowEventMap {
+        "note-ready": Event;
+        "note-load-progress": CustomEvent<{ progress: number }>;
     }
 
     interface AutoCompleteConfig {
@@ -115,11 +123,17 @@ declare global {
         filterKey: (e: { altKey: boolean }, dx: number, dy: number, dz: number) => void;
     });
 
+    interface PanZoomTransform {
+        x: number;
+        y: number;
+        scale: number;
+    }
+
     interface PanZoom {
         zoomTo(x: number, y: number, scale: number);
         moveTo(x: number, y: number);
         on(event: string, callback: () => void);
-        getTransform(): unknown;
+        getTransform(): PanZoomTransform;
         dispose(): void;
     }
 }

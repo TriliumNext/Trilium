@@ -1,0 +1,82 @@
+{
+  "about": {
+    "title": "Over Trilium Notes",
+    "homepage": "Homepagina:",
+    "app_version": "App versie:",
+    "db_version": "DB Versie:",
+    "sync_version": "Sync Versie:",
+    "build_date": "Build datum:",
+    "build_revision": "Build revisie:",
+    "data_directory": "Gegevensmap:"
+  },
+  "toast": {
+    "critical-error": {
+      "title": "Kritische Error",
+      "message": "Een kritieke fout heeft plaatsgevonden waardoor de cliënt zich aanmeldt vanaf het begin:\n\n84X\n\nDit is waarschijnlijk veroorzaakt door een script dat op een onverwachte manier faalt. Probeer de sollicitatie in veilige modus te starten en de kwestie aan te spreken."
+    },
+    "widget-error": {
+      "title": "Starten widget mislukt",
+      "message-unknown": "Onbekende widget kan niet gestart worden omdat:\n\n{{message}}",
+      "message-custom": "Aangepaste widget van notitie met ID \"{{id}}\", getiteld \"{{title}}\" kon niet worden geïnitialiseerd vanwege:\n\n{{message}}"
+    },
+    "bundle-error": {
+      "title": "Custom script laden mislukt",
+      "message": "Script van notitie met ID \"{{id}}\", getiteld \"{{title}}\" kon niet worden uitgevoerd vanwege:\n\n{{message}}"
+    }
+  },
+  "add_link": {
+    "add_link": "Voeg link toe",
+    "help_on_links": "Hulp bij links",
+    "note": "notitie",
+    "search_note": "zoek voor notitie op naam",
+    "link_title_mirrors": "De link titel is hetzelfde als de notitie's huidige titel",
+    "link_title": "Link titel",
+    "button_add_link": "Link toevoegen",
+    "link_title_arbitrary": "snelkoppelingsnaam kan willekeurig worden aangepast"
+  },
+  "branch_prefix": {
+    "edit_branch_prefix": "Bewerk branch prefix",
+    "save": "Opslaan",
+    "branch_prefix_saved": "Branch prefix is opgeslagen.",
+    "help_on_tree_prefix": "Help bij boomvoorvoegsel",
+    "prefix": "Voorvoegsel: ",
+    "edit_branch_prefix_multiple": "Bewerk zijtakvoorvoegsel voor {{count}} zijtakken",
+    "branch_prefix_saved_multiple": "Vertakkingsvoorvoegsel opgeslagen voor {{count}} vertakkingen."
+  },
+  "bulk_actions": {
+    "bulk_actions": "Bulk acties",
+    "affected_notes": "Getroffen notities",
+    "available_actions": "Beschikbare acties",
+    "chosen_actions": "Kies acties",
+    "execute_bulk_actions": "Bulk acties uitvoeren",
+    "bulk_actions_executed": "Bulk acties zijn succesvol uitgevoerd.",
+    "none_yet": "Nog niks... voeg een actie toe door een van de beschikbare bovenstaande opties te klikken.",
+    "labels": "Labels",
+    "relations": "Relaties",
+    "notes": "Notities",
+    "other": "Andere"
+  },
+  "calendar": {
+    "april": "April",
+    "may": "Mei",
+    "june": "Juni",
+    "july": "Juli",
+    "august": "Augustus",
+    "september": "September",
+    "october": "Oktober",
+    "november": "November",
+    "december": "December"
+  },
+  "close_pane_button": {
+    "close_this_pane": "Sluit dit paneel"
+  },
+  "create_pane_button": {
+    "create_new_split": "Maak nieuwe split"
+  },
+  "edit_button": {
+    "edit_this_note": "Notitie bewerken"
+  },
+  "show_toc_widget_button": {
+    "show_toc": "Laat Inhoudsopgave zien"
+  }
+}

@@ -1,6 +1,6 @@
 {
 	"formatVersion": 2,
-	"appVersion": "0.94.0",
+	"appVersion": "0.99.3",
 	"files": [
 		{
 			"isClone": false,
@@ -29,7 +29,7 @@
 					"title": "Journal",
 					"notePosition": 10,
 					"prefix": null,
-					"isExpanded": true,
+					"isExpanded": false,
 					"type": "book",
 					"mime": "",
 					"attributes": [
@@ -60,6 +60,13 @@
 							"value": "dayGridMonth",
 							"isInheritable": false,
 							"position": 40
+						},
+						{
+							"type": "relation",
+							"name": "dateTemplate",
+							"value": "bRQvb9VCkc3t",
+							"isInheritable": false,
+							"position": 50
 						}
 					],
 					"dataFileName": "Journal.dat",
@@ -82,37 +89,44 @@
 						{
 							"type": "relation",
 							"name": "internalLink",
-							"value": "Th0SHTjziC8R",
+							"value": "xY1FldcqIlaS",
 							"isInheritable": false,
 							"position": 10
 						},
 						{
 							"type": "relation",
 							"name": "internalLink",
-							"value": "1afuYh5pfoEP",
+							"value": "Th0SHTjziC8R",
 							"isInheritable": false,
 							"position": 20
 						},
 						{
 							"type": "relation",
 							"name": "internalLink",
-							"value": "FtCt1LKirRGs",
+							"value": "1afuYh5pfoEP",
 							"isInheritable": false,
 							"position": 30
 						},
 						{
 							"type": "relation",
 							"name": "internalLink",
-							"value": "uppxiNYbjvGw",
+							"value": "FtCt1LKirRGs",
 							"isInheritable": false,
 							"position": 40
 						},
 						{
 							"type": "relation",
 							"name": "internalLink",
-							"value": "Q3ve69mXIaMY",
+							"value": "uppxiNYbjvGw",
 							"isInheritable": false,
 							"position": 50
+						},
+						{
+							"type": "relation",
+							"name": "internalLink",
+							"value": "Q3ve69mXIaMY",
+							"isInheritable": false,
+							"position": 60
 						},
 						{
 							"type": "label",
@@ -2686,6 +2700,7 @@
 								}
 							],
 							"format": "html",
+							"dataFileName": "Note Types.html",
 							"attachments": [],
 							"dirFileName": "Note Types",
 							"children": [
@@ -3164,9 +3179,16 @@
 									"notePosition": 40,
 									"prefix": null,
 									"isExpanded": false,
-									"type": "geoMap",
-									"mime": "application/json",
+									"type": "book",
+									"mime": "",
 									"attributes": [
+										{
+											"type": "relation",
+											"name": "template",
+											"value": "_template_geo_map",
+											"isInheritable": false,
+											"position": 10
+										},
 										{
 											"type": "label",
 											"name": "label:geolocation",
@@ -3182,8 +3204,16 @@
 											"position": 20
 										}
 									],
-									"dataFileName": "Geo Map (The Seven Wonders of .json",
-									"attachments": [],
+									"attachments": [
+										{
+											"attachmentId": "jPOilfLdSmbX",
+											"title": "geoMap.json",
+											"role": "viewConfig",
+											"mime": "application/json",
+											"position": 0,
+											"dataFileName": "Geo Map (The Seven Wonder.json"
+										}
+									],
 									"dirFileName": "Geo Map (The Seven Wonders of the World)",
 									"children": [
 										{
@@ -6016,6 +6046,68 @@
 									"attachments": []
 								}
 							]
+						}
+					]
+				},
+				{
+					"isClone": false,
+					"noteId": "fhNlr1V1o3d8",
+					"notePath": [
+						"root",
+						"fhNlr1V1o3d8"
+					],
+					"title": "Miscellaneous",
+					"notePosition": 30,
+					"prefix": null,
+					"isExpanded": false,
+					"type": "text",
+					"mime": "text/html",
+					"attributes": [
+						{
+							"type": "label",
+							"name": "iconClass",
+							"value": "bx bx-dots-horizontal-rounded",
+							"isInheritable": false,
+							"position": 10
+						}
+					],
+					"format": "html",
+					"attachments": [],
+					"dirFileName": "Miscellaneous",
+					"children": [
+						{
+							"isClone": false,
+							"noteId": "bRQvb9VCkc3t",
+							"notePath": [
+								"root",
+								"fhNlr1V1o3d8",
+								"bRQvb9VCkc3t"
+							],
+							"title": "Day Note Template",
+							"notePosition": 10,
+							"prefix": null,
+							"isExpanded": false,
+							"type": "text",
+							"mime": "text/html",
+							"attributes": [
+								{
+									"type": "label",
+									"name": "iconClass",
+									"value": "bx bx-notepad",
+									"isInheritable": false,
+									"position": 10
+								},
+								{
+									"type": "label",
+									"name": "excludeFromNoteMap",
+									"value": "",
+									"isInheritable": false,
+									"position": 20
+								}
+							],
+							"format": "html",
+							"dataFileName": "Day Note Template.html",
+							"attachments": []
 						}
 					]
 				}

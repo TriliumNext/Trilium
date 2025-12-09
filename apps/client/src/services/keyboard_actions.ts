@@ -1,6 +1,6 @@
 import server from "./server.js";
-import appContext, { type CommandNames } from "../components/app_context.js";
-import shortcutService from "./shortcuts.js";
+import appContext from "../components/app_context.js";
+import shortcutService, { ShortcutBinding } from "./shortcuts.js";
 import type Component from "../components/component.js";
 import type { ActionKeyboardShortcut } from "@triliumnext/commons";
 
@@ -28,14 +28,24 @@ async function getActionsForScope(scope: string) {
     return actions.filter((action) => action.scope === scope);
 }
 
-async function setupActionsForElement(scope: string, $el: JQuery<HTMLElement>, component: Component) {
+async function setupActionsForElement(scope: string, $el: JQuery<HTMLElement>, component: Component, ntxId: string | null | undefined) {
+    if (!$el[0]) return [];
+
     const actions = await getActionsForScope(scope);
+    const bindings: ShortcutBinding[] = [];
 
     for (const action of actions) {
         for (const shortcut of action.effectiveShortcuts ?? []) {
-            shortcutService.bindElShortcut($el, shortcut, () => component.triggerCommand(action.actionName, { ntxId: appContext.tabManager.activeNtxId }));
+            const binding = shortcutService.bindElShortcut($el, shortcut, () => {
+                component.triggerCommand(action.actionName, { ntxId });
+            });
+            if (binding) {
+                bindings.push(binding);
+            }
         }
     }
+
+    return bindings;
 }
 
 getActionsForScope("window").then((actions) => {
@@ -60,6 +70,10 @@ async function getAction(actionName: string, silent = false) {
     }
 
     return action;
+}
+
+export function getActionSync(actionName: string) {
+    return keyboardActionRepo[actionName];
 }
 
 function updateDisplayedShortcuts($container: JQuery<HTMLElement>) {

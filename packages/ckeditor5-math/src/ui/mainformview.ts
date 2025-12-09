@@ -1,5 +1,6 @@
 import { ButtonView, createLabeledTextarea, FocusCycler, LabelView, LabeledFieldView, submitHandler, SwitchButtonView, View, ViewCollection, type TextareaView, type FocusableView, Locale, FocusTracker, KeystrokeHandler } from 'ckeditor5';
-import { IconCheck, IconCancel } from "@ckeditor/ckeditor5-icons";
+import IconCheck from "@ckeditor/ckeditor5-icons/theme/icons/check.svg?raw";
+import IconCancel from "@ckeditor/ckeditor5-icons/theme/icons/cancel.svg?raw";
 import { extractDelimiters, hasDelimiters } from '../utils.js';
 import MathView from './mathview.js';
 import '../../theme/mathform.css';

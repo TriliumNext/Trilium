@@ -21,7 +21,7 @@ runs:
   # Certificate setup
   - name: Import Apple certificates
     if: inputs.os == 'macos'
-    uses: apple-actions/import-codesign-certs@v5
+    uses: apple-actions/import-codesign-certs@v6
     with:
       p12-file-base64: ${{ env.APPLE_APP_CERTIFICATE_BASE64 }}
       p12-password: ${{ env.APPLE_APP_CERTIFICATE_PASSWORD }}
@@ -30,7 +30,7 @@ runs:
 
   - name: Install Installer certificate
     if: inputs.os == 'macos'
-    uses: apple-actions/import-codesign-certs@v5
+    uses: apple-actions/import-codesign-certs@v6
     with:
       p12-file-base64: ${{ env.APPLE_INSTALLER_CERTIFICATE_BASE64 }}
       p12-password: ${{ env.APPLE_INSTALLER_CERTIFICATE_PASSWORD }}
@@ -74,7 +74,7 @@ runs:
 
   - name: Update build info
     shell: ${{ inputs.shell }}
-    run: npm run chore:update-build-info
+    run: pnpm run chore:update-build-info
 
   # Critical debugging configuration
   - name: Run electron-forge build with enhanced logging
@@ -86,7 +86,8 @@ runs:
       APPLE_ID_PASSWORD: ${{ env.APPLE_ID_PASSWORD }}
       WINDOWS_SIGN_EXECUTABLE: ${{ env.WINDOWS_SIGN_EXECUTABLE }}
       TRILIUM_ARTIFACT_NAME_HINT: TriliumNotes-${{ github.ref_name }}-${{ inputs.os }}-${{ inputs.arch }}
-    run: pnpm nx --project=desktop electron-forge:make -- --arch=${{ inputs.arch }} --platform=${{ inputs.forge_platform }}
+      TARGET_ARCH: ${{ inputs.arch }}
+    run: pnpm run --filter desktop electron-forge:make --arch=${{ inputs.arch }} --platform=${{ inputs.forge_platform }}
 
   # Add DMG signing step
   - name: Sign DMG

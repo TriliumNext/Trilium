@@ -4,76 +4,19 @@
   "description": "Standalone tool to dump contents of Trilium document.db file into a directory tree of notes",
   "private": true,
   "dependencies": {
-    "better-sqlite3": "^12.0.0",
-    "mime-types": "^3.0.0",
-    "sanitize-filename": "^1.6.3",
-    "tsx": "^4.19.3",
-    "yargs": "^18.0.0"
+    "better-sqlite3": "12.5.0",
+    "mime-types": "3.0.2",
+    "sanitize-filename": "1.6.3",
+    "tsx": "4.21.0",
+    "yargs": "18.0.0"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.11",
-    "@types/mime-types": "^3.0.0",
-    "@types/yargs": "^17.0.33"
+    "@types/better-sqlite3": "7.6.13",
+    "@types/mime-types": "3.0.1",
+    "@types/yargs": "17.0.35"
   },
-  "nx": {
-    "name": "dump-db",
-    "targets": {
-      "build": {
-        "executor": "@nx/esbuild:esbuild",
-        "outputs": [
-          "{options.outputPath}"
-        ],
-        "defaultConfiguration": "production",
-        "options": {
-          "platform": "node",
-          "outputPath": "apps/dump-db/dist",
-          "format": [
-            "cjs"
-          ],
-          "bundle": false,
-          "main": "apps/dump-db/src/main.ts",
-          "tsConfig": "apps/dump-db/tsconfig.app.json",
-          "assets": [
-            "apps/dump-db/src/assets"
-          ],
-          "esbuildOptions": {
-            "sourcemap": true,
-            "outExtension": {
-              ".js": ".js"
-            }
-          }
-        },
-        "configurations": {
-          "development": {},
-          "production": {
-            "esbuildOptions": {
-              "sourcemap": false,
-              "outExtension": {
-                ".js": ".js"
-              }
-            }
-          }
-        }
-      },
-      "serve": {
-        "executor": "@nx/js:node",
-        "defaultConfiguration": "development",
-        "dependsOn": [
-          "build"
-        ],
-        "options": {
-          "buildTarget": "dump-db:build",
-          "runBuildTargetDependencies": false
-        },
-        "configurations": {
-          "development": {
-            "buildTarget": "dump-db:build:development"
-          },
-          "production": {
-            "buildTarget": "dump-db:build:production"
-          }
-        }
-      }
-    }
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "build": "esbuild --platform=node --format=cjs --outdir=dist src/main.ts"
   }
 }

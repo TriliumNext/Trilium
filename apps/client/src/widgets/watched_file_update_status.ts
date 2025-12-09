@@ -2,7 +2,7 @@ import { t } from "../services/i18n.js";
 import NoteContextAwareWidget from "./note_context_aware_widget.js";
 import server from "../services/server.js";
 import fileWatcher from "../services/file_watcher.js";
-import dayjs from "dayjs";
+import { dayjs } from "@triliumnext/commons";
 import type { EventData } from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
 
@@ -73,13 +73,13 @@ export default class WatchedFileUpdateStatusWidget extends NoteContextAwareWidge
 
     async refreshWithNote(note: FNote) {
         const { entityType, entityId } = this.getEntity();
-        if (!entityType || !entityId) {
-            return;
-        }
+        if (!entityType || !entityId) return;
         const status = fileWatcher.getFileModificationStatus(entityType, entityId);
 
         this.$filePath.text(status.filePath);
-        this.$fileLastModified.text(dayjs.unix(status.lastModifiedMs / 1000).format("HH:mm:ss"));
+        if (status.lastModifiedMs) {
+            this.$fileLastModified.text(dayjs.unix(status.lastModifiedMs / 1000).format("HH:mm:ss"));
+        }
     }
 
     getEntity() {

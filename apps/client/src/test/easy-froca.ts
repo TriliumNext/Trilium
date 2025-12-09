@@ -3,6 +3,8 @@ import FNote from "../entities/fnote.js";
 import froca from "../services/froca.js";
 import FAttribute from "../entities/fattribute.js";
 import noteAttributeCache from "../services/note_attribute_cache.js";
+import FBranch from "../entities/fbranch.js";
+import FBlob from "../entities/fblob.js";
 
 type AttributeDefinitions = { [key in `#${string}`]: string; };
 type RelationDefinitions = { [key in `~${string}`]: string; };
@@ -10,6 +12,8 @@ type RelationDefinitions = { [key in `~${string}`]: string; };
 interface NoteDefinition extends AttributeDefinitions, RelationDefinitions {
     id?: string | undefined;
     title: string;
+    children?: NoteDefinition[];
+    content?: string;
 }
 
 /**
@@ -47,11 +51,47 @@ export function buildNote(noteDef: NoteDefinition) {
         blobId: ""
     });
     froca.notes[note.noteId] = note;
+    let childNotePosition = 0;
+
+    // Manage content.
+    const content = noteDef.content ?? "";
+    note.getContent = async () => content;
+
+    const blob = new FBlob({
+        blobId: utils.randomString(10),
+        content,
+        contentLength: content.length,
+        dateModified: new Date().toISOString(),
+        utcDateModified: new Date().toISOString()
+    });
+    note.getBlob = async () => blob;
+
+    // Manage children.
+    if (noteDef.children) {
+        for (const childDef of noteDef.children) {
+            const childNote = buildNote(childDef);
+            const branchId = `${note.noteId}_${childNote.noteId}`;
+            const branch = new FBranch(froca, {
+                branchId,
+                noteId: childNote.noteId,
+                parentNoteId: note.noteId,
+                notePosition: childNotePosition,
+                fromSearchNote: false
+            });
+            froca.branches[branchId] = branch;
+            note.addChild(childNote.noteId, branchId, false);
+            childNotePosition += 10;
+        }
+    }
 
     let position = 0;
     for (const [ key, value ] of Object.entries(noteDef)) {
         const attributeId = utils.randomString(12);
-        const name = key.substring(1);
+        let name = key.substring(1);
+        const isInheritable = key.endsWith("(inheritable)");
+        if (isInheritable) {
+            name = name.substring(0, name.length - "(inheritable)".length);
+        }
 
         let attribute: FAttribute | null = null;
         if (key.startsWith("#")) {
@@ -62,7 +102,7 @@ export function buildNote(noteDef: NoteDefinition) {
                 name,
                 value,
                 position,
-                isInheritable: false
+                isInheritable
             });
         }
 
@@ -74,7 +114,7 @@ export function buildNote(noteDef: NoteDefinition) {
                 name,
                 value,
                 position,
-                isInheritable: false
+                isInheritable
             });
         }
 

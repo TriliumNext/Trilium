@@ -15,7 +15,7 @@ import eraseService from "../services/erase.js";
 import sanitizeAttributeName from "./sanitize_attribute_name.js";
 import noteTypesService from "../services/note_types.js";
 import type { BranchRow } from "@triliumnext/commons";
-import type { EntityChange } from "./entity_changes_interface.js";
+import type { EntityChange } from "@triliumnext/commons";
 import becca_loader from "../becca/becca_loader.js";
 const noteTypes = noteTypesService.getNoteTypeNames();
 

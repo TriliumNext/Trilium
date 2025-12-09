@@ -13,12 +13,13 @@
 
     --theme-style: dark;
     --native-titlebar-background: #00000000;
+    --window-background-color-bgfx: transparent; /* When background effects enabled */
 
-    --main-background-color: #272727;
+    --main-background-color: #242424;
     --main-text-color: #ccc;
     --main-border-color: #454545;
     --subtle-border-color: #313131;
-    --dropdown-border-color: #292929;
+    --dropdown-border-color: #404040;
     --dropdown-shadow-opacity: 0.6;
     --dropdown-item-icon-destructive-color: #de6e5b;
     --disabled-tooltip-icon-color: #7fd2ef;
@@ -39,6 +40,9 @@
     --cmd-button-keyboard-shortcut-background: #0000004d;
     --cmd-button-keyboard-shortcut-color: white;
     --cmd-button-disabled-opacity: 0.5;
+
+    --button-group-active-button-background: #ffffff4e;
+    --button-group-active-button-text-color: white;
 
     --icon-button-color: currentColor;
     --icon-button-hover-background: var(--hover-item-background-color);
@@ -89,6 +93,7 @@
 
     --menu-text-color: #e3e3e3;
     --menu-background-color: #222222d9;
+    --menu-background-color-no-backdrop: #1b1b1b;
     --menu-item-icon-color: #8c8c8c;
     --menu-item-disabled-opacity: 0.5;
     --menu-item-keyboard-shortcut-color: #ffffff8f;
@@ -96,6 +101,7 @@
     --menu-item-delimiter-color: #ffffff1c;
     --menu-item-group-header-color: #ffffff91;
     --menu-section-background-color: #fefefe08;
+    --menu-submenu-mobile-background-color: rgba(0, 0, 0, 0.15);
 
     --modal-backdrop-color: #000;
     --modal-shadow-color: rgba(0, 0, 0, .5);
@@ -120,6 +126,8 @@
     --quick-search-focus-border: #80808095;
     --quick-search-focus-background: #ffffff1f;
     --quick-search-focus-color: white;
+    --quick-search-result-content-background: #0000004d;
+    --quick-search-result-highlight-color: #a4d995;
 
     --left-pane-collapsed-border-color: #0009;
     --left-pane-background-color: #1f1f1f;
@@ -144,17 +152,26 @@
     --launcher-pane-vert-button-hover-background: #ffffff1c;
     --launcher-pane-vert-button-hover-shadow: 4px 4px 4px rgba(0, 0, 0, 0.2);
     --launcher-pane-vert-button-focus-outline-color: var(--input-focus-outline-color);
+    --launcher-pane-vert-background-color-bgfx: #00000026; /* When background effects enabled */
 
     --launcher-pane-horiz-border-color: rgb(22, 22, 22);
     --launcher-pane-horiz-background-color: #282828;
-    --launcher-pane-horiz-text-color: #909090;
+    --launcher-pane-horiz-text-color: #b8b8b8;
     --launcher-pane-horiz-button-hover-color: #ffffff;
     --launcher-pane-horiz-button-hover-background: #ffffff1c;
     --launcher-pane-horiz-button-hover-shadow: unset;
     --launcher-pane-horiz-button-focus-outline-color: var(--input-focus-outline-color);
+    --launcher-pane-horiz-background-color-bgfx: #ffffff17; /* When background effects enabled */
+    --launcher-pane-horiz-border-color-bgfx: #00000080; /* When background effects enabled */
+
+    --global-menu-update-available-badge-background-color: #7dbe61;
+    --global-menu-update-available-badge-color: black;
 
     --protected-session-active-icon-color: #8edd8e;
     --sync-status-error-pulse-color: #f47871;
+
+    --center-pane-vert-layout-background-color-bgfx: #0c0c0c69;
+    --center-pane-horiz-layout-background-color-bgfx: #1e1e1ec7;
 
     --right-pane-heading-color: gray;
 
@@ -165,9 +182,10 @@
 
     --tab-close-button-hover-background: #a45353;
     --tab-close-button-hover-color: white;
-
+    
     --active-tab-background-color: #ffffff1c;
     --active-tab-hover-background-color: var(--active-tab-background-color);
+    --active-tab-icon-color: #a9a9a9;
     --active-tab-text-color: #ffffffcd;
     --active-tab-shadow: 3px 3px 6px rgba(0, 0, 0, 0.2), -1px -1px 3px rgba(0, 0, 0, 0.4);
     --active-tab-dragging-shadow: var(--active-tab-shadow), 0 0 20px rgba(0, 0, 0, 0.4);
@@ -181,9 +199,9 @@
     --badge-background-color: #ffffff1a;
     --badge-text-color: var(--muted-text-color);
 
-    --promoted-attribute-card-background-color: var(--card-background-color);
-    --promoted-attribute-card-shadow-color: #000000b3;
-
+    --promoted-attribute-card-background-color: #ffffff21;
+    --promoted-attribute-card-shadow: none;
+    
     --floating-button-shadow-color: #00000080;
     --floating-button-background-color: #494949d2;
     --floating-button-color: var(--button-text-color);
@@ -197,6 +215,8 @@
     --floating-button-hide-button-background: #00000029;
     --floating-button-hide-button-color: #ffffff63;
 
+    --right-pane-background-color: var(--main-background-color);
+    --right-pane-background-color-bgfx: #0c0c0c24; /* Only for the vertical layout */
     --right-pane-item-hover-background: #ffffff26;
     --right-pane-item-hover-color: white;
 
@@ -214,10 +234,9 @@
     --code-block-box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
 
     --card-background-color: #ffffff12;
-    --card-background-hover-color: #3c3c3c;
-    --card-background-press-color: #464646;
-    --card-border-color: #222222;
-    --card-box-shadow: 0 0 12px rgba(0, 0, 0, 0.15);
+    --card-background-hover-color: #ffffff20;
+    --card-border-color: transparent;
+    --card-box-shadow: none;
 
     --calendar-color: var(--menu-text-color);
     --calendar-weekday-labels-color: var(--muted-text-color);
@@ -251,11 +270,35 @@
     --ck-editor-toolbar-button-on-color: white;
     --ck-editor-toolbar-button-on-shadow: 1px 1px 2px rgba(0, 0, 0, .75);
     --ck-editor-toolbar-dropdown-button-open-background: #ffffff14;
+
+    --calendar-coll-event-background-saturation: 25%;
+    --calendar-coll-event-background-lightness: 20%;
+    --calendar-coll-event-background-color: #3c3c3c;
+    --calendar-coll-event-text-color: white;
+    --calendar-coll-event-hover-filter: brightness(1.25);
+    --callendar-coll-event-archived-sripe-color: #00000026;
+    --calendar-coll-today-background-color: #ffffff08;
 }
 
 /*
  * Dark color scheme tweaks
  */
+
+#left-pane .fancytree-node.tinted {
+    --custom-color: var(--dark-theme-custom-color);
+
+    /* The background color of the active item in the note tree.
+     * The --custom-color-hue variable contains the hue of the user-selected note color.
+     * This value is unset for gray tones. */
+    --custom-bg-color: hsl(var(--custom-color-hue), 20%, 33%, 0.4);
+}
+
+:root .reference-link,
+:root .reference-link:hover,
+.ck-content a.reference-link > span,
+.board-note {
+    color: var(--dark-theme-custom-color, inherit);
+}
 
 body ::-webkit-calendar-picker-indicator {
     filter: invert(1);
@@ -267,4 +310,14 @@ body ::-webkit-calendar-picker-indicator {
 
 body .todo-list input[type="checkbox"]:not(:checked):before {
     border-color: var(--muted-text-color) !important;
+}
+
+.quick-edit-dialog-wrapper.with-hue {
+    --modal-background-color: hsl(var(--custom-color-hue), 8.8%, 11.2%);
+    --modal-border-color: hsl(var(--custom-color-hue), 9.4%, 25.1%);
+    --promoted-attribute-card-background-color: hsl(var(--custom-color-hue), 13.2%, 20.8%);
+}
+
+.use-note-color {
+    --custom-color: var(--dark-theme-custom-color);
 }

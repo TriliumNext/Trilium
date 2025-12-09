@@ -9,7 +9,7 @@ import { formatMarkdown, applyHighlighting } from "./utils.js";
 export const TPL = `
 <div class="note-context-chat h-100 w-100 d-flex flex-column">
     <!-- Move validation warning outside the card with better styling -->
-    <div class="provider-validation-warning alert alert-warning m-2 border-left border-warning" style="display: none; padding-left: 15px; border-left: 4px solid #ffc107; background-color: rgba(255, 248, 230, 0.9); font-size: 0.9rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05);"></div>
+    <div class="provider-validation-warning alert alert-warning m-2 border-inline-start border-warning" style="display: none; padding-inline-start: 15px; border-inline-start: 4px solid #ffc107; background-color: rgba(255, 248, 230, 0.9); font-size: 0.9rem; box-shadow: 0 2px 5px rgba(0,0,0,0.05);"></div>
 
     <div class="note-context-chat-container flex-grow-1 overflow-auto p-3">
         <div class="note-context-chat-messages"></div>

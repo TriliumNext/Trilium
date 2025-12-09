@@ -1,4 +1,4 @@
-import { AttributeRow, NoteType } from "./rows.js";
+import { AttachmentRow, AttributeRow, BranchRow, NoteRow, NoteType } from "./rows.js";
 
 type Response = {
     success: true,
@@ -29,7 +29,7 @@ export interface DeleteNotesPreview {
 export interface RevisionItem {
     noteId: string;
     revisionId?: string;
-    dateLastEdited?: string;
+    dateCreated?: string;
     contentLength?: number;
     type: NoteType;
     title: string;
@@ -154,4 +154,134 @@ export interface OpenAiOrAnthropicModelResponse {
         name: string;
         type: string;
     }>;
+}
+
+export type ToggleInParentResponse = {
+    success: true;
+} | {
+    success: false;
+    message: string;
+}
+
+export type EditedNotesResponse = {
+    noteId: string;
+    isDeleted: boolean;
+    title?: string;
+    notePath?: string[] | null;
+}[];
+
+export interface MetadataResponse {
+    dateCreated: string | undefined;
+    utcDateCreated: string;
+    dateModified: string | undefined;
+    utcDateModified: string | undefined;
+}
+
+export interface NoteSizeResponse {
+    noteSize: number;
+}
+
+export interface SubtreeSizeResponse {
+    subTreeNoteCount: number;
+    subTreeSize: number;
+}
+
+export interface SimilarNote {
+    score: number;
+    notePath: string[];
+    noteId: string;
+}
+
+export type SimilarNoteResponse = (SimilarNote[] | undefined);
+
+export type SaveSearchNoteResponse = CloneResponse;
+
+export interface CloneResponse {
+    success: boolean;
+    message?: string;
+    branchId?: string;
+    notePath?: string;
+}
+
+export interface ConvertToAttachmentResponse {
+    attachment: AttachmentRow;
+}
+
+export interface ConvertAttachmentToNoteResponse {
+    note: NoteRow;
+    branch: BranchRow;
+}
+
+export type SaveSqlConsoleResponse = CloneResponse;
+
+export interface BacklinkCountResponse {
+    count: number;
+}
+
+export type BacklinksResponse = ({
+    noteId: string;
+    relationName: string;
+} | {
+    noteId: string;
+    excerpts: string[]
+})[];
+
+
+export type SqlExecuteResults = (object[] | object)[];
+
+export interface SqlExecuteResponse {
+    success: boolean;
+    error?: string;
+    results: SqlExecuteResults;
+}
+
+export interface CreateChildrenResponse {
+    note: NoteRow;
+    branch: BranchRow;
+}
+
+export interface SchemaResponse {
+    name: string;
+    columns: {
+        name: string;
+        type: string;
+    }[];
+}
+
+export interface RelationMapRelation {
+    name: string;
+    attributeId: string;
+    sourceNoteId: string;
+    targetNoteId: string;
+}
+
+export interface RelationMapPostResponse {
+    noteTitles: Record<string, string>;
+    relations: RelationMapRelation[];
+    inverseRelations: Record<string, string>;
+}
+
+export interface NoteMapLink {
+    key: string;
+    sourceNoteId: string;
+    targetNoteId: string;
+    name: string;
+}
+
+export interface NoteMapPostResponse {
+    notes: string[];
+    links: NoteMapLink[];
+    noteIdToDescendantCountMap: Record<string, number>;
+}
+
+export interface UpdateAttributeResponse {
+    attributeId: string;
+}
+
+export interface RenderMarkdownResponse {
+    htmlContent: string;
+}
+
+export interface ToMarkdownResponse {
+    markdownContent: string;
 }

@@ -13,6 +13,8 @@ import sql from "../../services/sql.js";
 import ws from "../../services/ws.js";
 import etapiTokenService from "../../services/etapi_tokens.js";
 import type { Request } from "express";
+import totp from "../../services/totp";
+import recoveryCodeService from "../../services/encryption/recovery_codes";
 
 /**
  * @swagger
@@ -161,9 +163,16 @@ function touchProtectedSession() {
 
 function token(req: Request) {
     const password = req.body.password;
+    const submittedTotpToken = req.body.totpToken;
+
+    if (totp.isTotpEnabled()) {
+        if (!verifyTOTP(submittedTotpToken)) {
+            return [401, "Incorrect credential"];
+        }
+    }
 
     if (!passwordEncryptionService.verifyPassword(password)) {
-        return [401, "Incorrect password"];
+        return [401, "Incorrect credential"];
     }
 
     // for backwards compatibility with Sender which does not send the name
@@ -172,6 +181,14 @@ function token(req: Request) {
     const { authToken } = etapiTokenService.createToken(tokenName);
 
     return { token: authToken };
+}
+
+function verifyTOTP(submittedTotpToken: string) {
+    if (totp.validateTOTP(submittedTotpToken)) return true;
+
+    const recoveryCodeValidates = recoveryCodeService.verifyRecoveryCode(submittedTotpToken);
+
+    return recoveryCodeValidates;
 }
 
 export default {

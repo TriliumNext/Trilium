@@ -1,5 +1,4 @@
 import { OptionDefinitions } from "@triliumnext/commons";
-import FormGroup from "../../../react/FormGroup";
 import FormTextBox from "../../../react/FormTextBox";
 import FormSelect from "../../../react/FormSelect";
 import { useEffect, useMemo, useState } from "preact/hooks";

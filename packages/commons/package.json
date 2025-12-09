@@ -1,57 +1,21 @@
 {
   "name": "@triliumnext/commons",
-  "version": "0.98.0",
+  "version": "0.100.0",
   "description": "Shared library between the clients (e.g. browser, Electron) and the server, mostly for type definitions and utility methods.",
   "private": true,
   "type": "module",
-  "main": "./dist/main.js",
-  "module": "./dist/main.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    "./package.json": "./package.json",
-    ".": {
-      "development": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "import": "./dist/main.js",
-      "default": "./dist/main.js"
-    }
-  },
+  "main": "./src/index.ts",
   "license": "AGPL-3.0-only",
   "author": {
     "name": "Trilium Notes Team",
     "email": "contact@eliandoran.me",
-    "url": "https://github.com/TriliumNext/Notes"
+    "url": "https://triliumnotes.org"
   },
-  "nx": {
-    "name": "commons",
-    "sourceRoot": "packages/commons/src",
-    "targets": {
-      "build": {
-        "executor": "@nx/esbuild:esbuild",
-        "outputs": [
-          "{options.outputPath}"
-        ],
-        "defaultConfiguration": "production",
-        "options": {
-          "main": "packages/commons/src/index.ts",
-          "outputPath": "packages/commons/dist",
-          "outputFileName": "main.js",
-          "tsConfig": "packages/commons/tsconfig.lib.json",
-          "platform": "node",
-          "format": [
-            "esm"
-          ],
-          "declarationRootDir": "packages/commons/src"
-        },
-        "configurations": {
-          "development": {
-            "minify": false
-          },
-          "production": {
-            "minify": true
-          }
-        }
-      }
-    }
+  "scripts": {
+    "test": "vitest"
+  },
+  "dependencies": {
+    "dayjs": "1.11.19",
+    "dayjs-plugin-utc": "0.1.2"
   }
 }

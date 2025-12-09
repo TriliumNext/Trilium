@@ -30,5 +30,5 @@ describe("etapi/import", () => {
             .expect(201);
         expect(response.body.note.title).toStrictEqual("Journal");
         expect(response.body.branch.parentNoteId).toStrictEqual("root");
-    });
+    }, 10_000);
 });

@@ -9,6 +9,7 @@ describe("Share API test", () => {
     let cannotSetHeadersCount = 0;
 
     beforeAll(async () => {
+        vi.useFakeTimers();
         const buildApp = (await import("../app.js")).default;
         app = await buildApp();
         app.use((err: unknown, req: Request, res: Response, next: NextFunction) => {

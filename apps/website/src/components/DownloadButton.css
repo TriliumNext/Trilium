@@ -1,0 +1,27 @@
+a.download-button {
+    display: none;    
+    align-items: center;
+    justify-content: center;
+    gap: 1em;
+
+    @media (min-width: 720px) {
+        display: flex !important;
+    }
+
+    .platform {
+        font-size: 0.75em;
+        opacity: 0.75;
+    }
+
+    &.big {
+        padding: 0.5em 3.5em;
+        margin: 1em 0;
+        gap: m;
+        text-align: left;
+
+        .platform {
+            display: block;
+        }
+    }
+}
+

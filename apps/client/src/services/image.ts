@@ -1,7 +1,7 @@
 import { t } from "./i18n.js";
 import toastService, { showError } from "./toast.js";
 
-function copyImageReferenceToClipboard($imageWrapper: JQuery<HTMLElement>) {
+export function copyImageReferenceToClipboard($imageWrapper: JQuery<HTMLElement>) {
     try {
         $imageWrapper.attr("contenteditable", "true");
         selectImage($imageWrapper.get(0));

@@ -1,0 +1,48 @@
+{
+    "name": "@triliumnext/split.js",
+    "version": "1.6.5",
+    "description": "2kb unopinionated utility for resizeable split views",
+    "main": "src/split.js",
+    "types": "index.d.ts",
+    "repository": "https://github.com/nathancahill/split",
+    "keywords": [
+        "css",
+        "split",
+        "flexbox",
+        "tiny",
+        "split-layout"
+    ],
+    "author": "Nathan Cahill <nathan@nathancahill.com>",
+    "license": "MIT",
+    "homepage": "https://split.js.org/",
+    "scripts": {
+        "test": "pnpm build && karma start",
+        "prepublish": "rollup -c",
+        "build": "rollup -c && npm run size",
+        "watch": "rollup -cw",
+        "size": "echo \"gzip size: $(gzip-size --raw $npm_package_minified_main) bytes\"",
+        "saucelabs": "yarn run test --browsers sl_firefox_latest,sl_chrome_latest,sl_safari,sl_edge,sl_ie_11,sl_ie_10"
+    },
+    "files": [
+        "index.d.ts",
+        "dist"
+    ],
+    "browserslist": [
+        "Chrome >= 22",
+        "Firefox >= 6",
+        "Opera >= 15",
+        "Safari >= 6.2",
+        "IE >= 9"
+    ],
+    "collective": {
+        "type": "opencollective",
+        "url": "https://opencollective.com/splitjs"
+    },
+    "devDependencies": {
+        "@rollup/plugin-buble": "1.0.3",
+        "karma": "6.4.4",
+        "karma-chrome-launcher": "3.2.0",
+        "karma-firefox-launcher": "2.1.3",
+        "karma-jasmine": "5.1.0"
+    }
+}

@@ -49,7 +49,14 @@ class="admonition warning">
       the <code>config.ini</code> file (check&nbsp;<a class="reference-link" href="#root/_help_Gzjqa934BdH4">Configuration (config.ini or environment variables)</a>&nbsp;for
       more information).
       <ol>
-        <li>You can also setup through environment variables (<code>TRILIUM_OAUTH_BASE_URL</code>, <code>TRILIUM_OAUTH_CLIENT_ID</code> and <code>TRILIUM_OAUTH_CLIENT_SECRET</code>).</li>
+        <li>You can also setup through environment variables:
+          <ul>
+            <li>Standard: <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL</code>, <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID</code>, <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET</code>
+            </li>
+            <li>Legacy (still supported): <code>TRILIUM_OAUTH_BASE_URL</code>, <code>TRILIUM_OAUTH_CLIENT_ID</code>, <code>TRILIUM_OAUTH_CLIENT_SECRET</code>
+            </li>
+          </ul>
+        </li>
         <li><code>oauthBaseUrl</code> should be the link of your Trilium instance server,
           for example, <code>https://&lt;your-trilium-domain&gt;</code>.</li>
       </ol>
@@ -64,9 +71,15 @@ class="admonition warning">
     <p>The default OAuth issuer is Google. To use other services such as Authentik
       or Auth0, you can configure the settings via <code>oauthIssuerBaseUrl</code>, <code>oauthIssuerName</code>,
       and <code>oauthIssuerIcon</code> in the <code>config.ini</code> file. Alternatively,
-      these values can be set using environment variables: <code>TRILIUM_OAUTH_ISSUER_BASE_URL</code>, <code>TRILIUM_OAUTH_ISSUER_NAME</code>,
-      and <code>TRILIUM_OAUTH_ISSUER_ICON</code>. <code>oauthIssuerName</code> and <code>oauthIssuerIcon</code> are
-      required for displaying correct issuer information at the Login page.</p>
+      these values can be set using environment variables:</p>
+    <ul>
+      <li>Standard: <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL</code>, <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME</code>, <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON</code>
+      </li>
+      <li>Legacy (still supported): <code>TRILIUM_OAUTH_ISSUER_BASE_URL</code>, <code>TRILIUM_OAUTH_ISSUER_NAME</code>, <code>TRILIUM_OAUTH_ISSUER_ICON</code>
+      </li>
+    </ul>
+    <p><code>oauthIssuerName</code> and <code>oauthIssuerIcon</code> are required
+      for displaying correct issuer information at the Login page.</p>
   </aside>
   <h4>Authentik</h4>
   <p>If you don’t already have a running Authentik instance, please follow

@@ -14,7 +14,7 @@ import htmlSanitizer from "../html_sanitizer.js";
 import type { File } from "./common.js";
 import type { NoteType } from "@triliumnext/commons";
 
-function importSingleFile(taskContext: TaskContext, file: File, parentNote: BNote) {
+function importSingleFile(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     const mime = mimeService.getMime(file.originalname) || file.mimetype;
 
     if (taskContext?.data?.textImportedAsText) {
@@ -42,7 +42,7 @@ function importSingleFile(taskContext: TaskContext, file: File, parentNote: BNot
     return importFile(taskContext, file, parentNote);
 }
 
-function importImage(file: File, parentNote: BNote, taskContext: TaskContext) {
+function importImage(file: File, parentNote: BNote, taskContext: TaskContext<"importNotes">) {
     if (typeof file.buffer === "string") {
         throw new Error("Invalid file content for image.");
     }
@@ -53,7 +53,7 @@ function importImage(file: File, parentNote: BNote, taskContext: TaskContext) {
     return note;
 }
 
-function importFile(taskContext: TaskContext, file: File, parentNote: BNote) {
+function importFile(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     const originalName = file.originalname;
 
     const { note } = noteService.createNewNote({
@@ -72,7 +72,7 @@ function importFile(taskContext: TaskContext, file: File, parentNote: BNote) {
     return note;
 }
 
-function importCodeNote(taskContext: TaskContext, file: File, parentNote: BNote) {
+function importCodeNote(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     const title = getNoteTitle(file.originalname, !!taskContext.data?.replaceUnderscoresWithSpaces);
     const content = processStringOrBuffer(file.buffer);
     const detectedMime = mimeService.getMime(file.originalname) || file.mimetype;
@@ -97,7 +97,7 @@ function importCodeNote(taskContext: TaskContext, file: File, parentNote: BNote)
     return note;
 }
 
-function importCustomType(taskContext: TaskContext, file: File, parentNote: BNote, type: NoteType, mime: string) {
+function importCustomType(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote, type: NoteType, mime: string) {
     const title = getNoteTitle(file.originalname, !!taskContext.data?.replaceUnderscoresWithSpaces);
     const content = processStringOrBuffer(file.buffer);
 
@@ -115,7 +115,7 @@ function importCustomType(taskContext: TaskContext, file: File, parentNote: BNot
     return note;
 }
 
-function importPlainText(taskContext: TaskContext, file: File, parentNote: BNote) {
+function importPlainText(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     const title = getNoteTitle(file.originalname, !!taskContext.data?.replaceUnderscoresWithSpaces);
     const plainTextContent = processStringOrBuffer(file.buffer);
     const htmlContent = convertTextToHtml(plainTextContent);
@@ -150,7 +150,7 @@ function convertTextToHtml(text: string) {
     return text;
 }
 
-function importMarkdown(taskContext: TaskContext, file: File, parentNote: BNote) {
+function importMarkdown(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     const title = getNoteTitle(file.originalname, !!taskContext.data?.replaceUnderscoresWithSpaces);
 
     const markdownContent = processStringOrBuffer(file.buffer);
@@ -174,7 +174,7 @@ function importMarkdown(taskContext: TaskContext, file: File, parentNote: BNote)
     return note;
 }
 
-function importHtml(taskContext: TaskContext, file: File, parentNote: BNote) {
+function importHtml(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     let content = processStringOrBuffer(file.buffer);
 
     // Try to get title from HTML first, fall back to filename
@@ -202,7 +202,7 @@ function importHtml(taskContext: TaskContext, file: File, parentNote: BNote) {
     return note;
 }
 
-function importAttachment(taskContext: TaskContext, file: File, parentNote: BNote) {
+function importAttachment(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     const mime = mimeService.getMime(file.originalname) || file.mimetype;
 
     if (mime.startsWith("image/") && typeof file.buffer !== "string") {

@@ -13,6 +13,14 @@ Note that this feature is meant for generally small snippets of code. For larger
 *   Type ` ``` ` (as in Markdown).
     *   Note that it's not possible to specify the language, as it will default to the last selected language.
 
+## Exiting out of the code block
+
+*   To exit out of a code block and enter a normal paragraph, move the cursor at the end of the code block and press <kbd>Enter</kbd> twice.
+*   Similarly, to insert a paragraph above the note block, move the cursor at the beginning of the code block and press <kbd>Enter</kbd> twice.
+
+> [!NOTE]
+> If you've pasted a code block with a more complex HTML structure, exiting out of the code block by pressing <kbd>Enter</kbd> multiple times might not work. In that case the best approach is to delete the code block entirely and use <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>V</kbd> (paste as plain text).
+
 ## Syntax highlighting & color schemes
 
 Since TriliumNext v0.90.12, Trilium will try to offer syntax highlighting to the code block. Note that the syntax highlighting mechanism is slightly different than the one in <a class="reference-link" href="../../Code.md">Code</a> notes as different technologies are involved.

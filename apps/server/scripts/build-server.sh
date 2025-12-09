@@ -20,10 +20,10 @@ fi
 # Debug output
 echo "Selected Arch: $ARCH"
 
-# Set Node.js version and architecture-specific filename
-NODE_VERSION=22.16.0
-
 script_dir=$(realpath $(dirname $0))
+
+# Set Node.js version and architecture-specific filename
+NODE_VERSION=$(cat "../../.nvmrc")
 BUILD_DIR="$script_dir/../dist"
 DIST_DIR="$script_dir/../out"
 

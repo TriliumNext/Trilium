@@ -1,4 +1,4 @@
-import ckeditor from './../theme/icons/math.svg';
+import ckeditor from './../theme/icons/math.svg?raw';
 import './augmentation.js';
 import "../theme/mathform.css";
 

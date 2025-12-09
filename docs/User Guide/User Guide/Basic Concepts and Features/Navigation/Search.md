@@ -13,7 +13,7 @@ Note search enables you to find notes by searching for text in the title, conten
 To search for notes, click on the magnifying glass icon on the toolbar or press the keyboard [shortcut](../Keyboard%20Shortcuts.md).
 
 1.  Set the text to search for in the _Search string_ field.
-    1.  Apart from searching for words ad-literam, there is also the possibility to search for attributes or properties of notes.
+    1.  Apart from searching for words literally, there is also the possibility to search for attributes or properties of notes.
     2.  See the examples below for more information.
 2.  To limit the search to a note and its sub-children, set a note in _Ancestor_.
     1.  This value is also pre-filled if the search is triggered from a [hoisted note](Note%20Hoisting.md) or a [workspace](Workspaces.md).

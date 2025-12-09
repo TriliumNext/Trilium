@@ -6,10 +6,11 @@
     <meta id="syncInProgress" content="<%= syncInProgress ? 1 : 0 %>" />
     <title><%= t("setup.title") %></title>
 
-    <% // TriliumNextTODO: move the css file to ${assetPath}/stylesheets/  %>
-    <link rel="stylesheet" href="<%= appPath %>/bootstrap.css">
-
     <style>
+        body {
+            /* Prevent the content from being rendered before the main stylesheet loads */
+            display: none;
+        }
         .lds-ring {
             display: inline-block;
             position: relative;
@@ -46,8 +47,9 @@
             }
         }
     </style>
+    <script src="<%= appPath %>/runtime.js" crossorigin type="module"></script>
 </head>
-<body>
+<body lang="<%= currentLocale.id %>" dir="<%= currentLocale.rtl ? 'rtl' : 'ltr' %>">
 <noscript><%= t("javascript-required") %></noscript>
 <div class="container">
     <div id="setup-dialog" class="col-md-12 col-lg-8 col-xl-6 mx-auto" style="padding-top: 25px; font-size: larger; display: none;">
@@ -168,7 +170,6 @@
 <!-- Required for correct loading of scripts in Electron -->
 <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
 
-<script src="<%= appPath %>/runtime.js" crossorigin type="module"></script>
 <script src="<%= appPath %>/setup.js" crossorigin type="module"></script>
 <link href="<%= assetPath %>/stylesheets/theme-light.css" rel="stylesheet" />
 <link href="<%= assetPath %>/stylesheets/theme-next.css" rel="stylesheet" />

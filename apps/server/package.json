@@ -1,18 +1,51 @@
 {
   "name": "@triliumnext/server",
-  "version": "0.98.0",
+  "version": "0.100.0",
   "description": "The server-side component of TriliumNext, which exposes the client via the web, allows for sync and provides a REST API for both internal and external use.",
   "private": true,
+  "main": "./src/main.ts",
+  "scripts": {
+    "dev": "cross-env NODE_ENV=development TRILIUM_ENV=dev TRILIUM_DATA_DIR=data TRILIUM_RESOURCE_DIR=src tsx watch --ignore '../client/node_modules/.vite-temp' ./src/main.ts",
+    "start-no-dir": "cross-env NODE_ENV=development TRILIUM_ENV=dev TRILIUM_RESOURCE_DIR=src tsx watch --ignore '../client/node_modules/.vite-temp' ./src/main.ts",
+    "edit-integration-db": "cross-env NODE_ENV=development TRILIUM_PORT=8086 TRILIUM_ENV=dev TRILIUM_DATA_DIR=spec/db TRILIUM_INTEGRATION_TEST=edit TRILIUM_RESOURCE_DIR=src tsx watch --ignore '../client/node_modules/.vite-temp' ./src/main.ts",
+    "build": "tsx scripts/build.ts",
+    "package": "pnpm build && bash scripts/build-server.sh",
+    "test": "vitest",
+    "coverage": "vitest --coverage",
+    "test-build": "vitest --config vitest.build.config.mts",
+    "start-prod": "cross-env TRILIUM_DATA_DIR=data pnpm start-prod-no-dir",
+    "start-prod-no-dir": "pnpm build && cross-env TRILIUM_ENV=production TRILIUM_PORT=8082 node dist/main.cjs",
+    "circular-deps": "dpdm -T src/**/*.ts --tree=false --warning=false --skip-dynamic-imports=circular",
+    "docker-build-debian": "pnpm build && docker build . -t triliumnext-debian -f Dockerfile",
+    "docker-build-alpine": "pnpm build && docker build . -t triliumnext-alpine -f Dockerfile.alpine",
+    "docker-build-rootless-debian": "pnpm build && docker build . -t triliumnext-rootless-debian -f Dockerfile.rootless",
+    "docker-build-rootless-alpine": "pnpm build && docker build . -t triliumnext-rootless-alpine -f Dockerfile.alpine.rootless",
+    "docker-start-debian": "pnpm docker-build-debian && docker run -p 8081:8080 triliumnext-debian",
+    "docker-start-alpine": "pnpm docker-build-alpine && docker run -p 8081:8080 triliumnext-alpine",
+    "docker-start-rootless-debian": "pnpm docker-build-rootless-debian && docker run -p 8081:8080 triliumnext-rootless-debian",
+    "docker-start-rootless-alpine": "pnpm docker-build-rootless-alpine && docker run -p 8081:8080 triliumnext-rootless-alpine",
+    "generate-document": "cross-env TRILIUM_ENV=dev TRILIUM_DATA_DIR=data TRILIUM_RESOURCE_DIR=src tsx ./scripts/generate_document.ts",
+    "proxy-traefik": "docker run --name trilium-traefik --rm --network=host -v ./docker/traefik/traefik.yml:/etc/traefik/traefik.yml -v ./docker/traefik/dynamic:/etc/traefik/dynamic traefik:latest"
+  },
   "dependencies": {
-    "better-sqlite3": "12.2.0"
+    "better-sqlite3": "12.5.0",
+    "html-to-text": "9.0.5",
+    "node-html-parser": "7.0.1"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "0.71.2",
+    "@braintree/sanitize-url": "7.1.1",
     "@electron/remote": "2.1.3",
-    "@types/archiver": "6.0.3",
+    "@preact/preset-vite": "2.10.2",
+    "@triliumnext/commons": "workspace:*",
+    "@triliumnext/express-partial-content": "workspace:*",
+    "@triliumnext/highlightjs": "workspace:*",
+    "@triliumnext/turndown-plugin-gfm": "workspace:*",
+    "@types/archiver": "7.0.0",
     "@types/better-sqlite3": "7.6.13",
     "@types/cls-hooked": "4.3.9",
     "@types/compression": "1.8.1",
-    "@types/cookie-parser": "1.4.9",
+    "@types/cookie-parser": "1.4.10",
     "@types/debounce": "1.2.4",
     "@types/ejs": "3.1.5",
     "@types/escape-html": "1.0.4",
@@ -21,356 +54,82 @@
     "@types/fs-extra": "11.0.4",
     "@types/html": "1.0.4",
     "@types/ini": "4.1.1",
-    "@types/js-yaml": "4.0.9",
-    "@types/jsdom": "21.1.7",
     "@types/mime-types": "3.0.1",
     "@types/multer": "2.0.0",
     "@types/safe-compare": "1.1.2",
     "@types/sanitize-html": "2.16.0",
     "@types/sax": "1.2.7",
     "@types/serve-favicon": "2.5.7",
-    "@types/serve-static": "1.15.8",
-    "@types/session-file-store": "1.2.5",
+    "@types/serve-static": "2.2.0",
     "@types/stream-throttle": "0.1.4",
     "@types/supertest": "6.0.3",
-    "@types/swagger-ui-express": "4.1.8",
     "@types/tmp": "0.2.6",
-    "@types/turndown": "5.0.5",
+    "@types/turndown": "5.0.6",
     "@types/ws": "8.18.1",
     "@types/xml2js": "0.4.14",
-    "express-http-proxy": "2.1.1",
-    "@anthropic-ai/sdk": "0.60.0",
-    "@braintree/sanitize-url": "7.1.1",
-    "@triliumnext/commons": "workspace:*",
-    "@triliumnext/express-partial-content": "workspace:*",
-    "@triliumnext/turndown-plugin-gfm": "workspace:*",
     "archiver": "7.0.1",
     "async-mutex": "0.5.0",
-    "axios": "1.11.0",
+    "axios": "1.13.2",
     "bindings": "1.5.0",
-    "chardet": "2.1.0",
+    "bootstrap": "5.3.8",
+    "chardet": "2.1.1",
     "cheerio": "1.1.2",
-    "chokidar": "4.0.3",
+    "chokidar": "5.0.0",
     "cls-hooked": "4.2.2",
     "compression": "1.8.1",
     "cookie-parser": "1.4.7",
     "csrf-csrf": "3.2.2",
-    "dayjs": "1.11.13",
-    "debounce": "2.2.0",
-    "debug": "4.4.1",
+    "debounce": "3.0.0",
+    "debug": "4.4.3",
     "ejs": "3.1.10",
-    "electron": "37.3.1",
+    "electron": "39.2.6",
     "electron-debug": "4.1.0",
     "electron-window-state": "5.0.3",
     "escape-html": "1.0.3",
-    "express": "5.1.0",
-    "express-openid-connect": "^2.17.1",
-    "express-rate-limit": "8.0.1",
+    "express": "5.2.1",
+    "express-http-proxy": "2.1.2",
+    "express-openid-connect": "2.19.3",
+    "express-rate-limit": "8.2.1",
     "express-session": "1.18.2",
     "file-uri-to-path": "2.0.0",
-    "fs-extra": "11.3.1",
+    "fs-extra": "11.3.2",
     "helmet": "8.1.0",
     "html": "1.0.0",
     "html2plaintext": "2.1.4",
     "http-proxy-agent": "7.0.2",
     "https-proxy-agent": "7.0.6",
-    "i18next": "25.4.0",
-    "i18next-fs-backend": "2.6.0",
+    "i18next": "25.7.1",
+    "i18next-fs-backend": "2.6.1",
     "image-type": "6.0.0",
-    "ini": "5.0.0",
+    "ini": "6.0.0",
     "is-animated": "2.0.2",
     "is-svg": "6.1.0",
     "jimp": "1.6.0",
-    "js-yaml": "4.1.0",
-    "jsdom": "26.1.0",
-    "marked": "16.2.0",
-    "mime-types": "3.0.1",
+    "lorem-ipsum": "2.0.8",
+    "marked": "17.0.1",
+    "mime-types": "3.0.2",
     "multer": "2.0.2",
     "normalize-strings": "1.1.1",
-    "ollama": "0.5.17",
-    "openai": "5.12.0",
+    "ollama": "0.6.3",
+    "openai": "6.10.0",
     "rand-token": "1.0.1",
     "safe-compare": "1.1.4",
     "sanitize-filename": "1.6.3",
     "sanitize-html": "2.17.0",
-    "sax": "1.4.1",
+    "sax": "1.4.3",
     "serve-favicon": "2.5.1",
     "stream-throttle": "0.1.3",
     "strip-bom": "5.0.0",
     "striptags": "3.2.0",
     "supertest": "7.1.4",
     "swagger-jsdoc": "6.2.8",
-    "swagger-ui-express": "5.0.1",
-    "time2fa": "^1.3.0",
+    "time2fa": "1.4.2",
     "tmp": "0.2.5",
-    "turndown": "7.2.1",
+    "turndown": "7.2.2",
     "unescape": "1.0.1",
+    "vite": "7.2.6",
     "ws": "8.18.3",
     "xml2js": "0.6.2",
     "yauzl": "3.2.0"
-  },
-  "nx": {
-    "name": "server",
-    "implicitDependencies": [
-      "share-theme"
-    ],
-    "targets": {
-      "serve": {
-        "executor": "@nx/js:node",
-        "dependsOn": [
-          {
-            "projects": [
-              "client"
-            ],
-            "target": "serve"
-          },
-          "build-without-client"
-        ],
-        "continuous": true,
-        "options": {
-          "buildTarget": "server:build-without-client:development",
-          "runBuildTargetDependencies": false
-        }
-      },
-      "serve-nodir": {
-        "executor": "@nx/js:node",
-        "dependsOn": [
-          {
-            "projects": [
-              "client"
-            ],
-            "target": "serve"
-          },
-          "build-without-client"
-        ],
-        "continuous": true,
-        "options": {
-          "buildTarget": "server:build-without-client:development",
-          "runBuildTargetDependencies": false
-        }
-      },
-      "edit-integration-db": {
-        "executor": "@nx/js:node",
-        "dependsOn": [
-          {
-            "projects": [
-              "client"
-            ],
-            "target": "serve"
-          },
-          "build-without-client"
-        ],
-        "continuous": true,
-        "options": {
-          "buildTarget": "server:build-without-client:development",
-          "runBuildTargetDependencies": false
-        }
-      },
-      "package": {
-        "dependsOn": [
-          "build"
-        ],
-        "command": "bash apps/server/scripts/build-server.sh"
-      },
-      "start-prod": {
-        "dependsOn": [
-          "build"
-        ],
-        "command": "node apps/server/dist/main.cjs"
-      },
-      "docker-build": {
-        "dependsOn": [
-          "build"
-        ],
-        "options": {
-          "cwd": "{projectRoot}"
-        },
-        "executor": "nx:run-commands",
-        "defaultConfiguration": "alpine",
-        "configurations": {
-          "debian": {
-            "command": "docker build . -t triliumnext-debian -f Dockerfile"
-          },
-          "alpine": {
-            "command": "docker build . -t triliumnext-alpine -f Dockerfile.alpine"
-          },
-          "rootless-debian": {
-            "command": "docker build . -t triliumnext-rootless-debian -f Dockerfile.rootless"
-          },
-          "rootless-alpine": {
-            "command": "docker build . -t triliumnext-rootless-alpine -f Dockerfile.alpine.rootless"
-          }
-        }
-      },
-      "docker-start": {
-        "dependsOn": [
-          "docker-build"
-        ],
-        "executor": "nx:run-commands",
-        "defaultConfiguration": "alpine",
-        "configurations": {
-          "debian": {
-            "command": "docker run -p 8081:8080 triliumnext-debian"
-          },
-          "alpine": {
-            "command": "docker run -p 8081:8080 triliumnext-alpine"
-          },
-          "rootless-debian": {
-            "command": "docker run -p 8081:8080 triliumnext-rootless-debian"
-          },
-          "rootless-alpine": {
-            "command": "docker run -p 8081:8080 triliumnext-rootless-alpine"
-          }
-        }
-      },
-      "build-without-client": {
-        "executor": "@nx/esbuild:esbuild",
-        "outputs": [
-          "{options.outputPath}"
-        ],
-        "options": {
-          "main": "apps/server/src/main.ts",
-          "outputPath": "apps/server/dist",
-          "outputFileName": "main.js",
-          "tsConfig": "apps/server/tsconfig.app.json",
-          "platform": "node",
-          "format": [
-            "cjs"
-          ],
-          "esbuildOptions": {
-            "loader": {
-              ".css": "text",
-              ".ejs": "text"
-            }
-          },
-          "declarationRootDir": "apps/server/src",
-          "minify": false,
-          "sourcemap": true,
-          "assets": [
-            {
-              "glob": "**/*",
-              "input": "apps/server/src/assets",
-              "output": "assets"
-            },
-            {
-              "glob": "**/*",
-              "input": "packages/share-theme/src/templates",
-              "output": "share-theme/templates"
-            }
-          ]
-        }
-      },
-      "build": {
-        "executor": "@nx/esbuild:esbuild",
-        "outputs": [
-          "{options.outputPath}"
-        ],
-        "dependsOn": [
-          "^build",
-          "client:build"
-        ],
-        "defaultConfiguration": "production",
-        "configurations": {
-          "production": {
-            "minify": true,
-            "sourcemap": false
-          },
-          "development": {
-            "minify": false,
-            "sourcemap": true
-          }
-        },
-        "options": {
-          "main": "apps/server/src/main.ts",
-          "outputPath": "apps/server/dist",
-          "tsConfig": "apps/server/tsconfig.app.json",
-          "platform": "node",
-          "external": [
-            "electron",
-            "@electron/remote",
-            "better-sqlite3",
-            "./xhr-sync-worker.js"
-          ],
-          "format": [
-            "cjs"
-          ],
-          "declarationRootDir": "apps/server/src",
-          "thirdParty": true,
-          "declaration": false,
-          "esbuildOptions": {
-            "splitting": false,
-            "loader": {
-              ".css": "text",
-              ".ejs": "text"
-            }
-          },
-          "additionalEntryPoints": [
-            "apps/server/src/docker_healthcheck.ts"
-          ],
-          "assets": [
-            {
-              "glob": "**/*",
-              "input": "apps/server/src/assets",
-              "output": "assets"
-            },
-            {
-              "glob": "**/*",
-              "input": "packages/share-theme/src/templates",
-              "output": "share-theme/templates"
-            },
-            {
-              "glob": "**/*",
-              "input": "apps/client/dist",
-              "output": "public",
-              "ignore": [
-                "webpack-stats.json"
-              ]
-            },
-            {
-              "glob": "**/*",
-              "input": "apps/server/node_modules/better-sqlite3",
-              "output": "node_modules/better-sqlite3"
-            },
-            {
-              "glob": "**/*",
-              "input": "apps/server/node_modules/bindings",
-              "output": "node_modules/bindings"
-            },
-            {
-              "glob": "**/*",
-              "input": "apps/server/node_modules/file-uri-to-path",
-              "output": "node_modules/file-uri-to-path"
-            },
-            {
-              "glob": "xhr-sync-worker.js",
-              "input": "apps/server/node_modules/jsdom/lib/jsdom/living/xhr",
-              "output": ""
-            }
-          ]
-        }
-      },
-      "test-build": {
-        "dependsOn": [
-          "build"
-        ],
-        "command": "vitest --config {projectRoot}/vitest.build.config.mts"
-      },
-      "circular-deps": {
-        "command": "pnpx dpdm -T {projectRoot}/src/**/*.ts --tree=false --warning=false --skip-dynamic-imports=circular"
-      }
-    }
-  },
-  "exports": {
-    "./package.json": "./package.json",
-    "./src/*": "./src/*",
-    ".": {
-      "development": "./src/main.ts",
-      "types": "./dist/main.d.ts",
-      "import": "./dist/main.js",
-      "default": "./dist/main.js"
-    }
-  },
-  "types": "./dist/main.d.ts",
-  "module": "./dist/main.js",
-  "main": "./dist/main.js"
+  }
 }

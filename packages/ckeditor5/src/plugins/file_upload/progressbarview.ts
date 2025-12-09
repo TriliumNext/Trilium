@@ -1,4 +1,4 @@
-import cancelIcon from '@ckeditor/ckeditor5-core/theme/icons/cancel.svg';
+import cancelIcon from '@ckeditor/ckeditor5-core/theme/icons/cancel.svg?raw';
 import { ButtonView, Locale, toUnit, View } from 'ckeditor5';
 
 const toPx = toUnit('%');

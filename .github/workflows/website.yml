@@ -1,0 +1,51 @@
+name: Deploy website
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/website/**"
+
+  pull_request:
+    paths:
+      - "apps/website/**"
+
+  release:
+    types: [ released ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    name: Build & deploy website
+
+    permissions:
+      contents: read
+      deployments: write
+      pull-requests: write # For PR preview comments
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - name: Set up node & dependencies
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --filter website --frozen-lockfile
+
+      - name: Build the website
+        run: pnpm website:build
+
+      - name: Deploy
+        uses: ./.github/actions/deploy-to-cloudflare-pages
+        with:
+          project_name: "trilium-homepage"
+          comment_body: "📚 Website preview is ready"
+          production_url: "https://triliumnotes.org"
+          deploy_dir: "apps/website/dist"
+          cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}

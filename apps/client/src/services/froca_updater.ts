@@ -8,6 +8,7 @@ import FAttribute, { type FAttributeRow } from "../entities/fattribute.js";
 import FAttachment, { type FAttachmentRow } from "../entities/fattachment.js";
 import type { default as FNote, FNoteRow } from "../entities/fnote.js";
 import type { EntityChange } from "../server_types.js";
+import type { OptionNames } from "@triliumnext/commons";
 
 async function processEntityChanges(entityChanges: EntityChange[]) {
     const loadResults = new LoadResults(entityChanges);
@@ -30,9 +31,8 @@ async function processEntityChanges(entityChanges: EntityChange[]) {
                     continue; // only noise
                 }
 
-                options.set(attributeEntity.name, attributeEntity.value);
-
-                loadResults.addOption(attributeEntity.name);
+                options.set(attributeEntity.name as OptionNames, attributeEntity.value);
+                loadResults.addOption(attributeEntity.name as OptionNames);
             } else if (ec.entityName === "attachments") {
                 processAttachment(loadResults, ec);
             } else if (ec.entityName === "blobs") {

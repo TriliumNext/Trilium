@@ -6,7 +6,7 @@ import {
 	ELEMENTS,
 	TOOLBAR_COMPONENT_NAME
 } from './constants.js';
-import insertFootnoteIcon from '../theme/icons/insert-footnote.svg';
+import insertFootnoteIcon from '../theme/icons/insert-footnote.svg?raw';
 import { modelQueryElement, modelQueryElementsAll } from './utils.js';
 
 export default class FootnoteUI extends Plugin {

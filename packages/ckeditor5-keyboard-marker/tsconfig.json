@@ -26,6 +26,7 @@
 	"moduleResolution": "NodeNext",
 	"module": "NodeNext",
 	"skipLibCheck": true,
+	"outDir": "out-tsc",
     "typeRoots": [
       "typings",
       "node_modules/@types"

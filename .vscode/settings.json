@@ -5,7 +5,8 @@
     "i18n-ally.keystyle": "nested",
     "i18n-ally.localesPaths": [
         "apps/server/src/assets/translations",
-        "apps/client/src/translations"
+        "apps/client/src/translations",
+        "apps/website/public/translations"
     ],
     "npm.exclude": [
         "**/dist",
@@ -36,5 +37,7 @@
         "apps/server/src/assets/doc_notes/**": true,
         "apps/edit-docs/demo/**": true
     },
-    "nxConsole.generateAiAgentRules": true
+    "eslint.rules.customizations": [
+        { "rule": "*", "severity": "warn" }
+    ]
 }

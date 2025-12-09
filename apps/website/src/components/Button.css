@@ -1,0 +1,20 @@
+a.button {
+    display: block;
+    background-color: var(--brand-1);
+    padding: 0.5em 1em;
+    border-radius: 6px;
+    color: var(--brand-foreground-color);
+    text-decoration: none;
+    text-align: center;    
+    box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.15);
+
+    &.outline {
+        border: 1px solid var(--brand-1);
+        color: var(--brand-1);
+        background-color: transparent;
+    }
+
+    .text {
+        vertical-align: middle;
+    }
+}

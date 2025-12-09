@@ -1,17 +1,7 @@
 import sanitizeHtml from "sanitize-html";
 import { sanitizeUrl } from "@braintree/sanitize-url";
 import optionService from "./options.js";
-import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
-
-// Be consistent with `ALLOWED_PROTOCOLS` in `src\public\app\services\link.js`
-// TODO: Deduplicate with client once we can.
-export const ALLOWED_PROTOCOLS = [
-    'http', 'https', 'ftp', 'ftps', 'mailto', 'data', 'evernote', 'file', 'facetime', 'gemini', 'git',
-    'gopher', 'imap', 'irc', 'irc6', 'jabber', 'jar', 'lastfm', 'ldap', 'ldaps', 'magnet', 'message',
-    'mumble', 'nfs', 'onenote', 'pop', 'rmi', 's3', 'sftp', 'skype', 'sms', 'spotify', 'steam', 'svn', 'udp',
-    'view-source', 'vlc', 'vnc', 'ws', 'wss', 'xmpp', 'jdbc', 'slack', 'tel', 'smb', 'zotero', 'geo',
-    'mid'
-];
+import { ALLOWED_PROTOCOLS, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
 
 // intended mainly as protection against XSS via import
 // secondarily, it (partly) protects against "CSS takeover"

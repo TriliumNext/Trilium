@@ -53,7 +53,7 @@ Alternatively, it's possible to insert a horizontal ruler by typing `---`.
 
 <figure class="image image-style-align-right"><img style="aspect-ratio:371/79;" src="8_Insert buttons_image.png" width="371" height="79"></figure>
 
-Page breaks provide a way to force the next paragraph or block (table, image, etc.) to be displayed onto the next page when printing (either to a real printer to [when exporting to PDF](../../Basic%20Concepts%20and%20Features/Notes/Export%20as%20PDF.md)).
+Page breaks provide a way to force the next paragraph or block (table, image, etc.) to be displayed onto the next page when printing (either to a real printer to [when exporting to PDF](../../Basic%20Concepts%20and%20Features/Notes/Printing%20%26%20Exporting%20as%20PDF.md)).
 
 Page breaks are marked in the editor with the words _Page break_, but they will not actually be shown when printed.
 

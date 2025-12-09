@@ -4,7 +4,7 @@ import zoomService from "../components/zoom.js";
 import contextMenu, { type MenuItem } from "./context_menu.js";
 import { t } from "../services/i18n.js";
 import type { BrowserWindow } from "electron";
-import type { CommandNames } from "../components/app_context.js";
+import type { CommandNames, AppContext } from "../components/app_context.js";
 
 function setupContextMenu() {
     const electron = utils.dynamicRequire("electron");
@@ -12,6 +12,8 @@ function setupContextMenu() {
     const remote = utils.dynamicRequire("@electron/remote");
     // FIXME: Remove typecast once Electron is properly integrated.
     const { webContents } = remote.getCurrentWindow() as BrowserWindow;
+
+    let appContext: AppContext;
 
     webContents.on("context-menu", (event, params) => {
         const { editFlags } = params;
@@ -37,7 +39,7 @@ function setupContextMenu() {
                 handler: () => webContents.session.addWordToSpellCheckerDictionary(params.misspelledWord)
             });
 
-            items.push({ title: `----` });
+            items.push({ kind: "separator" });
         }
 
         if (params.isEditable) {
@@ -112,12 +114,26 @@ function setupContextMenu() {
             // Replace the placeholder with the real search keyword.
             let searchUrl = searchEngineUrl.replace("{keyword}", encodeURIComponent(params.selectionText));
 
-            items.push({ title: "----" });
+            items.push({ kind: "separator" });
 
             items.push({
                 title: t("electron_context_menu.search_online", { term: shortenedSelection, searchEngine: searchEngineName }),
                 uiIcon: "bx bx-search-alt",
                 handler: () => electron.shell.openExternal(searchUrl)
+            });
+
+            items.push({
+                title: t("electron_context_menu.search_in_trilium", { term: shortenedSelection }),
+                uiIcon: "bx bx-search",
+                handler: async () => {
+                    if (!appContext) {
+                        appContext = (await import("../components/app_context.js")).default;
+                    }
+
+                    await appContext.triggerCommand("searchNotes", {
+                        searchString: params.selectionText
+                    });
+                }
             });
         }
 

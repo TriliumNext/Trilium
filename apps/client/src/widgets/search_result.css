@@ -1,0 +1,16 @@
+.search-result-widget {
+    flex-grow: 100000;
+    flex-shrink: 100000;
+    height: 100%;
+    overflow: auto;
+    contain: none !important;
+}
+
+.search-result-widget .note-list {
+    padding: 10px;
+}
+
+.search-no-results, .search-not-executed-yet {
+    margin: 20px;
+    padding: 20px !important;
+}

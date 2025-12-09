@@ -46,6 +46,8 @@ function mockServer() {
                         attributes: []
                     }
                 }
+
+                console.warn(`Unsupported GET to mocked server: ${url}`);
             },
 
             async post(url: string, data: object) {

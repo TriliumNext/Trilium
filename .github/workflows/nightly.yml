@@ -19,7 +19,6 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GITHUB_UPLOAD_URL: https://uploads.github.com/repos/TriliumNext/Notes/releases/179589950/assets{?name,label}
   GITHUB_RELEASE_ID: 179589950
 
 permissions:
@@ -46,20 +45,32 @@ jobs:
             image: win-signing
             shell: cmd
             forge_platform: win32
+        # Exclude ARM64 Linux from default matrix to use native runner
+        exclude:
+          - arch: arm64
+            os:
+              name: linux
+        # Add ARM64 Linux with native ubuntu-24.04-arm runner for better-sqlite3 compatibility
+        include:
+          - arch: arm64
+            os:
+              name: linux
+              image: ubuntu-24.04-arm
+              shell: bash
+              forge_platform: linux
     runs-on: ${{ matrix.os.image }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
       - name: Set up node & dependencies
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - uses: nrwl/nx-set-shas@v4
       - name: Update nightly version
-        run: npm run chore:ci-update-nightly-version
+        run: pnpm run chore:ci-update-nightly-version
       - name: Run the build
         uses: ./.github/actions/build-electron
         with:
@@ -79,7 +90,7 @@ jobs:
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGN_KEY }}
 
       - name: Publish release
-        uses: softprops/action-gh-release@v2.3.2
+        uses: softprops/action-gh-release@v2.5.0
         if: ${{ github.event_name != 'pull_request' }}
         with:
           make_latest: false
@@ -91,7 +102,7 @@ jobs:
           name: Nightly Build
 
       - name: Publish artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: ${{ github.event_name == 'pull_request' }}
         with:
           name: TriliumNotes ${{ matrix.os.name }} ${{ matrix.arch }}
@@ -111,7 +122,7 @@ jobs:
             runs-on: ubuntu-24.04-arm
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Run the build
         uses: ./.github/actions/build-server
@@ -120,7 +131,7 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Publish release
-        uses: softprops/action-gh-release@v2.3.2
+        uses: softprops/action-gh-release@v2.5.0
         if: ${{ github.event_name != 'pull_request' }}
         with:
           make_latest: false

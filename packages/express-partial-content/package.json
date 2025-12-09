@@ -5,56 +5,14 @@
   "version": "1.1.0",
   "type": "module",
   "private": true,
-  "main": "./dist/main.js",
-  "module": "./dist/main.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    "./package.json": "./package.json",
-    ".": {
-      "development": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "import": "./dist/main.js",
-      "default": "./dist/main.js"
-    }
-  },
+  "main": "./src/index.ts",
   "keywords": [
     "partial-content",
     "206",
     "stream",
     "typescript"
   ],
-  "nx": {
-    "name": "express-partial-content",
-    "targets": {
-      "build": {
-        "executor": "@nx/esbuild:esbuild",
-        "outputs": [
-          "{options.outputPath}"
-        ],
-        "defaultConfiguration": "production",
-        "options": {
-          "main": "packages/express-partial-content/src/index.ts",
-          "outputPath": "packages/express-partial-content/dist",
-          "outputFileName": "main.js",
-          "tsConfig": "packages/express-partial-content/tsconfig.lib.json",
-          "platform": "node",
-          "format": [
-            "esm"
-          ],
-          "declarationRootDir": "packages/express-partial-content/src"
-        },
-        "configurations": {
-          "development": {
-            "minify": false
-          },
-          "production": {
-            "minify": true
-          }
-        }
-      }
-    }
-  },
   "dependencies": {
-    "tslib": "^2.3.0"
+    "tslib": "2.8.1"
   }
 }

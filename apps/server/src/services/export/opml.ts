@@ -6,7 +6,7 @@ import type TaskContext from "../task_context.js";
 import type BBranch from "../../becca/entities/bbranch.js";
 import type { Response } from "express";
 
-function exportToOpml(taskContext: TaskContext, branch: BBranch, version: string, res: Response) {
+function exportToOpml(taskContext: TaskContext<"export">, branch: BBranch, version: string, res: Response) {
     if (!["1.0", "2.0"].includes(version)) {
         throw new Error(`Unrecognized OPML version ${version}`);
     }
@@ -77,7 +77,7 @@ function exportToOpml(taskContext: TaskContext, branch: BBranch, version: string
 </opml>`);
     res.end();
 
-    taskContext.taskSucceeded();
+    taskContext.taskSucceeded(null);
 }
 
 function prepareText(text: string) {

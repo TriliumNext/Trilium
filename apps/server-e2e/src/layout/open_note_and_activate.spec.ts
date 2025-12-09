@@ -8,11 +8,11 @@ test("Opens and activate a note from launcher Bar", async ({ page, context }) =>
     await app.goto();
     await app.closeAllTabs();
 
-    const mapButton = app.launcherBar.locator(".launcher-button.bx-search.visible");
+    const mapButton = app.launcherBar.locator(".launcher-button.bx-search");
     await expect(mapButton).toBeVisible();
 
-    await page.keyboard.down('Control');  
-    await page.keyboard.down('Shift'); 
+    await page.keyboard.down('Control');
+    await page.keyboard.down('Shift');
 
     await mapButton.click();
 
@@ -23,7 +23,7 @@ test("Opens and activate a note from launcher Bar", async ({ page, context }) =>
     await expect(tabs).toHaveCount(2);
 
     const secondTab = tabs.nth(1);
-    await expect(secondTab).toHaveAttribute('active', ''); 
+    await expect(secondTab).toHaveAttribute('active', '');
 });
 
 test("Opens and activate a note from note tree", async ({ page, context }) => {
@@ -31,8 +31,8 @@ test("Opens and activate a note from note tree", async ({ page, context }) => {
     await app.goto();
     await app.closeAllTabs();
 
-    await page.keyboard.down('Control');  
-    await page.keyboard.down('Shift'); 
+    await page.keyboard.down('Control');
+    await page.keyboard.down('Shift');
 
     await app.clickNoteOnNoteTreeByTitle(NOTE_TITLE);
 
@@ -43,5 +43,5 @@ test("Opens and activate a note from note tree", async ({ page, context }) => {
     await expect(tabs).toHaveCount(2);
 
     const secondTab = tabs.nth(1);
-    await expect(secondTab).toHaveAttribute('active', ''); 
+    await expect(secondTab).toHaveAttribute('active', '');
 });

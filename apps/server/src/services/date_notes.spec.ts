@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import { dayjs } from "@triliumnext/commons";
 import { describe, expect, it, vi } from 'vitest';
 
 import type BNote from "../becca/entities/bnote.js";

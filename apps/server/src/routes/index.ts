@@ -5,7 +5,7 @@ import attributeService from "../services/attributes.js";
 import config from "../services/config.js";
 import optionService from "../services/options.js";
 import log from "../services/log.js";
-import { isDev, isElectron } from "../services/utils.js";
+import { isDev, isElectron, isWindows11 } from "../services/utils.js";
 import protectedSessionService from "../services/protected_session.js";
 import packageJson from "../../package.json" with { type: "json" };
 import assetPath from "../services/asset_path.js";
@@ -14,10 +14,13 @@ import { generateToken as generateCsrfToken } from "./csrf_protection.js";
 
 import type { Request, Response } from "express";
 import type BNote from "../becca/entities/bnote.js";
+import { getCurrentLocale } from "../services/i18n.js";
+
+type View = "desktop" | "mobile" | "print";
 
 function index(req: Request, res: Response) {
-    const options = optionService.getOptionMap();
     const view = getView(req);
+    const options = optionService.getOptionMap();
 
     //'overwrite' set to false (default) => the existing token will be re-used and validated
     //'validateOnReuse' set to false => if validation fails, generate a new token instead of throwing an error
@@ -31,6 +34,7 @@ function index(req: Request, res: Response) {
 
     const theme = options.theme;
     const themeNote = attributeService.getNoteWithLabel("appTheme", theme);
+    const nativeTitleBarVisible = options.nativeTitleBarVisible === "true";
 
     res.render(view, {
         device: view,
@@ -41,8 +45,8 @@ function index(req: Request, res: Response) {
         layoutOrientation: options.layoutOrientation,
         platform: process.platform,
         isElectron,
-        hasNativeTitleBar: isElectron && options.nativeTitleBarVisible === "true",
-        hasBackgroundEffects: isElectron && options.backgroundEffects === "true",
+        hasNativeTitleBar: isElectron && nativeTitleBarVisible,
+        hasBackgroundEffects: isElectron && isWindows11 && !nativeTitleBarVisible && options.backgroundEffects === "true",
         mainFontSize: parseInt(options.mainFontSize),
         treeFontSize: parseInt(options.treeFontSize),
         detailFontSize: parseInt(options.detailFontSize),
@@ -53,14 +57,20 @@ function index(req: Request, res: Response) {
         isDev,
         isMainWindow: view === "mobile" ? true : !req.query.extraWindow,
         isProtectedSessionAvailable: protectedSessionService.isProtectedSessionAvailable(),
-        maxContentWidth: Math.max(640, parseInt(options.maxContentWidth)),
         triliumVersion: packageJson.version,
-        assetPath: assetPath,
-        appPath: appPath
+        assetPath,
+        appPath,
+        baseApiUrl: 'api/',
+        currentLocale: getCurrentLocale()
     });
 }
 
-function getView(req: Request): "desktop" | "mobile" {
+function getView(req: Request): View {
+    // Special override for printing.
+    if ("print" in req.query) {
+        return "print";
+    }
+
     // Electron always uses the desktop view.
     if (isElectron) {
         return "desktop";

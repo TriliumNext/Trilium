@@ -1,4 +1,4 @@
-import kbdIcon from '../theme/icons/kbd.svg';
+import kbdIcon from '../theme/icons/kbd.svg?raw';
 import './augmentation.js';
 
 export { default as Kbd } from './kbd.js';

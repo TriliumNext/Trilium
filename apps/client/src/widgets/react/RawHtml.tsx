@@ -1,26 +1,28 @@
-import type { CSSProperties } from "preact/compat";
+import type { CSSProperties, HTMLProps, RefObject } from "preact/compat";
 
 type HTMLElementLike = string | HTMLElement | JQuery<HTMLElement>;
 
-interface RawHtmlProps {
+interface RawHtmlProps extends Pick<HTMLProps<HTMLElement>, "tabindex" | "dir"> {
     className?: string;
-    html: HTMLElementLike;
+    html?: HTMLElementLike;
     style?: CSSProperties;
+    onClick?: (e: MouseEvent) => void;
 }
 
-export default function RawHtml(props: RawHtmlProps) {
-    return <span {...getProps(props)} />;
+export default function RawHtml({containerRef, ...props}: RawHtmlProps & { containerRef?: RefObject<HTMLSpanElement>}) {
+    return <span ref={containerRef} {...getProps(props)} />;
 }
 
-export function RawHtmlBlock(props: RawHtmlProps) {
-    return <div {...getProps(props)} />
+export function RawHtmlBlock({containerRef, ...props}: RawHtmlProps & { containerRef?: RefObject<HTMLDivElement>}) {
+    return <div ref={containerRef} {...getProps(props)} />
 }
 
-function getProps({ className, html, style }: RawHtmlProps) {
+function getProps({ className, html, style, onClick }: RawHtmlProps) {
     return {
         className: className,
-        dangerouslySetInnerHTML: getHtml(html),
-        style
+        dangerouslySetInnerHTML: getHtml(html ?? ""),
+        style,
+        onClick
     }
 }
 

@@ -1,16 +1,16 @@
 :root {
     --theme-style: dark;
 
-    --main-font-family: Montserrat;
+    --main-font-family: Montserrat, sans-serif;
     --main-font-size: normal;
 
-    --tree-font-family: Montserrat;
+    --tree-font-family: Montserrat, sans-serif;
     --tree-font-size: normal;
 
-    --detail-font-family: Montserrat;
+    --detail-font-family: Montserrat, sans-serif;
     --detail-font-size: normal;
 
-    --monospace-font-family: JetBrainsLight;
+    --monospace-font-family: JetBrainsLight, monospace;
     --monospace-font-size: normal;
 
     --main-background-color: #333;
@@ -76,10 +76,24 @@
 
     --mermaid-theme: dark;
     --native-titlebar-background: #00000000;
+
+    --calendar-coll-event-background-saturation: 30%;
+    --calendar-coll-event-background-lightness: 30%;
 }
 
 body ::-webkit-calendar-picker-indicator {
     filter: invert(1);
+}
+
+#left-pane .fancytree-node.tinted {
+    --custom-color: var(--dark-theme-custom-color);
+}
+
+:root .reference-link,
+:root .reference-link:hover,
+.ck-content a.reference-link > span,
+.board-note {
+    color: var(--dark-theme-custom-color, inherit);
 }
 
 .excalidraw.theme--dark {
@@ -96,4 +110,8 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 
 .ck-content pre {
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6) !important;
+}
+
+.use-note-color {
+    --custom-color: var(--dark-theme-custom-color);
 }

@@ -9,7 +9,11 @@ import { Ollama } from 'ollama';
 vi.mock('../../options.js', () => ({
     default: {
         getOption: vi.fn(),
-        getOptionBool: vi.fn()
+        getOptionBool: vi.fn(),
+        getOptionInt: vi.fn(name => {
+            if (name === "protectedSessionTimeout") return Number.MAX_SAFE_INTEGER;
+            return 0;
+        })
     }
 }));
 
@@ -25,12 +29,12 @@ vi.mock('./providers.js', () => ({
     getOllamaOptions: vi.fn()
 }));
 
-vi.mock('../formatters/ollama_formatter.js', () => ({
-    OllamaMessageFormatter: vi.fn().mockImplementation(() => ({
-        formatMessages: vi.fn().mockReturnValue([
+vi.mock('../formatters/ollama_formatter.js', () => {
+    class MockFormatter {
+        formatMessages = vi.fn().mockReturnValue([
             { role: 'user', content: 'Hello' }
-        ]),
-        formatResponse: vi.fn().mockReturnValue({
+        ]);
+        formatResponse = vi.fn().mockReturnValue({
             text: 'Hello! How can I help you today?',
             provider: 'Ollama',
             model: 'llama2',
@@ -40,9 +44,10 @@ vi.mock('../formatters/ollama_formatter.js', () => ({
                 totalTokens: 15
             },
             tool_calls: null
-        })
-    }))
-}));
+        });
+    }
+    return { OllamaMessageFormatter: MockFormatter };
+});
 
 vi.mock('../tools/tool_registry.js', () => ({
     default: {
@@ -60,64 +65,8 @@ vi.mock('./stream_handler.js', () => ({
 }));
 
 vi.mock('ollama', () => {
-    const mockStream = {
-        [Symbol.asyncIterator]: async function* () {
-            yield {
-                message: {
-                    role: 'assistant',
-                    content: 'Hello'
-                },
-                done: false
-            };
-            yield {
-                message: {
-                    role: 'assistant',
-                    content: ' world'
-                },
-                done: true
-            };
-        }
-    };
-
-    const mockOllama = vi.fn().mockImplementation(() => ({
-        chat: vi.fn().mockImplementation((params) => {
-            if (params.stream) {
-                return Promise.resolve(mockStream);
-            }
-            return Promise.resolve({
-                message: {
-                    role: 'assistant',
-                    content: 'Hello! How can I help you today?'
-                },
-                created_at: '2024-01-01T00:00:00Z',
-                model: 'llama2',
-                done: true
-            });
-        }),
-        show: vi.fn().mockResolvedValue({
-            modelfile: 'FROM llama2',
-            parameters: {},
-            template: '',
-            details: {
-                format: 'gguf',
-                family: 'llama',
-                families: ['llama'],
-                parameter_size: '7B',
-                quantization_level: 'Q4_0'
-            }
-        }),
-        list: vi.fn().mockResolvedValue({
-            models: [
-                {
-                    name: 'llama2:latest',
-                    modified_at: '2024-01-01T00:00:00Z',
-                    size: 3800000000
-                }
-            ]
-        })
-    }));
-
-    return { Ollama: mockOllama };
+    const MockOllama = vi.fn();
+    return { Ollama: MockOllama };
 });
 
 // Mock global fetch
@@ -134,9 +83,8 @@ describe('OllamaService', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        
+
         // Create the mock instance before creating the service
-        const OllamaMock = vi.mocked(Ollama);
         mockOllamaInstance = {
             chat: vi.fn().mockImplementation((params) => {
                 if (params.stream) {
@@ -191,11 +139,14 @@ describe('OllamaService', () => {
                 ]
             })
         };
-        
-        OllamaMock.mockImplementation(() => mockOllamaInstance);
-        
+
+        // Mock the Ollama constructor to return our mock instance
+        (Ollama as any).mockImplementation(function(this: any) {
+            return mockOllamaInstance;
+        });
+
         service = new OllamaService();
-        
+
         // Replace the formatter with a mock after construction
         (service as any).formatter = {
             formatMessages: vi.fn().mockReturnValue([
@@ -231,26 +182,26 @@ describe('OllamaService', () => {
         it('should return true when AI is enabled and base URL exists', () => {
             vi.mocked(options.getOptionBool).mockReturnValueOnce(true); // AI enabled
             vi.mocked(options.getOption).mockReturnValueOnce('http://localhost:11434'); // Base URL
-            
+
             const result = service.isAvailable();
-            
+
             expect(result).toBe(true);
         });
 
         it('should return false when AI is disabled', () => {
             vi.mocked(options.getOptionBool).mockReturnValueOnce(false); // AI disabled
-            
+
             const result = service.isAvailable();
-            
+
             expect(result).toBe(false);
         });
 
         it('should return false when no base URL', () => {
             vi.mocked(options.getOptionBool).mockReturnValueOnce(true); // AI enabled
             vi.mocked(options.getOption).mockReturnValueOnce(''); // No base URL
-            
+
             const result = service.isAvailable();
-            
+
             expect(result).toBe(false);
         });
     });
@@ -275,9 +226,9 @@ describe('OllamaService', () => {
             };
             vi.mocked(providers.getOllamaOptions).mockResolvedValueOnce(mockOptions);
             vi.mocked(options.getOption).mockReturnValue('http://localhost:11434');
-            
+
             const result = await service.generateChatCompletion(messages);
-            
+
             expect(result).toEqual({
                 text: 'Hello! How can I help you today?',
                 provider: 'ollama',
@@ -296,12 +247,12 @@ describe('OllamaService', () => {
             };
             vi.mocked(providers.getOllamaOptions).mockResolvedValueOnce(mockOptions);
             vi.mocked(options.getOption).mockReturnValue('http://localhost:11434');
-            
+
             const result = await service.generateChatCompletion(messages);
-            
+
             // Wait for chunks to be processed
             await new Promise(resolve => setTimeout(resolve, 100));
-            
+
             // For streaming, we expect a different response structure
             expect(result).toBeDefined();
             expect(result).toHaveProperty('text');
@@ -310,7 +261,7 @@ describe('OllamaService', () => {
 
         it('should handle tools when enabled', async () => {
             vi.mocked(options.getOption).mockReturnValue('http://localhost:11434');
-            
+
             const mockTools = [{
                 name: 'test_tool',
                 description: 'Test tool',
@@ -320,7 +271,7 @@ describe('OllamaService', () => {
                     required: []
                 }
             }];
-            
+
             const mockOptions = {
                 baseUrl: 'http://localhost:11434',
                 model: 'llama2',
@@ -329,18 +280,18 @@ describe('OllamaService', () => {
                 tools: mockTools
             };
             vi.mocked(providers.getOllamaOptions).mockResolvedValueOnce(mockOptions);
-            
+
             const chatSpy = vi.spyOn(mockOllamaInstance, 'chat');
-            
+
             await service.generateChatCompletion(messages);
-            
+
             const calledParams = chatSpy.mock.calls[0][0] as any;
             expect(calledParams.tools).toEqual(mockTools);
         });
 
         it('should throw error if service not available', async () => {
             vi.mocked(options.getOptionBool).mockReturnValueOnce(false); // AI disabled
-            
+
             await expect(service.generateChatCompletion(messages)).rejects.toThrow(
                 'Ollama service is not available'
             );
@@ -350,14 +301,14 @@ describe('OllamaService', () => {
             vi.mocked(options.getOption)
                 .mockReturnValueOnce('') // Empty base URL for ollamaBaseUrl
                 .mockReturnValue(''); // Ensure all subsequent calls return empty
-            
+
             const mockOptions = {
                 baseUrl: '',
                 model: 'llama2',
                 stream: false
             };
             vi.mocked(providers.getOllamaOptions).mockResolvedValueOnce(mockOptions);
-            
+
             await expect(service.generateChatCompletion(messages)).rejects.toThrow(
                 'Ollama service is not available'
             );
@@ -365,19 +316,19 @@ describe('OllamaService', () => {
 
         it('should handle API errors', async () => {
             vi.mocked(options.getOption).mockReturnValue('http://localhost:11434');
-            
+
             const mockOptions = {
                 baseUrl: 'http://localhost:11434',
                 model: 'llama2',
                 stream: false
             };
             vi.mocked(providers.getOllamaOptions).mockResolvedValueOnce(mockOptions);
-            
+
             // Mock API error
             mockOllamaInstance.chat.mockRejectedValueOnce(
                 new Error('Connection refused')
             );
-            
+
             await expect(service.generateChatCompletion(messages)).rejects.toThrow(
                 'Connection refused'
             );
@@ -385,31 +336,30 @@ describe('OllamaService', () => {
 
         it('should create client with custom fetch for debugging', async () => {
             vi.mocked(options.getOption).mockReturnValue('http://localhost:11434');
-            
+
             const mockOptions = {
                 baseUrl: 'http://localhost:11434',
                 model: 'llama2',
                 stream: false
             };
             vi.mocked(providers.getOllamaOptions).mockResolvedValueOnce(mockOptions);
-            
+
             // Spy on Ollama constructor
-            const OllamaMock = vi.mocked(Ollama);
-            OllamaMock.mockClear();
-            
+            (Ollama as any).mockClear();
+
             // Create new service to trigger client creation
             const newService = new OllamaService();
-            
+
             // Replace the formatter with a mock for the new service
             (newService as any).formatter = {
                 formatMessages: vi.fn().mockReturnValue([
                     { role: 'user', content: 'Hello' }
                 ])
             };
-            
+
             await newService.generateChatCompletion(messages);
-            
-            expect(OllamaMock).toHaveBeenCalledWith({
+
+            expect(Ollama).toHaveBeenCalledWith({
                 host: 'http://localhost:11434',
                 fetch: expect.any(Function)
             });
@@ -417,7 +367,7 @@ describe('OllamaService', () => {
 
         it('should handle tool execution feedback', async () => {
             vi.mocked(options.getOption).mockReturnValue('http://localhost:11434');
-            
+
             const mockOptions = {
                 baseUrl: 'http://localhost:11434',
                 model: 'llama2',
@@ -426,7 +376,7 @@ describe('OllamaService', () => {
                 tools: [{ name: 'test_tool', description: 'Test', parameters: {} }]
             };
             vi.mocked(providers.getOllamaOptions).mockResolvedValueOnce(mockOptions);
-            
+
             // Mock response with tool call (arguments should be a string for Ollama)
             mockOllamaInstance.chat.mockResolvedValueOnce({
                 message: {
@@ -442,9 +392,9 @@ describe('OllamaService', () => {
                 },
                 done: true
             });
-            
+
             const result = await service.generateChatCompletion(messages);
-            
+
             expect(result.tool_calls).toEqual([{
                 id: 'call_123',
                 type: 'function',
@@ -457,14 +407,14 @@ describe('OllamaService', () => {
 
         it('should handle mixed text and tool content', async () => {
             vi.mocked(options.getOption).mockReturnValue('http://localhost:11434');
-            
+
             const mockOptions = {
                 baseUrl: 'http://localhost:11434',
                 model: 'llama2',
                 stream: false
             };
             vi.mocked(providers.getOllamaOptions).mockResolvedValueOnce(mockOptions);
-            
+
             // Mock response with both text and tool calls
             mockOllamaInstance.chat.mockResolvedValueOnce({
                 message: {
@@ -480,30 +430,30 @@ describe('OllamaService', () => {
                 },
                 done: true
             });
-            
+
             const result = await service.generateChatCompletion(messages);
-            
+
             expect(result.text).toBe('Let me help you with that.');
             expect(result.tool_calls).toHaveLength(1);
         });
 
         it('should format messages using the formatter', async () => {
             vi.mocked(options.getOption).mockReturnValue('http://localhost:11434');
-            
+
             const mockOptions = {
                 baseUrl: 'http://localhost:11434',
                 model: 'llama2',
                 stream: false
             };
             vi.mocked(providers.getOllamaOptions).mockResolvedValueOnce(mockOptions);
-            
+
             const formattedMessages = [{ role: 'user', content: 'Hello' }];
             (service as any).formatter.formatMessages.mockReturnValueOnce(formattedMessages);
-            
+
             const chatSpy = vi.spyOn(mockOllamaInstance, 'chat');
-            
+
             await service.generateChatCompletion(messages);
-            
+
             expect((service as any).formatter.formatMessages).toHaveBeenCalled();
             expect(chatSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -514,23 +464,23 @@ describe('OllamaService', () => {
 
         it('should handle network errors gracefully', async () => {
             vi.mocked(options.getOption).mockReturnValue('http://localhost:11434');
-            
+
             const mockOptions = {
                 baseUrl: 'http://localhost:11434',
                 model: 'llama2',
                 stream: false
             };
             vi.mocked(providers.getOllamaOptions).mockResolvedValueOnce(mockOptions);
-            
+
             // Mock network error
             global.fetch = vi.fn().mockRejectedValueOnce(
                 new Error('Network error')
             );
-            
+
             mockOllamaInstance.chat.mockRejectedValueOnce(
                 new Error('fetch failed')
             );
-            
+
             await expect(service.generateChatCompletion(messages)).rejects.toThrow(
                 'fetch failed'
             );
@@ -538,19 +488,19 @@ describe('OllamaService', () => {
 
         it('should validate model availability', async () => {
             vi.mocked(options.getOption).mockReturnValue('http://localhost:11434');
-            
+
             const mockOptions = {
                 baseUrl: 'http://localhost:11434',
                 model: 'nonexistent-model',
                 stream: false
             };
             vi.mocked(providers.getOllamaOptions).mockResolvedValueOnce(mockOptions);
-            
+
             // Mock model not found error
             mockOllamaInstance.chat.mockRejectedValueOnce(
                 new Error('model "nonexistent-model" not found')
             );
-            
+
             await expect(service.generateChatCompletion(messages)).rejects.toThrow(
                 'model "nonexistent-model" not found'
             );
@@ -561,23 +511,22 @@ describe('OllamaService', () => {
         it('should reuse existing client', async () => {
             vi.mocked(options.getOptionBool).mockReturnValue(true);
             vi.mocked(options.getOption).mockReturnValue('http://localhost:11434');
-            
+
             const mockOptions = {
                 baseUrl: 'http://localhost:11434',
                 model: 'llama2',
                 stream: false
             };
             vi.mocked(providers.getOllamaOptions).mockResolvedValue(mockOptions);
-            
-            const OllamaMock = vi.mocked(Ollama);
-            OllamaMock.mockClear();
-            
+
+            (Ollama as any).mockClear();
+
             // Make two calls
             await service.generateChatCompletion([{ role: 'user', content: 'Hello' }]);
             await service.generateChatCompletion([{ role: 'user', content: 'Hi' }]);
-            
+
             // Should only create client once
-            expect(OllamaMock).toHaveBeenCalledTimes(1);
+            expect(Ollama).toHaveBeenCalledTimes(1);
         });
     });
 });

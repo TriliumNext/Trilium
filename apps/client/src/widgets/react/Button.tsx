@@ -1,9 +1,11 @@
-import type { RefObject } from "preact";
+import type { ComponentChildren, RefObject } from "preact";
 import type { CSSProperties } from "preact/compat";
-import { useRef, useMemo } from "preact/hooks";
+import { useMemo } from "preact/hooks";
 import { memo } from "preact/compat";
+import { CommandNames } from "../../components/app_context";
+import Icon from "./Icon";
 
-interface ButtonProps {
+export interface ButtonProps {
     name?: string;
     /** Reference to the button element. Mostly useful for requesting focus. */
     buttonRef?: RefObject<HTMLButtonElement>;
@@ -17,9 +19,11 @@ interface ButtonProps {
     disabled?: boolean;
     size?: "normal" | "small" | "micro";
     style?: CSSProperties;
+    triggerCommand?: CommandNames;
+    title?: string;
 }
 
-const Button = memo(({ name, buttonRef: _buttonRef, className, text, onClick, keyboardShortcut, icon, primary, disabled, size, style }: ButtonProps) => {
+const Button = memo(({ name, buttonRef, className, text, onClick, keyboardShortcut, icon, primary, disabled, size, style, triggerCommand, ...restProps }: ButtonProps) => {
     // Memoize classes array to prevent recreation
     const classes = useMemo(() => {
         const classList: string[] = ["btn"];
@@ -39,8 +43,6 @@ const Button = memo(({ name, buttonRef: _buttonRef, className, text, onClick, ke
         return classList.join(" ");
     }, [primary, className, size]);
 
-    const buttonRef = _buttonRef ?? useRef<HTMLButtonElement>(null);
-    
     // Memoize keyboard shortcut rendering
     const shortcutElements = useMemo(() => {
         if (!keyboardShortcut) return null;
@@ -57,16 +59,51 @@ const Button = memo(({ name, buttonRef: _buttonRef, className, text, onClick, ke
         <button
             name={name}
             className={classes}
-            type={onClick ? "button" : "submit"}
+            type={onClick || triggerCommand ? "button" : "submit"}
             onClick={onClick}
             ref={buttonRef}
             disabled={disabled}
             style={style}
+            data-trigger-command={triggerCommand}
+            {...restProps}
         >
-            {icon && <span className={`bx ${icon}`}></span>}
+            {icon && <Icon icon={`bx ${icon}`} />}
             {text} {shortcutElements}
         </button>
     );
 });
+
+export function ButtonGroup({ children }: { children: ComponentChildren }) {
+    return (
+        <div className="btn-group" role="group">
+            {children}
+        </div>
+    )
+}
+
+export function SplitButton({ text, icon, children, ...restProps }: {
+    text: string;
+    icon?: string;
+    title?: string;
+    /** Click handler for the main button component (not the split). */
+    onClick?: () => void;
+    /** The children inside the dropdown of the split. */
+    children: ComponentChildren;
+}) {
+    return (
+        <ButtonGroup>
+            <button type="button" class="btn btn-secondary" {...restProps}>
+                {icon && <Icon icon={`bx ${icon}`} />}
+                {text}
+            </button>
+            <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="visually-hidden">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu">
+                {children}
+            </ul>
+        </ButtonGroup>
+    )
+}
 
 export default Button;

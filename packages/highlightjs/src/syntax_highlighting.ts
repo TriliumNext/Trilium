@@ -1,9 +1,9 @@
-import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import { normalizeMimeTypeForCKEditor, SupportedMimeTypes } from "@triliumnext/commons";
 import type { LanguageFn } from "highlight.js";
 
-type MimeRecord = Record<string, (() => Promise<{ default: LanguageFn}>) | null>;
+type MimeRecord = Record<SupportedMimeTypes, (() => Promise<{ default: LanguageFn}>) | null>;
 
-const byMimeType: MimeRecord = {
+export const byMimeType: MimeRecord = {
     "text/plain": () => import("highlight.js/lib/languages/plaintext"),
     "application/dart": () => import("highlight.js/lib/languages/dart"),
     "application/edn": () => import("highlight.js/lib/languages/clojure"),
@@ -17,6 +17,7 @@ const byMimeType: MimeRecord = {
     "application/sieve": null,
     "application/sparql-query": null,
     "application/typescript": () => import("highlight.js/lib/languages/typescript"),
+    "application/vnd.kdl": () => import("./languages/kdl.js"),
     "application/x-aspx": null,
     "application/x-bat": () => import("highlight.js/lib/languages/dos"),
     "application/x-cypher-query": () => import("highlightjs-cypher"),
@@ -42,6 +43,7 @@ const byMimeType: MimeRecord = {
     "text/velocity": null,
     "text/vnd.mermaid": null,
     "text/mermaid": null,
+    "text/x-abap": () => import("./languages/abap.js"),
     "text/x-asm-mips": () => import("highlight.js/lib/languages/mipsasm"),
     "text/x-asterisk": null,
     "text/x-brainfuck": () => import("highlight.js/lib/languages/brainfuck"),
@@ -88,6 +90,7 @@ const byMimeType: MimeRecord = {
     "text/x-idl": null,
     "text/x-java": () => import("highlight.js/lib/languages/java"),
     "text/x-julia": () => import("highlight.js/lib/languages/julia"),
+    "text/x-pegjs": null,
     "text/x-kotlin": () => import("highlight.js/lib/languages/kotlin"),
     "text/x-latex": () => import("highlight.js/lib/languages/latex"),
     "text/x-less": () => import("highlight.js/lib/languages/less"),
@@ -170,10 +173,10 @@ const byMimeType: MimeRecord = {
     "text/xml": () => import("highlight.js/lib/languages/xml"),
 }
 
-const normalizedByMimeType: MimeRecord = {};
+const normalizedByMimeType: Partial<MimeRecord> = {};
 for (const [mimeType, loader] of Object.entries(byMimeType)) {
     const normalizedMimeType = normalizeMimeTypeForCKEditor(mimeType);
     normalizedByMimeType[normalizedMimeType] = loader;
 }
 
-export default normalizedByMimeType;
+export default normalizedByMimeType as MimeRecord;

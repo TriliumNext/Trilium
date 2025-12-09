@@ -66,9 +66,14 @@ class RightPanelWidget extends NoteContextAwareWidget {
             this.$buttons.append((buttonWidget as BasicWidget).render());
         }
 
-        this.initialized = this.doRenderBody().catch((e) => {
-            this.logRenderingError(e);
-        });
+        const renderResult = this.doRenderBody();
+        if (typeof renderResult === "object" && "catch" in renderResult) {
+            this.initialized = renderResult.catch((e) => {
+                this.logRenderingError(e);
+            });
+        } else {
+            this.initialized = Promise.resolve();
+        }
     }
 
     /**
@@ -77,7 +82,7 @@ class RightPanelWidget extends NoteContextAwareWidget {
      * Your class should override this method.
      * @returns {Promise|undefined} if widget needs async operation to initialize, it can return a Promise
      */
-    async doRenderBody() {}
+    doRenderBody(): Promise<void> | void {}
 }
 
 export default RightPanelWidget;

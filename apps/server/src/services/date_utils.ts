@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import { dayjs } from "@triliumnext/commons";
 import cls from "./cls.js";
 
 const LOCAL_DATETIME_FORMAT = "YYYY-MM-DD HH:mm:ss.SSSZZ";
@@ -91,9 +91,12 @@ function validateUtcDateTime(str: string | undefined) {
 }
 
 export default {
+    LOCAL_DATETIME_FORMAT,
+    UTC_DATETIME_FORMAT,
     utcNowDateTime,
     localNowDateTime,
     localNowDate,
+
     utcDateStr,
     utcDateTimeStr,
     parseDateTime,

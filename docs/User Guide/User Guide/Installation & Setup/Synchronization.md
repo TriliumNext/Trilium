@@ -9,7 +9,7 @@ In this setup, a central server (referred to as the _sync server_) and multiple 
 
 ### Security Considerations
 
-Setting up the server securely is critical and can be complex. It is crucial to use a valid [TLS certificate](Server%20Installation/TLS%20Configuration.md) (HTTPS) rather than an unencrypted HTTP connection to ensure security and avoid potential vulnerabilities.
+Setting up the server securely is critical and can be complex. It is crucial to use a valid [TLS certificate](Server%20Installation/HTTPS%20\(TLS\).md) (HTTPS) rather than an unencrypted HTTP connection to ensure security and avoid potential vulnerabilities.
 
 ### Synchronizing a Desktop Instance with a Sync Server
 

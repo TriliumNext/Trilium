@@ -13,6 +13,7 @@
 
     --theme-style: light;
     --native-titlebar-background: #ffffff00;
+    --window-background-color-bgfx: transparent; /* When background effects enabled */
 
     --main-background-color: white;
     --main-text-color: black;
@@ -39,6 +40,9 @@
     --cmd-button-keyboard-shortcut-background: #00000017;
     --cmd-button-keyboard-shortcut-color: black;
     --cmd-button-disabled-opacity: 0.5;
+
+    --button-group-active-button-background: #00000026;
+    --button-group-active-button-text-color: black;
 
     --icon-button-color: currentColor;
     --icon-button-hover-background: var(--hover-item-background-color);
@@ -83,6 +87,7 @@
 
     --menu-text-color: #272727;
     --menu-background-color: #ffffffd9;
+    --menu-background-color-no-backdrop: #fdfdfd;
     --menu-item-icon-color: #727272;
     --menu-item-disabled-opacity: 0.6;
     --menu-item-keyboard-shortcut-color: #666666a8;
@@ -114,16 +119,18 @@
     --quick-search-focus-border: #00000029;
     --quick-search-focus-background: #ffffff80;
     --quick-search-focus-color: #000;
+    --quick-search-result-content-background: #0000000f;
+    --quick-search-result-highlight-color: #c65050;
 
     --left-pane-collapsed-border-color: #0000000d;
     --left-pane-background-color: #f2f2f2;
     --left-pane-text-color: #383838;
-    --left-pane-item-hover-background: #eaeaea;
+    --left-pane-item-hover-background: rgba(0, 0, 0, 0.032);
     --left-pane-item-selected-background: white;
     --left-pane-item-selected-color: black;
     --left-pane-item-selected-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
-    --left-pane-item-action-button-background: #d7d7d7;
-    --left-pane-item-action-button-color: inherit;
+    --left-pane-item-action-button-background: rgba(0, 0, 0, 0.11);
+    --left-pane-item-action-button-color: var(--left-pane-text-color);
     --left-pane-item-action-button-hover-background: white;
     --left-pane-item-action-button-hover-shadow: 2px 2px 3px rgba(0, 0, 0, 0.15);
     --left-pane-item-selected-action-button-hover-shadow: 2px 2px 10px rgba(0, 0, 0, 0.25);
@@ -138,6 +145,7 @@
     --launcher-pane-vert-button-hover-background: white;
     --launcher-pane-vert-button-hover-shadow: 4px 4px 4px rgba(0, 0, 0, 0.075);
     --launcher-pane-vert-button-focus-outline-color: var(--input-focus-outline-color);
+    --launcher-pane-vert-background-color-bgfx: #00000009; /* When background effects enabled */
 
     --launcher-pane-horiz-border-color: rgba(0, 0, 0, 0.1);
     --launcher-pane-horiz-background-color: #fafafa;
@@ -145,9 +153,17 @@
     --launcher-pane-horiz-button-hover-background: var(--icon-button-hover-background);
     --launcher-pane-horiz-button-hover-shadow: unset;
     --launcher-pane-horiz-button-focus-outline-color: var(--input-focus-outline-color);
+    --launcher-pane-horiz-background-color-bgfx: #ffffffb3; /* When background effects enabled */
+    --launcher-pane-horiz-border-color-bgfx: #00000026; /* When background effects enabled */
+
+    --global-menu-update-available-badge-background-color: #4fa450;
+    --global-menu-update-available-badge-color: white;
 
     --protected-session-active-icon-color: #16b516;
     --sync-status-error-pulse-color: #ff5528;
+
+    --center-pane-vert-layout-background-color-bgfx: #ffffff75;
+    --center-pane-horiz-layout-background-color-bgfx: #ffffffd6;
 
     --right-pane-heading-color: gray;
 
@@ -158,9 +174,10 @@
 
     --tab-close-button-hover-background: #c95a5a;
     --tab-close-button-hover-color: white;
-
+    
     --active-tab-background-color: white;
     --active-tab-hover-background-color: var(--active-tab-background-color);
+    --active-tab-icon-color: gray;
     --active-tab-text-color: black;
     --active-tab-shadow: 3px 3px 6px rgba(0, 0, 0, 0.1), -1px -1px 3px rgba(0, 0, 0, 0.05);
     --active-tab-dragging-shadow: var(--active-tab-shadow), 0 0 20px rgba(0, 0, 0, 0.1);
@@ -169,13 +186,13 @@
     --inactive-tab-hover-background-color: #00000016;
     --inactive-tab-text-color: #4e4e4e;
 
-    --alert-bar-background: #32637b29;
+    --alert-bar-background: #f9cf2b29;
 
     --badge-background-color: #00000011;
     --badge-text-color: var(--muted-text-color);
 
-    --promoted-attribute-card-background-color: var(--card-background-color);
-    --promoted-attribute-card-shadow-color: #00000033;
+    --promoted-attribute-card-background-color: #00000014;
+    --promoted-attribute-card-shadow: none;
 
     --floating-button-shadow-color: #00000042;
     --floating-button-background-color: #eaeaeacc;
@@ -196,7 +213,9 @@
     --new-tab-button-hover-background: white;
     --new-tab-button-hover-color: black;
 
-    --right-pane-item-hover-background: #ececec;
+    --right-pane-background-color: var(--main-background-color);
+    --right-pane-background-color-bgfx: #ffffff9e; /* Only for the vertical layout */
+    --right-pane-item-hover-background: #00000013;
     --right-pane-item-hover-color: inherit;
 
     --scrollbar-thumb-color: #0000005c;
@@ -212,12 +231,11 @@
 
     --code-block-box-shadow: 4px 4px 8px rgba(0, 0, 0, 0.1), 0px 0px 2px rgba(0, 0, 0, 0.2);
 
-    --card-background-color: var(--accented-background-color);
-    --card-background-hover-color: #f9f9f9;
-    --card-background-press-color: #efefef;
-    --card-border-color: #eaeaea;
+    --card-background-color: #0000000d;
+    --card-background-hover-color: #0000001c;
+    --card-border-color: transparent;
     --card-shadow-color: rgba(0, 0, 0, 0.1);
-    --card-box-shadow: 0 0 12px var(--card-shadow-color);
+    --card-box-shadow: none;
 
     --calendar-color: var(--menu-text-color);
     --calendar-weekday-labels-color: var(--muted-text-color);
@@ -251,4 +269,26 @@
     --ck-editor-toolbar-button-on-shadow: none;
     --ck-editor-toolbar-dropdown-button-open-background: #0000000f;
 
+    --calendar-coll-event-background-lightness: 95%;
+    --calendar-coll-event-background-saturation: 80%;
+    --calendar-coll-event-background-color: #eaeaea;
+    --calendar-coll-event-text-color: black;
+    --calendar-coll-event-hover-filter: brightness(.95) saturate(1.25);
+    --callendar-coll-event-archived-sripe-color: #0000000a;
+    --calendar-coll-today-background-color: #00000006;
+}
+
+#left-pane .fancytree-node.tinted {
+    --custom-color: var(--light-theme-custom-color);
+
+    /* The background color of the active item in the note tree.
+     * The --custom-color-hue variable contains the hue of the user-selected note color.
+     * This value is unset for gray tones. */
+    --custom-bg-color: hsl(var(--custom-color-hue), 37%, 89%, 1);
+}
+
+.quick-edit-dialog-wrapper.with-hue {
+    --modal-background-color: hsl(var(--custom-color-hue), 56%, 96%);
+    --modal-border-color: hsl(var(--custom-color-hue), 33%, 41%);
+    --promoted-attribute-card-background-color: hsl(var(--custom-color-hue), 40%, 88%);
 }

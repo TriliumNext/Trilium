@@ -17,7 +17,8 @@
         "**/node_modules/**",
         "apps/edit-docs/demo/**",
         "apps/server/src/assets/doc_notes/**",
-        "docs/**"
+        "docs/**",
+        "apps/server/Dockerfile.legacy"
     ],
     "html": {
         "enabled": false

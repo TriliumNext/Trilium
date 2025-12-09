@@ -1,0 +1,11 @@
+.modal.info-dialog {
+    user-select: text;
+
+    h3 {
+        font-size: 1.25em;
+    }
+
+    pre {
+        font-size: 0.75em;
+    }
+}

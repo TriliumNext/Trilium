@@ -13,7 +13,7 @@ export interface Froca {
 
     getBlob(entityType: string, entityId: string): Promise<FBlob | null>;
     getNote(noteId: string, silentNotFoundError?: boolean): Promise<FNote | null>;
-    getNoteFromCache(noteId: string): FNote;
+    getNoteFromCache(noteId: string): FNote | undefined;
     getNotesFromCache(noteIds: string[], silentNotFoundError?: boolean): FNote[];
     getNotes(noteIds: string[], silentNotFoundError?: boolean): Promise<FNote[]>;
 

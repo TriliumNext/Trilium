@@ -6,7 +6,7 @@ import { randomString } from "./utils.js";
 import instanceId from "./instance_id.js";
 import becca from "../becca/becca.js";
 import blobService from "../services/blob.js";
-import type { EntityChange } from "./entity_changes_interface.js";
+import type { EntityChange } from "@triliumnext/commons";
 import type { Blob } from "./blob-interface.js";
 import eventService from "./events.js";
 

@@ -22,7 +22,7 @@
     "move-notes-to": "選択したノートを移動",
     "copy-notes-to-clipboard": "選択したノートをクリップボードにコピー",
     "paste-notes-from-clipboard": "クリップボードからアクティブなノートにノートを貼り付け",
-    "cut-notes-to-clipboard": "選択したノートをクリップボードにカット",
+    "cut-notes-to-clipboard": "選択したノートをクリップボードに切り取り",
     "select-all-notes-in-parent": "現在のノートレベルと同じノートをすべて選択する",
     "add-note-above-to-the-selection": "上のノートを選択範囲に追加",
     "add-note-below-to-selection": "下のノートを選択範囲に追加",
@@ -46,7 +46,7 @@
     "last-tab": "最後のタブをアクティブにする",
     "dialogs": "ダイアログ",
     "show-note-source": "「ノートのソース」ダイアログを表示",
-    "show-options": "「オプション」ページを開く",
+    "show-options": "「設定」ページを開く",
     "show-recent-changes": "「最近の変更」ダイアログを表示",
     "show-sql-console": "「SQLコンソール」ページを開く",
     "show-backend-log": "「バックエンドログ」ページを開く",
@@ -88,9 +88,9 @@
     "duplicate-subtree": "サブツリーの複製",
     "edit-branch-prefix": "「ブランチ接頭辞の編集」ダイアログを表示",
     "show-revisions": "「ノートの変更履歴」ダイアログを表示",
-    "attributes-labels-and-relations": "属性（ラベルと関係）",
+    "attributes-labels-and-relations": "属性（ラベルとリレーション）",
     "add-new-label": "新しいラベルを作成する",
-    "create-new-relation": "新しい関係を作成する",
+    "create-new-relation": "新しいリレーションを作成する",
     "toggle-basic-properties": "基本属性切り替え",
     "toggle-file-properties": "ファイル属性切り替え",
     "toggle-image-properties": "画像属性切り替え",
@@ -101,16 +101,16 @@
     "toggle-book-properties": "コレクションプロパティ切り替え",
     "toggle-zen-mode": "禅モード（集中した編集のための最小限のUI）を有効/無効にする",
     "add-include-note-to-text": "ノートを埋め込むダイアログを開く",
-    "toggle-promoted-attributes": "プロモートされた属性をトグルする",
+    "toggle-promoted-attributes": "プロモート属性切り替え",
     "force-save-revision": "アクティブノートの新しいノートリヴィジョンを強制する",
-    "toggle-classic-editor-toolbar": "固定ツールバーを持ったエディターのフォーマットタブをトグルする"
+    "toggle-classic-editor-toolbar": "固定ツールバーエディターの書式設定タブ切り替え"
   },
   "keyboard_action_names": {
     "back-in-note-history": "ノートの履歴を戻る",
     "forward-in-note-history": "ノートの履歴を進む",
     "command-palette": "コマンドパレット",
     "scroll-to-active-note": "アクティブノートまでスクロール",
-    "quick-search": "クイックサーチ",
+    "quick-search": "クイック検索",
     "search-in-subtree": "サブツリー内を検索",
     "expand-subtree": "サブツリーを展開",
     "collapse-subtree": "サブツリーを折りたたむ",
@@ -128,7 +128,7 @@
     "move-notes-to": "ノートを移動",
     "copy-notes-to-clipboard": "ノートをクリップボードにコピー",
     "paste-notes-from-clipboard": "クリップボードからノートを貼り付け",
-    "cut-notes-to-clipboard": "ノートをクリップボードにカット",
+    "cut-notes-to-clipboard": "ノートをクリップボードに切り取り",
     "select-all-notes-in-parent": "親ノート内のすべてのノートを選択",
     "add-note-above-to-selection": "選択範囲に上のノートを追加",
     "add-note-below-to-selection": "選択範囲に下のノートを追加",
@@ -184,7 +184,7 @@
     "edit-branch-prefix": "ブランチ接頭辞の編集",
     "show-revisions": "変更履歴を表示",
     "add-new-label": "ラベルを追加",
-    "add-new-relation": "関係を追加",
+    "add-new-relation": "リレーションを追加",
     "toggle-ribbon-tab-basic-properties": "リボンタブ切り替え：基本属性",
     "toggle-ribbon-tab-book-properties": "リボンタブ切り替え：書籍属性",
     "toggle-ribbon-tab-file-properties": "リボンタブ切り替え：ファイル属性",
@@ -198,7 +198,9 @@
     "toggle-note-hoisting": "ノートホイスト切り替え",
     "unhoist-note": "ノートホイストを無効にする",
     "force-save-revision": "強制保存リビジョン",
-    "add-include-note-to-text": "埋め込みノートを追加"
+    "add-include-note-to-text": "埋め込みノートを追加",
+    "toggle-ribbon-tab-classic-editor": "リボンタブのクラシックエディターに切り替える",
+    "toggle-ribbon-tab-promoted-attributes": "リボンタブ切り替え：プロモート属性"
   },
   "login": {
     "title": "ログイン",
@@ -251,7 +253,8 @@
     "password": "パスワード",
     "password-placeholder": "パスワード",
     "finish-setup": "セットアップ完了",
-    "back": "戻る"
+    "back": "戻る",
+    "note": "ノート:"
   },
   "setup_sync-in-progress": {
     "heading": "同期中",
@@ -309,7 +312,7 @@
     "new-note-title": "新しいノート",
     "bookmarks-title": "ブックマーク",
     "open-today-journal-note-title": "今日の日記を開く",
-    "quick-search-title": "クイックサーチ",
+    "quick-search-title": "クイック検索",
     "recent-changes-title": "最近の変更",
     "root-title": "隠されたノート",
     "note-map-title": "ノートマップ",
@@ -335,13 +338,18 @@
     "sync-status-title": "同期状態",
     "settings-title": "設定",
     "llm-chat-title": "ノートとチャット",
-    "options-title": "オプション",
+    "options-title": "設定",
     "multi-factor-authentication-title": "多要素認証",
-    "etapi-title": "ETAPI"
+    "etapi-title": "ETAPI",
+    "visible-launchers-title": "可視化されたランチャー",
+    "inbox-title": "Inbox",
+    "base-abstract-launcher-title": "ベース アブストラクトランチャー",
+    "command-palette": "コマンドパレットを開く",
+    "zen-mode": "禅モード"
   },
   "notes": {
     "new-note": "新しいノート",
-    "duplicate-note-suffix": "(重複)",
+    "duplicate-note-suffix": "(複製)",
     "duplicate-note-title": "{{- noteTitle }} {{ duplicateNoteSuffix }}"
   },
   "backend_log": {
@@ -355,7 +363,8 @@
     "export_filter": "PDFドキュメント (*.pdf)",
     "unable-to-export-message": "現在のノートをPDFとしてエクスポートできませんでした。",
     "unable-to-export-title": "PDFとしてエクスポートできません",
-    "unable-to-save-message": "選択されたファイルに書き込めませんでした。もう一度試すか、別の保存先を選択してください。"
+    "unable-to-save-message": "選択されたファイルに書き込めませんでした。もう一度試すか、別の保存先を選択してください。",
+    "unable-to-print": "ノートを印刷できません"
   },
   "tray": {
     "tooltip": "Trilium Notes",
@@ -395,7 +404,7 @@
     "end-date": "終了日",
     "start-time": "開始時刻",
     "end-time": "終了時間",
-    "board": "ボード",
+    "board": "カンバンボード",
     "status": "ステータス",
     "board_note_first": "最初のノート",
     "board_note_second": "2番目のノート",
@@ -405,7 +414,12 @@
     "geo-map": "ジオマップ",
     "geolocation": "ジオロケーション",
     "built-in-templates": "内蔵のテンプレート",
-    "board_status_todo": "未完了"
+    "board_status_todo": "未完了",
+    "presentation": "プレゼンテーション",
+    "presentation_slide": "プレゼンテーションスライド",
+    "presentation_slide_first": "最初のスライド",
+    "presentation_slide_second": "2番目のスライド",
+    "background": "背景"
   },
   "share_404": {
     "title": "該当なし",
@@ -413,7 +427,17 @@
   },
   "share_page": {
     "clipped-from": "このノートは元々{{- url}}から切り取られたものです",
-    "no-content": "このノートには内容がありません。"
+    "no-content": "このノートには内容がありません。",
+    "parent": "親:",
+    "child-notes": "子ノート:"
   },
-  "weekdayNumber": "第{weekNumber}週"
+  "weekdayNumber": "第{weekNumber}週",
+  "quarterNumber": "四半期 {quarterNumber}",
+  "sql_init": {
+    "db_not_initialized_desktop": "DB が初期化されていません。画面の指示に従ってください。",
+    "db_not_initialized_server": "DB が初期化されていません。セットアップ ページ 「http://[your-server-host]:{{port}}」 にアクセスして、Trilium を初期化する方法の説明を確認してください。"
+  },
+  "desktop": {
+    "instance_already_running": "すでにインスタンスが実行されているので、代わりにそのインスタンスにフォーカスします。"
+  }
 }

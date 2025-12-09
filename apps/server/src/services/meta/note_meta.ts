@@ -1,6 +1,7 @@
 import type { NoteType } from "@triliumnext/commons";
 import type AttachmentMeta from "./attachment_meta.js";
 import type AttributeMeta from "./attribute_meta.js";
+import type { ExportFormat } from "../export/zip/abstract_provider.js";
 
 export interface NoteMetaFile {
     formatVersion: number;
@@ -19,7 +20,7 @@ export default interface NoteMeta {
     type?: NoteType;
     mime?: string;
     /** 'html' or 'markdown', applicable to text notes only */
-    format?: "html" | "markdown";
+    format?: ExportFormat;
     dataFileName?: string;
     dirFileName?: string;
     /** this file should not be imported (e.g., HTML navigation) */

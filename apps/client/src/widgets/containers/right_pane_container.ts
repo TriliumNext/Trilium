@@ -5,6 +5,7 @@ import type { EventData, EventNames } from "../../components/app_context.js";
 
 export default class RightPaneContainer extends FlexContainer<RightPanelWidget> {
     private rightPaneHidden: boolean;
+    private firstRender: boolean;
 
     constructor() {
         super("column");
@@ -14,6 +15,7 @@ export default class RightPaneContainer extends FlexContainer<RightPanelWidget> 
         this.collapsible();
 
         this.rightPaneHidden = false;
+        this.firstRender = true;
     }
 
     isEnabled() {
@@ -41,10 +43,11 @@ export default class RightPaneContainer extends FlexContainer<RightPanelWidget> 
         const oldToggle = !this.isHiddenInt();
         const newToggle = this.isEnabled();
 
-        if (oldToggle !== newToggle) {
+        if (oldToggle !== newToggle || this.firstRender) {
             this.toggleInt(newToggle);
 
             splitService.setupRightPaneResizer();
+            this.firstRender = false;
         }
     }
 

@@ -1,11 +1,11 @@
 import { Mermaid as MermaidDll, icons } from '../src/index.js';
 import Mermaid from '../src/mermaid.js';
 
-import infoIcon from './../theme/icons/info.svg';
-import insertMermaidIcon from './../theme/icons/insert.svg';
-import previewModeIcon from './../theme/icons/preview-mode.svg';
-import splitModeIcon from './../theme/icons/split-mode.svg';
-import sourceModeIcon from './../theme/icons/source-mode.svg';
+import infoIcon from './../theme/icons/info.svg?raw';
+import insertMermaidIcon from './../theme/icons/insert.svg?raw';
+import previewModeIcon from './../theme/icons/preview-mode.svg?raw';
+import splitModeIcon from './../theme/icons/split-mode.svg?raw';
+import sourceModeIcon from './../theme/icons/source-mode.svg?raw';
 import { describe, it } from 'vitest';
 import { expect } from 'vitest';
 

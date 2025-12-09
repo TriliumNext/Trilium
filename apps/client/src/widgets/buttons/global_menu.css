@@ -1,0 +1,122 @@
+.global-menu {
+    width: 53px;
+    height: 53px;
+    flex-shrink: 0;
+}
+
+.global-menu .dropdown-menu {
+    min-width: 20em;
+}
+
+button.global-menu-button {
+    --update-badge-x-offset: 4%;
+    --update-badge-y-offset: -16%;
+
+    position: relative;
+    width: 100% !important;
+    height: 100% !important;
+    border: none;
+    padding: 6px;
+}
+
+.global-menu-button svg > g {
+    transform-origin: center;
+    transition: transform 300ms ease-in-out;
+}
+
+.global-menu-button:active svg > g,
+.global-menu-button.show svg > g{
+    transform: scale(0.85) rotate(-10deg);
+}
+
+.global-menu-button svg path {
+    fill: var(--launcher-pane-text-color);
+}
+
+.global-menu-button:hover {
+    border: none;
+}
+
+.global-menu-button:hover svg path,
+.global-menu-button.show svg path {
+    transition: 300ms linear fill;
+}
+
+.global-menu-button svg path {
+    transition: fill 1000ms ease-out;
+}
+
+.global-menu-button:is(:hover, .show) svg path.st0 { fill:#95C980; transition-delay: 0ms; }
+.global-menu-button:is(:hover, .show) svg path.st1 { fill:#72B755; transition-delay: 50ms; }
+.global-menu-button:is(:hover, .show) svg path.st2 { fill:#4FA52B; transition-delay: 100ms; }
+.global-menu-button:is(:hover, .show) svg path.st3 { fill:#EE8C89; transition-delay: 200ms; }
+.global-menu-button:is(:hover, .show) svg path.st4 { fill:#E96562; transition-delay: 250ms; }
+.global-menu-button:is(:hover, .show) svg path.st5 { fill:#E33F3B; transition-delay: 300ms; }
+.global-menu-button:is(:hover, .show) svg path.st6 { fill:#EFB075; transition-delay: 400ms; }
+.global-menu-button:is(:hover, .show) svg path.st7 { fill:#E99547; transition-delay: 450ms; }
+.global-menu-button:is(:hover, .show) svg path.st8 { fill:#E47B19; transition-delay: 500ms; }
+
+.global-menu-button-update-available {
+    position: absolute;
+    display: flex;
+    width: 16px;
+    height: 16px;
+    right: calc(0px - var(--update-badge-x-offset));
+    bottom: calc(0px - var(--update-badge-y-offset));
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    background: var(--global-menu-update-available-badge-background-color, var(--admonition-tip-accent-color));
+    color: var(--global-menu-update-available-badge-color, var(--main-background-color));
+    font-size: 16px;
+    transition: transform 200ms ease-in-out;
+    pointer-events: none;
+}
+
+.global-menu-button.show .global-menu-button-update-available {
+    transform: scale(.75);
+    transform-origin: center;
+}
+
+.global-menu .zoom-container {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+}
+
+.global-menu .zoom-buttons {
+    margin-inline-start: 2em;
+}
+
+.global-menu .zoom-buttons a {
+    display: inline-block;
+    border: 1px solid var(--button-border-color);
+    border-radius: var(--button-border-radius);
+    color: var(--button-text-color);
+    background-color: var(--button-background-color);
+    padding: 3px;
+    margin-inline-start: 3px;
+    text-decoration: none;
+}
+
+.global-menu .zoom-buttons a:hover {
+    text-decoration: none;
+}
+
+.global-menu .zoom-state {
+    margin-inline-start: 5px;
+    margin-inline-end: 5px;
+}
+
+.global-menu .dropdown-item .bx {
+    position: relative;
+    top: 3px;
+    font-size: 120%;
+    margin-inline-end: 6px;
+}
+
+
+.global-menu-button-wrapper:hover .global-menu-button-update-available-button {
+    opacity: 1;
+}
+/* #endregion */

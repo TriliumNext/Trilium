@@ -12,12 +12,17 @@ import path from "path";
 import type NoteMeta from "./meta/note_meta.js";
 import log from "./log.js";
 import { t } from "i18next";
+import { release as osRelease } from "os";
+
+const osVersion = osRelease().split('.').map(Number);
 
 const randtoken = generator({ source: "crypto" });
 
 export const isMac = process.platform === "darwin";
 
 export const isWindows = process.platform === "win32";
+
+export const isWindows11 = isWindows && osVersion[0] === 10 && osVersion[2] >= 22000;
 
 export const isElectron = !!process.versions["electron"];
 
@@ -126,7 +131,7 @@ export function getContentDisposition(filename: string) {
 }
 
 // render and book are string note in the sense that they are expected to contain empty string
-const STRING_NOTE_TYPES = new Set(["text", "code", "relationMap", "search", "render", "book", "mermaid", "canvas"]);
+const STRING_NOTE_TYPES = new Set(["text", "code", "relationMap", "search", "render", "book", "mermaid", "canvas", "webView"]);
 const STRING_MIME_TYPES = new Set(["application/javascript", "application/x-javascript", "application/json", "application/x-sql", "image/svg+xml"]);
 
 export function isStringNote(type: string | undefined, mime: string) {
@@ -222,27 +227,6 @@ export function timeLimit<T>(promise: Promise<T>, limitMs: number, errorMessage?
             }
         }, limitMs);
     });
-}
-
-export interface DeferredPromise<T> extends Promise<T> {
-    resolve: (value: T | PromiseLike<T>) => void;
-    reject: (reason?: any) => void;
-}
-
-export function deferred<T>(): DeferredPromise<T> {
-    return (() => {
-        let resolve!: (value: T | PromiseLike<T>) => void;
-        let reject!: (reason?: any) => void;
-
-        let promise = new Promise<T>((res, rej) => {
-            resolve = res;
-            reject = rej;
-        }) as DeferredPromise<T>;
-
-        promise.resolve = resolve;
-        promise.reject = reject;
-        return promise as DeferredPromise<T>;
-    })();
 }
 
 export function removeDiacritic(str: string) {
@@ -473,11 +457,36 @@ export function normalizeCustomHandlerPattern(pattern: string | null | undefined
     }
 }
 
+export function formatUtcTime(time: string) {
+    return time.replace("T", " ").substring(0, 19)
+}
+
+// TODO: Deduplicate with client utils
+export function formatSize(size: number | null | undefined) {
+    if (size === null || size === undefined) {
+        return "";
+    }
+
+    size = Math.max(Math.round(size / 1024), 1);
+
+    if (size < 1024) {
+        return `${size} KiB`;
+    } else {
+        return `${Math.round(size / 102.4) / 10} MiB`;
+    }
+}
+
+function slugify(text: string) {
+    return text
+        .normalize("NFC") // keep composed form, preserves accents
+        .toLowerCase()
+        .replace(/[^\p{Letter}\p{Number}]+/gu, "-") // replace non-letter/number with "-"
+        .replace(/(^-|-$)+/g, ""); // trim dashes
+}
 
 export default {
     compareVersions,
     crash,
-    deferred,
     envToBoolean,
     escapeHtml,
     escapeRegExp,
@@ -509,6 +518,7 @@ export default {
     safeExtractMessageAndStackFromError,
     sanitizeSqlIdentifier,
     stripTags,
+    slugify,
     timeLimit,
     toBase64,
     toMap,

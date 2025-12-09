@@ -1,9 +1,10 @@
-import toastService, { type ToastOptions } from "./toast.js";
+import toastService, { type ToastOptionsWithRequiredId } from "./toast.js";
 import server from "./server.js";
 import ws from "./ws.js";
 import utils from "./utils.js";
 import appContext from "../components/app_context.js";
 import { t } from "./i18n.js";
+import { WebSocketMessage } from "@triliumnext/commons";
 
 type BooleanLike = boolean | "true" | "false";
 
@@ -56,17 +57,17 @@ export async function uploadFiles(entityType: string, parentNoteId: string, file
     }
 }
 
-function makeToast(id: string, message: string): ToastOptions {
+function makeToast(id: string, message: string): ToastOptionsWithRequiredId {
     return {
-        id: id,
+        id,
         title: t("import.import-status"),
-        message: message,
+        message,
         icon: "plus"
     };
 }
 
 ws.subscribeToMessages(async (message) => {
-    if (message.taskType !== "importNotes") {
+    if (!("taskType" in message) || message.taskType !== "importNotes") {
         return;
     }
 
@@ -77,7 +78,7 @@ ws.subscribeToMessages(async (message) => {
         toastService.showPersistent(makeToast(message.taskId, t("import.in-progress", { progress: message.progressCount })));
     } else if (message.type === "taskSucceeded") {
         const toast = makeToast(message.taskId, t("import.successful"));
-        toast.closeAfter = 5000;
+        toast.timeout = 5000;
 
         toastService.showPersistent(toast);
 
@@ -87,8 +88,8 @@ ws.subscribeToMessages(async (message) => {
     }
 });
 
-ws.subscribeToMessages(async (message) => {
-    if (message.taskType !== "importAttachments") {
+ws.subscribeToMessages(async (message: WebSocketMessage) => {
+    if (!("taskType" in message) || message.taskType !== "importAttachments") {
         return;
     }
 
@@ -99,7 +100,7 @@ ws.subscribeToMessages(async (message) => {
         toastService.showPersistent(makeToast(message.taskId, t("import.in-progress", { progress: message.progressCount })));
     } else if (message.type === "taskSucceeded") {
         const toast = makeToast(message.taskId, t("import.successful"));
-        toast.closeAfter = 5000;
+        toast.timeout = 5000;
 
         toastService.showPersistent(toast);
 

@@ -2,12 +2,10 @@ import { useRef, useState } from "preact/hooks";
 import { t } from "../../services/i18n";
 import Button from "../react/Button";
 import Modal from "../react/Modal";
-import { Modal as BootstrapModal } from "bootstrap";
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import FormTextBox from "../react/FormTextBox";
 import FormGroup from "../react/FormGroup";
 import { refToJQuerySelector } from "../react/react_utils";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
 
 // JQuery here is maintained for compatibility with existing code.
 interface ShownCallbackData {
@@ -28,7 +26,7 @@ export interface PromptDialogOptions {
     readOnly?: boolean;
 }
 
-function PromptDialogComponent() {    
+export default function PromptDialog() {
     const modalRef = useRef<HTMLDivElement>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const labelRef = useRef<HTMLLabelElement>(null);
@@ -37,7 +35,7 @@ function PromptDialogComponent() {
     const [ value, setValue ] = useState("");
     const [ shown, setShown ] = useState(false);
     const submitValue = useRef<string>(null);
-    
+
     useTriliumEvent("showPromptDialog", (newOpts) => {
         opts.current = newOpts;
         setValue(newOpts.defaultValue ?? "");
@@ -50,7 +48,7 @@ function PromptDialogComponent() {
             title={opts.current?.title ?? t("prompt.title")}
             size="lg"
             zIndex={2000}
-            modalRef={modalRef} formRef={formRef}            
+            modalRef={modalRef} formRef={formRef}
             onShown={() => {
                 opts.current?.shown?.({
                     $dialog: refToJQuerySelector(modalRef),
@@ -59,6 +57,7 @@ function PromptDialogComponent() {
                     $form: refToJQuerySelector(formRef)
                 });
                 answerRef.current?.focus();
+                answerRef.current?.select();
             }}
             onSubmit={() => {
                 submitValue.current = value;
@@ -83,12 +82,4 @@ function PromptDialogComponent() {
             </FormGroup>
         </Modal>
     );
-}
-
-export default class PromptDialog extends ReactBasicWidget {
-
-    get component() {
-        return <PromptDialogComponent />;
-    }
-
 }

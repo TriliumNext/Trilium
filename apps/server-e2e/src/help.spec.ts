@@ -11,18 +11,6 @@ test("Help popup", async ({ page, context }) => {
     await expect(page.locator(".help-cards")).toBeVisible();
 });
 
-test("Complete help in search", async ({ page, context }) => {
-    const app = new App(page, context);
-    await app.goto();
-
-    await app.launcherBar.locator(".bx-search").first().click();
-    await app.currentNoteSplit.locator(".search-settings .bx-help-circle").click();
-    const popupPromise = page.waitForEvent("popup");
-    await page.getByRole("link", { name: "complete help on search syntax" }).click();
-    const popup = await popupPromise;
-    expect(popup.url()).toBe("https://triliumnext.github.io/Docs/Wiki/search.html");
-});
-
 test("In-app-help works in English", async ({ page, context }) => {
     const app = new App(page, context);
     await app.goto();

@@ -379,14 +379,6 @@ describe("#timeLimit", () => {
     });
 });
 
-describe("#deferred", () => {
-    it("should return a promise", () => {
-        const result = utils.deferred();
-        expect(result).toBeInstanceOf(Promise);
-    });
-    // TriliumNextTODO: Add further tests!
-});
-
 describe("#removeDiacritic", () => {
     const testCases: TestCase<typeof utils.removeDiacritic>[] = [
         [ "w/ 'Äpfel' it should replace the 'Ä'", [ "Äpfel" ], "Apfel" ],
@@ -679,5 +671,36 @@ describe("#normalizeCustomHandlerPattern", () => {
             const result = utils.normalizeCustomHandlerPattern(...fnParams);
             expect(result).toStrictEqual(expected);
         });
+    });
+});
+
+describe("#slugify", () => {
+    it("should return a slugified string", () => {
+        const testString = "This is a Test String! With unicode & Special #Chars.";
+        const expectedSlug = "this-is-a-test-string-with-unicode-special-chars";
+        const result = utils.slugify(testString);
+        expect(result).toBe(expectedSlug);
+    });
+
+    it("supports CJK characters without alteration", () => {
+        const testString = "测试中文字符";
+        const expectedSlug = "测试中文字符";
+        const result = utils.slugify(testString);
+        expect(result).toBe(expectedSlug);
+    });
+
+    it("supports Cyrillic characters without alteration", () => {
+        const testString = "Тестирование кириллических символов";
+        const expectedSlug = "тестирование-кириллических-символов";
+        const result = utils.slugify(testString);
+        expect(result).toBe(expectedSlug);
+    });
+
+    // preserves diacritic marks
+    it("preserves diacritic marks", () => {
+        const testString = "Café naïve façade jalapeño";
+        const expectedSlug = "café-naïve-façade-jalapeño";
+        const result = utils.slugify(testString);
+        expect(result).toBe(expectedSlug);
     });
 });

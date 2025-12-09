@@ -1,6 +1,23 @@
 {
-    "keyboard_actions": {
-        "delete-note": "Xoá ghi chép",
-        "move-notes-to": "Di chuyển ghi chép được chọn"
-    }
+  "keyboard_actions": {
+    "delete-note": "Xoá ghi chú",
+    "move-notes-to": "Di chuyển ghi chép được chọn",
+    "back-in-note-history": "Điều hướng đến ghi chú trước đó trong lịch sử",
+    "forward-in-note-history": "Chuyển hướng đến ghi chú tiếp theo trong lịch sử",
+    "open-jump-to-note-dialog": "Mở hộp thoại \"Jump to note\"",
+    "open-command-palette": "Mở bảng lệnh",
+    "scroll-to-active-note": "Cuộn cây ghi chú đến ghi chú đang sử dụng",
+    "quick-search": "Kích hoạt thanh tìm kiếm nhanh",
+    "search-in-subtree": "Tìm kiếm các ghi chú trong cây con của ghi chú hiện tại",
+    "expand-subtree": "Mở rộng cây con của ghi chú hiện tại",
+    "collapse-tree": "Thu gọn toàn bộ cây ghi chú",
+    "collapse-subtree": "Thu gọn cây con của ghi chú hiện tại",
+    "sort-child-notes": "Sắp xếp các ghi chú con",
+    "creating-and-moving-notes": "Tạo và di chuyển ghi chú",
+    "create-note-after": "Tạo ghi chú sau ghi chú hiện tại",
+    "create-note-into": "Tạo ghi chú con cho ghi chú hiện tại",
+    "create-note-into-inbox": "Tạo một ghi chú trong thư mục đầu vào (nếu được khai báo) hoặc ghi chú của ngày",
+    "move-note-up": "Chuyển ghi chú lên",
+    "move-note-down": "Chuyển ghi chú xuống"
+  }
 }

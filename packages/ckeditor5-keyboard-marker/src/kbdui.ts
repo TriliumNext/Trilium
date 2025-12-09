@@ -1,5 +1,5 @@
 import { AttributeCommand, ButtonView, Plugin } from 'ckeditor5';
-import kbdIcon from '../theme/icons/kbd.svg';
+import kbdIcon from '../theme/icons/kbd.svg?raw';
 
 const KBD = 'kbd';
 

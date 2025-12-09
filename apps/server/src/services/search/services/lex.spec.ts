@@ -59,6 +59,34 @@ describe("Lexer fulltext", () => {
     it("escaping special characters", () => {
         expect(lex("hello \\#\\~\\'").fulltextTokens.map((t) => t.token)).toEqual(["hello", "#~'"]);
     });
+
+    it("recognizes leading = operator for exact match", () => {
+        const result1 = lex("=example");
+        expect(result1.fulltextTokens.map((t) => t.token)).toEqual(["example"]);
+        expect(result1.leadingOperator).toBe("=");
+
+        const result2 = lex("=hello world");
+        expect(result2.fulltextTokens.map((t) => t.token)).toEqual(["hello", "world"]);
+        expect(result2.leadingOperator).toBe("=");
+
+        const result3 = lex("='hello world'");
+        expect(result3.fulltextTokens.map((t) => t.token)).toEqual(["hello world"]);
+        expect(result3.leadingOperator).toBe("=");
+    });
+
+    it("doesn't treat = as leading operator in other contexts", () => {
+        const result1 = lex("==example");
+        expect(result1.fulltextTokens.map((t) => t.token)).toEqual(["==example"]);
+        expect(result1.leadingOperator).toBe("");
+
+        const result2 = lex("= example");
+        expect(result2.fulltextTokens.map((t) => t.token)).toEqual(["=", "example"]);
+        expect(result2.leadingOperator).toBe("");
+
+        const result3 = lex("example");
+        expect(result3.fulltextTokens.map((t) => t.token)).toEqual(["example"]);
+        expect(result3.leadingOperator).toBe("");
+    });
 });
 
 describe("Lexer expression", () => {

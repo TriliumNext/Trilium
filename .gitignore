@@ -1,4 +1,5 @@
 # See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+/.cache
 
 # compiled output
 dist
@@ -32,14 +33,11 @@ testem.log
 .DS_Store
 Thumbs.db
 
-.nx/cache
-.nx/workspace-data
-
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
 test-output
 
-apps/*/data
+apps/*/data*
 apps/*/out
 upload
 
@@ -48,3 +46,7 @@ upload
 
 /result
 .svelte-kit
+
+# docs
+site/
+apps/*/coverage

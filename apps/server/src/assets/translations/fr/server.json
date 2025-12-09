@@ -111,7 +111,9 @@
     "incorrect-password": "Le mot de passe est incorrect. Veuillez réessayer.",
     "password": "Mot de passe",
     "remember-me": "Se souvenir de moi",
-    "button": "Connexion"
+    "button": "Connexion",
+    "sign_in_with_sso": "Se connecter avec {{ ssoIssuerName }}",
+    "incorrect-totp": "TOTP incorrect. Veuillez réessayer."
   },
   "set_password": {
     "title": "Définir un mot de passe",
@@ -248,7 +250,13 @@
     "other": "Autre",
     "advanced-title": "Avancé",
     "visible-launchers-title": "Raccourcis visibles",
-    "user-guide": "Guide de l'utilisateur"
+    "user-guide": "Guide de l'utilisateur",
+    "jump-to-note-title": "Aller à...",
+    "llm-chat-title": "Discuter avec Notes",
+    "multi-factor-authentication-title": "MFA",
+    "ai-llm-title": "AI/LLM",
+    "localization": "Langue et région",
+    "inbox-title": "Boîte de réception"
   },
   "notes": {
     "new-note": "Nouvelle note",
@@ -266,7 +274,8 @@
     "export_filter": "Document PDF (*.pdf)",
     "unable-to-export-message": "La note actuelle n'a pas pu être exportée en format PDF.",
     "unable-to-export-title": "Impossible d'exporter au format PDF",
-    "unable-to-save-message": "Le fichier sélectionné n'a pas pu être écrit. Réessayez ou sélectionnez une autre destination."
+    "unable-to-save-message": "Le fichier sélectionné n'a pas pu être écrit. Réessayez ou sélectionnez une autre destination.",
+    "unable-to-print": "Impossible d'imprimer la note"
   },
   "tray": {
     "tooltip": "Trilium Notes",
@@ -275,7 +284,8 @@
     "bookmarks": "Signets",
     "today": "Ouvrir la note du journal du jour",
     "new-note": "Nouvelle note",
-    "show-windows": "Afficher les fenêtres"
+    "show-windows": "Afficher les fenêtres",
+    "open_new_window": "Ouvrir une nouvelle fenêtre"
   },
   "migration": {
     "old_version": "La migration directe à partir de votre version actuelle n'est pas prise en charge. Veuillez d'abord mettre à jour vers la version v0.60.4, puis vers cette nouvelle version.",
@@ -350,6 +360,82 @@
     "add-include-note-to-text": "Ajouter une note inclusion au texte",
     "edit-read-only-note": "Modifier une note en lecture seule",
     "add-new-label": "Ajouter une nouvelle étiquette",
-    "add-new-relation": "Ajouter une nouvelle relation"
+    "add-new-relation": "Ajouter une nouvelle relation",
+    "toggle-ribbon-tab-classic-editor": "Basculer l'onglet Mise en forme de l'éditeur avec la barre d'outils fixe",
+    "toggle-ribbon-tab-basic-properties": "Afficher/masquer les Propriétés de base de la note",
+    "toggle-ribbon-tab-book-properties": "Afficher/masquer les Propriétés du Livre",
+    "toggle-ribbon-tab-file-properties": "Afficher/masquer les Propriétés du fichier",
+    "toggle-ribbon-tab-image-properties": "Afficher/masquer les Propriétés de l'image",
+    "toggle-ribbon-tab-owned-attributes": "Afficher/masquer les Attributs propres",
+    "toggle-ribbon-tab-inherited-attributes": "Afficher/masquer les Attributs hérités",
+    "toggle-right-pane": "Afficher le panneau de droite",
+    "print-active-note": "Imprimer la note active",
+    "export-active-note-as-pdf": "Exporter la note active en PDF",
+    "open-note-externally": "Ouvrir la note à l'extérieur",
+    "render-active-note": "Faire un rendu de la note active",
+    "run-active-note": "Lancer la note active",
+    "reload-frontend-app": "Recharger l'application Frontend",
+    "open-developer-tools": "Ouvrir les outils développeur",
+    "find-in-text": "Chercher un texte",
+    "toggle-left-pane": "Afficher le panneau de gauche",
+    "toggle-full-screen": "Passer en mode plein écran",
+    "zoom-out": "Dézoomer",
+    "zoom-in": "Zoomer",
+    "reset-zoom-level": "Réinitilaliser le zoom",
+    "copy-without-formatting": "Copier sans mise en forme",
+    "force-save-revision": "Forcer la sauvegarde de la révision",
+    "toggle-ribbon-tab-promoted-attributes": "Basculer les attributs promus de l'onglet du ruban",
+    "toggle-ribbon-tab-note-map": "Basculer l'onglet du ruban Note Map",
+    "toggle-ribbon-tab-note-info": "Basculer l'onglet du ruban Note Info",
+    "toggle-ribbon-tab-note-paths": "Basculer les chemins de notes de l'onglet du ruban",
+    "toggle-ribbon-tab-similar-notes": "Basculer l'onglet du ruban Notes similaires",
+    "toggle-note-hoisting": "Activer la focalisation sur la note",
+    "unhoist-note": "Désactiver la focalisation sur la note"
+  },
+  "sql_init": {
+    "db_not_initialized_desktop": "Base de données non initialisée, merci de suivre les instructions à l'écran.",
+    "db_not_initialized_server": "Base de données non initialisée, veuillez visitez - http://[your-server-host]:{{port}} pour consulter les instructions d'initialisation de Trilium."
+  },
+  "desktop": {
+    "instance_already_running": "Une instance est déjà en cours d'execution, ouverture de cette instance à la place."
+  },
+  "weekdayNumber": "Semaine {weekNumber}",
+  "quarterNumber": "Trimestre {quarterNumber}",
+  "share_theme": {
+    "site-theme": "Thème du site",
+    "search_placeholder": "Recherche...",
+    "image_alt": "Image de l'article",
+    "last-updated": "Dernière mise à jour le {{- date}}",
+    "subpages": "Sous-pages:",
+    "on-this-page": "Sur cette page",
+    "expand": "Développer"
+  },
+  "hidden_subtree_templates": {
+    "text-snippet": "Extrait de texte",
+    "description": "Description",
+    "list-view": "Vue en liste",
+    "grid-view": "Vue en grille",
+    "calendar": "Calendrier",
+    "table": "Tableau",
+    "geo-map": "Carte géographique",
+    "start-date": "Date de début",
+    "end-date": "Date de fin",
+    "start-time": "Heure de début",
+    "end-time": "Heure de fin",
+    "geolocation": "Géolocalisation",
+    "built-in-templates": "Modèles intégrés",
+    "board": "Tableau de bord",
+    "status": "État",
+    "board_note_first": "Première note",
+    "board_note_second": "Deuxième note",
+    "board_note_third": "Troisième note",
+    "board_status_todo": "A faire",
+    "board_status_progress": "En cours",
+    "board_status_done": "Terminé",
+    "presentation": "Présentation",
+    "presentation_slide": "Diapositive de présentation",
+    "presentation_slide_first": "Première diapositive",
+    "presentation_slide_second": "Deuxième diapositive",
+    "background": "Arrière-plan"
   }
 }

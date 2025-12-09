@@ -20,7 +20,7 @@ class Options {
         this.arr = arr;
     }
 
-    get(key: string) {
+    get(key: OptionNames) {
         return this.arr?.[key] as string;
     }
 
@@ -40,7 +40,7 @@ class Options {
         }
     }
 
-    getInt(key: string) {
+    getInt(key: OptionNames) {
         const value = this.arr?.[key];
         if (typeof value === "number") {
             return value;
@@ -52,7 +52,7 @@ class Options {
         return null;
     }
 
-    getFloat(key: string) {
+    getFloat(key: OptionNames) {
         const value = this.arr?.[key];
         if (typeof value !== "string") {
             return null;
@@ -60,15 +60,15 @@ class Options {
         return parseFloat(value);
     }
 
-    is(key: string) {
+    is(key: OptionNames) {
         return this.arr[key] === "true";
     }
 
-    set(key: string, value: OptionValue) {
+    set(key: OptionNames, value: OptionValue) {
         this.arr[key] = value;
     }
 
-    async save(key: string, value: OptionValue) {
+    async save(key: OptionNames, value: OptionValue) {
         this.set(key, value);
 
         const payload: Record<string, OptionValue> = {};
@@ -85,7 +85,7 @@ class Options {
         await server.put<void>("options", newValues);
     }
 
-    async toggle(key: string) {
+    async toggle(key: OptionNames) {
         await this.save(key, (!this.is(key)).toString());
     }
 }

@@ -10,12 +10,12 @@ The following information is displayed:
     *   Clicking on the title will open the note in the current tab.
     *   Holding <kbd>Ctrl</kbd> pressed while clicking the title will open in a new tab instead of the current one.
 *   A snippet of the content will be displayed as well.
-*   A button to [quickly edit](Quick%20edit.md) the note in a popup.
+*   A button to [quickly edit](../Navigation/Quick%20edit.md) the note in a popup.
 
 The tooltip can be found in multiple places, including:
 
 *   In <a class="reference-link" href="../../Note%20Types/Text.md">Text</a> notes, when hovering over <a class="reference-link" href="../../Note%20Types/Text/Links/Internal%20(reference)%20links.md">Internal (reference) links</a> .
-*   <a class="reference-link" href="../../Note%20Types/Collections.md">Collections</a>: 
-    *   <a class="reference-link" href="../../Note%20Types/Collections/Geo%20Map%20View.md">Geo Map View</a>, when hovering over a marker.
-    *   <a class="reference-link" href="../../Note%20Types/Collections/Calendar%20View.md">Calendar View</a>, when hovering over an event.
-    *   <a class="reference-link" href="../../Note%20Types/Collections/Table%20View.md">Table View</a>, when hovering over a note title, or over a [relation](../../Advanced%20Usage/Attributes/Relations.md).
+*   <a class="reference-link" href="../../Collections.md">Collections</a>: 
+    *   <a class="reference-link" href="../../Collections/Geo%20Map.md">Geo Map View</a>, when hovering over a marker.
+    *   <a class="reference-link" href="../../Collections/Calendar.md">Calendar View</a>, when hovering over an event.
+    *   <a class="reference-link" href="../../Collections/Table.md">Table View</a>, when hovering over a note title, or over a [relation](../../Advanced%20Usage/Attributes/Relations.md).

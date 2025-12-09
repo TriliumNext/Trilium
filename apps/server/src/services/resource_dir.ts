@@ -1,4 +1,3 @@
-import log from "./log.js";
 import path from "path";
 import fs from "fs";
 
@@ -10,7 +9,7 @@ const ELECTRON_APP_ROOT_DIR = path.resolve(RESOURCE_DIR, "../..");
 const DB_INIT_DIR = path.resolve(RESOURCE_DIR, "db");
 
 if (!fs.existsSync(DB_INIT_DIR)) {
-    log.error(`Could not find DB initialization directory: ${DB_INIT_DIR}`);
+    console.error(`Could not find DB initialization directory: ${DB_INIT_DIR}`);
     process.exit(1);
 }
 

@@ -7,8 +7,8 @@ import log from "./log.js";
 import sqlInit from "./sql_init.js";
 import cls from "./cls.js";
 import keyboardActionsService from "./keyboard_actions.js";
-import electron from "electron";
-import type { App, BrowserWindowConstructorOptions, BrowserWindow, WebContents } from "electron";
+import electron, { ipcMain } from "electron";
+import type { App, BrowserWindowConstructorOptions, BrowserWindow, WebContents, IpcMainEvent } from "electron";
 import { formatDownloadTitle, isDev, isMac, isWindows } from "./utils.js";
 import { t } from "i18next";
 import { RESOURCE_DIR } from "./resource_dir.js";
@@ -67,60 +67,106 @@ electron.ipcMain.on("create-extra-window", (event, arg) => {
     createExtraWindow(arg.extraWindowHash);
 });
 
+interface PrintOpts {
+    notePath: string;
+    printToPdf: boolean;
+}
+
 interface ExportAsPdfOpts {
+    notePath: string;
     title: string;
     landscape: boolean;
     pageSize: "A0" | "A1" | "A2" | "A3" | "A4" | "A5" | "A6" | "Legal" | "Letter" | "Tabloid" | "Ledger";
 }
 
-electron.ipcMain.on("export-as-pdf", async (e, opts: ExportAsPdfOpts) => {
-    const browserWindow = electron.BrowserWindow.fromWebContents(e.sender);
-    if (!browserWindow) {
-        return;
-    }
-
-    const filePath = electron.dialog.showSaveDialogSync(browserWindow, {
-        defaultPath: formatDownloadTitle(opts.title, "file", "application/pdf"),
-        filters: [
-            {
-                name: t("pdf.export_filter"),
-                extensions: ["pdf"]
-            }
-        ]
+electron.ipcMain.on("print-note", async (e, { notePath }: PrintOpts) => {
+    const browserWindow = await getBrowserWindowForPrinting(e, notePath, "printing");
+    browserWindow.webContents.print({}, (success, failureReason) => {
+        if (!success && failureReason !== "Print job canceled") {
+            electron.dialog.showErrorBox(t("pdf.unable-to-print"), failureReason);
+        }
+        e.sender.send("print-done");
+        browserWindow.destroy();
     });
-    if (!filePath) {
-        return;
-    }
-
-    let buffer: Buffer;
-    try {
-        buffer = await browserWindow.webContents.printToPDF({
-            landscape: opts.landscape,
-            pageSize: opts.pageSize,
-            generateDocumentOutline: true,
-            generateTaggedPDF: true,
-            printBackground: true,
-            displayHeaderFooter: true,
-            headerTemplate: `<div></div>`,
-            footerTemplate: `
-                <div class="pageNumber" style="width: 100%; text-align: center; font-size: 10pt;">
-                </div>
-            `
-        });
-    } catch (e) {
-        electron.dialog.showErrorBox(t("pdf.unable-to-export-title"), t("pdf.unable-to-export-message"));
-        return;
-    }
-
-    try {
-        await fs.writeFile(filePath, buffer);
-    } catch (e) {
-        electron.dialog.showErrorBox(t("pdf.unable-to-export-title"), t("pdf.unable-to-save-message"));
-        return;
-    }
-
-    electron.shell.openPath(filePath);
 });
+
+electron.ipcMain.on("export-as-pdf", async (e, { title, notePath, landscape, pageSize }: ExportAsPdfOpts) => {
+    const browserWindow = await getBrowserWindowForPrinting(e, notePath, "exporting_pdf");
+
+    async function print() {
+        const filePath = electron.dialog.showSaveDialogSync(browserWindow, {
+            defaultPath: formatDownloadTitle(title, "file", "application/pdf"),
+            filters: [
+                {
+                    name: t("pdf.export_filter"),
+                    extensions: ["pdf"]
+                }
+            ]
+        });
+        if (!filePath) return;
+
+        let buffer: Buffer;
+        try {
+            buffer = await browserWindow.webContents.printToPDF({
+                landscape,
+                pageSize,
+                generateDocumentOutline: true,
+                generateTaggedPDF: true,
+                printBackground: true,
+                displayHeaderFooter: true,
+                headerTemplate: `<div></div>`,
+                footerTemplate: `
+                    <div class="pageNumber" style="width: 100%; text-align: center; font-size: 10pt;">
+                    </div>
+                `
+            });
+        } catch (e) {
+            electron.dialog.showErrorBox(t("pdf.unable-to-export-title"), t("pdf.unable-to-export-message"));
+            return;
+        }
+
+        try {
+            await fs.writeFile(filePath, buffer);
+        } catch (e) {
+            electron.dialog.showErrorBox(t("pdf.unable-to-export-title"), t("pdf.unable-to-save-message"));
+            return;
+        }
+
+        electron.shell.openPath(filePath);
+    }
+
+    try {
+        await print();
+    } finally {
+        e.sender.send("print-done");
+        browserWindow.destroy();
+    }
+});
+
+async function getBrowserWindowForPrinting(e: IpcMainEvent, notePath: string, action: "printing" | "exporting_pdf") {
+    const browserWindow = new electron.BrowserWindow({
+        show: false,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+            offscreen: true,
+            session: e.sender.session
+        },
+    });
+
+    const progressCallback = (_e, progress: number) => e.sender.send("print-progress", { progress, action });
+    ipcMain.on("print-progress", progressCallback);
+
+    await browserWindow.loadURL(`http://127.0.0.1:${port}/?print#${notePath}`);
+    await browserWindow.webContents.executeJavaScript(`
+        new Promise(resolve => {
+            if (window._noteReady) return resolve();
+            window.addEventListener("note-ready", () => resolve());
+        });
+    `);
+    ipcMain.off("print-progress", progressCallback);
+    return browserWindow;
+}
 
 async function createMainWindow(app: App) {
     if ("setUserTasks" in app) {
@@ -173,22 +219,6 @@ async function createMainWindow(app: App) {
     mainWindow.on("closed", () => (mainWindow = null));
 
     configureWebContents(mainWindow.webContents, spellcheckEnabled);
-
-    app.on("second-instance", (event, commandLine) => {
-        const lastFocusedWindow = getLastFocusedWindow();
-        if (commandLine.includes("--new-window")) {
-            createExtraWindow("");
-        } else if (lastFocusedWindow) {
-            // Someone tried to run a second instance, we should focus our window.
-            // see www.ts "requestSingleInstanceLock" for the rest of this logic with explanation
-            if (lastFocusedWindow.isMinimized()) {
-                lastFocusedWindow.restore();
-            }
-            lastFocusedWindow.show();
-            lastFocusedWindow.focus();
-        }
-    });
-
     trackWindowFocus(mainWindow);
 }
 
@@ -224,7 +254,7 @@ function getWindowExtraOpts() {
 }
 
 async function configureWebContents(webContents: WebContents, spellcheckEnabled: boolean) {
-    const remoteMain = (await import("@electron/remote/main/index.js")).default;
+    const remoteMain = (await import("@electron/remote/main/index.js"));
     remoteMain.enable(webContents);
 
     webContents.setWindowOpenHandler((details) => {
@@ -257,7 +287,11 @@ async function configureWebContents(webContents: WebContents, spellcheckEnabled:
 }
 
 function getIcon() {
-    return path.join(RESOURCE_DIR, "../public/assets/icon.png");
+    if (process.env.NODE_ENV === "development") {
+        return path.join(__dirname, "../../../desktop/electron-forge/app-icon/png/256x256-dev.png");
+    } else {
+        return path.join(RESOURCE_DIR, "../public/assets/icon.png");
+    }
 }
 
 async function createSetupWindow() {
@@ -306,14 +340,18 @@ async function registerGlobalShortcuts() {
                 const result = globalShortcut.register(
                     translatedShortcut,
                     cls.wrap(() => {
-                        if (!mainWindow) {
+                        const targetWindow = getLastFocusedWindow() || mainWindow;
+                        if (!targetWindow || targetWindow.isDestroyed()) {
                             return;
                         }
 
-                        // window may be hidden / not in focus
-                        mainWindow.focus();
+                        if (action.actionName === "toggleTray") {
+                            targetWindow.focus();
+                        } else {
+                            showAndFocusWindow(targetWindow);
+                        }
 
-                        mainWindow.webContents.send("globalShortcut", action.actionName);
+                        targetWindow.webContents.send("globalShortcut", action.actionName);
                     })
                 );
 
@@ -325,6 +363,17 @@ async function registerGlobalShortcuts() {
             }
         }
     }
+}
+
+function showAndFocusWindow(window: BrowserWindow) {
+    if (!window) return;
+
+    if (window.isMinimized()) {
+        window.restore();
+    }
+
+    window.show();
+    window.focus();
 }
 
 function getMainWindow() {
@@ -341,6 +390,7 @@ function getAllWindows() {
 
 export default {
     createMainWindow,
+    createExtraWindow,
     createSetupWindow,
     closeSetupWindow,
     registerGlobalShortcuts,

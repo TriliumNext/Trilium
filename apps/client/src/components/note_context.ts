@@ -9,10 +9,10 @@ import hoistedNoteService from "../services/hoisted_note.js";
 import options from "../services/options.js";
 import type { ViewScope } from "../services/link.js";
 import type FNote from "../entities/fnote.js";
-import type TypeWidget from "../widgets/type_widgets/type_widget.js";
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
 import { closeActiveDialog } from "../services/dialog.js";
+import { ReactWrappedWidget } from "../widgets/basic_widget.js";
 
 export interface SetNoteOpts {
     triggerSwitchEvent?: unknown;
@@ -321,14 +321,20 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
             return false;
         }
 
+        if (note.type === "search") {
+            return false;
+        }
+
         if (!["default", "contextual-help"].includes(this.viewScope?.viewMode ?? "")) {
             return false;
         }
 
         // Collections must always display a note list, even if no children.
-        const viewType = note.getLabelValue("viewType") ?? "grid";
-        if (!["list", "grid"].includes(viewType)) {
-            return true;
+        if (note.type === "book") {
+            const viewType = note.getLabelValue("viewType") ?? "grid";
+            if (!["list", "grid"].includes(viewType)) {
+                return true;
+            }
         }
 
         if (!note.hasChildren()) {
@@ -395,7 +401,7 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
     async getTypeWidget() {
         return this.timeout(
-            new Promise<TypeWidget | null>((resolve) =>
+            new Promise<ReactWrappedWidget | null>((resolve) =>
                 appContext.triggerCommand("executeWithTypeWidget", {
                     resolve,
                     ntxId: this.ntxId
@@ -435,6 +441,24 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         }
 
         return title;
+    }
+}
+
+export function openInCurrentNoteContext(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDownEvent | React.PointerEvent<HTMLCanvasElement> | null, notePath: string, viewScope?: ViewScope) {
+    const ntxId = $(evt?.target as Element)
+        .closest("[data-ntx-id]")
+        .attr("data-ntx-id");
+
+    const noteContext = ntxId ? appContext.tabManager.getNoteContextById(ntxId) : appContext.tabManager.getActiveContext();
+
+    if (noteContext) {
+        noteContext.setNote(notePath, { viewScope }).then(() => {
+            if (noteContext !== appContext.tabManager.getActiveContext()) {
+                appContext.tabManager.activateNoteContext(noteContext.ntxId);
+            }
+        });
+    } else {
+        appContext.tabManager.openContextWithNote(notePath, { viewScope, activate: true });
     }
 }
 

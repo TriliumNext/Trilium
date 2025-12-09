@@ -1,0 +1,20 @@
+.table-print-view .tabulator-print-table table,
+.table-print-view .tabulator-print-table th,
+.table-print-view .tabulator-print-table tr,
+.table-print-view .tabulator-print-table td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+.table-print-view .tabulator-print-table th {
+    background-color: #f0f0f0;
+}
+
+.table-print-view .tabulator-print-table th,
+.table-print-view .tabulator-print-table td {
+    padding: 0.25rem 0.5rem;
+}
+
+.table-print-view .tabulator-print-table td[aria-checked] svg path {
+    fill: currentColor;
+}

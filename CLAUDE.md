@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Trilium Notes is a hierarchical note-taking application with advanced features like synchronization, scripting, and rich text editing. It's built as a TypeScript monorepo using NX, with multiple applications and shared packages.
+Trilium Notes is a hierarchical note-taking application with advanced features like synchronization, scripting, and rich text editing. It's built as a TypeScript monorepo using pnpm, with multiple applications and shared packages.
 
 ## Development Commands
 
@@ -14,12 +14,9 @@ Trilium Notes is a hierarchical note-taking application with advanced features l
 
 ### Running Applications
 - `pnpm run server:start` - Start development server (http://localhost:8080)
-- `pnpm nx run server:serve` - Alternative server start command
-- `pnpm nx run desktop:serve` - Run desktop Electron app
 - `pnpm run server:start-prod` - Run server in production mode
 
 ### Building
-- `pnpm nx build <project>` - Build specific project (server, client, desktop, etc.)
 - `pnpm run client:build` - Build client application
 - `pnpm run server:build` - Build server application
 - `pnpm run electron:build` - Build desktop application
@@ -28,12 +25,7 @@ Trilium Notes is a hierarchical note-taking application with advanced features l
 - `pnpm test:all` - Run all tests (parallel + sequential)
 - `pnpm test:parallel` - Run tests that can run in parallel
 - `pnpm test:sequential` - Run tests that must run sequentially (server, ckeditor5-mermaid, ckeditor5-math)
-- `pnpm nx test <project>` - Run tests for specific project
 - `pnpm coverage` - Generate coverage reports
-
-### Linting & Type Checking
-- `pnpm nx run <project>:lint` - Lint specific project
-- `pnpm nx run <project>:typecheck` - Type check specific project
 
 ## Architecture Overview
 
@@ -94,7 +86,6 @@ Frontend uses a widget system (`apps/client/src/widgets/`):
    - `apps/server/src/assets/db/schema.sql` - Core database structure
 
 4. **Configuration**:
-   - `nx.json` - NX workspace configuration
    - `package.json` - Project dependencies and scripts
 
 ## Note Types and Features
@@ -154,7 +145,7 @@ Trilium provides powerful user scripting capabilities:
 - Update schema in `apps/server/src/assets/db/schema.sql`
 
 ## Build System Notes
-- Uses NX for monorepo management with build caching
+- Uses pnpm for monorepo management
 - Vite for fast development builds
 - ESBuild for production optimization
 - pnpm workspaces for dependency management

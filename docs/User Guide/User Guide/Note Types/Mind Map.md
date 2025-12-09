@@ -22,3 +22,4 @@ The mindmap allows for easy jotting down of ideas and storing them in a hierarch
 *   In the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Floating%20buttons.md">Floating buttons</a> area:
     *   An [image reference](Text/Images/Image%20references.md) can be copied, to paste the mind map in a text note.
     *   The diagram can be exported either as SVG (vectorial) or PNG (raster).
+    *   The note can be togged [read-only](../Basic%20Concepts%20and%20Features/Notes/Read-Only%20Notes.md).

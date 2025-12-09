@@ -1,7 +1,7 @@
 import { t } from "./i18n.js";
 import froca from "./froca.js";
 import server from "./server.js";
-import type { MenuCommandItem, MenuItem, MenuItemBadge } from "../menus/context_menu.js";
+import type { MenuCommandItem, MenuItem, MenuItemBadge, MenuSeparatorItem } from "../menus/context_menu.js";
 import type { NoteType } from "../entities/fnote.js";
 import type { TreeCommandNames } from "../menus/tree_context_menu.js";
 
@@ -73,7 +73,7 @@ const BETA_BADGE = {
     title: t("note_types.beta-feature")
 };
 
-const SEPARATOR = { title: "----" };
+const SEPARATOR: MenuSeparatorItem = { kind: "separator" };
 
 const creationDateCache = new Map<string, Date>();
 let rootCreationDate: Date | undefined;
@@ -81,8 +81,8 @@ let rootCreationDate: Date | undefined;
 async function getNoteTypeItems(command?: TreeCommandNames) {
     const items: MenuItem<TreeCommandNames>[] = [
         ...getBlankNoteTypes(command),
-        ...await getBuiltInTemplates(t("note_types.collections"), command, true),
         ...await getBuiltInTemplates(null, command, false),
+        ...await getBuiltInTemplates(t("note_types.collections"), command, true),
         ...await getUserTemplates(command)
     ];
 
@@ -121,7 +121,10 @@ async function getUserTemplates(command?: TreeCommandNames) {
     }
 
     const items: MenuItem<TreeCommandNames>[] = [
-        SEPARATOR
+        {
+            title: t("note_type_chooser.templates"),
+            kind: "header"
+        }
     ];
 
     for (const templateNote of templateNotes) {
@@ -158,15 +161,15 @@ async function getBuiltInTemplates(title: string | null, command: TreeCommandNam
     if (title) {
         items.push({
             title: title,
-            enabled: false,
-            uiIcon: "bx bx-empty"
+            kind: "header"
         });
     } else {
         items.push(SEPARATOR);
     }
 
     for (const templateNote of childNotes) {
-        if (templateNote.hasLabel("collection") !== filterCollections) {
+        if (templateNote.hasLabel("collection") !== filterCollections ||
+            !templateNote.hasLabel("template")) {
             continue;
         }
 

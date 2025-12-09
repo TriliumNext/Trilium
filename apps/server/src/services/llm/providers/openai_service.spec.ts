@@ -2,13 +2,17 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { OpenAIService } from './openai_service.js';
 import options from '../../options.js';
 import * as providers from './providers.js';
-import type { ChatCompletionOptions, Message } from '../ai_interface.js';
+import type { Message } from '../ai_interface.js';
 
 // Mock dependencies
 vi.mock('../../options.js', () => ({
     default: {
         getOption: vi.fn(),
-        getOptionBool: vi.fn()
+        getOptionBool: vi.fn(),
+        getOptionInt: vi.fn(name => {
+            if (name === "protectedSessionTimeout") return Number.MAX_SAFE_INTEGER;
+            return 0;
+        })
     }
 }));
 
@@ -53,17 +57,17 @@ describe('OpenAIService', () => {
     describe('isAvailable', () => {
         it('should return true when base checks pass', () => {
             vi.mocked(options.getOptionBool).mockReturnValueOnce(true); // AI enabled
-            
+
             const result = service.isAvailable();
-            
+
             expect(result).toBe(true);
         });
 
         it('should return false when AI is disabled', () => {
             vi.mocked(options.getOptionBool).mockReturnValueOnce(false); // AI disabled
-            
+
             const result = service.isAvailable();
-            
+
             expect(result).toBe(false);
         });
     });
@@ -89,7 +93,7 @@ describe('OpenAIService', () => {
                 enableTools: false
             };
             vi.mocked(providers.getOpenAIOptions).mockReturnValueOnce(mockOptions);
-            
+
             // Mock the getClient method to return our mock client
             const mockCompletion = {
                 id: 'chatcmpl-123',
@@ -120,9 +124,9 @@ describe('OpenAIService', () => {
             };
 
             vi.spyOn(service as any, 'getClient').mockReturnValue(mockClient);
-            
+
             const result = await service.generateChatCompletion(messages);
-            
+
             expect(result).toEqual({
                 text: 'Hello! How can I help you today?',
                 model: 'gpt-3.5-turbo',
@@ -144,7 +148,7 @@ describe('OpenAIService', () => {
                 stream: true
             };
             vi.mocked(providers.getOpenAIOptions).mockReturnValueOnce(mockOptions);
-            
+
             // Mock the streaming response
             const mockStream = {
                 [Symbol.asyncIterator]: async function* () {
@@ -162,7 +166,7 @@ describe('OpenAIService', () => {
                     };
                 }
             };
-            
+
             const mockClient = {
                 chat: {
                     completions: {
@@ -172,9 +176,9 @@ describe('OpenAIService', () => {
             };
 
             vi.spyOn(service as any, 'getClient').mockReturnValue(mockClient);
-            
+
             const result = await service.generateChatCompletion(messages);
-            
+
             expect(result).toHaveProperty('stream');
             expect(result.text).toBe('');
             expect(result.model).toBe('gpt-3.5-turbo');
@@ -183,7 +187,7 @@ describe('OpenAIService', () => {
 
         it('should throw error if service not available', async () => {
             vi.mocked(options.getOptionBool).mockReturnValueOnce(false); // AI disabled
-            
+
             await expect(service.generateChatCompletion(messages)).rejects.toThrow(
                 'OpenAI service is not available'
             );
@@ -197,7 +201,7 @@ describe('OpenAIService', () => {
                 stream: false
             };
             vi.mocked(providers.getOpenAIOptions).mockReturnValueOnce(mockOptions);
-            
+
             const mockClient = {
                 chat: {
                     completions: {
@@ -207,7 +211,7 @@ describe('OpenAIService', () => {
             };
 
             vi.spyOn(service as any, 'getClient').mockReturnValue(mockClient);
-            
+
             await expect(service.generateChatCompletion(messages)).rejects.toThrow(
                 'API Error: Invalid API key'
             );
@@ -222,7 +226,7 @@ describe('OpenAIService', () => {
                     parameters: {}
                 }
             }];
-            
+
             const mockOptions = {
                 apiKey: 'test-key',
                 baseUrl: 'https://api.openai.com/v1',
@@ -233,7 +237,7 @@ describe('OpenAIService', () => {
                 tool_choice: 'auto'
             };
             vi.mocked(providers.getOpenAIOptions).mockReturnValueOnce(mockOptions);
-            
+
             const mockCompletion = {
                 id: 'chatcmpl-123',
                 object: 'chat.completion',
@@ -263,9 +267,9 @@ describe('OpenAIService', () => {
             };
 
             vi.spyOn(service as any, 'getClient').mockReturnValue(mockClient);
-            
+
             await service.generateChatCompletion(messages);
-            
+
             const createCall = mockClient.chat.completions.create.mock.calls[0][0];
             expect(createCall.tools).toEqual(mockTools);
             expect(createCall.tool_choice).toBe('auto');
@@ -281,7 +285,7 @@ describe('OpenAIService', () => {
                 tools: [{ type: 'function' as const, function: { name: 'test', description: 'test' } }]
             };
             vi.mocked(providers.getOpenAIOptions).mockReturnValueOnce(mockOptions);
-            
+
             const mockCompletion = {
                 id: 'chatcmpl-123',
                 object: 'chat.completion',
@@ -319,9 +323,9 @@ describe('OpenAIService', () => {
             };
 
             vi.spyOn(service as any, 'getClient').mockReturnValue(mockClient);
-            
+
             const result = await service.generateChatCompletion(messages);
-            
+
             expect(result).toEqual({
                 text: '',
                 model: 'gpt-3.5-turbo',

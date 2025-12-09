@@ -1,7 +1,8 @@
 # ETAPI (REST API)
-ETAPI is Trilium's public/external REST API. It is available since Trilium v0.50.
+> [!TIP]
+> For a quick start, consult the <a class="reference-link" href="ETAPI%20(REST%20API)/API%20Reference.dat">API Reference</a>.
 
-The documentation is in OpenAPI format, available [here](https://github.com/TriliumNext/Trilium/blob/master/src/etapi/etapi.openapi.yaml).
+ETAPI is Trilium's public/external REST API. It is available since Trilium v0.50.
 
 ## API clients
 
@@ -62,3 +63,11 @@ Make sure to replace the values of:
 *   `TOKEN` with your ETAPI token.
 *   `SERVER` with the correct protocol, host name and port to your Trilium instance.
 *   `NOTE_ID` with an existing note ID to download.
+
+As another example, to obtain a .zip export of a note and place it in a directory called `out`, simply replace the last statement in the script with:
+
+```
+curl -H "Authorization: $TOKEN" \
+	-X GET "$SERVER/etapi/notes/$NOTE_ID/export" \
+    --output "out/$NOTE_ID.zip"
+```

@@ -9,63 +9,8 @@
     "sqlite": "5.1.1",
     "sqlite3": "5.1.7"
   },
-  "nx": {
-    "name": "db-compare",
-    "targets": {
-      "build": {
-        "executor": "@nx/esbuild:esbuild",
-        "outputs": [
-          "{options.outputPath}"
-        ],
-        "defaultConfiguration": "production",
-        "options": {
-          "platform": "node",
-          "outputPath": "apps/db-compare/dist",
-          "format": [
-            "cjs"
-          ],
-          "bundle": false,
-          "main": "apps/db-compare/src/compare.ts",
-          "tsConfig": "apps/db-compare/tsconfig.app.json",
-          "assets": [],
-          "esbuildOptions": {
-            "sourcemap": true,
-            "outExtension": {
-              ".js": ".js"
-            }
-          }
-        },
-        "configurations": {
-          "development": {},
-          "production": {
-            "esbuildOptions": {
-              "sourcemap": false,
-              "outExtension": {
-                ".js": ".js"
-              }
-            }
-          }
-        }
-      },
-      "serve": {
-        "executor": "@nx/js:node",
-        "defaultConfiguration": "development",
-        "dependsOn": [
-          "build"
-        ],
-        "options": {
-          "buildTarget": "db-compare:build",
-          "runBuildTargetDependencies": false
-        },
-        "configurations": {
-          "development": {
-            "buildTarget": "db-compare:build:development"
-          },
-          "production": {
-            "buildTarget": "db-compare:build:production"
-          }
-        }
-      }
-    }
+  "scripts": {
+    "dev": "tsx src/compare.ts",
+    "build": "esbuild --platform=node --format=cjs --outdir=dist src/compare.ts"
   }
 }

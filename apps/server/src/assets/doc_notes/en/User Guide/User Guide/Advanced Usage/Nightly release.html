@@ -1,0 +1,35 @@
+<p>Nightly releases are versions built every day, containing the latest improvements
+  and bugfixes, directly from the main development branch. These versions
+  are generally useful in preparation for a release, to ensure that there
+  are no significant bugs that need to be addressed first, or they can be
+  used to confirm whether a particular bug is fixed or feature is well implemented.</p>
+<h2>Regarding the stability</h2>
+<p>Despite being on a development branch, generally the main branch is pretty
+  stable since PRs are tested before they are merged. If you notice any issues,
+  feel free to report them either via a ticket or via the Matrix.</p>
+<h2>Downloading the nightly release manually</h2>
+<p>Go to <a href="https://github.com/TriliumNext/Trilium/releases/tag/nightly">github.com/TriliumNext/Trilium/releases/tag/nightly</a> and
+  look for the artifacts starting with <code>TriliumNotes-main</code>. Choose
+  the appropriate one for your platform (e.g. <code>windows-x64.zip</code>).</p>
+<p>Depending on your use case, you can either test the portable version or
+  even use the installer.</p>
+<aside class="admonition note">
+  <p>If you choose the installable version (e.g. the .exe on Windows), it will
+    replace your stable installation.</p>
+</aside>
+<aside class="admonition important">
+  <p>By default, the nightly uses the same database as the production version.
+    Generally you could easily downgrade if needed. However, if there are changes
+    to the database or sync version, it will not be possible to downgrade without
+    having to restore from a backup.</p>
+</aside>
+<h2>Automatically download and install the latest nightly</h2>
+<p>This is pretty useful if you are a beta tester that wants to periodically
+  update their version:</p>
+<p>On Ubuntu:</p><pre><code class="language-text-x-trilium-auto">#!/usr/bin/env bash
+
+name=TriliumNotes-linux-x64-nightly.deb
+rm -f $name*
+wget https://github.com/TriliumNext/Trilium/releases/download/nightly/$name
+sudo apt-get install ./$name
+rm $name</code></pre>

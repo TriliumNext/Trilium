@@ -4,15 +4,18 @@ import Column from "../../react/Column";
 import FormCheckbox from "../../react/FormCheckbox";
 import FormGroup from "../../react/FormGroup";
 import FormSelect from "../../react/FormSelect";
-import { useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
+import { useStaticTooltip, useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
 import OptionsSection from "./components/OptionsSection";
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef } from "preact/hooks";
 import codeNoteSample from "./samples/code_note.txt?raw";
-import { DEFAULT_PREFIX } from "../abstract_code_type_widget";
+import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import { MimeType } from "@triliumnext/commons";
 import mime_types from "../../../services/mime_types";
 import CheckboxList from "./components/CheckboxList";
 import AutoReadOnlySize from "./components/AutoReadOnlySize";
+import "./code_notes.css";
+import { byMimeType as codeBlockMimeTypes } from "@triliumnext/highlightjs/src/syntax_highlighting";
+import { default as codeNoteMimeTypes } from "@triliumnext/codemirror/src/syntax_highlighting";
 
 const SAMPLE_MIME = "application/typescript";
 
@@ -57,7 +60,7 @@ function Appearance() {
         <OptionsSection title={t("code_theme.title")}>
             <div className="row" style={{ marginBottom: "15px" }}>
                 <FormGroup name="color-scheme" label={t("code_theme.color-scheme")} className="col-md-6" style={{ marginBottom: 0 }}>
-                    <FormSelect 
+                    <FormSelect
                         values={themes}
                         keyProperty="id" titleProperty="name"
                         currentValue={codeNoteTheme} onChange={setCodeNoteTheme}
@@ -123,17 +126,52 @@ function CodeNotePreview({ themeName, wordWrapping }: { themeName: string, wordW
 }
 
 function CodeMimeTypes() {
+    return (
+        <OptionsSection title={t("code_mime_types.title")}>
+            <CodeMimeTypesList />
+        </OptionsSection>
+    )
+}
+
+type MimeTypeWithDisabled = MimeType & { disabled?: boolean };
+
+export function CodeMimeTypesList() {
+    const containerRef = useRef<HTMLUListElement>(null);
+    useStaticTooltip(containerRef, {
+        title() {
+            const mime = this.querySelector("input")?.value;
+            if (!mime || mime === "text/plain") return "";
+
+            const hasCodeBlockSyntax = !!codeBlockMimeTypes[mime];
+            const hasCodeNoteSyntax = !!codeNoteMimeTypes[mime];
+
+            return `
+                <strong>${t("code_mime_types.tooltip_syntax_highlighting")}</strong><br/>
+                ${hasCodeBlockSyntax ? "✅" : "❌"} ${t("code_mime_types.tooltip_code_block_syntax")}<br/>
+                ${hasCodeNoteSyntax ? "✅" : "❌"} ${t("code_mime_types.tooltip_code_note_syntax")}
+            `;
+        },
+        selector: "label",
+        placement: "left",
+        fallbackPlacements: [ "left" ],
+        animation: false,
+        html: true
+    });
     const [ codeNotesMimeTypes, setCodeNotesMimeTypes ] = useTriliumOptionJson<string[]>("codeNotesMimeTypes");
-    const sectionStyle = useMemo(() => ({ marginBottom: "1em", breakInside: "avoid-column" }), []);
     const groupedMimeTypes: Record<string, MimeType[]> = useMemo(() => {
         mime_types.loadMimeTypes();
 
-        const ungroupedMimeTypes = Array.from(mime_types.getMimeTypes());
+        const ungroupedMimeTypes = Array.from(mime_types.getMimeTypes()) as MimeTypeWithDisabled[];
         const plainTextMimeType = ungroupedMimeTypes.shift();
         const result: Record<string, MimeType[]> = {};
         ungroupedMimeTypes.sort((a, b) => a.title.localeCompare(b.title));
 
-        result[""] = [ plainTextMimeType! ];
+        if (plainTextMimeType) {
+            result[""] = [ plainTextMimeType ];
+            plainTextMimeType.enabled = true;
+            plainTextMimeType.disabled = true;
+        }
+
         for (const mimeType of ungroupedMimeTypes) {
             const initial = mimeType.title.charAt(0).toUpperCase();
             if (!result[initial]) {
@@ -142,23 +180,21 @@ function CodeMimeTypes() {
             result[initial].push(mimeType);
         }
         return result;
-    }, []);  
+    }, [ codeNotesMimeTypes ]);
 
     return (
-        <OptionsSection title={t("code_mime_types.title")}>
-            <ul class="options-mime-types" style={{ listStyleType: "none", columnWidth: "250px" }}>
-                {Object.entries(groupedMimeTypes).map(([ initial, mimeTypes ]) => (
-                    <section style={sectionStyle}>
-                        { initial && <h5>{initial}</h5> }
-                        <CheckboxList
-                            values={mimeTypes}
-                            keyProperty="mime" titleProperty="title"
-                            currentValue={codeNotesMimeTypes} onChange={setCodeNotesMimeTypes}
-                            columnWidth="inherit"
-                        />
-                    </section>
-                ))}
-            </ul>
-        </OptionsSection>
-    )
+        <ul class="options-mime-types" ref={containerRef}>
+            {Object.entries(groupedMimeTypes).map(([ initial, mimeTypes ]) => (
+                <section>
+                    { initial && <h5>{initial}</h5> }
+                    <CheckboxList
+                        values={mimeTypes as MimeTypeWithDisabled[]}
+                        keyProperty="mime" titleProperty="title" disabledProperty="disabled"
+                        currentValue={codeNotesMimeTypes} onChange={setCodeNotesMimeTypes}
+                        columnWidth="inherit"
+                    />
+                </section>
+            ))}
+        </ul>
+    );
 }

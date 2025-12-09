@@ -45,16 +45,16 @@ export default class LauncherContextMenu implements SelectMenuItemEventListener<
             isVisibleRoot || isAvailableRoot ? { title: t("launcher_context_menu.add-script-launcher"), command: "addScriptLauncher", uiIcon: "bx bx-code-curly" } : null,
             isVisibleRoot || isAvailableRoot ? { title: t("launcher_context_menu.add-custom-widget"), command: "addWidgetLauncher", uiIcon: "bx bx-customize" } : null,
             isVisibleRoot || isAvailableRoot ? { title: t("launcher_context_menu.add-spacer"), command: "addSpacerLauncher", uiIcon: "bx bx-dots-horizontal" } : null,
-            isVisibleRoot || isAvailableRoot ? { title: "----" } : null,
+            isVisibleRoot || isAvailableRoot ? { kind: "separator" } : null,
 
             isAvailableItem ? { title: t("launcher_context_menu.move-to-visible-launchers"), command: "moveLauncherToVisible", uiIcon: "bx bx-show", enabled: true } : null,
             isVisibleItem ? { title: t("launcher_context_menu.move-to-available-launchers"), command: "moveLauncherToAvailable", uiIcon: "bx bx-hide", enabled: true } : null,
-            isVisibleItem || isAvailableItem ? { title: "----" } : null,
+            isVisibleItem || isAvailableItem ? { kind: "separator" } : null,
 
             { title: `${t("launcher_context_menu.duplicate-launcher")}`, command: "duplicateSubtree", uiIcon: "bx bx-outline", enabled: isItem },
             { title: `${t("launcher_context_menu.delete")}`, command: "deleteNotes", uiIcon: "bx bx-trash destructive-action-icon", enabled: canBeDeleted },
 
-            { title: "----" },
+            { kind: "separator" },
 
             { title: t("launcher_context_menu.reset"), command: "resetLauncher", uiIcon: "bx bx-reset destructive-action-icon", enabled: canBeReset }
         ];

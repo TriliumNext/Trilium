@@ -16,7 +16,7 @@ import BBranch from "../becca/entities/bbranch.js";
 import BNote from "../becca/entities/bnote.js";
 import BAttribute from "../becca/entities/battribute.js";
 import BAttachment from "../becca/entities/battachment.js";
-import dayjs from "dayjs";
+import { dayjs } from "@triliumnext/commons";
 import htmlSanitizer from "./html_sanitizer.js";
 import ValidationError from "../errors/validation_error.js";
 import noteTypesService from "./note_types.js";
@@ -94,6 +94,23 @@ function copyChildAttributes(parentNote: BNote, childNote: BNote) {
                 isInheritable: attr.isInheritable
             }).save();
         }
+    }
+}
+
+function copyAttachments(origNote: BNote, newNote: BNote) {
+    for (const attachment of origNote.getAttachments()) {
+        if (attachment.role === "image") {
+            // Handled separately, see `checkImageAttachments`.
+            continue;
+        }
+
+        const newAttachment = new BAttachment({
+            ...attachment,
+            attachmentId: undefined,
+            ownerId: newNote.noteId
+        });
+
+        newAttachment.save();
     }
 }
 
@@ -222,14 +239,14 @@ function createNewNote(params: NoteParams): {
             }
         }
 
-        asyncPostProcessContent(note, params.content);
-
         if (params.templateNoteId) {
-            if (!becca.getNote(params.templateNoteId)) {
+            const templateNote = becca.getNote(params.templateNoteId);
+            if (!templateNote) {
                 throw new Error(`Template note '${params.templateNoteId}' does not exist.`);
             }
 
             note.addRelation("template", params.templateNoteId);
+            copyAttachments(templateNote, note);
 
             // no special handling for ~inherit since it doesn't matter if it's assigned with the note creation or later
         }
@@ -296,7 +313,7 @@ function createNewNoteWithTarget(target: "into" | "after" | "before", targetBran
     }
 }
 
-function protectNoteRecursively(note: BNote, protect: boolean, includingSubTree: boolean, taskContext: TaskContext) {
+function protectNoteRecursively(note: BNote, protect: boolean, includingSubTree: boolean, taskContext: TaskContext<"protectNotes">) {
     protectNote(note, protect);
 
     taskContext.increaseProgressCount();
@@ -747,7 +764,7 @@ function updateNoteData(noteId: string, content: string, attachments: Attachment
     note.setContent(newContent, { forceFrontendReload });
 
     if (attachments?.length > 0) {
-        const existingAttachmentsByTitle = toMap(note.getAttachments({ includeContentLength: false }), "title");
+        const existingAttachmentsByTitle = toMap(note.getAttachments(), "title");
 
         for (const { attachmentId, role, mime, title, position, content } of attachments) {
             const existingAttachment = existingAttachmentsByTitle.get(title);
@@ -765,7 +782,7 @@ function updateNoteData(noteId: string, content: string, attachments: Attachment
     }
 }
 
-function undeleteNote(noteId: string, taskContext: TaskContext) {
+function undeleteNote(noteId: string, taskContext: TaskContext<"undeleteNotes">) {
     const noteRow = sql.getRow<NoteRow>("SELECT * FROM notes WHERE noteId = ?", [noteId]);
 
     if (!noteRow.isDeleted || !noteRow.deleteId) {
@@ -785,7 +802,7 @@ function undeleteNote(noteId: string, taskContext: TaskContext) {
     }
 }
 
-function undeleteBranch(branchId: string, deleteId: string, taskContext: TaskContext) {
+function undeleteBranch(branchId: string, deleteId: string, taskContext: TaskContext<"undeleteNotes">) {
     const branchRow = sql.getRow<BranchRow>("SELECT * FROM branches WHERE branchId = ?", [branchId]);
 
     if (!branchRow.isDeleted) {
@@ -1017,6 +1034,8 @@ function duplicateSubtreeInner(origNote: BNote, origBranch: BBranch | null | und
                 duplicateSubtreeInner(childBranch.getNote(), childBranch, newNote.noteId, noteIdMapping);
             }
         }
+
+        asyncPostProcessContent(newNote, content);
 
         return newNote;
     }

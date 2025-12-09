@@ -15,6 +15,9 @@
     },
     "widget-error": {
       "title": "Widgetin luonti epäonnistui"
+    },
+    "bundle-error": {
+      "title": "Mukautetun skriptin lataus epäonnistui"
     }
   },
   "add_link": {

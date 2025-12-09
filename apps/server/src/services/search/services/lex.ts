@@ -10,9 +10,17 @@ function lex(str: string) {
     let quotes: boolean | string = false; // otherwise contains used quote - ', " or `
     let fulltextEnded = false;
     let currentWord = "";
+    let leadingOperator = "";
 
     function isSymbolAnOperator(chr: string) {
         return ["=", "*", ">", "<", "!", "-", "+", "%", ","].includes(chr);
+    }
+    
+    // Check if the string starts with an exact match operator
+    // This allows users to use "=searchterm" for exact matching
+    if (str.startsWith("=") && str.length > 1 && str[1] !== "=" && str[1] !== " ") {
+        leadingOperator = "=";
+        str = str.substring(1); // Remove the leading operator from the string
     }
 
     function isPreviousSymbolAnOperator() {
@@ -128,7 +136,8 @@ function lex(str: string) {
     return {
         fulltextQuery,
         fulltextTokens,
-        expressionTokens
+        expressionTokens,
+        leadingOperator
     };
 }
 

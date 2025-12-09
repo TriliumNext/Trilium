@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import BNote from "../../becca/entities/bnote.js";
 import { mapByNoteType } from "./single.js";
+import { buildNote } from "../../test/becca_easy_mocking.js";
 
 describe("Note type mappings", () => {
     it("supports mermaid note", () => {
-        const note = new BNote({
+        const note = buildNote({
             type: "mermaid",
             title: "New note"
         });

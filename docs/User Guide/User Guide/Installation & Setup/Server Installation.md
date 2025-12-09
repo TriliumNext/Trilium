@@ -18,7 +18,7 @@ The server installation includes both web and [mobile frontends](Mobile%20Fronte
 
 ## Configuration
 
-After setting up your server installation, you may want to configure settings such as the port or enable [TLS](Server%20Installation/TLS%20Configuration.md). Configuration is managed via the Trilium `config.ini` file, which is located in the [data directory](Data%20directory.md) by default. To begin customizing your setup, copy the provided `config-sample.ini` file with default values to `config.ini`.
+After setting up your server installation, you may want to configure settings such as the port or enable [TLS](Server%20Installation/HTTPS%20\(TLS\).md). Configuration is managed via the Trilium `config.ini` file, which is located in the [data directory](Data%20directory.md) by default. To begin customizing your setup, copy the provided `config-sample.ini` file with default values to `config.ini`.
 
 You can also review the [configuration](../Advanced%20Usage/Configuration%20\(config.ini%20or%20e.md) file to provide all `config.ini` values as environment variables instead.
 
@@ -32,7 +32,7 @@ export TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data
 
 ### Disabling / Modifying the Upload Limit
 
-If you're running into the 250MB limit imposed on the server by default, and you'd like to increase the upload limit, you can set the `TRILIUM_NO_UPLOAD_LIMIT` environment variable to `true` disable it completely:
+If you're running into the 250MB limit imposed on the server by default, and you'd like to increase the upload limit, you can set the `TRILIUM_NO_UPLOAD_LIMIT` environment variable to `true` to disable it completely:
 
 ```
 export TRILIUM_NO_UPLOAD_LIMIT=true 
@@ -76,4 +76,4 @@ client_max_body_size 0;
 
 ### Apache
 
-For an Apache setup, refer to the [Apache proxy setup](Server%20Installation/2.%20Reverse%20proxy/Apache.md) guide.
+For an Apache setup, refer to the [Apache proxy setup](Server%20Installation/2.%20Reverse%20proxy/Apache%20using%20Docker.md) guide.

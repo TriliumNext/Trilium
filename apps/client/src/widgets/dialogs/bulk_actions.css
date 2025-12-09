@@ -4,7 +4,7 @@
 
 .bulk-actions-dialog .bulk-available-action-list button {
     padding: 2px 7px;
-    margin-right: 10px;
+    margin-inline-end: 10px;
     margin-bottom: 5px;
 }
 
@@ -17,8 +17,15 @@
 }
 
 .bulk-actions-dialog .bulk-existing-action-list .button-column {
-    /* minimal width so that table remains static sized and most space remains for middle column with settings */
     width: 50px;
     white-space: nowrap;
-    text-align: right;
+    text-align: end;
+}
+
+.bulk-actions-dialog .bulk-existing-action-list .button-column > * {
+    vertical-align: middle;
+}
+
+.bulk-actions-dialog .bulk-existing-action-list .button-column .help-dropdown {
+    display: inline-block !important;
 }

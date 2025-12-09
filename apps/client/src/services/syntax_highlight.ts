@@ -24,7 +24,9 @@ export async function formatCodeBlocks($container: JQuery<HTMLElement>) {
             continue;
         }
 
-        applyCopyToClipboardButton($(codeBlock));
+        if (glob.device !== "print") {
+            applyCopyToClipboardButton($(codeBlock));
+        }
 
         if (syntaxHighlightingEnabled) {
             applySingleBlockSyntaxHighlight($(codeBlock), normalizedMimeType);
@@ -61,7 +63,11 @@ export async function applySingleBlockSyntaxHighlight($codeBlock: JQuery<HTMLEle
         highlightedText = highlightAuto(text);
     } else if (normalizedMimeType) {
         await ensureMimeTypesForHighlighting(normalizedMimeType);
-        highlightedText = highlight(text, { language: normalizedMimeType });
+        try {
+            highlightedText = highlight(text, { language: normalizedMimeType });
+        } catch (e) {
+            console.warn("Unable to apply syntax highlight.", e);
+        }
     }
 
     if (highlightedText) {
@@ -76,7 +82,7 @@ export async function ensureMimeTypesForHighlighting(mimeTypeHint?: string) {
 
     // Load theme.
     const currentThemeName = String(options.get("codeBlockTheme"));
-    loadHighlightingTheme(currentThemeName);
+    await loadHighlightingTheme(currentThemeName);
 
     // Load mime types.
     let mimeTypes: MimeType[];
@@ -98,17 +104,16 @@ export async function ensureMimeTypesForHighlighting(mimeTypeHint?: string) {
     highlightingLoaded = true;
 }
 
-export function loadHighlightingTheme(themeName: string) {
+export async function loadHighlightingTheme(themeName: string) {
     const themePrefix = "default:";
     let theme: Theme | null = null;
-    if (themeName.includes(themePrefix)) {
+    if (glob.device === "print") {
+        theme = Themes.vs;
+    } else if (themeName.includes(themePrefix)) {
         theme = Themes[themeName.substring(themePrefix.length)];
     }
-    if (!theme) {
-        theme = Themes.default;
-    }
 
-    loadTheme(theme);
+    await loadTheme(theme ?? Themes.default);
 }
 
 /**

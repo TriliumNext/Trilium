@@ -1,53 +1,59 @@
-import { useCallback, useRef, useState } from "preact/hooks";
-import appContext from "../../components/app_context";
+import { useRef, useState } from "preact/hooks";
 import { t } from "../../services/i18n";
 import server from "../../services/server";
 import toast from "../../services/toast";
 import utils from "../../services/utils";
 import Modal from "../react/Modal";
-import ReactBasicWidget from "../react/ReactBasicWidget";
 import Button from "../react/Button";
-import useTriliumEvent from "../react/hooks";
+import { useTriliumEvent } from "../react/hooks";
+import { CKEditorApi } from "../type_widgets/text/CKEditorWithWatchdog";
+import { RenderMarkdownResponse } from "@triliumnext/commons";
 
-interface RenderMarkdownResponse {
-    htmlContent: string;
+export interface MarkdownImportOpts {
+    editorApi: CKEditorApi;
 }
 
-function MarkdownImportDialogComponent() {
+export default function MarkdownImportDialog() {
     const markdownImportTextArea = useRef<HTMLTextAreaElement>(null);
-    let [ text, setText ] = useState("");
-    let [ shown, setShown ] = useState(false);
+    const editorApiRef = useRef<CKEditorApi>(null);
+    const [ text, setText ] = useState("");
+    const [ shown, setShown ] = useState(false);
 
-    const triggerImport = useCallback(() => {
-        if (appContext.tabManager.getActiveContextNoteType() !== "text") {
-            return;
-        }
-    
+    useTriliumEvent("showPasteMarkdownDialog", ({ editorApi }) => {
         if (utils.isElectron()) {
             const { clipboard } = utils.dynamicRequire("electron");
             const text = clipboard.readText();
-    
-            convertMarkdownToHtml(text);
+
+            convertMarkdownToHtml(text, editorApi);
         } else {
+            editorApiRef.current = editorApi;
             setShown(true);
         }
-    }, []);
+    });
 
-    useTriliumEvent("importMarkdownInline", triggerImport);
-    useTriliumEvent("pasteMarkdownIntoText", triggerImport);
-
-    async function sendForm() {
-        await convertMarkdownToHtml(text);
-        setText("");
+    function submit() {
         setShown(false);
+        if (editorApiRef.current && text) {
+            convertMarkdownToHtml(text, editorApiRef.current);
+        }
     }
 
     return (
         <Modal
             className="markdown-import-dialog" title={t("markdown_import.dialog_title")} size="lg"
-            footer={<Button className="markdown-import-button" text={t("markdown_import.import_button")} onClick={sendForm} keyboardShortcut="Ctrl+Space" />}
+            footer={
+                <Button
+                    className="markdown-import-button"
+                    text={t("markdown_import.import_button")}
+                    keyboardShortcut="Ctrl+Enter"
+                    onClick={submit}
+                />
+            }
             onShown={() => markdownImportTextArea.current?.focus()}
-            onHidden={() => setShown(false) }
+            onHidden={() => {
+                setShown(false);
+                setText("");
+            }}
             show={shown}
         >
             <p>{t("markdown_import.modal_body_text")}</p>
@@ -57,34 +63,15 @@ function MarkdownImportDialogComponent() {
                 onKeyDown={(e) => {
                     if (e.key === "Enter" && e.ctrlKey) {
                         e.preventDefault();
-                        sendForm();
+                        submit();
                     }
                 }}></textarea>
         </Modal>
     )
 }
 
-export default class MarkdownImportDialog extends ReactBasicWidget {
-
-    get component() {
-        return <MarkdownImportDialogComponent />;
-    }
-
-}
-
-async function convertMarkdownToHtml(markdownContent: string) {
+async function convertMarkdownToHtml(markdownContent: string, textTypeWidget: CKEditorApi) {
     const { htmlContent } = await server.post<RenderMarkdownResponse>("other/render-markdown", { markdownContent });
-
-    const textEditor = await appContext.tabManager.getActiveContext()?.getTextEditor();
-    if (!textEditor) {
-        return;
-    }
-
-    const viewFragment = textEditor.data.processor.toView(htmlContent);
-    const modelFragment = textEditor.data.toModel(viewFragment);
-
-    textEditor.model.insertContent(modelFragment, textEditor.model.document.selection);
-    textEditor.editing.view.focus();
-
+    textTypeWidget.addHtmlToEditor(htmlContent);
     toast.showMessage(t("markdown_import.import_success"));
 }

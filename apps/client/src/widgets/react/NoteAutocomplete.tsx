@@ -1,11 +1,11 @@
-import { useRef } from "preact/hooks";
 import { t } from "../../services/i18n";
 import { useEffect } from "preact/hooks";
 import note_autocomplete, { Options, type Suggestion } from "../../services/note_autocomplete";
 import type { RefObject } from "preact";
 import type { CSSProperties } from "preact/compat";
+import { useSyncedRef } from "./hooks";
 
-interface NoteAutocompleteProps {    
+interface NoteAutocompleteProps {
     id?: string;
     inputRef?: RefObject<HTMLInputElement>;
     text?: string;
@@ -15,13 +15,15 @@ interface NoteAutocompleteProps {
     opts?: Omit<Options, "container">;
     onChange?: (suggestion: Suggestion | null) => void;
     onTextChange?: (text: string) => void;
+    onKeyDown?: (e: KeyboardEvent) => void;
+    onBlur?: (newValue: string) => void;
     noteIdChanged?: (noteId: string) => void;
     noteId?: string;
 }
 
-export default function NoteAutocomplete({ id, inputRef: _ref, text, placeholder, onChange, onTextChange, container, containerStyle, opts, noteId, noteIdChanged }: NoteAutocompleteProps) {
-    const ref = _ref ?? useRef<HTMLInputElement>(null);
-    
+export default function NoteAutocomplete({ id, inputRef: externalInputRef, text, placeholder, onChange, onTextChange, container, containerStyle, opts, noteId, noteIdChanged, onKeyDown, onBlur }: NoteAutocompleteProps) {
+    const ref = useSyncedRef<HTMLInputElement>(externalInputRef);
+
     useEffect(() => {
         if (!ref.current) return;
         const $autoComplete = $(ref.current);
@@ -35,8 +37,24 @@ export default function NoteAutocomplete({ id, inputRef: _ref, text, placeholder
             ...opts,
             container: container?.current
         });
+        if (onTextChange) {
+            $autoComplete.on("input", () => onTextChange($autoComplete[0].value));
+        }
+        if (onKeyDown) {
+            $autoComplete.on("keydown", (e) => e.originalEvent && onKeyDown(e.originalEvent));
+        }
+        if (onBlur) {
+            $autoComplete.on("blur", () => onBlur($autoComplete.getSelectedNoteId() ?? ""));
+        }
+    }, [opts, container?.current]);
+
+    // On change event handlers.
+    useEffect(() => {
+        if (!ref.current) return;
+        const $autoComplete = $(ref.current);
+
         if (onChange || noteIdChanged) {
-            const listener = (_e, suggestion) => {
+            const autoCompleteListener = (_e, suggestion) => {
                 onChange?.(suggestion);
 
                 if (noteIdChanged) {
@@ -44,20 +62,25 @@ export default function NoteAutocomplete({ id, inputRef: _ref, text, placeholder
                     noteIdChanged(noteId);
                 }
             };
+            const changeListener = (e) => {
+                if (!ref.current?.value) {
+                    autoCompleteListener(e, null);
+                }
+            };
             $autoComplete
-                .on("autocomplete:noteselected", listener)
-                .on("autocomplete:externallinkselected", listener)
-                .on("autocomplete:commandselected", listener)
-                .on("change", (e) => {
-                    if (!ref.current?.value) {
-                        listener(e, null);
-                    }
-                });
+                .on("autocomplete:noteselected", autoCompleteListener)
+                .on("autocomplete:externallinkselected", autoCompleteListener)
+                .on("autocomplete:commandselected", autoCompleteListener)
+                .on("change", changeListener);
+            return () => {
+                $autoComplete
+                    .off("autocomplete:noteselected", autoCompleteListener)
+                    .off("autocomplete:externallinkselected", autoCompleteListener)
+                    .off("autocomplete:commandselected", autoCompleteListener)
+                    .off("change", changeListener);
+            };
         }
-        if (onTextChange) {
-            $autoComplete.on("input", () => onTextChange($autoComplete[0].value));
-        }
-    }, [opts, container?.current]);
+    }, [opts, container?.current, onChange, noteIdChanged])
 
     useEffect(() => {
         if (!ref.current) return;
@@ -68,6 +91,8 @@ export default function NoteAutocomplete({ id, inputRef: _ref, text, placeholder
         } else if (text) {
             note_autocomplete.setText($autoComplete, text);
         } else {
+            $autoComplete.setSelectedNotePath("");
+            $autoComplete.autocomplete("val", "");
             ref.current.value = "";
         }
     }, [text, noteId]);
