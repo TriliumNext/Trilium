@@ -14,3 +14,7 @@
 .export-dialog form .form-check-label {
     padding: 2px;
 }
+
+.export-dialog form .export-single-formats .switch-widget {
+    margin-top: 10px;
+}

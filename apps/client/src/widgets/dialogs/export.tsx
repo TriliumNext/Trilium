@@ -1,8 +1,10 @@
 import { useState } from "preact/hooks";
 import { t } from "../../services/i18n";
 import tree from "../../services/tree";
+import { copyTextWithToast } from "../../services/clipboard_ext.js";
 import Button from "../react/Button";
 import FormRadioGroup from "../react/FormRadioGroup";
+import FormToggle from "../react/FormToggle";
 import Modal from "../react/Modal";
 import "./export.css";
 import ws from "../../services/ws";
@@ -21,10 +23,12 @@ interface ExportDialogProps {
 export default function ExportDialog() {
     const [ opts, setOpts ] = useState<ExportDialogProps>();
     const [ exportType, setExportType ] = useState<string>(opts?.defaultType ?? "subtree");
+    const [ exportToClipboard, setExportToClipboard ] = useState(false);
     const [ subtreeFormat, setSubtreeFormat ] = useState("html");
     const [ singleFormat, setSingleFormat ] = useState("html");
     const [ opmlVersion, setOpmlVersion ] = useState("2.0");
     const [ shown, setShown ] = useState(false);
+    const [ exporting, setExporting ] = useState(false);
 
     useTriliumEvent("showExportDialog", async ({ notePath, defaultType }) => {
         const { noteId, parentNoteId } = tree.getNoteIdAndParentIdFromUrl(notePath);
@@ -47,18 +51,20 @@ export default function ExportDialog() {
             className="export-dialog"
             title={`${t("export.export_note_title")} ${opts?.noteTitle ?? ""}`}
             size="lg"
-            onSubmit={() => {
+            onSubmit={async () => {
                 if (!opts || !opts.branchId) {
                     return;
                 }
 
                 const format = (exportType === "subtree" ? subtreeFormat : singleFormat);
                 const version = (format === "opml" ? opmlVersion : "1.0");
-                exportBranch(opts.branchId, exportType, format, version);
+                setExporting(true);
+                await exportBranch(opts.branchId, exportType, format, version, exportToClipboard);
+                setExporting(false);
                 setShown(false);
             }}
             onHidden={() => setShown(false)}
-            footer={<Button className="export-button" text={t("export.export")} primary />}
+            footer={<Button className="export-button" text={t("export.export")} primary disabled={exporting} />}
             show={shown}
         >
 
@@ -118,6 +124,12 @@ export default function ExportDialog() {
                             { value: "markdown", label: t("export.format_markdown") }
                         ]}
                     />
+
+                    <FormToggle
+                        switchOnName={t("export.export_to_clipboard")} switchOnTooltip={t("export.export_to_clipboard_on_tooltip")}
+                        switchOffName={t("export.export_to_clipboard")} switchOffTooltip={t("export.export_to_clipboard_off_tooltip")}
+                        currentValue={exportToClipboard} onChange={setExportToClipboard}
+                    />
                 </div>
             }
 
@@ -125,10 +137,37 @@ export default function ExportDialog() {
     );
 }
 
-function exportBranch(branchId: string, type: string, format: string, version: string) {
+async function exportBranch(branchId: string, type: string, format: string, version: string, exportToClipboard: boolean) {
     const taskId = utils.randomString(10);
     const url = open.getUrlForDownload(`api/branches/${branchId}/export/${type}/${format}/${version}/${taskId}`);
-    open.download(url);
+    if (type === "single" && exportToClipboard) {
+        await exportSingleToClipboard(url);
+    } else {
+        open.download(url);
+    }
+}
+
+async function exportSingleToClipboard(url: string) {
+    try {
+        const res = await fetch(url);
+        if (!res.ok) {
+            throw new Error(`${res.status} ${res.statusText}`);
+        }
+        const blob = await res.blob();
+
+        // Try reading as text (HTML/Markdown are text); if that fails, fall back to ArrayBuffer->UTF-8
+        let text: string;
+        try {
+            text = await blob.text();
+        } catch {
+            const ab = await blob.arrayBuffer();
+            text = new TextDecoder("utf-8").decode(new Uint8Array(ab));
+        }
+
+        await copyTextWithToast(text);
+    } catch (error) {
+        console.error("Failed to copy exported note to clipboard:", error);
+    }
 }
 
 ws.subscribeToMessages(async (message) => {
