@@ -89,6 +89,41 @@ Press Ctrl+Enter to save."
                 </div>
             </div>
 
+            <!-- Meta Note Panel (hidden by default) -->
+            <div id="meta-note-panel" class="meta-note-panel hidden">
+                <div class="panel-header">
+                    <h3>Why is this clip interesting?</h3>
+                </div>
+                
+                <div class="panel-content">
+                    <textarea 
+                        id="meta-note-textarea" 
+                        class="meta-note-textarea" 
+                        rows="4" 
+                        placeholder="Add a personal note about why this content is interesting or important...
+
+This will be saved as a child note so you can remember your thoughts later.
+
+Press Ctrl+Enter to save or leave blank to skip."
+                        autofocus></textarea>
+
+                    <div class="panel-actions">
+                        <button type="button" class="btn btn-primary" id="meta-note-save">
+                            <span class="btn-icon">💾</span>
+                            Save with Note
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="meta-note-skip">
+                            <span class="btn-icon">→</span>
+                            Skip
+                        </button>
+                        <button type="button" class="btn btn-tertiary" id="meta-note-cancel">
+                            <span class="btn-icon">✕</span>
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="status-section">
                 <div id="status-message" class="status-message hidden">
                     <span id="status-text"></span>

@@ -83,6 +83,7 @@ class OptionsController {
       const autoSave = document.getElementById('auto-save') as HTMLInputElement;
       const enableToasts = document.getElementById('enable-toasts') as HTMLInputElement;
       const toastDuration = document.getElementById('toast-duration') as HTMLInputElement;
+      const enableMetaNotePrompt = document.getElementById('enable-meta-note-prompt') as HTMLInputElement;
       const screenshotFormat = document.getElementById('screenshot-format') as HTMLSelectElement;
 
       if (triliumUrl) triliumUrl.value = config.triliumServerUrl || '';
@@ -93,6 +94,7 @@ class OptionsController {
         toastDuration.value = String(config.toastDuration || 3000);
         this.updateToastDurationDisplay();
       }
+      if (enableMetaNotePrompt) enableMetaNotePrompt.checked = config.enableMetaNotePrompt || false;
       if (screenshotFormat) screenshotFormat.value = config.screenshotFormat || 'png';
 
       // Load content format preference (default to 'html')
@@ -157,6 +159,7 @@ class OptionsController {
         autoSave: (document.getElementById('auto-save') as HTMLInputElement).checked,
         enableToasts: (document.getElementById('enable-toasts') as HTMLInputElement).checked,
         toastDuration: parseInt((document.getElementById('toast-duration') as HTMLInputElement).value, 10) || 3000,
+        enableMetaNotePrompt: (document.getElementById('enable-meta-note-prompt') as HTMLInputElement).checked,
         screenshotFormat: (document.getElementById('screenshot-format') as HTMLSelectElement).value as 'png' | 'jpeg',
         screenshotQuality: 0.9,
         dateTimeFormat: dateTimeFormat as 'preset' | 'custom',

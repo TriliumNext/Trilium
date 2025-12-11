@@ -11,6 +11,8 @@ const logger = Logger.create('Popup', 'popup');
 class PopupController {
   private elements: { [key: string]: HTMLElement } = {};
   private connectionCheckInterval?: number;
+  private pendingSaveAction: (() => Promise<void>) | null = null;
+  private pendingSaveType: string | null = null;
 
   constructor() {
     this.initialize();
@@ -47,6 +49,11 @@ class PopupController {
       'keep-title-checkbox',
       'save-link-submit',
       'save-link-cancel',
+      'meta-note-panel',
+      'meta-note-textarea',
+      'meta-note-save',
+      'meta-note-skip',
+      'meta-note-cancel',
       'open-settings',
       'back-to-main',
       'view-logs',
@@ -99,6 +106,12 @@ class PopupController {
     this.elements['save-link-submit']?.addEventListener('click', this.handleSaveLinkSubmit.bind(this));
     this.elements['save-link-cancel']?.addEventListener('click', this.handleSaveLinkCancel.bind(this));
     this.elements['save-link-textarea']?.addEventListener('keydown', this.handleSaveLinkKeydown.bind(this));
+
+    // Meta note panel
+    this.elements['meta-note-save']?.addEventListener('click', this.handleMetaNoteSave.bind(this));
+    this.elements['meta-note-skip']?.addEventListener('click', this.handleMetaNoteSkip.bind(this));
+    this.elements['meta-note-cancel']?.addEventListener('click', this.handleMetaNoteCancel.bind(this));
+    this.elements['meta-note-textarea']?.addEventListener('keydown', this.handleMetaNoteKeydown.bind(this));
 
     // Footer buttons
     this.elements['open-settings']?.addEventListener('click', this.handleOpenSettings.bind(this));
@@ -155,14 +168,38 @@ class PopupController {
     logger.info('Save selection requested');
 
     try {
-      this.showProgress('Saving selection...');
+      // Check if meta note prompt is enabled
+      const settings = await chrome.storage.sync.get('enableMetaNotePrompt');
+      const isEnabled = settings.enableMetaNotePrompt === true;
 
-      const response = await MessageUtils.sendMessage({
-        type: 'SAVE_SELECTION'
-      });
+      logger.info('Meta note prompt check', { isEnabled, settings });
 
-      this.showSuccess('Selection saved successfully!');
-      logger.info('Selection saved', { response });
+      if (isEnabled) {
+        // Show panel and set pending action
+        this.pendingSaveAction = () => this.performSaveSelection();
+        this.pendingSaveType = 'selection';
+
+        const panel = this.elements['meta-note-panel'];
+        const textarea = this.elements['meta-note-textarea'] as HTMLTextAreaElement;
+
+        if (panel) {
+          panel.classList.remove('hidden');
+          logger.info('Meta note panel displayed');
+
+          setTimeout(() => {
+            if (textarea) {
+              textarea.focus();
+            }
+          }, 100);
+        } else {
+          logger.error('Meta note panel element not found');
+          await this.performSaveSelection();
+        }
+        return;
+      }
+
+      // Otherwise, save directly
+      await this.performSaveSelection();
     } catch (error) {
       this.showError('Failed to save selection');
       logger.error('Failed to save selection', error as Error);
@@ -173,14 +210,38 @@ class PopupController {
     logger.info('Save page requested');
 
     try {
-      this.showProgress('Saving page...');
+      // Check if meta note prompt is enabled
+      const settings = await chrome.storage.sync.get('enableMetaNotePrompt');
+      const isEnabled = settings.enableMetaNotePrompt === true;
 
-      const response = await MessageUtils.sendMessage({
-        type: 'SAVE_PAGE'
-      });
+      logger.info('Meta note prompt check', { isEnabled, settings });
 
-      this.showSuccess('Page saved successfully!');
-      logger.info('Page saved', { response });
+      if (isEnabled) {
+        // Show panel and set pending action
+        this.pendingSaveAction = () => this.performSavePage();
+        this.pendingSaveType = 'page';
+
+        const panel = this.elements['meta-note-panel'];
+        const textarea = this.elements['meta-note-textarea'] as HTMLTextAreaElement;
+
+        if (panel) {
+          panel.classList.remove('hidden');
+          logger.info('Meta note panel displayed');
+
+          setTimeout(() => {
+            if (textarea) {
+              textarea.focus();
+            }
+          }, 100);
+        } else {
+          logger.error('Meta note panel element not found');
+          await this.performSavePage();
+        }
+        return;
+      }
+
+      // Otherwise, save directly
+      await this.performSavePage();
     } catch (error) {
       this.showError('Failed to save page');
       logger.error('Failed to save page', error as Error);
@@ -191,14 +252,38 @@ class PopupController {
     logger.info('Save cropped screenshot requested');
 
     try {
-      this.showProgress('Capturing cropped screenshot...');
+      // Check if meta note prompt is enabled
+      const settings = await chrome.storage.sync.get('enableMetaNotePrompt');
+      const isEnabled = settings.enableMetaNotePrompt === true;
 
-      const response = await MessageUtils.sendMessage({
-        type: 'SAVE_CROPPED_SCREENSHOT'
-      });
+      logger.info('Meta note prompt check', { isEnabled, settings });
 
-      this.showSuccess('Screenshot saved successfully!');
-      logger.info('Cropped screenshot saved', { response });
+      if (isEnabled) {
+        // Show panel and set pending action
+        this.pendingSaveAction = () => this.performSaveCroppedScreenshot();
+        this.pendingSaveType = 'cropped-screenshot';
+
+        const panel = this.elements['meta-note-panel'];
+        const textarea = this.elements['meta-note-textarea'] as HTMLTextAreaElement;
+
+        if (panel) {
+          panel.classList.remove('hidden');
+          logger.info('Meta note panel displayed');
+
+          setTimeout(() => {
+            if (textarea) {
+              textarea.focus();
+            }
+          }, 100);
+        } else {
+          logger.error('Meta note panel element not found');
+          await this.performSaveCroppedScreenshot();
+        }
+        return;
+      }
+
+      // Otherwise, save directly
+      await this.performSaveCroppedScreenshot();
     } catch (error) {
       this.showError('Failed to save screenshot');
       logger.error('Failed to save cropped screenshot', error as Error);
@@ -209,14 +294,38 @@ class PopupController {
     logger.info('Save full screenshot requested');
 
     try {
-      this.showProgress('Capturing full screenshot...');
+      // Check if meta note prompt is enabled
+      const settings = await chrome.storage.sync.get('enableMetaNotePrompt');
+      const isEnabled = settings.enableMetaNotePrompt === true;
 
-      const response = await MessageUtils.sendMessage({
-        type: 'SAVE_FULL_SCREENSHOT'
-      });
+      logger.info('Meta note prompt check', { isEnabled, settings });
 
-      this.showSuccess('Screenshot saved successfully!');
-      logger.info('Full screenshot saved', { response });
+      if (isEnabled) {
+        // Show panel and set pending action
+        this.pendingSaveAction = () => this.performSaveFullScreenshot();
+        this.pendingSaveType = 'full-screenshot';
+
+        const panel = this.elements['meta-note-panel'];
+        const textarea = this.elements['meta-note-textarea'] as HTMLTextAreaElement;
+
+        if (panel) {
+          panel.classList.remove('hidden');
+          logger.info('Meta note panel displayed');
+
+          setTimeout(() => {
+            if (textarea) {
+              textarea.focus();
+            }
+          }, 100);
+        } else {
+          logger.error('Meta note panel element not found');
+          await this.performSaveFullScreenshot();
+        }
+        return;
+      }
+
+      // Otherwise, save directly
+      await this.performSaveFullScreenshot();
     } catch (error) {
       this.showError('Failed to save screenshot');
       logger.error('Failed to save full screenshot', error as Error);
@@ -355,6 +464,145 @@ class PopupController {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  private handleMetaNoteCancel(): void {
+    logger.info('Meta note cancelled');
+
+    try {
+      const panel = this.elements['meta-note-panel'];
+      const textarea = this.elements['meta-note-textarea'] as HTMLTextAreaElement;
+
+      if (panel) {
+        panel.classList.add('hidden');
+      }
+
+      // Clear form and state
+      if (textarea) {
+        textarea.value = '';
+      }
+      this.pendingSaveAction = null;
+      this.pendingSaveType = null;
+    } catch (error) {
+      logger.error('Failed to cancel meta note', error as Error);
+    }
+  }
+
+  private async handleMetaNoteSave(): Promise<void> {
+    logger.info('Meta note save with note');
+
+    try {
+      const textarea = this.elements['meta-note-textarea'] as HTMLTextAreaElement;
+      const metaNote = textarea?.value?.trim() || '';
+
+      if (this.pendingSaveAction) {
+        // Close panel first
+        this.handleMetaNoteCancel();
+
+        // Execute the save action with meta note
+        await this.executeSaveWithMetaNote(metaNote);
+      }
+    } catch (error) {
+      this.showError('Failed to save with meta note');
+      logger.error('Failed to execute meta note save', error as Error);
+    }
+  }
+
+  private async handleMetaNoteSkip(): Promise<void> {
+    logger.info('Meta note skipped');
+
+    try {
+      if (this.pendingSaveAction) {
+        // Close panel first
+        this.handleMetaNoteCancel();
+
+        // Execute the save action without meta note
+        await this.executeSaveWithMetaNote('');
+      }
+    } catch (error) {
+      this.showError('Failed to save');
+      logger.error('Failed to execute skip save', error as Error);
+    }
+  }
+
+  private handleMetaNoteKeydown(event: KeyboardEvent): void {
+    // Handle Ctrl+Enter to save
+    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+      event.preventDefault();
+      this.handleMetaNoteSave();
+    }
+  }
+
+  private async executeSaveWithMetaNote(metaNote: string): Promise<void> {
+    try {
+      switch (this.pendingSaveType) {
+        case 'selection':
+          await this.performSaveSelection(metaNote);
+          break;
+        case 'page':
+          await this.performSavePage(metaNote);
+          break;
+        case 'cropped-screenshot':
+          await this.performSaveCroppedScreenshot(metaNote);
+          break;
+        case 'full-screenshot':
+          await this.performSaveFullScreenshot(metaNote);
+          break;
+        default:
+          logger.warn('Unknown save type', { type: this.pendingSaveType });
+      }
+    } catch (error) {
+      logger.error('Failed to execute save with meta note', error as Error);
+      throw error;
+    }
+  }
+
+  private async performSaveSelection(metaNote?: string): Promise<void> {
+    this.showProgress('Saving selection...');
+
+    const response = await MessageUtils.sendMessage({
+      type: 'SAVE_SELECTION',
+      metaNote
+    });
+
+    this.showSuccess('Selection saved successfully!');
+    logger.info('Selection saved', { response, hasMetaNote: !!metaNote });
+  }
+
+  private async performSavePage(metaNote?: string): Promise<void> {
+    this.showProgress('Saving page...');
+
+    const response = await MessageUtils.sendMessage({
+      type: 'SAVE_PAGE',
+      metaNote
+    });
+
+    this.showSuccess('Page saved successfully!');
+    logger.info('Page saved', { response, hasMetaNote: !!metaNote });
+  }
+
+  private async performSaveCroppedScreenshot(metaNote?: string): Promise<void> {
+    this.showProgress('Capturing cropped screenshot...');
+
+    const response = await MessageUtils.sendMessage({
+      type: 'SAVE_CROPPED_SCREENSHOT',
+      metaNote
+    });
+
+    this.showSuccess('Screenshot saved successfully!');
+    logger.info('Cropped screenshot saved', { response, hasMetaNote: !!metaNote });
+  }
+
+  private async performSaveFullScreenshot(metaNote?: string): Promise<void> {
+    this.showProgress('Capturing full screenshot...');
+
+    const response = await MessageUtils.sendMessage({
+      type: 'SAVE_FULL_SCREENSHOT',
+      metaNote
+    });
+
+    this.showSuccess('Screenshot saved successfully!');
+    logger.info('Full screenshot saved', { response, hasMetaNote: !!metaNote });
   }
 
   private handleOpenSettings(): void {

@@ -934,3 +934,83 @@ body {
   background-color: #f59e0b;
   animation: pulse 1.5s infinite;
 }
+
+/* Meta Note Panel */
+.meta-note-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--color-bg-primary);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.meta-note-panel.hidden {
+  display: none;
+}
+
+.meta-note-panel .panel-header {
+  padding: 20px;
+  border-bottom: 1px solid var(--color-border-primary);
+  background: var(--color-bg-secondary);
+}
+
+.meta-note-panel .panel-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.meta-note-panel .panel-content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.meta-note-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.meta-note-textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.meta-note-textarea::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+.btn-tertiary {
+  background: transparent;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-secondary);
+}
+
+.btn-tertiary:hover {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border-primary);
+  color: var(--color-text-primary);
+}
+
+.btn-tertiary:active {
+  transform: scale(0.98);
+}

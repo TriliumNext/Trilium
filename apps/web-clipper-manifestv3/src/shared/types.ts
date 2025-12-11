@@ -8,24 +8,29 @@ export interface BaseMessage {
 
 export interface SaveSelectionMessage extends BaseMessage {
   type: 'SAVE_SELECTION';
+  metaNote?: string; // Optional personal note about why this clip is interesting
 }
 
 export interface SavePageMessage extends BaseMessage {
   type: 'SAVE_PAGE';
+  metaNote?: string; // Optional personal note about why this clip is interesting
 }
 
 export interface SaveScreenshotMessage extends BaseMessage {
   type: 'SAVE_SCREENSHOT';
   cropRect?: CropRect;
   fullScreen?: boolean; // If true, capture full visible area without cropping
+  metaNote?: string; // Optional personal note about why this clip is interesting
 }
 
 export interface SaveCroppedScreenshotMessage extends BaseMessage {
   type: 'SAVE_CROPPED_SCREENSHOT';
+  metaNote?: string; // Optional personal note about why this clip is interesting
 }
 
 export interface SaveFullScreenshotMessage extends BaseMessage {
   type: 'SAVE_FULL_SCREENSHOT';
+  metaNote?: string; // Optional personal note about why this clip is interesting
 }
 
 export interface SaveLinkMessage extends BaseMessage {
@@ -187,6 +192,7 @@ export interface ExtensionConfig {
   dateTimeFormat?: 'preset' | 'custom';
   dateTimePreset?: string;
   dateTimeCustomFormat?: string;
+  enableMetaNotePrompt?: boolean; // Prompt user to add personal note about why clip is interesting (default: false)
 }
 
 /**

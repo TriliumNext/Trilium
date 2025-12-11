@@ -81,19 +81,19 @@ class BackgroundService {
     try {
       switch (typedMessage.type) {
         case 'SAVE_SELECTION':
-          return await this.saveSelection();
+          return await this.saveSelection(typedMessage.metaNote);
 
         case 'SAVE_PAGE':
-          return await this.savePage();
+          return await this.savePage(typedMessage.metaNote);
 
         case 'SAVE_SCREENSHOT':
-          return await this.saveScreenshot(typedMessage.cropRect);
+          return await this.saveScreenshot(typedMessage.cropRect, typedMessage.metaNote);
 
         case 'SAVE_CROPPED_SCREENSHOT':
-          return await this.saveScreenshot(); // Will prompt user for crop area
+          return await this.saveScreenshot(undefined, typedMessage.metaNote); // Will prompt user for crop area
 
         case 'SAVE_FULL_SCREENSHOT':
-          return await this.saveScreenshot({ fullScreen: true } as any);
+          return await this.saveScreenshot({ fullScreen: true } as any, typedMessage.metaNote);
 
         case 'SAVE_LINK':
           return await this.saveLinkWithNote(typedMessage.url, typedMessage.title, typedMessage.content, typedMessage.keepTitle);
@@ -403,8 +403,8 @@ class BackgroundService {
     }
   }
 
-  private async saveSelection(): Promise<TriliumResponse> {
-    logger.info('Saving selection...');
+  private async saveSelection(metaNote?: string): Promise<TriliumResponse> {
+    logger.info('Saving selection...', { hasMetaNote: !!metaNote });
 
     try {
       const response = await this.sendMessageToActiveTab({
@@ -412,7 +412,7 @@ class BackgroundService {
       }) as ClipData;
 
       // Check for existing note and ask user what to do
-      const result = await this.saveTriliumNoteWithDuplicateCheck(response);
+      const result = await this.saveTriliumNoteWithDuplicateCheck(response, metaNote);
 
       // Show success toast if save was successful
       if (result.success && result.noteId) {
@@ -449,8 +449,8 @@ class BackgroundService {
     }
   }
 
-  private async savePage(): Promise<TriliumResponse> {
-    logger.info('Saving page...');
+  private async savePage(metaNote?: string): Promise<TriliumResponse> {
+    logger.info('Saving page...', { hasMetaNote: !!metaNote });
 
     try {
       const response = await this.sendMessageToActiveTab({
@@ -458,7 +458,7 @@ class BackgroundService {
       }) as ClipData;
 
       // Check for existing note and ask user what to do
-      const result = await this.saveTriliumNoteWithDuplicateCheck(response);
+      const result = await this.saveTriliumNoteWithDuplicateCheck(response, metaNote);
 
       // Show success toast if save was successful
       if (result.success && result.noteId) {
@@ -495,7 +495,7 @@ class BackgroundService {
     }
   }
 
-  private async saveTriliumNoteWithDuplicateCheck(clipData: ClipData): Promise<TriliumResponse> {
+  private async saveTriliumNoteWithDuplicateCheck(clipData: ClipData, metaNote?: string): Promise<TriliumResponse> {
     // Check if a note already exists for this URL
     if (clipData.url) {
       // Check if user has enabled auto-append for duplicates
@@ -511,6 +511,11 @@ class BackgroundService {
         if (autoAppend) {
           logger.info('Auto-appending (user preference)');
           const result = await triliumServerFacade.appendToNote(existingNote.noteId, clipData);
+
+          // Create meta note child if provided
+          if (result.success && result.noteId && metaNote) {
+            await this.createMetaNoteChild(result.noteId, metaNote);
+          }
 
           // Show success toast for append
           if (result.success && result.noteId) {
@@ -554,12 +559,17 @@ class BackgroundService {
 
           if (userChoice.action === 'new') {
             logger.info('User chose to create new note');
-            return await this.saveTriliumNote(clipData, true); // Force new note
+            return await this.saveTriliumNote(clipData, true, metaNote); // Force new note
           }
 
           // User chose 'append' - append to existing note
           logger.info('User chose to append to existing note');
           const result = await triliumServerFacade.appendToNote(existingNote.noteId, clipData);
+
+          // Create meta note child if provided
+          if (result.success && result.noteId && metaNote) {
+            await this.createMetaNoteChild(result.noteId, metaNote);
+          }
 
           // Show success toast for append
           if (result.success && result.noteId) {
@@ -581,17 +591,17 @@ class BackgroundService {
         } catch (error) {
           logger.warn('Failed to show duplicate dialog or user cancelled', error as Error);
           // If dialog fails, default to creating new note
-          return await this.saveTriliumNote(clipData, true);
+          return await this.saveTriliumNote(clipData, true, metaNote);
         }
       }
     }
 
     // No existing note found, create new one
-    return await this.saveTriliumNote(clipData, false);
+    return await this.saveTriliumNote(clipData, false, metaNote);
   }
 
-  private async saveScreenshot(cropRect?: { x: number; y: number; width: number; height: number } | { fullScreen: boolean }): Promise<TriliumResponse> {
-    logger.info('Saving screenshot...', { cropRect });
+  private async saveScreenshot(cropRect?: { x: number; y: number; width: number; height: number } | { fullScreen: boolean }, metaNote?: string): Promise<TriliumResponse> {
+    logger.info('Saving screenshot...', { cropRect, hasMetaNote: !!metaNote });
 
     try {
       let screenshotRect: { x: number; y: number; width: number; height: number } | undefined;
@@ -692,7 +702,7 @@ class BackgroundService {
         }
       };
 
-      const result = await this.saveTriliumNote(clipData);
+      const result = await this.saveTriliumNote(clipData, false, metaNote);
 
       // Show success toast if save was successful
       if (result.success && result.noteId) {
@@ -1177,8 +1187,8 @@ class BackgroundService {
     });
   }
 
-  private async saveTriliumNote(clipData: ClipData, forceNew = false): Promise<TriliumResponse> {
-    logger.debug('Saving to Trilium', { clipData, forceNew });
+  private async saveTriliumNote(clipData: ClipData, forceNew = false, metaNote?: string): Promise<TriliumResponse> {
+    logger.debug('Saving to Trilium', { clipData, forceNew, hasMetaNote: !!metaNote });
 
     try {
       // ============================================================
@@ -1210,16 +1220,16 @@ class BackgroundService {
 
       switch (format) {
         case 'html':
-          return await this.saveAsHtml(clipData, forceNew);
+          return await this.saveAsHtml(clipData, forceNew, metaNote);
 
         case 'markdown':
-          return await this.saveAsMarkdown(clipData, forceNew);
+          return await this.saveAsMarkdown(clipData, forceNew, metaNote);
 
         case 'both':
-          return await this.saveAsBoth(clipData, forceNew);
+          return await this.saveAsBoth(clipData, forceNew, metaNote);
 
         default:
-          return await this.saveAsHtml(clipData, forceNew);
+          return await this.saveAsHtml(clipData, forceNew, metaNote);
       }
     } catch (error) {
       logger.error('Failed to save to Trilium', error as Error);
@@ -1231,37 +1241,51 @@ class BackgroundService {
    * Save content as HTML (human-readable format)
    * Applies Phase 3 (Cheerio) processing before sending to Trilium
    */
-  private async saveAsHtml(clipData: ClipData, forceNew = false): Promise<TriliumResponse> {
+  private async saveAsHtml(clipData: ClipData, forceNew = false, metaNote?: string): Promise<TriliumResponse> {
     // Apply Phase 3: Cheerio processing for final cleanup
     const processedContent = this.processWithCheerio(clipData.content);
 
-    return await triliumServerFacade.createNote({
+    const result = await triliumServerFacade.createNote({
       ...clipData,
       content: processedContent
     }, forceNew);
+
+    // Create meta note child if provided
+    if (result.success && result.noteId && metaNote) {
+      await this.createMetaNoteChild(result.noteId, metaNote);
+    }
+
+    return result;
   }
 
   /**
    * Save content as Markdown (AI/LLM-friendly format)
    */
-  private async saveAsMarkdown(clipData: ClipData, forceNew = false): Promise<TriliumResponse> {
+  private async saveAsMarkdown(clipData: ClipData, forceNew = false, metaNote?: string): Promise<TriliumResponse> {
     const markdown = this.convertToMarkdown(clipData.content);
 
-    return await triliumServerFacade.createNote({
+    const result = await triliumServerFacade.createNote({
       ...clipData,
       content: markdown
     }, forceNew, {
       type: 'code',
       mime: 'text/markdown'
     });
+
+    // Create meta note child if provided
+    if (result.success && result.noteId && metaNote) {
+      await this.createMetaNoteChild(result.noteId, metaNote);
+    }
+
+    return result;
   }
 
   /**
    * Save both HTML and Markdown versions (HTML parent with markdown child)
    */
-  private async saveAsBoth(clipData: ClipData, forceNew = false): Promise<TriliumResponse> {
+  private async saveAsBoth(clipData: ClipData, forceNew = false, metaNote?: string): Promise<TriliumResponse> {
     // Save HTML parent note
-    const parentResponse = await this.saveAsHtml(clipData, forceNew);
+    const parentResponse = await this.saveAsHtml(clipData, forceNew, metaNote);
 
     if (!parentResponse.success || !parentResponse.noteId) {
       return parentResponse;
@@ -1696,6 +1720,45 @@ class BackgroundService {
       logger.error('Failed to open note in Trilium', error as Error);
       return { success: false };
     }
+  }
+
+  /**
+   * Create a child note with the meta note content
+   * This is used to save the user's personal note about why a clip is interesting
+   */
+  private async createMetaNoteChild(parentNoteId: string, metaNote: string): Promise<void> {
+    try {
+      logger.info('Creating meta note child', { parentNoteId, metaNoteLength: metaNote.length });
+
+      await triliumServerFacade.createChildNote(parentNoteId, {
+        title: 'Why this is interesting',
+        content: `<p>${this.escapeHtmlContent(metaNote)}</p>`,
+        type: 'page',
+        url: '',
+        attributes: [
+          { type: 'label', name: 'metaNote', value: 'true' },
+          { type: 'label', name: 'iconClass', value: 'bx bx-comment-detail' }
+        ]
+      });
+
+      logger.info('Meta note child created successfully', { parentNoteId });
+    } catch (error) {
+      logger.error('Failed to create meta note child', error as Error);
+      // Don't throw - we don't want to fail the entire save operation if meta note creation fails
+    }
+  }
+
+  /**
+   * Escape HTML content for safe insertion
+   */
+  private escapeHtmlContent(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+      .replace(/\n/g, '<br>');
   }
 }
 
