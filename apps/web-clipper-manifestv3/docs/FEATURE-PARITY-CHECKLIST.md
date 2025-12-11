@@ -93,7 +93,7 @@ _(No priority issues remaining in this category)_
 | Date metadata | ✅ | publishedDate, modifiedDate with customizable formats | - |
 | Interactive toasts | ✅ | With "Open in Trilium" button when noteId provided | - |
 | Save tabs feature | ✅ | Bulk save all tabs as note with links | - |
-| Meta Note Popup option | ❌ | See Trilium Issue [#5350](https://github.com/TriliumNext/Trilium/issues/5350) | MED |
+| Meta Note Popup option | ✅ | Prompt to add personal note about why clip is interesting | - |
 | Add custom keyboard shortcuts | ❌ | See Trilium Issue [#5349](https://github.com/TriliumNext/Trilium/issues/5349) | LOW |
 | Handle Firefox Keyboard Shortcut Bug | ❌ | See Trilium Issue [#5226](https://github.com/TriliumNext/Trilium/issues/5226) | LOW |
 
@@ -143,6 +143,8 @@ _(No priority issues remaining in this category)_
 - [x] **Extract date metadata from pages** - Implemented with customizable formats
 - [x] **Add "already visited" detection to popup** - Fully implemented
 - [ ] Add interactive toast buttons
+- [ ] Add "save with custom note" for all save types
+- [ ] Add robust table handling in Markdown conversion
 - [ ] Add meta note popup option (see Trilium Issue [#5350](https://github.com/TriliumNext/Trilium/issues/5350))
 - [ ] Add custom keyboard shortcuts (see Trilium Issue [#5349](https://github.com/TriliumNext/Trilium/issues/5349))
 - [ ] Handle Firefox keyboard shortcut bug (see Trilium Issue [#5226](https://github.com/TriliumNext/Trilium/issues/5226))
