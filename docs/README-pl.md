@@ -35,9 +35,9 @@ wiedzy.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
-## ⏬Ściągnij
-- [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
-  wersja stabilna, zalecana dla większości użytkowników.
+## ⏬ Pobierz
+- [Ostatnie wydanie](https://github.com/TriliumNext/Trilium/releases/latest) –
+  stabilna wersja, polecane dla większości użytkowników.
 - [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) -
   niestabilna wersja deweloperska, aktualizowana codziennie o najnowsze funkcje
   i poprawki.
