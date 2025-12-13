@@ -401,7 +401,8 @@ function parseQueryToExpression(query: string, searchContext: SearchContext) {
 }
 
 function searchNotes(query: string, params: SearchParams = {}): BNote[] {
-    const searchResults = findResultsWithQuery(query, new SearchContext(params));
+    const searchContext = new SearchContext(params);
+    const searchResults = findResultsWithQuery(query, searchContext);
 
     return searchResults.map((sr) => becca.notes[sr.noteId]);
 }
@@ -417,16 +418,15 @@ function findResultsWithQuery(query: string, searchContext: SearchContext): Sear
     }
 
     // If the query starts with '#', it's a pure expression query.
-    // Don't use progressive search for these as they may have complex 
+    // Don't use progressive search for these as they may have complex
     // ordering or other logic that shouldn't be interfered with.
     const isPureExpressionQuery = query.trim().startsWith('#');
-    
-    if (isPureExpressionQuery) {
-        // For pure expression queries, use standard search without progressive phases
-        return performSearch(expression, searchContext, searchContext.enableFuzzyMatching);
-    }
 
-    return findResultsWithExpression(expression, searchContext);
+    const results = isPureExpressionQuery
+        ? performSearch(expression, searchContext, searchContext.enableFuzzyMatching)
+        : findResultsWithExpression(expression, searchContext);
+
+    return results;
 }
 
 function findFirstNoteWithQuery(query: string, searchContext: SearchContext): BNote | null {
