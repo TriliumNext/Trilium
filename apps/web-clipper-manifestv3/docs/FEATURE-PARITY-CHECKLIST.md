@@ -51,7 +51,7 @@
 | Logs viewer | ✅ | Filter/search/export | - |
 | Context menus | ✅ | All save types including cropped/full screenshot | - |
 | Keyboard shortcuts | ✅ | Save (Ctrl+Shift+S), Screenshot (Ctrl+Shift+E) | - |
-| Toast notifications | ⚠️ | Basic only | LOW |
+| Toast notifications | ✅ | Interactive with "Open in Trilium" button | - |
 | Already visited banner | ✅ | Shows when page was previously clipped | - |
 | Screenshot selection UI | ✅ | Drag-to-select with ESC cancel | - |
 
@@ -142,7 +142,7 @@ _(No priority issues remaining in this category)_
 - [x] Add custom note text for links
 - [x] **Extract date metadata from pages** - Implemented with customizable formats
 - [x] **Add "already visited" detection to popup** - Fully implemented
-- [ ] Add interactive toast buttons
+- [x] **Add interactive toast buttons** - "Open in Trilium" button when noteId provided
 - [ ] Add "save with custom note" for all save types
 - [ ] Add robust table handling in Markdown conversion
 - [ ] Add meta note popup option (see Trilium Issue [#5350](https://github.com/TriliumNext/Trilium/issues/5350))
@@ -200,7 +200,7 @@ _(No important issues remaining)_
 
 ### Nice to Have
 
-1. **Basic toast notifications** - No interactive buttons
+_(No nice-to-have issues remaining)_
 
 ---
 
