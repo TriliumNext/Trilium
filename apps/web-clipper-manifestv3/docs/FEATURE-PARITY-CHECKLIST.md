@@ -143,9 +143,8 @@ _(No priority issues remaining in this category)_
 - [x] **Extract date metadata from pages** - Implemented with customizable formats
 - [x] **Add "already visited" detection to popup** - Fully implemented
 - [x] **Add interactive toast buttons** - "Open in Trilium" button when noteId provided
-- [ ] Add "save with custom note" for all save types
+- [x] **Add "save with custom note" for all save types** - Fully implemented with meta note popup
 - [ ] Add robust table handling in Markdown conversion
-- [ ] Add meta note popup option (see Trilium Issue [#5350](https://github.com/TriliumNext/Trilium/issues/5350))
 - [ ] Add custom keyboard shortcuts (see Trilium Issue [#5349](https://github.com/TriliumNext/Trilium/issues/5349))
 - [ ] Handle Firefox keyboard shortcut bug (see Trilium Issue [#5226](https://github.com/TriliumNext/Trilium/issues/5226))
 
@@ -164,6 +163,15 @@ _(No priority issues remaining in this category)_
 - UI: Shows green banner with checkmark and "Open in Trilium" link
 - Styling: Theme-aware success colors with proper hover states
 - Files: `src/popup/popup.ts:759-862`, `src/popup/index.html:109-117`, `src/popup/popup.css:297-350`
+
+**Save with Custom Note Implementation** (December 14, 2025):
+- Feature enables users to add a personal note ("Why is this interesting?") when saving any content type
+- Popup UI: Meta note panel with textarea, Save/Skip/Cancel buttons (`src/popup/popup.ts:460-557`, `src/popup/index.html:93-125`)
+- Settings: Toggle in options page to enable/disable the prompt (`src/options/index.html:49`, `src/options/options.ts:86-162`)
+- All save handlers check `enableMetaNotePrompt` setting and show panel if enabled
+- Background service creates child note titled "Why this is interesting" with user's note content
+- Supported save types: Selection, Page, Cropped Screenshot, Full Screenshot
+- Files: `src/popup/popup.ts`, `src/background/index.ts:1729-1758`, `src/shared/types.ts`
 
 ---
 
