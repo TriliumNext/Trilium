@@ -22,7 +22,7 @@ import RenameNoteBulkAction from "../bulk_actions/note/rename_note";
 import { getErrorMessage } from "../../services/utils";
 import "./SearchDefinitionTab.css";
 
-export default function SearchDefinitionTab({ note, ntxId, hidden }: TabContext) {
+export default function SearchDefinitionTab({ note, ntxId, hidden, noteContext }: TabContext) {
   const parentComponent = useContext(ParentComponent);
   const [ searchOptions, setSearchOptions ] = useState<{ availableOptions: SearchOption[], activeOptions: SearchOption[] }>();
   const [ error, setError ] = useState<{ message: string }>();
@@ -72,6 +72,27 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: TabContext)
       refreshOptions();
     }
   });
+
+  useEffect(() => {
+    async function autoExecute() {
+      if (!note || note.type !== "search" || !note.hasLabel("autoExecuteSearch")) {
+        executionState.save("");
+        return;
+      }
+
+      const lastExecutedNoteId = executionState.load();
+      if (lastExecutedNoteId !== note.noteId) {
+        executionState.save(note.noteId);
+
+        await refreshResults();
+
+        if (noteContext?.viewScope?.viewMode === "default" && note.children.length > 0) {
+          parentComponent?.triggerCommand("toggleRibbonTabBookProperties", {});
+        }
+      }
+    }
+    autoExecute();
+  }, [note]);
 
   return (
     <div className="search-definition-widget">
@@ -159,6 +180,14 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: TabContext)
     </div>
   )
 }
+
+const executionState = function() {
+  let lastAutoExecutedSearchNoteId = "";
+  return {
+    load: () => lastAutoExecutedSearchNoteId,
+    save: (noteId: string) => lastAutoExecutedSearchNoteId = noteId,
+  };
+}();
 
 function BulkActionsList({ note }: { note: FNote }) {
   const [ bulkActions, setBulkActions ] = useState<RenameNoteBulkAction[]>();
