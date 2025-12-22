@@ -1,6 +1,6 @@
 import FNote from "../../entities/fnote";
 
-export const allViewTypes = ["list", "grid", "calendar", "table", "geoMap", "board", "presentation"] as const;
+export const allViewTypes = ["list", "grid", "gallery", "calendar", "table", "geoMap", "board", "presentation"] as const;
 export type ViewTypeOptions = typeof allViewTypes[number];
 
 export type ViewModeMedia = "screen" | "print";

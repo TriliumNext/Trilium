@@ -21,6 +21,7 @@ import { useViewType, VIEW_TYPE_MAPPINGS } from "../ribbon/CollectionPropertiesT
 const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
     grid: "bx bxs-grid",
     list: "bx bx-list-ul",
+    gallery: "bx bx-images",
     calendar: "bx bx-calendar",
     table: "bx bx-table",
     geoMap: "bx bx-map-alt",

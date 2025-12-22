@@ -3,16 +3,16 @@ import { useEffect, useRef } from "preact/hooks";
 
 import ActionButton, { ActionButtonProps } from "./ActionButton";
 import Button, { ButtonProps } from "./Button";
-
 interface FormFileUploadProps {
     name?: string;
     onChange: (files: FileList | null) => void;
     multiple?: boolean;
     hidden?: boolean;
     inputRef?: Ref<HTMLInputElement>;
+    accept?: string;
 }
 
-export default function FormFileUpload({ inputRef, name, onChange, multiple, hidden }: FormFileUploadProps) {
+export default function FormFileUpload({ inputRef, name, onChange, multiple, hidden, accept }: FormFileUploadProps) {
     // Prevent accidental reuse of a file selected in a previous instance of the upload form.
     useEffect(() => {
         onChange(null);
@@ -26,6 +26,7 @@ export default function FormFileUpload({ inputRef, name, onChange, multiple, hid
                 type="file"
                 class="form-control-file"
                 multiple={multiple}
+                accept={accept}
                 onChange={e => onChange((e.target as HTMLInputElement).files)} />
         </label>
     );
@@ -58,7 +59,7 @@ export function FormFileUploadButton({ onChange, ...buttonProps }: Omit<ButtonPr
  * Similar to {@link FormFileUploadButton}, but uses an {@link ActionButton} instead of a normal {@link Button}.
  * @param param the change listener for the file upload and the properties for the button.
  */
-export function FormFileUploadActionButton({ onChange, ...buttonProps }: Omit<ActionButtonProps, "onClick"> & Pick<FormFileUploadProps, "onChange">) {
+export function FormFileUploadActionButton({ onChange, multiple, accept, ...buttonProps }: Omit<ActionButtonProps, "onClick"> & Pick<FormFileUploadProps, "onChange" | "multiple" | "accept">) {
     const inputRef = useRef<HTMLInputElement>(null);
 
     return (
@@ -70,6 +71,8 @@ export function FormFileUploadActionButton({ onChange, ...buttonProps }: Omit<Ac
             <FormFileUpload
                 inputRef={inputRef}
                 hidden
+                multiple={multiple}
+                accept={accept}
                 onChange={onChange}
             />
         </>
