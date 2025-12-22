@@ -801,7 +801,8 @@
     "board": "Board",
     "presentation": "Presentation",
     "include_archived_notes": "Show archived notes",
-    "hide_child_notes": "Hide child notes in tree"
+    "hide_child_notes": "Hide child notes in tree",
+    "gallery": "Gallery"
   },
   "edited_notes": {
     "no_edited_notes_found": "No edited notes on this day yet...",
@@ -2263,5 +2264,24 @@
     "pages_other": "{{count}} pages",
     "pages_alt": "Page {{pageNumber}}",
     "pages_loading": "Loading..."
+  },
+  "gallery": {
+    "gallery_created": "Gallery Created",
+    "new_gallery": "Create New Gallery",
+    "select_all": "Select All",
+    "selected": "selected",
+    "clear_selection": "Clear Selection",
+    "delete_selected": "Delete Selected",
+    "delete_multiple": "Delete {{count}} items",
+    "items_selected": "{{count}} item selected",
+    "items_selected_other": "{{count}} items selected",
+    "enter_gallery_name": "Enter new gallery name",
+    "gallery_creation_failed": "Failed to create new gallery.",
+    "default_gallery_name": "New Gallery",
+    "no_image_files": "No image files found.",
+    "drop_images_here": "Drop Images Here",
+    "back_to_parent": "Back To Parent",
+    "image_count": "{{count}} image",
+    "image_count_other": "{{count}} images"
   }
 }
