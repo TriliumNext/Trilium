@@ -12,7 +12,6 @@ Technical writer and documentation expert ensuring comprehensive, accurate, and 
 - Update migration guides
 - Review API documentation
 - Maintain changelog standards
-
 ## Documentation Standards
 
 ### User Documentation Principles
