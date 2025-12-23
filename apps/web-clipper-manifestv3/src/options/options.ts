@@ -1,4 +1,4 @@
-import { Logger } from '@/shared/utils';
+import { Logger, BrowserDetect } from '@/shared/utils';
 import { ExtensionConfig } from '@/shared/types';
 import { ThemeManager, ThemeMode } from '@/shared/theme';
 import { DateFormatter, DATE_TIME_PRESETS } from '@/shared/date-formatter';
@@ -26,6 +26,7 @@ class OptionsController {
 
       await this.initializeTheme();
       await this.loadCurrentSettings();
+      await this.initializeShortcuts();
       this.setupEventHandlers();
 
       logger.info('Options page initialized successfully');
@@ -71,6 +72,95 @@ class OptionsController {
     // Toast duration slider
     const toastDurationSlider = document.getElementById('toast-duration') as HTMLInputElement;
     toastDurationSlider?.addEventListener('input', this.updateToastDurationDisplay.bind(this));
+
+    // Open browser shortcuts settings
+    const openShortcutsBtn = document.getElementById('open-shortcuts-settings');
+    openShortcutsBtn?.addEventListener('click', this.handleOpenShortcutsSettings.bind(this));
+  }
+
+  private async initializeShortcuts(): Promise<void> {
+    try {
+      logger.debug('Initializing shortcuts UI...');
+      await this.loadShortcuts();
+      this.updateShortcutsHelpText();
+      logger.debug('Shortcuts UI initialized');
+    } catch (error) {
+      logger.error('Failed to initialize shortcuts UI', error as Error);
+    }
+  }
+
+  private updateShortcutsHelpText(): void {
+    const helpText = document.getElementById('shortcuts-help-text');
+    const button = document.getElementById('open-shortcuts-settings');
+    const browser = BrowserDetect.getBrowser();
+    const browserName = BrowserDetect.getBrowserName();
+
+    if (helpText) {
+      helpText.textContent = BrowserDetect.getShortcutsInstructions();
+    }
+
+    // Update button text for Firefox since it can't open directly
+    if (button && browser === 'firefox') {
+      button.textContent = '📖 Show Instructions';
+    } else if (button) {
+      button.textContent = `⚙ Configure Shortcuts in ${browserName}`;
+    }
+  }
+
+  private async loadShortcuts(): Promise<void> {
+    try {
+      const commands = await chrome.commands.getAll();
+
+      const mapByName: Record<string, chrome.commands.Command> = {};
+      commands.forEach(c => { if (c.name) mapByName[c.name] = c; });
+
+      const names = ['save-selection', 'save-page', 'save-screenshot', 'save-tabs'];
+      names.forEach(name => {
+        const kbd = document.getElementById(`shortcut-${name}`);
+        const cmd = mapByName[name];
+        if (kbd) {
+          kbd.textContent = cmd?.shortcut || 'Not set';
+          kbd.classList.toggle('not-set', !cmd?.shortcut);
+        }
+      });
+
+      logger.debug('Loaded shortcuts', { commands });
+    } catch (error) {
+      logger.error('Failed to load shortcuts', error as Error);
+    }
+  }
+
+  private handleOpenShortcutsSettings(): void {
+    const browser = BrowserDetect.getBrowser();
+    const shortcutsUrl = BrowserDetect.getShortcutsUrl();
+    const browserName = BrowserDetect.getBrowserName();
+
+    logger.info('Opening shortcuts settings', { browser, shortcutsUrl });
+
+    if (shortcutsUrl) {
+      // Chromium-based browsers support direct URL navigation
+      try {
+        chrome.tabs.create({ url: shortcutsUrl });
+        logger.info('Opened browser shortcuts settings', { browser, url: shortcutsUrl });
+      } catch (error) {
+        logger.error('Failed to open shortcuts settings', error as Error);
+        this.showStatus(`Could not open shortcuts settings. Navigate to ${shortcutsUrl} manually.`, 'warning');
+      }
+    } else if (browser === 'firefox') {
+      // Firefox doesn't allow opening about: URLs, show instructions instead
+      this.showStatus(
+        'Firefox: Open Menu (☰) → Add-ons and themes → Extensions → Click the gear icon (⚙️) → Manage Extension Shortcuts',
+        'info'
+      );
+      logger.info('Displayed Firefox shortcut instructions');
+    } else {
+      // Unknown browser - provide generic guidance
+      this.showStatus(
+        `Please check ${browserName}'s extension settings to configure keyboard shortcuts.`,
+        'info'
+      );
+      logger.warn('Unknown browser, cannot open shortcuts settings', { browser });
+    }
   }
 
   private async loadCurrentSettings(): Promise<void> {

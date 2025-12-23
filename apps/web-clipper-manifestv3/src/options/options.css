@@ -738,3 +738,101 @@ button:disabled {
   color: var(--color-text-primary);
   font-size: 14px;
 }
+
+/* Keyboard Shortcuts Section */
+.shortcuts-section {
+  background: var(--color-surface-secondary);
+  padding: 20px;
+  border-radius: 6px;
+  margin-top: 20px;
+  border: 1px solid var(--color-border-primary);
+}
+
+.shortcuts-section h3 {
+  margin-top: 0;
+  color: var(--color-text-primary);
+  margin-bottom: 10px;
+}
+
+.shortcuts-section > p {
+  color: var(--color-text-secondary);
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  margin-bottom: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.shortcut-item:last-child {
+  margin-bottom: 0;
+}
+
+.shortcut-item > label {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  min-width: 140px;
+  margin-bottom: 0;
+  font-size: 14px;
+}
+
+.shortcut-display {
+  display: flex;
+  align-items: center;
+}
+
+.shortcut-display kbd {
+  display: inline-block;
+  padding: 8px 16px;
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background: var(--color-surface-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  min-width: 120px;
+  text-align: center;
+}
+
+.shortcut-display kbd.not-set {
+  color: var(--color-text-secondary);
+  font-style: italic;
+  font-weight: 400;
+}
+
+.shortcut-actions {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.shortcut-actions .primary-btn {
+  background: var(--color-primary);
+  color: white;
+  padding: 12px 24px;
+  font-size: 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.shortcut-actions .primary-btn:hover {
+  background: var(--color-primary-hover);
+}
+
+.shortcut-actions .help-text {
+  margin-top: 10px;
+  margin-bottom: 0;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}

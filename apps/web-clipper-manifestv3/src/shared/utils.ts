@@ -296,6 +296,114 @@ export const Utils = {
 };
 
 /**
+ * Browser detection utilities
+ */
+export type BrowserType = 'chrome' | 'firefox' | 'edge' | 'opera' | 'brave' | 'unknown';
+
+export const BrowserDetect = {
+  /**
+   * Detect the current browser type
+   */
+  getBrowser(): BrowserType {
+    const userAgent = navigator.userAgent.toLowerCase();
+
+    // Order matters - check more specific browsers first
+    if (userAgent.includes('edg/') || userAgent.includes('edge')) {
+      return 'edge';
+    }
+    if (userAgent.includes('brave')) {
+      return 'brave';
+    }
+    if (userAgent.includes('opr/') || userAgent.includes('opera')) {
+      return 'opera';
+    }
+    if (userAgent.includes('firefox')) {
+      return 'firefox';
+    }
+    if (userAgent.includes('chrome')) {
+      return 'chrome';
+    }
+
+    return 'unknown';
+  },
+
+  /**
+   * Check if running in Firefox
+   */
+  isFirefox(): boolean {
+    return this.getBrowser() === 'firefox';
+  },
+
+  /**
+   * Check if running in a Chromium-based browser
+   */
+  isChromium(): boolean {
+    const browser = this.getBrowser();
+    return ['chrome', 'edge', 'opera', 'brave'].includes(browser);
+  },
+
+  /**
+   * Get the browser's extension shortcuts URL
+   */
+  getShortcutsUrl(): string | null {
+    const browser = this.getBrowser();
+
+    switch (browser) {
+      case 'chrome':
+        return 'chrome://extensions/shortcuts';
+      case 'edge':
+        return 'edge://extensions/shortcuts';
+      case 'opera':
+        return 'opera://extensions/shortcuts';
+      case 'brave':
+        return 'brave://extensions/shortcuts';
+      case 'firefox':
+        // Firefox doesn't allow opening about: URLs programmatically
+        return null;
+      default:
+        return null;
+    }
+  },
+
+  /**
+   * Get human-readable browser name
+   */
+  getBrowserName(): string {
+    const browser = this.getBrowser();
+    const names: Record<BrowserType, string> = {
+      chrome: 'Chrome',
+      firefox: 'Firefox',
+      edge: 'Edge',
+      opera: 'Opera',
+      brave: 'Brave',
+      unknown: 'your browser'
+    };
+    return names[browser];
+  },
+
+  /**
+   * Get instructions for accessing shortcuts in the current browser
+   */
+  getShortcutsInstructions(): string {
+    const browser = this.getBrowser();
+
+    switch (browser) {
+      case 'firefox':
+        return 'In Firefox: Menu (☰) → Add-ons and themes → Extensions (⚙️ gear icon) → Manage Extension Shortcuts';
+      case 'edge':
+        return 'Opens Edge extension shortcuts settings';
+      case 'opera':
+        return 'Opens Opera extension shortcuts settings';
+      case 'brave':
+        return 'Opens Brave extension shortcuts settings';
+      case 'chrome':
+      default:
+        return 'Opens Chrome extension shortcuts settings';
+    }
+  }
+};
+
+/**
  * Message handling utilities
  */
 export const MessageUtils = {
