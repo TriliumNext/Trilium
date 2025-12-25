@@ -319,6 +319,8 @@
 }
 
 .note-split.with-hue *::selection,
-.quick-edit-dialog-wrapper.with-hue *::selection {
+.quick-edit-dialog-wrapper.with-hue *::selection,
+.note-split.with-hue div.note-title-widget input.note-title::selection,
+.quick-edit-dialog-wrapper.with-hue div.note-title-widget input.note-title::selection {
     background: hsl(var(--custom-color-hue), 60%, 90%);
 }

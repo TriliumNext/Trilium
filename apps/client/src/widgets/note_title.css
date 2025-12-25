@@ -21,6 +21,7 @@ div.note-title-widget {
 
     &::selection {
         color: var(--main-text-color);
+        background: var(--selection-background-color);
     }
 }
 
