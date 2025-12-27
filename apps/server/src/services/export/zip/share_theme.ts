@@ -70,6 +70,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
             }) : "";
 
             content = renderNoteForExport(note, branch, basePath, noteMeta.notePath.slice(0, -1));
+            // TODO: This will probably never match, but should it be exclude from running on code/jsFrontend notes?
             if (typeof content === "string") {
                 content = content.replace(/href="[^"]*\.\/([a-zA-Z0-9_\/]{12})[^"]*"/g, (match, id) => {
                     if (match.includes("/assets/")) return match;
@@ -113,6 +114,10 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
     mapExtension(type: string | null, mime: string, existingExtension: string, format: ExportFormat): string | null {
         if (mime.startsWith("image/")) {
             return null;
+        }
+
+        if (mime.startsWith("application/javascript")) {
+            return "js";
         }
 
         return "html";
