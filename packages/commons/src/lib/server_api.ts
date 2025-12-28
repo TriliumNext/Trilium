@@ -273,3 +273,15 @@ export interface NoteMapPostResponse {
     links: NoteMapLink[];
     noteIdToDescendantCountMap: Record<string, number>;
 }
+
+export interface UpdateAttributeResponse {
+    attributeId: string;
+}
+
+export interface RenderMarkdownResponse {
+    htmlContent: string;
+}
+
+export interface ToMarkdownResponse {
+    markdownContent: string;
+}

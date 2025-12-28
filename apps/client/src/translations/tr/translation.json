@@ -5,25 +5,32 @@
     "db_version": "Veritabanı versiyonu:",
     "title": "Trilium Notes Hakkında",
     "sync_version": "Eşleştirme versiyonu:",
-    "data_directory": "Veri dizini:"
+    "data_directory": "Veri dizini:",
+    "build_date": "Derleme tarihi:",
+    "build_revision": "Derleme revizyonu:"
   },
   "branch_prefix": {
     "save": "Kaydet",
     "edit_branch_prefix": "Dalın önekini düzenle",
     "prefix": "Önek: ",
-    "branch_prefix_saved": "Dal öneki kaydedildi."
+    "branch_prefix_saved": "Dal öneki kaydedildi.",
+    "edit_branch_prefix_multiple": "{{count}} dal için dal ön ekini düzenle",
+    "help_on_tree_prefix": "Ağaç ön eki hakkında yardım",
+    "branch_prefix_saved_multiple": "Dal ön eki, {{count}} dal için kaydedildi.",
+    "affected_branches": "Etkilenen dal sayısı ({{count}}):"
   },
   "delete_notes": {
     "close": "Kapat",
     "delete_notes_preview": "Not önizlemesini sil",
-    "delete_all_clones_description": "Tüm klonları da sil (son değişikliklerden geri alınabilir)"
+    "delete_all_clones_description": "Tüm klonları da sil (son değişikliklerden geri alınabilir)",
+    "erase_notes_description": "Normal (yazılımsal) silme işlemi, notları yalnızca silinmiş olarak işaretler ve belirli bir süre içinde (son değişiklikler iletişim kutusunda) geri alınabilir. Bu seçeneği işaretlemek, notları hemen siler ve notların geri alınması mümkün olmaz."
   },
   "export": {
     "close": "Kapat"
   },
   "import": {
     "chooseImportFile": "İçe aktarım dosyası",
-    "importDescription": "Seçilen dosya(lar) alt not olarak içe aktarılacaktır"
+    "importDescription": "Seçilen dosya(lar)ın içeriği, alt not(lar) olarak şuraya içe aktarılacaktır"
   },
   "info": {
     "closeButton": "Kapat"
@@ -34,21 +41,23 @@
   "toast": {
     "critical-error": {
       "title": "Kritik hata",
-      "message": "İstemci uygulamasının başlatılmasını engelleyen kritik bir hata meydana geldi\n\n{{message}}\n\nBu muhtemelen bir betiğin beklenmedik şekilde başarısız olmasından kaynaklanıyor. Uygulamayı güvenli modda başlatarak sorunu ele almayı deneyin."
+      "message": "İstemci uygulamasının başlamasını engelleyen kritik bir hata oluştu:\n\n{{message}}\n\nBunun nedeni büyük olasılıkla bir komut dosyasının beklenmedik bir şekilde başarısız olmasıdır. Uygulamayı güvenli modda başlatmayı ve sorunu gidermeyi deneyin."
     },
     "widget-error": {
       "title": "Bir widget başlatılamadı",
-      "message-unknown": "Bilinmeyen widget aşağıdaki sebeple başlatılamadı\n\n{{message}}"
+      "message-unknown": "Bilinmeyen bir widget aşağıdaki sebeple başlatılamadı\n\n{{message}}",
+      "message-custom": "ID'si \"{{id}}\" ve başlığı \"{{title}}\" olan nottan alınan özel bileşen şu sebepten başlatılamadı:\n\n{{message}}"
     },
     "bundle-error": {
-      "title": "Özel bir betik yüklenemedi"
+      "title": "Özel bir betik yüklenemedi",
+      "message": "ID'si \"{{id}}\" ve başlığı \"{{title}}\" olan nottan alınan komut dosyası şunun nedeniyle yürütülemedi:\n\n{{message}}"
     }
   },
   "add_link": {
     "add_link": "Bağlantı ekle",
     "help_on_links": "Bağlantılar konusunda yardım",
     "note": "Not",
-    "search_note": "isimle not ara",
+    "search_note": "notu adına göre ara",
     "link_title_mirrors": "bağlantı adı notun şu anki adıyla aynı",
     "link_title_arbitrary": "bağlantı adı isteğe bağlı olarak değiştirilebilir",
     "link_title": "Bağlantı adı",
@@ -85,12 +94,7 @@
     "cancel": "İptal",
     "ok": "OK",
     "are_you_sure_remove_note": "\"{{title}}\" notunu ilişki haritasından kaldırmak istediğinize emin misiniz?. ",
-    "also_delete_note": "Notu da sil"
-  },
-  "ai_llm": {
-    "n_notes_queued": "{{ count }} not dizinleme için sıraya alındı",
-    "n_notes_queued_plural": "{{ count }} not dizinleme için sıraya alındı",
-    "notes_indexed": "{{ count }} not dizinlendi",
-    "notes_indexed_plural": "{{ count }} not dizinlendi"
+    "also_delete_note": "Notu da sil",
+    "if_you_dont_check": "Bunu işaretlemezseniz, not yalnızca ilişki haritasından kaldırılacaktır."
   }
 }

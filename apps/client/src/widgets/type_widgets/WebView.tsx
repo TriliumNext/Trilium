@@ -26,7 +26,7 @@ function WebViewContent({ src }: { src: string }) {
 
 function WebViewHelp() {
     return (
-        <Alert className="note-detail-web-view-help" type="warning" style={{ margin: "50px", padding: "20px 20px 0px 20px;" }}>
+        <Alert className="note-detail-web-view-help" type="warning">
             <h4>{t("web_view.web_view")}</h4>
             <p>{t("web_view.embed_websites")}</p>
             <p>{t("web_view.create_label")}</p>

@@ -1,24 +1,28 @@
-import { useEffect, useMemo, useState } from "preact/hooks";
-import { t } from "../../../services/i18n";
-import FormCheckbox from "../../react/FormCheckbox";
-import FormRadioGroup from "../../react/FormRadioGroup";
-import { useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
-import OptionsSection from "./components/OptionsSection";
-import { formatDateTime, toggleBodyClass } from "../../../services/utils";
-import FormGroup from "../../react/FormGroup";
-import Column from "../../react/Column";
-import { FormSelectGroup, FormSelectWithGroups } from "../../react/FormSelect";
-import { Themes } from "@triliumnext/highlightjs";
-import { ensureMimeTypesForHighlighting, loadHighlightingTheme } from "../../../services/syntax_highlight";
 import { normalizeMimeTypeForCKEditor, type OptionNames } from "@triliumnext/commons";
-import { getHtml } from "../../react/RawHtml";
+import { Themes } from "@triliumnext/highlightjs";
 import type { CSSProperties } from "preact/compat";
+import { useEffect, useMemo, useState } from "preact/hooks";
+import { Trans } from "react-i18next";
+
+import { isExperimentalFeatureEnabled } from "../../../services/experimental_features";
+import { t } from "../../../services/i18n";
+import { ensureMimeTypesForHighlighting, loadHighlightingTheme } from "../../../services/syntax_highlight";
+import { formatDateTime, toggleBodyClass } from "../../../services/utils";
+import Column from "../../react/Column";
+import FormCheckbox from "../../react/FormCheckbox";
+import FormGroup from "../../react/FormGroup";
+import FormRadioGroup from "../../react/FormRadioGroup";
+import { FormSelectGroup, FormSelectWithGroups } from "../../react/FormSelect";
 import FormText from "../../react/FormText";
 import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
-import CheckboxList from "./components/CheckboxList";
+import { useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
 import KeyboardShortcut from "../../react/KeyboardShortcut";
-import { Trans } from "react-i18next";
+import { getHtml } from "../../react/RawHtml";
 import AutoReadOnlySize from "./components/AutoReadOnlySize";
+import CheckboxList from "./components/CheckboxList";
+import OptionsSection from "./components/OptionsSection";
+
+const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
 export default function TextNoteSettings() {
     return (
@@ -32,7 +36,7 @@ export default function TextNoteSettings() {
             <AutoReadOnlySize option="autoReadonlySizeText" label={t("text_auto_read_only_size.label")} />
             <DateTimeFormatOptions />
         </>
-    )
+    );
 }
 
 function FormattingToolbar() {
@@ -65,7 +69,7 @@ function FormattingToolbar() {
                 containerStyle={{ marginInlineStart: "1em" }}
             />
         </OptionsSection>
-    )
+    );
 }
 
 function EditorFeatures() {
@@ -119,7 +123,7 @@ function CodeBlockStyle() {
 
         for (const [ id, theme ] of Object.entries(Themes)) {
             const data: ThemeData = {
-                val: "default:" + id,
+                val: `default:${  id}`,
                 title: theme.name
             };
 
@@ -177,7 +181,7 @@ function CodeBlockStyle() {
 
             <CodeBlockPreview theme={codeBlockTheme} wordWrap={codeBlockWordWrap} />
         </OptionsSection>
-    )
+    );
 }
 
 const SAMPLE_LANGUAGE = normalizeMimeTypeForCKEditor("application/javascript;env=frontend");
@@ -219,18 +223,18 @@ function CodeBlockPreview({ theme, wordWrap }: { theme: string, wordWrap: boolea
     const codeStyle = useMemo<CSSProperties>(() => {
         if (wordWrap) {
             return { whiteSpace: "pre-wrap" };
-        } else {
-            return { whiteSpace: "pre"};
         }
+        return { whiteSpace: "pre"};
+
     }, [ wordWrap ]);
 
     return (
         <div className="note-detail-readonly-text-content ck-content code-sample-wrapper">
-            <pre className="hljs" style={{ marginBottom: 0 }}>
+            <pre className="hljs selectable-text" style={{ marginBottom: 0 }}>
                 <code className="code-sample" style={codeStyle} dangerouslySetInnerHTML={getHtml(code)} />
             </pre>
         </div>
-    )
+    );
 }
 
 interface ThemeData {
@@ -241,7 +245,7 @@ interface ThemeData {
 function TableOfContent() {
     const [ minTocHeadings, setMinTocHeadings ] = useTriliumOption("minTocHeadings");
 
-    return (
+    return (!isNewLayout &&
         <OptionsSection title={t("table_of_contents.title")}>
             <FormText>{t("table_of_contents.description")}</FormText>
 
@@ -257,14 +261,31 @@ function TableOfContent() {
             <FormText>{t("table_of_contents.disable_info")}</FormText>
             <FormText>{t("table_of_contents.shortcut_info")}</FormText>
         </OptionsSection>
-    )
+    );
 }
 
 function HighlightsList() {
+    return (
+        <OptionsSection title={t("highlights_list.title")}>
+            <HighlightsListOptions />
+
+            {!isNewLayout && (
+                <>
+                    <hr />
+                    <h5>{t("highlights_list.visibility_title")}</h5>
+                    <FormText>{t("highlights_list.visibility_description")}</FormText>
+                    <FormText>{t("highlights_list.shortcut_info")}</FormText>
+                </>
+            )}
+        </OptionsSection>
+    );
+}
+
+export function HighlightsListOptions() {
     const [ highlightsList, setHighlightsList ] = useTriliumOptionJson<string[]>("highlightsList");
 
     return (
-        <OptionsSection title={t("highlights_list.title")}>
+        <>
             <FormText>{t("highlights_list.description")}</FormText>
             <CheckboxList
                 values={[
@@ -277,13 +298,8 @@ function HighlightsList() {
                 keyProperty="val" titleProperty="title"
                 currentValue={highlightsList} onChange={setHighlightsList}
             />
-            <hr />
-
-            <h5>{t("highlights_list.visibility_title")}</h5>
-            <FormText>{t("highlights_list.visibility_description")}</FormText>
-            <FormText>{t("highlights_list.shortcut_info")}</FormText>
-        </OptionsSection>
-    )
+        </>
+    );
 }
 
 function DateTimeFormatOptions() {
@@ -302,19 +318,19 @@ function DateTimeFormatOptions() {
             </FormText>
 
             <div className="row align-items-center">
-              <FormGroup name="custom-date-time-format" className="col-md-6" label={t("custom_date_time_format.format_string")}>
-                  <FormTextBox
+                <FormGroup name="custom-date-time-format" className="col-md-6" label={t("custom_date_time_format.format_string")}>
+                    <FormTextBox
                         placeholder="YYYY-MM-DD HH:mm"
                         currentValue={customDateTimeFormat || "YYYY-MM-DD HH:mm"} onChange={setCustomDateTimeFormat}
-                  />
-              </FormGroup>
+                    />
+                </FormGroup>
 
-              <FormGroup name="formatted-date" className="col-md-6" label={t("custom_date_time_format.formatted_time")}>
-                <div>
-                    {formatDateTime(new Date(), customDateTimeFormat)}
-                </div>
-              </FormGroup>
+                <FormGroup name="formatted-date" className="col-md-6" label={t("custom_date_time_format.formatted_time")}>
+                    <div>
+                        {formatDateTime(new Date(), customDateTimeFormat)}
+                    </div>
+                </FormGroup>
             </div>
         </OptionsSection>
-    )
+    );
 }

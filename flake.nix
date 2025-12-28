@@ -258,6 +258,13 @@
         packages.server = server;
 
         packages.default = desktop;
+
+        devShells.default = pkgs.mkShell {
+          buildInputs = [
+            nodejs
+            pnpm
+          ];
+        };
       }
     );
 }

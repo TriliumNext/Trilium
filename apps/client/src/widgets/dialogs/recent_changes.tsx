@@ -21,7 +21,7 @@ export default function RecentChangesDialog() {
     const [ refreshCounter, setRefreshCounter ] = useState(0);
     const [ shown, setShown ] = useState(false);
 
-    useTriliumEvent("showRecentChanges", ({ ancestorNoteId }) => {        
+    useTriliumEvent("showRecentChanges", ({ ancestorNoteId }) => {
         setAncestorNoteId(ancestorNoteId ?? hoisted_note.getHoistedNoteId());
         setShown(true);
     });
@@ -91,7 +91,7 @@ function RecentChangesTimeline({ groupedByDate, setShown }: { groupedByDate: Map
                                 return (
                                     <li className={isDeleted ? "deleted-note" : ""}>
                                         <span title={change.date}>{formattedTime}</span>
-                                        { !isDeleted
+                                        { notePath && !isDeleted
                                         ? <NoteLink notePath={notePath} title={change.current_title} />
                                         : <DeletedNoteLink change={change} setShown={setShown} /> }
                                     </li>

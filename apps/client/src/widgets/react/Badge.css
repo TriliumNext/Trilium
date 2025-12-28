@@ -1,0 +1,86 @@
+.ext-badge {
+    display: flex;
+    height: 1.9em;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--badge-radius);
+    padding-inline: 8px;
+    font-size: 0.75em;
+    letter-spacing: .2pt;
+    background-color: var(--color, transparent);
+    color: white;
+    min-width: 0;
+    flex-shrink: 1;
+    white-space: collapse;
+
+    &.clickable,
+    .dropdown-badge & {
+        cursor: pointer;
+
+        &:hover {
+            background-color: color-mix(in srgb, var(--color, --badge-background-color) 80%, black);
+        }
+    }
+
+    .bx {
+        font-size: 1.2em;
+        margin-inline-end: 4px;
+        opacity: .6;
+    }
+
+    a {
+        color: inherit !important;
+        text-decoration: none;
+    }
+
+    > * {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+.dropdown-badge {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-radius: var(--badge-radius);
+
+    button,
+    .btn {
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .ext-badge {
+        border-radius: 0;
+
+        .text {
+            display: inline-flex;
+            align-items: center;
+            min-width: 0;
+
+            .text-inner {
+                min-width: 0;
+                text-overflow: ellipsis;
+                overflow: hidden;
+            }
+
+            .arrow {
+                font-size: 1.3em;
+                margin-inline-start: 0.25em;
+                margin-inline-end: 0;
+            }
+        }
+    }
+
+    .btn {
+        border: 0;
+        margin: 0;
+        padding: 0;
+    }
+}

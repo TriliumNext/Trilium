@@ -10,16 +10,16 @@ import FNote from "../../entities/fnote";
 import search from "../../services/search";
 import { TypeWidgetProps } from "./type_widget";
 
-export default function Empty({ }: TypeWidgetProps) {
+export default function Empty({ ntxId }: TypeWidgetProps) {
     return (
         <>
             <WorkspaceSwitcher />
-            <NoteSearch />
+            <NoteSearch ntxId={ntxId ?? null} />
         </>
     )
 }
 
-function NoteSearch() {
+function NoteSearch({ ntxId }: { ntxId: string | null }) {
     const resultsContainerRef = useRef<HTMLDivElement>(null);
     const autocompleteRef = useRef<HTMLInputElement>(null);
 
@@ -45,10 +45,9 @@ function NoteSearch() {
                         if (!suggestion?.notePath) {
                             return false;
                         }
-
-                        const activeContext = appContext.tabManager.getActiveContext();
-                        if (activeContext) {
-                            activeContext.setNote(suggestion.notePath);
+                        const activeNoteContext = appContext.tabManager.getNoteContextById(ntxId) ?? appContext.tabManager.getActiveContext();
+                        if (activeNoteContext) {
+                            activeNoteContext.setNote(suggestion.notePath);
                         }
                     }}
                 />

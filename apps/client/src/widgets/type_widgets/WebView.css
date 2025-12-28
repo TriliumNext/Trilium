@@ -1,9 +1,16 @@
 .note-detail-web-view {
     height: 100%;
     position: relative;
+    overflow: hidden;
 }
 
-.note-detail-web-view > * {
+.note-detail-web-view .note-detail-web-view-help {
+    margin: 50px;
+    padding: 20px 20px 0 20px;
+}
+
+.note-detail-web-view > iframe,
+.note-detail-web-view > webview {
     position: absolute;
     top: 0;
     width: 100%;

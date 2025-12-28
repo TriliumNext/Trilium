@@ -1,39 +1,41 @@
-import froca from "../services/froca.js";
-import RootCommandExecutor from "./root_command_executor.js";
-import Entrypoints from "./entrypoints.js";
-import options from "../services/options.js";
-import utils, { hasTouchBar } from "../services/utils.js";
-import zoomComponent from "./zoom.js";
-import TabManager from "./tab_manager.js";
-import Component from "./component.js";
-import keyboardActionsService from "../services/keyboard_actions.js";
-import linkService, { type ViewScope } from "../services/link.js";
-import MobileScreenSwitcherExecutor, { type Screen } from "./mobile_screen_switcher.js";
-import MainTreeExecutors from "./main_tree_executors.js";
-import toast from "../services/toast.js";
-import ShortcutComponent from "./shortcut_component.js";
-import { t, initLocale } from "../services/i18n.js";
-import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
-import type { PromptDialogOptions } from "../widgets/dialogs/prompt.js";
-import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
-import type LoadResults from "../services/load_results.js";
-import type { Attribute } from "../services/attribute_parser.js";
-import type NoteTreeWidget from "../widgets/note_tree.js";
-import type { default as NoteContext, GetTextEditorCallback } from "./note_context.js";
-import type { NativeImage, TouchBar } from "electron";
-import TouchBarComponent from "./touch_bar.js";
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
-import { StartupChecks } from "./startup_checks.js";
-import type { CreateNoteOpts } from "../services/note_create.js";
-import { ColumnComponent } from "tabulator-tables";
-import { ChooseNoteTypeCallback } from "../widgets/dialogs/note_type_chooser.jsx";
-import type RootContainer from "../widgets/containers/root_container.js";
 import { SqlExecuteResults } from "@triliumnext/commons";
-import { AddLinkOpts } from "../widgets/dialogs/add_link.jsx";
-import { IncludeNoteOpts } from "../widgets/dialogs/include_note.jsx";
+import type { NativeImage, TouchBar } from "electron";
+import { ColumnComponent } from "tabulator-tables";
+
+import type { Attribute } from "../services/attribute_parser.js";
+import froca from "../services/froca.js";
+import { initLocale,t } from "../services/i18n.js";
+import keyboardActionsService from "../services/keyboard_actions.js";
+import linkService, { type ViewScope } from "../services/link.js";
+import type LoadResults from "../services/load_results.js";
+import type { CreateNoteOpts } from "../services/note_create.js";
+import options from "../services/options.js";
+import toast from "../services/toast.js";
+import utils, { hasTouchBar } from "../services/utils.js";
 import { ReactWrappedWidget } from "../widgets/basic_widget.js";
+import type RootContainer from "../widgets/containers/root_container.js";
+import { AddLinkOpts } from "../widgets/dialogs/add_link.jsx";
+import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
+import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
+import { IncludeNoteOpts } from "../widgets/dialogs/include_note.jsx";
+import type { InfoProps } from "../widgets/dialogs/info.jsx";
 import type { MarkdownImportOpts } from "../widgets/dialogs/markdown_import.jsx";
+import { ChooseNoteTypeCallback } from "../widgets/dialogs/note_type_chooser.jsx";
+import type { PromptDialogOptions } from "../widgets/dialogs/prompt.js";
+import type NoteTreeWidget from "../widgets/note_tree.js";
+import Component from "./component.js";
+import Entrypoints from "./entrypoints.js";
+import MainTreeExecutors from "./main_tree_executors.js";
+import MobileScreenSwitcherExecutor, { type Screen } from "./mobile_screen_switcher.js";
+import type { default as NoteContext, GetTextEditorCallback } from "./note_context.js";
+import RootCommandExecutor from "./root_command_executor.js";
+import ShortcutComponent from "./shortcut_component.js";
+import { StartupChecks } from "./startup_checks.js";
+import TabManager from "./tab_manager.js";
+import TouchBarComponent from "./touch_bar.js";
+import zoomComponent from "./zoom.js";
 
 interface Layout {
     getRootWidget: (appContext: AppContext) => RootContainer;
@@ -124,7 +126,7 @@ export type CommandMappings = {
         isNewNote?: boolean;
     };
     showPromptDialog: PromptDialogOptions;
-    showInfoDialog: ConfirmWithMessageOptions;
+    showInfoDialog: InfoProps;
     showConfirmDialog: ConfirmWithMessageOptions;
     showRecentChanges: CommandData & { ancestorNoteId: string };
     showImportDialog: CommandData & { noteId: string };
@@ -264,7 +266,7 @@ export type CommandMappings = {
 
     reEvaluateRightPaneVisibility: CommandData;
     runActiveNote: CommandData;
-    scrollContainerToCommand: CommandData & {
+    scrollContainerTo: CommandData & {
         position: number;
     };
     scrollToEnd: CommandData;
@@ -445,6 +447,8 @@ type EventMappings = {
         error: string;
     };
     searchRefreshed: { ntxId?: string | null };
+    textEditorRefreshed: { ntxId?: string | null, editor: CKTextEditor };
+    contentElRefreshed: { ntxId?: string | null, contentEl: HTMLElement };
     hoistedNoteChanged: {
         noteId: string;
         ntxId: string | null;
@@ -486,7 +490,7 @@ type EventMappings = {
     relationMapResetPanZoom: { ntxId: string | null | undefined };
     relationMapResetZoomIn: { ntxId: string | null | undefined };
     relationMapResetZoomOut: { ntxId: string | null | undefined };
-    activeNoteChanged: {};
+    activeNoteChanged: {ntxId: string | null | undefined};
     showAddLinkDialog: AddLinkOpts;
     showIncludeDialog: IncludeNoteOpts;
     openBulkActionsDialog: {
@@ -693,10 +697,8 @@ $(window).on("beforeunload", () => {
                 console.log(`Component ${component.componentId} is not finished saving its state.`);
                 allSaved = false;
             }
-        } else {
-            if (!listener()) {
-                allSaved = false;
-            }
+        } else if (!listener()) {
+            allSaved = false;
         }
     }
 
@@ -706,7 +708,7 @@ $(window).on("beforeunload", () => {
     }
 });
 
-$(window).on("hashchange", function () {
+$(window).on("hashchange", () => {
     const { notePath, ntxId, viewScope, searchString } = linkService.parseNavigationStateFromUrl(window.location.href);
 
     if (notePath || ntxId) {

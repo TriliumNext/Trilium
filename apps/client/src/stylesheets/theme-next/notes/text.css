@@ -22,7 +22,7 @@
     --ck-color-button-on-background: transparent;
     --ck-color-button-on-hover-background: var(--hover-item-background-color);
     --ck-color-button-default-active-background: var(--hover-item-background-color);
-    
+
     --ck-color-split-button-hover-background: var(--ck-editor-toolbar-dropdown-button-open-background);
 
     --ck-focus-ring: 1px solid transparent;
@@ -77,7 +77,7 @@
     visibility: collapse;
 }
 
-/* 
+/*
  * Dropdowns
  */
 
@@ -85,7 +85,7 @@
 :root .ck.ck-dropdown__panel,
 :root .ck-balloon-panel {
     --ck-editor-popup-padding: 4px;
-    
+
     --ck-color-panel-background: var(--menu-background-color);
     --ck-color-panel-border: var(--ck-editor-popup-border-color);
 
@@ -487,7 +487,7 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
 .ck.ck-labeled-field-view > .ck.ck-labeled-field-view__input-wrapper > label.ck.ck-label {
     /* Move the label above the text box regardless of the text box state */
     transform: translate(0, calc(-.2em - var(--ck-input-label-height))) !important;
-    
+
     padding-inline-start: 0 !important;
     background: transparent;
     font-size: .85em;
@@ -518,7 +518,7 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
  */
 
 /*
- * Code Blocks 
+ * Code Blocks
  */
 
 .attachment-content-wrapper pre,
@@ -527,8 +527,15 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
     border: 0;
     border-radius: 6px;
     box-shadow: var(--code-block-box-shadow);
-    padding: 0;
     margin-top: 2px !important;
+}
+
+.attachment-content-wrapper pre {
+    border-radius: var(--dropdown-border-radius);
+}
+
+:root .ck-content pre:has(> code) {
+    padding: 0;
 }
 
 :root .ck-content pre {
@@ -539,7 +546,7 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
      * for single-line code blocks */
 
     --copy-button-margin-size: calc((1em    * 1.5   + var(--padding-size) * 2 - var(--icon-button-size)) / 2);
-    
+
     /* Where:                        │        └ Line height
      *                               └───────── Font size
      */
@@ -627,6 +634,10 @@ html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
     font-weight: 300;
 }
 
+.ck-content strong {
+    font-weight: 600;
+}
+
 .ck-content hr {
     margin: 5px 0;
     height: 1px;
@@ -643,7 +654,7 @@ html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
     }
 }
 
-.note-detail-printable:not(.word-wrap) pre code {
+.ck-content:not(.word-wrap) pre code {
     white-space: pre;
 }
 
@@ -663,16 +674,33 @@ html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
     color: var(--main-text-color);
 }
 
+/* Links */
+
+.ck-content a.ck-widget {
+    outline: none;
+}
+
+.ck-content a.ck-widget.ck-widget_selected,
+.ck-content a.ck-link_selected {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--link-selection-outline-color);
+    background: var(--link-hover-background);
+} 
+
 /* Reference link */
 
 .ck-content a.reference-link,
 .ck-content a.reference-link:hover {
     /* Apply underline only to the span inside the link so it can follow the
      * target note's user defined color */
-    text-decoration: none;
+     text-decoration: none;
 }
 
-.ck-content a.reference-link > span {
+.ck-content a.reference-link > span.use-note-color {
+    color: var(--custom-color, inherit);
+}
+
+.ck-content a.reference-link:hover > span {
     text-decoration: underline;
 }
 

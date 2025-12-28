@@ -1,16 +1,21 @@
-import { useNoteContext, useTriliumEvent } from "./react/hooks"
-import FNote from "../entities/fnote";
-import protected_session_holder from "../services/protected_session_holder";
-import { useEffect, useRef, useState } from "preact/hooks";
-import NoteContext from "../components/note_context";
-import { isValidElement, VNode } from "preact";
-import { TypeWidgetProps } from "./type_widgets/type_widget";
 import "./NoteDetail.css";
+
+import { isValidElement, VNode } from "preact";
+import { useEffect, useRef, useState } from "preact/hooks";
+
+import NoteContext from "../components/note_context";
+import FNote from "../entities/fnote";
+import type { PrintReport } from "../print";
 import attributes from "../services/attributes";
-import { ExtendedNoteType, TYPE_MAPPINGS, TypeWidget } from "./note_types";
-import { dynamicRequire, isElectron, isMobile } from "../services/utils";
-import toast from "../services/toast.js";
+import dialog from "../services/dialog";
 import { t } from "../services/i18n";
+import protected_session_holder from "../services/protected_session_holder";
+import toast from "../services/toast.js";
+import { dynamicRequire, isElectron, isMobile } from "../services/utils";
+import { ExtendedNoteType, TYPE_MAPPINGS, TypeWidget } from "./note_types";
+import { useNoteContext, useTriliumEvent } from "./react/hooks";
+import { NoteListWithLinks } from "./react/NoteList";
+import { TypeWidgetProps } from "./type_widgets/type_widget";
 
 /**
  * The note detail is in charge of rendering the content of a note, by determining its type (e.g. text, code) and using the appropriate view widget.
@@ -28,8 +33,9 @@ export default function NoteDetail() {
     const { note, type, mime, noteContext, parentComponent } = useNoteInfo();
     const { ntxId, viewScope } = noteContext ?? {};
     const isFullHeight = checkFullHeight(noteContext, type);
-    const noteTypesToRender = useRef<{ [ key in ExtendedNoteType ]?: (props: TypeWidgetProps) => VNode }>({});
+    const [ noteTypesToRender, setNoteTypesToRender ] = useState<{ [ key in ExtendedNoteType ]?: (props: TypeWidgetProps) => VNode }>({});
     const [ activeNoteType, setActiveNoteType ] = useState<ExtendedNoteType>();
+    const widgetRequestId = useRef(0);
 
     const props: TypeWidgetProps = {
         note: note!,
@@ -38,19 +44,28 @@ export default function NoteDetail() {
         parentComponent,
         noteContext
     };
+
     useEffect(() => {
         if (!type) return;
+        const requestId = ++widgetRequestId.current;
 
-        if (!noteTypesToRender.current[type]) {
+        if (!noteTypesToRender[type]) {
             getCorrespondingWidget(type).then((el) => {
                 if (!el) return;
-                noteTypesToRender.current[type] = el;
+
+                // Ignore stale requests
+                if (requestId !== widgetRequestId.current) return;
+
+                setNoteTypesToRender(prev => ({
+                    ...prev,
+                    [type]: el
+                }));
                 setActiveNoteType(type);
             });
         } else {
             setActiveNoteType(type);
         }
-    }, [ note, viewScope, type ]);
+    }, [ note, viewScope, type, noteTypesToRender ]);
 
     // Detect note type changes.
     useTriliumEvent("entitiesReloaded", async ({ loadResults }) => {
@@ -70,7 +85,7 @@ export default function NoteDetail() {
             parentComponent.handleEvent("noteTypeMimeChanged", { noteId: note.noteId });
         } else if (note.noteId
             && loadResults.isNoteReloaded(note.noteId, parentComponent.componentId)
-            && (type !== (await getWidgetType(note, noteContext)) || mime !== note?.mime)) {
+            && (type !== (await getExtendedWidgetType(note, noteContext)) || mime !== note?.mime)) {
             // this needs to have a triggerEvent so that e.g., note type (not in the component subtree) is updated
             parentComponent.triggerEvent("noteTypeMimeChanged", { noteId: note.noteId });
         } else {
@@ -95,9 +110,11 @@ export default function NoteDetail() {
     });
 
     // Automatically focus the editor.
-    useTriliumEvent("activeNoteChanged", () => {
-        // Restore focus to the editor when switching tabs, but only if the note tree is not already focused.
-        if (!document.activeElement?.classList.contains("fancytree-title")) {
+    useTriliumEvent("activeNoteChanged", ({ ntxId: eventNtxId }) => {
+        if (eventNtxId != ntxId) return;
+        // Restore focus to the editor when switching tabs,
+        // but only if the note tree and the note panel (e.g., note title or note detail) are not focused.
+        if (!document.activeElement?.classList.contains("fancytree-title") && !parentComponent.$widget[0].closest(".note-split")?.contains(document.activeElement)) {
             parentComponent.triggerCommand("focusOnDetail", { ntxId });
         }
     });
@@ -113,11 +130,17 @@ export default function NoteDetail() {
     useEffect(() => {
         if (!isElectron()) return;
         const { ipcRenderer } = dynamicRequire("electron");
-        const listener = () => {
+        const onPrintProgress = (_e: any, { progress, action }: { progress: number, action: "printing" | "exporting_pdf" }) => showToast(action, progress);
+        const onPrintDone = (_e, printReport: PrintReport) => {
             toast.closePersistent("printing");
+            handlePrintReport(printReport);
         };
-        ipcRenderer.on("print-done", listener);
-        return () => ipcRenderer.off("print-done", listener);
+        ipcRenderer.on("print-progress", onPrintProgress);
+        ipcRenderer.on("print-done", onPrintDone);
+        return () => {
+            ipcRenderer.off("print-progress", onPrintProgress);
+            ipcRenderer.off("print-done", onPrintDone);
+        };
     }, []);
 
     useTriliumEvent("executeInActiveNoteDetailWidget", ({ callback }) => {
@@ -139,11 +162,7 @@ export default function NoteDetail() {
     useTriliumEvent("printActiveNote", () => {
         if (!noteContext?.isActive() || !note) return;
 
-        toast.showPersistent({
-            icon: "bx bx-loader-circle bx-spin",
-            message: t("note_detail.printing"),
-            id: "printing"
-        });
+        showToast("printing");
 
         if (isElectron()) {
             const { ipcRenderer } = dynamicRequire("electron");
@@ -162,8 +181,17 @@ export default function NoteDetail() {
                     return;
                 }
 
-                iframe.contentWindow.addEventListener("note-ready", () => {
+                iframe.contentWindow.addEventListener("note-load-progress", (e) => {
+                    showToast("printing", e.detail.progress);
+                });
+
+                iframe.contentWindow.addEventListener("note-ready", (e) => {
                     toast.closePersistent("printing");
+
+                    if ("detail" in e) {
+                        handlePrintReport(e.detail as PrintReport);
+                    }
+
                     iframe.contentWindow?.print();
                     document.body.removeChild(iframe);
                 });
@@ -173,11 +201,7 @@ export default function NoteDetail() {
 
     useTriliumEvent("exportAsPdf", () => {
         if (!noteContext?.isActive() || !note) return;
-        toast.showPersistent({
-            icon: "bx bx-loader-circle bx-spin",
-            message: t("note_detail.printing_pdf"),
-            id: "printing"
-        });
+        showToast("exporting_pdf");
 
         const { ipcRenderer } = dynamicRequire("electron");
         ipcRenderer.send("export-as-pdf", {
@@ -193,7 +217,7 @@ export default function NoteDetail() {
             ref={containerRef}
             class={`note-detail ${isFullHeight ? "full-height" : ""}`}
         >
-            {Object.entries(noteTypesToRender.current).map(([ itemType, Element ]) => {
+            {Object.entries(noteTypesToRender).map(([ itemType, Element ]) => {
                 return <NoteDetailWrapper
                     Element={Element}
                     key={itemType}
@@ -201,7 +225,7 @@ export default function NoteDetail() {
                     isVisible={type === itemType}
                     isFullHeight={isFullHeight}
                     props={props}
-                />
+                />;
             })}
         </div>
     );
@@ -243,7 +267,7 @@ function useNoteInfo() {
     const [ mime, setMime ] = useState<string>();
 
     function refresh() {
-        getWidgetType(actualNote, noteContext).then(type => {
+        getExtendedWidgetType(actualNote, noteContext).then(type => {
             setNote(actualNote);
             setType(type);
             setMime(actualNote?.mime);
@@ -271,12 +295,12 @@ async function getCorrespondingWidget(type: ExtendedNoteType): Promise<null | Ty
     } else if (isValidElement(result)) {
         // Direct VNode provided.
         return result;
-    } else {
-        return result;
     }
+    return result;
+
 }
 
-async function getWidgetType(note: FNote | null | undefined, noteContext: NoteContext | undefined): Promise<ExtendedNoteType | undefined> {
+export async function getExtendedWidgetType(note: FNote | null | undefined, noteContext: NoteContext | undefined): Promise<ExtendedNoteType | undefined> {
     if (!noteContext) return undefined;
     if (!note) {
         // If the note is null, then it's a new tab. If it's undefined, then it's not loaded yet.
@@ -288,8 +312,10 @@ async function getWidgetType(note: FNote | null | undefined, noteContext: NoteCo
 
     if (noteContext?.viewScope?.viewMode === "source") {
         resultingType = "readOnlyCode";
-    } else if (noteContext?.viewScope && noteContext.viewScope.viewMode === "attachments") {
+    } else if (noteContext.viewScope?.viewMode === "attachments") {
         resultingType = noteContext.viewScope.attachmentId ? "attachmentDetail" : "attachmentList";
+    } else if (noteContext.viewScope?.viewMode === "note-map") {
+        resultingType = "noteMap";
     } else if (type === "text" && (await noteContext?.isReadOnly())) {
         resultingType = "readOnlyText";
     } else if ((type === "code" || type === "mermaid") && (await noteContext?.isReadOnly())) {
@@ -311,7 +337,7 @@ async function getWidgetType(note: FNote | null | undefined, noteContext: NoteCo
     return resultingType;
 }
 
-function checkFullHeight(noteContext: NoteContext | undefined, type: ExtendedNoteType | undefined) {
+export function checkFullHeight(noteContext: NoteContext | undefined, type: ExtendedNoteType | undefined) {
     if (!noteContext) return false;
 
     // https://github.com/zadam/trilium/issues/2522
@@ -321,4 +347,39 @@ function checkFullHeight(noteContext: NoteContext | undefined, type: ExtendedNot
     return (!noteContext?.hasNoteList() && isFullHeightNoteType && !isSqlNote)
         || noteContext?.viewScope?.viewMode === "attachments"
         || isBackendNote;
+}
+
+function showToast(type: "printing" | "exporting_pdf", progress: number = 0) {
+    toast.showPersistent({
+        icon: "bx bx-loader-circle bx-spin",
+        message: type === "printing" ? t("note_detail.printing") : t("note_detail.printing_pdf"),
+        id: "printing",
+        progress
+    });
+}
+
+function handlePrintReport(printReport: PrintReport) {
+    if (printReport.type === "collection" && printReport.ignoredNoteIds.length > 0) {
+        toast.showPersistent({
+            id: "print-report",
+            icon: "bx bx-collection",
+            title: t("note_detail.print_report_title"),
+            message: t("note_detail.print_report_collection_content", { count: printReport.ignoredNoteIds.length }),
+            buttons: [
+                {
+                    text: t("note_detail.print_report_collection_details_button"),
+                    onClick(api) {
+                        api.dismissToast();
+                        dialog.info(<>
+                            <h3>{t("note_detail.print_report_collection_details_ignored_notes")}</h3>
+                            <NoteListWithLinks noteIds={printReport.ignoredNoteIds} />
+                        </>, {
+                            title: t("note_detail.print_report_title"),
+                            size: "md"
+                        });
+                    }
+                }
+            ]
+        });
+    }
 }

@@ -1,0 +1,73 @@
+{
+  "import": {
+    "safeImportTooltip": "Trilium <code>.zip</code> export files can contain executable scripts which may contain harmful behaviour. Safe import will deactivate automatic execution of all imported scripts. Uncheck \"Safe import\" only if the imported archive is supposed to contain executable scripts and you completely trust the contents of the import file.",
+    "shrinkImagesTooltip": "<p>If you check this option, Trilium will attempt to shrink the imported images by scaling and optimisation which may affect the perceived image quality. If unchecked, images will be imported without changes.</p><p>This doesn't apply to <code>.zip</code> imports with metadata since it is assumed these files are already optimised.</p>",
+    "codeImportedAsCode": "Import recognised code files (e.g. <code>.json</code>) as code notes if it's unclear from metadata"
+  },
+  "upload_attachments": {
+    "tooltip": "If you check this option, Trilium will attempt to shrink the uploaded images by scaling and optimisation which may affect the perceived image quality. If unchecked, images will be uploaded without changes."
+  },
+  "attribute_detail": {
+    "auto_read_only_disabled": "text/code notes can be set automatically into read mode when they are too large. You can disable this behaviour on per-note basis by adding this label to the note",
+    "workspace_tab_background_color": "CSS colour used in the note tab when hoisted to this note",
+    "color": "defines colour of the note in note tree, links etc. Use any valid CSS colour value like 'red' or #a13d5f",
+    "color_type": "Colour"
+  },
+  "mobile_detail_menu": {
+    "error_unrecognized_command": "Unrecognised command {{command}}"
+  },
+  "promoted_attributes": {
+    "remove_color": "Remove the colour label"
+  },
+  "max_content_width": {
+    "centerContent": "Keep content centred"
+  },
+  "theme": {
+    "auto_theme": "Legacy (Follow system colour scheme)",
+    "triliumnext": "Trilium (Follow system colour scheme)"
+  },
+  "search_engine": {
+    "custom_name_placeholder": "Customise search engine name",
+    "custom_url_placeholder": "Customise search engine url"
+  },
+  "highlights_list": {
+    "description": "You can customise the highlights list displayed in the right panel:",
+    "color": "Coloured text",
+    "bg_color": "Text with background colour"
+  },
+  "table_of_contents": {
+    "description": "Table of contents will appear in text notes when the note has more than a defined number of headings. You can customise this number:"
+  },
+  "custom_date_time_format": {
+    "description": "Customise the format of the date and time inserted via <shortcut /> or the toolbar. See <doc>Day.js docs</doc> for available format tokens."
+  },
+  "i18n": {
+    "title": "Localisation"
+  },
+  "attachment_detail_2": {
+    "unrecognized_role": "Unrecognised attachment role '{{role}}'."
+  },
+  "ai_llm": {
+    "reprocess_index_started": "Search index optimisation started in the background",
+    "index_rebuilding": "Optimising index ({{percentage}}%)",
+    "index_rebuild_complete": "Index optimisation complete"
+  },
+  "highlighting": {
+    "color-scheme": "Colour Scheme"
+  },
+  "code_theme": {
+    "color-scheme": "Colour scheme"
+  },
+  "call_to_action": {
+    "background_effects_message": "On Windows devices, background effects are now fully stable. The background effects adds a touch of colour to the user interface by blurring the background behind it. This technique is also used in other applications such as Windows Explorer."
+  },
+  "settings_appearance": {
+    "related_code_blocks": "Colour scheme for code blocks in text notes",
+    "related_code_notes": "Colour scheme for code notes"
+  },
+  "note-color": {
+    "clear-color": "Clear note colour",
+    "set-color": "Set note colour",
+    "set-custom-color": "Set custom note colour"
+  }
+}

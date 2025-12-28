@@ -1,1 +1,9 @@
-{}
+{
+    "get-started": {
+        "title": "Iniciar",
+        "desktop_title": "Baixe a aplicação para desktop (v{{version}})",
+        "architecture": "Arquitetura:",
+        "older_releases": "Veja os lançamentos anteriores",
+        "server_title": "Configure um servidor para acessar em múltiplos dispositivos"
+    }
+}

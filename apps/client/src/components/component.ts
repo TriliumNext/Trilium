@@ -65,8 +65,8 @@ export class TypedComponent<ChildT extends TypedComponent<ChildT>> {
 
             // don't create promises if not needed (optimization)
             return callMethodPromise && childrenPromise ? Promise.all([callMethodPromise, childrenPromise]) : callMethodPromise || childrenPromise;
-        } catch (e: any) {
-            console.error(`Handling of event '${name}' failed in ${this.constructor.name} with error ${e.message} ${e.stack}`);
+        } catch (e: unknown) {
+            console.error(`Handling of event '${name}' failed in ${this.constructor.name} with error`, e);
 
             return null;
         }

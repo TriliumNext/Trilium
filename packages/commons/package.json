@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/commons",
-  "version": "0.99.5",
+  "version": "0.101.1",
   "description": "Shared library between the clients (e.g. browser, Electron) and the server, mostly for type definitions and utility methods.",
   "private": true,
   "type": "module",
@@ -10,5 +10,12 @@
     "name": "Trilium Notes Team",
     "email": "contact@eliandoran.me",
     "url": "https://triliumnotes.org"
+  },
+  "scripts": {
+    "test": "vitest"
+  },
+  "dependencies": {
+    "dayjs": "1.11.19",
+    "dayjs-plugin-utc": "0.1.2"
   }
 }

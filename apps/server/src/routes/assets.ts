@@ -27,7 +27,8 @@ async function register(app: express.Application) {
             appType: "custom",
             cacheDir: path.join(srcRoot, "../../.cache/vite"),
             base: `/${assetUrlFragment}/`,
-            root: clientDir
+            root: clientDir,
+            css: { devSourcemap: true }
         });
         app.use(`/${assetUrlFragment}/`, (req, res, next) => {
             req.url = `/${assetUrlFragment}` + req.url;

@@ -17,6 +17,10 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .c
     padding: 4px 16px;
     background: var(--cmd-button-background-color);
     color: var(--cmd-button-text-color);
+
+    &.dropdown-toggle-split {
+        min-width: unset;
+    }
 }
 
 button.btn.btn-primary:hover,
@@ -52,7 +56,8 @@ button.btn.btn-primary:focus-visible,
 button.btn.btn-secondary:focus-visible,
 button.btn.btn-sm:not(.select-button):focus-visible,
 button.btn.btn-success:focus-visible,
-button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):focus-visible {
+button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .ck-button-replaceall, .ck-button-replace).ck-button_with-text:not(.ck-disabled):focus-visible,
+.tn-focusable-button:focus-visible {
     outline: 2px solid var(--input-focus-outline-color);
 }
 
@@ -142,7 +147,15 @@ button.btn.btn-success kbd {
     outline: 2px solid var(--input-focus-outline-color);
 }
 
-/* 
+/* Button groups */
+
+/* Active button */
+:root .btn-group button.btn.active {
+    background-color: var(--button-group-active-button-background);
+    color: var(--button-group-active-button-text-color);
+}
+
+/*
  * Input boxes
  */
 
@@ -340,6 +353,11 @@ label.input-group.tn-number-unit-pair input {
     padding-inline-end: 0;
 }
 
+:root .input-group > pre[aria-hidden="true"] {
+    margin: 0;
+    padding: 0;
+}
+
 /* Combo box-like dropdown buttons */
 
 .select-button.dropdown-toggle::after {
@@ -387,7 +405,8 @@ button.select-button.dropdown-toggle.btn:active {
 select:focus,
 select.form-select:focus,
 select.form-control:focus,
-.select-button.dropdown-toggle.btn:focus {
+.select-button.dropdown-toggle.btn:focus,
+.select-button.focus-outline:focus {
     box-shadow: unset;
     outline: 3px solid var(--input-focus-outline-color);
     outline-offset: 0;
@@ -410,7 +429,7 @@ optgroup {
     line-height: 40px;
 }
 
-/* 
+/*
  * File input
  *
  * <label class="tn-file-input tn-input-field">
@@ -623,8 +642,8 @@ body a.tn-link:visited,
     border-radius: 4px;
     background: var(--background);
     color: var(--link-color);
-    font-weight: normal;
-    text-decoration: underline;
+    font-weight: 500;
+    text-decoration: none;
 
     transition:
         background-color 200ms ease-out,
@@ -639,10 +658,12 @@ body a.tn-link:focus-visible,
 }
 
 body a.tn-link:hover,
-.use-tn-links a:hover {
+.use-tn-links a:hover,
+.use-tn-links a.ck-widget_selected {
     box-shadow: 0 0 0 4px var(--link-hover-background);
     --background: var(--link-hover-background);
     color: var(--link-hover-color);
+    text-decoration: underline;
 
     transition:
         background-color 100ms ease-in,

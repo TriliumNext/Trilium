@@ -26,6 +26,9 @@
     "bun": {
         "enabled": false
     },
+    "nix": {
+        "enabled": true
+    },
     "packageRules": [
         {
             "matchPackageNames": "@fsegurai/codemirror-theme-**",

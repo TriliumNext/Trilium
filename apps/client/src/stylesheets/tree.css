@@ -160,6 +160,11 @@ span.fancytree-node.multiple-parents .fancytree-title::after {
     content: " \eb3d"; /* lookup code for "link-alt" in boxicons.css */
 }
 
+body.experimental-feature-new-layout span.fancytree-node.multiple-parents .fancytree-title::after {
+    content: " \ed82";
+    opacity: 0.5;
+}
+
 span.fancytree-node.shared .fancytree-title::after {
     font-family: "boxicons" !important;
     font-size: smaller;

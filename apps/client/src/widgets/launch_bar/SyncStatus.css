@@ -1,0 +1,26 @@
+.sync-status {
+    box-sizing: border-box;
+}
+
+.sync-status .sync-status-icon {
+    display: inline-block;
+    position: relative;
+    top: -5px;
+    font-size: 110%;
+}
+
+.sync-status .sync-status-sub-icon {
+    font-size: 40%;
+    position: absolute;
+    inset-inline-start: 0;
+    top: 16px;
+}
+
+.sync-status .sync-status-icon span {
+    border: none !important;
+}
+
+.sync-status-icon:not(.sync-status-in-progress):hover {
+    background-color: var(--hover-item-background-color);
+    cursor: pointer;
+}

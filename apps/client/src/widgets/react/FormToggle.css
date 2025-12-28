@@ -24,6 +24,14 @@
     border-radius: 24px;
     background-color: var(--switch-off-track-background);
     transition: background 200ms ease-in;
+
+    &.disable-transitions {
+        transition: none !important;
+
+        &:after {
+            transition: none !important;
+        }
+    }
 }
 
 .switch-widget .switch-button.on {

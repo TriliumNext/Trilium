@@ -39,7 +39,9 @@
     "edit_branch_prefix": "브랜치 접두사 편집",
     "help_on_tree_prefix": "트리 접두사에 대한 도움말",
     "prefix": "접두사: ",
-    "branch_prefix_saved": "브랜치 접두사가 저장되었습니다."
+    "branch_prefix_saved": "브랜치 접두사가 저장되었습니다.",
+    "edit_branch_prefix_multiple": "{{count}}개의 지점 접두사 편집",
+    "branch_prefix_saved_multiple": "{{count}}개의 지점에 대해 지점 접두사가 저장되었습니다."
   },
   "bulk_actions": {
     "bulk_actions": "대량 작업",
@@ -48,12 +50,24 @@
     "available_actions": "가능한 액션들",
     "chosen_actions": "선택한 액션들",
     "execute_bulk_actions": "대량 액션들 실행",
-    "bulk_actions_executed": "대량 액션들이 성공적으로 실행되었습니다."
+    "bulk_actions_executed": "대량 액션들이 성공적으로 실행되었습니다.",
+    "none_yet": "아직 없습니다... 위에 있는 가능한 작업 중 하나를 클릭하여 작업을 추가하세요.",
+    "labels": "라벨",
+    "relations": "관계",
+    "notes": "노트",
+    "other": "기타"
   },
   "i18n": {
     "saturday": "토요일",
     "sunday": "일요일",
     "first-week-of-the-year": "일년의 첫째 주",
     "first-week-contains-first-day": "첫 번째 주에는 올해의 첫날이 포함됩니다"
+  },
+  "clone_to": {
+    "clone_notes_to": "~로 노트 복제",
+    "help_on_links": "링크에 대한 도움말",
+    "notes_to_clone": "노트 클론 생성",
+    "target_parent_note": "부모 노트 타겟",
+    "search_for_note_by_its_name": "이름으로 노트 검색하기"
   }
 }

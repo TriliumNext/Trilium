@@ -49,7 +49,7 @@ export default class ScrollingContainer extends Container<BasicWidget> {
         }
     }
 
-    scrollContainerToCommand({ position }: CommandListenerData<"scrollContainerToCommand">) {
+    scrollContainerToCommand({ position }: CommandListenerData<"scrollContainerTo">) {
         this.$widget.scrollTop(position);
     }
 }

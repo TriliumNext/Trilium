@@ -26,17 +26,17 @@
   "dependencies": {
     "boxicons": "2.1.4",
     "fuse.js": "7.1.0",
-    "katex": "0.16.25",
-    "mermaid": "11.12.0"
+    "katex": "0.16.27",
+    "mermaid": "11.12.2"
   },
   "devDependencies": {
     "@digitak/esrun": "3.2.26",
     "@triliumnext/ckeditor5": "workspace:*",
-    "@typescript-eslint/eslint-plugin": "8.46.4",
-    "@typescript-eslint/parser": "8.46.4",
+    "@typescript-eslint/eslint-plugin": "8.50.1",
+    "@typescript-eslint/parser": "8.50.1",
     "dotenv": "17.2.3",
-    "esbuild": "0.27.0",
-    "eslint": "9.39.1",
+    "esbuild": "0.27.2",
+    "eslint": "9.39.2",
     "highlight.js": "11.11.1",
     "typescript": "5.9.3"
   }

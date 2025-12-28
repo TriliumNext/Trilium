@@ -1,0 +1,37 @@
+<p>Day.js is a date manipulation library that's used by Trilium, but it's
+  also shared with both front-end and back-end scripts. For more information
+  about the library itself, consult the <a href="https://day.js.org/en/">official documentation</a>.</p>
+<h2>How to use</h2>
+<p>The <code>dayjs</code> method is provided directly in the <code>api</code> global:</p><pre><code class="language-application-javascript-env-backend">const date = api.dayjs();
+api.log(date.format("YYYY-MM-DD"));</code></pre>
+<h2>Plugins</h2>
+<p>Day.js uses a modular, plugin-based architecture. Generally these plugins
+  must be imported, but this process doesn't work inside Trilium scripts
+  due to the use of a bundler.</p>
+<p>Since v0.100.0, the same set of plugins is available for both front-end
+  and back-end scripts.</p>
+<p>The following Day.js plugins are directly integrated into Trilium:</p>
+<ul>
+  <li><a href="https://day.js.org/docs/en/plugin/advanced-format">AdvancedFormat</a>
+  </li>
+  <li><a href="https://day.js.org/docs/en/plugin/duration">Duration</a>, since
+    v0.100.0.</li>
+  <li><a href="https://day.js.org/docs/en/plugin/is-between">IsBetween</a>
+  </li>
+  <li><a href="https://day.js.org/docs/en/plugin/iso-week">IsoWeek</a>
+  </li>
+  <li><a href="https://day.js.org/docs/en/plugin/is-same-or-after">IsSameOrAfter</a>
+  </li>
+  <li><a href="https://day.js.org/docs/en/plugin/is-same-or-before">IsSameOrBefore</a>
+  </li>
+  <li><a href="https://day.js.org/docs/en/plugin/quarter-of-year">QuarterOfYear</a>
+  </li>
+  <li><a href="https://day.js.org/docs/en/plugin/utc">UTC</a>
+  </li>
+</ul>
+<aside class="admonition note">
+  <p>If another Day.js plugin might be needed for scripting purposes, feel
+    free to open a feature request for it. Depending on the size of the plugin
+    and the potential use of it inside the Trilium code base, it has a chance
+    of being integrated.</p>
+</aside>

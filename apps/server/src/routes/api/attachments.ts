@@ -14,13 +14,13 @@ function getAttachmentBlob(req: Request) {
 function getAttachments(req: Request) {
     const note = becca.getNoteOrThrow(req.params.noteId);
 
-    return note.getAttachments({ includeContentLength: true });
+    return note.getAttachments();
 }
 
 function getAttachment(req: Request) {
     const { attachmentId } = req.params;
 
-    return becca.getAttachmentOrThrow(attachmentId, { includeContentLength: true });
+    return becca.getAttachmentOrThrow(attachmentId);
 }
 
 function getAllAttachments(req: Request) {
@@ -28,7 +28,7 @@ function getAllAttachments(req: Request) {
     // one particular attachment is requested, but return all note's attachments
 
     const attachment = becca.getAttachmentOrThrow(attachmentId);
-    return attachment.getNote()?.getAttachments({ includeContentLength: true }) || [];
+    return attachment.getNote()?.getAttachments() || [];
 }
 
 function saveAttachment(req: Request) {

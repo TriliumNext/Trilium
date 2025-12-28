@@ -20,19 +20,20 @@ release-urile)](https://img.shields.io/github/downloads/triliumnext/trilium/tota
 [![Starea
 traducerilor](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
-[Engleză](./README.md) | [Chineză (Simplificată)](./docs/README-ZH_CN.md) |
-[Chineză (Tradițională)](./docs/README-ZH_TW.md) | [Rusă](./docs/README-ru.md) |
-[Japoneză](./docs/README-ja.md) | [Italiană](./docs/README-it.md) |
-[Spaniolă](./docs/README-es.md)
+<!-- translate:off -->
+<!-- LANGUAGE SWITCHER -->
+[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
+script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
+| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
+| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
+[Spanish](./README-es.md)
+<!-- translate:on -->
 
 Trilium Notes este o aplicație gratuită și open-source pentru notițe structurate
 ierarhic cu scopul de a crea o bază de date de cunoștințe personală, de mari
 dimensiuni.
 
-Prezentare generală prin [capturi de
-ecran](https://triliumnext.github.io/Docs/Wiki/screenshot-tour):
-
-<a href="https://triliumnext.github.io/Docs/Wiki/screenshot-tour"><img src="./docs/app.png" alt="Trilium Screenshot" width="1000"></a>
+<img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ Descarcă
 - [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
@@ -52,85 +53,89 @@ Documentația este disponibilă în mai multe formate:
   [docs.triliumnotes.org](https://docs.triliumnotes.org/)
 - **Ghid în aplicație**: Apăsați `F1` în Trilium pentru a accesa aceeași
   documentație local, direct din aplicație
-- **GitHub**: Navigați [ghidul de utilizator](./docs/User%20Guide/User%20Guide/)
+- **GitHub**: Navigați [ghidul de utilizator](./User%20Guide/User%20Guide/)
   direct din acest repository
 
 ### Linkuri rapide
 - [Ghid rapid](https://docs.triliumnotes.org/)
-- [Instrucțiuni de
-  instalare](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation.md)
+- [Instrucțiuni de instalare](https://docs.triliumnotes.org/user-guide/setup)
 - [Instalare prin
-  Docker](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md)
+  Docker](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
 - [Procesul de
-  actualizare](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Upgrading%20TriliumNext.md)
+  actualizare](https://docs.triliumnotes.org/user-guide/setup/upgrading)
 - [Concepte de bază și
-  funcții](./docs/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes.md)
+  funcții](https://docs.triliumnotes.org/user-guide/concepts/notes)
 - [Concepte pentru o bază de date de cunoștințe
-  personală](https://triliumnext.github.io/Docs/Wiki/patterns-of-personal-knowledge)
+  personală](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
 ## 🎁 Funcții
 
 * Notițele pot fi aranjate într-o structură ierarhică cu o adâncime nelimitată.
   O singură notiță poate fi plasată în mai multe locuri în abore (vedeți
-  [procesul de clonare](https://triliumnext.github.io/Docs/Wiki/cloning-notes))
+  [procesul de
+  clonare](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
 * Editor vizual de notițe cu suport de tabele, imagini și [ecuații
-  matematice](https://triliumnext.github.io/Docs/Wiki/text-notes) cu
+  matematice](https://docs.triliumnotes.org/user-guide/note-types/text) cu
   [auto-formatare în stil
-  Markdown](https://triliumnext.github.io/Docs/Wiki/text-notes#autoformat)
+  Markdown](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
 * Suport for editarea [notițelor de tip cod
-  sursă](https://triliumnext.github.io/Docs/Wiki/code-notes), inclusiv cu
+  sursă](https://docs.triliumnotes.org/user-guide/note-types/code), inclusiv cu
   evidențierea sintaxei
 * [Navigare rapidă printre
-  notițe](https://triliumnext.github.io/Docs/Wiki/note-navigation), căutare în
-  conținutul notițelor și [focalizarea
-  notițelor](https://triliumnext.github.io/Docs/Wiki/note-hoisting)
+  notițe](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
+  căutare în conținutul notițelor și [focalizarea
+  notițelor](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
 * Salvarea transparentă a [reviziilor
-  notițelor](https://triliumnext.github.io/Docs/Wiki/note-revisions)
-* [Attribute](https://triliumnext.github.io/Docs/Wiki/attributes) pentru
-  organizarea și căutarea notițelor, dar și posibilitatea de [script-uri
-  avansate](https://triliumnext.github.io/Docs/Wiki/scripts)
+  notițelor](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
+* [Attribute](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
+  pentru organizarea și căutarea notițelor, dar și posibilitatea de [script-uri
+  avansate](https://docs.triliumnotes.org/user-guide/scripts)
 * Interfața grafică este disponibilă în mai multe limbi, dintre care și limba
   română
 * [Integrare directă cu OpenID and
-  TOTP](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Server%20Installation/Multi-Factor%20Authentication.md)
-  pentru o autentificare mai sigură
-* [Sincronizare](https://triliumnext.github.io/Docs/Wiki/synchronization) cu un
-  server propriu
-  * există și un [serviciu terț pentru
-    sincronizare](https://trilium.cc/paid-hosting)
-* [Partajarea](https://triliumnext.github.io/Docs/Wiki/sharing) (publicarea)
-  notițelor pe Internet
-* [Criptare puternică](https://triliumnext.github.io/Docs/Wiki/protected-notes)
+  TOTP](https://docs.triliumnotes.org/user-guide/setup/server/mfa) pentru o
+  autentificare mai sigură
+* [Sincronizare](https://docs.triliumnotes.org/user-guide/setup/synchronization)
+  cu un server propriu
+  * există [servicii terțe pentru găzduirea unui server de
+    sincronizare](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+* [Partajarea](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
+  (publicarea) notițelor pe Internet
+* [Criptare
+  puternică](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
   la nivel de notițe
 * Desenare liberă, folosind [Excalidraw](https://excalidraw.com/) (notițe de tip
   „schiță”)
-* [Hărți de relații](https://triliumnext.github.io/Docs/Wiki/relation-map) and
-  [hărți de legături](https://triliumnext.github.io/Docs/Wiki/link-map) pentru
-  vizualizarea notițelor și a relațiilor acestora
+* [Hărți ale
+  relaților](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
+  și [hărți ale
+  notițelor/legăturilor](https://docs.triliumnotes.org/user-guide/note-types/note-map)
+  pentru vizualizarea notițelor și relaților acestora
 * Hărți mentale, bazate pe [Mind Elixir](https://docs.mind-elixir.com/)
-* [Hărți geografice](./docs/User%20Guide/User%20Guide/Note%20Types/Geo%20Map.md)
-  cu marcaje și trasee GPX
-* [Scriptare](https://triliumnext.github.io/Docs/Wiki/scripts) - vedeți
+* [Hărți
+  geografice](https://docs.triliumnotes.org/user-guide/collections/geomap) cu
+  marcaje și trasee GPX
+* [Scriptare](https://docs.triliumnotes.org/user-guide/scripts) - vedeți
   [Prezentare
-  avansată](https://triliumnext.github.io/Docs/Wiki/advanced-showcases)
-* [API-uri REST](https://triliumnext.github.io/Docs/Wiki/etapi) pentru
-  automatizare
+  avansată](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
+* [API-uri REST](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi)
+  pentru automatizare
 * Suportă peste 100 de mii de notițe fără impact de performanță
 * [Interfață de mobil optimizată pentru touch
-  screen](https://triliumnext.github.io/Docs/Wiki/mobile-frontend) pentru
+  screen](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) pentru
   telefoane mobile și tablete
-* [Temă întunecată](https://triliumnext.github.io/Docs/Wiki/themes) predefinită,
-  dar și suport pentru teme personalizate
+* [Temă întunecată](https://docs.triliumnotes.org/user-guide/concepts/themes)
+  predefinită, dar și suport pentru teme personalizate
 * Import și export pentru
-  [Evernote](https://triliumnext.github.io/Docs/Wiki/evernote-import) și
-  [Markdown](https://triliumnext.github.io/Docs/Wiki/markdown)
-* [Web Clipper](https://triliumnext.github.io/Docs/Wiki/web-clipper) pentru
-  salvarea rapidă a conținutului de pe Internet
+  [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  și
+  [Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
+* [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper)
+  pentru salvarea rapidă a conținutului de pe Internet
 * Interfață grafică personalizabilă (butoane, widget-uri definite de utilizator,
   ...)
-* [Metrice](./docs/User%20Guide/User%20Guide/Advanced%20Usage/Metrics.md),
-  inclusiv un [dashboard
-  Grafana](./docs/User%20Guide/User%20Guide/Advanced%20Usage/Metrics/grafana-dashboard.json)
+* [Metrice](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
+  împreună cu un dashboard Grafana.
 
 ✨ Consultați următoarele resurse din partea comunității Trilium:
 
@@ -220,7 +225,7 @@ versiunea de sincronizare uneori rămâne în urmă la aplicația de mobil.
 Pentru a instala Trilium pe server (inclusiv prin Docker din
 [Dockerhub](https://hub.docker.com/r/triliumnext/trilium)), urmați [documentația
 de instalare a
-server-ului](https://triliumnext.github.io/Docs/Wiki/server-installation).
+server-ului](https://docs.triliumnotes.org/user-guide/setup/server).
 
 
 ## 💻 Moduri de a contribui
@@ -312,8 +317,9 @@ Trilium nu ar fi fost posibil fără tehnologiile pe care este bazat:
   vizualizare de tip arbore.
 * [jsPlumb](https://github.com/jsplumb/jsplumb) - bibliotecă de conectivitate
   vizuală. Folosită în [hărți de tip
-  relație](https://triliumnext.github.io/Docs/Wiki/relation-map.html) și [hărți
-  de legături](https://triliumnext.github.io/Docs/Wiki/note-map.html#link-map)
+  relație](https://docs.triliumnotes.org/user-guide/note-types/relation-map) și
+  [hărți de
+  legături](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Sprijiniți proiectul
 

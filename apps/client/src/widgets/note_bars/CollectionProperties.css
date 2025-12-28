@@ -1,0 +1,20 @@
+.collection-properties {
+    padding: 0;
+    display: flex;
+    gap: 0.25em;
+    align-items: center;
+    width: 100%;
+    max-width: unset;
+    font-size: 0.8em;
+
+    .dropdown-menu {
+        input.form-control {
+            padding: 2px 8px;
+            margin-left: 1em;
+        }
+    }
+
+    .spacer {
+        flex-grow: 1;
+    }
+}

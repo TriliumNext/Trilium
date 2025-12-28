@@ -9,7 +9,6 @@
     "tobermory.es6-string-html",
     "vitest.explorer",
     "yzhang.markdown-all-in-one",
-    "svelte.svelte-vscode",
-    "bradlc.vscode-tailwindcss"
+    "usernamehw.errorlens"
   ]
 }

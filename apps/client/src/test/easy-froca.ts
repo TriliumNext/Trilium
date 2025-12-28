@@ -1,10 +1,12 @@
-import utils from "../services/utils.js";
+import { NoteType } from "@triliumnext/commons";
+
+import FAttribute from "../entities/fattribute.js";
+import FBlob from "../entities/fblob.js";
+import FBranch from "../entities/fbranch.js";
 import FNote from "../entities/fnote.js";
 import froca from "../services/froca.js";
-import FAttribute from "../entities/fattribute.js";
 import noteAttributeCache from "../services/note_attribute_cache.js";
-import FBranch from "../entities/fbranch.js";
-import FBlob from "../entities/fblob.js";
+import utils from "../services/utils.js";
 
 type AttributeDefinitions = { [key in `#${string}`]: string; };
 type RelationDefinitions = { [key in `~${string}`]: string; };
@@ -12,6 +14,7 @@ type RelationDefinitions = { [key in `~${string}`]: string; };
 interface NoteDefinition extends AttributeDefinitions, RelationDefinitions {
     id?: string | undefined;
     title: string;
+    type?: NoteType;
     children?: NoteDefinition[];
     content?: string;
 }
@@ -45,7 +48,7 @@ export function buildNote(noteDef: NoteDefinition) {
     const note = new FNote(froca, {
         noteId: noteDef.id ?? utils.randomString(12),
         title: noteDef.title,
-        type: "text",
+        type: noteDef.type ?? "text",
         mime: "text/html",
         isProtected: false,
         blobId: ""
@@ -87,7 +90,11 @@ export function buildNote(noteDef: NoteDefinition) {
     let position = 0;
     for (const [ key, value ] of Object.entries(noteDef)) {
         const attributeId = utils.randomString(12);
-        const name = key.substring(1);
+        let name = key.substring(1);
+        const isInheritable = key.endsWith("(inheritable)");
+        if (isInheritable) {
+            name = name.substring(0, name.length - "(inheritable)".length);
+        }
 
         let attribute: FAttribute | null = null;
         if (key.startsWith("#")) {
@@ -98,7 +105,7 @@ export function buildNote(noteDef: NoteDefinition) {
                 name,
                 value,
                 position,
-                isInheritable: false
+                isInheritable
             });
         }
 
@@ -110,7 +117,7 @@ export function buildNote(noteDef: NoteDefinition) {
                 name,
                 value,
                 position,
-                isInheritable: false
+                isInheritable
             });
         }
 

@@ -10,6 +10,11 @@ interface LocaleMapping {
 const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, LocaleMapping | null> = {
     en: null,
     en_rtl: null,
+    "en-GB": {
+        languageCode: "en-GB",
+        coreTranslation: () => import("ckeditor5/translations/en-gb.js"),
+        premiumFeaturesTranslation: () => import("ckeditor5-premium-features/translations/en-gb.js"),
+    },
     ar: {
         languageCode: "ar",
         coreTranslation: () => import("ckeditor5/translations/ar.js"),

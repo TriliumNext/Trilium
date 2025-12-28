@@ -11,10 +11,12 @@ export interface Locale {
     electronLocale?: "en" | "de" | "es" | "fr" | "zh_CN" | "zh_TW" | "ro" | "af" | "am" | "ar" | "bg" | "bn" | "ca" | "cs" | "da" | "el" | "en_GB" | "es_419" | "et" | "fa" | "fi" | "fil" | "gu" | "he" | "hi" | "hr" | "hu" | "id" | "it" | "ja" | "kn" | "ko" | "lt" | "lv" | "ml" | "mr" | "ms" | "nb" | "nl" | "pl" | "pt_BR" | "pt_PT" | "ru" | "sk" | "sl" | "sr" | "sv" | "sw" | "ta" | "te" | "th" | "tr" | "uk" | "ur" | "vi";
 }
 
+// When adding a new locale, prefer the version with hyphen instead of underscore.
 const UNSORTED_LOCALES = [
     { id: "cn", name: "简体中文", electronLocale: "zh_CN" },
     { id: "de", name: "Deutsch", electronLocale: "de" },
-    { id: "en", name: "English", electronLocale: "en" },
+    { id: "en", name: "English (United States)", electronLocale: "en" },
+    { id: "en-GB", name: "English (United Kingdom)", electronLocale: "en_GB" },
     { id: "es", name: "Español", electronLocale: "es" },
     { id: "fr", name: "Français", electronLocale: "fr" },
     { id: "it", name: "Italiano", electronLocale: "it" },

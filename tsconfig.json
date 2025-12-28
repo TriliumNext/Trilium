@@ -62,6 +62,9 @@
     },
     {
       "path": "./packages/share-theme"
+    },
+    {
+      "path": "./scripts"
     }
   ]
 }

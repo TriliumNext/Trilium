@@ -199,6 +199,7 @@ export default class TocWidget extends RightPanelWidget {
              * For document note types, we obtain the content directly from the DOM since it allows us to obtain processed data without
              * requesting data twice. However, when immediately navigating to a new note the new document is not yet attached to the hierarchy,
              * resulting in an empty TOC. The fix is to simply wait for it to pop up.
+             * TODO: Use a better method that is not prone to unnecessary delays and race conditions.
              */
             setTimeout(async () => {
                 const $contentEl = await this.noteContext?.getContentElement();
@@ -209,7 +210,7 @@ export default class TocWidget extends RightPanelWidget {
                 } else {
                     console.warn("Unable to get content element for doctype");
                 }
-            }, 10);
+            }, 250);
         }
     }
 

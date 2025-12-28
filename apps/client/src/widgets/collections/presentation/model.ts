@@ -1,6 +1,7 @@
 import { NoteType } from "@triliumnext/commons";
 import FNote from "../../../entities/fnote";
 import contentRenderer from "../../../services/content_renderer";
+import { ProgressChangedFn } from "../interface";
 
 type DangerouslySetInnerHTML = { __html: string; };
 
@@ -22,14 +23,26 @@ export interface PresentationModel {
     slides: PresentationSlideModel[];
 }
 
-export async function buildPresentationModel(note: FNote): Promise<PresentationModel> {
+export async function buildPresentationModel(note: FNote, onProgressChanged?: ProgressChangedFn): Promise<PresentationModel> {
     const slideNotes = await note.getChildNotes();
-    const slides: PresentationSlideModel[] = await Promise.all(slideNotes.map(async slideNote => ({
-        ...(await buildSlideModel(slideNote)),
-        verticalSlides: note.type !== "search" ? await buildVerticalSlides(slideNote) : undefined
-    })));
+    onProgressChanged?.(0.3);
+    const total = slideNotes.length;
+    let completed = 0;
 
+    const slidePromises = slideNotes.map(slideNote => (async () => {
+        const base = await buildSlideModel(slideNote);
+        const verticalSlides = note.type !== "search" ? await buildVerticalSlides(slideNote) : undefined;
+        const slide: PresentationSlideModel = { ...base, verticalSlides };
+        completed++;
+        onProgressChanged?.(Math.min(0.3 + (completed / total) * 0.4, 0.7));
+        return slide;
+    })());
+
+    const slides: PresentationSlideModel[] = await Promise.all(slidePromises);
+
+    onProgressChanged?.(0.7);
     postProcessSlides(slides);
+    onProgressChanged?.(1);
     return { slides };
 }
 

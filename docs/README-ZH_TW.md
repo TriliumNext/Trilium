@@ -19,16 +19,18 @@ releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
 [![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
 [![翻譯狀態](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
-[英文](./README.md) | [簡體中文](./docs/README-ZH_CN.md) |
-[正體中文](./docs/README-ZH_TW.md) | [俄文](./docs/README-ru.md) |
-[日文](./docs/README-ja.md) | [義大利文](./docs/README-it.md) |
-[西班牙文](./docs/README-es.md)
+<!-- translate:off -->
+<!-- LANGUAGE SWITCHER -->
+[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
+script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
+| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
+| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
+[Spanish](./README-es.md)
+<!-- translate:on -->
 
 Trilium Notes 是一款免費且開源、跨平台的階層式筆記應用程式，專注於建立大型個人知識庫。
 
-想快速了解，請查看[螢幕截圖](https://triliumnext.github.io/Docs/Wiki/screenshot-tour)：
-
-<a href="https://triliumnext.github.io/Docs/Wiki/screenshot-tour"><img src="./docs/app.png" alt="Trilium Screenshot" width="1000"></a>
+<img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ 下載
 - [最新版本](https://github.com/TriliumNext/Trilium/releases/latest) –
@@ -43,52 +45,56 @@ Trilium Notes 是一款免費且開源、跨平台的階層式筆記應用程式
 我們的使用說明包含多種格式：
 - **線上文件**：可於 [docs.triliumnotes.org](https://docs.triliumnotes.org/) 查看完整使用說明
 - **應用程式內說明**：在 Trilium 中按下 `F1` 即可直接於應用程式內存取相同文件
-- **GitHub**：請參閱此儲存庫中的[使用說明](./docs/User%20Guide/User%20Guide/)
+- **GitHub**：請參閱此儲存庫中的[使用說明](./User%20Guide/User%20Guide/)
 
 ### 快速連結
 - [上手指南](https://docs.triliumnotes.org/)
-- [安裝說明](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation.md)
+- [安裝說明](https://docs.triliumnotes.org/user-guide/setup)
 - [Docker
-  設定](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md)
-- [升級
-  TriliumNext](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Upgrading%20TriliumNext.md)
-- [基礎觀念與功能](./docs/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes.md)
-- [個人知識庫的模式](https://triliumnext.github.io/Docs/Wiki/patterns-of-personal-knowledge)
+  設定](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
+- [升級 TriliumNext](https://docs.triliumnotes.org/user-guide/setup/upgrading)
+- [基礎觀念與功能](https://docs.triliumnotes.org/user-guide/concepts/notes)
+- [個人知識庫的模式](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
 ## 🎁 功能
 
-* 筆記可組織成任意深度的樹狀結構。單一筆記可放在樹中的多個位置（參見[筆記克隆](https://triliumnext.github.io/Docs/Wiki/cloning-notes)）
-* 豐富的所見即所得（WYSIWYG）筆記編輯器，支援表格、圖片與[數學公式](https://triliumnext.github.io/Docs/Wiki/text-notes)，並具備
+* 筆記可組織成任意深度的樹狀結構。單一筆記可放在樹中的多個位置（參見[筆記克隆](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning)）
+* 豐富的所見即所得（WYSIWYG）筆記編輯器，支援表格、圖片與[數學公式](https://docs.triliumnotes.org/user-guide/note-types/text)，並具備
   Markdown
-  的[自動格式化](https://triliumnext.github.io/Docs/Wiki/text-notes#autoformat)
-* 支援編輯[程式碼筆記](https://triliumnext.github.io/Docs/Wiki/code-notes)，包含語法高亮
-* 快速、輕鬆地在筆記間[導航](https://triliumnext.github.io/Docs/Wiki/note-navigation)、全文搜尋，以及[筆記聚焦（hoisting）](https://triliumnext.github.io/Docs/Wiki/note-hoisting)
-* 無縫的[筆記版本管理](https://triliumnext.github.io/Docs/Wiki/note-revisions)
-* 筆記[屬性](https://triliumnext.github.io/Docs/Wiki/attributes)可用於筆記的組織、查詢與進階[腳本](https://triliumnext.github.io/Docs/Wiki/scripts)
+  的[自動格式化](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
+* 支援編輯[程式碼筆記](https://docs.triliumnotes.org/user-guide/note-types/code)，包含語法高亮
+* 快速、輕鬆地在筆記間[導航](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation)、全文搜尋，以及[筆記聚焦（hoisting）](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
+* 無縫的[筆記版本管理](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
+* 筆記[屬性](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)可用於筆記的組織、查詢與進階[腳本](https://docs.triliumnotes.org/user-guide/scripts)
 * 介面提供英文、德文、西班牙文、法文、羅馬尼亞文與中文（簡體與正體）
 * 直接[整合 OpenID 與
-  TOTP](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Server%20Installation/Multi-Factor%20Authentication.md)
-  以實現更安全的登入
-* 與自架的同步伺服器進行[同步](https://triliumnext.github.io/Docs/Wiki/synchronization)
-  * 另有[第三方同步伺服器託管服務](https://trilium.cc/paid-hosting)
-* 將筆記[分享](https://triliumnext.github.io/Docs/Wiki/sharing)（公開發布）到網際網路
-* 以每則筆記為粒度的強大[筆記加密](https://triliumnext.github.io/Docs/Wiki/protected-notes)
+  TOTP](https://docs.triliumnotes.org/user-guide/setup/server/mfa) 以實現更安全的登入
+* 與自架的同步伺服器進行[同步](https://docs.triliumnotes.org/user-guide/setup/synchronization)
+  * 有[第三方服務可託管同步伺服器](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+* 將筆記[分享](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)（公開發布）到網際網路
+* 以每則筆記為粒度的強大[筆記加密](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
 * 手繪/示意圖：基於 [Excalidraw](https://excalidraw.com/)（筆記類型為「canvas」）
-* 用於視覺化筆記及其關係的[關聯圖](https://triliumnext.github.io/Docs/Wiki/relation-map)與[連結圖](https://triliumnext.github.io/Docs/Wiki/link-map)
+* [關係圖](https://docs.triliumnotes.org/user-guide/note-types/relation-map) 與
+  [筆記/連結圖](https://docs.triliumnotes.org/user-guide/note-types/note-map)
+  用於視覺化呈現筆記及其關聯性
 * 心智圖：基於 [Mind Elixir](https://docs.mind-elixir.com/)
-* 具有定位釘與 GPX 軌跡的[地圖](./docs/User%20Guide/User%20Guide/Note%20Types/Geo%20Map.md)
-* [腳本](https://triliumnext.github.io/Docs/Wiki/scripts)——參見[進階展示](https://triliumnext.github.io/Docs/Wiki/advanced-showcases)
-* 用於自動化的 [REST API](https://triliumnext.github.io/Docs/Wiki/etapi)
+* 具有定位釘與 GPX
+  軌跡的[地圖](https://docs.triliumnotes.org/user-guide/collections/geomap)
+* [腳本](https://docs.triliumnotes.org/user-guide/scripts)——參見[進階展示](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
+* 用於自動化的 [REST
+  API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi)
 * 在可用性與效能上均可良好擴展，支援超過十萬筆筆記
-* 為手機與平板最佳化的[行動前端](https://triliumnext.github.io/Docs/Wiki/mobile-frontend)
-* 內建[深色主題](https://triliumnext.github.io/Docs/Wiki/themes)，並支援自訂主題
-* [Evernote 匯入](https://triliumnext.github.io/Docs/Wiki/evernote-import)與
-  [Markdown 匯入與匯出](https://triliumnext.github.io/Docs/Wiki/markdown)
-* 用於快速保存網頁內容的 [Web Clipper](https://triliumnext.github.io/Docs/Wiki/web-clipper)
+* 為手機與平板最佳化的[行動前端](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
+* 內建[深色主題](https://docs.triliumnotes.org/user-guide/concepts/themes)，並支援自訂主題
+* [Evernote
+  匯入](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)與
+  [Markdown
+  匯入與匯出](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
+* 用於快速保存網頁內容的 [Web
+  Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper)
 * 可自訂的 UI（側邊欄按鈕、使用者自訂小工具等）
-* [度量指標（Metrics）](./docs/User%20Guide/User%20Guide/Advanced%20Usage/Metrics.md)，並附有
-  [Grafana
-  儀表板](./docs/User%20Guide/User%20Guide/Advanced%20Usage/Metrics/grafana-dashboard.json)
+* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics)，以及
+  Grafana 儀表板。
 
 ✨ 想要更多 Trilium Notes 的主題、腳本、外掛與資源，亦可參考以下第三方資源 / 社群：
 
@@ -159,7 +165,7 @@ TriliumDroid 時，建議停用伺服器安裝版本的自動更新功能（詳�
 
 若要在您自己的伺服器上安裝 TriliumNext（包括從 [Docker
 Hub](https://hub.docker.com/r/triliumnext/trilium) 使用 Docker
-部署），請遵循[伺服器安裝文件](https://triliumnext.github.io/Docs/Wiki/server-installation)。
+部署），請遵循[伺服器安裝文件](https://docs.triliumnotes.org/user-guide/setup/server)。
 
 
 ## 💻 貢獻
@@ -229,7 +235,7 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [Tabulator](https://github.com/olifolkerd/tabulator) —— 用於集合中的互動式表格。
 * [FancyTree](https://github.com/mar10/fancytree) —— 功能非常豐富的樹狀元件，無可匹敵。
 * [jsPlumb](https://github.com/jsplumb/jsplumb) ——
-  視覺連線函式庫。用於[關聯圖](https://triliumnext.github.io/Docs/Wiki/relation-map.html)與[連結圖](https://triliumnext.github.io/Docs/Wiki/note-map.html#link-map)
+  視覺連線函式庫。用於[關聯圖](https://docs.triliumnotes.org/user-guide/note-types/relation-map)與[連結圖](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 支援我們
 

@@ -1,6 +1,6 @@
 import utils from "./utils.js";
 import server from "./server.js";
-import toastService, { type ToastOptions } from "./toast.js";
+import toastService, { type ToastOptionsWithRequiredId } from "./toast.js";
 import froca from "./froca.js";
 import hoistedNoteService from "./hoisted_note.js";
 import ws from "./ws.js";
@@ -176,11 +176,6 @@ async function moveNodeUpInHierarchy(node: Fancytree.FancytreeNode) {
         toastService.showError(resp.message);
         return;
     }
-
-    if (!hoistedNoteService.isTopLevelNode(node) && node.getParent().getChildren().length <= 1) {
-        node.getParent().folder = false;
-        node.getParent().renderTitle();
-    }
 }
 
 function filterSearchBranches(branchIds: string[]) {
@@ -200,11 +195,11 @@ function filterRootNote(branchIds: string[]) {
     });
 }
 
-function makeToast(id: string, message: string): ToastOptions {
+function makeToast(id: string, message: string): ToastOptionsWithRequiredId {
     return {
-        id: id,
+        id,
         title: t("branches.delete-status"),
-        message: message,
+        message,
         icon: "trash"
     };
 }
@@ -221,7 +216,7 @@ ws.subscribeToMessages(async (message) => {
         toastService.showPersistent(makeToast(message.taskId, t("branches.delete-notes-in-progress", { count: message.progressCount })));
     } else if (message.type === "taskSucceeded") {
         const toast = makeToast(message.taskId, t("branches.delete-finished-successfully"));
-        toast.closeAfter = 5000;
+        toast.timeout = 5000;
 
         toastService.showPersistent(toast);
     }
@@ -239,7 +234,7 @@ ws.subscribeToMessages(async (message) => {
         toastService.showPersistent(makeToast(message.taskId, t("branches.undeleting-notes-in-progress", { count: message.progressCount })));
     } else if (message.type === "taskSucceeded") {
         const toast = makeToast(message.taskId, t("branches.undeleting-notes-finished-successfully"));
-        toast.closeAfter = 5000;
+        toast.timeout = 5000;
 
         toastService.showPersistent(toast);
     }
@@ -247,7 +242,7 @@ ws.subscribeToMessages(async (message) => {
 
 async function cloneNoteToBranch(childNoteId: string, parentBranchId: string, prefix?: string) {
     const resp = await server.put<Response>(`notes/${childNoteId}/clone-to-branch/${parentBranchId}`, {
-        prefix: prefix
+        prefix
     });
 
     if (!resp.success) {
@@ -257,7 +252,7 @@ async function cloneNoteToBranch(childNoteId: string, parentBranchId: string, pr
 
 async function cloneNoteToParentNote(childNoteId: string, parentNoteId: string, prefix?: string) {
     const resp = await server.put<Response>(`notes/${childNoteId}/clone-to-note/${parentNoteId}`, {
-        prefix: prefix
+        prefix
     });
 
     if (!resp.success) {

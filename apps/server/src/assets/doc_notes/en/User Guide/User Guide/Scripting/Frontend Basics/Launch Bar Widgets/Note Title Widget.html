@@ -1,0 +1,47 @@
+<figure class="image">
+  <img style="aspect-ratio:1007/94;" src="Note Title Widget_image.png"
+  width="1007" height="94">
+</figure>
+<p>This is an example of a note context-aware widget, which reacts to the
+  currently opened note and refreshes automatically as the user navigates
+  through the notes.</p>
+<h2>Legacy widget</h2>
+<p>In this example, the title of the note is displayed. It works best on
+  the <a href="#root/_help_x0JgW8UqGXvq">horizontal layout</a>.</p><pre><code class="language-application-javascript-env-backend">const TPL = `\
+&lt;div style="
+    display: flex;
+    height: 53px;
+    width: fit-content;
+    font-size: 0.75em;
+    contain: none;
+    align-items: center;
+    flex-shrink: 0;
+    padding: 0 1em;
+"&gt;&lt;/div&gt;`;
+
+class NoteTitleWidget extends api.NoteContextAwareWidget {
+    doRender() {
+        this.$widget = $(TPL);
+    }
+
+    async refreshWithNote(note) {
+        this.$widget.text(note.title);
+    }
+}
+
+module.exports = new NoteTitleWidget();</code></pre>
+<h2>Preact widget (v0.101.0+)</h2><pre><code class="language-text-jsx">import { defineLauncherWidget, useActiveNoteContext } from "trilium:preact";
+
+export default defineLauncherWidget({
+    render: () =&gt; {
+        const { note } = useActiveNoteContext();
+        return &lt;div style={{
+            display: "flex",
+            height: "53px",
+            width: "fit-content",
+            fontSize: "0.75em",
+            alignItems: "center",
+            flexShrink: 0            
+        }}&gt;{note?.title}&lt;/div&gt;;
+    }
+});</code></pre>

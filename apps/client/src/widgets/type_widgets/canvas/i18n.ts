@@ -1,10 +1,12 @@
+import { Language } from "@excalidraw/excalidraw/i18n";
 import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 
-export const LANGUAGE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, string | null> = {
+export const LANGUAGE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, Language["code"] | null> = {
     ar: "ar-SA",
     cn: "zh-CN",
     de: "de-DE",
     en: "en",
+    "en-GB": "en",
     en_rtl: "en",
     es: "es-ES",
     fr: "fr-FR",

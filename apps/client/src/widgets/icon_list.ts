@@ -2102,8 +2102,8 @@ const icons: Icon[] = [
         type_of_icon: "REGULAR"
     },
     {
-        name: "border-inline-start",
-        slug: "border-inline-start-regular",
+        name: "border-left",
+        slug: "border-left-regular",
         category_id: 111,
         type_of_icon: "REGULAR"
     },
@@ -10259,9 +10259,9 @@ function getIconClass(icon: Icon) {
         return `bxl-${icon.name}`;
     } else if (icon.type_of_icon === "SOLID") {
         return `bxs-${icon.name}`;
-    } else {
-        return `bx-${icon.name}`;
-    }
+    } 
+    return `bx-${icon.name}`;
+    
 }
 
 for (const icon of icons) {

@@ -16,10 +16,12 @@
     },
     "widget-error": {
       "title": "Starten widget mislukt",
-      "message-unknown": "Onbekende widget kan niet gestart worden omdat:\n\n{{message}}"
+      "message-unknown": "Onbekende widget kan niet gestart worden omdat:\n\n{{message}}",
+      "message-custom": "Aangepaste widget van notitie met ID \"{{id}}\", getiteld \"{{title}}\" kon niet worden geïnitialiseerd vanwege:\n\n{{message}}"
     },
     "bundle-error": {
-      "title": "Custom script laden mislukt"
+      "title": "Custom script laden mislukt",
+      "message": "Script van notitie met ID \"{{id}}\", getiteld \"{{title}}\" kon niet worden uitgevoerd vanwege:\n\n{{message}}"
     }
   },
   "add_link": {
@@ -29,14 +31,17 @@
     "search_note": "zoek voor notitie op naam",
     "link_title_mirrors": "De link titel is hetzelfde als de notitie's huidige titel",
     "link_title": "Link titel",
-    "button_add_link": "Link toevoegen"
+    "button_add_link": "Link toevoegen",
+    "link_title_arbitrary": "snelkoppelingsnaam kan willekeurig worden aangepast"
   },
   "branch_prefix": {
     "edit_branch_prefix": "Bewerk branch prefix",
     "save": "Opslaan",
     "branch_prefix_saved": "Branch prefix is opgeslagen.",
     "help_on_tree_prefix": "Help bij boomvoorvoegsel",
-    "prefix": "Voorvoegsel: "
+    "prefix": "Voorvoegsel: ",
+    "edit_branch_prefix_multiple": "Bewerk zijtakvoorvoegsel voor {{count}} zijtakken",
+    "branch_prefix_saved_multiple": "Vertakkingsvoorvoegsel opgeslagen voor {{count}} vertakkingen."
   },
   "bulk_actions": {
     "bulk_actions": "Bulk acties",

@@ -50,7 +50,7 @@
 
     --tab-bar-height: 50px;
     --tab-height: 36px;
-    --tab-first-item-horiz-offset: 1px;
+    --tab-first-item-horiz-offset: 0;
     --new-tab-button-size: 24px;
 
     --center-pane-border-radius: 10px;
@@ -62,6 +62,7 @@
 
     --menu-padding-size: 8px;
     --menu-item-icon-vert-offset: -2px;
+    --menu-submenu-mobile-background-color: rgba(255, 255, 255, 0.15);
 
     --more-accented-background-color: var(--card-background-hover-color);
 
@@ -88,15 +89,23 @@
      * the color is adjusted based on the current color scheme (light or dark). The lightness
      * component of the color represented in the CIELAB color space, will be
      * constrained to a certain percentage defined below.
-     * 
+     *
      * Note: the tree background may vary when background effects are enabled, so it is recommended
      * to maintain a higher contrast margin than on the usual note tree solid background. */
 
     /* The maximum perceptual lightness for the custom color in the light theme (%): */
     --tree-item-light-theme-max-color-lightness: 60;
-    
+
     /* The minimum perceptual lightness for the custom color in the dark theme (%): */
     --tree-item-dark-theme-min-color-lightness: 65;
+}
+
+body {
+    user-select: none;
+}
+
+.selectable-text {
+    user-select: text;
 }
 
 body.backdrop-effects-disabled {
@@ -119,15 +128,20 @@ body.backdrop-effects-disabled {
     font-size: 0.9rem !important;
 }
 
-body.mobile .dropdown-menu {
-    backdrop-filter: var(--dropdown-backdrop-filter);
-    border-radius: var(--dropdown-border-radius);
-    position: relative;
+/* Use this class for non-legacy menus */
+.dropdown-menu.tn-dropdown-menu {
+    --menu-item-icon-vert-offset: 0;
+    white-space-collapse: discard;
 }
 
-body.mobile .dropdown-menu .dropdown-menu {
-    backdrop-filter: unset !important;
-    border-radius: unset !important;
+.dropdown-menu.tn-dropdown-menu .bx {
+    margin-inline-end: 6px;
+}
+
+.dropdown-menu.tn-dropdown-menu-scrollable {
+    /* Note: scrollable dropdowns does not support submenus */
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 body.desktop .dropdown-menu::before,
@@ -149,16 +163,12 @@ body.desktop .dropdown-menu.tn-dropdown-list {
     backdrop-filter: var(--dropdown-backdrop-filter);
 }
 
-body.desktop .dropdown-menu.tn-dropdown-list::before {
-    display: none;
-}
-
 body.desktop .dropdown-submenu .dropdown-menu::before {
     content: unset;
 }
 
-body.mobile .dropdown-submenu .dropdown-menu {
-    background: transparent !important;
+body.desktop .dropdown-menu.tn-dropdown-list::before {
+    display: none;
 }
 
 body.desktop .dropdown-submenu .dropdown-menu {
@@ -167,20 +177,37 @@ body.desktop .dropdown-submenu .dropdown-menu {
 }
 
 .dropdown-item,
-body.mobile .dropdown-submenu .dropdown-toggle,
 .excalidraw .context-menu .context-menu-item {
     --menu-item-start-padding: 8px;
     --menu-item-end-padding: 22px;
     --menu-item-vertical-padding: 2px;
-    
-    padding-top: var(--menu-item-vertical-padding) !important;
-    padding-bottom: var(--menu-item-vertical-padding) !important;
-    padding-inline-start: var(--menu-item-start-padding) !important;
-    padding-inline-end: var(--menu-item-end-padding) !important;
 
     /* Note: the right padding should also accommodate the submenu arrow. */
     border-radius: 6px;
     cursor: default !important;
+}
+
+.dropdown-item:not(.dropdown-submenu),
+body.desktop .dropdown-item.dropdown-submenu .dropdown-toggle,
+.excalidraw .context-menu .context-menu-item {
+    padding-top: var(--menu-item-vertical-padding) !important;
+    padding-bottom: var(--menu-item-vertical-padding) !important;
+    padding-inline-start: var(--menu-item-start-padding) !important;
+    padding-inline-end: var(--menu-item-end-padding) !important;
+}
+
+.dropdown-item.dropdown-submenu {
+    padding: 0 !important;
+
+    .dropdown-toggle {
+        flex-grow: 1;
+    }
+}
+
+body.desktop .dropdown-menu:has(> .dropdown-submenu.dropstart) > .dropdown-item:not(.dropdown-submenu),
+body.desktop .dropdown-menu:has(> .dropdown-submenu.dropstart) > .dropdown-item.dropdown-submenu .dropdown-toggle {
+    padding-inline-end: var(--menu-item-start-padding) !important;
+    padding-inline-start: var(--menu-item-end-padding) !important;
 }
 
 :root .dropdown-item:focus-visible {
@@ -201,16 +228,16 @@ body.mobile .dropdown-item:not(:last-of-type) {
     margin-bottom: 0.5em;
 }
 
-body.mobile .dropdown-submenu:hover {
-    background: transparent !important;
-}
-
 html body .dropdown-item.disabled,
 html body .dropdown-item[disabled] {
     color: var(--menu-text-color) !important;
     opacity: var(--menu-item-disabled-opacity);
 }
 
+.dropdown-item:not(.disabled) .destructive-action-icon,
+.dropdown-item:not(.disabled) .bx-trash {
+    --menu-item-icon-color: var(--dropdown-item-icon-destructive-color);
+}
 /* Badges */
 :root .badge {
     --bs-badge-color: var(--badge-text-color);
@@ -260,7 +287,8 @@ html body .dropdown-item[disabled] {
 }
 
 /* Menu item arrow */
-.dropdown-menu .dropdown-toggle::after {
+body.mobile .dropdown-submenu .dropdown-toggle::after,
+body.desktop .dropdown-submenu:not(.dropstart) .dropdown-toggle::after {
     content: "\ed3b" !important;
     position: absolute;
     display: flex !important;
@@ -268,6 +296,26 @@ html body .dropdown-item[disabled] {
     justify-content: center;
     top: 0;
     inset-inline-end: 0;
+    margin: unset !important;
+    border: unset !important;
+    padding: 0 4px;
+    font-family: boxicons;
+    font-size: 1.2em;
+    color: var(--menu-item-arrow-color) !important;
+}
+
+body.mobile .dropdown-submenu.dropstart .dropdown-toggle::before {
+    content: unset;
+}
+
+body.desktop .dropdown-submenu.dropstart .dropdown-toggle::before {
+    content: "\ea4d" !important;
+    position: absolute;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    top: 0;
+    inset-inline-start: 0;
     margin: unset !important;
     border: unset !important;
     padding: 0 4px;
@@ -321,17 +369,126 @@ body.desktop .dropdown-menu.static .dropdown-item.active {
     --active-item-text-color: var(--menu-text-color);
 }
 
+/* #region Mobile tweaks for dropdown menus */
+body.mobile #context-menu-cover {
+    transition: background-color 150ms ease-in;
+
+    &.show {
+        background: rgba(0, 0, 0, 0.7);
+    }
+
+    &.global-menu-cover {
+        bottom: calc(var(--mobile-bottom-offset) + var(--launcher-pane-size));
+
+        @media (min-width: 992px) {
+            bottom: 0;
+        }
+    }
+}
+
+body.mobile .dropdown-menu.mobile-bottom-menu,
+body.mobile .dropdown.global-menu .dropdown-menu {
+    border-radius: var(--dropdown-border-radius) var(--dropdown-border-radius) 0 0;
+}
+
+body.mobile .dropdown-menu {
+    --dropdown-menu-padding-vertical: 0.7em;
+    --dropdown-menu-padding-horizontal: 1em;
+    --hover-item-background-color: var(--card-background-color);
+    font-size: 1em !important;
+    backdrop-filter: var(--dropdown-backdrop-filter);
+    position: relative;
+
+    .dropdown-toggle::after {
+        top: 0.5em;
+        right: var(--dropdown-menu-padding-horizontal);
+        transform: translateX(50%) rotate(90deg);
+    }
+
+    .dropdown-item.submenu-open .dropdown-toggle::after {
+        transform: rotate(270deg);
+    }
+
+    .dropdown-item,
+    .dropdown-custom-item {
+        margin-bottom: 0;
+        padding: var(--dropdown-menu-padding-vertical) var(--dropdown-menu-padding-horizontal) !important;
+        background: var(--card-background-color);
+        border-bottom: 1px solid var(--menu-item-delimiter-color) !important;
+        border-radius: 0;
+    }
+
+    .dropdown-item:first-of-type,
+    .dropdown-divider + .dropdown-item,
+    .dropdown-custom-item:first-of-type,
+    .dropdown-divider + .dropdown-custom-item {
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+    }
+
+    .dropdown-item:last-of-type,
+    .dropdown-item:has(+ .dropdown-divider),
+    .dropdown-custom-item:last-of-type,
+    .dropdown-custom-item:has(+ .dropdown-divider) {
+        border-bottom-left-radius: 6px;
+        border-bottom-right-radius: 6px;
+        border-bottom: 0 !important;
+    }
+
+    .dropdown-divider {
+        visibility: hidden;
+    }
+
+    .dropdown-submenu {
+        padding: 0 !important;
+        backdrop-filter: unset !important;
+
+        .dropdown-toggle {
+            padding: var(--dropdown-menu-padding-vertical) var(--dropdown-menu-padding-horizontal);
+        }
+
+        .dropdown-menu {
+            --menu-background-color: --menu-submenu-mobile-background-color;
+            --bs-dropdown-divider-margin-y: 0.25rem;
+            border-radius: 0;
+            max-height: 0;
+            transition: max-height 100ms ease-in;
+            display: block !important;
+
+            &.show {
+                max-height: 1000px;
+                padding: 0.5rem 0.75rem !important;
+            }
+        }
+
+        &.submenu-open {
+            .dropdown-toggle {
+                padding-bottom: var(--dropdown-menu-padding-vertical);
+            }
+        }
+    }
+
+    .dropdown-custom-item:has(.note-color-picker) {
+        overflow-x: auto;
+    }
+
+    .note-color-picker {
+        padding: 0;
+        width: fit-content;
+
+        .color-cell {
+            --color-picker-cell-size: 26px;
+            flex-shrink: 0;
+        }
+    }
+}
+/* #endregion */
+
 body.desktop .dropdown-menu .dropdown-toggle::after {
     height: 100%;
 }
 
-body.mobile .dropdown-menu .dropdown-toggle::after {
-    transform: rotate(90deg);
-}
 
-body.mobile .dropdown-menu .dropdown-item.submenu-open .dropdown-toggle::after {
-    transform: rotate(270deg);
-}
 
 /* Dropdown item button (used in zoom buttons in global menu) */
 
@@ -345,6 +502,12 @@ li.dropdown-item a.dropdown-item-button.bx {
 
 li.dropdown-item a.dropdown-item-button:focus-visible {
     outline: 2px solid var(--input-focus-outline-color) !important;
+}
+
+:root .dropdown-menu .note-color-picker {
+    padding: 4px 10px;
+    --note-color-picker-clear-color-cell-background: var(--main-text-color);
+    --note-color-picker-clear-color-cell-selection-outline-color: var(--main-text-color);
 }
 
 /*
@@ -597,11 +760,6 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
 
 .note-list.grid-view .note-book-card:hover {
     filter: contrast(105%);
-}
-
-.note-list.grid-view .note-book-card img {
-    object-fit: cover !important;
-    width: 100%;
 }
 
 .note-list.grid-view .ck-content {

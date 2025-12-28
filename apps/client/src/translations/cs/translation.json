@@ -24,41 +24,95 @@
       "message": "Uživatelský skript z poznámky s ID \"{{id}}\" a názvem \"{{title}}\" nemohl být spuštěn z důvodu: \n\n{{message}}"
     }
   },
-  "ai_llm": {
-    "n_notes_queued_0": "{{ count }} poznámka ve frontě k indexaci",
-    "n_notes_queued_1": "{{ count }} poznámky ve frontě k indexaci",
-    "n_notes_queued_2": "{{ count }} poznámek ve frontě k indexaci",
-    "notes_indexed_0": "{{ count }} poznámka indexována",
-    "notes_indexed_1": "{{ count }} poznámky indexovány",
-    "notes_indexed_2": "{{ count }} poznámek indexováno"
-  },
   "add_link": {
     "add_link": "Přidat odkaz",
     "help_on_links": "Nápověda k odkazům",
     "note": "Poznámka",
     "search_note": "hledat poznámku podle názvu",
     "link_title": "Název odkazu",
-    "button_add_link": "Přidat odkaz"
+    "button_add_link": "Přidat odkaz",
+    "link_title_mirrors": "titulek odkazu odráží momentální titulek poznámky",
+    "link_title_arbitrary": "titulek odkazu může být změněn libovolně"
   },
   "branch_prefix": {
-    "prefix": "Prefix: ",
-    "save": "Uložit"
+    "prefix": "Předpona: ",
+    "save": "Uložit",
+    "edit_branch_prefix": "Upravit prefix větve",
+    "edit_branch_prefix_multiple": "Upravit prefix větve pro {{count}} větví",
+    "help_on_tree_prefix": "Nápověda k prefixu stromu",
+    "branch_prefix_saved": "Prefix větve byl uložen.",
+    "branch_prefix_saved_multiple": "Prefix větve byl uložen pro {{count}} větví.",
+    "affected_branches": "Ovlivněné větve ({{count}}):"
   },
   "bulk_actions": {
     "bulk_actions": "Hromadné akce",
     "affected_notes": "Ovlivněné poznámky",
-    "notes": "Poznámky"
+    "notes": "Poznámky",
+    "include_descendants": "Zahrnout potomky vybraných poznámek",
+    "available_actions": "Dostupné akce",
+    "chosen_actions": "Vybrané akce",
+    "execute_bulk_actions": "Vykonat hromadné akce",
+    "bulk_actions_executed": "Hromadné akce byly úspěšně provedeny.",
+    "labels": "Štítky",
+    "relations": "Relace",
+    "other": "Ostatní",
+    "none_yet": "Zatím žádné akce... přidejte akci kliknutím na jednu z dostupných výše."
   },
   "confirm": {
     "cancel": "Zrušit",
-    "ok": "OK"
+    "ok": "OK",
+    "confirmation": "Potvrzení",
+    "are_you_sure_remove_note": "Opravdu chcete odstranit poznámku „{{title}}“ z mapy vztahů? ",
+    "if_you_dont_check": "Pokud tuto možnost nezaškrtnete, poznámka bude odstraněna pouze z mapy vztahů.",
+    "also_delete_note": "Odstraňte také poznámku"
   },
   "delete_notes": {
     "cancel": "Zrušit",
     "ok": "OK",
-    "close": "Zavřít"
+    "close": "Zavřít",
+    "delete_notes_preview": "Odstranit náhled poznámek",
+    "delete_all_clones_description": "Odstraňte také všechny klony (lze vrátit zpět v nedávných změnách)",
+    "erase_notes_description": "Normální (měkké) smazání pouze označí poznámky jako smazané a lze je během určité doby obnovit (v dialogovém okně posledních změn). Zaškrtnutím této možnosti se poznámky okamžitě vymažou a nebude možné je obnovit.",
+    "erase_notes_warning": "Trvale smažte poznámky (nelze vrátit zpět), včetně všech klonů. Tím se vynutí opětovné načtení aplikace.",
+    "notes_to_be_deleted": "Následující poznámky budou smazány ({{notesCount}})",
+    "no_note_to_delete": "Žádná poznámka nebude smazána (pouze klony).",
+    "broken_relations_to_be_deleted": "Následující vazby budou přerušeny a smazány ({{relationCount}})",
+    "deleted_relation_text": "Poznámka {{- note}} (bude smazána) je odkazována vazbou {{- relation}} pocházející z {{- source}}."
   },
   "export": {
-    "close": "Zavřít"
+    "close": "Zavřít",
+    "export_note_title": "Exportovat poznámku",
+    "export_type_subtree": "Tato poznámka a všechny její odvozené poznámky",
+    "format_html": "HTML – doporučeno, protože zachovává veškeré formátování",
+    "format_html_zip": "HTML v archivu ZIP – toto se doporučuje, protože se tak zachová veškeré formátování.",
+    "format_markdown": "Markdown – zachovává většinu formátování.",
+    "format_opml": "OPML – formát pro výměnu osnov pouze pro text. Formátování, obrázky a soubory nejsou zahrnuty.",
+    "opml_version_1": "OPML v1.0 – pouze prostý text",
+    "opml_version_2": "OPML v2.0 – umožňuje také HTML",
+    "export_type_single": "Pouze tato poznámka bez jejích potomků",
+    "export": "Exportovat",
+    "choose_export_type": "Nejprve vyberte typ exportu",
+    "export_status": "Stav exportu",
+    "export_in_progress": "Export probíhá: {{progressCount}}",
+    "export_finished_successfully": "Export byl úspěšně dokončen.",
+    "format_pdf": "PDF – pro tisk nebo sdílení.",
+    "share-format": "HTML pro publikování na webu – používá stejný motiv jako sdílené poznámky, ale lze jej publikovat jako statický web."
+  },
+  "clone_to": {
+    "clone_notes_to": "Klonovat poznámky do...",
+    "help_on_links": "Nápověda k odkazům",
+    "notes_to_clone": "Poznámky na klonování",
+    "search_for_note_by_its_name": "hledat poznámku dle jejího názvu",
+    "prefix_optional": "Předpona (volitelná)",
+    "target_parent_note": "Zaměřit rodičovskou poznámku",
+    "cloned_note_prefix_title": "Klonovaná poznámka se zobrazí ve stromu poznámek s danou předponou",
+    "clone_to_selected_note": "Klonovat vybranou poznámku",
+    "no_path_to_clone_to": "Žádná cest pro klonování.",
+    "note_cloned": "Poznámka „{{clonedTitle}}“ bylo naklonována do „{{targetTitle}}“"
+  },
+  "zpetne_odkazy": {
+    "backlink_one": "{{count}} zpětný odkaz",
+    "backlink_few": "{{count}} zpětné odkazy",
+    "backlink_other": "{{count}} zpětných odkazů"
   }
 }

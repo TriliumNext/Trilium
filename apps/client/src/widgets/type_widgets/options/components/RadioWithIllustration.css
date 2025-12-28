@@ -1,0 +1,28 @@
+.options-section .radio-with-illustration {
+    list-style-type: none;
+    margin-bottom: 0;
+    padding: 0;
+    display: flex;
+    gap: 1.5em;
+    justify-content: center;
+
+    figure {
+        figcaption {
+            margin-top: 0.25em;
+            text-align: center;
+        }
+
+        margin-bottom: 0;
+
+        &> .illustration {
+            border-radius: 6px;
+            padding: 3px;
+            cursor: pointer;
+        }
+    }
+
+    &> .selected figure > .illustration {
+        outline: 3px solid var(--input-focus-outline-color);
+    }
+
+}

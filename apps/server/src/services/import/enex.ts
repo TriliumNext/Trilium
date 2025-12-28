@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import { dayjs } from "@triliumnext/commons";
 import sax from "sax";
 import stream from "stream";
 import { Throttle } from "stream-throttle";

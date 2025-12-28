@@ -1,1 +1,17 @@
-{}
+{
+    "get-started": {
+        "title": "Başlangıç",
+        "desktop_title": "Masaüstü uygulamasını indirin (v{{version}})",
+        "architecture": "Mimari:",
+        "older_releases": "Eski sürümleri görüntüle",
+        "server_title": "Birden fazla cihazdan erişim için bir sunucu kurun"
+    },
+    "hero_section": {
+        "title": "Düşüncelerinizi organize edin. Kişisel bilgi birikiminizi oluşturun.",
+        "subtitle": "Trilium, not tutma ve kişisel bir bilgi tabanını düzenleme için açık kaynaklı bir çözümdür. Bunu masaüstünü bilgisayarınızda kullanabilir veya kendi barındırdığınız sunucuyla senkronize ederek notlarınızı gittiğiniz her yerde yanınızda bulundurabilirsiniz.",
+        "get_started": "Başlayın",
+        "github": "GitHub",
+        "dockerhub": "Docker Hub",
+        "screenshot_alt": "Trilium Notes masaüstü uygulamasının ekran görüntüsü"
+    }
+}

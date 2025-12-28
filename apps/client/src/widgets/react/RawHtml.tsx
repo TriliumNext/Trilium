@@ -1,8 +1,8 @@
-import type { CSSProperties, RefObject } from "preact/compat";
+import type { CSSProperties, HTMLProps, RefObject } from "preact/compat";
 
 type HTMLElementLike = string | HTMLElement | JQuery<HTMLElement>;
 
-interface RawHtmlProps {
+interface RawHtmlProps extends Pick<HTMLProps<HTMLElement>, "tabindex" | "dir"> {
     className?: string;
     html?: HTMLElementLike;
     style?: CSSProperties;

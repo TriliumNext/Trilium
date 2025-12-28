@@ -288,7 +288,7 @@ class FrocaImpl implements Froca {
         return (await this.getNotes([noteId], silentNotFoundError))[0];
     }
 
-    getNoteFromCache(noteId: string) {
+    getNoteFromCache(noteId: string): FNote | undefined {
         if (!noteId) {
             throw new Error("Empty noteId");
         }

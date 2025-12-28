@@ -14,9 +14,10 @@ interface TableProps<T> extends Omit<Options, "data" | "footerElement" | "index"
     events?: Partial<EventCallBackMethods>;
     index: keyof T;
     footerElement?: string | HTMLElement | JSX.Element;
+    onReady?: () => void;
 }
 
-export default function Tabulator<T>({ className, columns, data, modules, tabulatorRef: externalTabulatorRef, footerElement, events, index, dataTree, ...restProps }: TableProps<T>) {
+export default function Tabulator<T>({ className, columns, data, modules, tabulatorRef: externalTabulatorRef, footerElement, events, index, dataTree, onReady, ...restProps }: TableProps<T>) {
     const parentComponent = useContext(ParentComponent);
     const containerRef = useRef<HTMLDivElement>(null);
     const tabulatorRef = useRef<VanillaTabulator>(null);
@@ -43,6 +44,7 @@ export default function Tabulator<T>({ className, columns, data, modules, tabula
         tabulator.on("tableBuilt", () => {
             tabulatorRef.current = tabulator;
             externalTabulatorRef.current = tabulator;
+            onReady?.();
         });
 
         return () => tabulator.destroy();

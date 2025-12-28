@@ -1,5 +1,13 @@
 .ribbon-container {
     margin-bottom: 5px;
+    position: relative;
+    z-index: 998;
+}
+
+/* When content header is floating, ribbon sticks below it */
+.scrolling-container:has(.content-header-widget.floating) .ribbon-container {
+    position: sticky;
+    top: var(--content-header-height, 100px);
 }
 
 .ribbon-top-row {
@@ -24,12 +32,15 @@
     max-width: max-content;
     flex-grow: 10;
     user-select: none;
+    display: flex;
+    align-items: center;
+    font-size: 0.9em;
+    padding-top: 2px;
 }
 
 .ribbon-tab-title .bx {
     font-size: 150%;
     position: relative;
-    top: 3px;
 }
 
 .ribbon-tab-title.active {
@@ -71,12 +82,9 @@
     display: flex;
     border-bottom: 1px solid var(--main-border-color);
     margin-inline-end: 5px;
-}
-
-.ribbon-button-container > * {
-    position: relative;
-    top: -3px;
-    margin-inline-start: 10px;
+    align-items: center;
+    height: 36px;
+    gap: 10px;
 }
 
 .ribbon-body {
@@ -144,6 +152,15 @@
     opacity: 0.3;
 }
 
+body.experimental-feature-new-layout .classic-toolbar-widget {
+    transition: opacity 250ms ease-in;
+
+    &.disabled {
+        opacity: 0.3;
+        pointer-events: none;
+    }
+}
+
 /* #endregion */
 
 /* #region Script Tab */
@@ -190,9 +207,6 @@
     vertical-align: middle !important;
 }
 
-.note-info-widget .calculate-button {
-    padding: 0 10px;
-}
 /* #endregion */
 
 /* #region Similar Notes */
@@ -347,6 +361,10 @@ body[dir=rtl] .attribute-list-editor {
     max-height: 200px;
     overflow: auto;
     padding: 14px 12px 13px 12px;
+
+    a.reference-link {
+        text-decoration: underline;
+    }
 }
 /* #endregion */
 
@@ -356,7 +374,7 @@ body[dir=rtl] .attribute-list-editor {
     display: flex;
     flex-wrap: wrap;
     gap: 15px;
-    overflow: hidden;
+    overflow: visible;
     align-items: center;
 }
 
@@ -386,22 +404,64 @@ body[dir=rtl] .attribute-list-editor {
 .note-actions {
     width: 35px;
     height: 35px;
+    display: flex;
+    align-items: center;
 }
 
 .note-actions .dropdown-menu {
     min-width: 15em;
 }
 
-.note-actions .dropdown-item .bx {
-    position: relative;
-    top: 3px;
-    font-size: 120%;
-    margin-inline-end: 5px;
-}
-
 .note-actions .dropdown-item[disabled], .note-actions .dropdown-item[disabled]:hover {
     color: var(--muted-text-color) !important;
     background-color: transparent !important;
     pointer-events: none; /* makes it unclickable */
+}
+/* #endregion */
+
+/* #region Experimental layout */
+body.experimental-feature-new-layout {
+    .ribbon-top-row {
+        min-height: 0;
+    }
+
+    .ribbon-container {
+        display: flex;
+        flex-direction: column-reverse;
+        border: 0;
+
+        .ribbon-tab-spacer,
+        .ribbon-tab-title,
+        .ribbon-body {
+            border-bottom: 0 !important;
+        }
+    }
+
+    .ribbon-button-container {
+        --button-gap: 5px;
+
+        border-bottom: 0 !important;
+        margin: 0;
+        gap: var(--button-gap);
+
+        button {
+            transition: opacity 250ms ease-in;
+
+            &.disabled {
+                opacity: 0.4;
+            }
+        }
+
+        .note-actions-custom {
+            display: flex;
+            align-items: center;
+            height: 36px;
+            gap: var(--button-gap);
+
+            &> button:last-of-type {
+                margin-right: 1em;
+            }
+        }
+    }
 }
 /* #endregion */

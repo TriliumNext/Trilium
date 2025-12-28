@@ -3,6 +3,137 @@
         "title": "Začínáme",
         "desktop_title": "Stažení aplikace pro osobní počítače (v{{version}})",
         "architecture": "Architektura:",
-        "older_releases": "Starší vydání"
+        "older_releases": "Starší vydání",
+        "server_title": "Nastavte server pro přístup z více zařízení"
+    },
+    "hero_section": {
+        "get_started": "Start",
+        "github": "GitHub",
+        "title": "Uspořádejte si myšlenky. Vytvořte si osobní znalostní bázi.",
+        "subtitle": "Trilium je open-source řešení pro pořizování poznámek a organizaci osobní znalostní báze. Používejte jej lokálně na svém počítači nebo jej synchronizujte se svým vlastním serverem, abyste měli své poznámky vždy po ruce, ať jste kdekoli.",
+        "dockerhub": "Docker Hub",
+        "screenshot_alt": "Snímek obrazovky desktopové aplikace Trilium Notes"
+    },
+    "organization_benefits": {
+        "title": "Organizace",
+        "note_structure_title": "Struktura poznámek",
+        "note_structure_description": "Poznámky lze uspořádat hierarchicky. Není třeba používat složky, protože každá poznámka může obsahovat podpoznámky. Jednu poznámku lze přidat na více míst v hierarchii.",
+        "attributes_title": "Poznámky k štítkům a vazbám",
+        "attributes_description": "Využijte vazby mezi poznámkami nebo přidejte štítky pro snadnou kategorizaci. Pomocí propagovaných atributů zadejte strukturované informace, které lze použít v různých tabulkách.",
+        "hoisting_title": "Pracovní prostředí a hoisting",
+        "hoisting_description": "Snadno oddělte své osobní a pracovní poznámky tím, že je seskupíte do pracovního prostoru, který zaměří strom poznámek tak, aby zobrazoval pouze konkrétní sadu poznámek."
+    },
+    "productivity_benefits": {
+        "title": "Produktivita a bezpečnost",
+        "revisions_title": "Revize poznámek",
+        "revisions_content": "Poznámky se pravidelně ukládají na pozadí a revize lze použít k přezkoumání nebo ke zrušení náhodných změn. Revize lze také vytvářet na požádání.",
+        "search_content": "Nebo vyhledávejte text uvnitř poznámek a zúžte vyhledávání filtrováním podle nadřazené poznámky nebo podle hloubky.",
+        "web_clipper_title": "Webový výstřižek",
+        "web_clipper_content": "Zachyťte webové stránky (nebo snímky obrazovky) a vložte je přímo do Trilium pomocí rozšíření prohlížeče Webového výstřižku.",
+        "sync_title": "Synchoronizace",
+        "sync_content": "Pomocí vlastní nebo cloudové instance můžete snadno synchronizovat své poznámky mezi více zařízeními a přistupovat k nim ze svého mobilního telefonu pomocí PWA.",
+        "protected_notes_title": "Chráněné poznámky",
+        "protected_notes_content": "Chraňte citlivé osobní údaje šifrováním poznámek a jejich uzamčením za heslem chráněnou relací.",
+        "jump_to_title": "Rychlé hledání a příkazy",
+        "jump_to_content": "Rychle přejděte k poznámkám nebo příkazům uživatelského rozhraní v celé hierarchii pomocí vyhledávání podle názvu, přičemž fuzzy vyhledávání zohledňuje překlepy nebo drobné rozdíly.",
+        "search_title": "Výkonné vyhledávání"
+    },
+    "note_types": {
+        "title": "Několik způsobů, jak prezentovat vaše informace",
+        "text_title": "Textová poznámka",
+        "text_description": "Poznámky se upravují pomocí vizuálního editoru (WYSIWYG) s podporou tabulek, obrázků, matematických výrazů a bloků kódu se zvýrazněním syntaxe. Text lze rychle formátovat pomocí syntaxe podobné Markdownu nebo pomocí příkazů s lomítkem.",
+        "code_title": "Poznámka kódu",
+        "code_description": "Velké vzorky zdrojového kódu nebo skriptů používají speciální editor s barevným zvýrazněním syntaxe pro mnoho programovacích jazyků a s různými barevnými motivy.",
+        "file_title": "Souborové poznámky",
+        "file_description": "Vložte multimediální soubory, jako jsou PDF, obrázky, videa, s náhledem v aplikaci.",
+        "canvas_title": "Plátno",
+        "canvas_description": "Uspořádejte tvary, obrázky a text na nekonečném plátně pomocí stejné technologie, jaká se používá na webu excalidraw.com. Ideální pro diagramy, náčrtky a vizuální plánování.",
+        "mermaid_title": "Mermaid diagramy",
+        "mermaid_description": "Vytvářejte diagramy, jako jsou vývojové diagramy, diagramy tříd a sekvencí, Ganttovy diagramy a mnoho dalších, pomocí syntaxe Mermaid.",
+        "mindmap_title": "Myšlenková mapa",
+        "mindmap_description": "Zorganizujte si myšlenky vizuálně nebo uspořádejte brainstorming.",
+        "others_list": "a další: <0>mapa poznámek</0>, <1>mapa vztahů</1>, <2>uložená vyhledávání</2>, <3>zobrazení poznámky</3> a <4>webové zobrazení</4>."
+    },
+    "extensibility_benefits": {
+        "title": "Sdílení a rozšiřitelnost",
+        "import_export_title": "Import/export",
+        "import_export_description": "Snadná interakce s jinými aplikacemi pomocí formátů Markdown, ENEX a OML.",
+        "share_title": "Sdílet poznámky na webu",
+        "share_description": "Pokud máte server, můžete jej použít ke sdílení části svých poznámek s ostatními lidmi.",
+        "scripting_title": "Pokročilé skriptování",
+        "scripting_description": "Vytvořte si vlastní integrace v rámci Trilium pomocí přizpůsobených widgetů nebo logiky na straně serveru.",
+        "api_title": "REST API",
+        "api_description": "Komunikujte s Trilium programově pomocí jeho vestavěného REST API."
+    },
+    "collections": {
+        "title": "Kolekce",
+        "calendar_title": "Kalendář",
+        "calendar_description": "Organizujte své osobní nebo pracovní události pomocí kalendáře, který podporuje celodenní i vícedenní události. Zobrazte si své události na první pohled v týdenním, měsíčním a ročním přehledu. Snadná interakce pro přidávání nebo přetahování událostí.",
+        "table_title": "Tabulka",
+        "table_description": "Zobrazujte a upravujte informace o poznámkách v tabulkové struktuře s různými typy sloupců, jako jsou text, čísla, zaškrtávací políčka, datum a čas, odkazy a barvy, a podporou vztahů. Volitelně můžete poznámky zobrazit v hierarchické struktuře stromu uvnitř tabulky.",
+        "board_title": "Kanbanová tabule",
+        "board_description": "Uspořádejte si úkoly nebo stav projektu do tabule Kanban, kde můžete snadno vytvářet nové položky a sloupce a jednoduše měnit jejich stav přetahováním po tabuli.",
+        "geomap_title": "Geomapa",
+        "geomap_description": "Naplánujte si dovolenou nebo si označte místa, která vás zajímají, přímo na geografické mapě pomocí přizpůsobitelných značek. Zobrazte zaznamenané trasy GPX a sledujte itineráře.",
+        "presentation_title": "Prezentace",
+        "presentation_description": "Uspořádejte informace do snímků a prezentujte je na celé obrazovce s plynulými přechody. Snímky lze také exportovat do formátu PDF pro snadné sdílení."
+    },
+    "faq": {
+        "title": "Často kladené otázky",
+        "mobile_question": "Existuje mobilní aplikace?",
+        "mobile_answer": "V současné době neexistuje žádná oficiální mobilní aplikace. Pokud však máte instanci serveru, můžete k ní přistupovat pomocí webového prohlížeče a dokonce ji nainstalovat jako PWA. Pro Android existuje neoficiální aplikace s názvem TriliumDroid, která funguje i offline (stejně jako desktopový klient).",
+        "database_question": "Kde jsou má data uložena?",
+        "database_answer": "Všechny vaše poznámky budou uloženy v databázi SQLite ve složce aplikace. Důvodem, proč Trilium používá databázi namísto prostých textových souborů, je jak výkon, tak i skutečnost, že některé funkce by byly mnohem obtížnější implementovat, například klony (stejná poznámka na více místech ve stromu). Chcete-li najít složku aplikace, stačí přejít do okna O aplikaci.",
+        "server_question": "Potřebuju server pro používání Trilium?",
+        "server_answer": "Ne, server umožňuje přístup přes webový prohlížeč a spravuje synchronizaci, pokud máte více zařízení. Chcete-li začít, stačí si stáhnout desktopovou aplikaci a začít ji používat.",
+        "scaling_question": "Jak dobře se aplikace přizpůsobuje velkému množství poznámek?",
+        "scaling_answer": "V závislosti na použití by aplikace měla být schopna bez problémů zpracovat alespoň 100 000 poznámek. Upozorňujeme, že proces synchronizace může někdy selhat, pokud nahráváte mnoho velkých souborů (1 GB na soubor), protože Trilium je spíše aplikací pro správu znalostí než úložištěm souborů (jako například NextCloud).",
+        "network_share_question": "Mohu sdílet svou databázi přes síťový disk?",
+        "network_share_answer": "Ne, sdílení databáze SQLite přes síťový disk obecně není dobrý nápad. I když to někdy může fungovat, existuje riziko, že se databáze poškodí kvůli nedokonalému zamykání souborů v síti.",
+        "security_question": "Jak jsou má data chráněna?",
+        "security_answer": "Ve výchozím nastavení nejsou poznámky šifrovány a lze je číst přímo z databáze. Jakmile je poznámka označena jako šifrovaná, je zašifrována pomocí AES-128-CBC."
+    },
+    "final_cta": {
+        "title": "Jste připraveni začít používat Trilium Notes?",
+        "description": "Vytvořte si svou osobní znalostní bázi s výkonnými funkcemi a plným soukromím.",
+        "get_started": "Začít"
+    },
+    "components": {
+        "link_learn_more": "Zjistit více..."
+    },
+    "download_now": {
+        "text": "Stáhnout nyní ",
+        "platform_big": "v{{version}} pro{{platform}}",
+        "platform_small": "pro {{platform}}",
+        "linux_big": "v{{version}} pro Linux",
+        "linux_small": "pro Linux",
+        "more_platforms": "Další platformy a nastavení serveru"
+    },
+    "header": {
+        "get-started": "Začít",
+        "documentation": "Dokumentace",
+        "support-us": "Podpořte nás"
+    },
+    "footer": {
+        "copyright_and_the": " a ",
+        "copyright_community": "komunita"
+    },
+    "social_buttons": {
+        "github": "GitHub",
+        "github_discussions": "GitHub diskuze",
+        "matrix": "Matrix",
+        "reddit": "Reddit"
+    },
+    "support_us": {
+        "title": "Podpořte nás",
+        "financial_donations_title": "Finanční dary",
+        "financial_donations_description": "Trilium je vyvíjeno a udržováno díky <Link>stovkám hodin práce</Link>. Vaše podpora zajišťuje, že zůstane open-source, vylepšuje jeho funkce a pokrývá náklady, jako je hosting.",
+        "financial_donations_cta": "Zvažte podporu hlavního vývojáře (<Link>eliandoran</Link>) aplikace prostřednictvím:",
+        "github_sponsors": "Sponzoři GitHubu",
+        "paypal": "PayPal",
+        "buy_me_a_coffee": "Buy Me A Coffee"
+    },
+    "contribute": {
+        "title": "Další způsoby, jak přispět"
     }
 }

@@ -6,7 +6,7 @@
  */
 :root {
 
-    /* 
+    /*
      * ⚠️ NOTICE: This theme is currently in the beta stage of development.
      * The names and purposes of these CSS variables are subject to frequent changes.
      */
@@ -21,8 +21,8 @@
     --subtle-border-color: #313131;
     --dropdown-border-color: #404040;
     --dropdown-shadow-opacity: 0.6;
-    --dropdown-item-icon-destructive-color: #de6e5b;
-    --disabled-tooltip-icon-color: #7fd2ef;
+    --dropdown-item-icon-destructive-color: #d58477;
+    --contextual-help-icon-color: #7fd2ef;
 
     --accented-background-color: #555;
 
@@ -40,6 +40,9 @@
     --cmd-button-keyboard-shortcut-background: #0000004d;
     --cmd-button-keyboard-shortcut-color: white;
     --cmd-button-disabled-opacity: 0.5;
+
+    --button-group-active-button-background: #ffffff4e;
+    --button-group-active-button-text-color: white;
 
     --icon-button-color: currentColor;
     --icon-button-hover-background: var(--hover-item-background-color);
@@ -71,11 +74,13 @@
     --select-arrow-svg: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='transparent' stroke='white' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/></svg>");
     --select-group-heading-text-color: gray;
 
-    --link-hover-background: #ffffff26;
-    --link-hover-color: white;
+    --link-color: #95c3d9;
+    --link-hover-background: #75c2e324;
+    --link-hover-color: var(--link-color);
+    --link-selection-outline-color: #75c2e385;
 
     --hover-item-text-color: #efefef;
-    --hover-item-background-color: #ffffff24;
+    --hover-item-background-color: #ffffff16;
     --hover-item-border-color: transparent;
 
     --active-item-text-color: var(--left-pane-text-color);
@@ -98,6 +103,7 @@
     --menu-item-delimiter-color: #ffffff1c;
     --menu-item-group-header-color: #ffffff91;
     --menu-section-background-color: #fefefe08;
+    --menu-submenu-mobile-background-color: rgba(0, 0, 0, 0.15);
 
     --modal-backdrop-color: #000;
     --modal-shadow-color: rgba(0, 0, 0, .5);
@@ -166,6 +172,9 @@
     --protected-session-active-icon-color: #8edd8e;
     --sync-status-error-pulse-color: #f47871;
 
+    --classic-toolbar-vert-layout-background-color: #ffffff0d;
+    --classic-toolbar-horiz-layout-background-color: var(--main-background-color);
+
     --center-pane-vert-layout-background-color-bgfx: #0c0c0c69;
     --center-pane-horiz-layout-background-color-bgfx: #1e1e1ec7;
 
@@ -178,7 +187,7 @@
 
     --tab-close-button-hover-background: #a45353;
     --tab-close-button-hover-color: white;
-    
+
     --active-tab-background-color: #ffffff1c;
     --active-tab-hover-background-color: var(--active-tab-background-color);
     --active-tab-icon-color: #a9a9a9;
@@ -195,9 +204,19 @@
     --badge-background-color: #ffffff1a;
     --badge-text-color: var(--muted-text-color);
 
+    --badge-temporaraily-editable-background-color: #297331;
+    --badge-read-only-background-color: #af4340;
+    --badge-share-background-color: #4d4d4d;
+    --badge-clipped-note-background-color: #295773;
+    --badge-execute-background-color: #604180;
+
+    --note-icon-background-color: #444444;
+    --note-icon-color: #d4d4d4;
+    --note-icon-hover-background-color: #555555;
+
     --promoted-attribute-card-background-color: #ffffff21;
     --promoted-attribute-card-shadow: none;
-    
+
     --floating-button-shadow-color: #00000080;
     --floating-button-background-color: #494949d2;
     --floating-button-color: var(--button-text-color);
@@ -216,14 +235,17 @@
     --right-pane-item-hover-background: #ffffff26;
     --right-pane-item-hover-color: white;
 
+    --bottom-panel-background-color: #11111180;
+    --bottom-panel-title-bar-background-color: #3F3F3F80;
+    
+    --status-bar-border-color: var(--main-border-color);
+    
     --scrollbar-thumb-color: #fdfdfd5c;
     --scrollbar-thumb-hover-color: #ffffff7d;
     --scrollbar-background-color: transparent;
     --scrollbar-border-color: unset; /* Deprecated */
 
     --selection-background-color: #3399FF70;
-    
-    --link-color: lightskyblue;
 
     --mermaid-theme: dark;
 
@@ -266,6 +288,14 @@
     --ck-editor-toolbar-button-on-color: white;
     --ck-editor-toolbar-button-on-shadow: 1px 1px 2px rgba(0, 0, 0, .75);
     --ck-editor-toolbar-dropdown-button-open-background: #ffffff14;
+
+    --calendar-coll-event-background-saturation: 25%;
+    --calendar-coll-event-background-lightness: 20%;
+    --calendar-coll-event-background-color: #3c3c3c;
+    --calendar-coll-event-text-color: white;
+    --calendar-coll-event-hover-filter: brightness(1.25);
+    --callendar-coll-event-archived-sripe-color: #00000026;
+    --calendar-coll-today-background-color: #ffffff08;
 }
 
 /*
@@ -281,10 +311,10 @@
     --custom-bg-color: hsl(var(--custom-color-hue), 20%, 33%, 0.4);
 }
 
-:root .reference-link,
-:root .reference-link:hover,
-.ck-content a.reference-link > span,
-.board-note {
+:root .reference-link.use-note-color,
+:root .reference-link.use-note-color:hover,
+.ck-content a.reference-link.use-note-color > span,
+.board-note.use-note-color {
     color: var(--dark-theme-custom-color, inherit);
 }
 
@@ -300,8 +330,24 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
     border-color: var(--muted-text-color) !important;
 }
 
-.tinted-quick-edit-dialog {
+.quick-edit-dialog-wrapper.with-hue {
     --modal-background-color: hsl(var(--custom-color-hue), 8.8%, 11.2%);
     --modal-border-color: hsl(var(--custom-color-hue), 9.4%, 25.1%);
     --promoted-attribute-card-background-color: hsl(var(--custom-color-hue), 13.2%, 20.8%);
+}
+
+.use-note-color {
+    --custom-color: var(--dark-theme-custom-color);
+}
+
+.note-split.with-hue,
+.quick-edit-dialog-wrapper.with-hue {
+    --note-icon-custom-background-color: hsl(var(--custom-color-hue), 15.8%, 30.9%);
+    --note-icon-custom-color: hsl(var(--custom-color-hue), 100%, 76.5%);
+    --note-icon-hover-custom-background-color: hsl(var(--custom-color-hue), 28.3%, 36.7%);
+}
+
+.note-split.with-hue *::selection,
+.quick-edit-dialog-wrapper.with-hue *::selection {
+    --selection-background-color: hsl(var(--custom-color-hue), 49.2%, 35%);
 }

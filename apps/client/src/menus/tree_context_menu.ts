@@ -1,3 +1,4 @@
+import NoteColorPicker from "./custom-items/NoteColorPicker.jsx";
 import treeService from "../services/tree.js";
 import froca from "../services/froca.js";
 import clipboard from "../services/clipboard.js";
@@ -139,7 +140,13 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                         uiIcon: "bx bx-rename",
                         enabled: isNotRoot && parentNotSearch && notOptionsOrHelp
                     },
-                    { title: t("tree-context-menu.convert-to-attachment"), command: "convertNoteToAttachment", uiIcon: "bx bx-paperclip", enabled: isNotRoot && !isHoisted && notOptionsOrHelp },
+                    {
+                        title:
+                        t("tree-context-menu.convert-to-attachment"),
+                        command: "convertNoteToAttachment",
+                        uiIcon: "bx bx-paperclip",
+                        enabled: isNotRoot && !isHoisted && notOptionsOrHelp && selectedNotes.some(note => note.isEligibleForConversionToAttachment())
+                    },
 
                     { kind: "separator" },
 
@@ -240,6 +247,15 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                 uiIcon: "bx bx-trash destructive-action-icon",
                 enabled: isNotRoot && !isHoisted && parentNotSearch && notOptionsOrHelp
             },
+
+            { kind: "separator"},
+
+            (notOptionsOrHelp && selectedNotes.length === 1) ? {
+                kind: "custom",
+                componentFn: () => {
+                    return NoteColorPicker({note});
+                }
+            } : null,
 
             { kind: "separator" },
 

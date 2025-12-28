@@ -1,13 +1,24 @@
-import FNote from "./entities/fnote";
 import { render } from "preact";
-import { CustomNoteList } from "./widgets/collections/NoteList";
 import { useCallback, useLayoutEffect, useRef } from "preact/hooks";
+
+import FNote from "./entities/fnote";
 import content_renderer from "./services/content_renderer";
+import { applyInlineMermaid } from "./services/content_renderer_text";
+import { dynamicRequire, isElectron } from "./services/utils";
+import { CustomNoteList, useNoteViewType } from "./widgets/collections/NoteList";
 
 interface RendererProps {
     note: FNote;
-    onReady: () => void;
+    onReady: (data: PrintReport) => void;
+    onProgressChanged?: (progress: number) => void;
 }
+
+export type PrintReport = {
+    type: "single-note";
+} | {
+    type: "collection";
+    ignoredNoteIds: string[];
+};
 
 async function main() {
     const notePath = window.location.hash.substring(1);
@@ -23,15 +34,25 @@ async function main() {
 
 function App({ note, noteId }: { note: FNote | null | undefined, noteId: string }) {
     const sentReadyEvent = useRef(false);
-    const onReady = useCallback(() => {
+    const onProgressChanged = useCallback((progress: number) => {
+        if (isElectron()) {
+            const { ipcRenderer } = dynamicRequire('electron');
+            ipcRenderer.send("print-progress", progress);
+        } else {
+            window.dispatchEvent(new CustomEvent("note-load-progress", { detail: { progress } }));
+        }
+    }, []);
+    const onReady = useCallback((printReport: PrintReport) => {
         if (sentReadyEvent.current) return;
-        window.dispatchEvent(new Event("note-ready"));
-        window._noteReady = true;
+        window.dispatchEvent(new CustomEvent("note-ready", {
+            detail: printReport
+        }));
+        window._noteReady = printReport;
         sentReadyEvent.current = true;
     }, []);
-    const props: RendererProps | undefined | null = note && { note, onReady };
+    const props: RendererProps | undefined | null = note && { note, onReady, onProgressChanged };
 
-    if (!note || !props) return <Error404 noteId={noteId} />
+    if (!note || !props) return <Error404 noteId={noteId} />;
 
     useLayoutEffect(() => {
         document.body.dataset.noteType = note.type;
@@ -40,8 +61,8 @@ function App({ note, noteId }: { note: FNote | null | undefined, noteId: string 
     return (
         <>
             {note.type === "book"
-            ? <CollectionRenderer {...props} />
-            : <SingleNoteRenderer {...props} />
+                ? <CollectionRenderer {...props} />
+                : <SingleNoteRenderer {...props} />
             }
         </>
     );
@@ -71,11 +92,18 @@ function SingleNoteRenderer({ note, onReady }: RendererProps) {
                 })
             );
 
+            // Initialize mermaid.
+            if (note.type === "text") {
+                await applyInlineMermaid(container);
+            }
+
             // Check custom CSS.
             await loadCustomCss(note);
         }
 
-        load().then(() => requestAnimationFrame(onReady))
+        load().then(() => requestAnimationFrame(() => onReady({
+            type: "single-note"
+        })));
     }, [ note ]);
 
     return <>
@@ -84,18 +112,21 @@ function SingleNoteRenderer({ note, onReady }: RendererProps) {
     </>;
 }
 
-function CollectionRenderer({ note, onReady }: RendererProps) {
+function CollectionRenderer({ note, onReady, onProgressChanged }: RendererProps) {
+    const viewType = useNoteViewType(note);
     return <CustomNoteList
+        viewType={viewType}
         isEnabled
         note={note}
         notePath={note.getBestNotePath().join("/")}
         ntxId="print"
         highlightedTokens={null}
         media="print"
-        onReady={async () => {
+        onReady={async (data: PrintReport) => {
             await loadCustomCss(note);
-            onReady();
+            onReady(data);
         }}
+        onProgressChanged={onProgressChanged}
     />;
 }
 
@@ -105,12 +136,12 @@ function Error404({ noteId }: { noteId: string }) {
             <p>The note you are trying to print could not be found.</p>
             <small>{noteId}</small>
         </main>
-    )
+    );
 }
 
 async function loadCustomCss(note: FNote) {
     const printCssNotes = await note.getRelationTargets("printCss");
-    let loadPromises: JQueryPromise<void>[] = [];
+    const loadPromises: JQueryPromise<void>[] = [];
 
     for (const printCssNote of printCssNotes) {
         if (!printCssNote || (printCssNote.type !== "code" && printCssNote.mime !== "text/css")) continue;

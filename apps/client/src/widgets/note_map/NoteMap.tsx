@@ -95,13 +95,13 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
         if (!graphRef.current || !notesAndRelationsRef.current) return;
         graphRef.current.d3Force("link")?.distance(linkDistance);
         graphRef.current.graphData(notesAndRelationsRef.current);
-    }, [ linkDistance ]);
+    }, [ linkDistance, mapType ]);
 
     // React to container size
     useEffect(() => {
         if (!containerSize || !graphRef.current) return;
         graphRef.current.width(containerSize.width).height(containerSize.height);
-    }, [ containerSize?.width, containerSize?.height ]);
+    }, [ containerSize?.width, containerSize?.height, mapType ]);
 
     // Fixing nodes when dragged.
     useEffect(() => {
@@ -114,7 +114,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                 node.fy = undefined;
             }
         })
-    }, [ fixNodes ]);
+    }, [ fixNodes, mapType ]);
 
     return (
         <div className="note-map-widget">

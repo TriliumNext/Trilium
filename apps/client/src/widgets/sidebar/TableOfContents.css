@@ -1,0 +1,82 @@
+.toc ol {
+    position: relative;
+    overflow: hidden;
+    padding-inline-start: 0px;
+    transition: max-height 0.3s ease;
+}
+
+.toc li.collapsed + ol {
+    display:none;
+}
+
+.toc li + ol:before {
+    content: "";
+    position: absolute;
+    height: 100%;
+    border-inline-start: 1px solid var(--main-border-color);
+    z-index: 10;
+}
+
+.toc li {
+    display: flex;
+    position: relative;
+    list-style: none;
+    align-items: center;
+    padding-inline-start: 7px;
+    cursor: pointer;
+    text-align: justify;
+    word-wrap: break-word;
+    hyphens: auto;
+}
+
+.toc > ol {
+    --toc-depth-level: 1;
+}
+.toc > ol > ol {
+    --toc-depth-level: 2;
+}
+.toc > ol > ol > ol {
+    --toc-depth-level: 3;
+}
+.toc > ol > ol > ol > ol {
+    --toc-depth-level: 4;
+}
+.toc > ol > ol > ol > ol > ol {
+    --toc-depth-level: 5;
+}
+
+.toc > ol ol::before {
+    inset-inline-start: calc((var(--toc-depth-level) - 2) * 20px + 14px);
+}
+
+.toc li {
+    padding-inline-start: calc((var(--toc-depth-level) - 1) * 20px + 4px);
+}
+
+.toc li .collapse-button {
+    display: flex;
+    position: relative;
+    width: 21px;
+    height: 21px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+}
+
+.toc li.collapsed .collapse-button {
+    transform: rotate(-90deg);
+}
+
+.toc li .item-content {
+    margin-inline-start: 25px;
+    flex: 1;
+}
+
+.toc li .collapse-button + .item-content {
+    margin-inline-start: 4px;
+}
+
+.toc li:hover {
+    font-weight: bold;
+}

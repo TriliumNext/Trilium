@@ -19,3 +19,9 @@ export function onWheelHorizontalScroll(event: WheelEvent) {
     event.stopImmediatePropagation();
     (event.currentTarget as HTMLElement).scrollLeft += event.deltaY + event.deltaX;
 }
+
+export function getClosestNtxId(element: HTMLElement) {
+    const closestNtxEl = element.closest<HTMLElement>("[data-ntx-id]");
+    if (!closestNtxEl) return null;
+    return closestNtxEl.dataset.ntxId ?? null;
+}

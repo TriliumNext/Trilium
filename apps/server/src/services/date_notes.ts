@@ -1,27 +1,17 @@
 import type BNote from "../becca/entities/bnote.js";
-import type { Dayjs } from "dayjs";
 
-import advancedFormat from "dayjs/plugin/advancedFormat.js";
 import attributeService from "./attributes.js";
 import cloningService from "./cloning.js";
-import dayjs from "dayjs";
+import { dayjs, Dayjs } from "@triliumnext/commons";
 import hoistedNoteService from "./hoisted_note.js";
-import isSameOrAfter from "dayjs/plugin/isSameOrAfter.js";
 import noteService from "./notes.js";
 import optionService from "./options.js";
 import protectedSessionService from "./protected_session.js";
-import quarterOfYear from "dayjs/plugin/quarterOfYear.js";
 import searchContext from "../services/search/search_context.js";
 import searchService from "../services/search/services/search.js";
 import sql from "./sql.js";
 import { t } from "i18next";
 import { ordinal } from "./i18n.js";
-import isoWeek from "dayjs/plugin/isoWeek.js";
-
-dayjs.extend(isSameOrAfter);
-dayjs.extend(quarterOfYear);
-dayjs.extend(advancedFormat);
-dayjs.extend(isoWeek);
 
 const CALENDAR_ROOT_LABEL = "calendarRoot";
 const YEAR_LABEL = "yearNote";

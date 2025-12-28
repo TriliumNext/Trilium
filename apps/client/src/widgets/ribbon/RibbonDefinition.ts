@@ -1,32 +1,32 @@
-import ScriptTab from "./ScriptTab";
-import EditedNotesTab from "./EditedNotesTab";
-import NotePropertiesTab from "./NotePropertiesTab";
-import NoteInfoTab from "./NoteInfoTab";
-import SimilarNotesTab from "./SimilarNotesTab";
-import FilePropertiesTab from "./FilePropertiesTab";
-import ImagePropertiesTab from "./ImagePropertiesTab";
-import NotePathsTab from "./NotePathsTab";
-import NoteMapTab from "./NoteMapTab";
-import OwnedAttributesTab from "./OwnedAttributesTab";
-import InheritedAttributesTab from "./InheritedAttributesTab";
-import CollectionPropertiesTab from "./CollectionPropertiesTab";
-import SearchDefinitionTab from "./SearchDefinitionTab";
-import BasicPropertiesTab from "./BasicPropertiesTab";
-import FormattingToolbar from "./FormattingToolbar";
-import options from "../../services/options";
 import { t } from "../../services/i18n";
+import options from "../../services/options";
+import BasicPropertiesTab from "./BasicPropertiesTab";
+import CollectionPropertiesTab from "./CollectionPropertiesTab";
+import EditedNotesTab from "./EditedNotesTab";
+import FilePropertiesTab from "./FilePropertiesTab";
+import FormattingToolbar from "./FormattingToolbar";
+import ImagePropertiesTab from "./ImagePropertiesTab";
+import InheritedAttributesTab from "./InheritedAttributesTab";
+import NoteInfoTab from "./NoteInfoTab";
+import NoteMapTab from "./NoteMapTab";
+import NotePathsTab from "./NotePathsTab";
+import NotePropertiesTab from "./NotePropertiesTab";
+import OwnedAttributesTab from "./OwnedAttributesTab";
 import { TabConfiguration } from "./ribbon-interface";
+import ScriptTab from "./ScriptTab";
+import SearchDefinitionTab from "./SearchDefinitionTab";
+import SimilarNotesTab from "./SimilarNotesTab";
 
 export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
     {
         title: t("classic_editor_toolbar.title"),
         icon: "bx bx-text",
-        show: async ({ note, noteContext }) => note?.type === "text"
+        show: async ({ note, noteContext }) => note?.type === "text" && noteContext?.viewScope?.viewMode === "default"
             && options.get("textNoteEditorType") === "ckeditor-classic"
             && !(await noteContext?.isReadOnly()),
         toggleCommand: "toggleRibbonTabClassicEditor",
         content: FormattingToolbar,
-        activate: true,
+        activate: ({ note }) => !options.is("editedNotesOpenInRibbon") || !note?.hasOwnedLabel("dateNote"),
         stayInDom: true
     },
     {
@@ -50,13 +50,13 @@ export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
         icon: "bx bx-calendar-edit",
         content: EditedNotesTab,
         show: ({ note }) => note?.hasOwnedLabel("dateNote"),
-        activate: ({ note }) => (note?.getPromotedDefinitionAttributes().length === 0 || !options.is("promotedAttributesOpenInRibbon")) && options.is("editedNotesOpenInRibbon")
+        activate: () => options.is("editedNotesOpenInRibbon")
     },
     {
         title: t("book_properties.book_properties"),
         icon: "bx bx-book",
         content: CollectionPropertiesTab,
-        show: ({ note }) => note?.type === "book" || note?.type === "search",
+        show: ({ note }) => (note?.type === "book" || note?.type === "search"),
         toggleCommand: "toggleRibbonTabBookProperties"
     },
     {
@@ -83,7 +83,6 @@ export const RIBBON_TAB_DEFINITIONS: TabConfiguration[] = [
         activate: true,
     },
     {
-        // BasicProperties
         title: t("basic_properties.basic_properties"),
         icon: "bx bx-slider",
         content: BasicPropertiesTab,

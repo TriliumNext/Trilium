@@ -1,7 +1,9 @@
+import clsx from "clsx";
 import {readCssVar} from "../utils/css-var";
 import Color, { ColorInstance } from "color";
 
 const registeredClasses = new Set<string>();
+const colorsWithHue = new Set<string>();
 
 // Read the color lightness limits defined in the theme as CSS variables
 
@@ -26,19 +28,24 @@ function createClassForColor(colorString: string | null) {
     if (!registeredClasses.has(className)) {
         const adjustedColor = adjustColorLightness(color, lightThemeColorMaxLightness!,
                                                    darkThemeColorMinLightness!);
+        const hue = getHue(color);
 
         $("head").append(`<style>
             .${className}, span.fancytree-active.${className} {
+                --original-custom-color: ${color.hex()};
                 --light-theme-custom-color: ${adjustedColor.lightThemeColor};
                 --dark-theme-custom-color: ${adjustedColor.darkThemeColor};
-                --custom-color-hue: ${getHue(color) ?? 'unset'};
+                --custom-color-hue: ${hue ?? 'unset'};
             }
         </style>`);
 
         registeredClasses.add(className);
+        if (hue !== undefined) {
+            colorsWithHue.add(className);
+        }
     }
 
-    return className;
+    return clsx("use-note-color", className, colorsWithHue.has(className) && "with-hue");
 }
 
 function parseColor(color: string) {

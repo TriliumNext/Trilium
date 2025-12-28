@@ -8,6 +8,7 @@
 .option-row > label {
     width: 40%;
     margin-bottom: 0 !important;
+    flex-shrink: 0;
 }
 
 .option-row > select,

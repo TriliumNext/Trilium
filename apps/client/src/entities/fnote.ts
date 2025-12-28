@@ -1,17 +1,19 @@
-import server from "../services/server.js";
-import noteAttributeCache from "../services/note_attribute_cache.js";
-import protectedSessionHolder from "../services/protected_session_holder.js";
+import { MIME_TYPES_DICT } from "@triliumnext/commons";
+
 import cssClassManager from "../services/css_class_manager.js";
 import type { Froca } from "../services/froca-interface.js";
-import type FAttachment from "./fattachment.js";
-import type { default as FAttribute, AttributeType } from "./fattribute.js";
-import utils from "../services/utils.js";
+import noteAttributeCache from "../services/note_attribute_cache.js";
+import protectedSessionHolder from "../services/protected_session_holder.js";
 import search from "../services/search.js";
+import server from "../services/server.js";
+import utils from "../services/utils.js";
+import type FAttachment from "./fattachment.js";
+import type { AttributeType,default as FAttribute } from "./fattribute.js";
 
 const LABEL = "label";
 const RELATION = "relation";
 
-const NOTE_TYPE_ICONS = {
+export const NOTE_TYPE_ICONS = {
     file: "bx bx-file",
     image: "bx bx-image",
     code: "bx bx-code",
@@ -240,7 +242,7 @@ export default class FNote {
 
             const aNote = this.froca.getNoteFromCache(aNoteId);
 
-            if (aNote.isArchived || aNote.isHiddenCompletely()) {
+            if (!aNote || aNote.isArchived || aNote.isHiddenCompletely()) {
                 return 1;
             }
 
@@ -268,13 +270,12 @@ export default class FNote {
                 }
             }
             return results;
-        } else {
-            return this.children;
         }
+        return this.children;
     }
 
     async getSubtreeNoteIds(includeArchived = false) {
-        let noteIds: (string | string[])[] = [];
+        const noteIds: (string | string[])[] = [];
         for (const child of await this.getChildNotes()) {
             if (child.isArchived && !includeArchived) continue;
 
@@ -471,9 +472,8 @@ export default class FNote {
                 return a.isHidden ? 1 : -1;
             } else if (a.isSearch !== b.isSearch) {
                 return a.isSearch ? 1 : -1;
-            } else {
-                return a.notePath.length - b.notePath.length;
             }
+            return a.notePath.length - b.notePath.length;
         });
 
         return notePaths;
@@ -597,14 +597,13 @@ export default class FNote {
         } else if (this.type === "text") {
             if (this.isFolder()) {
                 return "bx bx-folder";
-            } else {
-                return "bx bx-note";
             }
-        } else if (this.type === "code" && this.mime.startsWith("text/x-sql")) {
-            return "bx bx-data";
-        } else {
-            return NOTE_TYPE_ICONS[this.type];
+            return "bx bx-note";
+        } else if (this.type === "code") {
+            const correspondingMimeType = MIME_TYPES_DICT.find(m => m.mime === this.mime);
+            return correspondingMimeType?.icon ?? NOTE_TYPE_ICONS.code;
         }
+        return NOTE_TYPE_ICONS[this.type];
     }
 
     getColorClass() {
@@ -617,7 +616,7 @@ export default class FNote {
     }
 
     getFilteredChildBranches() {
-        let childBranches = this.getChildBranches();
+        const childBranches = this.getChildBranches();
 
         if (!childBranches) {
             console.error(`No children for '${this.noteId}'. This shouldn't happen.`);
@@ -811,9 +810,9 @@ export default class FNote {
             return this.getLabelValue(nameWithPrefix.substring(1));
         } else if (nameWithPrefix.startsWith("~")) {
             return this.getRelationValue(nameWithPrefix.substring(1));
-        } else {
-            return this.getLabelValue(nameWithPrefix);
         }
+        return this.getLabelValue(nameWithPrefix);
+
     }
 
     /**
@@ -878,10 +877,10 @@ export default class FNote {
         promotedAttrs.sort((a, b) => {
             if (a.noteId === b.noteId) {
                 return a.position < b.position ? -1 : 1;
-            } else {
-                // inherited promoted attributes should stay grouped: https://github.com/zadam/trilium/issues/3761
-                return a.noteId < b.noteId ? -1 : 1;
             }
+            // inherited promoted attributes should stay grouped: https://github.com/zadam/trilium/issues/3761
+            return a.noteId < b.noteId ? -1 : 1;
+
         });
 
         return promotedAttrs;
@@ -993,6 +992,10 @@ export default class FNote {
         );
     }
 
+    isJsx() {
+        return (this.type === "code" && this.mime === "text/jsx");
+    }
+
     /** @returns true if this note is HTML */
     isHtml() {
         return (this.type === "code" || this.type === "file" || this.type === "render") && this.mime === "text/html";
@@ -1000,7 +1003,7 @@ export default class FNote {
 
     /** @returns JS script environment - either "frontend" or "backend" */
     getScriptEnv() {
-        if (this.isHtml() || (this.isJavaScript() && this.mime.endsWith("env=frontend"))) {
+        if (this.isHtml() || (this.isJavaScript() && this.mime.endsWith("env=frontend")) || this.isJsx()) {
             return "frontend";
         }
 
@@ -1022,7 +1025,7 @@ export default class FNote {
      * @returns a promise that resolves when the script has been run. Additionally, for front-end notes, the promise will contain the value that is returned by the script.
      */
     async executeScript() {
-        if (!this.isJavaScript()) {
+        if (!(this.isJavaScript() || this.isJsx())) {
             throw new Error(`Note ${this.noteId} is of type ${this.type} and mime ${this.mime} and thus cannot be executed`);
         }
 

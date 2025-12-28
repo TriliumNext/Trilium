@@ -1,12 +1,13 @@
-import { useEffect, useState } from "preact/hooks";
-import { TabContext } from "./ribbon-interface";
 import { SimilarNoteResponse } from "@triliumnext/commons";
-import server from "../../services/server";
-import { t } from "../../services/i18n";
-import froca from "../../services/froca";
-import NoteLink from "../react/NoteLink";
+import { useEffect, useState } from "preact/hooks";
 
-export default function SimilarNotesTab({ note }: TabContext) {
+import froca from "../../services/froca";
+import { t } from "../../services/i18n";
+import server from "../../services/server";
+import NoteLink from "../react/NoteLink";
+import { TabContext } from "./ribbon-interface";
+
+export default function SimilarNotesTab({ note }: Pick<TabContext, "note">) {
     const [ similarNotes, setSimilarNotes ] = useState<SimilarNoteResponse>();
 
     useEffect(() => {
@@ -17,7 +18,7 @@ export default function SimilarNotesTab({ note }: TabContext) {
                     await froca.getNotes(noteIds, true); // preload all at once
                 }
                 setSimilarNotes(similarNotes);
-            });    
+            });
         }
 
     }, [ note?.noteId ]);
@@ -42,5 +43,5 @@ export default function SimilarNotesTab({ note }: TabContext) {
                 )}
             </div>
         </div>
-    )
+    );
 }

@@ -1,8 +1,8 @@
 .board-view {
-  overflow-x: auto;
   position: relative;
   height: 100%;
   user-select: none;
+  overflow-x: auto;
 
   --card-font-size: 0.9em;
   --card-line-height: 1.2;
@@ -20,7 +20,6 @@ body.mobile .board-view {
   display: flex;
   gap: 1em;
   padding: 1em;
-  padding-bottom: 0;
   align-items: flex-start;
 }
 
@@ -127,7 +126,8 @@ body.mobile .board-view-container .board-column {
 
 .board-view-container .board-column > .board-column-content {
   flex-grow: 1;
-  overflow: scroll;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 0.5em;
 }
 

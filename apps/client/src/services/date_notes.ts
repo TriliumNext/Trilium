@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import { dayjs } from "@triliumnext/commons";
 import type { FNoteRow } from "../entities/fnote.js";
 import froca from "./froca.js";
 import server from "./server.js";

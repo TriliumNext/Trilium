@@ -22,11 +22,25 @@
     margin-bottom: 20px;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
+}
+
+.attachment-detail-wrapper.list-view {
+    overflow: visible;
+}
+
+.attachment-title {
+    font-size: 1.1rem;
+    margin: 0;
+
+    a {
+        color: inherit !important;
+    }
 }
 
 .attachment-title-line {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 1em;
 }
 
@@ -44,12 +58,12 @@
 
 .attachment-content-wrapper pre {
     padding: 10px;
-    margin-top: 10px;
-    margin-bottom: 10px;
+    margin: 0;
 }
 
 .attachment-detail-wrapper.list-view .attachment-content-wrapper {
     max-height: 300px;
+    overflow: auto;
 }
 
 .attachment-detail-wrapper.full-detail {
@@ -60,12 +74,16 @@
     height: 100%;
 }
 
-.attachment-detail-wrapper.list-view .attachment-content-wrapper pre {
-    max-height: 400px;
+.attachment-detail-wrapper.list-view {
+    border-radius: 12px;
+    background-color: var(--card-background-color);
+    padding: 6px;
+    box-shadow: var(--card-box-shadow);
 }
 
-.attachment-content-wrapper img {
-    margin: 10px;
+.attachment-detail-wrapper.list-view .attachment-content-wrapper pre {
+    max-height: 400px;
+    padding: 0;
 }
 
 .attachment-detail-wrapper.list-view .attachment-content-wrapper img, .attachment-detail-wrapper.list-view .attachment-content-wrapper video {
@@ -84,7 +102,7 @@
 }
 
 .attachment-detail-wrapper .attachment-deletion-warning {
-    margin-top: 15px;
+    margin: 0.5em 0;
 }
 /* #endregion */
 
@@ -108,15 +126,6 @@
 /* #endregion */
 
 /* #region Attachment actions */
-.attachment-actions {
-    width: 35px;
-    height: 35px;
-}
-
-.attachment-actions .select-button {
-    position: relative;
-    top: 3px;
-}
 
 .attachment-actions .dropdown-menu {
     width: 20em;

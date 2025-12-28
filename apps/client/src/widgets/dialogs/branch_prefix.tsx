@@ -103,7 +103,7 @@ export default function BranchPrefixDialog() {
                     <input class="branch-prefix-input form-control" value={prefix} ref={branchInput}
                         onChange={(e) => setPrefix((e.target as HTMLInputElement).value)} />
                     {isSingleBranch && branches[0] && (
-                        <div class="branch-prefix-note-title input-group-text"> - {branches[0].getNoteFromCache().title}</div>
+                        <div class="branch-prefix-note-title input-group-text"> - {branches[0].getNoteFromCache()?.title}</div>
                     )}
                 </div>
             </FormGroup>
@@ -113,7 +113,7 @@ export default function BranchPrefixDialog() {
                     <ul>
                         {branches.map((branch) => {
                             const note = branch.getNoteFromCache();
-                            return (
+                            return note && (
                                 <li key={branch.branchId}>
                                     {branch.prefix && <span className="branch-prefix-current">{branch.prefix} - </span>}
                                     {note.title}

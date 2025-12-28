@@ -1,7 +1,10 @@
 import { ComponentChild, createContext, render, type JSX, type RefObject } from "preact";
 import Component from "../../components/component";
+import NoteContext from "../../components/note_context";
 
 export const ParentComponent = createContext<Component | null>(null);
+
+export const NoteContextContext = createContext<NoteContext | null>(null);
 
 /**
  * Takes in a React ref and returns a corresponding JQuery selector.
@@ -41,7 +44,7 @@ export function disposeReactWidget(container: Element) {
     render(null, container);
 }
 
-export function joinElements(components: ComponentChild[] | undefined, separator = ", ") {
+export function joinElements(components: ComponentChild[] | undefined, separator: ComponentChild = ", ") {
     if (!components) return <></>;
 
     const joinedComponents: ComponentChild[] = [];

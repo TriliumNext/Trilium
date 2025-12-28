@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import supertest, { type Response } from "supertest";
 import type { Application } from "express";
-import dayjs from "dayjs";
+import { dayjs } from "@triliumnext/commons";
 import { type SQLiteSessionStore } from "./session_parser.js";
 import { SessionData } from "express-session";
 import cls from "../services/cls.js";

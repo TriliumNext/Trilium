@@ -45,7 +45,7 @@
   top: 3px;
   inset-inline-start: 2px;
   background-color: white;
-  color: black;
+  color: var(--light-theme-custom-color, black);
   padding: 2px;
   border-radius: 50%;
   font-size: 17px;

@@ -1,0 +1,33 @@
+@keyframes note-type-switcher-intro {
+    from {
+        opacity: 0;
+    } to {
+        opacity: 1;
+    }
+}
+
+.note-type-switcher {
+    --badge-radius: 12px;
+
+    position: relative;
+    top: 5px;
+    padding: .25em 0;
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    min-width: 0;
+    gap: 5px;
+    min-height: 35px;
+
+    >* {
+        flex-shrink: 0;
+        animation: note-type-switcher-intro 200ms ease-in;
+    }
+
+    .ext-badge {
+        --color: var(--input-background-color);
+        color: var(--main-text-color);
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+}

@@ -10,7 +10,7 @@ The following information is displayed:
     *   Clicking on the title will open the note in the current tab.
     *   Holding <kbd>Ctrl</kbd> pressed while clicking the title will open in a new tab instead of the current one.
 *   A snippet of the content will be displayed as well.
-*   A button to [quickly edit](Quick%20edit.md) the note in a popup.
+*   A button to [quickly edit](../Navigation/Quick%20edit.md) the note in a popup.
 
 The tooltip can be found in multiple places, including:
 

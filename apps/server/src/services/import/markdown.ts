@@ -66,7 +66,7 @@ class CustomMarkdownRenderer extends Renderer {
         // Handle todo-list in the CKEditor format.
         if (item.task) {
             let itemBody = '';
-            const checkbox = this.checkbox({ checked: !!item.checked });
+            const checkbox = this.checkbox({ checked: !!item.checked, raw: "- [ ]", type: "checkbox" });
             if (item.loose) {
                 if (item.tokens[0]?.type === 'paragraph') {
                     item.tokens[0].text = checkbox + item.tokens[0].text;
@@ -86,7 +86,7 @@ class CustomMarkdownRenderer extends Renderer {
                 itemBody += checkbox;
             }
 
-            itemBody += `<span class="todo-list__label__description">${this.parser.parse(item.tokens, !!item.loose)}</span>`;
+            itemBody += `<span class="todo-list__label__description">${this.parser.parse(item.tokens.filter(t => t.type !== "checkbox"))}</span>`;
             return `<li><label class="todo-list__label">${itemBody}</label></li>`;
         }
 

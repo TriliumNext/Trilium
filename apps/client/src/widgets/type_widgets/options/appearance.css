@@ -1,0 +1,167 @@
+.old-layout-illustration {
+    width: 170px;
+    height: 130px;
+    border: 1px solid var(--main-border-color);
+    border-radius: 6px;
+    display: flex;
+    background: var(--root-background);
+    overflow: hidden;
+
+    .launcher-pane {
+        width: 10%;
+        background: var(--launcher-pane-vert-background-color);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1px 0;
+
+        svg {
+            margin-top: 1px;
+            margin-bottom: 5px;
+        }
+
+        .bx {
+            margin: 4px 0;
+            font-size: 12px;
+            opacity: 0.5;
+        }
+    }
+
+    .tree {
+        width: 20%;
+        font-size: 4px;
+        padding: 12px 5px;
+        overflow: hidden;
+        flex-shrink: 0;
+        filter: blur(1px);
+
+        ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+    }
+
+    .main {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        font-size: 8px;
+
+        .tab-bar {
+            height: 10px;
+            flex-shrink: 0;
+        }
+
+        .content {
+            padding-inline-start: 6px;
+            background-color: var(--main-background-color);
+            flex-grow: 1;
+            border-top-left-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+
+            .title-bar {
+                display: flex;
+                align-items: center;
+                font-size: 14px;
+                padding: 5px;
+
+                .title {
+                    margin-inline-start: 4px;
+                    flex-grow: 1;
+                    font-size: 12px;
+                }
+            }
+
+            .ribbon {
+                padding: 0 5px;
+
+                .bx {
+                    font-size: 10px;
+                }
+
+                .ribbon-header {
+                    display: flex;
+                    gap: 3px;
+                }
+
+                .ribbon-body {
+                    border: 0 solid var(--main-text-color);
+                    border-top-width: 1px;
+                    border-bottom-width: 1px;
+                    margin: 2px 0;
+
+                    .ribbon-body-content {
+                        height: 4px;
+                        margin-block: 4px;
+                        background: repeating-linear-gradient(90deg, currentColor, currentColor 10px, transparent 10px, transparent 22px);
+                        opacity: .5;
+                    }
+                }
+            }
+
+            .note-header {
+                display: flex;
+                flex-direction: column;
+                padding-inline: 2px;
+
+                .note-toolbar {
+                    align-self: flex-end;
+                }
+
+                .note-inline-title {
+                    display: flex;
+                    align-items: center;
+                    padding-bottom: 4px;
+
+                    .note-icon {
+                        display: flex;
+                        width: 22px;
+                        height: 22px;
+                        justify-content: center;
+                        align-items: center;
+                        border-radius: 50%;
+                        background: var(--note-icon-hover-background-color);
+                        font-size: 12px;
+                        color: var(--note-icon-color);
+                    }
+
+                    .note-title-row {
+                        margin-inline-start: 4px;
+                        line-height: 1;
+
+                        .title {
+                            font-size: 11px;
+                        }
+
+                        .subtitle {
+                            font-size: 6px;
+                            opacity: .5;
+                        }
+                    }
+                }
+            }
+
+            .content-inner {
+                font-size: 6px;
+                overflow: hidden;
+                padding: 5px;
+                opacity: 0.5;
+                filter: blur(1px);
+            }
+
+            .status-bar {
+                background-color: var(--left-pane-background-color);
+                flex-shrink: 0;
+                padding: 0 2px;
+                display: flex;
+
+                &> .status-bar-breadcrumb {
+                    flex-grow: 1;
+                }
+            }
+        }
+    }
+}

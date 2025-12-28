@@ -62,6 +62,16 @@ export default class MathEditing extends Plugin {
 			allowAttributes: [ 'equation', 'type', 'display', 'fontSize', 'fontColor', 'fontBackgroundColor' ]
 		} );
 
+		// Prevent <mathtex-inline> from being inserted inside <codeBlock>
+		schema.addChildCheck( ( context, childDefinition ) => {
+			if ( childDefinition && childDefinition.name === 'mathtex-inline' ) {
+				// If the context is inside a codeBlock, disallow it
+				if ( context.endsWith( 'codeBlock' ) ) {
+					return false;
+				}
+			}
+		});
+
 		schema.register( 'mathtex-display', {
 			inheritAllFrom: '$blockObject',
 			allowAttributes: [ 'equation', 'type', 'display', 'fontSize', 'fontColor' ]

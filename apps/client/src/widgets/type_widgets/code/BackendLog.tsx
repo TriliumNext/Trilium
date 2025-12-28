@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "preact/hooks";
 import "./code.css";
-import { CodeEditor } from "./Code";
+
 import CodeMirror from "@triliumnext/codemirror";
+import { useEffect, useRef, useState } from "preact/hooks";
+
 import server from "../../../services/server";
 import { useTriliumEvent } from "../../react/hooks";
 import { TypeWidgetProps } from "../type_widget";
+import { CodeEditor } from "./Code";
 
 export default function BackendLog({ ntxId, parentComponent }: TypeWidgetProps) {
     const [ content, setContent ] = useState<string>();
@@ -40,5 +42,5 @@ export default function BackendLog({ ntxId, parentComponent }: TypeWidgetProps) 
                 preferPerformance
             />
         </div>
-    )
+    );
 }

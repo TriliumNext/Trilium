@@ -1,11 +1,12 @@
 import { useMemo, useState } from "preact/hooks";
+
+import { t } from "../../services/i18n";
 import Button from "../react/Button";
 import Modal from "../react/Modal";
 import { dismissCallToAction, getCallToActions } from "./call_to_action_definitions";
-import { t } from "../../services/i18n";
 
 export default function CallToActionDialog() {
-    const activeCallToActions = useMemo(() => getCallToActions(), []);        
+    const activeCallToActions = useMemo(() => getCallToActions(), []);
     const [ activeIndex, setActiveIndex ] = useState(0);
     const [ shown, setShown ] = useState(true);
     const activeItem = activeCallToActions[activeIndex];
@@ -36,11 +37,11 @@ export default function CallToActionDialog() {
                         await dismissCallToAction(activeItem.id);
                         await button.onClick();
                         goToNext();
-                    }}/>   
+                    }}/>
                 )}
             </>}
         >
-            <p>{activeItem.message}</p>
+            <p className="pre-wrap-text">{activeItem.message}</p>
         </Modal>
-    )
+    );
 }

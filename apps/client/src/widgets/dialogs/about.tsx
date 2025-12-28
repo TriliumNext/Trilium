@@ -31,29 +31,29 @@ export default function AboutDialog() {
                 <tbody>
                     <tr>
                         <th>{t("about.homepage")}</th>
-                        <td><a className="tn-link external" href="https://github.com/TriliumNext/Trilium" style={forceWordBreak}>https://github.com/TriliumNext/Trilium</a></td>
+                        <td className="selectable-text"><a className="tn-link external" href="https://github.com/TriliumNext/Trilium" style={forceWordBreak}>https://github.com/TriliumNext/Trilium</a></td>
                     </tr>
                     <tr>
                         <th>{t("about.app_version")}</th>
-                        <td className="app-version">{appInfo?.appVersion}</td>
+                        <td className="app-version selectable-text">{appInfo?.appVersion}</td>
                     </tr>
                     <tr>
                         <th>{t("about.db_version")}</th>
-                        <td className="db-version">{appInfo?.dbVersion}</td>
+                        <td className="db-version selectable-text">{appInfo?.dbVersion}</td>
                     </tr>
                     <tr>
                         <th>{t("about.sync_version")}</th>
-                        <td className="sync-version">{appInfo?.syncVersion}</td>
+                        <td className="sync-version selectable-text">{appInfo?.syncVersion}</td>
                     </tr>
                     <tr>
                         <th>{t("about.build_date")}</th>
-                        <td className="build-date">
+                        <td className="build-date selectable-text">
                             {appInfo?.buildDate ? formatDateTime(appInfo.buildDate) : ""}
                         </td>
                     </tr>
                     <tr>
                         <th>{t("about.build_revision")}</th>
-                        <td>
+                        <td className="selectable-text">
                             {appInfo?.buildRevision && <a className="tn-link build-revision external" href={`https://github.com/TriliumNext/Trilium/commit/${appInfo.buildRevision}`} target="_blank" style={forceWordBreak}>{appInfo.buildRevision}</a>}
                         </td>
                     </tr>
@@ -76,8 +76,8 @@ function DirectoryLink({ directory, style }: { directory: string, style?: CSSPro
             openService.openDirectory(directory);
         };
 
-        return <a className="tn-link" href="#" onClick={onClick} style={style}>{directory}</a>
+        return <a className="tn-link selectable-text" href="#" onClick={onClick} style={style}>{directory}</a>
     } else {
-        return <span style={style}>{directory}</span>;
+        return <span className="selectable-text" style={style}>{directory}</span>;
     }
 }

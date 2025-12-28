@@ -508,7 +508,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                         (data.hitMode === "over" && node.data.noteType === "search") ||
                         (["after", "before"].includes(data.hitMode) && (node.data.noteId === hoistedNoteService.getHoistedNoteId() || node.getParent().data.noteType === "search"))
                     ) {
-                        await dialogService.info("Dropping notes into this location is not allowed.");
+                        await dialogService.info(t("note_tree.dropping-not-allowed"));
 
                         return;
                     }
@@ -574,6 +574,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                         .loadSearchNote(noteId)
                         .then(() => {
                             const note = froca.getNoteFromCache(noteId);
+                            if (!note) return [];
 
                             let childNoteIds = note.getChildNoteIds();
 
@@ -585,6 +586,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                         })
                         .then(() => {
                             const note = froca.getNoteFromCache(noteId);
+                            if (!note) return [];
 
                             return this.prepareChildren(note);
                         });
@@ -740,7 +742,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         const node = $.ui.fancytree.getNode(e as unknown as Event);
         const note = froca.getNoteFromCache(node.data.noteId);
 
-        if (note.isLaunchBarConfig()) {
+        if (note?.isLaunchBarConfig()) {
             import("../menus/launcher_context_menu.js").then(({ default: LauncherContextMenu }) => {
                 const launcherContextMenu = new LauncherContextMenu(this, node);
                 launcherContextMenu.show(e);
@@ -775,7 +777,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             if (hideArchivedNotes) {
                 const note = branch.getNoteFromCache();
 
-                if (note.hasLabel("archived")) {
+                if (!note || note.hasLabel("archived")) {
                     continue;
                 }
             }
@@ -1606,7 +1608,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         return !parentNote?.hasLabel("sorted");
     }
 
-    moveNoteUpCommand({ node }: CommandListenerData<"moveNoteUp">) {
+    async moveNoteUpCommand({ node }: CommandListenerData<"moveNoteUp">) {
         if (!node || !this.canBeMovedUpOrDown(node)) {
             return;
         }
@@ -1614,11 +1616,12 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         const beforeNode = node.getPrevSibling();
 
         if (beforeNode !== null) {
-            branchService.moveBeforeBranch([node.data.branchId], beforeNode.data.branchId);
+            await branchService.moveBeforeBranch([node.data.branchId], beforeNode.data.branchId);
+            node.makeVisible({ scrollIntoView: true });
         }
     }
 
-    moveNoteDownCommand({ node }: CommandListenerData<"moveNoteDown">) {
+    async moveNoteDownCommand({ node }: CommandListenerData<"moveNoteDown">) {
         if (!this.canBeMovedUpOrDown(node)) {
             return;
         }
@@ -1626,7 +1629,8 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         const afterNode = node.getNextSibling();
 
         if (afterNode !== null) {
-            branchService.moveAfterBranch([node.data.branchId], afterNode.data.branchId);
+            await branchService.moveAfterBranch([node.data.branchId], afterNode.data.branchId);
+            node.makeVisible({ scrollIntoView: true });
         }
     }
 
@@ -1752,7 +1756,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         for (const nodeToDuplicate of nodesToDuplicate) {
             const note = froca.getNoteFromCache(nodeToDuplicate.data.noteId);
 
-            if (note.isProtected && !protectedSessionHolder.isProtectedSessionAvailable()) {
+            if (note?.isProtected && !protectedSessionHolder.isProtectedSessionAvailable()) {
                 continue;
             }
 

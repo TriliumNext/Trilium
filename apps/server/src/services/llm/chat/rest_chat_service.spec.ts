@@ -38,11 +38,12 @@ vi.mock('../pipeline/chat_pipeline.js', () => ({
     }))
 }));
 
-vi.mock('./handlers/tool_handler.js', () => ({
-    ToolHandler: vi.fn().mockImplementation(() => ({
-        handleToolCalls: vi.fn()
-    }))
-}));
+vi.mock('./handlers/tool_handler.js', () => {
+    class ToolHandler {
+        handleToolCalls = vi.fn()
+    }
+    return { ToolHandler };
+});
 
 vi.mock('../chat_storage_service.js', () => ({
     default: {

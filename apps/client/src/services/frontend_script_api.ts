@@ -1,26 +1,27 @@
-import server from "./server.js";
-import utils from "./utils.js";
-import toastService from "./toast.js";
-import linkService from "./link.js";
+import { dayjs, formatLogMessage } from "@triliumnext/commons";
+
+import appContext from "../components/app_context.js";
+import type Component from "../components/component.js";
+import type NoteContext from "../components/note_context.js";
+import type FNote from "../entities/fnote.js";
+import BasicWidget, { ReactWrappedWidget } from "../widgets/basic_widget.js";
+import NoteContextAwareWidget from "../widgets/note_context_aware_widget.js";
+import RightPanelWidget from "../widgets/right_panel_widget.js";
+import dateNotesService from "./date_notes.js";
+import dialogService from "./dialog.js";
 import froca from "./froca.js";
+import { preactAPI } from "./frontend_script_api_preact.js";
+import { t } from "./i18n.js";
+import linkService from "./link.js";
 import noteTooltipService from "./note_tooltip.js";
 import protectedSessionService from "./protected_session.js";
-import dateNotesService from "./date_notes.js";
 import searchService from "./search.js";
-import RightPanelWidget from "../widgets/right_panel_widget.js";
-import ws from "./ws.js";
-import appContext from "../components/app_context.js";
-import NoteContextAwareWidget from "../widgets/note_context_aware_widget.js";
-import BasicWidget, { ReactWrappedWidget } from "../widgets/basic_widget.js";
-import SpacedUpdate from "./spaced_update.js";
+import server from "./server.js";
 import shortcutService from "./shortcuts.js";
-import dialogService from "./dialog.js";
-import type FNote from "../entities/fnote.js";
-import { t } from "./i18n.js";
-import dayjs from "dayjs";
-import type NoteContext from "../components/note_context.js";
-import type Component from "../components/component.js";
-import { formatLogMessage } from "@triliumnext/commons";
+import SpacedUpdate from "./spaced_update.js";
+import toastService from "./toast.js";
+import utils from "./utils.js";
+import ws from "./ws.js";
 
 /**
  * A whole number
@@ -77,6 +78,10 @@ export interface Api {
 
     /**
      * Entity whose event triggered this execution.
+     *
+     * <p>
+     * For front-end scripts, generally there's no origin entity specified since the scripts are run by the user or automatically by the UI (widgets).
+     * If there is an origin entity specified, then it's going to be a note entity.
      */
     originEntity: unknown | null;
 
@@ -278,12 +283,16 @@ export interface Api {
     getActiveContextNote(): FNote;
 
     /**
-     * @returns returns active context (split)
+     * Obtains the currently active/focused split in the current tab.
+     *
+     * Note that this method does not return the note context of the "Quick edit" panel, it will return the note context behind it.
      */
     getActiveContext(): NoteContext;
 
     /**
-     * @returns returns active main context (first split in a tab, represents the tab as a whole)
+     * Obtains the main context of the current tab. This is the left-most split.
+     *
+     * Note that this method does not return the note context of the "Quick edit" panel, it will return the note context behind it.
      */
     getActiveMainContext(): NoteContext;
 
@@ -456,6 +465,8 @@ export interface Api {
      * Log given message to the log pane in UI
      */
     log(message: string | object): void;
+
+    preact: typeof preactAPI;
 }
 
 /**
@@ -525,9 +536,8 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
         return params.map((p) => {
             if (typeof p === "function") {
                 return `!@#Function: ${p.toString()}`;
-            } else {
-                return p;
             }
+            return p;
         });
     }
 
@@ -554,9 +564,8 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
             await ws.waitForMaxKnownEntityChangeId();
 
             return ret.executionResult;
-        } else {
-            throw new Error(`server error: ${ret.error}`);
         }
+        throw new Error(`server error: ${ret.error}`);
     };
 
     this.runOnBackend = async (func, params = []) => {
@@ -713,6 +722,8 @@ function FrontendScriptApi(this: Api, startNote: FNote, currentNote: FNote, orig
         this.logMessages[noteId].push(message);
         this.logSpacedUpdates[noteId].scheduleUpdate();
     };
+
+    this.preact = preactAPI;
 }
 
 export default FrontendScriptApi as any as {

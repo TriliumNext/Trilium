@@ -126,9 +126,7 @@ function isAffecting(attrRow: AttributeRow, affectedNote: FNote | null | undefin
         }
     }
 
-    // TODO: This doesn't seem right.
-    //@ts-ignore
-    if (this.isInheritable) {
+    if (attrRow.isInheritable) {
         for (const owningNote of owningNotes) {
             if (owningNote.hasAncestor(attrNote.noteId, true)) {
                 return true;

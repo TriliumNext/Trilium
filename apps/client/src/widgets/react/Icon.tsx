@@ -1,8 +1,16 @@
-interface IconProps {
+import clsx from "clsx";
+import { HTMLAttributes } from "preact";
+
+interface IconProps extends Pick<HTMLAttributes<HTMLSpanElement>, "className" | "onClick"> {
     icon?: string;
     className?: string;
 }
 
-export default function Icon({ icon, className }: IconProps) {
-    return <span class={`${icon ?? "bx bx-empty"} ${className ?? ""}`}></span>
+export default function Icon({ icon, className, ...restProps }: IconProps) {
+    return (
+        <span
+            class={clsx(icon ?? "bx bx-empty", className)}
+            {...restProps}
+        />
+    );
 }

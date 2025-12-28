@@ -62,6 +62,8 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
 
         this.$widget.addClass(utils.getNoteTypeClass(note.type));
         this.$widget.addClass(utils.getMimeTypeClass(note.mime));
+        this.$widget.addClass(`view-mode-${this.noteContext?.viewScope?.viewMode ?? "default"}`);
+        this.$widget.addClass(note.getColorClass());
         this.$widget.toggleClass(["bgfx", "options"], note.isOptions());
         this.$widget.toggleClass("protected", note.isProtected);
 
@@ -88,11 +90,11 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
 
     async entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {
         // listening on changes of note.type and CSS class
-
+        const LABELS_CAUSING_REFRESH = ["cssClass", "language", "viewType", "color"];
         const noteId = this.noteContext?.noteId;
         if (
             loadResults.isNoteReloaded(noteId) ||
-            loadResults.getAttributeRows().find((attr) => attr.type === "label" && ["cssClass", "language", "viewType"].includes(attr.name ?? "") && attributeService.isAffecting(attr, this.noteContext?.note))
+            loadResults.getAttributeRows().find((attr) => attr.type === "label" && LABELS_CAUSING_REFRESH.includes(attr.name ?? "") && attributeService.isAffecting(attr, this.noteContext?.note))
         ) {
             this.refresh();
         }

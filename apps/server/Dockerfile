@@ -1,4 +1,4 @@
-FROM node:24.11.1-bullseye-slim AS builder
+FROM node:24.12.0-bullseye-slim AS builder
 RUN corepack enable
 
 # Install native dependencies since we might be building cross-platform.
@@ -7,7 +7,7 @@ COPY ./docker/package.json ./docker/pnpm-workspace.yaml /usr/src/app/
 # We have to use --no-frozen-lockfile due to CKEditor patches
 RUN pnpm install --no-frozen-lockfile --prod && pnpm rebuild
 
-FROM node:24.11.1-bullseye-slim
+FROM node:24.12.0-bullseye-slim
 # Install only runtime dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \

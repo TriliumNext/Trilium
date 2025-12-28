@@ -4,41 +4,49 @@ import FormSelect, { FormSelectWithGroups } from "../react/FormSelect";
 import { TabContext } from "./ribbon-interface";
 import { mapToKeyValueArray } from "../../services/utils";
 import { useNoteLabel, useNoteLabelBoolean } from "../react/hooks";
-import { bookPropertiesConfig, BookProperty, ButtonProperty, CheckBoxProperty, ComboBoxProperty, NumberProperty } from "./collection-properties-config";
-import Button from "../react/Button";
+import { bookPropertiesConfig, BookProperty, ButtonProperty, CheckBoxProperty, ComboBoxProperty, NumberProperty, SplitButtonProperty } from "./collection-properties-config";
+import Button, { SplitButton } from "../react/Button";
 import { ParentComponent } from "../react/react_utils";
 import FNote from "../../entities/fnote";
 import FormCheckbox from "../react/FormCheckbox";
 import FormTextBox from "../react/FormTextBox";
 import { ComponentChildren } from "preact";
 import { ViewTypeOptions } from "../collections/interface";
+import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 
-const VIEW_TYPE_MAPPINGS: Record<ViewTypeOptions, string> = {
-  grid: t("book_properties.grid"),
-  list: t("book_properties.list"),
-  calendar: t("book_properties.calendar"),
-  table: t("book_properties.table"),
-  geoMap: t("book_properties.geo-map"),
-  board: t("book_properties.board"),
-  presentation: t("book_properties.presentation")
+export const VIEW_TYPE_MAPPINGS: Record<ViewTypeOptions, string> = {
+    grid: t("book_properties.grid"),
+    list: t("book_properties.list"),
+    calendar: t("book_properties.calendar"),
+    table: t("book_properties.table"),
+    geoMap: t("book_properties.geo-map"),
+    board: t("book_properties.board"),
+    presentation: t("book_properties.presentation")
 };
 
-export default function CollectionPropertiesTab({ note }: TabContext) {
-  const [ viewType, setViewType ] = useNoteLabel(note, "viewType");
-  const defaultViewType = (note?.type === "search" ? "list" : "grid");
-  const viewTypeWithDefault = (viewType ?? defaultViewType) as ViewTypeOptions;
-  const properties = bookPropertiesConfig[viewTypeWithDefault].properties;
+const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
-  return (
-    <div className="book-properties-widget">
-      {note && (
-        <>
-          <CollectionTypeSwitcher viewType={viewTypeWithDefault} setViewType={setViewType} />
-          <BookProperties viewType={viewTypeWithDefault} note={note} properties={properties} />
-        </>
-      )}
-    </div>
-  );
+export default function CollectionPropertiesTab({ note }: TabContext) {
+    const [viewType, setViewType] = useViewType(note);
+    const properties = bookPropertiesConfig[viewType].properties;
+
+    return (
+        <div className="book-properties-widget">
+            {note && (
+                <>
+                    {!isNewLayout && <CollectionTypeSwitcher viewType={viewType} setViewType={setViewType} />}
+                    <BookProperties viewType={viewType} note={note} properties={properties} />
+                </>
+            )}
+        </div>
+    );
+}
+
+export function useViewType(note: FNote | null | undefined) {
+    const [ viewType, setViewType ] = useNoteLabel(note, "viewType");
+    const defaultViewType = (note?.type === "search" ? "list" : "grid");
+    const viewTypeWithDefault = (viewType ?? defaultViewType) as ViewTypeOptions;
+    return [ viewTypeWithDefault, setViewType ] as const;
 }
 
 function CollectionTypeSwitcher({ viewType, setViewType }: { viewType: string, setViewType: (newValue: string) => void }) {
@@ -80,6 +88,8 @@ function mapPropertyView({ note, property }: { note: FNote, property: BookProper
   switch (property.type) {
     case "button":
       return <ButtonPropertyView note={note} property={property} />
+    case "split-button":
+      return <SplitButtonPropertyView note={note} property={property} />
     case "checkbox":
       return <CheckboxPropertyView note={note} property={property} />
     case "number":
@@ -97,13 +107,31 @@ function ButtonPropertyView({ note, property }: { note: FNote, property: ButtonP
     title={property.title}
     icon={property.icon}
     onClick={() => {
-      if (!parentComponent) return;
-      property.onClick({
-        note,
-        triggerCommand: parentComponent.triggerCommand.bind(parentComponent)
-    });
+        if (!parentComponent) return;
+        property.onClick({
+            note,
+            triggerCommand: parentComponent.triggerCommand.bind(parentComponent)
+        });
     }}
   />
+}
+
+function SplitButtonPropertyView({ note, property }: { note: FNote, property: SplitButtonProperty }) {
+    const parentComponent = useContext(ParentComponent);
+    const clickContext = parentComponent && {
+        note,
+        triggerCommand: parentComponent.triggerCommand.bind(parentComponent)
+    };
+
+    const ItemsComponent = property.items;
+    return <SplitButton
+        text={property.label}
+        icon={property.icon}
+        title={property.title}
+        onClick={() => clickContext && property.onClick(clickContext)}
+    >
+        {parentComponent && <ItemsComponent note={note} parentComponent={parentComponent} />}
+    </SplitButton>
 }
 
 function CheckboxPropertyView({ note, property }: { note: FNote, property: CheckBoxProperty }) {
@@ -127,7 +155,7 @@ function NumberPropertyView({ note, property }: { note: FNote, property: NumberP
             <FormTextBox
                 type="number"
                 currentValue={value ?? ""} onChange={setValue}
-                style={{ width: (property.width ?? 100) + "px" }}
+                style={{ width: (property.width ?? 100) }}
                 min={property.min ?? 0}
                 disabled={disabled}
             />

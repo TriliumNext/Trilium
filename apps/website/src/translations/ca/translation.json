@@ -1,1 +1,8 @@
-{}
+{
+    "get-started": {
+        "title": "Comença",
+        "desktop_title": "Descarrega l'aplicació d'escriptori (v{{version}})",
+        "architecture": "Arquitectura:",
+        "older_releases": "Veure versions anteriors"
+    }
+}

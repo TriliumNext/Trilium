@@ -6,14 +6,12 @@ import FilePropertiesTab from "../widgets/ribbon/FilePropertiesTab.jsx";
 import FlexContainer from "../widgets/containers/flex_container.js";
 import FloatingButtons from "../widgets/FloatingButtons.jsx";
 import GlobalMenuWidget from "../widgets/buttons/global_menu.js";
-import LauncherContainer from "../widgets/containers/launcher_container.js";
 import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
 import NoteList from "../widgets/collections/NoteList.jsx";
 import NoteTitleWidget from "../widgets/note_title.js";
 import ContentHeader from "../widgets/containers/content_header.js";
 import NoteTreeWidget from "../widgets/note_tree.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
-import PromotedAttributesWidget from "../widgets/promoted_attributes.js";
 import QuickSearchWidget from "../widgets/quick_search.js";
 import ReadOnlyNoteInfoBar from "../widgets/ReadOnlyNoteInfoBar.jsx";
 import RootContainer from "../widgets/containers/root_container.js";
@@ -29,9 +27,13 @@ import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button
 import type AppContext from "../components/app_context.js";
 import NoteDetail from "../widgets/NoteDetail.jsx";
 import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.jsx";
+import PromotedAttributes from "../widgets/PromotedAttributes.jsx";
+import SplitNoteContainer from "../widgets/containers/split_note_container.js";
+import LauncherContainer from "../widgets/launch_bar/LauncherContainer.jsx";
 
 const MOBILE_CSS = `
 <style>
+span.keyboard-shortcut,
 kbd {
     display: none;
 }
@@ -141,33 +143,35 @@ export default class MobileLayout {
                             .id("detail-container")
                             .class("d-sm-flex d-md-flex d-lg-flex d-xl-flex col-12 col-sm-7 col-md-8 col-lg-9")
                             .child(
-                                new NoteWrapperWidget()
-                                    .child(
-                                        new FlexContainer("row")
-                                            .contentSized()
-                                            .css("font-size", "larger")
-                                            .css("align-items", "center")
-                                            .child(<ToggleSidebarButton />)
-                                            .child(<NoteTitleWidget />)
-                                            .child(<MobileDetailMenu />)
-                                    )
-                                    .child(<FloatingButtons items={MOBILE_FLOATING_BUTTONS} />)
-                                    .child(new PromotedAttributesWidget())
-                                    .child(
-                                        new ScrollingContainer()
-                                            .filling()
-                                            .contentSized()
-                                            .child(new ContentHeader()
-                                                .child(<ReadOnlyNoteInfoBar />)
-                                                .child(<SharedInfoWidget />)
-                                            )
-                                            .child(<NoteDetail />)
-                                            .child(<NoteList media="screen" />)
-                                            .child(<StandaloneRibbonAdapter component={SearchDefinitionTab} />)
-                                            .child(<SearchResult />)
-                                            .child(<FilePropertiesWrapper />)
-                                    )
-                                    .child(<MobileEditorToolbar />)
+                                new SplitNoteContainer(() =>
+                                    new NoteWrapperWidget()
+                                        .child(
+                                            new FlexContainer("row")
+                                                .contentSized()
+                                                .css("font-size", "larger")
+                                                .css("align-items", "center")
+                                                .child(<ToggleSidebarButton />)
+                                                .child(<NoteTitleWidget />)
+                                                .child(<MobileDetailMenu />)
+                                        )
+                                        .child(<FloatingButtons items={MOBILE_FLOATING_BUTTONS} />)
+                                        .child(<PromotedAttributes />)
+                                        .child(
+                                            new ScrollingContainer()
+                                                .filling()
+                                                .contentSized()
+                                                .child(new ContentHeader()
+                                                    .child(<ReadOnlyNoteInfoBar />)
+                                                    .child(<SharedInfoWidget />)
+                                                )
+                                                .child(<NoteDetail />)
+                                                .child(<NoteList media="screen" />)
+                                                .child(<StandaloneRibbonAdapter component={SearchDefinitionTab} />)
+                                                .child(<SearchResult />)
+                                                .child(<FilePropertiesWrapper />)
+                                        )
+                                        .child(<MobileEditorToolbar />)
+                                )
                             )
                     )
             )
@@ -179,7 +183,7 @@ export default class MobileLayout {
                     .child(new FlexContainer("row")
                         .class("horizontal")
                         .css("height", "53px")
-                        .child(new LauncherContainer(true))
+                        .child(<LauncherContainer isHorizontalLayout />)
                         .child(<GlobalMenuWidget isHorizontalLayout />)
                         .id("launcher-pane"))
             )

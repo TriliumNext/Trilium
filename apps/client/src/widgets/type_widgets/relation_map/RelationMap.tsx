@@ -1,25 +1,31 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { TypeWidgetProps } from "../type_widget";
-import { jsPlumbInstance, OnConnectionBindInfo } from "jsplumb";
-import { useEditorSpacedUpdate, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
-import FNote from "../../../entities/fnote";
-import { RefObject } from "preact";
 import "./RelationMap.css";
-import { t } from "../../../services/i18n";
+
+import { CreateChildrenResponse, RelationMapPostResponse } from "@triliumnext/commons";
+import { jsPlumbInstance, OnConnectionBindInfo } from "jsplumb";
 import panzoom, { PanZoomOptions } from "panzoom";
+import { RefObject } from "preact";
+import { HTMLProps } from "preact/compat";
+import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
+
+import FNote from "../../../entities/fnote";
+import attribute_autocomplete from "../../../services/attribute_autocomplete";
 import dialog from "../../../services/dialog";
+import { isExperimentalFeatureEnabled } from "../../../services/experimental_features";
+import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
-import { CreateChildrenResponse, RelationMapPostResponse } from "@triliumnext/commons";
-import RelationMapApi, { ClientRelation, MapData, MapDataNoteEntry, RelationType } from "./api";
-import setupOverlays, { uniDirectionalOverlays } from "./overlays";
-import { JsPlumb } from "./jsplumb";
-import { getMousePosition, getZoom, idToNoteId, noteIdToId } from "./utils";
-import { NoteBox } from "./NoteBox";
 import utils from "../../../services/utils";
-import attribute_autocomplete from "../../../services/attribute_autocomplete";
+import ActionButton from "../../react/ActionButton";
+import { useEditorSpacedUpdate, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
+import { TypeWidgetProps } from "../type_widget";
+import RelationMapApi, { ClientRelation, MapData, MapDataNoteEntry, RelationType } from "./api";
 import { buildRelationContextMenuHandler } from "./context_menu";
-import { HTMLProps } from "preact/compat";
+import { JsPlumb } from "./jsplumb";
+import { NoteBox } from "./NoteBox";
+import setupOverlays, { uniDirectionalOverlays } from "./overlays";
+import { getMousePosition, getZoom, idToNoteId, noteIdToId } from "./utils";
+
+const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
 interface Clipboard {
     noteId: string;
@@ -43,7 +49,7 @@ declare module "jsplumb" {
     }
 }
 
-export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProps) {
+export default function RelationMap({ note, noteContext, ntxId, parentComponent }: TypeWidgetProps) {
     const [ data, setData ] = useState<MapData>();
     const containerRef = useRef<HTMLDivElement>(null);
     const mapApiRef = useRef<RelationMapApi>(null);
@@ -52,6 +58,7 @@ export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProp
     const spacedUpdate = useEditorSpacedUpdate({
         note,
         noteContext,
+        noteType: "relationMap",
         getData() {
             return {
                 content: JSON.stringify(data),
@@ -119,9 +126,9 @@ export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProp
         options: {
             maxZoom: 2,
             minZoom: 0.3,
-        smoothScroll: false,
+            smoothScroll: false,
             //@ts-expect-error Upstream incorrectly mentions no arguments.
-            filterKey: function (e: KeyboardEvent) {
+            filterKey (e: KeyboardEvent) {
                 // if ALT is pressed, then panzoom should bubble the event up
                 // this is to preserve ALT-LEFT, ALT-RIGHT navigation working
                 return e.altKey;
@@ -156,6 +163,34 @@ export default function RelationMap({ note, noteContext, ntxId }: TypeWidgetProp
                     <NoteBox {...note} mapApiRef={mapApiRef} />
                 ))}
             </JsPlumb>
+
+            {isNewLayout && (
+                <div className="btn-group btn-group-sm content-floating-buttons bottom-right">
+                    <ActionButton
+                        icon="bx bx-zoom-in"
+                        text={t("relation_map_buttons.zoom_in_title")}
+                        onClick={() => parentComponent?.triggerEvent("relationMapResetZoomIn", { ntxId })}
+                        className="tn-tool-button"
+                        noIconActionClass
+                    />
+
+                    <ActionButton
+                        icon="bx bx-zoom-out"
+                        text={t("relation_map_buttons.zoom_out_title")}
+                        onClick={() => parentComponent?.triggerEvent("relationMapResetZoomOut", { ntxId })}
+                        className="tn-tool-button"
+                        noIconActionClass
+                    />
+
+                    <ActionButton
+                        icon="bx bx-crop"
+                        text={t("relation_map_buttons.reset_pan_zoom_title")}
+                        onClick={() => parentComponent?.triggerEvent("relationMapResetPanZoom", { ntxId })}
+                        className="tn-tool-button"
+                        noIconActionClass
+                    />
+                </div>
+            )}
         </div>
     );
 }
@@ -380,7 +415,7 @@ function useRelationCreation({ mapApiRef, jsPlumbApiRef }: { mapApiRef: RefObjec
         // if there's no event, then this has been triggered programmatically
         if (!originalEvent || !mapApiRef.current) return;
 
-        let name = await dialog.prompt({
+        const name = await dialog.prompt({
             message: t("relation_map.specify_new_relation_name"),
             shown: ({ $answer }) => {
                 if (!$answer) {

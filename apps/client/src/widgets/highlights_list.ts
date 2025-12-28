@@ -5,14 +5,14 @@
  * - For example, if there is a formula in the middle of the highlighted text, the two ends of the formula will be regarded as two entries
  */
 
-import { t } from "../services/i18n.js";
-import attributeService from "../services/attributes.js";
-import RightPanelWidget from "./right_panel_widget.js";
-import options from "../services/options.js";
-import OnClickButtonWidget from "./buttons/onclick_button.js";
 import appContext, { type EventData } from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
+import attributeService from "../services/attributes.js";
+import { t } from "../services/i18n.js";
 import katex from "../services/math.js";
+import options from "../services/options.js";
+import OnClickButtonWidget from "./buttons/onclick_button.js";
+import RightPanelWidget from "./right_panel_widget.js";
 
 const TPL = /*html*/`<div class="highlights-list-widget">
     <style>
@@ -159,13 +159,13 @@ export default class HighlightsListWidget extends RightPanelWidget {
      */
     async replaceMathTextWithKatax(html: string) {
         const mathTextRegex = /<span class="math-tex">\\\(([\s\S]*?)\\\)<\/span>/g;
-        var matches = [...html.matchAll(mathTextRegex)];
+        const matches = [...html.matchAll(mathTextRegex)];
         let modifiedText = html;
 
         if (matches.length > 0) {
             // Process all matches asynchronously
             for (const match of matches) {
-                let latexCode = match[1];
+                const latexCode = match[1];
                 let rendered;
 
                 try {
@@ -234,7 +234,7 @@ export default class HighlightsListWidget extends RightPanelWidget {
         }
 
         findSubStr = findSubStr.substring(1);
-        combinedRegexStr = `(` + combinedRegexStr.substring(1) + `)`;
+        combinedRegexStr = `(${combinedRegexStr.substring(1)})`;
         const combinedRegex = new RegExp(combinedRegexStr, "gi");
         const $highlightsList = $("<ol>");
         let prevEndIndex = -1,
@@ -302,26 +302,28 @@ export default class HighlightsListWidget extends RightPanelWidget {
         let targetElement;
         if (isReadOnly) {
             const $container = await this.noteContext.getContentElement();
-            targetElement = $container
-                .find(findSubStr)
-                .filter(function () {
-                    if (findSubStr.indexOf("color") >= 0 && findSubStr.indexOf("background-color") < 0) {
-                        let color = this.style.color;
-                        const $el = $(this as HTMLElement);
-                        return !($el.prop("tagName") === "SPAN" && color === "");
-                    } else {
+            if ($container) {
+                targetElement = $container
+                    .find(findSubStr)
+                    .filter(function () {
+                        if (findSubStr.indexOf("color") >= 0 && findSubStr.indexOf("background-color") < 0) {
+                            const color = this.style.color;
+                            const $el = $(this as HTMLElement);
+                            return !($el.prop("tagName") === "SPAN" && color === "");
+                        }
                         return true;
-                    }
-                })
-                .filter(function () {
-                    const $el = $(this as HTMLElement);
-                    return (
-                        $el.parent(findSubStr).length === 0 &&
-                        $el.parent().parent(findSubStr).length === 0 &&
-                        $el.parent().parent().parent(findSubStr).length === 0 &&
-                        $el.parent().parent().parent().parent(findSubStr).length === 0
-                    );
-                });
+
+                    })
+                    .filter(function () {
+                        const $el = $(this as HTMLElement);
+                        return (
+                            $el.parent(findSubStr).length === 0 &&
+                            $el.parent().parent(findSubStr).length === 0 &&
+                            $el.parent().parent().parent(findSubStr).length === 0 &&
+                            $el.parent().parent().parent().parent(findSubStr).length === 0
+                        );
+                    });
+            }
         } else {
             const textEditor = await this.noteContext.getTextEditor();
             const el = textEditor?.editing.view.domRoots.values().next().value;
@@ -333,11 +335,11 @@ export default class HighlightsListWidget extends RightPanelWidget {
                         // the background-color error will be regarded as color, so it needs to be filtered
                         const $el = $(this as HTMLElement);
                         if (findSubStr.indexOf("color") >= 0 && findSubStr.indexOf("background-color") < 0) {
-                            let color = this.style.color;
+                            const color = this.style.color;
                             return !($el.prop("tagName") === "SPAN" && color === "");
-                        } else {
-                            return true;
                         }
+                        return true;
+
                     })
                     .filter(function () {
                         // Need to filter out the child elements of the element that has been found

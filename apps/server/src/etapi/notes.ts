@@ -185,7 +185,7 @@ function register(router: Router) {
 
     eu.route(router, "get", "/etapi/notes/:noteId/attachments", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
-        const attachments = note.getAttachments({ includeContentLength: true });
+        const attachments = note.getAttachments();
 
         res.json(attachments.map((attachment) => mappers.mapAttachmentToPojo(attachment)));
     });

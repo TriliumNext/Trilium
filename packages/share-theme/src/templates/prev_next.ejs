@@ -5,7 +5,7 @@
         if (note.noteId === subRoot.note.noteId) return null;
 
         const parent = note.getParentNotes()[0];
-        const children = parent.getChildNotes();
+        const children = parent.getVisibleChildNotes();
         const index = children.findIndex(n => n.noteId === note.noteId);
 
         // If we are the first child, previous goes up a level
@@ -15,8 +15,8 @@
         // We are not the first child at this level so previous
         // should go to the end of the previous tree
         let candidate = children[index - 1];
-        while (candidate.hasChildren()) {
-            const children = candidate.getChildNotes();
+        while (candidate.hasVisibleChildren()) {
+            const children = candidate.getVisibleChildNotes();
             const lastChild = children[children.length - 1];
             candidate = lastChild;
         }
@@ -27,10 +27,10 @@
     const nextNote = (() => {
         // If this currently active note has children, next
         // should be the first child
-        if (note.hasChildren()) return note.getChildNotes()[0];
+        if (note.hasVisibleChildren()) return note.getVisibleChildNotes()[0];
 
         let parent = note.getParentNotes()[0];
-        let children = parent.getChildNotes();
+        let children = parent.getVisibleChildNotes();
         let index = children.findIndex(n => n.noteId === note.noteId);
 
         // If we are not the last of the current level, just go
@@ -44,7 +44,7 @@
 
             const originalParent = parent;
             parent = parent.getParentNotes()[0];
-            children = parent.getChildNotes();
+            children = parent.getVisibleChildNotes();
             index = children.findIndex(n => n.noteId === originalParent.noteId);
         }
 

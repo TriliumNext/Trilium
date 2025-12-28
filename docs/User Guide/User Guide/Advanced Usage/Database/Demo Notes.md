@@ -13,7 +13,7 @@ There are some cases in which you may want to restore the original demo notes. F
 
 You can easily restore the demo notes by using Trilium's built-in import feature by importing them:
 
-*   Download [this .zip archive](https://github.com/TriliumNext/Trilium/raw/develop/db/demo.zip) with the latest version of the demo notes
+*   Download [the .zip archive](https://github.com/TriliumNext/Trilium/raw/refs/heads/main/apps/server/src/assets/db/demo.zip) with the latest version of the demo notes
 *   Right click on any note in your tree under which you would like the demo notes to be imported
 *   Click "Import into note"
 *   Select the .zip archive to import it

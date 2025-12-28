@@ -820,12 +820,15 @@ export default class TabRowWidget extends BasicWidget {
     }
 
     contextsReopenedEvent({ mainNtxId, tabPosition }: EventData<"contextsReopened">) {
-        if (!mainNtxId || !tabPosition) {
+        if (!mainNtxId || tabPosition < 0) {
             // no tab reopened
             return;
         }
         const tabEl = this.getTabById(mainNtxId)[0];
-        tabEl.parentNode?.insertBefore(tabEl, this.tabEls[tabPosition]);
+
+        if ( tabEl && tabEl.parentNode ){
+            tabEl.parentNode.insertBefore(tabEl, this.tabEls[tabPosition]);
+        }
     }
 
     updateTabById(ntxId: string | null) {

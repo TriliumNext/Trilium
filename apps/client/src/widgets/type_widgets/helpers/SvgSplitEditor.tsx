@@ -77,14 +77,25 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
     }, [ note ]);
 
     // Import/export
-    useTriliumEvent("exportSvg", ({ ntxId: eventNtxId }) => {
+    useTriliumEvent("exportSvg", async({ ntxId: eventNtxId }) => {
         if (eventNtxId !== ntxId || !svg) return;
-        utils.downloadSvg(note.title, svg);
+
+        try {
+            const svgEl = containerRef.current?.querySelector("svg");
+            if (!svgEl) throw new Error("SVG element not found");
+            await utils.downloadAsSvg(note.title, svgEl);
+        } catch (e) {
+            console.warn(e);
+            toast.showError(t("svg.export_to_svg"));
+        }
     });
+
     useTriliumEvent("exportPng", async ({ ntxId: eventNtxId }) => {
         if (eventNtxId !== ntxId || !svg) return;
         try {
-            await utils.downloadSvgAsPng(note.title, svg);
+            const svgEl = containerRef.current?.querySelector("svg");
+            if (!svgEl) throw new Error("SVG element not found");
+            await utils.downloadAsPng(note.title, svgEl);
         } catch (e) {
             console.warn(e);
             toast.showError(t("svg.export_to_png"));
@@ -136,12 +147,16 @@ function useResizer(containerRef: RefObject<HTMLDivElement>, noteId: string, svg
     const lastPanZoom = useRef<{ pan: SvgPanZoom.Point, zoom: number }>();
     const lastNoteId = useRef<string>();
     const zoomRef = useRef<SvgPanZoom.Instance>();
+    const width = useElementSize(containerRef);
 
     // Set up pan & zoom.
     useEffect(() => {
+        if (zoomRef.current || width?.width === 0) return;
+
         const shouldPreservePanZoom = (lastNoteId.current === noteId);
         const svgEl = containerRef.current?.querySelector("svg");
         if (!svgEl) return;
+
         const zoomInstance = svgPanZoom(svgEl, {
             zoomEnabled: true,
             controlIconsEnabled: false
@@ -163,14 +178,14 @@ function useResizer(containerRef: RefObject<HTMLDivElement>, noteId: string, svg
                 pan: zoomInstance.getPan(),
                 zoom: zoomInstance.getZoom()
             }
+            zoomRef.current = undefined;
             zoomInstance.destroy();
         };
-    }, [ svg ]);
+    }, [ svg, width ]);
 
     // React to container changes.
-    const width = useElementSize(containerRef);
     useEffect(() => {
-        if (!zoomRef.current) return;
+        if (!zoomRef.current || (width?.width ?? 0) < 1) return;
         zoomRef.current.resize().fit().center();
     }, [ width ]);
 

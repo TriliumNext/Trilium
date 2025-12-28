@@ -24,7 +24,7 @@ describe("Board data", () => {
             parentNoteId: "note1"
         });
         froca.branches["note1_note2"] = branch;
-        froca.getNoteFromCache("note1").addChild("note2", "note1_note2", false);
+        froca.getNoteFromCache("note1")!.addChild("note2", "note1_note2", false);
         const data = await getBoardData(parentNote, "status", {}, false);
         const noteIds = Array.from(data.byColumn.values()).flat().map(item => item.note.noteId);
         expect(noteIds.length).toBe(3);

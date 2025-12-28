@@ -1,0 +1,79 @@
+#toast-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    width: 100%;
+    top: 20px;
+    pointer-events: none;
+    contain: none;
+}
+
+.toast {
+    --bs-toast-bg: var(--accented-background-color);
+    --bs-toast-color: var(--main-text-color);
+    z-index: 9999999999 !important;
+    pointer-events: all;
+    overflow: hidden;
+}
+
+.toast-header {
+    background-color: var(--more-accented-background-color) !important;
+    color: var(--main-text-color) !important;
+}
+
+.toast-body {
+    white-space: preserve-breaks;
+    overflow: hidden;
+}
+
+.toast.no-title {
+    display: flex;
+    flex-direction: row;
+}
+
+.toast.no-title .toast-icon {
+    display: flex;
+    align-items: center;
+    padding: var(--bs-toast-padding-y) var(--bs-toast-padding-x);
+}
+
+.toast.no-title .toast-body {
+    padding-inline-start: 0;
+    padding-inline-end: 0;
+}
+
+.toast.no-title .toast-header {
+    background-color: unset !important;
+}
+
+.toast {
+    .toast-buttons {
+        padding: 0 1em 1em 1em;
+        display: flex;
+        gap: 1em;
+        justify-content: space-between;
+
+        .btn {
+            color: var(--bs-toast-color);
+            background: var(--modal-control-button-background);
+
+            &:hover {
+                background: var(--modal-control-button-hover-background);
+                color: var(--bs-toast-color);
+            }
+        }
+    }
+
+    .toast-progress {
+        position: absolute;
+        bottom: 0;
+        inset-inline-start: 0;
+        inset-inline-end: 0;
+        background-color: var(--toast-text-color) !important;
+        height: 4px;
+        transition: width 0.1s linear;
+    }
+}
+

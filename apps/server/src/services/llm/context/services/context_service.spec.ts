@@ -46,11 +46,12 @@ vi.mock('../../ai_service_manager.js', () => ({
     }
 }));
 
-vi.mock('../index.js', () => ({
-    ContextExtractor: vi.fn().mockImplementation(() => ({
-        findRelevantNotes: vi.fn().mockResolvedValue([])
-    }))
-}));
+vi.mock('../index.js', () => {
+    class ContextExtractor {
+        findRelevantNotes = vi.fn().mockResolvedValue([])
+    }
+    return { ContextExtractor };
+});
 
 describe('ContextService', () => {
     let service: ContextService;
@@ -59,7 +60,7 @@ describe('ContextService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         service = new ContextService();
-        
+
         mockLLMService = {
             generateChatCompletion: vi.fn().mockResolvedValue({
                 content: 'Mock LLM response',
@@ -84,7 +85,7 @@ describe('ContextService', () => {
     describe('initialize', () => {
         it('should initialize successfully', async () => {
             const result = await service.initialize();
-            
+
             expect(result).toBeUndefined(); // initialize returns void
             expect((service as any).initialized).toBe(true);
         });
@@ -92,7 +93,7 @@ describe('ContextService', () => {
         it('should not initialize twice', async () => {
             await service.initialize();
             await service.initialize(); // Second call should be a no-op
-            
+
             expect((service as any).initialized).toBe(true);
         });
 
@@ -102,9 +103,9 @@ describe('ContextService', () => {
                 service.initialize(),
                 service.initialize()
             ];
-            
+
             await Promise.all(promises);
-            
+
             expect((service as any).initialized).toBe(true);
         });
     });
@@ -186,11 +187,11 @@ describe('ContextService', () => {
     describe('error handling', () => {
         it('should handle service operations', async () => {
             await service.initialize();
-            
+
             // These operations should not throw
             const result1 = await service.processQuery('test', mockLLMService);
             const result2 = await service.findRelevantNotes('test', null, {});
-            
+
             expect(result1).toBeDefined();
             expect(result2).toBeDefined();
         });

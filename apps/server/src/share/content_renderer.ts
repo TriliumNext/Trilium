@@ -38,6 +38,8 @@ interface Subroot {
     branch?: SBranch | BBranch
 }
 
+type GetNoteFunction = (id: string) => SNote | BNote | null;
+
 function getSharedSubTreeRoot(note: SNote | BNote | undefined): Subroot {
     if (!note || note.noteId === shareRoot.SHARE_ROOT_NOTE_ID) {
         // share root itself is not shared
@@ -301,7 +303,7 @@ function renderText(result: Result, note: SNote | BNote) {
 
     result.isEmpty = document.textContent?.trim().length === 0 && document.querySelectorAll("img").length === 0;
 
-    const getNote = note instanceof BNote
+    const getNote: GetNoteFunction = note instanceof BNote
         ? (noteId: string) => becca.getNote(noteId)
         : (noteId: string) => shaca.getNote(noteId);
     const getAttachment = note instanceof BNote
@@ -321,11 +323,20 @@ function renderText(result: Result, note: SNote | BNote) {
             if (href?.startsWith("#")) {
                 handleAttachmentLink(linkEl, href, getNote, getAttachment);
             }
+
+            if (linkEl.classList.contains("reference-link")) {
+                cleanUpReferenceLinks(linkEl, getNote);
+            }
         }
 
         // Apply syntax highlight.
         for (const codeEl of document.querySelectorAll("pre code")) {
-            const highlightResult = highlightAuto(codeEl.innerText);
+            if (codeEl.classList.contains("language-mermaid") && note.type === "text") {
+                // Mermaid is handled on client-side, we don't want to break it by adding syntax highlighting.
+                continue;
+            }
+
+            const highlightResult = highlightAuto(codeEl.text);
             codeEl.innerHTML = highlightResult.value;
             codeEl.classList.add("hljs");
         }
@@ -338,7 +349,7 @@ function renderText(result: Result, note: SNote | BNote) {
     }
 }
 
-function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: (id: string) => SNote | BNote | null, getAttachment: (id: string) => BAttachment | SAttachment | null) {
+function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNoteFunction, getAttachment: (id: string) => BAttachment | SAttachment | null) {
     const linkRegExp = /attachmentId=([a-zA-Z0-9_]+)/g;
     let attachmentMatch;
     if ((attachmentMatch = linkRegExp.exec(href))) {
@@ -375,6 +386,28 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: (id: s
             log.error(`Broken link detected in shared note: unable to find note with ID ${noteId}`);
             linkEl.removeAttribute("href");
         }
+    }
+}
+
+/**
+ * Processes reference links to ensure that they are up to date. More specifically, reference links contain in their HTML source code the note title at the time of the linking. It can be changed in the mean-time or the note can become protected, which leaks information.
+ *
+ * @param linkEl the <a> element to process.
+ */
+function cleanUpReferenceLinks(linkEl: HTMLElement, getNote: GetNoteFunction) {
+    // Note: this method is basically a reimplementation of getReferenceLinkTitleSync from the link service of the client.
+    const href = linkEl.getAttribute("href") ?? "";
+    if (linkEl.classList.contains("attachment-link")) return;
+
+    const noteId = href.split("/").at(-1);
+    const note = noteId ? getNote(noteId) : undefined;
+    if (!note) {
+        // If a note is not found, simply replace it with a text.
+        linkEl.replaceWith(new TextNode(linkEl.innerText));
+    } else if (note.isProtected) {
+        linkEl.innerHTML = "[protected]";
+    } else {
+        linkEl.innerHTML = `<span><span class="${note.getIcon()}"></span>${utils.escapeHtml(note.title)}</span>`;
     }
 }
 

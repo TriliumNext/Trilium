@@ -18,3 +18,37 @@
     in the <em>Collection</em> tab there are options to expand and to collapse
     all notes easily.</li>
 </ul>
+<h2>Printing and exporting to PDF</h2>
+<p>Since v0.100.0, list collections can be <a href="#root/_help_NRnIZmSMc5sj">printed or exported to PDF</a>.</p>
+<p>A printed list collection will print all the notes in the collection,
+  in the right order and preserving the full hierarchy.</p>
+<p>If exported to PDF within the desktop application, there is additional
+  functionality:</p>
+<ul>
+  <li>The table of contents of the PDF will reflect the structure of the notes.</li>
+  <li>Reference and inline links to other notes within the same hierarchy will
+    be functional (will jump to the corresponding page). If a link refers to
+    a note that is not in the printed hierarchy, it will be unlinked.</li>
+</ul>
+<h2>Expanding and collapsing multiple notes at once</h2>
+<p>Apart from individually expanding or collapsing notes, it's also possible
+  to expand or collapse them all at once. To do so, go to the <em>Collection Properties</em> tab
+  in the&nbsp;<a class="reference-link" href="#root/_help_BlN9DFI679QC">Ribbon</a>&nbsp;and
+  look for the corresponding button.</p>
+<p>By default, the <em>Expand</em> button will only expand the direct children
+  (first level) of the collection. Starting with v0.100.0, it's possible
+  to expand multiple levels of notes using the arrow button next to the button.</p>
+<p>Manually expanded notes will reset if the application/tab is closed and
+  then the collection is visited again. Automatically expanded notes, using
+  the ribbon configuration will persist.</p>
+<aside class="admonition tip">
+  <p>By design, the UI provides only a handful of levels of depth for expanding
+    notes (direct children, 2-5, all levels). It's also possible to specify
+    any desired depth by manually setting the <a href="#root/_help_HI6GBBIduIgv">corresponding label</a>.
+    For example: <code>#expanded=100</code> to expand up to 100 levels of depth.</p>
+</aside>
+<aside class="admonition note">
+  <p>From a performance standpoint, the List collection is efficient since
+    it does not load child notes unless the notes are actually expanded. Expanding
+    the list for a significantly large hierarchy can cause slow-downs.</p>
+</aside>

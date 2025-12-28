@@ -4328,6 +4328,28 @@ paths:
             text/html:
               schema:
                 type: string
+  /api/other/to-markdown:
+    post:
+      tags: [Utilities]
+      summary: Renders given HTML to Markdown
+      operationId: toMarkdown
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [htmlContent]
+              properties:
+                htmlContent:
+                  type: string
+      responses:
+        '200':
+          description: The input text rendered as Markdown
+          content:
+            text/plain:
+              schema:
+                type: string
 
 components:
   securitySchemes:

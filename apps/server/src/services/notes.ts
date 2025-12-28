@@ -16,7 +16,7 @@ import BBranch from "../becca/entities/bbranch.js";
 import BNote from "../becca/entities/bnote.js";
 import BAttribute from "../becca/entities/battribute.js";
 import BAttachment from "../becca/entities/battachment.js";
-import dayjs from "dayjs";
+import { dayjs } from "@triliumnext/commons";
 import htmlSanitizer from "./html_sanitizer.js";
 import ValidationError from "../errors/validation_error.js";
 import noteTypesService from "./note_types.js";
@@ -772,7 +772,7 @@ function updateNoteData(noteId: string, content: string, attachments: Attachment
     note.setContent(newContent, { forceFrontendReload });
 
     if (attachments?.length > 0) {
-        const existingAttachmentsByTitle = toMap(note.getAttachments({ includeContentLength: false }), "title");
+        const existingAttachmentsByTitle = toMap(note.getAttachments(), "title");
 
         for (const { attachmentId, role, mime, title, position, content } of attachments) {
             const existingAttachment = existingAttachmentsByTitle.get(title);

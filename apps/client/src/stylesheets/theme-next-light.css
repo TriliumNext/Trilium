@@ -6,7 +6,7 @@
  */
 :root {
 
-    /* 
+    /*
      * ⚠️ NOTICE: This theme is currently in the beta stage of development.
      * The names and purposes of these CSS variables are subject to frequent changes.
      */
@@ -21,8 +21,8 @@
     --subtle-border-color: rgba(0, 0, 0, 0.1);
     --dropdown-border-color: #ccc;
     --dropdown-shadow-opacity: 0.2;
-    --dropdown-item-icon-destructive-color: #ec5138;
-    --disabled-tooltip-icon-color: #004382;
+    --dropdown-item-icon-destructive-color: #de4027;
+    --contextual-help-icon-color: #004382;
 
     --accented-background-color: #f5f5f5;
 
@@ -40,6 +40,9 @@
     --cmd-button-keyboard-shortcut-background: #00000017;
     --cmd-button-keyboard-shortcut-color: black;
     --cmd-button-disabled-opacity: 0.5;
+
+    --button-group-active-button-background: #00000026;
+    --button-group-active-button-text-color: black;
 
     --icon-button-color: currentColor;
     --icon-button-hover-background: var(--hover-item-background-color);
@@ -71,8 +74,10 @@
     --select-arrow-svg: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='transparent' stroke='black' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/></svg>");
     --select-group-heading-text-color: gray;
 
-    --link-hover-background: #00000012;
-    --link-hover-color: black;
+    --link-color: #0076af;
+    --link-hover-background: #3c7fa017;
+    --link-hover-color: var(--link-color);
+    --link-selection-outline-color: #95c3d9db;
 
     --hover-item-text-color: black;
     --hover-item-background-color: #0000001a;
@@ -135,7 +140,7 @@
     /* Deprecated: now local variables in #launcher, with the values dependent on the current layout. */
     --launcher-pane-background-color: unset;
     --launcher-pane-text-color: unset;
-    
+
     --launcher-pane-vert-background-color: #e8e8e8;
     --launcher-pane-vert-text-color: #000000bd;
     --launcher-pane-vert-button-hover-color: black;
@@ -159,6 +164,9 @@
     --protected-session-active-icon-color: #16b516;
     --sync-status-error-pulse-color: #ff5528;
 
+    --classic-toolbar-vert-layout-background-color: #ffffffa1;
+    --classic-toolbar-horiz-layout-background-color: var(--main-background-color);
+
     --center-pane-vert-layout-background-color-bgfx: #ffffff75;
     --center-pane-horiz-layout-background-color-bgfx: #ffffffd6;
 
@@ -171,7 +179,7 @@
 
     --tab-close-button-hover-background: #c95a5a;
     --tab-close-button-hover-color: white;
-    
+
     --active-tab-background-color: white;
     --active-tab-hover-background-color: var(--active-tab-background-color);
     --active-tab-icon-color: gray;
@@ -187,6 +195,16 @@
 
     --badge-background-color: #00000011;
     --badge-text-color: var(--muted-text-color);
+
+    --badge-temporaraily-editable-background-color: #35a64c;
+    --badge-read-only-background-color: #c8302c;
+    --badge-share-background-color: #6b6b6b;
+    --badge-clipped-note-background-color: #2284c0;
+    --badge-execute-background-color: #7b47af;
+
+    --note-icon-background-color: #4f4f4f;
+    --note-icon-color: white;
+    --note-icon-hover-background-color: #737373;
 
     --promoted-attribute-card-background-color: #00000014;
     --promoted-attribute-card-shadow: none;
@@ -215,14 +233,17 @@
     --right-pane-item-hover-background: #00000013;
     --right-pane-item-hover-color: inherit;
 
+    --bottom-panel-background-color: #ffffff8c;
+    --bottom-panel-title-bar-background-color: #94949414;
+
+    --status-bar-border-color: #0000003a;
+
     --scrollbar-thumb-color: #0000005c;
     --scrollbar-thumb-hover-color: #00000066;
     --scrollbar-background-color: transparent;
     --scrollbar-border-color: unset; /* Deprecated */
 
     --selection-background-color: #3399FF70;
-
-    --link-color: blue;
 
     --mermaid-theme: default;
 
@@ -265,6 +286,14 @@
     --ck-editor-toolbar-button-on-color: black;
     --ck-editor-toolbar-button-on-shadow: none;
     --ck-editor-toolbar-dropdown-button-open-background: #0000000f;
+
+    --calendar-coll-event-background-lightness: 95%;
+    --calendar-coll-event-background-saturation: 80%;
+    --calendar-coll-event-background-color: #eaeaea;
+    --calendar-coll-event-text-color: black;
+    --calendar-coll-event-hover-filter: brightness(.95) saturate(1.25);
+    --callendar-coll-event-archived-sripe-color: #0000000a;
+    --calendar-coll-today-background-color: #00000006;
 }
 
 #left-pane .fancytree-node.tinted {
@@ -276,8 +305,20 @@
     --custom-bg-color: hsl(var(--custom-color-hue), 37%, 89%, 1);
 }
 
-.tinted-quick-edit-dialog {
+.quick-edit-dialog-wrapper.with-hue {
     --modal-background-color: hsl(var(--custom-color-hue), 56%, 96%);
     --modal-border-color: hsl(var(--custom-color-hue), 33%, 41%);
     --promoted-attribute-card-background-color: hsl(var(--custom-color-hue), 40%, 88%);
+}
+
+.note-split.with-hue,
+.quick-edit-dialog-wrapper.with-hue {
+    --note-icon-custom-background-color: hsl(var(--custom-color-hue), 44.5%, 43.1%);
+    --note-icon-custom-color: hsl(var(--custom-color-hue), 91.3%, 91%);
+    --note-icon-hover-custom-background-color: hsl(var(--custom-color-hue), 55.1%, 50.2%);
+}
+
+.note-split.with-hue *::selection,
+.quick-edit-dialog-wrapper.with-hue *::selection {
+    --selection-background-color: hsl(var(--custom-color-hue), 60%, 90%);
 }

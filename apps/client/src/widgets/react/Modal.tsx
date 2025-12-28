@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { useEffect, useRef, useMemo } from "preact/hooks";
 import { t } from "../../services/i18n";
 import { ComponentChildren } from "preact";
@@ -7,9 +8,16 @@ import { Modal as BootstrapModal } from "bootstrap";
 import { memo } from "preact/compat";
 import { useSyncedRef } from "./hooks";
 
-interface ModalProps {
+interface CustomTitleBarButton {
+    title: string;
+    iconClassName: string;
+    onClick: () => void;
+}
+
+export interface ModalProps {
     className: string;
     title: string | ComponentChildren;
+    customTitleBarButtons?: (CustomTitleBarButton | null)[];
     size: "xl" | "lg" | "md" | "sm";
     children: ComponentChildren;
     /**
@@ -62,9 +70,17 @@ interface ModalProps {
      * By default displaying a modal will close all existing modals. Set this to true to keep the existing modals open instead. This is useful for confirmation modals.
      */
     stackable?: boolean;
+    /**
+     * If true, the modal will remain in the DOM even when not shown. This can be useful for certain CSS transitions or when you want to avoid re-mounting the modal content.
+     */
+    keepInDom?: boolean;
+    /**
+     * If true, the modal will not focus itself after becoming visible.
+     */
+    noFocus?: boolean;
 }
 
-export default function Modal({ children, className, size, title, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden: onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable }: ModalProps) {
+export default function Modal({ children, className, size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden: onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus }: ModalProps) {
     const modalRef = useSyncedRef<HTMLDivElement>(externalModalRef);
     const modalInstanceRef = useRef<BootstrapModal>();
     const elementToFocus = useRef<Element | null>();
@@ -96,13 +112,15 @@ export default function Modal({ children, className, size, title, header, footer
     useEffect(() => {
         if (show && modalRef.current) {
             elementToFocus.current = document.activeElement;
-            openDialog($(modalRef.current), !stackable).then(($widget) => {
+            openDialog($(modalRef.current), !stackable, {
+                focus: !noFocus
+            }).then(($widget) => {
                 modalInstanceRef.current = BootstrapModal.getOrCreateInstance($widget[0]);
             })
         } else {
             modalInstanceRef.current?.hide();
         }
-    }, [ show, modalRef.current ]);
+    }, [ show, modalRef.current, noFocus ]);
 
     // Memoize styles to prevent recreation on every render
     const dialogStyle = useMemo<CSSProperties>(() => {
@@ -126,7 +144,7 @@ export default function Modal({ children, className, size, title, header, footer
 
     return (
         <div className={`modal fade mx-auto ${className}`} tabIndex={-1} style={dialogStyle} role="dialog" ref={modalRef}>
-            {show && <div className={`modal-dialog modal-${size} ${scrollable ? "modal-dialog-scrollable" : ""}`} style={documentStyle} role="document">
+            {(show || keepInDom) && <div className={`modal-dialog modal-${size} ${scrollable ? "modal-dialog-scrollable" : ""}`} style={documentStyle} role="document">
                 <div className="modal-content">
                     <div className="modal-header">
                         {!title || typeof title === "string" ? (
@@ -138,7 +156,17 @@ export default function Modal({ children, className, size, title, header, footer
                         {helpPageId && (
                             <button className="help-button" type="button" data-in-app-help={helpPageId} title={t("modal.help_title")}>?</button>
                         )}
+
+                        {titleBarButtons?.filter((b) => b !== null).map((titleBarButton) => (
+                            <button type="button"
+                                    className={clsx("custom-title-bar-button bx", titleBarButton.iconClassName)}
+                                    title={titleBarButton.title}
+                                    onClick={titleBarButton.onClick}>
+                            </button>
+                        ))}
+
                         <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label={t("modal.close")}></button>
+
                     </div>
 
                     {onSubmit ? (

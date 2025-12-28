@@ -1,5 +1,5 @@
 import FNote from "../../../entities/fnote.js";
-import type { LabelType } from "../../../services/promoted_attribute_definition_parser.js";
+import { extractAttributeDefinitionTypeAndName, type LabelType } from "../../../services/promoted_attribute_definition_parser.js";
 import type { AttributeDefinitionInformation } from "./columns.js";
 
 export type TableData = {
@@ -79,14 +79,14 @@ export default function getAttributeDefinitionInformation(parentNote: FNote) {
             continue;
         }
 
-        const [ labelType, name ] = attrDef.name.split(":", 2);
+        const [ attrType, name ] = extractAttributeDefinitionTypeAndName(attrDef.name);
         if (attrDef.type !== "label") {
             console.warn("Relations are not supported for now");
             continue;
         }
 
         let type: LabelType | "relation" = def.labelType || "text";
-        if (labelType === "relation") {
+        if (attrType === "relation") {
             type = "relation";
         }
 

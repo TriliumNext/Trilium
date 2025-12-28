@@ -1,0 +1,34 @@
+.component.note-badges {
+    contain: none;
+}
+
+.note-badges {
+    display: flex;
+    gap: 5px;
+    min-width: 0;
+    flex-shrink: 1;
+    overflow: hidden;
+    --badge-radius: 12px;
+
+    .ext-badge {
+        &.temporarily-editable-badge {--color: var(--badge-temporaraily-editable-background-color)}
+        &.read-only-badge {--color: var(--badge-read-only-background-color);}
+        &.share-badge {--color: var(--badge-share-background-color);}
+        &.clipped-note-badge {--color: var(--badge-clipped-note-background-color);}
+        &.execute-badge {--color: var(--badge-execute-background-color);}
+        min-width: 0;
+
+        .text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+    }
+
+    .dropdown-badge {
+        &.dropdown-backlinks-badge .dropdown-menu {
+            min-width: 500px;
+        }
+    }
+}
+

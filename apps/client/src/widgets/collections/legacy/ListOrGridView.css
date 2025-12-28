@@ -75,6 +75,7 @@
     justify-content: center;
     text-align: center;
     padding: 10px;
+    flex-grow: 1;
 }
 
 .note-book-content.type-image img, .note-book-content.type-canvas svg {

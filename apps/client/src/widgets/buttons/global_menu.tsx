@@ -1,16 +1,19 @@
-import Dropdown from "../react/Dropdown";
 import "./global_menu.css";
-import { useStaticTooltip, useStaticTooltipWithKeyboardShortcut, useTriliumOption, useTriliumOptionBool, useTriliumOptionInt } from "../react/hooks";
-import { useContext, useEffect, useRef, useState } from "preact/hooks";
-import { t } from "../../services/i18n";
-import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem } from "../react/FormList";
-import { CommandNames } from "../../components/app_context";
-import KeyboardShortcut from "../react/KeyboardShortcut";
+
 import { KeyboardActionNames } from "@triliumnext/commons";
-import { ComponentChildren } from "preact";
+import { ComponentChildren, RefObject } from "preact";
+import { useContext, useEffect, useRef, useState } from "preact/hooks";
+
+import { CommandNames } from "../../components/app_context";
 import Component from "../../components/component";
+import { ExperimentalFeature, ExperimentalFeatureId, experimentalFeatures, isExperimentalFeatureEnabled, toggleExperimentalFeature } from "../../services/experimental_features";
+import { t } from "../../services/i18n";
+import utils, { dynamicRequire, isElectron, isMobile, reloadFrontendApp } from "../../services/utils";
+import Dropdown from "../react/Dropdown";
+import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem } from "../react/FormList";
+import { useStaticTooltip, useStaticTooltipWithKeyboardShortcut, useTriliumOption, useTriliumOptionBool, useTriliumOptionInt } from "../react/hooks";
+import KeyboardShortcut from "../react/KeyboardShortcut";
 import { ParentComponent } from "../react/react_utils";
-import utils, { dynamicRequire, isElectron, isMobile } from "../../services/utils";
 
 interface MenuItemProps<T> {
     icon: string,
@@ -26,18 +29,23 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
     const isVerticalLayout = !isHorizontalLayout;
     const parentComponent = useContext(ParentComponent);
     const { isUpdateAvailable, latestVersion } = useTriliumUpdateStatus();
-    
+    const isMobileLocal = isMobile();
+    const logoRef = useRef<SVGSVGElement>(null);
+    useStaticTooltip(logoRef);
+
     return (
         <Dropdown
             className="global-menu"
             buttonClassName={`global-menu-button ${isHorizontalLayout ? "bx bx-menu" : ""}`} noSelectButtonStyle iconAction hideToggleArrow
             text={<>
-                {isVerticalLayout && <VerticalLayoutIcon />}
+                {isVerticalLayout && <VerticalLayoutIcon logoRef={logoRef} />}
                 {isUpdateAvailable && <div class="global-menu-button-update-available">
-                    <span className="bx bxs-down-arrow-alt global-menu-button-update-available-button" title={t("update_available.update_available")}></span>
+                    <span className="bx bxs-down-arrow-alt global-menu-button-update-available-button" title={t("update_available.update_available")} />
                 </div>}
             </>}
             noDropdownListStyle
+            onShown={isMobileLocal ? () => document.getElementById("context-menu-cover")?.classList.add("show", "global-menu-cover") : undefined}
+            onHidden={isMobileLocal ? () => document.getElementById("context-menu-cover")?.classList.remove("show", "global-menu-cover") : undefined}
         >
 
             <MenuItem command="openNewWindow" icon="bx bx-window-open" text={t("global_menu.open_new_window")} />
@@ -51,29 +59,30 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
 
             <SwitchToOptions />
             <MenuItem command="showLaunchBarSubtree" icon={`bx ${isMobile() ? "bx-mobile" : "bx-sidebar"}`} text={t("global_menu.configure_launchbar")} />
-            <AdvancedMenu />
+            <AdvancedMenu dropStart={!isVerticalLayout} />
             <MenuItem command="showOptions" icon="bx bx-cog" text={t("global_menu.options")} />
             <FormDropdownDivider />
 
             <KeyboardActionMenuItem command="showHelp" icon="bx bx-help-circle" text={t("global_menu.show_help")} />
             <KeyboardActionMenuItem command="showCheatsheet" icon="bx bxs-keyboard" text={t("global_menu.show-cheatsheet")} />
             <MenuItem command="openAboutDialog" icon="bx bx-info-circle" text={t("global_menu.about")} />
-            
+
             {isUpdateAvailable &&  <>
                 <FormListHeader text={t("global_menu.new-version-available")} />
                 <MenuItem command={() => window.open("https://github.com/TriliumNext/Trilium/releases/latest")}
-                          icon="bx bx-download"
-                          text={t("global_menu.download-update", {latestVersion})} />
+                    icon="bx bx-download"
+                    text={t("global_menu.download-update", {latestVersion})} />
             </>}
-            
+
             {!isElectron() && <BrowserOnlyOptions />}
+            {glob.isDev && <DevelopmentOptions dropStart={!isVerticalLayout} />}
         </Dropdown>
-    )
+    );
 }
 
-function AdvancedMenu() {
+function AdvancedMenu({ dropStart }: { dropStart: boolean }) {
     return (
-        <FormDropdownSubmenu icon="bx bx-chip" title={t("global_menu.advanced")}>
+        <FormDropdownSubmenu icon="bx bx-chip" title={t("global_menu.advanced")} dropStart={dropStart}>
             <MenuItem command="showHiddenSubtree" icon="bx bx-hide" text={t("global_menu.show_hidden_subtree")} />
             <MenuItem command="showSearchHistory" icon="bx bx-search-alt" text={t("global_menu.open_search_history")} />
             <FormDropdownDivider />
@@ -86,7 +95,7 @@ function AdvancedMenu() {
             {isElectron() && <MenuItem command="openDevTools" icon="bx bx-bug-alt" text={t("global_menu.open_dev_tools")} />}
             <KeyboardActionMenuItem command="reloadFrontendApp" icon="bx bx-refresh" text={t("global_menu.reload_frontend")} title={t("global_menu.reload_hint")} />
         </FormDropdownSubmenu>
-    )
+    );
 }
 
 function BrowserOnlyOptions() {
@@ -96,14 +105,41 @@ function BrowserOnlyOptions() {
     </>;
 }
 
+function DevelopmentOptions({ dropStart }: { dropStart: boolean }) {
+    return <>
+        <FormDropdownDivider />
+        <FormListItem disabled>Development Options</FormListItem>
+        <FormDropdownSubmenu icon="bx bx-test-tube" title="Experimental features" dropStart={dropStart}>
+            {experimentalFeatures.map((feature) => (
+                <ExperimentalFeatureToggle key={feature.id} experimentalFeature={feature as ExperimentalFeature} />
+            ))}
+        </FormDropdownSubmenu>
+    </>;
+}
+
+function ExperimentalFeatureToggle({ experimentalFeature }: { experimentalFeature: ExperimentalFeature }) {
+    const featureEnabled = isExperimentalFeatureEnabled(experimentalFeature.id as ExperimentalFeatureId);
+
+    return (
+        <FormListItem
+            checked={featureEnabled}
+            title={experimentalFeature.description}
+            onClick={async () => {
+                await toggleExperimentalFeature(experimentalFeature.id as ExperimentalFeatureId, !featureEnabled);
+                reloadFrontendApp();
+            }}
+        >{experimentalFeature.name}</FormListItem>
+    );
+}
+
 function SwitchToOptions() {
     if (isElectron()) {
         return;
     } else if (!isMobile()) {
-        return <MenuItem command="switchToMobileVersion" icon="bx bx-mobile" text={t("global_menu.switch_to_mobile_version")} />
-    } else {
-        return <MenuItem command="switchToDesktopVersion" icon="bx bx-desktop" text={t("global_menu.switch_to_desktop_version")} />
+        return <MenuItem command="switchToMobileVersion" icon="bx bx-mobile" text={t("global_menu.switch_to_mobile_version")} />;
     }
+    return <MenuItem command="switchToDesktopVersion" icon="bx bx-desktop" text={t("global_menu.switch_to_desktop_version")} />;
+
 }
 
 function MenuItem({ icon, text, title, command, disabled, active }: MenuItemProps<KeyboardActionNames | CommandNames | (() => void)>) {
@@ -114,7 +150,7 @@ function MenuItem({ icon, text, title, command, disabled, active }: MenuItemProp
         onClick={typeof command === "function" ? command : undefined}
         disabled={disabled}
         active={active}
-        >{text}</FormListItem>
+    >{text}</FormListItem>;
 }
 
 function KeyboardActionMenuItem({ text, command, ...props }: MenuItemProps<KeyboardActionNames>) {
@@ -122,13 +158,10 @@ function KeyboardActionMenuItem({ text, command, ...props }: MenuItemProps<Keybo
         {...props}
         command={command}
         text={<>{text} <KeyboardShortcut actionName={command as KeyboardActionNames} /></>}
-    />
+    />;
 }
 
-function VerticalLayoutIcon() {
-    const logoRef = useRef<SVGSVGElement>(null);
-    useStaticTooltip(logoRef);
-
+export function VerticalLayoutIcon({ logoRef }: { logoRef?: RefObject<SVGSVGElement> }) {
     return (
         <svg ref={logoRef} viewBox="0 0 256 256" title={t("global_menu.menu")}>
             <g>
@@ -145,7 +178,7 @@ function VerticalLayoutIcon() {
                 <path className="st8" d="m66.3 52.2c15.3 12.8 23.3 33.6 26.1 48.9l-50.6-22 48.8 24.9c-12.2 6-29.6 11.8-46.5 10-19.8-16.4-40.2-46.4-42.6-61.5 12.4-6.5 41.5-5.8 64.8-0.3z"/>
             </g>
         </svg>
-    )
+    );
 }
 
 function ZoomControls({ parentComponent }: { parentComponent?: Component | null }) {
@@ -169,7 +202,7 @@ function ZoomControls({ parentComponent }: { parentComponent?: Component | null 
                 }}
                 className={`dropdown-item-button ${icon}`}
             >{children}</a>
-        )
+        );
     }
 
     return isElectron() ? (
@@ -210,7 +243,7 @@ function ToggleWindowOnTop() {
                 setIsAlwaysOnTop(newState);
             }}
         />
-    )
+    );
 }
 
 function useTriliumUpdateStatus() {
@@ -221,9 +254,15 @@ function useTriliumUpdateStatus() {
     async function updateVersionStatus() {
         const RELEASES_API_URL = "https://api.github.com/repos/TriliumNext/Trilium/releases/latest";
 
-        const resp = await fetch(RELEASES_API_URL);
-        const data = await resp.json();
-        const latestVersion = data?.tag_name?.substring(1);
+        let latestVersion: string | undefined;
+        try {
+            const resp = await fetch(RELEASES_API_URL);
+            const data = await resp.json();
+            latestVersion = data?.tag_name?.substring(1);
+        } catch (e) {
+            console.warn("Unable to fetch latest version info from GitHub releases API", e);
+        }
+
         setLatestVersion(latestVersion);
     }
 

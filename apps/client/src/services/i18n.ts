@@ -2,7 +2,7 @@ import options from "./options.js";
 import i18next from "i18next";
 import i18nextHttpBackend from "i18next-http-backend";
 import server from "./server.js";
-import type { Locale } from "@triliumnext/commons";
+import { LOCALE_IDS, setDayjsLocale, type Locale } from "@triliumnext/commons";
 import { initReactI18next } from "react-i18next";
 
 let locales: Locale[] | null;
@@ -13,7 +13,7 @@ let locales: Locale[] | null;
 export let translationsInitializedPromise = $.Deferred();
 
 export async function initLocale() {
-    const locale = (options.get("locale") as string) || "en";
+    const locale = ((options.get("locale") as string) || "en") as LOCALE_IDS;
 
     locales = await server.get<Locale[]>("options/locales");
 
@@ -27,6 +27,7 @@ export async function initLocale() {
         returnEmptyString: false
     });
 
+    await setDayjsLocale(locale);
     translationsInitializedPromise.resolve();
 }
 

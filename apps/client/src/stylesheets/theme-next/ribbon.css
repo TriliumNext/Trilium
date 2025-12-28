@@ -164,15 +164,9 @@ ul.editability-dropdown li.dropdown-item > div {
     background: var(--cmd-button-hover-background-color);
 }
 
-/* 
+/*
  * Note info
  */
-
-:root .note-info-widget-table button.calculate-button {
-    min-width: 0;
-    padding: 4px 10px !important;
-    font-size: 0.8em;
-}
 
 /* Narrow width layout */
 .note-info-widget {

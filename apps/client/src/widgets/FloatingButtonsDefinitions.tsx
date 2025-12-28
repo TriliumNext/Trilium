@@ -1,23 +1,27 @@
+import { BacklinkCountResponse, BacklinksResponse, SaveSqlConsoleResponse } from "@triliumnext/commons";
 import { VNode } from "preact";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
+
 import appContext, { EventData, EventNames } from "../components/app_context";
 import Component from "../components/component";
 import NoteContext from "../components/note_context";
 import FNote from "../entities/fnote";
-import ActionButton, { ActionButtonProps } from "./react/ActionButton";
-import { useIsNoteReadOnly, useNoteLabelBoolean, useTriliumEvent, useTriliumOption, useWindowSize } from "./react/hooks";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
-import { createImageSrcUrl, openInAppHelpFromUrl } from "../services/utils";
-import server from "../services/server";
-import { BacklinkCountResponse, BacklinksResponse, SaveSqlConsoleResponse } from "@triliumnext/commons";
-import toast from "../services/toast";
+import attributes from "../services/attributes";
+import { isExperimentalFeatureEnabled } from "../services/experimental_features";
+import froca from "../services/froca";
 import { t } from "../services/i18n";
 import { copyImageReferenceToClipboard } from "../services/image";
-import tree from "../services/tree";
 import { getHelpUrlForNote } from "../services/in_app_help";
-import froca from "../services/froca";
+import LoadResults from "../services/load_results";
+import server from "../services/server";
+import toast from "../services/toast";
+import tree from "../services/tree";
+import { createImageSrcUrl, openInAppHelpFromUrl } from "../services/utils";
+import { ViewTypeOptions } from "./collections/interface";
+import ActionButton, { ActionButtonProps } from "./react/ActionButton";
+import { useIsNoteReadOnly, useNoteLabelBoolean, useTriliumEvent, useTriliumOption, useWindowSize } from "./react/hooks";
 import NoteLink from "./react/NoteLink";
 import RawHtml from "./react/RawHtml";
-import { ViewTypeOptions } from "./collections/interface";
 
 export interface FloatingButtonContext {
     parentComponent: Component;
@@ -35,7 +39,7 @@ function FloatingButton({ className, ...props }: ActionButtonProps) {
         className={`floating-button ${className ?? ""}`}
         noIconActionClass
         {...props}
-    />
+    />;
 }
 
 export type FloatingButtonsList = ((context: FloatingButtonContext) => false | VNode)[];
@@ -64,7 +68,15 @@ export const MOBILE_FLOATING_BUTTONS: FloatingButtonsList = [
     RelationMapButtons,
     ExportImageButtons,
     Backlinks
-]
+];
+
+/**
+ * Floating buttons that should be hidden in popup editor (Quick edit).
+ */
+export const POPUP_HIDDEN_FLOATING_BUTTONS: FloatingButtonsList = [
+    InAppHelpButton,
+    ToggleReadOnlyButton
+];
 
 function RefreshBackendLogButton({ note, parentComponent, noteContext, isDefaultViewMode }: FloatingButtonContext) {
     const isEnabled = (note.noteId === "_backendLog" || note.type === "render") && isDefaultViewMode;
@@ -72,7 +84,7 @@ function RefreshBackendLogButton({ note, parentComponent, noteContext, isDefault
         text={t("backend_log.refresh")}
         icon="bx bx-refresh"
         onClick={() => parentComponent.triggerEvent("refreshData", { ntxId: noteContext.ntxId })}
-    />
+    />;
 }
 
 function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: FloatingButtonContext) {
@@ -84,7 +96,7 @@ function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: F
         text={upcomingOrientation === "vertical" ? t("switch_layout_button.title_vertical") : t("switch_layout_button.title_horizontal")}
         icon={upcomingOrientation === "vertical" ? "bx bxs-dock-bottom" : "bx bxs-dock-left"}
         onClick={() => setSplitEditorOrientation(upcomingOrientation)}
-    />
+    />;
 }
 
 function ToggleReadOnlyButton({ note, viewType, isDefaultViewMode }: FloatingButtonContext) {
@@ -96,13 +108,13 @@ function ToggleReadOnlyButton({ note, viewType, isDefaultViewMode }: FloatingBut
         text={isReadOnly ? t("toggle_read_only_button.unlock-editing") : t("toggle_read_only_button.lock-editing")}
         icon={isReadOnly ? "bx bx-lock-open-alt" : "bx bx-lock-alt"}
         onClick={() => setReadOnly(!isReadOnly)}
-    />
+    />;
 }
 
 function EditButton({ note, noteContext }: FloatingButtonContext) {
     const [animationClass, setAnimationClass] = useState("");
     const {isReadOnly, enableEditing} = useIsNoteReadOnly(note, noteContext);
-    
+
     const isReadOnlyInfoBarDismissed = false; // TODO
 
     useEffect(() => {
@@ -119,7 +131,7 @@ function EditButton({ note, noteContext }: FloatingButtonContext) {
         icon="bx bx-pencil"
         className={animationClass}
         onClick={() => enableEditing()}
-    />
+    />;
 }
 
 function ShowTocWidgetButton({ note, noteContext, isDefaultViewMode }: FloatingButtonContext) {
@@ -137,7 +149,7 @@ function ShowTocWidgetButton({ note, noteContext, isDefaultViewMode }: FloatingB
                 appContext.triggerEvent("showTocWidget", { noteId: noteContext.noteId });
             }
         }}
-    />
+    />;
 }
 
 function ShowHighlightsListWidgetButton({ note, noteContext, isDefaultViewMode }: FloatingButtonContext) {
@@ -155,16 +167,16 @@ function ShowHighlightsListWidgetButton({ note, noteContext, isDefaultViewMode }
                 appContext.triggerEvent("showHighlightsListWidget", { noteId: noteContext.noteId });
             }
         }}
-    />
+    />;
 }
 
 function RunActiveNoteButton({ note }: FloatingButtonContext) {
-    const isEnabled = note.mime.startsWith("application/javascript") || note.mime === "text/x-sqlite;schema=trilium";
+    const isEnabled = (note.mime.startsWith("application/javascript") || note.mime === "text/x-sqlite;schema=trilium");
     return isEnabled && <FloatingButton
         icon="bx bx-play"
         text={t("code_buttons.execute_button_title")}
         triggerCommand="runActiveNote"
-    />
+    />;
 }
 
 function OpenTriliumApiDocsButton({ note }: FloatingButtonContext) {
@@ -173,7 +185,7 @@ function OpenTriliumApiDocsButton({ note }: FloatingButtonContext) {
         icon="bx bx-help-circle"
         text={t("code_buttons.trilium_api_docs_button_title")}
         onClick={() => openInAppHelpFromUrl(note.mime.endsWith("frontend") ? "Q2z6av6JZVWm" : "MEtfsqa5VwNi")}
-    />
+    />;
 }
 
 function SaveToNoteButton({ note }: FloatingButtonContext) {
@@ -181,17 +193,21 @@ function SaveToNoteButton({ note }: FloatingButtonContext) {
     return isEnabled && <FloatingButton
         icon="bx bx-save"
         text={t("code_buttons.save_to_note_button_title")}
-        onClick={async (e) => {
-            e.preventDefault();
-            const { notePath } = await server.post<SaveSqlConsoleResponse>("special-notes/save-sql-console", { sqlConsoleNoteId: note.noteId });
-            if (notePath) {
-                toast.showMessage(t("code_buttons.sql_console_saved_message", { "note_path": await tree.getNotePathTitle(notePath) }));
-                // TODO: This hangs the navigation, for some reason.
-                //await ws.waitForMaxKnownEntityChangeId();
-                await appContext.tabManager.getActiveContext()?.setNote(notePath);
-            }
-        }}
-    />
+        onClick={buildSaveSqlToNoteHandler(note)}
+    />;
+}
+
+export function buildSaveSqlToNoteHandler(note: FNote) {
+    return async (e: MouseEvent) => {
+        e.preventDefault();
+        const { notePath } = await server.post<SaveSqlConsoleResponse>("special-notes/save-sql-console", { sqlConsoleNoteId: note.noteId });
+        if (notePath) {
+            toast.showMessage(t("code_buttons.sql_console_saved_message", { "note_path": await tree.getNotePathTitle(notePath) }));
+            // TODO: This hangs the navigation, for some reason.
+            //await ws.waitForMaxKnownEntityChangeId();
+            await appContext.tabManager.getActiveContext()?.setNote(notePath);
+        }
+    };
 }
 
 function RelationMapButtons({ note, isDefaultViewMode, triggerEvent }: FloatingButtonContext) {
@@ -224,7 +240,7 @@ function RelationMapButtons({ note, isDefaultViewMode, triggerEvent }: FloatingB
                 />
             </div>
         </>
-    )
+    );
 }
 
 function GeoMapButtons({ triggerEvent, viewType, isReadOnly }: FloatingButtonContext) {
@@ -240,8 +256,10 @@ function GeoMapButtons({ triggerEvent, viewType, isReadOnly }: FloatingButtonCon
 
 function CopyImageReferenceButton({ note, isDefaultViewMode }: FloatingButtonContext) {
     const hiddenImageCopyRef = useRef<HTMLDivElement>(null);
-    const isEnabled = ["mermaid", "canvas", "mindMap", "image"].includes(note?.type ?? "")
-            && note?.isContentAvailable() && isDefaultViewMode;
+    const isEnabled = (
+        ["mermaid", "canvas", "mindMap", "image"].includes(note?.type ?? "")
+        && note?.isContentAvailable() && isDefaultViewMode
+    );
 
     return isEnabled && (
         <>
@@ -262,7 +280,7 @@ function CopyImageReferenceButton({ note, isDefaultViewMode }: FloatingButtonCon
                 position: "absolute" // Take out of the the hidden image from flexbox to prevent the layout being affected
             }} />
         </>
-    )
+    );
 }
 
 function ExportImageButtons({ note, triggerEvent, isDefaultViewMode }: FloatingButtonContext) {
@@ -282,33 +300,26 @@ function ExportImageButtons({ note, triggerEvent, isDefaultViewMode }: FloatingB
                 onClick={() => triggerEvent("exportPng")}
             />
         </>
-    )
+    );
 }
 
 function InAppHelpButton({ note }: FloatingButtonContext) {
     const helpUrl = getHelpUrlForNote(note);
+    const isEnabled = !!helpUrl;
 
-    return !!helpUrl && (
+    return isEnabled && (
         <FloatingButton
             icon="bx bx-help-circle"
             text={t("help-button.title")}
             onClick={() => helpUrl && openInAppHelpFromUrl(helpUrl)}
         />
-    )
+    );
 }
 
 function Backlinks({ note, isDefaultViewMode }: FloatingButtonContext) {
-    let [ backlinkCount, setBacklinkCount ] = useState(0);
-    let [ popupOpen, setPopupOpen ] = useState(false);
+    const [ popupOpen, setPopupOpen ] = useState(false);
     const backlinksContainerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!isDefaultViewMode) return;
-
-        server.get<BacklinkCountResponse>(`note-map/${note.noteId}/backlink-count`).then(resp => {
-            setBacklinkCount(resp.count);
-        });
-    }, [ note ]);
+    const backlinkCount = useBacklinkCount(note, isDefaultViewMode);
 
     // Determine the max height of the container.
     const { windowHeight } = useWindowSize();
@@ -333,29 +344,53 @@ function Backlinks({ note, isDefaultViewMode }: FloatingButtonContext) {
 
             {popupOpen && (
                 <div ref={backlinksContainerRef} className="backlinks-items dropdown-menu" style={{ display: "block" }}>
-                    <BacklinksList noteId={note.noteId} />
+                    <BacklinksList note={note} />
                 </div>
             )}
         </div>
     );
 }
 
-function BacklinksList({ noteId }: { noteId: string }) {
+export function useBacklinkCount(note: FNote | null | undefined, isDefaultViewMode: boolean) {
+    const [ backlinkCount, setBacklinkCount ] = useState(0);
+
+    const refresh = useCallback(() => {
+        if (!note || !isDefaultViewMode) return;
+
+        server.get<BacklinkCountResponse>(`note-map/${note.noteId}/backlink-count`).then(resp => {
+            setBacklinkCount(resp.count);
+        });
+    }, [ isDefaultViewMode, note ]);
+
+    useEffect(() => refresh(), [ refresh ]);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (note && needsRefresh(note, loadResults)) refresh();
+    });
+
+    return backlinkCount;
+}
+
+export function BacklinksList({ note }: { note: FNote }) {
     const [ backlinks, setBacklinks ] = useState<BacklinksResponse>([]);
 
-    useEffect(() => {
-        server.get<BacklinksResponse>(`note-map/${noteId}/backlinks`).then(async (backlinks) => {
+    function refresh() {
+        server.get<BacklinksResponse>(`note-map/${note.noteId}/backlinks`).then(async (backlinks) => {
             // prefetch all
             const noteIds = backlinks
-                    .filter(bl => "noteId" in bl)
-                    .map((bl) => bl.noteId);
+                .filter(bl => "noteId" in bl)
+                .map((bl) => bl.noteId);
             await froca.getNotes(noteIds);
             setBacklinks(backlinks);
         });
-    }, [ noteId ]);
+    }
+
+    useEffect(() => refresh(), [ note ]);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (needsRefresh(note, loadResults)) refresh();
+    });
 
     return backlinks.map(backlink => (
-        <div>
+        <li>
             <NoteLink
                 notePath={backlink.noteId}
                 showNotePath showNoteIcon
@@ -369,6 +404,12 @@ function BacklinksList({ noteId }: { noteId: string }) {
                     <RawHtml html={excerpt} />
                 ))
             )}
-        </div>
+        </li>
     ));
+}
+
+function needsRefresh(note: FNote, loadResults: LoadResults) {
+    return loadResults.getAttributeRows().some(attr =>
+        attr.type === "relation" &&
+        attributes.isAffecting(attr, note));
 }

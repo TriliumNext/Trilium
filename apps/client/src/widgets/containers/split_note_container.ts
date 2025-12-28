@@ -1,12 +1,10 @@
 import FlexContainer from "./flex_container.js";
 import appContext, { type CommandData, type CommandListenerData, type EventData, type EventNames, type NoteSwitchedContext } from "../../components/app_context.js";
 import type BasicWidget from "../basic_widget.js";
-import type NoteContext from "../../components/note_context.js";
 import Component from "../../components/component.js";
 import splitService from "../../services/resizer.js";
-interface NoteContextEvent {
-    noteContext: NoteContext;
-}
+import { isMobile } from "../../services/utils.js";
+import NoteContext from "../../components/note_context.js";
 
 interface SplitNoteWidget extends BasicWidget {
     hasBeenAlreadyShown?: boolean;
@@ -53,13 +51,14 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
 
         this.child(widget);
 
-        if (noteContext.mainNtxId && noteContext.ntxId) {
+        if (noteContext.mainNtxId && noteContext.ntxId && !isMobile()) {
             splitService.setupNoteSplitResizer([noteContext.mainNtxId,noteContext.ntxId]);
         }
     }
 
     async openNewNoteSplitEvent({ ntxId, notePath, hoistedNoteId, viewScope }: EventData<"openNewNoteSplit">) {
-        const mainNtxId = appContext.tabManager.getActiveMainContext()?.ntxId;
+        const activeContext = appContext.tabManager.getActiveMainContext();
+        const mainNtxId = activeContext?.ntxId;
         if (!mainNtxId) {
             console.warn("Missing main note context ID");
             return;
@@ -73,22 +72,30 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
 
         hoistedNoteId = hoistedNoteId || appContext.tabManager.getActiveContext()?.hoistedNoteId;
 
-        const noteContext = await appContext.tabManager.openEmptyTab(null, hoistedNoteId, mainNtxId);
-        if (!noteContext.ntxId) {
-            logError("Failed to create new note context!");
-            return;
+
+        const subContexts = activeContext.getSubContexts();
+        let noteContext: NoteContext | undefined = undefined;
+        if (isMobile() && subContexts.length > 1) {
+            noteContext = subContexts.find(s => s.ntxId !== ntxId);
+        }
+        if (!noteContext) {
+            noteContext = await appContext.tabManager.openEmptyTab(null, hoistedNoteId, mainNtxId);
+            // remove the original position of newly created note context
+            const ntxIds = appContext.tabManager.children.map((c) => c.ntxId).filter((id) => id !== noteContext?.ntxId) as string[];
+
+            // insert the note context after the originating note context
+            if (!noteContext.ntxId) {
+                logError("Failed to create new note context!");
+                return;
+            }
+            ntxIds.splice(ntxIds.indexOf(ntxId) + 1, 0, noteContext.ntxId);
+
+            this.triggerCommand("noteContextReorder", { ntxIdsInOrder: ntxIds });
+
+            // move the note context rendered widget after the originating widget
+            this.$widget.find(`[data-ntx-id="${noteContext.ntxId}"]`).insertAfter(this.$widget.find(`[data-ntx-id="${ntxId}"]`));
         }
 
-        // remove the original position of newly created note context
-        const ntxIds = appContext.tabManager.children.map((c) => c.ntxId).filter((id) => id !== noteContext.ntxId) as string[];
-
-        // insert the note context after the originating note context
-        ntxIds.splice(ntxIds.indexOf(ntxId) + 1, 0, noteContext.ntxId);
-
-        this.triggerCommand("noteContextReorder", { ntxIdsInOrder: ntxIds });
-
-        // move the note context rendered widget after the originating widget
-        this.$widget.find(`[data-ntx-id="${noteContext.ntxId}"]`).insertAfter(this.$widget.find(`[data-ntx-id="${ntxId}"]`));
 
         await appContext.tabManager.activateNoteContext(noteContext.ntxId);
 
@@ -100,9 +107,22 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
     }
 
     async closeThisNoteSplitCommand({ ntxId }: CommandListenerData<"closeThisNoteSplit">) {
-        if (ntxId) {
-            await appContext.tabManager.removeNoteContext(ntxId);
+        if (!ntxId) return;
+        const contexts = appContext.tabManager.noteContexts;
+        const currentIndex = contexts.findIndex((c) => c.ntxId === ntxId);
+        if (currentIndex === -1) return;
+
+        const isRemoveMainContext = contexts[currentIndex].isMainContext();
+        if (isRemoveMainContext && currentIndex + 1 < contexts.length) {
+            const ntxIds = contexts.map((c) => c.ntxId).filter((c) => !!c) as string[];
+            this.triggerCommand("noteContextReorder", {
+                ntxIdsInOrder: ntxIds,
+                oldMainNtxId: ntxId,
+                newMainNtxId: ntxIds[currentIndex + 1]
+            });
         }
+
+        await appContext.tabManager.removeNoteContext(ntxId);
     }
 
     async moveThisNoteSplitCommand({ ntxId, isMovingLeft }: CommandListenerData<"moveThisNoteSplit">) {
@@ -167,12 +187,16 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
         splitService.delNoteSplitResizer(ntxIds);
     }
 
-    contextsReopenedEvent({ ntxId, afterNtxId }: EventData<"contextsReopened">) {
-        if (ntxId === undefined || afterNtxId === undefined) {
-            // no single split reopened
-            return;
+    contextsReopenedEvent({ ntxId, mainNtxId, afterNtxId }: EventData<"contextsReopened">) {
+        if (ntxId !== undefined && afterNtxId !== undefined) {
+            this.$widget.find(`[data-ntx-id="${ntxId}"]`).insertAfter(this.$widget.find(`[data-ntx-id="${afterNtxId}"]`));
+        } else if (mainNtxId) {
+            const contexts = appContext.tabManager.noteContexts;
+            const nextIndex = contexts.findIndex(c => c.ntxId === mainNtxId);
+            const beforeNtxId = (nextIndex !== -1 && nextIndex + 1 < contexts.length) ? contexts[nextIndex + 1].ntxId : null;
+
+            this.$widget.find(`[data-ntx-id="${mainNtxId}"]`).insertBefore(this.$widget.find(`[data-ntx-id="${beforeNtxId}"]`));
         }
-        this.$widget.find(`[data-ntx-id="${ntxId}"]`).insertAfter(this.$widget.find(`[data-ntx-id="${afterNtxId}"]`));
     }
 
     async refresh() {

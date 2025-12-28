@@ -187,7 +187,7 @@ docker run -d --name trilium -p 8080:8080 --user $(id -u):$(id -g) -v ~/trilium-
 *   `TRILIUM_GID`: GID to use for the container process (passed to Docker's `--user` flag)
 *   `TRILIUM_DATA_DIR`: Path to the data directory inside the container (default: `/home/node/trilium-data`)
 
-For a complete list of configuration environment variables (network settings, authentication, sync, etc.), see <a class="reference-link" href="#root/dmi3wz9muS2O">Configuration (config.ini or environment variables)</a>.
+For a complete list of configuration environment variables (network settings, authentication, sync, etc.), see <a class="reference-link" href="../../../Advanced%20Usage/Configuration%20(config.ini%20or%20e.md">Configuration (config.ini or environment variables)</a>.
 
 ### Volume Permissions
 

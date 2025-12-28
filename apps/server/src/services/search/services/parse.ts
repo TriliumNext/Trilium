@@ -1,6 +1,6 @@
 "use strict";
 
-import dayjs from "dayjs";
+import { dayjs } from "@triliumnext/commons";
 import AndExp from "../expressions/and.js";
 import OrExp from "../expressions/or.js";
 import NotExp from "../expressions/not.js";

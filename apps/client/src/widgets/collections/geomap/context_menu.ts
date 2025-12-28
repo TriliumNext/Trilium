@@ -2,6 +2,7 @@ import type { LatLng, LeafletMouseEvent } from "leaflet";
 import appContext, { type CommandMappings } from "../../../components/app_context.js";
 import contextMenu, { type MenuItem } from "../../../menus/context_menu.js";
 import linkContextMenu from "../../../menus/link_context_menu.js";
+import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker.jsx";
 import { t } from "../../../services/i18n.js";
 import { createNewNote } from "./api.js";
 import { copyTextWithToast } from "../../../services/clipboard_ext.js";
@@ -11,14 +12,19 @@ export default function openContextMenu(noteId: string, e: LeafletMouseEvent, is
     let items: MenuItem<keyof CommandMappings>[] = [
         ...buildGeoLocationItem(e),
         { kind: "separator" },
-        ...linkContextMenu.getItems(),
+        ...linkContextMenu.getItems(e),
     ];
 
     if (isEditable) {
         items = [
             ...items,
             { kind: "separator" },
-            { title: t("geo-map-context.remove-from-map"), command: "deleteFromMap", uiIcon: "bx bx-trash" }
+            { title: t("geo-map-context.remove-from-map"), command: "deleteFromMap", uiIcon: "bx bx-trash" },
+            { kind: "separator"},
+            {
+                kind: "custom",
+                componentFn: () => NoteColorPicker({note: noteId})
+            }
         ];
     }
 
@@ -26,14 +32,14 @@ export default function openContextMenu(noteId: string, e: LeafletMouseEvent, is
         x: e.originalEvent.pageX,
         y: e.originalEvent.pageY,
         items,
-        selectMenuItemHandler: ({ command }, e) => {
+        selectMenuItemHandler: ({ command }) => {
             if (command === "deleteFromMap") {
                 appContext.triggerCommand(command, { noteId });
                 return;
             }
 
             // Pass the events to the link context menu
-            linkContextMenu.handleLinkContextMenuItem(command, noteId);
+            linkContextMenu.handleLinkContextMenuItem(command, e, noteId);
         }
     });
 }

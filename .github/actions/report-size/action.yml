@@ -44,7 +44,7 @@ runs:
   steps:
     # Checkout branch to compare to [required]
     - name: Checkout base branch
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         ref: ${{ inputs.branch }}
         path: br-base

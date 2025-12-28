@@ -256,7 +256,9 @@
     "multi-factor-authentication-title": "MFA",
     "ai-llm-title": "AI/LLM",
     "localization": "Sprache & Region",
-    "inbox-title": "Posteingang"
+    "inbox-title": "Posteingang",
+    "zen-mode": "Zen-Modus",
+    "command-palette": "Befehlspalette öffnen"
   },
   "notes": {
     "new-note": "Neue Notiz",
@@ -302,7 +304,7 @@
     "end-time": "Endzeit",
     "geolocation": "Geolokation",
     "built-in-templates": "Integrierte Vorlagen",
-    "board": "Tafel",
+    "board": "Kanban-Board",
     "status": "Status",
     "board_note_first": "Erste Notiz",
     "board_note_second": "Zweite Notiz",

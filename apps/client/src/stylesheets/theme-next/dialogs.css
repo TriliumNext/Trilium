@@ -25,6 +25,7 @@
 
 .modal .modal-header .btn-close,
 .modal .modal-header .help-button,
+.modal .modal-header .custom-title-bar-button,
 #toast-container .toast .toast-header .btn-close {
     display: flex;
     justify-content: center;
@@ -55,15 +56,17 @@
     font-family: boxicons;
 }
 
-.modal .modal-header .help-button {
+.modal .modal-header .help-button,
+.modal .modal-header .custom-title-bar-button {
     margin-inline-end: 0;
-    font-size: calc(var(--modal-control-button-size) * .75);
+    font-size: calc(var(--modal-control-button-size) * .70);
     font-family: unset;
     font-weight: bold;
 }
 
 .modal .modal-header .btn-close:hover,
 .modal .modal-header .help-button:hover,
+.modal .modal-header .custom-title-bar-button:hover,
 #toast-container .toast .toast-header .btn-close:hover {
     background: var(--modal-control-button-hover-background);
     color: var(--modal-control-button-hover-color);
@@ -71,6 +74,7 @@
 
 .modal .modal-header .btn-close:active,
 .modal .modal-header .help-button:active,
+.modal .modal-header .custom-title-bar-button:active,
 #toast-container .toast .toast-header .btn-close:active {
     transform: scale(.85);
 }

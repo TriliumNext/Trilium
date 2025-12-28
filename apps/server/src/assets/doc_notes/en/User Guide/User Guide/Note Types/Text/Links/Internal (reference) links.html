@@ -1,33 +1,49 @@
-<p>Unlike external notes, internal links (links to other notes) can be created
-  at the current position by :</p>
+<p>Internal links are links to other notes within Trilium.</p>
+<p>You can open an internal link by clicking it. You can also see a read-only
+  preview of an internal link's contents by hovering over it.</p>
+<h2>Inserting internal links</h2>
+<p>Internal links can be created at the current position in a text note by:</p>
 <ol>
   <li>Pressing <kbd>Ctrl</kbd> + <kbd>L</kbd> or the
     <img src="Internal (reference) links.png"
-    width="20" height="17">button from the&nbsp;<a class="reference-link" href="#root/_help_nRhnJkTT8cPs">Formatting toolbar</a>.</li>
-  <li>Filling in the desired note to link. It's also possible to create notes
-    from this dialog by typing a non-existing note title and selecting <em>Create and link child note</em>.</li>
+    width="20" height="17">button underneath the
+    <img src="1_Internal (reference) links.png"
+    width="34" height="16">menu in the&nbsp;<a class="reference-link" href="#root/_help_nRhnJkTT8cPs">Formatting toolbar</a>.</li>
+  <li>Searching for the title of the desired note to link. It's also possible
+    to create new notes from this dialog by typing a non-existing note title
+    and selecting <em>Create and link child note</em>.</li>
 </ol>
-<p>There are two link types, adjustable when creating the link to the note:</p>
+<p>There are two link types which you can select when creating the link to
+  the note:</p>
 <ol>
-  <li><em>link title mirrors the note's current title</em>
+  <li><em>Link title mirrors the note's current title</em>
     <ol>
       <li>This is sometimes also called "reference link".</li>
-      <li>Title of such links cannot be changed, instead it is always mirroring
-        the title of linked note.</li>
-      <li>The icon of the note is also displayed.</li>
-      <li>The link title will automatically update if the title of the note is changed.</li>
+      <li>The title of this link cannot be changed. Instead, it will always show
+        the current title of the linked note.</li>
+      <li>The icon of the linked note will also be displayed.</li>
     </ol>
   </li>
-  <li><em>link title can be changed arbitrarily</em>
+  <li><em>Link title can be changed arbitrarily</em>
     <ol>
-      <li>This is the traditional hyperlink, where the text of the link can be different
-        to the note title.</li>
+      <li>This will create a traditional hyperlink, where the text of the link can
+        be different from the note title.</li>
     </ol>
   </li>
 </ol>
-<p>Once an internal link is created:</p>
-<ul>
-  <li>You can follow the note link by double clicking it.</li>
-  <li>Alternatively if you only wish to quickly preview the content, you can
-    hover over the link and will see read only preview.</li>
-</ul>
+<h2>In-place linking</h2>
+<p>You can also insert internal links “inline” by using the <code>@</code> symbol:</p>
+<ol>
+  <li>Type <code>@</code> in a text note, which will open the note search menu.</li>
+  <li>Search for the desired note's title by typing a few characters. Use <kbd>Up</kbd> and <kbd>Down</kbd> to
+    select the correct note, and press <kbd>Enter</kbd> or <kbd>Tab</kbd> to create
+    the link. It's also possible to create new notes with this method by typing
+    a non-existing note title and selecting <em>Create and link child note</em>.</li>
+</ol>
+<h2>Pasting internal links</h2>
+<p>You can also insert internal links by copying a note from the note tree.</p>
+<ol>
+  <li>In the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>,
+    select a note and press <kbd>Ctrl</kbd> + <kbd>C</kbd>.</li>
+  <li>In a text note, paste the link by pressing <kbd>Ctrl</kbd> + <kbd>V</kbd>.</li>
+</ol>

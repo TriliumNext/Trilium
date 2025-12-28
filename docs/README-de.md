@@ -20,19 +20,20 @@ releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
 [![Translation
 status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
-[Englisch](./README.md) | [Chinesisch (Vereinfacht)](./docs/README-ZH_CN.md) |
-[Chinesisch (Traditionell)](./docs/README-ZH_TW.md) |
-[Russisch](./docs/README-ru.md) | [Japanisch](./docs/README-ja.md) |
-[Italienisch](./docs/README-it.md) | [Spanisch](./docs/README-es.md)
+<!-- translate:off -->
+<!-- LANGUAGE SWITCHER -->
+[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
+script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
+| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
+| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
+[Spanish](./README-es.md)
+<!-- translate:on -->
 
 Trilium Notes ist eine freie, open-source, plattformfreie, hierarchische
 Notiz-Anwendung mit Fokus auf die Erstellung großer persönlicher
 Wissenssammlungen.
 
-Siehe [screenshots](https://triliumnext.github.io/Docs/Wiki/screenshot-tour) für
-einen schnellen Überblick:
-
-<a href="https://triliumnext.github.io/Docs/Wiki/screenshot-tour"><img src="./docs/app.png" alt="Trilium Screenshot" width="1000"></a>
+<img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ Download
 - [Neueste Version](https://github.com/TriliumNext/Trilium/releases/latest) –
@@ -51,86 +52,88 @@ Unsere Dokumentation ist verfügbar in mehreren Formaten:
   [docs.triliumnotes.org](https://docs.triliumnotes.org/)
 - **In-App-Hilfe**: drücke `F1` in Trilium, um dieselbe Dokumentation direkt in
   der Anwendung aufzurufen
-- **GitHub**: Durchsuche das
-  [Benutzerhandbuch](./docs/User%20Guide/User%20Guide/) in diesem Repository
+- **GitHub**: Durchsuche das [Benutzerhandbuch](./User%20Guide/User%20Guide/) in
+  diesem Repository
 
 ### Schnellzugriff
 - [Erste Schritte](https://docs.triliumnotes.org/)
-- [Installationsanleitung](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation.md)
+- [Installationsanleitung](https://docs.triliumnotes.org/user-guide/setup)
 - [Docker
-  Einrichten](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md)
+  Einrichten](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
 - [TriliumNext
-  aktualisieren](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Upgrading%20TriliumNext.md)
+  aktualisieren](https://docs.triliumnotes.org/user-guide/setup/upgrading)
 - [Grundkonzepte und
-  Funktionen](./docs/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes.md)
+  Funktionen](https://docs.triliumnotes.org/user-guide/concepts/notes)
 - [Muster persönlicher
-  Wissensdatenbanken](https://triliumnext.github.io/Docs/Wiki/patterns-of-personal-knowledge)
+  Wissensdatenbanken](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
 ## 🎁 Funktionen
 
 * Notizen lassen sich in beliebig tiefe Baumstrukturen einordnen. Eine einzelne
   Notiz kann an mehreren Stellen im Baum existieren (siehe
-  [Klonen](https://triliumnext.github.io/Docs/Wiki/cloning-notes))
+  [Klonen](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
 * Umfangreicher WYSIWYG-Editor für Notizen, z. B. mit Tabellen, Bildern und
-  [Mathematik](https://triliumnext.github.io/Docs/Wiki/text-notes) mit
+  [Mathematik](https://docs.triliumnotes.org/user-guide/note-types/text) mit
   Markdown-Autoformatierung
 * Unterstützung für das Bearbeiten von [Notizen mit
-  Quellcode](https://triliumnext.github.io/Docs/Wiki/code-notes), inkl.
+  Quellcode](https://docs.triliumnotes.org/user-guide/note-types/code), inkl.
   Syntaxhervorhebung
 * Schnelle und einfache [Navigation zwischen
-  Notizen](https://triliumnext.github.io/Docs/Wiki/note-navigation),
+  Notizen](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
   Volltextsuche sowie
-  [Notizhervorhebung](https://triliumnext.github.io/Docs/Wiki/note-hoisting)
+  [Notizhervorhebung](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
 * Nahtlose [Versionierung von
-  Notizen](https://triliumnext.github.io/Docs/Wiki/note-revisions)
-* Notiz [Attribute](https://triliumnext.github.io/Docs/Wiki/attributes) können
-  zur Organisation von Notizen, für Abfragen und erweiterte
-  [Skripterstellung](https://triliumnext.github.io/Docs/Wiki/scripts) verwendet
+  Notizen](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
+* Notiz
+  [Attribute](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
+  können zur Organisation von Notizen, für Abfragen und erweiterte
+  [Skripterstellung](https://docs.triliumnotes.org/user-guide/scripts) verwendet
   werden
 * Benutzeroberfläche verfügbar in Englisch, Deutsch, Spanisch, Französisch,
   Rumänisch sowie Chinesisch (vereinfacht und traditionell)
 * Direkte [OpenID- und
-  TOTP-Integration](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Server%20Installation/Multi-Factor%20Authentication.md)
+  TOTP-Integration](https://docs.triliumnotes.org/user-guide/setup/server/mfa)
   für eine sicherere Anmeldung
-* [Synchronisierung](https://triliumnext.github.io/Docs/Wiki/synchronization)
+* [Synchronisierung](https://docs.triliumnotes.org/user-guide/setup/synchronization)
   mit einem selbst gehosteten Synchronisierungsserver
-  * Es gibt einen [Drittanbieter-Dienst für das Hosten von
-    Synchronisationsservern](https://trilium.cc/paid-hosting)
-* [Freigabe](https://triliumnext.github.io/Docs/Wiki/sharing) (Veröffentlichung)
-  von Notizen im öffentlichen Internet
+  * there are [3rd party services for hosting synchronisation
+    server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+* [Freigabe](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
+  (Veröffentlichung) von Notizen im öffentlichen Internet
 * Starke
-  [Notizverschlüsselung](https://triliumnext.github.io/Docs/Wiki/protected-notes)
+  [Notizverschlüsselung](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
   mit Granularität pro Notiz
 * Skizzieren von Diagrammen basierend auf [Excalidraw](https://excalidraw.com/)
   (Notiztyp „Canvas“)
-* [Beziehungskarten](https://triliumnext.github.io/Docs/Wiki/relation-map) and
-  [Verknüpfungskarten](https://triliumnext.github.io/Docs/Wiki/link-map) zur
-  Visualisierung von Notizen und deren Beziehungen
+* [Relation
+  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
+  [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
+  for visualizing notes and their relations
 * Mindmaps, basierend auf [Mind Elixir](https://docs.mind-elixir.com/)
-* [Geokarten](./docs/User%20Guide/User%20Guide/Note%20Types/Geo%20Map.md) mit
+* [Geokarten](https://docs.triliumnotes.org/user-guide/collections/geomap) mit
   Standortmarkierungen und GPX-Tracks
-* [Skripting](https://triliumnext.github.io/Docs/Wiki/scripts) – siehe
+* [Skripting](https://docs.triliumnotes.org/user-guide/scripts) – siehe
   [Erweiterte
-  Showcases](https://triliumnext.github.io/Docs/Wiki/advanced-showcases)
-* [REST-API](https://triliumnext.github.io/Docs/Wiki/etapi) für die
-  Automatisierung
+  Showcases](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
+* [REST-API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi) für
+  die Automatisierung
 * Skalierbar in Bedienbarkeit und Performance — geeignet für über 100.000
   Notizen
 * Touch-optimiertes [mobiles
-  Frontend](https://triliumnext.github.io/Docs/Wiki/mobile-frontend) für
+  Frontend](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) für
   Smartphones und Tablets
-* Integriertes [dunkles Design](https://triliumnext.github.io/Docs/Wiki/themes),
+* Integriertes [dunkles
+  Design](https://docs.triliumnotes.org/user-guide/concepts/themes),
   Unterstützung für benutzerdefinierte Designs
-* [Evernote](https://triliumnext.github.io/Docs/Wiki/evernote-import) und
-  [Markdown importieren und
-  exportieren](https://triliumnext.github.io/Docs/Wiki/markdown)
-* [Web Clipper](https://triliumnext.github.io/Docs/Wiki/web-clipper) zum
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  und [Markdown importieren und
+  exportieren](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
+* [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) zum
   einfachen Speichern von Webinhalten
 * Anpassbare Benutzeroberfläche (Seitenleisten-Schaltflächen, benutzerdefinierte
   Widgets, ...)
-* [Metriken](./docs/User%20Guide/User%20Guide/Advanced%20Usage/Metrics.md),
-  zusammen mit einem
-  [Grafana-Dashboard](./docs/User%20Guide/User%20Guide/Advanced%20Usage/Metrics/grafana-dashboard.json)
+* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
+  along with a Grafana Dashboard.
 
 ✨ Weitere Informationen zu TriliumNext findet man in den folgenden
 Ressourcen/Communities von Drittanbietern:
@@ -228,7 +231,7 @@ Trilium und TriliumDroid übereinstimmen muss.
 Um TriliumNext auf deinen eigenen Server zu installieren (einschließlich über
 Docker von [Dockerhub](https://hub.docker.com/r/triliumnext/trilium)), befolge
 [die
-Server-Installationsanweisungen](https://triliumnext.github.io/Docs/Wiki/server-installation).
+Server-Installationsanweisungen](https://docs.triliumnotes.org/user-guide/setup/server).
 
 
 ## 💻 Mitwirken
@@ -322,9 +325,9 @@ Trilium wäre ohne die zugrundeliegenden Technologien nicht möglich:
   Baum-Bibliothek ohne echte Konkurrenz.
 * [jsPlumb](https://github.com/jsplumb/jsplumb) - visuelle
   Verbindungsbibliothek. Verwendet in
-  [Beziehungskarten](https://triliumnext.github.io/Docs/Wiki/relation-map.html)
+  [Beziehungskarten](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
   und
-  [Verbindungskarten](https://triliumnext.github.io/Docs/Wiki/note-map.html#link-map)
+  [Verbindungskarten](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Unterstützung
 

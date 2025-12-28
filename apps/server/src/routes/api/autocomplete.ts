@@ -1,21 +1,20 @@
-"use strict";
-
-import beccaService from "../../becca/becca_service.js";
-import searchService from "../../services/search/services/search.js";
-import log from "../../services/log.js";
-import utils from "../../services/utils.js";
-import cls from "../../services/cls.js";
-import becca from "../../becca/becca.js";
 import type { Request } from "express";
+
+import becca from "../../becca/becca.js";
+import beccaService from "../../becca/becca_service.js";
 import ValidationError from "../../errors/validation_error.js";
+import cls from "../../services/cls.js";
+import log from "../../services/log.js";
+import searchService from "../../services/search/services/search.js";
 import sql from "../../services/sql.js";
+import utils from "../../services/utils.js";
 
 function getAutocomplete(req: Request) {
     if (typeof req.query.query !== "string") {
         throw new ValidationError("Invalid query data type.");
     }
     const query = (req.query.query || "").trim();
-    const fastSearch = String(req.query.fastSearch).toLowerCase() === "false" ? false : true;
+    const fastSearch = String(req.query.fastSearch).toLowerCase() !== "false";
 
     const activeNoteId = req.query.activeNoteId || "none";
 
@@ -75,7 +74,7 @@ function getRecentNotes(activeNoteId: string) {
             notePath: rn.notePath,
             noteTitle: title,
             notePathTitle,
-            highlightedNotePathTitle: utils.escapeHtml(notePathTitle),
+            highlightedNotePathTitle: utils.escapeHtml(notePathTitle || title),
             icon: icon ?? "bx bx-note"
         };
     });

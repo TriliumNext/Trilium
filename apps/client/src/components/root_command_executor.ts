@@ -1,14 +1,14 @@
-import Component from "./component.js";
-import appContext, { type CommandData, type CommandListenerData } from "./app_context.js";
 import dateNoteService from "../services/date_notes.js";
-import treeService from "../services/tree.js";
-import openService from "../services/open.js";
-import protectedSessionService from "../services/protected_session.js";
-import options from "../services/options.js";
 import froca from "../services/froca.js";
-import utils from "../services/utils.js";
-import toastService from "../services/toast.js";
 import noteCreateService from "../services/note_create.js";
+import openService from "../services/open.js";
+import options from "../services/options.js";
+import protectedSessionService from "../services/protected_session.js";
+import toastService from "../services/toast.js";
+import treeService from "../services/tree.js";
+import utils, { openInReusableSplit } from "../services/utils.js";
+import appContext, { type CommandListenerData } from "./app_context.js";
+import Component from "./component.js";
 
 export default class RootCommandExecutor extends Component {
     editReadOnlyNoteCommand() {
@@ -193,6 +193,19 @@ export default class RootCommandExecutor extends Component {
         appContext.triggerEvent("zenModeChanged", { isEnabled });
     }
 
+    async toggleRibbonTabNoteMapCommand(data: CommandListenerData<"toggleRibbonTabNoteMap">) {
+        const { isExperimentalFeatureEnabled } = await import("../services/experimental_features.js");
+        const isNewLayout = isExperimentalFeatureEnabled("new-layout");
+        if (!isNewLayout) {
+            this.triggerEvent("toggleRibbonTabNoteMap", data);
+            return;
+        }
+
+        const activeContext = appContext.tabManager.getActiveContext();
+        if (!activeContext?.notePath) return;
+        openInReusableSplit(activeContext.notePath, "note-map");
+    }
+
     firstTabCommand() {
         this.#goToTab(1);
     }
@@ -262,7 +275,7 @@ export default class RootCommandExecutor extends Component {
         }
         catch (e) {
             console.error("Error creating AI Chat note:", e);
-            toastService.showError("Failed to create AI Chat note: " + (e as Error).message);
+            toastService.showError(`Failed to create AI Chat note: ${(e as Error).message}`);
         }
     }
 }

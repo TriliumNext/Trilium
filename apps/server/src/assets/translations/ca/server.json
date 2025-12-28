@@ -3,7 +3,9 @@
     "back-in-note-history": "Navega a la nota previa a l'historial",
     "forward-in-note-history": "Navega a la següent nota a l'historial",
     "dialogs": "Diàlegs",
-    "other": "Altres"
+    "other": "Altres",
+    "open-jump-to-note-dialog": "Obre \"Salta a la nota\"",
+    "open-command-palette": "Obre el panell de comandes"
   },
   "login": {
     "title": "Inicia sessió",

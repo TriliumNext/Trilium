@@ -1,6 +1,6 @@
 {
 	"formatVersion": 2,
-	"appVersion": "0.99.3",
+	"appVersion": "0.100.0",
 	"files": [
 		{
 			"isClone": false,
@@ -5507,51 +5507,7 @@
 																				}
 																			],
 																			"dataFileName": "chartjs-plugin-datalabe.min.js",
-																			"attachments": [],
-																			"dirFileName": "chartjs-plugin-datalabels.min.js",
-																			"children": [
-																				{
-																					"isClone": true,
-																					"noteId": "piyimQhwfcy5",
-																					"notePath": [
-																						"root",
-																						"rvaX6hEaQlmk",
-																						"KZVWidxicAfn",
-																						"xRQuuwkaobBM",
-																						"GXUcReLM6dSe",
-																						"oLPbgCo7djD7",
-																						"AlL9eFopYuHg",
-																						"9GZB2MeW51xv",
-																						"3jaioienOLTR",
-																						"piyimQhwfcy5"
-																					],
-																					"title": "chart.js",
-																					"prefix": null,
-																					"dataFileName": "chart.js.clone.html",
-																					"type": "text",
-																					"format": "html"
-																				}
-																			]
-																		},
-																		{
-																			"isClone": true,
-																			"noteId": "piyimQhwfcy5",
-																			"notePath": [
-																				"root",
-																				"rvaX6hEaQlmk",
-																				"KZVWidxicAfn",
-																				"xRQuuwkaobBM",
-																				"GXUcReLM6dSe",
-																				"oLPbgCo7djD7",
-																				"AlL9eFopYuHg",
-																				"9GZB2MeW51xv",
-																				"piyimQhwfcy5"
-																			],
-																			"title": "chart.js",
-																			"prefix": null,
-																			"dataFileName": "chart.js.clone.html",
-																			"type": "text",
-																			"format": "html"
+																			"attachments": []
 																		}
 																	]
 																},
@@ -6044,6 +6000,86 @@
 									],
 									"dataFileName": "Custom request handler.js",
 									"attachments": []
+								},
+								{
+									"isClone": false,
+									"noteId": "DAybX9h5jOoG",
+									"notePath": [
+										"root",
+										"rvaX6hEaQlmk",
+										"KZVWidxicAfn",
+										"DAybX9h5jOoG"
+									],
+									"title": "Render note with JSX",
+									"notePosition": 100,
+									"prefix": null,
+									"isExpanded": false,
+									"type": "render",
+									"mime": "",
+									"attributes": [
+										{
+											"type": "label",
+											"name": "widget",
+											"value": "",
+											"isInheritable": false,
+											"position": 10
+										},
+										{
+											"type": "relation",
+											"name": "renderNote",
+											"value": "xzqr5J1V4YwY",
+											"isInheritable": false,
+											"position": 20
+										}
+									],
+									"attachments": [],
+									"dirFileName": "Render note with JSX",
+									"children": [
+										{
+											"isClone": false,
+											"noteId": "xzqr5J1V4YwY",
+											"notePath": [
+												"root",
+												"rvaX6hEaQlmk",
+												"KZVWidxicAfn",
+												"DAybX9h5jOoG",
+												"xzqr5J1V4YwY"
+											],
+											"title": "JSX",
+											"notePosition": 12,
+											"prefix": null,
+											"isExpanded": false,
+											"type": "code",
+											"mime": "text/jsx",
+											"attributes": [],
+											"dataFileName": "JSX.jsx",
+											"attachments": [],
+											"dirFileName": "JSX",
+											"children": [
+												{
+													"isClone": false,
+													"noteId": "mqDw6BebfE58",
+													"notePath": [
+														"root",
+														"rvaX6hEaQlmk",
+														"KZVWidxicAfn",
+														"DAybX9h5jOoG",
+														"xzqr5J1V4YwY",
+														"mqDw6BebfE58"
+													],
+													"title": "FormElements",
+													"notePosition": 10,
+													"prefix": null,
+													"isExpanded": false,
+													"type": "code",
+													"mime": "text/jsx",
+													"attributes": [],
+													"dataFileName": "FormElements.jsx",
+													"attachments": []
+												}
+											]
+										}
+									]
 								}
 							]
 						}

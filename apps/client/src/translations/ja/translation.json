@@ -21,8 +21,17 @@
     },
     "bundle-error": {
       "title": "カスタムスクリプトの読み込みに失敗しました",
-      "message": "ノートID”{{id}}”, ノートタイトル “{{title}}” のスクリプトを実行できませんでした。理由は以下の通りです:\n\n{{message}}"
-    }
+      "message": "次の理由によりスクリプトを実行できませんでした:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "サーバーからウィジェットのリストを取得できませんでした"
+    },
+    "widget-render-error": {
+      "title": "カスタム React ウィジェットのレンダリングに失敗しました"
+    },
+    "widget-missing-parent": "カスタムウィジェットに必須の '{{property}}' プロパティが定義されていません。\n\nこのスクリプトを UI 要素なしで実行する場合は、代わりに '#run=frontendStartup' を使用してください。",
+    "open-script-note": "スクリプトノートを開く",
+    "scripting-error": "カスタムスクリプトエラー: {{title}}"
   },
   "add_link": {
     "add_link": "リンクを追加",
@@ -218,7 +227,8 @@
     "unknown_search_option": "不明な検索オプション {{searchOptionName}}",
     "search_note_saved": "検索ノートが {{- notePathTitle}} に保存されました",
     "actions_executed": "アクションが実行されました。",
-    "ancestor": "祖先:"
+    "ancestor": "祖先:",
+    "view_options": "表示オプション:"
   },
   "shortcuts": {
     "multiple_shortcuts": "同じアクションに対して複数のショートカットを設定する場合、カンマで区切ることができます。",
@@ -258,7 +268,7 @@
     "export_in_progress": "エクスポート処理中: {{progressCount}}",
     "export_finished_successfully": "エクスポートが正常に完了しました。",
     "format_pdf": "PDF - 印刷または共有目的に。",
-    "share-format": "Web 公開用の HTML - 共有ノートで使用されるのと同じテーマを使用しますが、静的 Web サイトとして公開できます。"
+    "share-format": "web 公開用の HTML - 共有ノートで使用されるのと同じテーマを使用しますが、静的 web サイトとして公開できます。"
   },
   "help": {
     "title": "チートシート",
@@ -290,7 +300,7 @@
     "pasteNotes": "ノートをサブノートとしてアクティブノートに貼り付ける（コピーされたか切り取りされたかに よって、移動またはクローンになる）",
     "deleteNotes": "ノート/サブツリーを削除",
     "editingNotes": "ノート編集",
-    "editNoteTitle": "ツリーペインでEnterキーを押すと、ツリーペインからノートタイトルに切り替わります。ノートタイトルだとテキストエディタにフォーカスが切り替わります。<kbd>Ctrl+.</kbd> を押すと、エディタからツリーペインに戻ります。",
+    "editNoteTitle": "ツリーペインでEnterキーを押すと、ツリーペインからノートタイトルに切り替わります。ノートタイトルだとテキストエディターにフォーカスが切り替わります。<kbd>Ctrl+.</kbd> を押すと、エディタからツリーペインに戻ります。",
     "createEditLink": "外部リンクの作成/編集",
     "createInternalLink": "内部リンクの作成",
     "followLink": "カーソル下のリンクをたどる",
@@ -312,7 +322,8 @@
     "moveNoteUpDown": "ノートリストでノートを上/下に移動",
     "notSet": "未設定",
     "goUpDown": "ノートのリストで上下する",
-    "editBranchPrefix": "アクティブノートのクローンの <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">プレフィックス</a> を編集する"
+    "editBranchPrefix": "アクティブノートのクローンの <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">プレフィックス</a> を編集する",
+    "editShortcuts": "キーボードショートカットを編集"
   },
   "import": {
     "importIntoNote": "ノートにインポート",
@@ -385,7 +396,7 @@
     "show_toc": "目次を表示"
   },
   "show_highlights_list_widget_button": {
-    "show_highlights_list": "ハイライト一覧を表示"
+    "show_highlights_list": "ハイライトリストを表示"
   },
   "relation_map_buttons": {
     "zoom_out_title": "ズームアウト",
@@ -420,10 +431,10 @@
     "apply-bulk-actions": "一括操作の適用",
     "converted-to-attachments": "{{count}}ノートが添付ファイルに変換されました。",
     "convert-to-attachment": "添付ファイルに変換",
-    "convert-to-attachment-confirm": "選択したノートを親ノートの添付ファイルに変換しますか？",
+    "convert-to-attachment-confirm": "選択したノートを親ノートの添付ファイルに変換してもよろしいですか？この操作は画像ノートにのみ適用され、その他のノートはスキップされます。",
     "open-in-popup": "クイック編集",
     "hoist-note": "ホイストノート",
-    "unhoist-note": "ノートをホイストしない",
+    "unhoist-note": "ノートのホイストを解除",
     "edit-branch-prefix": "ブランチの接頭辞を編集",
     "archive": "アーカイブ",
     "unarchive": "アーカイブ解除"
@@ -457,7 +468,13 @@
     "convert_into_attachment_successful": "ノート '{{title}}' は添付ファイルに変換されました。",
     "convert_into_attachment_prompt": "本当にノート '{{title}}' を親ノートの添付ファイルに変換しますか？",
     "note_attachments": "ノートの添付ファイル",
-    "open_note_on_server": "サーバー上のノートを開く"
+    "open_note_on_server": "サーバー上のノートを開く",
+    "view_revisions": "ノートの変更履歴...",
+    "note_map": "ノートマップ",
+    "advanced": "高度",
+    "export_as_image": "画像としてエクスポート",
+    "export_as_image_png": "PNG (raster)",
+    "export_as_image_svg": "SVG (vector)"
   },
   "command_palette": {
     "export_note_title": "ノートをエクスポート",
@@ -496,7 +513,8 @@
     "new-item-placeholder": "ノートのタイトルを入力...",
     "add-column-placeholder": "列名を入力...",
     "edit-note-title": "クリックしてノートのタイトルを編集",
-    "edit-column-title": "クリックして列のタイトルを編集"
+    "edit-column-title": "クリックして列のタイトルを編集",
+    "column-already-exists": "この列は既にボード上に存在します。"
   },
   "code_buttons": {
     "execute_button_title": "スクリプトを実行",
@@ -524,13 +542,12 @@
     "button_title": "ボタンを表示"
   },
   "svg_export_button": {
-    "button_title": "図をSVGとしてエクスポート"
+    "button_title": "図をSVG形式でエクスポート"
   },
   "book_properties": {
     "grid": "グリッド",
     "list": "リスト",
     "collapse_all_notes": "すべてのノートを折りたたむ",
-    "expand_all_children": "すべての子を展開",
     "collapse": "折りたたむ",
     "expand": "展開",
     "book_properties": "コレクションプロパティ",
@@ -541,7 +558,11 @@
     "geo-map": "ジオマップ",
     "board": "ボード",
     "include_archived_notes": "アーカイブされたノートを表示",
-    "presentation": "プレゼンテーション"
+    "presentation": "プレゼンテーション",
+    "expand_tooltip": "このコレクションの直下の子（1階層下）を展開します。その他のオプションについては、右側の矢印を押してください。",
+    "expand_first_level": "直下の子を展開",
+    "expand_nth_level": "{{depth}} 階層下まで展開",
+    "expand_all_levels": "すべての階層を展開"
   },
   "note_types": {
     "geo-map": "ジオマップ",
@@ -578,7 +599,7 @@
     "file_type": "ファイルタイプ",
     "file_size": "ファイルサイズ",
     "download": "ダウンロード",
-    "open": "開く",
+    "open": "外部で開く",
     "title": "ファイル",
     "upload_new_revision": "編集履歴をアップロード",
     "original_file_name": "元のファイル名",
@@ -594,7 +615,9 @@
     "calculate": "計算",
     "subtree_size": "（サブツリーサイズ: {{size}}、ノード数: {{count}}）",
     "title": "ノート情報",
-    "note_size_info": "ノートのサイズは、このノートに必要なストレージの概算を示します。これは、ノートの内容とそのノートの編集履歴の内容を考慮したものです。"
+    "note_size_info": "ノートのサイズは、このノートに必要なストレージの概算を示します。これは、ノートの内容とそのノートの編集履歴の内容を考慮したものです。",
+    "show_similar_notes": "類似のノートを表示",
+    "mime": "MIME タイプ"
   },
   "image_properties": {
     "file_type": "ファイルタイプ",
@@ -794,7 +817,7 @@
   },
   "web_view": {
     "web_view": "Web ビュー",
-    "embed_websites": "Web ビュータイプでは、ウェブサイトをTriliumに埋め込むことができます。",
+    "embed_websites": "Web ビュータイプでは、web サイトを Trilium に埋め込むことができます。",
     "create_label": "まず始めに、埋め込みたいURLアドレスのラベルを作成してください。例: #webViewSrc=\"https://www.google.com\""
   },
   "backend_log": {
@@ -905,7 +928,7 @@
     "underline": "下線",
     "color": "カラーテキスト",
     "bg_color": "背景色付きテキスト",
-    "visibility_title": "ハイライトリスト表示",
+    "visibility_title": "ハイライトリストの表示",
     "visibility_description": "#hideHighlightWidget ラベルを追加することで、ノートごとにハイライトウィジェットを非表示にできます。",
     "shortcut_info": "設定 -> ショートカット（右ペイン切り替え）で、右ペイン（ハイライトを含む）を素早く切り替えるキーボードショートカットを設定できます。"
   },
@@ -918,7 +941,8 @@
   },
   "toc": {
     "table_of_contents": "目次",
-    "options": "オプション"
+    "options": "オプション",
+    "no_headings": "見出しはありません。"
   },
   "text_auto_read_only_size": {
     "title": "自動読み取り専用のサイズ",
@@ -956,7 +980,7 @@
   "password": {
     "wiki": "wiki",
     "heading": "パスワード",
-    "alert_message": "新しいパスワードは大切に保管してください。パスワードはウェブインターフェースへのログインや、保護されたノートの暗号化に使用されます。パスワードを忘れると、保護されたノートはすべて永久に失われます。",
+    "alert_message": "新しいパスワードは大切に保管してください。パスワードは web インターフェースへのログインや、保護されたノートの暗号化に使用されます。パスワードを忘れると、保護されたノートはすべて永久に失われます。",
     "reset_link": "リセットするにはここをクリック。",
     "old_password": "旧パスワード",
     "new_password": "新パスワード",
@@ -1006,7 +1030,8 @@
   "info": {
     "closeButton": "閉じる",
     "modalTitle": "情報メッセージ",
-    "okButton": "OK"
+    "okButton": "OK",
+    "copy_to_clipboard": "クリップボードにコピー"
   },
   "protected_session_password": {
     "close_label": "閉じる",
@@ -1101,7 +1126,7 @@
     "sql_console_home": "SQLコンソールノートのデフォルトの場所",
     "bookmark_folder": "このラベルの付いたノートは、ブックマークにフォルダとして表示されます（子フォルダへのアクセスを許可します）",
     "share_hidden_from_tree": "このノートは左側のナビゲーションツリーには表示されていませんが、URL からアクセスできます",
-    "share_external_link": "ノートは共有ツリー内で外部ウェブサイトへのリンクとして機能します",
+    "share_external_link": "ノートは共有ツリー内で外部 web サイトへのリンクとして機能します",
     "share_alias": "https://your_trilium_host/share/[your_alias] でノートを利用できるようにエイリアスを定義します",
     "share_omit_default_css": "デフォルトの共有ページのCSSは省略されます。スタイルを大幅に変更する場合に使用してください。",
     "share_root": "/share root で提供されるノートをマークする。",
@@ -1153,7 +1178,8 @@
     "open_note_in_popup": "クイック編集",
     "open_note_in_new_tab": "新しいタブでノートを開く",
     "open_note_in_new_split": "新しく分割してノートを開く",
-    "open_note_in_new_window": "新しいウィンドウでノートを開く"
+    "open_note_in_new_window": "新しいウィンドウでノートを開く",
+    "open_note_in_other_split": "他の分割画面でノートを開く"
   },
   "note_tooltip": {
     "quick-edit": "クイック編集",
@@ -1185,7 +1211,11 @@
   },
   "highlights_list_2": {
     "title": "ハイライトリスト",
-    "options": "オプション"
+    "options": "オプション",
+    "title_with_count_other": "{{count}} ハイライト",
+    "modal_title": "ハイライトリストの設定",
+    "menu_configure": "ハイライトリストの設定...",
+    "no_highlights": "ハイライトが見つかりません。"
   },
   "quick-search": {
     "placeholder": "クイック検索",
@@ -1208,7 +1238,8 @@
     "unhoist": "ホイスト解除",
     "saved-search-note-refreshed": "保存した検索ノートが更新されました。",
     "refresh-saved-search-results": "保存した検索結果を更新",
-    "toggle-sidebar": "サイドバーを切り替え"
+    "toggle-sidebar": "サイドバーを切り替え",
+    "dropping-not-allowed": "この場所にノートをドロップすることはできません。"
   },
   "bulk_actions": {
     "bulk_actions": "一括操作",
@@ -1225,7 +1256,15 @@
     "none_yet": "アクションを上のリストからクリックして追加。"
   },
   "note_title": {
-    "placeholder": "ここにノートのタイトルを入力..."
+    "placeholder": "ここにノートのタイトルを入力...",
+    "created_on": "<Value /> に作成",
+    "last_modified": "<Value /> に変更",
+    "note_type_switcher_label": "{{type}} から切り替え:",
+    "note_type_switcher_others": "その他のノートタイプ",
+    "note_type_switcher_templates": "テンプレート",
+    "note_type_switcher_collection": "コレクション",
+    "edited_notes": "この日に編集されたノート",
+    "promoted_attributes": "プロモート属性"
   },
   "search_result": {
     "no_notes_found": "指定された検索パラメータに該当するノートは見つかりませんでした。",
@@ -1260,9 +1299,6 @@
     "move-to-available-launchers": "利用可能なランチャーに移動",
     "duplicate-launcher": "ランチャーの複製 <kbd data-command=\"duplicateSubtree\">",
     "reset_launcher_confirm": "本当に「{{title}}」をリセットしますか？ このノート（およびその子ノート）のすべてのデータと設定が失われ、ランチャーは元の場所に戻ります。"
-  },
-  "editable-text": {
-    "auto-detect-language": "自動検出"
   },
   "highlighting": {
     "title": "コードブロック",
@@ -1300,7 +1336,8 @@
     "copy-link": "リンクをコピー",
     "paste": "貼り付け",
     "paste-as-plain-text": "プレーンテキストで貼り付け",
-    "search_online": "{{searchEngine}} で \"{{term}}\" を検索"
+    "search_online": "{{searchEngine}} で \"{{term}}\" を検索",
+    "search_in_trilium": "Triliumで「{{term}}」を検索"
   },
   "duration": {
     "seconds": "秒",
@@ -1324,8 +1361,9 @@
     "minimum_input": "入力された時間値は {{minimumSeconds}} 秒以上である必要があります。"
   },
   "note_language": {
-    "not_set": "未設定",
-    "configure-languages": "言語を設定..."
+    "not_set": "言語が設定されていません",
+    "configure-languages": "言語を設定...",
+    "help-on-languages": "コンテンツの言語に関するヘルプ..."
   },
   "content_language": {
     "title": "コンテンツの言語",
@@ -1335,7 +1373,8 @@
     "button_title": "図をPNG形式でエクスポート"
   },
   "svg": {
-    "export_to_png": "図をPNG形式でエクスポートできませんでした。"
+    "export_to_png": "図をPNG形式でエクスポートできませんでした。",
+    "export_to_svg": "図をSVG形式でエクスポートできませんでした。"
   },
   "code_theme": {
     "title": "外観",
@@ -1499,9 +1538,7 @@
     "indexing_stopped": "インデックス登録を停止しました",
     "indexing_in_progress": "インデックス登録中です...",
     "last_indexed": "最終インデックス作成日時",
-    "n_notes_queued_0": "{{ count }} 件のノートがインデックス作成待ちです",
     "note_chat": "ノートチャット",
-    "notes_indexed_0": "{{ count }} 件のノートをインデックスしました",
     "sources": "ソース",
     "start_indexing": "インデックス作成を開始",
     "use_advanced_context": "高度なコンテキストを使用",
@@ -1582,9 +1619,8 @@
     "this_launcher_doesnt_define_target_note": "このランチャーはターゲットノートを定義していません。"
   },
   "zpetne_odkazy": {
-    "backlink": "{{count}} バックリンク",
-    "backlinks": "{{count}} バックリンク",
-    "relation": "リレーション"
+    "relation": "リレーション",
+    "backlink_other": "{{count}} 個のバックリンク"
   },
   "mobile_detail_menu": {
     "delete_this_note": "このノートを削除",
@@ -1595,7 +1631,8 @@
   },
   "inherited_attribute_list": {
     "title": "継承属性",
-    "no_inherited_attributes": "継承属性はありません。"
+    "no_inherited_attributes": "継承属性はありません。",
+    "none": "なし"
   },
   "note_map": {
     "open_full": "拡大表示",
@@ -1616,7 +1653,7 @@
     "remove_this_attribute": "この属性を削除",
     "remove_color": "このカラーラベルを削除",
     "promoted_attributes": "プロモート属性",
-    "url_placeholder": "http://ウェブサイト..."
+    "url_placeholder": "http://web サイト..."
   },
   "relation_map": {
     "open_in_new_tab": "新しいタブで開く",
@@ -1772,7 +1809,14 @@
     "placeholder": "ここにコードノートの内容を入力..."
   },
   "editable_text": {
-    "placeholder": "ここにノートの内容を入力..."
+    "placeholder": "ここにノートの内容を入力...",
+    "auto-detect-language": "自動検出",
+    "keeps-crashing": "編集コンポーネントがクラッシュし続けます。Trilium を再起動してください。問題が解決しない場合は、バグレポートの作成をご検討ください。",
+    "editor_crashed_title": "テキストエディターがクラッシュしました",
+    "editor_crashed_content": "コンテンツは正常に復元されましたが、最近の変更の一部が保存されていない可能性があります。",
+    "editor_crashed_details_button": "詳細を見る...",
+    "editor_crashed_details_intro": "このエラーが何度も発生する場合は、以下の情報を貼り付けて GitHub に報告することを検討してください。",
+    "editor_crashed_details_title": "技術情報"
   },
   "empty": {
     "open_note_instruction": "以下の入力欄にノートのタイトルを入力するか、ツリー内のノートを選択してノートを開きます。",
@@ -1826,7 +1870,10 @@
     "app-restart-required": "（変更を有効にするにはアプリケーションの再起動が必要です）"
   },
   "code_mime_types": {
-    "title": "ドロップダウンで利用可能なMIMEタイプ"
+    "title": "ドロップダウンで利用可能なMIMEタイプ",
+    "tooltip_syntax_highlighting": "構文ハイライト表示",
+    "tooltip_code_block_syntax": "テキストノート内のコードブロック",
+    "tooltip_code_note_syntax": "コードノート"
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "添付ファイル消去のタイムアウト",
@@ -1883,7 +1930,11 @@
   "note_detail": {
     "could_not_find_typewidget": "タイプ {{type}} の typeWidget が見つかりませんでした",
     "printing": "印刷中です...",
-    "printing_pdf": "PDF へのエクスポート中です..."
+    "printing_pdf": "PDF へのエクスポート中です...",
+    "print_report_title": "レポートを印刷",
+    "print_report_collection_content_other": "コレクション内の {{count}} 件のノートは、サポートされていないか保護されているため、印刷できませんでした。",
+    "print_report_collection_details_button": "詳細を見る",
+    "print_report_collection_details_ignored_notes": "無視されたノート"
   },
   "watched_file_update_status": {
     "ignore_this_change": "この変更を無視する",
@@ -1929,7 +1980,7 @@
     "search-for": "「{{term}}」を検索",
     "create-note": "子ノート「{{term}}」を作成してリンクする",
     "insert-external-link": "「{{term}}」への外部リンクを挿入",
-    "clear-text-field": "テキストフィールドを消去",
+    "clear-text-field": "テキストフィールドをクリア",
     "show-recent-notes": "最近のノートを表示",
     "full-text-search": "全文検索"
   },
@@ -1960,7 +2011,7 @@
   "book_properties_config": {
     "hide-weekends": "週末を非表示",
     "display-week-numbers": "週番号を表示",
-    "map-style": "マップスタイル:",
+    "map-style": "マップスタイル",
     "max-nesting-depth": "最大階層の深さ:",
     "show-scale": "スケールを表示",
     "raster": "Raster",
@@ -1974,14 +2025,20 @@
     "background_effects_title": "背景効果が安定しました",
     "background_effects_message": "Windowsデバイスでは、背景効果が完全に安定しました。背景効果は、背景をぼかすことでユーザーインターフェースに彩りを添えます。この技術は、Windowsエクスプローラーなどの他のアプリケーションでも使用されています。",
     "background_effects_button": "背景効果を有効にする",
-    "dismiss": "却下"
+    "dismiss": "却下",
+    "new_layout_title": "新しいレイアウト",
+    "new_layout_message": "Trilium のレイアウトを刷新しました。リボンは廃止され、メインインターフェースにシームレスに統合されました。主要な機能は、新しいステータスバーと展開可能なセクション（プロモート属性など）に集約されています。\n\n新しいレイアウトはデフォルトで有効になっていますが、「オプション」→「外観」から一時的に無効にすることもできます。",
+    "new_layout_button": "詳細情報"
   },
   "settings": {
     "related_settings": "関連設定"
   },
   "settings_appearance": {
     "related_code_blocks": "テキストノート内のコードブロックの配色",
-    "related_code_notes": "コードノートの配色"
+    "related_code_notes": "コードノートの配色",
+    "ui": "ユーザーインターフェース",
+    "ui_old_layout": "旧レイアウト",
+    "ui_new_layout": "新しいレイアウト"
   },
   "units": {
     "percentage": "%"
@@ -2055,7 +2112,7 @@
     "recovery_keys_used": "使用日: {{date}}",
     "recovery_keys_unused": "回復コード {{index}} は未使用です",
     "oauth_title": "OAuth/OpenID",
-    "oauth_description": "OpenIDは、Googleなどの他のサービスのアカウントを使用してウェブサイトにログインし、本人確認を行うための標準化された方法です。デフォルトの発行者はGoogleですが、他のOpenIDプロバイダに変更できます。詳しくは<a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">こちら</a>をご覧ください。Google経由でOpenIDサービスを設定するには、<a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">こちらの手順</a>に従ってください。",
+    "oauth_description": "OpenIDは、Googleなどの他のサービスのアカウントを使用して web サイトにログインし、本人確認を行うための標準化された方法です。デフォルトの発行者はGoogleですが、他のOpenIDプロバイダに変更できます。詳しくは<a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">こちら</a>をご覧ください。Google経由でOpenIDサービスを設定するには、<a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">こちらの手順</a>に従ってください。",
     "oauth_description_warning": "OAuth/OpenIDを有効にするには、config.iniファイルにOAuth/OpenIDのベースURL、クライアントID、クライアントシークレットを設定し、アプリケーションを再起動する必要があります。環境変数から設定する場合は、TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID and TRILIUM_OAUTH_CLIENT_SECRET を設定してください。",
     "oauth_missing_vars": "設定がありません: {{-variables}}",
     "oauth_user_account": "ユーザーアカウント: ",
@@ -2088,7 +2145,78 @@
   "read-only-info": {
     "read-only-note": "現在、読み取り専用のノートを表示しています。",
     "auto-read-only-note": "このノートは読み込みを高速化するために読み取り専用モードで表示されています。",
-    "auto-read-only-learn-more": "さらに詳しく",
     "edit-note": "ノートを編集"
+  },
+  "note-color": {
+    "clear-color": "ノートの色をクリア",
+    "set-color": "ノートの色を設定",
+    "set-custom-color": "ノートの色をカスタム設定"
+  },
+  "popup-editor": {
+    "maximize": "フルエディターに切り替え"
+  },
+  "server": {
+    "unknown_http_error_title": "サーバーとの通信エラー",
+    "unknown_http_error_content": "ステータスコード: {{statusCode}}\nURL: {{method}} {{url}}\nメッセージ: {{message}}",
+    "traefik_blocks_requests": "Traefik リバース プロキシを使用している場合、サーバーとの通信に影響する重大な変更が導入されました。"
+  },
+  "tab_history_navigation_buttons": {
+    "go-back": "前のノートに戻る",
+    "go-forward": "次のノートに進む"
+  },
+  "experimental_features": {
+    "title": "実験オプション",
+    "disclaimer": "これらのオプションは試験的なもので、動作が不安定になる可能性があります。注意してご使用ください。",
+    "new_layout_name": "新しいレイアウト",
+    "new_layout_description": "よりモダンな外観と使いやすさが向上した新しいレイアウトをお試しください。今後のリリースで大幅な変更が加えられる可能性があります。"
+  },
+  "breadcrumb_badges": {
+    "read_only_explicit": "読み取り専用",
+    "read_only_auto": "自動的に読み取り専用",
+    "shared_publicly": "公開で共有",
+    "shared_locally": "ローカルで共有",
+    "read_only_explicit_description": "このノートは手動で読み取り専用に設定されています。\nクリックすると一時的に編集できます。",
+    "read_only_temporarily_disabled": "一時的に編集可能",
+    "read_only_auto_description": "このノートはパフォーマンス上の理由により、自動的に読み取り専用モードに設定されました。この自動制限は設定から調整できます。\n\n一時的に編集するにはクリックしてください。",
+    "read_only_temporarily_disabled_description": "このノートは現在編集可能ですが、通常は読み取り専用です。別のノートに移動すると読み取り専用に戻ります。\n\nクリックすると読み取り専用モードが再度有効になります。",
+    "clipped_note": "Web クリップ",
+    "clipped_note_description": "このノートは {{url}} から取得されました。\n\nクリックすると元の web ページに移動します。",
+    "execute_script": "スクリプトを実行",
+    "execute_script_description": "このノートはスクリプトノートです。クリックするとスクリプトが実行されます。",
+    "execute_sql": "SQL を実行",
+    "execute_sql_description": "このノートは SQL ノートです。クリックすると SQL クエリが実行されます。",
+    "shared_copy_to_clipboard": "リンクをクリップボードにコピー",
+    "shared_open_in_browser": "ブラウザでリンクを開く",
+    "shared_unshare": "共有を削除"
+  },
+  "status_bar": {
+    "language_title": "コンテンツの言語を変更",
+    "note_info_title": "ノート情報を表示（例: 日付、ノートのサイズなど）",
+    "backlinks_title_other": "バックリンクを表示",
+    "attachments_title_other": "添付ファイルを新しいタブで表示",
+    "attributes_other": "{{count}} 個の属性",
+    "attributes_title": "所有属性と継承属性",
+    "note_paths_title": "ノートパス",
+    "code_note_switcher": "言語モードを変更",
+    "backlinks_other": "{{count}} バックリンク",
+    "attachments_other": "{{count}} 件の添付ファイル",
+    "note_paths_other": "{{count}} 個のパス"
+  },
+  "breadcrumb": {
+    "hoisted_badge": "ホイスト",
+    "hoisted_badge_title": "ホイスト解除",
+    "workspace_badge": "ワークスペース",
+    "scroll_to_top_title": "ノートの先頭にジャンプ",
+    "create_new_note": "新しい子ノートを作成",
+    "empty_hide_archived_notes": "アーカイブされたノートを非表示"
+  },
+  "right_pane": {
+    "empty_message": "このノートには何も表示されません",
+    "empty_button": "パネルを非表示",
+    "toggle": "右パネルを切り替え",
+    "custom_widget_go_to_source": "ソースコードへ移動"
+  },
+  "attributes_panel": {
+    "title": "ノート属性"
   }
 }

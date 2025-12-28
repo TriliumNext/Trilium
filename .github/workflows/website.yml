@@ -25,7 +25,7 @@ jobs:
       pull-requests: write # For PR preview comments
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
       - name: Set up node & dependencies
         uses: actions/setup-node@v6

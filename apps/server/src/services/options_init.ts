@@ -1,10 +1,11 @@
-import optionService from "./options.js";
+import { type KeyboardShortcutWithRequiredActionName, type OptionMap, type OptionNames, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
+
 import appInfo from "./app_info.js";
-import { randomSecureToken, isWindows } from "./utils.js";
-import log from "./log.js";
 import dateUtils from "./date_utils.js";
 import keyboardActions from "./keyboard_actions.js";
-import { SANITIZER_DEFAULT_ALLOWED_TAGS, type KeyboardShortcutWithRequiredActionName, type OptionMap, type OptionNames } from "@triliumnext/commons";
+import log from "./log.js";
+import optionService from "./options.js";
+import { isWindows,randomSecureToken } from "./utils.js";
 
 function initDocumentOptions() {
     optionService.createOption("documentId", randomSecureToken(16), false);
@@ -104,6 +105,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "leftPaneVisible", value: "true", isSynced: false },
     { name: "rightPaneWidth", value: "25", isSynced: false },
     { name: "rightPaneVisible", value: "true", isSynced: false },
+    { name: "rightPaneCollapsedItems", value: "[]", isSynced: false },
     { name: "nativeTitleBarVisible", value: "false", isSynced: false },
     { name: "eraseEntitiesAfterTimeInSeconds", value: "604800", isSynced: true }, // default is 7 days
     { name: "eraseEntitiesAfterTimeScale", value: "86400", isSynced: true }, // default 86400 seconds = Day
@@ -129,7 +131,6 @@ const defaultOptions: DefaultOption[] = [
     { name: "logRetentionDays", value: "90", isSynced: false }, // default 90 days
     { name: "customSearchEngineName", value: "DuckDuckGo", isSynced: true },
     { name: "customSearchEngineUrl", value: "https://duckduckgo.com/?q={keyword}", isSynced: true },
-    { name: "promotedAttributesOpenInRibbon", value: "true", isSynced: true },
     { name: "editedNotesOpenInRibbon", value: "true", isSynced: true },
     { name: "mfaEnabled", value: "false", isSynced: false },
     { name: "mfaMethod", value: "totp", isSynced: false },
@@ -157,6 +158,7 @@ const defaultOptions: DefaultOption[] = [
     { name: "shadowsEnabled", value: "true", isSynced: false },
     { name: "backdropEffectsEnabled", value: "true", isSynced: false },
     { name: "smoothScrollEnabled", value: "true", isSynced: false },
+    { name: "newLayout", value: "true", isSynced: true },
 
     // Internationalization
     { name: "locale", value: "en", isSynced: true },
@@ -172,9 +174,9 @@ const defaultOptions: DefaultOption[] = [
         value: (optionsMap) => {
             if (optionsMap.theme === "light") {
                 return "default:stackoverflow-light";
-            } else {
-                return "default:stackoverflow-dark";
             }
+            return "default:stackoverflow-dark";
+
         },
         isSynced: false
     },
@@ -216,7 +218,14 @@ const defaultOptions: DefaultOption[] = [
     { name: "aiSystemPrompt", value: "", isSynced: true },
     { name: "aiSelectedProvider", value: "openai", isSynced: true },
 
-    { name: "seenCallToActions", value: "[]", isSynced: true }
+    {
+        name: "seenCallToActions",
+        value: JSON.stringify([
+            "new_layout", "background_effects", "next_theme"
+        ]),
+        isSynced: true
+    },
+    { name: "experimentalFeatures", value: "[]", isSynced: true }
 ];
 
 /**

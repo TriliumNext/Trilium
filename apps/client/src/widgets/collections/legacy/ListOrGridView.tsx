@@ -1,21 +1,25 @@
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
-import FNote from "../../../entities/fnote";
-import Icon from "../../react/Icon";
-import { ViewModeProps } from "../interface";
-import {  useNoteLabelBoolean, useImperativeSearchHighlighlighting } from "../../react/hooks";
-import NoteLink from "../../react/NoteLink";
 import "./ListOrGridView.css";
-import content_renderer from "../../../services/content_renderer";
-import { Pager, usePagination } from "../Pagination";
-import tree from "../../../services/tree";
-import link from "../../../services/link";
-import { t } from "../../../services/i18n";
+
+import { useEffect, useRef, useState } from "preact/hooks";
+
+import FNote from "../../../entities/fnote";
 import attribute_renderer from "../../../services/attribute_renderer";
+import content_renderer from "../../../services/content_renderer";
+import { t } from "../../../services/i18n";
+import link from "../../../services/link";
+import tree from "../../../services/tree";
+import { useImperativeSearchHighlighlighting, useNoteLabel, useNoteLabelBoolean } from "../../react/hooks";
+import Icon from "../../react/Icon";
+import NoteLink from "../../react/NoteLink";
+import { ViewModeProps } from "../interface";
+import { Pager, usePagination } from "../Pagination";
+import { filterChildNotes, useFilteredNoteIds } from "./utils";
 
 export function ListView({ note, noteIds: unfilteredNoteIds, highlightedTokens }: ViewModeProps<{}>) {
-    const [ isExpanded ] = useNoteLabelBoolean(note, "expanded");
+    const expandDepth = useExpansionDepth(note);
     const noteIds = useFilteredNoteIds(note, unfilteredNoteIds);
     const { pageNotes, ...pagination } = usePagination(note, noteIds);
+    const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
 
     return (
         <div class="note-list list-view">
@@ -24,7 +28,11 @@ export function ListView({ note, noteIds: unfilteredNoteIds, highlightedTokens }
 
                 <div class="note-list-container use-tn-links">
                     {pageNotes?.map(childNote => (
-                        <ListNoteCard note={childNote} parentNote={note} expand={isExpanded} highlightedTokens={highlightedTokens} />
+                        <ListNoteCard
+                            key={childNote.noteId}
+                            note={childNote} parentNote={note}
+                            expandDepth={expandDepth} highlightedTokens={highlightedTokens}
+                            currentLevel={1} includeArchived={includeArchived} />
                     ))}
                 </div>
 
@@ -55,12 +63,20 @@ export function GridView({ note, noteIds: unfilteredNoteIds, highlightedTokens }
     );
 }
 
-function ListNoteCard({ note, parentNote, expand, highlightedTokens }: { note: FNote, parentNote: FNote, expand?: boolean, highlightedTokens: string[] | null | undefined }) {
-    const [ isExpanded, setExpanded ] = useState(expand);
+function ListNoteCard({ note, parentNote, highlightedTokens, currentLevel, expandDepth, includeArchived }: {
+    note: FNote,
+    parentNote: FNote,
+    currentLevel: number,
+    expandDepth: number,
+    highlightedTokens: string[] | null | undefined;
+    includeArchived: boolean;
+}) {
+
+    const [ isExpanded, setExpanded ] = useState(currentLevel <= expandDepth);
     const notePath = getNotePath(parentNote, note);
 
     // Reset expand state if switching to another note, or if user manually toggled expansion state.
-    useEffect(() => setExpanded(expand), [ note, expand ]);
+    useEffect(() => setExpanded(currentLevel <= expandDepth), [ note, currentLevel, expandDepth ]);
 
     return (
         <div
@@ -80,10 +96,10 @@ function ListNoteCard({ note, parentNote, expand, highlightedTokens }: { note: F
 
             {isExpanded && <>
                 <NoteContent note={note} highlightedTokens={highlightedTokens} noChildrenList />
-                <NoteChildren note={note} parentNote={parentNote} highlightedTokens={highlightedTokens} />
+                <NoteChildren note={note} parentNote={parentNote} highlightedTokens={highlightedTokens} currentLevel={currentLevel} expandDepth={expandDepth} includeArchived={includeArchived} />
             </>}
         </div>
-    )
+    );
 }
 
 function GridNoteCard({ note, parentNote, highlightedTokens }: { note: FNote, parentNote: FNote, highlightedTokens: string[] | null | undefined }) {
@@ -116,7 +132,7 @@ function GridNoteCard({ note, parentNote, highlightedTokens }: { note: FNote, pa
                 highlightedTokens={highlightedTokens}
             />
         </div>
-    )
+    );
 }
 
 function NoteAttributes({ note }: { note: FNote }) {
@@ -127,7 +143,7 @@ function NoteAttributes({ note }: { note: FNote }) {
         });
     }, [ note ]);
 
-    return <span className="note-list-attributes" ref={ref} />
+    return <span className="note-list-attributes" ref={ref} />;
 }
 
 function NoteContent({ note, trim, noChildrenList, highlightedTokens }: { note: FNote, trim?: boolean, noChildrenList?: boolean, highlightedTokens: string[] | null | undefined }) {
@@ -153,42 +169,55 @@ function NoteContent({ note, trim, noChildrenList, highlightedTokens }: { note: 
                 console.warn(`Caught error while rendering note '${note.noteId}' of type '${note.type}'`);
                 console.error(e);
                 contentRef.current?.replaceChildren(t("collections.rendering_error"));
-            })
+            });
     }, [ note, highlightedTokens ]);
 
     return <div ref={contentRef} className="note-book-content" />;
 }
 
-function NoteChildren({ note, parentNote, highlightedTokens }: { note: FNote, parentNote: FNote, highlightedTokens: string[] | null | undefined }) {
-    const imageLinks = note.getRelations("imageLink");
+function NoteChildren({ note, parentNote, highlightedTokens, currentLevel, expandDepth, includeArchived }: {
+    note: FNote,
+    parentNote: FNote,
+    currentLevel: number,
+    expandDepth: number,
+    highlightedTokens: string[] | null | undefined
+    includeArchived: boolean;
+}) {
     const [ childNotes, setChildNotes ] = useState<FNote[]>();
 
     useEffect(() => {
-        note.getChildNotes().then(childNotes => {
-            const filteredChildNotes = childNotes.filter((childNote) => !imageLinks.find((rel) => rel.value === childNote.noteId));
-            setChildNotes(filteredChildNotes);
-        });
-    }, [ note ]);
+        filterChildNotes(note, includeArchived).then(setChildNotes);
+    }, [ note, includeArchived ]);
 
-    return childNotes?.map(childNote => <ListNoteCard note={childNote} parentNote={parentNote} highlightedTokens={highlightedTokens} />)
-}
-
-/**
- * Filters the note IDs for the legacy view to filter out subnotes that are already included in the note content such as images, included notes.
- */
-function useFilteredNoteIds(note: FNote, noteIds: string[]) {
-    return useMemo(() => {
-        const includedLinks = note ? note.getRelations().filter((rel) => rel.name === "imageLink" || rel.name === "includeNoteLink") : [];
-        const includedNoteIds = new Set(includedLinks.map((rel) => rel.value));
-        return noteIds.filter((noteId) => !includedNoteIds.has(noteId) && noteId !== "_hidden");
-    }, noteIds);
+    return childNotes?.map(childNote => <ListNoteCard
+        key={childNote.noteId}
+        note={childNote}
+        parentNote={parentNote}
+        highlightedTokens={highlightedTokens}
+        currentLevel={currentLevel + 1} expandDepth={expandDepth}
+        includeArchived={includeArchived}
+    />);
 }
 
 function getNotePath(parentNote: FNote, childNote: FNote) {
     if (parentNote.type === "search") {
         // for search note parent, we want to display a non-search path
         return childNote.noteId;
-    } else {
-        return `${parentNote.noteId}/${childNote.noteId}`
     }
+    return `${parentNote.noteId}/${childNote.noteId}`;
+
+}
+
+function useExpansionDepth(note: FNote) {
+    const [ expandDepth ] = useNoteLabel(note, "expanded");
+
+    if (expandDepth === null || expandDepth === undefined) { // not defined
+        return 0;
+    } else if (expandDepth === "") { // defined without value
+        return 1;
+    } else if (expandDepth === "all") {
+        return Number.MAX_SAFE_INTEGER;
+    }
+    return parseInt(expandDepth, 10);
+
 }

@@ -19,16 +19,18 @@
 [![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
 [![翻译状态](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
-[英文](./README.md) | [简体中文](./docs/README-ZH_CN.md) |
-[正体中文](./docs/README-ZH_TW.md) | [俄文](./docs/README-ru.md) |
-[日文](./docs/README-ja.md) | [意大利文](./docs/README-it.md) |
-[西班牙文](./docs/README-es.md)
+<!-- translate:off -->
+<!-- LANGUAGE SWITCHER -->
+[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
+script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
+| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
+| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
+[Spanish](./README-es.md)
+<!-- translate:on -->
 
 Trilium Notes 是一款免费且开源、跨平台的阶层式笔记应用程序，专注于建立大型个人知识库。
 
-想快速了解，请查看[screenshots](https://triliumnext.github.io/Docs/Wiki/screenshot-tour):
-
-<a href="https://triliumnext.github.io/Docs/Wiki/screenshot-tour"><img src="./docs/app.png" alt="Trilium Screenshot" width="1000"></a>
+<img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ 下载
 - [最新版本](https://github.com/TriliumNext/Trilium/releases/latest) –
@@ -43,55 +45,58 @@ Trilium Notes 是一款免费且开源、跨平台的阶层式笔记应用程序
 我们的文档有多种格式可供使用：
 - **在线文档**：请访问我们完整的文档：[docs.triliumnotes.org](https://docs.triliumnotes.org/)
 - **应用内帮助**：在 Trilium 中按下`F1`即可直接在应用程序内访问相同文档
-- **GitHub**：浏览此存储库中的[用户指南](./docs/User%20Guide/User%20Guide/)
+- **GitHub**：浏览此存储库中的[用户指南](./User%20Guide/User%20Guide/)
 
 ### 快速链接
 - [用户说明](https://docs.triliumnotes.org/)
-- [安装说明](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation.md)
+- [安装说明](https://docs.triliumnotes.org/user-guide/setup)
 - [Docker
-  设置](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md)
-- [升级
-  TriliumNext](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Upgrading%20TriliumNext.md)
-- [基本概念与特性](./docs/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes.md)
-- [个人知识库模式](https://triliumnext.github.io/Docs/Wiki/patterns-of-personal-knowledge)
+  设置](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
+- [升级 TriliumNext](https://docs.triliumnotes.org/user-guide/setup/upgrading)
+- [基本概念与特性](https://docs.triliumnotes.org/user-guide/concepts/notes)
+- [个人知识库模式](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
 ## 🎁 功能
 
 * 笔记可组织成任意深度的树形结构。单一笔记可放在树中的多个位置（参见
-  [笔记复制/克隆](https://triliumnext.github.io/Docs/Wiki/cloning-notes))
-* 丰富的所见即所得（WYSIWYG）笔记编辑器，支持表格、图片与[数学公式](https://triliumnext.github.io/Docs/Wiki/text-notes)，并具备
+  [笔记复制/克隆](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
+* 丰富的所见即所得（WYSIWYG）笔记编辑器，支持表格、图片与[数学公式](https://docs.triliumnotes.org/user-guide/note-types/text)，并具备
   Markdown
-  的[自动格式](https://triliumnext.github.io/Docs/Wiki/text-notes#autoformat)
-* 支持编辑[程序代码笔记](https://triliumnext.github.io/Docs/Wiki/code-notes), ，包含语法高亮
-* 快速、轻松地在笔记间[导航](https://triliumnext.github.io/Docs/Wiki/note-navigation)、全文搜索，以及[笔记聚焦（hoisting）](https://triliumnext.github.io/Docs/Wiki/note-hoisting)
-* 无缝的[笔记版本管理](https://triliumnext.github.io/Docs/Wiki/note-revisions)
-* 笔记[属性](https://triliumnext.github.io/Docs/Wiki/attributes)可用于笔记的组织、查询与高级[脚本](https://triliumnext.github.io/Docs/Wiki/scripts)
+  的[自动格式](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
+* 支持编辑[程序代码笔记](https://docs.triliumnotes.org/user-guide/note-types/code),
+  ，包含语法高亮
+* 快速、轻松地在笔记间[导航](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation)、全文搜索，以及[笔记聚焦（hoisting）](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
+* 无缝的[笔记版本管理](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
+* 笔记[属性](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)可用于笔记的组织、查询与高级[脚本](https://docs.triliumnotes.org/user-guide/scripts)
 * 接口提供英文、德文、西班牙文、法文、罗马尼亚文与中文（简体与正体）
-* 直接整合[OpenID 与
-  TOTP](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Server%20Installation/Multi-Factor%20Authentication.md)
+* 直接整合[OpenID 与 TOTP](https://docs.triliumnotes.org/user-guide/setup/server/mfa)
   以实现更安全的登录
-* 与自架的同步服务器进行[同步](https://triliumnext.github.io/Docs/Wiki/synchronization)
-  * 另有[3rd party service for hosting synchronisation
-    server](https://trilium.cc/paid-hosting)
-* 将笔记[分享](https://triliumnext.github.io/Docs/Wiki/sharing)（公开发布）到互联网
-* 以每则笔记为粒度的强大 [笔记加密](https://triliumnext.github.io/Docs/Wiki/protected-notes)
+* 与自架的同步服务器进行[同步](https://docs.triliumnotes.org/user-guide/setup/synchronization)
+  * 有[第三方服务用于托管同步服务器](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+* 将笔记[分享](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)（公开发布）到互联网
+* 以每则笔记为粒度的强大
+  [笔记加密](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
 * 手绘/示意图：基于 [Excalidraw](https://excalidraw.com/) （笔记类型为「canvas」）
-* 用于可视化笔记及其关系的[关系图](https://triliumnext.github.io/Docs/Wiki/relation-map)与[链接图](https://triliumnext.github.io/Docs/Wiki/link-map)
+* 用于可视化笔记及其关系的[关系图](https://docs.triliumnotes.org/user-guide/note-types/relation-map)和[笔记/链接图](https://docs.triliumnotes.org/user-guide/note-types/note-map)
 * 思维导图：基于[Mind Elixir](https://docs.mind-elixir.com/)
-* 具有定位钉与 GPX 轨迹的[地图](./docs/User%20Guide/User%20Guide/Note%20Types/Geo%20Map.md)
-* [脚本](https://triliumnext.github.io/Docs/Wiki/scripts) - 参见
-  [高级展示](https://triliumnext.github.io/Docs/Wiki/advanced-showcases)
-* 用于自动化的 [REST API](https://triliumnext.github.io/Docs/Wiki/etapi)
+* 具有定位钉与 GPX
+  轨迹的[地图](https://docs.triliumnotes.org/user-guide/collections/geomap)
+* [脚本](https://docs.triliumnotes.org/user-guide/scripts) - 参见
+  [高级展示](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
+* 用于自动化的 [REST
+  API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi)
 * 在可用性与效能上均可良好扩展，支持超过 100,000 笔笔记
-* 为手机与平板优化的[移动前端](https://triliumnext.github.io/Docs/Wiki/mobile-frontend)
-* 内置[深色主题](https://triliumnext.github.io/Docs/Wiki/themes)
-* [Evernote 导入](https://triliumnext.github.io/Docs/Wiki/evernote-import)与
-  [Markdown 导入与导出](https://triliumnext.github.io/Docs/Wiki/markdown)
-* 用于快速保存网页内容的 [Web Clipper](https://triliumnext.github.io/Docs/Wiki/web-clipper)
+* 为手机与平板优化的[移动前端](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
+* 内置[深色主题](https://docs.triliumnotes.org/user-guide/concepts/themes)
+* [Evernote
+  导入](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)与
+  [Markdown
+  导入与导出](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
+* 用于快速保存网页内容的 [Web
+  Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper)
 * 可自定义的 UI（侧边栏按钮、用户自定义小组件等）
-* [度量指标（Metrics）](./docs/User%20Guide/User%20Guide/Advanced%20Usage/Metrics.md)，并附有
-  [Grafana
-  仪表板](./docs/User%20Guide/User%20Guide/Advanced%20Usage/Metrics/grafana-dashboard.json)
+* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics)，以及
+  Grafana 仪表板。
 
 ✨ 想要更多 TriliumNext 的主题、脚本、外挂与资源，亦可参考以下第三方资源／社群：
 
@@ -160,7 +165,7 @@ TriliumNext 也提供 Flatpak，惟尚未发布到 FlatHub。
 
 若要在你自己的服务器上安装 TriliumNext（包括从 [Docker
 Hub](https://hub.docker.com/r/triliumnext/trilium) 使用 Docker
-部署），请遵循[服务器安装文件](https://triliumnext.github.io/Docs/Wiki/server-installation)。
+部署），请遵循[服务器安装文件](https://docs.triliumnotes.org/user-guide/setup/server)。
 
 
 ## 💻 贡献
@@ -230,7 +235,7 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [Tabulator](https://github.com/olifolkerd/tabulator) —— 用于集合中的交互式表格。
 * [FancyTree](https://github.com/mar10/fancytree) —— 功能丰富的树形控件库，无可匹敌。
 * [jsPlumb](https://github.com/jsplumb/jsplumb) ——
-  可视化连接库。用于[关系图](https://triliumnext.github.io/Docs/Wiki/relation-map.html)和[链接图](https://triliumnext.github.io/Docs/Wiki/note-map.html#link-map)
+  可视化连接库。用于[关系图](https://docs.triliumnotes.org/user-guide/note-types/relation-map)和[链接图](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 支持我们
 

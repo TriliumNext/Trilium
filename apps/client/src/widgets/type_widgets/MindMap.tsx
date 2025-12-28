@@ -1,16 +1,19 @@
-import { useCallback, useEffect, useRef } from "preact/hooks";
-import { TypeWidgetProps } from "./type_widget";
-import { MindElixirData, MindElixirInstance, Operation, Options, default as VanillaMindElixir } from "mind-elixir";
-import { HTMLAttributes, RefObject } from "preact";
-// allow node-menu plugin css to be bundled by webpack
-import nodeMenu from "@mind-elixir/node-menu";
 import "mind-elixir/style";
 import "@mind-elixir/node-menu/dist/style.css";
 import "./MindMap.css";
+
+// allow node-menu plugin css to be bundled by webpack
+import nodeMenu from "@mind-elixir/node-menu";
+import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import { snapdom } from "@zumer/snapdom";
+import { default as VanillaMindElixir,MindElixirData, MindElixirInstance, Operation, Options } from "mind-elixir";
+import { HTMLAttributes, RefObject } from "preact";
+import { useCallback, useEffect, useRef } from "preact/hooks";
+
+import utils from "../../services/utils";
 import { useEditorSpacedUpdate, useNoteLabelBoolean, useSyncedRef, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
 import { refToJQuerySelector } from "../react/react_utils";
-import utils from "../../services/utils";
-import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import { TypeWidgetProps } from "./type_widget";
 
 const NEW_TOPIC_NAME = "";
 
@@ -28,13 +31,14 @@ const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, Options["locale"] | null> 
     de: null,
     en: "en",
     en_rtl: "en",
+    "en-GB": "en",
     es: "es",
     fr: "fr",
     it: "it",
     ja: "ja",
     pt: "pt",
     pt_br: "pt",
-    ro: null,
+    ro: "ro",
     ru: "ru",
     tw: "zh_TW",
     uk: null
@@ -44,11 +48,25 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
     const apiRef = useRef<MindElixirInstance>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [ isReadOnly ] = useNoteLabelBoolean(note, "readOnly");
+
+
     const spacedUpdate = useEditorSpacedUpdate({
         note,
+        noteType: "mindMap",
         noteContext,
         getData: async () => {
             if (!apiRef.current) return;
+
+            const result = await snapdom(apiRef.current.nodes, {
+                backgroundColor: "transparent",
+                scale: 2
+            });
+
+            // a data URL in the format: "data:image/svg+xml;charset=utf-8,<url-encoded-svg>"
+            // We need to extract the content after the comma and decode the URL encoding (%3C to <, %20 to space, etc.)
+            // to get raw SVG content that Trilium's backend can store as an attachment
+            const svgContent = decodeURIComponent(result.url.split(',')[1]);
+
             return {
                 content: apiRef.current.getDataString(),
                 attachments: [
@@ -56,11 +74,11 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
                         role: "image",
                         title: "mindmap-export.svg",
                         mime: "image/svg+xml",
-                        content: await apiRef.current.exportSvg().text(),
+                        content: svgContent,
                         position: 0
                     }
                 ]
-            }
+            };
         },
         onContentChange: (content) => {
             let newContent: MindElixirData;
@@ -72,7 +90,7 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
                     console.debug("Wrong JSON content: ", content);
                 }
             } else {
-                newContent = VanillaMindElixir.new(NEW_TOPIC_NAME)
+                newContent = VanillaMindElixir.new(NEW_TOPIC_NAME);
             }
             apiRef.current?.init(newContent!);
         }
@@ -87,13 +105,13 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
     // Export as PNG or SVG.
     useTriliumEvents([ "exportSvg", "exportPng" ], async ({ ntxId: eventNtxId }, eventName) => {
         if (eventNtxId !== ntxId || !apiRef.current) return;
-        const title = note.title;
-        const svg = await apiRef.current.exportSvg().text();
+        const nodes = apiRef.current.nodes;
         if (eventName === "exportSvg") {
-            utils.downloadSvg(title, svg);
+            await utils.downloadAsSvg(note.title, nodes);
         } else {
-            utils.downloadSvgAsPng(title, svg);
+            await utils.downloadAsPng(note.title, nodes);
         }
+
     });
 
     const onKeyDown = useCallback((e: KeyboardEvent) => {
@@ -123,7 +141,7 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
                 onKeyDown
             }}
         />
-    )
+    );
 }
 
 function MindElixir({ containerRef: externalContainerRef, containerProps, apiRef: externalApiRef, onChange, editable }: MindElixirProps) {
@@ -175,7 +193,7 @@ function MindElixir({ containerRef: externalContainerRef, containerProps, apiRef
             if (operation.name !== "beginEdit") {
                 onChange();
             }
-        }
+        };
 
         bus.addListener("operation", operationListener);
         bus.addListener("changeDirection", onChange);
@@ -188,5 +206,5 @@ function MindElixir({ containerRef: externalContainerRef, containerProps, apiRef
 
     return (
         <div ref={containerRef} {...containerProps} />
-    )
+    );
 }

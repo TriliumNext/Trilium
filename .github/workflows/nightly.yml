@@ -45,9 +45,22 @@ jobs:
             image: win-signing
             shell: cmd
             forge_platform: win32
+        # Exclude ARM64 Linux from default matrix to use native runner
+        exclude:
+          - arch: arm64
+            os:
+              name: linux
+        # Add ARM64 Linux with native ubuntu-24.04-arm runner for better-sqlite3 compatibility
+        include:
+          - arch: arm64
+            os:
+              name: linux
+              image: ubuntu-24.04-arm
+              shell: bash
+              forge_platform: linux
     runs-on: ${{ matrix.os.image }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
       - name: Set up node & dependencies
         uses: actions/setup-node@v6
@@ -77,7 +90,7 @@ jobs:
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGN_KEY }}
 
       - name: Publish release
-        uses: softprops/action-gh-release@v2.4.2
+        uses: softprops/action-gh-release@v2.5.0
         if: ${{ github.event_name != 'pull_request' }}
         with:
           make_latest: false
@@ -89,7 +102,7 @@ jobs:
           name: Nightly Build
 
       - name: Publish artifacts
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: ${{ github.event_name == 'pull_request' }}
         with:
           name: TriliumNotes ${{ matrix.os.name }} ${{ matrix.arch }}
@@ -109,7 +122,7 @@ jobs:
             runs-on: ubuntu-24.04-arm
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Run the build
         uses: ./.github/actions/build-server
@@ -118,7 +131,7 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Publish release
-        uses: softprops/action-gh-release@v2.4.2
+        uses: softprops/action-gh-release@v2.5.0
         if: ${{ github.event_name != 'pull_request' }}
         with:
           make_latest: false

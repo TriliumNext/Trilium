@@ -15,6 +15,121 @@
         "server_title": "여러 기기에서 액세스할 수 있는 서버 설정"
     },
     "download_now": {
-        "text": "지금 내려받기 "
+        "text": "지금 내려받기 ",
+        "platform_big": "{{platform}}용 v{{version}}",
+        "platform_small": "{{platform}}용",
+        "linux_big": "리눅스용 v{{version}}",
+        "linux_small": "리눅스용",
+        "more_platforms": "더 많은 플랫폼 및 서버 구성"
+    },
+    "organization_benefits": {
+        "title": "구성",
+        "note_structure_description": "노트는 계층적으로 정리될 수 있습니다. 각 노트는 하위 노트를 포함할 수 있으므로 폴더가 필요 없습니다. 하나의 노트가 계층 구조의 여러 위치에 추가될 수 있습니다.",
+        "attributes_title": "노트 라벨과 관계",
+        "attributes_description": "쉬운 분류를 위해 노트 사이의 관계를 이용하거나 라벨을 추가할 수 있습니다. 테이블이나 보드에서 사용될 수 있는 구조화된 정보를 입력하려면 승격된 속성을 사용하세요.",
+        "hoisting_title": "작업 공간과 끌어올리기",
+        "hoisting_description": "작업 공간에 개인 노트와 업무 노트를 그룹화하여 쉽게 분리할 수 있으며 메모 트리가 특정 메모 세트만 표시하도록 할 수 있습니다.",
+        "note_structure_title": "노트 구조"
+    },
+    "productivity_benefits": {
+        "title": "생산성과 안전성",
+        "revisions_title": "노트 수정",
+        "revisions_content": "노트는 주기적으로 백그라운드에서 저장되고 수정 내용들은 검토하거나 실수로 변경한 내용을 취소하는 데 사용할 수 있습니다.수정 내역들은 필요에 따라 수동으로 생성될 수도 있습니다.",
+        "sync_title": "동기화",
+        "sync_content": "자체 호스팅 또는 클라우드 인스턴스를 이용하여 여러 기기 사이에서 노트를 쉽게 동기화하고 PWA를 통해 모바일 폰에서 접근할 수 있습니다.",
+        "protected_notes_title": "보호된 노트",
+        "protected_notes_content": "노트를 암호화하고 비밀번호로 보호되는 세션 뒤에 잠궈 민감한 개인 정보를 보호하세요.",
+        "jump_to_title": "빠른 검색 및 명령어",
+        "jump_to_content": "제목을 검색하고 오타나 약간의 차이를 설명하기 위해 퍼지 매칭을 통해 계층 전반에 걸쳐 노트나 UI 명령으로 빠르게 이동하세요.",
+        "search_title": "상세 검색",
+        "search_content": "또는 노트 내부에서 문자를 검색하거나 부모 노트 또는 단계별로 필터링 하는 등 검색 범위를 조정하세요.",
+        "web_clipper_title": "웹 클리퍼",
+        "web_clipper_content": "웹 클리퍼 확장 프로그램을 사용하여 웹 페이지(또는 스크린샷)를 Trilium으로 가져와 문서에 사용하세요."
+    },
+    "header": {
+        "get-started": "시작하기",
+        "documentation": "문서"
+    },
+    "support_us": {
+        "financial_donations_title": "금전적 기부",
+        "financial_donations_description": "Trilium은 <Link>수백시간의 작업</Link>을 통해 구축되고 유지관리됩니다. 여러분의 지원은 Trilium을 오픈소스로 유지하고, 기능을 개선하고, 호스팅 등의 비용을 충당합니다.",
+        "financial_donations_cta": "애플리케이션의 주요 개발자 (<Link>eliandoran</Link>)을 다음 방법으로 후원하는 것을 고려해 주십시오.",
+        "github_sponsors": "GitHub Sponsors",
+        "paypal": "페이팔",
+        "buy_me_a_coffee": "Buy Me A Coffee"
+    },
+    "contribute": {
+        "title": "기여할 수 있는 다른 방법",
+        "way_translate": "<Link>Weblate</Link>를 통해 이 애플리케이션을 당신의 모국어로 번역하세요.",
+        "way_community": "<Discussions>GitHub Discussions</Discussions>나 <Matrix>Matrix</Matrix>에서 커뮤니티와 소통하세요.",
+        "way_reports": "<Link>GitHub issues</Link>를 통해 버그를 제보하세요.",
+        "way_document": "문서의 부족한 부분을 알려주거나 가이드, FAQ, 튜토리얼에 기여하여 문서를 개선하세요.",
+        "way_market": "소문을 내주세요: Trilium Notes를 친구들과, 혹은 블로그나 SNS에서 공유하세요."
+    },
+    "404": {
+        "title": "404: 페이지를 찾을 수 없음",
+        "description": "요청하신 페이지를 찾을 수 없습니다. 해당 페이지가 삭제되었거나 URL이 잘못되었을 수 있습니다."
+    },
+    "download_helper_desktop_windows": {
+        "title_x64": "Windows 64비트",
+        "title_arm64": "Windows on ARM (WoA)",
+        "description_x64": "Windows 10 및 11을 구동하는 Intel 또는 AMD 장치와 호환됩니다.",
+        "description_arm64": "ARM 장치와 호환됩니다. (예: Qualcomm Snapdragon).",
+        "quick_start": "Winget을 통해 설치:",
+        "download_exe": "설치 프로그램 내려받기 (.exe)",
+        "download_zip": "포터블 (.zip)",
+        "download_scoop": "Scoop (패키지 관리자)"
+    },
+    "download_helper_desktop_linux": {
+        "title_x64": "리눅스 64비트",
+        "title_arm64": "ARM 기반 리눅스",
+        "description_x64": "대부분의 리눅스 배포판에서 x86_64 아키텍처와 호환됩니다.",
+        "description_arm64": "ARM 기반 리눅스 배포판에서 aarch64 아키텍처와 호환됩니다."
+    },
+    "note_types": {
+        "text_title": "텍스트 노트",
+        "text_description": "노트는 WYSIWYG 편집기를 사용하며 표, 이미지, 수학 표현식, 구문 강조 기능의 코드 블록을 지원합니다. 특수문자를 사용한 마크다운 유사 구문이나 슬래시(/) 명령으로 텍스트 서식을 빠르게 지정할 수 있습니다.",
+        "code_title": "코드 노트",
+        "title": "당신의 정보를 보여주는 다양한 방법",
+        "code_description": "대규모 소스 코드나 스크립트 샘플은 전용 편집기를 사용하여 다양한 프로그래밍 언어에 대한 구문 강조 기능과 다양한 색상 테마를 제공합니다.",
+        "file_title": "파일 노트",
+        "file_description": "PDF, 이미지, 인앱 어플리케이션 미리보기를 포함한 비디오와 같은 멀티미디어 파일을 저장하세요.",
+        "canvas_title": "캔버스",
+        "canvas_description": "excalidraw.com과 동일한 기술을 사용하여 무한한 캔버스에 도형, 이미지, 텍스트를 배치하세요. 다이어그램, 스케치, 시각적 계획에 이상적입니다.",
+        "mermaid_title": "Mermaid 다이어그램",
+        "mermaid_description": "Mermaid 구문을 사용하여 순서도(Flowchart), 클래스 및 시퀀스 다이어그램, 간트(Gantt) 차트 등의 다이어그램을 만들어 보세요.",
+        "mindmap_title": "마인드맵",
+        "mindmap_description": "생각을 시각적으로 정리하거나 브레인스토밍 세션을 진행하세요.",
+        "others_list": "기타: <0>노트 맵</0>, <1>관계 맵</1>, <2>저장된 검색</2>, <3>렌더링 노트</3>, <4>웹 뷰</4>."
+    },
+    "extensibility_benefits": {
+        "title": "공유 및 확장성",
+        "import_export_title": "가져오기/내보내기",
+        "import_export_description": "Markdown, ENEX, OML 형식으로 다른 애플리케이션과 쉽게 상호 작용할 수 있습니다.",
+        "share_title": "웹에서 노트 공유하기",
+        "share_description": "만약 서버를 사용한다면, 다른 사람들과 메모의 일부를 공유할 수 있습니다.",
+        "scripting_title": "고급 Scripting",
+        "scripting_description": "사용자 정의 위젯, 서버 사이드 로직을 사용하여 Trilium 내에서 통합 시스템을 구축해보세요.",
+        "api_title": "REST API",
+        "api_description": "내장되어있는 REST API를 사용하여 Trilium과 프로그래밍 방식으로 상호작용 해보세요."
+    },
+    "collections": {
+        "title": "컬렉션",
+        "calendar_title": "캘린더",
+        "calendar_description": "캘린더를 사용하여 개인 또는 업무 관련 일정을 관리하세요. 하루 또는 며칠 단위로 일정을 관리할 수 있으며, 주별, 월별, 연도별 보기를 통해 일정을 한눈에 확인할 수 있습니다. 또 간편한 상호작용을 통해 일정을 추가하거나 끌어다 놓을 수 있습니다.",
+        "table_title": "테이블",
+        "table_description": "텍스트, 숫자, 체크박스, 날짜 및 시간, 링크, 색상 등 다양한 열 유형을 제공하고 관계 기능을 지원하는 표 형식으로 노트에 내용을 표시하고 편집할 수 있습니다. 필요에 따라 표 안에 트리 계층 구조의 노트를 표시할 수도 있습니다.",
+        "board_title": "칸반 보드",
+        "board_description": "칸반 보드에 작업이나 프로젝트 상태를 정리하세요. 새 항목과 열을 쉽게 만들 수 있고, 보드 위로 드래그하여 상태를 간단히 변경할 수 있습니다.",
+        "geomap_title": "지리 지도",
+        "geomap_description": "커스터마이징이 가능한 마커로 휴가를 계획하거나 관심 지점을 지도에 직접 표시하세요. 기록된 GPX 트랙을 표시하여 여정을 추적할 수도 있습니다.",
+        "presentation_title": "프레젠테이션",
+        "presentation_description": "슬라이드에 정보를 정리하고, 매끄러운 전환 효과와 함께 전체 화면으로 발표하세요. 슬라이드를 PDF로 내보내 간편하게 공유할 수도 있습니다."
+    },
+    "faq": {
+        "mobile_question": "모바일 앱이 있나요?",
+        "mobile_answer": "현재 공식적인 모바일 앱은 없습니다. 하지만, 서버 인스턴스를 가지고 있다면 웹 브라우저를 이용해 접근하거나 PWA로 설치할 수 있습니다. 안드로이드에는 (데스크탑 클라이언트처럼)오프라인에서도 작동하는 TriliumDroid라는 비공식 앱이 있습니다.",
+        "database_question": "어디에 데이터가 저장되나요?",
+        "server_question": "Trilium을 사용하기 위해 서버가 필요한가요?"
     }
 }

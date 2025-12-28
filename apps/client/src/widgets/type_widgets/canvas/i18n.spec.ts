@@ -22,6 +22,7 @@ describe("Canvas i18n", () => {
             if (locale.contentOnly || locale.devOnly) continue;
             const languageCode = LANGUAGE_MAPPINGS[locale.id];
             if (!supportedLanguageCodes.has(languageCode)) {
+                console.log("Supported locales:", Array.from(supportedLanguageCodes.values()).join(", "));
                 expect.fail(`Unable to find locale for ${locale.id} -> ${languageCode}.`)
             }
         }

@@ -1,5 +1,5 @@
-import { Autoformat, AutoLink, BlockQuote, BlockToolbar, Bold, CKFinderUploadAdapter, Clipboard, Code, CodeBlock, Enter, FindAndReplace, Font, FontBackgroundColor, FontColor, GeneralHtmlSupport, Heading, HeadingButtonsUI, HorizontalLine, Image, ImageCaption, ImageInline, ImageResize, ImageStyle, ImageToolbar, ImageUpload, Alignment, Indent, IndentBlock, Italic, Link, List, ListProperties, Mention, PageBreak, Paragraph, ParagraphButtonUI, PasteFromOffice, PictureEditing, RemoveFormat, SelectAll, ShiftEnter, SpecialCharacters, SpecialCharactersEssentials, Strikethrough, Style, Subscript, Superscript, Table, TableCaption, TableCellProperties, TableColumnResize, TableProperties, TableSelection, TableToolbar, TextPartLanguage, TextTransformation, TodoList, Typing, Underline, Undo, Bookmark, Emoji, Notification, EmojiMention, EmojiPicker } from "ckeditor5";
-import { SlashCommand, Template } from "ckeditor5-premium-features";
+import { Autoformat, AutoLink, BlockQuote, BlockToolbar, Bold, CKFinderUploadAdapter, Clipboard, Code, CodeBlock, Enter, Font, FontBackgroundColor, FontColor, GeneralHtmlSupport, Heading, HeadingButtonsUI, HorizontalLine, Image, ImageCaption, ImageInline, ImageResize, ImageStyle, ImageToolbar, ImageUpload, Alignment, Indent, IndentBlock, Italic, Link, List, ListProperties, Mention, PageBreak, Paragraph, ParagraphButtonUI, PasteFromOffice, PictureEditing, RemoveFormat, SelectAll, ShiftEnter, SpecialCharacters, SpecialCharactersEssentials, Strikethrough, Style, Subscript, Superscript, Table, TableCaption, TableCellProperties, TableColumnResize, TableProperties, TableSelection, TableToolbar, TextPartLanguage, TextTransformation, TodoList, Typing, Underline, Undo, Bookmark, EmojiMention, EmojiPicker, FindAndReplaceEditing } from "ckeditor5";
+import { SlashCommand, Template, FormatPainter } from "ckeditor5-premium-features";
 import type { Plugin } from "ckeditor5";
 import CutToNotePlugin from "./plugins/cuttonote.js";
 import UploadimagePlugin from "./plugins/uploadimage.js";
@@ -29,6 +29,7 @@ import CodeBlockToolbar from "./plugins/code_block_toolbar.js";
 import CodeBlockLanguageDropdown from "./plugins/code_block_language_dropdown.js";
 import MoveBlockUpDownPlugin from "./plugins/move_block_updown.js";
 import ScrollOnUndoRedoPlugin from "./plugins/scroll_on_undo_redo.js"
+import InlineCodeNoSpellcheck from "./plugins/inline_code_no_spellcheck.js";
 
 /**
  * Plugins that are specific to Trilium and not part of the CKEditor 5 core, included in both text editors but not in the attribute editor.
@@ -49,7 +50,8 @@ const TRILIUM_PLUGINS: typeof Plugin[] = [
     CodeBlockLanguageDropdown,
     CodeBlockToolbar,
     MoveBlockUpDownPlugin,
-	ScrollOnUndoRedoPlugin
+    ScrollOnUndoRedoPlugin,
+    InlineCodeNoSpellcheck,
 ];
 
 /**
@@ -83,7 +85,8 @@ export const CORE_PLUGINS: typeof Plugin[] = [
  */
 export const PREMIUM_PLUGINS: typeof Plugin[] = [
     SlashCommand,
-    Template
+    Template,
+	FormatPainter
 ];
 
 /**
@@ -98,6 +101,7 @@ export const COMMON_PLUGINS: typeof Plugin[] = [
 	Italic,
 	Underline,
 	Strikethrough,
+    FindAndReplaceEditing,
 	Code,
 	Superscript,
 	Subscript,
@@ -139,7 +143,6 @@ export const COMMON_PLUGINS: typeof Plugin[] = [
 	RemoveFormat,
 	SpecialCharacters,
 	SpecialCharactersEssentials,
-	FindAndReplace,
 	PageBreak,
 	GeneralHtmlSupport,
 	TextPartLanguage,

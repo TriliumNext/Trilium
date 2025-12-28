@@ -1,15 +1,28 @@
-.note-title-widget {
+div.note-title-widget {
+    /* The font size for the title */
+    --note-title-size: 180%;
+    /* The horizontal padding of the title widget */
+    --note-title-padding-inline: 12px;
+
     flex-grow: 1000;
-    height: 100%;
+    height: auto;
+    contain: unset;
 }
 
 .note-title-widget input.note-title {
-    font-size: 110%;
+    font-size: var(--note-title-size);
     border: 0;
-    margin: 2px 0px;
+    border-radius: 0;
     min-width: 5em;
     width: 100%;
-    padding: 1px 12px;
+    line-height: 1;
+    padding-block: 0;
+    padding-inline: var(--note-title-padding-inline);
+
+    &::selection {
+        color: var(--main-text-color);
+        background: var(--selection-background-color);
+    }
 }
 
 .note-title-widget input.note-title[readonly] {
@@ -22,9 +35,78 @@
 }
 
 body.mobile .note-title-widget input.note-title {
-    padding: 0;
+    --note-title-padding-inline: 0;
 }
 
-body.desktop .note-title-widget input.note-title {
-    font-size: 180%;
+body.experimental-feature-new-layout {
+    .title-row {
+        container-type: size;
+        transition: border 400ms ease-out;
+
+        &.note-split-title {
+            border-bottom: 1px solid var(--main-border-color);
+
+            &.hide-title {
+                border-bottom-color: transparent;
+                transition: none;
+            }
+
+            .note-icon-widget {
+                margin-inline: 12px 8px;
+            }
+        }
+
+        .note-icon-widget {
+            --note-icon-size: 16px;
+            --note-icon-container-padding-size: 6px;
+            margin-inline: 0;
+        }
+
+        .note-title-widget {
+            --note-title-size: 18px;
+            --note-title-padding-inline: 0;
+        }
+
+        @container (max-width: 600px) {
+            .note-title-widget {
+                --note-title-size: 1.25rem;
+                --note-title-padding-inline: 4px;
+            }
+
+            .note-title-widget {
+                display: flex;
+                align-items: center;
+                .note-title {
+                    font-size: 1em;
+                }
+            }
+
+            .note-title-widget:focus-within + .note-badges,
+            .ext-badge .text {
+                display: none;
+            }
+
+            .ext-badge {
+                --size: 2em;
+                width: var(--size);
+                height: var(--size);
+                padding: 0;
+
+                .bx {
+                    opacity: 1;
+                    margin: 0;
+                }
+            };
+        }
+    }
+
+    .note-title-widget {
+        input.note-title {
+            --input-focus-background: transparent;
+            --input-focus-outline-color: transparent;
+            --input-hover-background: transparent;
+            --input-hover-color: initial;
+            --input-focus-color: initial;
+        }
+    }
 }

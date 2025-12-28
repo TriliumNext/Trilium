@@ -14,14 +14,14 @@ import { t } from "../../../services/i18n";
 import { DEFAULT_THEME, loadPresentationTheme } from "./themes";
 import FNote from "../../../entities/fnote";
 
-export default function PresentationView({ note, noteIds, media, onReady }: ViewModeProps<{}>) {
+export default function PresentationView({ note, noteIds, media, onReady, onProgressChanged }: ViewModeProps<{}>) {
     const [ presentation, setPresentation ] = useState<PresentationModel>();
     const containerRef = useRef<HTMLDivElement>(null);
     const [ api, setApi ] = useState<Reveal.Api>();
     const stylesheets = usePresentationStylesheets(note, media);
 
     function refresh() {
-        buildPresentationModel(note).then(setPresentation);
+        buildPresentationModel(note, onProgressChanged).then(setPresentation);
     }
 
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
@@ -41,7 +41,7 @@ export default function PresentationView({ note, noteIds, media, onReady }: View
         }
     }, [ api, presentation ]);
 
-    if (!presentation || !stylesheets) return;
+    if (!presentation || !stylesheets || !note.hasChildren()) return;
     const content = (
         <>
             {stylesheets.map(stylesheet => <style>{stylesheet}</style>)}

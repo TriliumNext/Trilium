@@ -12,7 +12,8 @@
   "add_link": {
     "add_link": "Thêm liên kết",
     "button_add_link": "Thêm liên kết",
-    "help_on_links": "Trợ giúp về các liên kết"
+    "help_on_links": "Trợ giúp về các liên kết",
+    "link_title": "Đề mục liên kết"
   },
   "bulk_actions": {
     "other": "Khác"
@@ -30,7 +31,9 @@
     "cancel": "Huỷ"
   },
   "export": {
-    "close": "Đóng"
+    "close": "Đóng",
+    "export": "Xuất",
+    "choose_export_type": "Xin hãy chọn cách xuất trước"
   },
   "help": {
     "other": "Khác",
@@ -98,5 +101,11 @@
   },
   "abstract_search_option": {
     "remove_this_search_option": "Xoá lựa chọn tìm kiếm này"
+  },
+  "add_relation": {
+    "to": "tới"
+  },
+  "abstract_bulk_action": {
+    "remove_this_search_action": "Xoá hành động tìm kiếm này"
   }
 }

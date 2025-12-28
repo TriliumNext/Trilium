@@ -20,222 +20,239 @@ releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
 [![Translation
 status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
-[English](./README.md) | [Chinese (Simplified)](./docs/README-ZH_CN.md) |
-[Chinese (Traditional)](./docs/README-ZH_TW.md) | [Russian](./docs/README-ru.md)
-| [Japanese](./docs/README-ja.md) | [Italian](./docs/README-it.md) |
-[Spanish](./docs/README-es.md)
+<!-- translate:off -->
+<!-- LANGUAGE SWITCHER -->
+[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
+script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
+| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
+| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
+[Spanish](./README-es.md)
+<!-- translate:on -->
 
 Το Trilium Notes είναι μια δωρεάν και ανοιχτού κώδικα, ιεραρχική εφαρμογή
 σημειώσεων πολλαπλών πλατφορμών με έμφαση στη δημιουργία μεγάλων προσωπικών
 βάσεων γνώσεων.
 
-See [screenshots](https://triliumnext.github.io/Docs/Wiki/screenshot-tour) for
-quick overview:
+<img src="./app.png" alt="Trilium Screenshot" width="1000">
 
-<a href="https://triliumnext.github.io/Docs/Wiki/screenshot-tour"><img src="./docs/app.png" alt="Trilium Screenshot" width="1000"></a>
-
-## ⏬ Download
-- [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
-  stable version, recommended for most users.
+## ⏬ Λήψη
+- [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) -
+  σταθερή έκδοση, συνιστάται για τους περισσότερους χρήστες.
 - [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  unstable development version, updated daily with the latest features and
-  fixes.
+  ασταθής έκδοση ανάπτυξης, ενημερώνεται καθημερινά με τις τελευταίες
+  δυνατότητες και διορθώσεις.
 
-## 📚 Documentation
+## 📚 Τεκμηρίωση
 
-**Visit our comprehensive documentation at
+**Επισκεφθείτε την ολοκληρωμένη τεκμηρίωσή μας στη διεύθυνση
 [docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 
-Our documentation is available in multiple formats:
-- **Online Documentation**: Browse the full documentation at
-  [docs.triliumnotes.org](https://docs.triliumnotes.org/)
-- **In-App Help**: Press `F1` within Trilium to access the same documentation
-  directly in the application
-- **GitHub**: Navigate through the [User
-  Guide](./docs/User%20Guide/User%20Guide/) in this repository
+Η τεκμηρίωση μας είναι διαθέσιμη σε πολλαπλές μορφές:
+- **Online Documentation **: Περιηγηθείτε στην πλήρη τεκμηρίωση
+  [docs.triliumnotes.org]
+- ** In-App Help **: Πατήστε `F1 ` εντός Trilium για την πρόσβαση στην ίδια
+  τεκμηρίωση απευθείας στην εφαρμογή
+- **GitHub**: Περιηγηθείτε στον [Οδηγό χρήσης](./User%20Guide/User%20Guide/) σε
+  αυτό το αποθετήριο
 
-### Quick Links
-- [Getting Started Guide](https://docs.triliumnotes.org/)
-- [Installation
-  Instructions](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation.md)
-- [Docker
-  Setup](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md)
-- [Upgrading
-  TriliumNext](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Upgrading%20TriliumNext.md)
-- [Basic Concepts and
-  Features](./docs/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes.md)
-- [Patterns of Personal Knowledge
-  Base](https://triliumnext.github.io/Docs/Wiki/patterns-of-personal-knowledge)
+### Γρήγοροι Σύνδεσμοι
+- [Οδηγός για να ξεκινήσετε](https://docs.triliumnotes.org/)
+- [Οδηγίες Εγκατάστασης](https://docs.triliumnotes.org/user-guide/setup)
+- [Ρύθμιση
+  Docker](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
+- [Αναβάθμιση
+  TriliumNext](https://docs.triliumnotes.org/user-guide/setup/upgrading)
+- [Βασικές έννοιες και
+  Χαρακτηριστικά](https://docs.triliumnotes.org/user-guide/concepts/notes)
+- [Μοτίβα Προσωπικής Βάσης
+  Γνώσεων](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
-## 🎁 Features
+## 🎁 Χαρακτηριστικά
 
-* Notes can be arranged into arbitrarily deep tree. Single note can be placed
-  into multiple places in the tree (see
-  [cloning](https://triliumnext.github.io/Docs/Wiki/cloning-notes))
-* Rich WYSIWYG note editor including e.g. tables, images and
-  [math](https://triliumnext.github.io/Docs/Wiki/text-notes) with markdown
-  [autoformat](https://triliumnext.github.io/Docs/Wiki/text-notes#autoformat)
-* Support for editing [notes with source
-  code](https://triliumnext.github.io/Docs/Wiki/code-notes), including syntax
-  highlighting
-* Fast and easy [navigation between
-  notes](https://triliumnext.github.io/Docs/Wiki/note-navigation), full text
-  search and [note
-  hoisting](https://triliumnext.github.io/Docs/Wiki/note-hoisting)
-* Seamless [note
-  versioning](https://triliumnext.github.io/Docs/Wiki/note-revisions)
-* Note [attributes](https://triliumnext.github.io/Docs/Wiki/attributes) can be
-  used for note organization, querying and advanced
-  [scripting](https://triliumnext.github.io/Docs/Wiki/scripts)
-* UI available in English, German, Spanish, French, Romanian, and Chinese
-  (simplified and traditional)
-* Direct [OpenID and TOTP
-  integration](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Server%20Installation/Multi-Factor%20Authentication.md)
-  for more secure login
-* [Synchronization](https://triliumnext.github.io/Docs/Wiki/synchronization)
-  with self-hosted sync server
-  * there's a [3rd party service for hosting synchronisation
-    server](https://trilium.cc/paid-hosting)
-* [Sharing](https://triliumnext.github.io/Docs/Wiki/sharing) (publishing) notes
-  to public internet
-* Strong [note
-  encryption](https://triliumnext.github.io/Docs/Wiki/protected-notes) with
-  per-note granularity
-* Sketching diagrams, based on [Excalidraw](https://excalidraw.com/) (note type
-  "canvas")
-* [Relation maps](https://triliumnext.github.io/Docs/Wiki/relation-map) and
-  [link maps](https://triliumnext.github.io/Docs/Wiki/link-map) for visualizing
-  notes and their relations
-* Mind maps, based on [Mind Elixir](https://docs.mind-elixir.com/)
-* [Geo maps](./docs/User%20Guide/User%20Guide/Note%20Types/Geo%20Map.md) with
-  location pins and GPX tracks
-* [Scripting](https://triliumnext.github.io/Docs/Wiki/scripts) - see [Advanced
-  showcases](https://triliumnext.github.io/Docs/Wiki/advanced-showcases)
-* [REST API](https://triliumnext.github.io/Docs/Wiki/etapi) for automation
-* Scales well in both usability and performance upwards of 100 000 notes
-* Touch optimized [mobile
-  frontend](https://triliumnext.github.io/Docs/Wiki/mobile-frontend) for
-  smartphones and tablets
-* Built-in [dark theme](https://triliumnext.github.io/Docs/Wiki/themes), support
-  for user themes
-* [Evernote](https://triliumnext.github.io/Docs/Wiki/evernote-import) and
-  [Markdown import & export](https://triliumnext.github.io/Docs/Wiki/markdown)
-* [Web Clipper](https://triliumnext.github.io/Docs/Wiki/web-clipper) for easy
-  saving of web content
-* Customizable UI (sidebar buttons, user-defined widgets, ...)
-* [Metrics](./docs/User%20Guide/User%20Guide/Advanced%20Usage/Metrics.md), along
-  with a [Grafana
-  Dashboard](./docs/User%20Guide/User%20Guide/Advanced%20Usage/Metrics/grafana-dashboard.json)
+* Οι σημειώσεις μπορούν να κανονιστούν σε αυθαίρετα βαθύ δέντρο. Μία σημείωση
+  μπορεί να τοποθετηθεί σε πολλαπλά μέρη του δέντρου (βλέπε
+  [αντιγραφή](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
+* Πλούσιος επεξεργαστής σημειώσεων WYSIWYG που περιλαμβάνει π.χ. πίνακες,
+  εικόνες και
+  [μαθηματικά](https://docs.triliumnotes.org/user-guide/note-types/text) με
+  σήμανση [αυτόματη
+  μορφοποίηση](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
+* Υποστήριξη για επεξεργασία [σημειώσεις με πηγαίο
+  κώδικα](https://docs.triliumnotes.org/user-guide/note-types/code),
+  συμπεριλαμβανομένης της επισήμανσης σύνταξης
+* Γρήγορη και εύκολη [πλοήγηση μεταξύ
+  σημειώσεων](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
+  αναζήτηση πλήρους κειμένου και [ανύψωση
+  σημειώσεων](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
+* Απρόσκοπτη [έκδοση
+  σημειώσεων](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
+* Σημείωση
+  [χαρακτηριστικά](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
+  μπορεί να χρησιμοποιηθούν για οργάνωση σημειώσεων, ερωτήματα και advanced
+  [scripting](https://docs.triliumnotes.org/user-guide/scripts)
+* Η UI είναι διαθέσιμη στα Αγγλικά, Γερμανικά, Ισπανικά, Γαλλικά, Ρουμανικά και
+  Κινεζικά (απλοποιημένα και παραδοσιακά)
+* Άμεση [ενσωμάτωση OpenID και
+  TOTP](https://docs.triliumnotes.org/user-guide/setup/server/mfa) για πιο
+  ασφαλή σύνδεση
+* [Συγχρονισμός](https://docs.triliumnotes.org/user-guide/setup/synchronization)
+  με self-hosted διακομιστή συγχρονισμού
+  * there are [3rd party services for hosting synchronisation
+    server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+* [Κοινή χρήση](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
+  (δημοσίευση) σημειώσεων στο δημόσιο διαδίκτυο
+* Ισχυρή [κρυπτογράφηση
+  σημειώσεων](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
+  με υποδιαίρεση ανά σημείωση
+* Σχεδίαση διαγραμμάτων, με βάση το [Excalidraw](https://excalidraw.com/) (τύπος
+  σημείωσης "καμβάς")
+* [Relation
+  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
+  [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
+  for visualizing notes and their relations
+* Νοητικοί χάρτες, βασισμένοι στο [Mind Elixir](https://docs.mind-elixir.com/)
+* [Γεωγραφικοί
+  χάρτες](https://docs.triliumnotes.org/user-guide/collections/geomap) με
+  καρφίτσες τοποθεσίας και κομμάτια GPX
+* [Scripting](https://docs.triliumnotes.org/user-guide/scripts) - ανατρέξτε στην
+  ενότητα [Προθήκες για
+  προχωρημένους](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
+* [REST API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi) για
+  αυτοματοποίηση
+* Κλιμακώνεται καλά τόσο στη χρηστικότητα όσο και στην απόδοση πάνω από 100.000
+  σημειώσεις
+* Βελτιστοποιημένη αφή [mobile
+  frontend](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) για
+  smartphones και tablets
+* Ενσωματωμένο [σκούρο
+  θέμα](https://docs.triliumnotes.org/user-guide/concepts/themes), υποστήριξη
+  για θέματα χρήστη
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  and [Markdown εισαγωγή &
+  εξαγωγή](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
+* [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) για
+  εύκολη αποθήκευση περιεχομένου ιστού
+* Προσαρμόσιμο UI (κουμπιά πλαϊνής γραμμής, γραφικά στοιχεία που ορίζονται από
+  το χρήστη,...)
+* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
+  along with a Grafana Dashboard.
 
-✨ Check out the following third-party resources/communities for more TriliumNext
-related goodies:
+✨ Ρίξτε μια ματιά στους ακόλουθους πόρους/κοινότητες τρίτων για περισσότερες
+δυνατότητες που σχετίζονται με το TriliumNext:
 
-- [awesome-trilium](https://github.com/Nriver/awesome-trilium) for 3rd party
-  themes, scripts, plugins and more.
-- [TriliumRocks!](https://trilium.rocks/) for tutorials, guides, and much more.
+- [awesome-trilium](https://github.com/Nriver/awesome-trilium) για θέματα
+  τρίτων, scripts, επεκτάσεις και άλλα.
+- [TriliumRocks!](https://trilium.rocks/) για σεμινάρια, οδηγούς και πολλά άλλα.
 
-## ❓Why TriliumNext?
+## ❓Γιατί TriliumNext;
 
-The original Trilium developer ([Zadam](https://github.com/zadam)) has
-graciously given the Trilium repository to the community project which resides
-at https://github.com/TriliumNext
+Ο αρχικός προγραμματιστής του Trilium ([Zadam](https://github.com/zadam)) έδωσε
+ευγενικά το αποθετήριο Trilium στην κοινότητα που βρίσκεται στο
+https://github.com/TriliumNext
 
-### ⬆️Migrating from Zadam/Trilium?
+### ⬆️Μετεγκατάσταση από Zadam/Trilium;
 
-There are no special migration steps to migrate from a zadam/Trilium instance to
-a TriliumNext/Trilium instance. Simply [install
-TriliumNext/Trilium](#-installation) as usual and it will use your existing
-database.
+Δεν υπάρχουν ειδικά βήματα για τη μετεγκατάσταση από μια έκδοση zadam/Trilium σε
+μια έκδοση TriliumNext/Trilium. Απλώς [εγκαταστήστε το
+TriliumNext/Trilium](#-installation) ως συνήθως και θα χρησιμοποιήσει την
+υπάρχουσα βάση δεδομένων σας.
 
-Versions up to and including
-[v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4) are
-compatible with the latest zadam/trilium version of
-[v0.63.7](https://github.com/zadam/trilium/releases/tag/v0.63.7). Any later
-versions of TriliumNext/Trilium have their sync versions incremented which
-prevents direct migration.
+Οι εκδόσεις έως και την
+[v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4) είναι
+συμβατές με την πιο πρόσφατη έκδοση zadam/trilium της
+[v0.63.7](https://github.com/zadam/trilium/releases/tag/v0.63.7). Οποιεσδήποτε
+νεότερες εκδόσεις του TriliumNext/Trilium έχουν αυξημένες εκδόσεις συγχρονισμού,
+γεγονός που αποτρέπει την άμεση μετεγκατάσταση.
 
-## 💬 Discuss with us
+## 💬 Συζητήστε μαζί μας
 
-Feel free to join our official conversations. We would love to hear what
-features, suggestions, or issues you may have!
+Μη διστάσετε να συμμετάσχετε στις επίσημες συνομιλίες μας. Θα θέλαμε να
+ακούσουμε ποιες δυνατότητες, προτάσεις ή προβλήματα μπορεί να έχετε!
 
-- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (For synchronous
-  discussions.)
-  - The `General` Matrix room is also bridged to
+- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (Για σύγχρονες
+  συζητήσεις.)
+  - Το δωμάτιο `General` Matrix είναι επίσης γεφυρωμένο με το
     [XMPP](xmpp:discuss@trilium.thisgreat.party?join)
-- [Github Discussions](https://github.com/TriliumNext/Trilium/discussions) (For
-  asynchronous discussions.)
-- [Github Issues](https://github.com/TriliumNext/Trilium/issues) (For bug
-  reports and feature requests.)
+- [Github Συζητήσεις](https://github.com/TriliumNext/Trilium/discussions) (Για
+  ασύγχρονες συζητήσεις.)
+- [Github Ζητήματα](https://github.com/TriliumNext/Trilium/issues) (Για αναφορές
+  σφαλμάτων και αιτήματα λειτουργιών.)
 
-## 🏗 Installation
+## 🏗 Εγκατάσταση
 
 ### Windows / MacOS
 
-Download the binary release for your platform from the [latest release
-page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the package
-and run the `trilium` executable.
+Κατεβάστε τη δυαδική έκδοση για την πλατφόρμα σας από την [τελευταία σελίδα
+έκδοσης](https://github.com/TriliumNext/Trilium/releases/latest), αποσυμπιέστε
+το πακέτο και εκτελέστε το εκτελέσιμο αρχείο `trilium`.
 
 ### Linux
 
-If your distribution is listed in the table below, use your distribution's
-package.
+Εάν η διανομή σας περιλαμβάνεται στον παρακάτω πίνακα, χρησιμοποιήστε το πακέτο
+της διανομής σας.
 
-[![Packaging
-status](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+[![Κατάσταση του
+πακέτου](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
 
-You may also download the binary release for your platform from the [latest
-release page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the
-package and run the `trilium` executable.
+Μπορείτε επίσης να κατεβάσετε τη δυαδική έκδοση για την πλατφόρμα σας από την
+[τελευταία σελίδα
+έκδοσης](https://github.com/TriliumNext/Trilium/releases/latest), αποσυμπιέστε
+το πακέτο και εκτελέστε το εκτελέσιμο αρχείο `trilium`.
 
-TriliumNext is also provided as a Flatpak, but not yet published on FlatHub.
+Το TriliumNext παρέχεται επίσης ως Flatpak, αλλά δεν έχει ακόμη δημοσιευθεί στο
+FlatHub.
 
-### Browser (any OS)
+### Πρόγραμμα περιήγησης (οποιοδήποτε λειτουργικό σύστημα)
 
-If you use a server installation (see below), you can directly access the web
-interface (which is almost identical to the desktop app).
+Εάν χρησιμοποιείτε εγκατάσταση διακομιστή (βλέπε παρακάτω), μπορείτε να έχετε
+απευθείας πρόσβαση στο web interface (που είναι σχεδόν πανομοιότυπη με την
+εφαρμογή desktop).
 
-Currently only the latest versions of Chrome & Firefox are supported (and
-tested).
+Επί του παρόντος υποστηρίζονται μόνο οι τελευταίες εκδόσεις του Chrome & Firefox
+(και ελέγχονται).
 
-### Mobile
+### Κινητό
 
-To use TriliumNext on a mobile device, you can use a mobile web browser to
-access the mobile interface of a server installation (see below).
+Για να χρησιμοποιήσετε το TriliumNext σε ένα κινητό, μπορείτε να χρησιμοποιήσετε
+ένα πρόγραμμα περιήγησης του κινητού για να έχετε πρόσβαση στο interface μιας
+εγκατάστασης διακομιστή (βλέπε παρακάτω).
 
-See issue https://github.com/TriliumNext/Trilium/issues/4962 for more
-information on mobile app support.
+Ανατρέξτε στο https://github.com/TriliumNext/Trilium/issues/4962 για
+περισσότερες πληροφορίες σχετικά με την υποστήριξη για κινητά.
 
-If you prefer a native Android app, you can use
-[TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
-Report bugs and missing features at [their
-repository](https://github.com/FliegendeWurst/TriliumDroid). Note: It is best to
-disable automatic updates on your server installation (see below) when using
-TriliumDroid since the sync version must match between Trilium and TriliumDroid.
+Εάν προτιμάτε μια εγγενή εφαρμογή Android, μπορείτε να χρησιμοποιήσετε το
+[TriliumDroid]. Αναφέρετε σφάλματα και χαρακτηριστικά που λείπουν στο
+[αποθετήριο τους](https://github.com/FliegendeWurst/TriliumDroid). Σημείωση:
+Είναι καλύτερο να απενεργοποιήσετε τις αυτόματες ενημερώσεις στην εγκατάσταση
+στο διακομιστή σας (βλέπε παρακάτω) όταν χρησιμοποιείτε TriliumDroid, δεδομένου
+ότι η έκδοση συγχρονισμού πρέπει να ταιριάζει μεταξύ Trilium και TriliumDroid.
 
-### Server
+### Διακομιστής
 
-To install TriliumNext on your own server (including via Docker from
-[Dockerhub](https://hub.docker.com/r/triliumnext/trilium)) follow [the server
-installation docs](https://triliumnext.github.io/Docs/Wiki/server-installation).
+Για να εγκαταστήσετε το TriliumNext στο δικό σας διακομιστή (συμπεριλαμβανομένου
+μέσω Docker από το [Dockerhub](https://hub.docker.com/r/triliumnext/trilium))
+ακολουθήστε [τις οδηγίες εγκατάστασης
+διακομιστή](https://docs.triliumnotes.org/user-guide/setup/server).
 
 
-## 💻 Contribute
+## 💻 Συνεισφέρετε
 
-### Translations
+### Μεταφράσεις
 
-If you are a native speaker, help us translate Trilium by heading over to our
-[Weblate page](https://hosted.weblate.org/engage/trilium/).
+Αν είστε γηγενής ομιλητής, βοηθήστε μας να μεταφράσουμε το Trilium
+κατευθυνόμενοι προς την [σελίδα
+Weblate](https://hosted.weblate.org/engage/trilium/).
 
-Here's the language coverage we have so far:
+Εδώ είναι η κάλυψη των γλωσσών που έχουμε μέχρι στιγμής:
 
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
+[Η κατάσταση των
+μεταφράσεων](https://hosted.weblate.org/widget/trilium/multi-auto.svg)
 
-### Code
+### Κώδικας
 
-Download the repository, install dependencies using `pnpm` and then run the
-server (available at http://localhost:8080):
+Κατεβάστε το αποθετήριο, εγκαταστήστε τα απαραίτητα αρχεία χρησιμοποιώντας το
+`pnpm` και στη συνέχεια εκτελέστε τον διακομιστή (είναι διαθέσιμος στο
+http://localhost:8080):
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -243,10 +260,11 @@ pnpm install
 pnpm run server:start
 ```
 
-### Documentation
+### Τεκμηρίωση
 
-Download the repository, install dependencies using `pnpm` and then run the
-environment required to edit the documentation:
+Κατεβάστε το αποθετήριο, εγκαταστήστε τα απαραίτητα αρχεία χρησιμοποιώντας το
+`pnpm` και στη συνέχεια εκτελέστε το περιβάλλον που απαιτείται για την
+επεξεργασία της τεκμηρίωσης:
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -254,9 +272,9 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
-### Building the Executable
-Download the repository, install dependencies using `pnpm` and then build the
-desktop app for Windows:
+### Δημιουργία του εκτελέσιμου αρχείου
+Κατεβάστε το αποθετήριο, εγκαταστήσετε τα απαραίτητα αρχεία χρησιμοποιώντας
+`pnpm ` και στη συνέχεια δημιουργήστε την εφαρμογή desktop για Windows:
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -264,70 +282,74 @@ pnpm install
 pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 ```
 
-For more details, see the [development
-docs](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
+Για περισσότερες λεπτομέρειες, ανατρέξτε στα [έγγραφα
+development](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
 
-### Developer Documentation
+### Developer αρχεία
 
-Please view the [documentation
-guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
-for details. If you have more questions, feel free to reach out via the links
-described in the "Discuss with us" section above.
+Δείτε τον [οδηγό
+τεκμηρίωσης](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
+για λεπτομέρειες. Εάν έχετε περισσότερες ερωτήσεις, μη διστάσετε να
+επικοινωνήσετε μέσω των συνδέσμων που περιγράφονται στην ενότητα «Συζητήστε μαζί
+μας» παραπάνω.
 
 ## 👏 Shoutouts
 
-* [zadam](https://github.com/zadam) for the original concept and implementation
-  of the application.
-* [Sarah Hussein](https://github.com/Sarah-Hussein) for designing the
-  application icon.
-* [nriver](https://github.com/nriver) for his work on internationalization.
-* [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
-* [antoniotejada](https://github.com/nriver) for the original syntax highlight
-  widget.
-* [Dosu](https://dosu.dev/) for providing us with the automated responses to
-  GitHub issues and discussions.
-* [Tabler Icons](https://tabler.io/icons) for the system tray icons.
+* [zadam](https://github.com/zadam) για την αρχική ιδέα και υλοποίηση της
+  εφαρμογής.
+* [Sarah Hussein](https://github.com/Sarah-Hussein) για τη σχεδίαση του
+  εικονιδίου της εφαρμογής.
+* [nriver](https://github.com/nriver) για το έργο του σχετικά με τη
+  διεθνοποίηση.
+* [Thomas Frei](https://github.com/thfrei) για το αρχικό έργο του στον Καμβά.
+* [antoniotejada](https://github.com/nriver) για το αρχικό widget επισήμανσης
+  σύνταξης.
+* [Dosu](https://dosu.dev/) που μας παρέχει τις αυτοματοποιημένες απαντήσεις σε
+  θέματα και συζητήσεις του GitHub.
+* [Tabler Icons](https://tabler.io/icons) για τα εικονίδια συστήματος.
 
-Trilium would not be possible without the technologies behind it:
+Το Trilium δεν θα ήταν εφικτό χωρίς τις τεχνολογίες πίσω από αυτό:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes. We are grateful for being offered a set of the premium features.
-* [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with
-  support for huge amount of languages.
-* [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite
-  whiteboard used in Canvas notes.
-* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - providing the
-  mind map functionality.
-* [Leaflet](https://github.com/Leaflet/Leaflet) - for rendering geographical
-  maps.
-* [Tabulator](https://github.com/olifolkerd/tabulator) - for the interactive
-  table used in collections.
-* [FancyTree](https://github.com/mar10/fancytree) - feature-rich tree library
-  without real competition.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - visual connectivity library.
-  Used in [relation
-  maps](https://triliumnext.github.io/Docs/Wiki/relation-map.html) and [link
-  maps](https://triliumnext.github.io/Docs/Wiki/note-map.html#link-map)
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - ο οπτικός επεξεργαστής
+  πίσω από τις σημειώσεις κειμένου. Είμαστε ευγνώμονες που μας προσφέρθηκε ένα
+  σύνολο από τα premium χαρακτηριστικά.
+* [CodeMirror](https://github.com/codemirror/CodeMirror) - επεξεργαστής κώδικα
+  με υποστήριξη για τεράστιο αριθμό γλωσσών.
+* [Excalidraw](https://github.com/excalidraw/excalidraw) - ο άπειρος πίνακας που
+  χρησιμοποιείται στις σημειώσεις του Καμβά.
+* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - παροχή της
+  λειτουργικότητας του χάρτη μυαλού.
+* [Leaflet](https://github.com/Leaflet/Leaflet) - για την απόδοση γεωγραφικών
+  χαρτών.
+* [Tabulator](https://github.com/olifolkerd/tabulator) - για τον διαδραστικό
+  πίνακα που χρησιμοποιείται στις συλλογές.
+* [FancyTree](https://github.com/mar10/fancytree) - πλούσια βιβλιοθήκη δέντρων
+  χωρίς πραγματικό ανταγωνισμό.
+* [jsPlumb](https://github.com/jsplumb/jsplumb) - βιβλιοθήκη οπτικής σύνδεσης.
+  Χρησιμοποιείται σε [χάρτες
+  σχέσεων](https://docs.triliumnotes.org/user-guide/note-types/relation-map) και
+  [χάρτες
+  συνδέσμων](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
-## 🤝 Support
+## 🤝 Υποστήριξη
 
-Trilium is built and maintained with [hundreds of hours of
-work](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Your
-support keeps it open-source, improves features, and covers costs such as
-hosting.
+Το Trilium δημιουργείται και συντηρείται με [εκατοντάδες ώρες
+εργασίας](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Η
+υποστήριξή σας το διατηρεί ανοιχτού κώδικα, βελτιώνει τις δυνατότητες και
+καλύπτει κόστη όπως η φιλοξενία.
 
-Consider supporting the main developer
-([eliandoran](https://github.com/eliandoran)) of the application via:
+Εξετάστε το ενδεχόμενο να υποστηρίξετε τον κύριο προγραμματιστή
+([eliandoran](https://github.com/eliandoran)) της εφαρμογής μέσω:
 
 - [GitHub Sponsors](https://github.com/sponsors/eliandoran)
 - [PayPal](https://paypal.me/eliandoran)
-- [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
+- [Buy Me a Coffee]
 
-## 🔑 License
+## 🔑 Άδεια
 
-Copyright 2017-2025 zadam, Elian Doran, and other contributors
+Copyright 2017-2025 zadam, Elian Doran και άλλοι συνεισφέροντες
 
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU Affero General Public License as published by the Free
-Software Foundation, either version 3 of the License, or (at your option) any
-later version.
+Αυτό το πρόγραμμα είναι δωρεάν λογισμικό: μπορείτε να το αναδιανέμετε ή/και να
+το τροποποιήσετε υπό τους όρους της GNU Affero Γενική Άδεια Δημόσιας Χρήσης,
+όπως δημοσιεύεται από το Ίδρυμα Ελεύθερου Λογισμικού, είτε έκδοση 3 της άδειας,
+είτε (κατ' επιλογή σας) οποιαδήποτε μεταγενέστερη έκδοση.

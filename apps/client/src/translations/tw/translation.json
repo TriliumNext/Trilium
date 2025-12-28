@@ -22,7 +22,15 @@
     "bundle-error": {
       "title": "載入自訂腳本失敗",
       "message": "來自 ID 為 \"{{id}}\"、標題為 \"{{title}}\" 的筆記的腳本因以下原因無法執行：\n\n{{message}}"
-    }
+    },
+    "widget-list-error": {
+      "title": "無法從伺服器取得元件清單"
+    },
+    "widget-render-error": {
+      "title": "無法渲染自訂 React 元件"
+    },
+    "widget-missing-parent": "自訂元件未定義強制性的 \"{{property}}\" 屬性。",
+    "open-script-note": "打開腳本筆記"
   },
   "add_link": {
     "add_link": "新增連結",
@@ -162,7 +170,8 @@
     "inPageSearch": "頁面內搜尋",
     "title": "列表",
     "newTabNoteLink": "在新分頁開啟筆記連結",
-    "newTabWithActivationNoteLink": "在新分頁開啟並切換至筆記連結"
+    "newTabWithActivationNoteLink": "在新分頁開啟並切換至筆記連結",
+    "editShortcuts": "編輯鍵盤快捷鍵"
   },
   "import": {
     "importIntoNote": "匯入至筆記",
@@ -204,7 +213,8 @@
   "info": {
     "modalTitle": "資訊消息",
     "closeButton": "關閉",
-    "okButton": "確定"
+    "okButton": "確定",
+    "copy_to_clipboard": "複製到剪貼簿"
   },
   "jump_to_note": {
     "search_button": "全文搜尋",
@@ -688,7 +698,13 @@
     "convert_into_attachment_successful": "筆記 '{{title}}' 已成功轉換為附件。",
     "convert_into_attachment_prompt": "確定要將筆記 '{{title}}' 轉換為父級筆記的附件嗎？",
     "print_pdf": "匯出為 PDF…",
-    "open_note_on_server": "在伺服器上開啟筆記"
+    "open_note_on_server": "在伺服器上開啟筆記",
+    "view_revisions": "筆記歷史版本...",
+    "advanced": "進階",
+    "export_as_image": "匯出為圖片",
+    "export_as_image_png": "PNG (點陣)",
+    "export_as_image_svg": "SVG (向量)",
+    "note_map": "筆記地圖"
   },
   "onclick_button": {
     "no_click_handler": "按鈕元件'{{componentId}}'沒有定義點擊時的處理方式"
@@ -732,9 +748,9 @@
     "zoom_out_title": "縮小"
   },
   "zpetne_odkazy": {
-    "backlink": "{{count}} 個反連結",
-    "backlinks": "{{count}} 個反連結",
-    "relation": "關聯"
+    "relation": "關聯",
+    "backlink_one": "{{count}} 個反連結",
+    "backlink_other": "{{count}} 個反連結"
   },
   "mobile_detail_menu": {
     "insert_child_note": "插入子筆記",
@@ -761,7 +777,6 @@
     "grid": "網格",
     "list": "列表",
     "collapse_all_notes": "收摺所有筆記",
-    "expand_all_children": "展開所有子項",
     "collapse": "收摺",
     "expand": "展開",
     "invalid_view_type": "無效的查看類型 '{{type}}'",
@@ -771,7 +786,11 @@
     "geo-map": "地理地圖",
     "board": "看板",
     "include_archived_notes": "顯示已封存筆記",
-    "presentation": "簡報"
+    "presentation": "簡報",
+    "expand_tooltip": "展開此集合的直接子級（單層深度）。按下右側箭頭以查看更多選項。",
+    "expand_first_level": "展開直接子級",
+    "expand_nth_level": "展開 {{depth}} 層",
+    "expand_all_levels": "展開所有層級"
   },
   "edited_notes": {
     "no_edited_notes_found": "今天還沒有編輯過的筆記...",
@@ -784,7 +803,7 @@
     "file_type": "檔案類型",
     "file_size": "檔案大小",
     "download": "下載",
-    "open": "打開",
+    "open": "以外部程式打開",
     "upload_new_revision": "上傳新版本",
     "upload_success": "已上傳新檔案版本。",
     "upload_failed": "新檔案版本上傳失敗。",
@@ -804,7 +823,8 @@
   },
   "inherited_attribute_list": {
     "title": "繼承的屬性",
-    "no_inherited_attributes": "沒有繼承的屬性。"
+    "no_inherited_attributes": "沒有繼承的屬性。",
+    "none": "無"
   },
   "note_info_widget": {
     "note_id": "筆記 ID",
@@ -815,7 +835,9 @@
     "note_size_info": "筆記大小提供了該筆記儲存需求的粗略估計。它考慮了筆記及其歷史的內容。",
     "calculate": "計算",
     "subtree_size": "（子階層大小: {{size}}, 共計 {{count}} 個筆記）",
-    "title": "筆記資訊"
+    "title": "筆記資訊",
+    "mime": "MIME 類型",
+    "show_similar_notes": "顯示相似筆記"
   },
   "note_map": {
     "open_full": "展開顯示",
@@ -878,7 +900,8 @@
     "search_parameters": "搜尋參數",
     "unknown_search_option": "未知的搜尋選項 {{searchOptionName}}",
     "search_note_saved": "搜尋筆記已儲存至 {{- notePathTitle}}",
-    "actions_executed": "已執行操作。"
+    "actions_executed": "已執行操作。",
+    "view_options": "查看選項："
   },
   "similar_notes": {
     "title": "相似筆記",
@@ -980,7 +1003,14 @@
     "placeholder": "在這裡輸入您的程式碼筆記內容…"
   },
   "editable_text": {
-    "placeholder": "在這裡輸入您的筆記內容…"
+    "placeholder": "在這裡輸入您的筆記內容…",
+    "auto-detect-language": "自動檢測",
+    "keeps-crashing": "編輯元件持續發生崩潰。請嘗試重新啟動 Trilium。若問題仍存在，請考慮提交錯誤報告。",
+    "editor_crashed_title": "文字編輯器崩潰",
+    "editor_crashed_content": "您的內容已成功恢復，但最近的幾項變更可能未被儲存。",
+    "editor_crashed_details_button": "檢視更多資訊⋯",
+    "editor_crashed_details_intro": "若您多次遇到此錯誤，請考慮在 GitHub 回報以下資訊。",
+    "editor_crashed_details_title": "技術資訊"
   },
   "empty": {
     "open_note_instruction": "透過在下面的輸入框中輸入筆記標題或在樹中選擇筆記來打開筆記。",
@@ -1148,7 +1178,10 @@
     "unit": "字元"
   },
   "code_mime_types": {
-    "title": "下拉選單可用的 MIME 文件類型"
+    "title": "下拉選單可用的 MIME 文件類型",
+    "tooltip_syntax_highlighting": "語法高亮顯示",
+    "tooltip_code_block_syntax": "文字筆記中的程式碼區塊",
+    "tooltip_code_note_syntax": "程式碼筆記"
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "Vim 快捷鍵",
@@ -1422,7 +1455,7 @@
     "import-into-note": "匯入至筆記",
     "apply-bulk-actions": "套用批次操作",
     "converted-to-attachments": "{{count}} 個筆記已被轉換為附件。",
-    "convert-to-attachment-confirm": "確定要將所選的筆記轉換為其父級筆記的附件嗎？",
+    "convert-to-attachment-confirm": "確定要將所選的筆記轉換為其父級筆記的附件嗎？此操作僅適用於圖像筆記，其他筆記將被跳過。",
     "duplicate": "複製副本",
     "open-in-popup": "快速編輯",
     "archive": "封存",
@@ -1487,7 +1520,12 @@
   },
   "highlights_list_2": {
     "title": "高亮列表",
-    "options": "選項"
+    "options": "選項",
+    "title_with_count_one": "{{count}} 處高亮",
+    "title_with_count_other": "{{count}} 處高亮",
+    "modal_title": "設定高亮列表",
+    "menu_configure": "設定高亮列表…",
+    "no_highlights": "未找到高亮內容。"
   },
   "quick-search": {
     "placeholder": "快速搜尋",
@@ -1510,7 +1548,8 @@
     "refresh-saved-search-results": "重新整理儲存的搜尋結果",
     "create-child-note": "建立子筆記",
     "unhoist": "取消聚焦",
-    "toggle-sidebar": "切換側邊欄"
+    "toggle-sidebar": "切換側邊欄",
+    "dropping-not-allowed": "不允許移動筆記至此處。"
   },
   "title_bar_buttons": {
     "window-on-top": "保持此視窗置頂"
@@ -1521,7 +1560,14 @@
     "printing_pdf": "正在匯出為 PDF…"
   },
   "note_title": {
-    "placeholder": "請輸入筆記標題..."
+    "placeholder": "請輸入筆記標題...",
+    "created_on": "建立於 <Value />",
+    "last_modified": "修改於 <Value />",
+    "note_type_switcher_label": "從 {{type}} 切換至：",
+    "note_type_switcher_others": "其他筆記類型",
+    "note_type_switcher_templates": "模板",
+    "note_type_switcher_collection": "集合",
+    "edited_notes": "編輯過的筆記"
   },
   "search_result": {
     "no_notes_found": "沒有找到符合搜尋條件的筆記。",
@@ -1550,7 +1596,8 @@
   },
   "toc": {
     "table_of_contents": "目錄",
-    "options": "選項"
+    "options": "選項",
+    "no_headings": "無標題。"
   },
   "watched_file_update_status": {
     "file_last_modified": "檔案 <code class=\"file-path\"></code> 最後修改時間為 <span class=\"file-last-modified\"></span>。",
@@ -1612,9 +1659,6 @@
     "move-to-available-launchers": "移動至可用啟動器",
     "duplicate-launcher": "複製啟動器 <kbd data-command=\"duplicateSubtree\">"
   },
-  "editable-text": {
-    "auto-detect-language": "自動檢測"
-  },
   "highlighting": {
     "description": "控制文字筆記程式碼區塊中的語法高亮，程式碼筆記不會受到影響。",
     "color-scheme": "配色方案",
@@ -1654,7 +1698,8 @@
     "copy-link": "複製連結",
     "paste": "貼上",
     "paste-as-plain-text": "以純文字貼上",
-    "search_online": "用 {{searchEngine}} 搜尋 \"{{term}}\""
+    "search_online": "用 {{searchEngine}} 搜尋 \"{{term}}\"",
+    "search_in_trilium": "在 Trilium 中搜尋「{{term}}」"
   },
   "image_context_menu": {
     "copy_reference_to_clipboard": "複製引用到剪貼簿",
@@ -1664,7 +1709,8 @@
     "open_note_in_new_tab": "在新分頁中打開筆記",
     "open_note_in_new_split": "在新頁面分割中打開筆記",
     "open_note_in_new_window": "在新視窗中打開筆記",
-    "open_note_in_popup": "快速編輯"
+    "open_note_in_popup": "快速編輯",
+    "open_note_in_other_split": "在另一個頁面分割中打開筆記"
   },
   "zen_mode": {
     "button_exit": "退出禪模式"
@@ -1788,9 +1834,7 @@
     "indexing_stopped": "已停止索引",
     "indexing_in_progress": "正在進行索引…",
     "last_indexed": "最後索引時間",
-    "n_notes_queued_0": "{{ count }} 條筆記已加入索引隊列",
     "note_chat": "筆記聊天",
-    "notes_indexed_0": "已索引 {{ count }} 條筆記",
     "sources": "來源",
     "start_indexing": "開始索引",
     "use_advanced_context": "使用進階上下文",
@@ -1927,8 +1971,9 @@
     "unknown_widget": "未知元件：\"{{id}}\"。"
   },
   "note_language": {
-    "not_set": "不設定",
-    "configure-languages": "設定語言…"
+    "not_set": "未設定語言",
+    "configure-languages": "設定語言…",
+    "help-on-languages": "設定內容語言說明…"
   },
   "content_language": {
     "title": "內文語言",
@@ -1946,7 +1991,8 @@
     "button_title": "將圖表匯出為 PNG"
   },
   "svg": {
-    "export_to_png": "無法將圖表匯出為 PNG。"
+    "export_to_png": "無法將圖表匯出為 PNG。",
+    "export_to_svg": "此绘图无法导出为SVG格式。"
   },
   "code_theme": {
     "title": "外觀",
@@ -1994,7 +2040,7 @@
   "book_properties_config": {
     "hide-weekends": "隱藏週末",
     "display-week-numbers": "顯示週數",
-    "map-style": "地圖樣式：",
+    "map-style": "地圖樣式",
     "max-nesting-depth": "最大嵌套深度：",
     "raster": "柵格",
     "vector_light": "向量（淺色）",
@@ -2019,7 +2065,8 @@
     "new-item-placeholder": "輸入筆記標題…",
     "add-column-placeholder": "輸入行名…",
     "edit-note-title": "點擊以編輯筆記標題",
-    "edit-column-title": "點擊以編輯行標題"
+    "edit-column-title": "點擊以編輯行標題",
+    "column-already-exists": "此列已在看板上。"
   },
   "command_palette": {
     "tree-action-name": "樹：{{name}}",
@@ -2050,14 +2097,20 @@
     "next_theme_title": "試用新 Trilium 主題",
     "next_theme_message": "您正在使用舊版主題，要試用新主題嗎？",
     "next_theme_button": "試用新主題",
-    "dismiss": "關閉"
+    "dismiss": "關閉",
+    "new_layout_title": "新版面配置",
+    "new_layout_button": "更多資訊",
+    "new_layout_message": "我們為 Trilium 推出了現代化版面配置。功能區分頁已移除並無縫整合至主介面，取而代之的是全新狀態列與可擴展區塊（例如提升屬性）承擔其主要功能。\n\n新版面配置預設為啟用狀態，您可透過「選項 → 外觀」暫時停用。"
   },
   "settings": {
     "related_settings": "相關設定"
   },
   "settings_appearance": {
     "related_code_blocks": "文字筆記中程式碼區塊的配色方案",
-    "related_code_notes": "程式碼筆記的配色方案"
+    "related_code_notes": "程式碼筆記的配色方案",
+    "ui": "使用者介面",
+    "ui_old_layout": "舊版面配置",
+    "ui_new_layout": "新版面配置"
   },
   "units": {
     "percentage": "%"
@@ -2088,7 +2141,84 @@
   "read-only-info": {
     "read-only-note": "目前正在檢視唯讀筆記。",
     "auto-read-only-note": "此筆記以唯讀模式顯示以加快載入速度。",
-    "auto-read-only-learn-more": "了解更多",
     "edit-note": "編輯筆記"
+  },
+  "note-color": {
+    "clear-color": "清除筆記顏色",
+    "set-color": "設定筆記顏色",
+    "set-custom-color": "設定自訂筆記顏色"
+  },
+  "popup-editor": {
+    "maximize": "切換至完整編輯器"
+  },
+  "experimental_features": {
+    "title": "實驗性選項",
+    "disclaimer": "這些選項屬實驗性質，可能導致系統不穩定。請謹慎使用。",
+    "new_layout_name": "新版面配置",
+    "new_layout_description": "體驗全新版面配置，呈現更現代的外觀與更佳的使用體驗。在未來版本將進行大幅調整。"
+  },
+  "server": {
+    "unknown_http_error_title": "與伺服器通訊錯誤",
+    "unknown_http_error_content": "狀態碼：{{statusCode}}\n網址：{{method}} {{url}}\n訊息：{{message}}",
+    "traefik_blocks_requests": "若您正在使用 Traefik 反向代理，該代理已引入一項重大變更影響與伺服器的通訊。"
+  },
+  "tab_history_navigation_buttons": {
+    "go-back": "返回前一筆記",
+    "go-forward": "前往下一筆記"
+  },
+  "breadcrumb_badges": {
+    "read_only_explicit": "唯讀",
+    "read_only_auto": "自動唯讀",
+    "shared_publicly": "公開分享",
+    "shared_locally": "本地分享",
+    "read_only_explicit_description": "此筆記已被手動設定為唯讀。\n點擊以臨時編輯。",
+    "read_only_temporarily_disabled": "臨時編輯",
+    "shared_copy_to_clipboard": "複製連結至剪貼簿",
+    "shared_open_in_browser": "在瀏覽器中打開連結",
+    "shared_unshare": "取消分享",
+    "clipped_note": "網頁擷取",
+    "execute_script": "運行腳本",
+    "execute_sql": "運行 SQL",
+    "read_only_auto_description": "基於效能考量，此筆記已自動設定為唯讀模式。此自動限制可於設定中調整。\n\n點擊此處可臨時編輯。",
+    "read_only_temporarily_disabled_description": "此筆記目前可編輯，但通常為唯讀狀態。當您切換至其他筆記時，本筆記將立即恢復為唯讀模式。\n\n點擊此處重新啟用唯讀模式。",
+    "clipped_note_description": "本筆記原始來源為 {{url}}。\n\n點擊此處前往原網頁。",
+    "execute_script_description": "此筆記為腳本筆記。點擊以執行腳本。",
+    "execute_sql_description": "此筆記為 SQL 筆記。點擊以執行 SQL 查詢。"
+  },
+  "breadcrumb": {
+    "hoisted_badge": "聚焦",
+    "hoisted_badge_title": "取消聚焦",
+    "workspace_badge": "工作空間",
+    "scroll_to_top_title": "跳轉至筆記開頭",
+    "create_new_note": "新增子筆記",
+    "empty_hide_archived_notes": "隱藏已歸檔的筆記"
+  },
+  "status_bar": {
+    "language_title": "更改內容語言",
+    "note_info_title": "查看筆記資訊（如日期、筆記大小）",
+    "backlinks_one": "{{count}} 個反連結",
+    "backlinks_other": "",
+    "backlinks_title_one": "查看反連結",
+    "backlinks_title_other": "",
+    "attachments_one": "{{count}} 個附件",
+    "attachments_other": "",
+    "attachments_title_one": "在新分頁中查看附件",
+    "attachments_title_other": "",
+    "attributes_one": "{{count}} 個屬性",
+    "attributes_other": "",
+    "attributes_title": "自有屬性及繼承屬性",
+    "note_paths_one": "{{count}} 條路徑",
+    "note_paths_other": "",
+    "note_paths_title": "筆記路徑",
+    "code_note_switcher": "更改語言模式"
+  },
+  "right_pane": {
+    "empty_button": "隱藏面板",
+    "toggle": "切換右側面板",
+    "custom_widget_go_to_source": "跳轉至原始碼",
+    "empty_message": "此筆記無內容可顯示"
+  },
+  "attributes_panel": {
+    "title": "筆記屬性"
   }
 }

@@ -1,6 +1,6 @@
 import optionService from "../options.js";
 import myScryptService from "./my_scrypt.js";
-import { toBase64 } from "../utils.js";
+import { toBase64, constantTimeCompare } from "../utils.js";
 import dataEncryptionService from "./data_encryption.js";
 
 function verifyPassword(password: string) {
@@ -12,7 +12,7 @@ function verifyPassword(password: string) {
         return false;
     }
 
-    return givenPasswordHash === dbPasswordHash;
+    return constantTimeCompare(givenPasswordHash, dbPasswordHash);
 }
 
 function setDataKey(password: string, plainTextDataKey: string | Buffer) {

@@ -56,10 +56,19 @@ export default async function buildApp() {
         app.use(compression()); // HTTP compression
     }
 
+    let resourcePolicy = config["Network"]["corsResourcePolicy"] as 'same-origin' | 'same-site' | 'cross-origin' | undefined;
+    if(resourcePolicy !== 'same-origin' && resourcePolicy !== 'same-site' && resourcePolicy !== 'cross-origin') {
+        log.error(`Invalid CORS Resource Policy value: '${resourcePolicy}', defaulting to 'same-origin'`);
+        resourcePolicy = 'same-origin';
+    }
+
     app.use(
         helmet({
             hidePoweredBy: false, // errors out in electron
             contentSecurityPolicy: false,
+            crossOriginResourcePolicy: {
+                policy: resourcePolicy
+            },
             crossOriginEmbedderPolicy: false
         })
     );

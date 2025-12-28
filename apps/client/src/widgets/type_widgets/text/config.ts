@@ -220,7 +220,7 @@ function buildListOfLanguages() {
     return [
         {
             language: mimeTypesService.MIME_TYPE_AUTO,
-            label: t("editable-text.auto-detect-language")
+            label: t("editable_text.auto-detect-language")
         },
         ...userLanguages
     ];

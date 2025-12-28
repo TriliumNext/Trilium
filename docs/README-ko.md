@@ -20,17 +20,18 @@ releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
 [![Translation
 status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
-[영어](./README.md) | [중국어 (간체)](./docs/README-ZH_CN.md) | [중국어
-(번체)](./docs/README-ZH_TW.md) | [러시아어](./docs/README-ru.md) |
-[일본어](./docs/README-ja.md) | [이탈리아어](./docs/README-it.md) |
-[스페인어](./docs/README-es.md)
+<!-- translate:off -->
+<!-- LANGUAGE SWITCHER -->
+[Chinese (Simplified Han script)](./README-ZH_CN.md) | [Chinese (Traditional Han
+script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
+| [German](./README-de.md) | [Greek](./README-el.md) | [Italian](./README-it.md)
+| [Japanese](./README-ja.md) | [Romanian](./README-ro.md) |
+[Spanish](./README-es.md)
+<!-- translate:on -->
 
 Trilium Notes는 대규모 개인 지식 기반 구축에 중점을 둔 무료 오픈 소스 크로스 플랫폼 계층적 메모 작성 애플리케이션입니다.
 
-See [screenshots](https://triliumnext.github.io/Docs/Wiki/screenshot-tour) for
-quick overview:
-
-<a href="https://triliumnext.github.io/Docs/Wiki/screenshot-tour"><img src="./docs/app.png" alt="Trilium Screenshot" width="1000"></a>
+<img src="./app.png" alt="Trilium Screenshot" width="1000">
 
 ## ⏬ 내려받기
 - [최신 릴리스](https://github.com/TriliumNext/Trilium/releases/latest) – 안정된 버전으로
@@ -40,87 +41,83 @@ quick overview:
 
 ## 📚 문서
 
-**[docs.triliumnotes.org](https://docs.triliumnotes.org/)에서 포괄적인 문서를 방문하세요**
+**[docs.triliumnotes.org](https://docs.triliumnotes.org/)에서 전체 문서를 확인하세요**
 
-저희 문서는 다양한 형식으로 제공됩니다.
+문서는 다양한 형식으로 제공됩니다:
 - **온라인 문서**: [docs.triliumnotes.org](https://docs.triliumnotes.org/)에서 모든 문서를
   보여줍니다
 - **도움말**: 트릴리움 어플리케이션에서 `F1` 버튼을 눌러 같은 문서를 직접 볼 수 있습니다
-- **GitHub**: Navigate through the [User
-  Guide](./docs/User%20Guide/User%20Guide/) in this repository
+- **GitHub**: 이 레포지토리의 [사용자 가이드](./User%20Guide/User%20Guide/)에서 확인할 수 있습니다
 
-### Quick Links
-- [Getting Started Guide](https://docs.triliumnotes.org/)
-- [Installation
-  Instructions](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation.md)
-- [Docker
-  Setup](./docs/User%20Guide/User%20Guide/Installation%20&%20Setup/Server%20Installation/1.%20Installing%20the%20server/Using%20Docker.md)
-- [Upgrading
-  TriliumNext](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Upgrading%20TriliumNext.md)
-- [Basic Concepts and
-  Features](./docs/User%20Guide/User%20Guide/Basic%20Concepts%20and%20Features/Notes.md)
-- [Patterns of Personal Knowledge
-  Base](https://triliumnext.github.io/Docs/Wiki/patterns-of-personal-knowledge)
+### 바로가기
+- [시작하기 가이드](https://docs.triliumnotes.org/)
+- [설치 방법](https://docs.triliumnotes.org/user-guide/setup)
+- [도커
+  설치](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
+- [TriliumNext로 업그레이드](https://docs.triliumnotes.org/user-guide/setup/upgrading)
+- [기본 개념 및 기능](https://docs.triliumnotes.org/user-guide/concepts/notes)
+- [개인 지식 베이스의
+  패턴들](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
-## 🎁 Features
+## 🎁 주요 기능
 
-* Notes can be arranged into arbitrarily deep tree. Single note can be placed
-  into multiple places in the tree (see
-  [cloning](https://triliumnext.github.io/Docs/Wiki/cloning-notes))
-* Rich WYSIWYG note editor including e.g. tables, images and
-  [math](https://triliumnext.github.io/Docs/Wiki/text-notes) with markdown
-  [autoformat](https://triliumnext.github.io/Docs/Wiki/text-notes#autoformat)
-* Support for editing [notes with source
-  code](https://triliumnext.github.io/Docs/Wiki/code-notes), including syntax
-  highlighting
-* Fast and easy [navigation between
-  notes](https://triliumnext.github.io/Docs/Wiki/note-navigation), full text
-  search and [note
-  hoisting](https://triliumnext.github.io/Docs/Wiki/note-hoisting)
-* Seamless [note
-  versioning](https://triliumnext.github.io/Docs/Wiki/note-revisions)
-* Note [attributes](https://triliumnext.github.io/Docs/Wiki/attributes) can be
-  used for note organization, querying and advanced
-  [scripting](https://triliumnext.github.io/Docs/Wiki/scripts)
-* UI available in English, German, Spanish, French, Romanian, and Chinese
-  (simplified and traditional)
-* Direct [OpenID and TOTP
-  integration](./docs/User%20Guide/User%20Guide/Installation%20%26%20Setup/Server%20Installation/Multi-Factor%20Authentication.md)
-  for more secure login
-* [Synchronization](https://triliumnext.github.io/Docs/Wiki/synchronization)
-  with self-hosted sync server
-  * there's a [3rd party service for hosting synchronisation
-    server](https://trilium.cc/paid-hosting)
-* [Sharing](https://triliumnext.github.io/Docs/Wiki/sharing) (publishing) notes
-  to public internet
-* Strong [note
-  encryption](https://triliumnext.github.io/Docs/Wiki/protected-notes) with
-  per-note granularity
-* Sketching diagrams, based on [Excalidraw](https://excalidraw.com/) (note type
-  "canvas")
-* [Relation maps](https://triliumnext.github.io/Docs/Wiki/relation-map) and
-  [link maps](https://triliumnext.github.io/Docs/Wiki/link-map) for visualizing
-  notes and their relations
-* Mind maps, based on [Mind Elixir](https://docs.mind-elixir.com/)
-* [Geo maps](./docs/User%20Guide/User%20Guide/Note%20Types/Geo%20Map.md) with
+* 노트는 다양한 깊이의 트리로 배열될 수 있으며, 하나의 노트는 트리의 여러 위치에 둘 수 있음
+  ([cloning](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning)
+  참고)
+* 마크다운
+  [자동서식](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)과
+  함께 테이블, 이미지, 그리고
+  [수학](https://docs.triliumnotes.org/user-guide/note-types/text) 등의 기능을 포함한 다양한
+  기능의 WYSIWYG 노트 편집기 제공
+* 구문 강조를 포함한 [소스코드](https://docs.triliumnotes.org/user-guide/note-types/code) 편집
+  기능
+* 쉽고 빠르게 노트를 찾을 수 있는
+  [내비게이션](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
+  전체 텍스트 검색 및 [노트
+  호이스팅](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
+* 원활한 [노트 버전
+  관리](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
+* 노트의 [속성](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)은
+  노트 조직화, 쿼리, 그리고 고급 기능인
+  [스크립팅](https://docs.triliumnotes.org/user-guide/scripts)에 사용
+* 영어, 독일어, 스페인어, 프랑스어, 루마니아어, 중국어 (간체, 번체) UI 제공
+* 더욱 안전한 로그인을 위해 직접 [OpenID 및 TOTP
+  통합](https://docs.triliumnotes.org/user-guide/setup/server/mfa)
+* self-hosted 동기화 서버를 통한
+  [동기화](https://docs.triliumnotes.org/user-guide/setup/synchronization)
+  * there are [3rd party services for hosting synchronisation
+    server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+* 노트의 인터넷 [공유](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
+  (퍼블리싱) 기능
+* 노트마다 세분화된 강력한 [노트
+  암호화](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
+* [Excalidraw](https://excalidraw.com/) 기반 스케치 다이어그램 (노트 타입 "캔버스")
+* [Relation
+  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
+  [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
+  for visualizing notes and their relations
+* [Mind Elixir](https://docs.mind-elixir.com/) 기반 마인드맵
+* [Geo maps](https://docs.triliumnotes.org/user-guide/collections/geomap) with
   location pins and GPX tracks
-* [Scripting](https://triliumnext.github.io/Docs/Wiki/scripts) - see [Advanced
-  showcases](https://triliumnext.github.io/Docs/Wiki/advanced-showcases)
-* [REST API](https://triliumnext.github.io/Docs/Wiki/etapi) for automation
+* [Scripting](https://docs.triliumnotes.org/user-guide/scripts) - see [Advanced
+  showcases](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
+* [REST API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi) for
+  automation
 * Scales well in both usability and performance upwards of 100 000 notes
 * Touch optimized [mobile
-  frontend](https://triliumnext.github.io/Docs/Wiki/mobile-frontend) for
+  frontend](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) for
   smartphones and tablets
-* Built-in [dark theme](https://triliumnext.github.io/Docs/Wiki/themes), support
-  for user themes
-* [Evernote](https://triliumnext.github.io/Docs/Wiki/evernote-import) and
-  [Markdown import & export](https://triliumnext.github.io/Docs/Wiki/markdown)
-* [Web Clipper](https://triliumnext.github.io/Docs/Wiki/web-clipper) for easy
-  saving of web content
+* Built-in [dark
+  theme](https://docs.triliumnotes.org/user-guide/concepts/themes), support for
+  user themes
+* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  and [Markdown import &
+  export](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
+* [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) for
+  easy saving of web content
 * Customizable UI (sidebar buttons, user-defined widgets, ...)
-* [Metrics](./docs/User%20Guide/User%20Guide/Advanced%20Usage/Metrics.md), along
-  with a [Grafana
-  Dashboard](./docs/User%20Guide/User%20Guide/Advanced%20Usage/Metrics/grafana-dashboard.json)
+* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
+  along with a Grafana Dashboard.
 
 ✨ Check out the following third-party resources/communities for more TriliumNext
 related goodies:
@@ -212,7 +209,7 @@ TriliumDroid since the sync version must match between Trilium and TriliumDroid.
 
 To install TriliumNext on your own server (including via Docker from
 [Dockerhub](https://hub.docker.com/r/triliumnext/trilium)) follow [the server
-installation docs](https://triliumnext.github.io/Docs/Wiki/server-installation).
+installation docs](https://docs.triliumnotes.org/user-guide/setup/server).
 
 
 ## 💻 Contribute
@@ -302,8 +299,9 @@ Trilium would not be possible without the technologies behind it:
   without real competition.
 * [jsPlumb](https://github.com/jsplumb/jsplumb) - visual connectivity library.
   Used in [relation
-  maps](https://triliumnext.github.io/Docs/Wiki/relation-map.html) and [link
-  maps](https://triliumnext.github.io/Docs/Wiki/note-map.html#link-map)
+  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
+  [link
+  maps](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 Support
 

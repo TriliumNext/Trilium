@@ -1,7 +1,8 @@
 import { KeyboardActionNames } from "@triliumnext/commons";
+import { VNode } from "preact";
+
 import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
-import { VNode } from "preact";
 
 export interface TabContext {
     note: FNote | null | undefined;

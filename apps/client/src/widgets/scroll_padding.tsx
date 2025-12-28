@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "preact/hooks";
 import { useNoteContext } from "./react/hooks";
 
 export default function ScrollPadding() {
-    const { note, parentComponent, ntxId } = useNoteContext();
+    const { note, parentComponent, ntxId, viewScope } = useNoteContext();
     const ref = useRef<HTMLDivElement>(null);
     const [height, setHeight] = useState<number>(10);
-    const isEnabled = ["text", "code"].includes(note?.type ?? "");
+    const isEnabled = ["text", "code"].includes(note?.type ?? "") && viewScope?.viewMode === "default";
 
     const refreshHeight = () => {
         if (!ref.current) return;
@@ -28,7 +28,7 @@ export default function ScrollPadding() {
         refreshHeight();
 
         return () => observer.disconnect();
-    }, [note]); // re-run when note changes
+    }, [ note, isEnabled ]); // re-run when note changes
 
     return (isEnabled ?
         <div

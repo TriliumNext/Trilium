@@ -1,8 +1,10 @@
 import { isValidElement, VNode } from "preact";
+
 import Component, { TypedComponent } from "../components/component.js";
 import froca from "../services/froca.js";
 import { t } from "../services/i18n.js";
-import toastService from "../services/toast.js";
+import toastService, { showErrorForScriptNote } from "../services/toast.js";
+import { randomString } from "../services/utils.js";
 import { renderReactWidget } from "./react/react_utils.jsx";
 
 export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedComponent<T> {
@@ -56,9 +58,8 @@ export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedCompon
     optChild(condition: boolean, ...components: (T | VNode)[]) {
         if (condition) {
             return this.child(...components);
-        } else {
-            return this;
         }
+        return this;
     }
 
     id(id: string) {
@@ -169,29 +170,25 @@ export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedCompon
         console.log("Got issue in widget ", this);
         console.error(e);
 
-        let noteId = this._noteId;
+        const noteId = this._noteId;
         if (this._noteId) {
             froca.getNote(noteId, true).then((note) => {
-                toastService.showPersistent({
-                    title: t("toast.widget-error.title"),
-                    icon: "alert",
-                    message: t("toast.widget-error.message-custom", {
-                        id: noteId,
-                        title: note?.title,
-                        message: e.message
-                    })
-                });
+                showErrorForScriptNote(noteId, t("toast.widget-error.message-custom", {
+                    id: noteId,
+                    title: note?.title,
+                    message: e.message || e.toString()
+                }));
             });
-            return;
+        } else {
+            toastService.showPersistent({
+                id: `custom-widget-failure-unknown-${randomString()}`,
+                title: t("toast.widget-error.title"),
+                icon: "bx bx-error-circle",
+                message: t("toast.widget-error.message-unknown", {
+                    message: e.message || e.toString()
+                })
+            });
         }
-
-        toastService.showPersistent({
-            title: t("toast.widget-error.title"),
-            icon: "alert",
-            message: t("toast.widget-error.message-unknown", {
-                message: e.message
-            })
-        });
     }
 
     /**
@@ -212,7 +209,7 @@ export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedCompon
 
     toggleInt(show: boolean | null | undefined) {
         this.$widget.toggleClass("hidden-int", !show)
-                    .toggleClass("visible", !!show);
+            .toggleClass("visible", !!show);
     }
 
     isHiddenInt() {
@@ -221,7 +218,7 @@ export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedCompon
 
     toggleExt(show: boolean | null | "" | undefined) {
         this.$widget.toggleClass("hidden-ext", !show)
-                    .toggleClass("visible", !!show);
+            .toggleClass("visible", !!show);
     }
 
     isHiddenExt() {
@@ -249,9 +246,8 @@ export class TypedBasicWidget<T extends TypedComponent<any>> extends TypedCompon
     getClosestNtxId() {
         if (this.$widget) {
             return this.$widget.closest("[data-ntx-id]").attr("data-ntx-id");
-        } else {
-            return null;
         }
+        return null;
     }
 
     cleanup() {}

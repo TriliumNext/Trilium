@@ -1,7 +1,7 @@
 import utils from "./utils.js";
 
 type ElementType = HTMLElement | Document;
-type Handler = (e: KeyboardEvent) => void;
+export type Handler = (e: KeyboardEvent) => void;
 
 export interface ShortcutBinding {
     element: HTMLElement | Document;

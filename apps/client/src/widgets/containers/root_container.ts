@@ -5,6 +5,7 @@ import FlexContainer from "./flex_container.js";
 import options from "../../services/options.js";
 import type BasicWidget from "../basic_widget.js";
 import utils from "../../services/utils.js";
+import { getEnabledExperimentalFeatureIds } from "../../services/experimental_features.js";
 
 /**
  * The root container is the top-most widget/container, from which the entire layout derives.
@@ -37,6 +38,7 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
         this.#setBackdropEffects();
         this.#setThemeCapabilities();
         this.#setLocaleAndDirection(options.get("locale"));
+        this.#setExperimentalFeatures();
 
         return super.render();
     }
@@ -56,7 +58,7 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
 
         if (loadResults.isOptionReloaded("maxContentWidth")
             || loadResults.isOptionReloaded("centerContent")) {
-            
+
             this.#setMaxContentWidth();
         }
     }
@@ -97,6 +99,12 @@ export default class RootContainer extends FlexContainer<BasicWidget> {
                         .asBoolean(false);
 
         document.body.classList.toggle("theme-supports-background-effects", useBgfx);
+    }
+
+    #setExperimentalFeatures() {
+        for (const featureId of getEnabledExperimentalFeatureIds()) {
+            document.body.classList.add(`experimental-feature-${featureId}`);
+        }
     }
 
     #setLocaleAndDirection(locale: string) {

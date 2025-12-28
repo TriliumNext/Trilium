@@ -1,7 +1,6 @@
 .note-detail-editable-text {
     font-family: var(--detail-font-family);
     padding-inline-start: 14px;
-    padding-top: 10px;
     height: 100%;
 }
 

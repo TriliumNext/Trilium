@@ -1,8 +1,9 @@
 import { Modal } from "bootstrap";
 import appContext from "../components/app_context.js";
-import type { ConfirmDialogOptions, ConfirmDialogResult, ConfirmWithMessageOptions } from "../widgets/dialogs/confirm.js";
+import type { ConfirmDialogOptions, ConfirmDialogResult, ConfirmWithMessageOptions, MessageType } from "../widgets/dialogs/confirm.js";
 import type { PromptDialogOptions } from "../widgets/dialogs/prompt.js";
 import { focusSavedElement, saveFocusedElement } from "./focus.js";
+import { InfoExtraProps } from "../widgets/dialogs/info.jsx";
 
 export async function openDialog($dialog: JQuery<HTMLElement>, closeActDialog = true, config?: Partial<Modal.Options>) {
     if (closeActDialog) {
@@ -37,8 +38,8 @@ export function closeActiveDialog() {
     }
 }
 
-async function info(message: string) {
-    return new Promise((res) => appContext.triggerCommand("showInfoDialog", { message, callback: res }));
+async function info(message: MessageType, extraProps?: InfoExtraProps) {
+    return new Promise((res) => appContext.triggerCommand("showInfoDialog", { ...extraProps, message, callback: res }));
 }
 
 /**

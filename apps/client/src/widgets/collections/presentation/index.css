@@ -2,6 +2,10 @@
     position: absolute;
     top: 1em;
     right: 1em;
+
+    .floating-buttons-children {
+        top: 0;
+    }
 }
 
 .presentation-container {

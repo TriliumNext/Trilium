@@ -1,6 +1,6 @@
 {
     "get-started": {
-        "desktop_title": "Pobierz wersję desktopową (v{{version}})",
+        "desktop_title": "Pobierz aplikację na komputer (v{{version}})",
         "architecture": "Architektura:",
         "older_releases": "Sprawdź poprzednie wydania",
         "server_title": "Skonfiguruj serwer, aby mieć dostęp z wielu urządzeń",
@@ -20,7 +20,7 @@
         "note_structure_description": "Notatki mogą być ułożone w hierarchię. Każda notatka może zawierać w sobie inne, co pozwala umieścić tą samą notatkę w wielu miejscach w hierarchii i nie wymusza to tworzenia dodatkowych folderów.",
         "attributes_title": "Etykiety i korelacje",
         "attributes_description": "Porządkuj łatwiej swoje notatki przy użyciu relacji i etykiet, używaj ich jako odnośników w tabelach i tablicach.",
-        "hoisting_title": "Przestrzenie robocze i windowanie notatek",
+        "hoisting_title": "Przestrzenie robocze i tryb skupienia",
         "hoisting_description": "Łatwo oddziel swoje personalne notatki od tych z pracy przez grupowanie ich w przestrzenie robocze, które pomogą ci się skupić na danym temacie."
     },
     "productivity_benefits": {

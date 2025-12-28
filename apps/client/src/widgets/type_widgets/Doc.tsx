@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "preact/hooks";
-import { RawHtmlBlock } from "../react/RawHtml";
-import renderDoc from "../../services/doc_renderer";
 import "./Doc.css";
-import { TypeWidgetProps } from "./type_widget";
+
+import { useEffect, useRef } from "preact/hooks";
+
+import appContext from "../../components/app_context";
+import renderDoc from "../../services/doc_renderer";
 import { useTriliumEvent } from "../react/hooks";
 import { refToJQuerySelector } from "../react/react_utils";
+import { TypeWidgetProps } from "./type_widget";
 
 export default function Doc({ note, viewScope, ntxId }: TypeWidgetProps) {
     const initialized = useRef<Promise<void> | null>(null);
@@ -14,9 +16,11 @@ export default function Doc({ note, viewScope, ntxId }: TypeWidgetProps) {
         if (!note) return;
 
         initialized.current = renderDoc(note).then($content => {
-            containerRef.current?.replaceChildren(...$content);
+            if (!containerRef.current) return;
+            containerRef.current.replaceChildren(...$content);
+            appContext.triggerEvent("contentElRefreshed", { ntxId, contentEl: containerRef.current });
         });
-    }, [ note ]);
+    }, [ note, ntxId ]);
 
     useTriliumEvent("executeWithContentElement", async ({ resolve, ntxId: eventNtxId}) => {
         if (eventNtxId !== ntxId) return;

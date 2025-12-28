@@ -49,6 +49,7 @@ Additionally, shorter aliases are available for common configurations (see Alter
 | `TRILIUM_NETWORK_CORSALLOWORIGIN` | string | ""  | CORS allowed origins |
 | `TRILIUM_NETWORK_CORSALLOWMETHODS` | string | ""  | CORS allowed methods |
 | `TRILIUM_NETWORK_CORSALLOWHEADERS` | string | ""  | CORS allowed headers |
+| `TRILIUM_NETWORK_CORSRESOURCEPOLICY` | string | same-origin | CORS Resource Policy allows same-origin/same-site/cross-origin as values, will error if not |
 
 ### Session Section
 
@@ -90,6 +91,7 @@ The following alternative environment variable names are also supported and work
 *   `TRILIUM_NETWORK_CORS_ALLOW_ORIGIN` (alternative to `TRILIUM_NETWORK_CORSALLOWORIGIN`)
 *   `TRILIUM_NETWORK_CORS_ALLOW_METHODS` (alternative to `TRILIUM_NETWORK_CORSALLOWMETHODS`)
 *   `TRILIUM_NETWORK_CORS_ALLOW_HEADERS` (alternative to `TRILIUM_NETWORK_CORSALLOWHEADERS`)
+*   `TRILIUM_NETWORK_CORS_RESOURCE_POLICY` (alternative to `TRILIUM_NETWORK_CORSRESOURCEPOLICY`)
 
 ### Sync Variables
 

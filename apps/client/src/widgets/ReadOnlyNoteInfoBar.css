@@ -16,4 +16,5 @@ body.zen div.read-only-note-info-bar-widget {
 :root div.read-only-note-info-bar-widget button {
     white-space: nowrap;
     padding: 2px 8px;
+    flex-shrink: 0;
 }

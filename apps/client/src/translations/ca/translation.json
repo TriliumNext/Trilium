@@ -1,185 +1,187 @@
 {
-    "about": {
-        "title": "Sobre Trilium Notes",
-        "homepage": "Pàgina principal:"
-    },
-    "add_link": {
-        "note": "Nota"
-    },
-    "branch_prefix": {
-        "prefix": "Prefix: ",
-        "save": "Desa"
-    },
-    "bulk_actions": {
-        "labels": "Etiquetes",
-        "relations": "Relacions",
-        "notes": "Notes",
-        "other": "Altres"
-    },
-    "confirm": {
-        "confirmation": "Confirmació",
-        "cancel": "Cancel·la",
-        "ok": "OK"
-    },
-    "delete_notes": {
-        "close": "Tanca",
-        "cancel": "Cancel·la",
-        "ok": "OK"
-    },
-    "export": {
-        "close": "Tanca",
-        "export": "Exporta"
-    },
-    "help": {
-        "troubleshooting": "Solució de problemes",
-        "other": "Altres"
-    },
-    "import": {
-        "options": "Opcions",
-        "import": "Importa"
-    },
-    "include_note": {
-        "label_note": "Nota"
-    },
-    "info": {
-        "closeButton": "Tanca",
-        "okButton": "OK"
-    },
-    "note_type_chooser": {
-        "templates": "Plantilles:"
-    },
-    "prompt": {
-        "title": "Sol·licitud",
-        "defaultTitle": "Sol·licitud"
-    },
-    "protected_session_password": {
-        "close_label": "Tanca"
-    },
-    "recent_changes": {
-        "undelete_link": "recuperar"
-    },
-    "revisions": {
-        "restore_button": "Restaura",
-        "delete_button": "Suprimeix",
-        "download_button": "Descarrega",
-        "mime": "MIME: ",
-        "preview": "Vista prèvia:"
-    },
-    "sort_child_notes": {
-        "title": "títol",
-        "ascending": "ascendent",
-        "descending": "descendent",
-        "folders": "Carpetes"
-    },
-    "upload_attachments": {
-        "options": "Opcions",
-        "upload": "Puja"
-    },
-    "attribute_detail": {
-        "name": "Nom",
-        "value": "Valor",
-        "promoted": "Destacat",
-        "promoted_alias": "Àlies",
-        "multiplicity": "Multiplicitat",
-        "label_type": "Tipus",
-        "text": "Text",
-        "number": "Número",
-        "boolean": "Booleà",
-        "date": "Data",
-        "time": "Hora",
-        "url": "URL",
-        "precision": "Precisió",
-        "digits": "dígits",
-        "inheritable": "Heretable",
-        "delete": "Suprimeix",
-        "color_type": "Color"
-    },
-    "rename_label": {
-        "to": "Per"
-    },
-    "move_note": {
-        "to": "a"
-    },
-    "add_relation": {
-        "to": "a"
-    },
-    "rename_relation": {
-        "to": "Per"
-    },
-    "update_relation_target": {
-        "to": "a"
-    },
-    "attachments_actions": {
-        "download": "Descarrega"
-    },
-    "calendar": {
-        "mon": "Dl",
-        "tue": "Dt",
-        "wed": "dc",
-        "thu": "Dj",
-        "fri": "Dv",
-        "sat": "Ds",
-        "sun": "Dg",
-        "january": "Gener",
-        "february": "Febrer",
-        "march": "Març",
-        "april": "Abril",
-        "may": "Maig",
-        "june": "Juny",
-        "july": "Juliol",
-        "august": "Agost",
-        "september": "Setembre",
-        "october": "Octubre",
-        "november": "Novembre",
-        "december": "Desembre"
-    },
-    "global_menu": {
-        "menu": "Menú",
-        "options": "Opcions",
-        "zoom": "Zoom",
-        "advanced": "Avançat",
-        "logout": "Tanca la sessió"
-    },
-    "zpetne_odkazy": {
-        "relation": "relació"
-    },
-    "note_icon": {
-        "category": "Categoria:",
-        "search": "Cerca:"
-    },
-    "basic_properties": {
-        "editable": "Editable",
-        "language": "Llengua"
-    },
-    "book_properties": {
-        "grid": "Graella",
-        "list": "Llista",
-        "collapse": "Replega",
-        "expand": "Desplega",
-        "calendar": "Calendari",
-        "table": "Taula",
-        "board": "Tauler"
-    },
-    "edited_notes": {
-        "deleted": "(suprimit)"
-    },
-    "file_properties": {
-        "download": "Descarrega",
-        "open": "Obre",
-        "title": "Fitxer"
-    },
-    "image_properties": {
-        "download": "Descarrega",
-        "open": "Obre",
-        "title": "Imatge"
-    },
-    "note_info_widget": {
-        "created": "Creat",
-        "modified": "Modificat",
-        "type": "Tipus",
-        "calculate": "calcula"
-    },
-    "note_paths": {
-        "archived": "Arxivat"
-    }
+  "about": {
+    "title": "Sobre Trilium Notes",
+    "homepage": "Pàgina principal:",
+    "app_version": "Versió de l'aplicació:",
+    "db_version": "Versió de la base de dades:"
+  },
+  "add_link": {
+    "note": "Nota"
+  },
+  "branch_prefix": {
+    "prefix": "Prefix: ",
+    "save": "Desa"
+  },
+  "bulk_actions": {
+    "labels": "Etiquetes",
+    "relations": "Relacions",
+    "notes": "Notes",
+    "other": "Altres"
+  },
+  "confirm": {
+    "confirmation": "Confirmació",
+    "cancel": "Cancel·la",
+    "ok": "OK"
+  },
+  "delete_notes": {
+    "close": "Tanca",
+    "cancel": "Cancel·la",
+    "ok": "OK"
+  },
+  "export": {
+    "close": "Tanca",
+    "export": "Exporta"
+  },
+  "help": {
+    "troubleshooting": "Solució de problemes",
+    "other": "Altres"
+  },
+  "import": {
+    "options": "Opcions",
+    "import": "Importa"
+  },
+  "include_note": {
+    "label_note": "Nota"
+  },
+  "info": {
+    "closeButton": "Tanca",
+    "okButton": "OK"
+  },
+  "note_type_chooser": {
+    "templates": "Plantilles:"
+  },
+  "prompt": {
+    "title": "Sol·licitud",
+    "defaultTitle": "Sol·licitud"
+  },
+  "protected_session_password": {
+    "close_label": "Tanca"
+  },
+  "recent_changes": {
+    "undelete_link": "recuperar"
+  },
+  "revisions": {
+    "restore_button": "Restaura",
+    "delete_button": "Suprimeix",
+    "download_button": "Descarrega",
+    "mime": "MIME: ",
+    "preview": "Vista prèvia:"
+  },
+  "sort_child_notes": {
+    "title": "títol",
+    "ascending": "ascendent",
+    "descending": "descendent",
+    "folders": "Carpetes"
+  },
+  "upload_attachments": {
+    "options": "Opcions",
+    "upload": "Puja"
+  },
+  "attribute_detail": {
+    "name": "Nom",
+    "value": "Valor",
+    "promoted": "Destacat",
+    "promoted_alias": "Àlies",
+    "multiplicity": "Multiplicitat",
+    "label_type": "Tipus",
+    "text": "Text",
+    "number": "Número",
+    "boolean": "Booleà",
+    "date": "Data",
+    "time": "Hora",
+    "url": "URL",
+    "precision": "Precisió",
+    "digits": "dígits",
+    "inheritable": "Heretable",
+    "delete": "Suprimeix",
+    "color_type": "Color"
+  },
+  "rename_label": {
+    "to": "Per"
+  },
+  "move_note": {
+    "to": "a"
+  },
+  "add_relation": {
+    "to": "a"
+  },
+  "rename_relation": {
+    "to": "Per"
+  },
+  "update_relation_target": {
+    "to": "a"
+  },
+  "attachments_actions": {
+    "download": "Descarrega"
+  },
+  "calendar": {
+    "mon": "Dl",
+    "tue": "Dt",
+    "wed": "dc",
+    "thu": "Dj",
+    "fri": "Dv",
+    "sat": "Ds",
+    "sun": "Dg",
+    "january": "Gener",
+    "february": "Febrer",
+    "march": "Març",
+    "april": "Abril",
+    "may": "Maig",
+    "june": "Juny",
+    "july": "Juliol",
+    "august": "Agost",
+    "september": "Setembre",
+    "october": "Octubre",
+    "november": "Novembre",
+    "december": "Desembre"
+  },
+  "global_menu": {
+    "menu": "Menú",
+    "options": "Opcions",
+    "zoom": "Zoom",
+    "advanced": "Avançat",
+    "logout": "Tanca la sessió"
+  },
+  "zpetne_odkazy": {
+    "relation": "relació"
+  },
+  "note_icon": {
+    "category": "Categoria:",
+    "search": "Cerca:"
+  },
+  "basic_properties": {
+    "editable": "Editable",
+    "language": "Llengua"
+  },
+  "book_properties": {
+    "grid": "Graella",
+    "list": "Llista",
+    "collapse": "Replega",
+    "expand": "Desplega",
+    "calendar": "Calendari",
+    "table": "Taula",
+    "board": "Tauler"
+  },
+  "edited_notes": {
+    "deleted": "(suprimit)"
+  },
+  "file_properties": {
+    "download": "Descarrega",
+    "open": "Obre",
+    "title": "Fitxer"
+  },
+  "image_properties": {
+    "download": "Descarrega",
+    "open": "Obre",
+    "title": "Imatge"
+  },
+  "note_info_widget": {
+    "created": "Creat",
+    "modified": "Modificat",
+    "type": "Tipus",
+    "calculate": "calcula"
+  },
+  "note_paths": {
+    "archived": "Arxivat"
+  }
 }

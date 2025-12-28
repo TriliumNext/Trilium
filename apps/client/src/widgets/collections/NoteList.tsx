@@ -1,19 +1,17 @@
-import { allViewTypes, ViewModeMedia, ViewModeProps, ViewTypeOptions } from "./interface";
-import { useNoteContext, useNoteLabel, useNoteLabelBoolean, useTriliumEvent } from "../react/hooks";
-import FNote from "../../entities/fnote";
 import "./NoteList.css";
-import { ListView, GridView } from "./legacy/ListOrGridView";
-import { useEffect, useRef, useState } from "preact/hooks";
-import GeoView from "./geomap";
-import ViewModeStorage from "./view_mode_storage";
-import CalendarView from "./calendar";
-import TableView from "./table";
-import BoardView from "./board";
-import { subscribeToMessages, unsubscribeToMessage as unsubscribeFromMessage } from "../../services/ws";
-import { WebSocketMessage } from "@triliumnext/commons";
-import froca from "../../services/froca";
-import PresentationView from "./presentation";
 
+import { WebSocketMessage } from "@triliumnext/commons";
+import { VNode } from "preact";
+import { lazy, Suspense } from "preact/compat";
+import { useEffect, useRef, useState } from "preact/hooks";
+
+import FNote from "../../entities/fnote";
+import type { PrintReport } from "../../print";
+import froca from "../../services/froca";
+import { subscribeToMessages, unsubscribeToMessage as unsubscribeFromMessage } from "../../services/ws";
+import { useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent } from "../react/hooks";
+import { allViewTypes, ViewModeMedia, ViewModeProps, ViewTypeOptions } from "./interface";
+import ViewModeStorage from "./view_mode_storage";
 interface NoteListProps {
     note: FNote | null | undefined;
     notePath: string | null | undefined;
@@ -23,22 +21,56 @@ interface NoteListProps {
     isEnabled: boolean;
     ntxId: string | null | undefined;
     media: ViewModeMedia;
-    onReady?: () => void;
+    viewType: ViewTypeOptions | undefined;
+    onReady?: (data: PrintReport) => void;
+    onProgressChanged?(progress: number): void;
 }
 
-export default function NoteList<T extends object>(props: Pick<NoteListProps, "displayOnlyCollections" | "media" | "onReady">) {
-    const { note, noteContext, notePath, ntxId } = useNoteContext();
-    const isEnabled = noteContext?.hasNoteList();
-    return <CustomNoteList note={note} isEnabled={!!isEnabled} notePath={notePath} ntxId={ntxId} {...props} />
-}
+type LazyLoadedComponent = ((props: ViewModeProps<any>) => VNode<any> | undefined);
+const ViewComponents: Record<ViewTypeOptions, { normal: LazyLoadedComponent, print?: LazyLoadedComponent }> = {
+    list: {
+        normal: lazy(() => import("./legacy/ListOrGridView.js").then(i => i.ListView)),
+        print: lazy(() => import("./legacy/ListPrintView.js").then(i => i.ListPrintView))
+    },
+    grid: {
+        normal: lazy(() => import("./legacy/ListOrGridView.js").then(i => i.GridView)),
+    },
+    geoMap: {
+        normal: lazy(() => import("./geomap/index.js")),
+    },
+    calendar: {
+        normal: lazy(() => import("./calendar/index.js"))
+    },
+    table: {
+        normal: lazy(() => import("./table/index.js")),
+        print: lazy(() => import("./table/TablePrintView.js"))
+    },
+    board: {
+        normal: lazy(() => import("./board/index.js"))
+    },
+    presentation: {
+        normal: lazy(() => import("./presentation/index.js"))
+    }
+};
 
-export function SearchNoteList<T extends object>(props: Omit<NoteListProps, "isEnabled">) {
-    return <CustomNoteList {...props} isEnabled={true} />
-}
-
-export function CustomNoteList<T extends object>({ note, isEnabled: shouldEnable, notePath, highlightedTokens, displayOnlyCollections, ntxId, onReady, ...restProps }: NoteListProps) {
-    const widgetRef = useRef<HTMLDivElement>(null);
+export default function NoteList(props: Pick<NoteListProps, "displayOnlyCollections" | "media" | "onReady" | "onProgressChanged">) {
+    const { note, noteContext, notePath, ntxId, viewScope } = useNoteContext();
     const viewType = useNoteViewType(note);
+    const noteType = useNoteProperty(note, "type");
+    const [ enabled, setEnabled ] = useState(noteContext?.hasNoteList());
+    useEffect(() => {
+        setEnabled(noteContext?.hasNoteList());
+    }, [ note, noteContext, viewType, viewScope?.viewMode, noteType ]);
+    return <CustomNoteList viewType={viewType} note={note} isEnabled={!!enabled} notePath={notePath} ntxId={ntxId} {...props} />;
+}
+
+export function SearchNoteList(props: Omit<NoteListProps, "isEnabled" | "viewType">) {
+    const viewType = useNoteViewType(props.note);
+    return <CustomNoteList {...props} isEnabled={true} viewType={viewType} />;
+}
+
+export function CustomNoteList({ note, viewType, isEnabled: shouldEnable, notePath, highlightedTokens, displayOnlyCollections, ntxId, onReady, onProgressChanged, ...restProps }: NoteListProps) {
+    const widgetRef = useRef<HTMLDivElement>(null);
     const noteIds = useNoteIds(shouldEnable ? note : null, viewType, ntxId);
     const isFullHeight = (viewType && viewType !== "list" && viewType !== "grid");
     const [ isIntersecting, setIsIntersecting ] = useState(false);
@@ -80,41 +112,30 @@ export function CustomNoteList<T extends object>({ note, isEnabled: shouldEnable
             viewConfig: viewModeConfig.config,
             saveConfig: viewModeConfig.storeFn,
             onReady: onReady ?? (() => {}),
+            onProgressChanged: onProgressChanged ?? (() => {}),
+
             ...restProps
-        }
+        };
     }
+
+    const ComponentToRender = viewType && props && isEnabled && (
+        props.media === "print" ? ViewComponents[viewType].print : ViewComponents[viewType].normal
+    );
 
     return (
         <div ref={widgetRef} className={`note-list-widget component ${isFullHeight && isEnabled ? "full-height" : ""}`}>
-            {props && isEnabled && (
+            {ComponentToRender && props && (
                 <div className="note-list-widget-content">
-                    {getComponentByViewType(viewType, props)}
+                    <Suspense fallback="">
+                        <ComponentToRender {...props} />
+                    </Suspense>
                 </div>
             )}
         </div>
     );
 }
 
-function getComponentByViewType(viewType: ViewTypeOptions, props: ViewModeProps<any>) {
-    switch (viewType) {
-        case "list":
-            return <ListView {...props} />;
-        case "grid":
-            return <GridView {...props} />;
-        case "geoMap":
-            return <GeoView {...props} />;
-        case "calendar":
-            return <CalendarView {...props} />
-        case "table":
-            return <TableView {...props} />
-        case "board":
-            return <BoardView {...props} />
-        case "presentation":
-            return <PresentationView {...props} />
-    }
-}
-
-function useNoteViewType(note?: FNote | null): ViewTypeOptions | undefined {
+export function useNoteViewType(note?: FNote | null): ViewTypeOptions | undefined {
     const [ viewType ] = useNoteLabel(note, "viewType");
 
     if (!note) {
@@ -122,14 +143,15 @@ function useNoteViewType(note?: FNote | null): ViewTypeOptions | undefined {
     } else if (!(allViewTypes as readonly string[]).includes(viewType || "")) {
         // when not explicitly set, decide based on the note type
         return note.type === "search" ? "list" : "grid";
-    } else {
-        return viewType as ViewTypeOptions;
     }
+    return viewType as ViewTypeOptions;
+
 }
 
 export function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOptions | undefined, ntxId: string | null | undefined) {
     const [ noteIds, setNoteIds ] = useState<string[]>([]);
     const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
+    const directChildrenOnly = (viewType === "list" || viewType === "grid" || viewType === "table" || note?.type === "search");
 
     async function refreshNoteIds() {
         if (!note) {
@@ -140,26 +162,28 @@ export function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOpt
     }
 
     async function getNoteIds(note: FNote) {
-        if (viewType === "list" || viewType === "grid" || viewType === "table" || note.type === "search") {
+        if (directChildrenOnly) {
             return await note.getChildNoteIdsWithArchiveFiltering(includeArchived);
-        } else {
-            return await note.getSubtreeNoteIds(includeArchived);
         }
+        return await note.getSubtreeNoteIds(includeArchived);
+
     }
 
     // Refresh on note switch.
-    useEffect(() => { refreshNoteIds() }, [ note, includeArchived ]);
+    useEffect(() => {
+        refreshNoteIds();
+    }, [ note, includeArchived, directChildrenOnly ]);
 
     // Refresh on alterations to the note subtree.
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         if (note && loadResults.getBranchRows().some(branch =>
-                branch.parentNoteId === note.noteId
+            branch.parentNoteId === note.noteId
                 || noteIds.includes(branch.parentNoteId ?? ""))
             || loadResults.getAttributeRows().some(attr => attr.name === "archived" && attr.noteId && noteIds.includes(attr.noteId))
         ) {
             refreshNoteIds();
         }
-    })
+    });
 
     // Refresh on search.
     useTriliumEvent("searchRefreshed", ({ ntxId: eventNtxId }) => {
@@ -180,13 +204,13 @@ export function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOpt
                     ...noteIds,
                     ...await getNoteIds(importedNote),
                     importedNoteId
-                ])
+                ]);
             }
         }
 
         subscribeToMessages(onImport);
         return () => unsubscribeFromMessage(onImport);
-    }, [ note, noteIds, setNoteIds ])
+    }, [ note, noteIds, setNoteIds ]);
 
     return noteIds;
 }

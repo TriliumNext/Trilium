@@ -33,7 +33,7 @@ jobs:
       TRILIUM_DATA_DIR: "${{ github.workspace }}/apps/server/spec/db"
       TRILIUM_INTEGRATION_TEST: memory
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           filter: tree:0
           fetch-depth: 0
@@ -77,9 +77,9 @@ jobs:
 
       - name: Upload test report
         if: failure()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
-          name: e2e report
+          name: e2e report ${{ matrix.arch }}
           path: apps/server-e2e/test-output
 
       - name: Kill the server

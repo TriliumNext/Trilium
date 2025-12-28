@@ -1,18 +1,20 @@
 import { useEffect, useState } from "preact/hooks";
 import { t } from "../../services/i18n";
 import ActionButton from "../react/ActionButton";
-import { useNoteContext, useTriliumEvent } from "../react/hooks";
+import { useNoteContext, useTriliumEvents } from "../react/hooks";
+import appContext from "../../components/app_context";
 
 export default function ClosePaneButton() {
     const { noteContext, ntxId, parentComponent } = useNoteContext();
-    const [ isEnabled, setIsEnabled ] = useState(false);
+    const [isEnabled, setIsEnabled] = useState(false);
 
     function refresh() {
-        setIsEnabled(!!(noteContext && !!noteContext.mainNtxId));
+        const isMainOfSomeContext = appContext.tabManager.noteContexts.some(c => c.mainNtxId === ntxId);
+        setIsEnabled(!!(noteContext && (!!noteContext.mainNtxId || isMainOfSomeContext)));
     }
 
-    useTriliumEvent("noteContextReorder", refresh);
-    useEffect(refresh, [ ntxId ]);
+    useTriliumEvents(["noteContextRemoved", "noteContextReorder", "newNoteContextCreated"], refresh);
+    useEffect(refresh, [ntxId]);
 
     return (
         <ActionButton

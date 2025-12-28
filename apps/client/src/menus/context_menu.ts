@@ -2,7 +2,7 @@ import { KeyboardActionNames } from "@triliumnext/commons";
 import keyboardActionService, { getActionSync } from "../services/keyboard_actions.js";
 import note_tooltip from "../services/note_tooltip.js";
 import utils from "../services/utils.js";
-import { should } from "vitest";
+import { h, JSX, render } from "preact";
 
 export interface ContextMenuOptions<T> {
     x: number;
@@ -13,6 +13,11 @@ export interface ContextMenuOptions<T> {
     /** On mobile, if set to `true` then the context menu is shown near the element. If `false` (default), then the context menu is shown at the bottom of the screen. */
     forcePositionOnMobile?: boolean;
     onHide?: () => void;
+}
+
+export interface CustomMenuItem {
+    kind: "custom",
+    componentFn: () => JSX.Element | null;
 }
 
 export interface MenuSeparatorItem {
@@ -51,7 +56,7 @@ export interface MenuCommandItem<T> {
     columns?: number;
 }
 
-export type MenuItem<T> = MenuCommandItem<T> | MenuSeparatorItem | MenuHeader;
+export type MenuItem<T> = MenuCommandItem<T> | CustomMenuItem | MenuSeparatorItem | MenuHeader;
 export type MenuHandler<T> = (item: MenuCommandItem<T>, e: JQuery.MouseDownEvent<HTMLElement, undefined, HTMLElement, HTMLElement>) => void;
 export type ContextMenuEvent = PointerEvent | MouseEvent | JQuery.ContextMenuEvent;
 
@@ -160,16 +165,19 @@ class ContextMenu {
         let $group = $parent; // The current group or parent element to which items are being appended
         let shouldStartNewGroup = false; // If true, the next item will start a new group
         let shouldResetGroup = false; // If true, the next item will be the last one from the group
+        let prevItemKind: string = "";
 
         for (let index = 0; index < items.length; index++) {
             const item = items[index];
+            const itemKind = ("kind" in item) ? item.kind : "";
+
             if (!item) {
                 continue;
             }
 
             // If the current item is a header, start a new group. This group will contain the
             // header and the next item that follows the header.
-            if ("kind" in item && item.kind === "header") {
+            if (itemKind === "header") {
                 if (multicolumn && !shouldResetGroup) {
                     shouldStartNewGroup = true;
                 }
@@ -195,124 +203,24 @@ class ContextMenu {
                 shouldStartNewGroup = false;
             }
 
-            if ("kind" in item && item.kind === "separator") {
+            if (itemKind === "separator") {
+                if (prevItemKind === "separator") {
+                    // Skip consecutive separators
+                    continue;
+                }
                 $group.append($("<div>").addClass("dropdown-divider"));
                 shouldResetGroup = true; // End the group after the next item
-            } else if ("kind" in item && item.kind === "header") {
-                $group.append($("<h6>").addClass("dropdown-header").text(item.title));
+            } else if (itemKind === "header") {
+                $group.append($("<h6>").addClass("dropdown-header").text((item as MenuHeader).title));
                 shouldResetGroup = true;
             } else {
-                const $icon = $("<span>");
-
-                if ("uiIcon" in item || "checked" in item) {
-                    const icon = (item.checked ? "bx bx-check" : item.uiIcon);
-                    if (icon) {
-                        $icon.addClass(icon);
-                    } else {
-                        $icon.append("&nbsp;");
-                    }
+                if (itemKind === "custom") {
+                    // Custom menu item
+                    $group.append(this.createCustomMenuItem(item as CustomMenuItem));
+                } else {
+                    // Standard menu item
+                    $group.append(this.createMenuItem(item as MenuCommandItem<any>));
                 }
-
-                const $link = $("<span>")
-                    .append($icon)
-                    .append(" &nbsp; ") // some space between icon and text
-                    .append(item.title);
-
-                if ("badges" in item && item.badges) {
-                    for (let badge of item.badges) {
-                        const badgeElement = $(`<span class="badge">`).text(badge.title);
-
-                        if (badge.className) {
-                            badgeElement.addClass(badge.className);
-                        }
-
-                        $link.append(badgeElement);
-                    }
-                }
-
-                if ("keyboardShortcut" in item && item.keyboardShortcut) {
-                    const shortcuts = getActionSync(item.keyboardShortcut).effectiveShortcuts;
-                    if (shortcuts) {
-                        const allShortcuts: string[] = [];
-                        for (const effectiveShortcut of shortcuts) {
-                            allShortcuts.push(effectiveShortcut.split("+")
-                                .map(key => `<kbd>${key}</kbd>`)
-                                .join("+"));
-                        }
-
-                        if (allShortcuts.length) {
-                            const container = $("<span>").addClass("keyboard-shortcut");
-                            container.append($(allShortcuts.join(",")));
-                            $link.append(container);
-                        }
-                    }
-                } else if ("shortcut" in item && item.shortcut) {
-                    $link.append($("<kbd>").text(item.shortcut));
-                }
-
-                const $item = $("<li>")
-                    .addClass("dropdown-item")
-                    .append($link)
-                    .on("contextmenu", (e) => false)
-                    // important to use mousedown instead of click since the former does not change focus
-                    // (especially important for focused text for spell check)
-                    .on("mousedown", (e) => {
-                        e.stopPropagation();
-
-                        if (e.which !== 1) {
-                            // only left click triggers menu items
-                            return false;
-                        }
-
-                        if (this.isMobile && "items" in item && item.items) {
-                            const $item = $(e.target).closest(".dropdown-item");
-
-                            $item.toggleClass("submenu-open");
-                            $item.find("ul.dropdown-menu").toggleClass("show");
-                            return false;
-                        }
-
-                        if ("handler" in item && item.handler) {
-                            item.handler(item, e);
-                        }
-
-                        this.options?.selectMenuItemHandler(item, e);
-
-                        // it's important to stop the propagation especially for sub-menus, otherwise the event
-                        // might be handled again by top-level menu
-                        return false;
-                    });
-
-                $item.on("mouseup", (e) => {
-                    // Prevent submenu from failing to expand on mobile
-                    if (!this.isMobile || !("items" in item && item.items)) {
-                        e.stopPropagation();
-                        // Hide the content menu on mouse up to prevent the mouse event from propagating to the elements below.
-                        this.hide();
-                        return false;
-                    }
-                });
-
-                if ("enabled" in item && item.enabled !== undefined && !item.enabled) {
-                    $item.addClass("disabled");
-                }
-
-                if ("items" in item && item.items) {
-                    $item.addClass("dropdown-submenu");
-                    $link.addClass("dropdown-toggle");
-
-                    const $subMenu = $("<ul>").addClass("dropdown-menu");
-                    const hasColumns = !!item.columns && item.columns > 1;
-                    if (!this.isMobile && hasColumns) {
-                        $subMenu.css("column-count", item.columns!);
-                    }
-
-                    this.addItems($subMenu, item.items, hasColumns);
-
-                    $item.append($subMenu);
-                }
-
-                $group.append($item);
 
                 // After adding a menu item, if the previous item was a separator or header,
                 // reset the group so that the next item will be appended directly to the parent.
@@ -321,7 +229,124 @@ class ContextMenu {
                     shouldResetGroup = false;
                 };
             }
+
+            prevItemKind = itemKind;
+
         }
+    }
+
+    private createCustomMenuItem(item: CustomMenuItem) {
+        const element = document.createElement("li");
+        element.classList.add("dropdown-custom-item");
+        element.onclick = () => this.hide();
+        render(h(item.componentFn, {}), element);
+        return element;
+    }
+
+    private createMenuItem(item: MenuCommandItem<any>) {
+        const $icon = $("<span>");
+
+        if ("uiIcon" in item || "checked" in item) {
+            const icon = (item.checked ? "bx bx-check" : item.uiIcon);
+            if (icon) {
+                $icon.addClass(icon);
+            } else {
+                $icon.append("&nbsp;");
+            }
+        }
+
+        const $link = $("<span>")
+            .append($icon)
+            .append(" &nbsp; ") // some space between icon and text
+            .append(item.title);
+
+        if ("badges" in item && item.badges) {
+            for (let badge of item.badges) {
+                const badgeElement = $(`<span class="badge">`).text(badge.title);
+
+                if (badge.className) {
+                    badgeElement.addClass(badge.className);
+                }
+
+                $link.append(badgeElement);
+            }
+        }
+
+        if ("keyboardShortcut" in item && item.keyboardShortcut) {
+            const shortcuts = getActionSync(item.keyboardShortcut).effectiveShortcuts;
+            if (shortcuts) {
+                const allShortcuts: string[] = [];
+                for (const effectiveShortcut of shortcuts) {
+                    allShortcuts.push(effectiveShortcut.split("+")
+                        .map(key => `<kbd>${key}</kbd>`)
+                        .join("+"));
+                }
+
+                if (allShortcuts.length) {
+                    const container = $("<span>").addClass("keyboard-shortcut");
+                    container.append($(allShortcuts.join(",")));
+                    $link.append(container);
+                }
+            }
+        } else if ("shortcut" in item && item.shortcut) {
+            $link.append($("<kbd>").text(item.shortcut));
+        }
+
+        const $item = $("<li>")
+            .addClass("dropdown-item")
+            .append($link)
+            .on("contextmenu", (e) => false)
+            // important to use mousedown instead of click since the former does not change focus
+            // (especially important for focused text for spell check)
+            .on("mousedown", (e) => {
+                if (e.which !== 1) {
+                    // only left click triggers menu items
+                    return false;
+                }
+
+                if (this.isMobile && "items" in item && item.items) {
+                    const $item = $(e.target).closest(".dropdown-item");
+
+                    $item.toggleClass("submenu-open");
+                    $item.find("ul.dropdown-menu").toggleClass("show");
+                    return false;
+                }
+
+                // Prevent submenu from failing to expand on mobile
+                if (!("items" in item && item.items)) {
+                    this.hide();
+                }
+
+                if ("handler" in item && item.handler) {
+                    item.handler(item, e);
+                }
+
+                this.options?.selectMenuItemHandler(item, e);
+
+                // it's important to stop the propagation especially for sub-menus, otherwise the event
+                // might be handled again by top-level menu
+                return false;
+            });
+
+        if ("enabled" in item && item.enabled !== undefined && !item.enabled) {
+            $item.addClass("disabled");
+        }
+
+        if ("items" in item && item.items) {
+            $item.addClass("dropdown-submenu");
+            $link.addClass("dropdown-toggle");
+
+            const $subMenu = $("<ul>").addClass("dropdown-menu");
+            const hasColumns = !!item.columns && item.columns > 1;
+            if (!this.isMobile && hasColumns) {
+                $subMenu.css("column-count", item.columns!);
+            }
+
+            this.addItems($subMenu, item.items, hasColumns);
+
+            $item.append($subMenu);
+        }
+        return $item;
     }
 
     async hide() {

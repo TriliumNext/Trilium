@@ -1,6 +1,16 @@
 {
   "keyboard_actions": {
     "back-in-note-history": "Geçmişteki önceki nota git",
-    "forward-in-note-history": "Geçmişteki sonraki nota git"
+    "forward-in-note-history": "Geçmişteki sonraki nota git",
+    "open-jump-to-note-dialog": "\"Nota geçiş yap\" iletişim kutusunu aç",
+    "open-command-palette": "Komut setini göster",
+    "scroll-to-active-note": "Not ağacını etkin olan nota kaydır",
+    "quick-search": "Hızlı arama çubuğunu etkinleştir",
+    "search-in-subtree": "Etkin notun alt ağacındaki notları ara",
+    "expand-subtree": "Geçerli notun alt ağacını genişlet",
+    "move-note-up": "Notu bir üste taşı",
+    "collapse-tree": "Tüm not ağacını daraltır",
+    "collapse-subtree": "Geçerli notun alt ağacını daraltır",
+    "sort-child-notes": "Alt notları sırala"
   }
 }

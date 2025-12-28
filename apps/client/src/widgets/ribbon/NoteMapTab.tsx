@@ -29,14 +29,14 @@ export default function NoteMapTab({ note }: TabContext) {
 
             {!isExpanded ? (
                 <ActionButton
-                    icon="bx bx-arrow-to-bottom"
+                    icon="bx bx-expand-vertical"
                     text={t("note_map.open_full")}
                     className="open-full-button"
                     onClick={() => setExpanded(true)}
                 />
             ) : (
                 <ActionButton
-                    icon="bx bx-arrow-to-top"
+                    icon="bx bx-collapse-vertical"
                     text={t("note_map.collapse")}
                     className="collapse-button"
                     onClick={() => setExpanded(false)}

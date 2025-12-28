@@ -14,6 +14,7 @@
 .note-detail-code-editor {
     min-height: 50px;
     height: 100%;
+    padding: 0 !important;
 }
 /* #endregion */
 
@@ -22,13 +23,9 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-}
 
-.backend-log-editor {
-    flex-grow: 1;
-    width: 100%;
-    border: none;
-    resize: none;
-    margin-bottom: 0;
+    .cm-editor {
+        font-size: 0.85em;
+    }
 }
 /* #endregion */

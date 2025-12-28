@@ -75,7 +75,7 @@ If moved by mistake, there is currently no way to undo the change. If the mouse 
     *   Clicking on the note title in the tooltip will navigate to the note in the current view.
 *   Middle-clicking the marker will open the note in a new tab.
 *   Right-clicking the marker will open a contextual menu (as described below).
-*   If the map is in read-only mode, clicking on a marker will open a <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Quick%20edit.md">Quick edit</a> popup for the corresponding note.
+*   If the map is in read-only mode, clicking on a marker will open a <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Navigation/Quick%20edit.md">Quick edit</a> popup for the corresponding note.
 
 ## Contextual menu
 

@@ -73,8 +73,7 @@ const EXTENSION_TO_MIME = new Map<string, string>([
     [".ts", "text/x-typescript"],
     [".excalidraw", "application/json"],
     [".mermaid", "text/vnd.mermaid"],
-    [".mmd", "text/vnd.mermaid"],
-    [".mp4", "video/mp4"]   // https://github.com/jshttp/mime-types/issues/138
+    [".mmd", "text/vnd.mermaid"]
 ]);
 
 /** @returns false if MIME is not detected */

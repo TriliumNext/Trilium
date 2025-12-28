@@ -1,26 +1,29 @@
-import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
-import Dropdown from "../react/Dropdown";
-import { NOTE_TYPES } from "../../services/note_types";
-import { FormDropdownDivider, FormListBadge, FormListItem } from "../react/FormList";
-import { getAvailableLocales, t } from "../../services/i18n";
-import { useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumOption } from "../react/hooks";
-import mime_types from "../../services/mime_types";
-import { Locale, LOCALES, NoteType, ToggleInParentResponse } from "@triliumnext/commons";
-import server from "../../services/server";
-import dialog from "../../services/dialog";
-import FormToggle from "../react/FormToggle";
+import { MimeType, NoteType, ToggleInParentResponse } from "@triliumnext/commons";
+import { ComponentChildren } from "preact";
+import { createPortal } from "preact/compat";
+import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useState } from "preact/hooks";
+
 import FNote from "../../entities/fnote";
-import protected_session from "../../services/protected_session";
-import FormDropdownList from "../react/FormDropdownList";
-import toast from "../../services/toast";
 import branches from "../../services/branches";
+import dialog from "../../services/dialog";
+import { getAvailableLocales, t } from "../../services/i18n";
+import mime_types from "../../services/mime_types";
+import { NOTE_TYPES } from "../../services/note_types";
+import protected_session from "../../services/protected_session";
+import server from "../../services/server";
 import sync from "../../services/sync";
+import toast from "../../services/toast";
+import Dropdown from "../react/Dropdown";
+import FormDropdownList from "../react/FormDropdownList";
+import { FormDropdownDivider, FormListBadge, FormListItem } from "../react/FormList";
+import FormToggle from "../react/FormToggle";
 import HelpButton from "../react/HelpButton";
-import { TabContext } from "./ribbon-interface";
+import { useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumOption } from "../react/hooks";
 import Modal from "../react/Modal";
 import { CodeMimeTypesList } from "../type_widgets/options/code_notes";
-import { ContentLanguagesList } from "../type_widgets/options/i18n";
 import { LocaleSelector } from "../type_widgets/options/components/LocaleSelector";
+import { ContentLanguagesList } from "../type_widgets/options/i18n";
+import { TabContext } from "./ribbon-interface";
 
 export default function BasicPropertiesTab({ note }: TabContext) {
     return (
@@ -37,18 +40,40 @@ export default function BasicPropertiesTab({ note }: TabContext) {
 }
 
 function NoteTypeWidget({ note }: { note?: FNote | null }) {
-    const noteTypes = useMemo(() => NOTE_TYPES.filter((nt) => !nt.reserved && !nt.static), []);
-    const [ codeNotesMimeTypes ] = useTriliumOption("codeNotesMimeTypes");
-    const mimeTypes = useMemo(() => {
-        mime_types.loadMimeTypes();
-        return mime_types.getMimeTypes().filter(mimeType => mimeType.enabled)
-    }, [ codeNotesMimeTypes ]);
     const notSelectableNoteTypes = useMemo(() => NOTE_TYPES.filter((nt) => nt.reserved || nt.static).map((nt) => nt.type), []);
 
     const currentNoteType = useNoteProperty(note, "type") ?? undefined;
     const currentNoteMime = useNoteProperty(note, "mime");
     const [ modalShown, setModalShown ] = useState(false);
 
+    return (
+        <div className="note-type-container">
+            <span>{t("basic_properties.note_type")}:</span> &nbsp;
+            <Dropdown
+                dropdownContainerClassName="note-type-dropdown"
+                text={<span className="note-type-desc">{findTypeTitle(currentNoteType, currentNoteMime)}</span>}
+                disabled={notSelectableNoteTypes.includes(currentNoteType ?? "text")}
+            >
+                <NoteTypeDropdownContent currentNoteType={currentNoteType} currentNoteMime={currentNoteMime} note={note} setModalShown={setModalShown} />
+            </Dropdown>
+
+            {createPortal(
+                <NoteTypeOptionsModal modalShown={modalShown} setModalShown={setModalShown} />,
+                document.body
+            )}
+        </div>
+    );
+}
+
+export function NoteTypeDropdownContent({ currentNoteType, currentNoteMime, note, setModalShown, noCodeNotes }: {
+    currentNoteType?: NoteType;
+    currentNoteMime?: string | null;
+    note?: FNote | null;
+    setModalShown: Dispatch<StateUpdater<boolean>>;
+    noCodeNotes?: boolean;
+}) {
+    const mimeTypes = useMimeTypes();
+    const noteTypes = useMemo(() => NOTE_TYPES.filter((nt) => !nt.reserved && !nt.static), []);
     const changeNoteType = useCallback(async (type: NoteType, mime?: string) => {
         if (!note || (type === currentNoteType && mime === currentNoteMime)) {
             return;
@@ -68,71 +93,94 @@ function NoteTypeWidget({ note }: { note?: FNote | null }) {
     }, [ note, currentNoteType, currentNoteMime ]);
 
     return (
-        <div className="note-type-container">
-            <span>{t("basic_properties.note_type")}:</span> &nbsp;
-            <Dropdown
-                dropdownContainerClassName="note-type-dropdown"
-                text={<span className="note-type-desc">{findTypeTitle(currentNoteType, currentNoteMime)}</span>}
-                disabled={notSelectableNoteTypes.includes(currentNoteType ?? "text")}
-            >
-                {noteTypes.map(({ isNew, isBeta, type, mime, title }) => {
-                    const badges: FormListBadge[] = [];
-                    if (isNew) {
-                        badges.push({
-                            className: "new-note-type-badge",
-                            text: t("note_types.new-feature")
-                        });
-                    }
-                    if (isBeta) {
-                        badges.push({
-                            text: t("note_types.beta-feature")
-                        });
-                    }
+        <>
+            {noteTypes.map(({ isNew, isBeta, type, mime, title }) => {
+                const badges: FormListBadge[] = [];
+                if (isNew) {
+                    badges.push({
+                        className: "new-note-type-badge",
+                        text: t("note_types.new-feature")
+                    });
+                }
+                if (isBeta) {
+                    badges.push({
+                        text: t("note_types.beta-feature")
+                    });
+                }
 
-                    const checked = (type === currentNoteType);
-                    if (type !== "code") {
-                        return (
+                const checked = (type === currentNoteType);
+                if (noCodeNotes || type !== "code") {
+                    return (
+                        <FormListItem
+                            checked={checked}
+                            badges={badges}
+                            onClick={() => changeNoteType(type, mime)}
+                        >{title}</FormListItem>
+                    );
+                } else {
+                    return (
+                        <>
+                            <FormDropdownDivider />
                             <FormListItem
                                 checked={checked}
-                                badges={badges}
-                                onClick={() => changeNoteType(type, mime)}
-                            >{title}</FormListItem>
-                        );
-                    } else {
-                        return (
-                            <>
-                                <FormDropdownDivider />
-                                <FormListItem
-                                    checked={checked}
-                                    disabled
-                                >
-                                    <strong>{title}</strong>
-                                </FormListItem>
-                            </>
-                        )
-                    }
-                })}
+                                disabled
+                            >
+                                <strong>{title}</strong>
+                            </FormListItem>
+                        </>
+                    );
+                }
+            })}
 
-                {mimeTypes.map(({ title, mime }) => (
-                    <FormListItem onClick={() => changeNoteType("code", mime)}>
-                        {title}
-                    </FormListItem>
-                ))}
+            {!noCodeNotes && <NoteTypeCodeNoteList mimeTypes={mimeTypes} changeNoteType={changeNoteType} setModalShown={setModalShown} />}
+        </>
+    );
+}
 
-                <FormDropdownDivider />
-                <FormListItem icon="bx bx-cog" onClick={() => setModalShown(true)}>{t("basic_properties.configure_code_notes")}</FormListItem>
-            </Dropdown>
+export function NoteTypeCodeNoteList({ currentMimeType, mimeTypes, changeNoteType, setModalShown }: {
+    currentMimeType?: string;
+    mimeTypes: MimeType[];
+    changeNoteType(type: NoteType, mime: string): void;
+    setModalShown(shown: boolean): void;
+}) {
+    return (
+        <>
+            {mimeTypes.map(({ title, mime }) => (
+                <FormListItem
+                    key={mime}
+                    checked={mime === currentMimeType}
+                    onClick={() => changeNoteType("code", mime)}
+                >
+                    {title}
+                </FormListItem>
+            ))}
 
-            <Modal
-                className="code-mime-types-modal"
-                title={t("code_mime_types.title")}
-                show={modalShown} onHidden={() => setModalShown(false)}
-                size="xl" scrollable
-            >
-                <CodeMimeTypesList />
-            </Modal>
-        </div>
-    )
+            <FormDropdownDivider />
+            <FormListItem icon="bx bx-cog" onClick={() => setModalShown(true)}>{t("basic_properties.configure_code_notes")}</FormListItem>
+        </>
+    );
+}
+
+export function useMimeTypes() {
+    const [ codeNotesMimeTypes ] = useTriliumOption("codeNotesMimeTypes");
+    const mimeTypes = useMemo(() => {
+        mime_types.loadMimeTypes();
+        return mime_types.getMimeTypes().filter(mimeType => mimeType.enabled);
+    }, [ codeNotesMimeTypes ]); // eslint-disable-line react-hooks/exhaustive-deps
+    return mimeTypes;
+}
+
+export function NoteTypeOptionsModal({ modalShown, setModalShown }: { modalShown: boolean, setModalShown: (shown: boolean) => void }) {
+    return (
+        <Modal
+            className="code-mime-types-modal"
+            title={t("code_mime_types.title")}
+            show={modalShown} onHidden={() => setModalShown(false)}
+            size="xl" scrollable
+        >
+            <CodeMimeTypesList />
+        </Modal>
+    );
 }
 
 function ProtectedNoteSwitch({ note }: { note?: FNote | null }) {
@@ -187,22 +235,11 @@ function EditabilitySelect({ note }: { note?: FNote | null }) {
                 }}
             />
         </div>
-    )
+    );
 }
 
 function BookmarkSwitch({ note }: { note?: FNote | null }) {
-    const [ isBookmarked, setIsBookmarked ] = useState<boolean>(false);
-    const refreshState = useCallback(() => {
-        const isBookmarked = note && !!note.getParentBranches().find((b) => b.parentNoteId === "_lbBookmarks");
-        setIsBookmarked(!!isBookmarked);
-    }, [ note ]);
-
-    useEffect(() => refreshState(), [ note ]);
-    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        if (note && loadResults.getBranchRows().find((b) => b.noteId === note.noteId)) {
-            refreshState();
-        }
-    });
+    const [ isBookmarked, setIsBookmarked ] = useNoteBookmarkState(note);
 
     return (
         <div className="bookmark-switch-container">
@@ -210,18 +247,36 @@ function BookmarkSwitch({ note }: { note?: FNote | null }) {
                 switchOnName={t("bookmark_switch.bookmark")} switchOnTooltip={t("bookmark_switch.bookmark_this_note")}
                 switchOffName={t("bookmark_switch.bookmark")} switchOffTooltip={t("bookmark_switch.remove_bookmark")}
                 currentValue={isBookmarked}
-                onChange={async (shouldBookmark) => {
-                    if (!note) return;
-                    const resp = await server.put<ToggleInParentResponse>(`notes/${note.noteId}/toggle-in-parent/_lbBookmarks/${shouldBookmark}`);
-
-                    if (!resp.success && "message" in resp) {
-                        toast.showError(resp.message);
-                    }
-                }}
+                onChange={setIsBookmarked}
                 disabled={["root", "_hidden"].includes(note?.noteId ?? "")}
             />
         </div>
-    )
+    );
+}
+
+export function useNoteBookmarkState(note: FNote | null | undefined) {
+    const [ isBookmarked, setIsBookmarked ] = useState<boolean>(false);
+    const refreshState = useCallback(() => {
+        const isBookmarked = note && !!note.getParentBranches().find((b) => b.parentNoteId === "_lbBookmarks");
+        setIsBookmarked(!!isBookmarked);
+    }, [ note ]);
+
+    const changeHandler = useCallback(async (shouldBookmark: boolean) => {
+        if (!note) return;
+        const resp = await server.put<ToggleInParentResponse>(`notes/${note.noteId}/toggle-in-parent/_lbBookmarks/${shouldBookmark}`);
+
+        if (!resp.success && "message" in resp) {
+            toast.showError(resp.message);
+        }
+    }, [ note ]);
+
+    useEffect(() => refreshState(), [ refreshState ]);
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (note && loadResults.getBranchRows().find((b) => b.noteId === note.noteId)) {
+            refreshState();
+        }
+    });
+    return [ isBookmarked, changeHandler ] as const;
 }
 
 function TemplateSwitch({ note }: { note?: FNote | null }) {
@@ -237,16 +292,33 @@ function TemplateSwitch({ note }: { note?: FNote | null }) {
                 currentValue={isTemplate} onChange={setIsTemplate}
             />
         </div>
-    )
+    );
 }
 
 function SharedSwitch({ note }: { note?: FNote | null }) {
+    const [ isShared, switchShareState ] = useShareState(note);
+
+    return (
+        <div className="shared-switch-container">
+            <FormToggle
+                currentValue={isShared}
+                onChange={switchShareState}
+                switchOnName={t("shared_switch.shared")} switchOnTooltip={t("shared_switch.toggle-on-title")}
+                switchOffName={t("shared_switch.shared")} switchOffTooltip={t("shared_switch.toggle-off-title")}
+                helpPage="R9pX4DGra2Vt"
+                disabled={["root", "_share", "_hidden"].includes(note?.noteId ?? "") || note?.noteId.startsWith("_options")}
+            />
+        </div>
+    );
+}
+
+export function useShareState(note: FNote | null | undefined) {
     const [ isShared, setIsShared ] = useState(false);
     const refreshState = useCallback(() => {
         setIsShared(!!note?.hasAncestor("_share"));
     }, [ note ]);
 
-    useEffect(() => refreshState(), [ note ]);
+    useEffect(() => refreshState(), [ refreshState ]);
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         if (note && loadResults.getBranchRows().find((b) => b.noteId === note.noteId)) {
             refreshState();
@@ -271,63 +343,71 @@ function SharedSwitch({ note }: { note?: FNote | null }) {
         sync.syncNow(true);
     }, [ note ]);
 
-    return (
-        <div className="shared-switch-container">
-            <FormToggle
-                currentValue={isShared}
-                onChange={switchShareState}
-                switchOnName={t("shared_switch.shared")} switchOnTooltip={t("shared_switch.toggle-on-title")}
-                switchOffName={t("shared_switch.shared")} switchOffTooltip={t("shared_switch.toggle-off-title")}
-                helpPage="R9pX4DGra2Vt"
-                disabled={["root", "_share", "_hidden"].includes(note?.noteId ?? "") || note?.noteId.startsWith("_options")}
-            />
-        </div>
-    )
+    return [ isShared, switchShareState ] as const;
 }
 
 function NoteLanguageSwitch({ note }: { note?: FNote | null }) {
+    return (
+        <div className="note-language-container">
+            <span>{t("basic_properties.language")}:</span>
+            &nbsp;
+
+            <NoteLanguageSelector note={note} />
+            <HelpButton helpPage="veGu4faJErEM" style={{ marginInlineStart: "4px" }} />
+        </div>
+    );
+}
+
+export function NoteLanguageSelector({ note }: { note: FNote | null | undefined }) {
+    const [ modalShown, setModalShown ] = useState(false);
+    const { locales, DEFAULT_LOCALE, currentNoteLanguage, setCurrentNoteLanguage } = useLanguageSwitcher(note);
+
+    return (
+        <>
+            <LocaleSelector
+                locales={locales}
+                defaultLocale={DEFAULT_LOCALE}
+                currentValue={currentNoteLanguage} onChange={setCurrentNoteLanguage}
+                extraChildren={<>
+                    <FormListItem
+                        onClick={() => setModalShown(true)}
+                        icon="bx bx-cog"
+                    >{t("note_language.configure-languages")}</FormListItem>
+                </>}
+            />
+            {createPortal(
+                <ContentLanguagesModal modalShown={modalShown} setModalShown={setModalShown} />,
+                document.body
+            )}
+        </>
+    );
+}
+
+export function useLanguageSwitcher(note: FNote | null | undefined) {
     const [ languages ] = useTriliumOption("languages");
     const DEFAULT_LOCALE = {
         id: "",
         name: t("note_language.not_set")
     };
     const [ currentNoteLanguage, setCurrentNoteLanguage ] = useNoteLabel(note, "language");
-    const [ modalShown, setModalShown ] = useState(false);
     const locales = useMemo(() => {
         const enabledLanguages = JSON.parse(languages ?? "[]") as string[];
         const filteredLanguages = getAvailableLocales().filter((l) => typeof l !== "object" || enabledLanguages.includes(l.id));
         return filteredLanguages;
     }, [ languages ]);
+    return { locales, DEFAULT_LOCALE, currentNoteLanguage, setCurrentNoteLanguage };
+}
 
+export function ContentLanguagesModal({ modalShown, setModalShown }: { modalShown: boolean, setModalShown: (shown: boolean) => void }) {
     return (
-        <div className="note-language-container">
-            <span>{t("basic_properties.language")}:</span>
-            &nbsp;
-            <LocaleSelector
-                locales={locales}
-                defaultLocale={DEFAULT_LOCALE}
-                currentValue={currentNoteLanguage ?? ""} onChange={setCurrentNoteLanguage}
-                extraChildren={(
-                    <FormListItem
-                        onClick={() => setModalShown(true)}
-                        icon="bx bx-cog"
-                    >{t("note_language.configure-languages")}</FormListItem>
-                )}
-            >
-
-            </LocaleSelector>
-
-            <HelpButton helpPage="B0lcI9xz1r8K" style={{ marginInlineStart: "4px" }} />
-
-            <Modal
-                className="content-languages-modal"
-                title={t("content_language.title")}
-                show={modalShown} onHidden={() => setModalShown(false)}
-                size="lg" scrollable
-            >
-                <ContentLanguagesList />
-            </Modal>
-        </div>
+        <Modal
+            className="content-languages-modal"
+            title={t("content_language.title")}
+            show={modalShown} onHidden={() => setModalShown(false)}
+            size="lg" scrollable
+        >
+            <ContentLanguagesList />
+        </Modal>
     );
 }
 

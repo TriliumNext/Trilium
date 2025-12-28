@@ -1,0 +1,61 @@
+body.experimental-feature-new-layout #right-pane {
+    display: flex;
+    flex-direction: column;
+
+    .card {
+        margin-inline: 0;
+        border-bottom: 1px solid var(--main-border-color);
+        border-radius: 0;
+
+        .card-header {
+            padding: 1px 0 0 0;
+            cursor: pointer;
+            justify-content: flex-start;
+            --icon-button-size: 26px;
+
+            .card-header-title {
+                padding-inline: 0;
+                flex-grow: 1;
+            }
+        }
+
+        .card-header-buttons {
+            transform: none;
+            top: 0;
+        }
+
+        &:last-of-type {
+            border-bottom: 0;
+        }
+
+        &.collapsed .card-header > .bx {
+            transform: rotate(-90deg);
+        }
+    }
+
+    .card.grow:not(.collapsed) {
+        flex-grow: 1;
+    }
+
+    .gutter-vertical + .card .card-header {
+        padding-top: 0;
+    }
+
+    .no-items {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-grow: 1;
+        flex-direction: column;
+        padding: 0.75em;
+        color: var(--muted-text-color);
+
+        .bx {
+            font-size: 3em;
+        }
+
+        button {
+            margin-top: 1em;
+        }
+    }
+}

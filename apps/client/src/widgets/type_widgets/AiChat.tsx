@@ -1,13 +1,15 @@
 import { useEffect, useRef } from "preact/hooks";
+
+import LlmChatPanel from "../llm_chat";
 import { useEditorSpacedUpdate, useLegacyWidget } from "../react/hooks";
 import { type TypeWidgetProps } from "./type_widget";
-import LlmChatPanel from "../llm_chat";
 
 export default function AiChat({ note, noteContext }: TypeWidgetProps) {
     const dataRef = useRef<object>();
     const spacedUpdate = useEditorSpacedUpdate({
         note,
         noteContext,
+        noteType: "aiChat",
         getData: async () => ({
             content: JSON.stringify(dataRef.current)
         }),

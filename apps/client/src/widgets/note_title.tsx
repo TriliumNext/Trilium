@@ -9,8 +9,9 @@ import { isLaunchBarConfig } from "../services/utils";
 import appContext from "../components/app_context";
 import branches from "../services/branches";
 import { isIMEComposing } from "../services/shortcuts";
+import clsx from "clsx";
 
-export default function NoteTitleWidget() {
+export default function NoteTitleWidget(props: {className?: string}) {
     const { note, noteId, componentId, viewScope, noteContext, parentComponent } = useNoteContext();
     const title = useNoteProperty(note, "title", componentId);
     const isProtected = useNoteProperty(note, "isProtected");
@@ -67,7 +68,7 @@ export default function NoteTitleWidget() {
     });
 
     return (
-        <div className="note-title-widget">
+        <div className={clsx("note-title-widget", props.className)}>
             {note && <FormTextBox
                 inputRef={textBoxRef}
                 autocomplete="off"

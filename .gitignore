@@ -44,8 +44,10 @@ upload
 .rollup.cache
 *.tsbuildinfo
 
+/.direnv
 /result
 .svelte-kit
 
 # docs
 site/
+apps/*/coverage

@@ -1,18 +1,48 @@
 import { Locale } from "@triliumnext/commons";
+import { ComponentChildren } from "preact";
+import { useMemo } from "preact/hooks";
+
 import Dropdown from "../../../react/Dropdown";
 import { FormDropdownDivider, FormListItem } from "../../../react/FormList";
-import { ComponentChildren } from "preact";
-import { useMemo, useState } from "preact/hooks";
 
 export function LocaleSelector({ id, locales, currentValue, onChange, defaultLocale, extraChildren }: {
     id?: string;
     locales: Locale[],
-    currentValue: string,
+    currentValue: string | null | undefined,
     onChange: (newLocale: string) => void,
     defaultLocale?: Locale,
-    extraChildren?: ComponentChildren
+    extraChildren?: ComponentChildren,
 }) {
-    const [ activeLocale, setActiveLocale ] = useState(defaultLocale?.id === currentValue ? defaultLocale : locales.find(l => l.id === currentValue));
+    const currentValueWithDefault = currentValue ?? defaultLocale?.id ?? "";
+    const { activeLocale, processedLocales } = useProcessedLocales(locales, defaultLocale, currentValueWithDefault);
+    return (
+        <Dropdown id={id} text={activeLocale?.name}>
+            {processedLocales.map((locale, index) => (
+                (typeof locale === "object") ? (
+                    <FormListItem
+                        key={locale.id}
+                        rtl={locale.rtl}
+                        checked={locale.id === currentValue}
+                        onClick={() => {
+                            onChange(locale.id);
+                        }}
+                    >{locale.name}</FormListItem>
+                ) : (
+                    <FormDropdownDivider key={`divider-${index}`} />
+                )
+            ))}
+            {extraChildren && (
+                <>
+                    <FormDropdownDivider />
+                    {extraChildren}
+                </>
+            )}
+        </Dropdown>
+    );
+}
+
+export function useProcessedLocales(locales: Locale[], defaultLocale: Locale | undefined, currentValue: string) {
+    const activeLocale = defaultLocale?.id === currentValue ? defaultLocale : locales.find(l => l.id === currentValue);
 
     const processedLocales = useMemo(() => {
         const leftToRightLanguages = locales.filter((l) => !l.rtl);
@@ -34,29 +64,8 @@ export function LocaleSelector({ id, locales, currentValue, onChange, defaultLoc
             ];
         }
 
-        if (extraChildren) {
-            items.push("---");
-        }
         return items;
-    }, [ locales ]);
+    }, [ locales, defaultLocale ]);
 
-    return (
-        <Dropdown id={id} text={activeLocale?.name}>
-            {processedLocales.map(locale => {
-                if (typeof locale === "object") {
-                    return <FormListItem
-                        rtl={locale.rtl}
-                        checked={locale.id === currentValue}
-                        onClick={() => {
-                            setActiveLocale(locale);
-                            onChange(locale.id);
-                        }}
-                    >{locale.name}</FormListItem>
-                } else {
-                    return <FormDropdownDivider />
-                }
-            })}
-            {extraChildren}
-        </Dropdown>
-    )
+    return { activeLocale, processedLocales };
 }

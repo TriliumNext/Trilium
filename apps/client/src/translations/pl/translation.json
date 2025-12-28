@@ -1,256 +1,279 @@
 {
   "about": {
     "title": "O Trilium Notes",
-    "homepage": "Strona główna:",
+    "homepage": "Strona domowa:",
     "app_version": "Wersja aplikacji:",
     "db_version": "Wersja bazy danych:",
     "sync_version": "Wersja synchronizacji:",
     "build_date": "Data kompilacji:",
-    "build_revision": "Wersja:",
-    "data_directory": "Katalog z danymi:"
+    "build_revision": "Rewizja:",
+    "data_directory": "Katalog danych:"
   },
   "toast": {
     "critical-error": {
       "title": "Błąd krytyczny",
-      "message": "Wystąpił krytyczny błąd uniemożliwiający uruchomienie aplikacji:\n\n{{message}}\n\nJest to spowodowane najprawdopodobniej niespodziewanym błędem skryptu. Spróbuj uruchomić aplikację ponownie w trybie bezpiecznym i zaadresuj problem."
+      "message": "Wystąpił błąd krytyczny, który uniemożliwia uruchomienie aplikacji klienckiej:\n\n{{message}}\n\nNajprawdopodobniej jest to spowodowane nieoczekiwanym błędem skryptu. Spróbuj uruchomić aplikację w trybie bezpiecznym (safe mode) i rozwiązać problem."
     },
     "widget-error": {
       "title": "Nie udało się zainicjować widżetu",
-      "message-custom": "Niestandardowy widżet z notatki o identyfikatorze \"{{id}}\", i tytule \"{{title}}\" nie mógł zostać zainicjowany z powodu:\n\n{{message}}",
-      "message-unknown": "Nieznany widżet nie mógł być zainicjowany z powodu:\n\n{{message}}"
+      "message-custom": "Niestandardowy widżet z notatki o ID \"{{id}}\", zatytułowany \"{{title}}\", nie mógł zostać zainicjowany z powodu:\n\n{{message}}",
+      "message-unknown": "Nieznany widżet nie mógł zostać zainicjowany z powodu:\n\n{{message}}"
     },
     "bundle-error": {
       "title": "Nie udało się załadować niestandardowego skryptu",
-      "message": "Skrypt z notatki o identyfikatorze \"{{id}}\", tytule \"{{title}}: nie został uruchomiony z powodu:\n\n{{message}}"
-    }
+      "message": "Skrypt z notatki o ID \"{{id}}\", zatytułowany \"{{title}}\", nie mógł zostać wykonany z powodu:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "Nie udało się pobrać listy widżetów z serwera"
+    },
+    "widget-render-error": {
+      "title": "Nie udało się wyrenderować niestandardowego widżetu React"
+    },
+    "widget-missing-parent": "Niestandardowy widżet nie ma zdefiniowanej obowiązkowej właściwości „{{property}}”.",
+    "open-script-note": "Otwórz notatkę ze skryptem"
   },
   "add_link": {
     "add_link": "Dodaj link",
     "note": "Notatka",
-    "search_note": "Wyszukaj notatkę po nazwie",
-    "link_title_arbitrary": "Tytuł linku można dowolnie zmieniać",
+    "search_note": "wyszukaj notatkę po nazwie",
+    "link_title_arbitrary": "tytuł linku można dowolnie zmieniać",
     "link_title": "Tytuł linku",
     "button_add_link": "Dodaj link",
     "help_on_links": "Pomoc dotycząca linków",
-    "link_title_mirrors": "tytuł linku odzwierciedla tytuł obecnej notatki"
+    "link_title_mirrors": "Tytuł linku odzwierciedla obecną nazwę notatki"
   },
   "branch_prefix": {
     "save": "Zapisz",
     "edit_branch_prefix": "Edytuj prefiks gałęzi",
     "prefix": "Prefiks: ",
-    "branch_prefix_saved": "Zapisano prefiks gałęzi.",
-    "help_on_tree_prefix": "Pomoc dotycząca prefiksu drzewa"
+    "branch_prefix_saved": "Prefiks gałęzi został zapisany.",
+    "help_on_tree_prefix": "Pomoc dotycząca prefiksu drzewa",
+    "edit_branch_prefix_multiple": "Edytuj prefiks gałęzi dla {{count}} gałęzi",
+    "branch_prefix_saved_multiple": "Prefiks gałęzi został zapisany dla {{count}} gałęzi.",
+    "affected_branches": "Dotyczy gałęzi ({{count}}):"
   },
   "bulk_actions": {
     "labels": "Etykiety",
     "notes": "Notatki",
     "other": "Inne",
-    "relations": "Powiązania",
-    "bulk_actions": "Działania zbiorcze",
-    "include_descendants": "Uwzględnia rozwinięcia wybranych notatek",
-    "available_actions": "Dostępne działania",
-    "chosen_actions": "Wybrane działania",
-    "execute_bulk_actions": "Wykonaj zbiór działań",
-    "bulk_actions_executed": "Zbiór działań został wykonany prawidłowo.",
-    "none_yet": "Brak zaznaczonych działań... dodaj działanie poprzez kliknięcie jednej z dostępnych opcji powyżej.",
+    "relations": "Relacje",
+    "bulk_actions": "Akcje masowe",
+    "include_descendants": "Uwzględnij elementy podrzędne wybranych notatek",
+    "available_actions": "Dostępne akcje",
+    "chosen_actions": "Wybrane akcje",
+    "execute_bulk_actions": "Wykonaj akcje masowe",
+    "bulk_actions_executed": "Akcje masowe zostały wykonane pomyślnie.",
+    "none_yet": "Jeszcze nic... dodaj akcję, klikając jedną z dostępnych powyżej.",
     "affected_notes": "Dotyczy notatek"
   },
   "confirm": {
     "ok": "OK",
     "cancel": "Anuluj",
     "confirmation": "Potwierdzenie",
-    "are_you_sure_remove_note": "Czy napewno chcesz usunąć notatkę \"{{title}}\" z mapy powiązań? ",
-    "if_you_dont_check": "Jeśli nie zaznaczysz tej opcji, notatka zostanie usunięta jedynie z mapy powiązań.",
-    "also_delete_note": "Usuń dodatkowo notatkę"
+    "are_you_sure_remove_note": "Czy na pewno chcesz usunąć notatkę \"{{title}}\" z mapy relacji? ",
+    "if_you_dont_check": "Jeśli tego nie zaznaczysz, notatka zostanie usunięta tylko z mapy relacji.",
+    "also_delete_note": "Usuń również notatkę"
   },
   "delete_notes": {
     "cancel": "Anuluj",
     "close": "Zamknij",
-    "delete_notes_preview": "Usuń podgląd notatek",
-    "delete_all_clones_description": "Usuń również wszystkie sklonowania (działanie może zostać cofnięte w ostatnich zmianach)",
-    "erase_notes_description": "Normalne (miękkie) usuwanie zaznacza jedynie notatki jako usunięte i można je przywrócić (w oknie dialogowym ostatnich zmian) przez wyznaczony okres czasu. Zaznaczenie tej opcji spowoduje natychmiastowe usunięcie notatek, bez możliwości ich przywrócenia.",
-    "erase_notes_warning": "Usuń notatki permanentnie (bez opcji ich przywrócenia), włączając wszystkie kopie. Działanie to wymaga ponownego uruchomienia aplikacji.",
+    "delete_notes_preview": "Podgląd usuwania notatek",
+    "delete_all_clones_description": "Usuń również wszystkie klony (można cofnąć w oknie Ostatnie zmiany)",
+    "erase_notes_description": "Normalne (miękkie) usuwanie jedynie oznacza notatki jako usunięte i można je przywrócić (w oknie Ostatnie zmiany) przez pewien czas. Zaznaczenie tej opcji spowoduje natychmiastowe wymazanie notatek i nie będzie możliwe ich przywrócenie.",
+    "erase_notes_warning": "Wymaż notatki trwale (nie można cofnąć), w tym wszystkie klony. Wymusi to przeładowanie aplikacji.",
     "notes_to_be_deleted": "Następujące notatki zostaną usunięte ({{notesCount}})",
-    "no_note_to_delete": "Żadne notatki nie zostaną usunięte (jedynie kopie).",
-    "broken_relations_to_be_deleted": "Następujące powiązania zostaną uszkodzone i usunięte ({{ relationCount}})",
+    "no_note_to_delete": "Żadna notatka nie zostanie usunięta (tylko klony).",
+    "broken_relations_to_be_deleted": "Następujące relacje zostaną zerwane i usunięte ({{ relationCount}})",
     "ok": "OK",
-    "deleted_relation_text": "Notatka {{- note}} (do usunięcia) jest powiązana przez relację {{- relation}} pochodzącą z {{- source}}."
+    "deleted_relation_text": "Notatka {{- note}} (do usunięcia) jest powiązana relacją {{- relation}} pochodzącą z {{- source}}."
   },
   "export": {
     "close": "Zamknij",
     "export_note_title": "Eksportuj notatkę",
-    "export_type_subtree": "Ta notatka oraz wszystkie podrzędne",
-    "format_html": "HTML - rekomendowany jako zachowujący całość formatowania",
-    "format_html_zip": "HTML w archiwum ZIP - rekomendowany jako zachowujący całość formatowania.",
+    "export_type_subtree": "Ta notatka i wszystkie jej elementy podrzędne",
+    "format_html": "HTML - zalecane, ponieważ zachowuje pełne formatowanie",
+    "format_html_zip": "HTML w archiwum ZIP - zalecane, ponieważ zachowuje pełne formatowanie.",
     "format_markdown": "Markdown - zachowuje większość formatowania.",
-    "format_opml": "OPML - format wymiany danych dla outlinerów zawierający tylko tekst. Formatowanie, obrazy i pliki nie są uwzględnione.",
+    "format_opml": "OPML - format wymiany konspektów (tylko tekst). Formatowanie, obrazy i pliki nie są dołączane.",
     "opml_version_1": "OPML v1.0 - tylko zwykły tekst",
-    "opml_version_2": "OPML v2.0 - umożliwia również HTML",
-    "export_type_single": "Tylko ta notatka, bez elementów podrzędnych",
+    "opml_version_2": "OPML v2.0 - dopuszcza również HTML",
+    "export_type_single": "Tylko ta notatka (bez elementów podrzędnych)",
     "export": "Eksportuj",
-    "choose_export_type": "Wybierz najpierw rodzaj pliku do eksportu",
+    "choose_export_type": "Proszę najpierw wybrać typ eksportu",
     "export_status": "Status eksportu",
-    "export_in_progress": "Postęp eksportowania: {{progressCount}}",
-    "export_finished_successfully": "Eksportowanie zakończone.",
-    "format_pdf": "PDF - w celu drukowania lub udostępniania."
+    "export_in_progress": "Eksport w toku: {{progressCount}}",
+    "export_finished_successfully": "Eksport zakończony pomyślnie.",
+    "format_pdf": "PDF - do druku lub udostępniania.",
+    "share-format": "HTML do publikacji w sieci - używa tego samego motywu co udostępnione notatki, ale może być opublikowany jako statyczna strona."
   },
   "clone_to": {
     "clone_notes_to": "Sklonuj notatki do...",
     "notes_to_clone": "Notatki do sklonowania",
-    "search_for_note_by_its_name": "Wyszukaj notatkę po jej nazwie",
-    "cloned_note_prefix_title": "Sklonowana notatka zostanie wyświetlona w drzewie notatki z podanym prefiksem",
-    "prefix_optional": "Prefiks (opcjonalne)",
+    "search_for_note_by_its_name": "wyszukaj notatkę po nazwie",
+    "cloned_note_prefix_title": "Sklonowana notatka będzie wyświetlana w drzewie z podanym prefiksem",
+    "prefix_optional": "Prefiks (opcjonalnie)",
     "clone_to_selected_note": "Sklonuj do wybranej notatki",
     "no_path_to_clone_to": "Brak ścieżki do sklonowania.",
     "note_cloned": "Notatka \"{{clonedTitle}}\" została sklonowana do \"{{targetTitle}}\"",
     "help_on_links": "Pomoc dotycząca linków",
-    "target_parent_note": "Docelowa główna notatka"
+    "target_parent_note": "Docelowa notatka nadrzędna"
   },
   "help": {
     "title": "Ściągawka",
     "noteNavigation": "Nawigacja po notatkach",
-    "goUpDown": "przewijanie w górę/w dół w liście notatek",
-    "collapseExpand": "zwiń/rozwiń zbiór",
-    "notSet": "niezdefiniowany",
-    "goBackForwards": "przewijaj do tyłu/do przodu w historii",
-    "showJumpToNoteDialog": "pokaż <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"przejdź do dialogu</a>",
+    "goUpDown": "idź w górę/dół listy notatek",
+    "collapseExpand": "zwiń/rozwiń węzeł",
+    "notSet": "nie ustawiono",
+    "goBackForwards": "idź wstecz / do przodu w historii",
+    "showJumpToNoteDialog": "pokaż okno <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Przejdź do\"</a>",
     "scrollToActiveNote": "przewiń do aktywnej notatki",
-    "jumpToParentNote": "przejdź do głównej notatki",
-    "collapseWholeTree": "zwiń całe drzewko notatki",
-    "collapseSubTree": "zwiń gałąź notatki",
-    "tabShortcuts": "Skóry kart",
-    "newTabNoteLink": "link notatki otwiera notatkę w nowej karcie",
-    "newTabWithActivationNoteLink": "link notatki otwiera i aktywuje notatkę w nowej karcie",
-    "onlyInDesktop": "Tylko na komputerze stacjonarnym (wersja Electron)",
-    "openEmptyTab": "Otwórz pustą kartę",
+    "jumpToParentNote": "przejdź do notatki nadrzędnej",
+    "collapseWholeTree": "zwiń całe drzewo notatek",
+    "collapseSubTree": "zwiń poddrzewo",
+    "tabShortcuts": "Skróty kart",
+    "newTabNoteLink": "na linku notatki otwiera notatkę w nowej karcie",
+    "newTabWithActivationNoteLink": "na linku notatki otwiera i aktywuje notatkę w nowej karcie",
+    "onlyInDesktop": "Tylko w wersji desktopowej (Electron)",
+    "openEmptyTab": "otwórz pustą kartę",
     "closeActiveTab": "zamknij aktywną kartę",
     "activateNextTab": "aktywuj następną kartę",
     "activatePreviousTab": "aktywuj poprzednią kartę",
     "creatingNotes": "Tworzenie notatek",
-    "createNoteAfter": "Utwórz nową notatkę obok obecnie aktywnej",
-    "createNoteInto": "Utwórz nową podnotatkę w obecnie otwartej",
-    "editBranchPrefix": "edytuj <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">prefiks</a> aktywnej kopii notatki",
-    "movingCloningNotes": "Przenoszenie / kopiowanie notatek",
-    "moveNoteUpDown": "Przenieś notatkę w górę/w dół na liście notatek",
-    "moveNoteUpHierarchy": "Przenieś notatkę w górę w hierarchii",
-    "multiSelectNote": "Zaznacz wiele notatek powyżej/poniżej",
-    "selectAllNotes": "Wybierz wszystkie notatki na obecnym poziomie",
-    "selectNote": "Wybierz notatkę",
-    "copyNotes": "skopiuj obecną notatkę (lub obecną sekcję) do schowka (zastosowanie dla<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/cloning-notes.html#cloning-notes\">klonowania</a>)",
-    "cutNotes": "przytnij obecną notatkę (lub obecną sekcję) do schowka (zastosowanie dla przenoszenia notatek)",
-    "pasteNotes": "wklej notatkę jako podnotatka w obecnej notatce (rozumiane jako przenieś lub skopiuj, w zależności czy notatka była skopiowana czy wycięta)",
-    "deleteNotes": "usuń notatkę / gałąź",
-    "editingNotes": "Edytowanie notatek",
+    "createNoteAfter": "utwórz nową notatkę po aktywnej notatce",
+    "createNoteInto": "Utwórz nową podnotatkę w aktywnej notatce",
+    "editBranchPrefix": "edytuj <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">prefiks</a> klona aktywnej notatki",
+    "movingCloningNotes": "Przenoszenie / klonowanie notatek",
+    "moveNoteUpDown": "przesuń notatkę w górę/dół na liście",
+    "moveNoteUpHierarchy": "przesuń notatkę w górę w hierarchii",
+    "multiSelectNote": "wybierz wiele notatek powyżej/poniżej",
+    "selectAllNotes": "zaznacz wszystkie notatki na bieżącym poziomie",
+    "selectNote": "wybierz notatkę",
+    "copyNotes": "kopiuj aktywną notatkę (lub zaznaczenie) do schowka (używane do <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/cloning-notes.html#cloning-notes\">klonowania</a>)",
+    "cutNotes": "wytnij bieżącą notatkę (lub zaznaczenie) do schowka (używane do przenoszenia)",
+    "pasteNotes": "wklej notatkę(-i) jako pod-notatkę do aktywnej notatki (jest to przeniesienie lub klonowanie w zależności od tego, czy użyto kopiuj czy wytnij)",
+    "deleteNotes": "usuń notatkę / poddrzewo",
+    "editingNotes": "Edycja notatek",
     "other": "Inne",
-    "editNoteTitle": "W panelu drzewa nastąpi przejście z panelu drzewa do tytułu notatki. Naciśnięcie klawisza Enter w tytule notatki spowoduje przejście do edytora tekstu. <kbd>Ctrl+.</kbd> spowoduje powrót z edytora do panelu drzewa.",
-    "createEditLink": "stwórz / edytuj zewnętrzny link",
-    "createInternalLink": "stwórz wewnętrzny link",
-    "followLink": "kliknij link pod kursorem",
-    "insertDateTime": "wstaw aktualną datę i godzinę w pozycji kursora",
+    "editNoteTitle": "w panelu drzewa przełącza z drzewa na tytuł notatki. Enter na tytule notatki przenosi fokus do edytora tekstu. <kbd>Ctrl+.</kbd> przełącza z powrotem z edytora do panelu drzewa.",
+    "createEditLink": "utwórz / edytuj link zewnętrzny",
+    "createInternalLink": "utwórz link wewnętrzny",
+    "followLink": "podążaj za linkiem pod kursorem",
+    "insertDateTime": "wstaw bieżącą datę i godzinę w pozycji karetki",
     "markdownAutoformat": "Autoformatowanie w stylu Markdown",
-    "headings": "<code>##</code>, <code>###</code>, <code>####</code> itd., po których następuje miejsce na nagłówki",
-    "bulletList": "<code>*</code> lub <code>-</code>, a następnie spacja, aby utworzyć listę",
-    "jumpToTreePane": "przejdź do panelu drzewa i przewiń do aktywnej notatki",
-    "numberedList": "<code>1.</code> or <code>1)</code> po którym następuje miejsce na listę numerowaną",
-    "blockQuote": "zacznij linijkę od <code></code> aby po kliknięciu spacji dodać blok cytatu",
-    "troubleshooting": "Rozwiązywanie błędów",
-    "reloadFrontend": "Załaduj ponownie Frontend Trilium",
+    "headings": "<code>##</code>, <code>###</code>, <code>####</code> itd. a następnie spacja dla nagłówków",
+    "bulletList": "<code>*</code> lub <code>-</code> a następnie spacja dla listy punktowanej",
+    "jumpToTreePane": "przeskocz do panelu drzewa i przewiń do aktywnej notatki",
+    "numberedList": "<code>1.</code> lub <code>1)</code> a następnie spacja dla listy numerowanej",
+    "blockQuote": "rozpocznij linię znakiem <code>></code> a następnie spacją dla cytatu blokowego",
+    "troubleshooting": "Rozwiązywanie problemów",
+    "reloadFrontend": "przeładuj frontend Trilium",
     "showDevTools": "pokaż narzędzia deweloperskie",
     "showSQLConsole": "pokaż konsolę SQL",
-    "quickSearch": "skup się na szybkim wyszukiwaniu",
-    "inPageSearch": "wyszukiwanie wewnątrz strony"
+    "quickSearch": "skupienie na szybkim wyszukiwaniu",
+    "inPageSearch": "wyszukiwanie na stronie",
+    "editShortcuts": "Edytuj skróty klawiszowe"
   },
   "book_properties": {
     "list": "Lista",
     "view_type": "Typ widoku",
     "grid": "Siatka",
     "collapse_all_notes": "Zwiń wszystkie notatki",
-    "expand_all_children": "Rozwiń wszystkie dzieci",
     "collapse": "Zwiń",
     "expand": "Rozwiń",
     "book_properties": "Właściwości kolekcji",
     "invalid_view_type": "Nieprawidłowy typ widoku '{{type}}'",
     "calendar": "Kalendarz",
     "table": "Tabela",
-    "geo-map": "Mapa geograficzna",
+    "geo-map": "Mapa Geo",
     "board": "Tablica",
     "presentation": "Prezentacja",
-    "include_archived_notes": "Pokaż zarchiwizowane notatki"
+    "include_archived_notes": "Pokaż zarchiwizowane notatki",
+    "expand_tooltip": "Rozwija bezpośrednie elementy podrzędne tej kolekcji (o jeden poziom). Aby uzyskać więcej opcji, naciśnij strzałkę po prawej.",
+    "expand_first_level": "Rozwiń bezpośrednie elementy podrzędne",
+    "expand_nth_level": "Rozwiń {{depth}} poziomów",
+    "expand_all_levels": "Rozwiń wszystkie poziomy"
   },
   "board_view": {
     "move-to": "Przenieś do",
-    "insert-above": "Umieść nad",
-    "insert-below": "Umieść pod",
+    "insert-above": "Wstaw powyżej",
+    "insert-below": "Wstaw poniżej",
     "delete-column": "Usuń kolumnę",
-    "delete-column-confirmation": "Czy na pewno chcesz usunąć tę kolumnę? Odpowiedni atrybut zostanie również usunięty w notatkach pod tą kolumną.",
+    "delete-column-confirmation": "Czy na pewno chcesz usunąć tę kolumnę? Odpowiedni atrybut zostanie usunięty również z notatek pod tą kolumną.",
     "new-item": "Nowy element",
-    "new-item-placeholder": "Wpisz tytuł notatki...",
+    "new-item-placeholder": "Wprowadź tytuł notatki...",
     "add-column": "Dodaj kolumnę",
-    "add-column-placeholder": "Wpisz tytuł kolumny...",
-    "edit-note-title": "Naciśnij aby edytować tytuł notatki",
-    "edit-column-title": "Naciśnij aby edytować tytuł kolumny",
+    "add-column-placeholder": "Wprowadź nazwę kolumny...",
+    "edit-note-title": "Kliknij, aby edytować tytuł notatki",
+    "edit-column-title": "Kliknij, aby edytować tytuł kolumny",
     "delete-note": "Usuń notatkę...",
     "remove-from-board": "Usuń z tablicy",
-    "archive-note": "Archiwalna notatka",
-    "unarchive-note": "Usuń notatkę z archiwum"
+    "archive-note": "Archiwizuj notatkę",
+    "unarchive-note": "Przywróć notatkę z archiwum",
+    "column-already-exists": "Ta kolumna już istnieje na tablicy."
   },
   "command_palette": {
     "tree-action-name": "Drzewo: {{name}}",
-    "export_note_title": "Wyeksportuj notatkę",
-    "export_note_description": "Wyeksportuj aktualną notatkę",
+    "export_note_title": "Eksportuj notatkę",
+    "export_note_description": "Eksportuj bieżącą notatkę",
     "show_attachments_title": "Pokaż załączniki",
-    "show_attachments_description": "Zobacz załączniki notatki",
+    "show_attachments_description": "Wyświetl załączniki notatki",
     "search_notes_title": "Szukaj notatek",
     "search_notes_description": "Otwórz zaawansowane wyszukiwanie",
-    "search_subtree_title": "Poszukaj w poddrzewie",
-    "search_subtree_description": "poszukaj wewnątrz poddrzewa",
+    "search_subtree_title": "Szukaj w poddrzewie",
+    "search_subtree_description": "Szukaj w bieżącym poddrzewie",
     "search_history_title": "Pokaż historię wyszukiwania",
-    "search_history_description": "Pokaż poprzednie wyszukiwania",
-    "configure_launch_bar_title": "Ustaw Launch Bar",
-    "configure_launch_bar_description": "Otwórz konfigurację Launch Bar, aby dodać lub usunąć elementy."
+    "search_history_description": "Wyświetl poprzednie wyszukiwania",
+    "configure_launch_bar_title": "Konfiguruj pasek szybkiego dostępu",
+    "configure_launch_bar_description": "Otwórz konfigurację paska szybkiego dostępu, aby dodać lub usunąć elementy."
   },
   "content_renderer": {
     "open_externally": "Otwórz zewnętrznie"
   },
   "modal": {
     "close": "Zamknij",
-    "help_title": "Pokaż więcej informacji na temat tego ekranu"
+    "help_title": "Wyświetl więcej informacji o tym ekranie"
   },
   "call_to_action": {
-    "next_theme_title": "Spróbuj nowy motyw Trilium",
-    "next_theme_message": "Obecnie używasz starszego motywu. Czy chcesz wypróbować nowy motyw?",
-    "next_theme_button": "Spróbuj nowego motywu",
-    "background_effects_title": "Efekty w tle są już stabilne",
+    "next_theme_title": "Wypróbuj nowy motyw Trilium",
+    "next_theme_message": "Obecnie używasz starszego motywu (legacy), czy chciałbyś wypróbować nowy motyw?",
+    "next_theme_button": "Wypróbuj nowy motyw",
+    "background_effects_title": "Efekty tła są teraz stabilne",
     "dismiss": "Odrzuć",
-    "background_effects_button": "Włącz efekty w tle",
-    "background_effects_message": "Na urządzeniach z systemem Windows efekty tła są teraz w pełni stabilne. Efekty tła dodają odrobinę koloru do interfejsu użytkownika, rozmywając tło za nim. Ta technika jest również stosowana w innych aplikacjach, takich jak Eksplorator Windows."
+    "background_effects_button": "Włącz efekty tła",
+    "background_effects_message": "Na urządzeniach z systemem Windows efekty tła są teraz w pełni stabilne. Efekty tła dodają odrobinę koloru do interfejsu użytkownika poprzez rozmycie tła za nim. Ta technika jest również stosowana w innych aplikacjach, takich jak Eksplorator Windows.",
+    "new_layout_title": "Nowy układ",
+    "new_layout_message": "Wprowadziliśmy zmodernizowany układ interfejsu dla Trilium. Wstążka została usunięta i płynnie zintegrowana z głównym interfejsem, a jej kluczowe funkcje przejęły nowy pasek stanu i rozwijane sekcje (takie jak promowane atrybuty).\n\nNowy układ jest domyślnie włączony i można go tymczasowo wyłączyć w Ustawienia → Wygląd.",
+    "new_layout_button": "Szczegóły"
   },
   "settings": {
     "related_settings": "Powiązane ustawienia"
   },
   "settings_appearance": {
     "related_code_blocks": "Schemat kolorów dla bloków kodu w notatkach tekstowych",
-    "related_code_notes": "Schemat kolorów dla kodu"
+    "related_code_notes": "Schemat kolorów dla notatek kodu",
+    "ui": "Interfejs użytkownika",
+    "ui_old_layout": "Stary układ",
+    "ui_new_layout": "Nowy układ"
   },
   "units": {
     "percentage": "%"
   },
   "pagination": {
-    "page_title": "Strony:{{startIndex}}-{{endIndex}}",
-    "total_notes": "{{count}}notatek"
+    "page_title": "Strona {{startIndex}} - {{endIndex}}",
+    "total_notes": "{{count}} notatek"
   },
   "collections": {
-    "rendering_error": "Błąd - Nie można pokazać treści."
+    "rendering_error": "Nie można wyświetlić zawartości z powodu błędu."
   },
   "add_label": {
     "add_label": "Dodaj etykietę",
-    "label_name_placeholder": "Nazwa etykiety",
+    "label_name_placeholder": "nazwa etykiety",
     "label_name_title": "Dozwolone są znaki alfanumeryczne, podkreślenie i dwukropek.",
-    "to_value": "do wartości",
+    "to_value": "na wartość",
     "new_value_placeholder": "nowa wartość",
-    "help_text": "We wszystkich dopasowanych notatkach:",
-    "help_text_item2": "albo zmień wartość istniejącej etykiety",
-    "help_text_item1": "utwórz daną etykietę, jeśli notatka jeszcze jej nie ma",
+    "help_text": "Na wszystkich dopasowanych notatkach:",
+    "help_text_item2": "lub zmień wartość istniejącej etykiety",
+    "help_text_item1": "utwórz podaną etykietę, jeśli notatka jeszcze jej nie ma",
     "help_text_note": "Możesz również wywołać tę metodę bez wartości, w takim przypadku etykieta zostanie przypisana do notatki bez wartości."
   },
   "attribute_detail": {
@@ -259,26 +282,26 @@
     "more_notes": "Więcej notatek",
     "label": "Szczegóły etykiety",
     "label_definition": "Szczegóły definicji etykiety",
-    "relation": "Szczegóły powiązania",
-    "relation_definition": "Szczegóły definicji powiązania",
-    "disable_versioning": "Wyłącza automatyczne wersjonowanie. Przydatne np. w przypadku dużych, ale nieistotnych notatek – np. dużych bibliotek JS używanych do skryptów",
-    "precision": "Prezycja",
-    "digits": "znaki",
-    "inverse_relation_title": "Opcjonalne ustawienie definiujące, do której relacji jest ta relacja przeciwna. Przykład: Główna - podnotatka są relacjami odwrotnymi do siebie.",
-    "inverse_relation": "Odwrócone powiązanie",
+    "relation": "Szczegóły relacji",
+    "relation_definition": "Szczegóły definicji relacji",
+    "disable_versioning": "wyłącza automatyczne wersjonowanie. Przydatne np. dla dużych, ale mało ważnych notatek - np. dużych bibliotek JS używanych do skryptów",
+    "precision": "Precyzja",
+    "digits": "cyfry",
+    "inverse_relation_title": "Opcjonalne ustawienie określające, do której relacji ta jest odwrotna. Przykład: Ojciec - Syn to relacje odwrotne.",
+    "inverse_relation": "Relacja odwrotna",
     "attr_detail_title": "Tytuł szczegółów atrybutu",
     "close_button_title": "Anuluj zmiany i zamknij",
-    "attr_is_owned_by": "Atrybut jest własnością",
-    "attr_name_title": "Nazwa atrybutu może składać się tylko ze znaków alfanumerycznych, dwukropka i podkreślenia",
+    "attr_is_owned_by": "Atrybut należy do",
+    "attr_name_title": "Nazwa atrybutu może składać się wyłącznie ze znaków alfanumerycznych, dwukropka i podkreślenia",
     "name": "Nazwa",
     "value": "Wartość",
     "target_note_title": "Relacja to nazwane połączenie między notatką źródłową a docelową.",
     "target_note": "Notatka docelowa",
-    "promoted_title": "Promowany atrybut jest wyraźnie wyświetlany w notatce.",
-    "promoted": "Promowany",
-    "promoted_alias_title": "Nazwa, która ma być wyświetlana w interfejsie promowanych atrybutów.",
+    "promoted_title": "Wyróżniony atrybut jest wyświetlany w widocznym miejscu notatki.",
+    "promoted": "Wyróżniony",
+    "promoted_alias_title": "Nazwa wyświetlana w interfejsie wyróżnionych atrybutów.",
     "promoted_alias": "Alias",
-    "multiplicity_title": "Krotność definiuje, ile atrybutów o tej samej nazwie można utworzyć - maksymalnie 1 lub więcej niż 1.",
+    "multiplicity_title": "Krotność określa, ile atrybutów o tej samej nazwie można utworzyć - maksymalnie 1 lub więcej niż 1.",
     "multiplicity": "Krotność",
     "single_value": "Pojedyncza wartość",
     "multi_value": "Wiele wartości",
@@ -288,121 +311,122 @@
     "number": "Liczba",
     "boolean": "Wartość logiczna",
     "date": "Data",
-    "date_time": "Data i czas",
-    "time": "Czas",
+    "date_time": "Data i godzina",
+    "time": "Godzina",
     "url": "URL",
-    "precision_title": "Jaka liczba cyfr po przecinku powinna być dostępna w interfejsie ustawiania wartości.",
-    "inheritable_title": "Dziedziczny atrybut będzie dziedziczony przez wszystkich potomków w tym drzewie.",
-    "inheritable": "Dziedziczny",
+    "precision_title": "Ile cyfr po przecinku powinno być dostępnych w interfejsie ustawiania wartości.",
+    "inheritable_title": "Atrybut dziedziczony będzie dziedziczony przez wszystkie elementy podrzędne w tym drzewie.",
+    "inheritable": "Dziedziczony",
     "save_and_close": "Zapisz i zamknij <kbd>Ctrl+Enter</kbd>",
     "calendar_root": "oznacza notatkę, która powinna być używana jako korzeń dla notatek dziennych. Tylko jedna powinna być tak oznaczona.",
-    "archived": "notatki z tą etykietą nie będą domyślnie widoczne w wynikach wyszukiwania (również w dialogach Przejdź do, Dodaj link itp.).",
-    "exclude_from_export": "notatki (wraz z ich poddrzewem) nie będą uwzględniane w żadnym eksporcie notatek",
-    "run": "definiuje, przy jakich zdarzeniach skrypt powinien być uruchamiany. Możliwe wartości to:\n<ul>\n<li>frontendStartup - gdy frontend Trilium się uruchamia (lub jest odświeżany), ale nie na urządzeniach mobilnych.</li>\n<li>mobileStartup - gdy frontend Trilium się uruchamia (lub jest odświeżany), na urządzeniach mobilnych.</li>\n<li>backendStartup - gdy backend Trilium się uruchamia</li>\n<li>hourly - uruchamiaj raz na godzinę. Możesz użyć dodatkowej etykiety <code>runAtHour</code>, aby określić, o której godzinie.</li>\n<li>daily - uruchamiaj raz dziennie</li>\n</ul>",
-    "run_on_instance": "Zdefiniuj, która instancja Trilium ma to uruchomić. Domyślnie wszystkie instancje.",
-    "run_at_hour": "O której godzinie ma to być uruchomione. Powinno być używane razem z <code>#run=hourly</code>. Można zdefiniować wielokrotnie dla większej liczby uruchomień w ciągu dnia.",
-    "disable_inclusion": "skrypty z tą etykietą nie będą uwzględniane w wykonaniu skryptu nadrzędnego.",
+    "archived": "notatki z tą etykietą domyślnie nie będą widoczne w wynikach wyszukiwania (również w oknach Przejdź do, Dodaj link itp.).",
+    "exclude_from_export": "notatki (wraz z ich poddrzewem) nie zostaną uwzględnione w żadnym eksporcie notatek",
+    "run": "określa, przy jakich zdarzeniach skrypt powinien zostać uruchomiony. Możliwe wartości:\n<ul>\n<li>frontendStartup - gdy frontend Trilium uruchamia się (lub jest odświeżany), ale nie na urządzeniach mobilnych.</li>\n<li>mobileStartup - gdy frontend Trilium uruchamia się (lub jest odświeżany) na urządzeniach mobilnych.</li>\n<li>backendStartup - gdy backend Trilium uruchamia się</li>\n<li>hourly - uruchamiaj raz na godzinę. Możesz użyć dodatkowej etykiety <code>runAtHour</code>, aby określić godzinę.</li>\n<li>daily - uruchamiaj raz dziennie</li>\n</ul>",
+    "run_on_instance": "Zdefiniuj, która instancja Trilium powinna to uruchomić. Domyślnie wszystkie instancje.",
+    "run_at_hour": "O której godzinie powinno to zostać uruchomione. Należy używać razem z <code>#run=hourly</code>. Można zdefiniować wielokrotnie dla większej liczby uruchomień w ciągu dnia.",
+    "disable_inclusion": "skrypty z tą etykietą nie zostaną uwzględnione w wykonaniu skryptu nadrzędnego.",
     "sorted": "utrzymuje notatki podrzędne posortowane alfabetycznie według tytułu",
     "sort_direction": "ASC (domyślnie) lub DESC",
-    "sort_folders_first": "Foldery (notatki z dziećmi) powinny być sortowane na górze",
-    "top": "utrzymuj daną notatkę na górze w jej rodzicu (dotyczy tylko posortowanych rodziców)",
-    "hide_promoted_attributes": "Ukryj promowane atrybuty w tej notatce",
+    "sort_folders_first": "Foldery (notatki z elementami podrzędnymi) powinny być sortowane na górze",
+    "top": "utrzymaj daną notatkę na górze w jej rodzicu (dotyczy tylko posortowanych rodziców)",
+    "hide_promoted_attributes": "Ukryj wyróżnione atrybuty w tej notatce",
     "read_only": "edytor jest w trybie tylko do odczytu. Działa tylko dla notatek tekstowych i kodowych.",
-    "auto_read_only_disabled": "notatki tekstowe/kodowe mogą być automatycznie ustawiane w tryb tylko do odczytu, gdy są zbyt duże. Możesz wyłączyć to zachowanie dla poszczególnych notatek, dodając tę etykietę do notatki",
-    "app_css": "oznacza notatki CSS, które są ładowane do aplikacji Trilium i mogą być używane do modyfikacji wyglądu Trilium.",
+    "auto_read_only_disabled": "notatki tekstowe/kodowe mogą być automatycznie ustawiane w tryb odczytu, gdy są zbyt duże. Możesz wyłączyć to zachowanie dla poszczególnych notatek, dodając tę etykietę",
+    "app_css": "oznacza notatki CSS, które są ładowane do aplikacji Trilium i mogą być używane do modyfikowania wyglądu Trilium.",
     "app_theme": "oznacza notatki CSS, które są pełnymi motywami Trilium i są dostępne w opcjach Trilium.",
-    "app_theme_base": "ustaw na \"next\", \"next-light\" lub \"next-dark\", aby użyć odpowiedniego motywu TriliumNext (auto, jasny lub ciemny) jako podstawy dla niestandardowego motywu, zamiast starszego.",
-    "css_class": "wartość tej etykiety jest dodawana jako klasa CSS do węzła reprezentującego daną notatkę w drzewie. Może to być przydatne do zaawansowanego motywowania. Może być używane w notatkach-szablonach.",
-    "icon_class": "wartość tej etykiety jest dodawana jako klasa CSS do ikony w drzewie, co może pomóc wizualnie odróżnić notatki w drzewie. Przykładem może być bx bx-home - ikony pochodzą z boxicons. Może być używane w notatkach-szablonach.",
-    "page_size": "liczba elementów na stronie w liście notatek",
-    "custom_request_handler": "zobacz <a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">Niestandardowy obsługujący żądania</a>",
-    "custom_resource_provider": "zobacz <a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">Niestandardowy obsługujący żądania</a>",
+    "app_theme_base": "ustaw na \"next\", \"next-light\" lub \"next-dark\", aby użyć odpowiedniego motywu TriliumNext (auto, jasny lub ciemny) jako bazy dla własnego motywu, zamiast starszego (legacy).",
+    "css_class": "wartość tej etykiety jest dodawana jako klasa CSS do węzła reprezentującego daną notatkę w drzewie. Może to być przydatne do zaawansowanego stylowania. Można używać w notatkach szablonów.",
+    "icon_class": "wartość tej etykiety jest dodawana jako klasa CSS do ikony w drzewie, co może pomóc wizualnie odróżnić notatki. Przykładem może być bx bx-home - ikony pochodzą z boxicons. Można używać w notatkach szablonów.",
+    "page_size": "liczba elementów na stronę w liście notatek",
+    "custom_request_handler": "zobacz <a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">Niestandardowa obsługa żądań</a>",
+    "custom_resource_provider": "zobacz <a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">Niestandardowa obsługa żądań</a>",
     "widget": "oznacza tę notatkę jako niestandardowy widżet, który zostanie dodany do drzewa komponentów Trilium",
-    "workspace": "oznacza tę notatkę jako obszar roboczy, co pozwala na łatwe podnoszenie",
-    "workspace_icon_class": "definiuje klasę CSS ikony box, która będzie używana w karcie po podniesieniu do tej notatki",
-    "workspace_tab_background_color": "Kolor CSS używany w karcie notatki po podniesieniu do tej notatki",
+    "workspace": "oznacza tę notatkę jako obszar roboczy, który umożliwia łatwe zawężanie widoku (hoisting)",
+    "workspace_icon_class": "definiuje klasę CSS box icon, która będzie używana w karcie po zawężeniu widoku do tej notatki",
+    "workspace_tab_background_color": "kolor CSS używany w karcie notatki po zawężeniu widoku do tej notatki",
     "workspace_calendar_root": "Definiuje korzeń kalendarza dla obszaru roboczego",
-    "workspace_template": "Ta notatka pojawi się w wyborze dostępnych szablonów podczas tworzenia nowej notatki, ale tylko po podniesieniu do obszaru roboczego zawierającego ten szablon",
+    "workspace_template": "Ta notatka pojawi się w wyborze dostępnych szablonów podczas tworzenia nowej notatki, ale tylko po zawężeniu widoku do obszaru roboczego zawierającego ten szablon",
     "search_home": "nowe notatki wyszukiwania będą tworzone jako dzieci tej notatki",
-    "workspace_search_home": "nowe notatki wyszukiwania będą tworzone jako dzieci tej notatki po podniesieniu do jakiegoś przodka tej notatki obszaru roboczego",
-    "inbox": "domyślna lokalizacja skrzynki odbiorczej dla nowych notatek - gdy tworzysz notatkę za pomocą przycisku \"nowa notatka\" na pasku bocznym, notatki będą tworzone jako notatki podrzędne w notatce oznaczonej etykietą <code>#inbox</code>.",
-    "workspace_inbox": "domyślna lokalizacja skrzynki odbiorczej dla nowych notatek po podniesieniu do jakiegoś przodka tej notatki obszaru roboczego",
+    "workspace_search_home": "nowe notatki wyszukiwania będą tworzone jako dzieci tej notatki, gdy widok zostanie zawężony do przodka tej notatki obszaru roboczego",
+    "inbox": "domyślna lokalizacja skrzynki odbiorczej dla nowych notatek - gdy tworzysz notatkę przy użyciu przycisku \"nowa notatka\" na pasku bocznym, notatki zostaną utworzone jako podrzędne w notatce oznaczonej etykietą <code>#inbox</code>.",
+    "workspace_inbox": "domyślna lokalizacja skrzynki odbiorczej dla nowych notatek, gdy widok jest zawężony do przodka tej notatki obszaru roboczego",
     "sql_console_home": "domyślna lokalizacja notatek konsoli SQL",
     "bookmark_folder": "notatka z tą etykietą pojawi się w zakładkach jako folder (umożliwiając dostęp do jej dzieci)",
-    "share_hidden_from_tree": "ta notatka jest ukryta w lewym drzewie nawigacyjnym, ale nadal dostępna pod swoim adresem URL",
+    "share_hidden_from_tree": "ta notatka jest ukryta w lewym drzewie nawigacyjnym, ale nadal dostępna przez jej adres URL",
     "share_external_link": "notatka będzie działać jako link do zewnętrznej strony internetowej w drzewie udostępniania",
-    "share_alias": "zdefiniuj alias, za pomocą którego notatka będzie dostępna pod adresem https://your_trilium_host/share/[your_alias]",
-    "share_omit_default_css": "domyślny CSS strony udostępniania zostanie pominięty. Użyj, gdy wprowadzasz obszerne zmiany w stylizacji.",
-    "share_root": "oznacza notatkę, która jest serwowana w katalogu głównym /share.",
-    "share_description": "zdefiniuj tekst, który ma być dodany do metatagu HTML dla opisu",
-    "share_raw": "notatka będzie serwowana w surowym formacie, bez opakowania HTML",
-    "share_disallow_robot_indexing": "zabroni robotom indeksowania tej notatki za pomocą nagłówka <code>X-Robots-Tag: noindex</code>",
-    "share_credentials": "wymagaj poświadczeń, aby uzyskać dostęp do tej udostępnionej notatki. Oczekuje się, że wartość będzie w formacie 'nazwa_użytkownika:hasło'. Nie zapomnij uczynić tego dziedzicznym, aby zastosować do notatek podrzędnych/obrazów.",
-    "share_index": "notatka z tą etykietą będzie zawierać listę wszystkich korzeni udostępnionych notatek",
-    "display_relations": "rozdzielone przecinkami nazwy relacji, które powinny być wyświetlane. Wszystkie inne będą ukryte.",
-    "hide_relations": "rozdzielone przecinkami nazwy relacji, które powinny być ukryte. Wszystkie inne będą wyświetlane.",
-    "title_template": "domyślny tytuł notatek tworzonych jako dzieci tej notatki. Wartość jest oceniana jako ciąg znaków JavaScript\n                        i dlatego może być wzbogacona o dynamiczną treść za pomocą wstrzykniętych zmiennych <code>now</code> i <code>parentNote</code>. Przykłady:\n                        \n                        <ul>\n                            <li><code>${parentNote.getLabelValue('authorName')}'s literary works</code></li>\n                            <li><code>Log for ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                        </ul>\n                        \n                        Zobacz <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">wiki ze szczegółami</a>, dokumentację API dla <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> i <a href=\"https://day.js.org/docs/en/display/format\">now</a>, aby uzyskać szczegółowe informacje.",
+    "share_alias": "zdefiniuj alias, za pomocą którego notatka będzie dostępna pod adresem https://twoj_host_trilium/share/[twoj_alias]",
+    "share_omit_default_css": "domyślny CSS strony udostępniania zostanie pominięty. Użyj, gdy wprowadzasz obszerne zmiany w stylu.",
+    "share_root": "oznacza notatkę, która jest serwowana pod adresem /share root.",
+    "share_description": "zdefiniuj tekst, który ma zostać dodany do tagu meta HTML description",
+    "share_raw": "notatka będzie serwowana w formacie surowym, bez otoczki HTML",
+    "share_disallow_robot_indexing": "zakaże indeksowania tej notatki przez roboty za pomocą nagłówka <code>X-Robots-Tag: noindex</code>",
+    "share_credentials": "wymagaj poświadczeń, aby uzyskać dostęp do tej udostępnionej notatki. Wartość powinna być w formacie 'użytkownik:hasło'. Nie zapomnij uczynić tego dziedziczonym, aby zastosować do notatek podrzędnych/obrazów.",
+    "share_index": "notatka z tą etykietą wylistuje wszystkie korzenie udostępnionych notatek",
+    "display_relations": "oddzielone przecinkami nazwy relacji, które powinny być wyświetlane. Wszystkie inne zostaną ukryte.",
+    "hide_relations": "oddzielone przecinkami nazwy relacji, które powinny być ukryte. Wszystkie inne zostaną wyświetlone.",
+    "title_template": "domyślny tytuł notatek utworzonych jako dzieci tej notatki. Wartość jest ewaluowana jako ciąg JavaScript \n                        i dzięki temu może być wzbogacona o dynamiczną zawartość za pomocą wstrzykniętych zmiennych <code>now</code> i <code>parentNote</code>. Przykłady:\n                        \n                        <ul>\n                            <li><code>Dzieła literackie ${parentNote.getLabelValue('authorName')}</code></li>\n                            <li><code>Log z ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>\n                        </ul>\n                        \n                        Zobacz <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">wiki ze szczegółami</a>, dokumentację API dla <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> oraz <a href=\"https://day.js.org/docs/en/display/format\">now</a> po więcej szczegółów.",
     "template": "Ta notatka pojawi się w wyborze dostępnych szablonów podczas tworzenia nowej notatki",
-    "toc": "<code>#toc</code> lub <code>#toc=show</code> wymusi wyświetlenie spisu treści, <code>#toc=hide</code> wymusi jego ukrycie. Jeśli etykieta nie istnieje, obserwowane jest ustawienie globalne",
-    "color": "definiuje kolor notatki w drzewie notatek, linkach itp. Użyj dowolnej prawidłowej wartości koloru CSS, np. 'red' lub #a13d5f",
-    "keyboard_shortcut": "Definiuje skrót klawiaturowy, który natychmiast przejdzie do tej notatki. Przykład: 'ctrl+alt+e'. Wymaga ponownego załadowania frontendu, aby zmiana zaczęła obowiązywać.",
-    "keep_current_hoisting": "Otwarcie tego linku nie zmieni podniesienia, nawet jeśli notatka nie jest wyświetlana w bieżącym podniesionym poddrzewie.",
+    "toc": "<code>#toc</code> lub <code>#toc=show</code> wymusi pokazanie spisu treści, <code>#toc=hide</code> wymusi jego ukrycie. Jeśli etykieta nie istnieje, przestrzegane jest ustawienie globalne",
+    "color": "definiuje kolor notatki w drzewie notatek, linkach itp. Użyj dowolnej poprawnej wartości koloru CSS, np. 'red' lub #a13d5f",
+    "keyboard_shortcut": "Definiuje skrót klawiszowy, który natychmiast przeskoczy do tej notatki. Przykład: 'ctrl+alt+e'. Wymaga przeładowania frontendu, aby zmiana weszła w życie.",
+    "keep_current_hoisting": "Otwarcie tego linku nie zmieni zawężenia widoku (hoisting), nawet jeśli notatka nie jest widoczna w obecnie zawężonym poddrzewie.",
     "execute_button": "Tytuł przycisku, który wykona bieżącą notatkę kodu",
     "execute_description": "Dłuższy opis bieżącej notatki kodu wyświetlany razem z przyciskiem wykonania",
-    "exclude_from_note_map": "Notatki z tą etykietą będą ukryte na Mapie Notatek",
+    "exclude_from_note_map": "Notatki z tą etykietą będą ukryte na Mapie notatek",
     "new_notes_on_top": "Nowe notatki będą tworzone na górze notatki nadrzędnej, a nie na dole.",
     "hide_highlight_widget": "Ukryj widżet listy wyróżnień",
-    "run_on_note_creation": "wykonuje się, gdy notatka jest tworzona na backendzie. Użyj tej relacji, jeśli chcesz uruchomić skrypt dla wszystkich notatek utworzonych w określonym poddrzewie. W takim przypadku utwórz ją w korzeniu poddrzewa i uczyń dziedziczną. Nowa notatka utworzona w poddrzewie (na dowolnej głębokości) uruchomi skrypt.",
-    "run_on_child_note_creation": "wykonuje się, gdy nowa notatka jest tworzona pod notatką, w której zdefiniowano tę relację",
-    "run_on_note_title_change": "wykonuje się, gdy tytuł notatki jest zmieniany (obejmuje również tworzenie notatki)",
-    "run_on_note_content_change": "wykonuje się, gdy zawartość notatki jest zmieniana (obejmuje również tworzenie notatki).",
-    "run_on_note_change": "wykonuje się, gdy notatka jest zmieniana (obejmuje również tworzenie notatki). Nie obejmuje zmian w zawartości",
+    "run_on_note_creation": "wykonuje się, gdy notatka jest tworzona na backendzie. Użyj tej relacji, jeśli chcesz uruchomić skrypt dla wszystkich notatek utworzonych w określonym poddrzewie. W takim przypadku utwórz go w notatce korzenia poddrzewa i uczyń go dziedziczonym. Nowa notatka utworzona w poddrzewie (na dowolnej głębokości) wyzwoli skrypt.",
+    "run_on_child_note_creation": "wykonuje się, gdy nowa notatka jest tworzona pod notatką, w której zdefiniowana jest ta relacja",
+    "run_on_note_title_change": "wykonuje się, gdy tytuł notatki zostanie zmieniony (obejmuje również utworzenie notatki)",
+    "run_on_note_content_change": "wykonuje się, gdy treść notatki zostanie zmieniona (obejmuje również utworzenie notatki).",
+    "run_on_note_change": "wykonuje się, gdy notatka zostanie zmieniona (obejmuje również utworzenie notatki). Nie obejmuje zmian treści",
     "run_on_note_deletion": "wykonuje się, gdy notatka jest usuwana",
-    "run_on_branch_creation": "wykonuje się, gdy tworzona jest gałąź. Gałąź to połączenie między notatką nadrzędną a podrzędną i jest tworzona np. podczas klonowania lub przenoszenia notatki.",
+    "run_on_branch_creation": "wykonuje się, gdy tworzona jest gałąź. Gałąź to połączenie między notatką nadrzędną a podrzędną, tworzone np. podczas klonowania lub przenoszenia notatki.",
     "run_on_branch_change": "wykonuje się, gdy gałąź jest aktualizowana.",
-    "run_on_branch_deletion": "wykonuje się, gdy gałąź jest usuwana. Gałąź to połączenie między notatką nadrzędną a podrzędną i jest usuwana np. podczas przenoszenia notatki (stara gałąź/link jest usuwana).",
+    "run_on_branch_deletion": "wykonuje się, gdy gałąź jest usuwana. Gałąź to połączenie między notatką nadrzędną a podrzędną, usuwane np. podczas przenoszenia notatki (stara gałąź/link jest usuwana).",
     "run_on_attribute_creation": "wykonuje się, gdy tworzony jest nowy atrybut dla notatki, która definiuje tę relację",
-    "run_on_attribute_change": " wykonuje się, gdy atrybut jest zmieniany w notatce, która definiuje tę relację. Jest to również wyzwalane, gdy atrybut jest usuwany",
-    "relation_template": "atrybuty notatki będą dziedziczone nawet bez relacji rodzic-dziecko, zawartość i poddrzewo notatki zostaną dodane do notatek instancji, jeśli są puste. Zobacz dokumentację, aby uzyskać szczegółowe informacje.",
-    "inherit": "atrybuty notatki będą dziedziczone nawet bez relacji rodzic-dziecko. Zobacz relację szablonu dla podobnego konceptu. Zobacz dziedziczenie atrybutów w dokumentacji.",
-    "render_note": "notatki typu \"renderuj notatkę HTML\" będą renderowane za pomocą notatki kodu (HTML lub skrypt) i konieczne jest wskazanie za pomocą tej relacji, która notatka ma być renderowana",
+    "run_on_attribute_change": " wykonuje się, gdy zmieniany jest atrybut notatki, która definiuje tę relację. Jest to wyzwalane również, gdy atrybut jest usuwany",
+    "relation_template": "atrybuty notatki będą dziedziczone nawet bez relacji rodzic-dziecko, treść notatki i poddrzewo zostaną dodane do notatek instancji, jeśli są puste. Zobacz dokumentację, aby uzyskać szczegóły.",
+    "inherit": "atrybuty notatki będą dziedziczone nawet bez relacji rodzic-dziecko. Zobacz relację szablonu dla podobnej koncepcji. Zobacz dziedziczenie atrybutów w dokumentacji.",
+    "render_note": "notatki typu \"render HTML note\" będą renderowane przy użyciu notatki kodu (HTML lub skrypt) i konieczne jest wskazanie za pomocą tej relacji, która notatka powinna zostać wyrenderowana",
     "widget_relation": "cel tej relacji zostanie wykonany i wyrenderowany jako widżet na pasku bocznym",
-    "share_css": "Notatka CSS, która zostanie wstrzyknięta na stronę udostępniania. Notatka CSS musi również znajdować się w udostępnionym poddrzewie. Rozważ również użycie 'share_hidden_from_tree' i 'share_omit_default_css'.",
-    "share_js": "Notatka JavaScript, która zostanie wstrzyknięta na stronę udostępniania. Notatka JS musi również znajdować się w udostępnionym poddrzewie. Rozważ użycie 'share_hidden_from_tree'.",
-    "share_template": "Wbudowana notatka JavaScript, która będzie używana jako szablon do wyświetlania udostępnionej notatki. W razie niepowodzenia używany jest domyślny szablon. Rozważ użycie 'share_hidden_from_tree'.",
-    "share_favicon": "Notatka favicon do ustawienia na udostępnionej stronie. Zazwyczaj chcesz ustawić ją w katalogu głównym udostępniania i uczynić ją dziedziczną. Notatka favicon musi również znajdować się w udostępnionym poddrzewie. Rozważ użycie 'share_hidden_from_tree'.",
+    "share_css": "Notatka CSS, która zostanie wstrzyknięta na stronę udostępniania. Notatka CSS musi znajdować się również w udostępnionym poddrzewie. Rozważ użycie również 'share_hidden_from_tree' i 'share_omit_default_css'.",
+    "share_js": "Notatka JavaScript, która zostanie wstrzyknięta na stronę udostępniania. Notatka JS musi znajdować się również w udostępnionym poddrzewie. Rozważ użycie 'share_hidden_from_tree'.",
+    "share_template": "Osadzona notatka JavaScript, która zostanie użyta jako szablon do wyświetlania udostępnionej notatki. W przypadku braku używany jest szablon domyślny. Rozważ użycie 'share_hidden_from_tree'.",
+    "share_favicon": "Notatka Favicon do ustawienia na udostępnionej stronie. Zazwyczaj chcesz ustawić ją w korzeniu udostępniania i uczynić dziedziczoną. Notatka Favicon musi znajdować się również w udostępnionym poddrzewie. Rozważ użycie 'share_hidden_from_tree'.",
     "is_owned_by_note": "jest własnością notatki",
-    "other_notes_with_name": "Inne notatki z nazwą {{attributeType}} \"{{attributeName}}\"",
+    "other_notes_with_name": "Inne notatki z {{attributeType}} nazwa \"{{attributeName}}\"",
     "and_more": "... i {{count}} więcej.",
-    "print_landscape": "Podczas eksportowania do formatu PDF zmienia orientację strony na poziomą zamiast pionowej.",
-    "print_page_size": "Podczas eksportowania do formatu PDF zmienia rozmiar strony. Obsługiwane wartości: <code>A0</code>, <code>A1</code>, <code>A2</code>, <code>A3</code>, <code>A4</code>, <code>A5</code>, <code>A6</code>, <code>Legal</code>, <code>Letter</code>, <code>Tabloid</code>, <code>Ledger</code>.",
+    "print_landscape": "Podczas eksportowania do PDF zmienia orientację strony na poziomą zamiast pionowej.",
+    "print_page_size": "Podczas eksportowania do PDF zmienia rozmiar strony. Obsługiwane wartości: <code>A0</code>, <code>A1</code>, <code>A2</code>, <code>A3</code>, <code>A4</code>, <code>A5</code>, <code>A6</code>, <code>Legal</code>, <code>Letter</code>, <code>Tabloid</code>, <code>Ledger</code>.",
     "color_type": "Kolor"
   },
   "import": {
     "importIntoNote": "Importuj do notatki",
-    "chooseImportFile": "Wybierz plik do zaimportowania",
-    "importDescription": "Zawartość wybranego pliku(ów) zostanie zaimportowana jako notatka(i) podrzędna(e) do",
+    "chooseImportFile": "Wybierz plik importu",
+    "importDescription": "Zawartość wybranego pliku/plików zostanie zaimportowana jako notatka/notatki podrzędne do",
     "options": "Opcje",
     "shrinkImages": "Zmniejsz obrazy",
     "safeImport": "Bezpieczny import",
     "import-status": "Status importu",
-    "in-progress": "Import w trakcie: {{progress}}",
-    "successful": "Importowanie zakończone sukcesem.",
-    "safeImportTooltip": "Pliki eksportu Trilium <code>.zip</code> mogą zawierać skrypty wykonywalne, które mogą powodować szkodliwe zachowania. Bezpieczny import dezaktywuje automatyczne wykonywanie wszystkich importowanych skryptów. Odznacz opcję „Bezpieczny import” tylko wtedy, gdy importowane archiwum ma zawierać skrypty wykonywalne i masz pełne zaufanie do zawartości importowanego pliku.",
-    "import": "Import",
-    "failed": "Błąd importu: {{message}}.",
+    "in-progress": "Import w toku: {{progress}}",
+    "successful": "Import zakończony pomyślnie.",
+    "safeImportTooltip": "Pliki eksportu <code>.zip</code> Trilium mogą zawierać skrypty wykonywalne, które mogą mieć szkodliwe działanie. Bezpieczny import dezaktywuje automatyczne wykonywanie wszystkich zaimportowanych skryptów. Odznacz \"Bezpieczny import\" tylko wtedy, gdy importowane archiwum ma zawierać skrypty i całkowicie ufasz zawartości pliku importu.",
+    "import": "Importuj",
+    "failed": "Import nie powiódł się: {{message}}.",
     "html_import_tags": {
       "title": "Tagi importu HTML",
-      "description": "Skonfiguruj, które tagi HTML mają zostać zachowane podczas importowania notatek. Tagi spoza tej listy zostaną usunięte podczas importu. Niektóre tagi (np. „script”) są zawsze usuwane ze względów bezpieczeństwa.",
-      "placeholder": "Wpisz tagi HTML, jedna na linijkę",
-      "reset_button": "Zresetuj do domyślnej listy"
+      "description": "Skonfiguruj, które tagi HTML powinny zostać zachowane podczas importowania notatek. Tagi spoza tej listy zostaną usunięte podczas importu. Niektóre tagi (jak 'script') są zawsze usuwane ze względów bezpieczeństwa.",
+      "placeholder": "Wprowadź tagi HTML, jeden w wierszu",
+      "reset_button": "Przywróć listę domyślną"
     },
-    "explodeArchivesTooltip": "Jeśli ta opcja jest zaznaczona, Trilium odczyta pliki <code>.zip</code>, <code>.enex</code> i <code>.opml</code> i utworzy notatki z plików wewnątrz tych archiwów. Jeśli opcja nie jest zaznaczona, Trilium dołączy same archiwa do notatki.",
+    "explodeArchivesTooltip": "Jeśli zaznaczone, Trilium odczyta pliki <code>.zip</code>, <code>.enex</code> i <code>.opml</code> i utworzy notatki z plików wewnątrz tych archiwów. Jeśli odznaczone, Trilium dołączy same archiwa do notatki.",
     "explodeArchives": "Czytaj zawartość archiwów <code>.zip</code>, <code>.enex</code> i <code>.opml</code>.",
-    "shrinkImagesTooltip": "<p>Jeśli zaznaczysz tę opcję, Trilium spróbuje zmniejszyć importowane obrazy poprzez skalowanie i optymalizację, co może wpłynąć na postrzeganą jakość obrazu. Jeśli opcja nie jest zaznaczona, obrazy zostaną zaimportowane bez zmian.</p><p>Nie dotyczy to importów <code>.zip</code> z metadanymi, ponieważ zakłada się, że te pliki są już zoptymalizowane.</p>",
-    "textImportedAsText": "Importuj HTML, Markdown i TXT jako notatki tekstowe, jeśli nie jest to jasne z metadanych",
-    "codeImportedAsCode": "Importuj rozpoznane pliki kodu (np. <code>.json</code>) jako notatki kodu, jeśli nie jest to jasne z metadanych",
-    "replaceUnderscoresWithSpaces": "Zastąp podkreślenia spacjami w nazwach importowanych notatek"
+    "shrinkImagesTooltip": "<p>Jeśli zaznaczysz tę opcję, Trilium spróbuje zmniejszyć importowane obrazy poprzez skalowanie i optymalizację, co może wpłynąć na postrzeganą jakość obrazu. Jeśli odznaczone, obrazy zostaną zaimportowane bez zmian.</p><p>Nie dotyczy to importu <code>.zip</code> z metadanymi, ponieważ zakłada się, że te pliki są już zoptymalizowane.</p>",
+    "textImportedAsText": "Importuj HTML, Markdown i TXT jako notatki tekstowe, jeśli metadane nie wskazują inaczej",
+    "codeImportedAsCode": "Importuj rozpoznane pliki kodu (np. <code>.json</code>) jako notatki kodu, jeśli metadane nie wskazują inaczej",
+    "replaceUnderscoresWithSpaces": "Zamień znaki podkreślenia na spacje w nazwach importowanych notatek",
+    "importZipRecommendation": "Podczas importowania pliku ZIP hierarchia notatek będzie odzwierciedlać strukturę podkatalogów w archiwum."
   },
   "image_properties": {
     "title": "Obraz",
@@ -412,58 +436,61 @@
     "download": "Pobierz",
     "open": "Otwórz",
     "copy_reference_to_clipboard": "Kopiuj odniesienie do schowka",
-    "upload_new_revision": "Wgraj nową wersję",
-    "upload_success": "Nowa wersja obrazu została wysłana.",
-    "upload_failed": "Wysyłanie nowej wersji obrazu nie powiodło się: {{message}}"
+    "upload_new_revision": "Prześlij nową wersję",
+    "upload_success": "Nowa wersja obrazu została przesłana.",
+    "upload_failed": "Przesłanie nowej wersji obrazu nie powiodło się: {{message}}"
   },
   "inherited_attribute_list": {
-    "title": "Odziedziczone atrybuty",
-    "no_inherited_attributes": "Brak odziedziczonych atrybutów."
+    "title": "Dziedziczone atrybuty",
+    "no_inherited_attributes": "Brak dziedziczonych atrybutów.",
+    "none": "brak"
   },
   "note_info_widget": {
     "note_id": "ID notatki",
-    "created": "Stworzona",
+    "created": "Utworzono",
     "modified": "Zmodyfikowano",
     "type": "Typ",
     "note_size": "Rozmiar notatki",
-    "note_size_info": "Rozmiar notatki pozwala oszacować przybliżoną ilość miejsca potrzebnego na przechowanie jej. Uwzględnia ona jej treść oraz treść jej poprawek.",
+    "note_size_info": "Rozmiar notatki zapewnia przybliżone oszacowanie wymagań pamięciowych dla tej notatki. Bierze pod uwagę treść notatki i zawartość jej wersji.",
     "calculate": "oblicz",
     "subtree_size": "(rozmiar poddrzewa: {{size}} w {{count}} notatkach)",
-    "title": "Informacje o notatce"
+    "title": "Info o notatce",
+    "show_similar_notes": "Pokaż podobne notatki",
+    "mime": "Typ MIME"
   },
   "note_map": {
-    "open_full": "Pełne rozszerzenie",
-    "collapse": "Zmniejsz do normalnego rozmiaru",
-    "title": "Mapa notatki",
-    "fix-nodes": "Napraw węzły",
-    "link-distance": "Odległość linku"
+    "open_full": "Rozwiń do pełnego",
+    "collapse": "Zwiń do normalnego rozmiaru",
+    "title": "Mapa notatek",
+    "fix-nodes": "Zablokuj węzły",
+    "link-distance": "Dystans łączy"
   },
   "note_paths": {
     "title": "Ścieżki notatki",
     "clone_button": "Sklonuj notatkę do nowej lokalizacji...",
-    "intro_placed": "Ta notatka jest umieszczona w następujących lokalizacjach:",
-    "intro_not_placed": "Ta notatka nie została jeszcze umieszczona w drzewie.",
-    "outside_hoisted": "Ta ścieżka znajduje się poza podniesioną notatką i trzeba ją odwiesić.",
-    "archived": "Zarchiwizowane",
+    "intro_placed": "Ta notatka jest umieszczona w następujących ścieżkach:",
+    "intro_not_placed": "Ta notatka nie jest jeszcze umieszczona w drzewie notatek.",
+    "outside_hoisted": "Ta ścieżka znajduje się poza zawężonym widokiem (hoisted note) i musisz cofnąć zawężenie.",
+    "archived": "Zarchiwizowana",
     "search": "Szukaj"
   },
   "note_properties": {
-    "this_note_was_originally_taken_from": "Ta notatka oryginalnie została wzięta z:",
+    "this_note_was_originally_taken_from": "Ta notatka została pierwotnie pobrana z:",
     "info": "Info"
   },
   "owned_attribute_list": {
     "owned_attributes": "Posiadane atrybuty"
   },
   "promoted_attributes": {
-    "promoted_attributes": "Promowane atrybuty",
-    "unset-field-placeholder": "nie ustawione",
+    "promoted_attributes": "Wyróżnione atrybuty",
+    "unset-field-placeholder": "nie ustawiono",
     "url_placeholder": "http://strona...",
     "open_external_link": "Otwórz link zewnętrzny",
-    "unknown_label_type": "Nieznany typ etykiety \"{{type}}\"",
-    "unknown_attribute_type": "Nieznany typ atrybutu \"{{type}}\"",
+    "unknown_label_type": "Nieznany typ etykiety '{{type}}'",
+    "unknown_attribute_type": "Nieznany typ atrybutu '{{type}}'",
     "add_new_attribute": "Dodaj nowy atrybut",
     "remove_this_attribute": "Usuń ten atrybut",
-    "remove_color": "Usuń ten kolor etykiety"
+    "remove_color": "Usuń etykietę koloru"
   },
   "script_executor": {
     "query": "Zapytanie",
@@ -472,61 +499,62 @@
     "execute_script": "Wykonaj skrypt"
   },
   "search_definition": {
-    "add_search_option": "Dodaj opcje wyszukiwania:",
+    "add_search_option": "Dodaj opcję wyszukiwania:",
     "search_string": "ciąg wyszukiwania",
     "search_script": "skrypt wyszukiwania",
     "ancestor": "przodek",
     "fast_search": "szybkie wyszukiwanie",
-    "fast_search_description": "Opcja szybkiego wyszukiwania wyłącza pełno tekstowe przeszukiwanie zawartości notatek, co może przyspieszyć przeszukiwanie dużych baz danych.",
-    "include_archived": "dodaj zarchiwizowane",
-    "include_archived_notes_description": "Domyślnie zarchiwizowane notatki są wyłączone z wyszukiwania, z tą opcją zostaną dodane do wyszukiwania.",
-    "order_by": "sortuj",
-    "limit": "limituj",
-    "limit_description": "Limituj liczbę wyników",
+    "fast_search_description": "Opcja szybkiego wyszukiwania wyłącza pełnotekstowe przeszukiwanie treści notatek, co może przyspieszyć wyszukiwanie w dużych bazach danych.",
+    "include_archived": "uwzględnij zarchiwizowane",
+    "include_archived_notes_description": "Zarchiwizowane notatki są domyślnie wykluczone z wyników wyszukiwania, ta opcja spowoduje ich uwzględnienie.",
+    "order_by": "sortuj według",
+    "limit": "limit",
+    "limit_description": "Ogranicz liczbę wyników",
     "save_to_note": "Zapisz do notatki",
     "search_parameters": "Parametry wyszukiwania",
     "unknown_search_option": "Nieznana opcja wyszukiwania {{searchOptionName}}",
-    "search_note_saved": "Wyszukiwana notatka została zapisana do {{- notePathTitle}}",
-    "actions_executed": "Akcja została wykonana.",
-    "debug": "debugowanie",
-    "debug_description": "Debugowanie wydrukuje dodatkowe informacje debugowania w konsoli, aby pomóc w debugowaniu złożonych zapytań",
+    "search_note_saved": "Notatka wyszukiwania została zapisana w {{- notePathTitle}}",
+    "actions_executed": "Akcje zostały wykonane.",
+    "debug": "debug",
+    "debug_description": "Debugowanie wypisze dodatkowe informacje debugowania w konsoli, aby pomóc w debugowaniu złożonych zapytań",
     "action": "akcja",
     "search_button": "Szukaj",
-    "search_execute": "Szukaj i wykonaj akcje"
+    "search_execute": "Szukaj i wykonaj akcje",
+    "view_options": "Ustawienia widoku:"
   },
   "similar_notes": {
     "title": "Podobne notatki",
     "no_similar_notes_found": "Nie znaleziono podobnych notatek."
   },
   "abstract_search_option": {
-    "remove_this_search_option": "Usuń tą opcję wyszukiwania",
-    "failed_rendering": "Nieudana opcja wyszukiwania: {{dto}} z błędem: {{error}} {{stack}}"
+    "remove_this_search_option": "Usuń tę opcję wyszukiwania",
+    "failed_rendering": "Nie udało się wyrenderować opcji wyszukiwania: {{dto}} z błędem: {{error}} {{stack}}"
   },
   "ancestor": {
     "label": "Przodek",
-    "placeholder": "szukaj notatki po jej nazwie",
-    "depth_label": "glębokość",
-    "depth_doesnt_matter": "nie ważne",
-    "depth_eq": "jest dokładnie {{count}}",
-    "direct_children": "bezpośrednie podnotatki",
-    "depth_gt": "jest więcej niż {{count}}",
-    "depth_lt": "jest mniej niż {{count}}"
+    "placeholder": "wyszukaj notatkę po nazwie",
+    "depth_label": "głębokość",
+    "depth_doesnt_matter": "nie ma znaczenia",
+    "depth_eq": "wynosi dokładnie {{count}}",
+    "direct_children": "bezpośrednie elementy podrzędne",
+    "depth_gt": "jest większa niż {{count}}",
+    "depth_lt": "jest mniejsza niż {{count}}"
   },
   "debug": {
-    "debug": "Debuguj",
-    "debug_info": "Debugowanie wyświetli dodatkowe informacje debugowania w konsoli, aby ułatwić debugowanie złożonych zapytań.",
-    "access_info": "Aby uzyskać dostęp do informacji debugowania, wykonaj zapytanie i kliknij \"Pokaż logi backendu\" w lewym górnym rogu."
+    "debug": "Debug",
+    "debug_info": "Debugowanie wypisze dodatkowe informacje debugowania w konsoli, aby pomóc w debugowaniu złożonych zapytań.",
+    "access_info": "Aby uzyskać dostęp do informacji debugowania, wykonaj zapytanie i kliknij \"Pokaż log backendu\" w lewym górnym rogu."
   },
   "fast_search": {
     "fast_search": "Szybkie wyszukiwanie",
-    "description": "Opcja szybkiego wyszukiwania wyłącza pełnotekstowe przeszukiwanie zawartości notatek, co może przyspieszyć wyszukiwanie w dużych bazach danych."
+    "description": "Opcja szybkiego wyszukiwania wyłącza pełnotekstowe przeszukiwanie treści notatek, co może przyspieszyć wyszukiwanie w dużych bazach danych."
   },
   "file_properties": {
     "download": "Pobierz",
-    "open": "Otwórz",
-    "upload_new_revision": "Wgraj nową wersję",
-    "upload_success": "Nowa wersja pliku nie została wysłana.",
-    "upload_failed": "Wysyłanie nowej wersji pliku się nie udało.",
+    "open": "Otwórz zewnętrznie",
+    "upload_new_revision": "Prześlij nową wersję",
+    "upload_success": "Nowa wersja pliku została przesłana.",
+    "upload_failed": "Przesłanie nowej wersji pliku nie powiodło się.",
     "title": "Plik",
     "note_id": "ID notatki",
     "original_file_name": "Oryginalna nazwa pliku",
@@ -535,28 +563,29 @@
   },
   "include_note": {
     "label_note": "Notatka",
-    "placeholder_search": "szukaj notatki po jej nazwie",
+    "placeholder_search": "wyszukaj notatkę po nazwie",
     "dialog_title": "Dołącz notatkę",
     "button_include": "Dołącz notatkę",
-    "box_size_prompt": "Rozmiar okna dołączonej notatki:",
+    "box_size_prompt": "Rozmiar pola dołączonej notatki:",
     "box_size_small": "mały (~ 10 linii)",
     "box_size_medium": "średni (~ 30 linii)",
-    "box_size_full": "pełny (okno pokazuje cały tekst)"
+    "box_size_full": "pełny (pole pokazuje cały tekst)"
   },
   "info": {
     "closeButton": "Zamknij",
     "okButton": "OK",
-    "modalTitle": "Wiadomość"
+    "modalTitle": "Informacja",
+    "copy_to_clipboard": "Kopiuj do schowka"
   },
   "jump_to_note": {
-    "search_placeholder": "Szukaj notatki po jej nazwie albo typie > komendy...",
-    "search_button": "Wyszukiwanie pełno tekstowe"
+    "search_placeholder": "Szukaj notatki po nazwie lub wpisz > dla poleceń...",
+    "search_button": "Szukaj w pełnym tekście"
   },
   "markdown_import": {
-    "dialog_title": "Zaimportuj Markdown",
-    "import_button": "Import",
+    "dialog_title": "Import Markdown",
+    "import_button": "Importuj",
     "import_success": "Treść Markdown została zaimportowana do dokumentu.",
-    "modal_body_text": "Ze względu na środowisko przeglądarki nie jest możliwe bezpośrednie odczytanie schowka z JavaScript. Wklej Markdown do importu do poniższego pola tekstowego i kliknij przycisk Importuj"
+    "modal_body_text": "Ze względu na ograniczenia przeglądarki (sandbox) nie można bezpośrednio odczytać schowka z poziomu JavaScript. Proszę wkleić treść Markdown do zaimportowania w poniższe pole tekstowe i kliknąć przycisk Importuj"
   },
   "limit": {
     "limit": "Limit",
@@ -565,16 +594,17 @@
   "link_context_menu": {
     "open_note_in_popup": "Szybka edycja",
     "open_note_in_new_tab": "Otwórz notatkę w nowej karcie",
-    "open_note_in_new_split": "Otwórz notatkę w nowym podziale ekranu",
-    "open_note_in_new_window": "Otwórz notatkę w nowym oknie"
+    "open_note_in_new_split": "Otwórz notatkę w nowym podziale",
+    "open_note_in_new_window": "Otwórz notatkę w nowym oknie",
+    "open_note_in_other_split": "Otwórz notatkę w drugim podziale"
   },
   "electron_integration": {
     "desktop-application": "Aplikacja desktopowa",
     "native-title-bar": "Natywny pasek tytułu",
-    "native-title-bar-description": "Dla systemów Windows i macOS wyłączenie natywnego paska tytułu sprawia, że aplikacja wygląda bardziej kompaktowo. W systemie Linux włączenie natywnego paska tytułu lepiej integruje się z resztą systemu.",
+    "native-title-bar-description": "Dla Windows i macOS, wyłączenie natywnego paska tytułu sprawia, że aplikacja wygląda bardziej kompaktowo. Na Linuxie, włączenie natywnego paska tytułu lepiej integruje się z resztą systemu.",
     "background-effects": "Włącz efekty tła (tylko Windows 11)",
     "background-effects-description": "Efekt Mica dodaje rozmyte, stylowe tło do okien aplikacji, tworząc głębię i nowoczesny wygląd. \"Natywny pasek tytułu\" musi być wyłączony.",
-    "restart-app-button": "Uruchom ponownie aplikację, aby zobaczyć zmiany",
+    "restart-app-button": "Zrestartuj aplikację, aby zobaczyć zmiany",
     "zoom-factor": "Współczynnik powiększenia"
   },
   "electron_context_menu": {
@@ -582,20 +612,21 @@
     "copy": "Kopiuj",
     "copy-link": "Kopiuj link",
     "paste": "Wklej",
-    "paste-as-plain-text": "Wklej jako plain text",
-    "search_online": "Szukaj \"{{term}}\" za pomocą {{searchEngine}}",
-    "add-term-to-dictionary": "Dodaj \"{{term}}\" do słownika"
+    "paste-as-plain-text": "Wklej jako zwykły tekst",
+    "search_online": "Szukaj \"{{term}}\" w {{searchEngine}}",
+    "add-term-to-dictionary": "Dodaj \"{{term}}\" do słownika",
+    "search_in_trilium": "Szukaj \"{{term}}\" w Trilium"
   },
   "image_context_menu": {
-    "copy_reference_to_clipboard": "Skopiuj odnośnik do schowka",
-    "copy_image_to_clipboard": "Skopiuj obraz do schowka"
+    "copy_reference_to_clipboard": "Kopiuj odniesienie do schowka",
+    "copy_image_to_clipboard": "Kopiuj obraz do schowka"
   },
   "note_autocomplete": {
     "clear-text-field": "Wyczyść pole tekstowe",
     "show-recent-notes": "Pokaż ostatnie notatki",
     "full-text-search": "Wyszukiwanie pełnotekstowe",
     "search-for": "Szukaj \"{{term}}\"",
-    "create-note": "Utwórz i połącz notatkę podrzędną \"{{term}}\"",
+    "create-note": "Utwórz i podlinkuj notatkę podrzędną \"{{term}}\"",
     "insert-external-link": "Wstaw link zewnętrzny do \"{{term}}\""
   },
   "note_tooltip": {
@@ -603,17 +634,17 @@
     "quick-edit": "Szybka edycja"
   },
   "duration": {
-    "seconds": "sekundy",
-    "minutes": "minuty",
-    "hours": "godziny",
-    "days": "dni"
+    "seconds": "Sekundy",
+    "minutes": "Minuty",
+    "hours": "Godziny",
+    "days": "Dni"
   },
   "share": {
     "title": "Ustawienia udostępniania",
-    "redirect_bare_domain": "Przekieruj gołą domenę na stronę udostępniania",
-    "redirect_bare_domain_description": "Przekieruj anonimowych użytkowników na stronę udostępniania zamiast pokazywać stronę logowania",
-    "show_login_link": "Pokaż link logowania w motywie udostępniania",
-    "show_login_link_description": "Dodaj link logowania do stopki strony udostępniania",
+    "redirect_bare_domain": "Przekieruj domenę główną na stronę Udostępniania",
+    "redirect_bare_domain_description": "Przekieruj anonimowych użytkowników na stronę Udostępniania zamiast pokazywać Logowanie",
+    "show_login_link": "Pokaż link Logowania w motywie Udostępniania",
+    "show_login_link_description": "Dodaj link logowania w stopce strony Udostępniania",
     "check_share_root": "Sprawdź status korzenia udostępniania",
     "share_root_found": "Notatka korzenia udostępniania '{{noteTitle}}' jest gotowa",
     "share_root_not_found": "Nie znaleziono notatki z etykietą #shareRoot",
@@ -621,35 +652,37 @@
   },
   "tasks": {
     "due": {
-      "today": "Dziś",
+      "today": "Dzisiaj",
       "tomorrow": "Jutro",
       "yesterday": "Wczoraj"
     }
   },
   "content_widget": {
-    "unknown_widget": "Nieznany widget dla \"{{id}}\"."
+    "unknown_widget": "Nieznany widżet dla \"{{id}}\"."
   },
   "note_language": {
-    "not_set": "Nie ustawione",
-    "configure-languages": "Konfiguracja języków..."
+    "not_set": "Nie ustawiono języka",
+    "configure-languages": "Konfiguruj języki...",
+    "help-on-languages": "Pomoc dotycząca języków treści..."
   },
   "content_language": {
-    "title": "Język treści",
-    "description": "Wybierz jeden lub więcej języków, które mają być wyświetlane w sekcji Właściwości Podstawowe Notatki Tekstowej tylko do odczytu lub edytowalnej. Umożliwi to korzystanie z takich funkcji, jak sprawdzanie pisowni czy obsługa pisania od prawej do lewej."
+    "title": "Języki treści",
+    "description": "Wybierz jeden lub więcej języków, które powinny pojawić się w wyborze języka w sekcji Właściwości podstawowe notatki tekstowej (tylko do odczytu lub edytowalnej). Umożliwi to funkcje takie jak sprawdzanie pisowni lub obsługa zapisu od prawej do lewej."
   },
   "switch_layout_button": {
-    "title_vertical": "Przesuń panel edycji na dół",
-    "title_horizontal": "Przesuń panel edycji do lewej"
+    "title_vertical": "Przenieś panel edycji na dół",
+    "title_horizontal": "Przenieś panel edycji na lewo"
   },
   "toggle_read_only_button": {
     "unlock-editing": "Odblokuj edycję",
     "lock-editing": "Zablokuj edycję"
   },
   "png_export_button": {
-    "button_title": "Wyeksportuj diagram jako PNG"
+    "button_title": "Eksportuj diagram jako PNG"
   },
   "svg": {
-    "export_to_png": "Diagram nie może zostać wyeksportowany jako PNG."
+    "export_to_png": "Diagram nie mógł zostać wyeksportowany do PNG.",
+    "export_to_svg": "Diagram nie mógł zostać wyeksportowany do SVG."
   },
   "code_theme": {
     "title": "Wygląd",
@@ -657,51 +690,51 @@
     "color-scheme": "Schemat kolorów"
   },
   "cpu_arch_warning": {
-    "title": "Proszę o pobranie wersji ARM64",
-    "message_macos": "TriliumNext działa obecnie w oparciu o technologię Rosetta 2, co oznacza, że używasz wersji Intel (x64) na komputerze Mac z procesorem Apple Silicon. Będzie to miało znaczący wpływ na wydajność i czas pracy baterii.",
-    "message_windows": "TriliumNext działa obecnie w trybie emulacji, co oznacza, że używasz wersji Intel (x64) na urządzeniu z systemem Windows na procesorze ARM. Będzie to miało znaczący wpływ na wydajność i czas pracy baterii.",
-    "recommendation": "Aby uzyskać najlepsze wrażenia, pobierz natywną wersję ARM64 aplikacji TriliumNext ze strony poświęconej wydaniom.",
+    "title": "Proszę pobrać wersję ARM64",
+    "message_macos": "TriliumNext działa obecnie w ramach translacji Rosetta 2, co oznacza, że używasz wersji Intel (x64) na komputerze Mac z procesorem Apple Silicon. Wpłynie to znacząco na wydajność i żywotność baterii.",
+    "message_windows": "TriliumNext działa obecnie w trybie emulacji, co oznacza, że używasz wersji Intel (x64) na urządzeniu Windows on ARM. Wpłynie to znacząco na wydajność i żywotność baterii.",
+    "recommendation": "Aby uzyskać najlepsze wrażenia, pobierz natywną wersję ARM64 TriliumNext z naszej strony wydań.",
     "download_link": "Pobierz wersję natywną",
-    "continue_anyway": "Kontynuuj mimo wszystko",
-    "dont_show_again": "Nie pokazuj więcej tego ostrzeżenia"
+    "continue_anyway": "Kontynuuj mimo to",
+    "dont_show_again": "Nie pokazuj tego ostrzeżenia ponownie"
   },
   "editorfeatures": {
-    "title": "Cechy",
+    "title": "Funkcje",
     "emoji_completion_enabled": "Włącz autouzupełnianie Emoji",
-    "note_completion_enabled": "Włącz autouzupełnianie notatki",
+    "note_completion_enabled": "Włącz autouzupełnianie notatek",
     "emoji_completion_description": "Jeśli włączone, emoji można łatwo wstawiać do tekstu, wpisując `:`, a następnie nazwę emoji.",
     "note_completion_description": "Jeśli włączone, linki do notatek można tworzyć, wpisując `@`, a następnie tytuł notatki.",
-    "slash_commands_enabled": "Włącz polecenia z ukośnikiem",
-    "slash_commands_description": "Jeśli włączone, polecenia edycji, takie jak wstawianie podziałów wierszy lub nagłówków, można przełączać, wpisując `/`."
+    "slash_commands_enabled": "Włącz polecenia slash (/)",
+    "slash_commands_description": "Jeśli włączone, polecenia edycji, takie jak wstawianie podziałów wiersza lub nagłówków, można przełączać, wpisując `/`."
   },
   "table_view": {
     "new-row": "Nowy wiersz",
     "new-column": "Nowa kolumna",
-    "sort-column-by": "Sotuj po \"{{title}}\"",
+    "sort-column-by": "Sortuj według \"{{title}}\"",
     "sort-column-ascending": "Rosnąco",
     "sort-column-descending": "Malejąco",
     "sort-column-clear": "Wyczyść sortowanie",
     "hide-column": "Ukryj kolumnę \"{{title}}\"",
     "show-hide-columns": "Pokaż/ukryj kolumny",
-    "row-insert-above": "Wstaw wiersz nad",
-    "row-insert-below": "Wstaw wiersz pod",
-    "row-insert-child": "Wstaw podnotatkę",
+    "row-insert-above": "Wstaw wiersz powyżej",
+    "row-insert-below": "Wstaw wiersz poniżej",
+    "row-insert-child": "Wstaw notatkę podrzędną",
     "add-column-to-the-left": "Dodaj kolumnę po lewej",
     "add-column-to-the-right": "Dodaj kolumnę po prawej",
     "edit-column": "Edytuj kolumnę",
     "delete_column_confirmation": "Czy na pewno chcesz usunąć tę kolumnę? Odpowiedni atrybut zostanie usunięty ze wszystkich notatek.",
     "delete-column": "Usuń kolumnę",
     "new-column-label": "Etykieta",
-    "new-column-relation": "Relacje"
+    "new-column-relation": "Relacja"
   },
   "book_properties_config": {
     "hide-weekends": "Ukryj weekendy",
-    "display-week-numbers": "Pokaż numery tygodni",
-    "map-style": "Styl mapy:",
-    "max-nesting-depth": "Maksymalna głębokość zagnieżdżenia:",
+    "display-week-numbers": "Wyświetlaj numery tygodni",
+    "map-style": "Styl mapy",
+    "max-nesting-depth": "Maks. głębokość zagnieżdżenia:",
     "raster": "Raster",
-    "vector_light": "Wektor (jasny)",
-    "vector_dark": "Wektor (ciemny)",
+    "vector_light": "Wektor (Jasny)",
+    "vector_dark": "Wektor (Ciemny)",
     "show-scale": "Pokaż skalę"
   },
   "table_context_menu": {
@@ -711,57 +744,54 @@
     "dialog_title": "Przenieś notatki do ...",
     "notes_to_move": "Notatki do przeniesienia",
     "target_parent_note": "Docelowa notatka nadrzędna",
-    "search_placeholder": "szukaj notatki po jej nazwie",
+    "search_placeholder": "wyszukaj notatkę po nazwie",
     "move_button": "Przenieś do wybranej notatki",
     "error_no_path": "Brak ścieżki do przeniesienia.",
     "move_success_message": "Wybrane notatki zostały przeniesione do "
   },
   "note_type_chooser": {
     "modal_title": "Wybierz typ notatki",
-    "modal_body": "Wybierz typ / szablon notatki dla nowej notatki:",
+    "modal_body": "Wybierz typ notatki / szablon nowej notatki:",
     "templates": "Szablony",
     "builtin_templates": "Wbudowane szablony",
-    "change_path_prompt": "Zmień ścieżkę, gdzie utworzyć nową notatkę:",
-    "search_placeholder": "wyszukaj ścieżkę po nazwie (domyślna, jeśli pusta)"
+    "change_path_prompt": "Zmień miejsce utworzenia nowej notatki:",
+    "search_placeholder": "szukaj ścieżki po nazwie (domyślna, jeśli puste)"
   },
   "password_not_set": {
-    "title": "Hasło nie zostało ustawione",
-    "body1": "Chronione notatki są szyfrowane hasłem użytkownika, ale hasło nie zostało jeszcze ustawione.",
-    "body2": "Aby móc chronić notatki, kliknij poniższy przycisk, aby otworzyć okno dialogowe Opcje i ustawić hasło.",
+    "title": "Hasło nie jest ustawione",
+    "body1": "Chronione notatki są szyfrowane przy użyciu hasła użytkownika, ale hasło nie zostało jeszcze ustawione.",
+    "body2": "Aby móc chronić notatki, kliknij przycisk poniżej, aby otworzyć okno Opcji i ustawić hasło.",
     "go_to_password_options": "Przejdź do opcji hasła"
   },
   "add_relation": {
-    "add_relation": "Dodaj powiązanie",
-    "relation_name": "nazwa powiązania",
+    "add_relation": "Dodaj relację",
+    "relation_name": "nazwa relacji",
     "allowed_characters": "Dozwolone są znaki alfanumeryczne, podkreślenie i dwukropek.",
     "to": "do",
-    "target_note": "docelowa notatka",
-    "create_relation_on_all_matched_notes": "We wszystkich dopasowanych notatkach utwórz daną relację."
+    "target_note": "notatka docelowa",
+    "create_relation_on_all_matched_notes": "Na wszystkich dopasowanych notatkach utwórz podaną relację."
   },
   "ai_llm": {
     "actions": "Akcje",
-    "retry": "Spróbuj ponownie",
-    "partial": "{{ percentage }}% wykonania",
-    "retry_queued": "notatka dodana do kolejki",
-    "retry_failed": "Nieudana próba dodania notatki do kolejki",
-    "max_notes_per_llm_query": "Maksymalna ilość notatek w zapytaniu",
-    "index_all_notes": "Zindeksuj wszystkie notatki",
-    "index_status": "Status indeksowania",
-    "indexed_notes": "Zindeksowane notatki",
+    "retry": "Ponów",
+    "partial": "{{ percentage }}% ukończono",
+    "retry_queued": "Notatka zakolejkowana do ponowienia",
+    "retry_failed": "Nie udało się zakolejkować notatki do ponowienia",
+    "max_notes_per_llm_query": "Maks. notatek na zapytanie",
+    "index_all_notes": "Indeksuj wszystkie notatki",
+    "index_status": "Status indeksu",
+    "indexed_notes": "Zaindeksowane notatki",
     "indexing_stopped": "Indeksowanie zatrzymane",
-    "indexing_in_progress": "Indeksowanie w trakcie...",
-    "last_indexed": "Ostatnio zindeksowane",
-    "n_notes_queued_0": "{{ count }} notatka zakolejkowana do indeksowania",
-    "n_notes_queued_1": "{{ count }} notatek zakolejkowanych do indeksowania",
-    "n_notes_queued_2": "{{ count }} notatek zakolejkowanych do indeksowania",
+    "indexing_in_progress": "Indeksowanie w toku...",
+    "last_indexed": "Ostatnio zaindeksowane",
     "note_chat": "Czat notatki",
     "note_title": "Tytuł notatki",
     "error": "Błąd",
     "last_attempt": "Ostatnia próba",
-    "queued_notes": "Zakolejkowane notatki",
-    "failed_notes": "Nieudane notatki",
-    "last_processed": "Ostatnio procesowane",
-    "refresh_stats": "Odśwież Statystyki",
+    "queued_notes": "Notatki w kolejce",
+    "failed_notes": "Notatki nieudane",
+    "last_processed": "Ostatnio przetworzone",
+    "refresh_stats": "Odśwież statystyki",
     "enable_ai_features": "Włącz funkcje AI/LLM",
     "enable_ai_description": "Włącz funkcje AI, takie jak podsumowywanie notatek, generowanie treści i inne możliwości LLM",
     "openai_tab": "OpenAI",
@@ -771,44 +801,44 @@
     "enable_ai": "Włącz funkcje AI/LLM",
     "enable_ai_desc": "Włącz funkcje AI, takie jak podsumowywanie notatek, generowanie treści i inne możliwości LLM",
     "provider_configuration": "Konfiguracja dostawcy AI",
-    "provider_precedence": "Pierwszeństwo dostawcy",
-    "provider_precedence_description": "Lista dostawców przedzielonych przecinkami w kolejności (np. „openai,anthropic,ollama”)",
+    "provider_precedence": "Kolejność dostawców",
+    "provider_precedence_description": "Lista dostawców oddzielona przecinkami w kolejności pierwszeństwa (np. 'openai,anthropic,ollama')",
     "temperature": "Temperatura",
-    "temperature_description": "Kontroluje losowość odpowiedzi (0 = deterministyczna, 2 = maksymalna losowość)",
-    "system_prompt": "Monit systemowy",
-    "system_prompt_description": "Domyślny monit systemowy używany do wszystkich interakcji ze sztuczną inteligencją",
+    "temperature_description": "Kontroluje losowość w odpowiedziach (0 = deterministyczne, 2 = maksymalna losowość)",
+    "system_prompt": "Prompt systemowy",
+    "system_prompt_description": "Domyślny prompt systemowy używany dla wszystkich interakcji AI",
     "openai_configuration": "Konfiguracja OpenAI",
     "openai_settings": "Ustawienia OpenAI",
     "api_key": "Klucz API",
     "url": "Bazowy URL",
     "model": "Model",
-    "openai_api_key_description": "Klucz API OpenAI umożliwiający dostęp do usług AI",
-    "anthropic_api_key_description": "Klucz API Anthropic umożliwiający dostęp do usług AI",
-    "default_model": "Domyślny Model",
+    "openai_api_key_description": "Twój klucz API OpenAI do dostępu do ich usług AI",
+    "anthropic_api_key_description": "Twój klucz API Anthropic do dostępu do modeli Claude",
+    "default_model": "Domyślny model",
     "openai_model_description": "Przykłady: gpt-4o, gpt-4-turbo, gpt-3.5-turbo",
     "base_url": "Bazowy URL",
-    "openai_url_description": "Domyślny: https://api.openai.com/v1",
+    "openai_url_description": "Domyślnie: https://api.openai.com/v1",
     "anthropic_settings": "Ustawienia Anthropic",
-    "anthropic_url_description": "Bazowy URL dla Anthropic API (domyślny: https://api.anthropic.com)",
-    "anthropic_model_description": "Modele Anthropic Claude'a do uzupełniania czatów",
+    "anthropic_url_description": "Bazowy URL dla API Anthropic (domyślnie: https://api.anthropic.com)",
+    "anthropic_model_description": "Modele Anthropic Claude do czatu",
     "voyage_settings": "Ustawienia Voyage AI",
     "ollama_settings": "Ustawienia Ollama",
-    "ollama_url_description": "URL dla Ollama API (domyślny: http://localhost:11434)",
-    "ollama_model_description": "Model Ollama używany do uzupełniania czatów",
+    "ollama_url_description": "URL dla API Ollama (domyślnie: http://localhost:11434)",
+    "ollama_model_description": "Model Ollama do użycia w czacie",
     "anthropic_configuration": "Konfiguracja Anthropic",
     "voyage_configuration": "Konfiguracja Voyage AI",
-    "voyage_url_description": "Domyślny: https://api.voyageai.com/v1",
+    "voyage_url_description": "Domyślnie: https://api.voyageai.com/v1",
     "ollama_configuration": "Konfiguracja Ollama",
     "enable_ollama": "Włącz Ollama",
-    "enable_ollama_description": "Włącz Ollama dla lokalnego modelu AI",
-    "ollama_url": "Ollama URL",
+    "enable_ollama_description": "Włącz Ollama do lokalnego użycia modeli AI",
+    "ollama_url": "URL Ollama",
     "ollama_model": "Model Ollama",
     "refresh_models": "Odśwież modele",
     "refreshing_models": "Odświeżanie...",
     "enable_automatic_indexing": "Włącz automatyczne indeksowanie",
-    "rebuild_index": "Odbuduj indeks",
-    "rebuild_index_error": "Błąd uruchomienia odbudowy indeksu. Sprawdź logi.",
-    "max_notes_per_llm_query_description": "Maksymalna liczba podobnych notatek do uwzględnienia w kontekście sztucznej inteligencji",
+    "rebuild_index": "Przebuduj indeks",
+    "rebuild_index_error": "Błąd podczas rozpoczynania przebudowy indeksu. Sprawdź logi po szczegóły.",
+    "max_notes_per_llm_query_description": "Maksymalna liczba podobnych notatek do uwzględnienia w kontekście AI",
     "active_providers": "Aktywni dostawcy",
     "disabled_providers": "Wyłączeni dostawcy",
     "remove_provider": "Usuń dostawcę z wyszukiwania",
@@ -817,38 +847,38 @@
     "not_started": "Nie rozpoczęto",
     "title": "Ustawienia AI",
     "processed_notes": "Przetworzone notatki",
-    "total_notes": "Wszystkie notatki",
+    "total_notes": "Łącznie notatek",
     "progress": "Postęp",
     "similarity_threshold_description": "Minimalny wynik podobieństwa (0-1) dla notatek, które mają być uwzględnione w kontekście zapytań LLM",
-    "reprocess_index": "Odbuduj indeks wyszukiwania",
-    "reprocessing_index": "Odbudowywanie...",
+    "reprocess_index": "Przebuduj indeks wyszukiwania",
+    "reprocessing_index": "Przebudowywanie...",
     "reprocess_index_started": "Optymalizacja indeksu wyszukiwania rozpoczęta w tle",
-    "reprocess_index_error": "Błąd odbudowywania indeksu wyszukiwania",
-    "index_rebuild_progress": "Postęp odbudowy indeksu",
-    "index_rebuilding": "Optymalizowanie indeksu ({{percentage}}%)",
+    "reprocess_index_error": "Błąd podczas przebudowy indeksu wyszukiwania",
+    "index_rebuild_progress": "Postęp przebudowy indeksu",
+    "index_rebuilding": "Optymalizacja indeksu ({{percentage}}%)",
     "index_rebuild_complete": "Optymalizacja indeksu zakończona",
-    "index_rebuild_status_error": "Błąd sprawdzania statusu odbudowy indeksu",
+    "index_rebuild_status_error": "Błąd podczas sprawdzania statusu przebudowy indeksu",
     "never": "Nigdy",
     "processing": "Przetwarzanie ({{percentage}}%)",
     "incomplete": "Niekompletne ({{percentage}}%)",
-    "complete": "Ukończono (100%)",
+    "complete": "Zakończone (100%)",
     "refreshing": "Odświeżanie...",
     "auto_refresh_notice": "Automatyczne odświeżanie co {{seconds}} sekund",
-    "note_queued_for_retry": "Notatka zakolejkowana do ponownej próby",
-    "failed_to_retry_note": "Nie udało się ponowić próby dla notatki",
-    "all_notes_queued_for_retry": "Wszystkie nieudane notatki zakolejkowane do ponownej próby",
-    "failed_to_retry_all": "Nie udało się ponowić próby dla notatek",
+    "note_queued_for_retry": "Notatka zakolejkowana do ponowienia",
+    "failed_to_retry_note": "Nie udało się ponowić notatki",
+    "all_notes_queued_for_retry": "Wszystkie nieudane notatki zakolejkowane do ponowienia",
+    "failed_to_retry_all": "Nie udało się ponowić notatek",
     "ai_settings": "Ustawienia AI",
-    "api_key_tooltip": "Klucz API do uzyskiwania dostępu do usługi",
+    "api_key_tooltip": "Klucz API do dostępu do usługi",
     "empty_key_warning": {
-      "anthropic": "Klucz API Anthropic jest pusty. Wprowadź prawidłowy klucz API.",
-      "openai": "Klucz API OpenAI jest pusty. Wprowadź prawidłowy klucz API.",
-      "voyage": "Klucz API Voyage jest pusty. Wprowadź prawidłowy klucz API.",
-      "ollama": "Klucz API Ollama jest pusty. Wprowadź prawidłowy klucz API."
+      "anthropic": "Klucz API Anthropic jest pusty. Proszę wprowadzić poprawny klucz API.",
+      "openai": "Klucz API OpenAI jest pusty. Proszę wprowadzić poprawny klucz API.",
+      "voyage": "Klucz API Voyage jest pusty. Proszę wprowadzić poprawny klucz API.",
+      "ollama": "Klucz API Ollama jest pusty. Proszę wprowadzić poprawny klucz API."
     },
     "agent": {
       "processing": "Przetwarzanie...",
-      "thinking": "Myślenie...",
+      "thinking": "Myślę...",
       "loading": "Ładowanie...",
       "generating": "Generowanie..."
     },
@@ -856,26 +886,23 @@
     "openai": "OpenAI",
     "use_enhanced_context": "Użyj rozszerzonego kontekstu",
     "enhanced_context_description": "Dostarcza AI więcej kontekstu z notatki i jej powiązanych notatek dla lepszych odpowiedzi",
-    "show_thinking": "Pokaż proces myślowy",
-    "show_thinking_description": "Pokaż proces myślowy AI",
+    "show_thinking": "Pokaż proces myślenia",
+    "show_thinking_description": "Pokaż ciąg myślowy AI",
     "enter_message": "Wpisz swoją wiadomość...",
-    "error_contacting_provider": "Błąd kontaktu z dostawcą AI. Sprawdź ustawienia i połączenie internetowe.",
+    "error_contacting_provider": "Błąd połączenia z dostawcą AI. Sprawdź swoje ustawienia i połączenie internetowe.",
     "error_generating_response": "Błąd generowania odpowiedzi AI",
-    "notes_indexed_0": "{{ count }} notatka zaindeksowana",
-    "notes_indexed_1": "{{ count }} notatek zaindeksowanych",
-    "notes_indexed_2": "",
     "sources": "Źródła",
     "start_indexing": "Rozpocznij indeksowanie",
     "use_advanced_context": "Użyj zaawansowanego kontekstu",
-    "ollama_no_url": "Ollama nie jest skonfigurowana. Wprowadź prawidłowy URL.",
+    "ollama_no_url": "Ollama nie jest skonfigurowana. Proszę wprowadzić poprawny URL.",
     "chat": {
       "root_note_title": "Czaty AI",
-      "root_note_content": "Ta notatka zawiera zapisane rozmowy na czacie AI.",
+      "root_note_content": "Ta notatka zawiera twoje zapisane rozmowy czatu AI.",
       "new_chat_title": "Nowy czat",
       "create_new_ai_chat": "Utwórz nowy czat AI"
     },
     "create_new_ai_chat": "Utwórz nowy czat AI",
-    "configuration_warnings": "Występują problemy z konfiguracją AI. Sprawdź ustawienia.",
+    "configuration_warnings": "Istnieją pewne problemy z twoją konfiguracją AI. Proszę sprawdzić ustawienia.",
     "experimental_warning": "Funkcja LLM jest obecnie eksperymentalna - zostałeś ostrzeżony.",
     "selected_provider": "Wybrany dostawca",
     "selected_provider_description": "Wybierz dostawcę AI dla funkcji czatu i uzupełniania",
@@ -883,8 +910,8 @@
     "select_provider": "Wybierz dostawcę...",
     "ai_enabled": "Funkcje AI włączone",
     "ai_disabled": "Funkcje AI wyłączone",
-    "no_models_found_online": "Nie znaleziono modeli. Sprawdź swój klucz API i ustawienia.",
-    "no_models_found_ollama": "Nie znaleziono modeli Ollama. Sprawdź, czy Ollama jest uruchomiona.",
+    "no_models_found_online": "Nie znaleziono modeli. Proszę sprawdzić klucz API i ustawienia.",
+    "no_models_found_ollama": "Nie znaleziono modeli Ollama. Proszę sprawdzić, czy Ollama jest uruchomiona.",
     "error_fetching": "Błąd pobierania modeli: {{error}}"
   },
   "prompt": {
@@ -894,18 +921,18 @@
   },
   "protected_session_password": {
     "modal_title": "Sesja chroniona",
-    "help_title": "Pomoc dotycząca notatek chronionych",
+    "help_title": "Pomoc dotycząca chronionych notatek",
     "close_label": "Zamknij",
     "form_label": "Aby kontynuować żądaną akcję, musisz rozpocząć sesję chronioną, wprowadzając hasło:",
     "start_button": "Rozpocznij sesję chronioną"
   },
   "recent_changes": {
     "title": "Ostatnie zmiany",
-    "erase_notes_button": "Wymaż teraz usunięte notatki",
+    "erase_notes_button": "Wymaż usunięte notatki teraz",
     "deleted_notes_message": "Usunięte notatki zostały wymazane.",
     "no_changes_message": "Brak zmian...",
     "undelete_link": "przywróć",
-    "confirm_undelete": "Czy chcesz przywrócić tę notatkę i jej podnotatki?"
+    "confirm_undelete": "Czy chcesz przywrócić tę notatkę i jej pod-notatki?"
   },
   "revisions": {
     "note_revisions": "Wersje notatki",
@@ -916,18 +943,18 @@
     "no_revisions": "Brak wersji dla tej notatki...",
     "restore_button": "Przywróć",
     "diff_on": "Pokaż różnice",
-    "diff_off": "Pokaż zawartość",
+    "diff_off": "Pokaż treść",
     "diff_on_hint": "Kliknij, aby pokazać różnice w źródle notatki",
-    "diff_off_hint": "Kliknij, aby pokazać zawartość notatki",
+    "diff_off_hint": "Kliknij, aby pokazać treść notatki",
     "diff_not_available": "Różnice nie są dostępne.",
-    "confirm_restore": "Czy chcesz przywrócić tę wersję? Spowoduje to nadpisanie bieżącego tytułu i zawartości notatki tą wersją.",
+    "confirm_restore": "Czy chcesz przywrócić tę wersję? Spowoduje to nadpisanie obecnego tytułu i treści notatki tą wersją.",
     "delete_button": "Usuń",
     "confirm_delete": "Czy chcesz usunąć tę wersję?",
     "revisions_deleted": "Wersje notatki zostały usunięte.",
     "revision_restored": "Wersja notatki została przywrócona.",
     "revision_deleted": "Wersja notatki została usunięta.",
-    "snapshot_interval": "Interwał migawki wersji notatki: {{seconds}}s.",
-    "maximum_revisions": "Limit migawek wersji notatki: {{number}}.",
+    "snapshot_interval": "Interwał zrzutu wersji notatki: {{seconds}}s.",
+    "maximum_revisions": "Limit zrzutów wersji notatki: {{number}}.",
     "settings": "Ustawienia wersji notatki",
     "download_button": "Pobierz",
     "mime": "MIME: ",
@@ -946,10 +973,10 @@
     "descending": "malejąco",
     "folders": "Foldery",
     "sort_folders_at_top": "sortuj foldery na górze",
-    "natural_sort": "Sortowanie naturalne",
-    "sort_with_respect_to_different_character_sorting": "sortuj z uwzględnieniem różnych zasad sortowania znaków i zestawień w różnych językach lub regionach.",
-    "natural_sort_language": "Język sortowania naturalnego",
-    "the_language_code_for_natural_sort": "Kod języka dla sortowania naturalnego, np. \"zh-CN\" dla chińskiego.",
+    "natural_sort": "Naturalne sortowanie",
+    "sort_with_respect_to_different_character_sorting": "sortuj z uwzględnieniem różnych zasad sortowania znaków w różnych językach lub regionach.",
+    "natural_sort_language": "Język naturalnego sortowania",
+    "the_language_code_for_natural_sort": "Kod języka dla naturalnego sortowania, np. \"pl-PL\" dla polskiego.",
     "sort": "Sortuj"
   },
   "upload_attachments": {
@@ -959,10 +986,10 @@
     "options": "Opcje",
     "shrink_images": "Zmniejsz obrazy",
     "upload": "Prześlij",
-    "tooltip": "Jeśli zaznaczysz tę opcję, Trilium spróbuje zmniejszyć przesyłane obrazy poprzez skalowanie i optymalizację, co może wpłynąć na postrzeganą jakość obrazu. Jeśli opcja nie jest zaznaczona, obrazy zostaną przesłane bez zmian."
+    "tooltip": "Jeśli zaznaczysz tę opcję, Trilium spróbuje zmniejszyć przesłane obrazy poprzez skalowanie i optymalizację, co może wpłynąć na postrzeganą jakość obrazu. Jeśli odznaczone, obrazy zostaną przesłane bez zmian."
   },
   "attribute_editor": {
-    "help_text_body1": "Aby dodać etykietę, po prostu wpisz np. <code>#rock</code> lub jeśli chcesz dodać również wartość, to np. <code>#year = 2020</code>",
+    "help_text_body1": "Aby dodać etykietę, po prostu wpisz np. <code>#rock</code> lub jeśli chcesz dodać również wartość, np. <code>#year = 2020</code>",
     "help_text_body2": "Dla relacji wpisz <code>~author = @</code>, co powinno wywołać autouzupełnianie, w którym możesz wyszukać żądaną notatkę.",
     "help_text_body3": "Alternatywnie możesz dodać etykietę i relację za pomocą przycisku <code>+</code> po prawej stronie.",
     "save_attributes": "Zapisz atrybuty <enter>",
@@ -979,7 +1006,7 @@
   "execute_script": {
     "execute_script": "Wykonaj skrypt",
     "help_text": "Możesz wykonywać proste skrypty na dopasowanych notatkach.",
-    "example_1": "Na przykład, aby dołączyć ciąg znaków do tytułu notatki, użyj tego małego skryptu:",
+    "example_1": "Na przykład, aby dodać ciąg znaków do tytułu notatki, użyj tego małego skryptu:",
     "example_2": "Bardziej złożonym przykładem byłoby usunięcie wszystkich atrybutów dopasowanej notatki:"
   },
   "delete_label": {
@@ -999,41 +1026,41 @@
     "update_label_value": "Zaktualizuj wartość etykiety",
     "label_name_placeholder": "nazwa etykiety",
     "label_name_title": "Dozwolone są znaki alfanumeryczne, podkreślenie i dwukropek.",
-    "to_value": "do wartości",
+    "to_value": "na wartość",
     "new_value_placeholder": "nowa wartość",
-    "help_text": "We wszystkich dopasowanych notatkach zmień wartość istniejącej etykiety.",
+    "help_text": "Na wszystkich dopasowanych notatkach zmień wartość istniejącej etykiety.",
     "help_text_note": "Możesz również wywołać tę metodę bez wartości, w takim przypadku etykieta zostanie przypisana do notatki bez wartości."
   },
   "delete_note": {
     "delete_note": "Usuń notatkę",
     "delete_matched_notes": "Usuń dopasowane notatki",
-    "delete_matched_notes_description": "Spowoduje to usunięcie dopasowanych notatek.",
-    "undelete_notes_instruction": "Po usunięciu można je przywrócić z okna dialogowego Ostatnie zmiany.",
-    "erase_notes_instruction": "Aby trwale usunąć notatki, możesz po usunięciu przejść do Opcje -> Inne i kliknąć przycisk \"Wymaż teraz usunięte notatki\"."
+    "delete_matched_notes_description": "To spowoduje usunięcie dopasowanych notatek.",
+    "undelete_notes_instruction": "Po usunięciu możliwe jest ich przywrócenie w oknie Ostatnie zmiany.",
+    "erase_notes_instruction": "Aby trwale wymazać notatki, możesz po usunięciu przejść do Opcje -> Inne i kliknąć przycisk \"Wymaż usunięte notatki teraz\"."
   },
   "delete_revisions": {
-    "delete_note_revisions": "Usuń wersje notatek",
+    "delete_note_revisions": "Usuń wersje notatki",
     "all_past_note_revisions": "Wszystkie przeszłe wersje dopasowanych notatek zostaną usunięte. Sama notatka zostanie w pełni zachowana. Innymi słowy, historia notatki zostanie usunięta."
   },
   "move_note": {
     "move_note": "Przenieś notatkę",
     "to": "do",
     "target_parent_note": "docelowa notatka nadrzędna",
-    "on_all_matched_notes": "We wszystkich dopasowanych notatkach",
+    "on_all_matched_notes": "Na wszystkich dopasowanych notatkach",
     "move_note_new_parent": "przenieś notatkę do nowego rodzica, jeśli notatka ma tylko jednego rodzica (tj. stara gałąź jest usuwana, a nowa gałąź do nowego rodzica jest tworzona)",
     "clone_note_new_parent": "sklonuj notatkę do nowego rodzica, jeśli notatka ma wiele klonów/gałęzi (nie jest jasne, która gałąź powinna zostać usunięta)",
-    "nothing_will_happen": "nic się nie stanie, jeśli notatka nie może być przeniesiona do notatki docelowej (tj. spowodowałoby to cykl w drzewie)"
+    "nothing_will_happen": "nic się nie stanie, jeśli notatki nie można przenieść do notatki docelowej (tj. utworzyłoby to cykl w drzewie)"
   },
   "rename_note": {
     "rename_note": "Zmień nazwę notatki",
     "rename_note_title_to": "Zmień tytuł notatki na",
     "new_note_title": "nowy tytuł notatki",
     "click_help_icon": "Kliknij ikonę pomocy po prawej stronie, aby zobaczyć wszystkie opcje",
-    "evaluated_as_js_string": "Podana wartość jest oceniana jako ciąg znaków JavaScript i dlatego może być wzbogacona o dynamiczną treść za pomocą wstrzykniętej zmiennej <code>note</code> (notatka, której nazwa jest zmieniana). Przykłady:",
-    "example_note": "<code>Notatka</code> - wszystkie dopasowane notatki mają zmienioną nazwę na 'Notatka'",
-    "example_new_title": "<code>NOWY: ${note.title}</code> - tytuły dopasowanych notatek są poprzedzone prefiksem 'NOWY: '",
-    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> - dopasowane notatki są poprzedzone prefiksem miesiąc-dzień utworzenia notatki",
-    "api_docs": "Zobacz dokumentację API dla <a href='https://zadam.github.io/trilium/backend_api/Note.html'>note</a> i jej właściwości <a href='https://day.js.org/docs/en/display/format'>dateCreatedObj / utcDateCreatedObj</a>, aby uzyskać szczegółowe informacje."
+    "evaluated_as_js_string": "Podana wartość jest ewaluowana jako ciąg JavaScript i dzięki temu może być wzbogacona o dynamiczną zawartość za pomocą wstrzykniętej zmiennej <code>note</code> (zmieniana notatka). Przykłady:",
+    "example_note": "<code>Notatka</code> - wszystkie dopasowane notatki zmieniają nazwę na 'Notatka'",
+    "example_new_title": "<code>NOWA: ${note.title}</code> - tytuły dopasowanych notatek są poprzedzone prefiksem 'NOWA: '",
+    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> - dopasowane notatki są poprzedzone miesiącem i dniem utworzenia notatki",
+    "api_docs": "Zobacz dokumentację API dla <a href='https://zadam.github.io/trilium/backend_api/Note.html'>notatki</a> i jej właściwości <a href='https://day.js.org/docs/en/display/format'>dateCreatedObj / utcDateCreatedObj</a> po szczegóły."
   },
   "delete_relation": {
     "delete_relation": "Usuń relację",
@@ -1054,15 +1081,15 @@
     "allowed_characters": "Dozwolone są znaki alfanumeryczne, podkreślenie i dwukropek.",
     "to": "do",
     "target_note": "notatka docelowa",
-    "on_all_matched_notes": "We wszystkich dopasowanych notatkach",
+    "on_all_matched_notes": "Na wszystkich dopasowanych notatkach",
     "change_target_note": "zmień notatkę docelową istniejącej relacji",
     "update_relation_target": "Zaktualizuj cel relacji"
   },
   "attachments_actions": {
     "open_externally": "Otwórz zewnętrznie",
-    "open_externally_title": "Plik zostanie otwarty w zewnętrznej aplikacji i będzie obserwowany pod kątem zmian. Następnie będziesz mógł przesłać zmodyfikowaną wersję z powrotem do Trilium.",
+    "open_externally_title": "Plik zostanie otwarty w zewnętrznej aplikacji i będzie monitorowany pod kątem zmian. Następnie będzie można przesłać zmodyfikowaną wersję z powrotem do Trilium.",
     "open_custom": "Otwórz niestandardowo",
-    "open_custom_title": "Plik zostanie otwarty w zewnętrznej aplikacji i będzie obserwowany pod kątem zmian. Następnie będziesz mógł przesłać zmodyfikowaną wersję z powrotem do Trilium.",
+    "open_custom_title": "Plik zostanie otwarty w zewnętrznej aplikacji i będzie monitorowany pod kątem zmian. Następnie będzie można przesłać zmodyfikowaną wersję z powrotem do Trilium.",
     "download": "Pobierz",
     "rename_attachment": "Zmień nazwę załącznika",
     "upload_new_revision": "Prześlij nową wersję",
@@ -1070,14 +1097,14 @@
     "convert_attachment_into_note": "Konwertuj załącznik na notatkę",
     "delete_attachment": "Usuń załącznik",
     "upload_success": "Nowa wersja załącznika została przesłana.",
-    "upload_failed": "Przesyłanie nowej wersji załącznika nie powiodło się.",
-    "open_externally_detail_page": "Otwieranie załącznika zewnętrznie jest dostępne tylko ze strony szczegółów, najpierw kliknij szczegóły załącznika i powtórz akcję.",
-    "open_custom_client_only": "Niestandardowe otwieranie załączników można wykonać tylko z klienta stacjonarnego.",
+    "upload_failed": "Przesłanie nowej wersji załącznika nie powiodło się.",
+    "open_externally_detail_page": "Otwieranie załącznika zewnętrznie jest dostępne tylko ze strony szczegółów, proszę najpierw kliknąć na szczegóły załącznika i powtórzyć akcję.",
+    "open_custom_client_only": "Niestandardowe otwieranie załączników można wykonać tylko w kliencie desktopowym.",
     "delete_confirm": "Czy na pewno chcesz usunąć załącznik '{{title}}'?",
     "delete_success": "Załącznik '{{title}}' został usunięty.",
-    "convert_confirm": "Czy na pewno chcesz przekonwertować załącznik '{{title}}' na osobną notatkę?",
+    "convert_confirm": "Czy na pewno chcesz przekonwertować załącznik '{{title}}' na oddzielną notatkę?",
     "convert_success": "Załącznik '{{title}}' został przekonwertowany na notatkę.",
-    "enter_new_name": "Wprowadź nową nazwę załącznika"
+    "enter_new_name": "Proszę wprowadzić nową nazwę załącznika"
   },
   "calendar": {
     "mon": "Pon",
@@ -1086,7 +1113,7 @@
     "thu": "Czw",
     "fri": "Pt",
     "sat": "Sob",
-    "sun": "Niedz",
+    "sun": "Ndz",
     "cannot_find_day_note": "Nie można znaleźć notatki dziennej",
     "cannot_find_week_note": "Nie można znaleźć notatki tygodniowej",
     "january": "Styczeń",
@@ -1123,35 +1150,35 @@
     "edit_this_note": "Edytuj tę notatkę"
   },
   "show_toc_widget_button": {
-    "show_toc": "Pokaż spis treści"
+    "show_toc": "Pokaż Spis Treści"
   },
   "show_highlights_list_widget_button": {
-    "show_highlights_list": "Pokaż listę wyróżnień"
+    "show_highlights_list": "Pokaż Listę Wyróżnień"
   },
   "global_menu": {
     "menu": "Menu",
     "options": "Opcje",
     "open_new_window": "Otwórz nowe okno",
     "switch_to_mobile_version": "Przełącz na wersję mobilną",
-    "switch_to_desktop_version": "Przełącz na wersję stacjonarną",
+    "switch_to_desktop_version": "Przełącz na wersję desktopową",
     "zoom": "Powiększenie",
     "toggle_fullscreen": "Przełącz pełny ekran",
     "zoom_out": "Pomniejsz",
     "reset_zoom_level": "Zresetuj poziom powiększenia",
     "zoom_in": "Powiększ",
-    "configure_launchbar": "Skonfiguruj pasek uruchamiania",
+    "configure_launchbar": "Konfiguruj pasek szybkiego dostępu",
     "show_shared_notes_subtree": "Pokaż poddrzewo udostępnionych notatek",
     "advanced": "Zaawansowane",
     "open_dev_tools": "Otwórz narzędzia deweloperskie",
     "open_sql_console": "Otwórz konsolę SQL",
     "open_sql_console_history": "Otwórz historię konsoli SQL",
     "open_search_history": "Otwórz historię wyszukiwania",
-    "show_backend_log": "Pokaż logi backendu",
-    "reload_hint": "Przeładowanie może pomóc w niektórych problemach wizualnych bez ponownego uruchamiania całej aplikacji.",
+    "show_backend_log": "Pokaż log backendu",
+    "reload_hint": "Przeładowanie może pomóc w przypadku niektórych błędów wizualnych bez ponownego uruchamiania całej aplikacji.",
     "reload_frontend": "Przeładuj frontend",
     "show_hidden_subtree": "Pokaż ukryte poddrzewo",
     "show_help": "Pokaż pomoc",
-    "about": "O notatkach Trilium",
+    "about": "O Trilium Notes",
     "logout": "Wyloguj",
     "show-cheatsheet": "Pokaż ściągawkę",
     "toggle-zen-mode": "Tryb Zen",
@@ -1163,11 +1190,11 @@
   },
   "sync_status": {
     "unknown": "<p>Status synchronizacji będzie znany po rozpoczęciu następnej próby synchronizacji.</p><p>Kliknij, aby wywołać synchronizację teraz.</p>",
-    "connected_with_changes": "<p>Połączono z serwerem synchronizacji. <br>Istnieją pewne oczekujące zmiany, które należy zsynchronizować.</p><p>Kliknij, aby wywołać synchronizację.</p>",
+    "connected_with_changes": "<p>Połączono z serwerem synchronizacji. <br>Istnieją pewne oczekujące zmiany do zsynchronizowania.</p><p>Kliknij, aby wywołać synchronizację.</p>",
     "connected_no_changes": "<p>Połączono z serwerem synchronizacji.<br>Wszystkie zmiany zostały już zsynchronizowane.</p><p>Kliknij, aby wywołać synchronizację.</p>",
-    "disconnected_with_changes": "<p>Nawiązanie połączenia z serwerem synchronizacji nie powiodło się.<br>Istnieją pewne oczekujące zmiany, które należy zsynchronizować.</p><p>Kliknij, aby wywołać synchronizację.</p>",
+    "disconnected_with_changes": "<p>Nawiązanie połączenia z serwerem synchronizacji nie powiodło się.<br>Istnieją pewne oczekujące zmiany do zsynchronizowania.</p><p>Kliknij, aby wywołać synchronizację.</p>",
     "disconnected_no_changes": "<p>Nawiązanie połączenia z serwerem synchronizacji nie powiodło się.<br>Wszystkie znane zmiany zostały zsynchronizowane.</p><p>Kliknij, aby wywołać synchronizację.</p>",
-    "in_progress": "Synchronizacja z serwerem jest w toku."
+    "in_progress": "Trwa synchronizacja z serwerem."
   },
   "left_pane_toggle": {
     "show_panel": "Pokaż panel",
@@ -1179,12 +1206,12 @@
   },
   "note_actions": {
     "convert_into_attachment": "Konwertuj na załącznik",
-    "re_render_note": "Wyrenderuj ponownie notatkę",
+    "re_render_note": "Wyrenderuj notatkę ponownie",
     "search_in_note": "Szukaj w notatce",
     "note_source": "Źródło notatki",
     "note_attachments": "Załączniki notatki",
     "open_note_externally": "Otwórz notatkę zewnętrznie",
-    "open_note_externally_title": "Plik zostanie otwarty w zewnętrznej aplikacji i będzie obserwowany pod kątem zmian. Następnie będziesz mógł przesłać zmodyfikowaną wersję z powrotem do Trilium.",
+    "open_note_externally_title": "Plik zostanie otwarty w zewnętrznej aplikacji i będzie monitorowany pod kątem zmian. Następnie będzie można przesłać zmodyfikowaną wersję z powrotem do Trilium.",
     "open_note_custom": "Otwórz notatkę niestandardowo",
     "import_files": "Importuj pliki",
     "export_note": "Eksportuj notatkę",
@@ -1194,10 +1221,17 @@
     "convert_into_attachment_failed": "Konwersja notatki '{{title}}' nie powiodła się.",
     "convert_into_attachment_successful": "Notatka '{{title}}' została przekonwertowana na załącznik.",
     "convert_into_attachment_prompt": "Czy na pewno chcesz przekonwertować notatkę '{{title}}' na załącznik notatki nadrzędnej?",
-    "print_pdf": "Eksportuj jako PDF..."
+    "print_pdf": "Eksportuj jako PDF...",
+    "open_note_on_server": "Otwórz notatkę na serwerze",
+    "view_revisions": "Wersje notatki...",
+    "note_map": "Mapa notatek",
+    "advanced": "Zaawansowane",
+    "export_as_image": "Eksportuj jako obraz",
+    "export_as_image_png": "PNG (grafika rastrowa)",
+    "export_as_image_svg": "SVG (wektorowy)"
   },
   "onclick_button": {
-    "no_click_handler": "Widżet przycisku '{{componentId}}' nie ma zdefiniowanego obsługi kliknięcia"
+    "no_click_handler": "Widżet przycisku '{{componentId}}' nie ma zdefiniowanej obsługi kliknięcia"
   },
   "protected_session_status": {
     "active": "Sesja chroniona jest aktywna. Kliknij, aby opuścić sesję chronioną.",
@@ -1210,7 +1244,7 @@
     "update_available": "Dostępna aktualizacja"
   },
   "note_launcher": {
-    "this_launcher_doesnt_define_target_note": "Ten program uruchamiający nie definiuje notatki docelowej."
+    "this_launcher_doesnt_define_target_note": "Ten skrót nie definiuje notatki docelowej."
   },
   "code_buttons": {
     "execute_button_title": "Wykonaj skrypt",
@@ -1220,7 +1254,7 @@
     "sql_console_saved_message": "Notatka konsoli SQL została zapisana w {{note_path}}"
   },
   "copy_image_reference_button": {
-    "button_title": "Kopiuj odniesienie do obrazu do schowka, można je wkleić do notatki tekstowej."
+    "button_title": "Skopiuj odniesienie do obrazu do schowka, można je wkleić w notatce tekstowej."
   },
   "hide_floating_buttons_button": {
     "button_title": "Ukryj przyciski"
@@ -1233,39 +1267,40 @@
   },
   "relation_map_buttons": {
     "create_child_note_title": "Utwórz nową notatkę podrzędną i dodaj ją do tej mapy relacji",
-    "reset_pan_zoom_title": "Zresetuj przesuwanie i powiększanie do początkowych współrzędnych i powiększenia",
+    "reset_pan_zoom_title": "Zresetuj przesunięcie i powiększenie do początkowych współrzędnych i powiększenia",
     "zoom_in_title": "Powiększ",
     "zoom_out_title": "Pomniejsz"
   },
   "zpetne_odkazy": {
-    "backlink": "{{count}} Backlink",
-    "backlinks": "{{count}} Backlinków",
-    "relation": "relacja"
+    "relation": "relacja",
+    "backlink_one": "{{count}} Link zwrotny",
+    "backlink_few": "{{count}} Linki zwrotne",
+    "backlink_many": "{{count}} Linki zwrotne"
   },
   "mobile_detail_menu": {
     "insert_child_note": "Wstaw notatkę podrzędną",
     "delete_this_note": "Usuń tę notatkę",
     "note_revisions": "Wersje notatki",
-    "error_cannot_get_branch_id": "Nie można uzyskać branchId dla notePath '{{notePath}}'",
+    "error_cannot_get_branch_id": "Nie można pobrać branchId dla ścieżki notatki '{{notePath}}'",
     "error_unrecognized_command": "Nierozpoznane polecenie {{command}}"
   },
   "note_icon": {
     "change_note_icon": "Zmień ikonę notatki",
     "category": "Kategoria:",
     "search": "Szukaj:",
-    "reset-default": "Zresetuj do domyślnej ikony"
+    "reset-default": "Przywróć domyślną ikonę"
   },
   "basic_properties": {
     "note_type": "Typ notatki",
-    "editable": "Edytowalny",
-    "basic_properties": "Podstawowe właściwości",
+    "editable": "Edytowalna",
+    "basic_properties": "Właściwości podstawowe",
     "language": "Język",
-    "configure_code_notes": "Skonfiguruj notatki kodowe..."
+    "configure_code_notes": "Konfiguruj notatki kodu..."
   },
   "edited_notes": {
-    "no_edited_notes_found": "Brak edytowanych notatek tego dnia...",
+    "no_edited_notes_found": "Brak edytowanych notatek w tym dniu...",
     "title": "Edytowane notatki",
-    "deleted": "(usunięto)"
+    "deleted": "(usunięta)"
   },
   "include_archived_notes": {
     "include_archived_notes": "Uwzględnij zarchiwizowane notatki"
@@ -1276,9 +1311,9 @@
     "title": "Tytuł",
     "date_created": "Data utworzenia",
     "date_modified": "Data ostatniej modyfikacji",
-    "content_size": "Rozmiar zawartości notatki",
-    "content_and_attachments_size": "Rozmiar zawartości notatki wraz z załącznikami",
-    "content_and_attachments_and_revisions_size": "Rozmiar zawartości notatki wraz z załącznikami i wersjami",
+    "content_size": "Rozmiar treści notatki",
+    "content_and_attachments_size": "Rozmiar treści notatki wraz z załącznikami",
+    "content_and_attachments_and_revisions_size": "Rozmiar treści notatki wraz z załącznikami i wersjami",
     "revision_count": "Liczba wersji",
     "children_count": "Liczba notatek podrzędnych",
     "parent_count": "Liczba klonów",
@@ -1291,25 +1326,25 @@
   },
   "search_script": {
     "title": "Skrypt wyszukiwania:",
-    "placeholder": "szukaj notatki po jej nazwie",
-    "description1": "Skrypt wyszukiwania pozwala zdefiniować wyniki wyszukiwania poprzez uruchomienie skryptu. Zapewnia to maksymalną elastyczność, gdy standardowe wyszukiwanie nie wystarcza.",
-    "description2": "Skrypt wyszukiwania musi być typu \"kod\" i podtypu \"JavaScript backend\". Skrypt musi zwrócić tablicę noteIds lub notatek.",
+    "placeholder": "wyszukaj notatkę po nazwie",
+    "description1": "Skrypt wyszukiwania pozwala definiować wyniki wyszukiwania poprzez uruchomienie skryptu. Zapewnia to maksymalną elastyczność, gdy standardowe wyszukiwanie nie wystarcza.",
+    "description2": "Skrypt wyszukiwania musi być typu \"code\" i podtypu \"JavaScript backend\". Skrypt musi zwracać tablicę identyfikatorów notatek (noteIds) lub notatek.",
     "example_title": "Zobacz ten przykład:",
-    "example_code": "// 1. wstępne filtrowanie za pomocą standardowego wyszukiwania\nconst candidateNotes = api.searchForNotes(\"#journal\"); \n\n// 2. zastosowanie niestandardowych kryteriów wyszukiwania\nconst matchedNotes = candidateNotes\n    .filter(note => note.title.match(/[0-9]{1,2}\\. ?[0-9]{1,2}\\. ?[0-9]{4}/));\n\nreturn matchedNotes;",
-    "note": "Pamiętaj, że skrypt wyszukiwania i ciąg wyszukiwania nie mogą być łączone ze sobą."
+    "example_code": "// 1. filtrowanie wstępne przy użyciu standardowego wyszukiwania\nconst candidateNotes = api.searchForNotes(\"#journal\"); \n\n// 2. stosowanie niestandardowych kryteriów wyszukiwania\nconst matchedNotes = candidateNotes\n    .filter(note => note.title.match(/[0-9]{1,2}\\. ?[0-9]{1,2}\\. ?[0-9]{4}/));\n\nreturn matchedNotes;",
+    "note": "Zauważ, że skryptu wyszukiwania i ciągu wyszukiwania nie można ze sobą łączyć."
   },
   "search_string": {
     "title_column": "Ciąg wyszukiwania:",
-    "placeholder": "słowa kluczowe pełnotekstowe, #tag = wartość...",
+    "placeholder": "słowa kluczowe, #tag = wartość...",
     "search_syntax": "Składnia wyszukiwania",
-    "also_see": "zobacz również",
-    "complete_help": "pełna pomoc dotycząca składni wyszukiwania",
-    "full_text_search": "Wpisz dowolny tekst do wyszukiwania pełnotekstowego",
+    "also_see": "zobacz także",
+    "complete_help": "kompletna pomoc dotycząca składni wyszukiwania",
+    "full_text_search": "Wpisz dowolny tekst, aby przeszukać pełną treść",
     "label_abc": "zwraca notatki z etykietą abc",
-    "label_year": "dopasowuje notatki z etykietą rok o wartości 2019",
-    "label_rock_pop": "dopasowuje notatki, które mają zarówno etykiety rock, jak i pop",
-    "label_rock_or_pop": "musi być obecna tylko jedna z etykiet",
-    "label_year_comparison": "porównanie numeryczne (również >, >=, <).",
+    "label_year": "dopasowuje notatki z etykietą year o wartości 2019",
+    "label_rock_pop": "dopasowuje notatki, które mają obie etykiety rock i pop",
+    "label_rock_or_pop": "tylko jedna z etykiet musi być obecna",
+    "label_year_comparison": "porównanie liczbowe (także >, >=, <).",
     "label_date_created": "notatki utworzone w ostatnim miesiącu",
     "error": "Błąd wyszukiwania: {{error}}",
     "search_prefix": "Szukaj:"
@@ -1317,7 +1352,7 @@
   "attachment_detail": {
     "open_help_page": "Otwórz stronę pomocy dotyczącą załączników",
     "owning_note": "Notatka nadrzędna: ",
-    "you_can_also_open": ", możesz również otworzyć ",
+    "you_can_also_open": ", możesz także otworzyć ",
     "list_of_all_attachments": "Listę wszystkich załączników",
     "attachment_deleted": "Ten załącznik został usunięty."
   },
@@ -1328,36 +1363,43 @@
     "no_attachments": "Ta notatka nie ma załączników."
   },
   "book": {
-    "no_children_help": "Ta kolekcja nie ma żadnych notatek podrzędnych, więc nie ma nic do wyświetlenia. Zobacz <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a>, aby uzyskać szczegółowe informacje.",
-    "drag_locked_title": "Zablokowano do edycji",
+    "no_children_help": "Ta kolekcja nie posiada żadnych notatek podrzędnych, więc nie ma nic do wyświetlenia. Zobacz <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> po szczegóły.",
+    "drag_locked_title": "Zablokowane do edycji",
     "drag_locked_message": "Przeciąganie niedozwolone, ponieważ kolekcja jest zablokowana do edycji."
   },
   "editable_code": {
-    "placeholder": "Wpisz tutaj treść swojej notatki kodowej..."
+    "placeholder": "Wpisz treść swojej notatki kodu tutaj..."
   },
   "editable_text": {
-    "placeholder": "Wpisz tutaj treść swojej notatki..."
+    "placeholder": "Wpisz treść swojej notatki tutaj...",
+    "auto-detect-language": "Wykryto automatycznie",
+    "editor_crashed_title": "Edytor tekstu uległ awarii",
+    "editor_crashed_content": "Twoja treść została pomyślnie odzyskana, ale kilka z twoich ostatnich zmian mogło nie zostać zapisanych.",
+    "editor_crashed_details_button": "Zobacz więcej szczegółów...",
+    "editor_crashed_details_intro": "Jeśli napotkasz ten błąd wielokrotnie, rozważ zgłoszenie go na GitHub, wklejając poniższe informacje.",
+    "editor_crashed_details_title": "Informacje techniczne",
+    "keeps-crashing": "Komponent edycji ciągle ulega awarii. Proszę spróbować zrestartować Trilium. Jeśli problem będzie się powtarzał, rozważ utworzenie zgłoszenia błędu."
   },
   "empty": {
-    "open_note_instruction": "Otwórz notatkę, wpisując jej tytuł w poniższe pole lub wybierz notatkę z drzewa.",
-    "search_placeholder": "szukaj notatki po jej nazwie",
+    "open_note_instruction": "Otwórz notatkę, wpisując tytuł notatki w polu poniżej lub wybierz notatkę w drzewie.",
+    "search_placeholder": "wyszukaj notatkę po nazwie",
     "enter_workspace": "Wejdź do obszaru roboczego {{title}}"
   },
   "file": {
-    "file_preview_not_available": "Podgląd pliku nie jest dostępny dla tego formatu.",
+    "file_preview_not_available": "Podgląd pliku nie jest dostępny dla tego formatu pliku.",
     "too_big": "Podgląd pokazuje tylko pierwsze {{maxNumChars}} znaków pliku ze względów wydajnościowych. Pobierz plik i otwórz go zewnętrznie, aby zobaczyć całą zawartość."
   },
   "protected_session": {
-    "enter_password_instruction": "Wyświetlenie chronionej notatki wymaga wprowadzenia hasła:",
-    "start_session_button": "Rozpocznij sesję chronioną <kbd>enter</kbd>",
+    "enter_password_instruction": "Wyświetlenie chronionej notatki wymaga podania hasła:",
+    "start_session_button": "Rozpocznij sesję chronioną",
     "started": "Sesja chroniona została rozpoczęta.",
-    "wrong_password": "Nieprawidłowe hasło.",
+    "wrong_password": "Błędne hasło.",
     "protecting-finished-successfully": "Ochrona zakończona pomyślnie.",
-    "unprotecting-finished-successfully": "Odblokowywanie zakończone pomyślnie.",
+    "unprotecting-finished-successfully": "Zdejmowanie ochrony zakończone pomyślnie.",
     "protecting-in-progress": "Ochrona w toku: {{count}}",
-    "unprotecting-in-progress-count": "Odblokowywanie w toku: {{count}}",
+    "unprotecting-in-progress-count": "Zdejmowanie ochrony w toku: {{count}}",
     "protecting-title": "Status ochrony",
-    "unprotecting-title": "Status odblokowywania"
+    "unprotecting-title": "Status zdejmowania ochrony"
   },
   "relation_map": {
     "open_in_new_tab": "Otwórz w nowej karcie",
@@ -1366,24 +1408,24 @@
     "rename_note": "Zmień nazwę notatki",
     "enter_new_title": "Wprowadź nowy tytuł notatki:",
     "remove_relation": "Usuń relację",
-    "confirm_remove_relation": "Czy na pewno chcesz usunąć tę relację?",
-    "specify_new_relation_name": "Określ nową nazwę relacji (dozwolone znaki: alfanumeryczne, dwukropek i podkreślenie):",
+    "confirm_remove_relation": "Czy na pewno chcesz usunąć relację?",
+    "specify_new_relation_name": "Podaj nową nazwę relacji (dozwolone znaki: alfanumeryczne, dwukropek i podkreślenie):",
     "connection_exists": "Połączenie '{{name}}' między tymi notatkami już istnieje.",
-    "start_dragging_relations": "Zacznij przeciągać stąd relacje i upuść je na inną notatkę.",
-    "note_not_found": "Nie znaleziono notatki {{noteId}}!",
+    "start_dragging_relations": "Zacznij przeciągać relacje stąd i upuść je na innej notatce.",
+    "note_not_found": "Notatka {{noteId}} nie znaleziona!",
     "cannot_match_transform": "Nie można dopasować transformacji: {{transform}}",
     "note_already_in_diagram": "Notatka \"{{title}}\" jest już na diagramie.",
     "enter_title_of_new_note": "Wprowadź tytuł nowej notatki",
     "default_new_note_title": "nowa notatka",
-    "click_on_canvas_to_place_new_note": "Kliknij na płótno, aby umieścić nową notatkę"
+    "click_on_canvas_to_place_new_note": "Kliknij na płótnie, aby umieścić nową notatkę"
   },
   "render": {
-    "note_detail_render_help_1": "Ta notatka pomocy jest wyświetlana, ponieważ ta notatka typu Renderuj HTML nie ma wymaganej relacji do prawidłowego działania.",
-    "note_detail_render_help_2": "Typ notatki Renderuj HTML jest używany do <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">skryptowania</a>. W skrócie, masz notatkę kodu HTML (opcjonalnie z pewnym JavaScriptem), a ta notatka ją wyrenderuje. Aby to zadziałało, musisz zdefiniować <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">relację</a> o nazwie \"renderNote\" wskazującą na notatkę HTML do wyrenderowania."
+    "note_detail_render_help_1": "Ta notatka pomocy jest wyświetlana, ponieważ ta notatka typu Render HTML nie ma wymaganej relacji do poprawnego działania.",
+    "note_detail_render_help_2": "Typ notatki Render HTML jest używany do <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">skryptowania</a>. W skrócie, masz notatkę kodu HTML (opcjonalnie z JavaScript) i ta notatka ją wyrenderuje. Aby to zadziałało, musisz zdefiniować <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">relację</a> o nazwie \"renderNote\" wskazującą na notatkę HTML do wyrenderowania."
   },
   "web_view": {
-    "web_view": "Widok sieciowy",
-    "embed_websites": "Notatka typu Widok sieciowy pozwala na osadzanie stron internetowych w Trilium.",
+    "web_view": "Widok WWW",
+    "embed_websites": "Notatka typu Widok WWW pozwala na osadzanie stron internetowych w Trilium.",
     "create_label": "Aby rozpocząć, utwórz etykietę z adresem URL, który chcesz osadzić, np. #webViewSrc=\"https://www.google.com\""
   },
   "backend_log": {
@@ -1393,31 +1435,31 @@
     "title": "Sprawdzanie spójności",
     "find_and_fix_button": "Znajdź i napraw problemy ze spójnością",
     "finding_and_fixing_message": "Znajdowanie i naprawianie problemów ze spójnością...",
-    "issues_fixed_message": "Wszelkie problemy ze spójnością, które mogły zostać znalezione, są teraz naprawione."
+    "issues_fixed_message": "Wszelkie znalezione problemy ze spójnością zostały naprawione."
   },
   "database_anonymization": {
     "title": "Anonimizacja bazy danych",
     "full_anonymization": "Pełna anonimizacja",
-    "full_anonymization_description": "Ta akcja utworzy nową kopię bazy danych i zanonimizuje ją (usunie całą zawartość notatek, pozostawiając tylko strukturę i niektóre niewrażliwe metadane) w celu udostępnienia online do celów debugowania bez obawy o wyciek danych osobowych.",
+    "full_anonymization_description": "Ta akcja utworzy nową kopię bazy danych i zanonimizuje ją (usunie całą treść notatek i pozostawi tylko strukturę oraz niektóre niewrażliwe metadane) w celu udostępnienia online do celów debugowania bez obawy o wyciek danych osobowych.",
     "save_fully_anonymized_database": "Zapisz w pełni zanonimizowaną bazę danych",
     "light_anonymization": "Lekka anonimizacja",
-    "light_anonymization_description": "Ta akcja utworzy nową kopię bazy danych i przeprowadzi na niej lekką anonimizację — w szczególności usunięta zostanie tylko zawartość wszystkich notatek, ale tytuły i atrybuty pozostaną. Dodatkowo niestandardowe notatki skryptów JS frontend/backend oraz niestandardowe widżety pozostaną. Zapewnia to więcej kontekstu do debugowania problemów.",
-    "choose_anonymization": "Możesz sam zdecydować, czy chcesz udostępnić w pełni, czy lekko zanonimizowaną bazę danych. Nawet w pełni zanonimizowana baza danych jest bardzo przydatna, jednak w niektórych przypadkach lekko zanonimizowana baza danych może przyspieszyć proces identyfikacji i naprawy błędów.",
+    "light_anonymization_description": "Ta akcja utworzy nową kopię bazy danych i wykona na niej lekką anonimizację — usunięta zostanie tylko treść wszystkich notatek, ale tytuły i atrybuty pozostaną. Dodatkowo, niestandardowe notatki skryptów JS frontend/backend oraz niestandardowe widżety pozostaną. Zapewnia to więcej kontekstu do debugowania problemów.",
+    "choose_anonymization": "Możesz sam zdecydować, czy chcesz dostarczyć w pełni, czy lekko zanonimizowaną bazę danych. Nawet w pełni zanonimizowana baza danych jest bardzo przydatna, jednak w niektórych przypadkach lekko zanonimizowana baza danych może przyspieszyć proces identyfikacji i naprawy błędów.",
     "save_lightly_anonymized_database": "Zapisz lekko zanonimizowaną bazę danych",
     "existing_anonymized_databases": "Istniejące zanonimizowane bazy danych",
     "creating_fully_anonymized_database": "Tworzenie w pełni zanonimizowanej bazy danych...",
     "creating_lightly_anonymized_database": "Tworzenie lekko zanonimizowanej bazy danych...",
-    "error_creating_anonymized_database": "Nie można utworzyć zanonimizowanej bazy danych, sprawdź logi backendu, aby uzyskać szczegółowe informacje",
+    "error_creating_anonymized_database": "Nie można utworzyć zanonimizowanej bazy danych, sprawdź logi backendu po szczegóły",
     "successfully_created_fully_anonymized_database": "Utworzono w pełni zanonimizowaną bazę danych w {{anonymizedFilePath}}",
     "successfully_created_lightly_anonymized_database": "Utworzono lekko zanonimizowaną bazę danych w {{anonymizedFilePath}}",
-    "no_anonymized_database_yet": "Brak jeszcze zanonimizowanej bazy danych."
+    "no_anonymized_database_yet": "Brak zanonimizowanej bazy danych."
   },
   "database_integrity_check": {
     "title": "Sprawdzanie integralności bazy danych",
-    "description": "Sprawdzi to, czy baza danych nie jest uszkodzona na poziomie SQLite. Może to zająć trochę czasu, w zależności od rozmiaru bazy danych.",
+    "description": "To sprawdzi, czy baza danych nie jest uszkodzona na poziomie SQLite. Może to zająć trochę czasu, w zależności od rozmiaru bazy danych.",
     "check_button": "Sprawdź integralność bazy danych",
     "checking_integrity": "Sprawdzanie integralności bazy danych...",
-    "integrity_check_succeeded": "Sprawdzanie integralności zakończyło się pomyślnie - nie znaleziono żadnych problemów.",
+    "integrity_check_succeeded": "Sprawdzanie integralności powiodło się - nie znaleziono problemów.",
     "integrity_check_failed": "Sprawdzanie integralności nie powiodło się: {{results}}"
   },
   "sync": {
@@ -1431,59 +1473,60 @@
     "failed": "Synchronizacja nie powiodła się: {{message}}"
   },
   "vacuum_database": {
-    "title": "Odkurzanie bazy danych",
-    "description": "Spowoduje to przebudowanie bazy danych, co zazwyczaj skutkuje mniejszym plikiem bazy danych. Żadne dane nie zostaną faktycznie zmienione.",
+    "title": "Odkurzanie bazy danych (Vacuum)",
+    "description": "To przebuduje bazę danych, co zazwyczaj skutkuje mniejszym plikiem bazy danych. Żadne dane nie zostaną faktycznie zmienione.",
     "button_text": "Odkurz bazę danych",
     "vacuuming_database": "Odkurzanie bazy danych...",
     "database_vacuumed": "Baza danych została odkurzona"
   },
   "fonts": {
-    "theme_defined": "Zdefiniowane przez motyw",
+    "theme_defined": "Zdefiniowana przez motyw",
     "fonts": "Czcionki",
     "main_font": "Główna czcionka",
     "font_family": "Rodzina czcionek",
     "size": "Rozmiar",
     "note_tree_font": "Czcionka drzewa notatek",
     "note_detail_font": "Czcionka szczegółów notatki",
-    "monospace_font": "Czcionka monospaced (kod)",
-    "note_tree_and_detail_font_sizing": "Pamiętaj, że rozmiar czcionki drzewa i szczegółów jest względny w stosunku do ustawienia rozmiaru czcionki głównej.",
-    "not_all_fonts_available": "Nie wszystkie wymienione czcionki mogą być dostępne w Twoim systemie.",
-    "apply_font_changes": "Aby zastosować zmiany czcionki, kliknij na",
+    "monospace_font": "Czcionka o stałej szerokości (kod)",
+    "note_tree_and_detail_font_sizing": "Zauważ, że rozmiar czcionki drzewa i szczegółów jest względny do ustawienia rozmiaru głównej czcionki.",
+    "not_all_fonts_available": "Nie wszystkie wymienione czcionki mogą być dostępne w twoim systemie.",
+    "apply_font_changes": "Aby zastosować zmiany czcionek, kliknij na",
     "reload_frontend": "przeładuj frontend",
-    "generic-fonts": "Czcionki generyczne",
-    "sans-serif-system-fonts": "Czcionki systemowe bezszeryfowe",
-    "serif-system-fonts": "Czcionki systemowe szeryfowe",
-    "monospace-system-fonts": "Czcionki systemowe monospaced",
-    "handwriting-system-fonts": "Czcionki systemowe odręczne",
+    "generic-fonts": "Czcionki ogólne",
+    "sans-serif-system-fonts": "Systemowe czcionki bezszeryfowe",
+    "serif-system-fonts": "Systemowe czcionki szeryfowe",
+    "monospace-system-fonts": "Systemowe czcionki o stałej szerokości",
+    "handwriting-system-fonts": "Systemowe czcionki odręczne",
     "serif": "Szeryfowa",
     "sans-serif": "Bezszeryfowa",
-    "monospace": "Monospaced",
+    "monospace": "O stałej szerokości",
     "system-default": "Domyślna systemowa"
   },
   "max_content_width": {
-    "title": "Szerokość zawartości",
-    "default_description": "Trilium domyślnie ogranicza maksymalną szerokość zawartości, aby poprawić czytelność na zmaksymalizowanych ekranach o dużej szerokości.",
-    "max_width_label": "Maksymalna szerokość zawartości",
-    "max_width_unit": "piksele"
+    "title": "Szerokość treści",
+    "default_description": "Trilium domyślnie ogranicza maksymalną szerokość treści, aby poprawić czytelność na zmaksymalizowanych ekranach szerokokątnych.",
+    "max_width_label": "Maksymalna szerokość treści",
+    "max_width_unit": "pikseli",
+    "centerContent": "Utrzymuj treść wyśrodkowaną"
   },
   "native_title_bar": {
-    "title": "Natywny pasek tytułu (wymaga ponownego uruchomienia aplikacji)",
+    "title": "Natywny pasek tytułu (wymaga restartu aplikacji)",
     "enabled": "włączony",
     "disabled": "wyłączony"
   },
   "ribbon": {
     "widgets": "Widżety wstążki",
-    "promoted_attributes_message": "Karta wstążki Promowane atrybuty otworzy się automatycznie, jeśli na notatce znajdują się promowane atrybuty",
-    "edited_notes_message": "Karta wstążki Edytowane notatki otworzy się automatycznie w notatkach dziennych"
+    "promoted_attributes_message": "Karta wstążki Wyróżnione Atrybuty otworzy się automatycznie, jeśli w notatce obecne są wyróżnione atrybuty",
+    "edited_notes_message": "Karta wstążki Edytowane Notatki otworzy się automatycznie na notatkach dziennych"
   },
   "theme": {
     "title": "Motyw aplikacji",
     "theme_label": "Motyw",
     "override_theme_fonts_label": "Nadpisz czcionki motywu",
-    "auto_theme": "Starszy (Dostosuj do schematu kolorów systemu)",
-    "light_theme": "Starszy (Jasny)",
-    "dark_theme": "Starszy (Ciemny)",
-    "triliumnext": "Trilium (Dostosuj do schematu kolorów systemu)",
+    "auto_theme": "Legacy (zgodny z systemem)",
+    "light_theme": "Legacy (Jasny)",
+    "dark_theme": "Legacy (Ciemny)",
+    "triliumnext": "Trilium (zgodny z systemem)",
     "triliumnext-light": "Trilium (Jasny)",
     "triliumnext-dark": "Trilium (Ciemny)",
     "layout": "Układ",
@@ -1496,33 +1539,36 @@
     "title": "Wydajność",
     "enable-motion": "Włącz przejścia i animacje",
     "enable-shadows": "Włącz cienie",
-    "enable-backdrop-effects": "Włącz efekty tła dla menu, wyskakujących okien i paneli",
+    "enable-backdrop-effects": "Włącz efekty tła dla menu, okienek i paneli",
     "enable-smooth-scroll": "Włącz płynne przewijanie",
-    "app-restart-required": "(ponowne uruchomienie aplikacji jest wymagane, aby zmiana zaczęła obowiązywać)"
+    "app-restart-required": "(wymagane jest ponowne uruchomienie aplikacji, aby zmiana weszła w życie)"
   },
   "zoom_factor": {
-    "title": "Współczynnik powiększenia (tylko w wersji stacjonarnej)",
-    "description": "Powiększanie można również kontrolować za pomocą skrótów CTRL+- i CTRL+="
+    "title": "Współczynnik powiększenia (tylko wersja desktop)",
+    "description": "Powiększaniem można sterować również za pomocą skrótów CTRL+- i CTRL+=."
   },
   "code_auto_read_only_size": {
     "title": "Automatyczny rozmiar tylko do odczytu",
-    "description": "Automatyczny rozmiar notatki tylko do odczytu to rozmiar, po którym notatki będą wyświetlane w trybie tylko do odczytu (ze względów wydajnościowych).",
-    "label": "Automatyczny rozmiar tylko do odczytu (notatki kodowe)",
-    "unit": "znaki"
+    "description": "Automatyczny rozmiar notatki tylko do odczytu to rozmiar, po przekroczeniu którego notatki będą wyświetlane w trybie tylko do odczytu (ze względów wydajnościowych).",
+    "label": "Automatyczny rozmiar tylko do odczytu (notatki kodu)",
+    "unit": "znaków"
   },
   "code-editor-options": {
     "title": "Edytor"
   },
   "code_mime_types": {
-    "title": "Dostępne typy MIME w rozwijanym menu"
+    "title": "Dostępne typy MIME na liście rozwijanej",
+    "tooltip_syntax_highlighting": "Podświetlanie składni",
+    "tooltip_code_block_syntax": "Bloki kodu w notatkach tekstowych",
+    "tooltip_code_note_syntax": "Notatki kodu"
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "Skróty klawiszowe Vim",
-    "enable_vim_keybindings": "Włącz skróty klawiszowe Vim w notatkach kodowych (bez trybu ex)"
+    "enable_vim_keybindings": "Włącz skróty klawiszowe Vim w notatkach kodu (brak trybu ex)"
   },
   "wrap_lines": {
-    "wrap_lines_in_code_notes": "Zawijaj wiersze w notatkach kodowych",
-    "enable_line_wrap": "Włącz zawijanie wierszy (zmiana może wymagać ponownego załadowania frontendu, aby zaczęła obowiązywać)"
+    "wrap_lines_in_code_notes": "Zawijaj wiersze w notatkach kodu",
+    "enable_line_wrap": "Włącz zawijanie wierszy (zmiana może wymagać przeładowania frontendu)"
   },
   "images": {
     "images_section_title": "Obrazy",
@@ -1530,15 +1576,15 @@
     "download_images_description": "Wklejony HTML może zawierać odniesienia do obrazów online, Trilium znajdzie te odniesienia i pobierze obrazy, aby były dostępne offline.",
     "enable_image_compression": "Włącz kompresję obrazów",
     "max_image_dimensions": "Maksymalna szerokość / wysokość obrazu (obraz zostanie przeskalowany, jeśli przekroczy to ustawienie).",
-    "max_image_dimensions_unit": "piksele",
-    "jpeg_quality_description": "Jakość JPEG (10 - najgorsza jakość, 100 - najlepsza jakość, 50 - 85 jest zalecane)"
+    "max_image_dimensions_unit": "pikseli",
+    "jpeg_quality_description": "Jakość JPEG (10 - najgorsza jakość, 100 - najlepsza jakość, zalecane 50 - 85)"
   },
   "attachment_erasure_timeout": {
-    "attachment_erasure_timeout": "Limit czasu usuwania załączników",
+    "attachment_erasure_timeout": "Limit czasu wymazywania załączników",
     "attachment_auto_deletion_description": "Załączniki są automatycznie usuwane (i wymazywane), jeśli nie są już powiązane z ich notatką po określonym czasie.",
     "erase_attachments_after": "Wymaż nieużywane załączniki po:",
-    "manual_erasing_description": "Możesz również wywołać wymazywanie ręcznie (bez uwzględniania powyższego limitu czasu):",
-    "erase_unused_attachments_now": "Wymaż teraz nieużywane załączniki",
+    "manual_erasing_description": "Możesz również wywołać wymazywanie ręcznie (bez uwzględniania zdefiniowanego powyżej limitu czasu):",
+    "erase_unused_attachments_now": "Wymaż nieużywane załączniki teraz",
     "unused_attachments_erased": "Nieużywane załączniki zostały wymazane."
   },
   "network_connections": {
@@ -1546,46 +1592,46 @@
     "check_for_updates": "Sprawdzaj aktualizacje automatycznie"
   },
   "note_erasure_timeout": {
-    "note_erasure_timeout_title": "Limit czasu usuwania notatek",
-    "note_erasure_description": "Usunięte notatki (i atrybuty, wersje...) są na początku tylko oznaczane jako usunięte i można je odzyskać z okna dialogowego Ostatnie notatki. Po pewnym czasie usunięte notatki są \"wymazywane\", co oznacza, że ich zawartość nie jest już możliwa do odzyskania. To ustawienie pozwala skonfigurować długość okresu między usunięciem a wymazaniem notatki.",
+    "note_erasure_timeout_title": "Limit czasu wymazywania notatek",
+    "note_erasure_description": "Usunięte notatki (oraz atrybuty, wersje...) są początkowo tylko oznaczane jako usunięte i możliwe jest ich odzyskanie z okna Ostatnie notatki. Po pewnym czasie usunięte notatki są \"wymazywane\", co oznacza, że ich zawartość nie jest już możliwa do odzyskania. To ustawienie pozwala skonfigurować długość okresu między usunięciem a wymazaniem notatki.",
     "erase_notes_after": "Wymaż notatki po:",
-    "manual_erasing_description": "Możesz również wywołać wymazywanie ręcznie (bez uwzględniania powyższego limitu czasu):",
-    "erase_deleted_notes_now": "Wymaż teraz usunięte notatki",
+    "manual_erasing_description": "Możesz również wywołać wymazywanie ręcznie (bez uwzględniania zdefiniowanego powyżej limitu czasu):",
+    "erase_deleted_notes_now": "Wymaż usunięte notatki teraz",
     "deleted_notes_erased": "Usunięte notatki zostały wymazane."
   },
   "revisions_snapshot_interval": {
-    "note_revisions_snapshot_interval_title": "Interwał migawki wersji notatki",
-    "note_revisions_snapshot_description": "Interwał migawki wersji notatki to czas, po którym dla notatki zostanie utworzona nowa wersja. Zobacz <doc>wiki</doc>, aby uzyskać więcej informacji.",
-    "snapshot_time_interval_label": "Interwał czasowy migawki wersji notatki:"
+    "note_revisions_snapshot_interval_title": "Interwał zrzutu wersji notatki",
+    "note_revisions_snapshot_description": "Interwał zrzutu wersji notatki to czas, po którym zostanie utworzona nowa wersja notatki. Zobacz <doc>wiki</doc> po więcej informacji.",
+    "snapshot_time_interval_label": "Interwał czasowy zrzutu wersji notatki:"
   },
   "revisions_snapshot_limit": {
-    "note_revisions_snapshot_limit_title": "Limit migawek wersji notatki",
-    "note_revisions_snapshot_limit_description": "Limit liczby migawek wersji notatki odnosi się do maksymalnej liczby wersji, które można zapisać dla każdej notatki. Gdzie -1 oznacza brak limitu, 0 oznacza usunięcie wszystkich wersji. Możesz ustawić maksymalną liczbę wersji dla pojedynczej notatki za pomocą etykiety #versioningLimit.",
-    "snapshot_number_limit_label": "Limit liczby migawek wersji notatki:",
-    "snapshot_number_limit_unit": "migawki",
-    "erase_excess_revision_snapshots": "Wymaż teraz nadmiarowe migawki wersji",
-    "erase_excess_revision_snapshots_prompt": "Nadmiarowe migawki wersji zostały wymazane."
+    "note_revisions_snapshot_limit_title": "Limit zrzutów wersji notatki",
+    "note_revisions_snapshot_limit_description": "Limit liczby zrzutów wersji notatki odnosi się do maksymalnej liczby wersji, które mogą zostać zapisane dla każdej notatki. Gdzie -1 oznacza brak limitu, 0 oznacza usuwanie wszystkich wersji. Możesz ustawić maksymalną liczbę wersji dla pojedynczej notatki za pomocą etykiety #versioningLimit.",
+    "snapshot_number_limit_label": "Limit liczbowy zrzutów wersji notatki:",
+    "snapshot_number_limit_unit": "zrzutów",
+    "erase_excess_revision_snapshots": "Wymaż nadmiarowe zrzuty wersji teraz",
+    "erase_excess_revision_snapshots_prompt": "Nadmiarowe zrzuty wersji zostały wymazane."
   },
   "search_engine": {
     "title": "Wyszukiwarka",
-    "custom_search_engine_info": "Niestandardowa wyszukiwarka wymaga ustawienia zarówno nazwy, jak i adresu URL. Jeśli którykolwiek z nich nie jest ustawiony, domyślną wyszukiwarką będzie DuckDuckGo.",
+    "custom_search_engine_info": "Niestandardowa wyszukiwarka wymaga ustawienia zarówno nazwy, jak i adresu URL. Jeśli którykolwiek z nich nie zostanie ustawiony, jako domyślna wyszukiwarka zostanie użyte DuckDuckGo.",
     "predefined_templates_label": "Predefiniowane szablony wyszukiwarek",
     "bing": "Bing",
     "baidu": "Baidu",
     "duckduckgo": "DuckDuckGo",
     "google": "Google",
-    "custom_name_label": "Niestandardowa nazwa wyszukiwarki",
+    "custom_name_label": "Nazwa niestandardowej wyszukiwarki",
     "custom_name_placeholder": "Dostosuj nazwę wyszukiwarki",
-    "custom_url_label": "Niestandardowy adres URL wyszukiwarki powinien zawierać {keyword} jako symbol zastępczy dla wyszukiwanego terminu.",
-    "custom_url_placeholder": "Dostosuj adres URL wyszukiwarki",
+    "custom_url_label": "URL niestandardowej wyszukiwarki powinien zawierać {keyword} jako symbol zastępczy dla wyszukiwanej frazy.",
+    "custom_url_placeholder": "Dostosuj URL wyszukiwarki",
     "save_button": "Zapisz"
   },
   "tray": {
-    "title": "Zasobnik systemowy",
-    "enable_tray": "Włącz zasobnik (zmiana ta wymaga ponownego uruchomienia Trilium, aby zaczęła obowiązywać)"
+    "title": "Zasobnik systemowy (Tray)",
+    "enable_tray": "Włącz zasobnik (wymagany restart Trilium, aby zmiana weszła w życie)"
   },
   "heading_style": {
-    "title": "Styl nagłówka",
+    "title": "Styl nagłówków",
     "plain": "Zwykły",
     "underline": "Podkreślenie",
     "markdown": "Styl Markdown"
@@ -1593,33 +1639,33 @@
   "highlights_list": {
     "title": "Lista wyróżnień",
     "description": "Możesz dostosować listę wyróżnień wyświetlaną w prawym panelu:",
-    "bold": "Pogrubiony tekst",
-    "italic": "Kursywa",
-    "underline": "Podkreślony tekst",
-    "color": "Kolorowy tekst",
+    "bold": "Tekst pogrubiony",
+    "italic": "Tekst pochylony",
+    "underline": "Tekst podkreślony",
+    "color": "Tekst kolorowy",
     "bg_color": "Tekst z kolorem tła",
-    "visibility_title": "Widoczność listy wyróżnień",
+    "visibility_title": "Widoczność Listy wyróżnień",
     "visibility_description": "Możesz ukryć widżet wyróżnień dla poszczególnych notatek, dodając etykietę #hideHighlightWidget.",
-    "shortcut_info": "Możesz skonfigurować skrót klawiaturowy do szybkiego przełączania prawego panelu (w tym wyróżnień) w Opcje -> Skróty (nazwa 'toggleRightPane')."
+    "shortcut_info": "Możesz skonfigurować skrót klawiszowy do szybkiego przełączania prawego panelu (w tym Wyróżnień) w Opcje -> Skróty (nazwa 'toggleRightPane')."
   },
   "table_of_contents": {
     "title": "Spis treści",
     "description": "Spis treści pojawi się w notatkach tekstowych, gdy notatka ma więcej niż zdefiniowaną liczbę nagłówków. Możesz dostosować tę liczbę:",
-    "unit": "nagłówki",
+    "unit": "nagłówków",
     "disable_info": "Możesz również użyć tej opcji, aby skutecznie wyłączyć spis treści, ustawiając bardzo wysoką liczbę.",
-    "shortcut_info": "Możesz skonfigurować skrót klawiaturowy do szybkiego przełączania prawego panelu (w tym spisu treści) w Opcje -> Skróty (nazwa 'toggleRightPane')."
+    "shortcut_info": "Możesz skonfigurować skrót klawiszowy do szybkiego przełączania prawego panelu (w tym Spisu treści) w Opcje -> Skróty (nazwa 'toggleRightPane')."
   },
   "text_auto_read_only_size": {
     "title": "Automatyczny rozmiar tylko do odczytu",
-    "description": "Automatyczny rozmiar notatki tylko do odczytu to rozmiar, po którym notatki będą wyświetlane w trybie tylko do odczytu (ze względów wydajnościowych).",
+    "description": "Automatyczny rozmiar notatki tylko do odczytu to rozmiar, po przekroczeniu którego notatki będą wyświetlane w trybie tylko do odczytu (ze względów wydajnościowych).",
     "label": "Automatyczny rozmiar tylko do odczytu (notatki tekstowe)",
-    "unit": "znaki"
+    "unit": "znaków"
   },
   "custom_date_time_format": {
-    "title": "Niestandardowy format daty/czasu",
-    "description": "Dostosuj format daty i czasu wstawianego za pomocą <shortcut /> lub paska narzędzi. Zobacz <doc>dokumentację Day.js</doc> dla dostępnych tokenów formatu.",
+    "title": "Niestandardowy format daty/godziny",
+    "description": "Dostosuj format daty i godziny wstawianej za pomocą <shortcut /> lub paska narzędzi. Zobacz <doc>dokumentację Day.js</doc> dla dostępnych tokenów formatowania.",
     "format_string": "Ciąg formatujący:",
-    "formatted_time": "Sformatowana data/czas:"
+    "formatted_time": "Sformatowana data/godzina:"
   },
   "i18n": {
     "title": "Lokalizacja",
@@ -1637,29 +1683,29 @@
     "first-week-contains-first-thursday": "Pierwszy tydzień zawiera pierwszy czwartek roku",
     "first-week-has-minimum-days": "Pierwszy tydzień ma minimalną liczbę dni",
     "min-days-in-first-week": "Minimalna liczba dni w pierwszym tygodniu",
-    "first-week-info": "Pierwszy tydzień zawiera pierwszy czwartek roku jest oparty na standardzie <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a>.",
-    "first-week-warning": "Zmiana opcji pierwszego tygodnia może powodować duplikaty z istniejącymi notatkami tygodniowymi, a istniejące notatki tygodniowe nie zostaną odpowiednio zaktualizowane.",
+    "first-week-info": "Pierwszy tydzień zawiera pierwszy czwartek roku bazuje na standardzie <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a>.",
+    "first-week-warning": "Zmiana opcji pierwszego tygodnia może spowodować duplikację istniejących notatek tygodniowych, a istniejące notatki tygodniowe nie zostaną odpowiednio zaktualizowane.",
     "formatting-locale": "Format daty i liczb",
     "formatting-locale-auto": "Na podstawie języka aplikacji"
   },
   "backup": {
     "automatic_backup": "Automatyczna kopia zapasowa",
-    "automatic_backup_description": "Trilium może automatycznie tworzyć kopie zapasowe bazy danych:",
+    "automatic_backup_description": "Trilium może automatycznie tworzyć kopię zapasową bazy danych:",
     "enable_daily_backup": "Włącz codzienną kopię zapasową",
-    "enable_weekly_backup": "Włącz tygodniową kopię zapasową",
-    "enable_monthly_backup": "Włącz miesięczną kopię zapasową",
+    "enable_weekly_backup": "Włącz cotygodniową kopię zapasową",
+    "enable_monthly_backup": "Włącz comiesięczną kopię zapasową",
     "backup_recommendation": "Zaleca się włączenie kopii zapasowej, ale może to spowolnić uruchamianie aplikacji przy dużych bazach danych i/lub wolnych urządzeniach pamięci masowej.",
     "backup_now": "Utwórz kopię zapasową teraz",
     "backup_database_now": "Utwórz kopię zapasową bazy danych teraz",
     "existing_backups": "Istniejące kopie zapasowe",
     "date-and-time": "Data i godzina",
     "path": "Ścieżka",
-    "database_backed_up_to": "Baza danych została zarchiwizowana do {{backupFilePath}}",
-    "no_backup_yet": "brak jeszcze kopii zapasowej"
+    "database_backed_up_to": "Kopia zapasowa bazy danych została zapisana w {{backupFilePath}}",
+    "no_backup_yet": "brak kopii zapasowych"
   },
   "etapi": {
     "title": "ETAPI",
-    "description": "ETAPI to interfejs API REST używany do programowego dostępu do instancji Trilium, bez interfejsu użytkownika.",
+    "description": "ETAPI to REST API służące do programowego dostępu do instancji Trilium, bez interfejsu użytkownika.",
     "create_token": "Utwórz nowy token ETAPI",
     "existing_tokens": "Istniejące tokeny",
     "no_tokens_yet": "Nie ma jeszcze żadnych tokenów. Kliknij przycisk powyżej, aby utworzyć jeden.",
@@ -1667,36 +1713,36 @@
     "created": "Utworzono",
     "actions": "Akcje",
     "new_token_title": "Nowy token ETAPI",
-    "new_token_message": "Wprowadź nazwę nowego tokenu",
+    "new_token_message": "Proszę wprowadzić nazwę nowego tokenu",
     "default_token_name": "nowy token",
     "error_empty_name": "Nazwa tokenu nie może być pusta",
-    "token_created_title": "Utworzono token ETAPI",
-    "token_created_message": "Skopiuj utworzony token do schowka. Trilium przechowuje token w postaci zaszyfrowanej i jest to ostatni raz, kiedy go widzisz.",
+    "token_created_title": "Token ETAPI utworzony",
+    "token_created_message": "Skopiuj utworzony token do schowka. Trilium przechowuje token zaszyfrowany i jest to ostatni raz, kiedy go widzisz.",
     "rename_token": "Zmień nazwę tego tokenu",
     "delete_token": "Usuń / dezaktywuj ten token",
     "rename_token_title": "Zmień nazwę tokenu",
-    "rename_token_message": "Wprowadź nową nazwę tokenu",
+    "rename_token_message": "Proszę wprowadzić nową nazwę tokenu",
     "delete_token_confirmation": "Czy na pewno chcesz usunąć token ETAPI \"{{name}}\"?"
   },
   "options_widget": {
     "options_status": "Status opcji",
-    "options_change_saved": "Zmiany w opcjach zostały zapisane."
+    "options_change_saved": "Zmiana opcji została zapisana."
   },
   "password": {
     "heading": "Hasło",
-    "alert_message": "Pamiętaj o zapamiętaniu nowego hasła. Hasło jest używane do logowania się do interfejsu internetowego i szyfrowania chronionych notatek. Jeśli zapomnisz hasła, wszystkie Twoje chronione notatki zostaną utracone na zawsze.",
+    "alert_message": "Pamiętaj, aby zapamiętać swoje nowe hasło. Hasło służy do logowania się do interfejsu webowego oraz do szyfrowania chronionych notatek. Jeśli zapomnisz hasła, wszystkie Twoje chronione notatki zostaną utracone na zawsze.",
     "reset_link": "Kliknij tutaj, aby je zresetować.",
     "old_password": "Stare hasło",
     "new_password": "Nowe hasło",
     "new_password_confirmation": "Potwierdzenie nowego hasła",
     "change_password": "Zmień hasło",
     "protected_session_timeout": "Limit czasu sesji chronionej",
-    "protected_session_timeout_description": "Limit czasu sesji chronionej to okres, po którym sesja chroniona jest usuwana z pamięci przeglądarki. Mierzy się go od ostatniej interakcji z chronionymi notatkami. Zobacz",
+    "protected_session_timeout_description": "Limit czasu sesji chronionej to okres, po którym sesja chroniona jest usuwana z pamięci przeglądarki. Jest to mierzone od ostatniej interakcji z chronionymi notatkami. Zobacz",
     "wiki": "wiki",
-    "for_more_info": "aby uzyskać więcej informacji.",
+    "for_more_info": "po więcej informacji.",
     "protected_session_timeout_label": "Limit czasu sesji chronionej:",
-    "reset_confirmation": "Resetując hasło, na zawsze utracisz dostęp do wszystkich istniejących chronionych notatek. Czy na pewno chcesz zresetować hasło?",
-    "reset_success_message": "Hasło zostało zresetowane. Ustaw nowe hasło",
+    "reset_confirmation": "Resetując hasło, na zawsze stracisz dostęp do wszystkich istniejących chronionych notatek. Czy na pewno chcesz zresetować hasło?",
+    "reset_success_message": "Hasło zostało zresetowane. Proszę ustawić nowe hasło",
     "change_password_heading": "Zmień hasło",
     "set_password_heading": "Ustaw hasło",
     "set_password": "Ustaw hasło",
@@ -1704,24 +1750,24 @@
     "password_changed_success": "Hasło zostało zmienione. Trilium zostanie przeładowane po naciśnięciu OK."
   },
   "multi_factor_authentication": {
-    "title": "Uwierzytelnianie wieloskładnikowe",
-    "description": "Uwierzytelnianie wieloskładnikowe (MFA) dodaje dodatkową warstwę zabezpieczeń do Twojego konta. Zamiast wpisywać tylko hasło, aby się zalogować, MFA wymaga podania jednego lub więcej dodatkowych dowodów weryfikujących Twoją tożsamość. W ten sposób, nawet jeśli ktoś zdobędzie Twoje hasło, nadal nie będzie mógł uzyskać dostępu do Twojego konta bez drugiego elementu informacji. To jak dodanie dodatkowego zamka do drzwi, co znacznie utrudnia włamanie.<br><br>Postępuj zgodnie z poniższymi instrukcjami, aby włączyć MFA. Jeśli nie skonfigurujesz go poprawnie, logowanie powróci do samego hasła.",
+    "title": "Uwierzytelnianie wieloskładnikowe (MFA)",
+    "description": "Uwierzytelnianie wieloskładnikowe (MFA) dodaje dodatkową warstwę zabezpieczeń do Twojego konta. Zamiast tylko wpisywać hasło do logowania, MFA wymaga podania jednego lub więcej dodatkowych dowodów tożsamości. W ten sposób, nawet jeśli ktoś zdobędzie Twoje hasło, nadal nie będzie mógł uzyskać dostępu do Twojego konta bez drugiej informacji. To jak dodanie dodatkowego zamka do drzwi, utrudniającego włamanie.<br><br>Proszę postępować zgodnie z poniższymi instrukcjami, aby włączyć MFA. Jeśli nie skonfigurujesz poprawnie, logowanie powróci do samego hasła.",
     "mfa_enabled": "Włącz uwierzytelnianie wieloskładnikowe",
     "mfa_method": "Metoda MFA",
-    "electron_disabled": "Uwierzytelnianie wieloskładnikowe nie jest obecnie obsługiwane w wersji stacjonarnej.",
-    "totp_title": "Jednorazowe hasło czasowe (TOTP)",
-    "totp_description": "TOTP (Time-Based One-Time Password) to funkcja bezpieczeństwa, która generuje unikalny, tymczasowy kod, który zmienia się co 30 sekund. Używasz tego kodu wraz z hasłem do logowania się na swoje konto, co znacznie utrudnia dostęp do niego innym osobom.",
+    "electron_disabled": "Uwierzytelnianie wieloskładnikowe nie jest obecnie obsługiwane w wersji desktopowej.",
+    "totp_title": "Hasło jednorazowe oparte na czasie (TOTP)",
+    "totp_description": "TOTP (Time-Based One-Time Password) to funkcja bezpieczeństwa, która generuje unikalny, tymczasowy kod zmieniający się co 30 sekund. Używasz tego kodu wraz z hasłem do logowania się na konto, co znacznie utrudnia dostęp innym osobom.",
     "totp_secret_title": "Wygeneruj sekret TOTP",
     "totp_secret_generate": "Wygeneruj sekret TOTP",
     "totp_secret_regenerate": "Wygeneruj ponownie sekret TOTP",
     "no_totp_secret_warning": "Aby włączyć TOTP, musisz najpierw wygenerować sekret TOTP.",
-    "totp_secret_description_warning": "Po wygenerowaniu nowego sekretu TOTP będziesz musiał ponownie zalogować się przy użyciu nowego sekretu TOTP.",
-    "totp_secret_generated": "Wygenerowano sekret TOTP",
-    "totp_secret_warning": "Zapisz wygenerowany sekret w bezpiecznym miejscu. Nie zostanie on ponownie pokazany.",
-    "totp_secret_regenerate_confirm": "Czy na pewno chcesz wygenerować ponownie sekret TOTP? Spowoduje to unieważnienie poprzedniego sekretu TOTP i wszystkich istniejących kodów odzyskiwania.",
-    "recovery_keys_title": "Klucze odzyskiwania jednorazowego logowania",
-    "recovery_keys_description": "Klucze odzyskiwania jednorazowego logowania są używane do logowania w przypadku, gdy nie możesz uzyskać dostępu do swoich kodów Authenticator.",
-    "recovery_keys_description_warning": "Klucze odzyskiwania nie zostaną ponownie pokazane po opuszczeniu strony, przechowuj je w bezpiecznym miejscu.<br>Po użyciu klucza odzyskiwania nie można go użyć ponownie.",
+    "totp_secret_description_warning": "Po wygenerowaniu nowego sekretu TOTP będziesz musiał zalogować się ponownie przy użyciu nowego sekretu TOTP.",
+    "totp_secret_generated": "Sekret TOTP wygenerowany",
+    "totp_secret_warning": "Proszę zapisać wygenerowany sekret w bezpiecznym miejscu. Nie zostanie pokazany ponownie.",
+    "totp_secret_regenerate_confirm": "Czy na pewno chcesz ponownie wygenerować sekret TOTP? To unieważni poprzedni sekret TOTP i wszystkie istniejące kody odzyskiwania.",
+    "recovery_keys_title": "Klucze odzyskiwania logowania jednokrotnego (SSO)",
+    "recovery_keys_description": "Klucze odzyskiwania logowania jednokrotnego służą do logowania w przypadku braku dostępu do kodów Authenticator.",
+    "recovery_keys_description_warning": "Klucze odzyskiwania nie zostaną pokazane ponownie po opuszczeniu strony, przechowuj je w bezpiecznym miejscu.<br>Po użyciu klucza odzyskiwania nie można go użyć ponownie.",
     "recovery_keys_error": "Błąd generowania kodów odzyskiwania",
     "recovery_keys_no_key_set": "Nie ustawiono kodów odzyskiwania",
     "recovery_keys_generate": "Wygeneruj kody odzyskiwania",
@@ -1729,15 +1775,15 @@
     "recovery_keys_used": "Użyto: {{date}}",
     "recovery_keys_unused": "Kod odzyskiwania {{index}} jest nieużywany",
     "oauth_title": "OAuth/OpenID",
-    "oauth_description": "OpenID to standaryzowany sposób logowania się na strony internetowe przy użyciu konta z innej usługi, takiej jak Google, w celu zweryfikowania Twojej tożsamości. Domyślnym dostawcą jest Google, ale możesz zmienić go na dowolnego innego dostawcę OpenID. Sprawdź <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">tutaj</a>, aby uzyskać więcej informacji. Postępuj zgodnie z tymi <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instrukcjami</a>, aby skonfigurować usługę OpenID za pośrednictwem Google.",
-    "oauth_description_warning": "Aby włączyć OAuth/OpenID, musisz ustawić podstawowy adres URL OAuth/OpenID, identyfikator klienta i sekret klienta w pliku config.ini i ponownie uruchomić aplikację. Jeśli chcesz ustawić je ze zmiennych środowiskowych, ustaw TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID i TRILIUM_OAUTH_CLIENT_SECRET.",
+    "oauth_description": "OpenID to standardowy sposób logowania do stron internetowych przy użyciu konta z innej usługi, takiej jak Google, w celu weryfikacji tożsamości. Domyślnym dostawcą jest Google, ale można go zmienić na dowolnego innego dostawcę OpenID. Sprawdź <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">tutaj</a>, aby uzyskać więcej informacji. Postępuj zgodnie z tymi <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instrukcjami</a>, aby skonfigurować usługę OpenID przez Google.",
+    "oauth_description_warning": "Aby włączyć OAuth/OpenID, musisz ustawić bazowy URL OAuth/OpenID, ID klienta i sekret klienta w pliku config.ini i zrestartować aplikację. Jeśli chcesz ustawić je za pomocą zmiennych środowiskowych, ustaw TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID i TRILIUM_OAUTH_CLIENT_SECRET.",
     "oauth_missing_vars": "Brakujące ustawienia: {{-variables}}",
     "oauth_user_account": "Konto użytkownika: ",
-    "oauth_user_email": "E-mail użytkownika: ",
-    "oauth_user_not_logged_in": "Niezalogowany!"
+    "oauth_user_email": "Email użytkownika: ",
+    "oauth_user_not_logged_in": "Nie zalogowano!"
   },
   "shortcuts": {
-    "keyboard_shortcuts": "Skróty klawiaturowe",
+    "keyboard_shortcuts": "Skróty klawiszowe",
     "multiple_shortcuts": "Wiele skrótów dla tej samej akcji można oddzielić przecinkiem.",
     "electron_documentation": "Zobacz <a href=\"https://www.electronjs.org/docs/latest/api/accelerator\">dokumentację Electron</a> dla dostępnych modyfikatorów i kodów klawiszy.",
     "type_text_to_filter": "Wpisz tekst, aby filtrować skróty...",
@@ -1747,33 +1793,33 @@
     "description": "Opis",
     "reload_app": "Przeładuj aplikację, aby zastosować zmiany",
     "set_all_to_default": "Ustaw wszystkie skróty na domyślne",
-    "confirm_reset": "Czy na pewno chcesz zresetować wszystkie skróty klawiaturowe do domyślnych?"
+    "confirm_reset": "Czy na pewno chcesz zresetować wszystkie skróty klawiszowe do domyślnych?"
   },
   "spellcheck": {
     "title": "Sprawdzanie pisowni",
-    "description": "Te opcje dotyczą tylko wersji stacjonarnych, przeglądarki będą używać własnego natywnego sprawdzania pisowni.",
+    "description": "Te opcje dotyczą tylko wersji desktopowych, przeglądarki będą używać własnego natywnego sprawdzania pisowni.",
     "enable": "Włącz sprawdzanie pisowni",
     "language_code_label": "Kod(y) języka",
-    "language_code_placeholder": "na przykład \"en-US\", \"de-AT\"",
-    "multiple_languages_info": "Wiele języków można oddzielić przecinkiem, np. \"en-US, de-DE, cs\". ",
+    "language_code_placeholder": "na przykład \"pl-PL\", \"en-US\"",
+    "multiple_languages_info": "Wiele języków można oddzielić przecinkiem, np. \"en-US, de-DE, pl\". ",
     "available_language_codes_label": "Dostępne kody języków:",
-    "restart-required": "Zmiany w opcjach sprawdzania pisowni zaczną obowiązywać po ponownym uruchomieniu aplikacji."
+    "restart-required": "Zmiany w opcjach sprawdzania pisowni wejdą w życie po ponownym uruchomieniu aplikacji."
   },
   "sync_2": {
     "config_title": "Konfiguracja synchronizacji",
     "server_address": "Adres instancji serwera",
     "timeout": "Limit czasu synchronizacji",
-    "timeout_unit": "milisekundy",
+    "timeout_unit": "milisekund",
     "proxy_label": "Serwer proxy synchronizacji (opcjonalnie)",
-    "note": "Notatka",
-    "note_description": "Jeśli pozostawisz ustawienie proxy puste, zostanie użyty systemowy serwer proxy (dotyczy tylko wersji stacjonarnej/electron).",
-    "special_value_description": "Inną specjalną wartością jest <code>noproxy</code>, która wymusza ignorowanie nawet systemowego serwera proxy i respektuje <code>NODE_TLS_REJECT_UNAUTHORIZED</code>.",
+    "note": "Uwaga",
+    "note_description": "Jeśli pozostawisz ustawienie proxy puste, zostanie użyte proxy systemowe (dotyczy tylko wersji desktop/electron).",
+    "special_value_description": "Inną wartością specjalną jest <code>noproxy</code>, która wymusza ignorowanie nawet proxy systemowego i respektuje <code>NODE_TLS_REJECT_UNAUTHORIZED</code>.",
     "save": "Zapisz",
     "help": "Pomoc",
     "test_title": "Test synchronizacji",
-    "test_description": "Sprawdzi to połączenie i uzgadnianie z serwerem synchronizacji. Jeśli serwer synchronizacji nie jest zainicjowany, spowoduje to jego skonfigurowanie do synchronizacji z lokalnym dokumentem.",
+    "test_description": "To przetestuje połączenie i handshake z serwerem synchronizacji. Jeśli serwer synchronizacji nie jest zainicjowany, skonfiguruje go do synchronizacji z lokalnym dokumentem.",
     "test_button": "Testuj synchronizację",
-    "handshake_failed": "Uzgadnianie serwera synchronizacji nie powiodło się, błąd: {{message}}"
+    "handshake_failed": "Handshake serwera synchronizacji nie powiódł się, błąd: {{message}}"
   },
   "api_log": {
     "close": "Zamknij"
@@ -1781,20 +1827,20 @@
   "attachment_detail_2": {
     "will_be_deleted_in": "Ten załącznik zostanie automatycznie usunięty za {{time}}",
     "will_be_deleted_soon": "Ten załącznik zostanie wkrótce automatycznie usunięty",
-    "deletion_reason": ", ponieważ załącznik nie jest powiązany z treścią notatki. Aby zapobiec usunięciu, dodaj link do załącznika z powrotem do treści lub przekonwertuj załącznik na notatkę.",
+    "deletion_reason": ", ponieważ załącznik nie jest podlinkowany w treści notatki. Aby zapobiec usunięciu, dodaj link do załącznika z powrotem do treści lub przekonwertuj załącznik na notatkę.",
     "role_and_size": "Rola: {{role}}, Rozmiar: {{size}}",
     "link_copied": "Link do załącznika skopiowany do schowka.",
     "unrecognized_role": "Nierozpoznana rola załącznika '{{role}}'."
   },
   "bookmark_switch": {
     "bookmark": "Zakładka",
-    "bookmark_this_note": "Dodaj tę notatkę do zakładek w lewym panelu bocznym",
+    "bookmark_this_note": "Dodaj tę notatkę do zakładek w lewym panelu",
     "remove_bookmark": "Usuń zakładkę"
   },
   "editability_select": {
     "auto": "Auto",
     "read_only": "Tylko do odczytu",
-    "always_editable": "Zawsze edytowalny",
+    "always_editable": "Zawsze edytowalna",
     "note_is_editable": "Notatka jest edytowalna, jeśli nie jest zbyt długa.",
     "note_is_read_only": "Notatka jest tylko do odczytu, ale można ją edytować po kliknięciu przycisku.",
     "note_is_always_editable": "Notatka jest zawsze edytowalna, niezależnie od jej długości."
@@ -1812,8 +1858,8 @@
     "unarchive": "Przywróć z archiwum",
     "delete": "Usuń",
     "search-in-subtree": "Szukaj w poddrzewie",
-    "hoist-note": "Podnieś notatkę",
-    "unhoist-note": "Opuść notatkę",
+    "hoist-note": "Zawęź widok do notatki (Hoist)",
+    "unhoist-note": "Cofnij zawężenie (Unhoist)",
     "edit-branch-prefix": "Edytuj prefiks gałęzi",
     "advanced": "Zaawansowane",
     "expand-subtree": "Rozwiń poddrzewo",
@@ -1823,9 +1869,9 @@
     "convert-to-attachment": "Konwertuj na załącznik",
     "copy-note-path-to-clipboard": "Kopiuj ścieżkę notatki do schowka",
     "protect-subtree": "Chroń poddrzewo",
-    "unprotect-subtree": "Odblokuj poddrzewo",
+    "unprotect-subtree": "Zdejmij ochronę z poddrzewa",
     "copy-clone": "Kopiuj / klonuj",
-    "clone-to": "Klonuj do...",
+    "clone-to": "Sklonuj do...",
     "cut": "Wytnij",
     "move-to": "Przenieś do...",
     "paste-into": "Wklej do",
@@ -1833,14 +1879,14 @@
     "duplicate": "Duplikuj",
     "export": "Eksportuj",
     "import-into-note": "Importuj do notatki",
-    "apply-bulk-actions": "Zastosuj akcje zbiorcze",
+    "apply-bulk-actions": "Zastosuj akcje masowe",
     "converted-to-attachments": "{{count}} notatek zostało przekonwertowanych na załączniki.",
-    "convert-to-attachment-confirm": "Czy na pewno chcesz przekonwertować wybrane notatki na załączniki ich notatek nadrzędnych?",
+    "convert-to-attachment-confirm": "Czy na pewno chcesz przekonwertować wybrane notatki na załączniki ich notatek nadrzędnych? Ta operacja dotyczy tylko notatek Obrazów, inne notatki zostaną pominięte.",
     "open-in-popup": "Szybka edycja"
   },
   "shared_info": {
-    "shared_publicly": "Ta notatka jest udostępniona publicznie na {{- link}}.",
-    "shared_locally": "Ta notatka jest udostępniona lokalnie na {{- link}}.",
+    "shared_publicly": "Ta notatka jest udostępniona publicznie pod adresem {{- link}}.",
+    "shared_locally": "Ta notatka jest udostępniona lokalnie pod adresem {{- link}}.",
     "help_link": "Aby uzyskać pomoc, odwiedź <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>."
   },
   "note_types": {
@@ -1853,15 +1899,15 @@
     "book": "Kolekcja",
     "mermaid-diagram": "Diagram Mermaid",
     "canvas": "Płótno",
-    "web-view": "Widok sieciowy",
+    "web-view": "Widok WWW",
     "mind-map": "Mapa myśli",
     "file": "Plik",
     "image": "Obraz",
-    "launcher": "Program uruchamiający",
+    "launcher": "Launcher",
     "doc": "Dokument",
     "widget": "Widżet",
-    "confirm-change": "Nie zaleca się zmiany typu notatki, gdy zawartość notatki nie jest pusta. Czy chcesz kontynuować mimo to?",
-    "geo-map": "Mapa geograficzna",
+    "confirm-change": "Nie zaleca się zmiany typu notatki, gdy treść notatki nie jest pusta. Czy mimo to chcesz kontynuować?",
+    "geo-map": "Mapa Geo",
     "beta-feature": "Beta",
     "ai-chat": "Czat AI",
     "task-list": "Lista zadań",
@@ -1870,39 +1916,45 @@
   },
   "protect_note": {
     "toggle-on": "Chroń notatkę",
-    "toggle-off": "Odblokuj notatkę",
-    "toggle-on-hint": "Notatka nie jest chroniona, kliknij, aby ją chronić",
-    "toggle-off-hint": "Notatka jest chroniona, kliknij, aby ją odblokować"
+    "toggle-off": "Zdejmij ochronę z notatki",
+    "toggle-on-hint": "Notatka nie jest chroniona, kliknij, aby włączyć ochronę",
+    "toggle-off-hint": "Notatka jest chroniona, kliknij, aby zdjąć ochronę"
   },
   "shared_switch": {
-    "shared": "Udostępnione",
+    "shared": "Udostępniona",
     "toggle-on-title": "Udostępnij notatkę",
     "toggle-off-title": "Przestań udostępniać notatkę",
-    "shared-branch": "Ta notatka istnieje tylko jako notatka udostępniona, zaprzestanie udostępniania spowoduje jej usunięcie. Czy chcesz kontynuować i tym samym usunąć tę notatkę?",
-    "inherited": "Notatka nie może być tutaj nieudostępniona, ponieważ jest udostępniana poprzez dziedziczenie od przodka."
+    "shared-branch": "Ta notatka istnieje tylko jako notatka udostępniona, zaprzestanie udostępniania spowoduje jej usunięcie. Czy chcesz kontynuować i usunąć tę notatkę?",
+    "inherited": "Nie można przestać udostępniać notatki w tym miejscu, ponieważ jest ona udostępniona poprzez dziedziczenie od przodka."
   },
   "template_switch": {
     "template": "Szablon",
     "toggle-on-hint": "Uczyń notatkę szablonem",
-    "toggle-off-hint": "Usuń notatkę jako szablon"
+    "toggle-off-hint": "Usuń notatkę z szablonów"
   },
   "open-help-page": "Otwórz stronę pomocy",
   "find": {
-    "case_sensitive": "Uwzględniaj wielkość liter",
-    "match_words": "Dopasuj słowa",
+    "case_sensitive": "Uwzględnij wielkość liter",
+    "match_words": "Dopasuj całe słowa",
     "find_placeholder": "Znajdź w tekście...",
-    "replace_placeholder": "Zastąp...",
-    "replace": "Zastąp",
-    "replace_all": "Zastąp wszystko"
+    "replace_placeholder": "Zamień na...",
+    "replace": "Zamień",
+    "replace_all": "Zamień wszystko"
   },
   "highlights_list_2": {
     "title": "Lista wyróżnień",
-    "options": "Opcje"
+    "options": "Opcje",
+    "modal_title": "Konfiguracja listy wyróżnień",
+    "menu_configure": "Konfiguracja listy wyróżnień...",
+    "no_highlights": "Nie znaleziono wyróżnień.",
+    "title_with_count_one": "{{count}} podświetlenie",
+    "title_with_count_few": "{{count}} podświetlenia",
+    "title_with_count_many": "{{count}} podświetleń"
   },
   "quick-search": {
     "placeholder": "Szybkie wyszukiwanie",
-    "searching": "Wyszukiwanie...",
-    "no-results": "Nie znaleziono wyników",
+    "searching": "Szukanie...",
+    "no-results": "Brak wyników",
     "more-results": "... i {{number}} więcej wyników.",
     "show-in-full-search": "Pokaż w pełnym wyszukiwaniu"
   },
@@ -1915,31 +1967,41 @@
     "automatically-collapse-notes-title": "Notatki zostaną zwinięte po okresie bezczynności, aby uporządkować drzewo.",
     "save-changes": "Zapisz i zastosuj zmiany",
     "auto-collapsing-notes-after-inactivity": "Automatyczne zwijanie notatek po bezczynności...",
-    "saved-search-note-refreshed": "Odświeżono zapisaną notatkę wyszukiwania.",
-    "hoist-this-note-workspace": "Podnieś tę notatkę (obszar roboczy)",
-    "refresh-saved-search-results": "Odśwież zapisane wyniki wyszukiwania",
+    "saved-search-note-refreshed": "Notatka zapisanego wyszukiwania odświeżona.",
+    "hoist-this-note-workspace": "Zawęź widok do tej notatki (obszar roboczy)",
+    "refresh-saved-search-results": "Odśwież wyniki zapisanego wyszukiwania",
     "create-child-note": "Utwórz notatkę podrzędną",
-    "unhoist": "Opuść",
-    "toggle-sidebar": "Przełącz pasek boczny"
+    "unhoist": "Cofnij zawężenie",
+    "toggle-sidebar": "Przełącz pasek boczny",
+    "dropping-not-allowed": "Upuszczanie notatek w tej lokalizacji jest niedozwolone."
   },
   "title_bar_buttons": {
-    "window-on-top": "Trzymaj okno na wierzchu"
+    "window-on-top": "Utrzymuj okno na wierzchu"
   },
   "note_detail": {
-    "could_not_find_typewidget": "Nie można znaleźć typeWidget dla typu '{{type}}'"
+    "could_not_find_typewidget": "Nie można znaleźć widżetu typu dla typu '{{type}}'",
+    "printing": "Drukowanie w toku...",
+    "printing_pdf": "Eksportowanie do PDF w toku..."
   },
   "note_title": {
-    "placeholder": "wpisz tutaj tytuł notatki..."
+    "placeholder": "wpisz tytuł notatki tutaj...",
+    "created_on": "Utworzono <Value />",
+    "last_modified": "Zmodyfikowano: <Value />",
+    "note_type_switcher_label": "Zmień z {{type}} na:",
+    "note_type_switcher_others": "Inny typ notatki",
+    "note_type_switcher_templates": "Szablon",
+    "note_type_switcher_collection": "Kolekcja",
+    "edited_notes": "Edytowane notatki"
   },
   "search_result": {
-    "no_notes_found": "Nie znaleziono żadnych notatek dla podanych parametrów wyszukiwania.",
+    "no_notes_found": "Nie znaleziono notatek dla podanych parametrów wyszukiwania.",
     "search_not_executed": "Wyszukiwanie nie zostało jeszcze wykonane. Kliknij przycisk \"Szukaj\" powyżej, aby zobaczyć wyniki."
   },
   "spacer": {
-    "configure_launchbar": "Skonfiguruj pasek uruchamiania"
+    "configure_launchbar": "Konfiguruj pasek szybkiego dostępu"
   },
   "sql_result": {
-    "no_rows": "Nie zwrócono żadnych wierszy dla tego zapytania"
+    "no_rows": "Dla tego zapytania nie zwrócono żadnych wierszy"
   },
   "sql_table_schemas": {
     "tables": "Tabele"
@@ -1951,14 +2013,15 @@
     "close_other_tabs": "Zamknij inne karty",
     "close_right_tabs": "Zamknij karty po prawej",
     "close_all_tabs": "Zamknij wszystkie karty",
-    "reopen_last_tab": "Otwórz ponownie ostatnią zamkniętą kartę",
+    "reopen_last_tab": "Otwórz ponownie ostatnio zamkniętą kartę",
     "move_tab_to_new_window": "Przenieś tę kartę do nowego okna",
     "copy_tab_to_new_window": "Skopiuj tę kartę do nowego okna",
     "new_tab": "Nowa karta"
   },
   "toc": {
     "table_of_contents": "Spis treści",
-    "options": "Opcje"
+    "options": "Opcje",
+    "no_headings": "Brak nagłówków."
   },
   "watched_file_update_status": {
     "file_last_modified": "Plik <code class=\"file-path\"></code> został ostatnio zmodyfikowany <span class=\"file-last-modified\"></span>.",
@@ -1966,18 +2029,18 @@
     "ignore_this_change": "Ignoruj tę zmianę"
   },
   "app_context": {
-    "please_wait_for_save": "Poczekaj kilka sekund na zakończenie zapisywania, a następnie spróbuj ponownie."
+    "please_wait_for_save": "Poczekaj kilka sekund na zakończenie zapisu, a następnie spróbuj ponownie."
   },
   "note_create": {
     "duplicated": "Notatka \"{{title}}\" została zduplikowana."
   },
   "image": {
     "copied-to-clipboard": "Odniesienie do obrazu zostało skopiowane do schowka. Można je wkleić w dowolnej notatce tekstowej.",
-    "cannot-copy": "Nie można skopiować odniesienia do obrazu do schowka."
+    "cannot-copy": "Nie udało się skopiować odniesienia do obrazu do schowka."
   },
   "clipboard": {
-    "cut": "Notatka(i) została(y) wycięta(e) do schowka.",
-    "copied": "Notatka(i) została(y) skopiowana(e) do schowka.",
+    "cut": "Notatka(-i) zostały wycięte do schowka.",
+    "copied": "Notatka(-i) zostały skopiowane do schowka.",
     "copy_failed": "Nie można skopiować do schowka z powodu problemów z uprawnieniami.",
     "copy_success": "Skopiowano do schowka."
   },
@@ -1987,7 +2050,7 @@
     "sql-error": "Wystąpił błąd podczas wykonywania zapytania SQL: {{message}}"
   },
   "branches": {
-    "cannot-move-notes-here": "Nie można przenieść tutaj notatek.",
+    "cannot-move-notes-here": "Nie można przenieść notatek tutaj.",
     "delete-status": "Status usuwania",
     "delete-notes-in-progress": "Usuwanie notatek w toku: {{count}}",
     "delete-finished-successfully": "Usuwanie zakończone pomyślnie.",
@@ -1995,37 +2058,34 @@
     "undeleting-notes-finished-successfully": "Przywracanie notatek zakończone pomyślnie."
   },
   "frontend_script_api": {
-    "async_warning": "Przekazujesz funkcję asynchroniczną do `api.runOnBackend()`, co prawdopodobnie nie zadziała zgodnie z zamierzeniami.\\nAlbo uczyń funkcję synchroniczną (usuwając słowo kluczowe `async`), albo użyj `api.runAsyncOnBackendWithManualTransactionHandling()`.",
+    "async_warning": "Przekazujesz funkcję asynchroniczną do `api.runOnBackend()`, co prawdopodobnie nie zadziała zgodnie z Twoimi intencjami.\\nAlbo spraw, aby funkcja była synchroniczna (usuwając słowo kluczowe `async`), albo użyj `api.runAsyncOnBackendWithManualTransactionHandling()`.",
     "sync_warning": "Przekazujesz funkcję synchroniczną do `api.runAsyncOnBackendWithManualTransactionHandling()`,\\npodczas gdy prawdopodobnie powinieneś użyć `api.runOnBackend()`."
   },
   "ws": {
     "sync-check-failed": "Sprawdzanie synchronizacji nie powiodło się!",
-    "consistency-checks-failed": "Sprawdzanie spójności nie powiodło się! Zobacz logi, aby uzyskać szczegółowe informacje.",
+    "consistency-checks-failed": "Sprawdzanie spójności nie powiodło się! Zobacz logi po szczegóły.",
     "encountered-error": "Napotkano błąd \"{{message}}\", sprawdź konsolę.",
     "lost-websocket-connection-title": "Utracono połączenie z serwerem",
-    "lost-websocket-connection-message": "Sprawdź konfigurację swojego odwrotnego serwera proxy (np. nginx lub Apache), aby upewnić się, że połączenia WebSocket są prawidłowo dozwolone i nie są blokowane."
+    "lost-websocket-connection-message": "Sprawdź konfigurację odwrotnego proxy (np. nginx lub Apache), aby upewnić się, że połączenia WebSocket są prawidłowo dozwolone i nie są blokowane."
   },
   "hoisted_note": {
-    "confirm_unhoisting": "Żądana notatka '{{requestedNote}}' znajduje się poza poddrzewem podniesionej notatki '{{hoistedNote}}' i musisz ją opuścić, aby uzyskać do niej dostęp. Czy chcesz kontynuować opuszczanie?"
+    "confirm_unhoisting": "Żądana notatka '{{requestedNote}}' znajduje się poza poddrzewem zawężonej notatki '{{hoistedNote}}' i musisz cofnąć zawężenie, aby uzyskać do niej dostęp. Czy chcesz kontynuować cofanie zawężenia?"
   },
   "launcher_context_menu": {
-    "reset_launcher_confirm": "Czy na pewno chcesz zresetować \"{{title}}\"? Wszystkie dane / ustawienia w tej notatce (i jej dzieciach) zostaną utracone, a program uruchamiający zostanie przywrócony do pierwotnej lokalizacji.",
-    "add-note-launcher": "Dodaj program uruchamiający notatkę",
-    "add-script-launcher": "Dodaj program uruchamiający skrypt",
+    "reset_launcher_confirm": "Czy na pewno chcesz zresetować \"{{title}}\"? Wszystkie dane / ustawienia w tej notatce (i jej elementach podrzędnych) zostaną utracone, a launcher zostanie przywrócony do pierwotnej lokalizacji.",
+    "add-note-launcher": "Dodaj launcher notatki",
+    "add-script-launcher": "Dodaj launcher skryptu",
     "add-custom-widget": "Dodaj niestandardowy widżet",
     "add-spacer": "Dodaj odstęp",
     "delete": "Usuń <kbd data-command=\"deleteNotes\"></kbd>",
     "reset": "Resetuj",
-    "move-to-visible-launchers": "Przenieś do widocznych programów uruchamiających",
-    "move-to-available-launchers": "Przenieś do dostępnych programów uruchamiających",
-    "duplicate-launcher": "Duplikuj program uruchamiający <kbd data-command=\"duplicateSubtree\">"
-  },
-  "editable-text": {
-    "auto-detect-language": "Wykryto automatycznie"
+    "move-to-visible-launchers": "Przenieś do widocznych launcherów",
+    "move-to-available-launchers": "Przenieś do dostępnych launcherów",
+    "duplicate-launcher": "Duplikuj launcher <kbd data-command=\"duplicateSubtree\">"
   },
   "highlighting": {
     "title": "Bloki kodu",
-    "description": "Kontroluje podświetlanie składni dla bloków kodu w notatkach tekstowych, notatki kodowe nie będą miały wpływu.",
+    "description": "Kontroluje podświetlanie składni dla bloków kodu wewnątrz notatek tekstowych, notatki kodu nie zostaną zmienione.",
     "color-scheme": "Schemat kolorów"
   },
   "code_block": {
@@ -2046,18 +2106,18 @@
       "label": "Pasek narzędzi formatowania",
       "floating": {
         "title": "Pływający",
-        "description": "narzędzia do edycji pojawiają się w pobliżu kursora;"
+        "description": "narzędzia edycji pojawiają się w pobliżu kursora;"
       },
       "fixed": {
         "title": "Stały",
-        "description": "narzędzia do edycji pojawiają się na karcie wstążki \"Formatowanie\"."
+        "description": "narzędzia edycji pojawiają się w karcie wstążki \"Formatowanie\"."
       },
-      "multiline-toolbar": "Wyświetlaj pasek narzędzi w wielu wierszach, jeśli się nie mieści."
+      "multiline-toolbar": "Wyświetl pasek narzędzi w wielu wierszach, jeśli się nie mieści."
     }
   },
   "geo-map": {
     "create-child-note-title": "Utwórz nową notatkę podrzędną i dodaj ją do mapy",
-    "create-child-note-instruction": "Kliknij na mapę, aby utworzyć nową notatkę w tej lokalizacji, lub naciśnij Escape, aby anulować.",
+    "create-child-note-instruction": "Kliknij na mapie, aby utworzyć nową notatkę w tej lokalizacji lub naciśnij Escape, aby anulować.",
     "unable-to-load-map": "Nie można załadować mapy."
   },
   "geo-map-context": {
@@ -2075,6 +2135,98 @@
   "presentation_view": {
     "edit-slide": "Edytuj ten slajd",
     "start-presentation": "Rozpocznij prezentację",
-    "slide-overview": "Przełącz podgląd slajdów"
+    "slide-overview": "Przełącz przegląd slajdów"
+  },
+  "experimental_features": {
+    "title": "Opcje eksperymentalne",
+    "disclaimer": "Te opcje są eksperymentalne i mogą powodować niestabilność. Używaj z ostrożnością.",
+    "new_layout_name": "Nowy układ",
+    "new_layout_description": "Wypróbuj nowy układ dla nowocześniejszego wyglądu i lepszej użyteczności. Podlega znacznym zmianom w nadchodzących wydaniach."
+  },
+  "read-only-info": {
+    "read-only-note": "Obecnie przeglądasz notatkę tylko do odczytu.",
+    "auto-read-only-note": "Ta notatka jest wyświetlana w trybie tylko do odczytu dla szybszego ładowania.",
+    "edit-note": "Edytuj notatkę"
+  },
+  "calendar_view": {
+    "delete_note": "Usuń notatkę..."
+  },
+  "note-color": {
+    "clear-color": "Wyczyść kolor notatki",
+    "set-color": "Ustaw kolor notatki",
+    "set-custom-color": "Ustaw niestandardowy kolor notatki"
+  },
+  "popup-editor": {
+    "maximize": "Przełącz na pełny edytor"
+  },
+  "server": {
+    "unknown_http_error_title": "Błąd komunikacji z serwerem",
+    "unknown_http_error_content": "Kod statusu: {{statusCode}}\nURL: {{method}} {{url}}\nWiadomość: {{message}}",
+    "traefik_blocks_requests": "Jeśli używasz odwrotnego proxy Traefik, wprowadziło ono zmianę łamiącą kompatybilność, która wpływa na komunikację z serwerem."
+  },
+  "tab_history_navigation_buttons": {
+    "go-back": "Wróć do poprzedniej notatki",
+    "go-forward": "Przejdź dalej do następnej notatki"
+  },
+  "breadcrumb_badges": {
+    "read_only_explicit": "Tylko do odczytu",
+    "read_only_explicit_description": "Ta notatka została ręcznie ustawiona jako tylko do odczytu.\nKliknij, aby ją tymczasowo edytować.",
+    "read_only_auto": "Auto tylko do odczytu",
+    "read_only_auto_description": "Ta notatka została ustawiona automatycznie w tryb tylko do odczytu ze względów wydajnościowych. Ten automatyczny limit można dostosować w ustawieniach.\n\nKliknij, aby ją tymczasowo edytować.",
+    "read_only_temporarily_disabled": "Tymczasowo edytowalna",
+    "read_only_temporarily_disabled_description": "Ta notatka jest obecnie edytowalna, ale normalnie jest tylko do odczytu. Notatka powróci do trybu tylko do odczytu, gdy tylko przejdziesz do innej notatki.\n\nKliknij, aby ponownie włączyć tryb tylko do odczytu.",
+    "shared_publicly": "Udostępniona publicznie",
+    "shared_locally": "Udostępniona lokalnie",
+    "clipped_note": "Wycinek WWW",
+    "clipped_note_description": "Ta notatka została pierwotnie pobrana z {{url}}.\n\nKliknij, aby przejść do źródłowej strony internetowej.",
+    "execute_script": "Uruchom skrypt",
+    "execute_script_description": "Ta notatka jest notatką skryptową. Kliknij, aby wykonać skrypt.",
+    "execute_sql": "Uruchom SQL",
+    "execute_sql_description": "Ta notatka jest notatką SQL. Kliknij, aby wykonać zapytanie SQL.",
+    "shared_copy_to_clipboard": "Kopiuj link do schowka",
+    "shared_open_in_browser": "Otwórz link w przeglądarce",
+    "shared_unshare": "Usuń udostępnienie"
+  },
+  "status_bar": {
+    "language_title": "Zmień język treści",
+    "note_info_title": "Informacje o notatce (np. daty, rozmiar notatki)",
+    "backlinks_title_one": "Wyświetl link zwrotny",
+    "backlinks_title_few": "Wyświetl linki zwrotne",
+    "backlinks_title_many": "Wyświetl linki zwrotne",
+    "attachments_title_one": "Otwórz załącznik w nowej karcie",
+    "attachments_title_few": "Otwórz załączniki w nowej karcie",
+    "attachments_title_many": "Otwórz załączniki w nowej karcie",
+    "attributes_one": "{{count}} atrybut",
+    "attributes_few": "{{count}} atrybuty",
+    "attributes_many": "{{count}} atrybutów",
+    "attributes_title": "Atrybuty własne i atrybuty dziedziczone",
+    "note_paths_title": "Ścieżki notatek",
+    "code_note_switcher": "Zmień tryb języka",
+    "backlinks_one": "{{count}} link zwrotny",
+    "backlinks_few": "{{count}} linki zwrotne",
+    "backlinks_many": "{{count}} linków zwrotnych",
+    "attachments_one": "{{count}} załącznik",
+    "attachments_few": "{{count}} załączniki",
+    "attachments_many": "{{count}} załączników",
+    "note_paths_one": "{{count}} ścieżka",
+    "note_paths_few": "{{count}} ścieżki",
+    "note_paths_many": "{{count}} ścieżek"
+  },
+  "breadcrumb": {
+    "hoisted_badge": "Wyróżniony",
+    "hoisted_badge_title": "Usuń wyróżnienie",
+    "workspace_badge": "Obszar roboczy",
+    "scroll_to_top_title": "Przejdź na początek notatki",
+    "create_new_note": "Utwórz nową notatkę podrzędną",
+    "empty_hide_archived_notes": "Ukryj zarchiwizowane notatki"
+  },
+  "attributes_panel": {
+    "title": "Atrybuty notatki"
+  },
+  "right_pane": {
+    "empty_message": "Brak elementów do wyświetlenia dla tej notatki",
+    "empty_button": "Ukryj panel",
+    "toggle": "Pokaż/ukryj prawy panel",
+    "custom_widget_go_to_source": "Przejdź do kodu źródłowego"
   }
 }

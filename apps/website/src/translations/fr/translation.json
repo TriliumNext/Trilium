@@ -51,10 +51,11 @@
         "mermaid_description": "Créez des diagrammes tels que des organigrammes, des diagrammes de classes et de séquences, des diagrammes de Gantt et bien d'autres, en utilisant la syntaxe Mermaid.",
         "mindmap_title": "Carte mentale",
         "mindmap_description": "Organisez vos pensées visuellement ou faites une séance de brainstorming.",
-        "others_list": "et autres : <0>carte de notes</0>, <1>carte de relations</1>, <2>recherches enregistrées</2>, <3>note de rendu</3> et <4>vues Web</4>."
+        "others_list": "et autres : <0>carte de notes</0>, <1>carte de relations</1>, <2>recherches enregistrées</2>, <3>note de rendu</3> et <4>vues Web</4>.",
+        "title": "Plusieurs façons de représenter vos informations"
     },
     "faq": {
-        "database_question": "Où sont les données stockées?",
+        "database_question": "Où sont stockées les données ?",
         "database_answer": "Toutes vos notes seront stockées dans une base de données SQLite, dans un dossier d'application. Trilium utilise une base de données plutôt que des fichiers texte pour des raisons de performances, et certaines fonctionnalités seraient beaucoup plus complexes à implémenter, comme les clones (même note à plusieurs endroits de l'arborescence). Pour trouver le dossier d'application, accédez simplement à la fenêtre « À propos ».",
         "mobile_answer": "Il n'existe actuellement aucune application mobile officielle. Cependant, si vous disposez d'une instance serveur, vous pouvez y accéder via un navigateur web et même l'installer en tant que PWA. Pour Android, il existe une application non officielle appelée \"TriliumDroid\", qui fonctionne même hors ligne (comme un client de bureau).",
         "mobile_question": "Y a-t-il une application mobile ?",
@@ -168,7 +169,10 @@
         "board_title": "Tableau de bord",
         "board_description": "Organisez vos tâches ou l'état de vos projets dans un tableau Kanban avec un moyen simple de créer de nouveaux éléments et colonnes et de modifier simplement leur état en les faisant glisser sur le tableau.",
         "geomap_title": "Géocarte",
-        "geomap_description": "Planifiez vos vacances ou marquez vos points d'intérêt directement sur une carte géographique grâce à des marqueurs personnalisables. Affichez les traces GPX enregistrées pour suivre vos itinéraires."
+        "geomap_description": "Planifiez vos vacances ou marquez vos points d'intérêt directement sur une carte géographique grâce à des marqueurs personnalisables. Affichez les traces GPX enregistrées pour suivre vos itinéraires.",
+        "title": "Collections",
+        "presentation_title": "Présentation",
+        "presentation_description": "Organisez les informations sous forme de diapositives et présentez-les en plein écran avec des transitions fluides. Les diapositives peuvent également être exportées au format PDF pour faciliter leur partage."
     },
     "download_now": {
         "text": "Télécharger maintenant. ",
@@ -187,5 +191,10 @@
         "github_discussions": "Discussions GitHub",
         "matrix": "Matrix",
         "reddit": "Reddit"
+    },
+    "header": {
+        "get-started": "Commencer",
+        "documentation": "Documentation",
+        "support-us": "Soutenez-nous"
     }
 }

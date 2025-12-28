@@ -19,7 +19,7 @@
     --dropdown-border-color: #555;
     --dropdown-shadow-opacity: 0.4;
     --dropdown-item-icon-destructive-color: #de6e5b;
-    --disabled-tooltip-icon-color: #7fd2ef;
+    --contextual-help-icon-color: #7fd2ef;
 
     --accented-background-color: #555;
     --more-accented-background-color: #777;
@@ -76,6 +76,9 @@
 
     --mermaid-theme: dark;
     --native-titlebar-background: #00000000;
+
+    --calendar-coll-event-background-saturation: 30%;
+    --calendar-coll-event-background-lightness: 30%;
 }
 
 body ::-webkit-calendar-picker-indicator {
@@ -109,3 +112,10 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
     box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6) !important;
 }
 
+.use-note-color {
+    --custom-color: var(--dark-theme-custom-color);
+}
+
+span.fancytree-active {
+    color: var(--dark-theme-custom-color, var(--active-item-text-color));
+}

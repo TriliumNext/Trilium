@@ -69,7 +69,7 @@ The board view has mild support for keyboard-based navigation:
 
 <figure class="image image-style-align-center"><img style="aspect-ratio:531/485;" src="Kanban Board_image.png" width="531" height="485"></figure>
 
-Note attributes can be displayed on the board to enhance it with custom information such as adding a Due date for your tasks.
+Since v0.100.0, note attributes can be displayed on the board to enhance it with custom information such as adding a _Due date_ for your tasks.
 
 This feature works exclusively via attribute definitions (<a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a>). The easiest way to add these is:
 
@@ -116,7 +116,7 @@ To do so:
 
 1.  First, create a Kanban board from scratch and not a template:
 2.  Assign `#viewType=board #hidePromotedAttributes` to emulate the default template.
-3.  Set `#board:groupBy` to the name of a relation to group by, **including the** `**~**` **prefix** (e.g. `~status`).
+3.  Set `#board:groupBy` to the name of a relation to group by, **including the** `~` **prefix** (e.g. `~status`).
 4.  Optionally, use <a class="reference-link" href="../Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> for easy status change within the note:
     
     ```

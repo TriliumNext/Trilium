@@ -1,115 +1,110 @@
-import utils from "./utils.js";
+import { signal } from "@preact/signals";
+
+import appContext from "../components/app_context.js";
+import froca from "./froca.js";
+import { t } from "./i18n.js";
+import utils, { randomString } from "./utils.js";
 
 export interface ToastOptions {
     id?: string;
     icon: string;
     title?: string;
     message: string;
-    delay?: number;
-    autohide?: boolean;
-    closeAfter?: number;
+    timeout?: number;
+    progress?: number;
+    buttons?: {
+        text: string;
+        onClick: (api: { dismissToast: () => void }) => void;
+    }[];
 }
 
-function toast(options: ToastOptions) {
-    const $toast = $(options.title
-        ? `\
-            <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="toast-header">
-                    <strong class="me-auto">
-                        <span class="bx bx-${options.icon}"></span>
-                        <span class="toast-title"></span>
-                    </strong>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-                <div class="toast-body"></div>
-            </div>`
-        : `
-            <div class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="toast-icon">
-                    <span class="bx bx-${options.icon}"></span>
-                </div>
-                <div class="toast-body"></div>
-                <div class="toast-header">
-                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            </div>`
-    );
+export type ToastOptionsWithRequiredId = Omit<ToastOptions, "id"> & Required<Pick<ToastOptions, "id">>;
 
-    $toast.toggleClass("no-title", !options.title);
-    $toast.find(".toast-title").text(options.title ?? "");
-    $toast.find(".toast-body").html(options.message);
-
-    if (options.id) {
-        $toast.attr("id", `toast-${options.id}`);
-    }
-
-    $("#toast-container").append($toast);
-
-    $toast.toast({
-        delay: options.delay || 3000,
-        autohide: !!options.autohide
-    });
-
-    $toast.on("hidden.bs.toast", (e) => e.target.remove());
-
-    $toast.toast("show");
-
-    return $toast;
-}
-
-function showPersistent(options: ToastOptions) {
-    let $toast = $(`#toast-${options.id}`);
-
-    if ($toast.length > 0) {
-        $toast.find(".toast-body").html(options.message);
+function showPersistent(options: ToastOptionsWithRequiredId) {
+    const existingToast = toasts.value.find(toast => toast.id === options.id);
+    if (existingToast) {
+        updateToast(options.id, options);
     } else {
-        options.autohide = false;
-
-        $toast = toast(options);
-    }
-
-    if (options.closeAfter) {
-        setTimeout(() => $toast.remove(), options.closeAfter);
+        addToast(options);
     }
 }
 
 function closePersistent(id: string) {
-    $(`#toast-${id}`).remove();
+    removeToastFromStore(id);
 }
 
-function showMessage(message: string, delay = 2000, icon = "check") {
+function showMessage(message: string, timeout = 2000, icon = "bx bx-check") {
     console.debug(utils.now(), "message:", message);
 
-    toast({
+    addToast({
         icon,
-        message: message,
-        autohide: true,
-        delay
+        message,
+        timeout
     });
 }
 
-export function showError(message: string, delay = 10000) {
+export function showError(message: string, timeout = 10000) {
     console.log(utils.now(), "error: ", message);
 
-    toast({
-        icon: "alert",
-        message: message,
-        autohide: true,
-        delay
+    addToast({
+        icon: "bx bx-error-circle",
+        message,
+        timeout
     });
 }
 
-function showErrorTitleAndMessage(title: string, message: string, delay = 10000) {
+function showErrorTitleAndMessage(title: string, message: string, timeout = 10000) {
     console.log(utils.now(), "error: ", message);
 
-    toast({
-        title: title,
-        icon: "alert",
-        message: message,
-        autohide: true,
-        delay
+    addToast({
+        title,
+        icon: "bx bx-error-circle",
+        message,
+        timeout
     });
 }
+
+export async function showErrorForScriptNote(noteId: string, message: string) {
+    const note = await froca.getNote(noteId, true);
+
+    showPersistent({
+        id: `custom-widget-failure-${noteId}`,
+        title: t("toast.scripting-error", { title: note?.title ?? "" }),
+        icon: note?.getIcon() ?? "bx bx-error-circle",
+        message,
+        timeout: 15_000,
+        buttons: [
+            {
+                text: t("toast.open-script-note"),
+                onClick: () => appContext.tabManager.openInNewTab(noteId, null, true)
+            }
+        ]
+    });
+}
+
+//#region Toast store
+export const toasts = signal<ToastOptionsWithRequiredId[]>([]);
+
+function addToast(opts: ToastOptions) {
+    const id = opts.id ?? randomString();
+    const toast = { ...opts, id };
+    toasts.value = [ ...toasts.value, toast ];
+    return id;
+}
+
+function updateToast(id: string, partial: Partial<ToastOptions>) {
+    toasts.value = toasts.value.map(toast => {
+        if (toast.id === id) {
+            return { ...toast, ...partial };
+        }
+        return toast;
+    });
+}
+
+export function removeToastFromStore(id: string) {
+    toasts.value = toasts.value.filter(toast => toast.id !== id);
+}
+//#endregion
 
 export default {
     showMessage,

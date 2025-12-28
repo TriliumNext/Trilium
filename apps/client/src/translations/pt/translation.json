@@ -711,9 +711,10 @@
     "zoom_out_title": "Reduzir"
   },
   "zpetne_odkazy": {
-    "backlink": "{{count}} Ligação Reversa",
-    "backlinks": "{{count}} Ligações Reversas",
-    "relation": "relação"
+    "relation": "relação",
+    "backlink_one": "{{count}} Ligação Reversa",
+    "backlink_many": "",
+    "backlink_other": "{{count}} Ligações Reversas"
   },
   "mobile_detail_menu": {
     "insert_child_note": "Inserir nota filha",
@@ -739,7 +740,6 @@
     "grid": "Grade",
     "list": "Lista",
     "collapse_all_notes": "Recolher todas as notas",
-    "expand_all_children": "Expandir todos os filhos",
     "collapse": "Recolher",
     "expand": "Expandir",
     "book_properties": "Propriedades da Coleção",
@@ -954,7 +954,8 @@
     "placeholder": "Digite o conteúdo da sua nota de código aqui…"
   },
   "editable_text": {
-    "placeholder": "Digite o conteúdo da sua nota aqui…"
+    "placeholder": "Digite o conteúdo da sua nota aqui…",
+    "auto-detect-language": "Detetado automaticamente"
   },
   "empty": {
     "open_note_instruction": "Abra uma nota a digitar o título da nota no campo abaixo ou escolha uma nota na árvore.",
@@ -1235,13 +1236,7 @@
     "indexing_stopped": "Indexação interrompida",
     "indexing_in_progress": "Indexação em andamento…",
     "last_indexed": "Última Indexada",
-    "n_notes_queued_0": "{{ count }} nota enfileirada para indexação",
-    "n_notes_queued_1": "{{ count }} notas enfileiradas para indexação",
-    "n_notes_queued_2": "{{ count }} notas enfileiradas para indexação",
     "note_chat": "Conversa de Nota",
-    "notes_indexed_0": "{{ count }} nota indexada",
-    "notes_indexed_1": "{{ count }} notas indexadas",
-    "notes_indexed_2": "{{ count }} notas indexadas",
     "sources": "Origens",
     "start_indexing": "Iniciar Indexação",
     "use_advanced_context": "Usar Contexto Avançado",
@@ -1773,9 +1768,6 @@
     "move-to-visible-launchers": "Mover para lançadores visíveis",
     "move-to-available-launchers": "Mover para lançadores disponíveis",
     "duplicate-launcher": "Duplicar o lançador <kbd data-command=\"duplicateSubtree\">"
-  },
-  "editable-text": {
-    "auto-detect-language": "Detetado automaticamente"
   },
   "highlighting": {
     "title": "Blocos de Código",

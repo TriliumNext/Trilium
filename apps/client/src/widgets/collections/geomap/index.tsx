@@ -130,7 +130,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
 
     return (
         <div className={`geo-view ${state === State.NewNote ? "placing-note" : ""}`}>
-            { coordinates && zoom && <Map
+            { coordinates !== undefined && zoom !== undefined && <Map
                 apiRef={apiRef} containerRef={containerRef}
                 coordinates={coordinates}
                 zoom={zoom}

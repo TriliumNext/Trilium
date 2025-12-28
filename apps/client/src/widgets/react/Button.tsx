@@ -3,6 +3,7 @@ import type { CSSProperties } from "preact/compat";
 import { useMemo } from "preact/hooks";
 import { memo } from "preact/compat";
 import { CommandNames } from "../../components/app_context";
+import Icon from "./Icon";
 
 export interface ButtonProps {
     name?: string;
@@ -66,7 +67,7 @@ const Button = memo(({ name, buttonRef, className, text, onClick, keyboardShortc
             data-trigger-command={triggerCommand}
             {...restProps}
         >
-            {icon && <span className={`bx ${icon}`}></span>}
+            {icon && <Icon icon={`bx ${icon}`} />}
             {text} {shortcutElements}
         </button>
     );
@@ -77,6 +78,31 @@ export function ButtonGroup({ children }: { children: ComponentChildren }) {
         <div className="btn-group" role="group">
             {children}
         </div>
+    )
+}
+
+export function SplitButton({ text, icon, children, ...restProps }: {
+    text: string;
+    icon?: string;
+    title?: string;
+    /** Click handler for the main button component (not the split). */
+    onClick?: () => void;
+    /** The children inside the dropdown of the split. */
+    children: ComponentChildren;
+}) {
+    return (
+        <ButtonGroup>
+            <button type="button" class="btn btn-secondary" {...restProps}>
+                {icon && <Icon icon={`bx ${icon}`} />}
+                {text}
+            </button>
+            <button type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="visually-hidden">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu">
+                {children}
+            </ul>
+        </ButtonGroup>
     )
 }
 

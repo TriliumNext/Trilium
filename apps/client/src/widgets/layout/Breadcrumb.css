@@ -1,0 +1,112 @@
+.breadcrumb {
+    position: relative;
+    align-items: center;
+    display: flex;
+    margin: 0;
+    align-items: center;
+    font-size: 0.9em;
+    gap: 0.25em;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    --badge-radius: 6px;
+
+    .badge-hoisted {
+        --color: var(--input-background-color);
+        color: var(--main-text-color);
+    }
+
+    a.tn-link {
+        --link-hover-background: var(--icon-button-hover-background);
+
+        color: var(--custom-color, inherit);
+
+        &:hover {
+            color: var(--custom-color, inherit);
+        }
+    }
+
+    .archived {
+        opacity: 0.6;
+    }
+
+    > span,
+    > span > span {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+
+        .bx {
+            margin-inline: 6px;
+        }
+
+        a {
+            text-decoration: none;
+            min-width: 0;
+            max-width: 150px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow: hidden;
+            display: block;
+            flex-shrink: 2;
+            font-weight: normal;
+        }
+    }
+
+    .icon-action {
+        font-size: .9rem !important;
+
+        .bxs-chevron-right {
+            transform: translateY(8%);
+
+            &::before {
+                opacity: .75;
+            }
+        }
+    }
+
+    > span:last-of-type a {
+        max-width: 300px;
+        flex-shrink: 1;
+    }
+
+    ul {
+        flex-direction: column;
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .dropdown-item span,
+    .dropdown-item strong,
+    .breadcrumb-last-item {
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        display: block;
+        max-width: 300px;
+        color: var(--custom-color, inherit) !important;
+    }
+
+    .dropdown.breadcrumb-child-list {
+        /* Icon */
+        li > span:first-child {
+            opacity: .75;
+        };
+    }
+
+    a.breadcrumb-last-item,
+    a.breadcrumb-last-item:visited {
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    input {
+        padding: 0 10px;
+        width: 200px;
+    }
+
+    & > .filler {
+        flex-grow: 1;
+        height: 23px;
+    }
+}

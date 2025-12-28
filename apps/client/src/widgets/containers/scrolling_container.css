@@ -4,6 +4,14 @@
     position: relative;
 }
 
-.note-split.type-code:not(.mime-text-x-sqlite) > .scrolling-container {
-    background-color: var(--code-background-color);
+.note-split.type-code:not(.mime-text-x-sqlite) {
+    &> .scrolling-container {
+        background-color: var(--code-background-color);
+        --scrollbar-background-color: var(--main-background-color);
+    }
+
+    .inline-title,
+    .title-actions {
+        background-color: var(--main-background-color);
+    }
 }

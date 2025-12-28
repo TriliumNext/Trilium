@@ -7,6 +7,7 @@ import link_context_menu from "../../../menus/link_context_menu.js";
 import froca from "../../../services/froca.js";
 import branches from "../../../services/branches.js";
 import Component from "../../../components/component.js";
+import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker.jsx";
 import { RefObject } from "preact";
 
 export function useContextMenu(parentNote: FNote, parentComponent: Component | null | undefined, tabulator: RefObject<Tabulator>): Partial<EventCallBackMethods> {
@@ -173,7 +174,7 @@ export function showRowContextMenu(parentComponent: Component, e: MouseEvent, ro
 
     contextMenu.show({
         items: [
-            ...link_context_menu.getItems(),
+            ...link_context_menu.getItems(e),
             { kind: "separator" },
             {
                 title: t("table_view.row-insert-above"),
@@ -219,9 +220,14 @@ export function showRowContextMenu(parentComponent: Component, e: MouseEvent, ro
                 title: t("table_context_menu.delete_row"),
                 uiIcon: "bx bx-trash",
                 handler: () => branches.deleteNotes([ rowData.branchId ], false, false)
+            },
+            { kind: "separator"},
+            {
+                kind: "custom",
+                componentFn: () => NoteColorPicker({note: rowData.noteId})
             }
         ],
-        selectMenuItemHandler: ({ command }) =>  link_context_menu.handleLinkContextMenuItem(command, rowData.noteId),
+        selectMenuItemHandler: ({ command }) =>  link_context_menu.handleLinkContextMenuItem(command, e, rowData.noteId),
         x: e.pageX,
         y: e.pageY
     });

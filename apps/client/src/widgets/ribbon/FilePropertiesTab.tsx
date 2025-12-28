@@ -1,13 +1,13 @@
+import FNote from "../../entities/fnote";
 import { t } from "../../services/i18n";
+import { downloadFileNote, openNoteExternally } from "../../services/open";
+import protected_session_holder from "../../services/protected_session_holder";
+import server from "../../services/server";
+import toast from "../../services/toast";
 import { formatSize } from "../../services/utils";
+import Button from "../react/Button";
 import { FormFileUploadButton } from "../react/FormFileUpload";
 import { useNoteBlob, useNoteLabel } from "../react/hooks";
-import Button from "../react/Button";
-import protected_session_holder from "../../services/protected_session_holder";
-import { downloadFileNote, openNoteExternally } from "../../services/open";
-import toast from "../../services/toast";
-import server from "../../services/server";
-import FNote from "../../entities/fnote";
 
 export default function FilePropertiesTab({ note }: { note?: FNote | null }) {
     const [ originalFileName ] = useNoteLabel(note, "originalFileName");
@@ -17,24 +17,24 @@ export default function FilePropertiesTab({ note }: { note?: FNote | null }) {
     return (
         <div className="file-properties-widget">
             {note && (
-                <table class="file-table">
+                <table className="file-table">
                     <tbody>
                         <tr>
-                            <th class="text-nowrap">{t("file_properties.note_id")}:</th>
-                            <td class="file-note-id">{note.noteId}</td>
-                            <th class="text-nowrap">{t("file_properties.original_file_name")}:</th>
-                            <td class="file-filename">{originalFileName ?? "?"}</td>
+                            <th className="text-nowrap">{t("file_properties.note_id")}:</th>
+                            <td className="file-note-id selectable-text">{note.noteId}</td>
+                            <th className="text-nowrap">{t("file_properties.original_file_name")}:</th>
+                            <td className="file-filename selectable-text">{originalFileName ?? "?"}</td>
                         </tr>
                         <tr>
-                            <th class="text-nowrap">{t("file_properties.file_type")}:</th>
-                            <td class="file-filetype">{note.mime}</td>
-                            <th class="text-nowrap">{t("file_properties.file_size")}:</th>
-                            <td class="file-filesize">{formatSize(blob?.contentLength ?? 0)}</td>
+                            <th className="text-nowrap">{t("file_properties.file_type")}:</th>
+                            <td className="file-filetype selectable-text">{note.mime}</td>
+                            <th className="text-nowrap">{t("file_properties.file_size")}:</th>
+                            <td className="file-filesize selectable-text">{formatSize(blob?.contentLength ?? 0)}</td>
                         </tr>
 
                         <tr>
                             <td colSpan={4}>
-                                <div class="file-buttons">
+                                <div className="file-buttons">
                                     <Button
                                         icon="bx bx-download"
                                         text={t("file_properties.download")}
@@ -54,19 +54,7 @@ export default function FilePropertiesTab({ note }: { note?: FNote | null }) {
                                         icon="bx bx-folder-open"
                                         text={t("file_properties.upload_new_revision")}
                                         disabled={!canAccessProtectedNote}
-                                        onChange={(fileToUpload) => {
-                                            if (!fileToUpload) {
-                                                return;
-                                            }
-
-                                            server.upload(`notes/${note.noteId}/file`, fileToUpload[0]).then((result) => {
-                                                if (result.uploaded) {
-                                                    toast.showMessage(t("file_properties.upload_success"));
-                                                } else {
-                                                    toast.showError(t("file_properties.upload_failed"));
-                                                }
-                                            });
-                                        }}
+                                        onChange={buildUploadNewFileRevisionListener(note)}
                                     />
                                 </div>
                             </td>
@@ -76,4 +64,20 @@ export default function FilePropertiesTab({ note }: { note?: FNote | null }) {
             )}
         </div>
     );
+}
+
+export function buildUploadNewFileRevisionListener(note: FNote) {
+    return (fileToUpload: FileList | null) => {
+        if (!fileToUpload) {
+            return;
+        }
+
+        server.upload(`notes/${note.noteId}/file`, fileToUpload[0]).then((result) => {
+            if (result.uploaded) {
+                toast.showMessage(t("file_properties.upload_success"));
+            } else {
+                toast.showError(t("file_properties.upload_failed"));
+            }
+        });
+    };
 }

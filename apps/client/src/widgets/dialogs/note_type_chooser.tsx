@@ -8,7 +8,7 @@ import note_types from "../../services/note_types";
 import { MenuCommandItem, MenuItem } from "../../menus/context_menu";
 import { TreeCommandNames } from "../../menus/tree_context_menu";
 import { Suggestion } from "../../services/note_autocomplete";
-import Badge from "../react/Badge";
+import SimpleBadge from "../react/Badge";
 import { useTriliumEvent } from "../react/hooks";
 
 export interface ChooseNoteTypeResponse {
@@ -108,7 +108,7 @@ export default function NoteTypeChooserDialogComponent() {
                                 value={[ item.type, item.templateNoteId ].join(",") }
                                 icon={item.uiIcon}>
                                 {item.title}
-                                {item.badges && item.badges.map((badge) => <Badge {...badge} />)}
+                                {item.badges && item.badges.map((badge) => <SimpleBadge {...badge} />)}
                             </FormListItem>;
                         }
                     })}

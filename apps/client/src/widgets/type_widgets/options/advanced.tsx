@@ -1,12 +1,16 @@
 import { AnonymizedDbResponse, DatabaseAnonymizeResponse, DatabaseCheckIntegrityResponse } from "@triliumnext/commons";
+import { useEffect, useMemo, useState } from "preact/hooks";
+
+import { experimentalFeatures } from "../../../services/experimental_features";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import Button from "../../react/Button";
-import FormText from "../../react/FormText";
-import OptionsSection from "./components/OptionsSection"
 import Column from "../../react/Column";
-import { useEffect, useState } from "preact/hooks";
+import FormText from "../../react/FormText";
+import { useTriliumOptionJson } from "../../react/hooks";
+import CheckboxList from "./components/CheckboxList";
+import OptionsSection from "./components/OptionsSection";
 
 export default function AdvancedSettings() {
     return <>
@@ -14,6 +18,7 @@ export default function AdvancedSettings() {
         <DatabaseIntegrityOptions />
         <DatabaseAnonymizationOptions />
         <VacuumDatabaseOptions />
+        <ExperimentalOptions />
     </>;
 }
 
@@ -44,14 +49,14 @@ function DatabaseIntegrityOptions() {
     return (
         <OptionsSection title={t("database_integrity_check.title")}>
             <FormText>{t("database_integrity_check.description")}</FormText>
-            
+
             <Button
                 text={t("database_integrity_check.check_button")}
                 onClick={async () => {
                     toast.showMessage(t("database_integrity_check.checking_integrity"));
-                    
+
                     const { results } = await server.get<DatabaseCheckIntegrityResponse>("database/check-integrity");
-        
+
                     if (results.length === 1 && results[0].integrity_check === "ok") {
                         toast.showMessage(t("database_integrity_check.integrity_check_succeeded"));
                     } else {
@@ -69,7 +74,7 @@ function DatabaseIntegrityOptions() {
                 }}
             />
         </OptionsSection>
-    )
+    );
 }
 
 function DatabaseAnonymizationOptions() {
@@ -93,7 +98,7 @@ function DatabaseAnonymizationOptions() {
                     buttonClick={async () => {
                         toast.showMessage(t("database_anonymization.creating_fully_anonymized_database"));
                         const resp = await server.post<DatabaseAnonymizeResponse>("database/anonymize/full");
-            
+
                         if (!resp.success) {
                             toast.showError(t("database_anonymization.error_creating_anonymized_database"));
                         } else {
@@ -123,7 +128,7 @@ function DatabaseAnonymizationOptions() {
             <hr />
             <ExistingAnonymizedDatabases databases={existingAnonymizedDatabases} />
         </OptionsSection>
-    )
+    );
 }
 
 function DatabaseAnonymizationOption({ title, description, buttonText, buttonClick }: { title: string, description: string, buttonText: string, buttonClick: () => void }) {
@@ -133,15 +138,15 @@ function DatabaseAnonymizationOption({ title, description, buttonText, buttonCli
             <FormText>{description}</FormText>
             <Button text={buttonText} onClick={buttonClick} />
         </Column>
-    )
+    );
 }
 
 function ExistingAnonymizedDatabases({ databases }: { databases: AnonymizedDbResponse[] }) {
     if (!databases.length) {
-        return <FormText>{t("database_anonymization.no_anonymized_database_yet")}</FormText>
+        return <FormText>{t("database_anonymization.no_anonymized_database_yet")}</FormText>;
     }
 
-    return (    
+    return (
         <table className="table table-stripped">
             <thead>
                 <th>{t("database_anonymization.existing_anonymized_databases")}</th>
@@ -154,7 +159,7 @@ function ExistingAnonymizedDatabases({ databases }: { databases: AnonymizedDbRes
                 ))}
             </tbody>
         </table>
-    )
+    );
 }
 
 function VacuumDatabaseOptions() {
@@ -171,5 +176,24 @@ function VacuumDatabaseOptions() {
                 }}
             />
         </OptionsSection>
-    )
+    );
+}
+
+function ExperimentalOptions() {
+    const [ enabledExperimentalFeatures, setEnabledExperimentalFeatures ] = useTriliumOptionJson<string[]>("experimentalFeatures", true);
+    const filteredExperimentalFeatures = useMemo(() =>  experimentalFeatures.filter(e => e.id !== "new-layout"), []);
+
+    return (filteredExperimentalFeatures.length > 0 &&
+        <OptionsSection title={t("experimental_features.title")}>
+            <FormText>{t("experimental_features.disclaimer")}</FormText>
+
+            <CheckboxList
+                values={filteredExperimentalFeatures}
+                keyProperty="id"
+                titleProperty="name"
+                descriptionProperty="description"
+                currentValue={enabledExperimentalFeatures} onChange={setEnabledExperimentalFeatures}
+            />
+        </OptionsSection>
+    );
 }

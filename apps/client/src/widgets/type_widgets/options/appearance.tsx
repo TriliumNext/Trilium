@@ -1,18 +1,24 @@
+import "./appearance.css";
+
+import { FontFamily, OptionNames } from "@triliumnext/commons";
 import { useEffect, useState } from "preact/hooks";
+
 import { t } from "../../../services/i18n";
-import { isElectron, isMobile, reloadFrontendApp, restartDesktopApp } from "../../../services/utils";
-import Column from "../../react/Column";
-import FormRadioGroup from "../../react/FormRadioGroup";
-import FormSelect, { FormSelectWithGroups } from "../../react/FormSelect";
-import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
-import OptionsSection from "./components/OptionsSection";
 import server from "../../../services/server";
+import { isElectron, isMobile, reloadFrontendApp, restartDesktopApp } from "../../../services/utils";
+import { VerticalLayoutIcon } from "../../buttons/global_menu";
+import Button from "../../react/Button";
+import Column from "../../react/Column";
 import FormCheckbox from "../../react/FormCheckbox";
 import FormGroup from "../../react/FormGroup";
-import { FontFamily, OptionNames } from "@triliumnext/commons";
-import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
+import FormRadioGroup from "../../react/FormRadioGroup";
+import FormSelect, { FormSelectWithGroups } from "../../react/FormSelect";
 import FormText from "../../react/FormText";
-import Button from "../../react/Button";
+import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import Icon from "../../react/Icon";
+import OptionsSection from "./components/OptionsSection";
+import RadioWithIllustration from "./components/RadioWithIllustration";
 import RelatedSettings from "./components/RelatedSettings";
 
 const MIN_CONTENT_WIDTH = 640;
@@ -30,7 +36,7 @@ const BUILTIN_THEMES: Theme[] = [
     { val: "auto", title: t("theme.auto_theme") },
     { val: "light", title: t("theme.light_theme") },
     { val: "dark", title: t("theme.dark_theme") }
-]
+];
 
 interface FontFamilyEntry {
     value: FontFamily;
@@ -84,6 +90,7 @@ export default function AppearanceSettings() {
 
     return (
         <div>
+            {!isMobile() && <LayoutSwitcher />}
             {!isMobile() && <LayoutOrientation />}
             <ApplicationTheme />
             {overrideThemeFonts === "true" && <Fonts />}
@@ -102,7 +109,119 @@ export default function AppearanceSettings() {
                 }
             ]} />
         </div>
-    )
+    );
+}
+
+function LayoutSwitcher() {
+    const [ newLayout, setNewLayout ] = useTriliumOptionBool("newLayout");
+
+    return (
+        <OptionsSection title={t("settings_appearance.ui")}>
+            <RadioWithIllustration
+                currentValue={newLayout ? "new-layout" : "old-layout"}
+                onChange={async newValue => {
+                    await setNewLayout(newValue === "new-layout");
+                    reloadFrontendApp();
+                }}
+                values={[
+                    { key: "old-layout", text: t("settings_appearance.ui_old_layout"), illustration: <LayoutIllustration /> },
+                    { key: "new-layout", text: t("settings_appearance.ui_new_layout"), illustration: <LayoutIllustration isNewLayout /> }
+                ]}
+            />
+        </OptionsSection>
+    );
+}
+
+function LayoutIllustration({ isNewLayout }: { isNewLayout?: boolean }) {
+    return (
+        <div className="old-layout-illustration">
+            <div className="launcher-pane">
+                <VerticalLayoutIcon />
+                <Icon icon="bx bx-send" />
+                <Icon icon="bx bx-file-blank" />
+                <Icon icon="bx bx-search" />
+            </div>
+
+            <div className="tree">
+                <ul>
+                    <li>Options</li>
+                    <ul>
+                        <li>Appearance</li>
+                        <li>Shortcuts</li>
+                        <li>Text Notes</li>
+                        <li>Code Notes</li>
+                        <li>Images</li>
+                    </ul>
+                </ul>
+            </div>
+
+            <div className="main">
+                <div className="tab-bar" />
+
+                <div className="content">
+
+                    {(isNewLayout) ? (
+                        <div className="note-header">
+                            <div className="note-toolbar">
+                                <Icon icon="bx bx-dock-right" />
+                            </div>
+                            <div className="note-inline-title">
+                                <Icon className="note-icon" icon="bx bx-leaf" />
+                                <div className="note-title-row">
+                                    <div className="title">Title</div>
+                                    <div className="subtitle">Just a sample note</div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                    <div>
+                        <div className="title-bar">
+                            <Icon icon="bx bx-leaf" />
+                            <span className="title">Title</span>
+                            <Icon icon="bx bx-dock-right" />
+                        </div>
+                    </div>
+                    )}
+
+                    {!isNewLayout && <div className="ribbon">
+                        <div className="ribbon-header">
+                            <Icon icon="bx bx-slider" />
+                            <Icon icon="bx bx-list-check" />
+                            <Icon icon="bx bx-list-plus" />
+                            <Icon icon="bx bx-collection" />
+                        </div>
+
+                        <div className="ribbon-body">
+                            <div className="ribbon-body-content"></div>
+                        </div>
+                    </div>}
+
+                    {isNewLayout && <div className="note-title-actions">
+                        <Icon icon="bx bx-chevron-down" />{" "}Promoted attributes
+                    </div>}
+
+                    <div className="content-inner">
+                        This is a "demo" document packaged with Trilium to showcase some of its features and also give you some ideas on how you might structure your notes. You can play with it, and modify the note content and tree structure as you wish.
+                    </div>
+
+                    {isNewLayout && <div className="status-bar">
+                        <div className="status-bar-breadcrumb">
+                            <Icon icon="bx bx-home" />
+                            <Icon icon="bx bx-chevron-right" />
+                            Note
+                            <Icon icon="bx bx-chevron-right" />
+                            Note
+                        </div>
+
+                        <div className="status-bar-actions">
+                            <Icon icon="bx bx-list-check" />
+                            <Icon icon="bx bx-info-circle" />
+                        </div>
+                    </div>}
+                </div>
+            </div>
+        </div>
+    );
 }
 
 function LayoutOrientation() {
@@ -141,7 +260,7 @@ function ApplicationTheme() {
             setThemes([
                 ...BUILTIN_THEMES,
                 ...userThemes
-            ])
+            ]);
         });
     }, []);
 
@@ -162,7 +281,7 @@ function ApplicationTheme() {
                 </FormGroup>
             </div>
         </OptionsSection>
-    )
+    );
 }
 
 function Fonts() {
@@ -245,7 +364,7 @@ function ElectronIntegration() {
 
             <Button text={t("electron_integration.restart-app-button")} onClick={restartDesktopApp} />
         </OptionsSection>
-    )
+    );
 }
 
 function Performance() {
@@ -271,7 +390,7 @@ function Performance() {
 
         {isElectron() && <SmoothScrollEnabledOption />}
 
-    </OptionsSection>
+    </OptionsSection>;
 }
 
 function SmoothScrollEnabledOption() {
@@ -280,7 +399,7 @@ function SmoothScrollEnabledOption() {
     return <FormCheckbox
         label={`${t("ui-performance.enable-smooth-scroll")} ${t("ui-performance.app-restart-required")}`}
         currentValue={smoothScrollEnabled} onChange={setSmoothScrollEnabled}
-    />
+    />;
 }
 
 function MaxContentWidth() {
@@ -302,10 +421,10 @@ function MaxContentWidth() {
             </Column>
 
             <FormCheckbox label={t("max_content_width.centerContent")}
-                          currentValue={centerContent}
-                          onChange={setCenterContent} />
+                currentValue={centerContent}
+                onChange={setCenterContent} />
         </OptionsSection>
-    )
+    );
 }
 
 function RibbonOptions() {
@@ -318,5 +437,5 @@ function RibbonOptions() {
                 currentValue={editedNotesOpenInRibbon} onChange={setEditedNotesOpenInRibbon}
             />
         </OptionsSection>
-    )
+    );
 }

@@ -21,7 +21,7 @@
     },
     "bundle-error": {
       "title": "Benutzerdefiniertes Skript konnte nicht geladen werden",
-      "message": "Skript von der Notiz mit der ID \"{{id}}\", und dem Titel \"{{title}}\" konnte nicht ausgeführt werden wegen:\n\n{{message}}"
+      "message": "Skript aus der Notiz \"{{title}}\" mit der ID \"{{id}}\", konnte nicht ausgeführt werden wegen:\n\n{{message}}"
     }
   },
   "add_link": {
@@ -39,7 +39,10 @@
     "help_on_tree_prefix": "Hilfe zum Baumpräfix",
     "prefix": "Präfix: ",
     "save": "Speichern",
-    "branch_prefix_saved": "Zweigpräfix wurde gespeichert."
+    "branch_prefix_saved": "Zweigpräfix wurde gespeichert.",
+    "branch_prefix_saved_multiple": "Der Zweigpräfix wurde für {{count}} Zweige gespeichert.",
+    "edit_branch_prefix_multiple": "Branch-Präfix für {{count}} Zweige bearbeiten",
+    "affected_branches": "Betroffene Zweige ({{count}}):"
   },
   "bulk_actions": {
     "bulk_actions": "Massenaktionen",
@@ -159,7 +162,8 @@
     "quickSearch": "Fokus auf schnelle Sucheingabe",
     "inPageSearch": "Auf-der-Seite-Suche",
     "newTabWithActivationNoteLink": "auf einen Notiz-Link öffnet und aktiviert die Notiz in einem neuen Tab",
-    "title": "Spickzettel"
+    "title": "Spickzettel",
+    "editShortcuts": "Tastenkürzel bearbeiten"
   },
   "import": {
     "importIntoNote": "In Notiz importieren",
@@ -684,7 +688,8 @@
     "convert_into_attachment_failed": "Konvertierung der Notiz '{{title}}' fehlgeschlagen.",
     "convert_into_attachment_successful": "Notiz '{{title}}' wurde als Anhang konvertiert.",
     "convert_into_attachment_prompt": "Bist du dir sicher, dass du die Notiz '{{title}}' in ein Anhang der übergeordneten Notiz konvertieren möchtest?",
-    "print_pdf": "Export als PDF..."
+    "print_pdf": "Export als PDF...",
+    "open_note_on_server": "Öffne Notiz auf dem Server"
   },
   "onclick_button": {
     "no_click_handler": "Das Schaltflächen-Widget „{{componentId}}“ hat keinen definierten Klick-Handler"
@@ -728,9 +733,9 @@
     "zoom_out_title": "Herauszoomen"
   },
   "zpetne_odkazy": {
-    "backlink": "{{count}} Rückverlinkung",
-    "backlinks": "{{count}} Rückverlinkungen",
-    "relation": "Beziehung"
+    "relation": "Beziehung",
+    "backlink_one": "{{count}} Rückverlinkung",
+    "backlink_other": "{{count}} Rückverlinkungen"
   },
   "mobile_detail_menu": {
     "insert_child_note": "Untergeordnete Notiz einfügen",
@@ -757,7 +762,6 @@
     "grid": "Gitter",
     "list": "Liste",
     "collapse_all_notes": "Alle Notizen einklappen",
-    "expand_all_children": "Unternotizen ausklappen",
     "collapse": "Einklappen",
     "expand": "Ausklappen",
     "invalid_view_type": "Ungültiger Ansichtstyp „{{type}}“",
@@ -767,7 +771,11 @@
     "geo-map": "Weltkarte",
     "board": "Tafel",
     "include_archived_notes": "Zeige archivierte Notizen",
-    "presentation": "Präsentation"
+    "presentation": "Präsentation",
+    "expand_all_levels": "Alle Ebenen erweitern",
+    "expand_tooltip": "Erweitert die direkten Unterelemente dieser Sammlung (eine Ebene tiefer). Für weitere Optionen auf den Pfeil rechts klicken.",
+    "expand_first_level": "Direkte Unterelemente erweitern",
+    "expand_nth_level": "{{depth}} Ebenen erweitern"
   },
   "edited_notes": {
     "no_edited_notes_found": "An diesem Tag wurden noch keine Notizen bearbeitet...",
@@ -976,7 +984,9 @@
     "placeholder": "Gebe hier den Inhalt deiner Codenotiz ein..."
   },
   "editable_text": {
-    "placeholder": "Gebe hier den Inhalt deiner Notiz ein..."
+    "placeholder": "Gebe hier den Inhalt deiner Notiz ein...",
+    "auto-detect-language": "Automatisch erkannt",
+    "keeps-crashing": "Die Bearbeitungskomponente stürzt immer wieder ab. Bitte starten Sie Trilium neu. Wenn das Problem weiterhin besteht, erstellen Sie einen Fehlerbericht."
   },
   "empty": {
     "open_note_instruction": "Öffne eine Notiz, indem du den Titel der Notiz in die Eingabe unten eingibst oder eine Notiz in der Baumstruktur auswählst.",
@@ -1104,7 +1114,8 @@
     "title": "Inhaltsbreite",
     "default_description": "Trilium begrenzt standardmäßig die maximale Inhaltsbreite, um die Lesbarkeit für maximierte Bildschirme auf Breitbildschirmen zu verbessern.",
     "max_width_label": "Maximale Inhaltsbreite in Pixel",
-    "max_width_unit": "Pixel"
+    "max_width_unit": "Pixel",
+    "centerContent": "Inhalt zentriert halten"
   },
   "native_title_bar": {
     "title": "Native Titelleiste (App-Neustart erforderlich)",
@@ -1143,7 +1154,10 @@
     "unit": "Zeichen"
   },
   "code_mime_types": {
-    "title": "Verfügbare MIME-Typen im Dropdown-Menü"
+    "title": "Verfügbare MIME-Typen im Dropdown-Menü",
+    "tooltip_syntax_highlighting": "Syntaxhervorhebung",
+    "tooltip_code_block_syntax": "Code-Blöcke in Textnotizen",
+    "tooltip_code_note_syntax": "Code-Notizen"
   },
   "vim_key_bindings": {
     "use_vim_keybindings_in_code_notes": "Verwende VIM-Tastenkombinationen in Codenotizen (kein Ex-Modus)",
@@ -1510,7 +1524,8 @@
     "refresh-saved-search-results": "Gespeicherte Suchergebnisse aktualisieren",
     "create-child-note": "Unternotiz anlegen",
     "unhoist": "Fokus verlassen",
-    "toggle-sidebar": "Seitenleiste ein-/ausblenden"
+    "toggle-sidebar": "Seitenleiste ein-/ausblenden",
+    "dropping-not-allowed": "Ablegen von Notizen an dieser Stelle ist nicht zulässig."
   },
   "title_bar_buttons": {
     "window-on-top": "Dieses Fenster immer oben halten"
@@ -1612,9 +1627,6 @@
     "move-to-available-launchers": "Zu verfügbaren Launchern verschieben",
     "duplicate-launcher": "Launcher duplizieren <kbd data-command=\"duplicateSubtree\">"
   },
-  "editable-text": {
-    "auto-detect-language": "Automatisch erkannt"
-  },
   "highlighting": {
     "description": "Steuert die Syntaxhervorhebung für Codeblöcke in Textnotizen, Code-Notizen sind nicht betroffen.",
     "color-scheme": "Farbschema",
@@ -1654,7 +1666,8 @@
     "copy-link": "Link kopieren",
     "paste": "Einfügen",
     "paste-as-plain-text": "Als unformatierten Text einfügen",
-    "search_online": "Suche nach \"{{term}}\" mit {{searchEngine}} starten"
+    "search_online": "Suche nach \"{{term}}\" mit {{searchEngine}} starten",
+    "search_in_trilium": "Suche nach \"{{term}}\" in Trilium"
   },
   "image_context_menu": {
     "copy_reference_to_clipboard": "Referenz in Zwischenablage kopieren",
@@ -1715,10 +1728,6 @@
     "help_title": "Zeige mehr Informationen zu diesem Fenster"
   },
   "ai_llm": {
-    "n_notes_queued": "{{ count }} Notiz zur Indizierung vorgemerkt",
-    "n_notes_queued_plural": "{{ count }} Notizen zur Indizierung vorgemerkt",
-    "notes_indexed": "{{ count }} Notiz indiziert",
-    "notes_indexed_plural": "{{ count }} Notizen indiziert",
     "not_started": "Nicht gestartet",
     "title": "KI Einstellungen",
     "processed_notes": "Verarbeitete Notizen",
@@ -2028,7 +2037,8 @@
     "new-item-placeholder": "Notiz Titel eingeben...",
     "add-column-placeholder": "Spaltenname eingeben...",
     "edit-note-title": "Klicke zum Editieren des Notiz-Titels",
-    "edit-column-title": "Klicke zum Editieren des Spalten-Titels"
+    "edit-column-title": "Klicke zum Editieren des Spalten-Titels",
+    "column-already-exists": "Die Spalte ist auf dem Board bereits vorhanden."
   },
   "command_palette": {
     "tree-action-name": "Struktur: {{name}}",
@@ -2078,5 +2088,21 @@
     "edit-slide": "Folie bearbeiten",
     "start-presentation": "Präsentation starten",
     "slide-overview": "Übersicht der Folien ein-/ausblenden"
+  },
+  "read-only-info": {
+    "read-only-note": "Aktuelle Notiz wird im Lese-Modus angezeigt.",
+    "auto-read-only-note": "Diese Notiz wird im Nur-Lesen-Modus angezeigt, um ein schnelleres Laden zu ermöglichen.",
+    "edit-note": "Notiz bearbeiten"
+  },
+  "calendar_view": {
+    "delete_note": "Notiz löschen..."
+  },
+  "note-color": {
+    "clear-color": "Notizfarbe entfernen",
+    "set-color": "Notizfarbe wählen",
+    "set-custom-color": "Eigene Notizfarbe wählen"
+  },
+  "popup-editor": {
+    "maximize": "Wechsele zum vollständigen Editor"
   }
 }

@@ -11,3 +11,4 @@ export * from "./lib/shared_constants.js";
 export * from "./lib/ws_api.js";
 export * from "./lib/attribute_names.js";
 export * from "./lib/utils.js";
+export * from "./lib/dayjs.js";

@@ -61,7 +61,11 @@ export async function loadTheme(theme: "none" | Theme) {
         document.querySelector("head")?.append(highlightingThemeEl);
     }
 
-    const themeCss = (await theme.load()).default as string;
+    let themeCss = (await theme.load()).default as string;
+
+    // Increase the specificity of the HLJS selector to render properly within CKEditor without the need of patching the library.
+    themeCss = themeCss.replace(/^.hljs {/m, ".hljs, .ck-content pre.hljs {");
+
     highlightingThemeEl.textContent = themeCss;
 }
 

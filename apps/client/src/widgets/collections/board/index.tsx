@@ -164,12 +164,12 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
             onWheel={onWheelHorizontalScroll}
         >
             <BoardViewContext.Provider value={boardViewContext}>
-                <div
+                {byColumn && columns && <div
                     className="board-view-container"
                     onDragOver={handleColumnDragOver}
                     onDrop={handleContainerDrop}
                 >
-                    {byColumn && columns?.map((column, index) => (
+                    {columns.map((column, index) => (
                         <>
                             {columnDropPosition === index && (
                                 <div className="column-drop-placeholder show" />
@@ -191,7 +191,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
                     )}
 
                     <AddNewColumn api={api} isInRelationMode={isInRelationMode} />
-                </div>
+                </div>}
             </BoardViewContext.Provider>
         </div>
     )
@@ -204,8 +204,19 @@ function AddNewColumn({ api, isInRelationMode }: { api: BoardApi, isInRelationMo
         setIsCreatingNewColumn(true);
     }, []);
 
+    const keydownCallback = useCallback((e: KeyboardEvent) => {
+        if (e.key === "Enter") {
+            setIsCreatingNewColumn(true);
+        }
+    }, []);
+
     return (
-        <div className={`board-add-column ${isCreatingNewColumn ? "editing" : ""}`} onClick={addColumnCallback}>
+        <div
+            className={`board-add-column ${isCreatingNewColumn ? "editing" : ""}`}
+            onClick={addColumnCallback}
+            onKeyDown={keydownCallback}
+            tabIndex={300}
+        >
             {!isCreatingNewColumn
             ? <>
                 <Icon icon="bx bx-plus" />{" "}
@@ -232,7 +243,7 @@ function AddNewColumn({ api, isInRelationMode }: { api: BoardApi, isInRelationMo
 export function TitleEditor({ currentValue, placeholder, save, dismiss, mode, isNewItem }: {
     currentValue?: string;
     placeholder?: string;
-    save: (newValue: string) => void;
+    save: (newValue: string) => void | Promise<void>;
     dismiss: () => void;
     isNewItem?: boolean;
     mode?: "normal" | "multiline" | "relation";

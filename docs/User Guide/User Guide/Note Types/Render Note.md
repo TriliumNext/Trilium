@@ -9,7 +9,7 @@ Render Note is used in <a class="reference-link" href="../Scripting.md">Scripti
 2.  Create a <a class="reference-link" href="Render%20Note.md">Render Note</a>.
 3.  Assign the `renderNote` [relation](../Advanced%20Usage/Attributes.md) to point at the previously created code note.
 
-## Dynamic content
+## Legacy scripting using jQuery
 
 A static HTML is generally not enough for <a class="reference-link" href="../Scripting.md">Scripting</a>. The next step is to automatically change parts of the note using JavaScript.
 
@@ -24,7 +24,7 @@ The current date & time is <span class="date"></span>
 
 Now we need to add the script. Create another <a class="reference-link" href="Code.md">Code</a>, but this time of JavaScript (frontend) language. Make sure the newly created note is a direct child of the HTML note created previously; with the following content:
 
-```
+```javascript
 const $dateEl = api.$container.find(".date");
 $dateEl.text(new Date());
 ```
@@ -33,6 +33,28 @@ Now create a render note at any place and set its `~renderNote` relation to poin
 
 > **Current date & time**  
 > The current date & time is Sun Apr 06 2025 15:26:29 GMT+0300 (Eastern European Summer Time)
+
+## Dynamic content using Preact & JSX
+
+As a more modern alternative to jQuery, it's possible to use Preact & JSX to render pages. Since JSX is a superset of JavaScript, there's no need to provide a HTML anymore.
+
+Here are the steps to creating a simple render note:
+
+1.  Create a note of type <a class="reference-link" href="Render%20Note.md">Render Note</a>.
+2.  Create a child <a class="reference-link" href="Code.md">Code</a> note with JSX as the language.  
+    As an example, use the following content:
+    
+    ```
+    export default function() {
+        return (
+            <>
+                <p>Hello world.</p>
+            </>
+        );
+    }
+    ```
+3.  In the parent render note, define a `~renderNote` relation pointing to the newly created child.
+4.  Refresh the render note and it should display a “Hello world” message.
 
 ## Refreshing the note
 

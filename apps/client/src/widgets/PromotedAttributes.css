@@ -1,0 +1,97 @@
+body.mobile .promoted-attributes-widget {
+    /* https://github.com/zadam/trilium/issues/4468 */
+    flex-shrink: 0.4;
+    overflow: auto;
+}
+
+.component.promoted-attributes-widget {
+    contain: none;
+}
+
+.promoted-attributes-container {
+    margin: 0 1.5em;
+    overflow: auto;
+    max-height: 400px;
+    flex-wrap: wrap;
+    display: table;
+}
+
+.promoted-attribute-cell {
+    display: flex;
+    align-items: center;
+    margin: 10px;
+}
+
+.promoted-attribute-cell > label {
+    user-select: none;
+    font-weight: bold;
+    vertical-align: middle;
+}
+.promoted-attribute-cell > * {
+    display: table-cell;
+    padding: 1px 0;
+}
+
+.promoted-attribute-cell div.input-group {
+    margin-inline-start: 10px;
+    display: flex;
+    min-height: 40px;
+}
+.promoted-attribute-cell strong {
+    word-break:keep-all;
+    white-space: nowrap;
+}
+
+.promoted-attribute-cell input[type="checkbox"] {
+    width: 22px !important;
+    flex-grow: 0;
+    width: unset;
+}
+
+/* Restore default apperance */
+.promoted-attribute-cell input[type="number"],
+.promoted-attribute-cell input[type="checkbox"] {
+    appearance: auto;
+}
+
+.promoted-attribute-cell input[type="color"] {
+    width: 24px;
+    height: 24px;
+    margin-top: 2px;
+    appearance: none;
+    padding: 0;
+    border: 0;
+    outline: none;
+    border-radius: 25% !important;
+}
+
+.promoted-attribute-cell input[type="color"]::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.promoted-attribute-cell input[type="color"]::-webkit-color-swatch {
+    border: none;
+    border-radius: 25%;
+}
+
+.promoted-attribute-label-number input {
+    text-align: right;
+    width: 120px;
+}
+
+.promoted-attribute-label-color input[type="hidden"][value=""] + input[type="color"] {
+    position: relative;
+    opacity: 0.5;
+}
+
+.promoted-attribute-label-color input[type="hidden"][value=""] + input[type="color"]:after {
+    content: "";
+    position: absolute;
+    top: 10px;
+    inset-inline-start: 0px;
+    inset-inline-end: 0;
+    height: 2px;
+    background: rgba(0, 0, 0, 0.5);
+    transform: rotate(45deg);
+    pointer-events: none;
+}

@@ -1,0 +1,37 @@
+.collapsible {
+    .collapsible-title {
+        line-height: 1em;
+        display: flex;
+        align-items: center;
+        appearance: none;
+        background: transparent;
+        border: 0;
+        color: inherit;
+
+        .arrow {
+            font-size: 1.3em;
+            transition: transform 250ms ease-in;
+        }
+    }
+
+    .collapsible-body {
+        height: 0;
+        overflow: hidden;
+    }
+
+    .collapsible-inner-body {
+        padding-top: 0.5em;
+    }
+
+    &.expanded {
+        .collapsible-title .arrow {
+            transform: rotate(90deg);
+        }
+    }
+
+    &.with-transition {
+        .collapsible-body {
+            transition: height 250ms ease-in;
+        }
+    }
+}

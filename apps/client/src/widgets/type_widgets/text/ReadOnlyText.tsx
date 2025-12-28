@@ -1,23 +1,24 @@
-import { useEffect, useMemo, useRef } from "preact/hooks";
-import { TypeWidgetProps } from "../type_widget";
 import "./ReadOnlyText.css";
-import { useNoteBlob, useNoteLabel, useTriliumEvent, useTriliumOptionBool } from "../../react/hooks";
-import RawHtml from "../../react/RawHtml";
-
 // we load CKEditor also for read only notes because they contain content styles required for correct rendering of even read only notes
 // we could load just ckeditor-content.css but that causes CSS conflicts when both build CSS and this content CSS is loaded at the same time
 // (see https://github.com/zadam/trilium/issues/1590 for example of such conflict)
 import "@triliumnext/ckeditor5";
-import FNote from "../../../entities/fnote";
-import { getLocaleById } from "../../../services/i18n";
-import { getMermaidConfig } from "../../../services/mermaid";
-import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
-import { renderMathInElement } from "../../../services/math";
-import link from "../../../services/link";
-import { formatCodeBlocks } from "../../../services/syntax_highlight";
-import TouchBar, { TouchBarButton, TouchBarSpacer } from "../../react/TouchBar";
+
+import clsx from "clsx";
+import { useEffect, useMemo, useRef } from "preact/hooks";
+
 import appContext from "../../../components/app_context";
+import FNote from "../../../entities/fnote";
+import { applyInlineMermaid, rewriteMermaidDiagramsInContainer } from "../../../services/content_renderer_text";
+import { getLocaleById } from "../../../services/i18n";
+import { renderMathInElement } from "../../../services/math";
+import { formatCodeBlocks } from "../../../services/syntax_highlight";
+import { useNoteBlob, useNoteLabel, useTriliumEvent, useTriliumOptionBool } from "../../react/hooks";
+import { RawHtmlBlock } from "../../react/RawHtml";
+import TouchBar, { TouchBarButton, TouchBarSpacer } from "../../react/TouchBar";
+import { TypeWidgetProps } from "../type_widget";
 import { applyReferenceLinks } from "./read_only_helper";
+import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
 
 export default function ReadOnlyText({ note, noteContext, ntxId }: TypeWidgetProps) {
     const blob = useNoteBlob(note);
@@ -30,6 +31,9 @@ export default function ReadOnlyText({ note, noteContext, ntxId }: TypeWidgetPro
         const container = contentRef.current;
         if (!container) return;
 
+        appContext.triggerEvent("contentElRefreshed", { ntxId, contentEl: container });
+
+        rewriteMermaidDiagramsInContainer(container);
         applyInlineMermaid(container);
         applyIncludedNotes(container);
         applyMath(container);
@@ -40,7 +44,6 @@ export default function ReadOnlyText({ note, noteContext, ntxId }: TypeWidgetPro
 
     // React to included note changes.
     useTriliumEvent("refreshIncludedNote", ({ noteId }) => {
-        console.log("Refresh ", noteId);
         if (!contentRef.current) return;
         refreshIncludedNote(contentRef.current, noteId);
     });
@@ -52,14 +55,12 @@ export default function ReadOnlyText({ note, noteContext, ntxId }: TypeWidgetPro
     });
 
     return (
-        <div
-            className={`note-detail-readonly-text note-detail-printable ${codeBlockWordWrap ? "word-wrap" : ""}`}
-            tabindex={100}
-            dir={isRtl ? "rtl" : "ltr"}
-        >
-            <RawHtml
+        <>
+            <RawHtmlBlock
                 containerRef={contentRef}
-                className="note-detail-readonly-text-content ck-content use-tn-links"
+                className={clsx("note-detail-readonly-text-content ck-content use-tn-links selectable-text", codeBlockWordWrap && "word-wrap")}
+                tabindex={100}
+                dir={isRtl ? "rtl" : "ltr"}
                 html={blob?.content}
             />
 
@@ -75,8 +76,8 @@ export default function ReadOnlyText({ note, noteContext, ntxId }: TypeWidgetPro
                     }}
                 />
             </TouchBar>
-        </div>
-    )
+        </>
+    );
 }
 
 function useNoteLanguage(note: FNote) {
@@ -86,26 +87,6 @@ function useNoteLanguage(note: FNote) {
         return correspondingLocale?.rtl;
     }, [ language ]);
     return { isRtl };
-}
-
-async function applyInlineMermaid(container: HTMLDivElement) {
-    const mermaidBlocks = container.querySelectorAll('pre:has(code[class="language-mermaid"])');
-    if (!mermaidBlocks.length) return;
-    const nodes: HTMLElement[] = [];
-
-    // Rewrite the code block from <pre><code> to <div> in order not to apply a codeblock style to it.
-    for (const mermaidBlock of mermaidBlocks) {
-        const div = document.createElement("div");
-        div.classList.add("mermaid-diagram");
-        div.innerHTML = mermaidBlock.querySelector("code")?.innerHTML ?? "";
-        mermaidBlock.replaceWith(div);
-        nodes.push(div);
-    }
-
-    // Initialize mermaid
-    const mermaid = (await import("mermaid")).default;
-    mermaid.initialize(getMermaidConfig());
-    mermaid.run({ nodes });
 }
 
 function applyIncludedNotes(container: HTMLDivElement) {

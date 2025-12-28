@@ -7,13 +7,10 @@ import Modal from "../react/Modal";
 import Button from "../react/Button";
 import { useTriliumEvent } from "../react/hooks";
 import { CKEditorApi } from "../type_widgets/text/CKEditorWithWatchdog";
+import { RenderMarkdownResponse } from "@triliumnext/commons";
 
 export interface MarkdownImportOpts {
     editorApi: CKEditorApi;
-}
-
-interface RenderMarkdownResponse {
-    htmlContent: string;
 }
 
 export default function MarkdownImportDialog() {
@@ -34,15 +31,26 @@ export default function MarkdownImportDialog() {
         }
     });
 
+    function submit() {
+        setShown(false);
+        if (editorApiRef.current && text) {
+            convertMarkdownToHtml(text, editorApiRef.current);
+        }
+    }
+
     return (
         <Modal
             className="markdown-import-dialog" title={t("markdown_import.dialog_title")} size="lg"
-            footer={<Button className="markdown-import-button" text={t("markdown_import.import_button")} onClick={() => setShown(false)} keyboardShortcut="Ctrl+Enter" />}
+            footer={
+                <Button
+                    className="markdown-import-button"
+                    text={t("markdown_import.import_button")}
+                    keyboardShortcut="Ctrl+Enter"
+                    onClick={submit}
+                />
+            }
             onShown={() => markdownImportTextArea.current?.focus()}
-            onHidden={async () => {
-                if (editorApiRef.current) {
-                    await convertMarkdownToHtml(text, editorApiRef.current);
-                }
+            onHidden={() => {
                 setShown(false);
                 setText("");
             }}
@@ -55,7 +63,7 @@ export default function MarkdownImportDialog() {
                 onKeyDown={(e) => {
                     if (e.key === "Enter" && e.ctrlKey) {
                         e.preventDefault();
-                        setShown(false);
+                        submit();
                     }
                 }}></textarea>
         </Modal>

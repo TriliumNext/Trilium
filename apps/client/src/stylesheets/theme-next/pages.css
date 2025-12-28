@@ -124,12 +124,8 @@
 
 /* The container */
 
-.note-split.empty-note {
-    --max-content-width: 70%;
-}
-
 .note-split.empty-note div.note-detail {
-    margin: 50px auto;
+    margin-inline: auto;
 }
 
 /* The search results list */
@@ -174,6 +170,10 @@
 
 .note-detail-content-widget-content.options:has(.shortcuts-options-section)::after {
     height: 0;
+}
+
+body.experimental-feature-new-layout .note-detail-content-widget-content.options {
+    padding-inline: 25px;
 }
 
 .options-section:not(.tn-no-card) {

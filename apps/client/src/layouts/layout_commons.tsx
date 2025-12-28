@@ -22,16 +22,9 @@ import RevisionsDialog from "../widgets/dialogs/revisions.js";
 import DeleteNotesDialog from "../widgets/dialogs/delete_notes.js";
 import InfoDialog from "../widgets/dialogs/info.js";
 import IncorrectCpuArchDialog from "../widgets/dialogs/incorrect_cpu_arch.js";
-import PopupEditorDialog from "../widgets/dialogs/popup_editor.js";
-import FlexContainer from "../widgets/containers/flex_container.js";
-import NoteIconWidget from "../widgets/note_icon";
-import PromotedAttributesWidget from "../widgets/promoted_attributes.js";
 import CallToActionDialog from "../widgets/dialogs/call_to_action.jsx";
-import NoteTitleWidget from "../widgets/note_title.jsx";
-import FormattingToolbar from "../widgets/ribbon/FormattingToolbar.js";
-import NoteList from "../widgets/collections/NoteList.jsx";
-import NoteDetail from "../widgets/NoteDetail.jsx";
-import StandaloneRibbonAdapter from "../widgets/ribbon/components/StandaloneRibbonAdapter.jsx";
+import PopupEditorDialog from "../widgets/dialogs/PopupEditor.jsx";
+import ToastContainer from "../widgets/Toast.jsx";
 
 export function applyModals(rootContainer: RootContainer) {
     rootContainer
@@ -57,16 +50,7 @@ export function applyModals(rootContainer: RootContainer) {
         .child(<ConfirmDialog />)
         .child(<PromptDialog />)
         .child(<IncorrectCpuArchDialog />)
-        .child(new PopupEditorDialog()
-                .child(new FlexContainer("row")
-                    .class("title-row")
-                    .css("align-items", "center")
-                    .cssBlock(".title-row > * { margin: 5px; }")
-                    .child(<NoteIconWidget />)
-                    .child(<NoteTitleWidget />))
-                .child(<StandaloneRibbonAdapter component={FormattingToolbar} />)
-                .child(new PromotedAttributesWidget())
-                .child(<NoteDetail />)
-                .child(<NoteList media="screen" displayOnlyCollections />))
-        .child(<CallToActionDialog />);
+        .child(<PopupEditorDialog />)
+        .child(<CallToActionDialog />)
+        .child(<ToastContainer />);
 }

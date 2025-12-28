@@ -1,23 +1,25 @@
-import { useEffect, useRef, useState } from "preact/hooks";
-import dialog from "../../../services/dialog";
-import toast from "../../../services/toast";
-import utils, { hasTouchBar, isMobile } from "../../../services/utils";
-import { useEditorSpacedUpdate, useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteLabel, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
-import { TypeWidgetProps } from "../type_widget";
-import CKEditorWithWatchdog, { CKEditorApi } from "./CKEditorWithWatchdog";
 import "./EditableText.css";
-import { CKTextEditor, ClassicEditor, EditorWatchdog, TemplateDefinition } from "@triliumnext/ckeditor5";
-import Component from "../../../components/component";
-import options from "../../../services/options";
-import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
-import getTemplates, { updateTemplateCache } from "./snippets.js";
+
+import { CKTextEditor, EditorWatchdog, TemplateDefinition } from "@triliumnext/ckeditor5";
+import { deferred } from "@triliumnext/commons";
+import { RefObject } from "preact";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+
 import appContext from "../../../components/app_context";
+import { buildSelectedBackgroundColor } from "../../../components/touch_bar";
+import dialog from "../../../services/dialog";
+import { t } from "../../../services/i18n";
 import link, { parseNavigationStateFromUrl } from "../../../services/link";
 import note_create from "../../../services/note_create";
+import options from "../../../services/options";
+import toast from "../../../services/toast";
+import utils, { hasTouchBar, isMobile } from "../../../services/utils";
+import { useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import TouchBar, { TouchBarButton, TouchBarGroup, TouchBarSegmentedControl } from "../../react/TouchBar";
-import { RefObject } from "preact";
-import { buildSelectedBackgroundColor } from "../../../components/touch_bar";
-import { deferred } from "@triliumnext/commons";
+import { TypeWidgetProps } from "../type_widget";
+import CKEditorWithWatchdog, { CKEditorApi } from "./CKEditorWithWatchdog";
+import getTemplates, { updateTemplateCache } from "./snippets.js";
+import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
 
 /**
  * The editor can operate into two distinct modes:
@@ -27,7 +29,7 @@ import { deferred } from "@triliumnext/commons";
  */
 export default function EditableText({ note, parentComponent, ntxId, noteContext }: TypeWidgetProps) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [ content, setContent ] = useState<string>();
+    const contentRef = useRef<string>("");
     const watchdogRef = useRef<EditorWatchdog>(null);
     const editorApiRef = useRef<CKEditorApi>(null);
     const refreshTouchBarRef = useRef<() => void>(null);
@@ -39,6 +41,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
     const spacedUpdate = useEditorSpacedUpdate({
         note,
         noteContext,
+        noteType: "text",
         getData() {
             const editor = watchdogRef.current?.editor;
             if (!editor) {
@@ -55,7 +58,12 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             };
         },
         onContentChange(newContent) {
-            setContent(newContent);
+            contentRef.current = newContent;
+            watchdogRef.current?.editor?.setData(newContent);
+        },
+        dataSaved(savedData) {
+            // Store back the saved data in order to retrieve it in case the CKEditor crashes.
+            contentRef.current = savedData.content;
         }
     });
     const templates = useTemplates();
@@ -97,6 +105,14 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                 editorApi: editorApiRef.current,
             });
         },
+        insertDateTimeToTextCommand() {
+            if (!editorApiRef.current) return;
+            const date = new Date();
+            const customDateTimeFormat = options.get("customDateTimeFormat");
+            const dateString = utils.formatDateTime(date, customDateTimeFormat);
+
+            addTextToEditor(dateString);
+        },
         // Include note functionality note
         addIncludeNoteToTextCommand() {
             if (!editorApiRef.current) return;
@@ -112,7 +128,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
 
             const resp = await note_create.createNoteWithTypePrompt(notePath, {
                 activate: false,
-                title: title
+                title
             });
 
             if (!resp || !resp.note) return;
@@ -196,18 +212,12 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         });
     }
 
-    useTriliumEvent("insertDateTimeToText", ({ ntxId: eventNtxId }) => {
-        if (eventNtxId !== ntxId) return;
-        const date = new Date();
-        const customDateTimeFormat = options.get("customDateTimeFormat");
-        const dateString = utils.formatDateTime(date, customDateTimeFormat);
-
-        addTextToEditor(dateString);
-    });
     useTriliumEvent("addTextToActiveEditor", ({ text }) => {
         if (!noteContext?.isActive()) return;
         addTextToEditor(text);
     });
+
+    const onWatchdogStateChange = useWatchdogCrashHandling();
 
     return (
         <>
@@ -215,7 +225,6 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                 containerRef={containerRef}
                 className={`note-detail-editable-text-editor use-tn-links ${codeBlockWordWrap ? "word-wrap" : ""}`}
                 tabIndex={300}
-                content={content}
                 contentLanguage={language}
                 isClassicEditor={isClassicEditor}
                 editorApi={editorApiRef}
@@ -226,19 +235,13 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                     // A threshold specifying the number of errors (defaults to 3). After this limit is reached and the time between last errors is shorter than minimumNonErrorTimePeriod, the watchdog changes its state to crashedPermanently, and it stops restarting the editor. This prevents an infinite restart loop.
                     crashNumberLimit: 10,
                     // A minimum number of milliseconds between saving the editor data internally (defaults to 5000). Note that for large documents, this might impact the editor performance.
-                    saveInterval: 5000
+                    saveInterval: Number.MAX_SAFE_INTEGER
                 }}
                 templates={templates}
                 onNotificationWarning={onNotificationWarning}
                 onWatchdogStateChange={onWatchdogStateChange}
                 onChange={() => spacedUpdate.scheduleUpdate()}
                 onEditorInitialized={(editor) => {
-                    console.log("Editor has been initialized!", parentComponent, editor);
-
-                    if (isClassicEditor) {
-                        setupClassicEditor(editor, parentComponent);
-                    }
-
                     if (hasTouchBar) {
                         const handler = () => refreshTouchBarRef.current?.();
                         for (const event of [ "bold", "italic", "underline", "paragraph", "heading" ]) {
@@ -251,6 +254,10 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
                     }
 
                     initialized.current.resolve();
+                    // Restore the data, either on the first render or if the editor crashes.
+                    // We are not using CKEditor's built-in watch dog content, instead we are using the data we store regularly in the spaced update (see `dataSaved`).
+                    editor.setData(contentRef.current);
+                    parentComponent?.triggerEvent("textEditorRefreshed", { ntxId, editor });
                 }}
             />}
 
@@ -273,20 +280,57 @@ function useTemplates() {
     return templates;
 }
 
-function onWatchdogStateChange(watchdog: EditorWatchdog) {
-    const currentState = watchdog.state;
-    logInfo(`CKEditor state changed to ${currentState}`);
+function useWatchdogCrashHandling() {
+    const hasCrashed = useRef(false);
+    const onWatchdogStateChange = useCallback((watchdog: EditorWatchdog) => {
+        const currentState = watchdog.state;
+        logInfo(`CKEditor state changed to ${currentState}`);
 
-    if (!["crashed", "crashedPermanently"].includes(currentState)) {
-        return;
-    }
+        if (currentState === "ready") {
+            hasCrashed.current = false;
+            watchdog.editor?.focus();
+        }
 
-    logError(`CKEditor crash logs: ${JSON.stringify(watchdog.crashes, null, 4)}`);
+        if (!["crashed", "crashedPermanently"].includes(currentState)) {
+            return;
+        }
 
-    if (currentState === "crashedPermanently") {
-        dialog.info(`Editing component keeps crashing. Please try restarting Trilium. If problem persists, consider creating a bug report.`);
-        watchdog.editor?.enableReadOnlyMode("crashed-editor");
-    }
+        hasCrashed.current = true;
+        const formattedCrash = JSON.stringify(watchdog.crashes, null, 4);
+        logError(`CKEditor crash logs: ${formattedCrash}`);
+
+        if (currentState === "crashed") {
+            toast.showPersistent({
+                id: "editor-crashed",
+                icon: "bx bx-bug",
+                title: t("editable_text.editor_crashed_title"),
+                message: t("editable_text.editor_crashed_content"),
+                buttons: [
+                    {
+                        text: t("editable_text.editor_crashed_details_button"),
+                        onClick: ({ dismissToast }) => {
+                            dismissToast();
+                            dialog.info(<>
+                                <p>{t("editable_text.editor_crashed_details_intro")}</p>
+                                <h3>{t("editable_text.editor_crashed_details_title")}</h3>
+                                <pre><code class="language-application-json">{formattedCrash}</code></pre>
+                            </>, {
+                                title: t("editable_text.editor_crashed_title"),
+                                size: "lg",
+                                copyToClipboardButton: true
+                            });
+                        }
+                    }
+                ],
+                timeout: 20_000
+            });
+        } else if (currentState === "crashedPermanently") {
+            dialog.info(t("editable_text.keeps-crashing"));
+            watchdog.editor?.enableReadOnlyMode("crashed-editor");
+        }
+    }, []);
+
+    return onWatchdogStateChange;
 }
 
 function onNotificationWarning(data, evt) {
@@ -302,60 +346,11 @@ function onNotificationWarning(data, evt) {
     evt.stop();
 }
 
-function setupClassicEditor(editor: CKTextEditor, parentComponent: Component | undefined) {
-    if (!parentComponent) return;
-    const $classicToolbarWidget = findClassicToolbar(parentComponent);
-
-    $classicToolbarWidget.empty();
-    if ($classicToolbarWidget.length) {
-        const toolbarView = (editor as ClassicEditor).ui.view.toolbar;
-        if (toolbarView.element) {
-            $classicToolbarWidget[0].appendChild(toolbarView.element);
-        }
-    }
-
-    if (utils.isMobile()) {
-        $classicToolbarWidget.addClass("visible");
-
-        // Reposition all dropdowns to point upwards instead of downwards.
-        // See https://ckeditor.com/docs/ckeditor5/latest/examples/framework/bottom-toolbar-editor.html for more info.
-        const toolbarView = (editor as ClassicEditor).ui.view.toolbar;
-        for (const item of toolbarView.items) {
-            if (!("panelView" in item)) continue;
-
-            item.on("change:isOpen", () => {
-                if (!("isOpen" in item) || !item.isOpen) return;
-
-                // @ts-ignore
-                item.panelView.position = item.panelView.position.replace("s", "n");
-            });
-        }
-    }
-}
-
-function findClassicToolbar(parentComponent: Component): JQuery<HTMLElement> {
-    const $widget = $(parentComponent.$widget);
-
-    if (!utils.isMobile()) {
-        const $parentSplit = $widget.parents(".note-split.type-text");
-
-        if ($parentSplit.length) {
-            // The editor is in a normal tab.
-            return $parentSplit.find("> .ribbon-container .classic-toolbar-widget");
-        } else {
-            // The editor is in a popup.
-            return $widget.closest(".modal-body").find(".classic-toolbar-widget");
-        }
-    } else {
-        return $("body").find(".classic-toolbar-widget");
-    }
-}
-
 function EditableTextTouchBar({ watchdogRef, refreshTouchBarRef }: { watchdogRef: RefObject<EditorWatchdog | null>, refreshTouchBarRef: RefObject<() => void> }) {
     const [ headingSelectedIndex, setHeadingSelectedIndex ] = useState<number>();
 
     function refresh() {
-        let headingSelectedIndex: number | undefined = undefined;
+        let headingSelectedIndex: number | undefined;
         const editor = watchdogRef.current?.editor;
         const headingCommand = editor?.commands.get("heading");
         const paragraphCommand = editor?.commands.get("paragraph");
@@ -369,7 +364,7 @@ function EditableTextTouchBar({ watchdogRef, refreshTouchBarRef }: { watchdogRef
         setHeadingSelectedIndex(headingSelectedIndex);
     }
 
-    useEffect(refresh, []);
+    useEffect(refresh, [ watchdogRef ]);
     refreshTouchBarRef.current = refresh;
 
     return (
@@ -384,7 +379,7 @@ function EditableTextTouchBar({ watchdogRef, refreshTouchBarRef }: { watchdogRef
                     const editor = watchdogRef.current?.editor;
                     switch (selectedIndex) {
                         case 0:
-                            editor?.execute("paragraph")
+                            editor?.execute("paragraph");
                             break;
                         case 1:
                             editor?.execute("heading", { value: "heading2" });
@@ -404,7 +399,7 @@ function EditableTextTouchBar({ watchdogRef, refreshTouchBarRef }: { watchdogRef
                 <TouchBarCommandButton watchdogRef={watchdogRef} command="underline" icon="NSTouchBarTextUnderlineTemplate" />
             </TouchBarGroup>
         </TouchBar>
-    )
+    );
 }
 
 function TouchBarCommandButton({ watchdogRef, icon, command }: { watchdogRef: RefObject<EditorWatchdog | null>, icon: string, command: string }) {

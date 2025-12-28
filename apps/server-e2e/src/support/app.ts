@@ -1,5 +1,5 @@
-import { expect, Locator, Page } from "@playwright/test";
 import type { BrowserContext } from "@playwright/test";
+import { expect, Locator, Page } from "@playwright/test";
 
 interface GotoOpts {
     url?: string;
@@ -123,7 +123,7 @@ export default class App {
         const noteActionsButton = this.currentNoteSplit.locator(".note-actions");
         await noteActionsButton.click();
 
-        const dropdownMenu = noteActionsButton.locator(".dropdown-menu");
+        const dropdownMenu = noteActionsButton.locator(".dropdown-menu").first();
         await this.page.waitForTimeout(100);
         await expect(dropdownMenu).toBeVisible();
         dropdownMenu.getByText(itemToFind).click();
@@ -163,7 +163,7 @@ export default class App {
     }
 
     dropdown(_locator: Locator): DropdownLocator {
-        let locator = _locator as DropdownLocator;
+        const locator = _locator as DropdownLocator;
         locator.selectOptionByText = async (text: string) => {
             await locator.locator(".dropdown-toggle").click();
             await locator.locator(".dropdown-item", { hasText: text }).click();

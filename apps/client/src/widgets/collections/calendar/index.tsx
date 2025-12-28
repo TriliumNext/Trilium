@@ -21,6 +21,7 @@ import ActionButton from "../../react/ActionButton";
 import { RefObject } from "preact";
 import TouchBar, { TouchBarButton, TouchBarLabel, TouchBarSegmentedControl, TouchBarSpacer } from "../../react/TouchBar";
 import { openCalendarContextMenu } from "./context_menu";
+import { isMobile } from "../../../services/utils";
 
 interface CalendarViewData {
 
@@ -77,6 +78,7 @@ export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ de
     "pt_br": () => import("@fullcalendar/core/locales/pt-br"),
     uk: () => import("@fullcalendar/core/locales/uk"),
     en: null,
+    "en-GB": () => import("@fullcalendar/core/locales/en-gb"),
     "en_rtl": null,
     ar: () => import("@fullcalendar/core/locales/ar")
 };
@@ -91,6 +93,7 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     const [ hideWeekends ] = useNoteLabelBoolean(note, "calendar:hideWeekends");
     const [ weekNumbers ] = useNoteLabelBoolean(note, "calendar:weekNumbers");
     const [ calendarView, setCalendarView ] = useNoteLabel(note, "calendar:view");
+    const [ initialDate ] = useNoteLabel(note, "calendar:initialDate");
     const initialView = useRef(calendarView);
     const viewSpacedUpdate = useSpacedUpdate(() => setCalendarView(initialView.current));
     useResizeObserver(containerRef, () => calendarRef.current?.updateSize());
@@ -115,7 +118,10 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
         if (loadResults.getNoteIds().some(noteId => noteIds.includes(noteId)) // note title change.
             || loadResults.getAttributeRows().some((a) => noteIds.includes(a.noteId ?? ""))) // subnote change.
         {
-            calendarRef.current?.refetchEvents();
+            // Defer execution after the load results are processed so that the event builder has the updated data to work with.
+            setTimeout(() => {
+                calendarRef.current?.refetchEvents();
+            }, 0);
         }
     });
 
@@ -134,6 +140,7 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                 height="90%"
                 nowIndicator
                 handleWindowResize={false}
+                initialDate={initialDate || undefined}
                 locale={locale}
                 {...editingProps}
                 eventDidMount={eventDidMount}
@@ -260,7 +267,7 @@ function useEventDisplayCustomization(parentNote: FNote) {
 
         // Prepend the icon to the title, if any.
         if (iconClass) {
-            let titleContainer;
+            let titleContainer: HTMLElement | null = null;
             switch (e.view.type) {
                 case "timeGridWeek":
                 case "dayGridMonth":
@@ -278,6 +285,9 @@ function useEventDisplayCustomization(parentNote: FNote) {
                 titleContainer.insertAdjacentHTML("afterbegin", icon);
             }
         }
+
+        // Disable the default context menu.
+        e.el.dataset.noContextMenu = "true";
 
         // Append promoted attributes to the end of the event container.
         if (promotedAttributes) {
@@ -304,10 +314,18 @@ function useEventDisplayCustomization(parentNote: FNote) {
             $(mainContainer ?? e.el).append($(promotedAttributesHtml));
         }
 
-        e.el.addEventListener("contextmenu", (contextMenuEvent) => {
-            const noteId = e.event.extendedProps.noteId;
-            openCalendarContextMenu(contextMenuEvent, noteId, parentNote);
-        });
+        async function onContextMenu(contextMenuEvent: PointerEvent) {
+            const note = await froca.getNote(e.event.extendedProps.noteId);
+            if (!note) return;
+
+            openCalendarContextMenu(contextMenuEvent, note, parentNote);
+        }
+
+        if (isMobile()) {
+            e.el.addEventListener("click", onContextMenu);
+        } else {
+            e.el.addEventListener("contextmenu", onContextMenu);
+        }
     }, []);
     return { eventDidMount };
 }

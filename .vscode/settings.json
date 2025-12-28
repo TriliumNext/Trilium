@@ -36,5 +36,11 @@
         "docs/**/*.png": true,
         "apps/server/src/assets/doc_notes/**": true,
         "apps/edit-docs/demo/**": true
-    }
+    },
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    },
+    "eslint.rules.customizations": [
+        { "rule": "*", "severity": "warn" }
+    ]
 }

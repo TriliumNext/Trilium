@@ -45,7 +45,7 @@ jobs:
               forge_platform: linux
     runs-on: ${{ matrix.os.image }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
       - name: Set up node & dependencies
         uses: actions/setup-node@v6
@@ -73,7 +73,7 @@ jobs:
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGN_KEY }}
 
       - name: Upload the artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: release-desktop-${{ matrix.os.name }}-${{ matrix.arch }}
           path: apps/desktop/upload/*.*
@@ -91,7 +91,7 @@ jobs:
             runs-on: ubuntu-24.04-arm
     runs-on: ${{ matrix.runs-on }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Run the build
         uses: ./.github/actions/build-server
@@ -100,7 +100,7 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Upload the artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: release-server-linux-${{ matrix.arch }}
           path: upload/*.*
@@ -114,20 +114,20 @@ jobs:
     steps:
       - run: mkdir upload
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           sparse-checkout: |
             docs/Release Notes
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v7
         with:
           merge-multiple: true
           pattern: release-*
           path: upload
 
       - name: Publish stable release
-        uses: softprops/action-gh-release@v2.4.2
+        uses: softprops/action-gh-release@v2.5.0
         with:
           draft: false
           body_path: docs/Release Notes/Release Notes/${{ github.ref_name }}.md

@@ -133,11 +133,11 @@ async function call<T>(method: string, url: string, componentId?: string, option
             };
 
             ipc.send("server-request", {
-                requestId: requestId,
-                headers: headers,
-                method: method,
+                requestId,
+                headers,
+                method,
                 url: `/${window.glob.baseApiUrl}${url}`,
-                data: data
+                data
             });
         })) as any;
     } else {
@@ -161,7 +161,7 @@ function ajax(url: string, method: string, data: unknown, headers: Headers, sile
         const options: JQueryAjaxSettings = {
             url: window.glob.baseApiUrl + url,
             type: method,
-            headers: headers,
+            headers,
             timeout: 60000,
             success: (body, textStatus, jqXhr) => {
                 const respHeaders: Headers = {};
@@ -263,7 +263,7 @@ async function reportError(method: string, url: string, statusCode: number, resp
 
     const toastService = (await import("./toast.js")).default;
 
-    const messageStr = typeof message === "string" ? message : JSON.stringify(message);
+    const messageStr = (typeof message === "string" ? message : JSON.stringify(message)) || "-";
 
     if ([400, 404].includes(statusCode) && response && typeof response === "object") {
         toastService.showError(messageStr);
@@ -274,10 +274,22 @@ async function reportError(method: string, url: string, statusCode: number, resp
             ...response
         });
     } else {
-        const title = `${statusCode} ${method} ${url}`;
-        toastService.showErrorTitleAndMessage(title, messageStr);
-        const { throwError } = await import("./ws.js");
-        throwError(`${title} - ${message}`);
+        const { t } = await import("./i18n.js");
+        if (statusCode === 400 && (url.includes("%23") || url.includes("%2F"))) {
+            toastService.showPersistent({
+                id: "trafik-blocked",
+                icon: "bx bx-unlink",
+                title: t("server.unknown_http_error_title"),
+                message: t("server.traefik_blocks_requests")
+            });
+        } else {
+            toastService.showErrorTitleAndMessage(
+                t("server.unknown_http_error_title"),
+                t("server.unknown_http_error_content", { statusCode, method, url, message: messageStr }),
+                15_000);
+        }
+        const { logError } = await import("./ws.js");
+        logError(`${statusCode} ${method} ${url} - ${message}`);
     }
 }
 

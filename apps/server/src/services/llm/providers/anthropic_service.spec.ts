@@ -31,50 +31,8 @@ vi.mock('./providers.js', () => ({
 }));
 
 vi.mock('@anthropic-ai/sdk', () => {
-    const mockStream = {
-        [Symbol.asyncIterator]: async function* () {
-            yield {
-                type: 'content_block_delta',
-                delta: { text: 'Hello' }
-            };
-            yield {
-                type: 'content_block_delta',
-                delta: { text: ' world' }
-            };
-            yield {
-                type: 'message_delta',
-                delta: { stop_reason: 'end_turn' }
-            };
-        }
-    };
-
-    const mockAnthropic = vi.fn().mockImplementation(() => ({
-        messages: {
-            create: vi.fn().mockImplementation((params) => {
-                if (params.stream) {
-                    return Promise.resolve(mockStream);
-                }
-                return Promise.resolve({
-                    id: 'msg_123',
-                    type: 'message',
-                    role: 'assistant',
-                    content: [{
-                        type: 'text',
-                        text: 'Hello! How can I help you today?'
-                    }],
-                    model: 'claude-3-opus-20240229',
-                    stop_reason: 'end_turn',
-                    stop_sequence: null,
-                    usage: {
-                        input_tokens: 10,
-                        output_tokens: 25
-                    }
-                });
-            })
-        }
-    }));
-
-    return { default: mockAnthropic };
+    const MockAnthropic = vi.fn();
+    return { default: MockAnthropic };
 });
 
 describe('AnthropicService', () => {
@@ -85,7 +43,6 @@ describe('AnthropicService', () => {
         vi.clearAllMocks();
 
         // Get the mocked Anthropic instance before creating the service
-        const AnthropicMock = vi.mocked(Anthropic);
         mockAnthropicInstance = {
             messages: {
                 create: vi.fn().mockImplementation((params) => {
@@ -127,7 +84,9 @@ describe('AnthropicService', () => {
             }
         };
 
-        AnthropicMock.mockImplementation(() => mockAnthropicInstance);
+        (Anthropic as any).mockImplementation(function(this: any) {
+            return mockAnthropicInstance;
+        });
 
         service = new AnthropicService();
     });
@@ -353,14 +312,13 @@ describe('AnthropicService', () => {
             vi.mocked(providers.getAnthropicOptions).mockReturnValueOnce(mockOptions);
 
             // Spy on Anthropic constructor
-            const AnthropicMock = vi.mocked(Anthropic);
-            AnthropicMock.mockClear();
+            (Anthropic as any).mockClear();
 
             // Create new service to trigger client creation
             const newService = new AnthropicService();
             await newService.generateChatCompletion(messages);
 
-            expect(AnthropicMock).toHaveBeenCalledWith({
+            expect(Anthropic).toHaveBeenCalledWith({
                 apiKey: 'test-key',
                 baseURL: 'https://api.anthropic.com',
                 defaultHeaders: {
@@ -380,14 +338,13 @@ describe('AnthropicService', () => {
             vi.mocked(providers.getAnthropicOptions).mockReturnValueOnce(mockOptions);
 
             // Spy on Anthropic constructor
-            const AnthropicMock = vi.mocked(Anthropic);
-            AnthropicMock.mockClear();
+            (Anthropic as any).mockClear();
 
             // Create new service to trigger client creation
             const newService = new AnthropicService();
             await newService.generateChatCompletion(messages);
 
-            expect(AnthropicMock).toHaveBeenCalledWith({
+            expect(Anthropic).toHaveBeenCalledWith({
                 apiKey: 'test-key',
                 baseURL: 'https://api.anthropic.com',
                 defaultHeaders: {

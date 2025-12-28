@@ -28,7 +28,7 @@ async function getActionsForScope(scope: string) {
     return actions.filter((action) => action.scope === scope);
 }
 
-async function setupActionsForElement(scope: string, $el: JQuery<HTMLElement>, component: Component) {
+async function setupActionsForElement(scope: string, $el: JQuery<HTMLElement>, component: Component, ntxId: string | null | undefined) {
     if (!$el[0]) return [];
 
     const actions = await getActionsForScope(scope);
@@ -36,7 +36,9 @@ async function setupActionsForElement(scope: string, $el: JQuery<HTMLElement>, c
 
     for (const action of actions) {
         for (const shortcut of action.effectiveShortcuts ?? []) {
-            const binding = shortcutService.bindElShortcut($el, shortcut, () => component.triggerCommand(action.actionName, { ntxId: appContext.tabManager.activeNtxId }));
+            const binding = shortcutService.bindElShortcut($el, shortcut, () => {
+                component.triggerCommand(action.actionName, { ntxId });
+            });
             if (binding) {
                 bindings.push(binding);
             }

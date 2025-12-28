@@ -55,6 +55,7 @@ export function buildClassicToolbar(multilineToolbar: boolean) {
                     ...TEXT_FORMATTING_GROUP,
                     items: ["underline", "strikethrough", "|", "superscript", "subscript", "|", "kbd"]
                 },
+                "formatPainter",
                 "|",
                 "fontColor",
                 "fontBackgroundColor",
@@ -84,8 +85,7 @@ export function buildClassicToolbar(multilineToolbar: boolean) {
                 "|",
                 "insertTemplate",
                 "markdownImport",
-                "cuttonote",
-                "findAndReplace"
+                "cuttonote"
             ],
             shouldNotGroupWhenFull: multilineToolbar
         }
@@ -104,6 +104,7 @@ export function buildFloatingToolbar() {
                     ...TEXT_FORMATTING_GROUP,
                     items: [ "strikethrough", "|", "superscript", "subscript", "|", "kbd" ]
                 },
+                "formatPainter",
                 "|",
                 "fontColor",
                 "fontBackgroundColor",
@@ -143,8 +144,7 @@ export function buildFloatingToolbar() {
             "imageUpload",
             "markdownImport",
             "specialCharacters",
-            "emoji",
-            "findAndReplace"
+            "emoji"
         ]
     };
 }

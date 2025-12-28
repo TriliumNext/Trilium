@@ -1,12 +1,12 @@
-import type FNote from "./entities/fnote";
-import type { Froca } from "./services/froca-interface";
-import { Suggestion } from "./services/note_autocomplete";
-import utils from "./services/utils";
 import appContext, { AppContext } from "./components/app_context";
-import server from "./services/server";
-import library_loader, { Library } from "./services/library_loader";
+import type FNote from "./entities/fnote";
+import type { PrintReport } from "./print";
 import type { lint } from "./services/eslint";
-import type { Mermaid, MermaidConfig } from "mermaid";
+import type { Froca } from "./services/froca-interface";
+import { Library } from "./services/library_loader";
+import { Suggestion } from "./services/note_autocomplete";
+import server from "./services/server";
+import utils from "./services/utils";
 
 interface ElectronProcess {
     type: string;
@@ -59,9 +59,14 @@ declare global {
         glob?: CustomGlobals;
 
         /** On the printing endpoint, set to true when the note has fully loaded and is ready to be printed/exported as PDF. */
-        _noteReady?: boolean;
+        _noteReady?: PrintReport;
 
         EXCALIDRAW_ASSET_PATH?: string;
+    }
+
+    interface WindowEventMap {
+        "note-ready": Event;
+        "note-load-progress": CustomEvent<{ progress: number }>;
     }
 
     interface AutoCompleteConfig {

@@ -37,25 +37,6 @@ export default function NoteAutocomplete({ id, inputRef: externalInputRef, text,
             ...opts,
             container: container?.current
         });
-        if (onChange || noteIdChanged) {
-            const listener = (_e, suggestion) => {
-                onChange?.(suggestion);
-
-                if (noteIdChanged) {
-                    const noteId = suggestion?.notePath?.split("/")?.at(-1);
-                    noteIdChanged(noteId);
-                }
-            };
-            $autoComplete
-                .on("autocomplete:noteselected", listener)
-                .on("autocomplete:externallinkselected", listener)
-                .on("autocomplete:commandselected", listener)
-                .on("change", (e) => {
-                    if (!ref.current?.value) {
-                        listener(e, null);
-                    }
-                });
-        }
         if (onTextChange) {
             $autoComplete.on("input", () => onTextChange($autoComplete[0].value));
         }
@@ -67,6 +48,40 @@ export default function NoteAutocomplete({ id, inputRef: externalInputRef, text,
         }
     }, [opts, container?.current]);
 
+    // On change event handlers.
+    useEffect(() => {
+        if (!ref.current) return;
+        const $autoComplete = $(ref.current);
+
+        if (onChange || noteIdChanged) {
+            const autoCompleteListener = (_e, suggestion) => {
+                onChange?.(suggestion);
+
+                if (noteIdChanged) {
+                    const noteId = suggestion?.notePath?.split("/")?.at(-1);
+                    noteIdChanged(noteId);
+                }
+            };
+            const changeListener = (e) => {
+                if (!ref.current?.value) {
+                    autoCompleteListener(e, null);
+                }
+            };
+            $autoComplete
+                .on("autocomplete:noteselected", autoCompleteListener)
+                .on("autocomplete:externallinkselected", autoCompleteListener)
+                .on("autocomplete:commandselected", autoCompleteListener)
+                .on("change", changeListener);
+            return () => {
+                $autoComplete
+                    .off("autocomplete:noteselected", autoCompleteListener)
+                    .off("autocomplete:externallinkselected", autoCompleteListener)
+                    .off("autocomplete:commandselected", autoCompleteListener)
+                    .off("change", changeListener);
+            };
+        }
+    }, [opts, container?.current, onChange, noteIdChanged])
+
     useEffect(() => {
         if (!ref.current) return;
         const $autoComplete = $(ref.current);
@@ -76,6 +91,8 @@ export default function NoteAutocomplete({ id, inputRef: externalInputRef, text,
         } else if (text) {
             note_autocomplete.setText($autoComplete, text);
         } else {
+            $autoComplete.setSelectedNotePath("");
+            $autoComplete.autocomplete("val", "");
             ref.current.value = "";
         }
     }, [text, noteId]);

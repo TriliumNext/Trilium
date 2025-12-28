@@ -23,7 +23,7 @@ html {
     --dropdown-border-color: #ccc;
     --dropdown-shadow-opacity: 0.2;
     --dropdown-item-icon-destructive-color: #ec5138;
-    --disabled-tooltip-icon-color: #004382;
+    --contextual-help-icon-color: #004382;
 
     --accented-background-color: #f5f5f5;
     --more-accented-background-color: #ddd;
@@ -80,15 +80,26 @@ html {
 
     --mermaid-theme: default;
     --native-titlebar-background: #ffffff00;
+
+    --calendar-coll-event-background-lightness: 95%;
+    --calendar-coll-event-background-saturation: 80%;
 }
 
 #left-pane .fancytree-node.tinted {
     --custom-color: var(--light-theme-custom-color);
 }
 
-:root .reference-link,
-:root .reference-link:hover,
-.ck-content a.reference-link > span,
-.board-note {
+:root .reference-link.use-note-color,
+:root .reference-link.use-note-color:hover,
+.ck-content a.reference-link.use-note-color > span,
+.board-note.use-note-color {
     color: var(--light-theme-custom-color, inherit);
+}
+
+.use-note-color {
+    --custom-color: var(--light-theme-custom-color);
+}
+
+span.fancytree-active {
+    color: var(--light-theme-custom-color, var(--active-item-text-color));
 }

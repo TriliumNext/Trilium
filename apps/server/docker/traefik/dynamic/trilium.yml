@@ -1,0 +1,12 @@
+http:
+  routers:
+    trilliumnext:
+      rule: "PathPrefix(`/`)" # accept everything for dev purposes
+      entryPoints: ["web"]
+      service: trilliumnext
+
+  services:
+    trilliumnext:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:8080/"

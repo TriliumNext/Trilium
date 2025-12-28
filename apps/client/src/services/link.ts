@@ -1,10 +1,11 @@
-import treeService from "./tree.js";
-import linkContextMenuService from "../menus/link_context_menu.js";
-import appContext, { type NoteCommandData } from "../components/app_context.js";
-import froca from "./froca.js";
-import utils from "./utils.js";
 import { ALLOWED_PROTOCOLS } from "@triliumnext/commons";
+
+import appContext, { type NoteCommandData } from "../components/app_context.js";
 import { openInCurrentNoteContext } from "../components/note_context.js";
+import linkContextMenuService from "../menus/link_context_menu.js";
+import froca from "./froca.js";
+import treeService from "./tree.js";
+import utils from "./utils.js";
 
 function getNotePathFromUrl(url: string) {
     const notePathMatch = /#(root[A-Za-z0-9_/]*)$/.exec(url);
@@ -27,7 +28,7 @@ async function getLinkIcon(noteId: string, viewMode: ViewMode | undefined) {
     return icon;
 }
 
-export type ViewMode = "default" | "source" | "attachments" | "contextual-help";
+export type ViewMode = "default" | "source" | "attachments" | "contextual-help" | "note-map";
 
 export interface ViewScope {
     /**
@@ -99,7 +100,7 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
     const viewMode = viewScope.viewMode || "default";
     let linkTitle = options.title;
 
-    if (!linkTitle) {
+    if (linkTitle === undefined) {
         if (viewMode === "attachments" && viewScope.attachmentId) {
             const attachment = await froca.getAttachment(viewScope.attachmentId);
 
@@ -122,7 +123,7 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
     const $container = $("<span>");
 
     if (showNoteIcon) {
-        let icon = await getLinkIcon(noteId, viewMode);
+        const icon = await getLinkIcon(noteId, viewMode);
 
         if (icon) {
             $container.append($("<span>").addClass(`bx ${icon}`)).append(" ");
@@ -131,7 +132,7 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
 
     const hash = calculateHash({
         notePath,
-        viewScope: viewScope
+        viewScope
     });
 
     const $noteLink = $("<a>", {
@@ -171,11 +172,11 @@ async function createLink(notePath: string | undefined, options: CreateLinkOptio
     return $container;
 }
 
-function calculateHash({ notePath, ntxId, hoistedNoteId, viewScope = {} }: NoteCommandData) {
+export function calculateHash({ notePath, ntxId, hoistedNoteId, viewScope = {} }: NoteCommandData) {
     notePath = notePath || "";
     const params = [
-        ntxId ? { ntxId: ntxId } : null,
-        hoistedNoteId && hoistedNoteId !== "root" ? { hoistedNoteId: hoistedNoteId } : null,
+        ntxId ? { ntxId } : null,
+        hoistedNoteId && hoistedNoteId !== "root" ? { hoistedNoteId } : null,
         viewScope.viewMode && viewScope.viewMode !== "default" ? { viewMode: viewScope.viewMode } : null,
         viewScope.attachmentId ? { attachmentId: viewScope.attachmentId } : null
     ].filter((p) => !!p);
@@ -219,7 +220,7 @@ export function parseNavigationStateFromUrl(url: string | undefined) {
     }
 
     const hash = url.substr(hashIdx + 1); // strip also the initial '#'
-    let [notePath, paramString] = hash.split("?");
+    const [notePath, paramString] = hash.split("?");
 
     const viewScope: ViewScope = {
         viewMode: "default"
@@ -252,7 +253,7 @@ export function parseNavigationStateFromUrl(url: string | undefined) {
     }
 
     if (searchString) {
-        return { searchString }
+        return { searchString };
     }
 
     if (!notePath.match(/^[_a-z0-9]{4,}(\/[_a-z0-9]{4,})*$/i)) {
@@ -334,7 +335,7 @@ export function goToLinkExt(evt: MouseEvent | JQuery.ClickEvent | JQuery.MouseDo
                 window.open(hrefLink, "_blank");
             } else {
                 // Enable protocols supported by CKEditor 5 to be clickable.
-                if (ALLOWED_PROTOCOLS.some((protocol) => hrefLink.toLowerCase().startsWith(protocol + ":"))) {
+                if (ALLOWED_PROTOCOLS.some((protocol) => hrefLink.toLowerCase().startsWith(`${protocol}:`))) {
                     if ( utils.isElectron()) {
                         const electron = utils.dynamicRequire("electron");
                         electron.shell.openExternal(hrefLink);
@@ -395,7 +396,7 @@ async function loadReferenceLinkTitle($el: JQuery<HTMLElement>, href: string | n
 
     href = href || $link.attr("href");
     if (!href) {
-        console.warn("Empty URL for parsing: " + $el[0].outerHTML);
+        console.warn(`Empty URL for parsing: ${$el[0].outerHTML}`);
         return;
     }
 
@@ -438,9 +439,9 @@ async function getReferenceLinkTitle(href: string) {
         const attachment = await note.getAttachmentById(viewScope.attachmentId);
 
         return attachment ? attachment.title : "[missing attachment]";
-    } else {
-        return note.title;
     }
+    return note.title;
+
 }
 
 function getReferenceLinkTitleSync(href: string) {
@@ -462,33 +463,35 @@ function getReferenceLinkTitleSync(href: string) {
         const attachment = note.attachments.find((att) => att.attachmentId === viewScope.attachmentId);
 
         return attachment ? attachment.title : "[missing attachment]";
-    } else {
-        return note.title;
     }
+    return note.title;
+
 }
 
-// TODO: Check why the event is not supported.
-//@ts-ignore
-$(document).on("click", "a", goToLink);
-// TODO: Check why the event is not supported.
-//@ts-ignore
-$(document).on("auxclick", "a", goToLink); // to handle the middle button
-// TODO: Check why the event is not supported.
-//@ts-ignore
-$(document).on("contextmenu", "a", linkContextMenu);
-// TODO: Check why the event is not supported.
-//@ts-ignore
-$(document).on("dblclick", "a", goToLink);
+if (glob.device !== "print") {
+    // TODO: Check why the event is not supported.
+    //@ts-ignore
+    $(document).on("click", "a", goToLink);
+    // TODO: Check why the event is not supported.
+    //@ts-ignore
+    $(document).on("auxclick", "a", goToLink); // to handle the middle button
+    // TODO: Check why the event is not supported.
+    //@ts-ignore
+    $(document).on("contextmenu", "a", linkContextMenu);
+    // TODO: Check why the event is not supported.
+    //@ts-ignore
+    $(document).on("dblclick", "a", goToLink);
 
-$(document).on("mousedown", "a", (e) => {
-    if (e.which === 2) {
-        // prevent paste on middle click
-        // https://github.com/zadam/trilium/issues/2995
-        // https://developer.mozilla.org/en-US/docs/Web/API/Element/auxclick_event#preventing_default_actions
-        e.preventDefault();
-        return false;
-    }
-});
+    $(document).on("mousedown", "a", (e) => {
+        if (e.which === 2) {
+            // prevent paste on middle click
+            // https://github.com/zadam/trilium/issues/2995
+            // https://developer.mozilla.org/en-US/docs/Web/API/Element/auxclick_event#preventing_default_actions
+            e.preventDefault();
+            return false;
+        }
+    });
+}
 
 export default {
     getNotePathFromUrl,

@@ -212,7 +212,8 @@ body[dir=ltr] #launcher-container {
 }
 
 #launcher-pane .launcher-button,
-#launcher-pane .dropdown {
+#launcher-pane .right-dropdown-widget,
+#launcher-pane .global-menu {
     width: calc(var(--launcher-pane-size) - (var(--launcher-pane-button-margin) * 2)) !important;
     height: calc(var(--launcher-pane-size) - (var(--launcher-pane-button-margin) * 2)) !important;
     margin: var(--launcher-pane-button-gap) var(--launcher-pane-button-margin);
@@ -345,7 +346,7 @@ body[dir=ltr] #launcher-container {
  */
 
  .calendar-dropdown-widget {
-    padding: 12px;
+    padding: 18px;
     color: var(--calendar-color);
     user-select: none;
 }
@@ -501,7 +502,7 @@ div.bookmark-folder-widget .note-link .bx {
     font-size: 1.2em;
 }
 
-/* 
+/*
  * QUICK SEARCH BOX
  */
 
@@ -612,7 +613,7 @@ div.quick-search .dropdown-menu {
  * As a temporary workaround, the backdrop and transparency are disabled for the
  * vertical layout.
  */
-body.layout-vertical.background-effects div.quick-search .dropdown-menu {    
+body.layout-vertical.background-effects div.quick-search .dropdown-menu {
     --menu-background-color: var(--menu-background-color-no-backdrop) !important;
 }
 
@@ -944,10 +945,24 @@ body.electron.background-effects.layout-horizontal .tab-row-container .toggle-bu
     position: absolute;
     bottom: 0;
     inset-inline-start: -10px;
-    inset-inline-end: -10px;
+    inset-inline-end: -6px;
     top: 32px;
     height: 1px;
     border-bottom: 1px solid var(--launcher-pane-horiz-border-color);
+}
+
+body.electron.background-effects.layout-horizontal .tab-row-container .tab-history-navigation-buttons {
+    position: relative;
+
+    &:after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        inset-inline-start: 0;
+        inset-inline-end: -7px;
+        height: 1px;
+        border-bottom: 1px solid var(--launcher-pane-horiz-border-color);
+    }
 }
 
 body.electron.background-effects.layout-horizontal .tab-row-container .tab-scroll-button-left,
@@ -1014,7 +1029,7 @@ body.layout-vertical.electron.platform-darwin .tab-row-container {
 }
 
 body.layout-horizontal .tab-row-container {
-    padding-top: calc((var(--tab-bar-height) - var(--tab-height)));
+    padding-top: calc(var(--tab-bar-height) - var(--tab-height));
 }
 
 /* Define extra drag areas for Electron windows */
@@ -1054,8 +1069,9 @@ body.desktop:not(.background-effects.platform-win32) #root-widget.horizontal-lay
     border-bottom-color: transparent;
 }
 
-.tab-row-widget .note-tab .note-tab-wrapper {
+:root div.tab-row-widget div.note-tab div.note-tab-wrapper {
     height: var(--tab-height) !important;
+    border-radius: 8px;
     transition:
         background 75ms ease-in,
         box-shadow 75ms ease-in;
@@ -1069,7 +1085,7 @@ body.desktop:not(.background-effects.platform-win32) #root-widget.horizontal-lay
     margin-top: calc((var(--tab-bar-height) - var(--tab-height)) * -1);
 }
 
-body.layout-horizontal .tab-row-widget .note-tab .note-tab-wrapper {
+body.layout-horizontal div.tab-row-widget div.note-tab div.note-tab-wrapper {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
 }
@@ -1207,12 +1223,37 @@ body.layout-vertical .tab-row-widget-is-sorting .note-tab.note-tab-is-dragging .
 }
 
 /*
+ * CLASSIC FORMATTING TOOLBAR
+ */
+
+#rest-pane > .classic-toolbar-widget {
+    margin-bottom: 2px;
+}
+
+body.layout-vertical #rest-pane > .classic-toolbar-widget {
+    border-start-start-radius: var(--center-pane-border-radius);
+}
+
+body.layout-vertical #rest-pane > .classic-toolbar-widget {
+    background: var(--classic-toolbar-vert-layout-background-color);
+}
+
+body.layout-horizontal #rest-pane > .classic-toolbar-widget {
+    background: var(--classic-toolbar-horiz-layout-background-color);
+}
+
+.classic-toolbar-widget:not(.hidden-ext) + #vertical-main-container {
+    /* Remove the center panel border radius when the toolbar is visible */
+    --center-pane-border-radius: 0;
+}
+
+/*
  * CENTER PANE
  */
 
  /* The first visible note split */
 .vertical-layout #center-pane .note-split:not(.visible ~ .visible) {
-    border-radius: var(--center-pane-border-radius) 0 0 0;
+    border-start-start-radius: var(--center-pane-border-radius);
 }
 
 #center-pane .note-split {
@@ -1333,6 +1374,10 @@ body.mobile .note-title {
     border-bottom: 2px solid #0000001c !important;
 }
 
+body.experimental-feature-new-layout #center-pane .note-split > div.alert {
+    margin-top: 0;
+}
+
 /*
  * Promoted attributes
  */
@@ -1428,9 +1473,7 @@ div.promoted-attribute-cell .tn-checkbox {
     height: 1cap;
 }
 
-/* Relocate the checkbox before the label */
 div.promoted-attribute-cell.promoted-attribute-label-boolean > div:first-of-type {
-    order: -1;
     margin-inline-end: 1.5em;
 }
 
@@ -1450,12 +1493,20 @@ div.promoted-attribute-cell .multiplicity:has(span) span {
     justify-content: center;
 }
 
+div.promoted-attribute-cell.promoted-attribute-label-color {
+    justify-content: space-between;
+}
+
+div.promoted-attribute-cell.promoted-attribute-label-color .input-group {
+    width: auto;
+}
+
 /*
  * Floating buttons
  */
 
  /* Floating buttons container */
-div#center-pane .floating-buttons-children {
+.floating-buttons-children {
     opacity: 1;
     min-height: var(--floating-button-height);
     transform-origin: right;
@@ -1467,12 +1518,12 @@ div#center-pane .floating-buttons-children {
                 opacity 250ms ease-out;
 }
 
-body[dir=rtl] div#center-pane .floating-buttons-children {
+body[dir=rtl] .floating-buttons-children {
     transform-origin: left;
 }
 
  /* Floating buttons container (collapsed) */
- div#center-pane .floating-buttons-children.temporarily-hidden {
+ .floating-buttons-children.temporarily-hidden {
     display: flex !important;
     opacity: 0;
     transform: scaleX(0);
@@ -1562,7 +1613,7 @@ div.floating-buttons .show-floating-buttons-button {
 div.floating-buttons .show-floating-buttons-button::before {
     animation: floating-buttons-show-hide-button-animation 400ms ease-out;
 }
- 
+
 div.floating-buttons .show-floating-buttons-button:hover,
 div.floating-buttons .show-floating-buttons-button:active {
     box-shadow: var(--floating-button-show-button-hover-shadow);
@@ -1752,6 +1803,10 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
     background: var(--right-pane-background-color);
 }
 
+#right-pane > * {
+    animation: fade-in 200ms ease-in;
+}
+
 #right-pane div.card-header {
     align-items: center;
     border: 0;
@@ -1824,7 +1879,7 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
 
 .excalidraw .dropdown-menu {
     border: unset !important;
-    box-shadow: unset !important;    
+    box-shadow: unset !important;
     background-color: transparent !important;
     --island-bg-color: var(--menu-background-color);
     --shadow-island: 0px 10px 20px rgba(0, 0, 0, var(--dropdown-shadow-opacity));

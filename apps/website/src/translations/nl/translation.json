@@ -29,6 +29,13 @@
         "revisions_content": "Notities worden periodiek op de achtergrond opgeslagen, en versies kunnen worden gebruikt om wijzigingen te bekijken of om per ongeluk gemaakte aanpassingen ongedaan te maken. Revisies kunnen ook handmatig worden aangemaakt.",
         "sync_title": "Synchronisatie",
         "sync_content": "Gebruik een zelfgehoste of cloudinstantie om je notities eenvoudig te synchroniseren tussen meerdere apparaten, en om er via een PWA toegang toe te krijgen op je mobiele telefoon.",
-        "protected_notes_title": "Beveiligde notities"
+        "protected_notes_title": "Beveiligde notities",
+        "protected_notes_content": "Bescherm gevoelige persoonlijke informatie door notities te versleutelen en te beschermen achter een met wachtwoord beveiligde sessie.",
+        "jump_to_title": "Snel zoeken en commando's",
+        "jump_to_content": "Spring snel naar notities of gebruikersinterfacecommando's binnen de hiërarchie door te zoeken naar de titel, met benaderingslogica om tikfouten en kleine verschillen te omzeilen.",
+        "search_title": "Krachtige zoekfunctie",
+        "search_content": "Of zoek naar tekst binnen notities en verfijn de zoekopdracht door in de bovenliggende notitie te filteren of zoekdiepte aan te geven.",
+        "web_clipper_title": "Web clipper",
+        "web_clipper_content": "Bewaar webpagina's (of schermafbeeldingen) en plaats deze direct in Trillium door de web clipper browser extensie te gebruiken."
     }
 }

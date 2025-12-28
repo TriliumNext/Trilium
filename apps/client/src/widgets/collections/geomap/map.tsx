@@ -30,7 +30,12 @@ export default function Map({ coordinates, zoom, layerName, viewportChanged, chi
     useEffect(() => {
         if (!containerRef.current) return;
         const mapInstance = L.map(containerRef.current, {
-            worldCopyJump: true
+            worldCopyJump: false,
+            maxBounds: [
+                [-90, -180],
+                [90, 180]
+            ],
+            minZoom: 2
         });
 
         mapRef.current = mapInstance;
@@ -56,7 +61,8 @@ export default function Map({ coordinates, zoom, layerName, viewportChanged, chi
             } else {
                 setLayer(L.tileLayer(layerData.url, {
                     attribution: layerData.attribution,
-                    detectRetina: true
+                    detectRetina: true,
+                    noWrap: true
                 }));
             }
         }

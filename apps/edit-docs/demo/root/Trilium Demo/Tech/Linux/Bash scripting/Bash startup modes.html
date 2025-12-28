@@ -14,6 +14,7 @@
 
       <div class="ck-content">
         <h3>Login shell</h3>
+
         <p>As a "login shell", Bash reads and sets (executes) the user's profile
           from /etc/profile and one of ~/.bash_profile, ~/.bash_login, or ~/.profile
           (in that order, using the first one that's readable!).</p>
@@ -23,6 +24,7 @@
           that only make sense for the initial user login. That's why all UNIX® shells
           have (should have) a "login" mode.</p>
         <p><em><strong>Methods to start Bash as a login shell:</strong></em>
+
         </p>
         <ul>
           <li>the first character of argv[0] is - (a hyphen): traditional UNIX® shells
@@ -31,17 +33,20 @@
           <li>Bash is started with the --login option</li>
         </ul>
         <p><em><strong>Methods to test for login shell mode:</strong></em>
+
         </p>
         <ul>
           <li>the shell option <a href="http://wiki.bash-hackers.org/internals/shell_options#login_shell">login_shell</a> is
             set</li>
         </ul>
         <p><em><strong>Related switches:</strong></em>
+
         </p>
         <ul>
           <li>--noprofile disables reading of all profile files</li>
         </ul>
          <h3>Interactive shell</h3>
+
         <p>When Bash starts as an interactive non-login shell, it reads and executes
           commands from ~/.bashrc. This file should contain, for example, aliases,
           since they need to be defined in every shell as they're not inherited from
@@ -51,11 +56,13 @@
           The classic way to have a system-wide rc file is to source /etc/bashrc
           from every user's ~/.bashrc.</p>
         <p><em><strong>Methods to test for interactive-shell mode:</strong></em>
+
         </p>
         <ul>
           <li>the special parameter $- contains the letter i (lowercase I)</li>
         </ul>
         <p><em><strong>Related switches:</strong></em>
+
         </p>
         <ul>
           <li>-i forces the interactive mode</li>
@@ -65,6 +72,7 @@
             ~/.bashrc)</li>
         </ul>
          <h3>SH mode</h3>
+
         <p>When Bash starts in SH compatiblity mode, it tries to mimic the startup
           behaviour of historical versions of sh as closely as possible, while conforming
           to the POSIX® standard as well. The profile files read are /etc/profile
@@ -74,6 +82,7 @@
           file.</p>
         <p>After the startup files are read, Bash enters the <a href="http://wiki.bash-hackers.org/scripting/bashbehaviour#posix_run_mode">POSIX(r) compatiblity mode (for running, not for starting!)</a>.</p>
         <p><em><strong>Bash starts in sh compatiblity mode when:</strong></em>
+
         </p>
         <ul>
           <li>

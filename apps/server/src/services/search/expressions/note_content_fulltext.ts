@@ -529,14 +529,18 @@ class NoteContentFulltextExp extends Expression {
             }
 
             try {
-                let canvasContent = JSON.parse(content);
-                // Canvas content may not have elements array, use empty array as default
-                const elements: Element[] = canvasContent.elements || [];
-                const texts = elements
-                    .filter((element: Element) => element.type === "text" && element.text) // Filter for 'text' type elements with a 'text' property
-                    .map((element: Element) => element.text!); // Use `!` to assert `text` is defined after filtering
+                const canvasContent = JSON.parse(content);
+                const elements = canvasContent.elements;
 
-                content = normalize(texts.join(" "));
+                if (Array.isArray(elements)) {
+                    const texts = elements
+                        .filter((element: Element) => element.type === "text" && element.text) // Filter for 'text' type elements with a 'text' property
+                        .map((element: Element) => element.text!); // Use `!` to assert `text` is defined after filtering
+
+                    content = normalize(texts.join(" "));
+                } else {
+                    content = "";
+                }
             } catch (e) {
                 // Handle JSON parse errors or malformed canvas content
                 content = "";

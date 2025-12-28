@@ -1,19 +1,24 @@
-.note-icon-widget {
-    padding-inline-start: 7px;
-    margin-inline-end: 0;
-    width: 50px;
-    height: 50px;
+div.note-icon-widget {
+    /* The size of the icon */
+    --note-icon-size: 30px;
+    /* The padding size for the icon container */
+    --note-icon-container-padding-size: 10px;
+    contain: unset;
 }
 
 .note-icon-widget button.note-icon {
-    font-size: 180%;
-    background-color: transparent;
+    --size: calc(var(--note-icon-size) + var(--note-icon-container-padding-size) * 2);
+
+    width: var(--size);
+    height: var(--size);
+    padding: 0;
     border: 1px solid transparent;
-    padding: 6px;
-    cursor: pointer;
+    background-color: transparent;
     color: var(--muted-text-color);
+    cursor: pointer;
+    font-size: var(--note-icon-size);
 }
-    
+
 .note-icon-widget button.note-icon:disabled {
     cursor: default;
     opacity: .75;
@@ -68,4 +73,42 @@
     border: 1px dashed var(--muted-text-color);
     width: 1em;
     height: 1em;
+}
+
+body.experimental-feature-new-layout {
+    .note-icon-widget button.note-icon {
+        --input-focus-outline-color: var(--note-icon-hover-background-color);
+
+        position: relative;
+        background: transparent !important;
+
+        &, &:hover {
+            border-radius: 50%;
+        }
+
+        /* The icon */
+        &::before {
+            position: relative;
+            z-index: 1;
+            color: var(--note-icon-custom-color, var(--note-icon-color));
+        }
+
+        /* The background circle */
+        &:not(.bx-empty:disabled)::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: var(--note-icon-custom-background-color, var(--note-icon-background-color));
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--note-icon-custom-color, var(--note-icon-color));
+        }
+
+        &:hover:not(.bx-empty:disabled)::after {
+            background: var(--note-icon-hover-custom-background-color, var(--note-icon-hover-background-color));
+            transition: background 200ms ease-out;
+        }
+    }
 }

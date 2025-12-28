@@ -1,84 +1,93 @@
 # Syntax highlighting
 ## Defining the MIME type
 
-The first step to supporting a new language for either code blocks or code notes is to define the MIME type. Go to `mime_types.ts` and add a corresponding entry:
+The first step to supporting a new language for either code blocks or code notes is to define the MIME type. Go to `mime_type.ts` in `packages/commons` and add a corresponding entry:
 
 ```
-{ title: "Batch file (DOS)", mime: "application/x-bat" }
+{ title: "ABAP (SAP)", mime: "text/x-abap", mdLanguageCode: "abap" }
 ```
+
+Where `mdLanguageCode` is a Markdown-friendly name of the language.
 
 ## Syntax highlighting for Highlight.js
 
-### Built-in languages
+The Highlight.js instance in Trilium identifies the code to highlight by the mime type mappings defined in `syntax_highlighting.ts` in `packages/highlightjs`.
 
-Highlight.js supports a lot of languages out of the box, for some of them we just need to enable them by specifying one of the language aliases in the `highlightJs` field in the `mime_types` definition:
+There are three possible cases, all involving modifying the `byMimeType` record:
 
-```
-{ title: "Batch file (DOS)", mime: "application/x-bat", highlightJs: "dos" }
-```
+### Highlight.js built-in languages:
 
-For the full list of supported languages, see [Supported Languages — highlight.js 11.9.0 documentation](https://highlightjs.readthedocs.io/en/latest/supported-languages.html). Look for the “Package” column to see if another library needs to be installed to support it.
-
-Note that we are using the CDN build which may or may not have all the languages listed as predefined in the “Supported languages” list. To view the real list of supported files, see the `node_modules/@highlightjs/cdn-assets/languages` directory.
-
-### Custom language
-
-When the source code for a language is available, one way is to simply copy it to `libraries/highlightjs/{id}.js` where `id` matches the name for `highlightJs`.
-
-Make sure in the script that the language is registered:
+Simply add a corresponding entry:
 
 ```
-hljs.registerLanguage('terraform', hljsDefineTerraform);
+"application/dart": () => import("highlight.js/lib/languages/dart"),
 ```
 
-Then in `mime_types.ts` make sure to set `highlightJsSource` to `libraries` to load it.
+### External modules from NPM
 
-```
-{ title: "Terraform (HCL)", mime: "text/x-hcl", highlightJs: "terraform", highlightJsSource: "libraries", codeMirrorSource: "libraries/codemirror/hcl.js" },
-```
+1.  Install the module as a dependency in `packages/highlight.js`
+2.  Import:
+    
+    ```
+    "application/x-cypher-query": () => import("highlightjs-cypher")
+    ```
+3.  Do this if the npm module is relatively new and it has TypeScript mappings, if not see the last option.
+
+### Modules integrated directly into Trilium
+
+*   Allows making small modifications if needed (especially if the module is old).
+*   Works well for modules missing type definitions, since types are added directly in code.
+
+Steps:
+
+1.  Copy the syntax highlighting file ([example](https://github.com/highlightjs/highlightjs-sap-abap/blob/main/src/abap.js)) into `packages/highlightjs/src/languages/[code].ts`.
+2.  Add a link in a comment at the top of the file linking to the original source code.
+3.  Replace `module.exports =` by `export default`.
+4.  Add types to the method:
+    
+    ```
+    import { HLJSApi, Language } from "highlight.js";
+    
+    export default function (hljs: HLJSApi): Language {
+        // [...]
+    }
+    ```
+5.  Remove any module loading mechanism or shims outside the main highlight function.
+6.  Modify `syntax_highlighting.js` to support the new language:
+    
+    ```
+    "text/x-abap": () => import("./languages/abap.js"),
+    ```
 
 ## Syntax highlighting for CodeMirror
 
-### Custom language
+> [!NOTE]
+> Newer versions of Trilium use CodeMirror 6, so the plugin must be compatible with this version.
 
-Generally new languages are not added in the base installation and need to be separately registered. For CodeMirror 5 it seems that (at least for simple languages), the modes are distributed as _simple modes_ and can generally be copy-pasted in `libraries/codemirror`. An example would be:
+### Adding the MIME type mapping
 
-```
-(() => {
+Similar to Highlight.js, the mappings for each MIME type are handled in `syntax_highlighting.ts` in `packages/codemirror`, by modifying the `byMimeType` record.
 
-    CodeMirror.defineSimpleMode("batch", {
+1.  Official modules:
+    
+    ```
+    async () => (await import('@codemirror/lang-html')).html(),
+    ```
+2.  Legacy modules (ported from CodeMirror 5):
+    
+    ```
+    "text/turtle": async () => (await import('@codemirror/legacy-modes/mode/turtle')).turtle, 
+    ```
+3.  Modules integrated into Trilium:
+    
+    ```
+    "application/x-bat": async () => (await import("./languages/batch.js")).batch,
+    ```
 
-        start: [],
+### Integrating existing modules
 
-        echo: []
-
-    });
-
-
-
-    CodeMirror.defineMIME("application/x-bat", "batch");
-
-    CodeMirror.modeInfo.push({
-
-        ext: [ "bat", "cmd" ],
-
-        mime: "application/x-bat",
-
-        mode: "batch",
-
-        name: "Batch file"
-
-    });
-
-})();
-
-
-```
-
-Note that changing `modeInfo` is crucial, otherwise syntax highlighting will not work. The `mime` field is mandatory, even if `mimes` is used instead.
-
-Afterwards, register it in `mime_types.ts`, specifying `codeMirrorSource` to point to the newly created file:
-
-```
-{ title: "Batch file (DOS)", mime: "application/x-bat", highlightJs: "dos", codeMirrorSource: "libraries/codemirror/batch.js" }
-```
+*   Add a comment at the beginning indicating the link to the original source code.
+*   Some imports might require updating:
+    *   Instead of  
+        `import { StreamParser, StringStream } from "@codemirror/stream-parser";`, use    
+        `import { StreamParser, StringStream } from "@codemirror/language";`

@@ -256,7 +256,9 @@
     "multi-factor-authentication-title": "MFA",
     "ai-llm-title": "AI/LLM",
     "localization": "Langue et région",
-    "inbox-title": "Boîte de réception"
+    "inbox-title": "Boîte de réception",
+    "command-palette": "Ouvrir la palette de commandes",
+    "zen-mode": "Mode Zen"
   },
   "notes": {
     "new-note": "Nouvelle note",

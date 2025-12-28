@@ -165,7 +165,7 @@ export default class TabManager extends Component {
         const activeNoteContext = this.getActiveContext();
         this.updateDocumentTitle(activeNoteContext);
 
-        this.triggerEvent("activeNoteChanged", {}); // trigger this even in on popstate event
+        this.triggerEvent("activeNoteChanged", {ntxId:activeNoteContext?.ntxId}); // trigger this even in on popstate event
     }
 
     calculateHash(): string {
@@ -647,7 +647,32 @@ export default class TabManager extends Component {
                 ...this.noteContexts.slice(-noteContexts.length),
                 ...this.noteContexts.slice(lastClosedTab.position, -noteContexts.length)
             ];
-            this.noteContextReorderEvent({ ntxIdsInOrder: ntxsInOrder.map((nc) => nc.ntxId).filter((id) => id !== null) });
+
+            // Update mainNtxId if the restored pane is the main pane in the split pane
+            const { oldMainNtxId, newMainNtxId } = (() => {
+                if (noteContexts.length !== 1) {
+                    return { oldMainNtxId: undefined, newMainNtxId: undefined };
+                }
+
+                const mainNtxId = noteContexts[0]?.mainNtxId;
+                const index = this.noteContexts.findIndex(c => c.ntxId === mainNtxId);
+
+                // No need to update if the restored position is after mainNtxId
+                if (index === -1 || lastClosedTab.position > index) {
+                    return { oldMainNtxId: undefined, newMainNtxId: undefined };
+                }
+
+                return {
+                    oldMainNtxId: this.noteContexts[index].ntxId ?? undefined,
+                    newMainNtxId: noteContexts[0]?.ntxId ?? undefined
+                };
+            })();
+
+            this.triggerCommand("noteContextReorder", {
+                ntxIdsInOrder: ntxsInOrder.map((nc) => nc.ntxId).filter((id) => id !== null),
+                oldMainNtxId,
+                newMainNtxId
+            });
 
             let mainNtx = noteContexts.find((nc) => nc.isMainContext());
             if (mainNtx) {
