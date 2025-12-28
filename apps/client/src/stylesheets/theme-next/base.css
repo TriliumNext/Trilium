@@ -134,7 +134,7 @@ body.backdrop-effects-disabled {
     white-space-collapse: discard;
 }
 
-.dropdown-menu.tn-dropdown-menu .bx {
+.dropdown-menu.tn-dropdown-menu .dropdown-item .bx {
     margin-inline-end: 6px;
 }
 

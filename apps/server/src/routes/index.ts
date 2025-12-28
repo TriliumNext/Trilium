@@ -1,20 +1,19 @@
-"use strict";
+import type { Request, Response } from "express";
 
-import sql from "../services/sql.js";
+import packageJson from "../../package.json" with { type: "json" };
+import type BNote from "../becca/entities/bnote.js";
+import appPath from "../services/app_path.js";
+import assetPath from "../services/asset_path.js";
 import attributeService from "../services/attributes.js";
 import config from "../services/config.js";
-import optionService from "../services/options.js";
-import log from "../services/log.js";
-import { isDev, isElectron, isWindows11 } from "../services/utils.js";
-import protectedSessionService from "../services/protected_session.js";
-import packageJson from "../../package.json" with { type: "json" };
-import assetPath from "../services/asset_path.js";
-import appPath from "../services/app_path.js";
-import { generateToken as generateCsrfToken } from "./csrf_protection.js";
-
-import type { Request, Response } from "express";
-import type BNote from "../becca/entities/bnote.js";
 import { getCurrentLocale } from "../services/i18n.js";
+import { generateCss, generateIconRegistry, getIconPacks, MIME_TO_EXTENSION_MAPPINGS } from "../services/icon_packs.js";
+import log from "../services/log.js";
+import optionService from "../services/options.js";
+import protectedSessionService from "../services/protected_session.js";
+import sql from "../services/sql.js";
+import { isDev, isElectron, isWindows11 } from "../services/utils.js";
+import { generateToken as generateCsrfToken } from "./csrf_protection.js";
 
 type View = "desktop" | "mobile" | "print";
 
@@ -35,10 +34,11 @@ function index(req: Request, res: Response) {
     const theme = options.theme;
     const themeNote = attributeService.getNoteWithLabel("appTheme", theme);
     const nativeTitleBarVisible = options.nativeTitleBarVisible === "true";
+    const iconPacks = getIconPacks();
 
     res.render(view, {
         device: view,
-        csrfToken: csrfToken,
+        csrfToken,
         themeCssUrl: getThemeCssUrl(theme, themeNote),
         themeUseNextAsBase: themeNote?.getAttributeValue("label", "appThemeBase"),
         headingStyle: options.headingStyle,
@@ -61,7 +61,14 @@ function index(req: Request, res: Response) {
         assetPath,
         appPath,
         baseApiUrl: 'api/',
-        currentLocale: getCurrentLocale()
+        currentLocale: getCurrentLocale(),
+        iconPackCss: iconPacks
+            .map(p => generateCss(p, p.builtin
+                ? `${assetPath}/fonts/${p.fontAttachmentId}.${MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
+                : `api/attachments/download/${p.fontAttachmentId}`))
+            .filter(Boolean)
+            .join("\n\n"),
+        iconRegistry: generateIconRegistry(iconPacks)
     });
 }
 
@@ -118,10 +125,9 @@ function getThemeCssUrl(theme: string, themeNote: BNote | null) {
         return `${assetPath}/stylesheets/theme-next-dark.css`;
     } else if (!process.env.TRILIUM_SAFE_MODE && themeNote) {
         return `api/notes/download/${themeNote.noteId}`;
-    } else {
-        // baseline light theme
-        return false;
     }
+    // baseline light theme
+    return false;
 }
 
 function getAppCssNoteIds() {

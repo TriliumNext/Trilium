@@ -32,17 +32,14 @@ div.note-icon-widget {
 }
 
 .note-icon-widget .filter-row {
-    padding-top: 10px;
-    padding-bottom: 10px;
-    padding-inline-end: 20px;
+    padding: 10px;
     display: flex;
-    align-items: baseline;
+    align-items: center;
+    gap: 1em;
 }
 
 .note-icon-widget .filter-row span {
     display: block;
-    padding-inline-start: 15px;
-    padding-inline-end: 15px;
     font-weight: bold;
 }
 
@@ -73,6 +70,14 @@ div.note-icon-widget {
     border: 1px dashed var(--muted-text-color);
     width: 1em;
     height: 1em;
+}
+
+.note-icon-widget {
+    .no-results {
+        padding: 20px;
+        text-align: center;
+        color: var(--muted-text-color);
+    }
 }
 
 body.experimental-feature-new-layout {

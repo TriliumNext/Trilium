@@ -285,3 +285,16 @@ export interface RenderMarkdownResponse {
 export interface ToMarkdownResponse {
     markdownContent: string;
 }
+
+export interface IconRegistry {
+    sources: {
+        prefix: string;
+        name: string;
+        /** An icon class to identify this icon pack. */
+        icon: string;
+        icons: {
+            id: string;
+            terms: string[];
+        }[]
+    }[];
+}

@@ -765,9 +765,14 @@
   },
   "note_icon": {
     "change_note_icon": "Change note icon",
-    "category": "Category:",
     "search": "Search:",
-    "reset-default": "Reset to default icon"
+    "search_placeholder": "Type to filter icons...",
+    "reset-default": "Reset to default icon",
+    "filter": "Filter",
+    "filter-none": "All icons",
+    "filter-default": "Default icons",
+    "icon_tooltip": "{{name}}\nIcon pack: {{iconPack}}",
+    "no_results": "No icons found."
   },
   "basic_properties": {
     "note_type": "Note type",
@@ -1613,7 +1618,7 @@
     "will_be_deleted_in": "This attachment will be automatically deleted in {{time}}",
     "will_be_deleted_soon": "This attachment will be automatically deleted soon",
     "deletion_reason": ", because the attachment is not linked in the note's content. To prevent deletion, add the attachment link back into the content or convert the attachment into note.",
-    "role_and_size": "Role: {{role}}, Size: {{size}}",
+    "role_and_size": "Role: {{role}}, size: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "Attachment link copied to clipboard.",
     "unrecognized_role": "Unrecognized attachment role '{{role}}'."
   },

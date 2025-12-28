@@ -1623,7 +1623,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
      * @param matchBy - choose by which property we detect if to update an existing attachment.
      *                      Supported values are either 'attachmentId' (default) or 'title'
      */
-    saveAttachment({ attachmentId, role, mime, title, content, position }: AttachmentRow, matchBy: "attachmentId" | "title" | undefined = "attachmentId") {
+    saveAttachment({ attachmentId, role, mime, title, content, position }: Omit<AttachmentRow, "ownerId">, matchBy: "attachmentId" | "title" | undefined = "attachmentId") {
         if (!["attachmentId", "title"].includes(matchBy)) {
             throw new Error(`Unsupported value '${matchBy}' for matchBy param, has to be either 'attachmentId' or 'title'.`);
         }

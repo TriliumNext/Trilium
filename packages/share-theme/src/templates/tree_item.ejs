@@ -15,7 +15,7 @@ const target = isExternalLink ? ` target="_blank" rel="noopener noreferrer"` : "
     <% if (note.noteId !== subRoot.note.noteId) { %>
     <a class="<%= linkClass %>" href="<%= linkHref %>"<%= target %>>
         <% if (note.hasVisibleChildren()) { %><button class="collapse-button" aria-label="<%= t("share_theme.expand") %>"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="svg-icon right-triangle"><path d="M3 8L12 17L21 8"></path></svg></button><% } %>
-        <span><i class="<%= note.getIcon() %>"></i> <%= note.title %></span>
+        <span><i class="<%= note.getIcon(iconPackSupportedPrefixes) %>"></i> <%= note.title %></span>
     </a>
 <% } %>
 

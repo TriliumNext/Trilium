@@ -1,0 +1,8826 @@
+{
+  "prefix": "bx",
+  "icons": {
+    "bx bx-empty": {
+      "terms": [
+        "empty"
+      ]
+    },
+    "bx bx-child": {
+      "terms": [
+        "child"
+      ]
+    },
+    "bx bxs-balloon": {
+      "terms": [
+        "balloon"
+      ]
+    },
+    "bx bxs-coffee-bean": {
+      "terms": [
+        "coffee-bean"
+      ]
+    },
+    "bx bxs-pear": {
+      "terms": [
+        "pear"
+      ]
+    },
+    "bx bxs-sushi": {
+      "terms": [
+        "sushi"
+      ]
+    },
+    "bx bx-sushi": {
+      "terms": [
+        "sushi"
+      ]
+    },
+    "bx bxs-shower": {
+      "terms": [
+        "shower"
+      ]
+    },
+    "bx bx-shower": {
+      "terms": [
+        "shower"
+      ]
+    },
+    "bx bxl-typescript": {
+      "terms": [
+        "typescript"
+      ]
+    },
+    "bx bxl-graphql": {
+      "terms": [
+        "graphql"
+      ]
+    },
+    "bx bx-rfid": {
+      "terms": [
+        "rfid"
+      ]
+    },
+    "bx bxs-universal-access": {
+      "terms": [
+        "universal-access"
+      ]
+    },
+    "bx bx-universal-access": {
+      "terms": [
+        "universal-access"
+      ]
+    },
+    "bx bxs-castle": {
+      "terms": [
+        "castle",
+        "fort",
+        "secure"
+      ]
+    },
+    "bx bxs-shield-minus": {
+      "terms": [
+        "shield-minus"
+      ]
+    },
+    "bx bx-shield-minus": {
+      "terms": [
+        "shield-minus"
+      ]
+    },
+    "bx bxs-shield-plus": {
+      "terms": [
+        "shield-plus"
+      ]
+    },
+    "bx bx-shield-plus": {
+      "terms": [
+        "shield-plus"
+      ]
+    },
+    "bx bx-vertical-bottom": {
+      "terms": [
+        "vertical-bottom"
+      ]
+    },
+    "bx bx-vertical-top": {
+      "terms": [
+        "vertical-top"
+      ]
+    },
+    "bx bx-horizontal-right": {
+      "terms": [
+        "horizontal-right"
+      ]
+    },
+    "bx bx-horizontal-left": {
+      "terms": [
+        "horizontal-left"
+      ]
+    },
+    "bx bxs-objects-vertical-bottom": {
+      "terms": [
+        "objects-vertical-bottom"
+      ]
+    },
+    "bx bx-objects-vertical-bottom": {
+      "terms": [
+        "objects-vertical-bottom"
+      ]
+    },
+    "bx bxs-objects-vertical-center": {
+      "terms": [
+        "objects-vertical-center"
+      ]
+    },
+    "bx bx-objects-vertical-center": {
+      "terms": [
+        "objects-vertical-center"
+      ]
+    },
+    "bx bxs-objects-vertical-top": {
+      "terms": [
+        "objects-vertical-top"
+      ]
+    },
+    "bx bx-objects-vertical-top": {
+      "terms": [
+        "objects-vertical-top"
+      ]
+    },
+    "bx bxs-objects-horizontal-right": {
+      "terms": [
+        "objects-horizontal-right"
+      ]
+    },
+    "bx bx-objects-horizontal-right": {
+      "terms": [
+        "objects-horizontal-right"
+      ]
+    },
+    "bx bxs-objects-horizontal-center": {
+      "terms": [
+        "objects-horizontal-center"
+      ]
+    },
+    "bx bx-objects-horizontal-center": {
+      "terms": [
+        "objects-horizontal-center"
+      ]
+    },
+    "bx bxs-objects-horizontal-left": {
+      "terms": [
+        "objects-horizontal-left"
+      ]
+    },
+    "bx bx-objects-horizontal-left": {
+      "terms": [
+        "objects-horizontal-left"
+      ]
+    },
+    "bx bxs-color": {
+      "terms": [
+        "color",
+        "palette",
+        "wheel"
+      ]
+    },
+    "bx bx-color": {
+      "terms": [
+        "color",
+        "palette",
+        "wheel"
+      ]
+    },
+    "bx bx-reflect-horizontal": {
+      "terms": [
+        "reflect-horizontal",
+        "flip"
+      ]
+    },
+    "bx bx-reflect-vertical": {
+      "terms": [
+        "reflect-vertical",
+        "flip"
+      ]
+    },
+    "bx bxl-postgresql": {
+      "terms": [
+        "postgresql",
+        "database",
+        "db",
+        "sql"
+      ]
+    },
+    "bx bxl-mongodb": {
+      "terms": [
+        "mongodb",
+        "database",
+        "db"
+      ]
+    },
+    "bx bxl-deezer": {
+      "terms": [
+        "deezer",
+        "music"
+      ]
+    },
+    "bx bxl-xing": {
+      "terms": [
+        "xing",
+        "search"
+      ]
+    },
+    "bx bx-cart-add": {
+      "terms": [
+        "cart-add",
+        "buy"
+      ]
+    },
+    "bx bx-cart-download": {
+      "terms": [
+        "cart-download",
+        "buy"
+      ]
+    },
+    "bx bx-no-signal": {
+      "terms": [
+        "no-signal",
+        "network",
+        "connection"
+      ]
+    },
+    "bx bx-signal-5": {
+      "terms": [
+        "signal-5",
+        "network",
+        "connection"
+      ]
+    },
+    "bx bx-signal-4": {
+      "terms": [
+        "signal-4",
+        "network",
+        "connection"
+      ]
+    },
+    "bx bx-signal-3": {
+      "terms": [
+        "signal-3",
+        "network",
+        "connection"
+      ]
+    },
+    "bx bx-signal-2": {
+      "terms": [
+        "signal-2",
+        "network",
+        "connection"
+      ]
+    },
+    "bx bx-signal-1": {
+      "terms": [
+        "signal-1",
+        "network",
+        "connection"
+      ]
+    },
+    "bx bxs-cheese": {
+      "terms": [
+        "cheese"
+      ]
+    },
+    "bx bx-cheese": {
+      "terms": [
+        "cheese"
+      ]
+    },
+    "bx bxs-hard-hat": {
+      "terms": [
+        "hard-hat",
+        "construction",
+        "worker",
+        "labour"
+      ]
+    },
+    "bx bx-hard-hat": {
+      "terms": [
+        "hard-hat",
+        "construction",
+        "worker",
+        "labour"
+      ]
+    },
+    "bx bxs-home-alt-2": {
+      "terms": [
+        "home-alt-2"
+      ]
+    },
+    "bx bx-home-alt-2": {
+      "terms": [
+        "home-alt-2"
+      ]
+    },
+    "bx bxl-meta": {
+      "terms": [
+        "meta",
+        "facebook",
+        "social media"
+      ]
+    },
+    "bx bxs-lemon": {
+      "terms": [
+        "lemon",
+        "lime",
+        "fruit",
+        "vegetable"
+      ]
+    },
+    "bx bx-lemon": {
+      "terms": [
+        "lemon",
+        "lime",
+        "fruit",
+        "vegetable"
+      ]
+    },
+    "bx bxs-cable-car": {
+      "terms": [
+        "cable-car",
+        "transportation",
+        "hill",
+        "travel"
+      ]
+    },
+    "bx bx-cable-car": {
+      "terms": [
+        "cable-car",
+        "transportation",
+        "hill",
+        "travel"
+      ]
+    },
+    "bx bxs-cricket-ball": {
+      "terms": [
+        "cricket-ball",
+        "sport"
+      ]
+    },
+    "bx bx-cricket-ball": {
+      "terms": [
+        "cricket-ball",
+        "sport"
+      ]
+    },
+    "bx bxs-tree-alt": {
+      "terms": [
+        "tree-alt",
+        "forest",
+        "christmas"
+      ]
+    },
+    "bx bx-male-female": {
+      "terms": [
+        "male-female"
+      ]
+    },
+    "bx bxs-invader": {
+      "terms": [
+        "invader"
+      ]
+    },
+    "bx bxs-baguette": {
+      "terms": [
+        "baguette",
+        "bread",
+        "bake",
+        "baking",
+        "food",
+        "nutrition"
+      ]
+    },
+    "bx bx-baguette": {
+      "terms": [
+        "baguette",
+        "bread",
+        "bake",
+        "baking",
+        "food",
+        "nutrition"
+      ]
+    },
+    "bx bx-fork": {
+      "terms": [
+        "fork",
+        "utensil",
+        "restaurant"
+      ]
+    },
+    "bx bx-knife": {
+      "terms": [
+        "knife",
+        "utensil",
+        "restaurant"
+      ]
+    },
+    "bx bxs-circle-half": {
+      "terms": [
+        "circle-half"
+      ]
+    },
+    "bx bx-circle-half": {
+      "terms": [
+        "circle-half"
+      ]
+    },
+    "bx bxs-circle-three-quarter": {
+      "terms": [
+        "circle-three-quarter"
+      ]
+    },
+    "bx bx-circle-three-quarter": {
+      "terms": [
+        "circle-three-quarter"
+      ]
+    },
+    "bx bxs-circle-quarter": {
+      "terms": [
+        "circle-quarter"
+      ]
+    },
+    "bx bx-circle-quarter": {
+      "terms": [
+        "circle-quarter"
+      ]
+    },
+    "bx bxs-bowl-rice": {
+      "terms": [
+        "bowl-rice",
+        "food"
+      ]
+    },
+    "bx bx-bowl-rice": {
+      "terms": [
+        "bowl-rice",
+        "food"
+      ]
+    },
+    "bx bxs-bowl-hot": {
+      "terms": [
+        "bowl-hot",
+        "food",
+        "heat"
+      ]
+    },
+    "bx bx-bowl-hot": {
+      "terms": [
+        "bowl-hot",
+        "food",
+        "heat"
+      ]
+    },
+    "bx bxs-popsicle": {
+      "terms": [
+        "popsicle",
+        "ice cream",
+        "dessert"
+      ]
+    },
+    "bx bx-popsicle": {
+      "terms": [
+        "popsicle",
+        "ice cream",
+        "dessert"
+      ]
+    },
+    "bx bx-cross": {
+      "terms": [
+        "cross",
+        "gaming",
+        "crosshair",
+        "aim"
+      ]
+    },
+    "bx bx-scatter-chart": {
+      "terms": [
+        "scatter-chart"
+      ]
+    },
+    "bx bx-money-withdraw": {
+      "terms": [
+        "money-withdraw",
+        "atm"
+      ]
+    },
+    "bx bx-candles": {
+      "terms": [
+        "candles",
+        "trading",
+        "stock"
+      ]
+    },
+    "bx bx-math": {
+      "terms": [
+        "math"
+      ]
+    },
+    "bx bx-party": {
+      "terms": [
+        "party",
+        "celebration"
+      ]
+    },
+    "bx bx-leaf": {
+      "terms": [
+        "leaf",
+        "plant",
+        "crop",
+        "nature"
+      ]
+    },
+    "bx bx-injection": {
+      "terms": [
+        "injection",
+        "syringe",
+        "dose"
+      ]
+    },
+    "bx bx-expand-vertical": {
+      "terms": [
+        "expand-vertical"
+      ]
+    },
+    "bx bx-expand-horizontal": {
+      "terms": [
+        "expand-horizontal"
+      ]
+    },
+    "bx bx-collapse-vertical": {
+      "terms": [
+        "collapse-vertical"
+      ]
+    },
+    "bx bx-collapse-horizontal": {
+      "terms": [
+        "collapse-horizontal"
+      ]
+    },
+    "bx bx-collapse-alt": {
+      "terms": [
+        "collapse-alt"
+      ]
+    },
+    "bx bxs-party": {
+      "terms": [
+        "party",
+        "celebration"
+      ]
+    },
+    "bx bxs-leaf": {
+      "terms": [
+        "leaf",
+        "plant",
+        "crop",
+        "nature"
+      ]
+    },
+    "bx bxs-injection": {
+      "terms": [
+        "injection",
+        "syringe",
+        "dose"
+      ]
+    },
+    "bx bxs-dog": {
+      "terms": [
+        "dog",
+        "pet",
+        "canine"
+      ]
+    },
+    "bx bxs-cat": {
+      "terms": [
+        "cat",
+        "pet"
+      ]
+    },
+    "bx bxl-upwork": {
+      "terms": [
+        "upwork"
+      ]
+    },
+    "bx bxl-netlify": {
+      "terms": [
+        "netlify"
+      ]
+    },
+    "bx bxl-java": {
+      "terms": [
+        "java"
+      ]
+    },
+    "bx bxl-heroku": {
+      "terms": [
+        "heroku"
+      ]
+    },
+    "bx bxl-go-lang": {
+      "terms": [
+        "go-lang"
+      ]
+    },
+    "bx bxl-gmail": {
+      "terms": [
+        "gmail"
+      ]
+    },
+    "bx bxl-flask": {
+      "terms": [
+        "flask"
+      ]
+    },
+    "bx bxl-99designs": {
+      "terms": [
+        "99designs"
+      ]
+    },
+    "bx bxl-venmo": {
+      "terms": [
+        "venmo"
+      ]
+    },
+    "bx bx-qr": {
+      "terms": [
+        "qr"
+      ]
+    },
+    "bx bx-qr-scan": {
+      "terms": [
+        "qr-scan"
+      ]
+    },
+    "bx bxl-docker": {
+      "terms": [
+        "docker"
+      ]
+    },
+    "bx bxl-aws": {
+      "terms": [
+        "aws"
+      ]
+    },
+    "bx bxs-hand": {
+      "terms": [
+        "hand",
+        "palm",
+        "stop"
+      ]
+    },
+    "bx bx-podcast": {
+      "terms": [
+        "podcast",
+        "audiobook",
+        "radio"
+      ]
+    },
+    "bx bxs-checkbox-minus": {
+      "terms": [
+        "checkbox-minus"
+      ]
+    },
+    "bx bx-checkbox-minus": {
+      "terms": [
+        "checkbox-minus"
+      ]
+    },
+    "bx bxs-speaker": {
+      "terms": [
+        "speaker"
+      ]
+    },
+    "bx bx-speaker": {
+      "terms": [
+        "speaker"
+      ]
+    },
+    "bx bxs-registered": {
+      "terms": [
+        "registered"
+      ]
+    },
+    "bx bx-registered": {
+      "terms": [
+        "registered"
+      ]
+    },
+    "bx bxs-phone-off": {
+      "terms": [
+        "phone-off"
+      ]
+    },
+    "bx bx-phone-off": {
+      "terms": [
+        "phone-off"
+      ]
+    },
+    "bx bxl-tiktok": {
+      "terms": [
+        "tiktok",
+        "social media",
+        "entertainment"
+      ]
+    },
+    "bx bxl-sketch": {
+      "terms": [
+        "sketch",
+        "web design"
+      ]
+    },
+    "bx bxl-steam": {
+      "terms": [
+        "steam"
+      ]
+    },
+    "bx bxl-trip-advisor": {
+      "terms": [
+        "trip-advisor",
+        "travel"
+      ]
+    },
+    "bx bxl-visual-studio": {
+      "terms": [
+        "visual-studio"
+      ]
+    },
+    "bx bxl-unity": {
+      "terms": [
+        "unity"
+      ]
+    },
+    "bx bxl-php": {
+      "terms": [
+        "php"
+      ]
+    },
+    "bx bxl-discord-alt": {
+      "terms": [
+        "discord-alt"
+      ]
+    },
+    "bx bxl-flutter": {
+      "terms": [
+        "flutter"
+      ]
+    },
+    "bx bxl-mastodon": {
+      "terms": [
+        "mastodon"
+      ]
+    },
+    "bx bxl-tailwind-css": {
+      "terms": [
+        "tailwind-css"
+      ]
+    },
+    "bx bx-buildings": {
+      "terms": [
+        "buildings",
+        "city",
+        "colony",
+        "skyline",
+        "skyscrapers"
+      ]
+    },
+    "bx bxs-buildings": {
+      "terms": [
+        "buildings",
+        "city",
+        "colony",
+        "skyline",
+        "skyscrapers"
+      ]
+    },
+    "bx bx-store-alt": {
+      "terms": [
+        "store-alt",
+        "shop",
+        "market"
+      ]
+    },
+    "bx bxs-store-alt": {
+      "terms": [
+        "store-alt",
+        "shop",
+        "market"
+      ]
+    },
+    "bx bx-bar-chart-alt-2": {
+      "terms": [
+        "bar-chart-alt-2"
+      ]
+    },
+    "bx bxs-bar-chart-alt-2": {
+      "terms": [
+        "bar-chart-alt-2"
+      ]
+    },
+    "bx bx-message-dots": {
+      "terms": [
+        "message-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bx bxs-message-dots": {
+      "terms": [
+        "message-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bx bx-message-rounded-dots": {
+      "terms": [
+        "message-rounded-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bx bxs-message-rounded-dots": {
+      "terms": [
+        "message-rounded-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bx bxs-devices": {
+      "terms": [
+        "devices",
+        "mobile",
+        "tab"
+      ]
+    },
+    "bx bx-memory-card": {
+      "terms": [
+        "memory-card",
+        "sd card",
+        "storage"
+      ]
+    },
+    "bx bxs-memory-card": {
+      "terms": [
+        "memory-card",
+        "sd card",
+        "storage"
+      ]
+    },
+    "bx bx-wallet-alt": {
+      "terms": [
+        "wallet-alt",
+        "money"
+      ]
+    },
+    "bx bxs-wallet-alt": {
+      "terms": [
+        "wallet-alt",
+        "money"
+      ]
+    },
+    "bx bxs-bank": {
+      "terms": [
+        "bank",
+        "institution",
+        "money",
+        "safe"
+      ]
+    },
+    "bx bx-slideshow": {
+      "terms": [
+        "slideshow",
+        "presentation",
+        "keynote"
+      ]
+    },
+    "bx bxs-slideshow": {
+      "terms": [
+        "slideshow",
+        "presentation",
+        "keynote"
+      ]
+    },
+    "bx bx-message-square": {
+      "terms": [
+        "message-square"
+      ]
+    },
+    "bx bx-message-square-dots": {
+      "terms": [
+        "message-square-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bx bxs-message-square": {
+      "terms": [
+        "message-square"
+      ]
+    },
+    "bx bxs-message-square-dots": {
+      "terms": [
+        "message-square-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bx bx-book-content": {
+      "terms": [
+        "book-content"
+      ]
+    },
+    "bx bxs-book-content": {
+      "terms": [
+        "book-content"
+      ]
+    },
+    "bx bx-chat": {
+      "terms": [
+        "chat",
+        "discussion",
+        "talk",
+        "comments",
+        "messages"
+      ]
+    },
+    "bx bxs-chat": {
+      "terms": [
+        "chat",
+        "discussion",
+        "talk",
+        "comments",
+        "messages"
+      ]
+    },
+    "bx bx-edit-alt": {
+      "terms": [
+        "edit-alt",
+        "writing",
+        "note",
+        "pencil"
+      ]
+    },
+    "bx bxs-edit-alt": {
+      "terms": [
+        "edit-alt",
+        "writing",
+        "note",
+        "pencil"
+      ]
+    },
+    "bx bx-mouse-alt": {
+      "terms": [
+        "mouse-alt"
+      ]
+    },
+    "bx bxs-mouse-alt": {
+      "terms": [
+        "mouse-alt"
+      ]
+    },
+    "bx bx-bug-alt": {
+      "terms": [
+        "bug-alt",
+        "error",
+        "warning"
+      ]
+    },
+    "bx bxs-bug-alt": {
+      "terms": [
+        "bug-alt",
+        "error",
+        "warning"
+      ]
+    },
+    "bx bx-notepad": {
+      "terms": [
+        "notepad"
+      ]
+    },
+    "bx bxs-notepad": {
+      "terms": [
+        "notepad"
+      ]
+    },
+    "bx bx-video-recording": {
+      "terms": [
+        "video-recording"
+      ]
+    },
+    "bx bxs-video-recording": {
+      "terms": [
+        "video-recording"
+      ]
+    },
+    "bx bx-shape-square": {
+      "terms": [
+        "shape-square"
+      ]
+    },
+    "bx bx-shape-triangle": {
+      "terms": [
+        "shape-triangle"
+      ]
+    },
+    "bx bxs-direction-left": {
+      "terms": [
+        "direction-left"
+      ]
+    },
+    "bx bx-ghost": {
+      "terms": [
+        "ghost",
+        "spooky",
+        "horror",
+        "scary"
+      ]
+    },
+    "bx bxs-ghost": {
+      "terms": [
+        "ghost",
+        "spooky",
+        "horror",
+        "scary"
+      ]
+    },
+    "bx bx-mail-send": {
+      "terms": [
+        "mail-send"
+      ]
+    },
+    "bx bx-code-alt": {
+      "terms": [
+        "code-alt"
+      ]
+    },
+    "bx bx-grid": {
+      "terms": [
+        "grid"
+      ]
+    },
+    "bx bxs-quote-single-left": {
+      "terms": [
+        "quote-single-left"
+      ]
+    },
+    "bx bxs-quote-single-right": {
+      "terms": [
+        "quote-single-right"
+      ]
+    },
+    "bx bx-user-pin": {
+      "terms": [
+        "user-pin"
+      ]
+    },
+    "bx bxs-user-pin": {
+      "terms": [
+        "user-pin"
+      ]
+    },
+    "bx bx-run": {
+      "terms": [
+        "run"
+      ]
+    },
+    "bx bx-copy-alt": {
+      "terms": [
+        "copy-alt"
+      ]
+    },
+    "bx bxs-copy-alt": {
+      "terms": [
+        "copy-alt"
+      ]
+    },
+    "bx bx-transfer-alt": {
+      "terms": [
+        "transfer-alt"
+      ]
+    },
+    "bx bxs-file-doc": {
+      "terms": [
+        "file-doc"
+      ]
+    },
+    "bx bxs-file-html": {
+      "terms": [
+        "file-html"
+      ]
+    },
+    "bx bxs-comment-detail": {
+      "terms": [
+        "comment-detail"
+      ]
+    },
+    "bx bxs-comment-add": {
+      "terms": [
+        "comment-add",
+        "chat",
+        "message",
+        "new",
+        "plus"
+      ]
+    },
+    "bx bxs-file-css": {
+      "terms": [
+        "file-css"
+      ]
+    },
+    "bx bxs-file-js": {
+      "terms": [
+        "file-js"
+      ]
+    },
+    "bx bxs-file-json": {
+      "terms": [
+        "file-json"
+      ]
+    },
+    "bx bxs-file-md": {
+      "terms": [
+        "file-md"
+      ]
+    },
+    "bx bxs-file-txt": {
+      "terms": [
+        "file-txt"
+      ]
+    },
+    "bx bxs-file-png": {
+      "terms": [
+        "file-png"
+      ]
+    },
+    "bx bxs-file-jpg": {
+      "terms": [
+        "file-jpg"
+      ]
+    },
+    "bx bxs-file-gif": {
+      "terms": [
+        "file-gif"
+      ]
+    },
+    "bx bxs-analyse": {
+      "terms": [
+        "analyse"
+      ]
+    },
+    "bx bx-book-open": {
+      "terms": [
+        "book-open"
+      ]
+    },
+    "bx bxs-plane-take-off": {
+      "terms": [
+        "plane-take-off",
+        "flight",
+        "fly"
+      ]
+    },
+    "bx bxs-plane-land": {
+      "terms": [
+        "plane-land",
+        "flight",
+        "fly",
+        "landing"
+      ]
+    },
+    "bx bxs-parking": {
+      "terms": [
+        "parking"
+      ]
+    },
+    "bx bxs-id-card": {
+      "terms": [
+        "id-card"
+      ]
+    },
+    "bx bxs-adjust-alt": {
+      "terms": [
+        "adjust-alt"
+      ]
+    },
+    "bx bx-landscape": {
+      "terms": [
+        "landscape"
+      ]
+    },
+    "bx bxs-landscape": {
+      "terms": [
+        "landscape"
+      ]
+    },
+    "bx bxs-traffic": {
+      "terms": [
+        "traffic"
+      ]
+    },
+    "bx bx-comment": {
+      "terms": [
+        "comment"
+      ]
+    },
+    "bx bxs-comment": {
+      "terms": [
+        "comment"
+      ]
+    },
+    "bx bx-comment-dots": {
+      "terms": [
+        "comment-dots",
+        "loading",
+        "message",
+        "chat"
+      ]
+    },
+    "bx bxs-comment-dots": {
+      "terms": [
+        "comment-dots",
+        "loading",
+        "message",
+        "chat"
+      ]
+    },
+    "bx bxs-wine": {
+      "terms": [
+        "wine"
+      ]
+    },
+    "bx bx-pyramid": {
+      "terms": [
+        "pyramid"
+      ]
+    },
+    "bx bxs-pyramid": {
+      "terms": [
+        "pyramid"
+      ]
+    },
+    "bx bx-cylinder": {
+      "terms": [
+        "cylinder"
+      ]
+    },
+    "bx bxs-cylinder": {
+      "terms": [
+        "cylinder"
+      ]
+    },
+    "bx bxs-graduation": {
+      "terms": [
+        "graduation",
+        "scholar",
+        "college"
+      ]
+    },
+    "bx bx-lock-alt": {
+      "terms": [
+        "lock-alt"
+      ]
+    },
+    "bx bxs-lock-alt": {
+      "terms": [
+        "lock-alt"
+      ]
+    },
+    "bx bx-lock-open-alt": {
+      "terms": [
+        "lock-open-alt"
+      ]
+    },
+    "bx bxs-lock-open-alt": {
+      "terms": [
+        "lock-open-alt"
+      ]
+    },
+    "bx bxs-hourglass-top": {
+      "terms": [
+        "hourglass-top"
+      ]
+    },
+    "bx bxs-hourglass-bottom": {
+      "terms": [
+        "hourglass-bottom"
+      ]
+    },
+    "bx bx-left-arrow-alt": {
+      "terms": [
+        "left-arrow-alt"
+      ]
+    },
+    "bx bx-right-arrow-alt": {
+      "terms": [
+        "right-arrow-alt"
+      ]
+    },
+    "bx bx-up-arrow-alt": {
+      "terms": [
+        "up-arrow-alt"
+      ]
+    },
+    "bx bx-down-arrow-alt": {
+      "terms": [
+        "down-arrow-alt"
+      ]
+    },
+    "bx bx-shape-circle": {
+      "terms": [
+        "shape-circle"
+      ]
+    },
+    "bx bx-cycling": {
+      "terms": [
+        "cycling"
+      ]
+    },
+    "bx bx-dna": {
+      "terms": [
+        "dna"
+      ]
+    },
+    "bx bx-bowling-ball": {
+      "terms": [
+        "bowling-ball"
+      ]
+    },
+    "bx bxs-bowling-ball": {
+      "terms": [
+        "bowling-ball"
+      ]
+    },
+    "bx bx-search-alt-2": {
+      "terms": [
+        "search-alt-2",
+        "magnifying glass"
+      ]
+    },
+    "bx bxs-search-alt-2": {
+      "terms": [
+        "search-alt-2",
+        "magnifying glass"
+      ]
+    },
+    "bx bx-plus-medical": {
+      "terms": [
+        "plus-medical",
+        "hospital",
+        "doctor",
+        "medicine"
+      ]
+    },
+    "bx bx-street-view": {
+      "terms": [
+        "street-view"
+      ]
+    },
+    "bx bx-droplet": {
+      "terms": [
+        "droplet"
+      ]
+    },
+    "bx bxs-droplet-half": {
+      "terms": [
+        "droplet-half"
+      ]
+    },
+    "bx bx-paint-roll": {
+      "terms": [
+        "paint-roll"
+      ]
+    },
+    "bx bxs-paint-roll": {
+      "terms": [
+        "paint-roll"
+      ]
+    },
+    "bx bx-shield-alt-2": {
+      "terms": [
+        "shield-alt-2"
+      ]
+    },
+    "bx bxs-shield-alt-2": {
+      "terms": [
+        "shield-alt-2"
+      ]
+    },
+    "bx bx-error-alt": {
+      "terms": [
+        "error-alt"
+      ]
+    },
+    "bx bxs-error-alt": {
+      "terms": [
+        "error-alt"
+      ]
+    },
+    "bx bx-square": {
+      "terms": [
+        "square"
+      ]
+    },
+    "bx bxs-square": {
+      "terms": [
+        "square"
+      ]
+    },
+    "bx bx-square-rounded": {
+      "terms": [
+        "square-rounded"
+      ]
+    },
+    "bx bxs-square-rounded": {
+      "terms": [
+        "square-rounded"
+      ]
+    },
+    "bx bx-polygon": {
+      "terms": [
+        "polygon"
+      ]
+    },
+    "bx bxs-polygon": {
+      "terms": [
+        "polygon"
+      ]
+    },
+    "bx bx-cube-alt": {
+      "terms": [
+        "cube-alt"
+      ]
+    },
+    "bx bxs-cube-alt": {
+      "terms": [
+        "cube-alt"
+      ]
+    },
+    "bx bx-cuboid": {
+      "terms": [
+        "cuboid"
+      ]
+    },
+    "bx bxs-cuboid": {
+      "terms": [
+        "cuboid"
+      ]
+    },
+    "bx bx-user-voice": {
+      "terms": [
+        "user-voice"
+      ]
+    },
+    "bx bxs-user-voice": {
+      "terms": [
+        "user-voice"
+      ]
+    },
+    "bx bx-accessibility": {
+      "terms": [
+        "accessibility",
+        "handicap",
+        "wheelchair",
+        "injury"
+      ]
+    },
+    "bx bx-building-house": {
+      "terms": [
+        "building-house"
+      ]
+    },
+    "bx bxs-building-house": {
+      "terms": [
+        "building-house"
+      ]
+    },
+    "bx bx-doughnut-chart": {
+      "terms": [
+        "doughnut-chart"
+      ]
+    },
+    "bx bxs-doughnut-chart": {
+      "terms": [
+        "doughnut-chart"
+      ]
+    },
+    "bx bxs-circle": {
+      "terms": [
+        "circle"
+      ]
+    },
+    "bx bx-log-in-circle": {
+      "terms": [
+        "log-in-circle"
+      ]
+    },
+    "bx bxs-log-in-circle": {
+      "terms": [
+        "log-in-circle"
+      ]
+    },
+    "bx bx-log-out-circle": {
+      "terms": [
+        "log-out-circle"
+      ]
+    },
+    "bx bxs-log-out-circle": {
+      "terms": [
+        "log-out-circle"
+      ]
+    },
+    "bx bxs-log-in": {
+      "terms": [
+        "log-in"
+      ]
+    },
+    "bx bxs-log-out": {
+      "terms": [
+        "log-out"
+      ]
+    },
+    "bx bxs-notification": {
+      "terms": [
+        "notification"
+      ]
+    },
+    "bx bxs-notification-off": {
+      "terms": [
+        "notification-off"
+      ]
+    },
+    "bx bx-check-square": {
+      "terms": [
+        "check-square"
+      ]
+    },
+    "bx bxs-check-square": {
+      "terms": [
+        "check-square"
+      ]
+    },
+    "bx bx-message-alt": {
+      "terms": [
+        "message-alt"
+      ]
+    },
+    "bx bxs-message-alt": {
+      "terms": [
+        "message-alt"
+      ]
+    },
+    "bx bx-message-alt-dots": {
+      "terms": [
+        "message-alt-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bx bxs-message-alt-dots": {
+      "terms": [
+        "message-alt-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bx bx-no-entry": {
+      "terms": [
+        "no-entry"
+      ]
+    },
+    "bx bxs-no-entry": {
+      "terms": [
+        "no-entry"
+      ]
+    },
+    "bx bxs-traffic-barrier": {
+      "terms": [
+        "traffic-barrier"
+      ]
+    },
+    "bx bxs-component": {
+      "terms": [
+        "component"
+      ]
+    },
+    "bx bxs-plane-alt": {
+      "terms": [
+        "plane-alt",
+        "flight",
+        "fly"
+      ]
+    },
+    "bx bx-palette": {
+      "terms": [
+        "palette",
+        "color",
+        "colour",
+        "painting"
+      ]
+    },
+    "bx bxs-palette": {
+      "terms": [
+        "palette",
+        "color",
+        "colour",
+        "painting"
+      ]
+    },
+    "bx bx-basket": {
+      "terms": [
+        "basket"
+      ]
+    },
+    "bx bxs-basket": {
+      "terms": [
+        "basket"
+      ]
+    },
+    "bx bx-purchase-tag-alt": {
+      "terms": [
+        "purchase-tag-alt",
+        "price",
+        "cost"
+      ]
+    },
+    "bx bxs-purchase-tag-alt": {
+      "terms": [
+        "purchase-tag-alt",
+        "price",
+        "cost"
+      ]
+    },
+    "bx bx-receipt": {
+      "terms": [
+        "receipt"
+      ]
+    },
+    "bx bxs-receipt": {
+      "terms": [
+        "receipt"
+      ]
+    },
+    "bx bx-line-chart": {
+      "terms": [
+        "line-chart"
+      ]
+    },
+    "bx bx-map-pin": {
+      "terms": [
+        "map-pin"
+      ]
+    },
+    "bx bxs-map-pin": {
+      "terms": [
+        "map-pin"
+      ]
+    },
+    "bx bx-hive": {
+      "terms": [
+        "hive"
+      ]
+    },
+    "bx bx-band-aid": {
+      "terms": [
+        "band-aid"
+      ]
+    },
+    "bx bxs-band-aid": {
+      "terms": [
+        "band-aid"
+      ]
+    },
+    "bx bx-credit-card-alt": {
+      "terms": [
+        "credit-card-alt",
+        "finance",
+        "money",
+        "debit"
+      ]
+    },
+    "bx bxs-credit-card-alt": {
+      "terms": [
+        "credit-card-alt",
+        "finance",
+        "money",
+        "debit"
+      ]
+    },
+    "bx bxs-credit-card": {
+      "terms": [
+        "credit-card",
+        "finance",
+        "money",
+        "debit"
+      ]
+    },
+    "bx bx-wifi-off": {
+      "terms": [
+        "wifi-off"
+      ]
+    },
+    "bx bxs-paint": {
+      "terms": [
+        "paint"
+      ]
+    },
+    "bx bx-brightness-half": {
+      "terms": [
+        "brightness-half"
+      ]
+    },
+    "bx bxs-brightness-half": {
+      "terms": [
+        "brightness-half"
+      ]
+    },
+    "bx bx-brightness": {
+      "terms": [
+        "brightness"
+      ]
+    },
+    "bx bxs-brightness": {
+      "terms": [
+        "brightness"
+      ]
+    },
+    "bx bx-filter-alt": {
+      "terms": [
+        "filter-alt"
+      ]
+    },
+    "bx bx-dialpad-alt": {
+      "terms": [
+        "dialpad-alt",
+        "keypad"
+      ]
+    },
+    "bx bx-border-right": {
+      "terms": [
+        "border-right"
+      ]
+    },
+    "bx bx-border-left": {
+      "terms": [
+        "border-left"
+      ]
+    },
+    "bx bx-border-top": {
+      "terms": [
+        "border-top"
+      ]
+    },
+    "bx bx-border-bottom": {
+      "terms": [
+        "border-bottom"
+      ]
+    },
+    "bx bx-border-all": {
+      "terms": [
+        "border-all"
+      ]
+    },
+    "bx bx-mobile-landscape": {
+      "terms": [
+        "mobile-landscape"
+      ]
+    },
+    "bx bx-mobile-vibration": {
+      "terms": [
+        "mobile-vibration"
+      ]
+    },
+    "bx bxs-rectangle": {
+      "terms": [
+        "rectangle"
+      ]
+    },
+    "bx bxs-right-arrow": {
+      "terms": [
+        "right-arrow"
+      ]
+    },
+    "bx bxs-left-arrow": {
+      "terms": [
+        "left-arrow"
+      ]
+    },
+    "bx bxs-up-arrow": {
+      "terms": [
+        "up-arrow"
+      ]
+    },
+    "bx bxs-down-arrow": {
+      "terms": [
+        "down-arrow"
+      ]
+    },
+    "bx bxs-right-top-arrow-circle": {
+      "terms": [
+        "right-top-arrow-circle"
+      ]
+    },
+    "bx bxs-right-down-arrow-circle": {
+      "terms": [
+        "right-down-arrow-circle"
+      ]
+    },
+    "bx bxs-left-top-arrow-circle": {
+      "terms": [
+        "left-top-arrow-circle"
+      ]
+    },
+    "bx bxs-left-down-arrow-circle": {
+      "terms": [
+        "left-down-arrow-circle"
+      ]
+    },
+    "bx bxs-institution": {
+      "terms": [
+        "institution"
+      ]
+    },
+    "bx bxs-school": {
+      "terms": [
+        "school"
+      ]
+    },
+    "bx bxs-chalkboard": {
+      "terms": [
+        "chalkboard",
+        "whiteboard",
+        "teaching"
+      ]
+    },
+    "bx bxs-skip-previous-circle": {
+      "terms": [
+        "skip-previous-circle"
+      ]
+    },
+    "bx bxs-skip-next-circle": {
+      "terms": [
+        "skip-next-circle"
+      ]
+    },
+    "bx bxs-data": {
+      "terms": [
+        "data"
+      ]
+    },
+    "bx bxs-mobile": {
+      "terms": [
+        "mobile"
+      ]
+    },
+    "bx bxs-folder-minus": {
+      "terms": [
+        "folder-minus",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bxs-bell-plus": {
+      "terms": [
+        "bell-plus",
+        "alert",
+        "notification"
+      ]
+    },
+    "bx bxs-bell-minus": {
+      "terms": [
+        "bell-minus",
+        "alert",
+        "notification"
+      ]
+    },
+    "bx bxs-search": {
+      "terms": [
+        "search",
+        "magnifying glass"
+      ]
+    },
+    "bx bxs-zoom-in": {
+      "terms": [
+        "zoom-in"
+      ]
+    },
+    "bx bxs-zoom-out": {
+      "terms": [
+        "zoom-out"
+      ]
+    },
+    "bx bxs-grid": {
+      "terms": [
+        "grid"
+      ]
+    },
+    "bx bxs-user-x": {
+      "terms": [
+        "user-x"
+      ]
+    },
+    "bx bxs-user-check": {
+      "terms": [
+        "user-check"
+      ]
+    },
+    "bx bxs-compass": {
+      "terms": [
+        "compass"
+      ]
+    },
+    "bx bx-gas-pump": {
+      "terms": [
+        "gas-pump"
+      ]
+    },
+    "bx bxs-stopwatch": {
+      "terms": [
+        "stopwatch"
+      ]
+    },
+    "bx bxs-timer": {
+      "terms": [
+        "timer"
+      ]
+    },
+    "bx bxs-time": {
+      "terms": [
+        "time"
+      ]
+    },
+    "bx bx-pie-chart-alt-2": {
+      "terms": [
+        "pie-chart-alt-2"
+      ]
+    },
+    "bx bxs-pie-chart-alt-2": {
+      "terms": [
+        "pie-chart-alt-2"
+      ]
+    },
+    "bx bx-time-five": {
+      "terms": [
+        "time-five"
+      ]
+    },
+    "bx bxs-time-five": {
+      "terms": [
+        "time-five"
+      ]
+    },
+    "bx bxl-instagram-alt": {
+      "terms": [
+        "instagram-alt",
+        "social media"
+      ]
+    },
+    "bx bxs-bookmarks": {
+      "terms": [
+        "bookmarks"
+      ]
+    },
+    "bx bxs-bookmark-minus": {
+      "terms": [
+        "bookmark-minus"
+      ]
+    },
+    "bx bx-briefcase-alt-2": {
+      "terms": [
+        "briefcase-alt-2",
+        "work",
+        "travel",
+        "suitcase"
+      ]
+    },
+    "bx bxs-briefcase-alt-2": {
+      "terms": [
+        "briefcase-alt-2",
+        "work",
+        "travel",
+        "suitcase"
+      ]
+    },
+    "bx bx-brush-alt": {
+      "terms": [
+        "brush-alt"
+      ]
+    },
+    "bx bxs-calendar": {
+      "terms": [
+        "calendar"
+      ]
+    },
+    "bx bxs-calendar-alt": {
+      "terms": [
+        "calendar-alt"
+      ]
+    },
+    "bx bxs-calendar-plus": {
+      "terms": [
+        "calendar-plus"
+      ]
+    },
+    "bx bxs-calendar-minus": {
+      "terms": [
+        "calendar-minus"
+      ]
+    },
+    "bx bxs-calendar-x": {
+      "terms": [
+        "calendar-x"
+      ]
+    },
+    "bx bxs-calendar-check": {
+      "terms": [
+        "calendar-check"
+      ]
+    },
+    "bx bxs-calendar-event": {
+      "terms": [
+        "calendar-event"
+      ]
+    },
+    "bx bx-customize": {
+      "terms": [
+        "customize"
+      ]
+    },
+    "bx bxs-customize": {
+      "terms": [
+        "customize"
+      ]
+    },
+    "bx bxs-carousel": {
+      "terms": [
+        "carousel"
+      ]
+    },
+    "bx bxs-rewind-circle": {
+      "terms": [
+        "rewind-circle"
+      ]
+    },
+    "bx bxs-fast-forward-circle": {
+      "terms": [
+        "fast-forward-circle"
+      ]
+    },
+    "bx bxs-mobile-vibration": {
+      "terms": [
+        "mobile-vibration"
+      ]
+    },
+    "bx bxs-quote-alt-left": {
+      "terms": [
+        "quote-alt-left"
+      ]
+    },
+    "bx bxs-quote-alt-right": {
+      "terms": [
+        "quote-alt-right"
+      ]
+    },
+    "bx bxs-layout": {
+      "terms": [
+        "layout"
+      ]
+    },
+    "bx bx-radio": {
+      "terms": [
+        "radio"
+      ]
+    },
+    "bx bx-printer": {
+      "terms": [
+        "printer"
+      ]
+    },
+    "bx bx-sort-a-z": {
+      "terms": [
+        "sort-a-z"
+      ]
+    },
+    "bx bx-sort-z-a": {
+      "terms": [
+        "sort-z-a"
+      ]
+    },
+    "bx bx-conversation": {
+      "terms": [
+        "conversation",
+        "chat",
+        "discussion"
+      ]
+    },
+    "bx bxs-brush-alt": {
+      "terms": [
+        "brush-alt"
+      ]
+    },
+    "bx bx-exit": {
+      "terms": [
+        "exit"
+      ]
+    },
+    "bx bxs-exit": {
+      "terms": [
+        "exit"
+      ]
+    },
+    "bx bx-extension": {
+      "terms": [
+        "extension"
+      ]
+    },
+    "bx bxs-extension": {
+      "terms": [
+        "extension"
+      ]
+    },
+    "bx bxs-file-find": {
+      "terms": [
+        "file-find",
+        "search"
+      ]
+    },
+    "bx bx-face": {
+      "terms": [
+        "face"
+      ]
+    },
+    "bx bxs-face": {
+      "terms": [
+        "face"
+      ]
+    },
+    "bx bx-file-find": {
+      "terms": [
+        "file-find",
+        "search"
+      ]
+    },
+    "bx bx-label": {
+      "terms": [
+        "label"
+      ]
+    },
+    "bx bxs-label": {
+      "terms": [
+        "label"
+      ]
+    },
+    "bx bx-check-shield": {
+      "terms": [
+        "check-shield"
+      ]
+    },
+    "bx bxs-check-shield": {
+      "terms": [
+        "check-shield"
+      ]
+    },
+    "bx bx-border-radius": {
+      "terms": [
+        "border-radius"
+      ]
+    },
+    "bx bx-add-to-queue": {
+      "terms": [
+        "add-to-queue"
+      ]
+    },
+    "bx bxs-add-to-queue": {
+      "terms": [
+        "add-to-queue"
+      ]
+    },
+    "bx bx-archive-in": {
+      "terms": [
+        "archive-in"
+      ]
+    },
+    "bx bxs-archive-in": {
+      "terms": [
+        "archive-in"
+      ]
+    },
+    "bx bx-archive-out": {
+      "terms": [
+        "archive-out"
+      ]
+    },
+    "bx bxs-archive-out": {
+      "terms": [
+        "archive-out"
+      ]
+    },
+    "bx bx-alarm-add": {
+      "terms": [
+        "alarm-add"
+      ]
+    },
+    "bx bxs-alarm-add": {
+      "terms": [
+        "alarm-add"
+      ]
+    },
+    "bx bx-space-bar": {
+      "terms": [
+        "space-bar"
+      ]
+    },
+    "bx bx-image-alt": {
+      "terms": [
+        "image-alt"
+      ]
+    },
+    "bx bx-image-add": {
+      "terms": [
+        "image-add"
+      ]
+    },
+    "bx bxs-image-add": {
+      "terms": [
+        "image-add"
+      ]
+    },
+    "bx bx-fridge": {
+      "terms": [
+        "fridge"
+      ]
+    },
+    "bx bxs-fridge": {
+      "terms": [
+        "fridge"
+      ]
+    },
+    "bx bx-dish": {
+      "terms": [
+        "dish"
+      ]
+    },
+    "bx bxs-dish": {
+      "terms": [
+        "dish"
+      ]
+    },
+    "bx bx-spa": {
+      "terms": [
+        "spa"
+      ]
+    },
+    "bx bxs-spa": {
+      "terms": [
+        "spa"
+      ]
+    },
+    "bx bx-cake": {
+      "terms": [
+        "cake"
+      ]
+    },
+    "bx bxs-cake": {
+      "terms": [
+        "cake"
+      ]
+    },
+    "bx bxs-city": {
+      "terms": [
+        "city"
+      ]
+    },
+    "bx bx-bolt-circle": {
+      "terms": [
+        "bolt-circle"
+      ]
+    },
+    "bx bxs-bolt-circle": {
+      "terms": [
+        "bolt-circle"
+      ]
+    },
+    "bx bx-tone": {
+      "terms": [
+        "tone"
+      ]
+    },
+    "bx bx-bitcoin": {
+      "terms": [
+        "bitcoin"
+      ]
+    },
+    "bx bx-lira": {
+      "terms": [
+        "lira"
+      ]
+    },
+    "bx bx-ruble": {
+      "terms": [
+        "ruble"
+      ]
+    },
+    "bx bxs-caret-up-circle": {
+      "terms": [
+        "caret-up-circle"
+      ]
+    },
+    "bx bxs-caret-down-circle": {
+      "terms": [
+        "caret-down-circle"
+      ]
+    },
+    "bx bxs-caret-left-circle": {
+      "terms": [
+        "caret-left-circle"
+      ]
+    },
+    "bx bxs-caret-right-circle": {
+      "terms": [
+        "caret-right-circle"
+      ]
+    },
+    "bx bx-rupee": {
+      "terms": [
+        "rupee"
+      ]
+    },
+    "bx bx-euro": {
+      "terms": [
+        "euro"
+      ]
+    },
+    "bx bx-pound": {
+      "terms": [
+        "pound"
+      ]
+    },
+    "bx bx-won": {
+      "terms": [
+        "won"
+      ]
+    },
+    "bx bx-yen": {
+      "terms": [
+        "yen"
+      ]
+    },
+    "bx bx-shekel": {
+      "terms": [
+        "shekel"
+      ]
+    },
+    "bx bxl-facebook-circle": {
+      "terms": [
+        "facebook-circle",
+        "social media"
+      ]
+    },
+    "bx bxl-jquery": {
+      "terms": [
+        "jquery"
+      ]
+    },
+    "bx bxl-imdb": {
+      "terms": [
+        "imdb"
+      ]
+    },
+    "bx bxl-pinterest-alt": {
+      "terms": [
+        "pinterest-alt"
+      ]
+    },
+    "bx bxs-tone": {
+      "terms": [
+        "tone"
+      ]
+    },
+    "bx bx-health": {
+      "terms": [
+        "health"
+      ]
+    },
+    "bx bxs-baby-carriage": {
+      "terms": [
+        "baby-carriage",
+        "child",
+        "pregnancy",
+        "birth"
+      ]
+    },
+    "bx bx-clinic": {
+      "terms": [
+        "clinic"
+      ]
+    },
+    "bx bxs-hand-up": {
+      "terms": [
+        "hand-up",
+        "finger",
+        "point",
+        "direction"
+      ]
+    },
+    "bx bxs-hand-right": {
+      "terms": [
+        "hand-right",
+        "finger",
+        "point",
+        "direction"
+      ]
+    },
+    "bx bxs-hand-down": {
+      "terms": [
+        "hand-down",
+        "finger",
+        "point",
+        "direction"
+      ]
+    },
+    "bx bxs-hand-left": {
+      "terms": [
+        "hand-left",
+        "finger",
+        "point",
+        "direction"
+      ]
+    },
+    "bx bx-male": {
+      "terms": [
+        "male"
+      ]
+    },
+    "bx bx-female": {
+      "terms": [
+        "female"
+      ]
+    },
+    "bx bx-male-sign": {
+      "terms": [
+        "male-sign"
+      ]
+    },
+    "bx bx-female-sign": {
+      "terms": [
+        "female-sign"
+      ]
+    },
+    "bx bxs-clinic": {
+      "terms": [
+        "clinic"
+      ]
+    },
+    "bx bxs-offer": {
+      "terms": [
+        "offer"
+      ]
+    },
+    "bx bx-food-tag": {
+      "terms": [
+        "food-tag"
+      ]
+    },
+    "bx bx-food-menu": {
+      "terms": [
+        "food-menu"
+      ]
+    },
+    "bx bxs-food-menu": {
+      "terms": [
+        "food-menu"
+      ]
+    },
+    "bx bxs-camera-plus": {
+      "terms": [
+        "camera-plus"
+      ]
+    },
+    "bx bxs-business": {
+      "terms": [
+        "business",
+        "skyline",
+        "skyscraper",
+        "city"
+      ]
+    },
+    "bx bx-meh-alt": {
+      "terms": [
+        "meh-alt"
+      ]
+    },
+    "bx bx-wink-tongue": {
+      "terms": [
+        "wink-tongue"
+      ]
+    },
+    "bx bx-happy-alt": {
+      "terms": [
+        "happy-alt"
+      ]
+    },
+    "bx bx-cool": {
+      "terms": [
+        "cool"
+      ]
+    },
+    "bx bx-tired": {
+      "terms": [
+        "tired"
+      ]
+    },
+    "bx bx-smile": {
+      "terms": [
+        "smile"
+      ]
+    },
+    "bx bx-angry": {
+      "terms": [
+        "angry"
+      ]
+    },
+    "bx bx-happy-heart-eyes": {
+      "terms": [
+        "happy-heart-eyes"
+      ]
+    },
+    "bx bx-dizzy": {
+      "terms": [
+        "dizzy"
+      ]
+    },
+    "bx bx-wink-smile": {
+      "terms": [
+        "wink-smile"
+      ]
+    },
+    "bx bx-confused": {
+      "terms": [
+        "confused"
+      ]
+    },
+    "bx bx-sleepy": {
+      "terms": [
+        "sleepy"
+      ]
+    },
+    "bx bx-shocked": {
+      "terms": [
+        "shocked"
+      ]
+    },
+    "bx bx-happy-beaming": {
+      "terms": [
+        "happy-beaming"
+      ]
+    },
+    "bx bx-meh-blank": {
+      "terms": [
+        "meh-blank"
+      ]
+    },
+    "bx bx-laugh": {
+      "terms": [
+        "laugh"
+      ]
+    },
+    "bx bx-upside-down": {
+      "terms": [
+        "upside-down"
+      ]
+    },
+    "bx bxs-angry": {
+      "terms": [
+        "angry"
+      ]
+    },
+    "bx bxs-happy-heart-eyes": {
+      "terms": [
+        "happy-heart-eyes"
+      ]
+    },
+    "bx bxs-dizzy": {
+      "terms": [
+        "dizzy"
+      ]
+    },
+    "bx bxs-wink-smile": {
+      "terms": [
+        "wink-smile"
+      ]
+    },
+    "bx bxs-smile": {
+      "terms": [
+        "smile"
+      ]
+    },
+    "bx bxs-meh": {
+      "terms": [
+        "meh"
+      ]
+    },
+    "bx bxs-meh-alt": {
+      "terms": [
+        "meh-alt"
+      ]
+    },
+    "bx bxs-confused": {
+      "terms": [
+        "confused"
+      ]
+    },
+    "bx bxs-sleepy": {
+      "terms": [
+        "sleepy"
+      ]
+    },
+    "bx bxs-sad": {
+      "terms": [
+        "sad"
+      ]
+    },
+    "bx bxs-happy": {
+      "terms": [
+        "happy"
+      ]
+    },
+    "bx bxs-shocked": {
+      "terms": [
+        "shocked"
+      ]
+    },
+    "bx bxs-happy-beaming": {
+      "terms": [
+        "happy-beaming"
+      ]
+    },
+    "bx bxs-tired": {
+      "terms": [
+        "tired"
+      ]
+    },
+    "bx bxs-cool": {
+      "terms": [
+        "cool"
+      ]
+    },
+    "bx bxs-meh-blank": {
+      "terms": [
+        "meh-blank"
+      ]
+    },
+    "bx bxs-laugh": {
+      "terms": [
+        "laugh"
+      ]
+    },
+    "bx bxs-happy-alt": {
+      "terms": [
+        "happy-alt"
+      ]
+    },
+    "bx bxs-upside-down": {
+      "terms": [
+        "upside-down"
+      ]
+    },
+    "bx bxs-wink-tongue": {
+      "terms": [
+        "wink-tongue"
+      ]
+    },
+    "bx bxl-adobe": {
+      "terms": [
+        "adobe"
+      ]
+    },
+    "bx bxl-algolia": {
+      "terms": [
+        "algolia"
+      ]
+    },
+    "bx bxl-audible": {
+      "terms": [
+        "audible"
+      ]
+    },
+    "bx bxl-figma": {
+      "terms": [
+        "figma"
+      ]
+    },
+    "bx bxl-etsy": {
+      "terms": [
+        "etsy"
+      ]
+    },
+    "bx bxl-gitlab": {
+      "terms": [
+        "gitlab"
+      ]
+    },
+    "bx bxl-patreon": {
+      "terms": [
+        "patreon"
+      ]
+    },
+    "bx bxl-redbubble": {
+      "terms": [
+        "redbubble"
+      ]
+    },
+    "bx bx-diamond": {
+      "terms": [
+        "diamond"
+      ]
+    },
+    "bx bxs-comment-error": {
+      "terms": [
+        "comment-error"
+      ]
+    },
+    "bx bxs-vial": {
+      "terms": [
+        "vial"
+      ]
+    },
+    "bx bx-align-left": {
+      "terms": [
+        "align-left"
+      ]
+    },
+    "bx bx-align-middle": {
+      "terms": [
+        "align-middle"
+      ]
+    },
+    "bx bx-align-right": {
+      "terms": [
+        "align-right"
+      ]
+    },
+    "bx bx-arrow-back": {
+      "terms": [
+        "arrow-back"
+      ]
+    },
+    "bx bx-bell-minus": {
+      "terms": [
+        "bell-minus",
+        "alert",
+        "notification"
+      ]
+    },
+    "bx bx-bell-off": {
+      "terms": [
+        "bell-off",
+        "alert",
+        "notification",
+        "silent"
+      ]
+    },
+    "bx bx-bell-plus": {
+      "terms": [
+        "bell-plus",
+        "alert",
+        "notification"
+      ]
+    },
+    "bx bx-bell": {
+      "terms": [
+        "bell",
+        "alert",
+        "notification"
+      ]
+    },
+    "bx bx-bookmark": {
+      "terms": [
+        "bookmark"
+      ]
+    },
+    "bx bx-bookmarks": {
+      "terms": [
+        "bookmarks"
+      ]
+    },
+    "bx bx-bullseye": {
+      "terms": [
+        "bullseye"
+      ]
+    },
+    "bx bx-camera-off": {
+      "terms": [
+        "camera-off"
+      ]
+    },
+    "bx bx-camera": {
+      "terms": [
+        "camera"
+      ]
+    },
+    "bx bx-captions": {
+      "terms": [
+        "captions",
+        "subtitles",
+        "subs",
+        "cc"
+      ]
+    },
+    "bx bx-checkbox-checked": {
+      "terms": [
+        "checkbox-checked"
+      ]
+    },
+    "bx bx-checkbox": {
+      "terms": [
+        "checkbox"
+      ]
+    },
+    "bx bx-checkbox-square": {
+      "terms": [
+        "checkbox-square"
+      ]
+    },
+    "bx bx-chevron-down": {
+      "terms": [
+        "chevron-down",
+        "arrow"
+      ]
+    },
+    "bx bx-chevron-up": {
+      "terms": [
+        "chevron-up",
+        "arrow"
+      ]
+    },
+    "bx bx-chevron-left": {
+      "terms": [
+        "chevron-left",
+        "arrow"
+      ]
+    },
+    "bx bx-chevron-right": {
+      "terms": [
+        "chevron-right",
+        "arrow"
+      ]
+    },
+    "bx bx-chevrons-down": {
+      "terms": [
+        "chevrons-down",
+        "arrow"
+      ]
+    },
+    "bx bx-chevrons-up": {
+      "terms": [
+        "chevrons-up",
+        "arrow"
+      ]
+    },
+    "bx bx-chevrons-right": {
+      "terms": [
+        "chevrons-right",
+        "arrow"
+      ]
+    },
+    "bx bx-chevrons-left": {
+      "terms": [
+        "chevrons-left",
+        "arrow"
+      ]
+    },
+    "bx bx-clipboard": {
+      "terms": [
+        "clipboard"
+      ]
+    },
+    "bx bx-code-curly": {
+      "terms": [
+        "code-curly"
+      ]
+    },
+    "bx bx-code": {
+      "terms": [
+        "code"
+      ]
+    },
+    "bx bx-coffee": {
+      "terms": [
+        "coffee"
+      ]
+    },
+    "bx bx-copy": {
+      "terms": [
+        "copy"
+      ]
+    },
+    "bx bx-copyright": {
+      "terms": [
+        "copyright"
+      ]
+    },
+    "bx bx-down-arrow-circle": {
+      "terms": [
+        "down-arrow-circle"
+      ]
+    },
+    "bx bx-error-circle": {
+      "terms": [
+        "error-circle"
+      ]
+    },
+    "bx bx-error": {
+      "terms": [
+        "error"
+      ]
+    },
+    "bx bx-exit-fullscreen": {
+      "terms": [
+        "exit-fullscreen"
+      ]
+    },
+    "bx bx-fast-forward-circle": {
+      "terms": [
+        "fast-forward-circle"
+      ]
+    },
+    "bx bx-fast-forward": {
+      "terms": [
+        "fast-forward"
+      ]
+    },
+    "bx bx-first-page": {
+      "terms": [
+        "first-page"
+      ]
+    },
+    "bx bx-folder-minus": {
+      "terms": [
+        "folder-minus",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bx-folder-plus": {
+      "terms": [
+        "folder-plus",
+        "add",
+        "folder add",
+        "new folder"
+      ]
+    },
+    "bx bx-folder": {
+      "terms": [
+        "folder"
+      ]
+    },
+    "bx bx-fullscreen": {
+      "terms": [
+        "fullscreen"
+      ]
+    },
+    "bx bx-hide": {
+      "terms": [
+        "hide"
+      ]
+    },
+    "bx bx-image": {
+      "terms": [
+        "image"
+      ]
+    },
+    "bx bx-info-circle": {
+      "terms": [
+        "info-circle"
+      ]
+    },
+    "bx bx-align-justify": {
+      "terms": [
+        "align-justify"
+      ]
+    },
+    "bx bx-key": {
+      "terms": [
+        "key"
+      ]
+    },
+    "bx bx-last-page": {
+      "terms": [
+        "last-page"
+      ]
+    },
+    "bx bx-left-arrow-circle": {
+      "terms": [
+        "left-arrow-circle"
+      ]
+    },
+    "bx bx-left-down-arrow-circle": {
+      "terms": [
+        "left-down-arrow-circle"
+      ]
+    },
+    "bx bx-left-indent": {
+      "terms": [
+        "left-indent"
+      ]
+    },
+    "bx bx-left-top-arrow-circle": {
+      "terms": [
+        "left-top-arrow-circle"
+      ]
+    },
+    "bx bx-menu": {
+      "terms": [
+        "menu"
+      ]
+    },
+    "bx bx-microphone": {
+      "terms": [
+        "microphone"
+      ]
+    },
+    "bx bx-minus-circle": {
+      "terms": [
+        "minus-circle"
+      ]
+    },
+    "bx bx-moon": {
+      "terms": [
+        "moon"
+      ]
+    },
+    "bx bx-pause-circle": {
+      "terms": [
+        "pause-circle"
+      ]
+    },
+    "bx bx-pause": {
+      "terms": [
+        "pause"
+      ]
+    },
+    "bx bx-play-circle": {
+      "terms": [
+        "play-circle"
+      ]
+    },
+    "bx bx-play": {
+      "terms": [
+        "play"
+      ]
+    },
+    "bx bx-plus-circle": {
+      "terms": [
+        "plus-circle"
+      ]
+    },
+    "bx bx-question-mark": {
+      "terms": [
+        "question-mark"
+      ]
+    },
+    "bx bx-radio-circle-marked": {
+      "terms": [
+        "radio-circle-marked"
+      ]
+    },
+    "bx bx-radio-circle": {
+      "terms": [
+        "radio-circle"
+      ]
+    },
+    "bx bx-rectangle": {
+      "terms": [
+        "rectangle"
+      ]
+    },
+    "bx bx-rewind": {
+      "terms": [
+        "rewind"
+      ]
+    },
+    "bx bx-reset": {
+      "terms": [
+        "reset"
+      ]
+    },
+    "bx bx-right-arrow-circle": {
+      "terms": [
+        "right-arrow-circle"
+      ]
+    },
+    "bx bx-right-down-arrow-circle": {
+      "terms": [
+        "right-down-arrow-circle"
+      ]
+    },
+    "bx bx-right-indent": {
+      "terms": [
+        "right-indent"
+      ]
+    },
+    "bx bx-right-top-arrow-circle": {
+      "terms": [
+        "right-top-arrow-circle"
+      ]
+    },
+    "bx bx-rss": {
+      "terms": [
+        "rss"
+      ]
+    },
+    "bx bx-search": {
+      "terms": [
+        "search",
+        "magnifying glass"
+      ]
+    },
+    "bx bx-show": {
+      "terms": [
+        "show"
+      ]
+    },
+    "bx bx-skip-next": {
+      "terms": [
+        "skip-next"
+      ]
+    },
+    "bx bx-skip-previous": {
+      "terms": [
+        "skip-previous"
+      ]
+    },
+    "bx bx-stop-circle": {
+      "terms": [
+        "stop-circle"
+      ]
+    },
+    "bx bx-stop": {
+      "terms": [
+        "stop"
+      ]
+    },
+    "bx bx-stopwatch": {
+      "terms": [
+        "stopwatch"
+      ]
+    },
+    "bx bx-sync": {
+      "terms": [
+        "sync"
+      ]
+    },
+    "bx bx-time": {
+      "terms": [
+        "time"
+      ]
+    },
+    "bx bx-toggle-left": {
+      "terms": [
+        "toggle-left",
+        "switch"
+      ]
+    },
+    "bx bx-toggle-right": {
+      "terms": [
+        "toggle-right",
+        "switch"
+      ]
+    },
+    "bx bx-trending-down": {
+      "terms": [
+        "trending-down"
+      ]
+    },
+    "bx bx-trending-up": {
+      "terms": [
+        "trending-up"
+      ]
+    },
+    "bx bx-up-arrow-circle": {
+      "terms": [
+        "up-arrow-circle"
+      ]
+    },
+    "bx bx-vertical-center": {
+      "terms": [
+        "vertical-center"
+      ]
+    },
+    "bx bx-video": {
+      "terms": [
+        "video"
+      ]
+    },
+    "bx bx-volume-full": {
+      "terms": [
+        "volume-full"
+      ]
+    },
+    "bx bx-volume-low": {
+      "terms": [
+        "volume-low"
+      ]
+    },
+    "bx bx-volume-mute": {
+      "terms": [
+        "volume-mute"
+      ]
+    },
+    "bx bx-volume": {
+      "terms": [
+        "volume"
+      ]
+    },
+    "bx bx-x-circle": {
+      "terms": [
+        "x-circle"
+      ]
+    },
+    "bx bx-zoom-in": {
+      "terms": [
+        "zoom-in"
+      ]
+    },
+    "bx bx-zoom-out": {
+      "terms": [
+        "zoom-out"
+      ]
+    },
+    "bx bx-archive": {
+      "terms": [
+        "archive"
+      ]
+    },
+    "bx bx-at": {
+      "terms": [
+        "at"
+      ]
+    },
+    "bx bx-bar-chart-alt": {
+      "terms": [
+        "bar-chart-alt"
+      ]
+    },
+    "bx bx-bar-chart-square": {
+      "terms": [
+        "bar-chart-square"
+      ]
+    },
+    "bx bx-bar-chart": {
+      "terms": [
+        "bar-chart"
+      ]
+    },
+    "bx bx-basketball": {
+      "terms": [
+        "basketball",
+        "nba"
+      ]
+    },
+    "bx bx-block": {
+      "terms": [
+        "block"
+      ]
+    },
+    "bx bx-book-bookmark": {
+      "terms": [
+        "book-bookmark"
+      ]
+    },
+    "bx bx-book": {
+      "terms": [
+        "book"
+      ]
+    },
+    "bx bx-bookmark-minus": {
+      "terms": [
+        "bookmark-minus"
+      ]
+    },
+    "bx bx-bookmark-plus": {
+      "terms": [
+        "bookmark-plus"
+      ]
+    },
+    "bx bx-briefcase": {
+      "terms": [
+        "briefcase",
+        "work",
+        "travel",
+        "suitcase"
+      ]
+    },
+    "bx bx-broadcast": {
+      "terms": [
+        "broadcast"
+      ]
+    },
+    "bx bx-building": {
+      "terms": [
+        "building"
+      ]
+    },
+    "bx bx-bug": {
+      "terms": [
+        "bug",
+        "error",
+        "warning"
+      ]
+    },
+    "bx bx-bluetooth": {
+      "terms": [
+        "bluetooth"
+      ]
+    },
+    "bx bx-bulb": {
+      "terms": [
+        "bulb"
+      ]
+    },
+    "bx bx-buoy": {
+      "terms": [
+        "buoy"
+      ]
+    },
+    "bx bx-calendar-plus": {
+      "terms": [
+        "calendar-plus"
+      ]
+    },
+    "bx bx-calendar-check": {
+      "terms": [
+        "calendar-check"
+      ]
+    },
+    "bx bx-calendar-minus": {
+      "terms": [
+        "calendar-minus"
+      ]
+    },
+    "bx bx-calendar-x": {
+      "terms": [
+        "calendar-x"
+      ]
+    },
+    "bx bx-calendar": {
+      "terms": [
+        "calendar"
+      ]
+    },
+    "bx bx-chart": {
+      "terms": [
+        "chart"
+      ]
+    },
+    "bx bx-cloud-download": {
+      "terms": [
+        "cloud-download"
+      ]
+    },
+    "bx bx-cloud-upload": {
+      "terms": [
+        "cloud-upload"
+      ]
+    },
+    "bx bx-cloud": {
+      "terms": [
+        "cloud"
+      ]
+    },
+    "bx bx-terminal": {
+      "terms": [
+        "terminal",
+        "command line"
+      ]
+    },
+    "bx bx-crosshair": {
+      "terms": [
+        "crosshair"
+      ]
+    },
+    "bx bx-compass": {
+      "terms": [
+        "compass"
+      ]
+    },
+    "bx bx-data": {
+      "terms": [
+        "data"
+      ]
+    },
+    "bx bx-desktop": {
+      "terms": [
+        "desktop",
+        "monitor",
+        "display"
+      ]
+    },
+    "bx bx-directions": {
+      "terms": [
+        "directions"
+      ]
+    },
+    "bx bx-dollar": {
+      "terms": [
+        "dollar"
+      ]
+    },
+    "bx bx-dots-horizontal-rounded": {
+      "terms": [
+        "dots-horizontal-rounded"
+      ]
+    },
+    "bx bx-dots-horizontal": {
+      "terms": [
+        "dots-horizontal"
+      ]
+    },
+    "bx bx-dots-vertical-rounded": {
+      "terms": [
+        "dots-vertical-rounded"
+      ]
+    },
+    "bx bx-dots-vertical": {
+      "terms": [
+        "dots-vertical"
+      ]
+    },
+    "bx bx-download": {
+      "terms": [
+        "download"
+      ]
+    },
+    "bx bx-envelope": {
+      "terms": [
+        "envelope",
+        "letter",
+        "mail",
+        "email",
+        "communication"
+      ]
+    },
+    "bx bx-gift": {
+      "terms": [
+        "gift"
+      ]
+    },
+    "bx bx-globe": {
+      "terms": [
+        "globe"
+      ]
+    },
+    "bx bx-devices": {
+      "terms": [
+        "devices",
+        "mobile",
+        "tab"
+      ]
+    },
+    "bx bx-headphone": {
+      "terms": [
+        "headphone"
+      ]
+    },
+    "bx bx-heart": {
+      "terms": [
+        "heart",
+        "health"
+      ]
+    },
+    "bx bx-home": {
+      "terms": [
+        "home"
+      ]
+    },
+    "bx bx-laptop": {
+      "terms": [
+        "laptop"
+      ]
+    },
+    "bx bx-layer": {
+      "terms": [
+        "layer"
+      ]
+    },
+    "bx bx-link-alt": {
+      "terms": [
+        "link-alt"
+      ]
+    },
+    "bx bx-link": {
+      "terms": [
+        "link"
+      ]
+    },
+    "bx bx-list-plus": {
+      "terms": [
+        "list-plus"
+      ]
+    },
+    "bx bx-list-ul": {
+      "terms": [
+        "list-ul"
+      ]
+    },
+    "bx bx-list-minus": {
+      "terms": [
+        "list-minus"
+      ]
+    },
+    "bx bx-lock-open": {
+      "terms": [
+        "lock-open"
+      ]
+    },
+    "bx bx-lock": {
+      "terms": [
+        "lock"
+      ]
+    },
+    "bx bx-map-alt": {
+      "terms": [
+        "map-alt"
+      ]
+    },
+    "bx bx-map": {
+      "terms": [
+        "map"
+      ]
+    },
+    "bx bx-message-rounded": {
+      "terms": [
+        "message-rounded"
+      ]
+    },
+    "bx bx-message": {
+      "terms": [
+        "message"
+      ]
+    },
+    "bx bx-mobile-alt": {
+      "terms": [
+        "mobile-alt"
+      ]
+    },
+    "bx bx-mobile": {
+      "terms": [
+        "mobile"
+      ]
+    },
+    "bx bx-navigation": {
+      "terms": [
+        "navigation"
+      ]
+    },
+    "bx bx-phone": {
+      "terms": [
+        "phone"
+      ]
+    },
+    "bx bx-pie-chart": {
+      "terms": [
+        "pie-chart"
+      ]
+    },
+    "bx bx-send": {
+      "terms": [
+        "send"
+      ]
+    },
+    "bx bx-sidebar": {
+      "terms": [
+        "sidebar"
+      ]
+    },
+    "bx bx-sitemap": {
+      "terms": [
+        "sitemap"
+      ]
+    },
+    "bx bx-spreadsheet": {
+      "terms": [
+        "spreadsheet"
+      ]
+    },
+    "bx bx-tab": {
+      "terms": [
+        "tab"
+      ]
+    },
+    "bx bx-tag": {
+      "terms": [
+        "tag"
+      ]
+    },
+    "bx bx-target-lock": {
+      "terms": [
+        "target-lock"
+      ]
+    },
+    "bx bx-tennis-ball": {
+      "terms": [
+        "tennis-ball",
+        "deuce"
+      ]
+    },
+    "bx bx-alarm": {
+      "terms": [
+        "alarm",
+        "alert"
+      ]
+    },
+    "bx bx-upload": {
+      "terms": [
+        "upload"
+      ]
+    },
+    "bx bx-usb": {
+      "terms": [
+        "usb"
+      ]
+    },
+    "bx bx-video-off": {
+      "terms": [
+        "video-off"
+      ]
+    },
+    "bx bx-voicemail": {
+      "terms": [
+        "voicemail"
+      ]
+    },
+    "bx bx-wifi": {
+      "terms": [
+        "wifi"
+      ]
+    },
+    "bx bx-window-open": {
+      "terms": [
+        "window-open"
+      ]
+    },
+    "bx bx-window": {
+      "terms": [
+        "window",
+        "browser"
+      ]
+    },
+    "bx bx-windows": {
+      "terms": [
+        "windows",
+        "browser"
+      ]
+    },
+    "bx bx-duplicate": {
+      "terms": [
+        "duplicate"
+      ]
+    },
+    "bx bx-table": {
+      "terms": [
+        "table"
+      ]
+    },
+    "bx bx-x": {
+      "terms": [
+        "x"
+      ]
+    },
+    "bx bx-adjust": {
+      "terms": [
+        "adjust"
+      ]
+    },
+    "bx bx-album": {
+      "terms": [
+        "album"
+      ]
+    },
+    "bx bx-anchor": {
+      "terms": [
+        "anchor"
+      ]
+    },
+    "bx bx-award": {
+      "terms": [
+        "award"
+      ]
+    },
+    "bx bx-bold": {
+      "terms": [
+        "bold"
+      ]
+    },
+    "bx bx-calculator": {
+      "terms": [
+        "calculator"
+      ]
+    },
+    "bx bx-cart": {
+      "terms": [
+        "cart"
+      ]
+    },
+    "bx bx-check": {
+      "terms": [
+        "check"
+      ]
+    },
+    "bx bx-cloud-drizzle": {
+      "terms": [
+        "cloud-drizzle"
+      ]
+    },
+    "bx bx-cloud-light-rain": {
+      "terms": [
+        "cloud-light-rain"
+      ]
+    },
+    "bx bx-cloud-lightning": {
+      "terms": [
+        "cloud-lightning"
+      ]
+    },
+    "bx bx-cloud-rain": {
+      "terms": [
+        "cloud-rain"
+      ]
+    },
+    "bx bx-cloud-snow": {
+      "terms": [
+        "cloud-snow"
+      ]
+    },
+    "bx bx-cog": {
+      "terms": [
+        "cog",
+        "gear",
+        "setting"
+      ]
+    },
+    "bx bx-columns": {
+      "terms": [
+        "columns"
+      ]
+    },
+    "bx bx-credit-card": {
+      "terms": [
+        "credit-card",
+        "finance",
+        "money",
+        "debit"
+      ]
+    },
+    "bx bx-crop": {
+      "terms": [
+        "crop"
+      ]
+    },
+    "bx bx-cube": {
+      "terms": [
+        "cube"
+      ]
+    },
+    "bx bx-cut": {
+      "terms": [
+        "cut"
+      ]
+    },
+    "bx bx-detail": {
+      "terms": [
+        "detail"
+      ]
+    },
+    "bx bx-shield-quarter": {
+      "terms": [
+        "shield-quarter"
+      ]
+    },
+    "bx bx-edit": {
+      "terms": [
+        "edit",
+        "writing",
+        "note",
+        "pencil"
+      ]
+    },
+    "bx bx-file": {
+      "terms": [
+        "file"
+      ]
+    },
+    "bx bx-filter": {
+      "terms": [
+        "filter"
+      ]
+    },
+    "bx bx-font": {
+      "terms": [
+        "font"
+      ]
+    },
+    "bx bx-git-branch": {
+      "terms": [
+        "git-branch"
+      ]
+    },
+    "bx bx-git-commit": {
+      "terms": [
+        "git-commit"
+      ]
+    },
+    "bx bx-git-compare": {
+      "terms": [
+        "git-compare"
+      ]
+    },
+    "bx bx-git-merge": {
+      "terms": [
+        "git-merge"
+      ]
+    },
+    "bx bx-git-pull-request": {
+      "terms": [
+        "git-pull-request"
+      ]
+    },
+    "bx bx-git-repo-forked": {
+      "terms": [
+        "git-repo-forked"
+      ]
+    },
+    "bx bx-group": {
+      "terms": [
+        "group"
+      ]
+    },
+    "bx bx-hash": {
+      "terms": [
+        "hash"
+      ]
+    },
+    "bx bx-heading": {
+      "terms": [
+        "heading"
+      ]
+    },
+    "bx bx-home-alt": {
+      "terms": [
+        "home-alt"
+      ]
+    },
+    "bx bx-italic": {
+      "terms": [
+        "italic"
+      ]
+    },
+    "bx bx-joystick": {
+      "terms": [
+        "joystick"
+      ]
+    },
+    "bx bx-link-external": {
+      "terms": [
+        "link-external"
+      ]
+    },
+    "bx bx-log-in": {
+      "terms": [
+        "log-in"
+      ]
+    },
+    "bx bx-log-out": {
+      "terms": [
+        "log-out"
+      ]
+    },
+    "bx bx-microphone-off": {
+      "terms": [
+        "microphone-off"
+      ]
+    },
+    "bx bx-minus": {
+      "terms": [
+        "minus"
+      ]
+    },
+    "bx bx-mouse": {
+      "terms": [
+        "mouse"
+      ]
+    },
+    "bx bx-move": {
+      "terms": [
+        "move"
+      ]
+    },
+    "bx bx-music": {
+      "terms": [
+        "music"
+      ]
+    },
+    "bx bx-notification": {
+      "terms": [
+        "notification"
+      ]
+    },
+    "bx bx-package": {
+      "terms": [
+        "package",
+        "box",
+        "shipping",
+        "delivery"
+      ]
+    },
+    "bx bx-paragraph": {
+      "terms": [
+        "paragraph"
+      ]
+    },
+    "bx bx-paste": {
+      "terms": [
+        "paste"
+      ]
+    },
+    "bx bx-pencil": {
+      "terms": [
+        "pencil"
+      ]
+    },
+    "bx bx-pin": {
+      "terms": [
+        "pin"
+      ]
+    },
+    "bx bx-plus": {
+      "terms": [
+        "plus"
+      ]
+    },
+    "bx bx-power-off": {
+      "terms": [
+        "power-off"
+      ]
+    },
+    "bx bx-pulse": {
+      "terms": [
+        "pulse"
+      ]
+    },
+    "bx bx-save": {
+      "terms": [
+        "save",
+        "floppy disk"
+      ]
+    },
+    "bx bx-screenshot": {
+      "terms": [
+        "screenshot"
+      ]
+    },
+    "bx bx-select-multiple": {
+      "terms": [
+        "select-multiple"
+      ]
+    },
+    "bx bx-share-alt": {
+      "terms": [
+        "share-alt"
+      ]
+    },
+    "bx bx-share": {
+      "terms": [
+        "share"
+      ]
+    },
+    "bx bx-shield-alt": {
+      "terms": [
+        "shield-alt"
+      ]
+    },
+    "bx bx-shield": {
+      "terms": [
+        "shield"
+      ]
+    },
+    "bx bx-shopping-bag": {
+      "terms": [
+        "shopping-bag"
+      ]
+    },
+    "bx bx-shuffle": {
+      "terms": [
+        "shuffle"
+      ]
+    },
+    "bx bx-sort": {
+      "terms": [
+        "sort"
+      ]
+    },
+    "bx bx-star": {
+      "terms": [
+        "star"
+      ]
+    },
+    "bx bx-sun": {
+      "terms": [
+        "sun"
+      ]
+    },
+    "bx bx-text": {
+      "terms": [
+        "text"
+      ]
+    },
+    "bx bx-trash": {
+      "terms": [
+        "trash"
+      ]
+    },
+    "bx bx-trophy": {
+      "terms": [
+        "trophy"
+      ]
+    },
+    "bx bx-underline": {
+      "terms": [
+        "underline"
+      ]
+    },
+    "bx bx-user-check": {
+      "terms": [
+        "user-check"
+      ]
+    },
+    "bx bx-user-circle": {
+      "terms": [
+        "user-circle"
+      ]
+    },
+    "bx bx-user-minus": {
+      "terms": [
+        "user-minus"
+      ]
+    },
+    "bx bx-user-plus": {
+      "terms": [
+        "user-plus"
+      ]
+    },
+    "bx bx-user-x": {
+      "terms": [
+        "user-x"
+      ]
+    },
+    "bx bx-user": {
+      "terms": [
+        "user"
+      ]
+    },
+    "bx bx-barcode": {
+      "terms": [
+        "barcode"
+      ]
+    },
+    "bx bx-crown": {
+      "terms": [
+        "crown"
+      ]
+    },
+    "bx bx-dislike": {
+      "terms": [
+        "dislike"
+      ]
+    },
+    "bx bx-down-arrow": {
+      "terms": [
+        "down-arrow"
+      ]
+    },
+    "bx bx-export": {
+      "terms": [
+        "export"
+      ]
+    },
+    "bx bxl-facebook": {
+      "terms": [
+        "facebook",
+        "social media"
+      ]
+    },
+    "bx bx-first-aid": {
+      "terms": [
+        "first-aid"
+      ]
+    },
+    "bx bx-flag": {
+      "terms": [
+        "flag"
+      ]
+    },
+    "bx bxl-github": {
+      "terms": [
+        "github"
+      ]
+    },
+    "bx bxl-google": {
+      "terms": [
+        "google"
+      ]
+    },
+    "bx bx-history": {
+      "terms": [
+        "history"
+      ]
+    },
+    "bx bxl-instagram": {
+      "terms": [
+        "instagram",
+        "social media"
+      ]
+    },
+    "bx bx-joystick-alt": {
+      "terms": [
+        "joystick-alt"
+      ]
+    },
+    "bx bx-left-arrow": {
+      "terms": [
+        "left-arrow"
+      ]
+    },
+    "bx bx-like": {
+      "terms": [
+        "like"
+      ]
+    },
+    "bx bx-list-check": {
+      "terms": [
+        "list-check"
+      ]
+    },
+    "bx bx-poll": {
+      "terms": [
+        "poll"
+      ]
+    },
+    "bx bx-radar": {
+      "terms": [
+        "radar"
+      ]
+    },
+    "bx bx-redo": {
+      "terms": [
+        "redo"
+      ]
+    },
+    "bx bx-reply-all": {
+      "terms": [
+        "reply-all"
+      ]
+    },
+    "bx bx-reply": {
+      "terms": [
+        "reply"
+      ]
+    },
+    "bx bx-repost": {
+      "terms": [
+        "repost"
+      ]
+    },
+    "bx bx-revision": {
+      "terms": [
+        "revision"
+      ]
+    },
+    "bx bx-right-arrow": {
+      "terms": [
+        "right-arrow"
+      ]
+    },
+    "bx bx-subdirectory-left": {
+      "terms": [
+        "subdirectory-left"
+      ]
+    },
+    "bx bx-subdirectory-right": {
+      "terms": [
+        "subdirectory-right"
+      ]
+    },
+    "bx bx-support": {
+      "terms": [
+        "support"
+      ]
+    },
+    "bx bx-timer": {
+      "terms": [
+        "timer"
+      ]
+    },
+    "bx bxl-twitter": {
+      "terms": [
+        "twitter",
+        "social media"
+      ]
+    },
+    "bx bx-undo": {
+      "terms": [
+        "undo"
+      ]
+    },
+    "bx bx-up-arrow": {
+      "terms": [
+        "up-arrow"
+      ]
+    },
+    "bx bxl-youtube": {
+      "terms": [
+        "youtube"
+      ]
+    },
+    "bx bxl-whatsapp": {
+      "terms": [
+        "whatsapp"
+      ]
+    },
+    "bx bxl-tumblr": {
+      "terms": [
+        "tumblr"
+      ]
+    },
+    "bx bx-phone-call": {
+      "terms": [
+        "phone-call"
+      ]
+    },
+    "bx bxl-behance": {
+      "terms": [
+        "behance"
+      ]
+    },
+    "bx bxl-dribbble": {
+      "terms": [
+        "dribbble"
+      ]
+    },
+    "bx bx-aperture": {
+      "terms": [
+        "aperture"
+      ]
+    },
+    "bx bx-film": {
+      "terms": [
+        "film"
+      ]
+    },
+    "bx bx-folder-open": {
+      "terms": [
+        "folder-open"
+      ]
+    },
+    "bx bx-task": {
+      "terms": [
+        "task"
+      ]
+    },
+    "bx bx-server": {
+      "terms": [
+        "server"
+      ]
+    },
+    "bx bx-battery": {
+      "terms": [
+        "battery"
+      ]
+    },
+    "bx bx-calendar-alt": {
+      "terms": [
+        "calendar-alt"
+      ]
+    },
+    "bx bx-import": {
+      "terms": [
+        "import"
+      ]
+    },
+    "bx bx-ruler": {
+      "terms": [
+        "ruler"
+      ]
+    },
+    "bx bx-horizontal-center": {
+      "terms": [
+        "horizontal-center"
+      ]
+    },
+    "bx bx-rotate-right": {
+      "terms": [
+        "rotate-right"
+      ]
+    },
+    "bx bx-rename": {
+      "terms": [
+        "rename"
+      ]
+    },
+    "bx bx-collapse": {
+      "terms": [
+        "collapse"
+      ]
+    },
+    "bx bx-phone-incoming": {
+      "terms": [
+        "phone-incoming"
+      ]
+    },
+    "bx bx-phone-outgoing": {
+      "terms": [
+        "phone-outgoing"
+      ]
+    },
+    "bx bx-body": {
+      "terms": [
+        "body",
+        "male"
+      ]
+    },
+    "bx bx-cast": {
+      "terms": [
+        "cast"
+      ]
+    },
+    "bx bx-chip": {
+      "terms": [
+        "chip"
+      ]
+    },
+    "bx bx-skip-next-circle": {
+      "terms": [
+        "skip-next-circle"
+      ]
+    },
+    "bx bx-skip-previous-circle": {
+      "terms": [
+        "skip-previous-circle"
+      ]
+    },
+    "bx bx-hdd": {
+      "terms": [
+        "hdd",
+        "storage",
+        "hard drive"
+      ]
+    },
+    "bx bx-store": {
+      "terms": [
+        "store",
+        "shop",
+        "market"
+      ]
+    },
+    "bx bx-globe-alt": {
+      "terms": [
+        "globe-alt"
+      ]
+    },
+    "bx bxl-vimeo": {
+      "terms": [
+        "vimeo"
+      ]
+    },
+    "bx bx-upvote": {
+      "terms": [
+        "upvote"
+      ]
+    },
+    "bx bx-downvote": {
+      "terms": [
+        "downvote"
+      ]
+    },
+    "bx bx-news": {
+      "terms": [
+        "news"
+      ]
+    },
+    "bx bx-pie-chart-alt": {
+      "terms": [
+        "pie-chart-alt"
+      ]
+    },
+    "bx bx-images": {
+      "terms": [
+        "images"
+      ]
+    },
+    "bx bx-purchase-tag": {
+      "terms": [
+        "purchase-tag",
+        "price",
+        "cost"
+      ]
+    },
+    "bx bx-pen": {
+      "terms": [
+        "pen"
+      ]
+    },
+    "bx bx-expand": {
+      "terms": [
+        "expand"
+      ]
+    },
+    "bx bx-paperclip": {
+      "terms": [
+        "paperclip"
+      ]
+    },
+    "bx bx-closet": {
+      "terms": [
+        "closet"
+      ]
+    },
+    "bx bx-tv": {
+      "terms": [
+        "tv",
+        "television",
+        "monitor"
+      ]
+    },
+    "bx bx-collection": {
+      "terms": [
+        "collection"
+      ]
+    },
+    "bx bx-station": {
+      "terms": [
+        "station"
+      ]
+    },
+    "bx bx-wallet": {
+      "terms": [
+        "wallet",
+        "money"
+      ]
+    },
+    "bx bx-briefcase-alt": {
+      "terms": [
+        "briefcase-alt",
+        "work",
+        "travel",
+        "suitcase"
+      ]
+    },
+    "bx bx-hourglass": {
+      "terms": [
+        "hourglass"
+      ]
+    },
+    "bx bx-carousel": {
+      "terms": [
+        "carousel"
+      ]
+    },
+    "bx bx-infinite": {
+      "terms": [
+        "infinite"
+      ]
+    },
+    "bx bx-plug": {
+      "terms": [
+        "plug",
+        "charging"
+      ]
+    },
+    "bx bx-notification-off": {
+      "terms": [
+        "notification-off"
+      ]
+    },
+    "bx bx-window-close": {
+      "terms": [
+        "window-close"
+      ]
+    },
+    "bx bx-command": {
+      "terms": [
+        "command"
+      ]
+    },
+    "bx bx-grid-alt": {
+      "terms": [
+        "grid-alt"
+      ]
+    },
+    "bx bx-trash-alt": {
+      "terms": [
+        "trash-alt"
+      ]
+    },
+    "bx bx-chalkboard": {
+      "terms": [
+        "chalkboard",
+        "whiteboard",
+        "teaching"
+      ]
+    },
+    "bx bx-loader": {
+      "terms": [
+        "loader"
+      ]
+    },
+    "bx bx-slider": {
+      "terms": [
+        "slider"
+      ]
+    },
+    "bx bx-paper-plane": {
+      "terms": [
+        "paper-plane"
+      ]
+    },
+    "bx bx-selection": {
+      "terms": [
+        "selection"
+      ]
+    },
+    "bx bxl-linkedin": {
+      "terms": [
+        "linkedin"
+      ]
+    },
+    "bx bx-world": {
+      "terms": [
+        "world"
+      ]
+    },
+    "bx bx-dock-bottom": {
+      "terms": [
+        "dock-bottom"
+      ]
+    },
+    "bx bx-dock-right": {
+      "terms": [
+        "dock-right"
+      ]
+    },
+    "bx bx-dock-top": {
+      "terms": [
+        "dock-top"
+      ]
+    },
+    "bx bx-dock-left": {
+      "terms": [
+        "dock-left"
+      ]
+    },
+    "bx bx-layout": {
+      "terms": [
+        "layout"
+      ]
+    },
+    "bx bxl-bitcoin": {
+      "terms": [
+        "bitcoin"
+      ]
+    },
+    "bx bxl-facebook-square": {
+      "terms": [
+        "facebook-square"
+      ]
+    },
+    "bx bx-alarm-off": {
+      "terms": [
+        "alarm-off",
+        "alert",
+        "silent"
+      ]
+    },
+    "bx bx-wrench": {
+      "terms": [
+        "wrench"
+      ]
+    },
+    "bx bx-loader-circle": {
+      "terms": [
+        "loader-circle"
+      ]
+    },
+    "bx bx-loader-alt": {
+      "terms": [
+        "loader-alt"
+      ]
+    },
+    "bx bx-car": {
+      "terms": [
+        "car"
+      ]
+    },
+    "bx bx-cart-alt": {
+      "terms": [
+        "cart-alt"
+      ]
+    },
+    "bx bxs-adjust": {
+      "terms": [
+        "adjust"
+      ]
+    },
+    "bx bxs-alarm": {
+      "terms": [
+        "alarm",
+        "alert"
+      ]
+    },
+    "bx bxs-alarm-off": {
+      "terms": [
+        "alarm-off",
+        "alert",
+        "silent"
+      ]
+    },
+    "bx bxs-album": {
+      "terms": [
+        "album"
+      ]
+    },
+    "bx bxs-archive": {
+      "terms": [
+        "archive"
+      ]
+    },
+    "bx bxs-camera": {
+      "terms": [
+        "camera"
+      ]
+    },
+    "bx bxs-camera-off": {
+      "terms": [
+        "camera-off"
+      ]
+    },
+    "bx bxs-folder": {
+      "terms": [
+        "folder"
+      ]
+    },
+    "bx bxs-folder-plus": {
+      "terms": [
+        "folder-plus",
+        "add",
+        "folder add",
+        "new folder"
+      ]
+    },
+    "bx bxs-award": {
+      "terms": [
+        "award"
+      ]
+    },
+    "bx bxs-bar-chart-square": {
+      "terms": [
+        "bar-chart-square"
+      ]
+    },
+    "bx bxs-barcode": {
+      "terms": [
+        "barcode"
+      ]
+    },
+    "bx bxs-battery": {
+      "terms": [
+        "battery"
+      ]
+    },
+    "bx bxs-battery-charging": {
+      "terms": [
+        "battery-charging"
+      ]
+    },
+    "bx bxs-battery-full": {
+      "terms": [
+        "battery-full"
+      ]
+    },
+    "bx bxs-bell": {
+      "terms": [
+        "bell",
+        "alert",
+        "notification"
+      ]
+    },
+    "bx bxs-bell-off": {
+      "terms": [
+        "bell-off",
+        "alert",
+        "notification",
+        "silent"
+      ]
+    },
+    "bx bxs-bolt": {
+      "terms": [
+        "bolt",
+        "zap"
+      ]
+    },
+    "bx bxs-book": {
+      "terms": [
+        "book"
+      ]
+    },
+    "bx bxs-book-bookmark": {
+      "terms": [
+        "book-bookmark"
+      ]
+    },
+    "bx bxs-bookmark": {
+      "terms": [
+        "bookmark"
+      ]
+    },
+    "bx bxs-bookmark-plus": {
+      "terms": [
+        "bookmark-plus"
+      ]
+    },
+    "bx bxs-book-open": {
+      "terms": [
+        "book-open"
+      ]
+    },
+    "bx bxs-bookmark-star": {
+      "terms": [
+        "bookmark-star"
+      ]
+    },
+    "bx bxs-briefcase": {
+      "terms": [
+        "briefcase",
+        "work",
+        "travel",
+        "suitcase"
+      ]
+    },
+    "bx bxs-briefcase-alt": {
+      "terms": [
+        "briefcase-alt",
+        "work",
+        "travel",
+        "suitcase"
+      ]
+    },
+    "bx bxs-bug": {
+      "terms": [
+        "bug",
+        "error",
+        "warning"
+      ]
+    },
+    "bx bxs-building": {
+      "terms": [
+        "building"
+      ]
+    },
+    "bx bxs-bulb": {
+      "terms": [
+        "bulb"
+      ]
+    },
+    "bx bxs-buoy": {
+      "terms": [
+        "buoy"
+      ]
+    },
+    "bx bxs-calculator": {
+      "terms": [
+        "calculator"
+      ]
+    },
+    "bx bxs-captions": {
+      "terms": [
+        "captions",
+        "subtitles",
+        "subs",
+        "cc"
+      ]
+    },
+    "bx bxs-car": {
+      "terms": [
+        "car"
+      ]
+    },
+    "bx bxs-cart-alt": {
+      "terms": [
+        "cart-alt"
+      ]
+    },
+    "bx bxs-cart": {
+      "terms": [
+        "cart"
+      ]
+    },
+    "bx bxs-chart": {
+      "terms": [
+        "chart"
+      ]
+    },
+    "bx bxs-chip": {
+      "terms": [
+        "chip"
+      ]
+    },
+    "bx bxs-cloud-download": {
+      "terms": [
+        "cloud-download"
+      ]
+    },
+    "bx bxs-cloud-upload": {
+      "terms": [
+        "cloud-upload"
+      ]
+    },
+    "bx bxs-cloud": {
+      "terms": [
+        "cloud"
+      ]
+    },
+    "bx bxs-coffee": {
+      "terms": [
+        "coffee"
+      ]
+    },
+    "bx bxs-cog": {
+      "terms": [
+        "cog",
+        "gear",
+        "setting"
+      ]
+    },
+    "bx bxs-collection": {
+      "terms": [
+        "collection"
+      ]
+    },
+    "bx bxs-contact": {
+      "terms": [
+        "contact"
+      ]
+    },
+    "bx bxs-copy": {
+      "terms": [
+        "copy"
+      ]
+    },
+    "bx bxs-coupon": {
+      "terms": [
+        "coupon"
+      ]
+    },
+    "bx bxs-crown": {
+      "terms": [
+        "crown"
+      ]
+    },
+    "bx bxs-cube": {
+      "terms": [
+        "cube"
+      ]
+    },
+    "bx bxs-detail": {
+      "terms": [
+        "detail"
+      ]
+    },
+    "bx bxs-discount": {
+      "terms": [
+        "discount"
+      ]
+    },
+    "bx bxs-dislike": {
+      "terms": [
+        "dislike"
+      ]
+    },
+    "bx bxs-dock-bottom": {
+      "terms": [
+        "dock-bottom"
+      ]
+    },
+    "bx bxs-dock-left": {
+      "terms": [
+        "dock-left"
+      ]
+    },
+    "bx bxs-dock-right": {
+      "terms": [
+        "dock-right"
+      ]
+    },
+    "bx bxs-dock-top": {
+      "terms": [
+        "dock-top"
+      ]
+    },
+    "bx bxs-down-arrow-circle": {
+      "terms": [
+        "down-arrow-circle"
+      ]
+    },
+    "bx bxs-download": {
+      "terms": [
+        "download"
+      ]
+    },
+    "bx bxs-downvote": {
+      "terms": [
+        "downvote"
+      ]
+    },
+    "bx bxs-drink": {
+      "terms": [
+        "drink"
+      ]
+    },
+    "bx bxs-droplet": {
+      "terms": [
+        "droplet"
+      ]
+    },
+    "bx bxs-duplicate": {
+      "terms": [
+        "duplicate"
+      ]
+    },
+    "bx bxs-eject": {
+      "terms": [
+        "eject"
+      ]
+    },
+    "bx bxs-envelope": {
+      "terms": [
+        "envelope",
+        "letter",
+        "mail",
+        "email",
+        "communication"
+      ]
+    },
+    "bx bxs-error-circle": {
+      "terms": [
+        "error-circle"
+      ]
+    },
+    "bx bxs-error": {
+      "terms": [
+        "error"
+      ]
+    },
+    "bx bxs-file-image": {
+      "terms": [
+        "file-image"
+      ]
+    },
+    "bx bxs-file": {
+      "terms": [
+        "file"
+      ]
+    },
+    "bx bxs-filter-alt": {
+      "terms": [
+        "filter-alt"
+      ]
+    },
+    "bx bxs-first-aid": {
+      "terms": [
+        "first-aid"
+      ]
+    },
+    "bx bxs-flag-alt": {
+      "terms": [
+        "flag-alt"
+      ]
+    },
+    "bx bxs-flag": {
+      "terms": [
+        "flag"
+      ]
+    },
+    "bx bxs-gift": {
+      "terms": [
+        "gift"
+      ]
+    },
+    "bx bxs-grid-alt": {
+      "terms": [
+        "grid-alt"
+      ]
+    },
+    "bx bxs-group": {
+      "terms": [
+        "group"
+      ]
+    },
+    "bx bxs-hdd": {
+      "terms": [
+        "hdd",
+        "storage",
+        "hard drive"
+      ]
+    },
+    "bx bxs-heart": {
+      "terms": [
+        "heart",
+        "health"
+      ]
+    },
+    "bx bxs-hide": {
+      "terms": [
+        "hide"
+      ]
+    },
+    "bx bxs-home": {
+      "terms": [
+        "home"
+      ]
+    },
+    "bx bxs-hot": {
+      "terms": [
+        "hot",
+        "fire"
+      ]
+    },
+    "bx bxs-hourglass": {
+      "terms": [
+        "hourglass"
+      ]
+    },
+    "bx bxs-image": {
+      "terms": [
+        "image"
+      ]
+    },
+    "bx bxs-inbox": {
+      "terms": [
+        "inbox"
+      ]
+    },
+    "bx bxs-info-circle": {
+      "terms": [
+        "info-circle"
+      ]
+    },
+    "bx bxs-joystick-alt": {
+      "terms": [
+        "joystick-alt"
+      ]
+    },
+    "bx bxs-joystick": {
+      "terms": [
+        "joystick"
+      ]
+    },
+    "bx bxs-layer": {
+      "terms": [
+        "layer"
+      ]
+    },
+    "bx bxs-left-arrow-circle": {
+      "terms": [
+        "left-arrow-circle"
+      ]
+    },
+    "bx bxs-like": {
+      "terms": [
+        "like"
+      ]
+    },
+    "bx bxs-lock-open": {
+      "terms": [
+        "lock-open"
+      ]
+    },
+    "bx bxs-lock": {
+      "terms": [
+        "lock"
+      ]
+    },
+    "bx bxs-map-alt": {
+      "terms": [
+        "map-alt"
+      ]
+    },
+    "bx bxs-map": {
+      "terms": [
+        "map"
+      ]
+    },
+    "bx bxs-message-rounded": {
+      "terms": [
+        "message-rounded"
+      ]
+    },
+    "bx bxs-message": {
+      "terms": [
+        "message"
+      ]
+    },
+    "bx bxs-microphone-off": {
+      "terms": [
+        "microphone-off"
+      ]
+    },
+    "bx bxs-microphone": {
+      "terms": [
+        "microphone"
+      ]
+    },
+    "bx bxs-minus-circle": {
+      "terms": [
+        "minus-circle"
+      ]
+    },
+    "bx bxs-moon": {
+      "terms": [
+        "moon"
+      ]
+    },
+    "bx bxs-mouse": {
+      "terms": [
+        "mouse"
+      ]
+    },
+    "bx bxs-music": {
+      "terms": [
+        "music"
+      ]
+    },
+    "bx bxs-navigation": {
+      "terms": [
+        "navigation"
+      ]
+    },
+    "bx bxs-news": {
+      "terms": [
+        "news"
+      ]
+    },
+    "bx bxs-package": {
+      "terms": [
+        "package",
+        "box",
+        "shipping",
+        "delivery"
+      ]
+    },
+    "bx bxs-paper-plane": {
+      "terms": [
+        "paper-plane"
+      ]
+    },
+    "bx bxs-paste": {
+      "terms": [
+        "paste"
+      ]
+    },
+    "bx bxs-pen": {
+      "terms": [
+        "pen"
+      ]
+    },
+    "bx bxs-pencil": {
+      "terms": [
+        "pencil"
+      ]
+    },
+    "bx bxs-phone-call": {
+      "terms": [
+        "phone-call"
+      ]
+    },
+    "bx bxs-phone-incoming": {
+      "terms": [
+        "phone-incoming"
+      ]
+    },
+    "bx bxs-phone-outgoing": {
+      "terms": [
+        "phone-outgoing"
+      ]
+    },
+    "bx bxs-phone": {
+      "terms": [
+        "phone"
+      ]
+    },
+    "bx bxs-pie-chart-alt": {
+      "terms": [
+        "pie-chart-alt"
+      ]
+    },
+    "bx bxs-pie-chart": {
+      "terms": [
+        "pie-chart"
+      ]
+    },
+    "bx bxs-pin": {
+      "terms": [
+        "pin"
+      ]
+    },
+    "bx bxs-playlist": {
+      "terms": [
+        "playlist"
+      ]
+    },
+    "bx bxs-plug": {
+      "terms": [
+        "plug",
+        "charging"
+      ]
+    },
+    "bx bxs-plus-circle": {
+      "terms": [
+        "plus-circle"
+      ]
+    },
+    "bx bxs-printer": {
+      "terms": [
+        "printer"
+      ]
+    },
+    "bx bxs-purchase-tag": {
+      "terms": [
+        "purchase-tag",
+        "price",
+        "cost"
+      ]
+    },
+    "bx bxs-quote-left": {
+      "terms": [
+        "quote-left"
+      ]
+    },
+    "bx bxs-quote-right": {
+      "terms": [
+        "quote-right"
+      ]
+    },
+    "bx bxs-radio": {
+      "terms": [
+        "radio"
+      ]
+    },
+    "bx bxs-rename": {
+      "terms": [
+        "rename"
+      ]
+    },
+    "bx bxs-report": {
+      "terms": [
+        "report"
+      ]
+    },
+    "bx bxs-right-arrow-circle": {
+      "terms": [
+        "right-arrow-circle"
+      ]
+    },
+    "bx bxs-ruler": {
+      "terms": [
+        "ruler"
+      ]
+    },
+    "bx bxs-save": {
+      "terms": [
+        "save",
+        "floppy disk"
+      ]
+    },
+    "bx bxs-sort-alt": {
+      "terms": [
+        "sort-alt"
+      ]
+    },
+    "bx bxs-select-multiple": {
+      "terms": [
+        "select-multiple"
+      ]
+    },
+    "bx bxs-send": {
+      "terms": [
+        "send"
+      ]
+    },
+    "bx bxs-server": {
+      "terms": [
+        "server"
+      ]
+    },
+    "bx bxs-share-alt": {
+      "terms": [
+        "share-alt"
+      ]
+    },
+    "bx bxs-share": {
+      "terms": [
+        "share"
+      ]
+    },
+    "bx bxs-shield": {
+      "terms": [
+        "shield"
+      ]
+    },
+    "bx bxs-shopping-bag-alt": {
+      "terms": [
+        "shopping-bag-alt"
+      ]
+    },
+    "bx bxs-shopping-bag": {
+      "terms": [
+        "shopping-bag"
+      ]
+    },
+    "bx bxs-show": {
+      "terms": [
+        "show"
+      ]
+    },
+    "bx bx-happy": {
+      "terms": [
+        "happy"
+      ]
+    },
+    "bx bx-meh": {
+      "terms": [
+        "meh"
+      ]
+    },
+    "bx bx-sad": {
+      "terms": [
+        "sad"
+      ]
+    },
+    "bx bxs-spreadsheet": {
+      "terms": [
+        "spreadsheet"
+      ]
+    },
+    "bx bxs-star": {
+      "terms": [
+        "star"
+      ]
+    },
+    "bx bxs-store": {
+      "terms": [
+        "store",
+        "shop",
+        "market"
+      ]
+    },
+    "bx bxs-sun": {
+      "terms": [
+        "sun"
+      ]
+    },
+    "bx bxs-t-shirt": {
+      "terms": [
+        "t-shirt"
+      ]
+    },
+    "bx bxs-tag-x": {
+      "terms": [
+        "tag-x"
+      ]
+    },
+    "bx bxs-tag": {
+      "terms": [
+        "tag"
+      ]
+    },
+    "bx bxs-tennis-ball": {
+      "terms": [
+        "tennis-ball",
+        "deuce"
+      ]
+    },
+    "bx bxs-terminal": {
+      "terms": [
+        "terminal",
+        "command line"
+      ]
+    },
+    "bx bxs-to-top": {
+      "terms": [
+        "to-top"
+      ]
+    },
+    "bx bxs-toggle-left": {
+      "terms": [
+        "toggle-left",
+        "switch"
+      ]
+    },
+    "bx bxs-toggle-right": {
+      "terms": [
+        "toggle-right",
+        "switch"
+      ]
+    },
+    "bx bxs-torch": {
+      "terms": [
+        "torch"
+      ]
+    },
+    "bx bxs-trash-alt": {
+      "terms": [
+        "trash-alt"
+      ]
+    },
+    "bx bxs-trash": {
+      "terms": [
+        "trash"
+      ]
+    },
+    "bx bxs-trophy": {
+      "terms": [
+        "trophy"
+      ]
+    },
+    "bx bxs-truck": {
+      "terms": [
+        "truck"
+      ]
+    },
+    "bx bxs-up-arrow-circle": {
+      "terms": [
+        "up-arrow-circle"
+      ]
+    },
+    "bx bxs-upvote": {
+      "terms": [
+        "upvote"
+      ]
+    },
+    "bx bxs-user-circle": {
+      "terms": [
+        "user-circle"
+      ]
+    },
+    "bx bxs-user-detail": {
+      "terms": [
+        "user-detail"
+      ]
+    },
+    "bx bxs-user-minus": {
+      "terms": [
+        "user-minus"
+      ]
+    },
+    "bx bxs-user-plus": {
+      "terms": [
+        "user-plus"
+      ]
+    },
+    "bx bxs-user": {
+      "terms": [
+        "user"
+      ]
+    },
+    "bx bxs-video-off": {
+      "terms": [
+        "video-off"
+      ]
+    },
+    "bx bxs-video": {
+      "terms": [
+        "video"
+      ]
+    },
+    "bx bxs-videos": {
+      "terms": [
+        "videos"
+      ]
+    },
+    "bx bxs-volume-full": {
+      "terms": [
+        "volume-full"
+      ]
+    },
+    "bx bxs-volume-low": {
+      "terms": [
+        "volume-low"
+      ]
+    },
+    "bx bxs-volume-mute": {
+      "terms": [
+        "volume-mute"
+      ]
+    },
+    "bx bxs-volume": {
+      "terms": [
+        "volume"
+      ]
+    },
+    "bx bxs-wallet": {
+      "terms": [
+        "wallet",
+        "money"
+      ]
+    },
+    "bx bxs-watch-alt": {
+      "terms": [
+        "watch-alt"
+      ]
+    },
+    "bx bxs-watch": {
+      "terms": [
+        "watch"
+      ]
+    },
+    "bx bxs-widget": {
+      "terms": [
+        "widget"
+      ]
+    },
+    "bx bxs-wrench": {
+      "terms": [
+        "wrench"
+      ]
+    },
+    "bx bxs-x-circle": {
+      "terms": [
+        "x-circle"
+      ]
+    },
+    "bx bxs-zap": {
+      "terms": [
+        "zap",
+        "bolt"
+      ]
+    },
+    "bx bxs-folder-open": {
+      "terms": [
+        "folder-open"
+      ]
+    },
+    "bx bxs-battery-low": {
+      "terms": [
+        "battery-low"
+      ]
+    },
+    "bx bxs-conversation": {
+      "terms": [
+        "conversation",
+        "chat",
+        "discussion"
+      ]
+    },
+    "bx bxs-dashboard": {
+      "terms": [
+        "dashboard"
+      ]
+    },
+    "bx bxs-file-plus": {
+      "terms": [
+        "file-plus",
+        "add",
+        "file add",
+        "new file"
+      ]
+    },
+    "bx bx-slider-alt": {
+      "terms": [
+        "slider-alt"
+      ]
+    },
+    "bx bxl-google-plus": {
+      "terms": [
+        "google-plus"
+      ]
+    },
+    "bx bxl-google-plus-circle": {
+      "terms": [
+        "google-plus-circle"
+      ]
+    },
+    "bx bxl-linkedin-square": {
+      "terms": [
+        "linkedin-square"
+      ]
+    },
+    "bx bxl-medium": {
+      "terms": [
+        "medium"
+      ]
+    },
+    "bx bxl-medium-square": {
+      "terms": [
+        "medium-square"
+      ]
+    },
+    "bx bxl-skype": {
+      "terms": [
+        "skype"
+      ]
+    },
+    "bx bxl-slack-old": {
+      "terms": [
+        "slack-old"
+      ]
+    },
+    "bx bxl-slack": {
+      "terms": [
+        "slack"
+      ]
+    },
+    "bx bxl-twitch": {
+      "terms": [
+        "twitch"
+      ]
+    },
+    "bx bxl-discord": {
+      "terms": [
+        "discord"
+      ]
+    },
+    "bx bxl-reddit": {
+      "terms": [
+        "reddit",
+        "social media"
+      ]
+    },
+    "bx bxl-pinterest": {
+      "terms": [
+        "pinterest"
+      ]
+    },
+    "bx bxl-blogger": {
+      "terms": [
+        "blogger"
+      ]
+    },
+    "bx bx-certification": {
+      "terms": [
+        "certification"
+      ]
+    },
+    "bx bxs-certification": {
+      "terms": [
+        "certification"
+      ]
+    },
+    "bx bx-rocket": {
+      "terms": [
+        "rocket"
+      ]
+    },
+    "bx bxs-rocket": {
+      "terms": [
+        "rocket"
+      ]
+    },
+    "bx bx-check-circle": {
+      "terms": [
+        "check-circle"
+      ]
+    },
+    "bx bxs-check-circle": {
+      "terms": [
+        "check-circle"
+      ]
+    },
+    "bx bxs-checkbox": {
+      "terms": [
+        "checkbox"
+      ]
+    },
+    "bx bxs-checkbox-checked": {
+      "terms": [
+        "checkbox-checked"
+      ]
+    },
+    "bx bxs-star-half": {
+      "terms": [
+        "star-half"
+      ]
+    },
+    "bx bx-bus": {
+      "terms": [
+        "bus"
+      ]
+    },
+    "bx bxs-bus": {
+      "terms": [
+        "bus"
+      ]
+    },
+    "bx bx-check-double": {
+      "terms": [
+        "check-double"
+      ]
+    },
+    "bx bx-dumbbell": {
+      "terms": [
+        "dumbbell",
+        "gym",
+        "workout"
+      ]
+    },
+    "bx bx-bot": {
+      "terms": [
+        "bot"
+      ]
+    },
+    "bx bx-area": {
+      "terms": [
+        "area"
+      ]
+    },
+    "bx bxs-bot": {
+      "terms": [
+        "bot"
+      ]
+    },
+    "bx bxs-area": {
+      "terms": [
+        "area"
+      ]
+    },
+    "bx bx-bed": {
+      "terms": [
+        "bed",
+        "sleep"
+      ]
+    },
+    "bx bxs-bed": {
+      "terms": [
+        "bed",
+        "sleep"
+      ]
+    },
+    "bx bx-bath": {
+      "terms": [
+        "bath"
+      ]
+    },
+    "bx bxs-bath": {
+      "terms": [
+        "bath"
+      ]
+    },
+    "bx bx-train": {
+      "terms": [
+        "train"
+      ]
+    },
+    "bx bxs-train": {
+      "terms": [
+        "train"
+      ]
+    },
+    "bx bx-taxi": {
+      "terms": [
+        "taxi"
+      ]
+    },
+    "bx bxs-taxi": {
+      "terms": [
+        "taxi"
+      ]
+    },
+    "bx bx-movie": {
+      "terms": [
+        "movie"
+      ]
+    },
+    "bx bxs-movie": {
+      "terms": [
+        "movie"
+      ]
+    },
+    "bx bx-hotel": {
+      "terms": [
+        "hotel"
+      ]
+    },
+    "bx bx-planet": {
+      "terms": [
+        "planet"
+      ]
+    },
+    "bx bxs-planet": {
+      "terms": [
+        "planet"
+      ]
+    },
+    "bx bx-list-ol": {
+      "terms": [
+        "list-ol"
+      ]
+    },
+    "bx bx-video-plus": {
+      "terms": [
+        "video-plus"
+      ]
+    },
+    "bx bxs-video-plus": {
+      "terms": [
+        "video-plus"
+      ]
+    },
+    "bx bx-menu-alt-left": {
+      "terms": [
+        "menu-alt-left"
+      ]
+    },
+    "bx bx-menu-alt-right": {
+      "terms": [
+        "menu-alt-right"
+      ]
+    },
+    "bx bx-box": {
+      "terms": [
+        "box",
+        "archive"
+      ]
+    },
+    "bx bxs-box": {
+      "terms": [
+        "box",
+        "archive"
+      ]
+    },
+    "bx bxs-key": {
+      "terms": [
+        "key"
+      ]
+    },
+    "bx bx-restaurant": {
+      "terms": [
+        "restaurant"
+      ]
+    },
+    "bx bx-swim": {
+      "terms": [
+        "swim"
+      ]
+    },
+    "bx bx-water": {
+      "terms": [
+        "water"
+      ]
+    },
+    "bx bx-wind": {
+      "terms": [
+        "wind",
+        "breeze",
+        "gust",
+        "air"
+      ]
+    },
+    "bx bx-dialpad": {
+      "terms": [
+        "dialpad",
+        "keypad"
+      ]
+    },
+    "bx bx-handicap": {
+      "terms": [
+        "handicap",
+        "wheelchair",
+        "injury"
+      ]
+    },
+    "bx bx-font-size": {
+      "terms": [
+        "font-size"
+      ]
+    },
+    "bx bx-code-block": {
+      "terms": [
+        "code-block"
+      ]
+    },
+    "bx bx-photo-album": {
+      "terms": [
+        "photo-album"
+      ]
+    },
+    "bx bxs-photo-album": {
+      "terms": [
+        "photo-album"
+      ]
+    },
+    "bx bxs-bell-ring": {
+      "terms": [
+        "bell-ring",
+        "alert",
+        "notification"
+      ]
+    },
+    "bx bxl-apple": {
+      "terms": [
+        "apple"
+      ]
+    },
+    "bx bxl-android": {
+      "terms": [
+        "android"
+      ]
+    },
+    "bx bxl-play-store": {
+      "terms": [
+        "play-store"
+      ]
+    },
+    "bx bxl-windows": {
+      "terms": [
+        "windows",
+        "browser"
+      ]
+    },
+    "bx bxl-vk": {
+      "terms": [
+        "vk",
+        "social media"
+      ]
+    },
+    "bx bxl-pocket": {
+      "terms": [
+        "pocket"
+      ]
+    },
+    "bx bx-strikethrough": {
+      "terms": [
+        "strikethrough"
+      ]
+    },
+    "bx bx-file-blank": {
+      "terms": [
+        "file-blank"
+      ]
+    },
+    "bx bxs-file-blank": {
+      "terms": [
+        "file-blank"
+      ]
+    },
+    "bx bx-highlight": {
+      "terms": [
+        "highlight"
+      ]
+    },
+    "bx bx-font-color": {
+      "terms": [
+        "font-color"
+      ]
+    },
+    "bx bx-fingerprint": {
+      "terms": [
+        "fingerprint"
+      ]
+    },
+    "bx bx-transfer": {
+      "terms": [
+        "transfer"
+      ]
+    },
+    "bx bx-circle": {
+      "terms": [
+        "circle"
+      ]
+    },
+    "bx bxs-edit": {
+      "terms": [
+        "edit",
+        "writing",
+        "note",
+        "pencil"
+      ]
+    },
+    "bx bx-ball": {
+      "terms": [
+        "ball",
+        "football",
+        "rugby"
+      ]
+    },
+    "bx bxs-ball": {
+      "terms": [
+        "ball",
+        "football",
+        "rugby"
+      ]
+    },
+    "bx bx-football": {
+      "terms": [
+        "football",
+        "soccer",
+        "goal"
+      ]
+    },
+    "bx bxs-film": {
+      "terms": [
+        "film"
+      ]
+    },
+    "bx bx-dollar-circle": {
+      "terms": [
+        "dollar-circle"
+      ]
+    },
+    "bx bxs-dollar-circle": {
+      "terms": [
+        "dollar-circle"
+      ]
+    },
+    "bx bxs-skull": {
+      "terms": [
+        "skull"
+      ]
+    },
+    "bx bxl-messenger": {
+      "terms": [
+        "messenger"
+      ]
+    },
+    "bx bx-search-alt": {
+      "terms": [
+        "search-alt",
+        "magnifying glass"
+      ]
+    },
+    "bx bxs-image-alt": {
+      "terms": [
+        "image-alt"
+      ]
+    },
+    "bx bxs-microphone-alt": {
+      "terms": [
+        "microphone-alt"
+      ]
+    },
+    "bx bx-analyse": {
+      "terms": [
+        "analyse"
+      ]
+    },
+    "bx bxs-x-square": {
+      "terms": [
+        "x-square"
+      ]
+    },
+    "bx bxs-plus-square": {
+      "terms": [
+        "plus-square"
+      ]
+    },
+    "bx bxs-minus-square": {
+      "terms": [
+        "minus-square"
+      ]
+    },
+    "bx bx-disc": {
+      "terms": [
+        "disc"
+      ]
+    },
+    "bx bxs-disc": {
+      "terms": [
+        "disc"
+      ]
+    },
+    "bx bx-equalizer": {
+      "terms": [
+        "equalizer"
+      ]
+    },
+    "bx bx-stats": {
+      "terms": [
+        "stats"
+      ]
+    },
+    "bx bx-move-horizontal": {
+      "terms": [
+        "move-horizontal"
+      ]
+    },
+    "bx bx-move-vertical": {
+      "terms": [
+        "move-vertical"
+      ]
+    },
+    "bx bxs-flame": {
+      "terms": [
+        "flame"
+      ]
+    },
+    "bx bx-grid-horizontal": {
+      "terms": [
+        "grid-horizontal"
+      ]
+    },
+    "bx bx-grid-vertical": {
+      "terms": [
+        "grid-vertical"
+      ]
+    },
+    "bx bx-grid-small": {
+      "terms": [
+        "grid-small"
+      ]
+    },
+    "bx bx-badge": {
+      "terms": [
+        "badge"
+      ]
+    },
+    "bx bxs-badge": {
+      "terms": [
+        "badge"
+      ]
+    },
+    "bx bx-id-card": {
+      "terms": [
+        "id-card"
+      ]
+    },
+    "bx bx-sort-up": {
+      "terms": [
+        "sort-up"
+      ]
+    },
+    "bx bx-sort-down": {
+      "terms": [
+        "sort-down"
+      ]
+    },
+    "bx bx-note": {
+      "terms": [
+        "note"
+      ]
+    },
+    "bx bxs-note": {
+      "terms": [
+        "note"
+      ]
+    },
+    "bx bx-test-tube": {
+      "terms": [
+        "test-tube"
+      ]
+    },
+    "bx bx-help-circle": {
+      "terms": [
+        "help-circle"
+      ]
+    },
+    "bx bxs-help-circle": {
+      "terms": [
+        "help-circle"
+      ]
+    },
+    "bx bx-card": {
+      "terms": [
+        "card"
+      ]
+    },
+    "bx bxs-card": {
+      "terms": [
+        "card"
+      ]
+    },
+    "bx bx-rewind-circle": {
+      "terms": [
+        "rewind-circle"
+      ]
+    },
+    "bx bx-magnet": {
+      "terms": [
+        "magnet"
+      ]
+    },
+    "bx bxs-magnet": {
+      "terms": [
+        "magnet"
+      ]
+    },
+    "bx bxl-500px": {
+      "terms": [
+        "500px"
+      ]
+    },
+    "bx bxl-angular": {
+      "terms": [
+        "angular"
+      ]
+    },
+    "bx bxl-codepen": {
+      "terms": [
+        "codepen"
+      ]
+    },
+    "bx bxl-creative-commons": {
+      "terms": [
+        "creative-commons"
+      ]
+    },
+    "bx bxl-digitalocean": {
+      "terms": [
+        "digitalocean"
+      ]
+    },
+    "bx bxl-deviantart": {
+      "terms": [
+        "deviantart"
+      ]
+    },
+    "bx bxl-discourse": {
+      "terms": [
+        "discourse"
+      ]
+    },
+    "bx bxl-dropbox": {
+      "terms": [
+        "dropbox"
+      ]
+    },
+    "bx bxl-drupal": {
+      "terms": [
+        "drupal"
+      ]
+    },
+    "bx bxl-ebay": {
+      "terms": [
+        "ebay"
+      ]
+    },
+    "bx bxl-amazon": {
+      "terms": [
+        "amazon"
+      ]
+    },
+    "bx bxl-digg": {
+      "terms": [
+        "digg"
+      ]
+    },
+    "bx bxl-unsplash": {
+      "terms": [
+        "unsplash"
+      ]
+    },
+    "bx bxl-wikipedia": {
+      "terms": [
+        "wikipedia"
+      ]
+    },
+    "bx bxl-sass": {
+      "terms": [
+        "sass"
+      ]
+    },
+    "bx bxl-foursquare": {
+      "terms": [
+        "foursquare"
+      ]
+    },
+    "bx bxl-invision": {
+      "terms": [
+        "invision"
+      ]
+    },
+    "bx bxl-opera": {
+      "terms": [
+        "opera"
+      ]
+    },
+    "bx bxl-airbnb": {
+      "terms": [
+        "airbnb"
+      ]
+    },
+    "bx bxl-yelp": {
+      "terms": [
+        "yelp"
+      ]
+    },
+    "bx bxl-quora": {
+      "terms": [
+        "quora"
+      ]
+    },
+    "bx bxl-git": {
+      "terms": [
+        "git"
+      ]
+    },
+    "bx bxl-html5": {
+      "terms": [
+        "html5"
+      ]
+    },
+    "bx bxl-product-hunt": {
+      "terms": [
+        "product-hunt"
+      ]
+    },
+    "bx bxl-magento": {
+      "terms": [
+        "magento"
+      ]
+    },
+    "bx bxl-stack-overflow": {
+      "terms": [
+        "stack-overflow"
+      ]
+    },
+    "bx bxl-firefox": {
+      "terms": [
+        "firefox"
+      ]
+    },
+    "bx bxl-javascript": {
+      "terms": [
+        "javascript"
+      ]
+    },
+    "bx bxl-nodejs": {
+      "terms": [
+        "nodejs"
+      ]
+    },
+    "bx bxl-kickstarter": {
+      "terms": [
+        "kickstarter"
+      ]
+    },
+    "bx bxl-vuejs": {
+      "terms": [
+        "vuejs"
+      ]
+    },
+    "bx bxl-bing": {
+      "terms": [
+        "bing"
+      ]
+    },
+    "bx bxl-react": {
+      "terms": [
+        "react"
+      ]
+    },
+    "bx bxl-periscope": {
+      "terms": [
+        "periscope"
+      ]
+    },
+    "bx bxl-wordpress": {
+      "terms": [
+        "wordpress"
+      ]
+    },
+    "bx bxl-telegram": {
+      "terms": [
+        "telegram"
+      ]
+    },
+    "bx bxl-stripe": {
+      "terms": [
+        "stripe"
+      ]
+    },
+    "bx bxl-edge": {
+      "terms": [
+        "edge"
+      ]
+    },
+    "bx bxl-paypal": {
+      "terms": [
+        "paypal"
+      ]
+    },
+    "bx bxl-internet-explorer": {
+      "terms": [
+        "internet-explorer"
+      ]
+    },
+    "bx bxl-joomla": {
+      "terms": [
+        "joomla"
+      ]
+    },
+    "bx bxl-dailymotion": {
+      "terms": [
+        "dailymotion"
+      ]
+    },
+    "bx bxl-chrome": {
+      "terms": [
+        "chrome"
+      ]
+    },
+    "bx bxl-baidu": {
+      "terms": [
+        "baidu"
+      ]
+    },
+    "bx bxl-visa": {
+      "terms": [
+        "visa"
+      ]
+    },
+    "bx bxl-mastercard": {
+      "terms": [
+        "mastercard"
+      ]
+    },
+    "bx bxl-redux": {
+      "terms": [
+        "redux"
+      ]
+    },
+    "bx bxl-bootstrap": {
+      "terms": [
+        "bootstrap"
+      ]
+    },
+    "bx bxl-yahoo": {
+      "terms": [
+        "yahoo"
+      ]
+    },
+    "bx bxl-microsoft": {
+      "terms": [
+        "microsoft"
+      ]
+    },
+    "bx bxl-css3": {
+      "terms": [
+        "css3"
+      ]
+    },
+    "bx bxl-jsfiddle": {
+      "terms": [
+        "jsfiddle"
+      ]
+    },
+    "bx bxl-shopify": {
+      "terms": [
+        "shopify"
+      ]
+    },
+    "bx bxl-flickr": {
+      "terms": [
+        "flickr"
+      ]
+    },
+    "bx bxl-less": {
+      "terms": [
+        "less"
+      ]
+    },
+    "bx bxl-snapchat": {
+      "terms": [
+        "snapchat"
+      ]
+    },
+    "bx bxl-soundcloud": {
+      "terms": [
+        "soundcloud"
+      ]
+    },
+    "bx bxl-spotify": {
+      "terms": [
+        "spotify"
+      ]
+    },
+    "bx bxl-trello": {
+      "terms": [
+        "trello"
+      ]
+    },
+    "bx bxl-wix": {
+      "terms": [
+        "wix"
+      ]
+    },
+    "bx bxl-mailchimp": {
+      "terms": [
+        "mailchimp"
+      ]
+    },
+    "bx bxl-medium-old": {
+      "terms": [
+        "medium-old"
+      ]
+    },
+    "bx bxl-squarespace": {
+      "terms": [
+        "squarespace"
+      ]
+    },
+    "bx bxl-whatsapp-square": {
+      "terms": [
+        "whatsapp-square"
+      ]
+    },
+    "bx bxl-flickr-square": {
+      "terms": [
+        "flickr-square"
+      ]
+    },
+    "bx bxs-ambulance": {
+      "terms": [
+        "ambulance"
+      ]
+    },
+    "bx bxs-left-arrow-square": {
+      "terms": [
+        "left-arrow-square"
+      ]
+    },
+    "bx bxs-up-arrow-square": {
+      "terms": [
+        "up-arrow-square"
+      ]
+    },
+    "bx bxs-down-arrow-square": {
+      "terms": [
+        "down-arrow-square"
+      ]
+    },
+    "bx bxs-right-arrow-square": {
+      "terms": [
+        "right-arrow-square"
+      ]
+    },
+    "bx bxs-user-badge": {
+      "terms": [
+        "user-badge"
+      ]
+    },
+    "bx bx-calendar-event": {
+      "terms": [
+        "calendar-event"
+      ]
+    },
+    "bx bx-caret-left": {
+      "terms": [
+        "caret-left"
+      ]
+    },
+    "bx bx-caret-up": {
+      "terms": [
+        "caret-up"
+      ]
+    },
+    "bx bx-caret-right": {
+      "terms": [
+        "caret-right"
+      ]
+    },
+    "bx bx-caret-down": {
+      "terms": [
+        "caret-down"
+      ]
+    },
+    "bx bxs-gas-pump": {
+      "terms": [
+        "gas-pump"
+      ]
+    },
+    "bx bxs-landmark": {
+      "terms": [
+        "landmark"
+      ]
+    },
+    "bx bx-show-alt": {
+      "terms": [
+        "show-alt"
+      ]
+    },
+    "bx bx-badge-check": {
+      "terms": [
+        "badge-check"
+      ]
+    },
+    "bx bxs-badge-check": {
+      "terms": [
+        "badge-check"
+      ]
+    },
+    "bx bx-rotate-left": {
+      "terms": [
+        "rotate-left"
+      ]
+    },
+    "bx bxs-coffee-alt": {
+      "terms": [
+        "coffee-alt"
+      ]
+    },
+    "bx bx-brush": {
+      "terms": [
+        "brush",
+        "color",
+        "colour",
+        "painting"
+      ]
+    },
+    "bx bxs-brush": {
+      "terms": [
+        "brush",
+        "color",
+        "colour",
+        "painting"
+      ]
+    },
+    "bx bxs-keyboard": {
+      "terms": [
+        "keyboard"
+      ]
+    },
+    "bx bxs-megaphone": {
+      "terms": [
+        "megaphone"
+      ]
+    },
+    "bx bxs-directions": {
+      "terms": [
+        "directions"
+      ]
+    },
+    "bx bxs-direction-right": {
+      "terms": [
+        "direction-right"
+      ]
+    },
+    "bx bx-unlink": {
+      "terms": [
+        "unlink"
+      ]
+    },
+    "bx bx-paint": {
+      "terms": [
+        "paint"
+      ]
+    },
+    "bx bx-joystick-button": {
+      "terms": [
+        "joystick-button"
+      ]
+    },
+    "bx bxs-joystick-button": {
+      "terms": [
+        "joystick-button"
+      ]
+    },
+    "bx bx-font-family": {
+      "terms": [
+        "font-family"
+      ]
+    },
+    "bx bxs-flask": {
+      "terms": [
+        "flask"
+      ]
+    },
+    "bx bxs-capsule": {
+      "terms": [
+        "capsule",
+        "medicine"
+      ]
+    },
+    "bx bxs-color-fill": {
+      "terms": [
+        "color-fill"
+      ]
+    },
+    "bx bxs-hotel": {
+      "terms": [
+        "hotel"
+      ]
+    },
+    "bx bxs-magic-wand": {
+      "terms": [
+        "magic-wand"
+      ]
+    },
+    "bx bx-repeat": {
+      "terms": [
+        "repeat"
+      ]
+    },
+    "bx bxs-eraser": {
+      "terms": [
+        "eraser",
+        "rubber"
+      ]
+    },
+    "bx bxs-cloud-rain": {
+      "terms": [
+        "cloud-rain"
+      ]
+    },
+    "bx bxs-cloud-lightning": {
+      "terms": [
+        "cloud-lightning"
+      ]
+    },
+    "bx bxs-eyedropper": {
+      "terms": [
+        "eyedropper"
+      ]
+    },
+    "bx bxs-user-rectangle": {
+      "terms": [
+        "user-rectangle"
+      ]
+    },
+    "bx bxs-plane": {
+      "terms": [
+        "plane",
+        "flight",
+        "fly"
+      ]
+    },
+    "bx bxs-tree": {
+      "terms": [
+        "tree",
+        "forest",
+        "christmas"
+      ]
+    },
+    "bx bxs-factory": {
+      "terms": [
+        "factory"
+      ]
+    },
+    "bx bxs-ship": {
+      "terms": [
+        "ship"
+      ]
+    },
+    "bx bx-walk": {
+      "terms": [
+        "walk"
+      ]
+    },
+    "bx bxs-yin-yang": {
+      "terms": [
+        "yin-yang"
+      ]
+    },
+    "bx bxs-file-pdf": {
+      "terms": [
+        "file-pdf"
+      ]
+    },
+    "bx bx-money": {
+      "terms": [
+        "money"
+      ]
+    },
+    "bx bx-home-circle": {
+      "terms": [
+        "home-circle"
+      ]
+    },
+    "bx bxs-home-circle": {
+      "terms": [
+        "home-circle"
+      ]
+    },
+    "bx bx-location-plus": {
+      "terms": [
+        "location-plus"
+      ]
+    },
+    "bx bxs-location-plus": {
+      "terms": [
+        "location-plus"
+      ]
+    },
+    "bx bx-arch": {
+      "terms": [
+        "arch"
+      ]
+    },
+    "bx bxs-arch": {
+      "terms": [
+        "arch"
+      ]
+    },
+    "bx bx-atom": {
+      "terms": [
+        "atom"
+      ]
+    },
+    "bx bxs-badge-dollar": {
+      "terms": [
+        "badge-dollar"
+      ]
+    },
+    "bx bx-baseball": {
+      "terms": [
+        "baseball"
+      ]
+    },
+    "bx bx-beer": {
+      "terms": [
+        "beer"
+      ]
+    },
+    "bx bxs-beer": {
+      "terms": [
+        "beer"
+      ]
+    },
+    "bx bx-bible": {
+      "terms": [
+        "bible"
+      ]
+    },
+    "bx bxs-bible": {
+      "terms": [
+        "bible"
+      ]
+    },
+    "bx bx-bomb": {
+      "terms": [
+        "bomb"
+      ]
+    },
+    "bx bxs-bomb": {
+      "terms": [
+        "bomb"
+      ]
+    },
+    "bx bx-bus-school": {
+      "terms": [
+        "bus-school"
+      ]
+    },
+    "bx bxs-bus-school": {
+      "terms": [
+        "bus-school"
+      ]
+    },
+    "bx bx-cabinet": {
+      "terms": [
+        "cabinet"
+      ]
+    },
+    "bx bxs-cabinet": {
+      "terms": [
+        "cabinet"
+      ]
+    },
+    "bx bx-calendar-edit": {
+      "terms": [
+        "calendar-edit"
+      ]
+    },
+    "bx bxs-calendar-edit": {
+      "terms": [
+        "calendar-edit"
+      ]
+    },
+    "bx bxs-car-wash": {
+      "terms": [
+        "car-wash"
+      ]
+    },
+    "bx bxs-car-garage": {
+      "terms": [
+        "car-garage"
+      ]
+    },
+    "bx bxs-car-mechanic": {
+      "terms": [
+        "car-mechanic"
+      ]
+    },
+    "bx bxs-car-crash": {
+      "terms": [
+        "car-crash"
+      ]
+    },
+    "bx bx-coffee-togo": {
+      "terms": [
+        "coffee-togo"
+      ]
+    },
+    "bx bxs-coffee-togo": {
+      "terms": [
+        "coffee-togo"
+      ]
+    },
+    "bx bxs-chess": {
+      "terms": [
+        "chess",
+        "strategy"
+      ]
+    },
+    "bx bxs-dryer": {
+      "terms": [
+        "dryer"
+      ]
+    },
+    "bx bxs-washer": {
+      "terms": [
+        "washer"
+      ]
+    },
+    "bx bx-pointer": {
+      "terms": [
+        "pointer"
+      ]
+    },
+    "bx bxs-pointer": {
+      "terms": [
+        "pointer"
+      ]
+    },
+    "bx bx-microchip": {
+      "terms": [
+        "microchip"
+      ]
+    },
+    "bx bxs-microchip": {
+      "terms": [
+        "microchip"
+      ]
+    },
+    "bx bxs-piano": {
+      "terms": [
+        "piano"
+      ]
+    },
+    "bx bxs-file-export": {
+      "terms": [
+        "file-export"
+      ]
+    },
+    "bx bxs-file-import": {
+      "terms": [
+        "file-import"
+      ]
+    },
+    "bx bxs-flag-checkered": {
+      "terms": [
+        "flag-checkered",
+        "f1",
+        "racing"
+      ]
+    },
+    "bx bx-heart-circle": {
+      "terms": [
+        "heart-circle"
+      ]
+    },
+    "bx bxs-heart-circle": {
+      "terms": [
+        "heart-circle"
+      ]
+    },
+    "bx bx-heart-square": {
+      "terms": [
+        "heart-square"
+      ]
+    },
+    "bx bxs-heart-square": {
+      "terms": [
+        "heart-square"
+      ]
+    },
+    "bx bx-home-heart": {
+      "terms": [
+        "home-heart"
+      ]
+    },
+    "bx bxs-home-heart": {
+      "terms": [
+        "home-heart"
+      ]
+    },
+    "bx bx-info-square": {
+      "terms": [
+        "info-square"
+      ]
+    },
+    "bx bxs-info-square": {
+      "terms": [
+        "info-square"
+      ]
+    },
+    "bx bx-layer-plus": {
+      "terms": [
+        "layer-plus"
+      ]
+    },
+    "bx bxs-layer-plus": {
+      "terms": [
+        "layer-plus"
+      ]
+    },
+    "bx bx-layer-minus": {
+      "terms": [
+        "layer-minus"
+      ]
+    },
+    "bx bxs-layer-minus": {
+      "terms": [
+        "layer-minus"
+      ]
+    },
+    "bx bx-recycle": {
+      "terms": [
+        "recycle"
+      ]
+    },
+    "bx bx-traffic-cone": {
+      "terms": [
+        "traffic-cone"
+      ]
+    },
+    "bx bxs-traffic-cone": {
+      "terms": [
+        "traffic-cone"
+      ]
+    },
+    "bx bx-wifi-2": {
+      "terms": [
+        "wifi-2"
+      ]
+    },
+    "bx bx-wifi-1": {
+      "terms": [
+        "wifi-1"
+      ]
+    },
+    "bx bx-wifi-0": {
+      "terms": [
+        "wifi-0"
+      ]
+    },
+    "bx bx-mask": {
+      "terms": [
+        "mask"
+      ]
+    },
+    "bx bxs-mask": {
+      "terms": [
+        "mask"
+      ]
+    },
+    "bx bx-low-vision": {
+      "terms": [
+        "low-vision",
+        "eye",
+        "view",
+        "visibility"
+      ]
+    },
+    "bx bxs-low-vision": {
+      "terms": [
+        "low-vision",
+        "eye",
+        "view",
+        "visibility"
+      ]
+    },
+    "bx bxs-radiation": {
+      "terms": [
+        "radiation",
+        "hazard",
+        "danger"
+      ]
+    },
+    "bx bx-been-here": {
+      "terms": [
+        "been-here"
+      ]
+    },
+    "bx bxs-been-here": {
+      "terms": [
+        "been-here"
+      ]
+    },
+    "bx bx-current-location": {
+      "terms": [
+        "current-location"
+      ]
+    },
+    "bx bx-arrow-from-top": {
+      "terms": [
+        "arrow-from-top"
+      ]
+    },
+    "bx bxs-arrow-from-top": {
+      "terms": [
+        "arrow-from-top"
+      ]
+    },
+    "bx bx-arrow-from-bottom": {
+      "terms": [
+        "arrow-from-bottom"
+      ]
+    },
+    "bx bxs-arrow-from-bottom": {
+      "terms": [
+        "arrow-from-bottom"
+      ]
+    },
+    "bx bx-arrow-from-left": {
+      "terms": [
+        "arrow-from-left"
+      ]
+    },
+    "bx bxs-arrow-from-left": {
+      "terms": [
+        "arrow-from-left"
+      ]
+    },
+    "bx bx-arrow-from-right": {
+      "terms": [
+        "arrow-from-right"
+      ]
+    },
+    "bx bxs-arrow-from-right": {
+      "terms": [
+        "arrow-from-right"
+      ]
+    },
+    "bx bx-arrow-to-right": {
+      "terms": [
+        "arrow-to-right"
+      ]
+    },
+    "bx bxs-arrow-to-right": {
+      "terms": [
+        "arrow-to-right"
+      ]
+    },
+    "bx bx-arrow-to-left": {
+      "terms": [
+        "arrow-to-left"
+      ]
+    },
+    "bx bxs-arrow-to-left": {
+      "terms": [
+        "arrow-to-left"
+      ]
+    },
+    "bx bx-arrow-to-top": {
+      "terms": [
+        "arrow-to-top"
+      ]
+    },
+    "bx bxs-arrow-to-top": {
+      "terms": [
+        "arrow-to-top"
+      ]
+    },
+    "bx bx-arrow-to-bottom": {
+      "terms": [
+        "arrow-to-bottom"
+      ]
+    },
+    "bx bxs-arrow-to-bottom": {
+      "terms": [
+        "arrow-to-bottom"
+      ]
+    },
+    "bx bx-book-reader": {
+      "terms": [
+        "book-reader"
+      ]
+    },
+    "bx bxs-book-reader": {
+      "terms": [
+        "book-reader"
+      ]
+    },
+    "bx bxs-edit-location": {
+      "terms": [
+        "edit-location"
+      ]
+    },
+    "bx bxs-ev-station": {
+      "terms": [
+        "ev-station"
+      ]
+    },
+    "bx bxs-shapes": {
+      "terms": [
+        "shapes"
+      ]
+    },
+    "bx bxs-florist": {
+      "terms": [
+        "florist"
+      ]
+    },
+    "bx bxs-pizza": {
+      "terms": [
+        "pizza"
+      ]
+    },
+    "bx bx-scan": {
+      "terms": [
+        "scan"
+      ]
+    },
+    "bx bx-calendar-week": {
+      "terms": [
+        "calendar-week"
+      ]
+    },
+    "bx bxs-calendar-week": {
+      "terms": [
+        "calendar-week"
+      ]
+    },
+    "bx bx-glasses": {
+      "terms": [
+        "glasses"
+      ]
+    },
+    "bx bx-glasses-alt": {
+      "terms": [
+        "glasses-alt"
+      ]
+    },
+    "bx bx-border-none": {
+      "terms": [
+        "border-none"
+      ]
+    },
+    "bx bx-border-inner": {
+      "terms": [
+        "border-inner"
+      ]
+    },
+    "bx bx-dice-1": {
+      "terms": [
+        "dice-1",
+        "game",
+        "random"
+      ]
+    },
+    "bx bxs-dice-1": {
+      "terms": [
+        "dice-1",
+        "game",
+        "random"
+      ]
+    },
+    "bx bx-dice-2": {
+      "terms": [
+        "dice-2",
+        "game",
+        "random"
+      ]
+    },
+    "bx bxs-dice-2": {
+      "terms": [
+        "dice-2",
+        "game",
+        "random"
+      ]
+    },
+    "bx bx-dice-3": {
+      "terms": [
+        "dice-3",
+        "game",
+        "random"
+      ]
+    },
+    "bx bxs-dice-3": {
+      "terms": [
+        "dice-3",
+        "game",
+        "random"
+      ]
+    },
+    "bx bx-dice-4": {
+      "terms": [
+        "dice-4",
+        "game",
+        "random"
+      ]
+    },
+    "bx bxs-dice-4": {
+      "terms": [
+        "dice-4",
+        "game",
+        "random"
+      ]
+    },
+    "bx bx-dice-5": {
+      "terms": [
+        "dice-5",
+        "game",
+        "random"
+      ]
+    },
+    "bx bxs-dice-5": {
+      "terms": [
+        "dice-5",
+        "game",
+        "random"
+      ]
+    },
+    "bx bx-dice-6": {
+      "terms": [
+        "dice-6",
+        "game",
+        "random"
+      ]
+    },
+    "bx bxs-dice-6": {
+      "terms": [
+        "dice-6",
+        "game",
+        "random"
+      ]
+    },
+    "bx bx-webcam": {
+      "terms": [
+        "webcam"
+      ]
+    },
+    "bx bxs-webcam": {
+      "terms": [
+        "webcam"
+      ]
+    },
+    "bx bx-spray-can": {
+      "terms": [
+        "spray-can",
+        "color",
+        "colour",
+        "paint spray"
+      ]
+    },
+    "bx bxs-spray-can": {
+      "terms": [
+        "spray-can",
+        "color",
+        "colour",
+        "paint spray"
+      ]
+    },
+    "bx bxs-file-archive": {
+      "terms": [
+        "file-archive"
+      ]
+    },
+    "bx bx-sticker": {
+      "terms": [
+        "sticker"
+      ]
+    },
+    "bx bxs-sticker": {
+      "terms": [
+        "sticker"
+      ]
+    },
+    "bx bx-tachometer": {
+      "terms": [
+        "tachometer"
+      ]
+    },
+    "bx bxs-tachometer": {
+      "terms": [
+        "tachometer"
+      ]
+    },
+    "bx bxs-thermometer": {
+      "terms": [
+        "thermometer"
+      ]
+    },
+    "bx bx-game": {
+      "terms": [
+        "game",
+        "pacman"
+      ]
+    },
+    "bx bxs-game": {
+      "terms": [
+        "game",
+        "pacman"
+      ]
+    },
+    "bx bx-abacus": {
+      "terms": [
+        "abacus"
+      ]
+    },
+    "bx bx-alarm-snooze": {
+      "terms": [
+        "alarm-snooze",
+        "alert",
+        "zzz",
+        "sleep"
+      ]
+    },
+    "bx bxs-alarm-snooze": {
+      "terms": [
+        "alarm-snooze",
+        "alert",
+        "zzz",
+        "sleep"
+      ]
+    },
+    "bx bx-alarm-exclamation": {
+      "terms": [
+        "alarm-exclamation",
+        "alert",
+        "error"
+      ]
+    },
+    "bx bxs-alarm-exclamation": {
+      "terms": [
+        "alarm-exclamation",
+        "alert",
+        "error"
+      ]
+    },
+    "bx bxs-chevrons-left": {
+      "terms": [
+        "chevrons-left",
+        "arrow"
+      ]
+    },
+    "bx bxs-chevrons-right": {
+      "terms": [
+        "chevrons-right",
+        "arrow"
+      ]
+    },
+    "bx bxs-chevrons-up": {
+      "terms": [
+        "chevrons-up",
+        "arrow"
+      ]
+    },
+    "bx bxs-chevrons-down": {
+      "terms": [
+        "chevrons-down",
+        "arrow"
+      ]
+    },
+    "bx bxs-chevron-down": {
+      "terms": [
+        "chevron-down",
+        "arrow"
+      ]
+    },
+    "bx bxs-chevron-up": {
+      "terms": [
+        "chevron-up",
+        "arrow"
+      ]
+    },
+    "bx bxs-chevron-right": {
+      "terms": [
+        "chevron-right",
+        "arrow"
+      ]
+    },
+    "bx bxs-chevron-left": {
+      "terms": [
+        "chevron-left",
+        "arrow"
+      ]
+    },
+    "bx bxs-guitar-amp": {
+      "terms": [
+        "guitar-amp"
+      ]
+    },
+    "bx bxs-up-arrow-alt": {
+      "terms": [
+        "up-arrow-alt"
+      ]
+    },
+    "bx bxs-down-arrow-alt": {
+      "terms": [
+        "down-arrow-alt"
+      ]
+    },
+    "bx bxs-left-arrow-alt": {
+      "terms": [
+        "left-arrow-alt"
+      ]
+    },
+    "bx bxs-right-arrow-alt": {
+      "terms": [
+        "right-arrow-alt"
+      ]
+    },
+    "bx bx-medal": {
+      "terms": [
+        "medal",
+        "honor",
+        "honour",
+        "achievement"
+      ]
+    },
+    "bx bxs-medal": {
+      "terms": [
+        "medal",
+        "honor",
+        "honour",
+        "achievement"
+      ]
+    },
+    "bx bxs-shopping-bags": {
+      "terms": [
+        "shopping-bags"
+      ]
+    },
+    "bx bxs-baseball": {
+      "terms": [
+        "baseball"
+      ]
+    },
+    "bx bx-task-x": {
+      "terms": [
+        "task-x"
+      ]
+    },
+    "bx bxs-basketball": {
+      "terms": [
+        "basketball",
+        "nba"
+      ]
+    },
+    "bx bx-barcode-reader": {
+      "terms": [
+        "barcode-reader"
+      ]
+    },
+    "bx bx-blanket": {
+      "terms": [
+        "blanket"
+      ]
+    },
+    "bx bxs-blanket": {
+      "terms": [
+        "blanket"
+      ]
+    },
+    "bx bxs-binoculars": {
+      "terms": [
+        "binoculars"
+      ]
+    },
+    "bx bx-bone": {
+      "terms": [
+        "bone"
+      ]
+    },
+    "bx bxs-bone": {
+      "terms": [
+        "bone"
+      ]
+    },
+    "bx bx-bong": {
+      "terms": [
+        "bong"
+      ]
+    },
+    "bx bxs-bong": {
+      "terms": [
+        "bong"
+      ]
+    },
+    "bx bx-book-alt": {
+      "terms": [
+        "book-alt"
+      ]
+    },
+    "bx bxs-book-alt": {
+      "terms": [
+        "book-alt"
+      ]
+    },
+    "bx bx-book-heart": {
+      "terms": [
+        "book-heart"
+      ]
+    },
+    "bx bxs-book-heart": {
+      "terms": [
+        "book-heart"
+      ]
+    },
+    "bx bx-book-add": {
+      "terms": [
+        "book-add"
+      ]
+    },
+    "bx bxs-book-add": {
+      "terms": [
+        "book-add"
+      ]
+    },
+    "bx bx-bracket": {
+      "terms": [
+        "bracket"
+      ]
+    },
+    "bx bx-brain": {
+      "terms": [
+        "brain"
+      ]
+    },
+    "bx bxs-brain": {
+      "terms": [
+        "brain"
+      ]
+    },
+    "bx bx-border-outer": {
+      "terms": [
+        "border-outer"
+      ]
+    },
+    "bx bx-braille": {
+      "terms": [
+        "braille"
+      ]
+    },
+    "bx bx-window-alt": {
+      "terms": [
+        "window-alt",
+        "browser"
+      ]
+    },
+    "bx bxs-window-alt": {
+      "terms": [
+        "window-alt",
+        "browser"
+      ]
+    },
+    "bx bx-calendar-heart": {
+      "terms": [
+        "calendar-heart"
+      ]
+    },
+    "bx bxs-calendar-heart": {
+      "terms": [
+        "calendar-heart"
+      ]
+    },
+    "bx bx-wine": {
+      "terms": [
+        "wine"
+      ]
+    },
+    "bx bx-vial": {
+      "terms": [
+        "vial"
+      ]
+    },
+    "bx bx-color-fill": {
+      "terms": [
+        "color-fill"
+      ]
+    },
+    "bx bx-capsule": {
+      "terms": [
+        "capsule",
+        "medicine"
+      ]
+    },
+    "bx bx-eraser": {
+      "terms": [
+        "eraser",
+        "rubber"
+      ]
+    },
+    "bx bx-drink": {
+      "terms": [
+        "drink"
+      ]
+    },
+    "bx bx-cctv": {
+      "terms": [
+        "cctv"
+      ]
+    },
+    "bx bxs-cctv": {
+      "terms": [
+        "cctv"
+      ]
+    },
+    "bx bx-chair": {
+      "terms": [
+        "chair"
+      ]
+    },
+    "bx bx-network-chart": {
+      "terms": [
+        "network-chart"
+      ]
+    },
+    "bx bxs-network-chart": {
+      "terms": [
+        "network-chart"
+      ]
+    },
+    "bx bx-vector": {
+      "terms": [
+        "vector"
+      ]
+    },
+    "bx bxs-vector": {
+      "terms": [
+        "vector"
+      ]
+    },
+    "bx bx-calendar-exclamation": {
+      "terms": [
+        "calendar-exclamation"
+      ]
+    },
+    "bx bxs-calendar-exclamation": {
+      "terms": [
+        "calendar-exclamation"
+      ]
+    },
+    "bx bx-calendar-star": {
+      "terms": [
+        "calendar-star"
+      ]
+    },
+    "bx bxs-calendar-star": {
+      "terms": [
+        "calendar-star"
+      ]
+    },
+    "bx bx-camera-home": {
+      "terms": [
+        "camera-home"
+      ]
+    },
+    "bx bxs-camera-home": {
+      "terms": [
+        "camera-home"
+      ]
+    },
+    "bx bx-camera-movie": {
+      "terms": [
+        "camera-movie"
+      ]
+    },
+    "bx bxs-camera-movie": {
+      "terms": [
+        "camera-movie"
+      ]
+    },
+    "bx bxs-backpack": {
+      "terms": [
+        "backpack"
+      ]
+    },
+    "bx bxs-cart-download": {
+      "terms": [
+        "cart-download"
+      ]
+    },
+    "bx bxs-cart-add": {
+      "terms": [
+        "cart-add"
+      ]
+    },
+    "bx bxs-car-battery": {
+      "terms": [
+        "car-battery"
+      ]
+    },
+    "bx bx-caret-right-circle": {
+      "terms": [
+        "caret-right-circle"
+      ]
+    },
+    "bx bx-caret-left-circle": {
+      "terms": [
+        "caret-left-circle"
+      ]
+    },
+    "bx bx-caret-up-circle": {
+      "terms": [
+        "caret-up-circle"
+      ]
+    },
+    "bx bx-caret-down-circle": {
+      "terms": [
+        "caret-down-circle"
+      ]
+    },
+    "bx bx-caret-right-square": {
+      "terms": [
+        "caret-right-square"
+      ]
+    },
+    "bx bxs-caret-right-square": {
+      "terms": [
+        "caret-right-square"
+      ]
+    },
+    "bx bx-caret-up-square": {
+      "terms": [
+        "caret-up-square"
+      ]
+    },
+    "bx bxs-caret-up-square": {
+      "terms": [
+        "caret-up-square"
+      ]
+    },
+    "bx bx-caret-left-square": {
+      "terms": [
+        "caret-left-square"
+      ]
+    },
+    "bx bxs-caret-left-square": {
+      "terms": [
+        "caret-left-square"
+      ]
+    },
+    "bx bx-caret-down-square": {
+      "terms": [
+        "caret-down-square"
+      ]
+    },
+    "bx bxs-caret-down-square": {
+      "terms": [
+        "caret-down-square"
+      ]
+    },
+    "bx bx-shield-x": {
+      "terms": [
+        "shield-x"
+      ]
+    },
+    "bx bxs-shield-x": {
+      "terms": [
+        "shield-x"
+      ]
+    },
+    "bx bx-line-chart-down": {
+      "terms": [
+        "line-chart-down"
+      ]
+    },
+    "bx bx-chevron-down-circle": {
+      "terms": [
+        "chevron-down-circle"
+      ]
+    },
+    "bx bxs-chevron-down-circle": {
+      "terms": [
+        "chevron-down-circle"
+      ]
+    },
+    "bx bx-chevron-up-circle": {
+      "terms": [
+        "chevron-up-circle"
+      ]
+    },
+    "bx bxs-chevron-up-circle": {
+      "terms": [
+        "chevron-up-circle"
+      ]
+    },
+    "bx bx-chevron-left-circle": {
+      "terms": [
+        "chevron-left-circle"
+      ]
+    },
+    "bx bxs-chevron-left-circle": {
+      "terms": [
+        "chevron-left-circle"
+      ]
+    },
+    "bx bx-chevron-right-circle": {
+      "terms": [
+        "chevron-right-circle"
+      ]
+    },
+    "bx bxs-chevron-right-circle": {
+      "terms": [
+        "chevron-right-circle"
+      ]
+    },
+    "bx bx-chevron-down-square": {
+      "terms": [
+        "chevron-down-square"
+      ]
+    },
+    "bx bxs-chevron-down-square": {
+      "terms": [
+        "chevron-down-square"
+      ]
+    },
+    "bx bx-chevron-up-square": {
+      "terms": [
+        "chevron-up-square"
+      ]
+    },
+    "bx bxs-chevron-up-square": {
+      "terms": [
+        "chevron-up-square"
+      ]
+    },
+    "bx bx-chevron-left-square": {
+      "terms": [
+        "chevron-left-square"
+      ]
+    },
+    "bx bxs-chevron-left-square": {
+      "terms": [
+        "chevron-left-square"
+      ]
+    },
+    "bx bx-chevron-right-square": {
+      "terms": [
+        "chevron-right-square"
+      ]
+    },
+    "bx bxs-chevron-right-square": {
+      "terms": [
+        "chevron-right-square"
+      ]
+    },
+    "bx bx-church": {
+      "terms": [
+        "church"
+      ]
+    },
+    "bx bxs-church": {
+      "terms": [
+        "church"
+      ]
+    },
+    "bx bx-coin": {
+      "terms": [
+        "coin"
+      ]
+    },
+    "bx bxs-coin": {
+      "terms": [
+        "coin"
+      ]
+    },
+    "bx bx-coin-stack": {
+      "terms": [
+        "coin-stack"
+      ]
+    },
+    "bx bxs-coin-stack": {
+      "terms": [
+        "coin-stack"
+      ]
+    },
+    "bx bx-unite": {
+      "terms": [
+        "unite"
+      ]
+    },
+    "bx bx-minus-front": {
+      "terms": [
+        "minus-front"
+      ]
+    },
+    "bx bx-intersect": {
+      "terms": [
+        "intersect"
+      ]
+    },
+    "bx bx-exclude": {
+      "terms": [
+        "exclude"
+      ]
+    },
+    "bx bx-minus-back": {
+      "terms": [
+        "minus-back"
+      ]
+    },
+    "bx bx-merge": {
+      "terms": [
+        "merge"
+      ]
+    },
+    "bx bx-trim": {
+      "terms": [
+        "trim"
+      ]
+    },
+    "bx bx-outline": {
+      "terms": [
+        "outline"
+      ]
+    },
+    "bx bxs-bullseye": {
+      "terms": [
+        "bullseye"
+      ]
+    },
+    "bx bx-meteor": {
+      "terms": [
+        "meteor"
+      ]
+    },
+    "bx bxs-meteor": {
+      "terms": [
+        "meteor"
+      ]
+    },
+    "bx bx-refresh": {
+      "terms": [
+        "refresh"
+      ]
+    },
+    "bx bx-home-smile": {
+      "terms": [
+        "home-smile"
+      ]
+    },
+    "bx bxs-home-smile": {
+      "terms": [
+        "home-smile"
+      ]
+    },
+    "bx bx-envelope-open": {
+      "terms": [
+        "envelope-open"
+      ]
+    },
+    "bx bxs-envelope-open": {
+      "terms": [
+        "envelope-open"
+      ]
+    },
+    "bx bxl-dev-to": {
+      "terms": [
+        "dev-to"
+      ]
+    },
+    "bx bx-message-alt-add": {
+      "terms": [
+        "message-alt-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bx bxs-message-alt-add": {
+      "terms": [
+        "message-alt-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bx bx-message-alt-check": {
+      "terms": [
+        "message-alt-check"
+      ]
+    },
+    "bx bxs-message-alt-check": {
+      "terms": [
+        "message-alt-check"
+      ]
+    },
+    "bx bx-message-alt-error": {
+      "terms": [
+        "message-alt-error"
+      ]
+    },
+    "bx bxs-message-alt-error": {
+      "terms": [
+        "message-alt-error"
+      ]
+    },
+    "bx bx-message-alt-x": {
+      "terms": [
+        "message-alt-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bxs-message-alt-x": {
+      "terms": [
+        "message-alt-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bx-message-alt-minus": {
+      "terms": [
+        "message-alt-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bxs-message-alt-minus": {
+      "terms": [
+        "message-alt-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bx-message-alt-edit": {
+      "terms": [
+        "message-alt-edit"
+      ]
+    },
+    "bx bxs-message-alt-edit": {
+      "terms": [
+        "message-alt-edit"
+      ]
+    },
+    "bx bx-message-alt-detail": {
+      "terms": [
+        "message-alt-detail"
+      ]
+    },
+    "bx bxs-message-alt-detail": {
+      "terms": [
+        "message-alt-detail"
+      ]
+    },
+    "bx bx-message-rounded-check": {
+      "terms": [
+        "message-rounded-check"
+      ]
+    },
+    "bx bxs-message-rounded-check": {
+      "terms": [
+        "message-rounded-check"
+      ]
+    },
+    "bx bx-message-rounded-error": {
+      "terms": [
+        "message-rounded-error"
+      ]
+    },
+    "bx bxs-message-rounded-error": {
+      "terms": [
+        "message-rounded-error"
+      ]
+    },
+    "bx bx-message-rounded-x": {
+      "terms": [
+        "message-rounded-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bxs-message-rounded-x": {
+      "terms": [
+        "message-rounded-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bx-message-rounded-minus": {
+      "terms": [
+        "message-rounded-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bxs-message-rounded-minus": {
+      "terms": [
+        "message-rounded-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bx-message-rounded-edit": {
+      "terms": [
+        "message-rounded-edit"
+      ]
+    },
+    "bx bxs-message-rounded-edit": {
+      "terms": [
+        "message-rounded-edit"
+      ]
+    },
+    "bx bx-message-rounded-add": {
+      "terms": [
+        "message-rounded-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bx bxs-message-rounded-add": {
+      "terms": [
+        "message-rounded-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bx bx-message-rounded-detail": {
+      "terms": [
+        "message-rounded-detail"
+      ]
+    },
+    "bx bxs-message-rounded-detail": {
+      "terms": [
+        "message-rounded-detail"
+      ]
+    },
+    "bx bx-message-check": {
+      "terms": [
+        "message-check"
+      ]
+    },
+    "bx bxs-message-check": {
+      "terms": [
+        "message-check"
+      ]
+    },
+    "bx bx-message-error": {
+      "terms": [
+        "message-error"
+      ]
+    },
+    "bx bxs-message-error": {
+      "terms": [
+        "message-error"
+      ]
+    },
+    "bx bx-message-x": {
+      "terms": [
+        "message-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bxs-message-x": {
+      "terms": [
+        "message-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bx-message-minus": {
+      "terms": [
+        "message-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bxs-message-minus": {
+      "terms": [
+        "message-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bx-message-edit": {
+      "terms": [
+        "message-edit"
+      ]
+    },
+    "bx bxs-message-edit": {
+      "terms": [
+        "message-edit"
+      ]
+    },
+    "bx bx-message-add": {
+      "terms": [
+        "message-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bx bxs-message-add": {
+      "terms": [
+        "message-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bx bx-message-detail": {
+      "terms": [
+        "message-detail"
+      ]
+    },
+    "bx bxs-message-detail": {
+      "terms": [
+        "message-detail"
+      ]
+    },
+    "bx bx-message-square-check": {
+      "terms": [
+        "message-square-check"
+      ]
+    },
+    "bx bxs-message-square-check": {
+      "terms": [
+        "message-square-check"
+      ]
+    },
+    "bx bx-message-square-error": {
+      "terms": [
+        "message-square-error"
+      ]
+    },
+    "bx bxs-message-square-error": {
+      "terms": [
+        "message-square-error"
+      ]
+    },
+    "bx bx-message-square-x": {
+      "terms": [
+        "message-square-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bxs-message-square-x": {
+      "terms": [
+        "message-square-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bx-message-square-minus": {
+      "terms": [
+        "message-square-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bxs-message-square-minus": {
+      "terms": [
+        "message-square-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bx-message-square-edit": {
+      "terms": [
+        "message-square-edit"
+      ]
+    },
+    "bx bxs-message-square-edit": {
+      "terms": [
+        "message-square-edit"
+      ]
+    },
+    "bx bx-message-square-add": {
+      "terms": [
+        "message-square-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bx bxs-message-square-add": {
+      "terms": [
+        "message-square-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bx bx-message-square-detail": {
+      "terms": [
+        "message-square-detail"
+      ]
+    },
+    "bx bxs-message-square-detail": {
+      "terms": [
+        "message-square-detail"
+      ]
+    },
+    "bx bx-comment-check": {
+      "terms": [
+        "comment-check"
+      ]
+    },
+    "bx bxs-comment-check": {
+      "terms": [
+        "comment-check"
+      ]
+    },
+    "bx bx-comment-error": {
+      "terms": [
+        "comment-error"
+      ]
+    },
+    "bx bx-comment-x": {
+      "terms": [
+        "comment-x",
+        "chat",
+        "message",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bxs-comment-x": {
+      "terms": [
+        "comment-x",
+        "chat",
+        "message",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bx-comment-edit": {
+      "terms": [
+        "comment-edit"
+      ]
+    },
+    "bx bxs-comment-edit": {
+      "terms": [
+        "comment-edit"
+      ]
+    },
+    "bx bx-comment-minus": {
+      "terms": [
+        "comment-minus",
+        "chat",
+        "message",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bxs-comment-minus": {
+      "terms": [
+        "comment-minus",
+        "chat",
+        "message",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx bx-comment-add": {
+      "terms": [
+        "comment-add",
+        "chat",
+        "message",
+        "new",
+        "plus"
+      ]
+    },
+    "bx bx-comment-detail": {
+      "terms": [
+        "comment-detail"
+      ]
+    },
+    "bx bx-cookie": {
+      "terms": [
+        "cookie",
+        "biscuit"
+      ]
+    },
+    "bx bxs-cookie": {
+      "terms": [
+        "cookie",
+        "biscuit"
+      ]
+    },
+    "bx bxs-copyright": {
+      "terms": [
+        "copyright"
+      ]
+    },
+    "bx bx-credit-card-front": {
+      "terms": [
+        "credit-card-front",
+        "finance",
+        "money",
+        "debit"
+      ]
+    },
+    "bx bxs-credit-card-front": {
+      "terms": [
+        "credit-card-front",
+        "finance",
+        "money",
+        "debit"
+      ]
+    },
+    "bx bxs-crop": {
+      "terms": [
+        "crop"
+      ]
+    },
+    "bx bxs-diamond": {
+      "terms": [
+        "diamond"
+      ]
+    },
+    "bx bx-door-open": {
+      "terms": [
+        "door-open"
+      ]
+    },
+    "bx bxs-door-open": {
+      "terms": [
+        "door-open"
+      ]
+    },
+    "bx bx-donate-heart": {
+      "terms": [
+        "donate-heart",
+        "donation",
+        "contribution"
+      ]
+    },
+    "bx bxs-donate-heart": {
+      "terms": [
+        "donate-heart",
+        "donation",
+        "contribution"
+      ]
+    },
+    "bx bx-donate-blood": {
+      "terms": [
+        "donate-blood"
+      ]
+    },
+    "bx bxs-donate-blood": {
+      "terms": [
+        "donate-blood"
+      ]
+    },
+    "bx bx-shape-polygon": {
+      "terms": [
+        "shape-polygon"
+      ]
+    },
+    "bx bxl-zoom": {
+      "terms": [
+        "zoom"
+      ]
+    },
+    "bx bxl-microsoft-teams": {
+      "terms": [
+        "microsoft-teams"
+      ]
+    },
+    "bx bxl-blender": {
+      "terms": [
+        "blender"
+      ]
+    },
+    "bx bxl-kubernetes": {
+      "terms": [
+        "kubernetes"
+      ]
+    },
+    "bx bxl-google-cloud": {
+      "terms": [
+        "google-cloud"
+      ]
+    },
+    "bx bxl-django": {
+      "terms": [
+        "django"
+      ]
+    },
+    "bx bxl-spring-boot": {
+      "terms": [
+        "spring-boot"
+      ]
+    },
+    "bx bxl-tux": {
+      "terms": [
+        "tux"
+      ]
+    },
+    "bx bxl-markdown": {
+      "terms": [
+        "markdown"
+      ]
+    },
+    "bx bxl-python": {
+      "terms": [
+        "python"
+      ]
+    },
+    "bx bxl-ok-ru": {
+      "terms": [
+        "ok-ru"
+      ]
+    },
+    "bx bxl-firebase": {
+      "terms": [
+        "firebase"
+      ]
+    },
+    "bx bxl-c-plus-plus": {
+      "terms": [
+        "c-plus-plus",
+        "c++"
+      ]
+    },
+    "bx bx-bookmark-heart": {
+      "terms": [
+        "bookmark-heart"
+      ]
+    },
+    "bx bxs-bookmark-heart": {
+      "terms": [
+        "bookmark-heart"
+      ]
+    },
+    "bx bx-sort-alt-2": {
+      "terms": [
+        "sort-alt-2"
+      ]
+    },
+    "bx bx-category": {
+      "terms": [
+        "category"
+      ]
+    },
+    "bx bxs-category": {
+      "terms": [
+        "category"
+      ]
+    },
+    "bx bx-category-alt": {
+      "terms": [
+        "category-alt"
+      ]
+    },
+    "bx bxs-category-alt": {
+      "terms": [
+        "category-alt"
+      ]
+    },
+    "bx bx-bookmark-alt": {
+      "terms": [
+        "bookmark-alt"
+      ]
+    },
+    "bx bxs-bookmark-alt": {
+      "terms": [
+        "bookmark-alt"
+      ]
+    },
+    "bx bx-bookmark-alt-plus": {
+      "terms": [
+        "bookmark-alt-plus"
+      ]
+    },
+    "bx bxs-bookmark-alt-plus": {
+      "terms": [
+        "bookmark-alt-plus"
+      ]
+    },
+    "bx bx-bookmark-alt-minus": {
+      "terms": [
+        "bookmark-alt-minus"
+      ]
+    },
+    "bx bxs-bookmark-alt-minus": {
+      "terms": [
+        "bookmark-alt-minus"
+      ]
+    },
+    "bx bxs-face-mask": {
+      "terms": [
+        "face-mask"
+      ]
+    },
+    "bx bxs-tv": {
+      "terms": [
+        "tv",
+        "television",
+        "monitor"
+      ]
+    },
+    "bx bx-tag-alt": {
+      "terms": [
+        "tag-alt"
+      ]
+    },
+    "bx bxs-tag-alt": {
+      "terms": [
+        "tag-alt"
+      ]
+    },
+    "bx bx-movie-play": {
+      "terms": [
+        "movie-play"
+      ]
+    },
+    "bx bxs-movie-play": {
+      "terms": [
+        "movie-play"
+      ]
+    },
+    "bx bxs-user-account": {
+      "terms": [
+        "user-account"
+      ]
+    },
+    "bx bx-expand-alt": {
+      "terms": [
+        "expand-alt"
+      ]
+    },
+    "bx bx-library": {
+      "terms": [
+        "library"
+      ]
+    },
+    "bx bx-trip": {
+      "terms": [
+        "trip"
+      ]
+    },
+    "bx bxs-virus": {
+      "terms": [
+        "virus",
+        "disease",
+        "covid",
+        "corona"
+      ]
+    },
+    "bx bxs-virus-block": {
+      "terms": [
+        "virus-block"
+      ]
+    }
+  }
+}

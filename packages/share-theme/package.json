@@ -24,7 +24,6 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "boxicons": "2.1.4",
     "fuse.js": "7.1.0",
     "katex": "0.16.27",
     "mermaid": "11.12.2"

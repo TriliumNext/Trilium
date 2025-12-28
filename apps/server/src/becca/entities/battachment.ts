@@ -1,15 +1,16 @@
-"use strict";
 
-import utils from "../../services/utils.js";
-import dateUtils from "../../services/date_utils.js";
-import AbstractBeccaEntity from "./abstract_becca_entity.js";
-import sql from "../../services/sql.js";
-import protectedSessionService from "../../services/protected_session.js";
-import log from "../../services/log.js";
+
 import type { AttachmentRow } from "@triliumnext/commons";
-import type BNote from "./bnote.js";
-import type BBranch from "./bbranch.js";
+
+import dateUtils from "../../services/date_utils.js";
+import log from "../../services/log.js";
 import noteService from "../../services/notes.js";
+import protectedSessionService from "../../services/protected_session.js";
+import sql from "../../services/sql.js";
+import utils from "../../services/utils.js";
+import AbstractBeccaEntity from "./abstract_becca_entity.js";
+import type BBranch from "./bbranch.js";
+import type BNote from "./bnote.js";
 
 const attachmentRoleToNoteTypeMapping = {
     image: "image",

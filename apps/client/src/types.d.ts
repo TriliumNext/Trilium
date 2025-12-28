@@ -1,3 +1,5 @@
+import { IconRegistry } from "@triliumnext/commons";
+
 import appContext, { AppContext } from "./components/app_context";
 import type FNote from "./entities/fnote";
 import type { PrintReport } from "./print";
@@ -46,6 +48,7 @@ interface CustomGlobals {
     linter: typeof lint;
     hasNativeTitleBar: boolean;
     isRtl: boolean;
+    iconRegistry: IconRegistry;
 }
 
 type RequireMethod = (moduleName: string) => any;

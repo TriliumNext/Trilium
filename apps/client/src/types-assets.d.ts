@@ -17,5 +17,3 @@ declare module "*?raw" {
     var content: string;
     export default content;
 }
-
-declare module "boxicons/css/boxicons.min.css" { }

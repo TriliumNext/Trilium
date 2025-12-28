@@ -1,17 +1,18 @@
-import appContext from "./components/app_context.js";
-import utils from "./services/utils.js";
-import noteTooltipService from "./services/note_tooltip.js";
-import bundleService from "./services/bundle.js";
-import toastService from "./services/toast.js";
-import noteAutocompleteService from "./services/note_autocomplete.js";
-import electronContextMenu from "./menus/electron_context_menu.js";
-import glob from "./services/glob.js";
-import { t } from "./services/i18n.js";
-import options from "./services/options.js";
+import "autocomplete.js/index_jquery.js";
+
 import type ElectronRemote from "@electron/remote";
 import type Electron from "electron";
-import "boxicons/css/boxicons.min.css";
-import "autocomplete.js/index_jquery.js";
+
+import appContext from "./components/app_context.js";
+import electronContextMenu from "./menus/electron_context_menu.js";
+import bundleService from "./services/bundle.js";
+import glob from "./services/glob.js";
+import { t } from "./services/i18n.js";
+import noteAutocompleteService from "./services/note_autocomplete.js";
+import noteTooltipService from "./services/note_tooltip.js";
+import options from "./services/options.js";
+import toastService from "./services/toast.js";
+import utils from "./services/utils.js";
 
 await appContext.earlyInit();
 

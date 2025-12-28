@@ -1,15 +1,19 @@
-import Dropdown from "./react/Dropdown";
 import "./note_icon.css";
+
+import { IconRegistry } from "@triliumnext/commons";
+import { Dropdown as BootstrapDropdown } from "bootstrap";
 import { t } from "i18next";
-import { useNoteContext, useNoteLabel } from "./react/hooks";
+import { RefObject } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
-import server from "../services/server";
-import type { Category, Icon } from "./icon_list";
-import FormTextBox from "./react/FormTextBox";
-import FormSelect from "./react/FormSelect";
+
 import FNote from "../entities/fnote";
 import attributes from "../services/attributes";
-import Button from "./react/Button";
+import server from "../services/server";
+import ActionButton from "./react/ActionButton";
+import Dropdown from "./react/Dropdown";
+import { FormDropdownDivider, FormListItem } from "./react/FormList";
+import FormTextBox from "./react/FormTextBox";
+import { useNoteContext, useNoteLabel, useStaticTooltip } from "./react/hooks";
 
 interface IconToCountCache {
     iconClassToCountMap: Record<string, number>;
@@ -17,14 +21,9 @@ interface IconToCountCache {
 
 interface IconData {
     iconToCount: Record<string, number>;
-    categories: Category[];
-    icons: Icon[];
+    icons: (IconRegistry["sources"][number]["icons"][number] & { iconPack: string })[];
 }
 
-let fullIconData: {
-    categories: Category[];
-    icons: Icon[];
-};
 let iconToCountCache!: Promise<IconToCountCache> | null;
 
 export default function NoteIcon() {
@@ -32,6 +31,7 @@ export default function NoteIcon() {
     const [ icon, setIcon ] = useState<string | null | undefined>();
     const [ iconClass ] = useNoteLabel(note, "iconClass");
     const [ workspaceIconClass ] = useNoteLabel(note, "workspaceIconClass");
+    const dropdownRef = useRef<BootstrapDropdown>(null);
 
     useEffect(() => {
         setIcon(note?.getIcon());
@@ -41,40 +41,54 @@ export default function NoteIcon() {
         <Dropdown
             className="note-icon-widget"
             title={t("note_icon.change_note_icon")}
-            dropdownContainerStyle={{ width: "610px" }}
+            dropdownRef={dropdownRef}
+            dropdownContainerStyle={{ width: "620px" }}
+            dropdownOptions={{ autoClose: "outside" }}
             buttonClassName={`note-icon tn-focusable-button ${icon ?? "bx bx-empty"}`}
             hideToggleArrow
             disabled={viewScope?.viewMode !== "default"}
         >
-            { note && <NoteIconList note={note} /> }
+            { note && <NoteIconList note={note} dropdownRef={dropdownRef} /> }
         </Dropdown>
-    )
+    );
 }
 
-function NoteIconList({ note }: { note: FNote }) {
+function NoteIconList({ note, dropdownRef }: {
+    note: FNote,
+    dropdownRef: RefObject<BootstrapDropdown>;
+}) {
     const searchBoxRef = useRef<HTMLInputElement>(null);
+    const iconListRef = useRef<HTMLDivElement>(null);
     const [ search, setSearch ] = useState<string>();
-    const [ categoryId, setCategoryId ] = useState<string>("0");
     const [ iconData, setIconData ] = useState<IconData>();
+    const [ filterByPrefix, setFilterByPrefix ] = useState<string | null>(null);
+    useStaticTooltip(iconListRef, {
+        selector: "span",
+        customClass: "pre-wrap-text",
+        animation: false,
+        title() { return this.getAttribute("title") || ""; },
+    });
 
     useEffect(() => {
         async function loadIcons() {
-            if (!fullIconData) {
-                fullIconData = (await import("./icon_list.js")).default;
-            }
-
             // Filter by text and/or category.
-            let icons: Icon[] = fullIconData.icons;
+            let icons: IconData["icons"] = [
+                ...glob.iconRegistry.sources.map(s => s.icons.map((i) => ({
+                    ...i,
+                    iconPack: s.name,
+                }))).flat()
+            ];
             const processedSearch = search?.trim()?.toLowerCase();
-            if (processedSearch || categoryId) {
+            if (processedSearch || filterByPrefix !== null) {
                 icons = icons.filter((icon) => {
-                    if (categoryId !== "0" && String(icon.category_id) !== categoryId) {
-                        return false;
+                    if (filterByPrefix) {
+                        if (!icon.id?.startsWith(`${filterByPrefix} `)) {
+                            return false;
+                        }
                     }
 
                     if (processedSearch) {
-                        if (!icon.name.includes(processedSearch) &&
-                            !icon.term?.find((t) => t.includes(processedSearch))) {
+                        if (!icon.terms?.some((t) => t.includes(processedSearch))) {
                             return false;
                         }
                     }
@@ -87,8 +101,8 @@ function NoteIconList({ note }: { note: FNote }) {
             const iconToCount = await getIconToCountMap();
             if (iconToCount) {
                 icons.sort((a, b) => {
-                    const countA = iconToCount[a.className ?? ""] || 0;
-                    const countB = iconToCount[b.className ?? ""] || 0;
+                    const countA = iconToCount[a.id ?? ""] || 0;
+                    const countB = iconToCount[b.id ?? ""] || 0;
 
                     return countB - countA;
                 });
@@ -96,71 +110,110 @@ function NoteIconList({ note }: { note: FNote }) {
 
             setIconData({
                 iconToCount,
-                icons,
-                categories: fullIconData.categories
-            })
+                icons
+            });
         }
 
         loadIcons();
-    }, [ search, categoryId ]);
+    }, [ search, filterByPrefix ]);
 
     return (
         <>
             <div class="filter-row">
-                <span>{t("note_icon.category")}</span>
-                <FormSelect
-                    name="icon-category"
-                    values={fullIconData?.categories ?? []}
-                    currentValue={categoryId} onChange={setCategoryId}
-                    keyProperty="id" titleProperty="name"
-                />
-
                 <span>{t("note_icon.search")}</span>
                 <FormTextBox
                     inputRef={searchBoxRef}
                     type="text"
                     name="icon-search"
+                    placeholder={t("note_icon.search_placeholder")}
                     currentValue={search} onChange={setSearch}
                     autoFocus
                 />
+
+                {getIconLabels(note).length > 0 && (
+                    <div style={{ textAlign: "center" }}>
+                        <ActionButton
+                            icon="bx bx-reset"
+                            text={t("note_icon.reset-default")}
+                            onClick={() => {
+                                if (!note) return;
+                                for (const label of getIconLabels(note)) {
+                                    attributes.removeAttributeById(note.noteId, label.attributeId);
+                                }
+                                dropdownRef?.current?.hide();
+                            }}
+                        />
+                    </div>
+                )}
+
+                {glob.iconRegistry.sources.length > 0 && <Dropdown
+                    buttonClassName="bx bx-filter-alt"
+                    hideToggleArrow
+                    noSelectButtonStyle
+                    noDropdownListStyle
+                    iconAction
+                    title={t("note_icon.filter")}
+                >
+                    <IconFilterContent filterByPrefix={filterByPrefix} setFilterByPrefix={setFilterByPrefix} />
+                </Dropdown>}
             </div>
 
             <div
                 class="icon-list"
+                ref={iconListRef}
                 onClick={(e) => {
+                    // Make sure we are not clicking on something else than a button.
                     const clickedTarget = e.target as HTMLElement;
-
-                    if (!clickedTarget.classList.contains("bx")) {
-                        return;
-                    }
+                    if (clickedTarget.tagName !== "SPAN" || clickedTarget.classList.length !== 2) return;
 
                     const iconClass = Array.from(clickedTarget.classList.values()).join(" ");
                     if (note) {
                         const attributeToSet = note.hasOwnedLabel("workspace") ? "workspaceIconClass" : "iconClass";
                         attributes.setLabel(note.noteId, attributeToSet, iconClass);
                     }
+                    dropdownRef?.current?.hide();
                 }}
             >
-                {getIconLabels(note).length > 0 && (
-                    <div style={{ textAlign: "center" }}>
-                        <Button
-                            text={t("note_icon.reset-default")}
-                            onClick={() => {
-                                if (!note) {
-                                    return;
-                                }
-                                for (const label of getIconLabels(note)) {
-                                    attributes.removeAttributeById(note.noteId, label.attributeId);
-                                }
-                            }}
+                {iconData?.icons?.length ? (
+                    (iconData?.icons ?? []).map(({ id, terms, iconPack }) => (
+                        <span
+                            key={id}
+                            class={id}
+                            title={t("note_icon.icon_tooltip", { name: terms?.[0] ?? id, iconPack })}
                         />
-                    </div>
+                    ))
+                ) : (
+                    <div class="no-results">{t("note_icon.no_results")}</div>
                 )}
-
-                {(iconData?.icons ?? []).map(({className, name}) => (
-                    <span class={`bx ${className}`} title={name} />
-                ))}
             </div>
+        </>
+    );
+}
+
+function IconFilterContent({ filterByPrefix, setFilterByPrefix }: {
+    filterByPrefix: string | null;
+    setFilterByPrefix: (value: string | null) => void;
+}) {
+    return (
+        <>
+            <FormListItem
+                checked={filterByPrefix === null}
+                onClick={() => setFilterByPrefix(null)}
+            >{t("note_icon.filter-none")}</FormListItem>
+            <FormListItem
+                checked={filterByPrefix === "bx"}
+                onClick={() => setFilterByPrefix("bx")}
+            >{t("note_icon.filter-default")}</FormListItem>
+            <FormDropdownDivider />
+
+            {glob.iconRegistry.sources.map(({ prefix, name, icon }) => (
+                prefix !== "bx" && <FormListItem
+                    key={prefix}
+                    onClick={() => setFilterByPrefix(prefix)}
+                    icon={icon}
+                    checked={filterByPrefix === prefix}
+                >{name}</FormListItem>
+            ))}
         </>
     );
 }
@@ -180,5 +233,5 @@ function getIconLabels(note: FNote) {
     }
     return note.getOwnedLabels()
         .filter((label) => ["workspaceIconClass", "iconClass"]
-        .includes(label.name));
+            .includes(label.name));
 }
