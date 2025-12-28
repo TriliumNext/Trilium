@@ -40,6 +40,13 @@ interface Subroot {
 
 type GetNoteFunction = (id: string) => SNote | BNote | null;
 
+function addContentAccessQuery(note: SNote | BNote, secondEl?:boolean) {
+    if (!(note instanceof BNote) && note.contentAccessor && note.contentAccessor?.type === "query") {
+        return secondEl ? `&cat=${note.contentAccessor.getToken()}` : `?cat=${note.contentAccessor.getToken()}`;
+    }
+    return ""
+}
+
 function getSharedSubTreeRoot(note: SNote | BNote | undefined): Subroot {
     if (!note || note.noteId === shareRoot.SHARE_ROOT_NOTE_ID) {
         // share root itself is not shared
@@ -111,7 +118,7 @@ export function renderNoteContent(note: SNote) {
         cssToLoad.push(`assets/scripts.css`);
     }
     for (const cssRelation of note.getRelations("shareCss")) {
-        cssToLoad.push(`api/notes/${cssRelation.value}/download`);
+        cssToLoad.push(`api/notes/${cssRelation.value}/download${addContentAccessQuery(note)}`);
     }
 
     // Determine JS to load.
@@ -119,11 +126,11 @@ export function renderNoteContent(note: SNote) {
         "assets/scripts.js"
     ];
     for (const jsRelation of note.getRelations("shareJs")) {
-        jsToLoad.push(`api/notes/${jsRelation.value}/download`);
+        jsToLoad.push(`api/notes/${jsRelation.value}/download${addContentAccessQuery(note)}`);
     }
 
     const customLogoId = note.getRelation("shareLogo")?.value;
-    const logoUrl = customLogoId ? `api/images/${customLogoId}/image.png` : `../${assetUrlFragment}/images/icon-color.svg`;
+    const logoUrl = customLogoId ? `api/images/${customLogoId}/image.png${addContentAccessQuery(note)}` : `../${assetUrlFragment}/images/icon-color.svg`;
 
     return renderNoteContentInternal(note, {
         subRoot,
@@ -133,7 +140,7 @@ export function renderNoteContent(note: SNote) {
         logoUrl,
         ancestors,
         isStatic: false,
-        faviconUrl: note.hasRelation("shareFavicon") ? `api/notes/${note.getRelationValue("shareFavicon")}/download` : `../favicon.ico`
+        faviconUrl: note.hasRelation("shareFavicon") ? `api/notes/${note.getRelationValue("shareFavicon")}/download${addContentAccessQuery(note)}` : `../favicon.ico`
     });
 }
 
@@ -158,6 +165,7 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         isEmpty,
         assetPath: shareAdjustedAssetPath,
         assetUrlFragment,
+        addContentAccessQuery: (second: boolean | undefined) => addContentAccessQuery(note, second),
         showLoginInShareTheme,
         t,
         isDev,
@@ -321,7 +329,7 @@ function renderText(result: Result, note: SNote | BNote) {
             }
 
             if (href?.startsWith("#")) {
-                handleAttachmentLink(linkEl, href, getNote, getAttachment);
+                handleAttachmentLink(linkEl, href, getNote, getAttachment, note);
             }
 
             if (linkEl.classList.contains("reference-link")) {
@@ -349,7 +357,7 @@ function renderText(result: Result, note: SNote | BNote) {
     }
 }
 
-function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNoteFunction, getAttachment: (id: string) => BAttachment | SAttachment | null) {
+function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNoteFunction, getAttachment: (id: string) => BAttachment | SAttachment | null, note: SNote | BNote) {
     const linkRegExp = /attachmentId=([a-zA-Z0-9_]+)/g;
     let attachmentMatch;
     if ((attachmentMatch = linkRegExp.exec(href))) {
@@ -357,7 +365,7 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
         const attachment = getAttachment(attachmentId);
 
         if (attachment) {
-            linkEl.setAttribute("href", `api/attachments/${attachmentId}/download`);
+            linkEl.setAttribute("href", `api/attachments/${attachmentId}/download${addContentAccessQuery(note)}`);
             linkEl.classList.add(`attachment-link`);
             linkEl.classList.add(`role-${attachment.role}`);
             linkEl.childNodes.length = 0;
@@ -430,7 +438,7 @@ function renderMermaid(result: Result, note: SNote | BNote) {
     }
 
     result.content = `
-<img src="api/images/${note.noteId}/${note.encodedTitle}?${note.utcDateModified}">
+<img src="api/images/${note.noteId}/${note.encodedTitle}?${note.utcDateModified}${addContentAccessQuery(note, true)}">
 <hr>
 <details>
     <summary>Chart source</summary>
@@ -439,14 +447,14 @@ function renderMermaid(result: Result, note: SNote | BNote) {
 }
 
 function renderImage(result: Result, note: SNote | BNote) {
-    result.content = `<img src="api/images/${note.noteId}/${note.encodedTitle}?${note.utcDateModified}">`;
+    result.content = `<img src="api/images/${note.noteId}/${note.encodedTitle}?${note.utcDateModified}${addContentAccessQuery(note, true)}">`;
 }
 
 function renderFile(note: SNote | BNote, result: Result) {
     if (note.mime === "application/pdf") {
-        result.content = `<iframe class="pdf-view" src="api/notes/${note.noteId}/view"></iframe>`;
+        result.content = `<iframe class="pdf-view" src="api/notes/${note.noteId}/view${addContentAccessQuery(note)}"></iframe>`;
     } else {
-        result.content = `<button type="button" onclick="location.href='api/notes/${note.noteId}/download'">Download file</button>`;
+        result.content = `<button type="button" onclick="location.href='api/notes/${note.noteId}/download${addContentAccessQuery(note)}'">Download file</button>`;
     }
 }
 

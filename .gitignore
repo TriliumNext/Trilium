@@ -8,6 +8,7 @@ out-tsc
 
 # dependencies
 node_modules
+.pnpm-store
 
 # IDEs and editors
 /.idea
@@ -18,6 +19,7 @@ node_modules
 *.launch
 .settings/
 *.sublime-workspace
+.devcontainer
 
 # misc
 /.sass-cache
