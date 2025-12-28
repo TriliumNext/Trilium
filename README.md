@@ -147,6 +147,21 @@ Here's the language coverage we have so far:
 
 ### Code
 
+General (OS / docker / podman, etc.) dependencies: 
+
+Debian
+```
+apt update
+apt install -y build-essential python3 make g++ libsqlite3-dev
+corepack enable
+```
+
+Alpine
+```
+apk add --no-cache build-base python3 python3-dev sqlite-dev
+corepack enable
+```
+
 Download the repository, install dependencies using `pnpm` and then run the server (available at http://localhost:8080):
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
@@ -154,6 +169,10 @@ cd Trilium
 pnpm install
 pnpm run server:start
 ```
+
+> If you faced with some problems, try to delete all `node_modules` and `.pnpm-store` folders, not only from the root, from every directory, like `apps/{app_name}/node_modules`and `/packages/{package_name}/node_modules` and then reinstall it by the `pnpm install`.
+
+Share styles not compiling by default, if you see share page without styles, make `pnpm run server:build` and then run development server.
 
 ### Documentation
 

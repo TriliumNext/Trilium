@@ -10,6 +10,7 @@ import type SAttribute from "./sattribute.js";
 import type SBranch from "./sbranch.js";
 import type { SNoteRow } from "./rows.js";
 import { NOTE_TYPE_ICONS } from "../../../becca/entities/bnote.js";
+import { ContentAccessor } from "./content_accessor.js";
 
 const LABEL = "label";
 const RELATION = "relation";
@@ -19,6 +20,7 @@ const isCredentials = (attr: SAttribute) => attr.type === "label" && attr.name =
 
 class SNote extends AbstractShacaEntity {
     noteId: string;
+    parentId?: string | undefined;
     title: string;
     type: string;
     mime: string;
@@ -33,11 +35,13 @@ class SNote extends AbstractShacaEntity {
     private __inheritableAttributeCache: SAttribute[] | null;
     targetRelations: SAttribute[];
     attachments: SAttachment[];
+    contentAccessor: ContentAccessor | undefined;
 
     constructor([noteId, title, type, mime, blobId, utcDateModified, isProtected]: SNoteRow) {
         super();
 
         this.noteId = noteId;
+        this.parentId = undefined;
         this.title = isProtected ? "[protected]" : title;
         this.type = type;
         this.mime = mime;
@@ -59,6 +63,19 @@ class SNote extends AbstractShacaEntity {
         this.shaca.notes[this.noteId] = this;
     }
 
+    initContentAccessor(){
+        if (!this.contentAccessor && this.getCredentials().length > 0) {
+            this.contentAccessor = new ContentAccessor(this);
+        }
+        if (this.contentAccessor) {
+            this.contentAccessor.update()
+        }
+    }
+
+    getParentId() {
+        return this.parentId;
+    }
+
     getParentBranches() {
         return this.parentBranches;
     }
@@ -72,7 +89,7 @@ class SNote extends AbstractShacaEntity {
     }
 
     getVisibleChildBranches() {
-        return this.getChildBranches().filter((branch) => !branch.isHidden && !branch.getNote().isLabelTruthy("shareHiddenFromTree"));
+        return this.getChildBranches().filter((branch) => !branch.isHidden && !branch.getNote().isLabelTruthy("shareHiddenFromTree") && !branch.getNote().isLabelTruthy("shareExclude"));
     }
 
     getParentNotes() {
@@ -80,7 +97,7 @@ class SNote extends AbstractShacaEntity {
     }
 
     getChildNotes() {
-        return this.children;
+        return this.children.filter((note) => !note.isLabelTruthy("shareExclude"));
     }
 
     getVisibleChildNotes() {
