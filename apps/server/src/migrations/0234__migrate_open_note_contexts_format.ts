@@ -18,8 +18,13 @@ export default () => {
             return;
         }
 
-        // Already in new format, skip
-        if (parsed[0].windowId) {
+        // Already in new format (array + windowId), skip
+        if (
+            Array.isArray(parsed) &&
+            parsed.length > 0 &&
+            typeof parsed[0] === "object" &&
+            parsed[0].windowId
+        ) {
             return;
         }
 
