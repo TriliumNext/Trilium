@@ -196,6 +196,44 @@ function updateTrayMenu() {
         return menuItems;
     }
 
+    function buildClosedWindowsMenu() {
+        const savedOpenNoteContexts = JSON.parse(optionService.getOption("openNoteContexts") || "[]");
+        const openedWindowIds = windowService.getAllWindowIds();
+        const closedWindows = savedOpenNoteContexts
+            .filter(win => !openedWindowIds.includes(win.windowId))
+            .sort((a, b) => {
+                // If closedAt is null, it indicates an abnormal closure and should be placed at the end
+                if (a.closedAt === null && b.closedAt === null) return 0;
+                if (a.closedAt === null) return 1;
+                if (b.closedAt === null) return -1;
+                // Otherwise, sort by time in descending order
+                return b.closedAt - a.closedAt;
+            });
+        const menuItems: Electron.MenuItemConstructorOptions[] = [];
+        for (const win of closedWindows) {
+            const activeCtx = win.contexts.find(c => c.active === true);
+            const activateNotePath = (activeCtx ?? win.contexts[0])?.notePath;
+            const activateNoteId = activateNotePath?.split("/").pop() ?? null;
+
+            // Get the title of the closed window
+            const rawTitle = activateNoteId ? becca_service.getNoteTitle(activateNoteId) : "";
+            let winTitle = rawTitle.length > 20 ? `${rawTitle.slice(0, 17)}...` : rawTitle;
+            const mainTabCount = win.contexts.filter(ctx => ctx.mainNtxId === null).length;
+            if (mainTabCount > 1) {
+                const tabSuffix = t("tray.tabs-total", { number: mainTabCount });
+                winTitle += ` (${tabSuffix})`;
+            }
+
+            menuItems.push({
+                label: winTitle,
+                type: "normal",
+                click: () => win.windowId !== "main" ? windowService.createExtraWindow(win.windowId, "") : windowService.createMainWindow()
+            });
+        }
+
+        return menuItems;
+    }
+
     const windowVisibilityMenuItems: Electron.MenuItemConstructorOptions[] = [];
 
     // Only call getWindowTitle if windowVisibilityMap has more than one window
@@ -257,6 +295,12 @@ function updateTrayMenu() {
             type: "submenu",
             icon: getIconPath("recents"),
             submenu: buildRecentNotesMenu()
+        },
+        {
+            label: t("tray.recently-closed-windows"),
+            type: "submenu",
+            icon: getIconPath("closed-windows"),
+            submenu: buildClosedWindowsMenu()
         },
         { type: "separator" },
         {
