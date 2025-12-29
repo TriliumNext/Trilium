@@ -56,6 +56,7 @@ function index(req: Request, res: Response) {
         appCssNoteIds: getAppCssNoteIds(),
         isDev,
         isMainWindow: view === "mobile" ? true : !req.query.extraWindow,
+        windowId: view !== "mobile" && req.query.extraWindow ? req.query.extraWindow : "main",
         isProtectedSessionAvailable: protectedSessionService.isProtectedSessionAvailable(),
         triliumVersion: packageJson.version,
         assetPath,

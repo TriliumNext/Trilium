@@ -16,28 +16,47 @@ import { RESOURCE_DIR } from "./resource_dir.js";
 // Prevent the window being garbage collected
 let mainWindow: BrowserWindow | null;
 let setupWindow: BrowserWindow | null;
-let allWindows: BrowserWindow[] = []; // // Used to store all windows, sorted by the order of focus.
 
-function trackWindowFocus(win: BrowserWindow) {
+interface WindowEntry {
+    window: BrowserWindow;
+    windowId: string; // custom window ID
+}
+let allWindowEntries: WindowEntry[] = [];
+
+function trackWindowFocus(win: BrowserWindow, windowId: string) {
     // We need to get the last focused window from allWindows. If the last window is closed, we return the previous window.
     // Therefore, we need to push the window into the allWindows array every time it gets focused.
     win.on("focus", () => {
-        allWindows = allWindows.filter(w => !w.isDestroyed() && w !== win);
-        allWindows.push(win);
+        allWindowEntries = allWindowEntries.filter(w => !w.window.isDestroyed() && w.window !== win);
+        allWindowEntries.push({ window: win, windowId: windowId });
+
         if (!optionService.getOptionBool("disableTray")) {
             electron.ipcMain.emit("reload-tray");
         }
     });
 
     win.on("closed", () => {
-        allWindows = allWindows.filter(w => !w.isDestroyed());
+        cls.wrap(() => {
+            const savedWindows = JSON.parse(
+                optionService.getOption("openNoteContexts") || "[]"
+            );
+
+            const win = savedWindows.find(w => w.windowId === windowId);
+            if (win) {
+                win.closedAt = Date.now();
+            }
+
+            optionService.setOption("openNoteContexts", JSON.stringify(savedWindows));
+        })();
+        
+        allWindowEntries = allWindowEntries.filter(w => !w.window.isDestroyed());
         if (!optionService.getOptionBool("disableTray")) {
             electron.ipcMain.emit("reload-tray");
         }
     });
 }
 
-async function createExtraWindow(extraWindowHash: string) {
+async function createExtraWindow(extraWindowId: string, extraWindowHash: string) {
     const spellcheckEnabled = optionService.getOptionBool("spellCheckEnabled");
 
     const { BrowserWindow } = await import("electron");
@@ -56,15 +75,15 @@ async function createExtraWindow(extraWindowHash: string) {
     });
 
     win.setMenuBarVisibility(false);
-    win.loadURL(`http://127.0.0.1:${port}/?extraWindow=1${extraWindowHash}`);
+    win.loadURL(`http://127.0.0.1:${port}/?extraWindow=${extraWindowId}${extraWindowHash}`);
 
     configureWebContents(win.webContents, spellcheckEnabled);
 
-    trackWindowFocus(win);
+    trackWindowFocus(win, extraWindowId);
 }
 
 electron.ipcMain.on("create-extra-window", (event, arg) => {
-    createExtraWindow(arg.extraWindowHash);
+    createExtraWindow(arg.extraWindowId, arg.extraWindowHash);
 });
 
 interface PrintOpts {
@@ -168,8 +187,8 @@ async function getBrowserWindowForPrinting(e: IpcMainEvent, notePath: string, ac
     return browserWindow;
 }
 
-async function createMainWindow(app: App) {
-    if ("setUserTasks" in app) {
+async function createMainWindow(app?: App) {
+    if (app && "setUserTasks" in app) {
         app.setUserTasks([
             {
                 program: process.execPath,
@@ -219,7 +238,7 @@ async function createMainWindow(app: App) {
     mainWindow.on("closed", () => (mainWindow = null));
 
     configureWebContents(mainWindow.webContents, spellcheckEnabled);
-    trackWindowFocus(mainWindow);
+    trackWindowFocus(mainWindow, "main");
 }
 
 function getWindowExtraOpts() {
@@ -381,11 +400,15 @@ function getMainWindow() {
 }
 
 function getLastFocusedWindow() {
-    return allWindows.length > 0 ? allWindows[allWindows.length - 1] : null;
+    return allWindowEntries.length > 0 ? allWindowEntries[allWindowEntries.length - 1]?.window : null;
 }
 
 function getAllWindows() {
-    return allWindows;
+    return allWindowEntries.map(e => e.window);
+}
+
+function getAllWindowIds(): string[] {
+    return allWindowEntries.map(e => e.windowId);
 }
 
 export default {
@@ -396,5 +419,6 @@ export default {
     registerGlobalShortcuts,
     getMainWindow,
     getLastFocusedWindow,
-    getAllWindows
+    getAllWindows,
+    getAllWindowIds
 };

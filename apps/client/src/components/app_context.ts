@@ -535,6 +535,7 @@ export type FilteredCommandNames<T extends CommandData> = keyof Pick<CommandMapp
 
 export class AppContext extends Component {
     isMainWindow: boolean;
+    windowId: string;
     components: Component[];
     beforeUnloadListeners: (WeakRef<BeforeUploadListener> | (() => boolean))[];
     tabManager!: TabManager;
@@ -543,10 +544,11 @@ export class AppContext extends Component {
 
     lastSearchString?: string;
 
-    constructor(isMainWindow: boolean) {
+    constructor(isMainWindow: boolean, windowId: string) {
         super();
 
         this.isMainWindow = isMainWindow;
+        this.windowId = windowId;
         // non-widget/layout components needed for the application
         this.components = [];
         this.beforeUnloadListeners = [];
@@ -676,8 +678,7 @@ export class AppContext extends Component {
         this.beforeUnloadListeners = this.beforeUnloadListeners.filter(l => l !== listener);
     }
 }
-
-const appContext = new AppContext(window.glob.isMainWindow);
+const appContext = new AppContext(window.glob.isMainWindow, window.glob.windowId);
 
 // we should save all outstanding changes before the page/app is closed
 $(window).on("beforeunload", () => {
