@@ -3,7 +3,8 @@ import { HTMLAttributes } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import link, { calculateHash, ViewScope } from "../../services/link";
-import { useImperativeSearchHighlighlighting, useNote, useNoteColorClass, useNoteIcon, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent } from "./hooks";
+import tree from "../../services/tree";
+import { useImperativeSearchHighlighlighting, useNote, useNoteColorClass, useNoteIcon, useNoteLabelBoolean, useNoteTitle, useTriliumEvent } from "./hooks";
 import Icon from "./Icon";
 
 interface NoteLinkOpts {
@@ -97,30 +98,27 @@ interface NewNoteLinkProps extends Pick<HTMLAttributes<HTMLAnchorElement>, "onCo
 }
 
 export function NewNoteLink({ notePath, viewScope, noContextMenu, showNoteIcon, noPreview, ...linkProps }: NewNoteLinkProps) {
-    const noteId = notePath.split("/").at(-1);
+
+    const { noteId, parentNoteId } = tree.getNoteIdAndParentIdFromUrl(notePath);
     const note = useNote(noteId);
-    const title = useNoteProperty(note, "title");
+
+    const title = useNoteTitle(noteId, parentNoteId);
     const icon = useNoteIcon(showNoteIcon ? note : null);
     const colorClass = useNoteColorClass(note);
     const [ archived ] = useNoteLabelBoolean(note, "archived");
 
     return (
-        <span>
-            <span>
-                {icon && <Icon icon={icon} />}
-
-                <a
-                    className={clsx("tn-link", colorClass, {
-                        "no-tooltip-preview": noPreview,
-                        archived
-                    })}
-                    href={calculateHash({ notePath, viewScope })}
-                    data-no-context-menu={noContextMenu}
-                    {...linkProps}
-                >
-                    {title}
-                </a>
-            </span>
-        </span>
+        <a
+            className={clsx("tn-link", colorClass, {
+                "no-tooltip-preview": noPreview,
+                archived
+            })}
+            href={calculateHash({ notePath, viewScope })}
+            data-no-context-menu={noContextMenu}
+            {...linkProps}
+        >
+            {icon && <><Icon icon={icon} />&nbsp;</>}
+            {title}
+        </a>
     );
 }

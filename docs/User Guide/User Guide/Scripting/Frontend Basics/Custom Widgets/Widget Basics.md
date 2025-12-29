@@ -108,11 +108,6 @@ class MyWidget extends api.BasicWidget {
 module.exports = new MyWidget();
 ```
 
-`parentWidget()` can be given the following values:
-
-*   `left-pane` - This renders the widget on the left side of the screen where the note tree lives.
-*   `center-pane` - This renders the widget in the center of the layout in the same location that notes and splits appear.
-*   `note-detail-pane` - This renders the widget _with_ the note in the center pane. This means it can appear multiple times with splits.
-*   `right-pane` - This renders the widget to the right of any opened notes.
+For the list of possible values for `parentWidget()`, see <a class="reference-link" href="../Custom%20Widgets.md">Custom Widgets</a>. 
 
 [Reload](../../../Troubleshooting/Refreshing%20the%20application.md) the application one last time. When you click the button, a "Hello World!" message should appear, confirming that your widget is fully functional.

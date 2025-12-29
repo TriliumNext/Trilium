@@ -16,6 +16,8 @@
     }
 
     a.tn-link {
+        --link-hover-background: var(--icon-button-hover-background);
+
         color: var(--custom-color, inherit);
 
         &:hover {
@@ -33,7 +35,7 @@
         align-items: center;
         min-width: 0;
 
-        .bx {
+        .tn-icon {
             margin-inline: 6px;
         }
 
@@ -46,6 +48,19 @@
             overflow: hidden;
             display: block;
             flex-shrink: 2;
+            font-weight: normal;
+        }
+    }
+
+    .icon-action {
+        font-size: .9rem !important;
+
+        &.breadcrumb-separator {
+            transform: translateY(8%);
+
+            &::before {
+                opacity: .75;
+            }
         }
     }
 
@@ -70,6 +85,13 @@
         display: block;
         max-width: 300px;
         color: var(--custom-color, inherit) !important;
+    }
+
+    .dropdown.breadcrumb-child-list {
+        /* Icon */
+        li > span:first-child {
+            opacity: .75;
+        };
     }
 
     a.breadcrumb-last-item,

@@ -19,6 +19,7 @@
         platform: "<%= platform %>",
         hasNativeTitleBar: <%= hasNativeTitleBar %>,
         TRILIUM_SAFE_MODE: <%= !!process.env.TRILIUM_SAFE_MODE %>,
-        isRtl: <%= !!currentLocale.rtl %>
+        isRtl: <%= !!currentLocale.rtl %>,
+        iconRegistry: <%- JSON.stringify(iconRegistry) %>
     };
 </script>

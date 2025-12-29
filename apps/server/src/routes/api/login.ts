@@ -108,7 +108,7 @@ function loginSync(req: Request) {
 
     const givenHash = req.body.hash;
 
-    if (expectedHash !== givenHash) {
+    if (!utils.constantTimeCompare(expectedHash, givenHash)) {
         return [400, { message: "Sync login credentials are incorrect. It looks like you're trying to sync two different initialized documents which is not possible." }];
     }
 

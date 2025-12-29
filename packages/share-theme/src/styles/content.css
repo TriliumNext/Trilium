@@ -50,7 +50,7 @@
     height: auto;
 }
 
-a.reference-link > span > .bx {
+a.reference-link > span > .tn-icon {
     margin-inline-end: 3px;
 }
 

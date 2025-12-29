@@ -6,6 +6,7 @@ import { lazy, Suspense } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
+import type { PrintReport } from "../../print";
 import froca from "../../services/froca";
 import { subscribeToMessages, unsubscribeToMessage as unsubscribeFromMessage } from "../../services/ws";
 import { useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent } from "../react/hooks";
@@ -21,7 +22,7 @@ interface NoteListProps {
     ntxId: string | null | undefined;
     media: ViewModeMedia;
     viewType: ViewTypeOptions | undefined;
-    onReady?: () => void;
+    onReady?: (data: PrintReport) => void;
     onProgressChanged?(progress: number): void;
 }
 
@@ -145,9 +146,9 @@ export function useNoteViewType(note?: FNote | null): ViewTypeOptions | undefine
     } else if (!(allViewTypes as readonly string[]).includes(viewType || "")) {
         // when not explicitly set, decide based on the note type
         return note.type === "search" ? "list" : "grid";
-    } 
+    }
     return viewType as ViewTypeOptions;
-    
+
 }
 
 export function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOptions | undefined, ntxId: string | null | undefined) {
@@ -166,9 +167,9 @@ export function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOpt
     async function getNoteIds(note: FNote) {
         if (directChildrenOnly) {
             return await note.getChildNoteIdsWithArchiveFiltering(includeArchived);
-        } 
+        }
         return await note.getSubtreeNoteIds(includeArchived);
-        
+
     }
 
     // Refresh on note switch.

@@ -82,7 +82,7 @@ const TPL = /*html*/`
     <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
         <h5 class="attr-detail-title">${t("attribute_detail.attr_detail_title")}</h5>
 
-        <span class="bx bx-x close-attr-detail-button tn-tool-button" title="${t("attribute_detail.close_button_title")}"></span>
+        <button class="close-attr-detail-button icon-action bx bx-x" title="${t("attribute_detail.close_button_title")}"></button>
     </div>
 
     <div class="attr-is-owned-by">${t("attribute_detail.attr_is_owned_by")}</div>

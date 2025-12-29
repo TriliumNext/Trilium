@@ -1,5 +1,5 @@
 import becca from "../becca/becca.js";
-import { fromBase64, randomSecureToken } from "./utils.js";
+import { fromBase64, randomSecureToken, constantTimeCompare } from "./utils.js";
 import BEtapiToken from "../becca/entities/betapi_token.js";
 import crypto from "crypto";
 
@@ -83,15 +83,16 @@ function isValidAuthHeader(auth: string | undefined) {
             return false;
         }
 
-        return etapiToken.tokenHash === authTokenHash;
+        return constantTimeCompare(etapiToken.tokenHash, authTokenHash);
     } else {
+        // Check ALL tokens to prevent timing attacks - do not short-circuit
+        let isValid = false;
         for (const etapiToken of becca.getEtapiTokens()) {
-            if (etapiToken.tokenHash === authTokenHash) {
-                return true;
+            if (constantTimeCompare(etapiToken.tokenHash, authTokenHash)) {
+                isValid = true;
             }
         }
-
-        return false;
+        return isValid;
     }
 }
 

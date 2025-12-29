@@ -1,32 +1,35 @@
-import { t } from "i18next";
-import { TypeWidgetProps } from "./type_widget";
 import "./Attachment.css";
-import NoteLink from "../react/NoteLink";
-import Button from "../react/Button";
-import { useContext, useEffect, useRef, useState } from "preact/hooks";
-import { ParentComponent, refToJQuerySelector } from "../react/react_utils";
-import HelpButton from "../react/HelpButton";
-import FAttachment from "../../entities/fattachment";
-import Alert from "../react/Alert";
-import utils from "../../services/utils";
-import content_renderer from "../../services/content_renderer";
-import { useTriliumEvent } from "../react/hooks";
-import froca from "../../services/froca";
-import Dropdown from "../react/Dropdown";
-import Icon from "../react/Icon";
-import { FormDropdownDivider, FormListItem } from "../react/FormList";
-import open from "../../services/open";
-import toast from "../../services/toast";
-import link from "../../services/link";
-import image from "../../services/image";
-import FormFileUpload from "../react/FormFileUpload";
-import server from "../../services/server";
-import dialog from "../../services/dialog";
-import ws from "../../services/ws";
-import appContext from "../../components/app_context";
+
 import { ConvertAttachmentToNoteResponse } from "@triliumnext/commons";
-import options from "../../services/options";
+import { t } from "i18next";
+import { useContext, useEffect, useRef, useState } from "preact/hooks";
+
+import appContext from "../../components/app_context";
+import FAttachment from "../../entities/fattachment";
 import FNote from "../../entities/fnote";
+import content_renderer from "../../services/content_renderer";
+import dialog from "../../services/dialog";
+import froca from "../../services/froca";
+import image from "../../services/image";
+import link from "../../services/link";
+import open from "../../services/open";
+import options from "../../services/options";
+import server from "../../services/server";
+import toast from "../../services/toast";
+import utils from "../../services/utils";
+import ws from "../../services/ws";
+import Admonition from "../react/Admonition";
+import Alert from "../react/Alert";
+import Button from "../react/Button";
+import Dropdown from "../react/Dropdown";
+import FormFileUpload from "../react/FormFileUpload";
+import { FormDropdownDivider, FormListItem } from "../react/FormList";
+import HelpButton from "../react/HelpButton";
+import { useTriliumEvent } from "../react/hooks";
+import Icon from "../react/Icon";
+import NoteLink from "../react/NoteLink";
+import { ParentComponent, refToJQuerySelector } from "../react/react_utils";
+import { TypeWidgetProps } from "./type_widget";
 
 /**
  * Displays the full list of attachments of a note and allows the user to interact with them.
@@ -34,20 +37,23 @@ import FNote from "../../entities/fnote";
 export function AttachmentList({ note }: TypeWidgetProps) {
     const attachments = useAttachments(note);
 
+    // TODO: Extract inline styles to CSS
     return (
-        <>
+        <div style={{display: "flex", flexDirection: "column", height: "100%"}}>
             <AttachmentListHeader noteId={note.noteId} />
+            <div style={{overflow: "auto", flexGrow: 1}}>
 
-            <div className="attachment-list-wrapper">
-                {attachments.length ? (
-                    attachments.map(attachment => <AttachmentInfo key={attachment.attachmentId} attachment={attachment} />)
-                ) : (
-                    <Alert type="info">
-                        {t("attachment_list.no_attachments")}
-                    </Alert>
-                )}
+                <div className="attachment-list-wrapper">
+                    {attachments.length ? (
+                        attachments.map(attachment => <AttachmentInfo key={attachment.attachmentId} attachment={attachment} />)
+                    ) : (
+                        <Alert type="info">
+                            {t("attachment_list.no_attachments")}
+                        </Alert>
+                    )}
+                </div>
             </div>
-        </>
+        </div>
     );
 }
 
@@ -91,7 +97,7 @@ function AttachmentListHeader({ noteId }: { noteId: string }) {
                 />
             </div>
         </div>
-    )
+    );
 }
 
 /**
@@ -130,7 +136,7 @@ export function AttachmentDetail({ note, viewScope }: TypeWidgetProps) {
                 )}
             </div>
         </>
-    )
+    );
 }
 
 function AttachmentInfo({ attachment, isFullDetail }: { attachment: FAttachment, isFullDetail?: boolean }) {
@@ -189,33 +195,37 @@ function AttachmentInfo({ attachment, isFullDetail }: { attachment: FAttachment,
                         ) : (attachment.title)}
                     </h4>
                     <div className="attachment-details">
-                        {t("attachment_detail_2.role_and_size", { role: attachment.role, size: utils.formatSize(attachment.contentLength) })}
+                        {t("attachment_detail_2.role_and_size", {
+                            role: attachment.role,
+                            size: utils.formatSize(attachment.contentLength),
+                            mimeType: attachment.mime
+                        })}
                     </div>
-                    <div style="flex: 1 1;"></div>
+                    <div style="flex: 1 1;" />
                 </div>
 
                 {attachment.utcDateScheduledForErasureSince && <DeletionAlert utcDateScheduledForErasureSince={attachment.utcDateScheduledForErasureSince} />}
                 <div ref={contentWrapper} className="attachment-content-wrapper" />
             </div>
         </div>
-    )
+    );
 }
 
 function DeletionAlert({ utcDateScheduledForErasureSince }: { utcDateScheduledForErasureSince: string }) {
     const scheduledSinceTimestamp = utils.parseDate(utcDateScheduledForErasureSince)?.getTime();
     // use default value (30 days in seconds) from options_init as fallback, in case getInt returns null
-    const intervalMs = options.getInt("eraseUnusedAttachmentsAfterSeconds") || 2592000 * 1000;
+    const intervalMs = (options.getInt("eraseUnusedAttachmentsAfterSeconds") || 2592000) * 1000;
     const deletionTimestamp = scheduledSinceTimestamp + intervalMs;
     const willBeDeletedInMs = deletionTimestamp - Date.now();
 
     return (
-        <Alert className="attachment-deletion-warning" type="info">
+        <Admonition className="attachment-deletion-warning" type="warning">
             { willBeDeletedInMs >= 60000
-            ? t("attachment_detail_2.will_be_deleted_in", { time: utils.formatTimeInterval(willBeDeletedInMs) })
-            : t("attachment_detail_2.will_be_deleted_soon")}
+                ? t("attachment_detail_2.will_be_deleted_in", { time: utils.formatTimeInterval(willBeDeletedInMs) })
+                : t("attachment_detail_2.will_be_deleted_soon")}
             {t("attachment_detail_2.deletion_reason")}
-        </Alert>
-    )
+        </Admonition>
+    );
 }
 
 function AttachmentActions({ attachment, copyAttachmentLinkToClipboard }: { attachment: FAttachment, copyAttachmentLinkToClipboard: () => void }) {
@@ -313,5 +323,5 @@ function AttachmentActions({ attachment, copyAttachmentLinkToClipboard }: { atta
                 />
             </Dropdown>
         </div>
-    )
+    );
 }

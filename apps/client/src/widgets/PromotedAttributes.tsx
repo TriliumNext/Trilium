@@ -13,6 +13,7 @@ import debounce from "../services/debounce";
 import { t } from "../services/i18n";
 import { DefinitionObject, extractAttributeDefinitionTypeAndName, LabelType } from "../services/promoted_attribute_definition_parser";
 import server from "../services/server";
+import { randomString } from "../services/utils";
 import ws from "../services/ws";
 import { useNoteContext, useNoteLabel, useTriliumEvent, useUniqueName } from "./react/hooks";
 import NoteAutocomplete from "./react/NoteAutocomplete";
@@ -116,7 +117,7 @@ export function usePromotedAttributeData(note: FNote | null | undefined, compone
                     valueAttr.attributeId = "";
                 }
 
-                const uniqueId = `${note.noteId}-${valueAttr.name}-${i}`;
+                const uniqueId = randomString();
                 cells.push({  definitionAttr, definition, valueAttr, valueName, uniqueId });
             }
         }
@@ -319,6 +320,7 @@ function MultiplicityCell({ cell, cells, setCells, setCellToFocus, note, compone
                     const index = cells.indexOf(cell);
                     const newCell: Cell = {
                         ...cell,
+                        uniqueId: randomString(),
                         valueAttr: {
                             attributeId: "",
                             type: cell.valueAttr.type,

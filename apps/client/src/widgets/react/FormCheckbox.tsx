@@ -1,8 +1,8 @@
 import { Tooltip } from "bootstrap";
-import { useEffect, useRef, useMemo, useCallback } from "preact/hooks";
+import { ComponentChildren, CSSProperties } from "preact";
+import { useCallback, useEffect, useMemo, useRef } from "preact/hooks";
+
 import { escapeQuotes } from "../../services/utils";
-import { ComponentChildren } from "preact";
-import { CSSProperties, memo } from "preact/compat";
 import { useUniqueName } from "./hooks";
 
 interface FormCheckboxProps {
@@ -18,30 +18,30 @@ interface FormCheckboxProps {
     containerStyle?: CSSProperties;
 }
 
-const FormCheckbox = memo(({ name, disabled, label, currentValue, onChange, hint, containerStyle }: FormCheckboxProps) => {    
+export default function FormCheckbox({ name, disabled, label, currentValue, onChange, hint, containerStyle }: FormCheckboxProps) {
     const labelRef = useRef<HTMLLabelElement>(null);
     const id = useUniqueName(name);
 
     useEffect(() => {
         if (!hint || !labelRef.current) return;
-        
+
         const tooltipInstance = Tooltip.getOrCreateInstance(labelRef.current, {
             html: true,
-            template: '<div class="tooltip tooltip-top" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>'
+            customClass: "tooltip-top"
         });
-        
-        return () => tooltipInstance?.dispose();
-    }, [hint]); // Proper dependency
 
-    const labelStyle = useMemo(() => 
+        return () => tooltipInstance?.dispose();
+    }, [hint]);
+
+    const labelStyle = useMemo(() =>
         hint ? { textDecoration: "underline dotted var(--main-text-color)" } : undefined,
-        [hint]
+    [hint]
     );
-    
+
     const handleChange = useCallback((e: Event) => {
         onChange((e.target as HTMLInputElement).checked);
     }, [onChange]);
-    
+
     const titleText = useMemo(() => hint ? escapeQuotes(hint) : undefined, [hint]);
 
     return (
@@ -65,6 +65,4 @@ const FormCheckbox = memo(({ name, disabled, label, currentValue, onChange, hint
             </label>
         </div>
     );
-});
-
-export default FormCheckbox;
+}

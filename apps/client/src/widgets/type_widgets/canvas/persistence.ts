@@ -1,12 +1,13 @@
+import { exportToSvg, getSceneVersion } from "@excalidraw/excalidraw";
+import { ExcalidrawElement, NonDeletedExcalidrawElement } from "@excalidraw/excalidraw/element/types";
+import { AppState, BinaryFileData, ExcalidrawImperativeAPI, ExcalidrawProps, LibraryItem } from "@excalidraw/excalidraw/types";
 import { RefObject } from "preact";
+import { useRef } from "preact/hooks";
+
 import NoteContext from "../../../components/note_context";
 import FNote from "../../../entities/fnote";
-import { AppState, BinaryFileData, ExcalidrawImperativeAPI, ExcalidrawProps, LibraryItem } from "@excalidraw/excalidraw/types";
-import { useRef } from "preact/hooks";
-import { SavedData, useEditorSpacedUpdate } from "../../react/hooks";
-import { ExcalidrawElement, NonDeletedExcalidrawElement } from "@excalidraw/excalidraw/element/types";
-import { exportToSvg, getSceneVersion } from "@excalidraw/excalidraw";
 import server from "../../../services/server";
+import { SavedData, useEditorSpacedUpdate } from "../../react/hooks";
 
 interface AttachmentMetadata {
     title: string;
@@ -39,6 +40,7 @@ export default function useCanvasPersistence(note: FNote, noteContext: NoteConte
     const spacedUpdate = useEditorSpacedUpdate({
         note,
         noteContext,
+        noteType: "canvas",
         onContentChange(newContent) {
             const api = apiRef.current;
             if (!api) return;
@@ -66,7 +68,7 @@ export default function useCanvasPersistence(note: FNote, noteContext: NoteConte
             // load the library state
             loadLibrary(note).then(({ libraryItems, metadata }) => {
                 // Update the library and save to independent variables
-                api.updateLibrary({ libraryItems: libraryItems, merge: false });
+                api.updateLibrary({ libraryItems, merge: false });
 
                 // save state of library to compare it to the new state later.
                 libraryCache.current = libraryItems;
@@ -158,7 +160,7 @@ export default function useCanvasPersistence(note: FNote, noteContext: NoteConte
             spacedUpdate.resetUpdateTimer();
             spacedUpdate.scheduleUpdate();
         }
-    }
+    };
 }
 
 async function getData(api: ExcalidrawImperativeAPI) {
@@ -202,7 +204,7 @@ async function getData(api: ExcalidrawImperativeAPI) {
     return {
         content,
         svg: svgString
-    }
+    };
 }
 
 function loadData(api: ExcalidrawImperativeAPI, content: CanvasContent, theme: AppState["theme"]) {

@@ -24,7 +24,6 @@
   ],
   "license": "Apache-2.0",
   "dependencies": {
-    "boxicons": "2.1.4",
     "fuse.js": "7.1.0",
     "katex": "0.16.27",
     "mermaid": "11.12.2"
@@ -32,8 +31,8 @@
   "devDependencies": {
     "@digitak/esrun": "3.2.26",
     "@triliumnext/ckeditor5": "workspace:*",
-    "@typescript-eslint/eslint-plugin": "8.50.0",
-    "@typescript-eslint/parser": "8.50.0",
+    "@typescript-eslint/eslint-plugin": "8.50.1",
+    "@typescript-eslint/parser": "8.50.1",
     "dotenv": "17.2.3",
     "esbuild": "0.27.2",
     "eslint": "9.39.2",

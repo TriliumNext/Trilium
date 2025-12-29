@@ -108,14 +108,6 @@ button.global-menu-button {
     margin-inline-end: 5px;
 }
 
-.global-menu .dropdown-item .bx {
-    position: relative;
-    top: 3px;
-    font-size: 120%;
-    margin-inline-end: 6px;
-}
-
-
 .global-menu-button-wrapper:hover .global-menu-button-update-available-button {
     opacity: 1;
 }

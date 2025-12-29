@@ -5,6 +5,7 @@ import { useEffect, useState } from "preact/hooks";
 import FNote from "../entities/fnote";
 import attributes from "../services/attributes";
 import { t } from "../services/i18n";
+import { isElectron } from "../services/utils";
 import HelpButton from "./react/HelpButton";
 import { useNoteContext, useTriliumEvent, useTriliumOption } from "./react/hooks";
 import InfoBar from "./react/InfoBar";
@@ -68,7 +69,11 @@ export function useShareInfo(note: FNote | null | undefined) {
         }
     });
 
-    return { link, linkHref, isSharedExternally: !!syncServerHost };
+    return {
+        link,
+        linkHref,
+        isSharedExternally: !isElectron() || !!syncServerHost    // on server we can't reliably detect if the note is shared locally or available publicly.
+    };
 }
 
 function getShareId(note: FNote) {

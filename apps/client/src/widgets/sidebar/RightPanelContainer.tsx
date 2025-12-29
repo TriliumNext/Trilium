@@ -6,12 +6,12 @@ import { VNode } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 
 import appContext from "../../components/app_context";
+import { WidgetsByParent } from "../../services/bundle";
 import { t } from "../../services/i18n";
 import options from "../../services/options";
 import { DEFAULT_GUTTER_SIZE } from "../../services/resizer";
-import BasicWidget from "../basic_widget";
 import Button from "../react/Button";
-import { useActiveNoteContext, useLegacyWidget, useNoteProperty, useTriliumOptionBool, useTriliumOptionJson } from "../react/hooks";
+import { useActiveNoteContext, useLegacyWidget, useNoteProperty, useTriliumEvent, useTriliumOptionBool, useTriliumOptionJson } from "../react/hooks";
 import Icon from "../react/Icon";
 import LegacyRightPanelWidget from "../right_panel_widget";
 import HighlightsList from "./HighlightsList";
@@ -23,13 +23,16 @@ const MIN_WIDTH_PERCENT = 5;
 interface RightPanelWidgetDefinition {
     el: VNode;
     enabled: boolean;
-    position: number;
+    position?: number;
 }
 
-export default function RightPanelContainer({ customWidgets }: { customWidgets: BasicWidget[] }) {
+export default function RightPanelContainer({ widgetsByParent }: { widgetsByParent: WidgetsByParent }) {
     const [ rightPaneVisible, setRightPaneVisible ] = useTriliumOptionBool("rightPaneVisible");
-    const items = useItems(rightPaneVisible, customWidgets);
+    const items = useItems(rightPaneVisible, widgetsByParent);
     useSplit(rightPaneVisible);
+    useTriliumEvent("toggleRightPane", () => {
+        setRightPaneVisible(!rightPaneVisible);
+    });
 
     return (
         <div id="right-pane">
@@ -51,7 +54,7 @@ export default function RightPanelContainer({ customWidgets }: { customWidgets: 
     );
 }
 
-function useItems(rightPaneVisible: boolean, customWidgets: BasicWidget[]) {
+function useItems(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent) {
     const { note } = useActiveNoteContext();
     const noteType = useNoteProperty(note, "type");
     const [ highlightsList ] = useTriliumOptionJson<string[]>("highlightsList");
@@ -61,23 +64,38 @@ function useItems(rightPaneVisible: boolean, customWidgets: BasicWidget[]) {
         {
             el: <TableOfContents />,
             enabled: (noteType === "text" || noteType === "doc"),
-            position: 10,
         },
         {
             el: <HighlightsList />,
             enabled: noteType === "text" && highlightsList.length > 0,
-            position: 20,
         },
-        ...customWidgets.map((w, i) => ({
-            el: <CustomWidget key={w._noteId} originalWidget={w as LegacyRightPanelWidget} />,
+        ...widgetsByParent.getLegacyWidgets("right-pane").map((widget) => ({
+            el: <CustomLegacyWidget key={widget._noteId} originalWidget={widget as LegacyRightPanelWidget} />,
             enabled: true,
-            position: w.position ?? 30 + i * 10
-        }))
+            position: widget.position
+        })),
+        ...widgetsByParent.getPreactWidgets("right-pane").map((widget) => {
+            const El = widget.render;
+            return {
+                el: <El />,
+                enabled: true,
+                position: widget.position
+            };
+        })
     ];
+
+    // Assign a position to items that don't have one yet.
+    let pos = 10;
+    for (const definition of definitions) {
+        if (!definition.position) {
+            definition.position = pos;
+            pos += 10;
+        }
+    }
 
     return definitions
         .filter(e => e.enabled)
-        .toSorted((a, b) => a.position - b.position)
+        .toSorted((a, b) => (a.position ?? 10) - (b.position ?? 10))
         .map(e => e.el);
 }
 
@@ -99,7 +117,7 @@ function useSplit(visible: boolean) {
     }, [ visible ]);
 }
 
-function CustomWidget({ originalWidget }: { originalWidget: LegacyRightPanelWidget }) {
+function CustomLegacyWidget({ originalWidget }: { originalWidget: LegacyRightPanelWidget }) {
     const containerRef = useRef<HTMLDivElement>(null);
 
     return (

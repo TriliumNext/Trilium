@@ -1,9 +1,10 @@
-import { Archiver } from "archiver";
-import type { default as NoteMeta, NoteMetaFile } from "../../meta/note_meta.js";
-import type BNote from "../../../becca/entities/bnote.js";
-import type BBranch from "../../../becca/entities/bbranch.js";
-import mimeTypes from "mime-types";
 import { NoteType } from "@triliumnext/commons";
+import { Archiver } from "archiver";
+import mimeTypes from "mime-types";
+
+import type BBranch from "../../../becca/entities/bbranch.js";
+import type BNote from "../../../becca/entities/bnote.js";
+import type { default as NoteMeta, NoteMetaFile } from "../../meta/note_meta.js";
 
 type RewriteLinksFn = (content: string, noteMeta: NoteMeta) => string;
 
@@ -14,6 +15,8 @@ export interface AdvancedExportOptions {
      * If `true`, then only the note's content will be kept. If `false` (default), then each page will have its own <html> template.
      */
     skipHtmlTemplate?: boolean;
+
+    skipExtraFiles?: boolean;
 
     /**
      * Provides a custom function to rewrite the links found in HTML or Markdown notes. This method is called for every note imported, if it's of the right type.
@@ -75,15 +78,15 @@ export abstract class ZipExportProvider {
         } else if (existingExtension.length > 0) {
             // if the page already has an extension, then we'll just keep it
             return null;
-        } else {
-            if (mime?.toLowerCase()?.trim() === "image/jpg") {
-                return "jpg";
-            } else if (mime?.toLowerCase()?.trim() === "text/mermaid") {
-                return "txt";
-            } else {
-                return mimeTypes.extension(mime) || "dat";
-            }
         }
+        if (mime?.toLowerCase()?.trim() === "image/jpg") {
+            return "jpg";
+        } else if (mime?.toLowerCase()?.trim() === "text/mermaid") {
+            return "txt";
+        }
+        return mimeTypes.extension(mime) || "dat";
+
+
     }
 
 }

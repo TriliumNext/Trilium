@@ -18,6 +18,11 @@ div.note-title-widget {
     line-height: 1;
     padding-block: 0;
     padding-inline: var(--note-title-padding-inline);
+
+    &::selection {
+        color: var(--main-text-color);
+        background: var(--selection-background-color);
+    }
 }
 
 .note-title-widget input.note-title[readonly] {
@@ -37,7 +42,7 @@ body.experimental-feature-new-layout {
     .title-row {
         container-type: size;
         transition: border 400ms ease-out;
-        
+
         &.note-split-title {
             border-bottom: 1px solid var(--main-border-color);
 
@@ -56,13 +61,13 @@ body.experimental-feature-new-layout {
             --note-icon-container-padding-size: 6px;
             margin-inline: 0;
         }
-        
+
         .note-title-widget {
             --note-title-size: 18px;
             --note-title-padding-inline: 0;
         }
 
-        @container (max-width: 700px) {
+        @container (max-width: 600px) {
             .note-title-widget {
                 --note-title-size: 1.25rem;
                 --note-title-padding-inline: 4px;
@@ -80,14 +85,14 @@ body.experimental-feature-new-layout {
             .ext-badge .text {
                 display: none;
             }
-        
+
             .ext-badge {
                 --size: 2em;
                 width: var(--size);
                 height: var(--size);
                 padding: 0;
 
-                .bx {
+                .tn-icon {
                     opacity: 1;
                     margin: 0;
                 }

@@ -1,0 +1,30 @@
+{
+	"version": 8,
+	"name": "versatiles-empty",
+	"metadata": {
+		"license": "https://creativecommons.org/publicdomain/zero/1.0/"
+	},
+	"glyphs": "https://tiles.versatiles.org/assets/glyphs/{fontstack}/{range}.pbf",
+	"sprite": [
+		{
+			"id": "basics",
+			"url": "https://tiles.versatiles.org/assets/sprites/basics/sprites"
+		}
+	],
+	"sources": {
+		"versatiles-shortbread": {
+			"attribution": "© <a href=\"https://www.openstreetmap.org/copyright\">OpenStreetMap</a> contributors",
+			"tiles": [
+				"https://tiles.versatiles.org/tiles/osm/{z}/{x}/{y}"
+			],
+			"type": "vector",
+			"scheme": "xyz",
+			"bounds": [ -180, -85.0511287798066, 180, 85.0511287798066 ],
+			"minzoom": 0,
+			"maxzoom": 14
+		}
+	},
+	"layers": [
+		
+	]
+}

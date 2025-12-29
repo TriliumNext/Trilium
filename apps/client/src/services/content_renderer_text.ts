@@ -1,13 +1,13 @@
-import { formatCodeBlocks } from "./syntax_highlight.js";
-import { getMermaidConfig } from "./mermaid.js";
-import { renderMathInElement } from "./math.js";
-import FNote from "../entities/fnote.js";
 import FAttachment from "../entities/fattachment.js";
-import tree from "./tree.js";
+import FNote from "../entities/fnote.js";
+import { default as content_renderer, type RenderOptions } from "./content_renderer.js";
 import froca from "./froca.js";
 import link from "./link.js";
+import { renderMathInElement } from "./math.js";
+import { getMermaidConfig } from "./mermaid.js";
+import { formatCodeBlocks } from "./syntax_highlight.js";
+import tree from "./tree.js";
 import { isHtmlEmpty } from "./utils.js";
-import { default as content_renderer, type RenderOptions } from "./content_renderer.js";
 
 export default async function renderText(note: FNote | FAttachment, $renderedContent: JQuery<HTMLElement>, options: RenderOptions = {}) {
     // entity must be FNote
@@ -22,12 +22,14 @@ export default async function renderText(note: FNote | FAttachment, $renderedCon
         }
 
         const getNoteIdFromLink = (el: HTMLElement) => tree.getNoteIdFromUrl($(el).attr("href") || "");
-        const referenceLinks = $renderedContent.find("a.reference-link");
+        const referenceLinks = $renderedContent.find<HTMLAnchorElement>("a.reference-link");
         const noteIdsToPrefetch = referenceLinks.map((i, el) => getNoteIdFromLink(el));
         await froca.getNotes(noteIdsToPrefetch);
 
         for (const el of referenceLinks) {
-            await link.loadReferenceLinkTitle($(el));
+            const innerSpan = document.createElement("span");
+            await link.loadReferenceLinkTitle($(innerSpan), el.href);
+            el.replaceChildren(innerSpan);
         }
 
         await rewriteMermaidDiagramsInContainer($renderedContent[0] as HTMLDivElement);

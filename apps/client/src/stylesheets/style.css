@@ -1,3 +1,5 @@
+@import "./boxicons-compat.css";
+
 @font-face {
     font-family: Montserrat;
     src: url(../fonts/Montserrat-Light.ttf);
@@ -436,7 +438,6 @@ body.desktop .tabulator-popup-container,
     opacity: 1;
 }
 
-.dropdown-menu a:hover:not(.disabled),
 .dropdown-item:hover:not(.disabled, .dropdown-container-item),
 .tabulator-menu-item:hover,
 :root .excalidraw .context-menu .context-menu-item:hover {
@@ -458,6 +459,7 @@ body.desktop .tabulator-popup-container,
 }
 
 body.desktop .dropdown-menu:not(#context-menu-container) .dropdown-item,
+body.desktop .dropdown-menu .dropdown-toggle,
 body #context-menu-container .dropdown-item > span,
 body.mobile .dropdown .dropdown-submenu > span {
     display: flex;
@@ -717,7 +719,6 @@ table.promoted-attributes-in-tooltip th {
 .tooltip {
     font-size: var(--main-font-size) !important;
     z-index: calc(var(--ck-z-panel) - 1) !important;
-    white-space: pre-wrap;
 }
 
 .tooltip.tooltip-top {
@@ -1127,11 +1128,6 @@ a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href
 .card {
     color: inherit !important;
     border-color: var(--main-border-color) !important;
-}
-
-.bx-empty {
-    width: 1em;
-    display: inline-block;
 }
 
 .modal-header {
@@ -1800,7 +1796,7 @@ button.close:hover {
     display: none;
 }
 
-.reference-link .bx {
+.reference-link .tn-icon {
     position: relative;
     top: 1px;
     margin-inline-end: 3px;
@@ -1952,6 +1948,10 @@ body.electron.platform-darwin:not(.native-titlebar) .tab-row-container {
     padding-inline-start: 1em;
 }
 
+.tab-row-widget {
+    contain: inline-size;
+}
+
 #tab-row-left-spacer {
     width: env(titlebar-area-x);
     -webkit-app-region: drag;
@@ -1961,7 +1961,7 @@ body.electron.platform-darwin:not(.native-titlebar):not(.full-screen) #tab-row-l
     width: 80px;
 }
 
-.tab-row-container {
+body.electron:not(.platform-darwin) .tab-row-container {
     padding-inline-end: calc(100vw - env(titlebar-area-width, 100vw));
 }
 
@@ -2012,8 +2012,10 @@ body.zen .shared-info-widget,
 body.zen .ribbon-container:not(:has(.classic-toolbar-widget)),
 body.zen .ribbon-container:has(.classic-toolbar-widget) .ribbon-top-row,
 body.zen .ribbon-container .ribbon-body:not(:has(.classic-toolbar-widget)),
-body.zen .note-icon-widget,
 body.zen .title-row .icon-action,
+body.zen .note-badges > *:not(.read-only-badge),
+body.zen .ribbon-button-container,
+body.zen .inline-title,
 body.zen .promoted-attributes-widget,
 body.zen .floating-buttons-children > *:not(.bx-edit-alt),
 body.zen .action-button,
@@ -2036,11 +2038,11 @@ body.zen #launcher-pane {
 }
 
 body.zen .title-row {
-    display: block !important;
     height: unset !important;
     -webkit-app-region: drag;
     padding-inline-start: env(titlebar-area-x);
     padding-inline-end: calc(100vw - env(titlebar-area-width, 100vw) + 2.5em);
+    border-bottom: none !important;
 }
 
 body.zen .floating-buttons {
@@ -2060,8 +2062,6 @@ body.zen .floating-buttons-children .button-widget {
 body.zen .note-title-widget,
 body.zen .note-title-widget input {
     font-size: 1rem !important;
-    background: transparent !important;
-    pointer-events: none;
 }
 
 body.zen #detail-container {
@@ -2196,8 +2196,9 @@ body.zen.experimental-feature-new-layout {
         border-radius: 8px;
         border: 1px solid var(--main-border-color);
         padding: 4px;
-        background: var(--menu-background-color);
+        background: var(--menu-background-color) !important;
         transform: translateX(-50%);
+        backdrop-filter: blur(6px);
     }
 
     #root-widget:has(.note-split.type-text:focus-within) .classic-toolbar-widget,
@@ -2414,7 +2415,7 @@ footer.webview-footer button {
     gap: 5px;
 }
 
-.right-pane-tab .tab-title .bx {
+.right-pane-tab .tab-title .tn-icon {
     font-size: 1.1em;
 }
 
@@ -2542,16 +2543,9 @@ footer.webview-footer button {
     inset-inline-end: 10px;
 }
 
-.content-floating-buttons button.bx {
+.content-floating-buttons button.tn-icon {
     font-size: 130%;
     padding: 1px 10px 1px 10px;
-}
-
-/* Customized icons */
-
-.bx-tn-toc::before {
-    content: "\ec24";
-    transform: rotate(180deg);
 }
 
 /* CK Editor */

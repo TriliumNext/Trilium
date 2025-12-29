@@ -2,9 +2,23 @@
     overflow: auto;
     scroll-behavior: smooth;
     position: relative;
+
+    > .inline-title,
+    > .note-detail > .note-detail-editable-text,
+    > .note-list-widget:not(.full-height) {
+        padding-inline: 24px;
+    }
+
 }
 
-.note-split.type-code:not(.mime-text-x-sqlite) > .scrolling-container {
-    background-color: var(--code-background-color);
-    --scrollbar-background-color: var(--main-background-color);
+.note-split.type-code:not(.mime-text-x-sqlite) {
+    &> .scrolling-container {
+        background-color: var(--code-background-color);
+        --scrollbar-background-color: var(--main-background-color);
+    }
+
+    .inline-title,
+    .title-actions {
+        background-color: var(--main-background-color);
+    }
 }

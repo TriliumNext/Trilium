@@ -1,7 +1,8 @@
-import { describe, it, expect } from "vitest";
-import { getContent, renderCode, type Result } from "./content_renderer.js";
 import { trimIndentation } from "@triliumnext/commons";
+import { describe, expect,it, vi } from "vitest";
+
 import { buildShareNote, buildShareNotes } from "../test/shaca_mocking.js";
+import { getContent, renderCode, type Result } from "./content_renderer.js";
 
 describe("content_renderer", () => {
     beforeAll(() => {
@@ -84,7 +85,7 @@ describe("content_renderer", () => {
                 <span class="hljs-tag">&lt;/<span class="hljs-name">BuilderRow</span>&gt;</span>
                 <span class="hljs-tag">&lt;/<span class="hljs-name">t</span>&gt;</span></code>
                 </pre>
-            `)
+            `);
         });
 
         describe("Reference links", () => {
@@ -106,7 +107,7 @@ describe("content_renderer", () => {
                 expect(result.content).toStrictEqual(trimIndentation`\
                     <h1>Test</h1>
                     <p>
-                        <a class="reference-link attachment-link role-file" href="api/attachments/q14s2Id7V6pp/download">5863845791835102555.mp4</a>
+                        <a class="reference-link attachment-link role-file" href="api/attachments/q14s2Id7V6pp/download"><span><span class="tn-icon bx bx-download"></span>5863845791835102555.mp4</span></a>
                         &nbsp;
                     </p>
                 `);
@@ -170,7 +171,7 @@ describe("content_renderer", () => {
                 const result = getContent(note);
                 expect(result.content).toStrictEqual(trimIndentation`\
                     <p>
-                        <a class="reference-link type-text" href="./MSkxxCFbBsYP"><span><span class="bx bx-note"></span>The quick &lt;strong&gt;brown&lt;/strong&gt; fox</span></a>
+                        <a class="reference-link type-text" href="./MSkxxCFbBsYP"><span><span class="tn-icon bx bx-note"></span>The quick &lt;strong&gt;brown&lt;/strong&gt; fox</span></a>
                     </p>
                 `);
             });

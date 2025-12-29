@@ -21,8 +21,17 @@
     },
     "bundle-error": {
       "title": "カスタムスクリプトの読み込みに失敗しました",
-      "message": "ノートID”{{id}}”, ノートタイトル “{{title}}” のスクリプトを実行できませんでした。理由は以下の通りです:\n\n{{message}}"
-    }
+      "message": "次の理由によりスクリプトを実行できませんでした:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "サーバーからウィジェットのリストを取得できませんでした"
+    },
+    "widget-render-error": {
+      "title": "カスタム React ウィジェットのレンダリングに失敗しました"
+    },
+    "widget-missing-parent": "カスタムウィジェットに必須の '{{property}}' プロパティが定義されていません。\n\nこのスクリプトを UI 要素なしで実行する場合は、代わりに '#run=frontendStartup' を使用してください。",
+    "open-script-note": "スクリプトノートを開く",
+    "scripting-error": "カスタムスクリプトエラー: {{title}}"
   },
   "add_link": {
     "add_link": "リンクを追加",
@@ -143,7 +152,6 @@
   },
   "note_icon": {
     "change_note_icon": "ノートアイコンの変更",
-    "category": "カテゴリー:",
     "search": "検索:",
     "reset-default": "アイコンをデフォルトに戻す"
   },
@@ -152,7 +160,7 @@
     "editable": "編集可能",
     "basic_properties": "基本プロパティ",
     "language": "言語",
-    "configure_code_notes": "コードノートを設定しています..."
+    "configure_code_notes": "コードノートを設定..."
   },
   "i18n": {
     "title": "ローカライゼーション",
@@ -1254,7 +1262,8 @@
     "note_type_switcher_others": "その他のノートタイプ",
     "note_type_switcher_templates": "テンプレート",
     "note_type_switcher_collection": "コレクション",
-    "edited_notes": "編集済みノート"
+    "edited_notes": "この日に編集されたノート",
+    "promoted_attributes": "プロモート属性"
   },
   "search_result": {
     "no_notes_found": "指定された検索パラメータに該当するノートは見つかりませんでした。",
@@ -1621,7 +1630,8 @@
   },
   "inherited_attribute_list": {
     "title": "継承属性",
-    "no_inherited_attributes": "継承属性はありません。"
+    "no_inherited_attributes": "継承属性はありません。",
+    "none": "なし"
   },
   "note_map": {
     "open_full": "拡大表示",
@@ -1919,7 +1929,11 @@
   "note_detail": {
     "could_not_find_typewidget": "タイプ {{type}} の typeWidget が見つかりませんでした",
     "printing": "印刷中です...",
-    "printing_pdf": "PDF へのエクスポート中です..."
+    "printing_pdf": "PDF へのエクスポート中です...",
+    "print_report_title": "レポートを印刷",
+    "print_report_collection_content_other": "コレクション内の {{count}} 件のノートは、サポートされていないか保護されているため、印刷できませんでした。",
+    "print_report_collection_details_button": "詳細を見る",
+    "print_report_collection_details_ignored_notes": "無視されたノート"
   },
   "watched_file_update_status": {
     "ignore_this_change": "この変更を無視する",
@@ -2200,5 +2214,8 @@
     "empty_button": "パネルを非表示",
     "toggle": "右パネルを切り替え",
     "custom_widget_go_to_source": "ソースコードへ移動"
+  },
+  "attributes_panel": {
+    "title": "ノート属性"
   }
 }

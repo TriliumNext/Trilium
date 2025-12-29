@@ -1,6 +1,9 @@
 import { signal } from "@preact/signals";
 
-import utils from "./utils.js";
+import appContext from "../components/app_context.js";
+import froca from "./froca.js";
+import { t } from "./i18n.js";
+import utils, { randomString } from "./utils.js";
 
 export interface ToastOptions {
     id?: string;
@@ -61,11 +64,29 @@ function showErrorTitleAndMessage(title: string, message: string, timeout = 1000
     });
 }
 
+export async function showErrorForScriptNote(noteId: string, message: string) {
+    const note = await froca.getNote(noteId, true);
+
+    showPersistent({
+        id: `custom-widget-failure-${noteId}`,
+        title: t("toast.scripting-error", { title: note?.title ?? "" }),
+        icon: note?.getIcon() ?? "bx bx-error-circle",
+        message,
+        timeout: 15_000,
+        buttons: [
+            {
+                text: t("toast.open-script-note"),
+                onClick: () => appContext.tabManager.openInNewTab(noteId, null, true)
+            }
+        ]
+    });
+}
+
 //#region Toast store
 export const toasts = signal<ToastOptionsWithRequiredId[]>([]);
 
 function addToast(opts: ToastOptions) {
-    const id = opts.id ?? crypto.randomUUID();
+    const id = opts.id ?? randomString();
     const toast = { ...opts, id };
     toasts.value = [ ...toasts.value, toast ];
     return id;
@@ -74,7 +95,7 @@ function addToast(opts: ToastOptions) {
 function updateToast(id: string, partial: Partial<ToastOptions>) {
     toasts.value = toasts.value.map(toast => {
         if (toast.id === id) {
-            return { ...toast, ...partial }
+            return { ...toast, ...partial };
         }
         return toast;
     });

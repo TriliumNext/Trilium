@@ -1,16 +1,18 @@
-import { useEffect, useRef, useState } from "preact/hooks";
-import { getThemeById, default as VanillaCodeMirror } from "@triliumnext/codemirror";
-import { TypeWidgetProps } from "../type_widget";
 import "./code.css";
-import CodeMirror, { CodeMirrorProps } from "./CodeMirror";
-import utils from "../../../services/utils";
-import { useEditorSpacedUpdate, useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteBlob, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
-import { t } from "../../../services/i18n";
+
+import { default as VanillaCodeMirror, getThemeById } from "@triliumnext/codemirror";
+import { useEffect, useRef, useState } from "preact/hooks";
+
 import appContext, { CommandListenerData } from "../../../components/app_context";
-import TouchBar, { TouchBarButton } from "../../react/TouchBar";
-import { refToJQuerySelector } from "../../react/react_utils";
-import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
 import FNote from "../../../entities/fnote";
+import { t } from "../../../services/i18n";
+import utils from "../../../services/utils";
+import { useEditorSpacedUpdate, useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteBlob, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import { refToJQuerySelector } from "../../react/react_utils";
+import TouchBar, { TouchBarButton } from "../../react/TouchBar";
+import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
+import { TypeWidgetProps } from "../type_widget";
+import CodeMirror, { CodeMirrorProps } from "./CodeMirror";
 
 interface CodeEditorProps {
     /** By default, the code editor will try to match the color of the scrolling container to match the one from the theme for a full-screen experience. If the editor is embedded, it makes sense not to have this behaviour. */
@@ -51,7 +53,7 @@ export function ReadOnlyCode({ note, viewScope, ntxId, parentComponent }: TypeWi
             mime={note.mime}
             readOnly
         />
-    )
+    );
 }
 
 function formatViewSource(note: FNote, content: string) {
@@ -74,8 +76,10 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
     const editorRef = useRef<VanillaCodeMirror>(null);
     const containerRef = useRef<HTMLPreElement>(null);
     const [ vimKeymapEnabled ] = useTriliumOptionBool("vimKeymapEnabled");
+    const mime = useNoteProperty(note, "mime");
     const spacedUpdate = useEditorSpacedUpdate({
         note,
+        noteType: "code",
         noteContext,
         getData: () => ({ content: editorRef.current?.getText() ?? "" }),
         onContentChange: (content) => {
@@ -107,7 +111,7 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
             <CodeEditor
                 ntxId={ntxId} parentComponent={parentComponent}
                 editorRef={editorRef} containerRef={containerRef}
-                mime={note.mime}
+                mime={mime ?? "text/plain"}
                 className="note-detail-code-editor"
                 placeholder={t("editable_code.placeholder")}
                 vimKeybindings={vimKeymapEnabled}
@@ -130,7 +134,7 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
                 )}
             </TouchBar>
         </>
-    )
+    );
 }
 
 export function CodeEditor({ parentComponent, ntxId, containerRef: externalContainerRef, editorRef: externalEditorRef, mime, onInitialized, lineWrapping, noBackgroundChange, ...editorProps }: CodeEditorProps & CodeMirrorProps & Pick<TypeWidgetProps, "parentComponent" | "ntxId">) {

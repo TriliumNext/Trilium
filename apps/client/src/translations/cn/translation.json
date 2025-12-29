@@ -21,8 +21,17 @@
     },
     "bundle-error": {
       "title": "加载自定义脚本失败",
-      "message": "来自 ID 为 \"{{id}}\"、标题为 \"{{title}}\" 的笔记的脚本因以下原因无法执行：\n\n{{message}}"
-    }
+      "message": "脚本因以下原因无法执行：\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "无法从服务器取得小部件清单"
+    },
+    "widget-render-error": {
+      "title": "渲染自定义 React 小部件失败"
+    },
+    "widget-missing-parent": "自定义小部件未定义强制性的 \"{{property}}\" 属性。\n\n如果此脚本需要在没有 UI 元素的情况下运行，请改用“#run=frontendStartup”。",
+    "open-script-note": "打开脚本笔记",
+    "scripting-error": "自定义脚本错误：{{title}}"
   },
   "add_link": {
     "add_link": "添加链接",
@@ -755,7 +764,6 @@
   },
   "note_icon": {
     "change_note_icon": "更改笔记图标",
-    "category": "类别:",
     "search": "搜索:",
     "reset-default": "重置为默认图标"
   },
@@ -817,7 +825,8 @@
   },
   "inherited_attribute_list": {
     "title": "继承的属性",
-    "no_inherited_attributes": "没有继承的属性。"
+    "no_inherited_attributes": "没有继承的属性。",
+    "none": "无"
   },
   "note_info_widget": {
     "note_id": "笔记 ID",
@@ -1587,7 +1596,11 @@
   "note_detail": {
     "could_not_find_typewidget": "找不到类型为 '{{type}}' 的 typeWidget",
     "printing": "正在打印…",
-    "printing_pdf": "正在导出为PDF…"
+    "printing_pdf": "正在导出为PDF…",
+    "print_report_title": "打印报告",
+    "print_report_collection_content_other": "集合中的 {{count}} 篇笔记无法打印，因为它们不受支持或受到保护。",
+    "print_report_collection_details_button": "查看详情",
+    "print_report_collection_details_ignored_notes": "忽略的笔记"
   },
   "note_title": {
     "placeholder": "请输入笔记标题...",
@@ -1597,7 +1610,8 @@
     "note_type_switcher_others": "其他笔记类型",
     "note_type_switcher_templates": "模板",
     "note_type_switcher_collection": "集合",
-    "edited_notes": "编辑过的笔记"
+    "edited_notes": "今天编辑过的笔记",
+    "promoted_attributes": "升级属性"
   },
   "search_result": {
     "no_notes_found": "没有找到符合搜索条件的笔记。",
@@ -2200,5 +2214,8 @@
     "toggle": "切换右侧面板",
     "custom_widget_go_to_source": "跳转到源码",
     "empty_message": "这篇笔记没有展示内容"
+  },
+  "attributes_panel": {
+    "title": "笔记属性"
   }
 }

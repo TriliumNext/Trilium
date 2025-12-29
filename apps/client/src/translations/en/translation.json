@@ -21,8 +21,17 @@
     },
     "bundle-error": {
       "title": "Failed to load a custom script",
-      "message": "Script from note with ID \"{{id}}\", titled \"{{title}}\" could not be executed due to:\n\n{{message}}"
-    }
+      "message": "Script could not be executed due to:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "Failed to obtain the list of widgets from the server"
+    },
+    "widget-render-error": {
+      "title": "Failed to render a custom React widget"
+    },
+    "widget-missing-parent": "Custom widget does not have mandatory '{{property}}' property defined.\n\nIf this script is meant to be run without a UI element, use '#run=frontendStartup' instead.",
+    "open-script-note": "Open script note",
+    "scripting-error": "Custom script error: {{title}}"
   },
   "add_link": {
     "add_link": "Add link",
@@ -756,9 +765,16 @@
   },
   "note_icon": {
     "change_note_icon": "Change note icon",
-    "category": "Category:",
     "search": "Search:",
-    "reset-default": "Reset to default icon"
+    "search_placeholder_one": "Search {{number}} icons across {{count}} packs",
+    "search_placeholder_other": "Search {{number}} icons across {{count}} packs",
+    "search_placeholder_filtered": "Search {{number}} icons in {{name}}",
+    "reset-default": "Reset to default icon",
+    "filter": "Filter",
+    "filter-none": "All icons",
+    "filter-default": "Default icons",
+    "icon_tooltip": "{{name}}\nIcon pack: {{iconPack}}",
+    "no_results": "No icons found."
   },
   "basic_properties": {
     "note_type": "Note type",
@@ -1605,7 +1621,7 @@
     "will_be_deleted_in": "This attachment will be automatically deleted in {{time}}",
     "will_be_deleted_soon": "This attachment will be automatically deleted soon",
     "deletion_reason": ", because the attachment is not linked in the note's content. To prevent deletion, add the attachment link back into the content or convert the attachment into note.",
-    "role_and_size": "Role: {{role}}, Size: {{size}}",
+    "role_and_size": "Role: {{role}}, size: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "Attachment link copied to clipboard.",
     "unrecognized_role": "Unrecognized attachment role '{{role}}'."
   },
@@ -1762,7 +1778,12 @@
   "note_detail": {
     "could_not_find_typewidget": "Could not find typeWidget for type '{{type}}'",
     "printing": "Printing in progress...",
-    "printing_pdf": "Exporting to PDF in progress..."
+    "printing_pdf": "Exporting to PDF in progress...",
+    "print_report_title": "Print report",
+    "print_report_collection_content_one": "{{count}} note in the collection could not be printed because they are not supported or they are protected.",
+    "print_report_collection_content_other": "{{count}} notes in the collection could not be printed because they are not supported or they are protected.",
+    "print_report_collection_details_button": "See details",
+    "print_report_collection_details_ignored_notes": "Ignored notes"
   },
   "note_title": {
     "placeholder": "type note's title here...",
@@ -1772,7 +1793,8 @@
     "note_type_switcher_others": "Other note type",
     "note_type_switcher_templates": "Template",
     "note_type_switcher_collection": "Collection",
-    "edited_notes": "Edited notes"
+    "edited_notes": "Notes edited on this day",
+    "promoted_attributes": "Promoted attributes"
   },
   "search_result": {
     "no_notes_found": "No notes have been found for given search parameters.",

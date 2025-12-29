@@ -54,6 +54,7 @@ function getEnabledFeatures() {
             console.warn("Failed to parse experimental features from options:", e);
         }
         enabledFeatures = new Set(features);
+        enabledFeatures.delete("new-layout"); // handled separately.
     }
     return enabledFeatures;
 }

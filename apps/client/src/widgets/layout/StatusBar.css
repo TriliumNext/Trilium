@@ -1,6 +1,6 @@
 .component.status-bar {
     contain: none;
-    border-top: 1px solid var(--main-border-color);
+    border-top: 1px solid var(--status-bar-border-color);
 
     > .status-bar-main-row {
         min-height: 28px;
@@ -9,7 +9,7 @@
         background-color: var(--left-pane-background-color);
         padding-inline: 0.25em;
         font-size: 0.85em;
-        
+
         > .breadcrumb {
             flex-grow: 1;
             --icon-button-size: 23px;
@@ -104,7 +104,7 @@
                 /* Note path card */
                 li {
                     --border-radius: 6px;
-                    
+
                     position: relative;
                     background: var(--card-background-color);
                     padding: 8px 20px 8px 25px;
@@ -120,7 +120,7 @@
                     & + li {
                         margin-top: 2px;
                     }
-                    
+
                     /* Current path arrow */
                     &.path-current::before {
                         position: absolute;
@@ -180,7 +180,7 @@
                 &:last-child {
                     border-radius: 0 0 var(--border-radius) var(--border-radius);
                 }
-                
+
                 /* Card header */
                 & > span:first-child {
                     display: block;
@@ -202,7 +202,7 @@
                         }
 
                         /* Note icon */
-                        > .bx {
+                        > .tn-icon {
                             color: var(--menu-item-icon-color);
                         }
 
@@ -298,6 +298,11 @@
     margin: 0 !important;
     padding: 0;
 
+    body.layout-horizontal.background-effects & {
+        /* Do not apply Mica over the bottom panel in the horizontal layout */
+        background: var(--right-pane-background-color);
+    }
+
     .bottom-panel-title-bar {
         display: flex;
         padding: 6px 12px;
@@ -319,6 +324,7 @@
         padding: 8px 12px;
         max-height: 40vh;
         overflow-y: auto;
+        animation: fade-in 200ms ease-in;
     }
 }
 

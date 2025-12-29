@@ -1,0 +1,76 @@
+<h2>Importing an existing icon pack</h2>
+<p>Icon packs are specific to Trilium, so they must either be created from
+  scratch (see below) or imported from a ZIP file from a third-party developer.</p>
+<aside
+class="admonition note">
+  <p><strong>Icon packs are third-party content</strong>
+    <br>
+    <br>The Trilium maintainers are not responsible for keeping these icon packs
+    up to date. If you have an issue with a specific icon pack, then the issue
+    must be reported to the third-party developer responsible for it, not the
+    Trilium team.</p>
+  </aside>
+  <p>To import an icon pack:</p>
+  <ol>
+    <li data-list-item-id="e72cd89899a976ca5c54e089df2285d41">Ideally, create a dedicated spot in your note tree where to place the
+      icon packs.</li>
+    <li data-list-item-id="ed7f941fe865c5f14e1ae724831e49ba1">Right click the note where to put it and select <em>Import into note</em>.</li>
+    <li
+    data-list-item-id="e1b6980592dddab6a0235dd070b3b7067">Uncheck <em>Safe import</em>.</li>
+      <li data-list-item-id="edd29376be6fbf3b9c59275145457de3b">Select <em>Import</em>.</li>
+      <li data-list-item-id="ea9ae8004d6cd7b349ac648cde9141977"><a href="#root/pOsGYCXsbNQG/BgmBlOIl72jZ/_help_s8alTXmpFR61">Refresh the application</a>.</li>
+  </ol>
+  <aside class="admonition warning">
+    <p>Since <em>Safe import</em> is disabled, make sure you trust the source as
+      it could contain dangerous third-party scripts. One good way to check if
+      the icon pack is safe is to manually extract the .zip and inspect the file
+      contents. Icon packs should only contain a font file and a JSON file. Other
+      files (especially scripts) are to be considered harmful.</p>
+  </aside>
+  <h2>Creating an icon pack</h2>
+  <p>Creating an icon pack requires some scripting knowledge outside Trilium
+    in order to generate the list of icons. For information, see&nbsp;<a class="reference-link"
+    href="#root/pKK96zzmvBGf/_help_g1mlRoU8CsqC">Creating an icon pack</a>.</p>
+  <h2>Using an icon from an icon pack</h2>
+  <p>After <a href="#root/pOsGYCXsbNQG/BgmBlOIl72jZ/_help_s8alTXmpFR61">refreshing the application</a>,
+    the icon pack should be enabled by default. To test this, simply select
+    an existing note or create a new one and try to change the note icon.</p>
+  <p>There should be a <em>Filter</em> button to the right of the search bar
+    in the icon list. Clicking it allows filtering by icon pack and the newly
+    imported icon pack should be displayed there.</p>
+  <aside class="admonition note">
+    <p>If the icon pack is missing from that list, then most likely there's something
+      wrong with it.</p>
+    <ul>
+      <li data-list-item-id="e0a36a4a12c83b68ed1affd67e7ffa850">Try checking the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/BgmBlOIl72jZ/qzNzp9LYQyPT/_help_bnyigUA2UK7s">Backend (server) logs</a>&nbsp;for
+        clues and make sure that the icon pack has the <code spellcheck="false">#iconPack</code> 
+        <a
+        href="#root/pOsGYCXsbNQG/tC7s2alapj8V/zEY4DaJG4YT5/_help_HI6GBBIduIgv">label</a>with a value assigned to it (a prefix).</li>
+      <li data-list-item-id="e33510913f0656b1c14c5f0c7278093c7">Icon packs that are <a href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/BFs8mudNFgCS/_help_bwg0e8ewQMak">protected</a> are
+        ignored.</li>
+    </ul>
+  </aside>
+  <h2>Integration with the share and export functionality</h2>
+  <p>Custom icon packs are also supported by the&nbsp;<a class="reference-link"
+    href="#root/pOsGYCXsbNQG/tC7s2alapj8V/_help_R9pX4DGra2Vt">Sharing</a>&nbsp;feature,
+    where they will be shown in the note tree. However, in order for an icon
+    pack to be visible to the share function, the icon pack note must also
+    be shared.</p>
+  <p>If you are using a custom share theme, make sure it supports the
+    <code
+    spellcheck="false">iconPackCss</code>, otherwise icons will not show up. Check the original
+      share template source code for reference.</p>
+  <p>Custom icon packs will also be preserved when&nbsp;<a class="reference-link"
+    href="#root/pOsGYCXsbNQG/tC7s2alapj8V/R9pX4DGra2Vt/_help_ycBFjKrrwE9p">Exporting static HTML for web publishing</a>.
+    In this case, there's no requirement to make the icon pack shared.</p>
+  <h2>What happens if I remove an icon pack</h2>
+  <p>If an icon pack is removed or disabled (by removing or altering its
+    <code
+    spellcheck="false">#iconPack</code>label), all the notes that use this icon pack will show
+      in the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;with
+      no icon. This won't cause any issues apart from looking strange.</p>
+  <p>The solution is to replace the icons with some else, try using&nbsp;
+    <a
+    class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/wArbEsdSae6g/_help_eIg8jdvaoNNd">Search</a>&nbsp;which supports bulk actions, to identify the notes with
+      the now deleted icon pack (by looking for the prefix) and changing or removing
+      their <code spellcheck="false">iconClass</code>.</p>

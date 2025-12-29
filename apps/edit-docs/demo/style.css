@@ -550,9 +550,9 @@
 					}
 
 @media print{
-		.ck-content figure.table:not(.layout-table):not(:has(> figcaption)){
-			display:block;
+		.ck-content figure.table:not(.layout-table){
 			width:fit-content;
+			height:fit-content;
 		}
 		.ck-content figure.table:not(.layout-table) > table{
 			height:initial;
@@ -602,3 +602,32 @@
 .ck-content .table th{
 	overflow-wrap:break-word;
 }
+
+:root{
+	--ck-content-table-style-spacing:1.5em;
+}
+
+.ck-content .table.table-style-align-left{
+			float:left;
+			margin-right:var(--ck-content-table-style-spacing);
+		}
+
+.ck-content .table.table-style-align-right{
+			float:right;
+			margin-left:var(--ck-content-table-style-spacing);
+		}
+
+.ck-content .table.table-style-align-center{
+			margin-left:auto;
+			margin-right:auto;
+		}
+
+.ck-content .table.table-style-block-align-left{
+			margin-left:0;
+			margin-right:auto;
+		}
+
+.ck-content .table.table-style-block-align-right{
+			margin-left:auto;
+			margin-right:0;
+		}

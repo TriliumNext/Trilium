@@ -1,0 +1,46 @@
+<p>For both&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>&nbsp;and
+  more complicated scripts, it's generally useful to split the code into
+  multiple&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;notes.</p>
+<p>When a script is run, the sub-children of the script being run (or the&nbsp;
+  <a
+  class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>) are checked for children. If the children are Code notes
+    of the corresponding type (front-end or backend) as the code being run,
+    they will be evaluated as well.</p>
+<p>The collection of a script and its child notes is called a <em>bundle</em>.
+  A child note inside a bundle is called a <em>module</em>.</p>
+<p>As a basic example of dependencies, consider the following note structure:</p>
+<ul>
+  <li>
+    <p><em>Script with dependency</em>
+    </p><pre><code class="language-application-javascript-env-backend">api.log(MyMath.sum(2, 2));</code></pre>
+    <ul>
+      <li>
+        <p><em>MyMath</em>
+        </p><pre><code class="language-application-javascript-env-backend">module.exports = {
+    sum(a, b) {
+        return a + b;
+    }
+};</code></pre>
+      </li>
+    </ul>
+  </li>
+</ul>
+<p>When <em>Script with dependency</em> is run, it will detect <em>MyMath</em> as
+  a submodule and provide the result of its <code>module.exports</code> object
+  into a global object with the same name as the note.</p>
+<aside class="admonition note">
+  <p>If the note contains spaces or special characters, they will be stripped.
+    For example <code>My Nice Note!</code> becomes <code>MyNiceNote</code>.</p>
+</aside>
+<h2>Alternative syntax</h2>
+<p>Instead of providing an object to <code>module.exports</code>, it's also
+  possible to add fields individually:</p><pre><code class="language-application-javascript-env-backend">module.exports.sum = (a, b) =&gt; a + b;
+module.exports.subtract = (a, b) =&gt; a - b;</code></pre>
+<h2>Ignoring a code script from a bundle</h2>
+<p>To ignore a script from being included in a bundle (e.g. if it's unrelated
+  to the parent script note), apply the <code>#disableInclusion</code> label.</p>
+<h2>Sharing a module across multiple bundles</h2>
+<p>Modules can be reused across multiple scripts by simply cloning the shared
+  module between two modules (see&nbsp;<a class="reference-link" href="#root/_help_IakOLONlIfGI">Cloning Notes</a>).</p>
+<p>Optionally, a separate note can be used to contain all the different reusable
+  modules for an easy way to discover them.</p>

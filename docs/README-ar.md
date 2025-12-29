@@ -11,14 +11,14 @@
 
 # ملاحظات تريليوم
 
-![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
-![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
-![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![GitHub Downloads (all assets, all
-releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+![رعاة GitHub](https://img.shields.io/github/sponsors/eliandoran) ![داعمو
+LiberaPay](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![عمليات سحب Docker](https://img.shields.io/docker/pulls/triliumnext/trilium)
+![تنزيلات GitHub (جميع الأصول، جميع
+الإصدارات)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
 [![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+[![حالة
+الترجمة](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
@@ -38,22 +38,20 @@ script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
 ## ⬇️ تنزيل
 - [النسخة الأخيرة](https://github.com/TriliumNext/Trilium/releases/latest) –
   نسخة مستقرة، محبذة لأكثر المستخدمين.
-- [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  unstable development version, updated daily with the latest features and
-  fixes.
+- [الإصدار الليلي](https://github.com/TriliumNext/Trilium/releases/tag/nightly)
+  – إصدار تطوير غير مستقر، يتم تحديثه يوميًا بأحدث الميزات والإصلاحات.
 
 ## 📚توثيق
 
-**Visit our comprehensive documentation at
+**يمكنكم الاطلاع على وثائقنا الشاملة على الرابط التالي:
 [docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 
 يتوفر التوثيق لدينا بصيغ متعددة:
-- **Online Documentation**: Browse the full documentation at
+- **الوثائق الإلكترونية**: تصفح الوثائق الكاملة على
   [docs.triliumnotes.org](https://docs.triliumnotes.org/)
-- **In-App Help**: Press `F1` within Trilium to access the same documentation
-  directly in the application
-- **GitHub**: Navigate through the [User Guide](./User%20Guide/User%20Guide/) in
-  this repository
+- **المساعدة داخل التطبيق**: اضغط على مفتاح `F1` داخل تطبيق Trilium للوصول إلى
+  نفس الوثائق مباشرةً داخل التطبيق
+- **GitHub**: تصفح [دليل المستخدم](./User%20Guide/User%20Guide/) في هذا المستودع
 
 ### روابط سريعة
 - [دليل البدء السريع](https://docs.triliumnotes.org/)
@@ -64,30 +62,30 @@ script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
   للملاحظات](https://docs.triliumnotes.org/user-guide/setup/upgrading)
 - [مفاهيم ومميزات
   اساسية](https://docs.triliumnotes.org/user-guide/concepts/notes)
-- [Patterns of Personal Knowledge
-  Base](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
+- [أنماط قاعدة المعرفة
+  الشخصية](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
 ## 🎁الميزات
 
-* Notes can be arranged into arbitrarily deep tree. Single note can be placed
-  into multiple places in the tree (see
-  [cloning](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
-* Rich WYSIWYG note editor including e.g. tables, images and
-  [math](https://docs.triliumnotes.org/user-guide/note-types/text) with markdown
-  [autoformat](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
-* Support for editing [notes with source
-  code](https://docs.triliumnotes.org/user-guide/note-types/code), including
-  syntax highlighting
-* Fast and easy [navigation between
-  notes](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
-  full text search and [note
-  hoisting](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
-* Seamless [note
-  versioning](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
-* Note
-  [attributes](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
-  can be used for note organization, querying and advanced
-  [scripting](https://docs.triliumnotes.org/user-guide/scripts)
+* يمكن ترتيب النوتات الموسيقية في شجرة ذات عمق غير محدود. ويمكن وضع نوتة واحدة
+  في أماكن متعددة في الشجرة (انظر
+  [الاستنساخ](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
+* محرر ملاحظات WYSIWYG غني يتضمن على سبيل المثال الجداول والصور
+  و[الرياضيات](https://docs.triliumnotes.org/user-guide/note-types/text) مع
+  تنسيق تلقائي لـ Markdown[2]
+* دعم تحرير [الملاحظات التي تحتوي على شفرة
+  المصدر](https://docs.triliumnotes.org/user-guide/note-types/code)، بما في ذلك
+  تمييز بناء الجملة
+* التنقل السريع والسهل بين الملاحظات
+  (https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation)،
+  والبحث في النص الكامل، ورفع الملاحظات
+  (https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
+* سلس [ملاحظة حول إصدار
+  النظام](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
+* يمكن استخدام
+  [السمات](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
+  لتنظيم الملاحظات والاستعلام عنها و[البرمجة
+  النصية](https://docs.triliumnotes.org/user-guide/scripts) المتقدمة
 * UI available in English, German, Spanish, French, Romanian, and Chinese
   (simplified and traditional)
 * Direct [OpenID and TOTP

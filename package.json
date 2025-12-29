@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/source",
-  "version": "0.100.0",
+  "version": "0.101.1",
   "description": "Build your personal knowledge base with Trilium Notes",
   "directories": {
     "doc": "docs"
@@ -69,7 +69,7 @@
     "tslib": "2.8.1",
     "tsx": "4.21.0",
     "typescript": "~5.9.0",
-    "typescript-eslint": "8.50.0",
+    "typescript-eslint": "8.50.1",
     "upath": "2.0.1",
     "vite": "7.3.0",
     "vite-plugin-dts": "~4.5.0",
@@ -89,7 +89,7 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@10.26.1",
+  "packageManager": "pnpm@10.26.2",
   "pnpm": {
     "patchedDependencies": {
       "@ckeditor/ckeditor5-mention": "patches/@ckeditor__ckeditor5-mention.patch",
@@ -97,7 +97,7 @@
     },
     "overrides": {
       "mermaid": "11.12.2",
-      "preact": "10.28.0",
+      "preact": "10.28.1",
       "roughjs": "4.6.6",
       "@types/express-serve-static-core": "5.1.0",
       "flat@<5.0.1": ">=5.0.1",

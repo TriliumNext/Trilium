@@ -1,23 +1,21 @@
 <h2>Key highlights</h2>
 <ul>
-  <li data-list-item-id="e08ebed8d78d0359c71a72be31cd95074"><code spellcheck="false">doRender</code> must not be overridden, instead
-    <code
-    spellcheck="false">doRenderBody()</code>has to be overridden.
-      <ul>
-        <li data-list-item-id="e34a4e9826ab89e0ce8ded8786a803f3a"><code spellcheck="false">doRenderBody</code> can optionally be <code spellcheck="false">async</code>.</li>
-      </ul>
+  <li><code>doRender</code> must not be overridden, instead <code>doRenderBody()</code> has
+    to be overridden.
+    <ul>
+      <li><code>doRenderBody</code> can optionally be <code>async</code>.</li>
+    </ul>
   </li>
-  <li data-list-item-id="e24bc184054a9c87a6c7695bb65c8d30b"><code spellcheck="false">parentWidget()</code> must be set to <code spellcheck="false">“rightPane”</code>.</li>
-  <li
-  data-list-item-id="e581cbed615c9be4f249274c5c51c6a18"><code spellcheck="false">widgetTitle()</code> getter can optionally be
-    overriden, otherwise the widget will be displayed as “Untitled widget”.</li>
+  <li><code>parentWidget()</code> must be set to <code>“rightPane”</code>.</li>
+  <li><code>widgetTitle()</code> getter can optionally be overriden, otherwise
+    the widget will be displayed as “Untitled widget”.</li>
 </ul>
 <h2>Example for new layout</h2>
 <aside class="admonition important">
   <p>This section addresses example that are tailored for the&nbsp;<a class="reference-link"
-    href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_IjZS7iK5EXtb">New Layout</a>&nbsp;(available
-    starting with v0.101.0) where the right pane widget/sidebar is no longer
-    shown or hidden based on the widgets it has.&nbsp;</p>
+    href="#root/_help_IjZS7iK5EXtb">New Layout</a>&nbsp;(available starting with
+    v0.101.0) where the right pane widget/sidebar is no longer shown or hidden
+    based on the widgets it has.&nbsp;</p>
 </aside>
 <h3>Title widget</h3>
 <p>This is an example of a context-aware widget which displays the title
@@ -41,7 +39,8 @@
 module.exports = new NoteTitleWidget();</code></pre>
 <h3>Clock</h3>
 <p>A simple widget which will show the current time, as an example on how
-  to dynamically change the content of the widget periodically.</p><pre><code class="language-text-x-trilium-auto">const template = `&lt;div&gt;&lt;/div&gt;`;
+  to dynamically change the content of the widget periodically.</p>
+<h3>Legacy widget</h3><pre><code class="language-text-x-trilium-auto">const template = `&lt;div&gt;&lt;/div&gt;`;
 
 class ToDoListWidget extends api.RightPanelWidget {
     
@@ -60,6 +59,26 @@ class ToDoListWidget extends api.RightPanelWidget {
 }
 
 module.exports = new ToDoListWidget();</code></pre>
+<h3>Preact widget</h3><pre><code class="language-text-x-trilium-auto">import { defineWidget, RightPanelWidget, useEffect, useState } from "trilium:preact";
+
+export default defineWidget({
+    parent: "right-pane",    
+    position: 1,
+    render() {
+        const [ time, setTime ] = useState();
+        useEffect(() =&gt; {
+            const interval = setInterval(() =&gt; {
+                setTime(new Date().toLocaleString());
+            }, 1000);
+            return () =&gt; clearInterval(interval);
+        });        
+        return (
+            &lt;RightPanelWidget id="clock-jsx" title="Clock (JSX)"&gt;
+                &lt;p&gt;The time is: {time}&lt;/p&gt;
+            &lt;/RightPanelWidget&gt;
+        );
+    }
+});</code></pre>
 <h2>Example for old layout</h2>
 <p>Here's a widget that displays a basic message ("Hi"):</p><pre><code class="language-text-x-trilium-auto">const template = `&lt;div&gt;Hi&lt;/div&gt;`;
 
@@ -82,14 +101,14 @@ class HelloWorldWidget extends api.RightPanelWidget {
 
 module.exports = new HelloWorldWidget();</code></pre>
 <h3>Conditionally changing visibility</h3>
-<p>In <code spellcheck="false">refreshWithNote</code>:</p><pre><code class="language-text-x-trilium-auto">const visible = true;	// replace with your own visibility logic
+<p>In <code>refreshWithNote</code>:</p><pre><code class="language-text-x-trilium-auto">const visible = true;	// replace with your own visibility logic
 this.toggleInt(visible);
 this.triggerCommand("reEvaluateRightPaneVisibility");</code></pre>
 <h2>Altering the position within the sidebar</h2>
 <p>By default, the sidebar items are displayed in the order they are found
-  by the application when searching for <code spellcheck="false">#widget</code> notes.</p>
+  by the application when searching for <code>#widget</code> notes.</p>
 <p>It is possible to make a widget appear higher or lower up, by adjusting
-  its <code spellcheck="false">position</code> property:</p><pre><code class="language-text-x-diff">class MyWidget extends api.RightPanelWidget {
+  its <code>position</code> property:</p><pre><code class="language-text-x-trilium-auto">class MyWidget extends api.RightPanelWidget {
 
 +    get position() { return 20 };
         

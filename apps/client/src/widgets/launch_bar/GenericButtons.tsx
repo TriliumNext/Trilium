@@ -1,8 +1,9 @@
 import { useCallback } from "preact/hooks";
+
 import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
 import link_context_menu from "../../menus/link_context_menu";
-import { escapeHtml, isCtrlKey } from "../../services/utils";
+import { isCtrlKey } from "../../services/utils";
 import { useGlobalShortcut, useNoteLabel } from "../react/hooks";
 import { LaunchBarActionButton, useLauncherIconAndTitle } from "./launch_bar_widgets";
 
@@ -26,10 +27,10 @@ export function CustomNoteLauncher({ launcherNote, getTargetNoteId, getHoistedNo
         const ctrlKey = isCtrlKey(evt);
 
         if ((evt.which === 1 && ctrlKey) || evt.which === 2) {
-            const activate = evt.shiftKey ? true : false;
+            const activate = !!evt.shiftKey;
             await appContext.tabManager.openInNewTab(targetNoteId, hoistedNoteIdWithDefault, activate);
         } else {
-            await appContext.tabManager.openInSameTab(targetNoteId);
+            await appContext.tabManager.openInSameTab(targetNoteId, hoistedNoteIdWithDefault);
         }
     }, [ launcherNote, getTargetNoteId, getHoistedNoteId ]);
 
@@ -40,7 +41,7 @@ export function CustomNoteLauncher({ launcherNote, getTargetNoteId, getHoistedNo
     return (
         <LaunchBarActionButton
             icon={icon}
-            text={escapeHtml(title)}
+            text={title}
             onClick={launch}
             onAuxClick={launch}
             onContextMenu={async evt => {
@@ -51,5 +52,5 @@ export function CustomNoteLauncher({ launcherNote, getTargetNoteId, getHoistedNo
                 }
             }}
         />
-    )
+    );
 }

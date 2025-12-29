@@ -40,7 +40,7 @@
   z-index: -1;
 }
 
-.geo-map-container .leaflet-div-icon .bx {
+.geo-map-container .leaflet-div-icon .tn-icon {
   position: absolute;
   top: 3px;
   inset-inline-start: 2px;

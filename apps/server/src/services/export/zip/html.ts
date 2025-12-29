@@ -1,9 +1,10 @@
+import fs from "fs";
+import html from "html";
+import path from "path";
+
 import type NoteMeta from "../../meta/note_meta.js";
 import { escapeHtml, getResourceDir, isDev } from "../../utils";
-import html from "html";
 import { ZipExportProvider } from "./abstract_provider.js";
-import path from "path";
-import fs from "fs";
 
 export default class HtmlExportProvider extends ZipExportProvider {
 
@@ -12,6 +13,8 @@ export default class HtmlExportProvider extends ZipExportProvider {
     private cssMeta: NoteMeta | null = null;
 
     prepareMeta(metaFile) {
+        if (this.zipExportOptions?.skipExtraFiles) return;
+
         this.navigationMeta = {
             noImport: true,
             dataFileName: "navigation.html"
@@ -61,16 +64,18 @@ export default class HtmlExportProvider extends ZipExportProvider {
             }
 
             if (content.length < 100_000) {
-                content = html.prettyPrint(content, { indent_size: 2 })
+                content = html.prettyPrint(content, { indent_size: 2 });
             }
             content = this.rewriteFn(content as string, noteMeta);
             return content;
-        } else {
-            return content;
         }
+        return content;
+
     }
 
     afterDone(rootMeta: NoteMeta) {
+        if (this.zipExportOptions?.skipExtraFiles) return;
+
         if (!this.navigationMeta || !this.indexMeta || !this.cssMeta) {
             throw new Error("Missing meta.");
         }

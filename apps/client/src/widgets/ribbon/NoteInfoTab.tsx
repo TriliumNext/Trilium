@@ -1,15 +1,16 @@
-import { useEffect, useState } from "preact/hooks";
-import { t } from "../../services/i18n";
 import { MetadataResponse, NoteSizeResponse, SubtreeSizeResponse } from "@triliumnext/commons";
-import server from "../../services/server";
-import Button from "../react/Button";
-import { formatDateTime } from "../../utils/formatters";
-import { formatSize } from "../../services/utils";
-import LoadingSpinner from "../react/LoadingSpinner";
-import { useTriliumEvent } from "../react/hooks";
-import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
+import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
+
 import FNote from "../../entities/fnote";
+import debounce from "../../services/debounce";
+import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
+import { t } from "../../services/i18n";
+import server from "../../services/server";
+import { formatSize } from "../../services/utils";
+import { formatDateTime } from "../../utils/formatters";
+import { useTriliumEvent } from "../react/hooks";
 import LinkButton from "../react/LinkButton";
+import LoadingSpinner from "../react/LoadingSpinner";
 
 const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
@@ -71,13 +72,13 @@ export function NoteSizeWidget({ isLoading, noteSizeResponse, subtreeSizeRespons
     </>;
 }
 
-export function useNoteMetadata(note: FNote | null | undefined) {
+export function useNoteMetadata(note: FNote | null | undefined, debounceTime = 10_000) {
     const [ isLoading, setIsLoading ] = useState(false);
     const [ noteSizeResponse, setNoteSizeResponse ] = useState<NoteSizeResponse>();
     const [ subtreeSizeResponse, setSubtreeSizeResponse ] = useState<SubtreeSizeResponse>();
     const [ metadata, setMetadata ] = useState<MetadataResponse>();
 
-    function refresh() {
+    const refresh = useCallback(() => {
         if (note) {
             server.get<MetadataResponse>(`notes/${note?.noteId}/metadata`).then(setMetadata);
         }
@@ -85,7 +86,9 @@ export function useNoteMetadata(note: FNote | null | undefined) {
         setNoteSizeResponse(undefined);
         setSubtreeSizeResponse(undefined);
         setIsLoading(false);
-    }
+    }, [ note ]);
+
+    const debouncedRefresh = useMemo(() => debounce(refresh, debounceTime), [ refresh, debounceTime ]);
 
     function requestSizeInfo() {
         if (!note) return;
@@ -100,11 +103,11 @@ export function useNoteMetadata(note: FNote | null | undefined) {
         }, 0);
     }
 
-    useEffect(refresh, [ note ]);
+    useEffect(() => refresh(), [ refresh ]);
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         const noteId = note?.noteId;
         if (noteId && (loadResults.isNoteReloaded(noteId) || loadResults.isNoteContentReloaded(noteId))) {
-            refresh();
+            debouncedRefresh();
         }
     });
 

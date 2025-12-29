@@ -40,6 +40,8 @@ module.exports = new NoteTitleWidget();
 
 A simple widget which will show the current time, as an example on how to dynamically change the content of the widget periodically.
 
+### Legacy widget
+
 ```
 const template = `<div></div>`;
 
@@ -60,6 +62,31 @@ class ToDoListWidget extends api.RightPanelWidget {
 }
 
 module.exports = new ToDoListWidget();
+```
+
+### Preact widget
+
+```
+import { defineWidget, RightPanelWidget, useEffect, useState } from "trilium:preact";
+
+export default defineWidget({
+    parent: "right-pane",    
+    position: 1,
+    render() {
+        const [ time, setTime ] = useState();
+        useEffect(() => {
+            const interval = setInterval(() => {
+                setTime(new Date().toLocaleString());
+            }, 1000);
+            return () => clearInterval(interval);
+        });        
+        return (
+            <RightPanelWidget id="clock-jsx" title="Clock (JSX)">
+                <p>The time is: {time}</p>
+            </RightPanelWidget>
+        );
+    }
+});
 ```
 
 ## Example for old layout
@@ -105,7 +132,7 @@ By default, the sidebar items are displayed in the order they are found by the a
 
 It is possible to make a widget appear higher or lower up, by adjusting its `position` property:
 
-```diff
+```
 class MyWidget extends api.RightPanelWidget {
 
 +    get position() { return 20 };

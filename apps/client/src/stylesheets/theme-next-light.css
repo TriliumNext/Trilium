@@ -21,7 +21,7 @@
     --subtle-border-color: rgba(0, 0, 0, 0.1);
     --dropdown-border-color: #ccc;
     --dropdown-shadow-opacity: 0.2;
-    --dropdown-item-icon-destructive-color: #ec5138;
+    --dropdown-item-icon-destructive-color: #de4027;
     --contextual-help-icon-color: #004382;
 
     --accented-background-color: #f5f5f5;
@@ -77,6 +77,7 @@
     --link-color: #0076af;
     --link-hover-background: #3c7fa017;
     --link-hover-color: var(--link-color);
+    --link-selection-outline-color: #95c3d9db;
 
     --hover-item-text-color: black;
     --hover-item-background-color: #0000001a;
@@ -232,8 +233,10 @@
     --right-pane-item-hover-background: #00000013;
     --right-pane-item-hover-color: inherit;
 
-    --bottom-panel-background-color: #0000000a;
-    --bottom-panel-title-bar-background-color: #00000017;
+    --bottom-panel-background-color: #ffffff8c;
+    --bottom-panel-title-bar-background-color: #94949414;
+
+    --status-bar-border-color: #0000003a;
 
     --scrollbar-thumb-color: #0000005c;
     --scrollbar-thumb-hover-color: #00000066;
@@ -317,5 +320,5 @@
 
 .note-split.with-hue *::selection,
 .quick-edit-dialog-wrapper.with-hue *::selection {
-    background: hsl(var(--custom-color-hue), 60%, 90%);
+    --selection-background-color: hsl(var(--custom-color-hue), 60%, 90%);
 }

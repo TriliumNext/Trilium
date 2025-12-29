@@ -3,6 +3,7 @@ import { createPortal } from "preact/compat";
 import { useCallback, useEffect, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
+import { randomString } from "../../services/utils";
 import { useActiveNoteContext, useContentElement, useIsNoteReadOnly, useNoteProperty, useTextEditor, useTriliumOptionJson } from "../react/hooks";
 import Modal from "../react/Modal";
 import { HighlightsListOptions } from "../type_widgets/options/text_notes";
@@ -201,7 +202,7 @@ function extractHighlightsFromTextEditor(editor: CKTextEditor) {
 
         if (Object.values(attrs).some(Boolean)) {
             result.push({
-                id: crypto.randomUUID(),
+                id: randomString(),
                 text: item.data,
                 attrs,
                 textNode: item.textNode,
@@ -269,7 +270,7 @@ function extractHighlightsFromStaticHtml(el: HTMLElement | null) {
 
             if (Object.values(attrs).some(Boolean)) {
                 highlights.push({
-                    id: crypto.randomUUID(),
+                    id: randomString(),
                     text: node.textContent,
                     element: el,
                     attrs

@@ -54,7 +54,7 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
     min-height: unset;
 }
 
-.modal.popup-editor-dialog div.note-title-widget {
+:root div.modal.popup-editor-dialog div.note-title-widget {
     --note-title-padding-inline: 8px;
 }
 

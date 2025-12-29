@@ -20,7 +20,7 @@
             margin-bottom: 5px;
         }
 
-        .bx {
+        .tn-icon {
             margin: 4px 0;
             font-size: 12px;
             opacity: 0.5;
@@ -54,6 +54,7 @@
         }
 
         .content {
+            padding-inline-start: 6px;
             background-color: var(--main-background-color);
             flex-grow: 1;
             border-top-left-radius: 6px;
@@ -68,26 +69,78 @@
                 padding: 5px;
 
                 .title {
+                    margin-inline-start: 4px;
                     flex-grow: 1;
+                    font-size: 12px;
                 }
             }
 
             .ribbon {
                 padding: 0 5px;
 
-                .bx {
+                .tn-icon {
                     font-size: 10px;
                 }
 
                 .ribbon-header {
                     display: flex;
+                    gap: 3px;
                 }
 
                 .ribbon-body {
-                    height: 20px;
-                    background-color: rgba(0, 0, 0, 0.05);
-                    border-radius: 6px;
-                    margin: 1px 0;
+                    border: 0 solid var(--main-text-color);
+                    border-top-width: 1px;
+                    border-bottom-width: 1px;
+                    margin: 2px 0;
+
+                    .ribbon-body-content {
+                        height: 4px;
+                        margin-block: 4px;
+                        background: repeating-linear-gradient(90deg, currentColor, currentColor 10px, transparent 10px, transparent 22px);
+                        opacity: .5;
+                    }
+                }
+            }
+
+            .note-header {
+                display: flex;
+                flex-direction: column;
+                padding-inline: 2px;
+
+                .note-toolbar {
+                    align-self: flex-end;
+                }
+
+                .note-inline-title {
+                    display: flex;
+                    align-items: center;
+                    padding-bottom: 4px;
+
+                    .note-icon {
+                        display: flex;
+                        width: 22px;
+                        height: 22px;
+                        justify-content: center;
+                        align-items: center;
+                        border-radius: 50%;
+                        background: var(--note-icon-hover-background-color);
+                        font-size: 12px;
+                        color: var(--note-icon-color);
+                    }
+
+                    .note-title-row {
+                        margin-inline-start: 4px;
+                        line-height: 1;
+
+                        .title {
+                            font-size: 11px;
+                        }
+
+                        .subtitle {
+                            font-size: 6px;
+                            opacity: .5;
+                        }
+                    }
                 }
             }
 

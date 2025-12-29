@@ -9,7 +9,7 @@
 .inline-title {
     max-width: var(--max-content-width);
     container-type: inline-size;
-    padding-inline-start: 24px;
+    padding-top: 20px;
 
     & > .inline-title-row {
         --icon-size: 35px;
@@ -75,10 +75,6 @@
     }
 }
 
-.note-split.type-code:not(.mime-text-x-sqlite) .inline-title {
-    background-color: var(--main-background-color);
-}
-
 body.prefers-centered-content .inline-title {
     margin-inline: auto;
 }
@@ -98,59 +94,4 @@ body.prefers-centered-content .inline-title {
     span.value {
         font-weight: 500;
     }
-}
-
-@keyframes note-type-switcher-intro {
-    from {
-        opacity: 0;
-    } to {
-        opacity: 1;
-    }
-}
-
-.note-type-switcher {
-    --badge-radius: 12px;
-
-    position: relative;
-    top: 5px;
-    padding: .25em 0;
-    display: flex;
-    align-items: center;
-    overflow-x: auto;
-    min-width: 0;
-    gap: 5px;
-    min-height: 35px;
-
-    >* {
-        flex-shrink: 0;
-        animation: note-type-switcher-intro 200ms ease-in;
-    }
-
-    .ext-badge {
-        --color: var(--input-background-color);
-        color: var(--main-text-color);
-        font-size: 0.9rem;
-        flex-shrink: 0;
-    }
-}
-
-.edited-notes {
-    padding: 1.5em 0;
-
-    .collapsible-inner-body {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.3em;
-
-        .badge {
-            margin: 0;
-            a.tn-link {
-                color: inherit;
-                text-transform: none;
-                text-decoration: none;
-                display: inline-block;
-            }
-        }
-    }
-
 }

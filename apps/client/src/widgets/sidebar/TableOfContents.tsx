@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { useCallback, useEffect, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
+import { randomString } from "../../services/utils";
 import { useActiveNoteContext, useContentElement, useIsNoteReadOnly, useNoteProperty, useTextEditor } from "../react/hooks";
 import Icon from "../react/Icon";
 import RightPanelWidget from "./RightPanelWidget";
@@ -172,7 +173,7 @@ function extractTocFromTextEditor(editor: CKTextEditor) {
             // Assign a unique ID
             let tocId = item.getAttribute(TOC_ID) as string | undefined;
             if (!tocId) {
-                tocId = crypto.randomUUID();
+                tocId = randomString();
                 writer.setAttribute(TOC_ID, tocId, item);
             }
 
@@ -210,7 +211,7 @@ function extractTocFromStaticHtml(el: HTMLElement | null) {
     const headings: DomHeading[] = [];
     for (const headingEl of el.querySelectorAll<HTMLHeadingElement>("h1,h2,h3,h4,h5,h6")) {
         headings.push({
-            id: crypto.randomUUID(),
+            id: randomString(),
             level: parseInt(headingEl.tagName.substring(1), 10),
             text: headingEl.textContent,
             element: headingEl

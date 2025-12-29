@@ -1,17 +1,17 @@
+import { type App, type BrowserWindow, type BrowserWindowConstructorOptions, default as electron, ipcMain, type IpcMainEvent, type WebContents } from "electron";
 import fs from "fs/promises";
+import { t } from "i18next";
 import path from "path";
 import url from "url";
-import port from "./port.js";
-import optionService from "./options.js";
-import log from "./log.js";
-import sqlInit from "./sql_init.js";
+
 import cls from "./cls.js";
 import keyboardActionsService from "./keyboard_actions.js";
-import electron, { ipcMain } from "electron";
-import type { App, BrowserWindowConstructorOptions, BrowserWindow, WebContents, IpcMainEvent } from "electron";
-import { formatDownloadTitle, isDev, isMac, isWindows } from "./utils.js";
-import { t } from "i18next";
+import log from "./log.js";
+import optionService from "./options.js";
+import port from "./port.js";
 import { RESOURCE_DIR } from "./resource_dir.js";
+import sqlInit from "./sql_init.js";
+import { formatDownloadTitle, isMac, isWindows } from "./utils.js";
 
 // Prevent the window being garbage collected
 let mainWindow: BrowserWindow | null;
@@ -80,18 +80,18 @@ interface ExportAsPdfOpts {
 }
 
 electron.ipcMain.on("print-note", async (e, { notePath }: PrintOpts) => {
-    const browserWindow = await getBrowserWindowForPrinting(e, notePath, "printing");
+    const { browserWindow, printReport } = await getBrowserWindowForPrinting(e, notePath, "printing");
     browserWindow.webContents.print({}, (success, failureReason) => {
         if (!success && failureReason !== "Print job canceled") {
             electron.dialog.showErrorBox(t("pdf.unable-to-print"), failureReason);
         }
-        e.sender.send("print-done");
+        e.sender.send("print-done", printReport);
         browserWindow.destroy();
     });
 });
 
 electron.ipcMain.on("export-as-pdf", async (e, { title, notePath, landscape, pageSize }: ExportAsPdfOpts) => {
-    const browserWindow = await getBrowserWindowForPrinting(e, notePath, "exporting_pdf");
+    const { browserWindow, printReport } = await getBrowserWindowForPrinting(e, notePath, "exporting_pdf");
 
     async function print() {
         const filePath = electron.dialog.showSaveDialogSync(browserWindow, {
@@ -120,14 +120,14 @@ electron.ipcMain.on("export-as-pdf", async (e, { title, notePath, landscape, pag
                     </div>
                 `
             });
-        } catch (e) {
+        } catch (_e) {
             electron.dialog.showErrorBox(t("pdf.unable-to-export-title"), t("pdf.unable-to-export-message"));
             return;
         }
 
         try {
             await fs.writeFile(filePath, buffer);
-        } catch (e) {
+        } catch (_e) {
             electron.dialog.showErrorBox(t("pdf.unable-to-export-title"), t("pdf.unable-to-save-message"));
             return;
         }
@@ -138,7 +138,7 @@ electron.ipcMain.on("export-as-pdf", async (e, { title, notePath, landscape, pag
     try {
         await print();
     } finally {
-        e.sender.send("print-done");
+        e.sender.send("print-done", printReport);
         browserWindow.destroy();
     }
 });
@@ -158,14 +158,14 @@ async function getBrowserWindowForPrinting(e: IpcMainEvent, notePath: string, ac
     ipcMain.on("print-progress", progressCallback);
 
     await browserWindow.loadURL(`http://127.0.0.1:${port}/?print#${notePath}`);
-    await browserWindow.webContents.executeJavaScript(`
+    const printReport = await browserWindow.webContents.executeJavaScript(`
         new Promise(resolve => {
-            if (window._noteReady) return resolve();
-            window.addEventListener("note-ready", () => resolve());
+            if (window._noteReady) return resolve(window._noteReady);
+            window.addEventListener("note-ready", (data) => resolve(data.detail));
         });
     `);
     ipcMain.off("print-progress", progressCallback);
-    return browserWindow;
+    return { browserWindow, printReport };
 }
 
 async function createMainWindow(app: App) {
@@ -289,9 +289,9 @@ async function configureWebContents(webContents: WebContents, spellcheckEnabled:
 function getIcon() {
     if (process.env.NODE_ENV === "development") {
         return path.join(__dirname, "../../../desktop/electron-forge/app-icon/png/256x256-dev.png");
-    } else {
-        return path.join(RESOURCE_DIR, "../public/assets/icon.png");
     }
+    return path.join(RESOURCE_DIR, "../public/assets/icon.png");
+
 }
 
 async function createSetupWindow() {

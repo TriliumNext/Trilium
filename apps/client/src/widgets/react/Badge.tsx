@@ -32,7 +32,8 @@ export function Badge({ icon, className, text, tooltip, href, ...containerProps 
         fallbackPlacements: [ "bottom" ],
         animation: false,
         html: true,
-        title: tooltip
+        title: tooltip,
+        customClass: "pre-wrap-text"
     });
 
     const content = <>
@@ -59,7 +60,10 @@ export function BadgeWithDropdown({ text, children, tooltip, className, dropdown
         <Dropdown
             className={`dropdown-badge dropdown-${className}`}
             text={<Badge
-                text={<>{text} <Icon className="arrow" icon="bx bx-chevron-down" /></>}
+                text={<>
+                    <span class="text-inner">{text}</span>
+                    <Icon className="arrow" icon="bx bx-chevron-down" />
+                </>}
                 className={className}
                 {...props}
             />}

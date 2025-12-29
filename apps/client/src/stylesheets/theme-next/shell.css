@@ -497,7 +497,7 @@ div.bookmark-folder-widget .note-link:hover a {
 }
 
 /* The item's icon */
-div.bookmark-folder-widget .note-link .bx {
+div.bookmark-folder-widget .note-link .tn-icon {
     color: var(--menu-item-icon-color);
     font-size: 1.2em;
 }
@@ -1085,7 +1085,7 @@ body.desktop:not(.background-effects.platform-win32) #root-widget.horizontal-lay
     margin-top: calc((var(--tab-bar-height) - var(--tab-height)) * -1);
 }
 
-body.layout-horizontal .tab-row-widget .note-tab .note-tab-wrapper {
+body.layout-horizontal div.tab-row-widget div.note-tab div.note-tab-wrapper {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
 }
@@ -1372,6 +1372,10 @@ body.mobile .note-title {
     font-weight: normal;
     animation: alert-show 300ms ease-in;
     border-bottom: 2px solid #0000001c !important;
+}
+
+body.experimental-feature-new-layout #center-pane .note-split > div.alert {
+    margin-top: 0;
 }
 
 /*
@@ -1797,6 +1801,10 @@ div.find-replace-widget div.find-widget-found-wrapper > span {
 
 #right-pane {
     background: var(--right-pane-background-color);
+}
+
+#right-pane > * {
+    animation: fade-in 200ms ease-in;
 }
 
 #right-pane div.card-header {

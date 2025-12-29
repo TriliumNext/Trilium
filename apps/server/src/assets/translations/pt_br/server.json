@@ -355,7 +355,9 @@
     "script-launcher-title": "Atalho de Script",
     "launch-bar-title": "Barra de Atalhos",
     "available-launchers-title": "Atalhos disponíveis",
-    "visible-launchers-title": "Atalhos Visíveis"
+    "visible-launchers-title": "Atalhos Visíveis",
+    "command-palette": "Abrir a Paleta de Comandos",
+    "zen-mode": "Modo Zen"
   },
   "notes": {
     "new-note": "Nova nota",
@@ -373,7 +375,8 @@
     "export_filter": "Documento PDF (*.pdf)",
     "unable-to-export-message": "A nota atual não pôde ser exportada como PDF.",
     "unable-to-export-title": "Não foi possível exportar como PDF",
-    "unable-to-save-message": "O arquivo selecionado não pôde ser salvo. Tente novamente ou selecione outro destino."
+    "unable-to-save-message": "O arquivo selecionado não pôde ser salvo. Tente novamente ou selecione outro destino.",
+    "unable-to-print": "Não foi possível imprimir a nota"
   },
   "tray": {
     "tooltip": "Trilium Notes",
@@ -416,14 +419,19 @@
     "end-time": "Hora de término",
     "geolocation": "Geolocalização",
     "built-in-templates": "Modelos integrados",
-    "board": "Quadro",
+    "board": "Quadro Kanban",
     "status": "Status",
     "board_note_first": "Primeira nota",
     "board_note_second": "Segunda nota",
     "board_note_third": "Terceira nota",
     "board_status_todo": "A fazer",
     "board_status_progress": "Em andamento",
-    "board_status_done": "Concluído"
+    "board_status_done": "Concluído",
+    "presentation": "Apresentação",
+    "presentation_slide": "Slide de apresentação",
+    "presentation_slide_first": "Primeiro slide",
+    "presentation_slide_second": "Segundo slide",
+    "background": "Plano de fundo"
   },
   "sql_init": {
     "db_not_initialized_desktop": "DB não inicializada, por favor siga as instruções na tela.",

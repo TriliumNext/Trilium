@@ -1,6 +1,6 @@
 import optionService from "../options.js";
 import myScryptService from "./my_scrypt.js";
-import { randomSecureToken, toBase64 } from "../utils.js";
+import { randomSecureToken, toBase64, constantTimeCompare } from "../utils.js";
 import dataEncryptionService from "./data_encryption.js";
 import type { OptionNames } from "@triliumnext/commons";
 
@@ -18,7 +18,7 @@ function verifyTotpSecret(secret: string): boolean {
         return false;
     }
 
-    return givenSecretHash === dbSecretHash;
+    return constantTimeCompare(givenSecretHash, dbSecretHash);
 }
 
 function setTotpSecret(secret: string) {

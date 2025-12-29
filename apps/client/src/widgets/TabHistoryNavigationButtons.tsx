@@ -15,7 +15,7 @@ export default function TabHistoryNavigationButtons() {
     const legacyBackVisible = useLauncherVisibility("_lbBackInHistory");
     const legacyForwardVisible = useLauncherVisibility("_lbForwardInHistory");
 
-    return (isElectron() &&
+    return (
         <div className="tab-history-navigation-buttons">
             {!legacyBackVisible && <ActionButton
                 icon="bx bx-left-arrow-alt"

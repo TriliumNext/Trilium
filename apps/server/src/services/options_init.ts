@@ -218,7 +218,13 @@ const defaultOptions: DefaultOption[] = [
     { name: "aiSystemPrompt", value: "", isSynced: true },
     { name: "aiSelectedProvider", value: "openai", isSynced: true },
 
-    { name: "seenCallToActions", value: "[]", isSynced: true },
+    {
+        name: "seenCallToActions",
+        value: JSON.stringify([
+            "new_layout", "background_effects", "next_theme"
+        ]),
+        isSynced: true
+    },
     { name: "experimentalFeatures", value: "[]", isSynced: true }
 ];
 

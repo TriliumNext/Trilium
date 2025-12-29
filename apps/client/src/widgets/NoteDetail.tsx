@@ -5,13 +5,16 @@ import { useEffect, useRef, useState } from "preact/hooks";
 
 import NoteContext from "../components/note_context";
 import FNote from "../entities/fnote";
+import type { PrintReport } from "../print";
 import attributes from "../services/attributes";
+import dialog from "../services/dialog";
 import { t } from "../services/i18n";
 import protected_session_holder from "../services/protected_session_holder";
 import toast from "../services/toast.js";
 import { dynamicRequire, isElectron, isMobile } from "../services/utils";
 import { ExtendedNoteType, TYPE_MAPPINGS, TypeWidget } from "./note_types";
 import { useNoteContext, useTriliumEvent } from "./react/hooks";
+import { NoteListWithLinks } from "./react/NoteList";
 import { TypeWidgetProps } from "./type_widgets/type_widget";
 
 /**
@@ -128,7 +131,10 @@ export default function NoteDetail() {
         if (!isElectron()) return;
         const { ipcRenderer } = dynamicRequire("electron");
         const onPrintProgress = (_e: any, { progress, action }: { progress: number, action: "printing" | "exporting_pdf" }) => showToast(action, progress);
-        const onPrintDone = () => toast.closePersistent("printing");
+        const onPrintDone = (_e, printReport: PrintReport) => {
+            toast.closePersistent("printing");
+            handlePrintReport(printReport);
+        };
         ipcRenderer.on("print-progress", onPrintProgress);
         ipcRenderer.on("print-done", onPrintDone);
         return () => {
@@ -179,8 +185,13 @@ export default function NoteDetail() {
                     showToast("printing", e.detail.progress);
                 });
 
-                iframe.contentWindow.addEventListener("note-ready", () => {
+                iframe.contentWindow.addEventListener("note-ready", (e) => {
                     toast.closePersistent("printing");
+
+                    if ("detail" in e) {
+                        handlePrintReport(e.detail as PrintReport);
+                    }
+
                     iframe.contentWindow?.print();
                     document.body.removeChild(iframe);
                 });
@@ -345,4 +356,30 @@ function showToast(type: "printing" | "exporting_pdf", progress: number = 0) {
         id: "printing",
         progress
     });
+}
+
+function handlePrintReport(printReport: PrintReport) {
+    if (printReport.type === "collection" && printReport.ignoredNoteIds.length > 0) {
+        toast.showPersistent({
+            id: "print-report",
+            icon: "bx bx-collection",
+            title: t("note_detail.print_report_title"),
+            message: t("note_detail.print_report_collection_content", { count: printReport.ignoredNoteIds.length }),
+            buttons: [
+                {
+                    text: t("note_detail.print_report_collection_details_button"),
+                    onClick(api) {
+                        api.dismissToast();
+                        dialog.info(<>
+                            <h3>{t("note_detail.print_report_collection_details_ignored_notes")}</h3>
+                            <NoteListWithLinks noteIds={printReport.ignoredNoteIds} />
+                        </>, {
+                            title: t("note_detail.print_report_title"),
+                            size: "md"
+                        });
+                    }
+                }
+            ]
+        });
+    }
 }

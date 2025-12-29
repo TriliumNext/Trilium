@@ -1,15 +1,16 @@
 import { AnonymizedDbResponse, DatabaseAnonymizeResponse, DatabaseCheckIntegrityResponse } from "@triliumnext/commons";
+import { useEffect, useMemo, useState } from "preact/hooks";
+
+import { experimentalFeatures } from "../../../services/experimental_features";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import Button from "../../react/Button";
-import FormText from "../../react/FormText";
-import OptionsSection from "./components/OptionsSection"
 import Column from "../../react/Column";
-import { useEffect, useState } from "preact/hooks";
-import CheckboxList from "./components/CheckboxList";
-import { experimentalFeatures } from "../../../services/experimental_features";
+import FormText from "../../react/FormText";
 import { useTriliumOptionJson } from "../../react/hooks";
+import CheckboxList from "./components/CheckboxList";
+import OptionsSection from "./components/OptionsSection";
 
 export default function AdvancedSettings() {
     return <>
@@ -73,7 +74,7 @@ function DatabaseIntegrityOptions() {
                 }}
             />
         </OptionsSection>
-    )
+    );
 }
 
 function DatabaseAnonymizationOptions() {
@@ -127,7 +128,7 @@ function DatabaseAnonymizationOptions() {
             <hr />
             <ExistingAnonymizedDatabases databases={existingAnonymizedDatabases} />
         </OptionsSection>
-    )
+    );
 }
 
 function DatabaseAnonymizationOption({ title, description, buttonText, buttonClick }: { title: string, description: string, buttonText: string, buttonClick: () => void }) {
@@ -137,12 +138,12 @@ function DatabaseAnonymizationOption({ title, description, buttonText, buttonCli
             <FormText>{description}</FormText>
             <Button text={buttonText} onClick={buttonClick} />
         </Column>
-    )
+    );
 }
 
 function ExistingAnonymizedDatabases({ databases }: { databases: AnonymizedDbResponse[] }) {
     if (!databases.length) {
-        return <FormText>{t("database_anonymization.no_anonymized_database_yet")}</FormText>
+        return <FormText>{t("database_anonymization.no_anonymized_database_yet")}</FormText>;
     }
 
     return (
@@ -180,13 +181,14 @@ function VacuumDatabaseOptions() {
 
 function ExperimentalOptions() {
     const [ enabledExperimentalFeatures, setEnabledExperimentalFeatures ] = useTriliumOptionJson<string[]>("experimentalFeatures", true);
+    const filteredExperimentalFeatures = useMemo(() =>  experimentalFeatures.filter(e => e.id !== "new-layout"), []);
 
-    return (
+    return (filteredExperimentalFeatures.length > 0 &&
         <OptionsSection title={t("experimental_features.title")}>
             <FormText>{t("experimental_features.disclaimer")}</FormText>
 
             <CheckboxList
-                values={experimentalFeatures}
+                values={filteredExperimentalFeatures}
                 keyProperty="id"
                 titleProperty="name"
                 descriptionProperty="description"

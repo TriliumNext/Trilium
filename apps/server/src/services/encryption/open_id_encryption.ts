@@ -1,5 +1,5 @@
 import myScryptService from "./my_scrypt.js";
-import utils from "../utils.js";
+import utils, { constantTimeCompare } from "../utils.js";
 import dataEncryptionService from "./data_encryption.js";
 import sql from "../sql.js";
 import sqlInit from "../sql_init.js";
@@ -87,8 +87,7 @@ function verifyOpenIDSubjectIdentifier(subjectIdentifier: string) {
         return undefined;
     }
 
-    console.log("Matches: " + givenHash === savedHash);
-    return givenHash === savedHash;
+    return constantTimeCompare(givenHash, savedHash as string);
 }
 
 function setDataKey(
