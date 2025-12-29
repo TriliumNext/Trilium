@@ -1,9 +1,9 @@
-import FlexContainer from "./flex_container.js";
-import splitService from "../../services/resizer.js";
-import type RightPanelWidget from "../right_panel_widget.js";
 import type { EventData, EventNames } from "../../components/app_context.js";
+import splitService from "../../services/resizer.js";
+import type BasicWidget from "../basic_widget.js";
+import FlexContainer from "./flex_container.js";
 
-export default class RightPaneContainer extends FlexContainer<RightPanelWidget> {
+export default class RightPaneContainer extends FlexContainer<BasicWidget> {
     private rightPaneHidden: boolean;
     private firstRender: boolean;
 

@@ -749,7 +749,6 @@
   },
   "note_icon": {
     "change_note_icon": "Cambiar icono de nota",
-    "category": "Categoría:",
     "search": "Búsqueda:",
     "reset-default": "Restablecer a icono por defecto"
   },

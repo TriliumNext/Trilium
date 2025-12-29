@@ -1,10 +1,11 @@
-import { HTMLProps, RefObject, useEffect, useImperativeHandle, useRef, useState } from "preact/compat";
-import { PopupEditor, ClassicEditor, EditorWatchdog, type WatchdogConfig, CKTextEditor, TemplateDefinition } from "@triliumnext/ckeditor5";
-import { buildConfig, BuildEditorOptions } from "./config";
-import { useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteContext, useSyncedRef, useTriliumOption } from "../../react/hooks";
-import link from "../../../services/link";
-import froca from "../../../services/froca";
+import { CKTextEditor, ClassicEditor, EditorWatchdog, PopupEditor, TemplateDefinition,type WatchdogConfig } from "@triliumnext/ckeditor5";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import { HTMLProps, RefObject, useEffect, useImperativeHandle, useRef, useState } from "preact/compat";
+
+import froca from "../../../services/froca";
+import link from "../../../services/link";
+import { useKeyboardShortcuts, useLegacyImperativeHandlers, useNoteContext, useSyncedRef, useTriliumOption } from "../../react/hooks";
+import { buildConfig, BuildEditorOptions } from "./config";
 
 export type BoxSize = "small" | "medium" | "full";
 
@@ -77,7 +78,7 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
                     this.addLinkToEditor(externalLink ? `${notePath}` : `#${notePath}`, linkTitle);
                 }
             } else {
-                editor.execute("referenceLink", { href: "#" + notePath });
+                editor.execute("referenceLink", { href: `#${  notePath}` });
             }
 
             editor.editing.view.focus();
@@ -86,7 +87,7 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
             watchdogRef.current?.editor?.model.change((writer) => {
                 const insertPosition = watchdogRef.current?.editor?.model.document.selection.getFirstPosition();
                 if (insertPosition) {
-                    writer.insertText(linkTitle, { linkHref: linkHref }, insertPosition);
+                    writer.insertText(linkTitle, { linkHref }, insertPosition);
                 }
             });
         },
@@ -99,8 +100,8 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
                 // in a way that will result in creating a valid model structure
                 editor?.model.insertContent(
                     writer.createElement("includeNote", {
-                        noteId: noteId,
-                        boxSize: boxSize
+                        noteId,
+                        boxSize
                     })
                 );
             });
@@ -150,39 +151,70 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
-        const watchdog = buildWatchdog(!!isClassicEditor, watchdogConfig);
-        watchdogRef.current = watchdog;
-        externalWatchdogRef.current = watchdog;
-        watchdog.setCreator(async () => {
-            const editor = await buildEditor(container, !!isClassicEditor, {
-                forceGplLicense: false,
-                isClassicEditor: !!isClassicEditor,
-                uiLanguage: uiLanguage as DISPLAYABLE_LOCALE_IDS,
-                contentLanguage: contentLanguage ?? null,
-                templates
-            });
 
-            setEditor(editor);
+        let isStale = false;
 
-            // Inspector integration.
-            if (import.meta.env.VITE_CKEDITOR_ENABLE_INSPECTOR === "true") {
-                const CKEditorInspector = (await import("@ckeditor/ckeditor5-inspector")).default;
-                CKEditorInspector.attach(editor);
+        const init = async () => {
+            // Ensure any previous watchdog is fully destroyed
+            if (watchdogRef.current) {
+                try {
+                    await watchdogRef.current.destroy();
+                } catch (e) {
+                    console.warn("Watchdog destroy failed", e);
+                }
+                watchdogRef.current = null;
             }
 
-            onEditorInitialized?.(editor);
+            if (isStale) return;
 
-            return editor;
-        });
+            const watchdog = buildWatchdog(!!isClassicEditor, watchdogConfig);
+            watchdogRef.current = watchdog;
+            externalWatchdogRef.current = watchdog;
 
-        if (onWatchdogStateChange) {
-            watchdog.on("stateChange", () => onWatchdogStateChange(watchdog));
-        }
+            watchdog.setCreator(async () => {
+                if (isStale) {
+                    throw new Error("Editor creation cancelled");
+                }
 
-        watchdog.create(container);
+                const editor = await buildEditor(container, !!isClassicEditor, {
+                    forceGplLicense: false,
+                    isClassicEditor: !!isClassicEditor,
+                    uiLanguage: uiLanguage as DISPLAYABLE_LOCALE_IDS,
+                    contentLanguage: contentLanguage ?? null,
+                    templates
+                });
 
-        return () => watchdog.destroy();
-    }, [ contentLanguage, templates, uiLanguage ]); // TODO: adding all dependencies here will cause errors during CK init.
+                if (isStale) {
+                    await editor.destroy();
+                    throw new Error("Editor creation cancelled");
+                }
+
+                setEditor(editor);
+
+                if (import.meta.env.VITE_CKEDITOR_ENABLE_INSPECTOR === "true") {
+                    const CKEditorInspector = (await import("@ckeditor/ckeditor5-inspector")).default;
+                    CKEditorInspector.attach(editor);
+                }
+
+                onEditorInitialized?.(editor);
+
+                return editor;
+            });
+
+            if (onWatchdogStateChange) {
+                watchdog.on("stateChange", () => onWatchdogStateChange(watchdog));
+            }
+
+            await watchdog.create(container);
+        };
+
+        init();
+
+        return () => {
+            isStale = true;
+        };
+    }, [ contentLanguage, templates, uiLanguage ]);
+
 
     // React to notification warning callback.
     useEffect(() => {
@@ -207,9 +239,9 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
 function buildWatchdog(isClassicEditor: boolean, watchdogConfig?: WatchdogConfig): EditorWatchdog {
     if (isClassicEditor) {
         return new EditorWatchdog(ClassicEditor, watchdogConfig);
-    } else {
-        return new EditorWatchdog(PopupEditor, watchdogConfig);
     }
+    return new EditorWatchdog(PopupEditor, watchdogConfig);
+
 }
 
 async function buildEditor(element: HTMLElement, isClassicEditor: boolean, opts: BuildEditorOptions) {

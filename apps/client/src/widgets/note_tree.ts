@@ -1,37 +1,38 @@
-import hoistedNoteService from "../services/hoisted_note.js";
-import treeService from "../services/tree.js";
-import utils from "../services/utils.js";
-import contextMenu from "../menus/context_menu.js";
-import froca from "../services/froca.js";
-import branchService from "../services/branches.js";
-import ws from "../services/ws.js";
-import NoteContextAwareWidget from "./note_context_aware_widget.js";
-import server from "../services/server.js";
-import noteCreateService from "../services/note_create.js";
-import toastService from "../services/toast.js";
-import appContext, { type CommandListenerData, type EventData } from "../components/app_context.js";
-import keyboardActionsService from "../services/keyboard_actions.js";
-import clipboard from "../services/clipboard.js";
-import protectedSessionService from "../services/protected_session.js";
-import linkService from "../services/link.js";
-import options from "../services/options.js";
-import protectedSessionHolder from "../services/protected_session_holder.js";
-import dialogService from "../services/dialog.js";
-import shortcutService from "../services/shortcuts.js";
-import { t } from "../services/i18n.js";
-import type FBranch from "../entities/fbranch.js";
-import type LoadResults from "../services/load_results.js";
-import type FNote from "../entities/fnote.js";
-import type { NoteType } from "../entities/fnote.js";
-import type { AttributeRow, BranchRow } from "../services/load_results.js";
-import type { SetNoteOpts } from "../components/note_context.js";
-import type { TouchBarItem } from "../components/touch_bar.js";
-import type { TreeCommandNames } from "../menus/tree_context_menu.js";
 import "jquery.fancytree";
 import "jquery.fancytree/dist/modules/jquery.fancytree.dnd5.js";
 import "jquery.fancytree/dist/modules/jquery.fancytree.clones.js";
 import "jquery.fancytree/dist/modules/jquery.fancytree.filter.js";
 import "../stylesheets/tree.css";
+
+import appContext, { type CommandListenerData, type EventData } from "../components/app_context.js";
+import type { SetNoteOpts } from "../components/note_context.js";
+import type { TouchBarItem } from "../components/touch_bar.js";
+import type FBranch from "../entities/fbranch.js";
+import type FNote from "../entities/fnote.js";
+import type { NoteType } from "../entities/fnote.js";
+import contextMenu from "../menus/context_menu.js";
+import type { TreeCommandNames } from "../menus/tree_context_menu.js";
+import branchService from "../services/branches.js";
+import clipboard from "../services/clipboard.js";
+import dialogService from "../services/dialog.js";
+import froca from "../services/froca.js";
+import hoistedNoteService from "../services/hoisted_note.js";
+import { t } from "../services/i18n.js";
+import keyboardActionsService from "../services/keyboard_actions.js";
+import linkService from "../services/link.js";
+import type LoadResults from "../services/load_results.js";
+import type { AttributeRow, BranchRow } from "../services/load_results.js";
+import noteCreateService from "../services/note_create.js";
+import options from "../services/options.js";
+import protectedSessionService from "../services/protected_session.js";
+import protectedSessionHolder from "../services/protected_session_holder.js";
+import server from "../services/server.js";
+import shortcutService from "../services/shortcuts.js";
+import toastService from "../services/toast.js";
+import treeService from "../services/tree.js";
+import utils from "../services/utils.js";
+import ws from "../services/ws.js";
+import NoteContextAwareWidget from "./note_context_aware_widget.js";
 
 const TPL = /*html*/`
 <div class="tree-wrapper">
@@ -242,7 +243,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     e.preventDefault();
 
                     appContext.tabManager.openTabWithNoteWithHoisting(notePath, {
-                        activate: e.shiftKey ? true : false
+                        activate: !!e.shiftKey
                     });
                 }
             }
@@ -402,7 +403,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     } else if (ctrlKey) {
                         const notePath = treeService.getNotePath(node);
                         appContext.tabManager.openTabWithNoteWithHoisting(notePath, {
-                            activate: event.shiftKey ? true : false
+                            activate: !!event.shiftKey
                         });
                     } else if (event.altKey) {
                         node.setSelected(!node.isSelected());
@@ -499,9 +500,9 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                         return ["before", "after"];
                     } else if (["_lbAvailableLaunchers", "_lbVisibleLaunchers"].includes(node.data.noteId)) {
                         return ["over"];
-                    } else {
-                        return true;
                     }
+                    return true;
+
                 },
                 dragDrop: async (node, data) => {
                     if (
@@ -597,7 +598,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             clones: {
                 highlightActiveClones: true
             },
-            enhanceTitle: async function (
+            async enhanceTitle (
                 event: Event,
                 data: {
                     node: Fancytree.FancytreeNode;
@@ -627,7 +628,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 const isHoistedNote = activeNoteContext && activeNoteContext.hoistedNoteId === note.noteId && note.noteId !== "root";
 
                 if (note.hasLabel("workspace") && !isHoistedNote) {
-                    const $enterWorkspaceButton = $(`<span class="tree-item-button enter-workspace-button bx bx-door-open" title="${t("note_tree.hoist-this-note-workspace")}"></span>`).on(
+                    const $enterWorkspaceButton = $(`<span class="tree-item-button tn-icon enter-workspace-button bx bx-door-open" title="${t("note_tree.hoist-this-note-workspace")}"></span>`).on(
                         "click",
                         cancelClickPropagation
                     );
@@ -636,7 +637,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 }
 
                 if (note.type === "search") {
-                    const $refreshSearchButton = $(`<span class="tree-item-button refresh-search-button bx bx-refresh" title="${t("note_tree.refresh-saved-search-results")}"></span>`).on(
+                    const $refreshSearchButton = $(`<span class="tree-item-button tn-icon refresh-search-button bx bx-refresh" title="${t("note_tree.refresh-saved-search-results")}"></span>`).on(
                         "click",
                         cancelClickPropagation
                     );
@@ -650,7 +651,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     && !note.isLaunchBarConfig()
                     && !note.noteId.startsWith("_help")
                 ) {
-                    const $createChildNoteButton = $(`<span class="tree-item-button add-note-button bx bx-plus" title="${t("note_tree.create-child-note")}"></span>`).on(
+                    const $createChildNoteButton = $(`<span class="tree-item-button tn-icon add-note-button bx bx-plus" title="${t("note_tree.create-child-note")}"></span>`).on(
                         "click",
                         cancelClickPropagation
                     );
@@ -659,7 +660,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 }
 
                 if (isHoistedNote) {
-                    const $unhoistButton = $(`<span class="tree-item-button unhoist-button bx bx-door-open" title="${t("note_tree.unhoist")}"></span>`).on("click", cancelClickPropagation);
+                    const $unhoistButton = $(`<span class="tree-item-button tn-icon unhoist-button bx bx-door-open" title="${t("note_tree.unhoist")}"></span>`).on("click", cancelClickPropagation);
 
                     $span.append($unhoistButton);
                 }
@@ -1281,7 +1282,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
 
         // activeNode is supposed to be moved when we find out activeNode is deleted but not all branches are deleted. save it for fixing activeNodePath after all nodes loaded.
         let movedActiveNode: Fancytree.FancytreeNode | null = null;
-        let parentsOfAddedNodes: Fancytree.FancytreeNode[] = [];
+        const parentsOfAddedNodes: Fancytree.FancytreeNode[] = [];
 
         for (const branchRow of branchRows) {
             if (branchRow.noteId) {
@@ -1452,10 +1453,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
             if (branchId && branchId.startsWith("virt")) {
                 // in case of virtual branches there's nothing to update
                 return;
-            } else {
-                logError(`Cannot find branch=${branchId}`);
-                return;
             }
+            logError(`Cannot find branch=${branchId}`);
+            return;
+
         }
 
         branch.isExpanded = isExpanded;
@@ -1594,7 +1595,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
         // Trigger the event with the selected branch IDs
         appContext.triggerEvent("editBranchPrefix", {
             selectedOrActiveBranchIds: branchIds,
-            node: node
+            node
         });
     }
 
@@ -1779,12 +1780,12 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
     #moveLaunchers(selectedOrActiveBranchIds: string[], desktopParent: string, mobileParent: string) {
         const desktopLaunchersToMove = selectedOrActiveBranchIds.filter((branchId) => !branchId.startsWith("_lbMobile"));
         if (desktopLaunchersToMove) {
-            branchService.moveToParentNote(desktopLaunchersToMove, "_lbRoot_" + desktopParent);
+            branchService.moveToParentNote(desktopLaunchersToMove, `_lbRoot_${  desktopParent}`);
         }
 
         const mobileLaunchersToMove = selectedOrActiveBranchIds.filter((branchId) => branchId.startsWith("_lbMobile"));
         if (mobileLaunchersToMove) {
-            branchService.moveToParentNote(mobileLaunchersToMove, "_lbMobileRoot_" + mobileParent);
+            branchService.moveToParentNote(mobileLaunchersToMove, `_lbMobileRoot_${  mobileParent}`);
         }
     }
 
@@ -1829,7 +1830,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 selectedOrActiveBranchIds: this.getSelectedOrActiveBranchIds(node),
                 selectedOrActiveNoteIds: this.getSelectedOrActiveNoteIds(node)
             });
-        }
+        };
 
         const items: TouchBarItem[] = [
             new TouchBar.TouchBarButton({

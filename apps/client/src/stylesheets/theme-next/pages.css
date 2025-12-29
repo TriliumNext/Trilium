@@ -151,6 +151,11 @@
     --options-title-font-size: .75rem;
     --options-title-offset: 13px;
 }
+
+.note-split.options {
+    --preferred-max-content-width: var(--options-card-max-width);
+}
+
 /* Create a gap at the top of the option pages */
 .note-detail-content-widget-content.options>*:first-child {
     margin-top: var(--options-first-item-top-margin, 1em);
@@ -172,6 +177,10 @@
     height: 0;
 }
 
+body.experimental-feature-new-layout .note-detail-content-widget-content.options {
+    padding-inline: 25px;
+}
+
 .options-section:not(.tn-no-card) {
     margin-bottom: calc(var(--options-title-offset) + 26px) !important;
     box-shadow: var(--card-box-shadow);
@@ -179,10 +188,6 @@
     border-radius: 8px;
     background: var(--card-background-color);
     padding: var(--options-card-padding);
-}
-
-body.prefers-centered-content .options-section:not(.tn-no-card) {
-    margin-inline: auto;
 }
 
 body.desktop .options-section:not(.tn-no-card) {

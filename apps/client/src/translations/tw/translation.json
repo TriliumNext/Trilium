@@ -21,8 +21,16 @@
     },
     "bundle-error": {
       "title": "載入自訂腳本失敗",
-      "message": "來自 ID 為 \"{{id}}\"、標題為 \"{{title}}\" 的筆記的腳本因以下原因無法執行：\n\n{{message}}"
-    }
+      "message": "腳本因以下原因無法執行：\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "無法從伺服器取得元件清單"
+    },
+    "widget-render-error": {
+      "title": "無法渲染自訂 React 元件"
+    },
+    "widget-missing-parent": "自訂元件未定義強制性的 \"{{property}}\" 屬性。",
+    "open-script-note": "打開腳本筆記"
   },
   "add_link": {
     "add_link": "新增連結",
@@ -753,7 +761,6 @@
   },
   "note_icon": {
     "change_note_icon": "更改筆記圖標",
-    "category": "類別：",
     "search": "搜尋：",
     "reset-default": "重置為預設圖標"
   },
@@ -815,7 +822,8 @@
   },
   "inherited_attribute_list": {
     "title": "繼承的屬性",
-    "no_inherited_attributes": "沒有繼承的屬性。"
+    "no_inherited_attributes": "沒有繼承的屬性。",
+    "none": "無"
   },
   "note_info_widget": {
     "note_id": "筆記 ID",
@@ -1513,6 +1521,7 @@
     "title": "高亮列表",
     "options": "選項",
     "title_with_count_one": "{{count}} 處高亮",
+    "title_with_count_other": "{{count}} 處高亮",
     "modal_title": "設定高亮列表",
     "menu_configure": "設定高亮列表…",
     "no_highlights": "未找到高亮內容。"
@@ -2089,7 +2098,8 @@
     "next_theme_button": "試用新主題",
     "dismiss": "關閉",
     "new_layout_title": "新版面配置",
-    "new_layout_button": "更多資訊"
+    "new_layout_button": "更多資訊",
+    "new_layout_message": "我們為 Trilium 推出了現代化版面配置。功能區分頁已移除並無縫整合至主介面，取而代之的是全新狀態列與可擴展區塊（例如提升屬性）承擔其主要功能。\n\n新版面配置預設為啟用狀態，您可透過「選項 → 外觀」暫時停用。"
   },
   "settings": {
     "related_settings": "相關設定"
@@ -2167,7 +2177,12 @@
     "shared_unshare": "取消分享",
     "clipped_note": "網頁擷取",
     "execute_script": "運行腳本",
-    "execute_sql": "運行 SQL"
+    "execute_sql": "運行 SQL",
+    "read_only_auto_description": "基於效能考量，此筆記已自動設定為唯讀模式。此自動限制可於設定中調整。\n\n點擊此處可臨時編輯。",
+    "read_only_temporarily_disabled_description": "此筆記目前可編輯，但通常為唯讀狀態。當您切換至其他筆記時，本筆記將立即恢復為唯讀模式。\n\n點擊此處重新啟用唯讀模式。",
+    "clipped_note_description": "本筆記原始來源為 {{url}}。\n\n點擊此處前往原網頁。",
+    "execute_script_description": "此筆記為腳本筆記。點擊以執行腳本。",
+    "execute_sql_description": "此筆記為 SQL 筆記。點擊以執行 SQL 查詢。"
   },
   "breadcrumb": {
     "hoisted_badge": "聚焦",
@@ -2181,18 +2196,28 @@
     "language_title": "更改內容語言",
     "note_info_title": "查看筆記資訊（如日期、筆記大小）",
     "backlinks_one": "{{count}} 個反連結",
+    "backlinks_other": "",
     "backlinks_title_one": "查看反連結",
+    "backlinks_title_other": "",
     "attachments_one": "{{count}} 個附件",
+    "attachments_other": "",
     "attachments_title_one": "在新分頁中查看附件",
+    "attachments_title_other": "",
     "attributes_one": "{{count}} 個屬性",
+    "attributes_other": "",
     "attributes_title": "自有屬性及繼承屬性",
     "note_paths_one": "{{count}} 條路徑",
+    "note_paths_other": "",
     "note_paths_title": "筆記路徑",
     "code_note_switcher": "更改語言模式"
   },
   "right_pane": {
     "empty_button": "隱藏面板",
     "toggle": "切換右側面板",
-    "custom_widget_go_to_source": "跳轉至原始碼"
+    "custom_widget_go_to_source": "跳轉至原始碼",
+    "empty_message": "此筆記無內容可顯示"
+  },
+  "attributes_panel": {
+    "title": "筆記屬性"
   }
 }

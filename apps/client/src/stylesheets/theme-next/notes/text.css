@@ -634,6 +634,10 @@ html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
     font-weight: 300;
 }
 
+.ck-content strong {
+    font-weight: 600;
+}
+
 .ck-content hr {
     margin: 5px 0;
     height: 1px;
@@ -678,8 +682,8 @@ html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
 
 .ck-content a.ck-widget.ck-widget_selected,
 .ck-content a.ck-link_selected {
-    outline: 2px solid var(--input-focus-outline-color);
-    outline-offset: 2px;
+    outline: none;
+    box-shadow: 0 0 0 2px var(--link-selection-outline-color);
     background: var(--link-hover-background);
 } 
 
@@ -692,7 +696,7 @@ html .note-detail-editable-text :not(figure, .include-note, hr):first-child {
      text-decoration: none;
 }
 
-.ck-content a.reference-link.use-note-color  > span {
+.ck-content a.reference-link > span.use-note-color {
     color: var(--custom-color, inherit);
 }
 

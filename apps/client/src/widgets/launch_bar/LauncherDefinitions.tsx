@@ -1,17 +1,20 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from "preact/hooks";
+
+import appContext, { CommandNames } from "../../components/app_context";
+import FNote from "../../entities/fnote";
+import date_notes from "../../services/date_notes";
+import dialog from "../../services/dialog";
+import { LauncherWidgetDefinitionWithType } from "../../services/frontend_script_api_preact";
+import { t } from "../../services/i18n";
+import toast from "../../services/toast";
+import { getErrorMessage, isMobile } from "../../services/utils";
+import BasicWidget from "../basic_widget";
+import NoteContextAwareWidget from "../note_context_aware_widget";
+import QuickSearchWidget from "../quick_search";
 import { useGlobalShortcut, useLegacyWidget, useNoteLabel, useNoteRelationTarget, useTriliumOptionBool } from "../react/hooks";
 import { ParentComponent } from "../react/react_utils";
-import BasicWidget from "../basic_widget";
-import FNote from "../../entities/fnote";
-import QuickSearchWidget from "../quick_search";
-import { getErrorMessage, isMobile } from "../../services/utils";
-import date_notes from "../../services/date_notes";
 import { CustomNoteLauncher } from "./GenericButtons";
 import { LaunchBarActionButton, LaunchBarContext, LauncherNoteProps, useLauncherIconAndTitle } from "./launch_bar_widgets";
-import dialog from "../../services/dialog";
-import { t } from "../../services/i18n";
-import appContext, { CommandNames } from "../../components/app_context";
-import toast from "../../services/toast";
 
 export function CommandButton({ launcherNote }: LauncherNoteProps) {
     const { icon, title } = useLauncherIconAndTitle(launcherNote);
@@ -23,7 +26,7 @@ export function CommandButton({ launcherNote }: LauncherNoteProps) {
             text={title}
             triggerCommand={command as CommandNames}
         />
-    )
+    );
 }
 
 // we're intentionally displaying the launcher title and icon instead of the target,
@@ -75,7 +78,7 @@ export function ScriptLauncher({ launcherNote }: LauncherNoteProps) {
             text={title}
             onClick={launch}
         />
-    )
+    );
 }
 
 export function AiChatButton({ launcherNote }: LauncherNoteProps) {
@@ -88,7 +91,7 @@ export function AiChatButton({ launcherNote }: LauncherNoteProps) {
             text={title}
             triggerCommand="createAiChat"
         />
-    )
+    );
 }
 
 export function TodayLauncher({ launcherNote }: LauncherNoteProps) {
@@ -114,12 +117,13 @@ export function QuickSearchLauncherWidget() {
         <div>
             {isEnabled && <LegacyWidgetRenderer widget={widget} />}
         </div>
-    )
+    );
 }
 
 export function CustomWidget({ launcherNote }: LauncherNoteProps) {
     const [ widgetNote ] = useNoteRelationTarget(launcherNote, "widget");
-    const [ widget, setWidget ] = useState<BasicWidget>();
+    const [ widget, setWidget ] = useState<BasicWidget | NoteContextAwareWidget | LauncherWidgetDefinitionWithType>();
+
     const parentComponent = useContext(ParentComponent) as BasicWidget | null;
     parentComponent?.contentSized();
 
@@ -146,9 +150,13 @@ export function CustomWidget({ launcherNote }: LauncherNoteProps) {
 
     return (
         <div>
-            {widget && <LegacyWidgetRenderer widget={widget} />}
+            {widget && (
+                ("type" in widget && widget.type === "preact-launcher-widget")
+                    ? <ReactWidgetRenderer widget={widget as LauncherWidgetDefinitionWithType} />
+                    : <LegacyWidgetRenderer widget={widget as BasicWidget} />
+            )}
         </div>
-    )
+    );
 }
 
 export function LegacyWidgetRenderer({ widget }: { widget: BasicWidget }) {
@@ -157,4 +165,9 @@ export function LegacyWidgetRenderer({ widget }: { widget: BasicWidget }) {
     });
 
     return widgetEl;
+}
+
+function ReactWidgetRenderer({ widget }: { widget: LauncherWidgetDefinitionWithType }) {
+    const El = widget.render;
+    return <El />;
 }

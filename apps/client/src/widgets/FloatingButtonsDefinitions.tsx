@@ -142,7 +142,7 @@ function ShowTocWidgetButton({ note, noteContext, isDefaultViewMode }: FloatingB
 
     return isEnabled && <FloatingButton
         text={t("show_toc_widget_button.show_toc")}
-        icon="bx bx-tn-toc"
+        icon="bx bx-spreadsheet bx-rotate-180"
         onClick={() => {
             if (noteContext?.viewScope && noteContext.noteId) {
                 noteContext.viewScope.tocTemporarilyHidden = false;

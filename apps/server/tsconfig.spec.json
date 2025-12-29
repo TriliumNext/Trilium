@@ -28,6 +28,7 @@
     "src/**/*.spec.jsx",
     "src/**/*.d.ts",
     "src/**/*.ts",
+    "src/**/*.json",
     "package.json"
   ]
 }

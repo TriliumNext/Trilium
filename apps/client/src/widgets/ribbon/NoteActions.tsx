@@ -71,9 +71,12 @@ function NoteContextMenu({ note, noteContext }: { note: FNote, noteContext?: Not
     const canBeConvertedToAttachment = note?.isEligibleForConversionToAttachment();
     const isSearchable = ["text", "code", "book", "mindMap", "doc"].includes(noteType);
     const isInOptionsOrHelp = note?.noteId.startsWith("_options") || note?.noteId.startsWith("_help");
-    const isPrintable = ["text", "code"].includes(noteType) || (noteType === "book" && ["presentation", "list", "table"].includes(viewType ?? ""));
     const isExportableToImage = ["mermaid", "mindMap"].includes(noteType);
     const isContentAvailable = note.isContentAvailable();
+    const isPrintable = isContentAvailable && (
+        ["text", "code"].includes(noteType) ||
+        (noteType === "book" && ["presentation", "list", "table"].includes(viewType ?? ""))
+    );
     const isElectron = getIsElectron();
     const isMac = getIsMac();
     const hasSource = ["text", "code", "relationMap", "mermaid", "canvas", "mindMap", "aiChat"].includes(noteType);
@@ -98,6 +101,7 @@ function NoteContextMenu({ note, noteContext }: { note: FNote, noteContext?: Not
             className="note-actions"
             hideToggleArrow
             noSelectButtonStyle
+            noDropdownListStyle
             iconAction
             onHidden={() => itemToFocusRef.current = null }
         >

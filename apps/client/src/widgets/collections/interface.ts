@@ -1,4 +1,5 @@
 import FNote from "../../entities/fnote";
+import type { PrintReport } from "../../print";
 
 export const allViewTypes = ["list", "grid", "calendar", "table", "geoMap", "board", "presentation"] as const;
 export type ViewTypeOptions = typeof allViewTypes[number];
@@ -18,6 +19,6 @@ export interface ViewModeProps<T extends object> {
     viewConfig: T | undefined;
     saveConfig(newConfig: T): void;
     media: ViewModeMedia;
-    onReady(): void;
+    onReady(data: PrintReport): void;
     onProgressChanged?: ProgressChangedFn;
 }

@@ -135,7 +135,7 @@ function RibbonTab({ icon, title, active, onClick, toggleCommand }: { icon: stri
             >
                 <span
                     ref={iconRef}
-                    className={`ribbon-tab-title-icon ${icon}`}
+                    className={`ribbon-tab-title-icon tn-icon ${icon}`}
                 />
                 &nbsp;
                 { active && <span class="ribbon-tab-title-label">{title}</span> }

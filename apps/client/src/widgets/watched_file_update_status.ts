@@ -17,7 +17,7 @@ const TPL = /*html*/`
 
     <p>${t("watched_file_update_status.file_last_modified")}</p>
 
-    <div style="display: flex; flex-direction: row; justify-content: space-evenly;">
+    <div style="display: flex; flex-direction: row; justify-content: flex-start; gap: 8px;">
         <button class="btn btn-sm file-upload-button">${t("watched_file_update_status.upload_modified_file")}</button>
 
         <button class="btn btn-sm ignore-this-change-button">${t("watched_file_update_status.ignore_this_change")}</button>

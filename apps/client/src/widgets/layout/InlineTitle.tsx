@@ -1,30 +1,19 @@
 import "./InlineTitle.css";
 
 import { NoteType } from "@triliumnext/commons";
+import { Tooltip } from "bootstrap";
 import clsx from "clsx";
 import { ComponentChild } from "preact";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
 import { Trans } from "react-i18next";
 
-import FNote from "../../entities/fnote";
-import attributes from "../../services/attributes";
-import froca from "../../services/froca";
-import { t } from "../../services/i18n";
 import { ViewScope } from "../../services/link";
-import { NOTE_TYPES, NoteTypeMapping } from "../../services/note_types";
-import server from "../../services/server";
 import { formatDateTime } from "../../utils/formatters";
 import NoteIcon from "../note_icon";
 import NoteTitleWidget from "../note_title";
-import SimpleBadge, { Badge, BadgeWithDropdown } from "../react/Badge";
-import Collapsible from "../react/Collapsible";
-import { FormDropdownDivider, FormListItem } from "../react/FormList";
-import { useNoteBlob, useNoteContext, useNoteLabel, useNoteProperty, useStaticTooltip, useTriliumEvent, useTriliumOptionBool } from "../react/hooks";
-import NoteLink from "../react/NoteLink";
+import { useNoteContext, useNoteProperty, useStaticTooltip } from "../react/hooks";
 import { joinElements } from "../react/react_utils";
-import { useEditedNotes } from "../ribbon/EditedNotesTab";
 import { useNoteMetadata } from "../ribbon/NoteInfoTab";
-import { onWheelHorizontalScroll } from "../widget_utils";
 
 const supportedNoteTypes = new Set<NoteType>([
     "text", "code"
@@ -76,9 +65,6 @@ export default function InlineTitle() {
                     <NoteTitleDetails />
                 </div>
             </div>
-
-            <EditedNotes />
-            <NoteTypeSwitcher />
         </div>
     );
 }
@@ -123,11 +109,13 @@ function TextWithValue({ i18nKey, value, valueTooltip }: {
     valueTooltip: string;
 }) {
     const listItemRef = useRef<HTMLLIElement>(null);
-    useStaticTooltip(listItemRef, {
+    const tooltipConfig: Partial<Tooltip.Options> = useMemo(() => ({
         selector: "span.value",
         title: valueTooltip,
-        popperConfig: { placement: "bottom" }
-    });
+        popperConfig: { placement: "bottom" },
+        animation: false
+    }), [ valueTooltip ]);
+    useStaticTooltip(listItemRef, tooltipConfig);
 
     return (
         <li ref={listItemRef}>
@@ -142,205 +130,4 @@ function TextWithValue({ i18nKey, value, valueTooltip }: {
 }
 //#endregion
 
-//#region Note type switcher
-const SWITCHER_PINNED_NOTE_TYPES = new Set<NoteType>([ "text", "code", "book", "canvas" ]);
 
-function NoteTypeSwitcher() {
-    const { note } = useNoteContext();
-    const blob = useNoteBlob(note);
-    const currentNoteType = useNoteProperty(note, "type");
-    const { pinnedNoteTypes, restNoteTypes } = useMemo(() => {
-        const pinnedNoteTypes: NoteTypeMapping[] = [];
-        const restNoteTypes: NoteTypeMapping[] = [];
-        for (const noteType of NOTE_TYPES) {
-            if (noteType.reserved || noteType.static || noteType.type === "book") continue;
-            if (SWITCHER_PINNED_NOTE_TYPES.has(noteType.type)) {
-                pinnedNoteTypes.push(noteType);
-            } else {
-                restNoteTypes.push(noteType);
-            }
-        }
-        return { pinnedNoteTypes, restNoteTypes };
-    }, []);
-    const currentNoteTypeData = useMemo(() => NOTE_TYPES.find(t => t.type === currentNoteType), [ currentNoteType ]);
-    const { builtinTemplates, collectionTemplates } = useBuiltinTemplates();
-
-    return (currentNoteType && supportedNoteTypes.has(currentNoteType) &&
-        <div
-            className="note-type-switcher"
-            onWheel={onWheelHorizontalScroll}
-        >
-            {note && blob?.contentLength === 0 && (
-                <>
-                    <div className="intro">{t("note_title.note_type_switcher_label", { type: currentNoteTypeData?.title.toLocaleLowerCase() })}</div>
-                    {pinnedNoteTypes.map(noteType => noteType.type !== currentNoteType && (
-                        <Badge
-                            key={noteType.type}
-                            text={noteType.title}
-                            icon={`bx ${noteType.icon}`}
-                            onClick={() => switchNoteType(note.noteId, noteType)}
-                        />
-                    ))}
-                    {collectionTemplates.length > 0 && <CollectionNoteTypes noteId={note.noteId} collectionTemplates={collectionTemplates} />}
-                    {builtinTemplates.length > 0 && <TemplateNoteTypes noteId={note.noteId} builtinTemplates={builtinTemplates} />}
-                    {restNoteTypes.length > 0 && <MoreNoteTypes noteId={note.noteId} restNoteTypes={restNoteTypes} />}
-                </>
-            )}
-        </div>
-    );
-}
-
-function MoreNoteTypes({ noteId, restNoteTypes }: { noteId: string, restNoteTypes: NoteTypeMapping[] }) {
-    return (
-        <BadgeWithDropdown
-            text={t("note_title.note_type_switcher_others")}
-            icon="bx bx-dots-vertical-rounded"
-        >
-            {restNoteTypes.map(noteType => (
-                <FormListItem
-                    key={noteType.type}
-                    icon={`bx ${noteType.icon}`}
-                    onClick={() => switchNoteType(noteId, noteType)}
-                >{noteType.title}</FormListItem>
-            ))}
-        </BadgeWithDropdown>
-    );
-}
-
-function CollectionNoteTypes({ noteId, collectionTemplates }: { noteId: string, collectionTemplates: FNote[] }) {
-    return (
-        <BadgeWithDropdown
-            text={t("note_title.note_type_switcher_collection")}
-            icon="bx bx-book"
-        >
-            {collectionTemplates.map(collectionTemplate => (
-                <FormListItem
-                    key={collectionTemplate.noteId}
-                    icon={collectionTemplate.getIcon()}
-                    onClick={() => setTemplate(noteId, collectionTemplate.noteId)}
-                >{collectionTemplate.title}</FormListItem>
-            ))}
-        </BadgeWithDropdown>
-    );
-}
-
-function TemplateNoteTypes({ noteId, builtinTemplates }: { noteId: string, builtinTemplates: FNote[] }) {
-    const [ userTemplates, setUserTemplates ] = useState<FNote[]>([]);
-
-    async function refreshTemplates() {
-        const templateNoteIds = await server.get<string[]>("search-templates");
-        const templateNotes = await froca.getNotes(templateNoteIds);
-        setUserTemplates(templateNotes);
-    }
-
-    // First load.
-    useEffect(() => {
-        refreshTemplates();
-    }, []);
-
-    // React to external changes.
-    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        if (loadResults.getAttributeRows().some(attr => attr.type === "label" && attr.name === "template")) {
-            refreshTemplates();
-        }
-    });
-
-    return (
-        <BadgeWithDropdown
-            text={t("note_title.note_type_switcher_templates")}
-            icon="bx bx-copy-alt"
-        >
-            {userTemplates.map(template => <TemplateItem key={template.noteId} noteId={noteId} template={template} />)}
-            {userTemplates.length > 0 && <FormDropdownDivider />}
-            {builtinTemplates.map(template => <TemplateItem key={template.noteId} noteId={noteId} template={template} />)}
-        </BadgeWithDropdown>
-    );
-}
-
-function TemplateItem({ noteId, template }: { noteId: string, template: FNote }) {
-    return (
-        <FormListItem
-            icon={template.getIcon()}
-            onClick={() => setTemplate(noteId, template.noteId)}
-        >{template.title}</FormListItem>
-    );
-}
-
-function switchNoteType(noteId: string, { type, mime }: NoteTypeMapping) {
-    return server.put(`notes/${noteId}/type`, { type, mime });
-}
-
-function setTemplate(noteId: string, templateId: string) {
-    return attributes.setRelation(noteId, "template", templateId);
-}
-
-function useBuiltinTemplates() {
-    const [ templates, setTemplates ] = useState<{
-        builtinTemplates: FNote[];
-        collectionTemplates: FNote[];
-    }>({
-        builtinTemplates: [],
-        collectionTemplates: []
-    });
-
-    async function loadBuiltinTemplates() {
-        const templatesRoot = await froca.getNote("_templates");
-        if (!templatesRoot) return;
-        const childNotes = await templatesRoot.getChildNotes();
-        const builtinTemplates: FNote[] = [];
-        const collectionTemplates: FNote[] = [];
-        for (const childNote of childNotes) {
-            if (!childNote.hasLabel("template")) continue;
-            if (childNote.hasLabel("collection")) {
-                collectionTemplates.push(childNote);
-            } else {
-                builtinTemplates.push(childNote);
-            }
-        }
-        setTemplates({ builtinTemplates, collectionTemplates });
-    }
-
-    useEffect(() => {
-        loadBuiltinTemplates();
-    }, []);
-
-    return templates;
-}
-//#endregion
-
-//#region Edited Notes
-function EditedNotes() {
-    const { note } = useNoteContext();
-    const [ dateNote ] = useNoteLabel(note, "dateNote");
-    const [ editedNotesOpenInRibbon ] = useTriliumOptionBool("editedNotesOpenInRibbon");
-
-    return (note && dateNote &&
-        <Collapsible
-            className="edited-notes"
-            title={t("note_title.edited_notes")}
-            initiallyExpanded={editedNotesOpenInRibbon}
-        >
-            <EditedNotesContent note={note} />
-        </Collapsible>
-    );
-}
-
-function EditedNotesContent({ note }: { note: FNote }) {
-    const editedNotes = useEditedNotes(note);
-
-    return (editedNotes !== undefined &&
-        (editedNotes.length > 0 ? editedNotes?.map(editedNote => (
-            <SimpleBadge
-                key={editedNote.noteId}
-                title={(
-                    <NoteLink
-                        notePath={editedNote.noteId}
-                        showNoteIcon
-                    />
-                )}
-            />
-        )) : (
-            <div className="no-edited-notes-found">{t("edited_notes.no_edited_notes_found")}</div>
-        )));
-}
-//#endregion

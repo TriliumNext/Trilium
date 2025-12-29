@@ -21,7 +21,7 @@
     --subtle-border-color: #313131;
     --dropdown-border-color: #404040;
     --dropdown-shadow-opacity: 0.6;
-    --dropdown-item-icon-destructive-color: #de6e5b;
+    --dropdown-item-icon-destructive-color: #d58477;
     --contextual-help-icon-color: #7fd2ef;
 
     --accented-background-color: #555;
@@ -77,6 +77,7 @@
     --link-color: #95c3d9;
     --link-hover-background: #75c2e324;
     --link-hover-color: var(--link-color);
+    --link-selection-outline-color: #75c2e385;
 
     --hover-item-text-color: #efefef;
     --hover-item-background-color: #ffffff16;
@@ -236,7 +237,9 @@
 
     --bottom-panel-background-color: #11111180;
     --bottom-panel-title-bar-background-color: #3F3F3F80;
-
+    
+    --status-bar-border-color: var(--main-border-color);
+    
     --scrollbar-thumb-color: #fdfdfd5c;
     --scrollbar-thumb-hover-color: #ffffff7d;
     --scrollbar-background-color: transparent;
@@ -346,5 +349,5 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 
 .note-split.with-hue *::selection,
 .quick-edit-dialog-wrapper.with-hue *::selection {
-    background: hsl(var(--custom-color-hue), 49.2%, 35%);
+    --selection-background-color: hsl(var(--custom-color-hue), 49.2%, 35%);
 }

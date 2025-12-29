@@ -21,7 +21,10 @@
     },
     "bundle-error": {
       "title": "Benutzerdefiniertes Skript konnte nicht geladen werden",
-      "message": "Skript aus der Notiz \"{{title}}\" mit der ID \"{{id}}\", konnte nicht ausgeführt werden wegen:\n\n{{message}}"
+      "message": "Skript konnte nicht ausgeführt werden wegen:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "Abruf der Liste von Widgets vom Server ist fehlgeschlagen"
     }
   },
   "add_link": {
@@ -746,7 +749,6 @@
   },
   "note_icon": {
     "change_note_icon": "Notiz-Icon ändern",
-    "category": "Kategorie:",
     "search": "Suche:",
     "reset-default": "Standard wiederherstellen"
   },

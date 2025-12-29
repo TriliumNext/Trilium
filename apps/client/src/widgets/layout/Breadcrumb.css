@@ -35,7 +35,7 @@
         align-items: center;
         min-width: 0;
 
-        .bx {
+        .tn-icon {
             margin-inline: 6px;
         }
 
@@ -55,9 +55,9 @@
     .icon-action {
         font-size: .9rem !important;
 
-        .bxs-chevron-right {
+        &.breadcrumb-separator {
             transform: translateY(8%);
-            
+
             &::before {
                 opacity: .75;
             }
@@ -87,12 +87,10 @@
         color: var(--custom-color, inherit) !important;
     }
 
-    .dropdown .breadcrumb-child-list {
+    .dropdown.breadcrumb-child-list {
         /* Icon */
         li > span:first-child {
             opacity: .75;
-            padding-inline-end: 4px;
-            translate: none;
         };
     }
 

@@ -1,7 +1,9 @@
+import type { CSSProperties } from "preact/compat";
 import { useEffect, useState } from "preact/hooks";
+
 import type FNote from "../../entities/fnote";
 import froca from "../../services/froca";
-import type { CSSProperties } from "preact/compat";
+import NoteLink from "./NoteLink";
 
 interface NoteListProps {
     noteIds?: string[];
@@ -29,6 +31,26 @@ export default function NoteList({ noteIds, branchIds, style }: NoteListProps) {
             {notes.map(note => (
                 <li key={note.noteId}>
                     {note.title}
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+export function NoteListWithLinks({ noteIds }: {
+    noteIds: string[]
+}) {
+    const [ notes, setNotes ] = useState<FNote[]>([]);
+
+    useEffect(() => {
+        froca.getNotes(noteIds).then((notes) => setNotes(notes));
+    }, [ noteIds ]);
+
+    return (notes &&
+        <ul>
+            {notes.map(note => (
+                <li key={note.noteId}>
+                    <NoteLink notePath={note.noteId} showNotePath showNoteIcon noPreview />
                 </li>
             ))}
         </ul>

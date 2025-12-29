@@ -54,6 +54,16 @@
         display: flex;
         gap: 1em;
         justify-content: space-between;
+
+        .btn {
+            color: var(--bs-toast-color);
+            background: var(--modal-control-button-background);
+
+            &:hover {
+                background: var(--modal-control-button-hover-background);
+                color: var(--bs-toast-color);
+            }
+        }
     }
 
     .toast-progress {

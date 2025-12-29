@@ -2,10 +2,11 @@ import { Dropdown as BootstrapDropdown, Tooltip } from "bootstrap";
 import { ComponentChildren, HTMLAttributes } from "preact";
 import { CSSProperties, HTMLProps } from "preact/compat";
 import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
+
 import { useTooltip, useUniqueName } from "./hooks";
 
 type DataAttributes = {
-  [key: `data-${string}`]: string | number | boolean | undefined;
+    [key: `data-${string}`]: string | number | boolean | undefined;
 };
 
 export interface DropdownProps extends Pick<HTMLProps<HTMLDivElement>, "id" | "className"> {
@@ -66,14 +67,14 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
         return () => {
             resizeObserver.disconnect();
             dropdown.dispose();
-        }
+        };
     }, []);
 
     const onShown = useCallback(() => {
         setShown(true);
         externalOnShown?.();
         hideTooltip();
-    }, [ hideTooltip ])
+    }, [ hideTooltip ]);
 
     const onHidden = useCallback(() => {
         setShown(false);
@@ -122,17 +123,23 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
                 {...buttonProps}
             >
                 {text}
-                <span className="caret"></span>
+                <span className="caret" />
             </button>
 
             <ul
-                class={`dropdown-menu ${isStatic ? "static" : ""} ${dropdownContainerClassName ?? ""} ${!noDropdownListStyle ? "tn-dropdown-list" : ""}`}
+                class={`dropdown-menu tn-dropdown-menu ${isStatic ? "static" : ""} ${dropdownContainerClassName ?? ""} ${!noDropdownListStyle ? "tn-dropdown-list" : ""}`}
                 style={dropdownContainerStyle}
                 aria-labelledby={ariaId}
                 ref={dropdownContainerRef}
+                onClick={(e) => {
+                    // Prevent clicks directly inside the dropdown from closing.
+                    if (e.target === dropdownContainerRef.current) {
+                        e.stopPropagation();
+                    }
+                }}
             >
                 {shown && children}
             </ul>
         </div>
-    )
+    );
 }

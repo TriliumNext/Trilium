@@ -115,3 +115,7 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 .use-note-color {
     --custom-color: var(--dark-theme-custom-color);
 }
+
+span.fancytree-active {
+    color: var(--dark-theme-custom-color, var(--active-item-text-color));
+}

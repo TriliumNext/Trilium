@@ -229,11 +229,11 @@ span.fancytree-node.archived {
     opacity: 0.6;
 }
 
-.fancytree-node:hover .bx.tree-item-button {
+.fancytree-node:hover .tn-icon.tree-item-button {
     display: inline-block;
 }
 
-.bx.tree-item-button {
+.tn-icon.tree-item-button {
     display: none;
     font-size: 120%;
     cursor: pointer;
@@ -243,7 +243,7 @@ span.fancytree-node.archived {
     border-radius: 5px;
 }
 
-.unhoist-button.bx.tree-item-button {
+.unhoist-button.tn-icon.tree-item-button {
     margin-inline-start: 0; /* unhoist button is on the left and doesn't need more margin */
     display: block; /* keep always visible */
 }

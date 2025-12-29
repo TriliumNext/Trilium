@@ -28,7 +28,7 @@ body.experimental-feature-new-layout #right-pane {
             border-bottom: 0;
         }
 
-        &.collapsed .card-header > .bx {
+        &.collapsed .card-header > .tn-icon {
             transform: rotate(-90deg);
         }
     }
@@ -50,7 +50,7 @@ body.experimental-feature-new-layout #right-pane {
         padding: 0.75em;
         color: var(--muted-text-color);
 
-        .bx {
+        .tn-icon {
             font-size: 3em;
         }
 

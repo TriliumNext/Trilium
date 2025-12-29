@@ -1,10 +1,12 @@
+import "./TablePrintView.css";
+
 import { useEffect, useRef, useState } from "preact/hooks";
+import { ExportModule, FormatModule, Tabulator as VanillaTabulator} from 'tabulator-tables';
+
+import { RawHtmlBlock } from "../../react/RawHtml";
 import { ViewModeProps } from "../interface";
 import useData, { TableConfig } from "./data";
-import { ExportModule, FormatModule, Tabulator as VanillaTabulator} from 'tabulator-tables';
 import Tabulator from "./tabulator";
-import { RawHtmlBlock } from "../../react/RawHtml";
-import "./TablePrintView.css";
 
 export default function TablePrintView({ note, noteIds, viewConfig, onReady }: ViewModeProps<TableConfig>) {
     const tabulatorRef = useRef<VanillaTabulator>(null);
@@ -13,7 +15,10 @@ export default function TablePrintView({ note, noteIds, viewConfig, onReady }: V
 
     useEffect(() => {
         if (!html) return;
-        onReady?.();
+        onReady?.({
+            type: "collection",
+            ignoredNoteIds: []
+        });
     }, [ html ]);
 
     return rowData && (
@@ -45,5 +50,5 @@ export default function TablePrintView({ note, noteIds, viewConfig, onReady }: V
             </div>
         </>
 
-    )
+    );
 }

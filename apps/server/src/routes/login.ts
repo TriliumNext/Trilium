@@ -1,3 +1,4 @@
+import crypto from "crypto";
 import utils from "../services/utils.js";
 import optionService from "../services/options.js";
 import myScryptService from "../services/encryption/my_scrypt.js";
@@ -160,7 +161,11 @@ function verifyPassword(submittedPassword: string) {
 
     const guess_hashed = myScryptService.getVerificationHash(submittedPassword);
 
-    return guess_hashed.equals(hashed_password);
+    // Use constant-time comparison to prevent timing attacks
+    if (hashed_password.length !== guess_hashed.length) {
+        return false;
+    }
+    return crypto.timingSafeEqual(guess_hashed, hashed_password);
 }
 
 function sendLoginError(req: Request, res: Response, errorType: 'password' | 'totp' = 'password') {

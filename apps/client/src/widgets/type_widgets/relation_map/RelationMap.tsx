@@ -58,6 +58,7 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
     const spacedUpdate = useEditorSpacedUpdate({
         note,
         noteContext,
+        noteType: "relationMap",
         getData() {
             return {
                 content: JSON.stringify(data),

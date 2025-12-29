@@ -13,7 +13,7 @@
   <li>Assign the <code>renderNote</code>  <a href="#root/_help_zEY4DaJG4YT5">relation</a> to
     point at the previously created code note.</li>
 </ol>
-<h2>Dynamic content</h2>
+<h2>Legacy scripting using jQuery</h2>
 <p>A static HTML is generally not enough for&nbsp;<a class="reference-link"
   href="#root/_help_CdNpE2pqjmI6">Scripting</a>. The next step is to automatically
   change parts of the note using JavaScript.</p>
@@ -24,7 +24,7 @@ The current date &amp; time is &lt;span class="date"&gt;&lt;/span&gt;</code></pr
 <p>Now we need to add the script. Create another&nbsp;<a class="reference-link"
   href="#root/_help_6f9hih2hXXZk">Code</a>, but this time of JavaScript (frontend)
   language. Make sure the newly created note is a direct child of the HTML
-  note created previously; with the following content:</p><pre><code class="language-text-x-trilium-auto">const $dateEl = api.$container.find(".date");
+  note created previously; with the following content:</p><pre><code class="language-application-javascript-env-backend">const $dateEl = api.$container.find(".date");
 $dateEl.text(new Date());</code></pre>
 <p>Now create a render note at any place and set its <code>~renderNote</code> relation
   to point to the HTML note. When the render note is accessed it will display:</p>
@@ -33,6 +33,34 @@ $dateEl.text(new Date());</code></pre>
     <br>The current date &amp; time is Sun Apr 06 2025 15:26:29 GMT+0300 (Eastern
     European Summer Time)</p>
 </blockquote>
+<h2>Dynamic content using Preact &amp; JSX</h2>
+<p>As a more modern alternative to jQuery, it's possible to use Preact &amp;
+  JSX to render pages. Since JSX is a superset of JavaScript, there's no
+  need to provide a HTML anymore.</p>
+<p>Here are the steps to creating a simple render note:</p>
+<ol>
+  <li>
+    <p>Create a note of type&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>.</p>
+  </li>
+  <li>
+    <p>Create a child&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note
+      with JSX as the language.
+      <br>As an example, use the following content:</p><pre><code class="language-text-x-trilium-auto">export default function() {
+    return (
+        &lt;&gt;
+            &lt;p&gt;Hello world.&lt;/p&gt;
+        &lt;/&gt;
+    );
+}</code></pre>
+  </li>
+  <li>
+    <p>In the parent render note, define a <code>~renderNote</code> relation pointing
+      to the newly created child.</p>
+  </li>
+  <li>
+    <p>Refresh the render note and it should display a “Hello world” message.</p>
+  </li>
+</ol>
 <h2>Refreshing the note</h2>
 <p>It's possible to refresh the note via:</p>
 <ul>

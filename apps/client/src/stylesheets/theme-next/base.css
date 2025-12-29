@@ -128,10 +128,20 @@ body.backdrop-effects-disabled {
     font-size: 0.9rem !important;
 }
 
+/* Use this class for non-legacy menus */
+.dropdown-menu.tn-dropdown-menu {
+    --menu-item-icon-vert-offset: 0;
+    white-space-collapse: discard;
+}
+
+.dropdown-menu.tn-dropdown-menu .dropdown-item .tn-icon {
+    margin-inline-end: 6px;
+}
+
 .dropdown-menu.tn-dropdown-menu-scrollable {
     /* Note: scrollable dropdowns does not support submenus */
     max-height: 90vh;
-    overflow: scroll;
+    overflow-y: auto;
 }
 
 body.desktop .dropdown-menu::before,
@@ -153,12 +163,12 @@ body.desktop .dropdown-menu.tn-dropdown-list {
     backdrop-filter: var(--dropdown-backdrop-filter);
 }
 
-body.desktop .dropdown-menu.tn-dropdown-list::before {
-    display: none;
-}
-
 body.desktop .dropdown-submenu .dropdown-menu::before {
     content: unset;
+}
+
+body.desktop .dropdown-menu.tn-dropdown-list::before {
+    display: none;
 }
 
 body.desktop .dropdown-submenu .dropdown-menu {
@@ -224,6 +234,10 @@ html body .dropdown-item[disabled] {
     opacity: var(--menu-item-disabled-opacity);
 }
 
+.dropdown-item:not(.disabled) .destructive-action-icon,
+.dropdown-item:not(.disabled) .bx-trash {
+    --menu-item-icon-color: var(--dropdown-item-icon-destructive-color);
+}
 /* Badges */
 :root .badge {
     --bs-badge-color: var(--badge-text-color);
@@ -235,7 +249,7 @@ html body .dropdown-item[disabled] {
 }
 
 /* Menu item icon */
-.dropdown-item .bx {
+.dropdown-item .tn-icon {
     translate: 0 var(--menu-item-icon-vert-offset);
     color: var(--menu-item-icon-color) !important;
     font-size: 1.1em;
@@ -482,7 +496,7 @@ li.dropdown-item a.dropdown-item-button {
     border: unset;
 }
 
-li.dropdown-item a.dropdown-item-button.bx {
+li.dropdown-item a.dropdown-item-button.tn-icon {
     color: var(--menu-text-color) !important;
 }
 
@@ -543,13 +557,13 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
     padding-top: 0;
 }
 
-#toast-container .toast:not(.no-title) .bx {
+#toast-container .toast:not(.no-title) .tn-icon {
     margin-inline-end: 0.5em;
     font-size: 1.1em;
     opacity: 0.85;
 }
 
-#toast-container .toast.no-title .bx {
+#toast-container .toast.no-title .tn-icon {
     margin-inline-end: 0;
     font-size: 1.3em;
 }
@@ -740,17 +754,12 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
     margin-bottom: 0;
 }
 
-.note-list-wrapper .note-book-card .bx {
+.note-list-wrapper .note-book-card .tn-icon {
     color: var(--left-pane-icon-color) !important;
 }
 
 .note-list.grid-view .note-book-card:hover {
     filter: contrast(105%);
-}
-
-.note-list.grid-view .note-book-card img {
-    object-fit: cover !important;
-    width: 100%;
 }
 
 .note-list.grid-view .ck-content {

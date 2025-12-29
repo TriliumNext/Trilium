@@ -3,7 +3,7 @@
 
 export interface AttachmentRow {
     attachmentId?: string;
-    ownerId?: string;
+    ownerId: string;
     role: string;
     mime: string;
     title: string;

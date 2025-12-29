@@ -22,7 +22,15 @@
     "bundle-error": {
       "title": "Nie udało się załadować niestandardowego skryptu",
       "message": "Skrypt z notatki o ID \"{{id}}\", zatytułowany \"{{title}}\", nie mógł zostać wykonany z powodu:\n\n{{message}}"
-    }
+    },
+    "widget-list-error": {
+      "title": "Nie udało się pobrać listy widżetów z serwera"
+    },
+    "widget-render-error": {
+      "title": "Nie udało się wyrenderować niestandardowego widżetu React"
+    },
+    "widget-missing-parent": "Niestandardowy widżet nie ma zdefiniowanej obowiązkowej właściwości „{{property}}”.",
+    "open-script-note": "Otwórz notatkę ze skryptem"
   },
   "add_link": {
     "add_link": "Dodaj link",
@@ -434,7 +442,8 @@
   },
   "inherited_attribute_list": {
     "title": "Dziedziczone atrybuty",
-    "no_inherited_attributes": "Brak dziedziczonych atrybutów."
+    "no_inherited_attributes": "Brak dziedziczonych atrybutów.",
+    "none": "brak"
   },
   "note_info_widget": {
     "note_id": "ID notatki",
@@ -1277,7 +1286,6 @@
   },
   "note_icon": {
     "change_note_icon": "Zmień ikonę notatki",
-    "category": "Kategoria:",
     "search": "Szukaj:",
     "reset-default": "Przywróć domyślną ikonę"
   },
@@ -1937,7 +1945,10 @@
     "options": "Opcje",
     "modal_title": "Konfiguracja listy wyróżnień",
     "menu_configure": "Konfiguracja listy wyróżnień...",
-    "no_highlights": "Nie znaleziono wyróżnień."
+    "no_highlights": "Nie znaleziono wyróżnień.",
+    "title_with_count_one": "{{count}} podświetlenie",
+    "title_with_count_few": "{{count}} podświetlenia",
+    "title_with_count_many": "{{count}} podświetleń"
   },
   "quick-search": {
     "placeholder": "Szybkie wyszukiwanie",
@@ -2008,7 +2019,8 @@
   },
   "toc": {
     "table_of_contents": "Spis treści",
-    "options": "Opcje"
+    "options": "Opcje",
+    "no_headings": "Brak nagłówków."
   },
   "watched_file_update_status": {
     "file_last_modified": "Plik <code class=\"file-path\"></code> został ostatnio zmodyfikowany <span class=\"file-last-modified\"></span>.",
@@ -2206,5 +2218,14 @@
     "scroll_to_top_title": "Przejdź na początek notatki",
     "create_new_note": "Utwórz nową notatkę podrzędną",
     "empty_hide_archived_notes": "Ukryj zarchiwizowane notatki"
+  },
+  "attributes_panel": {
+    "title": "Atrybuty notatki"
+  },
+  "right_pane": {
+    "empty_message": "Brak elementów do wyświetlenia dla tej notatki",
+    "empty_button": "Ukryj panel",
+    "toggle": "Pokaż/ukryj prawy panel",
+    "custom_widget_go_to_source": "Przejdź do kodu źródłowego"
   }
 }

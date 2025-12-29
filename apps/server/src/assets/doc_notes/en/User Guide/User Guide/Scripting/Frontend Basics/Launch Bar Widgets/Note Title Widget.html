@@ -5,6 +5,7 @@
 <p>This is an example of a note context-aware widget, which reacts to the
   currently opened note and refreshes automatically as the user navigates
   through the notes.</p>
+<h2>Legacy widget</h2>
 <p>In this example, the title of the note is displayed. It works best on
   the <a href="#root/_help_x0JgW8UqGXvq">horizontal layout</a>.</p><pre><code class="language-application-javascript-env-backend">const TPL = `\
 &lt;div style="
@@ -29,3 +30,18 @@ class NoteTitleWidget extends api.NoteContextAwareWidget {
 }
 
 module.exports = new NoteTitleWidget();</code></pre>
+<h2>Preact widget (v0.101.0+)</h2><pre><code class="language-text-jsx">import { defineLauncherWidget, useActiveNoteContext } from "trilium:preact";
+
+export default defineLauncherWidget({
+    render: () =&gt; {
+        const { note } = useActiveNoteContext();
+        return &lt;div style={{
+            display: "flex",
+            height: "53px",
+            width: "fit-content",
+            fontSize: "0.75em",
+            alignItems: "center",
+            flexShrink: 0            
+        }}&gt;{note?.title}&lt;/div&gt;;
+    }
+});</code></pre>

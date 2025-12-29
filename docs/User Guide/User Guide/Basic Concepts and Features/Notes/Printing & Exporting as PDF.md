@@ -59,6 +59,9 @@ Since v0.100.0, it is possible to print more than one note at the time by using�
 
 The resulting collection will contain all the children of the collection, while maintaining the hierarchy.
 
+> [!NOTE]
+> Not all note types are supported when printing or exporting to PDF. When an unsupported note is encountered, it is skipped. At the end, if any of the notes were skipped, a message will be displayed with the possibility of viewing the full list of skipped notes. The same limitations as the ones described in _Constraints & limitations_ apply.
+
 ## Keyboard shortcut
 
 It's possible to trigger both printing and export as PDF from the keyboard by going to _Keyboard shortcuts_ in <a class="reference-link" href="../UI%20Elements/Options.md">Options</a> and assigning a key combination for:
@@ -76,12 +79,12 @@ Not all <a class="reference-link" href="../../Note%20Types.md">Note Types</a> 
 *   For <a class="reference-link" href="../../Collections.md">Collections</a>, the following are supported:
     *   <a class="reference-link" href="../../Collections/List%20View.md">List View</a>, allowing to print multiple notes at once while preserving hierarchy (similar to a book).
     *   <a class="reference-link" href="../../Collections/Presentation.md">Presentation</a>, where each slide/sub-note is displayed.
+        *   Most note types are supported, especially the ones that have an image representation such as <a class="reference-link" href="../../Note%20Types/Canvas.md">Canvas</a> and <a class="reference-link" href="../../Note%20Types/Mind%20Map.md">Mind Map</a>.
     *   <a class="reference-link" href="../../Collections/Table.md">Table</a>, where the table is rendered in a print-friendly way.
         *   Tables that are too complex (especially if they have multiple columns) might not fit properly, however tables with a large number of rows are supported thanks to pagination.
         *   Consider printing in landscape mode, or using `#printLandscape` if exporting to PDF.
     *   The rest of the collections are not supported, but we plan to add support for all the collection types at some point.
-*   Using <a class="reference-link" href="../../Theme%20development/Custom%20app-wide%20CSS.md">Custom app-wide CSS</a> for printing is not longer supported, due to a more stable but isolated mechanism.
-    *   We plan to introduce a new mechanism specifically for a print CSS.
+*   Using <a class="reference-link" href="../../Theme%20development/Custom%20app-wide%20CSS.md">Custom app-wide CSS</a> for printing is no longer supported, instead a custom `printCss` relation needs to be used (see below).
 
 ## Customizing the print CSS
 

@@ -523,7 +523,8 @@
   },
   "toc": {
     "table_of_contents": "Sommario",
-    "options": "Opzioni"
+    "options": "Opzioni",
+    "no_headings": "Nessun titolo."
   },
   "table_of_contents": {
     "title": "Sommario",
@@ -556,7 +557,13 @@
   },
   "highlights_list_2": {
     "title": "Punti salienti",
-    "options": "Opzioni"
+    "options": "Opzioni",
+    "title_with_count_one": "{{count}} evidenza",
+    "title_with_count_many": "{{count}} evidenze",
+    "title_with_count_other": "{{count}} evidenze",
+    "modal_title": "Configura elenco dei punti salienti",
+    "menu_configure": "Configura elenco dei punti salienti...",
+    "no_highlights": "Nessun punto saliente trovato."
   },
   "quick-search": {
     "placeholder": "Ricerca rapida",
@@ -1326,7 +1333,6 @@
   },
   "note_icon": {
     "change_note_icon": "Cambia icona nota",
-    "category": "Categoria:",
     "search": "Ricerca:",
     "reset-default": "Ripristina l'icona predefinita"
   },
@@ -1388,7 +1394,8 @@
   },
   "inherited_attribute_list": {
     "title": "Attributi ereditati",
-    "no_inherited_attributes": "Nessun attributo ereditato."
+    "no_inherited_attributes": "Nessun attributo ereditato.",
+    "none": "nessuno"
   },
   "note_info_widget": {
     "note_id": "ID nota",
@@ -1400,7 +1407,8 @@
     "calculate": "calcolare",
     "subtree_size": "(dimensione del sottoalbero: {{size}} in {{count}} note)",
     "title": "Nota informativa",
-    "show_similar_notes": "Mostra note simili"
+    "show_similar_notes": "Mostra note simili",
+    "mime": "Tipo MIME"
   },
   "note_map": {
     "open_full": "Espandi completamente",
@@ -2095,14 +2103,20 @@
     "background_effects_title": "Gli effetti di sfondo sono ora stabili",
     "background_effects_message": "Sui dispositivi Windows, gli effetti di sfondo sono ora completamente stabili. Gli effetti di sfondo aggiungono un tocco di colore all'interfaccia utente sfocando lo sfondo retrostante. Questa tecnica è utilizzata anche in altre applicazioni come Esplora risorse di Windows.",
     "background_effects_button": "Abilita gli effetti di sfondo",
-    "dismiss": "Congedare"
+    "dismiss": "Congedare",
+    "new_layout_title": "Nuovo layout",
+    "new_layout_message": "Abbiamo introdotto un layout modernizzato per Trilium. La barra multifunzione è stata rimossa e integrata perfettamente nell'interfaccia principale, con una nuova barra di stato e sezioni espandibili (come gli attributi promossi) che assumono le funzioni chiave.\n\nIl nuovo layout è abilitato di default e può essere temporaneamente disabilitato tramite Opzioni → Aspetto.",
+    "new_layout_button": "Maggiori informazioni"
   },
   "settings": {
     "related_settings": "Impostazioni correlate"
   },
   "settings_appearance": {
     "related_code_blocks": "Schema di colori per i blocchi di codice nelle note di testo",
-    "related_code_notes": "Schema di colori per le note del codice"
+    "related_code_notes": "Schema di colori per le note del codice",
+    "ui": "Interfaccia utente",
+    "ui_old_layout": "Vecchio layout",
+    "ui_new_layout": "Nuovo layout"
   },
   "units": {
     "percentage": "%"
@@ -2159,13 +2173,18 @@
     "execute_script": "Esegui script",
     "execute_script_description": "Questa nota è una nota di script. Clicca per eseguire lo script.",
     "execute_sql": "Esegui SQL",
-    "execute_sql_description": "Questa nota è una nota SQL. Clicca per eseguire la query SQL."
+    "execute_sql_description": "Questa nota è una nota SQL. Clicca per eseguire la query SQL.",
+    "shared_copy_to_clipboard": "Copia link negli appunti",
+    "shared_open_in_browser": "Apri il link nel browser",
+    "shared_unshare": "Rimuovi condivisione"
   },
   "breadcrumb": {
     "workspace_badge": "Area di lavoro",
     "scroll_to_top_title": "Vai all'inizio della nota",
     "hoisted_badge": "Sollevato",
-    "hoisted_badge_title": "Abbassato"
+    "hoisted_badge_title": "Abbassato",
+    "create_new_note": "Crea nuova nota secondaria",
+    "empty_hide_archived_notes": "Nascondi note archiviate"
   },
   "status_bar": {
     "language_title": "Cambia lingua dei contenuti",
@@ -2191,5 +2210,14 @@
     "note_paths_other": "{{count}} percorsi",
     "note_paths_title": "Nota percorsi",
     "code_note_switcher": "Cambia modalità lingua"
+  },
+  "attributes_panel": {
+    "title": "Attributi delle note"
+  },
+  "right_pane": {
+    "empty_message": "Nulla da segnalare per questa nota",
+    "empty_button": "Nascondi il pannello",
+    "toggle": "Attiva/disattiva pannello destro",
+    "custom_widget_go_to_source": "Vai al codice sorgente"
   }
 }

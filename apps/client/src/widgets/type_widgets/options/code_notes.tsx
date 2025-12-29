@@ -1,21 +1,23 @@
+import "./code_notes.css";
+
 import CodeMirror, { ColorThemes, getThemeById } from "@triliumnext/codemirror";
+import { default as codeNoteMimeTypes } from "@triliumnext/codemirror/src/syntax_highlighting";
+import { MimeType } from "@triliumnext/commons";
+import { byMimeType as codeBlockMimeTypes } from "@triliumnext/highlightjs/src/syntax_highlighting";
+import { useEffect, useMemo, useRef } from "preact/hooks";
+
 import { t } from "../../../services/i18n";
+import mime_types from "../../../services/mime_types";
 import Column from "../../react/Column";
 import FormCheckbox from "../../react/FormCheckbox";
 import FormGroup from "../../react/FormGroup";
 import FormSelect from "../../react/FormSelect";
 import { useStaticTooltip, useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
-import OptionsSection from "./components/OptionsSection";
-import { useEffect, useMemo, useRef } from "preact/hooks";
-import codeNoteSample from "./samples/code_note.txt?raw";
 import { CODE_THEME_DEFAULT_PREFIX as DEFAULT_PREFIX } from "../constants";
-import { MimeType } from "@triliumnext/commons";
-import mime_types from "../../../services/mime_types";
-import CheckboxList from "./components/CheckboxList";
 import AutoReadOnlySize from "./components/AutoReadOnlySize";
-import "./code_notes.css";
-import { byMimeType as codeBlockMimeTypes } from "@triliumnext/highlightjs/src/syntax_highlighting";
-import { default as codeNoteMimeTypes } from "@triliumnext/codemirror/src/syntax_highlighting";
+import CheckboxList from "./components/CheckboxList";
+import OptionsSection from "./components/OptionsSection";
+import codeNoteSample from "./samples/code_note.txt?raw";
 
 const SAMPLE_MIME = "application/typescript";
 
@@ -27,7 +29,7 @@ export default function CodeNoteSettings() {
             <CodeMimeTypes />
             <AutoReadOnlySize option="autoReadonlySizeCode" label={t("code_auto_read_only_size.label")} />
         </>
-    )
+    );
 }
 
 function Editor() {
@@ -42,7 +44,7 @@ function Editor() {
                 />
             </FormGroup>
         </OptionsSection>
-    )
+    );
 }
 
 function Appearance() {
@@ -51,7 +53,7 @@ function Appearance() {
 
     const themes = useMemo(() => {
         return ColorThemes.map(({ id, name }) => ({
-            id: "default:" + id,
+            id: `default:${id}`,
             name
         }));
     }, []);
@@ -130,7 +132,7 @@ function CodeMimeTypes() {
         <OptionsSection title={t("code_mime_types.title")}>
             <CodeMimeTypesList />
         </OptionsSection>
-    )
+    );
 }
 
 type MimeTypeWithDisabled = MimeType & { disabled?: boolean };
@@ -152,8 +154,9 @@ export function CodeMimeTypesList() {
             `;
         },
         selector: "label",
+        customClass: "tooltip-top",
         placement: "left",
-        fallbackPlacements: [ "left" ],
+        fallbackPlacements: [ "left", "right" ],
         animation: false,
         html: true
     });

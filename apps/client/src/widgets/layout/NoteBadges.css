@@ -16,6 +16,13 @@
         &.share-badge {--color: var(--badge-share-background-color);}
         &.clipped-note-badge {--color: var(--badge-clipped-note-background-color);}
         &.execute-badge {--color: var(--badge-execute-background-color);}
+        min-width: 0;
+
+        .text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
     }
 
     .dropdown-badge {

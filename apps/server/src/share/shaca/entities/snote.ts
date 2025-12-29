@@ -1,15 +1,14 @@
-"use strict";
-
-import sql from "../../sql.js";
-import utils from "../../../services/utils.js";
-import AbstractShacaEntity from "./abstract_shaca_entity.js";
 import escape from "escape-html";
+
+import { NOTE_TYPE_ICONS } from "../../../becca/entities/bnote.js";
 import type { Blob } from "../../../services/blob-interface.js";
+import utils from "../../../services/utils.js";
+import sql from "../../sql.js";
+import AbstractShacaEntity from "./abstract_shaca_entity.js";
+import type { SNoteRow } from "./rows.js";
 import type SAttachment from "./sattachment.js";
 import type SAttribute from "./sattribute.js";
 import type SBranch from "./sbranch.js";
-import type { SNoteRow } from "./rows.js";
-import { NOTE_TYPE_ICONS } from "../../../becca/entities/bnote.js";
 
 const LABEL = "label";
 const RELATION = "relation";
@@ -101,18 +100,16 @@ class SNote extends AbstractShacaEntity {
         if (!row) {
             if (silentNotFoundError) {
                 return undefined;
-            } else {
-                throw new Error(`Cannot find note content for note '${this.noteId}', blob '${this.blobId}'`);
             }
+            throw new Error(`Cannot find note content for note '${this.noteId}', blob '${this.blobId}'`);
         }
 
         const content = row.content;
 
         if (this.hasStringContent()) {
             return content === null ? "" : content.toString("utf-8");
-        } else {
-            return content;
         }
+        return content;
     }
 
     /** @returns true if the note has string content (not binary) */
@@ -137,9 +134,8 @@ class SNote extends AbstractShacaEntity {
             return attributeCache.filter((attr) => attr.type === type && !isCredentials(attr));
         } else if (name) {
             return attributeCache.filter((attr) => attr.name === name && !isCredentials(attr));
-        } else {
-            return attributeCache.filter((attr) => !isCredentials(attr));
         }
+        return attributeCache.filter((attr) => !isCredentials(attr));
     }
 
     getCredentials() {
@@ -460,9 +456,8 @@ class SNote extends AbstractShacaEntity {
             return this.ownedAttributes.filter((attr) => attr.type === type);
         } else if (name) {
             return this.ownedAttributes.filter((attr) => attr.name === name);
-        } else {
-            return this.ownedAttributes.slice();
         }
+        return this.ownedAttributes.slice();
     }
 
     /**
@@ -532,8 +527,17 @@ class SNote extends AbstractShacaEntity {
         };
     }
 
-    getIcon() {
-        const iconClassLabels = this.getLabels("iconClass");
+    getIcon(filterByPrefix: string[] = []) {
+        return `tn-icon ${this.#getIconInternal(filterByPrefix)}`;
+    }
+
+    #getIconInternal(filterByPrefix: string[] = []) {
+        const iconClassLabels = this.getLabels("iconClass").filter(label => {
+            if (filterByPrefix.length === 0) {
+                return true;
+            }
+            return filterByPrefix.some(prefix => label.value.startsWith(prefix));
+        });
 
         if (iconClassLabels && iconClassLabels.length > 0) {
             return iconClassLabels[0].value;
@@ -545,14 +549,12 @@ class SNote extends AbstractShacaEntity {
         } else if (this.type === "text") {
             if (this.isFolder()) {
                 return "bx bx-folder";
-            } else {
-                return "bx bx-note";
             }
+            return "bx bx-note";
         } else if (this.type === "code" && this.mime.startsWith("text/x-sql")) {
             return "bx bx-data";
-        } else {
-            return NOTE_TYPE_ICONS[this.type];
         }
+        return NOTE_TYPE_ICONS[this.type];
     }
 
     isFolder() {

@@ -133,11 +133,11 @@ async function call<T>(method: string, url: string, componentId?: string, option
             };
 
             ipc.send("server-request", {
-                requestId: requestId,
-                headers: headers,
-                method: method,
+                requestId,
+                headers,
+                method,
                 url: `/${window.glob.baseApiUrl}${url}`,
-                data: data
+                data
             });
         })) as any;
     } else {
@@ -161,7 +161,7 @@ function ajax(url: string, method: string, data: unknown, headers: Headers, sile
         const options: JQueryAjaxSettings = {
             url: window.glob.baseApiUrl + url,
             type: method,
-            headers: headers,
+            headers,
             timeout: 60000,
             success: (body, textStatus, jqXhr) => {
                 const respHeaders: Headers = {};
@@ -288,8 +288,8 @@ async function reportError(method: string, url: string, statusCode: number, resp
                 t("server.unknown_http_error_content", { statusCode, method, url, message: messageStr }),
                 15_000);
         }
-        const { throwError } = await import("./ws.js");
-        throwError(`${statusCode} ${method} ${url} - ${message}`);
+        const { logError } = await import("./ws.js");
+        logError(`${statusCode} ${method} ${url} - ${message}`);
     }
 }
 

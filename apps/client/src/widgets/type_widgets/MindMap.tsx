@@ -1,17 +1,19 @@
-import { useCallback, useEffect, useRef } from "preact/hooks";
-import { TypeWidgetProps } from "./type_widget";
-import { MindElixirData, MindElixirInstance, Operation, Options, default as VanillaMindElixir } from "mind-elixir";
-import { HTMLAttributes, RefObject } from "preact";
-// allow node-menu plugin css to be bundled by webpack
-import nodeMenu from "@mind-elixir/node-menu";
 import "mind-elixir/style";
 import "@mind-elixir/node-menu/dist/style.css";
 import "./MindMap.css";
+
+// allow node-menu plugin css to be bundled by webpack
+import nodeMenu from "@mind-elixir/node-menu";
+import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+import { snapdom } from "@zumer/snapdom";
+import { default as VanillaMindElixir,MindElixirData, MindElixirInstance, Operation, Options } from "mind-elixir";
+import { HTMLAttributes, RefObject } from "preact";
+import { useCallback, useEffect, useRef } from "preact/hooks";
+
+import utils from "../../services/utils";
 import { useEditorSpacedUpdate, useNoteLabelBoolean, useSyncedRef, useTriliumEvent, useTriliumEvents, useTriliumOption } from "../react/hooks";
 import { refToJQuerySelector } from "../react/react_utils";
-import utils from "../../services/utils";
-import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
-import { snapdom, SnapdomOptions } from "@zumer/snapdom";
+import { TypeWidgetProps } from "./type_widget";
 
 const NEW_TOPIC_NAME = "";
 
@@ -50,6 +52,7 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
 
     const spacedUpdate = useEditorSpacedUpdate({
         note,
+        noteType: "mindMap",
         noteContext,
         getData: async () => {
             if (!apiRef.current) return;
@@ -75,7 +78,7 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
                         position: 0
                     }
                 ]
-            }
+            };
         },
         onContentChange: (content) => {
             let newContent: MindElixirData;
@@ -87,7 +90,7 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
                     console.debug("Wrong JSON content: ", content);
                 }
             } else {
-                newContent = VanillaMindElixir.new(NEW_TOPIC_NAME)
+                newContent = VanillaMindElixir.new(NEW_TOPIC_NAME);
             }
             apiRef.current?.init(newContent!);
         }
@@ -138,7 +141,7 @@ export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
                 onKeyDown
             }}
         />
-    )
+    );
 }
 
 function MindElixir({ containerRef: externalContainerRef, containerProps, apiRef: externalApiRef, onChange, editable }: MindElixirProps) {
@@ -190,7 +193,7 @@ function MindElixir({ containerRef: externalContainerRef, containerProps, apiRef
             if (operation.name !== "beginEdit") {
                 onChange();
             }
-        }
+        };
 
         bus.addListener("operation", operationListener);
         bus.addListener("changeDirection", onChange);
@@ -203,5 +206,5 @@ function MindElixir({ containerRef: externalContainerRef, containerProps, apiRef
 
     return (
         <div ref={containerRef} {...containerProps} />
-    )
+    );
 }

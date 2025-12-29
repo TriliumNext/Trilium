@@ -1,23 +1,25 @@
+import "./EditableText.css";
+
+import { CKTextEditor, EditorWatchdog, TemplateDefinition } from "@triliumnext/ckeditor5";
+import { deferred } from "@triliumnext/commons";
+import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+
+import appContext from "../../../components/app_context";
+import { buildSelectedBackgroundColor } from "../../../components/touch_bar";
 import dialog from "../../../services/dialog";
+import { t } from "../../../services/i18n";
+import link, { parseNavigationStateFromUrl } from "../../../services/link";
+import note_create from "../../../services/note_create";
+import options from "../../../services/options";
 import toast from "../../../services/toast";
 import utils, { hasTouchBar, isMobile } from "../../../services/utils";
 import { useEditorSpacedUpdate, useLegacyImperativeHandlers, useNoteLabel, useTriliumEvent, useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
+import TouchBar, { TouchBarButton, TouchBarGroup, TouchBarSegmentedControl } from "../../react/TouchBar";
 import { TypeWidgetProps } from "../type_widget";
 import CKEditorWithWatchdog, { CKEditorApi } from "./CKEditorWithWatchdog";
-import "./EditableText.css";
-import { CKTextEditor, EditorWatchdog, TemplateDefinition } from "@triliumnext/ckeditor5";
-import options from "../../../services/options";
-import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
 import getTemplates, { updateTemplateCache } from "./snippets.js";
-import appContext from "../../../components/app_context";
-import link, { parseNavigationStateFromUrl } from "../../../services/link";
-import note_create from "../../../services/note_create";
-import TouchBar, { TouchBarButton, TouchBarGroup, TouchBarSegmentedControl } from "../../react/TouchBar";
-import { RefObject } from "preact";
-import { buildSelectedBackgroundColor } from "../../../components/touch_bar";
-import { deferred } from "@triliumnext/commons";
-import { t } from "../../../services/i18n";
+import { loadIncludedNote, refreshIncludedNote, setupImageOpening } from "./utils";
 
 /**
  * The editor can operate into two distinct modes:
@@ -39,6 +41,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
     const spacedUpdate = useEditorSpacedUpdate({
         note,
         noteContext,
+        noteType: "text",
         getData() {
             const editor = watchdogRef.current?.editor;
             if (!editor) {
@@ -376,7 +379,7 @@ function EditableTextTouchBar({ watchdogRef, refreshTouchBarRef }: { watchdogRef
                     const editor = watchdogRef.current?.editor;
                     switch (selectedIndex) {
                         case 0:
-                            editor?.execute("paragraph")
+                            editor?.execute("paragraph");
                             break;
                         case 1:
                             editor?.execute("heading", { value: "heading2" });
@@ -396,7 +399,7 @@ function EditableTextTouchBar({ watchdogRef, refreshTouchBarRef }: { watchdogRef
                 <TouchBarCommandButton watchdogRef={watchdogRef} command="underline" icon="NSTouchBarTextUnderlineTemplate" />
             </TouchBarGroup>
         </TouchBar>
-    )
+    );
 }
 
 function TouchBarCommandButton({ watchdogRef, icon, command }: { watchdogRef: RefObject<EditorWatchdog | null>, icon: string, command: string }) {

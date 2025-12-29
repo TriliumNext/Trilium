@@ -1,6 +1,5 @@
 .note-detail-editable-text {
     font-family: var(--detail-font-family);
-    padding-inline-start: 14px;
     height: 100%;
 }
 
@@ -49,4 +48,8 @@ body.heading-style-underline .note-detail-editable-text h6 { border-bottom: 1px 
     box-shadow: none !important;
     min-height: 50px;
     height: 100%;
+}
+
+.note-detail-editable-text .ck.ck-editor__editable_inline {
+    padding: 0;
 }

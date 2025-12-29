@@ -1,9 +1,9 @@
 import "./StatusBar.css";
 
-import { KeyboardActionNames, Locale } from "@triliumnext/commons";
+import { Locale, NoteType } from "@triliumnext/commons";
 import { Dropdown as BootstrapDropdown } from "bootstrap";
 import clsx from "clsx";
-import { type ComponentChildren } from "preact";
+import { type ComponentChildren, RefObject } from "preact";
 import { createPortal } from "preact/compat";
 import { useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
@@ -216,13 +216,12 @@ interface NoteInfoContext extends StatusBarContext {
     setSimilarNotesShown: (value: boolean) => void;
 }
 
-export function NoteInfoBadge({ note, similarNotesShown, setSimilarNotesShown }: NoteInfoContext) {
+export function NoteInfoBadge(context: NoteInfoContext) {
     const dropdownRef = useRef<BootstrapDropdown>(null);
-    const { metadata, ...sizeProps } = useNoteMetadata(note);
-    const [ originalFileName ] = useNoteLabel(note, "originalFileName");
+    const [ dropdownShown, setDropdownShown ] = useState(false);
+    const { note, similarNotesShown, setSimilarNotesShown } = context;
     const noteType = useNoteProperty(note, "type");
-    const noteTypeMapping = useMemo(() => NOTE_TYPES.find(t => t.type === noteType), [ noteType ]);
-    const enabled = note && noteType && noteTypeMapping;
+    const enabled = note && noteType;
 
     // Keyboard shortcut.
     useTriliumEvent("toggleRibbonTabNoteInfo", () => enabled && dropdownRef.current?.show());
@@ -234,13 +233,30 @@ export function NoteInfoBadge({ note, similarNotesShown, setSimilarNotesShown }:
             title={t("status_bar.note_info_title")}
             dropdownRef={dropdownRef}
             dropdownContainerClassName="dropdown-note-info"
-            dropdownOptions={{ autoClose: "outside" }}
+            dropdownOptions={{autoClose: "outside" }}
+            onShown={() => setDropdownShown(true)}
+            onHidden={() => setDropdownShown(false)}
         >
+            {dropdownShown && <NoteInfoContent {...context} dropdownRef={dropdownRef} noteType={noteType} />}
+        </StatusBarDropdown>
+    );
+}
+
+function NoteInfoContent({ note, setSimilarNotesShown, noteType, dropdownRef }: NoteInfoContext & {
+    dropdownRef: RefObject<BootstrapDropdown>;
+    noteType: NoteType;
+}) {
+    const { metadata, ...sizeProps } = useNoteMetadata(note);
+    const [ originalFileName ] = useNoteLabel(note, "originalFileName");
+    const noteTypeMapping = useMemo(() => NOTE_TYPES.find(t => t.type === noteType), [ noteType ]);
+
+    return (
+        <>
             <ul>
                 {originalFileName && <NoteInfoValue text={t("file_properties.original_file_name")} value={originalFileName} />}
                 <NoteInfoValue text={t("note_info_widget.created")} value={formatDateTime(metadata?.dateCreated)} />
                 <NoteInfoValue text={t("note_info_widget.modified")} value={formatDateTime(metadata?.dateModified)} />
-                <NoteInfoValue text={t("note_info_widget.type")} value={<><Icon icon={`bx ${noteTypeMapping.icon ?? NOTE_TYPE_ICONS[noteType]}`}/>{" "}{noteTypeMapping?.title}</>} />
+                {noteTypeMapping && <NoteInfoValue text={t("note_info_widget.type")} value={<><Icon icon={`bx ${noteTypeMapping.icon ?? NOTE_TYPE_ICONS[noteType]}`}/>{" "}{noteTypeMapping?.title}</>} />}
                 {note.mime && <NoteInfoValue text={t("note_info_widget.mime")} value={note.mime} />}
                 <NoteInfoValue text={t("note_info_widget.note_id")} value={<code>{note.noteId}</code>} />
                 <NoteInfoValue text={t("note_info_widget.note_size")} title={t("note_info_widget.note_size_info")} value={<NoteSizeWidget {...sizeProps} />} />
@@ -253,7 +269,7 @@ export function NoteInfoBadge({ note, similarNotesShown, setSimilarNotesShown }:
                     setSimilarNotesShown(true);
                 }}
             />
-        </StatusBarDropdown>
+        </>
     );
 }
 
@@ -269,10 +285,10 @@ function NoteInfoValue({ text, title, value }: { text: string; title?: string, v
 function SimilarNotesPane({ note, similarNotesShown, setSimilarNotesShown }: NoteInfoContext) {
     return (similarNotesShown &&
         <BottomPanel title={t("similar_notes.title")}
-                       className="similar-notes-pane"
-                       visible={similarNotesShown}
-                       setVisible={setSimilarNotesShown}
-                       scrollable>
+            className="similar-notes-pane"
+            visible={similarNotesShown}
+            setVisible={setSimilarNotesShown}
+        >
             <SimilarNotesTab note={note} />
         </BottomPanel>
     );
@@ -324,7 +340,7 @@ function AttributesButton({ note, attributesShown, setAttributesShown }: Attribu
 
     // React to note changes.
     useEffect(() => {
-        setCount(note.attributes.length);
+        setCount(note.getAttributes().filter(a => !a.isAutoLink).length);
     }, [ note ]);
 
     // React to changes in count.
@@ -372,10 +388,10 @@ function AttributesPane({ note, noteContext, attributesShown, setAttributesShown
 
     return (context &&
         <BottomPanel title={t("attributes_panel.title")}
-                       className="attribute-list"
-                       visible={attributesShown}
-                       setVisible={setAttributesShown}>
-            
+            className="attribute-list"
+            visible={attributesShown}
+            setVisible={setAttributesShown}>
+
             <span class="attributes-panel-label">{t("inherited_attribute_list.title")}</span>
             <InheritedAttributesTab {...context} emptyListString="inherited_attribute_list.none" />
 
@@ -428,7 +444,7 @@ function CodeNoteSwitcher({ note }: StatusBarContext) {
     return (note.type === "code" &&
         <>
             <StatusBarDropdown
-                icon="bx bx-code-curly"
+                icon={correspondingMimeType?.icon ?? "bx bx-code-curly"}
                 text={correspondingMimeType?.title}
                 title={t("status_bar.code_note_switcher")}
                 dropdownContainerClassName="dropdown-code-note-switcher tn-dropdown-menu-scrollable"
@@ -463,11 +479,11 @@ function BottomPanel({ children, title, visible, setVisible, className }: Bottom
     return <div className={clsx("bottom-panel", className, {"hidden-ext": !visible})}>
         <div className="bottom-panel-title-bar">
             <span className="bottom-panel-title-bar-caption">{title}</span>
-            <button class="icon-action bx bx-x" onClick={() => setVisible?.(false)}></button>
+            <button class="icon-action bx bx-x" onClick={() => setVisible?.(false)} />
         </div>
         <div class={clsx("bottom-panel-content")}>
             {children}
         </div>
-    </div>
+    </div>;
 }
 //#endregion

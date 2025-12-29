@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { buildNote } from "../../../test/easy-froca";
+
 import FNote from "../../../entities/fnote";
+import { buildNote } from "../../../test/easy-froca";
 import { buildPresentationModel, PresentationModel } from "./model";
 
 let presentationNote!: FNote;
@@ -65,7 +66,7 @@ describe("Presentation model", () => {
                     ]
                 }
             ]
-        })
+        });
     });
 
     it("empty slides don't render children", () => {
@@ -73,11 +74,11 @@ describe("Presentation model", () => {
     });
 
     it("rewrites links to other slides", () => {
-        expect(data.slides[1].content.__html).toStrictEqual(`<div class="ck-content"><p>Go to&nbsp;<a class="reference-link" href="#/slide-slide1"><span class="bx bx-folder"></span>First slide</a>.</p></div>`);
-        expect(data.slides[1].verticalSlides![0].content.__html).toStrictEqual(`<div class="ck-content"><p>Go to&nbsp;<a class="reference-link" href="#/slide-slide2"><span class="bx bx-note"></span>First-sub</a>.</p></div>`);
+        expect(data.slides[1].content.__html).toStrictEqual(`<div class="ck-content"><p>Go to&nbsp;<a class="reference-link" href="#/slide-slide1"><span><span class="tn-icon bx bx-folder"></span>First slide</span></a>.</p></div>`);
+        expect(data.slides[1].verticalSlides![0].content.__html).toStrictEqual(`<div class="ck-content"><p>Go to&nbsp;<a class="reference-link" href="#/slide-slide2"><span><span class="tn-icon bx bx-note"></span>First-sub</span></a>.</p></div>`);
     });
 
     it("rewrites links even if they are not part of the slideshow", () => {
-        expect(data.slides[0].verticalSlides![0].content.__html).toStrictEqual(`<div class="ck-content"><p>Go to&nbsp;<a class="reference-link" href="#/slide-other"><span class="bx bx-note"></span>Other note</a>.</p></div>`);
+        expect(data.slides[0].verticalSlides![0].content.__html).toStrictEqual(`<div class="ck-content"><p>Go to&nbsp;<a class="reference-link" href="#/slide-other"><span><span class="tn-icon bx bx-note"></span>Other note</span></a>.</p></div>`);
     });
 });

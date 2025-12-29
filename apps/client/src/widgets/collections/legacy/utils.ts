@@ -1,4 +1,5 @@
 import { useMemo } from "preact/hooks";
+
 import FNote from "../../../entities/fnote";
 
 /**
@@ -12,9 +13,9 @@ export function useFilteredNoteIds(note: FNote, noteIds: string[]) {
     }, [ note, noteIds ]);
 }
 
-export async function filterChildNotes(note: FNote) {
+export async function filterChildNotes(note: FNote, includeArchived = true) {
     const imageLinks = note.getRelations("imageLink");
     const imageLinkNoteIds = new Set(imageLinks.map(rel => rel.value));
     const childNotes = await note.getChildNotes();
-    return childNotes.filter((childNote) => !imageLinkNoteIds.has(childNote.noteId));
+    return childNotes.filter((childNote) => !imageLinkNoteIds.has(childNote.noteId) && (includeArchived || !childNote.isArchived));
 }

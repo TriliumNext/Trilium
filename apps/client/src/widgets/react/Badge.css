@@ -22,7 +22,7 @@
         }
     }
 
-    .bx {
+    .tn-icon {
         font-size: 1.2em;
         margin-inline-end: 4px;
         opacity: .6;
@@ -50,16 +50,30 @@
     white-space: nowrap;
     border-radius: var(--badge-radius);
 
+    button,
+    .btn {
+        min-width: 0;
+        overflow: hidden;
+    }
+
     .ext-badge {
         border-radius: 0;
 
         .text {
             display: inline-flex;
             align-items: center;
+            min-width: 0;
+
+            .text-inner {
+                min-width: 0;
+                text-overflow: ellipsis;
+                overflow: hidden;
+            }
 
             .arrow {
                 font-size: 1.3em;
-                margin-left: 0.25em;
+                margin-inline-start: 0.25em;
+                margin-inline-end: 0;
             }
         }
     }

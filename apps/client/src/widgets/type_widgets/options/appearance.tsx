@@ -159,11 +159,29 @@ function LayoutIllustration({ isNewLayout }: { isNewLayout?: boolean }) {
                 <div className="tab-bar" />
 
                 <div className="content">
-                    <div className="title-bar">
-                        <Icon icon="bx bx-note" />
-                        <span className="title">Title</span>
-                        <Icon icon="bx bx-dock-right" />
+
+                    {(isNewLayout) ? (
+                        <div className="note-header">
+                            <div className="note-toolbar">
+                                <Icon icon="bx bx-dock-right" />
+                            </div>
+                            <div className="note-inline-title">
+                                <Icon className="note-icon" icon="bx bx-leaf" />
+                                <div className="note-title-row">
+                                    <div className="title">Title</div>
+                                    <div className="subtitle">Just a sample note</div>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                    <div>
+                        <div className="title-bar">
+                            <Icon icon="bx bx-leaf" />
+                            <span className="title">Title</span>
+                            <Icon icon="bx bx-dock-right" />
+                        </div>
                     </div>
+                    )}
 
                     {!isNewLayout && <div className="ribbon">
                         <div className="ribbon-header">
@@ -173,7 +191,9 @@ function LayoutIllustration({ isNewLayout }: { isNewLayout?: boolean }) {
                             <Icon icon="bx bx-collection" />
                         </div>
 
-                        <div className="ribbon-body" />
+                        <div className="ribbon-body">
+                            <div className="ribbon-body-content"></div>
+                        </div>
                     </div>}
 
                     {isNewLayout && <div className="note-title-actions">

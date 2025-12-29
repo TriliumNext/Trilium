@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/server",
-  "version": "0.100.0",
+  "version": "0.101.1",
   "description": "The server-side component of TriliumNext, which exposes the client via the web, allows for sync and provides a REST API for both internal and external use.",
   "private": true,
   "main": "./src/main.ts",
@@ -30,7 +30,8 @@
   "dependencies": {
     "better-sqlite3": "12.5.0",
     "html-to-text": "9.0.5",
-    "node-html-parser": "7.0.1"
+    "node-html-parser": "7.0.1",
+    "sucrase": "3.35.1"
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "0.71.2",

@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useState } from "preact/hooks";
-import froca from "../../../services/froca";
+
 import type FNote from "../../../entities/fnote";
+import type { PrintReport } from "../../../print";
 import content_renderer from "../../../services/content_renderer";
+import froca from "../../../services/froca";
 import type { ViewModeProps } from "../interface";
 import { filterChildNotes, useFilteredNoteIds } from "./utils";
 
@@ -12,27 +14,35 @@ interface NotesWithContent {
 
 export function ListPrintView({ note, noteIds: unfilteredNoteIds, onReady, onProgressChanged }: ViewModeProps<{}>) {
     const noteIds = useFilteredNoteIds(note, unfilteredNoteIds);
-    const [ notesWithContent, setNotesWithContent ] = useState<NotesWithContent[]>();
+    const [ state, setState ] = useState<{
+        notesWithContent?: NotesWithContent[],
+        data?: PrintReport
+    }>({});
 
     useLayoutEffect(() => {
         const noteIdsSet = new Set<string>();
 
         froca.getNotes(noteIds).then(async (notes) => {
             const noteIdsWithChildren = await note.getSubtreeNoteIds(true);
+            const ignoredNoteIds: string[] = [];
             const notesWithContent: NotesWithContent[] = [];
 
             async function processNote(note: FNote, depth: number) {
-                const content = await content_renderer.getRenderedContent(note, {
-                    trim: false,
-                    noChildrenList: true
-                });
+                if (isNotePrintable(note)) {
+                    const content = await content_renderer.getRenderedContent(note, {
+                        trim: false,
+                        noChildrenList: true
+                    });
 
-                const contentEl = content.$renderedContent[0];
+                    const contentEl = content.$renderedContent[0];
 
-                insertPageTitle(contentEl, note.title);
-                rewriteHeadings(contentEl, depth);
-                noteIdsSet.add(note.noteId);
-                notesWithContent.push({ note, contentEl });
+                    insertPageTitle(contentEl, note.title);
+                    rewriteHeadings(contentEl, depth);
+                    noteIdsSet.add(note.noteId);
+                    notesWithContent.push({ note, contentEl });
+                } else {
+                    ignoredNoteIds.push(note.noteId);
+                }
 
                 if (onProgressChanged) {
                     onProgressChanged(notesWithContent.length / noteIdsWithChildren.length);
@@ -55,27 +65,45 @@ export function ListPrintView({ note, noteIds: unfilteredNoteIds, onReady, onPro
                 rewriteLinks(contentEl, noteIdsSet);
             }
 
-            setNotesWithContent(notesWithContent);
+            setState({
+                notesWithContent,
+                data: {
+                    type: "collection",
+                    ignoredNoteIds
+                }
+            });
         });
     }, [noteIds]);
 
     useEffect(() => {
-        if (notesWithContent && onReady) {
-            onReady();
+        if (onReady && state?.data) {
+            onReady(state.data);
         }
-    }, [ notesWithContent, onReady ]);
+    }, [ state, onReady ]);
 
     return (
         <div class="note-list list-print-view">
             <div class="note-list-container use-tn-links">
                 <h1>{note.title}</h1>
 
-                {notesWithContent?.map(({ note: childNote, contentEl }) => (
+                {state.notesWithContent?.map(({ note: childNote, contentEl }) => (
                     <section id={`note-${childNote.noteId}`} class="note" dangerouslySetInnerHTML={{ __html: contentEl.innerHTML }} />
                 ))}
             </div>
         </div>
     );
+}
+
+function isNotePrintable(note: FNote) {
+    if (!note.isContentAvailable()) {
+        return false;
+    }
+
+    if (note.type === "file") {
+        return false;
+    }
+
+    return true;
 }
 
 function insertPageTitle(contentEl: HTMLElement, title: string) {
