@@ -144,10 +144,12 @@ export default class TabManager extends Component {
                 // Filter out the oldest entry (excluding the main window)
                 if (savedWindows?.length >= MAX_SAVED_WINDOWS) {
                     const candidates = savedWindows.filter(w => w.windowId !== "main");
-                    const oldest = candidates.reduce((a, b) =>
-                        a.createdAt < b.createdAt ? a : b
-                    );
-                    savedWindows.splice(savedWindows.indexOf(oldest), 1);
+                    if (candidates.length > 0) {
+                        const oldest = candidates.reduce((a, b) =>
+                            a.createdAt < b.createdAt ? a : b
+                        );
+                        savedWindows.splice(savedWindows.indexOf(oldest), 1);
+                    }
                 }
                 savedWindows.push({
                     windowId: appContext.windowId,
