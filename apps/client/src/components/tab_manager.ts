@@ -59,7 +59,7 @@ export default class TabManager extends Component {
                     windowId: appContext.windowId,
                     createdAt: Date.now(),
                     closedAt: null,
-                    contexts: savedWindows
+                    contexts: openNoteContexts
                 });
             }
 
@@ -135,17 +135,17 @@ export default class TabManager extends Component {
 
             // Save window contents
             if (currentWin) {
-                currentWin.createdAt = Date.now(),
+                currentWin.createdAt = Date.now();
                 currentWin.closedAt = null;
                 currentWin.contexts = filteredNoteContexts;
             } else {
                 // Filter out the oldest entry (excluding the main window)
-                if (savedWindows.length >= 10) {
+                if (savedWindows?.length >= 10) {
                     const candidates = savedWindows.filter(w => w.windowId !== "main");
-                    const oldestIndex = candidates.reduce((a, b) =>
+                    const oldest = candidates.reduce((a, b) =>
                         a.createdAt < b.createdAt ? a : b
                     );
-                    savedWindows.splice(savedWindows.indexOf(oldestIndex), 1);
+                    savedWindows.splice(savedWindows.indexOf(oldest), 1);
                 }
                 savedWindows.push({
                     windowId: appContext.windowId,
