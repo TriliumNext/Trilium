@@ -22,6 +22,7 @@ export default () => {
         if (
             Array.isArray(parsed) &&
             parsed.length > 0 &&
+            parsed[0] &&
             typeof parsed[0] === "object" &&
             parsed[0].windowId
         ) {
