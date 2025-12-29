@@ -45,8 +45,15 @@ async function initNotSyncedOptions(initialized: boolean, opts: NotSyncedOpts = 
         "openNoteContexts",
         JSON.stringify([
             {
-                notePath: "root",
-                active: true
+                windowId: "main",
+                createdAt: 0,
+                closedAt: null,
+                contexts: [
+                    {
+                        notePath: "root",
+                        active: true
+                    }
+                ]
             }
         ]),
         false
@@ -251,8 +258,15 @@ function initStartupOptions() {
             "openNoteContexts",
             JSON.stringify([
                 {
-                    notePath: process.env.TRILIUM_START_NOTE_ID || "root",
-                    active: true
+                    windowId: "main",
+                    createdAt: 0,
+                    closedAt: null,
+                    contexts: [
+                        {
+                            notePath: process.env.TRILIUM_START_NOTE_ID || "root",
+                            active: true
+                        }
+                    ]
                 }
             ])
         );

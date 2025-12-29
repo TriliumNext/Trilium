@@ -41,9 +41,6 @@ export default class TabManager extends Component {
         this.recentlyClosedTabs = [];
 
         this.tabsUpdate = new SpacedUpdate(async () => {
-            if (!appContext.isMainWindow) {
-                return;
-            }
             if (options.is("databaseReadonly")) {
                 return;
             }
@@ -52,9 +49,21 @@ export default class TabManager extends Component {
                 .map((nc) => nc.getPojoState())
                 .filter((t) => !!t);
 
-            await server.put("options", {
-                openNoteContexts: JSON.stringify(openNoteContexts)
-            });
+            // Update the current window’s openNoteContexts in options    
+            const savedWindows = options.getJson("openNoteContexts");
+            const win = savedWindows.find(w => w.windowId === appContext.windowId);
+            if (win) {
+                win.contexts = openNoteContexts;
+            } else {
+                savedWindows.push({
+                    windowId: appContext.windowId,
+                    createdAt: Date.now(),
+                    closedAt: null,
+                    contexts: savedWindows
+                });
+            }
+
+            await options.save("openNoteContexts", JSON.stringify(savedWindows));
         });
 
         appContext.addBeforeUnloadListener(this);
@@ -69,8 +78,13 @@ export default class TabManager extends Component {
     }
 
     async loadTabs() {
+        // Get the current window’s openNoteContexts
+        const savedWindows = options.getJson("openNoteContexts");
+        const currentWin = savedWindows.find(w => w.windowId === appContext.windowId);
+        const openNoteContexts = currentWin ? currentWin.contexts : undefined;
+
         try {
-            const noteContextsToOpen = (appContext.isMainWindow && options.getJson("openNoteContexts")) || [];
+            const noteContextsToOpen = openNoteContexts || [];
 
             // preload all notes at once
             await froca.getNotes([...noteContextsToOpen.flatMap((tab: NoteContextState) =>
@@ -118,6 +132,30 @@ export default class TabManager extends Component {
                     });
                 }
             });
+
+            // Save window contents
+            if (currentWin) {
+                currentWin.createdAt = Date.now(),
+                currentWin.closedAt = null;
+                currentWin.contexts = filteredNoteContexts;
+            } else {
+                // Filter out the oldest entry (excluding the main window)
+                if (savedWindows.length >= 10) {
+                    const candidates = savedWindows.filter(w => w.windowId !== "main");
+                    const oldestIndex = candidates.reduce((a, b) =>
+                        a.createdAt < b.createdAt ? a : b
+                    );
+                    savedWindows.splice(savedWindows.indexOf(oldestIndex), 1);
+                }
+                savedWindows.push({
+                    windowId: appContext.windowId,
+                    createdAt: Date.now(),
+                    closedAt: null,
+                    contexts: filteredNoteContexts
+                });
+            }
+
+            await options.save("openNoteContexts", JSON.stringify(savedWindows));
 
             // if there's a notePath in the URL, make sure it's open and active
             // (useful, for e.g., opening clipped notes from clipper or opening link in an extra window)
