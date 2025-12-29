@@ -11,6 +11,8 @@ import linkService from "../services/link.js";
 import type { EventData } from "./app_context.js";
 import type FNote from "../entities/fnote.js";
 
+const MAX_SAVED_WINDOWS = 10;
+
 interface TabState {
     contexts: NoteContext[];
     position: number;
@@ -140,7 +142,7 @@ export default class TabManager extends Component {
                 currentWin.contexts = filteredNoteContexts;
             } else {
                 // Filter out the oldest entry (excluding the main window)
-                if (savedWindows?.length >= 10) {
+                if (savedWindows?.length >= MAX_SAVED_WINDOWS) {
                     const candidates = savedWindows.filter(w => w.windowId !== "main");
                     const oldest = candidates.reduce((a, b) =>
                         a.createdAt < b.createdAt ? a : b
