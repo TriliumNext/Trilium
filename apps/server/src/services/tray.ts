@@ -197,7 +197,7 @@ function updateTrayMenu() {
     }
 
     function buildClosedWindowsMenu() {
-        const savedOpenNoteContexts = JSON.parse(optionService.getOption("openNoteContexts") || "[]");
+        const savedOpenNoteContexts = optionService.getOptionJson("openNoteContexts") || "[]";
         const openedWindowIds = windowService.getAllWindowIds();
         const closedWindows = savedOpenNoteContexts
             .filter(win => !openedWindowIds.includes(win.windowId))
