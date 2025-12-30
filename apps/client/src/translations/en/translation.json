@@ -2253,6 +2253,7 @@
     "drop_images_here": "Drop Images Here",
     "back_to_parent": "Back To Parent",
     "image_count": "{{count}} image",
-    "image_count_other": "{{count}} images"
+    "image_count_other": "{{count}} images",
+    "empty_gallery": "This gallery is empty. Upload images to make them appear."
   }
 }
