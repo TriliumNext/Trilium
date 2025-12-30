@@ -1,10 +1,11 @@
-import FlexContainer from "./flex_container.js";
 import appContext, { type CommandData, type CommandListenerData, type EventData, type EventNames, type NoteSwitchedContext } from "../../components/app_context.js";
-import type BasicWidget from "../basic_widget.js";
 import Component from "../../components/component.js";
+import NoteContext from "../../components/note_context.js";
 import splitService from "../../services/resizer.js";
 import { isMobile } from "../../services/utils.js";
-import NoteContext from "../../components/note_context.js";
+import type BasicWidget from "../basic_widget.js";
+import NoteContextAwareWidget from "../note_context_aware_widget.js";
+import FlexContainer from "./flex_container.js";
 
 interface SplitNoteWidget extends BasicWidget {
     hasBeenAlreadyShown?: boolean;
@@ -74,7 +75,7 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
 
 
         const subContexts = activeContext.getSubContexts();
-        let noteContext: NoteContext | undefined = undefined;
+        let noteContext: NoteContext | undefined;
         if (isMobile() && subContexts.length > 1) {
             noteContext = subContexts.find(s => s.ntxId !== ntxId);
         }
@@ -201,6 +202,11 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
 
     async refresh() {
         this.toggleExt(true);
+
+        // Mark the active note context.
+        for (const child of this.children as NoteContextAwareWidget[]) {
+            child.$widget.toggleClass("active", !!child.noteContext?.isActive());
+        }
     }
 
     toggleInt(show: boolean) {} // not needed
@@ -239,16 +245,16 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
                 widget.hasBeenAlreadyShown = true;
 
                 return [widget.handleEvent("noteSwitched", noteSwitchedContext), this.refreshNotShown(noteSwitchedContext)];
-            } else {
-                return Promise.resolve();
             }
+            return Promise.resolve();
+
         }
 
         if (name === "activeContextChanged") {
             return this.refreshNotShown(data as EventData<"activeContextChanged">);
-        } else {
-            return super.handleEventInChildren(name, data);
         }
+        return super.handleEventInChildren(name, data);
+
     }
 
     refreshNotShown(data: NoteSwitchedContext | EventData<"activeContextChanged">) {

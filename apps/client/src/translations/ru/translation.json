@@ -1012,7 +1012,16 @@
   "note_icon": {
     "search": "Поиск:",
     "change_note_icon": "Изменить иконку заметки",
-    "reset-default": "Сбросить к значку по умолчанию"
+    "reset-default": "Сбросить к значку по умолчанию",
+    "no_results": "Иконки не найдены.",
+    "icon_tooltip": "{{name}}\nНабор иконок: {{iconPack}}",
+    "filter-default": "Иконки по-умолчанию",
+    "filter-none": "Все иконки",
+    "filter": "Фильтр",
+    "search_placeholder_filtered": "Поиск {{number}} иконок в {{name}}",
+    "search_placeholder_one": "Поиск {{number}} иконки среди {{count}} наборов",
+    "search_placeholder_few": "Поиск {{number}} иконок среди {{count}} наборов",
+    "search_placeholder_many": "Поиск {{number}} иконок среди {{count}} наборов"
   },
   "basic_properties": {
     "editable": "Изменяемое",
@@ -2025,7 +2034,7 @@
     "lost-websocket-connection-message": "Проверьте конфигурацию обратного прокси (например, nginx или Apache), чтобы убедиться, что соединения WebSocket должным образом разрешены и не заблокированы."
   },
   "attachment_detail_2": {
-    "role_and_size": "Роль: {{role}}, Размер: {{size}}",
+    "role_and_size": "Роль: {{role}}, размер: {{size}}, MIME: {{- mimeType}}",
     "unrecognized_role": "Нераспознанная роль вложения '{{role}}'.",
     "link_copied": "Ссылка на вложение скопирована в буфер обмена.",
     "will_be_deleted_soon": "Это вложение скоро будет автоматически удалено",

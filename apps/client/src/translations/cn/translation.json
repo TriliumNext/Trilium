@@ -765,7 +765,14 @@
   "note_icon": {
     "change_note_icon": "更改笔记图标",
     "search": "搜索:",
-    "reset-default": "重置为默认图标"
+    "reset-default": "重置为默认图标",
+    "search_placeholder_other": "在 {{count}} 个图标包中搜索 {{number}} 个图标",
+    "search_placeholder_filtered": "在 {{name}} 中搜索 {{number}} 个图标",
+    "filter": "筛选",
+    "filter-none": "所有图标",
+    "filter-default": "默认图标",
+    "icon_tooltip": "{{name}}\n图标包：{{iconPack}}",
+    "no_results": "没有找到图标。"
   },
   "basic_properties": {
     "note_type": "笔记类型",
@@ -1445,7 +1452,7 @@
     "will_be_deleted_in": "此附件将在 {{time}} 后自动删除",
     "will_be_deleted_soon": "该附件在不久后将被自动删除",
     "deletion_reason": "，因为该附件未链接在笔记的内容中。为防止被删除，请将附件链接重新添加到内容中或将附件转换为笔记。",
-    "role_and_size": "角色：{{role}}，大小：{{size}}",
+    "role_and_size": "角色：{{role}}，大小：{{size}}，文件类型：{{- mimeType}}",
     "link_copied": "附件链接已复制到剪贴板。",
     "unrecognized_role": "无法识别的附件角色 '{{role}}'。"
   },

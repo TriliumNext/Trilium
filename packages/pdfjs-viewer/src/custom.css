@@ -1,0 +1,14 @@
+:root {
+    --main-color: var(--tn-main-text-color);
+    --body-bg-color: var(--tn-main-background-color);
+    --toolbar-bg-color: var(--tn-main-background-color);
+    --toolbar-border-color: var(--tn-main-border-color);
+    --toolbar-icon-opacity: 1;
+}
+
+.pdfViewer {
+    .page .canvasWrapper {
+        border: 1px solid var(--tn-main-border-color);
+        box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+    }
+}

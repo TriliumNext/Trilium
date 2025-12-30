@@ -50,6 +50,7 @@ async function register(app: express.Application) {
     }
     app.use(`/share/assets/fonts/`, express.static(path.join(getClientDir(), "fonts")));
     app.use(`/share/assets/`, express.static(getShareThemeAssetDir()));
+    app.use(`/pdfjs/`, persistentCacheStatic(getPdfjsAssetDir()));
     app.use(`/${assetUrlFragment}/images`, persistentCacheStatic(path.join(resourceDir, "assets", "images")));
     app.use(`/${assetUrlFragment}/doc_notes`, persistentCacheStatic(path.join(resourceDir, "assets", "doc_notes")));
     app.use(`/assets/vX/fonts`, express.static(path.join(srcRoot, "public/fonts")));
@@ -64,6 +65,15 @@ export function getShareThemeAssetDir() {
     }
     const resourceDir = getResourceDir();
     return path.join(resourceDir, "share-theme/assets");
+}
+
+export function getPdfjsAssetDir() {
+    if (process.env.NODE_ENV === "development") {
+        const srcRoot = path.join(__dirname, "..", "..");
+        return path.join(srcRoot, "../../packages/pdfjs-viewer/dist");
+    }
+    const resourceDir = getResourceDir();
+    return path.join(resourceDir, "pdfjs-viewer/assets");
 }
 
 export function getClientDir() {

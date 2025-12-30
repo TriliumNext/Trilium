@@ -1,20 +1,21 @@
-"use strict";
 
-import protectedSessionService from "../../services/protected_session.js";
-import utils from "../../services/utils.js";
-import log from "../../services/log.js";
-import noteService from "../../services/notes.js";
-import tmp from "tmp";
+
+import chokidar from "chokidar";
+import type { Request, Response } from "express";
 import fs from "fs";
 import { Readable } from "stream";
-import chokidar from "chokidar";
-import ws from "../../services/ws.js";
+import tmp from "tmp";
+
 import becca from "../../becca/becca.js";
-import ValidationError from "../../errors/validation_error.js";
-import type { Request, Response } from "express";
-import type BNote from "../../becca/entities/bnote.js";
 import type BAttachment from "../../becca/entities/battachment.js";
+import type BNote from "../../becca/entities/bnote.js";
+import ValidationError from "../../errors/validation_error.js";
 import dataDirs from "../../services/data_dir.js";
+import log from "../../services/log.js";
+import noteService from "../../services/notes.js";
+import protectedSessionService from "../../services/protected_session.js";
+import utils from "../../services/utils.js";
+import ws from "../../services/ws.js";
 
 function updateFile(req: Request) {
     const note = becca.getNoteOrThrow(req.params.noteId);
@@ -189,8 +190,8 @@ function saveToTmpDir(fileName: string, content: string | Buffer, entityType: st
         chokidar.watch(tmpObj.name).on("change", (path, stats) => {
             ws.sendMessageToAllClients({
                 type: "openedFileUpdated",
-                entityType: entityType,
-                entityId: entityId,
+                entityType,
+                entityId,
                 lastModifiedMs: stats?.atimeMs,
                 filePath: tmpObj.name
             });

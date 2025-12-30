@@ -153,7 +153,14 @@
   "note_icon": {
     "change_note_icon": "ノートアイコンの変更",
     "search": "検索:",
-    "reset-default": "アイコンをデフォルトに戻す"
+    "reset-default": "アイコンをデフォルトに戻す",
+    "search_placeholder_other": "{{count}} 個のパックから {{number}} 個のアイコンを検索",
+    "search_placeholder_filtered": "{{name}} で {{number}} 個のアイコンを検索",
+    "filter": "フィルター",
+    "filter-none": "すべてのアイコン",
+    "filter-default": "デフォルトアイコン",
+    "icon_tooltip": "{{name}}\nアイコンパック: {{iconPack}}",
+    "no_results": "アイコンが見つかりません。"
   },
   "basic_properties": {
     "note_type": "ノートタイプ",
@@ -2129,7 +2136,7 @@
     "will_be_deleted_in": "この添付ファイルは {{time}} 後に自動的に削除されます",
     "will_be_deleted_soon": "この添付ファイルはすぐに自動的に削除されます",
     "deletion_reason": "、添付ファイルがノートのコンテンツにリンクされていないためです。削除されないようにするには、添付ファイルのリンクをコンテンツに再度追加するか、添付ファイルをノートに変換してください。",
-    "role_and_size": "ロール: {{role}},サイズ: {{size}}",
+    "role_and_size": "ロール: {{role}},サイズ: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "添付ファイルのリンクをクリップボードにコピーしました。",
     "unrecognized_role": "添付ファイルのロール「{{role}}」は認識されません。"
   },

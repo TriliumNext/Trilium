@@ -4,14 +4,16 @@ import { ViewTypeOptions } from "../collections/interface";
 
 const ATTACHMENT_ROLE = "viewConfig";
 
+export type ViewModeStorageType = ViewTypeOptions | "pdfHistory";
+
 export default class ViewModeStorage<T extends object> {
 
     private note: FNote;
     private attachmentName: string;
 
-    constructor(note: FNote, viewType: ViewTypeOptions) {
+    constructor(note: FNote, viewType: ViewModeStorageType) {
         this.note = note;
-        this.attachmentName = viewType + ".json";
+        this.attachmentName = `${viewType}.json`;
     }
 
     async store(data: T) {
