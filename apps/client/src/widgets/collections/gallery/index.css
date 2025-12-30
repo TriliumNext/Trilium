@@ -223,3 +223,18 @@
     font-size: 0.85em;
     opacity: 0.7;
 }
+
+.gallery-empty-help {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 48px 24px;
+    margin: 24px;
+    border-radius: 8px;
+    background-color: var(--accented-background-color);
+    border: 2px dashed var(--main-border-color);
+    color: var(--muted-text-color);
+    font-size: 14px;
+}

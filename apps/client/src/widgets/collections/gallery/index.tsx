@@ -15,6 +15,7 @@ import server from "../../../services/server";
 import toast from "../../../services/toast";
 import tree from "../../../services/tree";
 import ActionButton from "../../react/ActionButton";
+import Alert from "../../react/Alert";
 import { FormFileUploadActionButton } from "../../react/FormFileUpload";
 import type { ViewModeProps } from "../interface";
 import { useFilteredNoteIds } from "../legacy/utils";
@@ -232,6 +233,8 @@ export default function GalleryView({ note, noteIds: unfilteredNoteIds }: ViewMo
         }
     };
 
+    const isEmpty = sortedNotes.length === 0;
+
     return (
         <div class="note-list gallery-view">
             <GalleryToolbar
@@ -246,6 +249,12 @@ export default function GalleryView({ note, noteIds: unfilteredNoteIds }: ViewMo
                 onClearSelection={clearSelection}
                 onDeleteSelected={handleDeleteSelected}
             />
+
+            {isEmpty && (
+                <Alert type="info" className="gallery-empty-help">
+                    {t("gallery.empty_gallery")}
+                </Alert>
+            )}
 
             <div class="note-list-wrapper">
                 <div class="gallery-container">
