@@ -1,6 +1,6 @@
 import "./index.css";
 
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import type FNote from "../../../entities/fnote";
@@ -31,28 +31,34 @@ export default function GalleryView({ note, noteIds: unfilteredNoteIds }: ViewMo
     const [displayCount, setDisplayCount] = useState(INITIAL_LOAD);
     const loadMoreRef = useRef<HTMLDivElement>(null);
 
-    // Get all notes (no pagination)
-    const allNotes = noteIds?.map(noteId => froca.notes[noteId]).filter(Boolean) || [];
+    // Track how many notes actually exist in froca to trigger recalculation when new notes are loaded
+    const loadedNoteCount = noteIds?.filter(id => froca.notes[id]).length ?? 0;
 
-    // Filter and sort notes: galleries first, then images
-    const sortedNotes = allNotes
-        .filter(childNote => {
-            const isGallery = childNote.hasLabel('collection') && childNote.getLabelValue('viewType') === 'gallery';
-            const isImage = childNote.type === 'image' || childNote.type === 'canvas';
-            return isGallery || isImage;
-        })
-        .sort((a, b) => {
-            const aIsGallery = a.hasLabel('collection') && a.getLabelValue('viewType') === 'gallery';
-            const bIsGallery = b.hasLabel('collection') && b.getLabelValue('viewType') === 'gallery';
+    // Memoize the filtered and sorted notes to avoid recalculating on every render
+    const { sortedNotes, imageCount } = useMemo(() => {
+        const allNotes = noteIds?.map(noteId => froca.notes[noteId]).filter(Boolean) || [];
 
-            if (aIsGallery && !bIsGallery) return -1;
-            if (!aIsGallery && bIsGallery) return 1;
-            return 0;
-        });
+        const notes = allNotes
+            .filter(childNote => {
+                const isGallery = childNote.hasLabel('collection') && childNote.getLabelValue('viewType') === 'gallery';
+                const isImage = childNote.type === 'image' || childNote.type === 'canvas';
+                return isGallery || isImage;
+            })
+            .sort((a, b) => {
+                const aIsGallery = a.hasLabel('collection') && a.getLabelValue('viewType') === 'gallery';
+                const bIsGallery = b.hasLabel('collection') && b.getLabelValue('viewType') === 'gallery';
 
-    const imageCount = sortedNotes.filter(note =>
-        note.type === 'image' || note.type === 'canvas'
-    ).length;
+                if (aIsGallery && !bIsGallery) return -1;
+                if (!aIsGallery && bIsGallery) return 1;
+                return 0;
+            });
+
+        const count = notes.filter(note =>
+            note.type === 'image' || note.type === 'canvas'
+        ).length;
+
+        return { sortedNotes: notes, imageCount: count };
+    }, [noteIds, loadedNoteCount]);
 
     // Only display a subset of notes for virtual scrolling
     const displayedNotes = sortedNotes.slice(0, displayCount);
@@ -213,11 +219,11 @@ export default function GalleryView({ note, noteIds: unfilteredNoteIds }: ViewMo
         }
     };
 
-    const handleDeleteSelected = async () => {
-        if (selectedNoteIds.size === 0) return;
+    const deleteNotes = async (noteIdsToDelete: string[]) => {
+        if (noteIdsToDelete.length === 0) return;
 
         const branchIds: string[] = [];
-        for (const noteId of selectedNoteIds) {
+        for (const noteId of noteIdsToDelete) {
             const noteToDelete = froca.notes[noteId];
             if (noteToDelete) {
                 const branch = noteToDelete.getParentBranches().find(b => b.parentNoteId === note.noteId);
@@ -231,6 +237,11 @@ export default function GalleryView({ note, noteIds: unfilteredNoteIds }: ViewMo
             await branches.deleteNotes(branchIds, false, false);
             clearSelection();
         }
+    };
+
+    const handleDeleteSelected = async () => {
+        if (selectedNoteIds.size === 0) return;
+        await deleteNotes(Array.from(selectedNoteIds));
     };
 
     const isEmpty = sortedNotes.length === 0;
@@ -266,7 +277,7 @@ export default function GalleryView({ note, noteIds: unfilteredNoteIds }: ViewMo
                             isSelected={selectedNoteIds.has(childNote.noteId)}
                             selectedNoteIds={selectedNoteIds}
                             toggleSelection={toggleSelection}
-                            clearSelection={clearSelection}
+                            deleteNotes={deleteNotes}
                         />
                     ))}
                 </div>
@@ -276,10 +287,9 @@ export default function GalleryView({ note, noteIds: unfilteredNoteIds }: ViewMo
                     <div
                         ref={loadMoreRef}
                         className="gallery-load-more"
-                        style={{ height: '20px', margin: '20px 0' }}
                     >
-                        <div style={{ textAlign: 'center', color: 'var(--muted-text-color)' }}>
-                            Loading more images... ({displayedNotes.length} of {sortedNotes.length})
+                        <div className="gallery-load-more-text">
+                            {t('gallery.loading_more', { loaded: displayedNotes.length, total: sortedNotes.length })}
                         </div>
                     </div>
                 )}
@@ -417,16 +427,20 @@ interface GalleryCardProps {
     isSelected: boolean;
     selectedNoteIds: Set<string>;
     toggleSelection: (noteId: string, isCtrlKey: boolean, isShiftKey: boolean) => void;
-    clearSelection: () => void;
+    deleteNotes: (noteIdsToDelete: string[]) => Promise<void>;
 }
 
-function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSelection, clearSelection }: GalleryCardProps) {
+function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSelection, deleteNotes }: GalleryCardProps) {
     const [noteTitle, setNoteTitle] = useState<string>();
     const [imageSrc, setImageSrc] = useState<string>();
     const notePath = getNotePath(parentNote, note);
     const isGallery = note.hasLabel('collection') && note.getLabelValue('viewType') === 'gallery';
 
-    const childCount = isGallery ? (() => {
+    const childCount = useMemo(() => {
+        if (!isGallery) {
+            return 0;
+        }
+
         const childNoteIds = note.children || [];
         return childNoteIds.filter(childId => {
             const child = froca.notes[childId];
@@ -436,7 +450,7 @@ function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSele
                 child.type === 'canvas' ||
                 (child.hasLabel('collection') && child.getLabelValue('viewType') === 'gallery');
         }).length;
-    })() : 0;
+    }, [isGallery, note.children]);
 
     useEffect(() => {
         tree.getNoteTitle(note.noteId, parentNote.noteId).then(setNoteTitle);
@@ -490,29 +504,11 @@ function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSele
             toggleSelection(note.noteId, false, false);
         }
 
-        const notesToDelete = selectedNoteIds.size > 0 && isSelected
+        const noteIdsToDelete = selectedNoteIds.size > 0 && isSelected
             ? Array.from(selectedNoteIds)
             : [note.noteId];
 
-        const isBulkOperation = notesToDelete.length > 1;
-
-        const handleDelete = async () => {
-            const branchIds: string[] = [];
-            for (const noteId of notesToDelete) {
-                const noteToDelete = froca.notes[noteId];
-                if (noteToDelete) {
-                    const branch = noteToDelete.getParentBranches().find(b => b.parentNoteId === parentNote.noteId);
-                    if (branch) {
-                        branchIds.push(branch.branchId);
-                    }
-                }
-            }
-
-            if (branchIds.length > 0) {
-                await branches.deleteNotes(branchIds, false, false);
-                clearSelection();
-            }
-        };
+        const isBulkOperation = noteIdsToDelete.length > 1;
 
         contextMenu.show({
             x: e.pageX,
@@ -529,10 +525,10 @@ function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSele
                 { kind: "separator" },
                 {
                     title: isBulkOperation
-                        ? t("gallery.delete_multiple", { count: notesToDelete.length })
+                        ? t("gallery.delete_multiple", { count: noteIdsToDelete.length })
                         : t("note_actions.delete_note"),
                     uiIcon: "bx bx-trash",
-                    handler: handleDelete
+                    handler: () => deleteNotes(noteIdsToDelete)
                 }
             ],
             selectMenuItemHandler: ({ command }) => {

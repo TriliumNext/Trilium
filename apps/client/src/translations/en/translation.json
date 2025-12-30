@@ -2254,6 +2254,7 @@
     "back_to_parent": "Back To Parent",
     "image_count": "{{count}} image",
     "image_count_other": "{{count}} images",
+    "loading_more": "Loading more images... ({{loaded}} of {{total}})",
     "empty_gallery": "This gallery is empty. Upload images to make them appear."
   }
 }
