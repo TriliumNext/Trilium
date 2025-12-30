@@ -197,9 +197,9 @@ function updateTrayMenu() {
     }
 
     function buildClosedWindowsMenu() {
-        const savedOpenNoteContexts = optionService.getOptionJson("openNoteContexts") || "[]";
+        const savedWindows = optionService.getOptionJson("openNoteContexts") || [];
         const openedWindowIds = windowService.getAllWindowIds();
-        const closedWindows = savedOpenNoteContexts
+        const closedWindows = savedWindows
             .filter(win => !openedWindowIds.includes(win.windowId))
             .sort((a, b) => {
                 // If closedAt is null, it indicates an abnormal closure and should be placed at the end

@@ -37,7 +37,7 @@ function trackWindowFocus(win: BrowserWindow, windowId: string) {
 
     win.on("closed", () => {
         cls.wrap(() => {
-            const savedWindows = optionService.getOptionJson("openNoteContexts") || "[]";
+            const savedWindows = optionService.getOptionJson("openNoteContexts") || [];
 
             const win = savedWindows.find(w => w.windowId === windowId);
             if (win) {

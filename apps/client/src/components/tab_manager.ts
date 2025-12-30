@@ -52,7 +52,7 @@ export default class TabManager extends Component {
                 .filter((t) => !!t);
 
             // Update the current window’s openNoteContexts in options    
-            const savedWindows = options.getJson("openNoteContexts");
+            const savedWindows = options.getJson("openNoteContexts") || [];
             const win = savedWindows.find(w => w.windowId === appContext.windowId);
             if (win) {
                 win.contexts = openNoteContexts;
@@ -81,7 +81,7 @@ export default class TabManager extends Component {
 
     async loadTabs() {
         // Get the current window’s openNoteContexts
-        const savedWindows = options.getJson("openNoteContexts");
+        const savedWindows = options.getJson("openNoteContexts") || [];
         const currentWin = savedWindows.find(w => w.windowId === appContext.windowId);
         const openNoteContexts = currentWin ? currentWin.contexts : undefined;
 
