@@ -11176,6 +11176,39 @@
                                     "dataFileName": "List View_image.png"
                                 }
                             ]
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "W1x7XN1KRSWo",
+                            "notePath": [
+                                "pOsGYCXsbNQG",
+                                "GTwFsgaA0lCt",
+                                "W1x7XN1KRSWo"
+                            ],
+                            "title": "Gallery",
+                            "notePosition": 120,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-images",
+                                    "isInheritable": false,
+                                    "position": 10
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "gallery",
+                                    "isInheritable": false,
+                                    "position": 20
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Gallery.md"
                         }
                     ]
                 },

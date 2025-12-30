@@ -1,7 +1,7 @@
 import "./index.css";
 
 import { ToggleInParentResponse } from "@triliumnext/commons";
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import type FNote from "../../../entities/fnote";
@@ -20,6 +20,7 @@ import tree from "../../../services/tree";
 import ActionButton from "../../react/ActionButton";
 import Alert from "../../react/Alert";
 import { FormFileUploadActionButton } from "../../react/FormFileUpload";
+import { useTriliumEvent } from "../../react/hooks";
 import type { ViewModeProps } from "../interface";
 import { useFilteredNoteIds } from "../legacy/utils";
 
@@ -494,11 +495,21 @@ function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSele
         }).length;
     }, [isGallery, note.children]);
 
-    useEffect(() => {
+    const refreshData = useCallback(() => {
         tree.getNoteTitle(note.noteId, parentNote.noteId).then(setNoteTitle);
         setImageSrc(getImageSrc(note));
         setIsShared(note.isShared());
     }, [note, parentNote.noteId]);
+
+    useEffect(() => {
+        refreshData();
+    }, [refreshData]);
+
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (loadResults.isNoteReloaded(note.noteId)) {
+            refreshData();
+        }
+    });
 
     const handleRename = async () => {
         const newTitle = await new Promise<string | null>((resolve) => {

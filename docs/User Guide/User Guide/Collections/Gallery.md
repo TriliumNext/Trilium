@@ -1,5 +1,4 @@
 # Gallery
-## Gallery View
 
 The Gallery View displays visual notes (images, canvases, mermaid diagrams, and mind maps) as a grid of thumbnails, making it ideal for browsing and managing collections of visual content such as photo albums, artwork, or diagram collections.
 
