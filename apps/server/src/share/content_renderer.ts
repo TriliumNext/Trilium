@@ -165,6 +165,15 @@ interface RenderArgs {
 }
 
 function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) {
+    // When rendering static share, non-protected JavaScript notes should be rendered as-is.
+    if (renderArgs.isStatic && note.mime.startsWith("application/javascript")) {
+        if (note.isProtected) {
+            return `console.log("Protected note cannot be exported.");`;
+        }
+
+        return note.getContent() ?? "";
+    }
+
     const { header, content, isEmpty } = getContent(note);
     const showLoginInShareTheme = options.getOption("showLoginInShareTheme");
     const opts = {

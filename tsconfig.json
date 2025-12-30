@@ -64,6 +64,9 @@
       "path": "./packages/share-theme"
     },
     {
+      "path": "./packages/pdfjs-viewer"
+    },
+    {
       "path": "./scripts"
     }
   ]

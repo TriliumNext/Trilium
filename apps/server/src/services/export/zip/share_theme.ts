@@ -74,6 +74,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
                 whitespaceCharacters: "\t\r\n\f\u200b\u00a0\u2002"
             }) : "";
 
+            // TODO: This will probably never match, but should it be exclude from running on code/jsFrontend notes?
             content = renderNoteForExport(note, branch, basePath, noteMeta.notePath.slice(0, -1), this.iconPacks);
             if (typeof content === "string") {
                 // Rewrite attachment download links
@@ -128,6 +129,10 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
     mapExtension(type: string | null, mime: string, existingExtension: string, format: ExportFormat): string | null {
         if (mime.startsWith("image/")) {
             return null;
+        }
+
+        if (mime.startsWith("application/javascript")) {
+            return "js";
         }
 
         // Don't add .html if the file already has .zip extension (for attachments).

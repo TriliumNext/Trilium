@@ -15,13 +15,17 @@
         // We are not the first child at this level so previous
         // should go to the end of the previous tree
         let candidate = children[index - 1];
-        while (candidate.hasVisibleChildren()) {
-            const children = candidate.getVisibleChildNotes();
-            const lastChild = children[children.length - 1];
-            candidate = lastChild;
+        while (candidate?.hasVisibleChildren()) {
+            const visibleChildren = candidate.getVisibleChildNotes();
+
+            if (visibleChildren.length === 0) {
+                break;
+            }
+
+            candidate = visibleChildren[visibleChildren.length - 1];
         }
 
-        return candidate;
+        return candidate ?? null;
     })();
 
     const nextNote = (() => {

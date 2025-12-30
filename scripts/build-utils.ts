@@ -87,6 +87,15 @@ export default class BuildHelper {
         }
     }
 
+    writeJson(relativePath: string, data: any) {
+        const fullPath = join(this.outDir, relativePath);
+        const dirPath = fullPath.substring(0, fullPath.lastIndexOf("/"));
+        if (dirPath) {
+            mkdirpSync(dirPath);
+        }
+        writeFileSync(fullPath, JSON.stringify(data, null, 4), "utf-8");
+    }
+
 }
 
 function tryPath(paths: string[]) {

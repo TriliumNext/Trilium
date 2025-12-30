@@ -85,13 +85,15 @@ async function remove<T>(url: string, componentId?: string) {
     return await call<T>("DELETE", url, componentId);
 }
 
-async function upload(url: string, fileToUpload: File) {
+async function upload(url: string, fileToUpload: File, componentId?: string) {
     const formData = new FormData();
     formData.append("upload", fileToUpload);
 
     return await $.ajax({
         url: window.glob.baseApiUrl + url,
-        headers: await getHeaders(),
+        headers: await getHeaders(componentId ? {
+            "trilium-component-id": componentId
+        } : undefined),
         data: formData,
         type: "PUT",
         timeout: 60 * 60 * 1000,

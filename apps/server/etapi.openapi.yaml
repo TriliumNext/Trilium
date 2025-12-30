@@ -341,7 +341,7 @@ paths:
         post:
             description: >
                 Create a branch (clone a note to a different location in the tree).
-                In case there is a branch between parent note and child note already, 
+                In case there is a branch between parent note and child note already,
                 then this will update the existing branch with prefix, notePosition and isExpanded.
             operationId: postBranch
             requestBody:
@@ -416,7 +416,7 @@ paths:
                                 $ref: "#/components/schemas/Error"
         delete:
             description: >
-                deletes a branch based on the branchId supplied. If this is the last branch of the (child) note, 
+                deletes a branch based on the branchId supplied. If this is the last branch of the (child) note,
                 then the note is deleted as well.
             operationId: deleteBranchById
             responses:
@@ -627,8 +627,8 @@ paths:
                   $ref: "#/components/schemas/EntityId"
         post:
             description: >
-                notePositions in branches are not automatically pushed to connected clients and need a specific instruction. 
-                If you want your changes to be in effect immediately, call this service after setting branches' notePosition. 
+                notePositions in branches are not automatically pushed to connected clients and need a specific instruction.
+                If you want your changes to be in effect immediately, call this service after setting branches' notePosition.
                 Note that you need to supply "parentNoteId" of branch(es) with changed positions.
             operationId: postRefreshNoteOrdering
             responses:
@@ -692,18 +692,20 @@ paths:
                         application/json; charset=utf-8:
                             schema:
                                 $ref: "#/components/schemas/Error"
-    /calendar/weeks/{date}:
+    /calendar/weeks/{week}:
         get:
-            description: returns a week note for a given date. Gets created if doesn't exist.
-            operationId: getWeekFirstDayNote
+            summary: Get a week note
+            description: Returns a week note for a given ISO week (format YYYY-Www, e.g., 2025-W01). The note is created if it doesn't exist.
+            operationId: getWeekNote
             parameters:
-                - name: date
+                - name: week
                   in: path
                   required: true
+                  description: The ISO 8601 week identifier (YYYY-Www).
                   schema:
                       type: string
-                      format: date
-                  example: 2022-02-22
+                      pattern: "[0-9]{4}-W[0-9]{2}"
+                      example: "2025-W01"
             responses:
                 "200":
                     description: week note
@@ -859,8 +861,8 @@ components:
             type: http
             scheme: basic
             description: >
-                Basic Auth where username is arbitrary string (e.g. "trilium", not checked), 
-                username is the ETAPI token. 
+                Basic Auth where username is arbitrary string (e.g. "trilium", not checked),
+                username is the ETAPI token.
                 To emphasize, do not use Trilium password here (won't work), only the generated
                 ETAPI token (from Options -> ETAPI)
     schemas:
@@ -897,13 +899,13 @@ components:
                 notePosition:
                     type: integer
                     description: >
-                        Position of the note in the parent. Normal ordering is 10, 20, 30 ... 
+                        Position of the note in the parent. Normal ordering is 10, 20, 30 ...
                         So if you want to create a note on the first position, use e.g. 5, for second position 15, for last e.g. 1000000
                 prefix:
                     type: string
                     description: >
-                        Prefix is branch (placement) specific title prefix for the note. 
-                        Let's say you have your note placed into two different places in the tree, 
+                        Prefix is branch (placement) specific title prefix for the note.
+                        Let's say you have your note placed into two different places in the tree,
                         but you want to change the title a bit in one of the placements. For this you can use prefix.
                 isExpanded:
                     type: boolean
@@ -930,7 +932,24 @@ components:
                     type: string
                 type:
                     type: string
-                    enum: [text, code, render, file, image, search, relationMap, book, noteMap, mermaid, webView, shortcut, doc, contentWidget, launcher]
+                    enum:
+                        [
+                            text,
+                            code,
+                            render,
+                            file,
+                            image,
+                            search,
+                            relationMap,
+                            book,
+                            noteMap,
+                            mermaid,
+                            webView,
+                            shortcut,
+                            doc,
+                            contentWidget,
+                            launcher,
+                        ]
                 mime:
                     type: string
                 isProtected:

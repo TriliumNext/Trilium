@@ -11,7 +11,8 @@ import froca from "../../services/froca";
 import { subscribeToMessages, unsubscribeToMessage as unsubscribeFromMessage } from "../../services/ws";
 import { useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent } from "../react/hooks";
 import { allViewTypes, ViewModeMedia, ViewModeProps, ViewTypeOptions } from "./interface";
-import ViewModeStorage from "./view_mode_storage";
+import ViewModeStorage, { type ViewModeStorageType } from "./view_mode_storage";
+
 interface NoteListProps {
     note: FNote | null | undefined;
     notePath: string | null | undefined;
@@ -215,7 +216,7 @@ export function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOpt
     return noteIds;
 }
 
-export function useViewModeConfig<T extends object>(note: FNote | null | undefined, viewType: ViewTypeOptions | undefined) {
+export function useViewModeConfig<T extends object>(note: FNote | null | undefined, viewType: ViewModeStorageType | undefined) {
     const [ viewConfig, setViewConfig ] = useState<{
         config: T | undefined;
         storeFn: (data: T) => void;
