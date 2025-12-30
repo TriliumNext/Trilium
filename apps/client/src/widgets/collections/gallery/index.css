@@ -224,6 +224,23 @@
     opacity: 0.7;
 }
 
+.gallery-type-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 4px;
+    padding: 4px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gallery-type-badge i {
+    font-size: 14px;
+    color: white;
+}
+
 .gallery-load-more {
     height: 20px;
     margin: 20px 0;

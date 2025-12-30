@@ -35,13 +35,13 @@ export default function GalleryView({ note, noteIds: unfilteredNoteIds }: ViewMo
     const loadedNoteCount = noteIds?.filter(id => froca.notes[id]).length ?? 0;
 
     // Memoize the filtered and sorted notes to avoid recalculating on every render
-    const { sortedNotes, imageCount } = useMemo(() => {
+    const { sortedNotes, imageCount, galleryCount } = useMemo(() => {
         const allNotes = noteIds?.map(noteId => froca.notes[noteId]).filter(Boolean) || [];
 
         const notes = allNotes
             .filter(childNote => {
                 const isGallery = childNote.hasLabel('collection') && childNote.getLabelValue('viewType') === 'gallery';
-                const isImage = childNote.type === 'image' || childNote.type === 'canvas';
+                const isImage = childNote.type === 'image' || childNote.type === 'canvas' || childNote.type === 'mermaid' || childNote.type === 'mindMap';
                 return isGallery || isImage;
             })
             .sort((a, b) => {
@@ -53,11 +53,15 @@ export default function GalleryView({ note, noteIds: unfilteredNoteIds }: ViewMo
                 return 0;
             });
 
-        const count = notes.filter(note =>
-            note.type === 'image' || note.type === 'canvas'
+        const imgCount = notes.filter(note =>
+            note.type === 'image' || note.type === 'canvas' || note.type === 'mermaid' || note.type === 'mindMap'
         ).length;
 
-        return { sortedNotes: notes, imageCount: count };
+        const galCount = notes.filter(note =>
+            note.hasLabel('collection') && note.getLabelValue('viewType') === 'gallery'
+        ).length;
+
+        return { sortedNotes: notes, imageCount: imgCount, galleryCount: galCount };
     }, [noteIds, loadedNoteCount]);
 
     // Only display a subset of notes for virtual scrolling
@@ -252,6 +256,7 @@ export default function GalleryView({ note, noteIds: unfilteredNoteIds }: ViewMo
                 selectedCount={selectedNoteIds.size}
                 totalCount={sortedNotes?.length ?? 0}
                 imageCount={imageCount}
+                galleryCount={galleryCount}
                 isUploading={isUploading}
                 currentNote={note}
                 onUpload={handleUpload}
@@ -302,6 +307,7 @@ interface GalleryToolbarProps {
     selectedCount: number;
     totalCount: number;
     imageCount: number;
+    galleryCount: number;
     isUploading: boolean;
     onUpload: (files: FileList | null) => void;
     onCreateGallery: () => void;
@@ -314,6 +320,7 @@ function GalleryToolbar({
     selectedCount,
     totalCount,
     imageCount,
+    galleryCount,
     isUploading,
     onUpload,
     onCreateGallery,
@@ -380,6 +387,11 @@ function GalleryToolbar({
                     multiple
                     accept="image/*"
                 />
+                {galleryCount > 0 && (
+                    <span className="gallery-toolbar-status">
+                        {t("gallery.gallery_count", { count: galleryCount })}
+                    </span>
+                )}
                 {imageCount > 0 && (
                     <span className="gallery-toolbar-status">
                         {t("gallery.image_count", { count: imageCount })}
@@ -448,6 +460,8 @@ function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSele
 
             return child.type === 'image' ||
                 child.type === 'canvas' ||
+                child.type === 'mermaid' ||
+                child.type === 'mindMap' ||
                 (child.hasLabel('collection') && child.getLabelValue('viewType') === 'gallery');
         }).length;
     }, [isGallery, note.children]);
@@ -459,6 +473,10 @@ function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSele
             setImageSrc(`api/images/${note.noteId}/${encodeURIComponent(note.title)}`);
         } else if (note.type === 'canvas') {
             setImageSrc(`api/images/${note.noteId}/canvas.png`);
+        } else if (note.type === 'mermaid') {
+            setImageSrc(`api/images/${note.noteId}/mermaid.svg`);
+        } else if (note.type === 'mindMap') {
+            setImageSrc(`api/images/${note.noteId}/mindmap.svg`);
         }
     }, [note, parentNote.noteId]);
 
@@ -565,6 +583,9 @@ function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSele
             ) : imageSrc ? (
                 <div className="gallery-image-container">
                     <img src={imageSrc} alt={noteTitle} loading="lazy" />
+                    <div className="gallery-type-badge">
+                        <i className={note.getIcon()} />
+                    </div>
                     <div className="gallery-title">{noteTitle}</div>
                 </div>
             ) : null}
