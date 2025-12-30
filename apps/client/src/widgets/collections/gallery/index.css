@@ -241,6 +241,30 @@
     color: white;
 }
 
+.gallery-share-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background-color: rgba(0, 0, 0, 0.6);
+    border: none;
+    border-radius: 4px;
+    padding: 4px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.gallery-share-badge:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.gallery-share-badge i {
+    font-size: 14px;
+    color: #4caf50;
+}
+
 .gallery-load-more {
     height: 20px;
     margin: 20px 0;

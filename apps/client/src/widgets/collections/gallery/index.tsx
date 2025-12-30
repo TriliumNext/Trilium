@@ -1,5 +1,6 @@
 import "./index.css";
 
+import { ToggleInParentResponse } from "@triliumnext/commons";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
@@ -7,10 +8,12 @@ import type FNote from "../../../entities/fnote";
 import contextMenu from "../../../menus/context_menu";
 import linkContextMenu from "../../../menus/link_context_menu";
 import branches from "../../../services/branches";
+import { copyTextWithToast } from "../../../services/clipboard_ext";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import link from "../../../services/link";
 import noteCreateService from "../../../services/note_create";
+import options from "../../../services/options";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import tree from "../../../services/tree";
@@ -22,6 +25,48 @@ import { useFilteredNoteIds } from "../legacy/utils";
 
 const INITIAL_LOAD = 50;
 const LOAD_MORE_INCREMENT = 50;
+
+const VISUAL_NOTE_TYPES = ['image', 'canvas', 'mermaid', 'mindMap'] as const;
+
+function isVisualType(type: string): boolean {
+    return (VISUAL_NOTE_TYPES as readonly string[]).includes(type);
+}
+
+function isGalleryNote(note: FNote): boolean {
+    return note.hasLabel('collection') && note.getLabelValue('viewType') === 'gallery';
+}
+
+function getImageSrc(note: FNote): string | undefined {
+    switch (note.type) {
+        case 'image':
+            return `api/images/${note.noteId}/${encodeURIComponent(note.title)}`;
+        case 'canvas':
+            return `api/images/${note.noteId}/canvas.png`;
+        case 'mermaid':
+            return `api/images/${note.noteId}/mermaid.svg`;
+        case 'mindMap':
+            return `api/images/${note.noteId}/mindmap.svg`;
+        default:
+            return undefined;
+    }
+}
+
+function getShareUrl(note: FNote): string {
+    const shareId = note.hasOwnedLabel("shareRoot")
+        ? ""
+        : note.getOwnedLabelValue("shareAlias") || note.noteId;
+
+    const syncServerHost = options.get("syncServerHost");
+    if (syncServerHost) {
+        return new URL(`/share/${shareId}`, syncServerHost).href;
+    }
+
+    let host = location.host;
+    if (host.endsWith("/")) {
+        host = host.substring(0, host.length - 1);
+    }
+    return `${location.protocol}//${host}${location.pathname}share/${shareId}`;
+}
 
 export default function GalleryView({ note, noteIds: unfilteredNoteIds }: ViewModeProps<{}>) {
     const noteIds = useFilteredNoteIds(note, unfilteredNoteIds);
@@ -39,27 +84,18 @@ export default function GalleryView({ note, noteIds: unfilteredNoteIds }: ViewMo
         const allNotes = noteIds?.map(noteId => froca.notes[noteId]).filter(Boolean) || [];
 
         const notes = allNotes
-            .filter(childNote => {
-                const isGallery = childNote.hasLabel('collection') && childNote.getLabelValue('viewType') === 'gallery';
-                const isImage = childNote.type === 'image' || childNote.type === 'canvas' || childNote.type === 'mermaid' || childNote.type === 'mindMap';
-                return isGallery || isImage;
-            })
+            .filter(childNote => isGalleryNote(childNote) || isVisualType(childNote.type))
             .sort((a, b) => {
-                const aIsGallery = a.hasLabel('collection') && a.getLabelValue('viewType') === 'gallery';
-                const bIsGallery = b.hasLabel('collection') && b.getLabelValue('viewType') === 'gallery';
+                const aIsGallery = isGalleryNote(a);
+                const bIsGallery = isGalleryNote(b);
 
                 if (aIsGallery && !bIsGallery) return -1;
                 if (!aIsGallery && bIsGallery) return 1;
                 return 0;
             });
 
-        const imgCount = notes.filter(note =>
-            note.type === 'image' || note.type === 'canvas' || note.type === 'mermaid' || note.type === 'mindMap'
-        ).length;
-
-        const galCount = notes.filter(note =>
-            note.hasLabel('collection') && note.getLabelValue('viewType') === 'gallery'
-        ).length;
+        const imgCount = notes.filter(note => isVisualType(note.type)).length;
+        const galCount = notes.filter(note => isGalleryNote(note)).length;
 
         return { sortedNotes: notes, imageCount: imgCount, galleryCount: galCount };
     }, [noteIds, loadedNoteCount]);
@@ -331,15 +367,11 @@ function GalleryToolbar({
 }: GalleryToolbarProps & { currentNote: FNote }) {
 
     // Check if current note is a gallery with parents
-    const hasParentGallery = currentNote && currentNote.getParentNotes().some(parent =>
-        parent.hasLabel('collection') && parent.getLabelValue('viewType') === 'gallery'
-    );
+    const hasParentGallery = currentNote && currentNote.getParentNotes().some(parent => isGalleryNote(parent));
 
     const handleGoBack = () => {
         if (currentNote) {
-            const parentGallery = currentNote.getParentNotes().find(parent =>
-                parent.hasLabel('collection') && parent.getLabelValue('viewType') === 'gallery'
-            );
+            const parentGallery = currentNote.getParentNotes().find(parent => isGalleryNote(parent));
 
             if (parentGallery) {
                 appContext.tabManager.getActiveContext()?.setNote(parentGallery.noteId);
@@ -445,8 +477,9 @@ interface GalleryCardProps {
 function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSelection, deleteNotes }: GalleryCardProps) {
     const [noteTitle, setNoteTitle] = useState<string>();
     const [imageSrc, setImageSrc] = useState<string>();
+    const [isShared, setIsShared] = useState(() => note.isShared());
     const notePath = getNotePath(parentNote, note);
-    const isGallery = note.hasLabel('collection') && note.getLabelValue('viewType') === 'gallery';
+    const isGallery = isGalleryNote(note);
 
     const childCount = useMemo(() => {
         if (!isGallery) {
@@ -457,27 +490,14 @@ function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSele
         return childNoteIds.filter(childId => {
             const child = froca.notes[childId];
             if (!child) return false;
-
-            return child.type === 'image' ||
-                child.type === 'canvas' ||
-                child.type === 'mermaid' ||
-                child.type === 'mindMap' ||
-                (child.hasLabel('collection') && child.getLabelValue('viewType') === 'gallery');
+            return isVisualType(child.type) || isGalleryNote(child);
         }).length;
     }, [isGallery, note.children]);
 
     useEffect(() => {
         tree.getNoteTitle(note.noteId, parentNote.noteId).then(setNoteTitle);
-
-        if (note.type === 'image') {
-            setImageSrc(`api/images/${note.noteId}/${encodeURIComponent(note.title)}`);
-        } else if (note.type === 'canvas') {
-            setImageSrc(`api/images/${note.noteId}/canvas.png`);
-        } else if (note.type === 'mermaid') {
-            setImageSrc(`api/images/${note.noteId}/mermaid.svg`);
-        } else if (note.type === 'mindMap') {
-            setImageSrc(`api/images/${note.noteId}/mindmap.svg`);
-        }
+        setImageSrc(getImageSrc(note));
+        setIsShared(note.isShared());
     }, [note, parentNote.noteId]);
 
     const handleRename = async () => {
@@ -493,6 +513,17 @@ function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSele
         if (newTitle && newTitle !== note.title) {
             await server.put(`notes/${note.noteId}/title`, { title: newTitle });
             setNoteTitle(newTitle);
+        }
+    };
+
+    const handleToggleShare = async (noteToShare: FNote) => {
+        const shouldShare = !noteToShare.isShared();
+        const resp = await server.put<ToggleInParentResponse>(`notes/${noteToShare.noteId}/toggle-in-parent/_share/${shouldShare}`);
+
+        if (!resp.success && "message" in resp) {
+            toast.showError(resp.message);
+        } else {
+            setIsShared(shouldShare);
         }
     };
 
@@ -542,6 +573,15 @@ function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSele
                 },
                 { kind: "separator" },
                 {
+                    title: isShared
+                        ? t("shared_switch.toggle-off-title")
+                        : t("shared_switch.toggle-on-title"),
+                    uiIcon: isShared ? "bx bx-unlink" : "bx bx-share-alt",
+                    enabled: !isBulkOperation,
+                    handler: () => handleToggleShare(note)
+                },
+                { kind: "separator" },
+                {
                     title: isBulkOperation
                         ? t("gallery.delete_multiple", { count: noteIdsToDelete.length })
                         : t("note_actions.delete_note"),
@@ -555,6 +595,13 @@ function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSele
                 }
             }
         });
+    };
+
+    const handleShareBadgeClick = (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const shareUrl = getShareUrl(note);
+        copyTextWithToast(shareUrl);
     };
 
     return (
@@ -573,6 +620,16 @@ function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSele
             {isGallery ? (
                 <div className="gallery-image-container gallery-folder-icon">
                     <i className="bx bx-folder" />
+                    {isShared && (
+                        <button
+                            type="button"
+                            className="gallery-share-badge"
+                            title={t("breadcrumb_badges.shared_copy_to_clipboard")}
+                            onClick={handleShareBadgeClick}
+                        >
+                            <i className="bx bx-share-alt" />
+                        </button>
+                    )}
                     <div className="gallery-title">
                         {noteTitle}
                         {childCount > 0 && (
@@ -586,6 +643,16 @@ function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSele
                     <div className="gallery-type-badge">
                         <i className={note.getIcon()} />
                     </div>
+                    {isShared && (
+                        <button
+                            type="button"
+                            className="gallery-share-badge"
+                            title={t("breadcrumb_badges.shared_copy_to_clipboard")}
+                            onClick={handleShareBadgeClick}
+                        >
+                            <i className="bx bx-share-alt" />
+                        </button>
+                    )}
                     <div className="gallery-title">{noteTitle}</div>
                 </div>
             ) : null}
