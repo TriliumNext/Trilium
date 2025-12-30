@@ -224,6 +224,16 @@
     opacity: 0.7;
 }
 
+.gallery-load-more {
+    height: 20px;
+    margin: 20px 0;
+}
+
+.gallery-load-more-text {
+    text-align: center;
+    color: var(--muted-text-color);
+}
+
 .gallery-empty-help {
     display: flex;
     flex-direction: column;
