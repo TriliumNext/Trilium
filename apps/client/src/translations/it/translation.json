@@ -16,13 +16,22 @@
     },
     "bundle-error": {
       "title": "Non si è riusciti a caricare uno script personalizzato",
-      "message": "Lo script della nota con ID \"{{id}}\", dal titolo \"{{title}}\" non è stato inizializzato a causa di:\n\n{{message}}"
+      "message": "Impossibile eseguire lo script a causa di:\n\n{{message}}"
     },
     "widget-error": {
       "title": "Impossibile inizializzare un widget",
       "message-custom": "Il widget personalizzato dalla nota con ID “{{id}}”, intitolato “{{title}}”, non è stato possibile inizializzare a causa di:\n\n{{message}}",
       "message-unknown": "Un widget sconosciuto non è stato inizializzato a causa di:\n\n{{message}}"
-    }
+    },
+    "widget-list-error": {
+      "title": "Impossibile ottenere l'elenco dei widget dal server"
+    },
+    "widget-render-error": {
+      "title": "Impossibile eseguire il rendering di un widget React personalizzato"
+    },
+    "widget-missing-parent": "Il widget personalizzato non ha la proprietà obbligatoria '{{property}}' definita.\n\nSe questo script deve essere eseguito senza un elemento dell'interfaccia utente, utilizzare invece '#run=frontendStartup'.",
+    "open-script-note": "Apri script note",
+    "scripting-error": "Errore script personalizzato: {{title}}"
   },
   "add_link": {
     "add_link": "Aggiungi un collegamento",
@@ -1334,7 +1343,16 @@
   "note_icon": {
     "change_note_icon": "Cambia icona nota",
     "search": "Ricerca:",
-    "reset-default": "Ripristina l'icona predefinita"
+    "reset-default": "Ripristina l'icona predefinita",
+    "search_placeholder_one": "Cerca {{number}} icona in {{count}} pacchetto",
+    "search_placeholder_many": "Cerca {{number}} icone in {{count}} pacchetti",
+    "search_placeholder_other": "Cerca {{number}} icone in {{count}} pacchetti",
+    "search_placeholder_filtered": "Cerca {{number}} icone in {{name}}",
+    "filter": "Filtro",
+    "filter-none": "Tutte le icone",
+    "filter-default": "Icone predefinite",
+    "icon_tooltip": "{{name}}\nPacchetto icone: {{iconPack}}",
+    "no_results": "Nessuna icona trovata."
   },
   "basic_properties": {
     "note_type": "Tipo di nota",
@@ -1792,7 +1810,7 @@
     "will_be_deleted_in": "Questo allegato verrà eliminato automaticamente tra {{time}}",
     "will_be_deleted_soon": "Questo allegato verrà eliminato automaticamente a breve",
     "deletion_reason": ", perché l'allegato non è collegato al contenuto della nota. Per impedirne l'eliminazione, aggiungi nuovamente il collegamento all'allegato nel contenuto o converti l'allegato in nota.",
-    "role_and_size": "Ruolo: {{role}}, Dimensione: {{size}}",
+    "role_and_size": "Ruolo: {{role}}, dimensione: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "Link all'allegato copiato negli appunti.",
     "unrecognized_role": "Ruolo di allegato non riconosciuto '{{role}}'."
   },
@@ -1886,7 +1904,13 @@
   "note_detail": {
     "could_not_find_typewidget": "Impossibile trovare typeWidget per il tipo '{{type}}'",
     "printing": "Stampa in corso...",
-    "printing_pdf": "Esportazione in PDF in corso..."
+    "printing_pdf": "Esportazione in PDF in corso...",
+    "print_report_title": "Stampa rapporto",
+    "print_report_collection_content_one": "{{count}} la note nella raccolta non può essere stampata perché non è supportata o è protetta.",
+    "print_report_collection_content_many": "{{count}} le note nella raccolta non possono essere stampate perché non sono supportate o sono protette.",
+    "print_report_collection_content_other": "{{count}} le note nella raccolta non possono essere stampate perché non sono supportate o sono protette.",
+    "print_report_collection_details_button": "Vedi dettagli",
+    "print_report_collection_details_ignored_notes": "Note ignorate"
   },
   "note_title": {
     "placeholder": "scrivi qui il titolo della nota...",
@@ -1896,7 +1920,8 @@
     "note_type_switcher_others": "Altro tipo di nota",
     "note_type_switcher_templates": "Modello",
     "note_type_switcher_collection": "Collezione",
-    "edited_notes": "Note modificate"
+    "edited_notes": "Note modificate in questo giorno",
+    "promoted_attributes": "Attributi promossi"
   },
   "search_result": {
     "no_notes_found": "Non sono state trovate note per i parametri di ricerca specificati.",

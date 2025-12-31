@@ -1,6 +1,7 @@
 import { RefObject } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
+import appContext from "../../../components/app_context";
 import FBlob from "../../../entities/fblob";
 import FNote from "../../../entities/fnote";
 import server from "../../../services/server";
@@ -14,10 +15,11 @@ const VARIABLE_WHITELIST = new Set([
     "main-text-color"
 ]);
 
-export default function PdfPreview({ note, blob, componentId }: {
+export default function PdfPreview({ note, blob, componentId, ntxId }: {
     note: FNote,
     blob: FBlob | null | undefined,
     componentId: string | undefined;
+    ntxId: string | null | undefined;
 }) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const { onLoad } = useStyleInjection(iframeRef);
@@ -49,8 +51,28 @@ export default function PdfPreview({ note, blob, componentId }: {
         }
     }, [ blob ]);
 
+    // Trigger focus when iframe content is clicked (iframe focus doesn't bubble)
+    useEffect(() => {
+        const iframe = iframeRef.current;
+        if (!iframe) return;
+
+        const handleIframeClick = () => {
+            if (ntxId) {
+                appContext.tabManager.activateNoteContext(ntxId);
+            }
+        };
+
+        // Listen for clicks on the iframe's content window
+        const iframeDoc = iframe.contentWindow?.document;
+        if (iframeDoc) {
+            iframeDoc.addEventListener('click', handleIframeClick);
+            return () => iframeDoc.removeEventListener('click', handleIframeClick);
+        }
+    }, [ iframeRef.current?.contentWindow, ntxId ]);
+
     return (historyConfig &&
         <iframe
+            tabIndex={300}
             ref={iframeRef}
             class="pdf-preview"
             src={`pdfjs/web/viewer.html?file=../../api/notes/${note.noteId}/open&lang=${locale}`}
