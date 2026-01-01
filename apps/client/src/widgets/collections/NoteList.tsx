@@ -36,6 +36,9 @@ const ViewComponents: Record<ViewTypeOptions, { normal: LazyLoadedComponent, pri
     grid: {
         normal: lazy(() => import("./legacy/ListOrGridView.js").then(i => i.GridView)),
     },
+    gallery: {
+        normal: lazy(() => import("./gallery/index.js")),
+    },
     geoMap: {
         normal: lazy(() => import("./geomap/index.js")),
     },
@@ -152,7 +155,7 @@ export function useNoteViewType(note?: FNote | null): ViewTypeOptions | undefine
 export function useNoteIds(note: FNote | null | undefined, viewType: ViewTypeOptions | undefined, ntxId: string | null | undefined) {
     const [ noteIds, setNoteIds ] = useState<string[]>([]);
     const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
-    const directChildrenOnly = (viewType === "list" || viewType === "grid" || viewType === "table" || note?.type === "search");
+    const directChildrenOnly = (viewType === "list" || viewType === "grid" || viewType === "gallery" || viewType === "table" || note?.type === "search");
 
     async function refreshNoteIds() {
         if (!note) {

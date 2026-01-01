@@ -71,6 +71,27 @@ export default function buildHiddenSubtreeTemplates() {
                 ]
             },
             {
+                id: "_template_gallery",
+                type: "book",
+                title: t("hidden_subtree_templates.gallery"),
+                icon: "bx bx-images",
+                attributes: [
+                    {
+                        name: "template",
+                        type: "label"
+                    },
+                    {
+                        name: "collection",
+                        type: "label"
+                    },
+                    {
+                        name: "viewType",
+                        type: "label",
+                        value: "gallery"
+                    }
+                ]
+            },
+            {
                 id: "_template_calendar",
                 type: "book",
                 title: t("hidden_subtree_templates.calendar"),
