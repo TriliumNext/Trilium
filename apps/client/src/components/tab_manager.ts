@@ -138,7 +138,7 @@ export default class TabManager extends Component {
             // Save window contents
             if (currentWin) {
                 currentWin.createdAt = Date.now();
-                currentWin.closedAt = null;
+                currentWin.closedAt = 0;
                 currentWin.contexts = filteredNoteContexts;
             } else {
                 // Filter out the oldest entry (excluding the main window)
