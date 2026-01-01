@@ -73,7 +73,7 @@ export function getPdfjsAssetDir() {
         return path.join(srcRoot, "../../packages/pdfjs-viewer/dist");
     }
     const resourceDir = getResourceDir();
-    return path.join(resourceDir, "pdfjs-viewer/assets");
+    return path.join(resourceDir, "pdfjs-viewer");
 }
 
 export function getClientDir() {

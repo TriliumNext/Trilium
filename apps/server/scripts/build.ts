@@ -17,6 +17,9 @@ async function main() {
     // Integrate the client.
     build.triggerBuildAndCopyTo("apps/client", "public/");
     build.deleteFromOutput("public/webpack-stats.json");
+
+    // pdf.js
+    build.triggerBuildAndCopyTo("packages/pdfjs-viewer", "pdfjs-viewer");
 }
 
 main();
