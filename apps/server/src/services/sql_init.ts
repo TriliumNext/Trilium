@@ -149,7 +149,7 @@ async function createInitialDatabase(skipDemoDb?: boolean) {
                 {
                     windowId: "main",
                     createdAt: 0,
-                    closedAt: null,
+                    closedAt: 0,
                     contexts: [
                         {
                             notePath: startNoteId,

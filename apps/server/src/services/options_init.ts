@@ -47,7 +47,7 @@ async function initNotSyncedOptions(initialized: boolean, opts: NotSyncedOpts = 
             {
                 windowId: "main",
                 createdAt: 0,
-                closedAt: null,
+                closedAt: 0,
                 contexts: [
                     {
                         notePath: "root",
@@ -266,7 +266,7 @@ function initStartupOptions() {
                 {
                     windowId: "main",
                     createdAt: 0,
-                    closedAt: null,
+                    closedAt: 0,
                     contexts: [
                         {
                             notePath: process.env.TRILIUM_START_NOTE_ID || "root",

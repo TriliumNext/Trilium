@@ -201,15 +201,9 @@ function updateTrayMenu() {
         const openedWindowIds = windowService.getAllWindowIds();
         const closedWindows = savedWindows
             .filter(win => !openedWindowIds.includes(win.windowId))
-            .sort((a, b) => {
-                // If closedAt is null, it indicates an abnormal closure and should be placed at the end
-                if (a.closedAt === null && b.closedAt === null) return 0;
-                if (a.closedAt === null) return 1;
-                if (b.closedAt === null) return -1;
-                // Otherwise, sort by time in descending order
-                return b.closedAt - a.closedAt;
-            });
+            .sort((a, b) => { return b.closedAt - a.closedAt; });  // sort by time in descending order
         const menuItems: Electron.MenuItemConstructorOptions[] = [];
+        
         for (const win of closedWindows) {
             const activeCtx = win.contexts.find(c => c.active === true);
             const activateNotePath = (activeCtx ?? win.contexts[0])?.notePath;

@@ -60,7 +60,7 @@ export default class TabManager extends Component {
                 savedWindows.push({
                     windowId: appContext.windowId,
                     createdAt: Date.now(),
-                    closedAt: null,
+                    closedAt: 0,
                     contexts: openNoteContexts
                 });
             }
@@ -154,7 +154,7 @@ export default class TabManager extends Component {
                 savedWindows.push({
                     windowId: appContext.windowId,
                     createdAt: Date.now(),
-                    closedAt: null,
+                    closedAt: 0,
                     contexts: filteredNoteContexts
                 });
             }

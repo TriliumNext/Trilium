@@ -34,7 +34,7 @@ export default () => {
             {
                 windowId: "main",
                 createdAt: 0,
-                closedAt: null,
+                closedAt: 0,
                 contexts: parsed
             }
         ];
