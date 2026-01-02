@@ -208,15 +208,15 @@ function updateTrayMenu() {
             const activeCtx = win.contexts.find(c => c.active === true);
             const activateNotePath = (activeCtx ?? win.contexts[0])?.notePath;
             const activateNoteId = activateNotePath?.split("/").pop() ?? null;
-
+            if (!activateNoteId) continue;
+            
             // Get the title of the closed window
-            const rawTitle = activateNoteId ? becca_service.getNoteTitle(activateNoteId) : "";
-            let winTitle = rawTitle.length > 20 ? `${rawTitle.slice(0, 17)}...` : rawTitle;
-            const mainTabCount = win.contexts.filter(ctx => ctx.mainNtxId === null).length;
-            if (mainTabCount > 1) {
-                const tabSuffix = t("tray.tabs-total", { number: mainTabCount });
-                winTitle += ` (${tabSuffix})`;
-            }
+            const winTitle = (() => {
+                const raw = becca_service.getNoteTitle(activateNoteId);
+                const truncated = raw.length > 20 ? `${raw.slice(0, 17)}…` : raw;
+                const tabCount = win.contexts.filter(ctx => ctx.mainNtxId === null).length;
+                return tabCount > 1 ? `${truncated} (${t("tray.tabs-total", { number: tabCount })})` : truncated;
+            })();
 
             menuItems.push({
                 label: winTitle,
