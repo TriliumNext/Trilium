@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { t } from "../../../services/i18n";
 import SplitEditor, { PreviewButton, SplitEditorProps } from "./SplitEditor";
 import { RawHtmlBlock } from "../../react/RawHtml";
@@ -55,7 +55,9 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
     }
 
     // Save as attachment.
-    function onSave() {
+    const onSave = useCallback(() => {
+        if (!svg) return; // Don't save if SVG hasn't been rendered yet
+
         const payload = {
             role: "image",
             title: `${attachmentName}.svg`,
@@ -65,16 +67,18 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
         };
 
         server.post(`notes/${note.noteId}/attachments?matchBy=title`, payload);
-    }
+    }, [ svg, attachmentName, note.noteId ]);
 
     // Save the SVG when entering a note only when it does not have an attachment.
     useEffect(() => {
+        if (!svg) return; // Wait until SVG is rendered
+
         note?.getAttachments().then((attachments) => {
             if (!attachments.find((a) => a.title === `${attachmentName}.svg`)) {
                 onSave();
             }
-        });
-    }, [ note ]);
+        }).catch(e => console.error("Failed to get attachments for SVGSplitEditor", e));
+    }, [ note, svg, attachmentName, onSave ]);
 
     // Import/export
     useTriliumEvent("exportSvg", async({ ntxId: eventNtxId }) => {

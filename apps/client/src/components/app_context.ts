@@ -6,7 +6,7 @@ import { ColumnComponent } from "tabulator-tables";
 
 import type { Attribute } from "../services/attribute_parser.js";
 import froca from "../services/froca.js";
-import { initLocale,t } from "../services/i18n.js";
+import { initLocale, t } from "../services/i18n.js";
 import keyboardActionsService from "../services/keyboard_actions.js";
 import linkService, { type ViewScope } from "../services/link.js";
 import type LoadResults from "../services/load_results.js";
@@ -472,6 +472,11 @@ type EventMappings = {
     };
     noteContextRemoved: {
         ntxIds: string[];
+    };
+    contextDataChanged: {
+        noteContext: NoteContext;
+        key: string;
+        value: unknown;
     };
     exportSvg: { ntxId: string | null | undefined; };
     exportPng: { ntxId: string | null | undefined; };

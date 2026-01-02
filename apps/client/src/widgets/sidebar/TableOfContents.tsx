@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
 import { randomString } from "../../services/utils";
-import { useActiveNoteContext, useContentElement, useIsNoteReadOnly, useNoteProperty, useTextEditor } from "../react/hooks";
+import { useActiveNoteContext, useContentElement, useGetContextData, useIsNoteReadOnly, useNoteProperty, useTextEditor } from "../react/hooks";
 import Icon from "../react/Icon";
 import RightPanelWidget from "./RightPanelWidget";
 
@@ -21,29 +21,50 @@ interface HeadingsWithNesting extends RawHeading {
     children: HeadingsWithNesting[];
 }
 
+export interface HeadingContext {
+    scrollToHeading(heading: RawHeading): void;
+    headings: RawHeading[];
+    activeHeadingId?: string | null;
+}
+
 export default function TableOfContents() {
     const { note, noteContext } = useActiveNoteContext();
     const noteType = useNoteProperty(note, "type");
+    const noteMime = useNoteProperty(note, "mime");
     const { isReadOnly } = useIsNoteReadOnly(note, noteContext);
 
     return (
         <RightPanelWidget id="toc" title={t("toc.table_of_contents")} grow>
             {((noteType === "text" && isReadOnly) || (noteType === "doc")) && <ReadOnlyTextTableOfContents />}
             {noteType === "text" && !isReadOnly && <EditableTextTableOfContents />}
+            {noteType === "file" && noteMime === "application/pdf" && <PdfTableOfContents />}
         </RightPanelWidget>
     );
 }
 
-function AbstractTableOfContents<T extends RawHeading>({ headings, scrollToHeading }: {
+function PdfTableOfContents() {
+    const data = useGetContextData("toc");
+
+    return (
+        <AbstractTableOfContents
+            headings={data?.headings || []}
+            scrollToHeading={data?.scrollToHeading || (() => {})}
+            activeHeadingId={data?.activeHeadingId}
+        />
+    );
+}
+
+function AbstractTableOfContents<T extends RawHeading>({ headings, scrollToHeading, activeHeadingId }: {
     headings: T[];
     scrollToHeading(heading: T): void;
+    activeHeadingId?: string | null;
 }) {
     const nestedHeadings = buildHeadingTree(headings);
     return (
         <span className="toc">
             {nestedHeadings.length > 0 ? (
                 <ol>
-                    {nestedHeadings.map(heading => <TableOfContentsHeading key={heading.id} heading={heading} scrollToHeading={scrollToHeading} />)}
+                    {nestedHeadings.map(heading => <TableOfContentsHeading key={heading.id} heading={heading} scrollToHeading={scrollToHeading} activeHeadingId={activeHeadingId} />)}
                 </ol>
             ) : (
                 <div className="no-headings">{t("toc.no_headings")}</div>
@@ -52,14 +73,16 @@ function AbstractTableOfContents<T extends RawHeading>({ headings, scrollToHeadi
     );
 }
 
-function TableOfContentsHeading({ heading, scrollToHeading }: {
+function TableOfContentsHeading({ heading, scrollToHeading, activeHeadingId }: {
     heading: HeadingsWithNesting;
     scrollToHeading(heading: RawHeading): void;
+    activeHeadingId?: string | null;
 }) {
     const [ collapsed, setCollapsed ] = useState(false);
+    const isActive = heading.id === activeHeadingId;
     return (
         <>
-            <li className={clsx(collapsed && "collapsed")}>
+            <li className={clsx(collapsed && "collapsed", isActive && "active")}>
                 {heading.children.length > 0 && (
                     <Icon
                         className="collapse-button"
@@ -74,7 +97,7 @@ function TableOfContentsHeading({ heading, scrollToHeading }: {
             </li>
             {heading.children && (
                 <ol>
-                    {heading.children.map(heading => <TableOfContentsHeading key={heading.id} heading={heading} scrollToHeading={scrollToHeading} />)}
+                    {heading.children.map(heading => <TableOfContentsHeading key={heading.id} heading={heading} scrollToHeading={scrollToHeading} activeHeadingId={activeHeadingId} />)}
                 </ol>
             )}
         </>

@@ -767,7 +767,7 @@ body.mobile .fancytree-node > span {
     background: var(--left-pane-item-hover-background);
 }
 
-#left-pane span.fancytree-node.shared .fancytree-title::after {
+#left-pane .note-indicator-icon.shared-indicator {
     opacity: 0.5;
 }
 

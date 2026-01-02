@@ -1,1 +1,12 @@
-{}
+{
+  "keyboard_actions": {
+    "back-in-note-history": "इतिहास में पिछले नोट पर जाएं",
+    "forward-in-note-history": "इतिहास में अगले नोट पर जाएं",
+    "open-jump-to-note-dialog": "\"Jump to Note\" डायलॉग खोलें",
+    "open-command-palette": "कमांड पैलेट खोलें",
+    "collapse-tree": "पूरे नोट ट्री को बंद करता है",
+    "collapse-subtree": "वर्तमान नोट के सबट्री को बंद करता है",
+    "sort-child-notes": "चाइल्ड नोट्स को सॉर्ट करें",
+    "creating-and-moving-notes": "नोट्स बनाना और स्थानांतरित करना"
+  }
+}

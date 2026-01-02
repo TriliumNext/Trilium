@@ -34,14 +34,14 @@ application with focus on building large personal knowledge bases.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
-## ⏬ Download
+## ⏬ Last ned
 - [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
-  stable version, recommended for most users.
+  stabil versjon, anbefalt for de fleste brukere.
 - [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  unstable development version, updated daily with the latest features and
-  fixes.
+  ustabil utviklingsversjon, oppdateres daglig med de nyeste funksjonene og
+  feilfiksene.
 
-## 📚 Documentation
+## 📚 Dokumentasjon
 
 **Visit our comprehensive documentation at
 [docs.triliumnotes.org](https://docs.triliumnotes.org/)**

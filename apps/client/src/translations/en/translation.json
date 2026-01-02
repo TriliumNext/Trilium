@@ -1769,7 +1769,11 @@
     "create-child-note": "Create child note",
     "unhoist": "Unhoist",
     "toggle-sidebar": "Toggle sidebar",
-    "dropping-not-allowed": "Dropping notes into this location is not allowed."
+    "dropping-not-allowed": "Dropping notes into this location is not allowed.",
+    "clone-indicator-tooltip": "This note has {{- count}} parents: {{- parents}}",
+    "clone-indicator-tooltip-single": "This note is cloned (1 additional parent: {{- parent}})",
+    "shared-indicator-tooltip": "This note is shared publicly",
+    "shared-indicator-tooltip-with-url": "This note is shared publicly at: {{- url}}"
   },
   "title_bar_buttons": {
     "window-on-top": "Keep Window on Top"
@@ -2234,5 +2238,15 @@
     "empty_button": "Hide the panel",
     "toggle": "Toggle right panel",
     "custom_widget_go_to_source": "Go to source code"
+  },
+  "pdf": {
+    "attachments_one": "{{count}} attachment",
+    "attachments_other": "{{count}} attachments",
+    "layers_one": "{{count}} layer",
+    "layers_other": "{{count}} layers",
+    "pages_one": "{{count}} page",
+    "pages_other": "{{count}} pages",
+    "pages_alt": "Page {{pageNumber}}",
+    "pages_loading": "Loading..."
   }
 }

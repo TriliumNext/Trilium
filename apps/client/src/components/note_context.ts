@@ -12,6 +12,7 @@ import server from "../services/server.js";
 import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
 import { ReactWrappedWidget } from "../widgets/basic_widget.js";
+import type { HeadingContext } from "../widgets/sidebar/TableOfContents.js";
 import appContext, { type EventData, type EventListener } from "./app_context.js";
 import Component from "./component.js";
 
@@ -22,6 +23,26 @@ export interface SetNoteOpts {
 
 export type GetTextEditorCallback = (editor: CKTextEditor) => void;
 
+export interface NoteContextDataMap {
+    toc: HeadingContext;
+    pdfPages: {
+        totalPages: number;
+        currentPage: number;
+        scrollToPage(page: number): void;
+        requestThumbnail(page: number): void;
+    };
+    pdfAttachments: {
+        attachments: Array<{ filename: string; size: number }>;
+        downloadAttachment(filename: string): void;
+    };
+    pdfLayers: {
+        layers: Array<{ id: string; name: string; visible: boolean }>;
+        toggleLayer(layerId: string, visible: boolean): void;
+    };
+}
+
+type ContextDataKey = keyof NoteContextDataMap;
+
 class NoteContext extends Component implements EventListener<"entitiesReloaded"> {
     ntxId: string | null;
     hoistedNoteId: string;
@@ -31,6 +52,13 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
     noteId?: string | null;
     parentNoteId?: string | null;
     viewScope?: ViewScope;
+
+    /**
+     * Metadata storage for UI components (e.g., table of contents, PDF page list, code outline).
+     * This allows type widgets to publish data that sidebar/toolbar components can consume.
+     * Data is automatically cleared when navigating to a different note.
+     */
+    private contextData: Map<string, unknown> = new Map();
 
     constructor(ntxId: string | null = null, hoistedNoteId: string = "root", mainNtxId: string | null = null) {
         super();
@@ -90,6 +118,22 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         this.notePath = resolvedNotePath;
         this.viewScope = opts.viewScope;
         ({ noteId: this.noteId, parentNoteId: this.parentNoteId } = treeService.getNoteIdAndParentIdFromUrl(resolvedNotePath));
+
+        // Clear context data when switching notes and notify subscribers
+        const oldKeys = Array.from(this.contextData.keys());
+        this.contextData.clear();
+        if (oldKeys.length > 0) {
+            // Notify subscribers asynchronously to avoid blocking navigation
+            window.setTimeout(() => {
+                for (const key of oldKeys) {
+                    this.triggerEvent("contextDataChanged", {
+                        noteContext: this,
+                        key,
+                        value: undefined
+                    });
+                }
+            }, 0);
+        }
 
         this.saveToRecentNotes(resolvedNotePath);
 
@@ -442,6 +486,52 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
         }
 
         return title;
+    }
+
+    /**
+     * Set metadata for this note context (e.g., table of contents, PDF pages, code outline).
+     * This data can be consumed by sidebar/toolbar components.
+     *
+     * @param key - Unique identifier for the data type (e.g., "toc", "pdfPages", "codeOutline")
+     * @param value - The data to store (will be cleared when switching notes)
+     */
+    setContextData<K extends ContextDataKey>(key: K, value: NoteContextDataMap[K]): void {
+        this.contextData.set(key, value);
+        // Trigger event so subscribers can react
+        this.triggerEvent("contextDataChanged", {
+            noteContext: this,
+            key,
+            value
+        });
+    }
+
+    /**
+     * Get metadata for this note context.
+     *
+     * @param key - The data key to retrieve
+     * @returns The stored data, or undefined if not found
+     */
+    getContextData<K extends ContextDataKey>(key: K): NoteContextDataMap[K] | undefined {
+        return this.contextData.get(key) as NoteContextDataMap[K] | undefined;
+    }
+
+    /**
+     * Check if context data exists for a given key.
+     */
+    hasContextData(key: ContextDataKey): boolean {
+        return this.contextData.has(key);
+    }
+
+    /**
+     * Clear specific context data.
+     */
+    clearContextData(key: ContextDataKey): void {
+        this.contextData.delete(key);
+        this.triggerEvent("contextDataChanged", {
+            noteContext: this,
+            key,
+            value: undefined
+        });
     }
 }
 

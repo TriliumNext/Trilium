@@ -22,6 +22,12 @@
     "bundle-error": {
       "title": "Echec du chargement d'un script personnalisé",
       "message": "Le script de la note avec l'ID \"{{id}}\", intitulé \"{{title}}\" n'a pas pu être exécuté à cause de\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "Impossible d'obtenir la liste des widgets depuis le serveur"
+    },
+    "widget-render-error": {
+      "title": "Rendu impossible d'un widget React custom"
     }
   },
   "add_link": {
@@ -757,7 +763,11 @@
   "note_icon": {
     "change_note_icon": "Changer l'icône de note",
     "search": "Recherche :",
-    "reset-default": "Réinitialiser l'icône par défaut"
+    "reset-default": "Réinitialiser l'icône par défaut",
+    "filter": "Filtre",
+    "filter-none": "Toutes les icônes",
+    "filter-default": "Icônes par défaut",
+    "icon_tooltip": "{{name}}\nPack d'icônes : {{iconPack}}"
   },
   "basic_properties": {
     "note_type": "Type de note",
@@ -1541,7 +1551,8 @@
     "refresh-saved-search-results": "Rafraîchir les résultats de recherche enregistrée",
     "create-child-note": "Créer une note enfant",
     "unhoist": "Désactiver le focus",
-    "toggle-sidebar": "Basculer la barre latérale"
+    "toggle-sidebar": "Basculer la barre latérale",
+    "dropping-not-allowed": "Lâcher des notes à cet endroit n'est pas autorisé"
   },
   "title_bar_buttons": {
     "window-on-top": "Épingler cette fenêtre au premier plan"
@@ -1549,10 +1560,19 @@
   "note_detail": {
     "could_not_find_typewidget": "Impossible de trouver typeWidget pour le type '{{type}}'",
     "printing": "Impression en cours...",
-    "printing_pdf": "Export au format PDF en cours..."
+    "printing_pdf": "Export au format PDF en cours...",
+    "print_report_title": "Imprimer le rapport",
+    "print_report_collection_details_button": "Consulter les détails",
+    "print_report_collection_details_ignored_notes": "Notes ignorées"
   },
   "note_title": {
-    "placeholder": "saisir le titre de la note ici..."
+    "placeholder": "saisir le titre de la note ici...",
+    "created_on": "Créé le <Value />",
+    "last_modified": "Modifié le <Value />",
+    "note_type_switcher_label": "Basculer de {{type}} à :",
+    "note_type_switcher_others": "Autre type de note",
+    "note_type_switcher_templates": "Modèle",
+    "note_type_switcher_collection": "Collection"
   },
   "search_result": {
     "no_notes_found": "Aucune note n'a été trouvée pour les paramètres de recherche donnés.",
@@ -1581,7 +1601,8 @@
   },
   "toc": {
     "table_of_contents": "Table des matières",
-    "options": "Options"
+    "options": "Options",
+    "no_headings": "Pas d'en-tête."
   },
   "watched_file_update_status": {
     "file_last_modified": "Le fichier <code class=\"file-path\"></code> a été modifié pour la dernière fois le <span class=\"file-last-modified\"></span>.",
@@ -1682,7 +1703,8 @@
     "copy-link": "Copier le lien",
     "paste": "Coller",
     "paste-as-plain-text": "Coller comme texte brut",
-    "search_online": "Rechercher «{{term}}» avec {{searchEngine}}"
+    "search_online": "Rechercher «{{term}}» avec {{searchEngine}}",
+    "search_in_trilium": "Rechercher \"{{term}}\" dans Trilium"
   },
   "image_context_menu": {
     "copy_reference_to_clipboard": "Copier la référence dans le presse-papiers",
@@ -1991,7 +2013,8 @@
     "add-column": "Ajouter une colonne",
     "add-column-placeholder": "Entrez le nom de la colonne...",
     "edit-note-title": "Cliquez pour modifier le titre de la note",
-    "edit-column-title": "Cliquez pour modifier le titre de la colonne"
+    "edit-column-title": "Cliquez pour modifier le titre de la colonne",
+    "column-already-exists": "Cette colonne existe déjà dans le tableau."
   },
   "presentation_view": {
     "edit-slide": "Modifier cette diapositive",
@@ -2075,7 +2098,8 @@
     "button_title": "Exporter le diagramme au format PNG"
   },
   "svg": {
-    "export_to_png": "Le diagramme n'a pas pu être exporté au format PNG."
+    "export_to_png": "Le diagramme n'a pas pu être exporté au format PNG.",
+    "export_to_svg": "Le diagramme n'a pas pu être exporté en SVG."
   },
   "code_theme": {
     "title": "Apparence",
@@ -2108,6 +2132,10 @@
   },
   "read-only-info": {
     "read-only-note": "Vous consultez actuellement une note en lecture seule.",
-    "auto-read-only-note": "Cette note s'affiche en mode lecture seule pour un chargement plus rapide."
+    "auto-read-only-note": "Cette note s'affiche en mode lecture seule pour un chargement plus rapide.",
+    "edit-note": "Editer la note"
+  },
+  "calendar_view": {
+    "delete_note": "Effacer la note..."
   }
 }

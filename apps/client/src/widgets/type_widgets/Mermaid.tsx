@@ -29,6 +29,7 @@ export default function Mermaid(props: TypeWidgetProps) {
         <SvgSplitEditor
             attachmentName="mermaid-export"
             renderSvg={renderSvg}
+            noteType="mermaid"
             {...props}
         />
     );

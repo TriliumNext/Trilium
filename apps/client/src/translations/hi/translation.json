@@ -1,5 +1,28 @@
 {
   "about": {
-    "title": "ट्रिलियम नोट्स के बारें में"
+    "title": "ट्रिलियम नोट्स के बारें में",
+    "build_date": "निर्माण की तारीख:"
+  },
+  "toast": {
+    "widget-error": {
+      "title": "एक विजेट को इनिशियलाइज़ करने में विफल रहा"
+    },
+    "bundle-error": {
+      "title": "एक कस्टम स्क्रिप्ट लोड करने में विफल रहा"
+    }
+  },
+  "update_available": {
+    "update_available": "उपलब्ध अद्यतन"
+  },
+  "code_buttons": {
+    "execute_button_title": "स्क्रिप्ट एक्सीक्यूट करें",
+    "trilium_api_docs_button_title": "ट्रिलियम एपीआई डॉक्स खोलें",
+    "save_to_note_button_title": "नोट में सेव करें"
+  },
+  "hide_floating_buttons_button": {
+    "button_title": "बटन छुपाएं"
+  },
+  "show_floating_buttons_button": {
+    "button_title": "बटन दिखाएं"
   }
 }

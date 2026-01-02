@@ -1,3 +1,5 @@
+import { describe, expect, it } from "vitest";
+
 import { buildNote } from "../test/becca_easy_mocking";
 import { determineBestFontAttachment, generateCss, generateIconRegistry, IconPackManifest, processIconPack } from "./icon_packs";
 

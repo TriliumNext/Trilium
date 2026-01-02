@@ -8,7 +8,7 @@ import search from "../services/search.js";
 import server from "../services/server.js";
 import utils from "../services/utils.js";
 import type FAttachment from "./fattachment.js";
-import type { AttributeType,default as FAttribute } from "./fattribute.js";
+import type { AttributeType, default as FAttribute } from "./fattribute.js";
 
 const LABEL = "label";
 const RELATION = "relation";

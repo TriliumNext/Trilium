@@ -5,7 +5,7 @@ import dateUtils from "./date_utils.js";
 import keyboardActions from "./keyboard_actions.js";
 import log from "./log.js";
 import optionService from "./options.js";
-import { isWindows,randomSecureToken } from "./utils.js";
+import { isWindows, randomSecureToken } from "./utils.js";
 
 function initDocumentOptions() {
     optionService.createOption("documentId", randomSecureToken(16), false);

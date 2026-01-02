@@ -68,6 +68,14 @@ export default class BuildHelper {
         writeFileSync(join(this.outDir, "meta.json"), JSON.stringify(result.metafile));
     }
 
+    buildFrontend() {
+        this.triggerBuildAndCopyTo("apps/client", "public/");
+        this.deleteFromOutput("public/webpack-stats.json");
+
+        // pdf.js
+        this.triggerBuildAndCopyTo("packages/pdfjs-viewer", "pdfjs-viewer");
+    }
+
     triggerBuildAndCopyTo(projectToBuild: string, destPath: string) {
         const projectDir = join(this.rootDir, projectToBuild);
         execSync("pnpm build", { cwd: projectDir, stdio: "inherit" });

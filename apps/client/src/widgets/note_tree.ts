@@ -624,6 +624,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                 const $span = $(node.span);
 
                 $span.find(".tree-item-button").remove();
+                $span.find(".note-indicator-icon").remove();
 
                 const isHoistedNote = activeNoteContext && activeNoteContext.hoistedNoteId === note.noteId && note.noteId !== "root";
 
@@ -663,6 +664,34 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     const $unhoistButton = $(`<span class="tree-item-button tn-icon unhoist-button bx bx-door-open" title="${t("note_tree.unhoist")}"></span>`).on("click", cancelClickPropagation);
 
                     $span.append($unhoistButton);
+                }
+
+                // Add clone indicator with tooltip if note has multiple parents
+                const parentNotes = note.getParentNotes();
+                const realParents = parentNotes.filter(
+                    (parent) => !["_share", "_lbBookmarks"].includes(parent.noteId) && parent.type !== "search"
+                );
+
+                if (realParents.length > 1) {
+                    const parentTitles = realParents.map((p) => p.title).join(", ");
+                    const tooltipText = realParents.length === 2
+                        ? t("note_tree.clone-indicator-tooltip-single", { parent: realParents[1].title })
+                        : t("note_tree.clone-indicator-tooltip", { count: realParents.length, parents: parentTitles });
+
+                    const $cloneIndicator = $(`<span class="note-indicator-icon clone-indicator"></span>`);
+                    $cloneIndicator.attr("title", tooltipText);
+                    $span.find(".fancytree-title").append($cloneIndicator);
+                }
+
+                // Add shared indicator with tooltip if note is shared
+                if (note.isShared()) {
+                    const shareId = note.getOwnedLabelValue("shareAlias") || note.noteId;
+                    const shareUrl = `${location.origin}${location.pathname}share/${shareId}`;
+                    const tooltipText = t("note_tree.shared-indicator-tooltip-with-url", { url: shareUrl });
+
+                    const $sharedIndicator = $(`<span class="note-indicator-icon shared-indicator"></span>`);
+                    $sharedIndicator.attr("title", tooltipText);
+                    $span.find(".fancytree-title").append($sharedIndicator);
                 }
             },
             // this is done to automatically lazy load all expanded notes after tree load

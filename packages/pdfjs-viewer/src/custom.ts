@@ -1,7 +1,16 @@
 import interceptPersistence from "./persistence";
+import { extractAndSendToc, setupScrollToHeading, setupActiveHeadingTracking } from "./toc";
+import { setupPdfPages } from "./pages";
+import { setupPdfAttachments } from "./attachments";
+import { setupPdfLayers } from "./layers";
 
 async function main() {
-    interceptPersistence(getCustomAppOptions());
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("sidebar") === "0") {
+        hideSidebar();
+    }
+
+    interceptPersistence(getCustomAppOptions(urlParams));
 
     // Wait for the PDF viewer application to be available.
     while (!window.PDFViewerApplication) {
@@ -11,13 +20,29 @@ async function main() {
 
     app.eventBus.on("documentloaded", () => {
         manageSave();
+        extractAndSendToc();
+        setupScrollToHeading();
+        setupActiveHeadingTracking();
+        setupPdfPages();
+        setupPdfAttachments();
+        setupPdfLayers();
     });
     await app.initializedPromise;
 };
 
-function getCustomAppOptions() {
-    const urlParams = new URLSearchParams(window.location.search);
+function hideSidebar() {
+    window.TRILIUM_HIDE_SIDEBAR = true;
+    const toggleButtonEl = document.getElementById("viewsManagerToggleButton");
+    if (toggleButtonEl) {
+        const spacer = toggleButtonEl.nextElementSibling.nextElementSibling;
+        if (spacer instanceof HTMLElement && spacer.classList.contains("toolbarButtonSpacer")) {
+            spacer.remove();
+        }
+        toggleButtonEl.remove();
+    }
+}
 
+function getCustomAppOptions(urlParams: URLSearchParams) {
     return {
         localeProperties: {
             // Read from URL query

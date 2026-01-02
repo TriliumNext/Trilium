@@ -34,7 +34,7 @@ application with focus on building large personal knowledge bases.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
-## ⏬ Download
+## ⏬ डाउनलोड कीजिए
 - [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
   stable version, recommended for most users.
 - [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –

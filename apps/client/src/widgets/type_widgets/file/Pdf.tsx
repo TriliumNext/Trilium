@@ -2,11 +2,12 @@ import { RefObject } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
+import type NoteContext from "../../../components/note_context";
 import FBlob from "../../../entities/fblob";
 import FNote from "../../../entities/fnote";
 import server from "../../../services/server";
 import { useViewModeConfig } from "../../collections/NoteList";
-import { useTriliumOption } from "../../react/hooks";
+import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 
 const VARIABLE_WHITELIST = new Set([
     "root-background",
@@ -15,16 +16,17 @@ const VARIABLE_WHITELIST = new Set([
     "main-text-color"
 ]);
 
-export default function PdfPreview({ note, blob, componentId, ntxId }: {
-    note: FNote,
-    blob: FBlob | null | undefined,
+export default function PdfPreview({ note, blob, componentId, noteContext }: {
+    note: FNote;
+    noteContext: NoteContext;
+    blob: FBlob | null | undefined;
     componentId: string | undefined;
-    ntxId: string | null | undefined;
 }) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const { onLoad } = useStyleInjection(iframeRef);
     const historyConfig = useViewModeConfig(note, "pdfHistory");
     const [ locale ] = useTriliumOption("locale");
+    const [ newLayout ] = useTriliumOptionBool("newLayout");
 
     useEffect(() => {
         function handleMessage(event: MessageEvent) {
@@ -36,13 +38,111 @@ export default function PdfPreview({ note, blob, componentId, ntxId }: {
             if (event.data.type === "pdfjs-viewer-save-view-history" && event.data?.data) {
                 historyConfig?.storeFn(JSON.parse(event.data.data));
             }
+
+            if (event.data.type === "pdfjs-viewer-toc") {
+                if (event.data.data) {
+                    // Convert PDF outline to HeadingContext format
+                    const headings = convertPdfOutlineToHeadings(event.data.data);
+                    noteContext.setContextData("toc", {
+                        headings,
+                        activeHeadingId: null,
+                        scrollToHeading: (heading) => {
+                            iframeRef.current?.contentWindow?.postMessage({
+                                type: "trilium-scroll-to-heading",
+                                headingId: heading.id
+                            }, window.location.origin);
+                        }
+                    });
+                } else {
+                    // No ToC available, use empty headings
+                    noteContext.setContextData("toc", {
+                        headings: [],
+                        activeHeadingId: null,
+                        scrollToHeading: () => {}
+                    });
+                }
+            }
+
+            if (event.data.type === "pdfjs-viewer-active-heading") {
+                const currentToc = noteContext.getContextData("toc");
+                if (currentToc) {
+                    noteContext.setContextData("toc", {
+                        ...currentToc,
+                        activeHeadingId: event.data.headingId
+                    });
+                }
+            }
+
+            if (event.data.type === "pdfjs-viewer-page-info") {
+                noteContext.setContextData("pdfPages", {
+                    totalPages: event.data.totalPages,
+                    currentPage: event.data.currentPage,
+                    scrollToPage: (page: number) => {
+                        iframeRef.current?.contentWindow?.postMessage({
+                            type: "trilium-scroll-to-page",
+                            pageNumber: page
+                        }, window.location.origin);
+                    },
+                    requestThumbnail: (page: number) => {
+                        iframeRef.current?.contentWindow?.postMessage({
+                            type: "trilium-request-thumbnail",
+                            pageNumber: page
+                        }, window.location.origin);
+                    }
+                });
+            }
+
+            if (event.data.type === "pdfjs-viewer-current-page") {
+                const currentPages = noteContext.getContextData("pdfPages");
+                if (currentPages) {
+                    noteContext.setContextData("pdfPages", {
+                        ...currentPages,
+                        currentPage: event.data.currentPage
+                    });
+                }
+            }
+
+            if (event.data.type === "pdfjs-viewer-thumbnail") {
+                // Forward thumbnail to any listeners
+                window.dispatchEvent(new CustomEvent("pdf-thumbnail", {
+                    detail: {
+                        pageNumber: event.data.pageNumber,
+                        dataUrl: event.data.dataUrl
+                    }
+                }));
+            }
+
+            if (event.data.type === "pdfjs-viewer-attachments") {
+                noteContext.setContextData("pdfAttachments", {
+                    attachments: event.data.attachments,
+                    downloadAttachment: (filename: string) => {
+                        iframeRef.current?.contentWindow?.postMessage({
+                            type: "trilium-download-attachment",
+                            filename
+                        }, window.location.origin);
+                    }
+                });
+            }
+
+            if (event.data.type === "pdfjs-viewer-layers") {
+                noteContext.setContextData("pdfLayers", {
+                    layers: event.data.layers,
+                    toggleLayer: (layerId: string, visible: boolean) => {
+                        iframeRef.current?.contentWindow?.postMessage({
+                            type: "trilium-toggle-layer",
+                            layerId,
+                            visible
+                        }, window.location.origin);
+                    }
+                });
+            }
         }
 
         window.addEventListener("message", handleMessage);
         return () => {
             window.removeEventListener("message", handleMessage);
         };
-    }, [ note, historyConfig, componentId, blob ]);
+    }, [ note, historyConfig, componentId, blob, noteContext ]);
 
     // Refresh when blob changes.
     useEffect(() => {
@@ -57,8 +157,8 @@ export default function PdfPreview({ note, blob, componentId, ntxId }: {
         if (!iframe) return;
 
         const handleIframeClick = () => {
-            if (ntxId) {
-                appContext.tabManager.activateNoteContext(ntxId);
+            if (noteContext.ntxId) {
+                appContext.tabManager.activateNoteContext(noteContext.ntxId);
             }
         };
 
@@ -68,14 +168,14 @@ export default function PdfPreview({ note, blob, componentId, ntxId }: {
             iframeDoc.addEventListener('click', handleIframeClick);
             return () => iframeDoc.removeEventListener('click', handleIframeClick);
         }
-    }, [ iframeRef.current?.contentWindow, ntxId ]);
+    }, [ iframeRef.current?.contentWindow, noteContext ]);
 
     return (historyConfig &&
         <iframe
             tabIndex={300}
             ref={iframeRef}
             class="pdf-preview"
-            src={`pdfjs/web/viewer.html?file=../../api/notes/${note.noteId}/open&lang=${locale}`}
+            src={`pdfjs/web/viewer.html?file=../../api/notes/${note.noteId}/open&lang=${locale}&sidebar=${newLayout ? "0" : "1"}`}
             onLoad={() => {
                 const win = iframeRef.current?.contentWindow;
                 if (win) {
@@ -137,4 +237,41 @@ function cssVarsToString(vars: Record<string, string>) {
     return `:root {\n${Object.entries(vars)
         .map(([k, v]) => `  ${k}: ${v};`)
         .join('\n')}\n}`;
+}
+
+interface PdfOutlineItem {
+    title: string;
+    level: number;
+    dest: unknown;
+    id: string;
+    items: PdfOutlineItem[];
+}
+
+interface PdfHeading {
+    level: number;
+    text: string;
+    id: string;
+    element: null;
+}
+
+function convertPdfOutlineToHeadings(outline: PdfOutlineItem[]): PdfHeading[] {
+    const headings: PdfHeading[] = [];
+
+    function flatten(items: PdfOutlineItem[]) {
+        for (const item of items) {
+            headings.push({
+                level: item.level + 1,
+                text: item.title,
+                id: item.id,
+                element: null // PDFs don't have DOM elements
+            });
+
+            if (item.items && item.items.length > 0) {
+                flatten(item.items);
+            }
+        }
+    }
+
+    flatten(outline);
+    return headings;
 }

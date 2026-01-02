@@ -9,6 +9,7 @@
 
 import { LOCALES } from "./i18n.js";
 import { DAYJS_LOADER, dayjs } from "./dayjs.js";
+import { describe, expect, it } from "vitest";
 
 describe("dayjs", () => {
     it("all dayjs locales are valid", async () => {

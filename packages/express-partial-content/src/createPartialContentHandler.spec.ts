@@ -8,6 +8,7 @@ import type { Content } from "./Content.js";
 import { Stream } from "stream";
 import type { Range } from "./Range.js";
 import type { MockInstance } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("createPartialContentHandler tests", () => {
   let logger: Logger;

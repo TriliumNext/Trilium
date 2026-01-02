@@ -4,7 +4,8 @@
  */
 
 import { NoteType } from "@triliumnext/commons";
-import { VNode, type JSX } from "preact";
+import { type JSX, VNode } from "preact";
+
 import { TypeWidgetProps } from "./type_widgets/type_widget";
 
 /**
@@ -13,7 +14,7 @@ import { TypeWidgetProps } from "./type_widgets/type_widget";
  */
 export type ExtendedNoteType = Exclude<NoteType, "launcher" | "text" | "code"> | "empty" | "readOnlyCode" | "readOnlyText" | "editableText" | "editableCode" | "attachmentDetail" | "attachmentList" |  "protectedSession" | "aiChat";
 
-export type TypeWidget = ((props: TypeWidgetProps) => VNode | JSX.Element);
+export type TypeWidget = ((props: TypeWidgetProps) => VNode | JSX.Element | undefined);
 type NoteTypeView = () => (Promise<{ default: TypeWidget } | TypeWidget> | TypeWidget);
 
 interface NoteTypeMapping {

@@ -148,27 +148,26 @@ span.fancytree-node.protected > span.fancytree-custom-icon {
     filter: drop-shadow(2px 2px 2px var(--main-text-color));
 }
 
-span.fancytree-node.multiple-parents.shared .fancytree-title::after {
+/* Note indicator icons (clone, shared) - real DOM elements for tooltip support */
+.note-indicator-icon {
     font-family: "boxicons" !important;
     font-size: smaller;
-    content: " \eb3d \ec03";
+    margin-inline-start: 4px;
+    opacity: 0.8;
+    cursor: help;
 }
 
-span.fancytree-node.multiple-parents .fancytree-title::after {
-    font-family: "boxicons" !important;
-    font-size: smaller;
-    content: " \eb3d"; /* lookup code for "link-alt" in boxicons.css */
+.note-indicator-icon.clone-indicator::before {
+    content: "\eb3d"; /* bx-link-alt */
 }
 
-body.experimental-feature-new-layout span.fancytree-node.multiple-parents .fancytree-title::after {
-    content: " \ed82";
+.note-indicator-icon.shared-indicator::before {
+    content: "\ec03"; /* bx-share-alt */
+}
+
+body.experimental-feature-new-layout .note-indicator-icon.clone-indicator::before {
+    content: "\ed82";
     opacity: 0.5;
-}
-
-span.fancytree-node.shared .fancytree-title::after {
-    font-family: "boxicons" !important;
-    font-size: smaller;
-    content: " \ec03"; /* lookup code for "share-alt" in boxicons.css */
 }
 
 span.fancytree-node.fancytree-active-clone:not(.fancytree-active) .fancytree-title {

@@ -692,7 +692,11 @@
     "convert_into_attachment_successful": "Notiz '{{title}}' wurde als Anhang konvertiert.",
     "convert_into_attachment_prompt": "Bist du dir sicher, dass du die Notiz '{{title}}' in ein Anhang der übergeordneten Notiz konvertieren möchtest?",
     "print_pdf": "Export als PDF...",
-    "open_note_on_server": "Öffne Notiz auf dem Server"
+    "open_note_on_server": "Öffne Notiz auf dem Server",
+    "export_as_image": "Als Bild exportieren",
+    "export_as_image_png": "PNG (Raster)",
+    "export_as_image_svg": "SVG (Vektor)",
+    "note_map": "Notizen Karte"
   },
   "onclick_button": {
     "no_click_handler": "Das Schaltflächen-Widget „{{componentId}}“ hat keinen definierten Klick-Handler"
@@ -750,7 +754,15 @@
   "note_icon": {
     "change_note_icon": "Notiz-Icon ändern",
     "search": "Suche:",
-    "reset-default": "Standard wiederherstellen"
+    "reset-default": "Standard wiederherstellen",
+    "search_placeholder_one": "Suche {{number}} Icons über {{count}} Pakete",
+    "search_placeholder_other": "Suche {{number}} Icons über {{count}} Pakete",
+    "search_placeholder_filtered": "Suche {{number}} Icons in {{name}}",
+    "filter": "Filter",
+    "filter-none": "Alle Icons",
+    "filter-default": "Standard Icons",
+    "icon_tooltip": "{{name}}\nIcon Paket: {{iconPack}}",
+    "no_results": "Keine Icons gefunden."
   },
   "basic_properties": {
     "note_type": "Notiztyp",
@@ -810,7 +822,8 @@
   },
   "inherited_attribute_list": {
     "title": "Geerbte Attribute",
-    "no_inherited_attributes": "Keine geerbten Attribute."
+    "no_inherited_attributes": "Keine geerbten Attribute.",
+    "none": "Keine"
   },
   "note_info_widget": {
     "note_id": "Notiz-ID",
@@ -821,7 +834,9 @@
     "note_size_info": "Die Notizgröße bietet eine grobe Schätzung des Speicherbedarfs für diese Notiz. Es berücksichtigt den Inhalt der Notiz und den Inhalt ihrer Notizrevisionen.",
     "calculate": "berechnen",
     "subtree_size": "(Teilbaumgröße: {{size}} in {{count}} Notizen)",
-    "title": "Notizinfo"
+    "title": "Notizinfo",
+    "mime": "MIME Typ",
+    "show_similar_notes": "Zeige ähnliche Notizen"
   },
   "note_map": {
     "open_full": "Vollständig erweitern",
@@ -884,7 +899,8 @@
     "search_parameters": "Suchparameter",
     "unknown_search_option": "Unbekannte Suchoption {{searchOptionName}}",
     "search_note_saved": "Suchnotiz wurde in {{-notePathTitle}} gespeichert",
-    "actions_executed": "Aktionen wurden ausgeführt."
+    "actions_executed": "Aktionen wurden ausgeführt.",
+    "view_options": "Anzeigeoptionen:"
   },
   "similar_notes": {
     "title": "Ähnliche Notizen",
@@ -988,7 +1004,12 @@
   "editable_text": {
     "placeholder": "Gebe hier den Inhalt deiner Notiz ein...",
     "auto-detect-language": "Automatisch erkannt",
-    "keeps-crashing": "Die Bearbeitungskomponente stürzt immer wieder ab. Bitte starten Sie Trilium neu. Wenn das Problem weiterhin besteht, erstellen Sie einen Fehlerbericht."
+    "keeps-crashing": "Die Bearbeitungskomponente stürzt immer wieder ab. Bitte starten Sie Trilium neu. Wenn das Problem weiterhin besteht, erstellen Sie einen Fehlerbericht.",
+    "editor_crashed_title": "Der Text Editor ist abgestürzt",
+    "editor_crashed_content": "Ihr Inhalt wurde erfolgreich wiederhergestellt, aber einzelne Ihrer letzten Änderungen waren möglicherweise noch nicht gespeichert.",
+    "editor_crashed_details_button": "Zeige mehr Details…",
+    "editor_crashed_details_intro": "Falls Sie diesen Fehler mehrmals sehen, melden Sie dies auf GitHub mit den folgenden Informationen.",
+    "editor_crashed_details_title": "Technische Informationen"
   },
   "empty": {
     "open_note_instruction": "Öffne eine Notiz, indem du den Titel der Notiz in die Eingabe unten eingibst oder eine Notiz in der Baumstruktur auswählst.",
@@ -1503,7 +1524,12 @@
   },
   "highlights_list_2": {
     "title": "Hervorhebungs-Liste",
-    "options": "Optionen"
+    "options": "Optionen",
+    "title_with_count_one": "{{count}} Highlight",
+    "title_with_count_other": "{{count}} Highlights",
+    "modal_title": "Highlight Liste konfigurieren",
+    "menu_configure": "Highlight Liste konfigurieren…",
+    "no_highlights": "Keine Highlights gefunden."
   },
   "quick-search": {
     "placeholder": "Schnellsuche",
@@ -1535,10 +1561,21 @@
   "note_detail": {
     "could_not_find_typewidget": "Konnte typeWidget für Typ ‚{{type}}‘ nicht finden",
     "printing": "Druckvorgang läuft…",
-    "printing_pdf": "PDF-Export läuft…"
+    "printing_pdf": "PDF-Export läuft…",
+    "print_report_title": "Druckreport",
+    "print_report_collection_details_button": "Details anzeigen",
+    "print_report_collection_details_ignored_notes": "Ignorierte Notizen"
   },
   "note_title": {
-    "placeholder": "Titel der Notiz hier eingeben…"
+    "placeholder": "Titel der Notiz hier eingeben…",
+    "created_on": "Erstellt am <Value />",
+    "last_modified": "Bearbeitet am <Value />",
+    "note_type_switcher_label": "Ändere von {{type}} zu:",
+    "note_type_switcher_others": "Andere Notizart",
+    "note_type_switcher_templates": "Template",
+    "note_type_switcher_collection": "Sammlung",
+    "edited_notes": "Notizen, bearbeitet an diesem Tag",
+    "promoted_attributes": "Hervorgehobene Attribute"
   },
   "search_result": {
     "no_notes_found": "Es wurden keine Notizen mit den angegebenen Suchparametern gefunden.",
@@ -1567,7 +1604,8 @@
   },
   "toc": {
     "table_of_contents": "Inhaltsverzeichnis",
-    "options": "Optionen"
+    "options": "Optionen",
+    "no_headings": "Keine Überschriften."
   },
   "watched_file_update_status": {
     "file_last_modified": "Datei <code class=\"file-path\"></code> wurde zuletzt geändert am <span class=\"file-last-modified\"></span>.",
@@ -2106,5 +2144,10 @@
   },
   "popup-editor": {
     "maximize": "Wechsele zum vollständigen Editor"
+  },
+  "experimental_features": {
+    "title": "Experimentelle Optionen",
+    "disclaimer": "Diese Optionen sind experimentell und können Instabilitäten verursachen. Achtsam zu verwenden.",
+    "new_layout_name": "Neues Layout"
   }
 }

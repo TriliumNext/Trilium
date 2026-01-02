@@ -1,11 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { deferred, LOCALES } from "@triliumnext/commons";
+import { beforeAll, describe, expect, it } from "vitest";
+
+import becca from "../becca/becca.js";
+import branches from "./branches.js";
 import cls from "./cls.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
-import sql_init from "./sql_init.js";
-import branches from "./branches.js";
-import becca from "../becca/becca.js";
-import { deferred, LOCALES } from "@triliumnext/commons";
 import { changeLanguage } from "./i18n.js";
+import sql_init from "./sql_init.js";
 
 describe("Hidden Subtree", () => {
     beforeAll(async () => {
