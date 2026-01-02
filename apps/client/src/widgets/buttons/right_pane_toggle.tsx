@@ -1,11 +1,17 @@
 import clsx from "clsx";
 
 import { t } from "../../services/i18n";
+import options from "../../services/options";
 import ActionButton from "../react/ActionButton";
-import { useTriliumOptionBool } from "../react/hooks";
+import { useState, useCallback } from "preact/hooks";
+import { useTriliumEvent } from "../react/hooks";
 
 export default function RightPaneToggle() {
-    const [ rightPaneVisible, setRightPaneVisible ] = useTriliumOptionBool("rightPaneVisible");
+    const [ rightPaneVisible, setRightPaneVisible ] = useState(options.is("rightPaneVisible"));
+
+    useTriliumEvent("toggleRightPane", useCallback(() => {
+        setRightPaneVisible(current => !current);
+    }, []));
 
     return (
         <ActionButton
@@ -15,7 +21,7 @@ export default function RightPaneToggle() {
             )}
             text={t("right_pane.toggle")}
             icon="bx bx-sidebar"
-            onClick={() => setRightPaneVisible(!rightPaneVisible)}
+            triggerCommand="toggleRightPane"
         />
     );
 }
