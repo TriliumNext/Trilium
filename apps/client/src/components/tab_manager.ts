@@ -27,6 +27,13 @@ interface NoteContextState {
     viewScope: Record<string, any>;
 }
 
+interface WindowState {
+    windowId: string;
+    createdAt: number;
+    closedAt: number;
+    contexts: NoteContextState[];
+}
+
 export default class TabManager extends Component {
     public children: NoteContext[];
     public mutex: Mutex;
@@ -53,7 +60,7 @@ export default class TabManager extends Component {
 
             // Update the current window’s openNoteContexts in options    
             const savedWindows = options.getJson("openNoteContexts") || [];
-            const win = savedWindows.find(w => w.windowId === appContext.windowId);
+            const win = savedWindows.find((w: WindowState) => w.windowId === appContext.windowId);
             if (win) {
                 win.contexts = openNoteContexts;
             } else {
@@ -62,7 +69,7 @@ export default class TabManager extends Component {
                     createdAt: Date.now(),
                     closedAt: 0,
                     contexts: openNoteContexts
-                });
+                } as WindowState);
             }
 
             await options.save("openNoteContexts", JSON.stringify(savedWindows));
@@ -136,7 +143,7 @@ export default class TabManager extends Component {
             });
 
             // Save window contents
-            if (currentWin) {
+            if (currentWin as WindowState) {
                 currentWin.createdAt = Date.now();
                 currentWin.closedAt = 0;
                 currentWin.contexts = filteredNoteContexts;
@@ -150,7 +157,7 @@ export default class TabManager extends Component {
                     let oldestClosedTime = Infinity;
                     let oldestCreatedIndex = -1;
                     let oldestCreatedTime = Infinity;
-                    savedWindows.forEach((w, i) => {
+                    savedWindows.forEach((w: WindowState, i: number) => {
                         if (w.windowId === "main") return;
                         if (w.closedAt !== 0) {
                             if (w.closedAt < oldestClosedTime) {
@@ -175,7 +182,7 @@ export default class TabManager extends Component {
                     createdAt: Date.now(),
                     closedAt: 0,
                     contexts: filteredNoteContexts
-                });
+                } as WindowState);
             }
 
             await options.save("openNoteContexts", JSON.stringify(savedWindows));
