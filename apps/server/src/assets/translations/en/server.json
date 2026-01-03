@@ -383,7 +383,7 @@
     "close": "Quit Trilium",
     "recents": "Recent notes",
     "recently-closed-windows": "Recently closed windows",
-    "tabs-total": "total {{number}} tabs",
+    "tabs-total": "{{number}} tabs total",
     "bookmarks": "Bookmarks",
     "today": "Open today's journal note",
     "new-note": "New note",
