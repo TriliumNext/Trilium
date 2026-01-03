@@ -1,1 +1,22 @@
-{}
+{
+  "about": {
+    "title": "Om Trilium Notes",
+    "app_version": "App versjon:",
+    "db_version": "DB versjon:",
+    "sync_version": "Synk versjon:",
+    "build_date": "Byggdato:",
+    "build_revision": "Bygg versjon:",
+    "data_directory": "Datamappe:",
+    "homepage": "Hjemmeside:"
+  },
+  "experimental_features": {
+    "new_layout_description": "Prøv det nye grensesnittet for et mer moderne utseende og forbedret brukervenlighet. Det må påregnes betydelige endringer i kommende versjoner."
+  },
+  "cpu_arch_warning": {
+    "recommendation": "For den beste brukeropplevelsen, vennligst last ned den tilpassede ARM64-versjonen av TriliumNext fra siden for utgivelser."
+  },
+  "zpetne_odkazy": {
+    "backlink_one": "{{count}} Tilbakelenke",
+    "backlink_other": "{{count}} Tilbakelenker"
+  }
+}

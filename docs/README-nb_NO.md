@@ -11,14 +11,13 @@
 
 # Trilium Notes
 
-![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
-![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![Sponsorer på GitHub](https://img.shields.io/github/sponsors/eliandoran)
+![LiberaPay bidragsytere](https://img.shields.io/liberapay/patrons/ElianDoran)\
 ![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![GitHub Downloads (all assets, all
-releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+![Nedlastinger på GitHub(alle elementer, alle
+utgivelser)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
 [![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+[![Oversettelsesstatus](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
@@ -43,30 +42,30 @@ application with focus on building large personal knowledge bases.
 
 ## 📚 Dokumentasjon
 
-**Visit our comprehensive documentation at
+**Besøk vår omfattende dokumentasjon på
 [docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 
-Our documentation is available in multiple formats:
-- **Online Documentation**: Browse the full documentation at
+Vår dokumentasjon er tilgjengelig i flere format:
+- **Online Dokumentasjon**: Utforsk full dokumentasjon på
   [docs.triliumnotes.org](https://docs.triliumnotes.org/)
-- **In-App Help**: Press `F1` within Trilium to access the same documentation
-  directly in the application
+- **Hjelp i app**: Trykk`F1` i Trilium for å lese samme dokumentasjon direkte i
+  applikasjonen
 - **GitHub**: Navigate through the [User Guide](./User%20Guide/User%20Guide/) in
   this repository
 
-### Quick Links
-- [Getting Started Guide](https://docs.triliumnotes.org/)
-- [Installation Instructions](https://docs.triliumnotes.org/user-guide/setup)
-- [Docker
-  Setup](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
-- [Upgrading
+### Hurtiglenker
+- [Startveiledning](https://docs.triliumnotes.org/)
+- [Installasjonsveiledning](https://docs.triliumnotes.org/user-guide/setup)
+- [Oppsett med
+  Docker](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
+- [Oppgradere
   TriliumNext](https://docs.triliumnotes.org/user-guide/setup/upgrading)
 - [Basic Concepts and
   Features](https://docs.triliumnotes.org/user-guide/concepts/notes)
 - [Patterns of Personal Knowledge
   Base](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
-## 🎁 Features
+## 🎁 Funksjoner
 
 * Notes can be arranged into arbitrarily deep tree. Single note can be placed
   into multiple places in the tree (see
@@ -81,8 +80,8 @@ Our documentation is available in multiple formats:
   notes](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
   full text search and [note
   hoisting](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
-* Seamless [note
-  versioning](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
+* Sømløs
+  [notathistorikk](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
 * Note
   [attributes](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
   can be used for note organization, querying and advanced
@@ -137,13 +136,13 @@ related goodies:
   themes, scripts, plugins and more.
 - [TriliumRocks!](https://trilium.rocks/) for tutorials, guides, and much more.
 
-## ❓Why TriliumNext?
+## ❓Hvorfor TriliumNext?
 
 The original Trilium developer ([Zadam](https://github.com/zadam)) has
 graciously given the Trilium repository to the community project which resides
 at https://github.com/TriliumNext
 
-### ⬆️Migrating from Zadam/Trilium?
+### ⬆️Migrere fra Zadam/Trilium?
 
 There are no special migration steps to migrate from a zadam/Trilium instance to
 a TriliumNext/Trilium instance. Simply [install
@@ -171,7 +170,7 @@ features, suggestions, or issues you may have!
 - [Github Issues](https://github.com/TriliumNext/Trilium/issues) (For bug
   reports and feature requests.)
 
-## 🏗 Installation
+## 🏗 Installasjon
 
 ### Windows / MacOS
 
@@ -184,8 +183,7 @@ and run the `trilium` executable.
 If your distribution is listed in the table below, use your distribution's
 package.
 
-[![Packaging
-status](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+[![Pakkestatus](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
 
 You may also download the binary release for your platform from the [latest
 release page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the
@@ -193,7 +191,7 @@ package and run the `trilium` executable.
 
 TriliumNext is also provided as a Flatpak, but not yet published on FlatHub.
 
-### Browser (any OS)
+### Nettleser (alle operativsystem)
 
 If you use a server installation (see below), you can directly access the web
 interface (which is almost identical to the desktop app).
@@ -201,7 +199,7 @@ interface (which is almost identical to the desktop app).
 Currently only the latest versions of Chrome & Firefox are supported (and
 tested).
 
-### Mobile
+### Mobil
 
 To use TriliumNext on a mobile device, you can use a mobile web browser to
 access the mobile interface of a server installation (see below).
@@ -223,19 +221,18 @@ To install TriliumNext on your own server (including via Docker from
 installation docs](https://docs.triliumnotes.org/user-guide/setup/server).
 
 
-## 💻 Contribute
+## 💻 Bidra
 
-### Translations
+### Oversettelser
 
 If you are a native speaker, help us translate Trilium by heading over to our
 [Weblate page](https://hosted.weblate.org/engage/trilium/).
 
 Here's the language coverage we have so far:
 
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
+[![Oversettelsesstatus](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
 
-### Code
+### Kode
 
 Download the repository, install dependencies using `pnpm` and then run the
 server (available at http://localhost:8080):
@@ -246,7 +243,7 @@ pnpm install
 pnpm run server:start
 ```
 
-### Documentation
+### Dokumentasjon
 
 Download the repository, install dependencies using `pnpm` and then run the
 environment required to edit the documentation:
@@ -270,14 +267,14 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 For more details, see the [development
 docs](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
 
-### Developer Documentation
+### Utviklerdokumentasjon
 
 Please view the [documentation
 guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
 for details. If you have more questions, feel free to reach out via the links
 described in the "Discuss with us" section above.
 
-## 👏 Shoutouts
+## 👏 Takk
 
 * [zadam](https://github.com/zadam) for the original concept and implementation
   of the application.
@@ -313,7 +310,7 @@ Trilium would not be possible without the technologies behind it:
   [link
   maps](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
-## 🤝 Support
+## 🤝 Støtte
 
 Trilium is built and maintained with [hundreds of hours of
 work](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Your
@@ -327,7 +324,7 @@ Consider supporting the main developer
 - [PayPal](https://paypal.me/eliandoran)
 - [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
 
-## 🔑 License
+## 🔑 Lisens
 
 Copyright 2017-2025 zadam, Elian Doran, and other contributors
 

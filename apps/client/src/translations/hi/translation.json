@@ -9,7 +9,11 @@
     },
     "bundle-error": {
       "title": "एक कस्टम स्क्रिप्ट लोड करने में विफल रहा"
-    }
+    },
+    "widget-list-error": {
+      "title": "सर्वर से विजेट्स की सूची प्राप्त करने में विफल"
+    },
+    "open-script-note": "स्क्रिप्ट नोट खोलें"
   },
   "update_available": {
     "update_available": "उपलब्ध अद्यतन"
@@ -24,5 +28,8 @@
   },
   "show_floating_buttons_button": {
     "button_title": "बटन दिखाएं"
+  },
+  "add_link": {
+    "note": "नोट"
   }
 }

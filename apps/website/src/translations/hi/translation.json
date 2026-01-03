@@ -11,5 +11,8 @@
     "organization_benefits": {
         "note_structure_title": "नोट संरचना",
         "note_structure_description": "नोटों को पदानुक्रमिक रूप से व्यवस्थित किया जा सकता है। फ़ोल्डर्स की कोई आवश्यकता नहीं है, क्योंकि प्रत्येक नोट में उप-नोट हो सकते हैं। एक एकल नोट को पदानुक्रम में कई स्थानों पर जोड़ा जा सकता है।"
+    },
+    "productivity_benefits": {
+        "protected_notes_title": "संरक्षित नोट्स"
     }
 }

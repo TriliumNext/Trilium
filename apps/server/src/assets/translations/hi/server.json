@@ -7,6 +7,9 @@
     "collapse-tree": "पूरे नोट ट्री को बंद करता है",
     "collapse-subtree": "वर्तमान नोट के सबट्री को बंद करता है",
     "sort-child-notes": "चाइल्ड नोट्स को सॉर्ट करें",
-    "creating-and-moving-notes": "नोट्स बनाना और स्थानांतरित करना"
+    "creating-and-moving-notes": "नोट्स बनाना और स्थानांतरित करना",
+    "move-note-up": "नोट को ऊपर ले जाएं",
+    "move-note-down": "नोट को नीचे ले जाएं",
+    "note-clipboard": "नोट क्लिपबोर्ड"
   }
 }

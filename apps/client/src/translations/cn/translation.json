@@ -1595,7 +1595,9 @@
     "create-child-note": "创建子笔记",
     "unhoist": "取消聚焦",
     "toggle-sidebar": "切换侧边栏",
-    "dropping-not-allowed": "不允许移动笔记到此处。"
+    "dropping-not-allowed": "不允许移动笔记到此处。",
+    "shared-indicator-tooltip": "此笔记已公开分享",
+    "shared-indicator-tooltip-with-url": "此笔记已公开分享至：{{- url}}"
   },
   "title_bar_buttons": {
     "window-on-top": "保持此窗口置顶"
@@ -2224,5 +2226,11 @@
   },
   "attributes_panel": {
     "title": "笔记属性"
+  },
+  "pdf": {
+    "attachments_other": "{{count}} 个附件",
+    "pages_other": "共{{count}}页",
+    "pages_alt": "第{{pageNumber}}页",
+    "pages_loading": "加载中..."
   }
 }

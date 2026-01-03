@@ -1245,7 +1245,11 @@
     "saved-search-note-refreshed": "保存した検索ノートが更新されました。",
     "refresh-saved-search-results": "保存した検索結果を更新",
     "toggle-sidebar": "サイドバーを切り替え",
-    "dropping-not-allowed": "この場所にノートをドロップすることはできません。"
+    "dropping-not-allowed": "この場所にノートをドロップすることはできません。",
+    "clone-indicator-tooltip": "このノートには {{- count}} 個の親があります: {{- parents}}",
+    "clone-indicator-tooltip-single": "このノートは複製されています (親が 1 件追加: {{- parent}})",
+    "shared-indicator-tooltip": "このノートは公開されています",
+    "shared-indicator-tooltip-with-url": "このノートは以下で公開されています: {{- url}}"
   },
   "bulk_actions": {
     "bulk_actions": "一括操作",
@@ -2224,5 +2228,12 @@
   },
   "attributes_panel": {
     "title": "ノート属性"
+  },
+  "pdf": {
+    "attachments_other": "{{count}} 添付ファイル",
+    "layers_other": "{{count}} 層",
+    "pages_other": "{{count}} ページ",
+    "pages_alt": "ページ {{pageNumber}}",
+    "pages_loading": "読み込み中..."
   }
 }

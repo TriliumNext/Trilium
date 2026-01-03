@@ -1260,12 +1260,14 @@ body.layout-horizontal #rest-pane > .classic-toolbar-widget {
     padding-top: 2px;
     background-color: var(--note-split-background-color, var(--main-background-color));
     transition: border-color 250ms ease-in;
-    border: 1px solid transparent;
-
-    &.active {
-        border-color: var(--link-selection-outline-color);
-    }
+    border: 2px solid transparent;
 }
+
+/* The active split in a multi-split view */
+#center-pane > .split-note-container-widget:has(> .note-split.visible ~ .note-split.visible) > .note-split.active {
+    border-color: var(--link-selection-outline-color);
+}
+
 
 body:not(.background-effects) #center-pane .note-split {
     animation: note-entrance 100ms linear;

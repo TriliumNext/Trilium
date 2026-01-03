@@ -134,8 +134,8 @@ importers:
   apps/build-docs:
     devDependencies:
       '@redocly/cli':
-        specifier: 2.14.2
-        version: 2.14.2(@opentelemetry/api@1.9.0)(ajv@8.17.1)(bufferutil@4.0.9)(core-js@3.46.0)(encoding@0.1.13)(utf-8-validate@6.0.5)
+        specifier: 2.14.3
+        version: 2.14.3(@opentelemetry/api@1.9.0)(ajv@8.17.1)(bufferutil@4.0.9)(core-js@3.46.0)(encoding@0.1.13)(utf-8-validate@6.0.5)
       archiver:
         specifier: 7.0.1
         version: 7.0.1
@@ -186,7 +186,7 @@ importers:
         version: 0.2.0(mermaid@11.12.2)
       '@mind-elixir/node-menu':
         specifier: 5.0.1
-        version: 5.0.1(mind-elixir@5.3.8)
+        version: 5.0.1(mind-elixir@5.4.0)
       '@popperjs/core':
         specifier: 2.11.8
         version: 2.11.8
@@ -278,8 +278,8 @@ importers:
         specifier: 11.12.2
         version: 11.12.2
       mind-elixir:
-        specifier: 5.3.8
-        version: 5.3.8
+        specifier: 5.4.0
+        version: 5.4.0
       normalize.css:
         specifier: 8.0.1
         version: 8.0.1
@@ -4496,8 +4496,8 @@ packages:
   '@redocly/ajv@8.17.1':
     resolution: {integrity: sha512-EDtsGZS964mf9zAUXAl9Ew16eYbeyAFWhsPr0fX6oaJxgd8rApYlPBf0joyhnUHz88WxrigyFtTaqqzXNzPgqw==}
 
-  '@redocly/cli@2.14.2':
-    resolution: {integrity: sha512-M1DTJgElNYfBQS2jikfkCCNaRfa4HeF+mZpQCjHbhcvJogsIZTPL5LI6lKSnovDUTAKzUMnVlLa8hji1wx3OJQ==}
+  '@redocly/cli@2.14.3':
+    resolution: {integrity: sha512-8sq3xvlt3roeVuMW0L4KYdiMii3PnhNuYId6xDtnEGF+ZDhlImUt/t64XwDPtjuiCdbZmSA4erUxNLRYUlB2Kw==}
     engines: {node: '>=22.12.0 || >=20.19.0 <21.0.0', npm: '>=10'}
     hasBin: true
 
@@ -4511,12 +4511,12 @@ packages:
     resolution: {integrity: sha512-0EbE8LRbkogtcCXU7liAyC00n9uNG9hJ+eMyHFdUsy9lB/WGqnEBgwjA9q2cyzAVcdTkQqTBBU1XePNnN3OijA==}
     engines: {node: '>=18.17.0', npm: '>=9.5.0'}
 
-  '@redocly/openapi-core@2.14.2':
-    resolution: {integrity: sha512-KXHubrwRg10rv46c9pzn0slcbK1YaqYfqR26uhc/2KrZ2+ke106kWp1qU5rCwhkuYNXhycVLd4MrXISYAOVViw==}
+  '@redocly/openapi-core@2.14.3':
+    resolution: {integrity: sha512-h3K19wflV6w+5uFnlo+tDjihSBe+yZvFvnxPxasC8tC78qu7YQOX+hITXYsdaS+ZZ1nxvYvLYiHHmbIplA41VA==}
     engines: {node: '>=22.12.0 || >=20.19.0 <21.0.0', npm: '>=10'}
 
-  '@redocly/respect-core@2.14.2':
-    resolution: {integrity: sha512-QMKkzlYv12k0CXezxrVlzuIvRMy8H/Eh5E7ILuEP763ydQaOd9JPO29YDCO8CJjxBqYV2R2USOAgB0Mkn5AmvQ==}
+  '@redocly/respect-core@2.14.3':
+    resolution: {integrity: sha512-p7mTf2vp6PSIQJLpMfVCijGecJzbMJzHEZOF4Uz8Zux3qPj+CpZNFwxPahFHZ8JYsRFsalMDCklyySz1ubQE6w==}
     engines: {node: '>=22.12.0 || >=20.19.0 <21.0.0', npm: '>=10'}
 
   '@replit/codemirror-indentation-markers@6.5.3':
@@ -10508,8 +10508,8 @@ packages:
     resolution: {integrity: sha512-z0yWI+4FDrrweS8Zmt4Ej5HdJmky15+L2e6Wgn3+iK5fWzb6T3fhNFq2+MeTRb064c6Wr4N/wv0DzQTjNzHNGQ==}
     engines: {node: '>=10'}
 
-  mind-elixir@5.3.8:
-    resolution: {integrity: sha512-p5TuyTCgVZhaCjDi3JjH+Gpz4nL95/9C5nJqYyoxAIEqs3F5r92U7BdP6LPs9oii2kGJbcRBtIEQU6hefADqLQ==}
+  mind-elixir@5.4.0:
+    resolution: {integrity: sha512-yxXajDWoSF6id8b2LKxlhXidxH/v6mx4JV+isrtsZ62RGCMsRbjUMFO9xOfTVH8vyxWhsbCkiAP6/i5hqbyk6w==}
 
   mini-css-extract-plugin@2.9.4:
     resolution: {integrity: sha512-ZWYT7ln73Hptxqxk2DxPU9MmapXRhxkJD6tkSR04dnQxm8BGu2hzgKLugK5yySD97u/8yy7Ma7E76k9ZdvtjkQ==}
@@ -15361,8 +15361,6 @@ snapshots:
       '@ckeditor/ckeditor5-core': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-code-block@47.3.0(patch_hash=2361d8caad7d6b5bddacc3a3b4aa37dbfba260b1c1b22a450413a79c1bb1ce95)':
     dependencies:
@@ -15564,8 +15562,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-editor-decoupled@47.3.0':
     dependencies:
@@ -16095,8 +16091,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-restricted-editing@47.3.0':
     dependencies:
@@ -18317,9 +18311,9 @@ snapshots:
 
   '@microsoft/tsdoc@0.15.1': {}
 
-  '@mind-elixir/node-menu@5.0.1(mind-elixir@5.3.8)':
+  '@mind-elixir/node-menu@5.0.1(mind-elixir@5.4.0)':
     dependencies:
-      mind-elixir: 5.3.8
+      mind-elixir: 5.4.0
 
   '@mixmark-io/domino@2.2.0': {}
 
@@ -19041,20 +19035,20 @@ snapshots:
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
-  '@redocly/cli@2.14.2(@opentelemetry/api@1.9.0)(ajv@8.17.1)(bufferutil@4.0.9)(core-js@3.46.0)(encoding@0.1.13)(utf-8-validate@6.0.5)':
+  '@redocly/cli@2.14.3(@opentelemetry/api@1.9.0)(ajv@8.17.1)(bufferutil@4.0.9)(core-js@3.46.0)(encoding@0.1.13)(utf-8-validate@6.0.5)':
     dependencies:
       '@opentelemetry/exporter-trace-otlp-http': 0.202.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/resources': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-node': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/semantic-conventions': 1.34.0
-      '@redocly/openapi-core': 2.14.2(ajv@8.17.1)
-      '@redocly/respect-core': 2.14.2(ajv@8.17.1)
+      '@redocly/openapi-core': 2.14.3(ajv@8.17.1)
+      '@redocly/respect-core': 2.14.3(ajv@8.17.1)
       abort-controller: 3.0.0
+      ajv-formats: 3.0.1(ajv@8.17.1)
       chokidar: 3.6.0
       colorette: 1.4.0
       cookie: 0.7.2
       dotenv: 16.4.7
-      form-data: 4.0.4
       glob: 11.0.3
       handlebars: 4.7.8
       https-proxy-agent: 7.0.6
@@ -19100,7 +19094,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@redocly/openapi-core@2.14.2(ajv@8.17.1)':
+  '@redocly/openapi-core@2.14.3(ajv@8.17.1)':
     dependencies:
       '@redocly/ajv': 8.17.1
       '@redocly/config': 0.41.1
@@ -19114,12 +19108,12 @@ snapshots:
     transitivePeerDependencies:
       - ajv
 
-  '@redocly/respect-core@2.14.2(ajv@8.17.1)':
+  '@redocly/respect-core@2.14.3(ajv@8.17.1)':
     dependencies:
       '@faker-js/faker': 7.6.0
       '@noble/hashes': 1.8.0
       '@redocly/ajv': 8.17.1
-      '@redocly/openapi-core': 2.14.2(ajv@8.17.1)
+      '@redocly/openapi-core': 2.14.3(ajv@8.17.1)
       better-ajv-errors: 1.2.0(ajv@8.17.1)
       colorette: 2.0.20
       json-pointer: 0.6.2
@@ -26767,7 +26761,7 @@ snapshots:
 
   mimic-response@3.1.0: {}
 
-  mind-elixir@5.3.8: {}
+  mind-elixir@5.4.0: {}
 
   mini-css-extract-plugin@2.9.4(webpack@5.101.3(@swc/core@1.11.29(@swc/helpers@0.5.17))(esbuild@0.27.2)):
     dependencies:
