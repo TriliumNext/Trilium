@@ -141,16 +141,35 @@ export default class TabManager extends Component {
                 currentWin.closedAt = 0;
                 currentWin.contexts = filteredNoteContexts;
             } else {
-                // Filter out the oldest entry (excluding the main window)
                 if (savedWindows?.length >= MAX_SAVED_WINDOWS) {
-                    const candidates = savedWindows.filter(w => w.windowId !== "main");
-                    if (candidates.length > 0) {
-                        const oldest = candidates.reduce((a, b) =>
-                            a.createdAt < b.createdAt ? a : b
-                        );
-                        savedWindows.splice(savedWindows.indexOf(oldest), 1);
+                    // Filter out the oldest entry
+                    // 1) Never remove the "main" window
+                    // 2) Prefer removing the oldest closed window (closedAt !== 0)
+                    // 3) If no closed window exists, remove the window with the oldest created window
+                    let oldestClosedIndex = -1;
+                    let oldestClosedTime = Infinity;
+                    let oldestCreatedIndex = -1;
+                    let oldestCreatedTime = Infinity;
+                    savedWindows.forEach((w, i) => {
+                        if (w.windowId === "main") return;
+                        if (w.closedAt !== 0) {
+                            if (w.closedAt < oldestClosedTime) {
+                                oldestClosedTime = w.closedAt;
+                                oldestClosedIndex = i;
+                            }
+                        } else {
+                            if (w.createdAt < oldestCreatedTime) {
+                                oldestCreatedTime = w.createdAt;
+                                oldestCreatedIndex = i;
+                            }
+                        }
+                    });
+                    const indexToRemove = oldestClosedIndex !== -1 ? oldestClosedIndex : oldestCreatedIndex;
+                    if (indexToRemove !== -1) {
+                        savedWindows.splice(indexToRemove, 1);
                     }
                 }
+
                 savedWindows.push({
                     windowId: appContext.windowId,
                     createdAt: Date.now(),
