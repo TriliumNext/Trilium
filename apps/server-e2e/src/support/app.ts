@@ -59,7 +59,7 @@ export default class App {
 
         // Wait for the page to load.
         if (url === "/") {
-            await expect(this.page.locator(".tree")).toContainText("Trilium Integration Test");
+            await expect(this.noteTree).toContainText("Trilium Integration Test");
             if (!preserveTabs) {
                 await this.closeAllTabs();
             }

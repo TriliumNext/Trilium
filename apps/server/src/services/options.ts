@@ -72,6 +72,19 @@ function getOptionBool(name: FilterOptionsByType<boolean>): boolean {
     return val === "true";
 }
 
+function getOptionJson(name: OptionNames) {
+    const val = getOptionOrNull(name);
+
+    if (typeof val !== "string") {
+        return null;
+    }
+    try {
+        return JSON.parse(val);
+    } catch (e) {
+        return null;
+    }
+}
+
 function setOption<T extends OptionNames>(name: T, value: string | OptionDefinitions[T]) {
     const option = becca.getOption(name);
 
@@ -137,6 +150,7 @@ export default {
     getOption,
     getOptionInt,
     getOptionBool,
+    getOptionJson,
     setOption,
     createOption,
     getOptions,

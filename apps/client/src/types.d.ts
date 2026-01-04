@@ -36,6 +36,7 @@ interface CustomGlobals {
     isProtectedSessionAvailable: boolean;
     isDev: boolean;
     isMainWindow: boolean;
+    windowId: string;
     maxEntityChangeIdAtLoad: number;
     maxEntityChangeSyncIdAtLoad: number;
     assetPath: string;
