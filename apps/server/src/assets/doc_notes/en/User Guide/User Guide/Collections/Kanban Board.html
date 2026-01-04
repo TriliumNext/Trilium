@@ -7,8 +7,8 @@
   adjusted.</p>
 <h2>How it works</h2>
 <p>When first creating a collection of <em>Board</em> type, a few subnotes
-  will be created, each having a <code>#status</code> label set. The board
-  then groups each note by the value of the status attribute.</p>
+  will be created, each having a <code spellcheck="false">#status</code> label
+  set. The board then groups each note by the value of the status attribute.</p>
 <p>Notes are displayed recursively, so even the child notes of the child
   notes will be displayed. However, unlike the&nbsp;<a class="reference-link"
   href="#root/_help_2FvYrpmOXm29">Table</a>, the notes are not displayed in a hierarchy.</p>
@@ -40,7 +40,7 @@
       <li>Enter the name of the note and press <kbd>Enter</kbd> or click away. To
         dismiss the creation of a new note, simply press <kbd>Escape</kbd> or leave
         the name empty.</li>
-      <li>Once created, the new note will have an attribute (<code>status</code> label
+      <li>Once created, the new note will have an attribute (<code spellcheck="false">status</code> label
         by default) set to the name of the column.</li>
     </ul>
   </li>
@@ -126,15 +126,16 @@
   <li>Relation attributes are also supported as well, showing a link with the
     target note title and icon.</li>
   <li>Currently, it's not possible to adjust which promoted attributes are displayed,
-    since all promoted attributes will be displayed (except the <code>board:groupBy</code> one).
+    since all promoted attributes will be displayed (except the <code spellcheck="false">board:groupBy</code> one).
     There are plans to improve upon this being able to hide promoted attributes
     individually.</li>
 </ul>
 <h3>Grouping by another label</h3>
-<p>By default, the label used to group the notes is <code>#status</code>.
-  It is possible to use a different label if needed by defining a label named <code>#board:groupBy</code> with
-  the value being the attribute to use (with or without <code>#</code> attribute
-  prefix).</p>
+<p>By default, the label used to group the notes is <code spellcheck="false">#status</code>.
+  It is possible to use a different label if needed by defining a label named
+  <code
+  spellcheck="false">#board:groupBy</code>with the value being the attribute to use (with or
+    without <code spellcheck="false">#</code> attribute prefix).</p>
 <h3>Grouping by relations</h3>
 <figure class="image image-style-align-right">
   <img style="aspect-ratio:535/245;" src="1_Kanban Board_image.png"
@@ -164,11 +165,14 @@
     <p>First, create a Kanban board from scratch and not a template:</p>
   </li>
   <li>
-    <p>Assign <code>#viewType=board #hidePromotedAttributes</code> to emulate the
-      default template.</p>
+    <p>Assign <code spellcheck="false">#viewType=board #hidePromotedAttributes</code> to
+      emulate the default template.</p>
   </li>
   <li>
-    <p>Set <code>#board:groupBy</code> to the name of a relation to group by, <strong>including the</strong>  <code>~</code>  <strong>prefix</strong> (e.g. <code>~status</code>).</p>
+    <p>Set <code spellcheck="false">#board:groupBy</code> to the name of a relation
+      to group by, <strong>including the</strong>  <code spellcheck="false">~</code>  <strong>prefix</strong> (e.g.
+      <code
+      spellcheck="false">~status</code>).</p>
   </li>
   <li>
     <p>Optionally, use&nbsp;<a class="reference-link" href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;for

@@ -17,7 +17,7 @@ For a simple example, we are going to create a render note that displays the cur
 
 To do so, first create an HTML code note with the following content:
 
-```
+```html
 <h1>Current date & time</h1>
 The current date & time is <span class="date"></span>
 ```
@@ -44,7 +44,7 @@ Here are the steps to creating a simple render note:
 2.  Create a child <a class="reference-link" href="Code.md">Code</a> note with JSX as the language.  
     As an example, use the following content:
     
-    ```
+    ```jsx
     export default function() {
         return (
             <>

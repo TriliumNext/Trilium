@@ -29,8 +29,9 @@
     "widget-render-error": {
       "title": "無法渲染自訂 React 元件"
     },
-    "widget-missing-parent": "自訂元件未定義強制性的 \"{{property}}\" 屬性。",
-    "open-script-note": "打開腳本筆記"
+    "widget-missing-parent": "自訂元件未定義強制性的 \"{{property}}\" 屬性。\n\n若此腳本需在無 UI 的情況下執行，請改用 \"#run=frontendStartup\"。",
+    "open-script-note": "打開腳本筆記",
+    "scripting-error": "自訂腳本錯誤：{{title}}"
   },
   "add_link": {
     "add_link": "新增連結",
@@ -287,7 +288,6 @@
     "download_button": "下載",
     "mime": "MIME類型： ",
     "file_size": "檔案大小：",
-    "preview": "預覽：",
     "preview_not_available": "無法預覽此類型的筆記。",
     "restore_button": "還原",
     "delete_button": "刪除",
@@ -762,7 +762,15 @@
   "note_icon": {
     "change_note_icon": "更改筆記圖標",
     "search": "搜尋：",
-    "reset-default": "重置為預設圖標"
+    "reset-default": "重置為預設圖標",
+    "search_placeholder_one": "在 {{count}} 個圖示包中搜尋 {{number}} 個圖示",
+    "search_placeholder_other": "",
+    "search_placeholder_filtered": "在 {{name}} 中搜尋 {{number}} 個圖示",
+    "filter": "篩選",
+    "filter-none": "所有圖示",
+    "filter-default": "預設圖示",
+    "icon_tooltip": "{{name}}\n圖示包：{{iconPack}}",
+    "no_results": "找不到圖示。"
   },
   "basic_properties": {
     "note_type": "筆記類型",
@@ -1404,7 +1412,7 @@
     "will_be_deleted_in": "此附件將在 {{time}} 後自動刪除",
     "will_be_deleted_soon": "該附件即將被自動刪除",
     "deletion_reason": "，因為該附件未連結在筆記的內容中。為防止被刪除，請將附件連結重新新增至內容中或將附件轉換為筆記。",
-    "role_and_size": "角色：{{role}}，大小：{{size}}",
+    "role_and_size": "角色：{{role}}，大小：{{size}}，MIME：{{- mimeType}}",
     "link_copied": "已複製附件連結到剪貼簿。",
     "unrecognized_role": "無法識別的附件角色 '{{role}}'。"
   },
@@ -1548,7 +1556,11 @@
     "create-child-note": "建立子筆記",
     "unhoist": "取消聚焦",
     "toggle-sidebar": "切換側邊欄",
-    "dropping-not-allowed": "不允許移動筆記至此處。"
+    "dropping-not-allowed": "不允許移動筆記至此處。",
+    "clone-indicator-tooltip": "此筆記有 {{- count}} 個父級：{{- parents}}",
+    "clone-indicator-tooltip-single": "此筆記已克隆（新增 1 個父級：{{- parent}}）",
+    "shared-indicator-tooltip": "此筆記已公開分享",
+    "shared-indicator-tooltip-with-url": "此筆記已公開分享至：{{- url}}"
   },
   "title_bar_buttons": {
     "window-on-top": "保持此視窗置頂"
@@ -1556,7 +1568,12 @@
   "note_detail": {
     "could_not_find_typewidget": "找不到類型為 '{{type}}' 的 typeWidget",
     "printing": "正在列印…",
-    "printing_pdf": "正在匯出為 PDF…"
+    "printing_pdf": "正在匯出為 PDF…",
+    "print_report_title": "列印報告",
+    "print_report_collection_content_one": "集合中的 {{count}} 篇筆記無法列印，因為它們不被支援或受到保護。",
+    "print_report_collection_content_other": "",
+    "print_report_collection_details_button": "查看詳情",
+    "print_report_collection_details_ignored_notes": "忽略的筆記"
   },
   "note_title": {
     "placeholder": "請輸入筆記標題...",
@@ -1566,7 +1583,8 @@
     "note_type_switcher_others": "其他筆記類型",
     "note_type_switcher_templates": "模板",
     "note_type_switcher_collection": "集合",
-    "edited_notes": "編輯過的筆記"
+    "edited_notes": "今天編輯過的筆記",
+    "promoted_attributes": "升級屬性"
   },
   "search_result": {
     "no_notes_found": "沒有找到符合搜尋條件的筆記。",
@@ -2219,5 +2237,15 @@
   },
   "attributes_panel": {
     "title": "筆記屬性"
+  },
+  "pdf": {
+    "attachments_one": "{{count}} 個附件",
+    "attachments_other": "",
+    "layers_one": "{{count}} 層",
+    "layers_other": "",
+    "pages_one": "共 {{count}} 頁",
+    "pages_other": "",
+    "pages_alt": "第 {{pageNumber}} 頁",
+    "pages_loading": "載入中…"
   }
 }

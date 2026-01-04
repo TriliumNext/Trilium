@@ -5,17 +5,18 @@
 <h2>Root privileges</h2>
 <aside class="admonition note">
   <p>The Trilium container at this time needs to be run with root privileges.
-    It will swap to UID and GID <code>1000:1000</code> to run the <code>node</code> process
-    after execution though, so the main process doesn't run with root privileges.</p>
+    It will swap to UID and GID <code spellcheck="false">1000:1000</code> to
+    run the <code spellcheck="false">node</code> process after execution though,
+    so the main process doesn't run with root privileges.</p>
 </aside>
 <p>The Trilium docker container needs to be run with root privileges. The
   node process inside the container will be started with reduced privileges
   (uid:gid 1000:1000) after some initialization logic. Please make sure that
   you don't use a security context (PodSecurityContext) which changes the
   user ID. To use a different uid:gid for file storage and the application,
-  please use the <code>USER_UID</code> &amp; <code>USER_GID</code> environment
+  please use the <code spellcheck="false">USER_UID</code> &amp; <code spellcheck="false">USER_GID</code> environment
   variables.</p>
-<p>The docker image will also fix the permissions of <code>/home/node</code> so
+<p>The docker image will also fix the permissions of <code spellcheck="false">/home/node</code> so
   you don't have to use an init container.</p>
 <h2>Helm Charts</h2>
 <p><a href="https://github.com/TriliumNext/helm-charts">Official Helm chart</a> from
@@ -27,7 +28,7 @@
 <p>Below is an example of how</p><pre><code class="language-text-x-trilium-auto">helm repo add trilium https://triliumnext.github.io/helm-charts
 "trilium" has been added to your repositories</code></pre>
 <h2>How to install a chart</h2>
-<p>After reviewing the <a href="https://github.com/TriliumNext/helm-charts/blob/main/charts/trilium/values.yaml"><code>values.yaml</code></a> from
+<p>After reviewing the <a href="https://github.com/TriliumNext/helm-charts/blob/main/charts/trilium/values.yaml"><code spellcheck="false">values.yaml</code></a> from
   the Helm chart, modifying as required and then creating your own:</p><pre><code class="language-text-x-trilium-auto">helm install --create-namespace --namespace trilium trilium trilium/trilium -f values.yaml</code></pre>
 <p>For more information on using Helm, please refer to the Helm documentation,
   or create a Discussion in the TriliumNext GitHub Organization.</p>

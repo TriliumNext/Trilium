@@ -18,8 +18,8 @@ class="admonition tip">
       to the additional complexity of importing the certificate into all machines
       connecting to the server.</li>
   </ul>
-  <h2>Modifying <code>config.ini</code></h2>
-  <p>Once you have your certificate, modify the <code>config.ini</code> file
+  <h2>Modifying <code spellcheck="false">config.ini</code></h2>
+  <p>Once you have your certificate, modify the <code spellcheck="false">config.ini</code> file
     in the <a href="#root/_help_tAassRL4RSQL">data directory</a> to configure Trilium
     to use it:</p><pre><code class="language-text-x-trilium-auto">[Network]
 port=8080
@@ -30,23 +30,24 @@ https=true
 certPath=/[username]/.acme.sh/[hostname]/fullchain.cer
 keyPath=/[username]/.acme.sh/[hostname]/example.com.key</code></pre>
   <p>You can also review the <a href="#root/_help_Gzjqa934BdH4">configuration</a> file
-    to provide all <code>config.ini</code> values as environment variables instead.
-    For example, you can configure TLS using environment variables:</p><pre><code class="language-text-x-trilium-auto">export TRILIUM_NETWORK_HTTPS=true
+    to provide all <code spellcheck="false">config.ini</code> values as environment
+    variables instead. For example, you can configure TLS using environment
+    variables:</p><pre><code class="language-text-x-trilium-auto">export TRILIUM_NETWORK_HTTPS=true
 export TRILIUM_NETWORK_CERTPATH=/path/to/cert.pem
 export TRILIUM_NETWORK_KEYPATH=/path/to/key.pem</code></pre>
   <p>The above example shows how this is set up in an environment where the
     certificate was generated using Let's Encrypt's ACME utility. Your paths
     may differ. For Docker installations, ensure these paths are within a volume
-    or another directory accessible by the Docker container, such as <code>/home/node/trilium-data/[DIR IN DATA DIRECTORY]</code>.</p>
-  <p>After configuring <code>config.ini</code>, restart Trilium and access the
-    hostname using "https".</p>
+    or another directory accessible by the Docker container, such as <code spellcheck="false">/home/node/trilium-data/[DIR IN DATA DIRECTORY]</code>.</p>
+  <p>After configuring <code spellcheck="false">config.ini</code>, restart Trilium
+    and access the hostname using "https".</p>
   <h2>Self-Signed Certificate</h2>
   <p>If you opt to use a self-signed certificate for your server instance,
     note that the desktop instance will not trust it by default.</p>
   <p>To bypass this, disable certificate validation by setting the following
     environment variable (for Linux):</p><pre><code class="language-text-x-trilium-auto">export NODE_TLS_REJECT_UNAUTHORIZED=0
 trilium</code></pre>
-  <p>Trilium provides scripts to start in this mode, such as <code>trilium-no-cert-check.bat</code> for
+  <p>Trilium provides scripts to start in this mode, such as <code spellcheck="false">trilium-no-cert-check.bat</code> for
     Windows.</p>
   <p><strong>Warning</strong>: Disabling TLS certificate validation is insecure.
     Proceed only if you fully understand the implications.</p>

@@ -64,8 +64,7 @@
     "restore_button": "Restaura",
     "delete_button": "Suprimeix",
     "download_button": "Descarrega",
-    "mime": "MIME: ",
-    "preview": "Vista prèvia:"
+    "mime": "MIME: "
   },
   "sort_child_notes": {
     "title": "títol",

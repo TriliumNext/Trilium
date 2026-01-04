@@ -1,3 +1,5 @@
+import { useContext } from "preact/hooks";
+
 import FNote from "../../entities/fnote";
 import { t } from "../../services/i18n";
 import { downloadFileNote, openNoteExternally } from "../../services/open";
@@ -8,11 +10,14 @@ import { formatSize } from "../../services/utils";
 import Button from "../react/Button";
 import { FormFileUploadButton } from "../react/FormFileUpload";
 import { useNoteBlob, useNoteLabel } from "../react/hooks";
+import { ParentComponent } from "../react/react_utils";
+import { TabContext } from "./ribbon-interface";
 
-export default function FilePropertiesTab({ note }: { note?: FNote | null }) {
+export default function FilePropertiesTab({ note, ntxId }: Pick<TabContext, "note" | "ntxId">) {
     const [ originalFileName ] = useNoteLabel(note, "originalFileName");
     const canAccessProtectedNote = !note?.isProtected || protected_session_holder.isProtectedSessionAvailable();
     const blob = useNoteBlob(note);
+    const parentComponent = useContext(ParentComponent);
 
     return (
         <div className="file-properties-widget">
@@ -40,7 +45,7 @@ export default function FilePropertiesTab({ note }: { note?: FNote | null }) {
                                         text={t("file_properties.download")}
                                         primary
                                         disabled={!canAccessProtectedNote}
-                                        onClick={() => downloadFileNote(note.noteId)}
+                                        onClick={() => downloadFileNote(note, parentComponent, ntxId)}
                                     />
 
                                     <Button

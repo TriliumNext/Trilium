@@ -295,7 +295,6 @@
     "download_button": "Download",
     "mime": "MIME: ",
     "file_size": "File size:",
-    "preview": "Preview:",
     "preview_not_available": "Preview isn't available for this note type."
   },
   "sort_child_notes": {
@@ -2209,7 +2208,14 @@
     "execute_script": "Run script",
     "execute_script_description": "This note is a script note. Click to execute the script.",
     "execute_sql": "Run SQL",
-    "execute_sql_description": "This note is a SQL note. Click to execute the SQL query."
+    "execute_sql_description": "This note is a SQL note. Click to execute the SQL query.",
+    "save_status_saved": "Saved",
+    "save_status_saving": "Saving...",
+    "save_status_unsaved": "Unsaved",
+    "save_status_error": "Save failed",
+    "save_status_saving_tooltip": "Changes are being saved.",
+    "save_status_unsaved_tooltip": "There are unsaved changes. They will be saved automatically in a moment.",
+    "save_status_error_tooltip": "An error occurred while saving the note. If possible, try copying the note content elsewhere and reloading the application."
   },
   "status_bar": {
     "language_title": "Change content language",

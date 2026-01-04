@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest";
 import { trimIndentation } from "@triliumnext/commons";
+import { describe, expect, it } from "vitest";
+
 import markdownService from "./markdown.js";
 
 describe("markdown", () => {
@@ -9,7 +10,9 @@ describe("markdown", () => {
             "diff": "language-text-x-diff",
             "javascript": "language-application-javascript-env-backend",
             "css": "language-text-css",
-            "mips": "language-text-x-asm-mips"
+            "mips": "language-text-x-asm-mips",
+            "jsx": "language-text-jsx",
+            "html": "language-text-html"
         };
 
         for (const [ input, output ] of Object.entries(conversionTable)) {
@@ -53,7 +56,7 @@ describe("markdown", () => {
             const result = markdownService.renderToHtml(trimIndentation`\
                 # ${title}
                 Hi there
-            `, title)
+            `, title);
             expect(result).toBe(`<p>Hi there</p>`);
         }
     });
@@ -302,6 +305,12 @@ $$`;
     it("preserves superscript and subscript", () => {
         const input = `Hello <sup>superscript</sup> <sub>subscript</sub>`;
         const expected = /*html*/`<p>Hello <sup>superscript</sup> <sub>subscript</sub></p>`;
+        expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
+    });
+
+    it("adds spellcheck=false to inline code", () => {
+        const input = `This is some inline code: \`const x = 10;\``;
+        const expected = /*html*/`<p>This is some inline code: <code spellcheck="false">const x = 10;</code></p>`;
         expect(markdownService.renderToHtml(input, "Title")).toStrictEqual(expected);
     });
 

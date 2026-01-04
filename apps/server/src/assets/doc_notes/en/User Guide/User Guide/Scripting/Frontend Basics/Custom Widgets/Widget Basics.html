@@ -16,17 +16,17 @@
 module.exports = new MyWidget();</code></pre>
 <p>To implement this widget:</p>
 <ol>
-  <li>Create a new <code>JS Frontend</code> note in Trilium and paste in the code
-    above.</li>
-  <li>Assign the <code>#widget</code>  <a href="#root/_help_zEY4DaJG4YT5">attribute</a> to
+  <li>Create a new <code spellcheck="false">JS Frontend</code> note in Trilium
+    and paste in the code above.</li>
+  <li>Assign the <code spellcheck="false">#widget</code>  <a href="#root/_help_zEY4DaJG4YT5">attribute</a> to
     the <a href="#root/_help_BFs8mudNFgCS">note</a>.</li>
   <li>Restart Trilium or reload the window.</li>
 </ol>
 <p>To verify that the widget is working, open the developer tools (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd>)
-  and run <code>document.querySelector("#my-widget")</code>. If the element
-  is found, the widget is functioning correctly. If <code>undefined</code> is
+  and run <code spellcheck="false">document.querySelector("#my-widget")</code>.
+  If the element is found, the widget is functioning correctly. If <code spellcheck="false">undefined</code> is
   returned, double-check that the <a href="#root/_help_BFs8mudNFgCS">note</a> has
-  the <code>#widget</code>  <a href="#root/_help_zEY4DaJG4YT5">attribute</a>.</p>
+  the <code spellcheck="false">#widget</code>  <a href="#root/_help_zEY4DaJG4YT5">attribute</a>.</p>
 <h3>Step 2: Adding an UI Element</h3>
 <p>Next, let's improve the widget by adding a button to it.</p><pre><code class="language-text-x-trilium-auto">const template = `&lt;div id="my-widget"&gt;&lt;button&gt;Click Me!&lt;/button&gt;&lt;/div&gt;`;
 
@@ -46,7 +46,9 @@ module.exports = new MyWidget();</code></pre>
 <h3>Step 3: Styling the Widget</h3>
 <p>To make the button more visually appealing and position it correctly,
   we'll apply some custom styling. Trilium includes <a href="https://boxicons.com">Box Icons</a>,
-  which we'll use to replace the button text with an icon. For example the <code>bx bxs-magic-wand</code> icon.</p>
+  which we'll use to replace the button text with an icon. For example the
+  <code
+  spellcheck="false">bx bxs-magic-wand</code>icon.</p>
 <p>Here's the updated template:</p><pre><code class="language-text-x-trilium-auto">const template = `&lt;div id="my-widget"&gt;&lt;button class="tree-floating-button bx bxs-magic-wand tree-settings-button"&gt;&lt;/button&gt;&lt;/div&gt;`;</code></pre>
 <p>Next, we'll adjust the button's position using CSS:</p><pre><code class="language-text-x-trilium-auto">class MyWidget extends api.BasicWidget {
     get position() { return 1; }
@@ -69,7 +71,8 @@ module.exports = new MyWidget();</code></pre>
   of the left pane, alongside other action buttons.</p>
 <h3>Step 4: Adding User Interaction</h3>
 <p>Let’s make the button interactive by showing a message when it’s clicked.
-  We'll use the <code>api.showMessage</code> method from the <a href="#root/_help_GLks18SNjxmC">Script API</a>.</p><pre><code class="language-text-x-trilium-auto">class MyWidget extends api.BasicWidget {
+  We'll use the <code spellcheck="false">api.showMessage</code> method from
+  the <a href="#root/_help_GLks18SNjxmC">Script API</a>.</p><pre><code class="language-text-x-trilium-auto">class MyWidget extends api.BasicWidget {
     get position() { return 1; }
     get parentWidget() { return "left-pane"; }
     
@@ -87,9 +90,8 @@ module.exports = new MyWidget();</code></pre>
 }
 
 module.exports = new MyWidget();</code></pre>
-<p>For the list of possible values for <code>parentWidget()</code>, see&nbsp;
-  <a
-  class="reference-link" href="#root/_help_MgibgPcfeuGz">Custom Widgets</a>.&nbsp;</p>
+<p>For the list of possible values for <code spellcheck="false">parentWidget()</code>,
+  see&nbsp;<a class="reference-link" href="#root/_help_MgibgPcfeuGz">Custom Widgets</a>.&nbsp;</p>
 <p><a href="#root/_help_s8alTXmpFR61">Reload</a> the application one last time.
   When you click the button, a "Hello World!" message should appear, confirming
   that your widget is fully functional.</p>

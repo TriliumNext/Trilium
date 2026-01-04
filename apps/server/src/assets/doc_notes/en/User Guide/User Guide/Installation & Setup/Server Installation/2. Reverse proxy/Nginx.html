@@ -55,9 +55,11 @@ server {
   block like so:</p>
 <ul>
   <li>update the location with your desired path (make sure to not leave a trailing
-    slash "/", if your <code>proxy_pass</code> does not end on a slash as well)</li>
-  <li>add the <code>proxy_cookie_path</code> directive with the same path: this
-    allows you to stay logged in at multiple instances at the same time.</li>
+    slash "/", if your <code spellcheck="false">proxy_pass</code> does not end
+    on a slash as well)</li>
+  <li>add the <code spellcheck="false">proxy_cookie_path</code> directive with
+    the same path: this allows you to stay logged in at multiple instances
+    at the same time.</li>
 </ul><pre><code class="language-text-x-trilium-auto">    location /trilium/instance-one {
         rewrite /trilium/instance-one/(.*) /$1  break;
         proxy_set_header Host $host;

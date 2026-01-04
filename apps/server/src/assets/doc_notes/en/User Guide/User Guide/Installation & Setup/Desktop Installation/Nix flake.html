@@ -5,15 +5,17 @@
   About 3-4 gigabytes of additional storage space, for build artifacts.</p>
 <h2>Run directly</h2>
 <p>Using <a href="https://nix.dev/manual/nix/stable/command-ref/new-cli/nix3-run.html">nix run</a>,
-  the desktop app can be started as: <code>nix run github:TriliumNext/Trilium/v0.95.0</code>
+  the desktop app can be started as: <code spellcheck="false">nix run github:TriliumNext/Trilium/v0.95.0</code>
 </p>
-<p>Running the server requires explicitly specifying the desired package: <code>nix run github:TriliumNext/Trilium/v0.95.0#server</code>
+<p>Running the server requires explicitly specifying the desired package:
+  <code
+  spellcheck="false">nix run github:TriliumNext/Trilium/v0.95.0#server</code>
 </p>
-<p>Instead of a version (<code>v0.95.0</code> above), you can also specify
-  a commit hash (or a branch name). This makes it easy to test development
-  builds.</p>
+<p>Instead of a version (<code spellcheck="false">v0.95.0</code> above), you
+  can also specify a commit hash (or a branch name). This makes it easy to
+  test development builds.</p>
 <h2>Install on NixOS</h2>
-<p>Add to your <code>flake.nix</code>:</p><pre><code class="language-text-x-trilium-auto">{
+<p>Add to your <code spellcheck="false">flake.nix</code>:</p><pre><code class="language-text-x-trilium-auto">{
   inputs = {
     nixpkgs.url = # ...;
     trilium-notes = {
@@ -46,7 +48,7 @@
     };
 }
 </code></pre>
-<p>Add to your <code>configuration.nix</code>:</p><pre><code class="language-text-x-trilium-auto">{
+<p>Add to your <code spellcheck="false">configuration.nix</code>:</p><pre><code class="language-text-x-trilium-auto">{
   # ...
   trilium-notes,
   ...

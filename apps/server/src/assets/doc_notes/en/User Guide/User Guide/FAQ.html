@@ -44,13 +44,13 @@
   run two Trilium processes (from one installation), each connected to a
   separate document. To achieve this, you need to set a location for the
   <a
-  href="#root/_help_tAassRL4RSQL">data directory</a>in the <code>TRILIUM_DATA_DIR</code> environment variable
-    and separate port on <code>TRILIUM_PORT</code> environment variable. How
-    to do that depends on the platform, in Unix-based systems you can achieve
-    that by running command such as this:</p><pre><code class="language-text-x-trilium-auto">TRILIUM_DATA_DIR=/home/me/path/to/data/dir TRILIUM_PORT=12345 trilium </code></pre>
-<p>You can save this command into a <code>.sh</code> script file or make an
-  alias. Do this similarly for a second instance with different data directory
-  and port.</p>
+  href="#root/_help_tAassRL4RSQL">data directory</a>in the <code spellcheck="false">TRILIUM_DATA_DIR</code> environment
+    variable and separate port on <code spellcheck="false">TRILIUM_PORT</code> environment
+    variable. How to do that depends on the platform, in Unix-based systems
+    you can achieve that by running command such as this:</p><pre><code class="language-text-x-trilium-auto">TRILIUM_DATA_DIR=/home/me/path/to/data/dir TRILIUM_PORT=12345 trilium </code></pre>
+<p>You can save this command into a <code spellcheck="false">.sh</code> script
+  file or make an alias. Do this similarly for a second instance with different
+  data directory and port.</p>
 <h2>Can I use Dropbox / Google Drive / OneDrive to sync data across multiple computers.</h2>
 <p>No.</p>
 <p>These general purpose sync apps are not suitable to sync database files
@@ -89,17 +89,18 @@
 <h3>Why does search sometimes find results with typos?</h3>
 <p>Trilium uses a progressive search strategy that includes fuzzy matching
   when exact matches return fewer than 5 results. This finds notes despite
-  minor typos in your search query. You can use fuzzy search operators (<code>~=</code> for
-  fuzzy exact match and <code>~*</code> for fuzzy contains). See the&nbsp;
-  <a
-  class="reference-link" href="#root/_help_eIg8jdvaoNNd">Search</a>&nbsp;documentation for details.</p>
+  minor typos in your search query. You can use fuzzy search operators (
+  <code
+  spellcheck="false">~=</code>for fuzzy exact match and <code spellcheck="false">~*</code> for
+    fuzzy contains). See the&nbsp;<a class="reference-link" href="#root/_help_eIg8jdvaoNNd">Search</a>&nbsp;documentation
+    for details.</p>
 <h3>How can I search for notes when I'm not sure of the exact spelling?</h3>
 <p>Use the fuzzy search operators:</p>
 <ul>
-  <li><code>#title ~= "projct"</code> - finds notes with titles like "project"
-    despite the typo</li>
-  <li><code>note.content ~* "algoritm"</code> - finds content containing "algorithm"
-    or similar words</li>
+  <li><code spellcheck="false">#title ~= "projct"</code> - finds notes with titles
+    like "project" despite the typo</li>
+  <li><code spellcheck="false">note.content ~* "algoritm"</code> - finds content
+    containing "algorithm" or similar words</li>
 </ul>
 <h3>Why do some search results appear before others with lower scores?</h3>
 <p>Trilium places exact matches before fuzzy matches. When you search for

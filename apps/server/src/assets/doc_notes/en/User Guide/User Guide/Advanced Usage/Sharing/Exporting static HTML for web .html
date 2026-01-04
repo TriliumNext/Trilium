@@ -25,10 +25,10 @@
   exporting to static HTML files comes with a few subtle differences:</p>
 <ul>
   <li>The URL structure is different. Where in normal sharing it's something
-    along the way of <code>example.com/share/noteid</code>, the notes follow
-    an hierarchical structure, such as <code>docs.triliumnotes.org/user-guide/concepts/navigation/tree-concepts</code>.</li>
-  <li>The <code>favicon.ico</code> is not handled automatically, it needs to be
-    manually added on the server after the export is generated.</li>
+    along the way of <code spellcheck="false">example.com/share/noteid</code>,
+    the notes follow an hierarchical structure, such as <code spellcheck="false">docs.triliumnotes.org/user-guide/concepts/navigation/tree-concepts</code>.</li>
+  <li>The <code spellcheck="false">favicon.ico</code> is not handled automatically,
+    it needs to be manually added on the server after the export is generated.</li>
   <li>The “Last updated” for notes is not available.</li>
   <li>The search functionality works slightly different since the normal one
     requires an active API to work. In the static export, search still works
@@ -36,8 +36,8 @@
 </ul>
 <h2>Differences from normal .zip export</h2>
 <ul>
-  <li>The name of the files/URLs will prefer <code>shareAlias</code> to allow
-    for clean URLs.</li>
+  <li>The name of the files/URLs will prefer <code spellcheck="false">shareAlias</code> to
+    allow for clean URLs.</li>
   <li>The export requires a functional web server as the pages will not render
     properly if accessed locally via a web browser due to the use of module
     scripts.</li>
@@ -54,12 +54,12 @@
 <h2>Testing locally</h2>
 <p>As mentioned previously, the exported static pages require a website to
   function. In order to test locally, a web server needs to be used.</p>
-<p>One example is to use the Node.js-based <a href="https://www.npmjs.com/package/http-server"><code>http-server</code></a> which
+<p>One example is to use the Node.js-based <a href="https://www.npmjs.com/package/http-server"><code spellcheck="false">http-server</code></a> which
   can be installed via:</p><pre><code class="language-text-x-trilium-auto">npm i -g http-server</code></pre>
 <p>Once installed simply:</p>
 <ol>
   <li>Extract the exported .zip file.</li>
-  <li>Inside the extracted directory, run <code>http-server</code>.</li>
+  <li>Inside the extracted directory, run <code spellcheck="false">http-server</code>.</li>
   <li>Access the indicated address (e.g. <a href="http://localhost:8080">http://localhost:8080</a>).</li>
 </ol>
 <h2>Automation</h2>

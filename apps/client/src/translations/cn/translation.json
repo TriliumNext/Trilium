@@ -290,7 +290,6 @@
     "download_button": "下载",
     "mime": "MIME 类型： ",
     "file_size": "文件大小：",
-    "preview": "预览：",
     "preview_not_available": "无法预览此类型的笔记。",
     "diff_on": "显示差异",
     "diff_off": "显示内容",
@@ -2231,6 +2230,7 @@
     "attachments_other": "{{count}} 个附件",
     "pages_other": "共{{count}}页",
     "pages_alt": "第{{pageNumber}}页",
-    "pages_loading": "加载中..."
+    "pages_loading": "加载中...",
+    "layers_other": "{{count}} 层"
   }
 }

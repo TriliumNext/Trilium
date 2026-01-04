@@ -19,7 +19,7 @@ import options, { type OptionValue } from "../../services/options";
 import protected_session_holder from "../../services/protected_session_holder";
 import server from "../../services/server";
 import shortcuts, { Handler, removeIndividualBinding } from "../../services/shortcuts";
-import SpacedUpdate from "../../services/spaced_update";
+import SpacedUpdate, { type StateCallback } from "../../services/spaced_update";
 import toast, { ToastOptions } from "../../services/toast";
 import tree from "../../services/tree";
 import utils, { escapeRegExp, getErrorMessage, randomString, reloadFrontendApp } from "../../services/utils";
@@ -63,22 +63,29 @@ export function useTriliumEvents<T extends EventNames>(eventNames: T[], handler:
     useDebugValue(() => eventNames.join(", "));
 }
 
-export function useSpacedUpdate(callback: () => void | Promise<void>, interval = 1000) {
+export function useSpacedUpdate(callback: () => void | Promise<void>, interval = 1000, stateCallback?: StateCallback) {
     const callbackRef = useRef(callback);
+    const stateCallbackRef = useRef(stateCallback);
     const spacedUpdateRef = useRef<SpacedUpdate>(new SpacedUpdate(
         () => callbackRef.current(),
-        interval
+        interval,
+        (state) => stateCallbackRef.current?.(state)
     ));
 
     // Update callback ref when it changes
     useEffect(() => {
         callbackRef.current = callback;
-    }, [callback]);
+    }, [ callback ]);
+
+    // Update state callback when it changes.
+    useEffect(() => {
+        stateCallbackRef.current = stateCallback;
+    }, [ stateCallback ]);
 
     // Update interval if it changes
     useEffect(() => {
         spacedUpdateRef.current?.setUpdateInterval(interval);
-    }, [interval]);
+    }, [ interval ]);
 
     return spacedUpdateRef.current;
 }
@@ -121,7 +128,12 @@ export function useEditorSpacedUpdate({ note, noteType, noteContext, getData, on
             dataSaved?.(data);
         };
     }, [ note, getData, dataSaved, noteType, parentComponent ]);
-    const spacedUpdate = useSpacedUpdate(callback);
+    const stateCallback = useCallback<StateCallback>((state) => {
+        noteContext?.setContextData("saveState", {
+            state
+        });
+    }, [ noteContext ]);
+    const spacedUpdate = useSpacedUpdate(callback, updateInterval, stateCallback);
 
     // React to note/blob changes.
     useEffect(() => {

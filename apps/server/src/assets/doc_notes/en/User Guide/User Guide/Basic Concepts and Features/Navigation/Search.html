@@ -118,47 +118,51 @@
 </ol>
 <h3>Simple Note Search Examples</h3>
 <ul>
-  <li><code>rings tolkien</code>: Full-text search to find notes containing
-    both "rings" and "tolkien".</li>
-  <li><code>"The Lord of the Rings" Tolkien</code>: Full-text search where "The
-    Lord of the Rings" must match exactly.</li>
-  <li><code>note.content *=* rings OR note.content *=* tolkien</code>: Find
-    notes containing "rings" or "tolkien" in their content.</li>
-  <li><code>towers #book</code>: Combine full-text and attribute search to find
-    notes containing "towers" and having the "book" label.</li>
-  <li><code>towers #book or #author</code>: Search for notes containing "towers"
-    and having either the "book" or "author" label.</li>
-  <li><code>towers #!book</code>: Search for notes containing "towers" and not
-    having the "book" label.</li>
-  <li><code>#book #publicationYear = 1954</code>: Find notes with the "book"
-    label and "publicationYear" set to 1954.</li>
-  <li><code>#genre *=* fan</code>: Find notes with the "genre" label containing
-    the substring "fan". Additional operators include <code>*=*</code> for "contains", <code>=*</code> for
-    "starts with", <code>*=</code> for "ends with", and <code>!=</code> for "is
-    not equal to".</li>
-  <li><code>#book #publicationYear &gt;= 1950 #publicationYear &lt; 1960</code>:
+  <li><code spellcheck="false">rings tolkien</code>: Full-text search to find
+    notes containing both "rings" and "tolkien".</li>
+  <li><code spellcheck="false">"The Lord of the Rings" Tolkien</code>: Full-text
+    search where "The Lord of the Rings" must match exactly.</li>
+  <li><code spellcheck="false">note.content *=* rings OR note.content *=* tolkien</code>:
+    Find notes containing "rings" or "tolkien" in their content.</li>
+  <li><code spellcheck="false">towers #book</code>: Combine full-text and attribute
+    search to find notes containing "towers" and having the "book" label.</li>
+  <li><code spellcheck="false">towers #book or #author</code>: Search for notes
+    containing "towers" and having either the "book" or "author" label.</li>
+  <li><code spellcheck="false">towers #!book</code>: Search for notes containing
+    "towers" and not having the "book" label.</li>
+  <li><code spellcheck="false">#book #publicationYear = 1954</code>: Find notes
+    with the "book" label and "publicationYear" set to 1954.</li>
+  <li><code spellcheck="false">#genre *=* fan</code>: Find notes with the "genre"
+    label containing the substring "fan". Additional operators include
+    <code
+    spellcheck="false">*=*</code>for "contains", <code spellcheck="false">=*</code> for "starts
+      with", <code spellcheck="false">*=</code> for "ends with", and <code spellcheck="false">!=</code> for
+      "is not equal to".</li>
+  <li><code spellcheck="false">#book #publicationYear &gt;= 1950 #publicationYear &lt; 1960</code>:
     Use numeric operators to find all books published in the 1950s.</li>
-  <li><code>#dateNote &gt;= TODAY-30</code>: Find notes with the "dateNote"
-    label within the last 30 days. Supported date values include NOW +- seconds,
-    TODAY +- days, MONTH +- months, YEAR +- years.</li>
-  <li><code>~author.title *=* Tolkien</code>: Find notes related to an author
-    whose title contains "Tolkien".</li>
-  <li><code>#publicationYear %= '19[0-9]{2}'</code>: Use the '%=' operator to
-    match a regular expression (regex). This feature has been available since
-    Trilium 0.52.</li>
-  <li><code>note.content %= '\\d{2}:\\d{2} (PM|AM)'</code>: Find notes that
-    mention a time. Backslashes in a regex must be escaped.</li>
+  <li><code spellcheck="false">#dateNote &gt;= TODAY-30</code>: Find notes with
+    the "dateNote" label within the last 30 days. Supported date values include
+    NOW +- seconds, TODAY +- days, MONTH +- months, YEAR +- years.</li>
+  <li><code spellcheck="false">~author.title *=* Tolkien</code>: Find notes
+    related to an author whose title contains "Tolkien".</li>
+  <li><code spellcheck="false">#publicationYear %= '19[0-9]{2}'</code>: Use
+    the '%=' operator to match a regular expression (regex). This feature has
+    been available since Trilium 0.52.</li>
+  <li><code spellcheck="false">note.content %= '\\d{2}:\\d{2} (PM|AM)'</code>:
+    Find notes that mention a time. Backslashes in a regex must be escaped.</li>
 </ul>
 <h3>Fuzzy Search</h3>
 <p>Trilium supports fuzzy search operators that find results with typos or
   spelling variations:</p>
 <ul>
-  <li><code>#title ~= trilim</code>: Fuzzy exact match - finds notes with titles
-    like "Trilium" even if you typed "trilim" (with typo)</li>
-  <li><code>#content ~* progra</code>: Fuzzy contains match - finds notes containing
-    words like "program", "programmer", "programming" even with slight misspellings</li>
-  <li><code>note.content ~* develpment</code>: Will find notes containing "development"
-    despite the typo</li>
+  <li><code spellcheck="false">#title ~= trilim</code>: Fuzzy exact match -
+    finds notes with titles like "Trilium" even if you typed "trilim" (with
+    typo)</li>
+  <li><code spellcheck="false">#content ~* progra</code>: Fuzzy contains match
+    - finds notes containing words like "program", "programmer", "programming"
+    even with slight misspellings</li>
+  <li><code spellcheck="false">note.content ~* develpment</code>: Will find
+    notes containing "development" despite the typo</li>
 </ul>
 <p><strong>Important notes about fuzzy search:</strong>
 </p>
@@ -171,8 +175,8 @@
 </ul>
 <h3>Advanced Use Cases</h3>
 <ul>
-  <li><code>~author.relations.son.title = 'Christopher Tolkien'</code>: Search
-    for notes with an "author" relation to a note that has a "son" relation
+  <li><code spellcheck="false">~author.relations.son.title = 'Christopher Tolkien'</code>:
+    Search for notes with an "author" relation to a note that has a "son" relation
     to "Christopher Tolkien". This can be modeled with the following note structure:
     <ul>
       <li>Books
@@ -197,30 +201,52 @@
       </li>
     </ul>
   </li>
-  <li><code>~author.title *= Tolkien OR (#publicationDate &gt;= 1954 AND #publicationDate &lt;= 1960)</code>:
+  <li><code spellcheck="false">~author.title *= Tolkien OR (#publicationDate &gt;= 1954 AND #publicationDate &lt;= 1960)</code>:
     Use boolean expressions and parentheses to group expressions. Note that
     expressions starting with a parenthesis need an "expression separator sign"
     (# or ~) prepended.</li>
-  <li><code>note.parents.title = 'Books'</code>: Find notes with a parent named
-    "Books".</li>
-  <li><code>note.parents.parents.title = 'Books'</code>: Find notes with a grandparent
-    named "Books".</li>
-  <li><code>note.ancestors.title = 'Books'</code>: Find notes with an ancestor
-    named "Books".</li>
-  <li><code>note.children.title = 'sub-note'</code>: Find notes with a child
-    named "sub-note".</li>
+  <li><code spellcheck="false">note.parents.title = 'Books'</code>: Find notes
+    with a parent named "Books".</li>
+  <li><code spellcheck="false">note.parents.parents.title = 'Books'</code>:
+    Find notes with a grandparent named "Books".</li>
+  <li><code spellcheck="false">note.ancestors.title = 'Books'</code>: Find notes
+    with an ancestor named "Books".</li>
+  <li><code spellcheck="false">note.children.title = 'sub-note'</code>: Find
+    notes with a child named "sub-note".</li>
 </ul>
 <h3>Search with Note Properties</h3>
-<p>Notes have properties that can be used in searches, such as <code>noteId</code>, <code>dateModified</code>, <code>dateCreated</code>, <code>isProtected</code>, <code>type</code>, <code>title</code>, <code>text</code>, <code>content</code>, <code>rawContent</code>, <code>ownedLabelCount</code>, <code>labelCount</code>, <code>ownedRelationCount</code>, <code>relationCount</code>, <code>ownedRelationCountIncludingLinks</code>, <code>relationCountIncludingLinks</code>, <code>ownedAttributeCount</code>, <code>attributeCount</code>, <code>targetRelationCount</code>, <code>targetRelationCountIncludingLinks</code>, <code>parentCount</code>, <code>childrenCount</code>, <code>isArchived</code>, <code>contentSize</code>, <code>noteSize</code>,
-  and <code>revisionCount</code>.</p>
-<p>These properties can be accessed via the <code>note.</code> prefix, e.g., <code>note.type = code AND note.mime = 'application/json'</code>.</p>
+<p>Notes have properties that can be used in searches, such as <code spellcheck="false">noteId</code>,
+  <code
+  spellcheck="false">dateModified</code>, <code spellcheck="false">dateCreated</code>,
+    <code
+    spellcheck="false">isProtected</code>, <code spellcheck="false">type</code>, <code spellcheck="false">title</code>,
+      <code
+      spellcheck="false">text</code>, <code spellcheck="false">content</code>, <code spellcheck="false">rawContent</code>,
+        <code
+        spellcheck="false">ownedLabelCount</code>, <code spellcheck="false">labelCount</code>,
+          <code
+          spellcheck="false">ownedRelationCount</code>, <code spellcheck="false">relationCount</code>,
+            <code
+            spellcheck="false">ownedRelationCountIncludingLinks</code>, <code spellcheck="false">relationCountIncludingLinks</code>,
+              <code
+              spellcheck="false">ownedAttributeCount</code>, <code spellcheck="false">attributeCount</code>,
+                <code
+                spellcheck="false">targetRelationCount</code>, <code spellcheck="false">targetRelationCountIncludingLinks</code>,
+                  <code
+                  spellcheck="false">parentCount</code>, <code spellcheck="false">childrenCount</code>,
+                    <code
+                    spellcheck="false">isArchived</code>, <code spellcheck="false">contentSize</code>, <code spellcheck="false">noteSize</code>,
+                      and <code spellcheck="false">revisionCount</code>.</p>
+<p>These properties can be accessed via the <code spellcheck="false">note.</code> prefix,
+  e.g., <code spellcheck="false">note.type = code AND note.mime = 'application/json'</code>.</p>
 <h3>Order by and Limit</h3><pre><code class="language-text-x-trilium-auto">#author=Tolkien orderBy #publicationDate desc, note.title limit 10</code></pre>
 <p>This example will:</p>
 <ol>
   <li>Find notes with the author label "Tolkien".</li>
-  <li>Order the results by <code>publicationDate</code> in descending order.</li>
-  <li>Use <code>note.title</code> as a secondary ordering if publication dates
-    are equal.</li>
+  <li>Order the results by <code spellcheck="false">publicationDate</code> in
+    descending order.</li>
+  <li>Use <code spellcheck="false">note.title</code> as a secondary ordering if
+    publication dates are equal.</li>
   <li>Limit the results to the first 10 notes.</li>
 </ol>
 <h3>Negation</h3>
@@ -267,11 +293,11 @@
 #author.title *=* Tolkien</code></pre>
 <h3>Separating Full-Text and Attribute Parts</h3>
 <p>Search syntax allows combining full-text search with attribute-based search.
-  For example, <code>tolkien #book</code> contains:</p>
+  For example, <code spellcheck="false">tolkien #book</code> contains:</p>
 <ol>
-  <li>Full-text tokens - <code>tolkien</code>
+  <li>Full-text tokens - <code spellcheck="false">tolkien</code>
   </li>
-  <li>Attribute expressions - <code>#book</code>
+  <li>Attribute expressions - <code spellcheck="false">#book</code>
   </li>
 </ol>
 <p>Trilium detects the separation between full text search and attribute/property
@@ -288,13 +314,13 @@
 <p>Three types of quotes are supported: single, double, and backtick.</p>
 <h3>Type Coercion</h3>
 <p>Label values are technically strings but can be coerced for numeric comparisons:</p><pre><code class="language-text-x-trilium-auto">note.dateCreated =* '2019-05'</code></pre>
-<p>This finds notes created in May 2019. Numeric operators like <code>#publicationYear &gt;= 1960</code> convert
+<p>This finds notes created in May 2019. Numeric operators like <code spellcheck="false">#publicationYear &gt;= 1960</code> convert
   string values to numbers for comparison.</p>
 <h2>Auto-Trigger Search from URL</h2>
 <p>You can open Trilium and automatically trigger a search by including the
   search <a href="https://meyerweb.com/eric/tools/dencoder/">url encoded</a> string
   in the URL:</p>
-<p><code>http://localhost:8080/#?searchString=abc</code>
+<p><code spellcheck="false">http://localhost:8080/#?searchString=abc</code>
 </p>
 <h2>Search Configuration</h2>
 <h3>Parameters</h3>

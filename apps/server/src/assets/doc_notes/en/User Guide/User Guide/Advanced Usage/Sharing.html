@@ -182,7 +182,7 @@ class="image">
   <h2>Sharing a note</h2>
   <ol>
     <li>
-      <p><strong>Enable Sharing</strong>: To share a note, toggle the <code>Shared</code> switch
+      <p><strong>Enable Sharing</strong>: To share a note, toggle the <code spellcheck="false">Shared</code> switch
         within the note's interface. Once sharing is enabled, an URL will appear,
         which you can click to access the shared note.</p>
       <p>
@@ -193,7 +193,7 @@ class="image">
     <li>
       <p><strong>Access the Shared Note</strong>: The link provided will open the
         note in your browser. If your server is not configured with a public IP,
-        the URL will refer to <code>localhost (127.0.0.1)</code>.</p>
+        the URL will refer to <code spellcheck="false">localhost (127.0.0.1)</code>.</p>
     </li>
   </ol>
   <h2>Sharing a note subtree</h2>
@@ -222,9 +222,11 @@ class="image">
         such as Nginx or Apache to serve static content.</li>
   </ul>
   <h3>Password protection</h3>
-  <p>To protect shared notes with a username and password, you can use the <code>#shareCredentials</code> attribute.
-    Add this label to the note with the format <code>#shareCredentials="username:password"</code>.
-    To protect an entire subtree, make sure the label is <a href="#root/_help_bwZpz2ajCEwO">inheritable</a>.</p>
+  <p>To protect shared notes with a username and password, you can use the
+    <code
+    spellcheck="false">#shareCredentials</code>attribute. Add this label to the note with the
+      format <code spellcheck="false">#shareCredentials="username:password"</code>.
+      To protect an entire subtree, make sure the label is <a href="#root/_help_bwZpz2ajCEwO">inheritable</a>.</p>
   <h2>Advanced sharing options</h2>
   <h3>Customizing the appearance of shared notes</h3>
   <p>The default design should be a good starting point, but you can customize
@@ -232,46 +234,52 @@ class="image">
   <ul>
     <li><strong>Custom CSS</strong>: Link a CSS&nbsp;<a class="reference-link"
       href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note to the shared page by adding
-      a <code>~shareCss</code> relation to the note. If you want this style to
-      apply to the entire subtree, make the label inheritable. You can hide the
-      CSS code note from the tree navigation by adding the <code>#shareHiddenFromTree</code> label.</li>
+      a <code spellcheck="false">~shareCss</code> relation to the note. If you
+      want this style to apply to the entire subtree, make the label inheritable.
+      You can hide the CSS code note from the tree navigation by adding the
+      <code
+      spellcheck="false">#shareHiddenFromTree</code>label.</li>
     <li><strong>Omitting Default CSS</strong>: For extensive styling changes,
-      use the <code>#shareOmitDefaultCss</code> label to avoid conflicts with Trilium's
-      <a
-      href="#root/_help_Wy267RK4M69c">default stylesheet</a>.</li>
+      use the <code spellcheck="false">#shareOmitDefaultCss</code> label to avoid
+      conflicts with Trilium's <a href="#root/_help_Wy267RK4M69c">default stylesheet</a>.</li>
   </ul>
   <h3>Adding JavaScript</h3>
-  <p>You can inject custom JavaScript into the shared note using the <code>~shareJs</code> relation.
+  <p>You can inject custom JavaScript into the shared note using the <code spellcheck="false">~shareJs</code> relation.
     This allows you to access note attributes or traverse the note tree using
-    the <code>fetchNote()</code> API, which retrieves note data based on its
-    ID.</p>
+    the <code spellcheck="false">fetchNote()</code> API, which retrieves note
+    data based on its ID.</p>
   <h3>Adding custom HTML</h3>
   <p>You can inject custom HTML snippets into specific locations of the shared
-    page using the <code>~shareHtml</code> relation. The HTML note should contain
-    the raw HTML content you want to inject, and you can control where it appears
-    by adding the <code>#shareHtmlLocation</code> label to the HTML snippet note
-    itself.</p>
-  <p>The <code>#shareHtmlLocation</code> label accepts values in the format <code>location:position</code>:</p>
+    page using the <code spellcheck="false">~shareHtml</code> relation. The HTML
+    note should contain the raw HTML content you want to inject, and you can
+    control where it appears by adding the <code spellcheck="false">#shareHtmlLocation</code> label
+    to the HTML snippet note itself.</p>
+  <p>The <code spellcheck="false">#shareHtmlLocation</code> label accepts values
+    in the format <code spellcheck="false">location:position</code>:</p>
   <ul>
-    <li><strong>Locations</strong>: <code>head</code>, <code>body</code>, <code>content</code>
+    <li><strong>Locations</strong>: <code spellcheck="false">head</code>,
+      <code
+      spellcheck="false">body</code>, <code spellcheck="false">content</code>
     </li>
-    <li><strong>Positions</strong>: <code>start</code>, <code>end</code>
+    <li><strong>Positions</strong>: <code spellcheck="false">start</code>,
+      <code
+      spellcheck="false">end</code>
     </li>
   </ul>
   <p>For example:</p>
   <ul>
-    <li><code>#shareHtmlLocation=head:start</code> - Injects HTML at the beginning
-      of the <code>&lt;head&gt;</code> section</li>
-    <li><code>#shareHtmlLocation=head:end</code> - Injects HTML at the end of the <code>&lt;head&gt;</code> section
-      (default)</li>
-    <li><code>#shareHtmlLocation=body:start</code> - Injects HTML at the beginning
-      of the <code>&lt;body&gt;</code> section</li>
-    <li><code>#shareHtmlLocation=content:start</code> - Injects HTML at the beginning
-      of the content area</li>
-    <li><code>#shareHtmlLocation=content:end</code> - Injects HTML at the end of
-      the content area</li>
+    <li><code spellcheck="false">#shareHtmlLocation=head:start</code> - Injects
+      HTML at the beginning of the <code spellcheck="false">&lt;head&gt;</code> section</li>
+    <li><code spellcheck="false">#shareHtmlLocation=head:end</code> - Injects HTML
+      at the end of the <code spellcheck="false">&lt;head&gt;</code> section (default)</li>
+    <li><code spellcheck="false">#shareHtmlLocation=body:start</code> - Injects
+      HTML at the beginning of the <code spellcheck="false">&lt;body&gt;</code> section</li>
+    <li><code spellcheck="false">#shareHtmlLocation=content:start</code> - Injects
+      HTML at the beginning of the content area</li>
+    <li><code spellcheck="false">#shareHtmlLocation=content:end</code> - Injects
+      HTML at the end of the content area</li>
   </ul>
-  <p>If no location is specified, the HTML will be injected at <code>content:end</code> by
+  <p>If no location is specified, the HTML will be injected at <code spellcheck="false">content:end</code> by
     default.</p>
   <p>Example:</p><pre><code class="language-application-javascript-env-backend">const currentNote = await fetchNote();
 const parentNote = await fetchNote(currentNote.parentNoteIds[0]);
@@ -280,42 +288,47 @@ for (const attr of parentNote.attributes) {
     console.log(attr.type, attr.name, attr.value);
 }</code></pre>
   <h3>Creating human-readable URL aliases</h3>
-  <p>Shared notes typically have URLs like <code>http://domain.tld/share/knvU8aJy4dJ7</code>,
+  <p>Shared notes typically have URLs like <code spellcheck="false">http://domain.tld/share/knvU8aJy4dJ7</code>,
     where the last part is the note's ID. You can make these URLs more user-friendly
-    by adding the <code>#shareAlias</code> label to individual notes (e.g., <code>#shareAlias=highlighting</code>).
-    This will change the URL to <code>http://domain.tld/share/highlighting</code>.</p>
+    by adding the <code spellcheck="false">#shareAlias</code> label to individual
+    notes (e.g., <code spellcheck="false">#shareAlias=highlighting</code>).
+    This will change the URL to <code spellcheck="false">http://domain.tld/share/highlighting</code>.</p>
   <p><strong>Important</strong>:</p>
   <ol>
     <li>Ensure that aliases are unique.</li>
-    <li>Using slashes (<code>/</code>) within aliases to create subpaths is not
-      supported.</li>
+    <li>Using slashes (<code spellcheck="false">/</code>) within aliases to create
+      subpaths is not supported.</li>
   </ol>
   <aside class="admonition tip">
     <ul>
       <li>To easily identify pages that don't have a share alias, run a&nbsp;
         <a
-        class="reference-link" href="#root/_help_eIg8jdvaoNNd">Search</a>&nbsp;with <code>#!shareAlias</code>.</li>
+        class="reference-link" href="#root/_help_eIg8jdvaoNNd">Search</a>&nbsp;with <code spellcheck="false">#!shareAlias</code>.</li>
       <li>To be able to enter the share alias faster, consider using&nbsp;<a class="reference-link"
-        href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;(for example <code>#label:shareAlias(inheritable)="promoted,alias=Slug,single,text"</code>).</li>
+        href="#root/_help_OFXdgB2nNk1F">Promoted Attributes</a>&nbsp;(for example
+        <code
+        spellcheck="false">#label:shareAlias(inheritable)="promoted,alias=Slug,single,text"</code>).</li>
     </ul>
   </aside>
   <h3>Setting a custom favicon</h3>
-  <p>To customize the favicon for your shared pages, create a relation <code>~shareFavicon</code> pointing
-    to a file note containing the favicon (e.g., in <code>.ico</code> format).</p>
+  <p>To customize the favicon for your shared pages, create a relation
+    <code
+    spellcheck="false">~shareFavicon</code>pointing to a file note containing the favicon (e.g.,
+      in <code spellcheck="false">.ico</code> format).</p>
   <h3>Sharing a note as the root</h3>
   <p>You can designate a specific note or folder as the root of your shared
-    content by adding the <code>#shareRoot</code> label. This note will be linked
-    when visiting <code>[http://domain.tld/share](http://domain/share)</code>,
+    content by adding the <code spellcheck="false">#shareRoot</code> label. This
+    note will be linked when visiting <code spellcheck="false">[http://domain.tld/share](http://domain/share)</code>,
     making it easier to use Trilium as a fully-fledged website.</p>
   <aside class="admonition tip">
-    <p>Consider combining this with the <code>#shareIndex</code> label, which will
-      display a list of all shared notes.</p>
+    <p>Consider combining this with the <code spellcheck="false">#shareIndex</code> label,
+      which will display a list of all shared notes.</p>
   </aside>
   <h3>Displaying an index of shared notes</h3>
   <p>When accessing a share, the sub-notes will be displayed in a tree on the
     left. But since multiple note trees can be shared, it might be useful to
     display a list of all the different share trees.</p>
-  <p>To do so, create a shared text note and apply the <code>shareIndex</code> label.
+  <p>To do so, create a shared text note and apply the <code spellcheck="false">shareIndex</code> label.
     When viewed, the list of shared roots will be displayed at the bottom of
     the note.</p>
   <h2>Attribute reference</h2>
@@ -419,23 +432,27 @@ for (const attr of parentNote.attributes) {
     </thead>
     <tbody>
       <tr>
-        <td><code>~shareLogo</code>
+        <td><code spellcheck="false">~shareLogo</code>
         </td>
         <td>Relation set to an image to use as logo. The image must be part of the
           share tree (it can be hidden if needed).</td>
       </tr>
       <tr>
-        <td><code>#shareLogoWidth</code>
+        <td><code spellcheck="false">#shareLogoWidth</code>
         </td>
-        <td>The width (in pixels, without unit) to set for the logo. Default is <code>53</code>.</td>
+        <td>The width (in pixels, without unit) to set for the logo. Default is
+          <code
+          spellcheck="false">53</code>.</td>
       </tr>
       <tr>
-        <td><code>#shareLogoHeight</code>
+        <td><code spellcheck="false">#shareLogoHeight</code>
         </td>
-        <td>The height (in pixels, without unit) to set for the logo. Default is <code>40</code>.</td>
+        <td>The height (in pixels, without unit) to set for the logo. Default is
+          <code
+          spellcheck="false">40</code>.</td>
       </tr>
       <tr>
-        <td><code>#shareRootLink</code>
+        <td><code spellcheck="false">#shareRootLink</code>
         </td>
         <td>URL to navigate to when the logo is pressed.</td>
       </tr>
@@ -452,27 +469,27 @@ for (const attr of parentNote.attributes) {
     </thead>
     <tbody>
       <tr>
-        <td><code>#shareOpenGraphColor</code>
+        <td><code spellcheck="false">#shareOpenGraphColor</code>
         </td>
-        <td>This adjusts the <code>theme-color</code> meta-property.</td>
+        <td>This adjusts the <code spellcheck="false">theme-color</code> meta-property.</td>
       </tr>
       <tr>
-        <td><code>#shareOpenGraphURL</code>
+        <td><code spellcheck="false">#shareOpenGraphURL</code>
         </td>
-        <td>This adjusts the <code>og:url</code> and <code>twitter:url</code> meta-properties.</td>
+        <td>This adjusts the <code spellcheck="false">og:url</code> and <code spellcheck="false">twitter:url</code> meta-properties.</td>
       </tr>
       <tr>
-        <td><code>#shareOpenGraphDomain</code>
+        <td><code spellcheck="false">#shareOpenGraphDomain</code>
         </td>
-        <td>Adjusts the <code>twitter:domain</code> meta-property.</td>
+        <td>Adjusts the <code spellcheck="false">twitter:domain</code> meta-property.</td>
       </tr>
       <tr>
-        <td><code>#shareOpenGraphImage</code> 
-          <br><code>~shareOpenGraphImage</code>
+        <td><code spellcheck="false">#shareOpenGraphImage</code> 
+          <br><code spellcheck="false">~shareOpenGraphImage</code>
         </td>
         <td>Can be either a label, case in which the value is passed on as-is, or
           it can be a relation to an image&nbsp;<a class="reference-link" href="#root/_help_W8vYD3Q1zjCR">File</a>.
-          This controls the <code>og:image</code> meta-property.</td>
+          This controls the <code spellcheck="false">og:image</code> meta-property.</td>
       </tr>
     </tbody>
   </table>

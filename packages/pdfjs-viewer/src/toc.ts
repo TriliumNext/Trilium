@@ -11,7 +11,7 @@ export async function extractAndSendToc() {
             window.parent.postMessage({
                 type: "pdfjs-viewer-toc",
                 data: null
-            }, window.location.origin);
+            } satisfies PdfViewerTocMessage, window.location.origin);
             return;
         }
 
@@ -26,12 +26,12 @@ export async function extractAndSendToc() {
         window.parent.postMessage({
             type: "pdfjs-viewer-toc",
             data: toc
-        }, window.location.origin);
+        } satisfies PdfViewerTocMessage, window.location.origin);
     } catch (error) {
         window.parent.postMessage({
             type: "pdfjs-viewer-toc",
             data: null
-        }, window.location.origin);
+        } satisfies PdfViewerTocMessage, window.location.origin);
     }
 }
 
@@ -165,7 +165,7 @@ export function setupActiveHeadingTracking() {
             window.parent.postMessage({
                 type: "pdfjs-viewer-active-heading",
                 headingId: activeHeadingId
-            }, window.location.origin);
+            } satisfies PdfViewerActiveHeadingMessage, window.location.origin);
         }
     }
 

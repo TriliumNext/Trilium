@@ -279,7 +279,6 @@
     "download_button": "Descargar",
     "mime": "MIME: ",
     "file_size": "Tamaño del archivo:",
-    "preview": "Vista previa:",
     "preview_not_available": "La vista previa no está disponible para este tipo de notas.",
     "diff_off": "Mostrar contenido",
     "diff_on": "Mostrar diferencia",

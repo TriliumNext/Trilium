@@ -30,9 +30,10 @@ if (!outputNoteId) {
     api.showError("Missing output.");
     return;
 }</code></pre>
-<p>Note that here we are using <code>api.showError</code> which is only available
-  for frontend notes. If you are writing a backend note, simply remove <code>api.showError</code> but
-  the user will no feedback on why the script did not execute properly.</p>
+<p>Note that here we are using <code spellcheck="false">api.showError</code> which
+  is only available for frontend notes. If you are writing a backend note,
+  simply remove <code spellcheck="false">api.showError</code> but the user
+  will no feedback on why the script did not execute properly.</p>
 <p>Afterwards we can simply read the note and do something with it:</p><pre><code class="language-application-javascript-env-backend">const note = api.getNote(inputNoteId);
 if (!note) {
 	return;

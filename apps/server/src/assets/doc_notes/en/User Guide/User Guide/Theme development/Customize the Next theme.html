@@ -1,20 +1,24 @@
 <p>By default, any custom theme will be based on the legacy light theme.
-  To use the TriliumNext theme instead, add the <code>#appThemeBase=next</code> attribute
-  onto the existing theme. The <code>appTheme</code> attribute must also be
-  present.</p>
+  To use the TriliumNext theme instead, add the <code spellcheck="false">#appThemeBase=next</code> attribute
+  onto the existing theme. The <code spellcheck="false">appTheme</code> attribute
+  must also be present.</p>
 <p>
   <img src="Customize the Next theme_i.png">
 </p>
-<p>The <code>appThemeBase</code> label can be set to one of the following values:</p>
+<p>The <code spellcheck="false">appThemeBase</code> label can be set to one
+  of the following values:</p>
 <ul>
-  <li><code>next</code>, for the TriliumNext (auto light or dark mode).</li>
-  <li><code>next-light</code>, for the always light mode of the TriliumNext.</li>
-  <li><code>next-dark</code>, for the always dark mode of the TriliumNext.</li>
+  <li><code spellcheck="false">next</code>, for the TriliumNext (auto light
+    or dark mode).</li>
+  <li><code spellcheck="false">next-light</code>, for the always light mode
+    of the TriliumNext.</li>
+  <li><code spellcheck="false">next-dark</code>, for the always dark mode of
+    the TriliumNext.</li>
   <li>Any other value is ignored and will use the legacy white theme instead.</li>
 </ul>
 <h2>Overrides</h2>
 <p>Do note that the TriliumNext theme has a few more overrides than the legacy
-  theme, so you might need to suffix <code>!important</code> if the style changes
-  are not applied.</p><pre><code class="language-text-css">:root {
+  theme, so you might need to suffix <code spellcheck="false">!important</code> if
+  the style changes are not applied.</p><pre><code class="language-text-css">:root {
 	--launcher-pane-background-color: #0d6efd !important;
 }</code></pre>

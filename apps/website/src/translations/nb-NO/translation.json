@@ -16,35 +16,54 @@
         "note_structure_title": "Notatstruktur"
     },
     "productivity_benefits": {
-        "sync_title": "Synkronisering"
+        "sync_title": "Synkronisering",
+        "search_title": "Kraftig søk",
+        "web_clipper_title": "Web clipper",
+        "revisions_title": "Notatrevisjon",
+        "protected_notes_title": "Beskyttede notater"
     },
     "note_types": {
         "canvas_title": "Kanvas",
-        "mindmap_title": "Tankekart"
+        "mindmap_title": "Tankekart",
+        "text_title": "Tekstnotat",
+        "code_title": "Kodenotat",
+        "file_title": "Filnotat",
+        "mermaid_title": "Mermaid diagrammer"
     },
     "extensibility_benefits": {
-        "import_export_title": "Import/eksport"
+        "import_export_title": "Import/eksport",
+        "scripting_title": "Avansert skripting",
+        "api_title": "REST API"
     },
     "collections": {
         "title": "Samlinger",
         "calendar_title": "Kalender",
         "table_title": "Tabell",
         "geomap_title": "Geokart",
-        "presentation_title": "Presentasjon"
+        "presentation_title": "Presentasjon",
+        "board_title": "Kanbantavle"
     },
     "header": {
-        "documentation": "Dokumentasjon"
+        "documentation": "Dokumentasjon",
+        "get-started": "Kom i gang",
+        "support-us": "Støtt oss"
     },
     "social_buttons": {
         "github": "GitHub",
         "matrix": "Matrix",
-        "reddit": "Reddit"
+        "reddit": "Reddit",
+        "github_discussions": "GitHub Discussions"
     },
     "support_us": {
-        "paypal": "PayPal"
+        "paypal": "PayPal",
+        "title": "Støtt oss",
+        "financial_donations_title": "Finansiell donasjon",
+        "github_sponsors": "GitHub Sponsors"
     },
     "download_helper_desktop_windows": {
-        "download_scoop": "Scoop"
+        "download_scoop": "Scoop",
+        "title_x64": "Windows 64-bit",
+        "download_zip": "Portable (.zip)"
     },
     "download_helper_desktop_linux": {
         "download_deb": ".deb",
@@ -56,10 +75,34 @@
         "download_zip": "Portable (.zip)"
     },
     "download_helper_server_docker": {
-        "download_ghcr": "ghcr.io"
+        "download_ghcr": "ghcr.io",
+        "download_dockerhub": "Docker Hub"
     },
     "download_helper_desktop_macos": {
         "download_homebrew_cask": "Homebrew Cask",
         "download_zip": "Portable (.zip)"
+    },
+    "final_cta": {
+        "get_started": "Kom i gang"
+    },
+    "components": {
+        "link_learn_more": "Lær mer..."
+    },
+    "download_now": {
+        "text": "Last ned nå ",
+        "platform_small": "for {{platform}}",
+        "linux_small": "for Linux"
+    },
+    "footer": {
+        "copyright_and_the": " og ",
+        "copyright_community": "fellesskapet"
+    },
+    "download_helper_server_linux": {
+        "download_tar_x64": "x64 (.tar.xz)",
+        "download_tar_arm64": "ARM (.tar.xz)",
+        "download_nixos": "NixOS modul"
+    },
+    "download_helper_server_hosted": {
+        "title": "Betalt hosting"
     }
 }

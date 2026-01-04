@@ -4,9 +4,9 @@
 <ol>
   <li><strong>Attribute Inheritance</strong>: All attributes from the template
     note are <a href="#root/_help_bwZpz2ajCEwO">inherited</a> by the instance notes.
-    Even attributes with <code>#isInheritable=false</code> are inherited by the
-    instance notes, although only inheritable attributes are further inherited
-    by the children of the instance notes.</li>
+    Even attributes with <code spellcheck="false">#isInheritable=false</code> are
+    inherited by the instance notes, although only inheritable attributes are
+    further inherited by the children of the instance notes.</li>
   <li><strong>Content Duplication</strong>: The content of the template note
     is copied to the instance note, provided the instance note is empty at
     the time of template assignment.</li>
@@ -35,33 +35,38 @@
   <img src="Templates_template-create-.png"
   alt="show child note templates">
 </p>
-<p>For the template to appear in the menu, the template note must have the <code>#template</code> label.
-  Do not confuse this with the <code>~template</code> relation, which links
-  the instance note to the template note. If you use <a href="#root/_help_9sRHySam5fXb">workspaces</a>,
-  you can also mark templates with <code>#workspaceTemplate</code> to display
-  them only in the workspace.</p>
+<p>For the template to appear in the menu, the template note must have the
+  <code
+  spellcheck="false">#template</code>label. Do not confuse this with the <code spellcheck="false">~template</code> relation,
+    which links the instance note to the template note. If you use <a href="#root/_help_9sRHySam5fXb">workspaces</a>,
+    you can also mark templates with <code spellcheck="false">#workspaceTemplate</code> to
+    display them only in the workspace.</p>
 <p>Templates can also be added or changed after note creation by creating
-  a <code>~template</code> relation pointing to the desired template note.&nbsp;</p>
-<p>To specify a template for child notes, you can use a <code>~child:template</code> relation
+  a <code spellcheck="false">~template</code> relation pointing to the desired
+  template note.&nbsp;</p>
+<p>To specify a template for child notes, you can use a <code spellcheck="false">~child:template</code> relation
   pointing to the appropriate template note. There is no limit to the depth
-  of the hierarchy — you can use <code>~child:child:template</code>, <code>~child:child:child:template</code>,
-  and so on.</p>
+  of the hierarchy — you can use <code spellcheck="false">~child:child:template</code>,
+  <code
+  spellcheck="false">~child:child:child:template</code>, and so on.</p>
 <aside class="admonition important">
   <p>Changing the template hierarchy after the parent note is created will
     not retroactively apply to newly created child notes.
-    <br>For example, if you initially use <code>~child:template</code> and later
-    switch to <code>~child:child:template</code>, it will not automatically
-    apply the new template to the grandchild notes. Only the structure present
-    at the time of note creation is considered.</p>
+    <br>For example, if you initially use <code spellcheck="false">~child:template</code> and
+    later switch to <code spellcheck="false">~child:child:template</code>, it
+    will not automatically apply the new template to the grandchild notes.
+    Only the structure present at the time of note creation is considered.</p>
 </aside>
 <h2>Additional Notes</h2>
-<p>From a visual perspective, templates can define <code>#iconClass</code> and <code>#cssClass</code> attributes,
-  allowing all instance notes (e.g., books) to display a specific icon and
-  CSS style.</p>
+<p>From a visual perspective, templates can define <code spellcheck="false">#iconClass</code> and
+  <code
+  spellcheck="false">#cssClass</code>attributes, allowing all instance notes (e.g., books)
+    to display a specific icon and CSS style.</p>
 <p>Explore the concept further in the <a href="#root/_help_wX4HbRucYSDD">demo notes</a>,
   including examples like the <a href="#root/_help_iRwzGnHPzonm">Relation Map</a>,
   <a
   href="#root/_help_xYjQUYhpbUEW">Task Manager</a>, and <a href="#root/_help_l0tKav7yLHGF">Day Notes</a>.</p>
 <p>Additionally, see <a href="#root/_help_47ZrP6FNuoG8">default note title</a> for
   creating title templates. Note templates and title templates can be combined
-  by creating a <code>#titleTemplate</code> for a template note.</p>
+  by creating a <code spellcheck="false">#titleTemplate</code> for a template
+  note.</p>

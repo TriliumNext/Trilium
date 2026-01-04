@@ -18,7 +18,7 @@
       <td>
         <img src="2_Custom app-wide CSS_image.png">
       </td>
-      <td>In the ribbon, press the “Owned Attributes” section and type <code>#appCss</code>.</td>
+      <td>In the ribbon, press the “Owned Attributes” section and type <code spellcheck="false">#appCss</code>.</td>
     </tr>
     <tr>
       <td>
@@ -26,8 +26,8 @@
       </td>
       <td>Type the desired CSS.&nbsp;&nbsp;&nbsp;
         <br>
-        <br>Generally it's a good idea to append <code>!important</code> for the styles
-        that are being changed, in order to prevent other</td>
+        <br>Generally it's a good idea to append <code spellcheck="false">!important</code> for
+        the styles that are being changed, in order to prevent other</td>
     </tr>
   </tbody>
 </table>
@@ -39,9 +39,10 @@
 <h2>Sample use cases</h2>
 <h3>Customizing the printing stylesheet</h3>
 <aside class="admonition tip">
-  <p>Since v0.99.2, it's no longer possible to use <code>#appCss</code> to customize
-    the printing CSS, since the printing is now done in an isolated environment.</p>
-  <p>However, it's still possible to customize the CSS via <code>~printCss</code>;
+  <p>Since v0.99.2, it's no longer possible to use <code spellcheck="false">#appCss</code> to
+    customize the printing CSS, since the printing is now done in an isolated
+    environment.</p>
+  <p>However, it's still possible to customize the CSS via <code spellcheck="false">~printCss</code>;
     see&nbsp;<a class="reference-link" href="#root/_help_NRnIZmSMc5sj">Printing &amp; Exporting as PDF</a>&nbsp;for
     more information.</p>
 </aside>
@@ -51,9 +52,10 @@
   workspaces.</p>
 <p>To do so:</p>
 <ol>
-  <li>In the note with <code>#workspace</code>, add an inheritable attribute <code>#cssClass(inheritable)</code> with
-    a value that uniquely identifies the workspace (say <code>my-workspace</code>).</li>
-  <li>Anywhere in the note structure, create a CSS note with <code>#appCss</code>.</li>
+  <li>In the note with <code spellcheck="false">#workspace</code>, add an inheritable
+    attribute <code spellcheck="false">#cssClass(inheritable)</code> with a value
+    that uniquely identifies the workspace (say <code spellcheck="false">my-workspace</code>).</li>
+  <li>Anywhere in the note structure, create a CSS note with <code spellcheck="false">#appCss</code>.</li>
 </ol>
 <h4>Change the color of the icons in the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a></h4><pre><code class="language-text-x-trilium-auto">.fancytree-node.my-workspace.fancytree-custom-icon {
     color: #ff0000;
@@ -70,8 +72,9 @@
 </figure>
 <ol>
   <li>Insert an image in any note and take the URL of the image.</li>
-  <li>Use the following CSS, adjusting the <code>background-image</code> and <code>width</code> and <code>height</code> to
-    the desired values.</li>
+  <li>Use the following CSS, adjusting the <code spellcheck="false">background-image</code> and
+    <code
+    spellcheck="false">width</code>and <code spellcheck="false">height</code> to the desired values.</li>
 </ol><pre><code class="language-text-x-trilium-auto">.note-split.my-workspace .scrolling-container:after {
     position: fixed;
     content: "";

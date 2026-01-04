@@ -1,7 +1,7 @@
 <p>Trilium provides a mechanism for <a href="#root/_help_CdNpE2pqjmI6">scripts</a> to
   open a public REST endpoint. This opens a way for various integrations
   with other services - a simple example would be creating new note from
-  Slack by issuing a slash command (e.g. <code>/trilium buy milk</code>).</p>
+  Slack by issuing a slash command (e.g. <code spellcheck="false">/trilium buy milk</code>).</p>
 <h2>Create note from outside Trilium</h2>
 <p>Let's take a look at an example. The goal is to provide a REST endpoint
   to which we can send title and content and Trilium will create a note.</p>
@@ -24,10 +24,12 @@ else {
 }</code></pre>
 <p>This script note has also following two attributes:</p>
 <ul>
-  <li>label <code>#customRequestHandler</code> with value <code>create-note</code>
+  <li>label <code spellcheck="false">#customRequestHandler</code> with value
+    <code
+    spellcheck="false">create-note</code>
   </li>
-  <li>relation <code>~targetNote</code> pointing to a note where new notes should
-    be saved</li>
+  <li>relation <code spellcheck="false">~targetNote</code> pointing to a note
+    where new notes should be saved</li>
 </ul>
 <h3>Explanation</h3>
 <p>Let's test this by using an HTTP client to send a request:</p><pre><code class="language-text-x-trilium-auto">POST http://your-trilium-server/custom/create-note
@@ -38,16 +40,18 @@ Content-Type: application/json
   "title": "hello",
   "content": "world"
 }+++++++++++++++++++++++++++++++++++++++++++++++</code></pre>
-<p>Notice the <code>/custom</code> part in the request path - Trilium considers
-  any request with this prefix as "custom" and tries to find a matching handler
-  by looking at all notes which have <code>customRequestHandler</code>  <a href="#root/_help_zEY4DaJG4YT5">label</a>.
-  Value of this label then contains a regular expression which will match
-  the request path (in our case trivial regex "create-note").</p>
-<p>Trilium will then find our code note created above and execute it. <code>api.req</code>, <code>api.res</code> are
-  set to <a href="https://expressjs.com/en/api.html#req">request</a> and
+<p>Notice the <code spellcheck="false">/custom</code> part in the request path
+  - Trilium considers any request with this prefix as "custom" and tries
+  to find a matching handler by looking at all notes which have <code spellcheck="false">customRequestHandler</code> 
   <a
-  href="https://expressjs.com/en/api.html#res">response</a>objects from which we can get details of the request and also
-    respond.</p>
+  href="#root/_help_zEY4DaJG4YT5">label</a>. Value of this label then contains a regular expression which
+    will match the request path (in our case trivial regex "create-note").</p>
+<p>Trilium will then find our code note created above and execute it.
+  <code
+  spellcheck="false">api.req</code>, <code spellcheck="false">api.res</code> are set to <a href="https://expressjs.com/en/api.html#req">request</a> and
+    <a
+    href="https://expressjs.com/en/api.html#res">response</a>objects from which we can get details of the request and also
+      respond.</p>
 <p>In the code note we check the request method and then use trivial authentication
   - keep in mind that these endpoints are by default totally unauthenticated,
   and you need to take care of this yourself.</p>
@@ -56,20 +60,21 @@ Content-Type: application/json
   href="#root/_help_GLks18SNjxmC">Script API</a>.</p>
 <h2>Custom resource provider</h2>
 <p>Another common use case is that you want to just expose a file note -
-  in such case you create label <code>customResourceProvider</code> (value
+  in such case you create label <code spellcheck="false">customResourceProvider</code> (value
   is again path regex).</p>
 <p>For more information, see&nbsp;<a href="#root/_help_d3fAXQ2diepH">Custom Resource Providers</a>.</p>
 <h2>Advanced concepts</h2>
-<p><code>api.req</code> and <code>api.res</code> are Express.js objects - you
-  can always look into its <a href="https://expressjs.com/en/api.html">documentation</a> for
+<p><code spellcheck="false">api.req</code> and <code spellcheck="false">api.res</code> are
+  Express.js objects - you can always look into its <a href="https://expressjs.com/en/api.html">documentation</a> for
   details.</p>
 <h3>Parameters</h3>
 <p>REST request paths often contain parameters in the URL, e.g.:</p><pre><code class="language-text-x-trilium-auto">http://your-trilium-server/custom/notes/123</code></pre>
 <p>The last part is dynamic so the matching of the URL must also be dynamic
-  - for this reason the matching is done with regular expressions. Following <code>customRequestHandler</code> value
-  would match it:</p><pre><code class="language-text-x-trilium-auto">notes/([0-9]+)</code></pre>
+  - for this reason the matching is done with regular expressions. Following
+  <code
+  spellcheck="false">customRequestHandler</code>value would match it:</p><pre><code class="language-text-x-trilium-auto">notes/([0-9]+)</code></pre>
 <p>Additionally, this also defines a matching group with the use of parenthesis
   which then makes it easier to extract the value. The matched groups are
-  available in <code>api.pathParams</code>:</p><pre><code class="language-text-x-trilium-auto">const noteId = api.pathParams[0];</code></pre>
-<p>Often you also need query params (as in e.g. <code>http://your-trilium-server/custom/notes?noteId=123</code>),
-  you can get those with standard express <code>req.query.noteId</code>.</p>
+  available in <code spellcheck="false">api.pathParams</code>:</p><pre><code class="language-text-x-trilium-auto">const noteId = api.pathParams[0];</code></pre>
+<p>Often you also need query params (as in e.g. <code spellcheck="false">http://your-trilium-server/custom/notes?noteId=123</code>),
+  you can get those with standard express <code spellcheck="false">req.query.noteId</code>.</p>

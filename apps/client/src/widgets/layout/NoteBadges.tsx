@@ -1,17 +1,20 @@
 import "./NoteBadges.css";
 
+import { clsx } from "clsx";
+
 import { copyTextWithToast } from "../../services/clipboard_ext";
 import { t } from "../../services/i18n";
 import { goToLinkExt } from "../../services/link";
 import { Badge, BadgeWithDropdown } from "../react/Badge";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
-import { useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean } from "../react/hooks";
+import { useGetContextData, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean } from "../react/hooks";
 import { useShareState } from "../ribbon/BasicPropertiesTab";
 import { useShareInfo } from "../shared_info";
 
 export default function NoteBadges() {
     return (
         <div className="note-badges">
+            <SaveStatusBadge />
             <ReadOnlyBadge />
             <ShareBadge />
             <ClippedNoteBadge />
@@ -102,6 +105,45 @@ function ExecuteBadge() {
             text={isScript ? t("breadcrumb_badges.execute_script") : t("breadcrumb_badges.execute_sql")}
             tooltip={executeDescription || (isScript ? t("breadcrumb_badges.execute_script_description") : t("breadcrumb_badges.execute_sql_description"))}
             onClick={() => parentComponent.triggerCommand("runActiveNote")}
+        />
+    );
+}
+
+export function SaveStatusBadge() {
+    const saveState = useGetContextData("saveState");
+    if (!saveState) return;
+
+    const stateConfig = {
+        saved: {
+            icon: "bx bx-check",
+            title: t("breadcrumb_badges.save_status_saved"),
+            tooltip: undefined
+        },
+        saving: {
+            icon: "bx bx-loader bx-spin",
+            title: t("breadcrumb_badges.save_status_saving"),
+            tooltip: t("breadcrumb_badges.save_status_saving_tooltip")
+        },
+        unsaved: {
+            icon: "bx bx-pencil",
+            title: t("breadcrumb_badges.save_status_unsaved"),
+            tooltip: t("breadcrumb_badges.save_status_unsaved_tooltip")
+        },
+        error: {
+            icon: "bx bxs-error",
+            title: t("breadcrumb_badges.save_status_error"),
+            tooltip: t("breadcrumb_badges.save_status_error_tooltip")
+        }
+    };
+
+    const { icon, title, tooltip } = stateConfig[saveState.state];
+
+    return (
+        <Badge
+            className={clsx("save-status-badge", saveState.state)}
+            icon={icon}
+            text={title}
+            tooltip={tooltip}
         />
     );
 }

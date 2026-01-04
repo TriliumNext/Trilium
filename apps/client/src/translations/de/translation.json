@@ -281,7 +281,6 @@
     "download_button": "Herunterladen",
     "mime": "MIME: ",
     "file_size": "Dateigröße:",
-    "preview": "Vorschau:",
     "preview_not_available": "Für diesen Notiztyp ist keine Vorschau verfügbar.",
     "restore_button": "Wiederherstellen",
     "delete_button": "Löschen",

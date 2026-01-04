@@ -12,15 +12,18 @@
 <p>Certain problems, such as rendering a note with a faulty script, can cause
   Trilium to crash. If Trilium attempts to reload the problematic note upon
   restart, it will continue to crash.</p>
-<p>To resolve this, use the <code>TRILIUM_START_NOTE_ID</code> environment
-  variable to reset the open tabs to a single specified note ID (e.g., <code>root</code>).
-  In Linux, you can set it as follows:</p><pre><code class="language-text-x-trilium-auto">TRILIUM_START_NOTE_ID=root ./trilium</code></pre>
+<p>To resolve this, use the <code spellcheck="false">TRILIUM_START_NOTE_ID</code> environment
+  variable to reset the open tabs to a single specified note ID (e.g.,
+  <code
+  spellcheck="false">root</code>). In Linux, you can set it as follows:</p><pre><code class="language-text-x-trilium-auto">TRILIUM_START_NOTE_ID=root ./trilium</code></pre>
 <h2>Broken Script Prevents Application Startup</h2>
 <p>If a custom script causes Trilium to crash, and it is set as a startup
   script or in an active <a href="#root/_help_MgibgPcfeuGz">custom widget</a>, start
   Triliumin "safe mode" to prevent any custom scripts from executing:</p><pre><code class="language-text-x-trilium-auto">TRILIUM_SAFE_MODE=true ./trilium</code></pre>
 <p>Depending on your Trilium distribution, you may have pre-made scripts
-  available: <code>trilium-safe-mode.bat</code> and <code>trilium-safe-mode.sh</code>.</p>
+  available: <code spellcheck="false">trilium-safe-mode.bat</code> and
+  <code
+  spellcheck="false">trilium-safe-mode.sh</code>.</p>
 <p>Once Trilium starts, locate and fix or delete the problematic note.</p>
 <h2>Sync and Consistency Checks</h2>
 <p>Trilium periodically verifies the logical consistency of the database
@@ -38,15 +41,16 @@
   <li>Unprotected notes can be recovered. Follow these steps:</li>
 </ul>
 <p>Access the <a href="#root/_help_wX4HbRucYSDD">database</a> file in the <a href="#root/_help_tAassRL4RSQL">data directory</a>.
-  Open the <code>document.db</code> file with an SQLite client (e.g., <a href="https://sqlitebrowser.org/">DB Browser</a>)
-  and execute the following queries:</p><pre><code class="language-text-x-trilium-auto">UPDATE options SET value = '77/twC5O00cuQgNC63VK32qOKKYwj21ev3jZDXoytVU=' WHERE name = 'passwordVerificationSalt';
+  Open the <code spellcheck="false">document.db</code> file with an SQLite
+  client (e.g., <a href="https://sqlitebrowser.org/">DB Browser</a>) and execute
+  the following queries:</p><pre><code class="language-text-x-trilium-auto">UPDATE options SET value = '77/twC5O00cuQgNC63VK32qOKKYwj21ev3jZDXoytVU=' WHERE name = 'passwordVerificationSalt';
 UPDATE options SET value = '710BMasZCAgibzIc07X4P9Q4TeBd4ONnqJOho+pWcBM=' WHERE name = 'passwordDerivedKeySalt';
 UPDATE options SET value = 'Eb8af1/T57b89lCRuS97tPEl4CwxsAWAU7YNJ77oY+s=' WHERE name = 'passwordVerificationHash';
 UPDATE options SET value = 'QpC8XoiYYeqHPtHKRtbNxfTHsk+pEBqVBODYp0FkPBa22tlBBKBMigdLu5GNX8Uu' WHERE name = 'encryptedDataKey';</code></pre>
 <p>After executing the changes, commit/write the changes. <strong>This sets the password to "password," allowing you to log in again.</strong>
 </p>
 <p>For pre-existing protected notes (now unrecoverable), consider deleting
-  them or exporting the unprotected notes. Then, delete <code>document.db</code> and
+  them or exporting the unprotected notes. Then, delete <code spellcheck="false">document.db</code> and
   start fresh.</p>
 <p>If you continue using the existing document file, change your password
   (Options -&gt; Change Password).</p>

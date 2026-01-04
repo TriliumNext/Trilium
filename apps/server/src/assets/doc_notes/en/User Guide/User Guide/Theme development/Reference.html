@@ -1,6 +1,7 @@
 <h2>Detecting mobile vs. desktop</h2>
-<p>The mobile layout is different than the one on the desktop. Use <code>body.mobile</code> and <code>body.desktop</code> to
-  differentiate between them.</p><pre><code class="language-text-css">body.mobile #root-widget {
+<p>The mobile layout is different than the one on the desktop. Use <code spellcheck="false">body.mobile</code> and
+  <code
+  spellcheck="false">body.desktop</code>to differentiate between them.</p><pre><code class="language-text-css">body.mobile #root-widget {
 	/* Do something on mobile */
 }
 
@@ -33,7 +34,7 @@ body.desktop #root-widget {
 <p>The user can select between vertical layout (the classical one, where
   the launcher bar is on the left) and a horizontal layout (where the launcher
   bar is on the top and tabs are full-width).</p>
-<p>Different styles can be applied by using classes at <code>body</code> level:</p><pre><code class="language-text-x-trilium-auto">body.layout-vertical #left-pane {
+<p>Different styles can be applied by using classes at <code spellcheck="false">body</code> level:</p><pre><code class="language-text-x-trilium-auto">body.layout-vertical #left-pane {
 	/* Do something */
 }
 
@@ -41,11 +42,13 @@ body.layout-horizontal #center-pane {
 	/* Do something else */	
 }</code></pre>
 <p>The two different layouts use different containers (but they are present
-  in the DOM regardless of the user's choice), for example <code>#horizontal-main-container</code> and <code>#vertical-main-container</code> can
-  be used to customize the background of the content section.</p>
+  in the DOM regardless of the user's choice), for example <code spellcheck="false">#horizontal-main-container</code> and
+  <code
+  spellcheck="false">#vertical-main-container</code>can be used to customize the background
+    of the content section.</p>
 <h2>Detecting platform (Windows, macOS) or Electron</h2>
 <p>It is possible to add particular styles that only apply to a given platform
-  by using the classes in <code>body</code>:</p>
+  by using the classes in <code spellcheck="false">body</code>:</p>
 <table>
   <thead>
     <tr>
@@ -55,9 +58,9 @@ body.layout-horizontal #center-pane {
   </thead>
   <tbody>
     <tr>
-      <td><code>&lt;br&gt;body.platform-win32 {&lt;br&gt; background: red;&lt;br&gt;}&lt;br&gt;</code>
+      <td><code spellcheck="false">&lt;br&gt;body.platform-win32 {&lt;br&gt; background: red;&lt;br&gt;}&lt;br&gt;</code>
       </td>
-      <td><code>&lt;br&gt;body.platform-darwin {&lt;br&gt; background: red;&lt;br&gt;}&lt;br&gt;</code>
+      <td><code spellcheck="false">&lt;br&gt;body.platform-darwin {&lt;br&gt; background: red;&lt;br&gt;}&lt;br&gt;</code>
       </td>
     </tr>
   </tbody>
@@ -68,7 +71,7 @@ body.layout-horizontal #center-pane {
 }</code></pre>
 <h3>Native title bar</h3>
 <p>It's possible to detect if the user has selected the native title bar
-  or the custom title bar by querying against <code>body</code>:</p><pre><code class="language-text-x-trilium-auto">body.electron.native-titlebar {
+  or the custom title bar by querying against <code spellcheck="false">body</code>:</p><pre><code class="language-text-x-trilium-auto">body.electron.native-titlebar {
 	/* Do something */
 }
 
@@ -101,15 +104,16 @@ body.electron:not(.native-titlebar) {
 }</code></pre>
 <h3>Background/transparency effects on Windows (Mica)</h3>
 <p>Windows 11 offers a special background/transparency effect called Mica,
-  which can be enabled by themes by setting the <code>--background-material</code> variable
-  at <code>body</code> level:</p><pre><code class="language-text-css">body.electron.platform-win32 {
+  which can be enabled by themes by setting the <code spellcheck="false">--background-material</code> variable
+  at <code spellcheck="false">body</code> level:</p><pre><code class="language-text-css">body.electron.platform-win32 {
 	--background-material: tabbed; 
 }</code></pre>
-<p>The value can be either <code>tabbed</code> (especially useful for the horizontal
-  layout) or <code>mica</code> (ideal for the vertical layout).</p>
-<p>Do note that the Mica effect is applied at <code>body</code> level and the
-  theme needs to make the entire hierarchy (semi-)transparent in order for
-  it to be visible. Use the TrilumNext theme as an inspiration.</p>
+<p>The value can be either <code spellcheck="false">tabbed</code> (especially
+  useful for the horizontal layout) or <code spellcheck="false">mica</code> (ideal
+  for the vertical layout).</p>
+<p>Do note that the Mica effect is applied at <code spellcheck="false">body</code> level
+  and the theme needs to make the entire hierarchy (semi-)transparent in
+  order for it to be visible. Use the TrilumNext theme as an inspiration.</p>
 <h2>Note icons, tab workspace accent color</h2>
 <p>Theme capabilities are small adjustments done through CSS variables that
   can affect the layout or the visual aspect of the application.</p>
@@ -134,17 +138,19 @@ body.electron:not(.native-titlebar) {
 }</code></pre>
 <h2>Custom fonts</h2>
 <p>Currently the only way to include a custom font is to use&nbsp;<a href="#root/_help_d3fAXQ2diepH">Custom resource providers</a>.
-  Basically import a font into Trilium and assign it <code>#customResourceProvider=fonts/myfont.ttf</code> and
-  then import the font in CSS via <code>/custom/fonts/myfont.ttf</code>. Use <code>../../../custom/fonts/myfont.ttf</code> if
-  you run your Trilium server on a different path than <code>/</code>.</p>
+  Basically import a font into Trilium and assign it <code spellcheck="false">#customResourceProvider=fonts/myfont.ttf</code> and
+  then import the font in CSS via <code spellcheck="false">/custom/fonts/myfont.ttf</code>.
+  Use <code spellcheck="false">../../../custom/fonts/myfont.ttf</code> if you
+  run your Trilium server on a different path than <code spellcheck="false">/</code>.</p>
 <h2>Dark and light themes</h2>
 <p>A light theme needs to have the following CSS:</p><pre><code class="language-text-css">:root {
 	--theme-style: light;
 }</code></pre>
-<p>if the theme is dark, then <code>--theme-style</code> needs to be <code>dark</code>.</p>
-<p>If the theme is auto (e.g. supports both light or dark based on <code>prefers-color-scheme</code>)
-  it must also declare (in addition to setting <code>--theme-style</code> to
-  either <code>light</code> or <code>dark</code>):</p><pre><code class="language-text-css">:root {
+<p>if the theme is dark, then <code spellcheck="false">--theme-style</code> needs
+  to be <code spellcheck="false">dark</code>.</p>
+<p>If the theme is auto (e.g. supports both light or dark based on <code spellcheck="false">prefers-color-scheme</code>)
+  it must also declare (in addition to setting <code spellcheck="false">--theme-style</code> to
+  either <code spellcheck="false">light</code> or <code spellcheck="false">dark</code>):</p><pre><code class="language-text-css">:root {
 
     --theme-style-auto: true;
 

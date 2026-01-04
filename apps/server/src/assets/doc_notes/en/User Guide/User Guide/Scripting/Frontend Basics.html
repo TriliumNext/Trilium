@@ -2,48 +2,54 @@
 <p>The frontend api supports two styles, regular scripts that are run with
   the current app and note context, and widgets that export an object to
   Trilium to be used in the UI. In both cases, the frontend api of Trilium
-  is available to scripts running in the frontend context as global variable <code>api</code>.
-  The members and methods of the api can be seen on the <a href="#root/_help_GLks18SNjxmC">Script API</a> page.</p>
+  is available to scripts running in the frontend context as global variable
+  <code
+  spellcheck="false">api</code>. The members and methods of the api can be seen on the <a href="#root/_help_GLks18SNjxmC">Script API</a> page.</p>
 <h2>Scripts</h2>
 <p>Scripts don't have any special requirements. They can be run at will using
   the execute button in the UI or they can be configured to run at certain
   times using <a href="#root/_help_zEY4DaJG4YT5">Attributes</a> on the note containing
   the script.</p>
 <h3>Global Events</h3>
-<p>This attribute is called <code>#run</code> and it can have any of the following
-  values:</p>
+<p>This attribute is called <code spellcheck="false">#run</code> and it can
+  have any of the following values:</p>
 <ul>
-  <li><code>frontendStartup</code> - executes on frontend upon startup.</li>
-  <li><code>mobileStartup</code> - executes on mobile frontend upon startup.</li>
-  <li><code>backendStartup</code> - executes on backend upon startup.</li>
-  <li><code>hourly</code> - executes once an hour on backend.</li>
-  <li><code>daily</code> - executes once a day on backend.</li>
+  <li><code spellcheck="false">frontendStartup</code> - executes on frontend
+    upon startup.</li>
+  <li><code spellcheck="false">mobileStartup</code> - executes on mobile frontend
+    upon startup.</li>
+  <li><code spellcheck="false">backendStartup</code> - executes on backend upon
+    startup.</li>
+  <li><code spellcheck="false">hourly</code> - executes once an hour on backend.</li>
+  <li><code spellcheck="false">daily</code> - executes once a day on backend.</li>
 </ul>
 <h3>Entity Events</h3>
 <p>These events are triggered by certain <a href="#root/_help_zEY4DaJG4YT5">relations</a> to
   other notes. Meaning that the script is triggered only if the note has
   this script attached to it through relations (or it can inherit it).</p>
 <ul>
-  <li><code>runOnNoteCreation</code> - executes when note is created on backend.</li>
-  <li><code>runOnNoteTitleChange</code> - executes when note title is changed
-    (includes note creation as well).</li>
-  <li><code>runOnNoteContentChange</code> - executes when note content is changed
-    (includes note creation as well).</li>
-  <li><code>runOnNoteChange</code> - executes when note is changed (includes
-    note creation as well).</li>
-  <li><code>runOnNoteDeletion</code> - executes when note is being deleted.</li>
-  <li><code>runOnBranchCreation</code> - executes when a branch is created. Branch
-    is a link between parent note and child note and is created e.g. when cloning
-    or moving note.</li>
-  <li><code>runOnBranchDeletion</code> - executes when a branch is delete. Branch
-    is a link between parent note and child note and is deleted e.g. when moving
-    note (old branch/link is deleted).</li>
-  <li><code>runOnChildNoteCreation</code> - executes when new note is created
-    under this note.</li>
-  <li><code>runOnAttributeCreation</code> - executes when new attribute is created
-    under this note.</li>
-  <li><code>runOnAttributeChange</code> - executes when attribute is changed
-    under this note.</li>
+  <li><code spellcheck="false">runOnNoteCreation</code> - executes when note
+    is created on backend.</li>
+  <li><code spellcheck="false">runOnNoteTitleChange</code> - executes when note
+    title is changed (includes note creation as well).</li>
+  <li><code spellcheck="false">runOnNoteContentChange</code> - executes when
+    note content is changed (includes note creation as well).</li>
+  <li><code spellcheck="false">runOnNoteChange</code> - executes when note is
+    changed (includes note creation as well).</li>
+  <li><code spellcheck="false">runOnNoteDeletion</code> - executes when note
+    is being deleted.</li>
+  <li><code spellcheck="false">runOnBranchCreation</code> - executes when a branch
+    is created. Branch is a link between parent note and child note and is
+    created e.g. when cloning or moving note.</li>
+  <li><code spellcheck="false">runOnBranchDeletion</code> - executes when a branch
+    is delete. Branch is a link between parent note and child note and is deleted
+    e.g. when moving note (old branch/link is deleted).</li>
+  <li><code spellcheck="false">runOnChildNoteCreation</code> - executes when
+    new note is created under this note.</li>
+  <li><code spellcheck="false">runOnAttributeCreation</code> - executes when
+    new attribute is created under this note.</li>
+  <li><code spellcheck="false">runOnAttributeChange</code> - executes when attribute
+    is changed under this note.</li>
 </ul>
 <h2>Widgets</h2>
 <p>Conversely to scripts, widgets do have some specific requirements in order
@@ -51,33 +57,36 @@
 <ul>
   <li>Extend <a href="https://triliumnext.github.io/Notes/frontend_api/BasicWidget.html">BasicWidget</a> or
     one of it's subclasses.</li>
-  <li>Create a new instance and assign it to <code>module.exports</code>.</li>
-  <li>Define a <code>parentWidget</code> member to determine where it should be
-    displayed.</li>
-  <li>Define a <code>position</code> (integer) that determines the location via
-    sort order.</li>
-  <li>Have a <code>#widget</code> attribute on the containing note.</li>
+  <li>Create a new instance and assign it to <code spellcheck="false">module.exports</code>.</li>
+  <li>Define a <code spellcheck="false">parentWidget</code> member to determine
+    where it should be displayed.</li>
+  <li>Define a <code spellcheck="false">position</code> (integer) that determines
+    the location via sort order.</li>
+  <li>Have a <code spellcheck="false">#widget</code> attribute on the containing
+    note.</li>
   <li>Create, render, and return your element in the render function.
     <ul>
       <li>For <a href="https://triliumnext.github.io/Notes/frontend_api/BasicWidget.html">BasicWidget</a> and
         <a
-        href="https://triliumnext.github.io/Notes/frontend_api/NoteContextAwareWidget.html">NoteContextAwareWidget</a>you should create <code>this.$widget</code> and
-          render it in <code>doRender()</code>.</li>
-      <li>For <a href="https://triliumnext.github.io/Notes/frontend_api/RightPanelWidget.html">RightPanelWidget</a> the <code>this.$widget</code> and <code>doRender()</code> are
-        already handled and you should instead return the value in <code>doRenderBody()</code>.</li>
+        href="https://triliumnext.github.io/Notes/frontend_api/NoteContextAwareWidget.html">NoteContextAwareWidget</a>you should create <code spellcheck="false">this.$widget</code> and
+          render it in <code spellcheck="false">doRender()</code>.</li>
+      <li>For <a href="https://triliumnext.github.io/Notes/frontend_api/RightPanelWidget.html">RightPanelWidget</a> the
+        <code
+        spellcheck="false">this.$widget</code>and <code spellcheck="false">doRender()</code> are already
+          handled and you should instead return the value in <code spellcheck="false">doRenderBody()</code>.</li>
     </ul>
   </li>
 </ul>
 <h3>parentWidget</h3>
 <ul>
-  <li><code>left-pane</code> - This renders the widget on the left side of the
-    screen where the note tree lives.</li>
-  <li><code>center-pane</code> - This renders the widget in the center of the
-    layout in the same location that notes and splits appear.</li>
-  <li><code>note-detail-pane</code> - This renders the widget <em>with</em> the
+  <li><code spellcheck="false">left-pane</code> - This renders the widget on
+    the left side of the screen where the note tree lives.</li>
+  <li><code spellcheck="false">center-pane</code> - This renders the widget in
+    the center of the layout in the same location that notes and splits appear.</li>
+  <li><code spellcheck="false">note-detail-pane</code> - This renders the widget <em>with</em> the
     note in the center pane. This means it can appear multiple times with splits.</li>
-  <li><code>right-pane</code> - This renders the widget to the right of any opened
-    notes.</li>
+  <li><code spellcheck="false">right-pane</code> - This renders the widget to
+    the right of any opened notes.</li>
 </ul>
 <h3>Tutorial</h3>
 <p>For more information on building widgets, take a look at <a href="#root/_help_SynTBQiBsdYJ">Widget Basics</a>.</p>

@@ -959,7 +959,6 @@
     "download_button": "Pobierz",
     "mime": "MIME: ",
     "file_size": "Rozmiar pliku:",
-    "preview": "Podgląd:",
     "preview_not_available": "Podgląd nie jest dostępny dla tego typu notatki."
   },
   "sort_child_notes": {

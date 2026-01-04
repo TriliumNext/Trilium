@@ -481,7 +481,7 @@ function renderImage(result: Result, note: SNote | BNote) {
 
 function renderFile(note: SNote | BNote, result: Result) {
     if (note.mime === "application/pdf") {
-        result.content = `<iframe class="pdf-view" src="api/notes/${note.noteId}/view"></iframe>`;
+        result.content = `<iframe class="pdf-view" src="../pdfjs/web/viewer.html?file=../../../share/api/notes/${note.noteId}/view"></iframe>`;
     } else {
         result.content = `<button type="button" onclick="location.href='api/notes/${note.noteId}/download'">Download file</button>`;
     }

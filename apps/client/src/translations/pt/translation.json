@@ -274,7 +274,6 @@
     "download_button": "Descarregar",
     "mime": "MIME: ",
     "file_size": "Tamanho do ficheiro:",
-    "preview": "Visualizar:",
     "preview_not_available": "A visualização não está disponível para este tipo de nota."
   },
   "sort_child_notes": {

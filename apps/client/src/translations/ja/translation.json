@@ -654,7 +654,6 @@
     "revision_deleted": "ノートの変更履歴は削除されました。",
     "settings": "ノートの変更履歴の設定",
     "file_size": "ファイルサイズ:",
-    "preview": "プレビュー:",
     "preview_not_available": "このノートタイプではプレビューは利用できません。",
     "diff_on": "差分を表示",
     "diff_off": "内容を表示",

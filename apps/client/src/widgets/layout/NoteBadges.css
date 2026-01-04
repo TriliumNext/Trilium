@@ -2,6 +2,11 @@
     contain: none;
 }
 
+@keyframes fadeOut {
+    from { opacity: var(--default-opacity); }
+    to { opacity: 0; }
+}
+
 .note-badges {
     display: flex;
     gap: 5px;
@@ -16,6 +21,23 @@
         &.share-badge {--color: var(--badge-share-background-color);}
         &.clipped-note-badge {--color: var(--badge-clipped-note-background-color);}
         &.execute-badge {--color: var(--badge-execute-background-color);}
+        &.save-status-badge {
+            --default-opacity: 0.4;
+            opacity: var(--default-opacity);
+            transition: opacity 250ms ease-in;
+            color: var(--main-text-color);
+
+            &.error {
+                color: var(--dropdown-item-icon-destructive-color);
+                opacity: 1;
+            }
+
+            &.saved {
+                animation: fadeOut 250ms ease-in 5s forwards;
+                pointer-events: none;
+            }
+        }
+
         min-width: 0;
 
         .text {

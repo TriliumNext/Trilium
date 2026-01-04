@@ -16,7 +16,7 @@ export function setupPdfPages() {
         window.parent.postMessage({
             type: "pdfjs-viewer-current-page",
             currentPage: evt.pageNumber
-        }, window.location.origin);
+        } satisfies PdfViewerCurrentPageMessage, window.location.origin);
     });
 
     window.addEventListener("message", async(event) => {
@@ -42,7 +42,7 @@ function sendPageInfo() {
         type: "pdfjs-viewer-page-info",
         totalPages: app.pdfDocument.numPages,
         currentPage: app.pdfViewer.currentPageNumber
-    }, window.location.origin);
+    } satisfies PdfViewerPageInfoMessage, window.location.origin);
 }
 
 async function generateThumbnail(pageNumber: number) {
@@ -75,7 +75,7 @@ async function generateThumbnail(pageNumber: number) {
             type: "pdfjs-viewer-thumbnail",
             pageNumber,
             dataUrl
-        }, window.location.origin);
+        } satisfies PdfViewerThumbnailMessage, window.location.origin);
     } catch (error) {
         console.error(`Error generating thumbnail for page %d:`, pageNumber, error);
     }

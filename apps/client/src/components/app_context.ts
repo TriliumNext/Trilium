@@ -382,7 +382,8 @@ export type CommandMappings = {
     reloadTextEditor: CommandData;
     chooseNoteType: CommandData & {
         callback: ChooseNoteTypeCallback
-    }
+    };
+    customDownload: CommandData;
 };
 
 type EventMappings = {

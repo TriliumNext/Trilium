@@ -1,7 +1,7 @@
 <h2>Why is my widget clipped by other UI elements</h2>
 <p>For performance and layout reasons, the size of widgets in Trilium is
   independent from its children. At CSS level, this means that the widget
-  container has <code>contain: size</code> applied to it.</p>
+  container has <code spellcheck="false">contain: size</code> applied to it.</p>
 <p>This works well if the widget has a fixed size (or based on its parent
   container), however to make a widget resize to fit its content, apply the
   following change:</p><pre><code class="language-text-x-diff">class MyWidget extends api.RightPanelWidget {
@@ -12,4 +12,5 @@
 +   }
         
 }</code></pre>
-<p>Alternatively apply <code>contain: none</code> to its CSS.</p>
+<p>Alternatively apply <code spellcheck="false">contain: none</code> to its
+  CSS.</p>

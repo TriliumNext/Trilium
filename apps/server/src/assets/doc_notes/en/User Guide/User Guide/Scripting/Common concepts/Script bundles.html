@@ -26,19 +26,19 @@
   </li>
 </ul>
 <p>When <em>Script with dependency</em> is run, it will detect <em>MyMath</em> as
-  a submodule and provide the result of its <code>module.exports</code> object
+  a submodule and provide the result of its <code spellcheck="false">module.exports</code> object
   into a global object with the same name as the note.</p>
 <aside class="admonition note">
   <p>If the note contains spaces or special characters, they will be stripped.
-    For example <code>My Nice Note!</code> becomes <code>MyNiceNote</code>.</p>
+    For example <code spellcheck="false">My Nice Note!</code> becomes <code spellcheck="false">MyNiceNote</code>.</p>
 </aside>
 <h2>Alternative syntax</h2>
-<p>Instead of providing an object to <code>module.exports</code>, it's also
-  possible to add fields individually:</p><pre><code class="language-application-javascript-env-backend">module.exports.sum = (a, b) =&gt; a + b;
+<p>Instead of providing an object to <code spellcheck="false">module.exports</code>,
+  it's also possible to add fields individually:</p><pre><code class="language-application-javascript-env-backend">module.exports.sum = (a, b) =&gt; a + b;
 module.exports.subtract = (a, b) =&gt; a - b;</code></pre>
 <h2>Ignoring a code script from a bundle</h2>
 <p>To ignore a script from being included in a bundle (e.g. if it's unrelated
-  to the parent script note), apply the <code>#disableInclusion</code> label.</p>
+  to the parent script note), apply the <code spellcheck="false">#disableInclusion</code> label.</p>
 <h2>Sharing a module across multiple bundles</h2>
 <p>Modules can be reused across multiple scripts by simply cloning the shared
   module between two modules (see&nbsp;<a class="reference-link" href="#root/_help_IakOLONlIfGI">Cloning Notes</a>).</p>

@@ -32,7 +32,7 @@ Common request is to allow multiple users collaborate, share notes etc. So far I
 
 This is normally not supported - one Trilium process can open only a single instance of a [database](Advanced%20Usage/Database.md). However, you can run two Trilium processes (from one installation), each connected to a separate document. To achieve this, you need to set a location for the [data directory](Installation%20%26%20Setup/Data%20directory.md) in the `TRILIUM_DATA_DIR` environment variable and separate port on `TRILIUM_PORT` environment variable. How to do that depends on the platform, in Unix-based systems you can achieve that by running command such as this:
 
-```
+```sh
 TRILIUM_DATA_DIR=/home/me/path/to/data/dir TRILIUM_PORT=12345 trilium 
 ```
 
@@ -44,7 +44,7 @@ No.
 
 These general purpose sync apps are not suitable to sync database files which are open and being worked on by another application. The result is that they will corrupt the database file, resulting in data loss and this message in the Trilium logs:
 
-```
+```plain
 SqliteError: database disk image is malformed
 ```
 

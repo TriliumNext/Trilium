@@ -59,89 +59,94 @@
   </thead>
   <tbody>
     <tr>
-      <td><code>runOnNoteCreation</code>
+      <td><code spellcheck="false">runOnNoteCreation</code>
       </td>
       <td>executes when note is created on backend. Use this relation if you want
         to run the script for all notes created under a specific subtree. In that
         case, create it on the subtree root note and make it inheritable. A new
         note created within the subtree (any depth) will trigger the script.</td>
-      <td>The <code>BNote</code> that got created.</td>
+      <td>The <code spellcheck="false">BNote</code> that got created.</td>
     </tr>
     <tr>
-      <td><code>runOnChildNoteCreation</code>
+      <td><code spellcheck="false">runOnChildNoteCreation</code>
       </td>
       <td>executes when new note is created under the note where this relation is
         defined</td>
-      <td>The <code>BNote</code> of the child that got created.</td>
+      <td>The <code spellcheck="false">BNote</code> of the child that got created.</td>
     </tr>
     <tr>
-      <td><code>runOnNoteTitleChange</code>
+      <td><code spellcheck="false">runOnNoteTitleChange</code>
       </td>
       <td>executes when note title is changed (includes note creation as well)</td>
-      <td>The <code>BNote</code> of the note whose title got changed.</td>
+      <td>The <code spellcheck="false">BNote</code> of the note whose title got changed.</td>
     </tr>
     <tr>
-      <td><code>runOnNoteContentChange</code>
+      <td><code spellcheck="false">runOnNoteContentChange</code>
       </td>
       <td>executes when note content is changed (includes note creation as well).</td>
-      <td>The <code>BNote</code> of the note whose content got changed.</td>
+      <td>The <code spellcheck="false">BNote</code> of the note whose content got
+        changed.</td>
     </tr>
     <tr>
-      <td><code>runOnNoteChange</code>
+      <td><code spellcheck="false">runOnNoteChange</code>
       </td>
       <td>executes when note is changed (includes note creation as well). Does not
         include content changes</td>
-      <td>The <code>BNote</code> of the note that got changed.</td>
+      <td>The <code spellcheck="false">BNote</code> of the note that got changed.</td>
     </tr>
     <tr>
-      <td><code>runOnNoteDeletion</code>
+      <td><code spellcheck="false">runOnNoteDeletion</code>
       </td>
       <td>executes when note is being deleted</td>
-      <td>The <code>BNote</code> of the note that got (soft) deleted.</td>
+      <td>The <code spellcheck="false">BNote</code> of the note that got (soft) deleted.</td>
     </tr>
     <tr>
-      <td><code>runOnBranchCreation</code>
+      <td><code spellcheck="false">runOnBranchCreation</code>
       </td>
       <td>executes when a branch is created. Branch is a link between parent note
         and child note and is created e.g. when cloning or moving note.</td>
-      <td>The <code>BBranch</code> that got created.</td>
+      <td>The <code spellcheck="false">BBranch</code> that got created.</td>
     </tr>
     <tr>
-      <td><code>runOnBranchChange</code>
+      <td><code spellcheck="false">runOnBranchChange</code>
       </td>
       <td>executes when a branch is updated. (since v0.62)</td>
-      <td>The <code>BBranch</code> that got changed.</td>
+      <td>The <code spellcheck="false">BBranch</code> that got changed.</td>
     </tr>
     <tr>
-      <td><code>runOnBranchDeletion</code>
+      <td><code spellcheck="false">runOnBranchDeletion</code>
       </td>
       <td>executes when a branch is deleted. Branch is a link between parent note
         and child note and is deleted e.g. when moving note (old branch/link is
         deleted).</td>
-      <td>The <code>BBranch</code> that got (soft) deleted.</td>
+      <td>The <code spellcheck="false">BBranch</code> that got (soft) deleted.</td>
     </tr>
     <tr>
-      <td><code>runOnAttributeCreation</code>
+      <td><code spellcheck="false">runOnAttributeCreation</code>
       </td>
       <td>executes when new attribute is created for the note which defines this
         relation</td>
-      <td>The <code>BAttribute</code> that got created.</td>
+      <td>The <code spellcheck="false">BAttribute</code> that got created.</td>
     </tr>
     <tr>
-      <td><code>runOnAttributeChange</code>
+      <td><code spellcheck="false">runOnAttributeChange</code>
       </td>
       <td>executes when the attribute is changed of a note which defines this relation.
         This is triggered also when the attribute is deleted</td>
-      <td>The <code>BAttribute</code> that got changed.</td>
+      <td>The <code spellcheck="false">BAttribute</code> that got changed.</td>
     </tr>
   </tbody>
 </table>
 
 <h2>Origin entity</h2>
-<p>When a script is run by an event such as the ones described above, <code>api.originEntity</code> will
-  get populated with the note, branch or attribute that triggered the change.</p>
-<p>For example, here's a script with <code>~runOnAttributeChange</code> which
-  automatically changes the color of a note based on the value of the <code>mycategory</code> label:</p><pre><code class="language-application-javascript-env-backend">const attr = api.originEntity;
+<p>When a script is run by an event such as the ones described above,
+  <code
+  spellcheck="false">api.originEntity</code>will get populated with the note, branch or attribute
+    that triggered the change.</p>
+<p>For example, here's a script with <code spellcheck="false">~runOnAttributeChange</code> which
+  automatically changes the color of a note based on the value of the
+  <code
+  spellcheck="false">mycategory</code>label:</p><pre><code class="language-application-javascript-env-backend">const attr = api.originEntity;
 if (attr.name !== "mycategory") return;
 const note = api.getNote(attr.noteId);
 if (attr.value === "Health") {

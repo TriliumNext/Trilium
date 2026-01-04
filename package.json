@@ -38,7 +38,8 @@
     "dev:format-fix": "eslint -c eslint.format.config.mjs . --fix",
     "dev:linter-check": "cross-env NODE_OPTIONS=--max_old_space_size=4096 eslint .",
     "dev:linter-fix": "cross-env NODE_OPTIONS=--max_old_space_size=4096 eslint . --fix",
-    "postinstall": "tsx scripts/electron-rebuild.mts"
+    "postinstall": "tsx scripts/electron-rebuild.mts && pnpm prepare",
+    "prepare": "pnpm run --filter pdfjs-viewer --filter share-theme build"
   },
   "private": true,
   "devDependencies": {

@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
-import markdownExportService from "./markdown.js";
 import { trimIndentation } from "@triliumnext/commons";
+import { describe, expect,it } from "vitest";
+
+import markdownExportService from "./markdown.js";
 
 describe("Markdown export", () => {
 
@@ -10,7 +11,9 @@ describe("Markdown export", () => {
             "language-text-x-diff": "diff",
             "language-application-javascript-env-frontend": "javascript",
             "language-application-javascript-env-backend": "javascript",
-            "language-text-x-asm-mips": "mips"
+            "language-text-x-asm-mips": "mips",
+            "language-text-jsx": "jsx",
+            "language-text-html": "html"
         };
 
         for (const [ input, output ] of Object.entries(conversionTable)) {

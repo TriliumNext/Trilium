@@ -44,7 +44,7 @@ export default function ImagePropertiesTab({ note, ntxId }: TabContext) {
                             text={t("image_properties.download")}
                             icon="bx bx-download"
                             primary
-                            onClick={() => downloadFileNote(note.noteId)}
+                            onClick={() => downloadFileNote(note, parentComponent, ntxId)}
                         />
 
                         <Button

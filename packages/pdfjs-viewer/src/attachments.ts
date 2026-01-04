@@ -24,7 +24,7 @@ async function extractAndSendAttachments() {
             window.parent.postMessage({
                 type: "pdfjs-viewer-attachments",
                 attachments: []
-            }, window.location.origin);
+            } satisfies PdfViewerAttachmentsMessage, window.location.origin);
             return;
         }
 
@@ -42,13 +42,13 @@ async function extractAndSendAttachments() {
                 filename: att.filename,
                 size: att.size
             }))
-        }, window.location.origin);
+        } satisfies PdfViewerAttachmentsMessage, window.location.origin);
     } catch (error) {
         console.error("Error extracting attachments:", error);
         window.parent.postMessage({
             type: "pdfjs-viewer-attachments",
             attachments: []
-        }, window.location.origin);
+        } satisfies PdfViewerAttachmentsMessage, window.location.origin);
     }
 }
 
