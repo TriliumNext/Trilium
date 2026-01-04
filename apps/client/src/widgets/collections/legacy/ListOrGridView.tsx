@@ -7,7 +7,6 @@ import attribute_renderer from "../../../services/attribute_renderer";
 import content_renderer from "../../../services/content_renderer";
 import { t } from "../../../services/i18n";
 import link from "../../../services/link";
-import tree from "../../../services/tree";
 import { useImperativeSearchHighlighlighting, useNoteLabel, useNoteLabelBoolean } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import NoteLink from "../../react/NoteLink";
@@ -103,16 +102,7 @@ function ListNoteCard({ note, parentNote, highlightedTokens, currentLevel, expan
 }
 
 function GridNoteCard({ note, parentNote, highlightedTokens }: { note: FNote, parentNote: FNote, highlightedTokens: string[] | null | undefined }) {
-    const titleRef = useRef<HTMLSpanElement>(null);
-    const [ noteTitle, setNoteTitle ] = useState<string>();
     const notePath = getNotePath(parentNote, note);
-    const highlightSearch = useImperativeSearchHighlighlighting(highlightedTokens);
-
-    useEffect(() => {
-        tree.getNoteTitle(note.noteId, parentNote.noteId).then(setNoteTitle);
-    }, [ note ]);
-
-    useEffect(() => highlightSearch(titleRef.current), [ noteTitle, highlightedTokens ]);
 
     return (
         <div
@@ -123,7 +113,7 @@ function GridNoteCard({ note, parentNote, highlightedTokens }: { note: FNote, pa
         >
             <h5 className="note-book-header">
                 <Icon className="note-icon" icon={note.getIcon()} />
-                <span ref={titleRef} className="note-book-title">{noteTitle}</span>
+                <NoteLink className="note-book-title" notePath={notePath} noPreview showNotePath={parentNote.type === "search"} highlightedTokens={highlightedTokens} />
                 <NoteAttributes note={note} />
             </h5>
             <NoteContent
