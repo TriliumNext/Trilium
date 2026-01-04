@@ -1,35 +1,220 @@
+/**
+ * Math Equation Editor Dialog Styles - Compact & Readable
+ */
+
+/* === Z-INDEX: MathLive UI above CKEditor === */
+.ML__keyboard, .ML__popover, .ML__menu, .ML__suggestions, .ML__autocomplete,
+.ML__tooltip, .ML__sr-only, [data-ml-root], #mathlive-suggestion-popover,
+.mathlive-suggestions-popover, [data-ml-tooltip], .ML__base {
+    z-index: calc(var(--ck-z-panel) + 1000) !important;
+}
+.ML__tooltip, [role="tooltip"], .ML__popover[role="tooltip"], .popover, [data-ml-tooltip] {
+    z-index: calc(var(--ck-z-panel) + 2000) !important;
+    position: fixed !important;
+}
+.ck.ck-balloon-panel, .ck.ck-balloon-panel .ck-balloon-panel__content {
+    overflow: visible !important;
+}
+
+/* === MAIN DIALOG === */
 .ck.ck-math-form {
-	display: flex;
-	align-items: flex-start;
-	flex-direction: row;
-	flex-wrap: nowrap;
-	padding: var(--ck-spacing-standard);
-
-	@media screen and (max-width: 600px) {
-		flex-wrap: wrap;
-
-		& .ck-math-view {
-			flex-basis: 100%;
-
-			& .ck-labeled-view {
-				flex-basis: 100%;
-			}
-
-			& .ck-label {
-				flex-basis: 100%;
-			}
-		}
-
-		& .ck-button {
-			flex-basis: 50%;
-		}
-	}
+    display: flex;
+    flex-direction: column;
+    padding: var(--ck-spacing-standard);
+    box-sizing: border-box;
+    max-width: 80vw;
+    max-height: 80vh;
+    overflow: visible;
+    user-select: text;
 }
 
-.ck-math-tex.ck-placeholder::before {
-	display: none !important;
+/* Scrollable content - vertical scroll, horizontal visible for tooltips */
+.ck-math-view {
+    overflow-y: auto;
+    overflow-x: visible;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    gap: var(--ck-spacing-standard);
+    min-height: 0;
+    width: 100%;
 }
 
-.ck.ck-toolbar-container {
-	z-index: calc(var(--ck-z-panel) + 2);
+/* === MATH INPUT === */
+.ck.ck-math-input {
+    display: flex;
+    flex-direction: column;
+    gap: var(--ck-spacing-standard);
+    width: fit-content;
+    min-width: 100%;
+    max-width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: visible !important;
+}
+
+/* === MATHLIVE EDITOR === */
+.ck.ck-math-input .ck-mathlive-container {
+    position: relative;
+    width: 100%;
+    min-height: 50px;
+    padding: var(--ck-spacing-small);
+    border: 1px solid var(--ck-color-input-border);
+    border-radius: var(--ck-border-radius);
+    background: var(--ck-color-input-background) !important;
+    transition: border-color 120ms ease;
+    overflow: visible !important;
+    clip-path: none !important;
+}
+.ck.ck-math-input .ck-mathlive-container:focus-within {
+    border-color: var(--ck-color-focus-border);
+}
+
+/* Position keyboard & menu buttons */
+.ck-mathlive-container math-field::part(virtual-keyboard-toggle),
+.ck-mathlive-container math-field::part(menu-toggle) {
+    position: absolute;
+    top: 8px;
+}
+.ck-mathlive-container math-field::part(virtual-keyboard-toggle) { right: 40px; }
+.ck-mathlive-container math-field::part(menu-toggle) {
+    right: 8px;
+    display: flex !important;
+    visibility: visible !important;
+}
+
+/* Math field element */
+.ck.ck-math-form math-field {
+    display: block !important;
+    width: 100%;
+    font-size: 1.5em;
+    background: transparent !important;
+    color: var(--ck-color-input-text);
+    border: none !important;
+    padding: 0;
+    outline: none !important;
+    --selection-background-color: rgba(33, 150, 243, 0.2);
+    --selection-color: inherit;
+    --contains-highlight-background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* === LATEX TEXTAREA === */
+.ck.ck-math-input .ck-latex-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    min-width: 100%;
+    max-width: 100%;
+    padding: var(--ck-spacing-small);
+    border: 1px solid var(--ck-color-input-border);
+    border-radius: var(--ck-border-radius);
+    background: var(--ck-color-input-background) !important;
+    transition: border-color 120ms ease;
+    box-sizing: border-box;
+}
+.ck.ck-math-input .ck-latex-wrapper:focus-within {
+    border-color: var(--ck-color-focus-border);
+}
+.ck.ck-math-input .ck-latex-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ck-color-text);
+    opacity: 0.8;
+    margin: 0 0 var(--ck-spacing-small) 0;
+    flex-shrink: 0;
+}
+.ck.ck-math-input .ck-latex-textarea {
+    width: fit-content;
+    min-width: 100%;
+    max-width: 100%;
+    min-height: 60px;
+    max-height: calc(80vh - 300px);
+    resize: both;
+    overflow: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.95em;
+    background: transparent !important;
+    color: var(--ck-color-input-text);
+    border: none !important;
+    padding: 0;
+    outline: none !important;
+    box-sizing: border-box;
+}
+
+/* === DISPLAY TOGGLE === */
+.ck-button-display-toggle {
+    align-self: flex-start;
+    padding: var(--ck-spacing-small) var(--ck-spacing-standard);
+    background: var(--ck-color-input-background);
+    color: var(--ck-color-text);
+    border: 1px solid var(--ck-color-input-border);
+    border-radius: var(--ck-border-radius);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.ck-button-display-toggle:hover { background: var(--ck-color-focus-border); }
+
+/* === PREVIEW === */
+.ck-math-preview,
+.ck.ck-math-preview {
+    width: 100%;
+    min-height: 40px;
+    max-height: none !important;
+    height: auto !important;
+    padding: var(--ck-spacing-small);
+    background: transparent !important;
+    border: none !important;
+    display: block;
+    text-align: left;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    flex-shrink: 0;
+}
+
+/* Center equation when in display mode */
+.ck-math-preview[data-display="true"],
+.ck.ck-math-preview[data-display="true"] {
+    text-align: center;
+}
+
+.ck-math-preview.ck-error, .ck-math-render-error {
+    border-color: var(--ck-color-error-text);
+    background: var(--ck-color-base-background);
+    color: var(--ck-color-error-text);
+}
+
+/* === BUTTONS === */
+.ck-math-button-row {
+    display: flex;
+    gap: var(--ck-spacing-standard);
+    justify-content: flex-end;
+    margin-top: var(--ck-spacing-standard);
+}
+.ck-button-save, .ck-button-cancel {
+    padding: var(--ck-spacing-small) var(--ck-spacing-standard);
+    border: 1px solid var(--ck-color-input-border);
+    border-radius: var(--ck-border-radius);
+    cursor: pointer;
+    font-weight: 500;
+}
+.ck-button-save {
+    background: var(--ck-color-focus-border);
+    color: white;
+}
+.ck-button-cancel {
+    background: var(--ck-color-input-background);
+    color: var(--ck-color-text);
+}
+.ck-button-save:hover { opacity: 0.9; }
+.ck-button-cancel:hover { background: var(--ck-color-base-background); }
+
+/* === OVERFLOW FIX: Allow tooltips to escape === */
+.ck.ck-balloon-panel,
+.ck.ck-balloon-panel .ck-balloon-panel__content,
+.ck.ck-math-form,
+.ck-math-view,
+.ck.ck-math-input,
+.ck.ck-math-input .ck-mathlive-container {
+    overflow: visible !important;
+    clip-path: none !important;
 }

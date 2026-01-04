@@ -70,6 +70,7 @@
     ]
   },
   "dependencies": {
-    "@ckeditor/ckeditor5-icons": "47.3.0"
+    "@ckeditor/ckeditor5-icons": "47.3.0",
+    "mathlive": "0.108.2"
   }
 }
