@@ -4,9 +4,8 @@ import appContext from "../../../components/app_context";
 import type NoteContext from "../../../components/note_context";
 import FBlob from "../../../entities/fblob";
 import FNote from "../../../entities/fnote";
-import server from "../../../services/server";
 import { useViewModeConfig } from "../../collections/NoteList";
-import { useTriliumEvent } from "../../react/hooks";
+import { useBlobEditorSpacedUpdate, useTriliumEvent } from "../../react/hooks";
 import PdfViewer from "./PdfViewer";
 
 export default function PdfPreview({ note, blob, componentId, noteContext }: {
@@ -18,12 +17,41 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
     const iframeRef = useRef<HTMLIFrameElement>(null);
     const historyConfig = useViewModeConfig<HistoryData>(note, "pdfHistory");
 
+    const spacedUpdate = useBlobEditorSpacedUpdate({
+        note,
+        noteType: "file",
+        noteContext,
+        getData() {
+            if (!iframeRef.current?.contentWindow) return undefined;
+
+            return new Promise<Blob>((resolve) => {
+                const onMessageReceived = (event: PdfMessageEvent) => {
+                    if (event.data.type !== "pdfjs-viewer-blob") return;
+                    if (event.data.noteId !== note.noteId || event.data.ntxId !== noteContext.ntxId) return;
+                    const blob = new Blob([event.data.data as Uint8Array<ArrayBuffer>], { type: note.mime });
+                    window.removeEventListener("message", onMessageReceived);
+                    resolve(blob);
+                };
+
+                window.addEventListener("message", onMessageReceived);
+                iframeRef.current?.contentWindow?.postMessage({
+                    type: "trilium-request-blob",
+                });
+            });
+        },
+        onContentChange() {
+            if (iframeRef.current?.contentWindow) {
+                iframeRef.current.contentWindow.location.reload();
+            }
+        }
+    });
+
     useEffect(() => {
         function handleMessage(event: PdfMessageEvent) {
             if (event.data?.type === "pdfjs-viewer-document-modified") {
-                const blob = new Blob([event.data.data as Uint8Array<ArrayBuffer>], { type: note.mime });
                 if (event.data.noteId === note.noteId && event.data.ntxId === noteContext.ntxId) {
-                    server.upload(`notes/${note.noteId}/file`, new File([blob], note.title, { type: note.mime }), componentId);
+                    spacedUpdate.resetUpdateTimer();
+                    spacedUpdate.scheduleUpdate();
                 }
             }
 
@@ -137,13 +165,6 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
             window.removeEventListener("message", handleMessage);
         };
     }, [ note, historyConfig, componentId, blob, noteContext ]);
-
-    // Refresh when blob changes.
-    useEffect(() => {
-        if (iframeRef.current?.contentWindow) {
-            iframeRef.current.contentWindow.location.reload();
-        }
-    }, [ blob ]);
 
     useTriliumEvent("customDownload", ({ ntxId }) => {
         if (ntxId !== noteContext.ntxId) return;
