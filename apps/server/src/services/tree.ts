@@ -98,15 +98,6 @@ function sortNotes(parentNoteId: string, customSortBy: string = "title", reverse
         }
 
         notes.sort((a, b) => {
-            if (foldersFirst) {
-                const aHasChildren = a.hasChildren();
-                const bHasChildren = b.hasChildren();
-
-                if ((aHasChildren && !bHasChildren) || (!aHasChildren && bHasChildren)) {
-                    // exactly one note of the two is a directory, so the sorting will be done based on this status
-                    return aHasChildren ? -1 : 1;
-                }
-            }
 
             function fetchValue(note: BNote, key: string) {
                 let rawValue: string | null;
@@ -152,6 +143,16 @@ function sortNotes(parentNoteId: string, customSortBy: string = "title", reverse
 
                 // since "bottom" should not be reversible, we'll reverse it once more to nullify this effect
                 return compare(bottomBEl, bottomAEl) * (reverse ? -1 : 1);
+            }
+
+            if (foldersFirst) {
+                const aHasChildren = a.hasChildren();
+                const bHasChildren = b.hasChildren();
+
+                if ((aHasChildren && !bHasChildren) || (!aHasChildren && bHasChildren)) {
+                    // exactly one note of the two is a directory, so the sorting will be done based on this status
+                    return aHasChildren ? -1 : 1;
+                }
             }
 
             const customAEl = fetchValue(a, customSortBy) ?? fetchValue(a, "title") as string;
