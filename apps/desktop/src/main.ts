@@ -6,7 +6,6 @@ import sqlInit from "@triliumnext/server/src/services/sql_init.js";
 import windowService from "@triliumnext/server/src/services/window.js";
 import tray from "@triliumnext/server/src/services/tray.js";
 import options from "@triliumnext/server/src/services/options.js";
-import { randomString } from "@triliumnext/server/src/services/utils.js";
 
 import electronDebug from "electron-debug";
 import electronDl from "electron-dl";
@@ -71,9 +70,10 @@ async function main() {
         globalShortcut.unregisterAll();
     });
 
-    app.on("second-instance", (event, commandLine) => {
+    app.on("second-instance", async (event, commandLine) => {
         const lastFocusedWindow = windowService.getLastFocusedWindow();
         if (commandLine.includes("--new-window")) {
+            const randomString = (await import("@triliumnext/server/src/services/utils.js")).randomString;
             const extraWindowId = randomString(4);
             windowService.createExtraWindow(extraWindowId, "");
         } else if (lastFocusedWindow) {
