@@ -50,6 +50,21 @@ async function cacheFirst(request) {
     return fresh;
 }
 
+async function networkFirst(request) {
+    const cache = await caches.open(STATIC_CACHE);
+    try {
+        const fresh = await fetch(request);
+        // Cache only successful GETs
+        if (request.method === "GET" && fresh.ok) cache.put(request, fresh.clone());
+        return fresh;
+    } catch (error) {
+        // Fallback to cache if network fails
+        const cached = await cache.match(request);
+        if (cached) return cached;
+        throw error;
+    }
+}
+
 async function forwardToClientLocalServer(request, clientId) {
     // Find a client to handle the request (prefer the initiating client if available)
     let client = clientId ? await self.clients.get(clientId) : null;
@@ -127,8 +142,14 @@ self.addEventListener("fetch", (event) => {
     // Only handle same-origin
     if (url.origin !== self.location.origin) return;
 
-    // Navigations + static assets: cache-first (simple app shell)
-    if (event.request.mode === "navigate" || (event.request.method === "GET" && !isLocalFirst(url))) {
+    // HTML files: network-first to ensure updates are reflected immediately
+    if (event.request.mode === "navigate" || url.pathname.endsWith(".html")) {
+        event.respondWith(networkFirst(event.request));
+        return;
+    }
+
+    // Static assets: cache-first for performance
+    if (event.request.method === "GET" && !isLocalFirst(url)) {
         event.respondWith(cacheFirst(event.request));
         return;
     }
