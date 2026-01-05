@@ -201,10 +201,11 @@ function updateTrayMenu() {
         const openedWindowIds = windowService.getAllWindowIds();
         const closedWindows = savedWindows
             .filter(win => !openedWindowIds.includes(win.windowId))
-            .sort((a, b) => { return b.closedAt - a.closedAt; });  // sort by time in descending order
+            .sort((a, b) => { return a.closedAt - b.closedAt; });  // sort by time in ascending order
         const menuItems: Electron.MenuItemConstructorOptions[] = [];
         
-        for (const win of closedWindows) {
+        for (let i = closedWindows.length - 1; i >= 0; i--) {
+            const win = closedWindows[i];
             const activeCtx = win.contexts.find(c => c.active === true);
             const activateNotePath = (activeCtx ?? win.contexts[0])?.notePath;
             const activateNoteId = activateNotePath?.split("/").pop() ?? null;

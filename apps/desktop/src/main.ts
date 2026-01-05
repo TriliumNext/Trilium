@@ -127,13 +127,38 @@ async function onReady() {
                 }
             });
         }
-
+        
+        await normalizeOpenNoteContexts();
         tray.createTray();
     } else {
         await windowService.createSetupWindow();
     }
 
     await windowService.registerGlobalShortcuts();
+}
+
+/**
+ * Some windows may have closed abnormally, leaving closedAt as 0 in openNoteContexts.
+ * This function normalizes those timestamps to the current time for correct sorting/filtering.
+ */
+async function normalizeOpenNoteContexts() {
+    const savedWindows = options.getOptionJson("openNoteContexts") || [];
+    const now = Date.now();
+
+    let changed = false;
+    for (const win of savedWindows) {
+        if (win.windowId !== "main" && win.closedAt === 0) {
+            win.closedAt = now;
+            changed = true;
+        }
+    }
+    
+    if (changed) {
+        const { default: cls } = (await import("@triliumnext/server/src/services/cls.js"));
+        cls.wrap(() => {
+            options.setOption("openNoteContexts", JSON.stringify(savedWindows));
+        })();
+    }
 }
 
 function getElectronLocale() {
