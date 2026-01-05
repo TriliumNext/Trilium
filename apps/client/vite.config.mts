@@ -8,12 +8,25 @@ import { viteStaticCopy } from 'vite-plugin-static-copy'
 const assets = [ "assets", "stylesheets", "fonts", "translations" ];
 
 const isDev = process.env.NODE_ENV === "development";
+
+// Always copy SQLite WASM files so they're available to the module
+const sqliteWasmPlugin = viteStaticCopy({
+    targets: [
+        {
+            // Copy the entire jswasm directory to maintain the module's expected structure
+            src: "../../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/*",
+            dest: "node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm"
+        }
+    ]
+});
+
 let plugins: any = [
     preact({
         babel: {
             compact: !isDev
         }
-    })
+    }),
+    sqliteWasmPlugin  // Always include SQLite WASM files
 ];
 
 if (!isDev) {
@@ -43,6 +56,12 @@ export default defineConfig(() => ({
     cacheDir: '../../node_modules/.vite/apps/client',
     base: "",
     plugins,
+    optimizeDeps: {
+        exclude: ['@sqlite.org/sqlite-wasm']
+    },
+    worker: {
+        format: 'es'
+    },
     resolve: {
         alias: [
             {

@@ -28,6 +28,7 @@
     "@mind-elixir/node-menu": "5.0.1",
     "@popperjs/core": "2.11.8",
     "@preact/signals": "2.5.1",
+    "@sqlite.org/sqlite-wasm": "3.51.1-build2",
     "@triliumnext/ckeditor5": "workspace:*",
     "@triliumnext/codemirror": "workspace:*",
     "@triliumnext/commons": "workspace:*",

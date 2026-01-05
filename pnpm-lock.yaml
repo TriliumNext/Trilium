@@ -193,6 +193,9 @@ importers:
       '@preact/signals':
         specifier: 2.5.1
         version: 2.5.1(preact@10.28.1)
+      '@sqlite.org/sqlite-wasm':
+        specifier: 3.51.1-build2
+        version: 3.51.1-build2
       '@triliumnext/ckeditor5':
         specifier: workspace:*
         version: link:../../packages/ckeditor5
@@ -5194,6 +5197,10 @@ packages:
 
   '@socket.io/component-emitter@3.1.2':
     resolution: {integrity: sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA==}
+
+  '@sqlite.org/sqlite-wasm@3.51.1-build2':
+    resolution: {integrity: sha512-lVPTBlFsEijJ3wuoIbMfC9QMZKfL8huHN8D/lijNKoVxPqUDNvDtXse0wafe7USSmyfKAMb1JZ3ISSr/Vgbn5w==}
+    hasBin: true
 
   '@ssddanbrown/codemirror-lang-smarty@1.0.0':
     resolution: {integrity: sha512-F0ut1kmdbT3eORk3xVIKfQsGCZiQdh+6sLayBa0+FTex2gyIQlVQZRRA7bPSlchI3uZtWwNnqGNz5O/QLWRlFg==}
@@ -15433,6 +15440,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       '@ckeditor/ckeditor5-watchdog': 47.3.0
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-dev-build-tools@54.2.3(@swc/helpers@0.5.17)(tslib@2.8.1)(typescript@5.9.3)':
     dependencies:
@@ -16096,8 +16105,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-restricted-editing@47.3.0':
     dependencies:
@@ -19926,6 +19933,8 @@ snapshots:
       tslib: 2.8.1
 
   '@socket.io/component-emitter@3.1.2': {}
+
+  '@sqlite.org/sqlite-wasm@3.51.1-build2': {}
 
   '@ssddanbrown/codemirror-lang-smarty@1.0.0': {}
 
