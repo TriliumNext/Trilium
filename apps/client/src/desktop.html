@@ -6,7 +6,7 @@
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
-        <link rel="manifest" crossorigin="use-credentials" href="manifest.webmanifest">
+        <!-- <link rel="manifest" crossorigin="use-credentials" href="manifest.webmanifest"> -->
         <title>Trilium Notes</title>
     </head>
 
@@ -24,6 +24,24 @@
         <!-- This works even when the user directly changes --root-background in CSS -->
         <div id="background-color-tracker" style="position: absolute; visibility: hidden; color: var(--root-background); transition: color 1ms;"></div>
 
+        <!-- Inject service worker -->
+        <script type="module">
+            import { attachServiceWorkerBridge, startLocalServerWorker } from "./local-bridge.js";
+
+            // 1) Start local worker ASAP (so /bootstrap is fast)
+            startLocalServerWorker();
+
+            // 2) Bridge SW -> local worker
+            attachServiceWorkerBridge();
+
+            // 3) Register SW
+            if ("serviceWorker" in navigator) {
+                const reg = await navigator.serviceWorker.register("./sw.js", { scope: "/src/" });
+                // Optionally wait for activation
+                await navigator.serviceWorker.ready;
+            }
+        </script>
+
         <!-- Bootstrap (request server for required information) -->
         <script>
             async function bootstrap() {
@@ -35,8 +53,11 @@
             }
 
             async function setupGlob() {
-                const response = await fetch("./bootstrap");
+                const response = await fetch("/bootstrap");
+                console.log("Service worker state", navigator.serviceWorker.controller);
+                console.log("Resp", response);
                 const json = await response.json();
+                console.log("Bootstrap", json);
                 
                 global = globalThis; /* fixes https://github.com/webpack/webpack/issues/10035 */
                 window.glob = {
