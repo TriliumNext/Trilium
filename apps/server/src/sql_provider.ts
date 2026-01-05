@@ -1,8 +1,6 @@
+import type { DatabaseProvider, Statement, Transaction } from "@triliumnext/core";
 import Database, { type Database as DatabaseType } from "better-sqlite3";
-import { readFileSync } from "fs";
-
-import dataDirs from "./data_dir";
-import type { DatabaseProvider, Statement, Transaction } from "./sql";
+import { unlinkSync } from "fs";
 
 const dbOpts: Database.Options = {
     nativeBinding: process.env.BETTERSQLITE3_NATIVE_PATH || undefined
@@ -37,6 +35,10 @@ export default class BetterSqlite3Provider implements DatabaseProvider {
     }
 
     backup(destinationFile: string) {
+        try {
+            unlinkSync(destinationFile);
+        } catch (e) { } // unlink throws exception if the file did not exist
+
         this.dbConnection?.backup(destinationFile);
     }
 
@@ -47,7 +49,7 @@ export default class BetterSqlite3Provider implements DatabaseProvider {
 
     transaction<T>(func: (statement: Statement) => T): Transaction {
         if (!this.dbConnection) throw new Error("DB not open.");
-        return this.dbConnection.transaction(func);
+        return this.dbConnection.transaction(func) as any;
     }
 
     get inTransaction() {
@@ -63,9 +65,4 @@ export default class BetterSqlite3Provider implements DatabaseProvider {
         this.dbConnection?.close();
     }
 
-}
-
-function buildIntegrationTestDatabase(dbPath?: string) {
-    const dbBuffer = readFileSync(dbPath ?? dataDirs.DOCUMENT_PATH);
-    return new Database(dbBuffer, dbOpts);
 }

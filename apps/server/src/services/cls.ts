@@ -1,11 +1,10 @@
-import clsHooked from "cls-hooked";
 import type { EntityChange } from "@triliumnext/commons";
-const namespace = clsHooked.createNamespace("trilium");
+import { getContext } from "@triliumnext/core/src/services/context";
 
 type Callback = (...args: any[]) => any;
 
-function init(callback: Callback) {
-    return namespace.runAndReturn(callback);
+function init(callback: () => void) {
+    getContext().init(callback);
 }
 
 function wrap(callback: Callback) {
@@ -18,81 +17,73 @@ function wrap(callback: Callback) {
     };
 }
 
-function get(key: string) {
-    return namespace.get(key);
-}
-
-function set(key: string, value: any) {
-    namespace.set(key, value);
-}
-
 function getHoistedNoteId() {
-    return namespace.get("hoistedNoteId") || "root";
+    return getContext().get("hoistedNoteId") || "root";
 }
 
 function getComponentId() {
-    return namespace.get("componentId");
+    return getContext().get("componentId");
 }
 
 function getLocalNowDateTime() {
-    return namespace.get("localNowDateTime");
+    return getContext().get("localNowDateTime");
 }
 
 function disableEntityEvents() {
-    namespace.set("disableEntityEvents", true);
+    getContext().set("disableEntityEvents", true);
 }
 
 function enableEntityEvents() {
-    namespace.set("disableEntityEvents", false);
+    getContext().set("disableEntityEvents", false);
 }
 
 function isEntityEventsDisabled() {
-    return !!namespace.get("disableEntityEvents");
+    return !!getContext().get("disableEntityEvents");
 }
 
 function setMigrationRunning(running: boolean) {
-    namespace.set("migrationRunning", !!running);
+    getContext().set("migrationRunning", !!running);
 }
 
 function isMigrationRunning() {
-    return !!namespace.get("migrationRunning");
-}
-
-function disableSlowQueryLogging(disable: boolean) {
-    namespace.set("disableSlowQueryLogging", disable);
-}
-
-function isSlowQueryLoggingDisabled() {
-    return !!namespace.get("disableSlowQueryLogging");
+    return !!getContext().get("migrationRunning");
 }
 
 function getAndClearEntityChangeIds() {
-    const entityChangeIds = namespace.get("entityChangeIds") || [];
+    const entityChangeIds = getContext().get("entityChangeIds") || [];
 
-    namespace.set("entityChangeIds", []);
+    getContext().set("entityChangeIds", []);
 
     return entityChangeIds;
 }
 
 function putEntityChange(entityChange: EntityChange) {
-    if (namespace.get("ignoreEntityChangeIds")) {
+    if (getContext().get("ignoreEntityChangeIds")) {
         return;
     }
 
-    const entityChangeIds = namespace.get("entityChangeIds") || [];
+    const entityChangeIds = getContext().get("entityChangeIds") || [];
 
     // store only ID since the record can be modified (e.g., in erase)
     entityChangeIds.push(entityChange.id);
 
-    namespace.set("entityChangeIds", entityChangeIds);
-}
-
-function reset() {
-    clsHooked.reset();
+    getContext().set("entityChangeIds", entityChangeIds);
 }
 
 function ignoreEntityChangeIds() {
-    namespace.set("ignoreEntityChangeIds", true);
+    getContext().set("ignoreEntityChangeIds", true);
+}
+
+function get(key: string) {
+    return getContext().get(key);
+}
+
+function set(key: string, value: unknown) {
+    getContext().set(key, value);
+}
+
+function reset() {
+    getContext().reset();
 }
 
 export default {
@@ -100,7 +91,6 @@ export default {
     wrap,
     get,
     set,
-    namespace,
     getHoistedNoteId,
     getComponentId,
     getLocalNowDateTime,
@@ -111,8 +101,6 @@ export default {
     getAndClearEntityChangeIds,
     putEntityChange,
     ignoreEntityChangeIds,
-    disableSlowQueryLogging,
-    isSlowQueryLoggingDisabled,
     setMigrationRunning,
     isMigrationRunning
 };
