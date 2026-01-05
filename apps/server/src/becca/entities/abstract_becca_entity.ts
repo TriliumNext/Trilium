@@ -1,16 +1,14 @@
-"use strict";
-
-import utils from "../../services/utils.js";
-import sql from "../../services/sql.js";
+import blobService from "../../services/blob.js";
+import cls from "../../services/cls.js";
+import dateUtils from "../../services/date_utils.js";
 import entityChangesService from "../../services/entity_changes.js";
 import eventService from "../../services/events.js";
-import dateUtils from "../../services/date_utils.js";
-import cls from "../../services/cls.js";
 import log from "../../services/log.js";
 import protectedSessionService from "../../services/protected_session.js";
-import blobService from "../../services/blob.js";
-import type { default as Becca, ConstructorData } from "../becca-interface.js";
+import sql from "../../services/sql.js";
+import utils from "../../services/utils.js";
 import becca from "../becca.js";
+import type { ConstructorData,default as Becca } from "../becca-interface.js";
 
 interface ContentOpts {
     forceSave?: boolean;
@@ -206,9 +204,9 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
             // a "random" prefix makes sure that the calculated hash/blobId is different for a decrypted/encrypted content
             const encryptedPrefixSuffix = "t$[nvQg7q)&_ENCRYPTED_?M:Bf&j3jr_";
             return Buffer.isBuffer(unencryptedContent) ? Buffer.concat([Buffer.from(encryptedPrefixSuffix), unencryptedContent]) : `${encryptedPrefixSuffix}${unencryptedContent}`;
-        } else {
-            return unencryptedContent;
         }
+        return unencryptedContent;
+
     }
 
     private saveBlob(content: string | Buffer, unencryptedContentForHashCalculation: string | Buffer, opts: ContentOpts = {}) {
@@ -227,7 +225,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
 
         const pojo = {
             blobId: newBlobId,
-            content: content,
+            content,
             dateModified: dateUtils.localNowDateTime(),
             utcDateModified: dateUtils.utcNowDateTime()
         };
@@ -241,7 +239,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
         entityChangesService.putEntityChange({
             entityName: "blobs",
             entityId: newBlobId,
-            hash: hash,
+            hash,
             isErased: false,
             utcDateChanged: pojo.utcDateModified,
             isSynced: true,
@@ -266,7 +264,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
             throw new Error(`Cannot find content for ${constructorData.primaryKeyName} '${(this as any)[constructorData.primaryKeyName]}', blobId '${this.blobId}'`);
         }
 
-        return blobService.processContent(row.content, this.isProtected || false, this.hasStringContent());
+        return blobService.processContent(row.content, this.isProtected || false, this.hasStringContent()) as string | Buffer;
     }
 
     /**

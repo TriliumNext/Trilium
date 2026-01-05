@@ -1,9 +1,10 @@
-import myScryptService from "./my_scrypt.js";
-import utils, { constantTimeCompare } from "../utils.js";
-import dataEncryptionService from "./data_encryption.js";
+import { data_encryption } from "@triliumnext/core";
+
+import OpenIdError from "../../errors/open_id_error.js";
 import sql from "../sql.js";
 import sqlInit from "../sql_init.js";
-import OpenIdError from "../../errors/open_id_error.js";
+import utils, { constantTimeCompare } from "../utils.js";
+import myScryptService from "./my_scrypt.js";
 
 function saveUser(subjectIdentifier: string, name: string, email: string) {
     if (isUserSaved()) return false;
@@ -16,7 +17,7 @@ function saveUser(subjectIdentifier: string, name: string, email: string) {
         verificationSalt
     );
     if (!verificationHash) {
-        throw new OpenIdError("Verification hash undefined!")
+        throw new OpenIdError("Verification hash undefined!");
     }
 
     const userIDEncryptedDataKey = setDataKey(
@@ -35,10 +36,10 @@ function saveUser(subjectIdentifier: string, name: string, email: string) {
         userIDVerificationHash: utils.toBase64(verificationHash),
         salt: verificationSalt,
         derivedKey: derivedKeySalt,
-        userIDEncryptedDataKey: userIDEncryptedDataKey,
+        userIDEncryptedDataKey,
         isSetup: "true",
         username: name,
-        email: email
+        email
     };
 
     sql.upsert("user_data", "tmpID", data);
@@ -53,7 +54,7 @@ function isSubjectIdentifierSaved() {
 
 function isUserSaved() {
     const isSaved = sql.getValue<string>("SELECT isSetup FROM user_data;");
-    return isSaved === "true" ? true : false;
+    return isSaved === "true";
 }
 
 function verifyOpenIDSubjectIdentifier(subjectIdentifier: string) {
@@ -102,7 +103,7 @@ function setDataKey(
         console.error("SOMETHING WENT WRONG SAVING USER ID DERIVED KEY");
         return undefined;
     }
-    const newEncryptedDataKey = dataEncryptionService.encrypt(
+    const newEncryptedDataKey = data_encryption.encrypt(
         subjectIdentifierDerivedKey,
         plainTextDataKey
     );
@@ -127,7 +128,7 @@ function getDataKey(subjectIdentifier: string) {
         console.error("SOMETHING WENT WRONG SAVING USER ID DERIVED KEY");
         return undefined;
     }
-    const decryptedDataKey = dataEncryptionService.decrypt(
+    const decryptedDataKey = data_encryption.decrypt(
         subjectIdentifierDerivedKey,
         encryptedDataKey.toString()
     );

@@ -6,6 +6,7 @@
 import { initializeCore } from "@triliumnext/core";
 
 import ClsHookedExecutionContext from "./cls_provider.js";
+import NodejsCryptoProvider from "./crypto_provider.js";
 import BetterSqlite3Provider from "./sql_provider.js";
 
 async function startApplication() {
@@ -41,6 +42,7 @@ async function startApplication() {
                 entity_changes.recalculateMaxEntityChangeId();
             }
         },
+        crypto: new NodejsCryptoProvider(),
         executionContext: new ClsHookedExecutionContext()
     });
     const { initializeTranslations } = (await import("./services/i18n.js"));

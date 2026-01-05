@@ -1,8 +1,9 @@
-import optionService from "../options.js";
-import myScryptService from "./my_scrypt.js";
-import { randomSecureToken, toBase64, constantTimeCompare } from "../utils.js";
-import dataEncryptionService from "./data_encryption.js";
 import type { OptionNames } from "@triliumnext/commons";
+import { data_encryption } from "@triliumnext/core";
+
+import optionService from "../options.js";
+import { constantTimeCompare,randomSecureToken, toBase64 } from "../utils.js";
+import myScryptService from "./my_scrypt.js";
 
 const TOTP_OPTIONS: Record<string, OptionNames> = {
     SALT: "totpEncryptionSalt",
@@ -32,7 +33,7 @@ function setTotpSecret(secret: string) {
     const verificationHash = toBase64(myScryptService.getVerificationHash(secret));
     optionService.setOption(TOTP_OPTIONS.VERIFICATION_HASH, verificationHash);
 
-    const encryptedSecret = dataEncryptionService.encrypt(
+    const encryptedSecret = data_encryption.encrypt(
         Buffer.from(encryptionSalt),
         secret
     );
@@ -48,7 +49,7 @@ function getTotpSecret(): string | null {
     }
 
     try {
-        const decryptedSecret = dataEncryptionService.decrypt(
+        const decryptedSecret = data_encryption.decrypt(
             Buffer.from(encryptionSalt),
             encryptedSecret
         );
