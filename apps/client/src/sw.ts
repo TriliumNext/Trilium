@@ -1,6 +1,13 @@
 // public/sw.js
-const VERSION = "localserver-v1.1";
+const VERSION = "localserver-v1.3";
 const STATIC_CACHE = `static-${VERSION}`;
+
+// Check if running in dev mode (passed via URL parameter)
+const isDev = true;
+
+if (isDev) {
+    console.log('[Service Worker] Running in DEV mode - caching disabled');
+}
 
 // Adjust these to your routes:
 const LOCAL_FIRST_PREFIXES = [
@@ -20,8 +27,11 @@ const PRECACHE_URLS = [
 
 self.addEventListener("install", (event) => {
     event.waitUntil((async () => {
-        const cache = await caches.open(STATIC_CACHE);
-        await cache.addAll(PRECACHE_URLS);
+        // Skip precaching in dev mode
+        if (!isDev) {
+            const cache = await caches.open(STATIC_CACHE);
+            await cache.addAll(PRECACHE_URLS);
+        }
         self.skipWaiting();
     })());
 });
@@ -40,6 +50,11 @@ function isLocalFirst(url) {
 }
 
 async function cacheFirst(request) {
+    // In dev mode, always bypass cache
+    if (isDev) {
+        return fetch(request);
+    }
+
     const cache = await caches.open(STATIC_CACHE);
     const cached = await cache.match(request);
     if (cached) return cached;
@@ -51,6 +66,11 @@ async function cacheFirst(request) {
 }
 
 async function networkFirst(request) {
+    // In dev mode, always bypass cache
+    if (isDev) {
+        return fetch(request);
+    }
+
     const cache = await caches.open(STATIC_CACHE);
     try {
         const fresh = await fetch(request);
