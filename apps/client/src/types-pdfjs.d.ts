@@ -45,6 +45,10 @@ interface WithContext {
 
 interface PdfDocumentModifiedMessage extends WithContext {
     type: "pdfjs-viewer-document-modified";
+}
+
+interface PdfDocumentBlobResultMessage extends WithContext {
+    type: "pdfjs-viewer-blob";
     data: Uint8Array<ArrayBufferLike>;
 }
 
@@ -113,4 +117,5 @@ type PdfMessageEvent = MessageEvent<
     | PdfViewerThumbnailMessage
     | PdfViewerAttachmentsMessage
     | PdfViewerLayersMessage
+    | PdfDocumentBlobResultMessage
 >;

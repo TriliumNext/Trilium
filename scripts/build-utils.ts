@@ -2,7 +2,7 @@ import { execSync } from "child_process";
 import { build as esbuild } from "esbuild";
 import { cpSync, existsSync, rmSync, writeFileSync } from "fs";
 import { copySync, emptyDirSync, mkdirpSync } from "fs-extra";
-import { join } from "path";
+import { delimiter, join } from "path";
 
 export default class BuildHelper {
 
@@ -20,7 +20,7 @@ export default class BuildHelper {
 
     copy(projectDirPath: string, outDirPath: string) {
         let sourcePath: string;
-        if (projectDirPath.startsWith("/")) {
+        if (projectDirPath.startsWith("/") || projectDirPath.startsWith("\\")) {
             sourcePath = join(this.rootDir, projectDirPath.substring(1));
         } else {
             sourcePath = join(this.projectDir, projectDirPath);

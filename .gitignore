@@ -51,3 +51,4 @@ upload
 # docs
 site/
 apps/*/coverage
+scripts/translation/.language*.json

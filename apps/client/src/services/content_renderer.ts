@@ -194,7 +194,7 @@ function renderFile(entity: FNote | FAttachment, type: string, $renderedContent:
 
     if (type === "pdf") {
         const $pdfPreview = $('<iframe class="pdf-preview" style="width: 100%; flex-grow: 100;"></iframe>');
-        $pdfPreview.attr("src", openService.getUrlForDownload(`api/${entityType}/${entityId}/open`));
+        $pdfPreview.attr("src", openService.getUrlForDownload(`pdfjs/web/viewer.html?file=../../api/${entityType}/${entityId}/open`));
 
         $content.append($pdfPreview);
     } else if (type === "audio") {
@@ -218,14 +218,14 @@ function renderFile(entity: FNote | FAttachment, type: string, $renderedContent:
         //       in attachment list
         const $downloadButton = $(`
             <button class="file-download btn btn-primary" type="button">
-                <span class="bx bx-download"></span>
+                <span class="tn-icon bx bx-download"></span>
                 ${t("file_properties.download")}
             </button>
         `);
 
         const $openButton = $(`
             <button class="file-open btn btn-primary" type="button">
-                <span class="bx bx-link-external"></span>
+                <span class="tn-icon bx bx-link-external"></span>
                 ${t("file_properties.open")}
             </button>
         `);

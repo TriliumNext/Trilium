@@ -5,6 +5,7 @@
     "moduleResolution": "bundler",
     "target": "es2023",
     "outDir": "dist",
+    "rootDir": "..",
     "types": [
       "node",
       "express"
@@ -12,7 +13,8 @@
     "tsBuildInfoFile": "dist/tsconfig.app.tsbuildinfo"
   },
   "include": [
-    "**/*.ts"
+    "scripts/*.ts",
+    "packages/commons/src/lib/i18n.ts"
   ],
   "references": []
 }

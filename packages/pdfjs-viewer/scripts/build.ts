@@ -3,6 +3,8 @@ import BuildHelper from "../../../scripts/build-utils";
 import { build as esbuild } from "esbuild";
 import { LOCALES } from "@triliumnext/commons";
 import { watch } from "chokidar";
+import { readFileSync, writeFileSync } from "fs";
+import packageJson from "../package.json" with { type: "json " };
 
 const build = new BuildHelper("packages/pdfjs-viewer");
 const watchMode = process.argv.includes("--watch");
@@ -16,6 +18,7 @@ async function main() {
     for (const file of [ "viewer.css", "viewer.html", "viewer.mjs" ]) {
         build.copy(`viewer/${file}`, `web/${file}`);
     }
+    patchCacheBuster(`${build.outDir}/web/viewer.html`);
     build.copy(`viewer/images`, `web/images`);
 
     // Copy the custom files.
@@ -34,8 +37,9 @@ async function main() {
     build.writeJson("web/locale/locale.json", localeMappings);
 
     // Copy pdfjs-dist files.
-    build.copy("/node_modules/pdfjs-dist/build/pdf.mjs", "build/pdf.mjs");
-    build.copy("/node_modules/pdfjs-dist/build/pdf.worker.mjs", "build/pdf.worker.mjs");
+    for (const file of [ "pdf.mjs", "pdf.worker.mjs", "pdf.sandbox.mjs" ]) {
+        build.copy(join("/node_modules/pdfjs-dist/build", file), join("build", file));
+    }
 
     if (watchMode) {
         watchForChanges();
@@ -57,6 +61,21 @@ async function buildScript(outPath: string) {
 async function rebuildCustomFiles() {
     await buildScript("web/custom.mjs");
     build.copy("src/custom.css", "web/custom.css");
+}
+
+function patchCacheBuster(htmlFilePath: string) {
+    const version = packageJson.version;
+    console.log(`Versioned URLs: ${version}.`)
+    let html = readFileSync(htmlFilePath, "utf-8");
+    html = html.replace(
+        `<link rel="stylesheet" href="custom.css" />`,
+        `<link rel="stylesheet" href="custom.css?v=${version}" />`);
+    html = html.replace(
+        `<script src="custom.mjs" type="module"></script>`,
+        `<script src="custom.mjs?v=${version}" type="module"></script>`
+    );
+
+    writeFileSync(htmlFilePath, html);
 }
 
 function watchForChanges() {

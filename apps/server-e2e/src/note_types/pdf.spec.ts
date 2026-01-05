@@ -70,6 +70,20 @@ test("Attachments listing works", async ({ page, context }) => {
     await expect(attachmentsList.locator(".pdf-attachment-item")).toHaveCount(0);
 });
 
+test("Download original PDF works", async ({ page, context }) => {
+    const app = new App(page, context);
+    await app.goto();
+    await app.goToNoteInNewTab("Dacia Logan.pdf");
+    const pdfHelper = new PdfHelper(app);
+    await pdfHelper.toBeInitialized();
+
+    const [ download ] = await Promise.all([
+        page.waitForEvent("download"),
+        app.currentNoteSplit.locator(".icon-action.bx.bx-download").click()
+    ]);
+    expect(download).toBeDefined();
+});
+
 test("Layers listing works", async ({ page, context }) => {
     const app = new App(page, context);
     await app.goto();
@@ -107,5 +121,9 @@ class PdfHelper {
 
     async expectPageToBe(expectedPageNumber: number) {
         await expect(this.contentFrame.locator("#pageNumber")).toHaveValue(`${expectedPageNumber}`);
+    }
+
+    async toBeInitialized() {
+        await expect(this.contentFrame.locator("#pageNumber")).toBeVisible();
     }
 }

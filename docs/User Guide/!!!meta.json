@@ -10201,6 +10201,13 @@
                                             "value": "bx bxs-file-pdf",
                                             "isInheritable": false,
                                             "position": 30
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "pdf",
+                                            "isInheritable": false,
+                                            "position": 60
                                         }
                                     ],
                                     "format": "markdown",

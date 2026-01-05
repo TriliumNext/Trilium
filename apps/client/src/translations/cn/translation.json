@@ -1596,7 +1596,9 @@
     "toggle-sidebar": "切换侧边栏",
     "dropping-not-allowed": "不允许移动笔记到此处。",
     "shared-indicator-tooltip": "此笔记已公开分享",
-    "shared-indicator-tooltip-with-url": "此笔记已公开分享至：{{- url}}"
+    "shared-indicator-tooltip-with-url": "此笔记已公开分享至：{{- url}}",
+    "clone-indicator-tooltip": "此笔记有 {{- count}} 个父级： {{- parents}}",
+    "clone-indicator-tooltip-single": "此笔记已克隆（1 个额外的父级：{{- parent}}）"
   },
   "title_bar_buttons": {
     "window-on-top": "保持此窗口置顶"
@@ -2194,7 +2196,14 @@
     "execute_sql_description": "这是一篇 SQL 笔记。点击即可执行 SQL 查询。",
     "shared_copy_to_clipboard": "复制链接到剪贴板",
     "shared_open_in_browser": "在浏览器中打开链接",
-    "shared_unshare": "取消共享"
+    "shared_unshare": "取消共享",
+    "save_status_saved": "已保存",
+    "save_status_saving": "保存中...",
+    "save_status_unsaved": "未保存",
+    "save_status_error": "保存失败",
+    "save_status_unsaved_tooltip": "还有一些更改尚未保存。它们将稍后自动保存。",
+    "save_status_error_tooltip": "保存笔记时出错。如果可以，请尝试将笔记内容复制到其他位置并重新加载应用程序。",
+    "save_status_saving_tooltip": "更改正在保存。"
   },
   "status_bar": {
     "language_title": "更改内容语言",

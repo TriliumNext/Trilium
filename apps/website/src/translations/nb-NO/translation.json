@@ -3,7 +3,8 @@
         "title": "Kom i gang",
         "architecture": "Arkitektur:",
         "desktop_title": "Last ned skrivebordsprogram (v{{version}})",
-        "older_releases": "Se tidligere versjoner"
+        "older_releases": "Se tidligere versjoner",
+        "server_title": "Sett opp en server for adgang fra flere enheter"
     },
     "hero_section": {
         "title": "Organiser tankene dine. Bygg din personlige kunnskapsbase.",
@@ -13,14 +14,19 @@
     },
     "organization_benefits": {
         "title": "Organisering",
-        "note_structure_title": "Notatstruktur"
+        "note_structure_title": "Notatstruktur",
+        "hoisting_title": "Arbeidsflate og fokusering",
+        "attributes_description": "Bruk relasjoner mellom notater eller legg til etiketter for enkel kategorisering. Bruk fremhevede attributter for å legge inn strukturert informasjon som kan brukes i tabeller og tavler."
     },
     "productivity_benefits": {
         "sync_title": "Synkronisering",
         "search_title": "Kraftig søk",
         "web_clipper_title": "Web clipper",
         "revisions_title": "Notatrevisjon",
-        "protected_notes_title": "Beskyttede notater"
+        "protected_notes_title": "Beskyttede notater",
+        "title": "Produktivitet og sikkerhet",
+        "sync_content": "Bruk en selv-hostet eller cloud-instans for å enkelt synkronisere notater på tvers av enheter, og ha de tilgjengelige fra din mobiltelefon ved hjelp av progressiv web-app.",
+        "jump_to_content": "Hopp raskt til notater eller grensesnittkommandoer over hele hierarkiet ved å søke etter tittel, med \"fuzzy\" matching for å ta hensyn til skrivefeil eller små differanser."
     },
     "note_types": {
         "canvas_title": "Kanvas",
@@ -33,7 +39,8 @@
     "extensibility_benefits": {
         "import_export_title": "Import/eksport",
         "scripting_title": "Avansert skripting",
-        "api_title": "REST API"
+        "api_title": "REST API",
+        "title": "Deling og utvidbarhet"
     },
     "collections": {
         "title": "Samlinger",
@@ -41,7 +48,8 @@
         "table_title": "Tabell",
         "geomap_title": "Geokart",
         "presentation_title": "Presentasjon",
-        "board_title": "Kanbantavle"
+        "board_title": "Kanbantavle",
+        "geomap_description": "Planlegg ferien din eller merk deg dine interessepunkter på et geografisk kart ved hjelp av definerbare markører. Vis lagrede GPX-spor for å se reisen din."
     },
     "header": {
         "documentation": "Dokumentasjon",
@@ -58,12 +66,15 @@
         "paypal": "PayPal",
         "title": "Støtt oss",
         "financial_donations_title": "Finansiell donasjon",
-        "github_sponsors": "GitHub Sponsors"
+        "github_sponsors": "GitHub Sponsors",
+        "financial_donations_description": "Trilium er bygget og vedlikeholdt med <Link>flere hundre timers arbeid</Link>. Ditt bidrag hjelper å holde det åpen kildekode, forbedre funksjonalitet og dekker driftskostnader."
     },
     "download_helper_desktop_windows": {
         "download_scoop": "Scoop",
         "title_x64": "Windows 64-bit",
-        "download_zip": "Portable (.zip)"
+        "download_zip": "Portable (.zip)",
+        "title_arm64": "Windows på ARM",
+        "download_exe": "Last ned installasjonsprogram (.exe)"
     },
     "download_helper_desktop_linux": {
         "download_deb": ".deb",
@@ -72,15 +83,19 @@
         "download_nixpkgs": "nixpkgs",
         "download_aur": "AUR",
         "title_x64": "Linux 64-bit",
-        "download_zip": "Portable (.zip)"
+        "download_zip": "Portable (.zip)",
+        "title_arm64": "Linux på ARM"
     },
     "download_helper_server_docker": {
         "download_ghcr": "ghcr.io",
-        "download_dockerhub": "Docker Hub"
+        "download_dockerhub": "Docker Hub",
+        "title": "Selv-hostet med Docker"
     },
     "download_helper_desktop_macos": {
         "download_homebrew_cask": "Homebrew Cask",
-        "download_zip": "Portable (.zip)"
+        "download_zip": "Portable (.zip)",
+        "title_x64": "macOS for Intel",
+        "download_dmg": "Last ned installasjonsprogram (.dmg)"
     },
     "final_cta": {
         "get_started": "Kom i gang"
@@ -91,7 +106,9 @@
     "download_now": {
         "text": "Last ned nå ",
         "platform_small": "for {{platform}}",
-        "linux_small": "for Linux"
+        "linux_small": "for Linux",
+        "platform_big": "v{{version}} for {{platform}}",
+        "linux_big": "v{{version}} for Linux"
     },
     "footer": {
         "copyright_and_the": " og ",
@@ -100,9 +117,17 @@
     "download_helper_server_linux": {
         "download_tar_x64": "x64 (.tar.xz)",
         "download_tar_arm64": "ARM (.tar.xz)",
-        "download_nixos": "NixOS modul"
+        "download_nixos": "NixOS modul",
+        "title": "Selv-hostet på Linux"
     },
     "download_helper_server_hosted": {
-        "title": "Betalt hosting"
+        "title": "Betalt hosting",
+        "download_triliumcc": "Alternativt sjekk trilium.cc"
+    },
+    "faq": {
+        "title": "Ofte stilte spørsmål"
+    },
+    "404": {
+        "title": "404: Siden ble ikke funnet"
     }
 }

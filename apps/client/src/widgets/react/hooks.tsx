@@ -170,6 +170,73 @@ export function useEditorSpacedUpdate({ note, noteType, noteContext, getData, on
     return spacedUpdate;
 }
 
+export function useBlobEditorSpacedUpdate({ note, noteType, noteContext, getData, onContentChange, dataSaved, updateInterval, replaceWithoutRevision }: {
+    noteType: NoteType;
+    note: FNote,
+    noteContext: NoteContext | null | undefined,
+    getData: () => Promise<Blob | undefined> | Blob | undefined,
+    onContentChange: (newBlob: FBlob) => void,
+    dataSaved?: (savedData: Blob) => void,
+    updateInterval?: number;
+    /** If set to true, then the blob is replaced directly without saving a revision before. */
+    replaceWithoutRevision?: boolean;
+}) {
+    const parentComponent = useContext(ParentComponent);
+    const blob = useNoteBlob(note, parentComponent?.componentId);
+
+    const callback = useMemo(() => {
+        return async () => {
+            const data = await getData();
+
+            // for read only notes
+            if (data === undefined || note.type !== noteType) return;
+
+            protected_session_holder.touchProtectedSessionIfNecessary(note);
+            await server.upload(`notes/${note.noteId}/file?replace=${replaceWithoutRevision ? "1" : "0"}`, new File([ data ], note.title, { type: note.mime }), parentComponent?.componentId);
+            dataSaved?.(data);
+        };
+    }, [ note, getData, dataSaved, noteType, parentComponent, replaceWithoutRevision ]);
+    const stateCallback = useCallback<StateCallback>((state) => {
+        noteContext?.setContextData("saveState", {
+            state
+        });
+    }, [ noteContext ]);
+    const spacedUpdate = useSpacedUpdate(callback, updateInterval, stateCallback);
+
+    // React to note/blob changes.
+    useEffect(() => {
+        if (!blob) return;
+        spacedUpdate.allowUpdateWithoutChange(() => onContentChange(blob));
+    }, [ blob ]);
+
+    // React to update interval changes.
+    useEffect(() => {
+        if (!updateInterval) return;
+        spacedUpdate.setUpdateInterval(updateInterval);
+    }, [ updateInterval ]);
+
+    // Save if needed upon switching tabs.
+    useTriliumEvent("beforeNoteSwitch", async ({ noteContext: eventNoteContext }) => {
+        if (eventNoteContext.ntxId !== noteContext?.ntxId) return;
+        await spacedUpdate.updateNowIfNecessary();
+    });
+
+    // Save if needed upon tab closing.
+    useTriliumEvent("beforeNoteContextRemove", async ({ ntxIds }) => {
+        if (!noteContext?.ntxId || !ntxIds.includes(noteContext.ntxId)) return;
+        await spacedUpdate.updateNowIfNecessary();
+    });
+
+    // Save if needed upon window/browser closing.
+    useEffect(() => {
+        const listener = () => spacedUpdate.isAllSavedAndTriggerUpdate();
+        appContext.addBeforeUnloadListener(listener);
+        return () => appContext.removeBeforeUnloadListener(listener);
+    }, []);
+
+    return spacedUpdate;
+}
+
 export function useNoteSavedData(noteId: string | undefined) {
     return useSyncExternalStore(
         (cb) => noteId ? noteSavedDataStore.subscribe(noteId, cb) : () => {},

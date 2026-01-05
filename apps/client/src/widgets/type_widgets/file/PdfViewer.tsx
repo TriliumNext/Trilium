@@ -15,12 +15,16 @@ interface PdfViewerProps extends Pick<HTMLAttributes<HTMLIFrameElement>, "tabInd
     /** Note: URLs are relative to /pdfjs/web. */
     pdfUrl: string;
     onLoad?(): void;
+    /**
+     * If set, enables editable mode which includes persistence of user settings, annotations as well as specific features such as sending table of contents data for the sidebar.
+     */
+    editable?: boolean;
 }
 
 /**
  * Reusable component displaying a PDF. The PDF needs to be provided via a URL.
  */
-export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad }: PdfViewerProps) {
+export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad, editable }: PdfViewerProps) {
     const iframeRef = useSyncedRef(externalIframeRef, null);
     const [ locale ] = useTriliumOption("locale");
     const [ newLayout ] = useTriliumOptionBool("newLayout");
@@ -30,7 +34,7 @@ export default function PdfViewer({ iframeRef: externalIframeRef, pdfUrl, onLoad
         <iframe
             ref={iframeRef}
             class="pdf-preview"
-            src={`pdfjs/web/viewer.html?file=${pdfUrl}&lang=${locale}&sidebar=${newLayout ? "0" : "1"}`}
+            src={`pdfjs/web/viewer.html?file=${pdfUrl}&lang=${locale}&sidebar=${newLayout ? "0" : "1"}&editable=${editable ? "1" : "0"}`}
             onLoad={() => {
                 injectStyles();
                 onLoad?.();

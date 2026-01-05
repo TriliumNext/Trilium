@@ -2200,7 +2200,14 @@
     "read_only_temporarily_disabled_description": "此筆記目前可編輯，但通常為唯讀狀態。當您切換至其他筆記時，本筆記將立即恢復為唯讀模式。\n\n點擊此處重新啟用唯讀模式。",
     "clipped_note_description": "本筆記原始來源為 {{url}}。\n\n點擊此處前往原網頁。",
     "execute_script_description": "此筆記為腳本筆記。點擊以執行腳本。",
-    "execute_sql_description": "此筆記為 SQL 筆記。點擊以執行 SQL 查詢。"
+    "execute_sql_description": "此筆記為 SQL 筆記。點擊以執行 SQL 查詢。",
+    "save_status_saved": "已儲存",
+    "save_status_saving": "正在儲存…",
+    "save_status_unsaved": "未儲存",
+    "save_status_error": "儲存失敗",
+    "save_status_saving_tooltip": "正在儲存更動。",
+    "save_status_unsaved_tooltip": "仍有更動尚未儲存。它們將在稍後自動儲存。",
+    "save_status_error_tooltip": "在儲存筆記時發生錯誤。如果可以，請嘗試將筆記內容複製至他處並重新載入應用程式。"
   },
   "breadcrumb": {
     "hoisted_badge": "聚焦",
@@ -2246,6 +2253,6 @@
     "pages_one": "共 {{count}} 頁",
     "pages_other": "",
     "pages_alt": "第 {{pageNumber}} 頁",
-    "pages_loading": "載入中…"
+    "pages_loading": "正在載入…"
   }
 }

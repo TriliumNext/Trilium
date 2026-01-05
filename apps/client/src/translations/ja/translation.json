@@ -2196,7 +2196,14 @@
     "execute_sql_description": "このノートは SQL ノートです。クリックすると SQL クエリが実行されます。",
     "shared_copy_to_clipboard": "リンクをクリップボードにコピー",
     "shared_open_in_browser": "ブラウザでリンクを開く",
-    "shared_unshare": "共有を削除"
+    "shared_unshare": "共有を削除",
+    "save_status_saved": "保存されました",
+    "save_status_saving": "保存中...",
+    "save_status_unsaved": "未保存",
+    "save_status_error": "保存に失敗しました",
+    "save_status_saving_tooltip": "変更を保存しています。",
+    "save_status_unsaved_tooltip": "未保存の変更があります。すぐに自動的に保存されます。",
+    "save_status_error_tooltip": "ノートの保存中にエラーが発生しました。可能であれば、ノートの内容を別の場所にコピーして、アプリケーションを再読み込みしてください。"
   },
   "status_bar": {
     "language_title": "コンテンツの言語を変更",

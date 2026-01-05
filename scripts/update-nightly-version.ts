@@ -11,9 +11,9 @@
  *
  */
 
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
 import fs from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
 function processVersion(version) {
     // Remove the beta suffix if any.
@@ -42,13 +42,18 @@ function patchPackageJson(packageJsonPath) {
 
 function main() {
     const scriptDir = dirname(fileURLToPath(import.meta.url));
-    
+
     const rootPackageJson = join(scriptDir, "..", "package.json");
     patchPackageJson(rootPackageJson);
-    
+
     for (const app of ["server", "client"]) {
         const appPackageJsonPath = join(scriptDir, "..", "apps", app, "package.json");
         patchPackageJson(appPackageJsonPath);
+    }
+
+    for (const packageName of [ "pdfjs-viewer" ]) {
+        const packageJsonPath = join(scriptDir, "..", "packages", packageName, "package.json");
+        patchPackageJson(packageJsonPath);
     }
 }
 
