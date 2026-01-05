@@ -1,44 +1,65 @@
-"use strict";
-
-/**
- * @module sql
- */
-
-import log from "./log.js";
-import type { Statement, Database as DatabaseType, RunResult } from "better-sqlite3";
-import dataDir from "./data_dir.js";
-import cls from "./cls.js";
 import fs from "fs";
-import Database from "better-sqlite3";
-import ws from "./ws.js";
+
 import becca_loader from "../becca/becca_loader.js";
-import entity_changes from "./entity_changes.js";
+import cls from "./cls.js";
 import config from "./config.js";
+import dataDir from "./data_dir.js";
+import entity_changes from "./entity_changes.js";
+import log from "./log.js";
+import BetterSqlite3Provider from "./sql_nodejs.js";
+import ws from "./ws.js";
 
-const dbOpts: Database.Options = {
-    nativeBinding: process.env.BETTERSQLITE3_NATIVE_PATH || undefined
-};
+type Params = any;
 
-let dbConnection: DatabaseType = buildDatabase();
+export interface Statement {
+    run(...params: Params): RunResult;
+    get(params: Params): unknown;
+    all(...params: Params): unknown[];
+    iterate(...params: Params): IterableIterator<unknown>;
+    raw(toggleState?: boolean): this;
+    pluck(toggleState?: boolean): this;
+}
+
+export interface Transaction {
+    deferred(): void;
+}
+
+export interface RunResult {
+    changes: number;
+    lastInsertRowid: number | bigint;
+}
+
+export interface DatabaseProvider {
+    loadFromFile(path: string, isReadOnly: boolean): void;
+    loadFromMemory(): void;
+    loadFromBuffer(buffer: NonSharedBuffer): void;
+    backup(destinationFile: string): void;
+    prepare(query: string): Statement;
+    transaction<T>(func: (statement: Statement) => T): Transaction;
+    get inTransaction(): boolean;
+    exec(query: string): void;
+    close(): void;
+}
+
+const dbConnection: DatabaseProvider = new BetterSqlite3Provider();
 let statementCache: Record<string, Statement> = {};
 
 function buildDatabase() {
     // for integration tests, ignore the config's readOnly setting
     if (process.env.TRILIUM_INTEGRATION_TEST === "memory") {
-        return buildIntegrationTestDatabase();
+        buildIntegrationTestDatabase();
     } else if (process.env.TRILIUM_INTEGRATION_TEST === "memory-no-store") {
-        return new Database(":memory:", dbOpts);
+        dbConnection.loadFromMemory();
     }
 
-    return new Database(dataDir.DOCUMENT_PATH, {
-        ...dbOpts,
-        readonly: config.General.readOnly
-    });
+    dbConnection.loadFromFile(dataDir.DOCUMENT_PATH, config.General.readOnly);
 }
 
+buildDatabase();
+
 function buildIntegrationTestDatabase(dbPath?: string) {
-    const dbBuffer = fs.readFileSync(dbPath ?? dataDir.DOCUMENT_PATH);
-    return new Database(dbBuffer, dbOpts);
+    const buffer = fs.readFileSync(dbPath ?? dataDir.DOCUMENT_PATH);
+    dbConnection.loadFromBuffer(buffer);
 }
 
 function rebuildIntegrationTestDatabase(dbPath?: string) {
@@ -47,27 +68,11 @@ function rebuildIntegrationTestDatabase(dbPath?: string) {
     }
 
     // This allows a database that is read normally but is kept in memory and discards all modifications.
-    dbConnection = buildIntegrationTestDatabase(dbPath);
+    buildIntegrationTestDatabase(dbPath);
     statementCache = {};
 }
 
-if (!process.env.TRILIUM_INTEGRATION_TEST) {
-    dbConnection.pragma("journal_mode = WAL");
-}
-
 const LOG_ALL_QUERIES = false;
-
-type Params = any;
-
-[`exit`, `SIGINT`, `SIGUSR1`, `SIGUSR2`, `SIGTERM`].forEach((eventType) => {
-    process.on(eventType, () => {
-        if (dbConnection) {
-            // closing connection is especially important to fold -wal file into the main DB file
-            // (see https://sqlite.org/tempfiles.html for details)
-            dbConnection.close();
-        }
-    });
-});
 
 function insert<T extends {}>(tableName: string, rec: T, replace = false) {
     const keys = Object.keys(rec || {});
@@ -129,7 +134,7 @@ function upsert<T extends {}>(tableName: string, primaryKey: string, rec: T) {
  * @returns the corresponding {@link Statement}.
  */
 function stmt(sql: string, isRaw?: boolean) {
-    const key = (isRaw ? "raw/" + sql : sql);
+    const key = (isRaw ? `raw/${sql}` : sql);
 
     if (!(key in statementCache)) {
         statementCache[key] = dbConnection.prepare(sql);
@@ -169,11 +174,11 @@ function getManyRows<T>(query: string, params: Params): T[] {
 
         let j = 1;
         for (const param of curParams) {
-            curParamsObj["param" + j++] = param;
+            curParamsObj[`param${j++}`] = param;
         }
 
         let i = 1;
-        const questionMarks = curParams.map(() => ":param" + i++).join(",");
+        const questionMarks = curParams.map(() => `:param${i++}`).join(",");
         const curQuery = query.replace(/\?\?\?/g, questionMarks);
 
         const statement = curParams.length === PARAM_LIMIT ? stmt(curQuery) : dbConnection.prepare(curQuery);
@@ -240,23 +245,23 @@ function executeMany(query: string, params: Params) {
 
         let j = 1;
         for (const param of curParams) {
-            curParamsObj["param" + j++] = param;
+            curParamsObj[`param${j++}`] = param;
         }
 
         let i = 1;
-        const questionMarks = curParams.map(() => ":param" + i++).join(",");
+        const questionMarks = curParams.map(() => `:param${i++}`).join(",");
         const curQuery = query.replace(/\?\?\?/g, questionMarks);
 
         dbConnection.prepare(curQuery).run(curParamsObj);
     }
 }
 
-function executeScript(query: string): DatabaseType {
+function executeScript(query: string) {
     if (LOG_ALL_QUERIES) {
         console.log(query);
     }
 
-    return dbConnection.exec(query);
+    dbConnection.exec(query);
 }
 
 /**
@@ -350,7 +355,7 @@ function fillParamList(paramIds: string[] | Set<string>, truncate = true) {
 async function copyDatabase(targetFilePath: string) {
     try {
         fs.unlinkSync(targetFilePath);
-    } catch (e) {} // unlink throws exception if the file did not exist
+    } catch (e) { } // unlink throws exception if the file did not exist
 
     await dbConnection.backup(targetFilePath);
 }
