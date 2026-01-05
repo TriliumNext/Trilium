@@ -1,7 +1,7 @@
 import { ExecutionContext } from "@triliumnext/core";
 import clsHooked from "cls-hooked";
 
-const namespace = clsHooked.createNamespace("trilium");
+export const namespace = clsHooked.createNamespace("trilium");
 
 export default class ClsHookedExecutionContext implements ExecutionContext {
 
