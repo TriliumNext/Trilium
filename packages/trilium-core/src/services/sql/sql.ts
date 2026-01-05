@@ -96,6 +96,13 @@ export class SqlService {
         return this.statementCache[key];
     }
 
+    /**
+     * Get first returned row.
+     *
+     * @param query - SQL query with ? used as parameter placeholder
+     * @param params - array of params if needed
+     * @returns - map of column name to column value
+     */
     getRow<T>(query: string, params: Params = []): T {
         return this.wrap(query, (s) => s.get(params)) as T;
     }
@@ -109,6 +116,13 @@ export class SqlService {
         return (all.length > 0 ? all[0] : null) as T | null;
     }
 
+    /**
+     * Get single value from the given query - first column from first returned row.
+     *
+     * @param query - SQL query with ? used as parameter placeholder
+     * @param params - array of params if needed
+     * @returns single value
+     */
     getValue<T>(query: string, params: Params = []): T {
         return this.wrap(query, (s) => s.pluck().get(params)) as T;
     }
@@ -140,6 +154,13 @@ export class SqlService {
         return (results as T[] | null) || [];
     }
 
+    /**
+     * Get all returned rows.
+     *
+     * @param query - SQL query with ? used as parameter placeholder
+     * @param params - array of params if needed
+     * @returns - array of all rows, each row is a map of column name to column value
+     */
     getRows<T>(query: string, params: Params = []): T[] {
         return this.wrap(query, (s) => s.all(params)) as T[];
     }
@@ -156,6 +177,13 @@ export class SqlService {
         return this.stmt(query).iterate(params) as IterableIterator<T>;
     }
 
+    /**
+     * Get a map of first column mapping to second column.
+     *
+     * @param query - SQL query with ? used as parameter placeholder
+     * @param params - array of params if needed
+     * @returns - map of first column to second column
+     */
     getMap<K extends string | number | symbol, V>(query: string, params: Params = []) {
         const map: Record<K, V> = {} as Record<K, V>;
         const results = this.getRawRows<[K, V]>(query, params);
@@ -167,10 +195,23 @@ export class SqlService {
         return map;
     }
 
+    /**
+     * Get a first column in an array.
+     *
+     * @param query - SQL query with ? used as parameter placeholder
+     * @param params - array of params if needed
+     * @returns array of first column of all returned rows
+     */
     getColumn<T>(query: string, params: Params = []): T[] {
         return this.wrap(query, (s) => s.pluck().all(params)) as T[];
     }
 
+    /**
+     * Execute SQL
+     *
+     * @param query - SQL query with ? used as parameter placeholder
+     * @param params - array of params if needed
+     */
     execute(query: string, params: Params = []): RunResult {
         if (this.params.isReadOnly && (query.startsWith("UPDATE") || query.startsWith("INSERT") || query.startsWith("DELETE"))) {
             this.log.error(`read-only DB ignored: ${query} with parameters ${JSON.stringify(params)}`);
