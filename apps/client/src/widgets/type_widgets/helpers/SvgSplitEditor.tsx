@@ -1,13 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from "preact/hooks";
-import { t } from "../../../services/i18n";
-import SplitEditor, { PreviewButton, SplitEditorProps } from "./SplitEditor";
-import { RawHtmlBlock } from "../../react/RawHtml";
-import server from "../../../services/server";
-import svgPanZoom from "svg-pan-zoom";
 import { RefObject } from "preact";
-import { useElementSize, useTriliumEvent } from "../../react/hooks";
-import utils from "../../../services/utils";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
+import svgPanZoom from "svg-pan-zoom";
+
+import { t } from "../../../services/i18n";
+import server from "../../../services/server";
 import toast from "../../../services/toast";
+import utils from "../../../services/utils";
+import { useElementSize, useTriliumEvent } from "../../react/hooks";
+import { RawHtmlBlock } from "../../react/RawHtml";
+import SplitEditor, { PreviewButton, SplitEditorProps } from "./SplitEditor";
 
 interface SvgSplitEditorProps extends Omit<SplitEditorProps, "previewContent"> {
     /**
@@ -117,11 +119,20 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
             onContentChanged={onContentChanged}
             dataSaved={onSave}
             previewContent={(
-                <RawHtmlBlock
-                    className="render-container"
-                    containerRef={containerRef}
-                    html={svg}
-                />
+                <TransformWrapper>
+                    <TransformComponent
+                        wrapperStyle={{
+                            width: "100%",
+                            height: "100%"
+                        }}
+                    >
+                        <RawHtmlBlock
+                            className="render-container"
+                            containerRef={containerRef}
+                            html={svg}
+                        />
+                    </TransformComponent>
+                </TransformWrapper>
             )}
             previewButtons={
                 <>
@@ -144,7 +155,7 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
             }
             {...props}
         />
-    )
+    );
 }
 
 function useResizer(containerRef: RefObject<HTMLDivElement>, noteId: string, svg: string | undefined) {
@@ -181,7 +192,7 @@ function useResizer(containerRef: RefObject<HTMLDivElement>, noteId: string, svg
             lastPanZoom.current = {
                 pan: zoomInstance.getPan(),
                 zoom: zoomInstance.getZoom()
-            }
+            };
             zoomRef.current = undefined;
             zoomInstance.destroy();
         };
