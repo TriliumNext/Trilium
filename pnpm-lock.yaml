@@ -525,6 +525,9 @@ importers:
       '@triliumnext/commons':
         specifier: workspace:*
         version: link:../../packages/commons
+      '@triliumnext/core':
+        specifier: workspace:*
+        version: link:../../packages/trilium-core
       '@triliumnext/express-partial-content':
         specifier: workspace:*
         version: link:../../packages/express-partial-content
@@ -1440,6 +1443,8 @@ importers:
       karma-jasmine:
         specifier: 5.1.0
         version: 5.1.0(karma@6.4.4(bufferutil@4.0.9)(utf-8-validate@6.0.5))
+
+  packages/trilium-core: {}
 
   packages/turndown-plugin-gfm:
     devDependencies:
@@ -15428,8 +15433,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       '@ckeditor/ckeditor5-watchdog': 47.3.0
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-dev-build-tools@54.2.3(@swc/helpers@0.5.17)(tslib@2.8.1)(typescript@5.9.3)':
     dependencies:

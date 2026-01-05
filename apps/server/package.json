@@ -40,6 +40,7 @@
     "@electron/remote": "2.1.3",
     "@preact/preset-vite": "2.10.2",
     "@triliumnext/commons": "workspace:*",
+    "@triliumnext/core": "workspace:*",
     "@triliumnext/express-partial-content": "workspace:*",
     "@triliumnext/highlightjs": "workspace:*",
     "@triliumnext/turndown-plugin-gfm": "workspace:*",
