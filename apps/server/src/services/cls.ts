@@ -3,8 +3,8 @@ import { getContext } from "@triliumnext/core/src/services/context";
 
 type Callback = (...args: any[]) => any;
 
-function init(callback: () => void) {
-    getContext().init(callback);
+function init<T>(callback: () => T) {
+    return getContext().init(callback);
 }
 
 function wrap(callback: Callback) {
