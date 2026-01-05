@@ -5,15 +5,19 @@
 
 import { initializeCore } from "@triliumnext/core";
 
-import { initializeTranslations } from "./services/i18n.js";
+import ClsHookedExecutionContext from "./cls_provider.js";
 import BetterSqlite3Provider from "./sql_provider.js";
 
 async function startApplication() {
-    await initializeTranslations();
     const config = (await import("./services/config.js")).default;
+    const { DOCUMENT_PATH } = (await import("./services/data_dir.js")).default;
+
+    const dbProvider = new BetterSqlite3Provider();
+    dbProvider.loadFromFile(DOCUMENT_PATH, config.General.readOnly);
+
     initializeCore({
         dbConfig: {
-            provider: new BetterSqlite3Provider(),
+            provider: dbProvider,
             isReadOnly: config.General.readOnly,
             async onTransactionCommit() {
                 const ws = (await import("./services/ws.js")).default;
@@ -36,8 +40,11 @@ async function startApplication() {
                 // the maxEntityChangeId has been incremented during failed transaction, need to recalculate
                 entity_changes.recalculateMaxEntityChangeId();
             }
-        }
+        },
+        executionContext: new ClsHookedExecutionContext()
     });
+    const { initializeTranslations } = (await import("./services/i18n.js"));
+    await initializeTranslations();
     const startTriliumServer = (await import("./www.js")).default;
     await startTriliumServer();
 }
