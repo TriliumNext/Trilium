@@ -1,11 +1,12 @@
-"use strict";
 
-import noteService from "../../services/notes.js";
+
+import { sanitize } from "@triliumnext/core";
 import xml2js from "xml2js";
-import protectedSessionService from "../protected_session.js";
-import htmlSanitizer from "../html_sanitizer.js";
-import type TaskContext from "../task_context.js";
+
 import type BNote from "../../becca/entities/bnote.js";
+import noteService from "../../services/notes.js";
+import protectedSessionService from "../protected_session.js";
+import type TaskContext from "../task_context.js";
 const parseString = xml2js.parseString;
 
 interface OpmlXml {
@@ -29,8 +30,8 @@ interface OpmlOutline {
 }
 
 async function importOpml(taskContext: TaskContext<"importNotes">, fileBuffer: string | Buffer, parentNote: BNote) {
-    const xml = await new Promise<OpmlXml>(function (resolve, reject) {
-        parseString(fileBuffer, function (err: any, result: OpmlXml) {
+    const xml = await new Promise<OpmlXml>((resolve, reject) => {
+        parseString(fileBuffer, (err: any, result: OpmlXml) => {
             if (err) {
                 reject(err);
             } else {
@@ -64,7 +65,7 @@ async function importOpml(taskContext: TaskContext<"importNotes">, fileBuffer: s
             throw new Error(`Unrecognized OPML version ${opmlVersion}`);
         }
 
-        content = htmlSanitizer.sanitize(content || "");
+        content = sanitize.sanitizeHtml(content || "");
 
         const { note } = noteService.createNewNote({
             parentNoteId,

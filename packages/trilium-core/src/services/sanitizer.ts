@@ -1,14 +1,14 @@
-import { sanitizeUrl } from "@braintree/sanitize-url";
+import { sanitizeUrl as sanitizeUrlInternal } from "@braintree/sanitize-url";
 import { ALLOWED_PROTOCOLS, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
-import sanitizeHtml from "sanitize-html";
 
 import optionService from "./options.js";
+import sanitize from "sanitize-html";
 
 // intended mainly as protection against XSS via import
 // secondarily, it (partly) protects against "CSS takeover"
 // sanitize also note titles, label values etc. - there are so many usages which make it difficult
 // to guarantee all of them are properly handled
-function sanitize(dirtyHtml: string) {
+export function sanitizeHtml(dirtyHtml: string) {
     if (!dirtyHtml) {
         return dirtyHtml;
     }
@@ -38,7 +38,7 @@ function sanitize(dirtyHtml: string) {
     const sizeRegex = [/^\d+\.?\d*(?:px|em|%)$/];
 
     // to minimize document changes, compress H
-    return sanitizeHtml(dirtyHtml, {
+    return sanitizeHtmlCustom(dirtyHtml, {
         allowedTags: allowedTags as string[],
         allowedAttributes: {
             "*": ["class", "style", "title", "src", "href", "hash", "disabled", "align", "alt", "center", "data-*"],
@@ -81,9 +81,10 @@ function sanitize(dirtyHtml: string) {
     });
 }
 
-export default {
-    sanitize,
-    sanitizeUrl: (url: string) => {
-        return sanitizeUrl(url).trim();
-    }
-};
+export function sanitizeHtmlCustom(dirtyHtml: string, config: sanitize.IOptions) {
+    return sanitize(dirtyHtml, config);
+}
+
+export function sanitizeUrl(url: string) {
+    return sanitizeUrlInternal(url).trim();
+}

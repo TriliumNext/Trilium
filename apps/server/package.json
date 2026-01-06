@@ -35,8 +35,7 @@
     "sucrase": "3.35.1"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "0.71.2",
-    "@braintree/sanitize-url": "7.1.1",
+    "@anthropic-ai/sdk": "0.71.2",    
     "@electron/remote": "2.1.3",
     "@preact/preset-vite": "2.10.2",
     "@triliumnext/commons": "workspace:*",
@@ -59,8 +58,7 @@
     "@types/ini": "4.1.1",
     "@types/mime-types": "3.0.1",
     "@types/multer": "2.0.0",
-    "@types/safe-compare": "1.1.2",
-    "@types/sanitize-html": "2.16.0",
+    "@types/safe-compare": "1.1.2",    
     "@types/sax": "1.2.7",
     "@types/serve-favicon": "2.5.7",
     "@types/serve-static": "2.2.0",
@@ -118,7 +116,6 @@
     "rand-token": "1.0.1",
     "safe-compare": "1.1.4",
     "sanitize-filename": "1.6.3",
-    "sanitize-html": "2.17.0",
     "sax": "1.4.3",
     "serve-favicon": "2.5.1",
     "stream-throttle": "0.1.3",

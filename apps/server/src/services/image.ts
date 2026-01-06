@@ -1,17 +1,18 @@
-"use strict";
+
+
+import { sanitize } from "@triliumnext/core";
+import imageType from "image-type";
+import isAnimated from "is-animated";
+import isSvg from "is-svg";
+import { Jimp } from "jimp";
+import sanitizeFilename from "sanitize-filename";
 
 import becca from "../becca/becca.js";
 import log from "./log.js";
-import protectedSessionService from "./protected_session.js";
 import noteService from "./notes.js";
 import optionService from "./options.js";
+import protectedSessionService from "./protected_session.js";
 import sql from "./sql.js";
-import { Jimp } from "jimp";
-import imageType from "image-type";
-import sanitizeFilename from "sanitize-filename";
-import isSvg from "is-svg";
-import isAnimated from "is-animated";
-import htmlSanitizer from "./html_sanitizer.js";
 
 async function processImage(uploadBuffer: Buffer, originalName: string, shrinkImageSwitch: boolean) {
     const compressImages = optionService.getOptionBool("compressImages");
@@ -46,9 +47,9 @@ async function processImage(uploadBuffer: Buffer, originalName: string, shrinkIm
 async function getImageType(buffer: Buffer) {
     if (isSvg(buffer.toString())) {
         return { ext: "svg" };
-    } else {
-        return (await imageType(buffer)) || { ext: "jpg" }; // optimistic JPG default
-    }
+    } 
+    return (await imageType(buffer)) || { ext: "jpg" }; // optimistic JPG default
+    
 }
 
 function getImageMimeFromExtension(ext: string) {
@@ -60,7 +61,7 @@ function getImageMimeFromExtension(ext: string) {
 function updateImage(noteId: string, uploadBuffer: Buffer, originalName: string) {
     log.info(`Updating image ${noteId}: ${originalName}`);
 
-    originalName = htmlSanitizer.sanitize(originalName);
+    originalName = sanitize.sanitizeHtml(originalName);
 
     const note = becca.getNote(noteId);
     if (!note) {

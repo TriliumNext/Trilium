@@ -1,4 +1,4 @@
-import { ValidationError } from "@triliumnext/core";
+import { sanitize, ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 import { parse } from "node-html-parser";
 import path from "path";
@@ -10,7 +10,6 @@ import attributeService from "../../services/attributes.js";
 import cloneService from "../../services/cloning.js";
 import dateNoteService from "../../services/date_notes.js";
 import dateUtils from "../../services/date_utils.js";
-import htmlSanitizer from "../../services/html_sanitizer.js";
 import imageService from "../../services/image.js";
 import log from "../../services/log.js";
 import noteService from "../../services/notes.js";
@@ -32,7 +31,7 @@ async function addClipping(req: Request) {
 
     const clipperInbox = await getClipperInboxNote();
 
-    const pageUrl = htmlSanitizer.sanitizeUrl(req.body.pageUrl);
+    const pageUrl = sanitize.sanitizeUrl(req.body.pageUrl);
     let clippingNote = findClippingNote(clipperInbox, pageUrl, clipType);
 
     if (!clippingNote) {
@@ -99,8 +98,8 @@ async function getClipperInboxNote() {
 async function createNote(req: Request) {
     const { content, images, labels } = req.body;
 
-    const clipType = htmlSanitizer.sanitize(req.body.clipType);
-    const pageUrl = htmlSanitizer.sanitizeUrl(req.body.pageUrl);
+    const clipType = sanitize.sanitizeHtml(req.body.clipType);
+    const pageUrl = sanitize.sanitizeUrl(req.body.pageUrl);
 
     const trimmedTitle = (typeof req.body.title === "string") ? req.body.title.trim() : "";
     const title = trimmedTitle || `Clipped note from ${pageUrl}`;
@@ -126,7 +125,7 @@ async function createNote(req: Request) {
 
     if (labels) {
         for (const labelName in labels) {
-            const labelValue = htmlSanitizer.sanitize(labels[labelName]);
+            const labelValue = sanitize.sanitizeHtml(labels[labelName]);
             note.setLabel(labelName, labelValue);
         }
     }
@@ -147,7 +146,7 @@ async function createNote(req: Request) {
 }
 
 export function processContent(images: Image[], note: BNote, content: string) {
-    let rewrittenContent = htmlSanitizer.sanitize(content);
+    let rewrittenContent = sanitize.sanitizeHtml(content);
 
     if (images) {
         for (const { src, dataUrl, imageId } of images) {
@@ -198,11 +197,11 @@ function openNote(req: Request) {
         return {
             result: "ok"
         };
-    } 
+    }
     return {
         result: "open-in-browser"
     };
-    
+
 }
 
 function handshake() {

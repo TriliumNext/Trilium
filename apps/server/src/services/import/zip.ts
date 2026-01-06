@@ -1,6 +1,7 @@
 
 
 import { ALLOWED_NOTE_TYPES, type NoteType } from "@triliumnext/commons";
+import { sanitize } from "@triliumnext/core";
 import path from "path";
 import type { Stream } from "stream";
 import yauzl from "yauzl";
@@ -14,7 +15,6 @@ import attributeService from "../../services/attributes.js";
 import log from "../../services/log.js";
 import noteService from "../../services/notes.js";
 import { getNoteTitle, newEntityId, processStringOrBuffer, removeTextFileExtension, unescapeHtml } from "../../services/utils.js";
-import htmlSanitizer from "../html_sanitizer.js";
 import type AttributeMeta from "../meta/attribute_meta.js";
 import type NoteMeta from "../meta/note_meta.js";
 import protectedSessionService from "../protected_session.js";
@@ -217,8 +217,8 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
             }
 
             if (taskContext.data?.safeImport) {
-                attr.name = htmlSanitizer.sanitize(attr.name);
-                attr.value = htmlSanitizer.sanitize(attr.value);
+                attr.name = sanitize.sanitizeHtml(attr.name);
+                attr.value = sanitize.sanitizeHtml(attr.value);
             }
 
             attributes.push(attr);
@@ -295,12 +295,12 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
                 attachmentId: getNewAttachmentId(attachmentMeta.attachmentId),
                 noteId: getNewNoteId(noteMeta.noteId)
             };
-        } 
+        }
         // don't check for noteMeta since it's not mandatory for notes
         return {
             noteId: getNoteId(noteMeta, absUrl)
         };
-        
+
     }
 
     function processTextNoteContent(content: string, noteTitle: string, filePath: string, noteMeta?: NoteMeta) {
@@ -313,13 +313,13 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
         content = content.replace(/<h1>([^<]*)<\/h1>/gi, (match, text) => {
             if (noteTitle.trim() === text.trim()) {
                 return ""; // remove whole H1 tag
-            } 
+            }
             return `<h2>${text}</h2>`;
-            
+
         });
 
         if (taskContext.data?.safeImport) {
-            content = htmlSanitizer.sanitize(content);
+            content = sanitize.sanitizeHtml(content);
         }
 
         content = content.replace(/<html.*<body[^>]*>/gis, "");
@@ -348,9 +348,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
                 return `src="api/attachments/${target.attachmentId}/image/${path.basename(url)}"`;
             } else if (target.noteId) {
                 return `src="api/images/${target.noteId}/${path.basename(url)}"`;
-            } 
+            }
             return match;
-            
+
         });
 
         content = content.replace(/href="([^"]*)"/g, (match, url) => {
@@ -374,9 +374,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
                 return `href="#root/${target.noteId}?viewMode=attachments&attachmentId=${target.attachmentId}"`;
             } else if (target.noteId) {
                 return `href="#root/${target.noteId}"`;
-            } 
+            }
             return match;
-            
+
         });
 
         if (noteMeta) {
@@ -692,9 +692,9 @@ function resolveNoteType(type: string | undefined): NoteType {
 
     if (type && (ALLOWED_NOTE_TYPES as readonly string[]).includes(type)) {
         return type as NoteType;
-    } 
+    }
     return "text";
-    
+
 }
 
 export function removeTriliumTags(content: string) {

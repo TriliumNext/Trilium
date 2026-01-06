@@ -1,18 +1,16 @@
-"use strict";
+import type { NoteType } from "@triliumnext/commons";
+import { sanitize } from "@triliumnext/core";
 
 import type BNote from "../../becca/entities/bnote.js";
-import type TaskContext from "../task_context.js";
-
-import noteService from "../../services/notes.js";
 import imageService from "../../services/image.js";
+import noteService from "../../services/notes.js";
+import { getNoteTitle, processStringOrBuffer } from "../../services/utils.js";
 import protectedSessionService from "../protected_session.js";
+import type TaskContext from "../task_context.js";
+import type { File } from "./common.js";
 import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
-import { getNoteTitle, processStringOrBuffer } from "../../services/utils.js";
 import importUtils from "./utils.js";
-import htmlSanitizer from "../html_sanitizer.js";
-import type { File } from "./common.js";
-import type { NoteType } from "@triliumnext/commons";
 
 function importSingleFile(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     const mime = mimeService.getMime(file.originalname) || file.mimetype;
@@ -88,7 +86,7 @@ function importCodeNote(taskContext: TaskContext<"importNotes">, file: File, par
         title,
         content,
         type,
-        mime: mime,
+        mime,
         isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
     });
 
@@ -106,7 +104,7 @@ function importCustomType(taskContext: TaskContext<"importNotes">, file: File, p
         title,
         content,
         type,
-        mime: mime,
+        mime,
         isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
     });
 
@@ -157,7 +155,7 @@ function importMarkdown(taskContext: TaskContext<"importNotes">, file: File, par
     let htmlContent = markdownService.renderToHtml(markdownContent, title);
 
     if (taskContext.data?.safeImport) {
-        htmlContent = htmlSanitizer.sanitize(htmlContent);
+        htmlContent = sanitize.sanitizeHtml(htmlContent);
     }
 
     const { note } = noteService.createNewNote({
@@ -185,7 +183,7 @@ function importHtml(taskContext: TaskContext<"importNotes">, file: File, parentN
     content = importUtils.handleH1(content, title);
 
     if (taskContext?.data?.safeImport) {
-        content = htmlSanitizer.sanitize(content);
+        content = sanitize.sanitizeHtml(content);
     }
 
     const { note } = noteService.createNewNote({
@@ -214,7 +212,7 @@ function importAttachment(taskContext: TaskContext<"importNotes">, file: File, p
             title: file.originalname,
             content: file.buffer,
             role: "file",
-            mime: mime
+            mime
         });
 
         taskContext.increaseProgressCount();

@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import html_sanitizer from "./html_sanitizer.js";
+import { sanitizeHtml } from "./sanitizer.js";
 import { trimIndentation } from "@triliumnext/commons";
 
 describe("sanitize", () => {
     it("filters out position inline CSS", () => {
         const dirty = `<div style="z-index:999999999;margin:0px;left:250px;height:100px;display:table;background:none;position:fixed;top:250px;"></div>`;
         const clean = `<div></div>`;
-        expect(html_sanitizer.sanitize(dirty)).toBe(clean);
+        expect(sanitizeHtml(dirty)).toBe(clean);
     });
 
     it("keeps inline styles defined in CKEDitor", () => {
@@ -48,6 +48,6 @@ describe("sanitize", () => {
                     </tbody>
                 </table>
             </figure>`;
-        expect(html_sanitizer.sanitize(dirty)).toBe(clean);
+        expect(sanitizeHtml(dirty)).toBe(clean);
     });
 });

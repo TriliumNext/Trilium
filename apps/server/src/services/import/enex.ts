@@ -1,13 +1,12 @@
 import type { AttributeType } from "@triliumnext/commons";
 import { dayjs } from "@triliumnext/commons";
-import { utils } from "@triliumnext/core";
+import { sanitize, utils } from "@triliumnext/core";
 import sax from "sax";
 import stream from "stream";
 import { Throttle } from "stream-throttle";
 
 import type BNote from "../../becca/entities/bnote.js";
 import date_utils from "../date_utils.js";
-import htmlSanitizer from "../html_sanitizer.js";
 import imageService from "../image.js";
 import log from "../log.js";
 import noteService from "../notes.js";
@@ -118,7 +117,7 @@ function importEnex(taskContext: TaskContext<"importNotes">, file: File, parentN
             "\u2611 "
         );
 
-        content = htmlSanitizer.sanitize(content);
+        content = sanitize.sanitizeHtml(content);
 
         return content;
     }
@@ -368,7 +367,7 @@ function importEnex(taskContext: TaskContext<"importNotes">, file: File, parentN
             }
         }
 
-        content = htmlSanitizer.sanitize(content);
+        content = sanitize.sanitizeHtml(content);
 
         // save updated content with links to files/images
         noteEntity.setContent(content);

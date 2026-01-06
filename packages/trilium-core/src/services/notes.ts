@@ -16,7 +16,6 @@ import * as cls from "../services/context.js";
 import protectedSessionService from "../services/protected_session.js";
 import { newEntityId, quoteRegex, toMap, unescapeHtml } from "./utils/index.js";
 import entityChangesService from "./entity_changes.js";
-import htmlSanitizer from "./html_sanitizer.js";
 import imageService from "./image.js";
 import noteTypesService from "./note_types.js";
 import optionService from "./options.js";
@@ -27,6 +26,7 @@ import ws from "./ws.js";
 import { getSql } from "./sql/index.js";
 import { getLog } from "./log.js";
 import { decodeBase64 } from "./utils/binary.js";
+import { sanitizeHtml } from "./sanitizer.js";
 
 interface FoundLink {
     name: "imageLink" | "internalLink" | "includeNoteLink" | "relationMapLink";
@@ -161,7 +161,7 @@ function getNewNoteTitle(parentNote: BNote) {
     // this isn't in theory a good place to sanitize title, but this will catch a lot of XSS attempts.
     // title is supposed to contain text only (not HTML) and be printed text only, but given the number of usages,
     // it's difficult to guarantee correct handling in all cases
-    title = htmlSanitizer.sanitize(title);
+    title = sanitizeHtml(title);
 
     return title;
 }
