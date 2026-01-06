@@ -16,3 +16,7 @@ export function getContext(): ExecutionContext {
     if (!ctx) throw new Error("Context not initialized");
     return ctx;
 }
+
+export function getHoistedNoteId() {
+    return getContext().get("hoistedNoteId") || "root";
+}

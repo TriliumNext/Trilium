@@ -1,5 +1,5 @@
 import type { EntityChange } from "@triliumnext/commons";
-import { getContext } from "@triliumnext/core/src/services/context";
+import { getContext, getHoistedNoteId as getHoistedNoteIdInternal } from "@triliumnext/core/src/services/context";
 
 type Callback = (...args: any[]) => any;
 
@@ -18,7 +18,7 @@ function wrap(callback: Callback) {
 }
 
 function getHoistedNoteId() {
-    return getContext().get("hoistedNoteId") || "root";
+    return getHoistedNoteIdInternal();
 }
 
 function getComponentId() {

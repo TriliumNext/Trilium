@@ -2,7 +2,7 @@
 
 import becca from "./becca.js";
 import { getLog } from "../services/log.js";
-import { getContext } from "src/services/context.js";
+import { getHoistedNoteId } from "src/services/context.js";
 
 function isNotePathArchived(notePath: string[]) {
     const noteId = notePath[notePath.length - 1];
@@ -82,7 +82,7 @@ function getNoteTitleArrayForPath(notePathArray: string[]) {
     let hoistedNotePassed = false;
 
     // this is a notePath from outside of hoisted subtree, so the full title path needs to be returned
-    const hoistedNoteId = getContext().getHoistedNoteId();
+    const hoistedNoteId = getHoistedNoteId();
     const outsideOfHoistedSubtree = !notePathArray.includes(hoistedNoteId);
 
     for (const noteId of notePathArray) {

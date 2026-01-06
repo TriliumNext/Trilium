@@ -9,7 +9,7 @@ import TaskContext from "../../services/task_context.js";
 import utils from "../../services/utils.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import BNote from "./bnote.js";
-import { getContext } from "src/services/context";
+import { getHoistedNoteId } from "src/services/context";
 
 /**
  * Branch represents a relationship between a child note and its parent note. Trilium allows a note to have multiple
@@ -160,7 +160,7 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
             }
         }
 
-        if ((this.noteId === "root" || this.noteId === getContext().getHoistedNoteId()) && !this.isWeak) {
+        if ((this.noteId === "root" || this.noteId === getHoistedNoteId()) && !this.isWeak) {
             throw new Error("Can't delete root or hoisted branch/note");
         }
 
