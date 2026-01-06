@@ -1,7 +1,5 @@
-
-
 import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
-import { becca_loader, binary_utils, entity_constructor } from "@triliumnext/core";
+import { becca_loader, binary_utils, entity_constructor, getInstanceId } from "@triliumnext/core";
 
 import becca from "../becca/becca.js";
 import appInfo from "./app_info.js";
@@ -10,7 +8,6 @@ import consistency_checks from "./consistency_checks.js";
 import contentHashService from "./content_hash.js";
 import dateUtils from "./date_utils.js";
 import entityChangesService from "./entity_changes.js";
-import instanceId from "./instance_id.js";
 import log from "./log.js";
 import optionService from "./options.js";
 import request from "./request.js";
@@ -132,7 +129,7 @@ async function doLogin(): Promise<SyncContext> {
         throw new Error("Got no response.");
     }
 
-    if (resp.instanceId === instanceId) {
+    if (resp.instanceId === getInstanceId()) {
         throw new Error(
             `Sync server has instance ID '${resp.instanceId}' which is also local. This usually happens when the sync client is (mis)configured to sync with itself (URL points back to client) instead of the correct sync server.`
         );
@@ -157,7 +154,7 @@ async function pullChanges(syncContext: SyncContext) {
     while (true) {
         const lastSyncedPull = getLastSyncedPull();
         const logMarkerId = randomString(10); // to easily pair sync events between client and server logs
-        const changesUri = `/api/sync/changed?instanceId=${instanceId}&lastEntityChangeId=${lastSyncedPull}&logMarkerId=${logMarkerId}`;
+        const changesUri = `/api/sync/changed?instanceId=${getInstanceId()}&lastEntityChangeId=${lastSyncedPull}&logMarkerId=${logMarkerId}`;
 
         const startDate = Date.now();
 
@@ -239,7 +236,7 @@ async function pushChanges(syncContext: SyncContext) {
 
         await syncRequest(syncContext, "PUT", `/api/sync/update?logMarkerId=${logMarkerId}`, {
             entities: entityChangesRecords,
-            instanceId
+            instanceId: getInstanceId()
         });
 
         ws.syncPushInProgress();

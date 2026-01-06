@@ -1,4 +1,4 @@
-import { events as eventService } from "@triliumnext/core";
+import { events as eventService, getInstanceId } from "@triliumnext/core";
 import type { Request } from "express";
 
 import appInfo from "../../services/app_info.js";
@@ -6,7 +6,6 @@ import dateUtils from "../../services/date_utils.js";
 import passwordEncryptionService from "../../services/encryption/password_encryption.js";
 import recoveryCodeService from "../../services/encryption/recovery_codes";
 import etapiTokenService from "../../services/etapi_tokens.js";
-import instanceId from "../../services/instance_id.js";
 import options from "../../services/options.js";
 import protectedSessionService from "../../services/protected_session.js";
 import sql from "../../services/sql.js";
@@ -114,7 +113,7 @@ function loginSync(req: Request) {
     req.session.loggedIn = true;
 
     return {
-        instanceId,
+        instanceId: getInstanceId(),
         maxEntityChangeId: sql.getValue("SELECT COALESCE(MAX(id), 0) FROM entity_changes WHERE isSynced = 1")
     };
 }

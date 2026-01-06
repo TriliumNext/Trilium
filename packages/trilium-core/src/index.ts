@@ -22,7 +22,7 @@ export { default as entity_changes } from "./services/entity_changes";
 export { getContext, type ExecutionContext } from "./services/context";
 export * as cls from "./services/context";
 export * from "./errors";
-export { default as instance_id } from "./services/instance_id";
+export { default as getInstanceId } from "./services/instance_id";
 export type { CryptoProvider } from "./services/encryption/crypto";
 
 export { default as becca } from "./becca/becca";

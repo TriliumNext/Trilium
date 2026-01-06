@@ -1,5 +1,11 @@
 import { randomString } from "./utils";
 
-const instanceId = randomString(12);
+let instanceId: string | null = null;
 
-export default instanceId;
+export default function getInstanceId() {
+    if (instanceId === null) {
+        instanceId = randomString(12);
+    }
+
+    return instanceId;
+}

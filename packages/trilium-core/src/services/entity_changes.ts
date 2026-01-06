@@ -2,13 +2,13 @@ import type { BlobRow, EntityChange } from "@triliumnext/commons";
 
 import becca from "../becca/becca.js";
 import dateUtils from "./utils/date.js";
-import instanceId from "./instance_id.js";
-import log, { getLog } from "./log.js";
+import  { getLog } from "./log.js";
 import { randomString } from "./utils/index.js";
 import { getSql } from "./sql/index.js";
 import { getComponentId } from "./context.js";
 import events from "./events.js";
 import blobService from "./blob.js";
+import getInstanceId from "./instance_id.js";
 
 let maxEntityChangeId = 0;
 
@@ -34,7 +34,7 @@ function putEntityChange(origEntityChange: EntityChange) {
     }
 
     ec.componentId = ec.componentId || getComponentId() || "NA"; // NA = not available
-    ec.instanceId = ec.instanceId || instanceId;
+    ec.instanceId = ec.instanceId || getInstanceId();
     ec.isSynced = ec.isSynced ? 1 : 0;
     ec.isErased = ec.isErased ? 1 : 0;
     ec.id = getSql().replace("entity_changes", ec);
@@ -55,7 +55,7 @@ function putNoteReorderingEntityChange(parentNoteId: string, componentId?: strin
         utcDateChanged: dateUtils.utcNowDateTime(),
         isSynced: true,
         componentId,
-        instanceId
+        instanceId: getInstanceId()
     });
 
     events.emit(events.ENTITY_CHANGED, {
