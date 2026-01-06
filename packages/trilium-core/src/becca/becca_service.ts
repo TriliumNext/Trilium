@@ -2,7 +2,7 @@
 
 import becca from "./becca.js";
 import { getLog } from "../services/log.js";
-import { getHoistedNoteId } from "src/services/context.js";
+import { getHoistedNoteId } from "../services/context.js";
 
 function isNotePathArchived(notePath: string[]) {
     const noteId = notePath[notePath.length - 1];

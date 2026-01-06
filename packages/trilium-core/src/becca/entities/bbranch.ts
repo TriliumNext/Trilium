@@ -8,8 +8,8 @@ import { getLog } from "../../services/log.js";
 import TaskContext from "../../services/task_context.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import BNote from "./bnote.js";
-import { getHoistedNoteId } from "src/services/context";
-import { randomString } from "src/services/utils";
+import { getHoistedNoteId } from "../../services/context";
+import { randomString } from "../../services/utils";
 
 /**
  * Branch represents a relationship between a child note and its parent note. Trilium allows a note to have multiple

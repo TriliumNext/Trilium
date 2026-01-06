@@ -12,8 +12,8 @@ import BBranch from "./entities/bbranch.js";
 import BEtapiToken from "./entities/betapi_token.js";
 import BNote from "./entities/bnote.js";
 import BOption from "./entities/boption.js";
-import { getSql } from "src/services/sql/index.js";
-import { getContext } from "src/services/context.js";
+import { getSql } from "../services/sql";
+import { getContext } from "../services/context.js";
 
 export const beccaLoaded = new Promise<void>(async (res, rej) => {
     // We have to import async since options init requires keyboard actions which require translations.

@@ -8,9 +8,9 @@ import { getLog } from "../../services/log.js";
 import protectedSessionService from "../../services/protected_session.js";
 import becca from "../becca.js";
 import type { ConstructorData,default as Becca } from "../becca-interface.js";
-import { getSql } from "src/services/sql";
-import { concat2, encodeUtf8, unwrapStringOrBuffer, wrapStringOrBuffer } from "src/services/utils/binary";
-import { hash, hashedBlobId, newEntityId, randomString } from "src/services/utils";
+import { getSql } from "../../services/sql";
+import { concat2, encodeUtf8, unwrapStringOrBuffer, wrapStringOrBuffer } from "../../services/utils/binary";
+import { hash, hashedBlobId, newEntityId, randomString } from "../../services/utils";
 
 interface ContentOpts {
     forceSave?: boolean;

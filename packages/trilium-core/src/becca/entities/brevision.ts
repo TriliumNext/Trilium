@@ -7,8 +7,8 @@ import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import BAttachment from "./battachment.js";
 import type { AttachmentRow, NoteType, RevisionPojo, RevisionRow } from "@triliumnext/commons";
 import eraseService from "../../services/erase.js";
-import { getSql } from "src/services/sql/index.js";
-import { isStringNote } from "src/services/utils/index.js";
+import { getSql } from "../../services/sql/index.js";
+import { isStringNote } from "../../services/utils/index.js";
 
 interface ContentOpts {
     /** will also save this BRevision entity */

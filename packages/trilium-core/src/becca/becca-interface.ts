@@ -10,8 +10,8 @@ import type { AttachmentRow, BlobRow, RevisionRow } from "@triliumnext/commons";
 import BBlob from "./entities/bblob.js";
 import BRecentNote from "./entities/brecent_note.js";
 import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
-import { getSql } from "src/services/sql/index.js";
-import NoteSet from "src/services/search/note_set.js";
+import { getSql } from "../services/sql/index.js";
+import NoteSet from "../services/search/note_set.js";
 
 /**
  * Becca is a backend cache of all notes, branches, and attributes.

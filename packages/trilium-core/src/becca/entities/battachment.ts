@@ -9,8 +9,8 @@ import protectedSessionService from "../../services/protected_session.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import type BBranch from "./bbranch.js";
 import type BNote from "./bnote.js";
-import { getSql } from "src/services/sql/index.js";
-import { isStringNote, replaceAll } from "src/services/utils";
+import { getSql } from "../../services/sql/index.js";
+import { isStringNote, replaceAll } from "../../services/utils";
 
 const attachmentRoleToNoteTypeMapping = {
     image: "image",

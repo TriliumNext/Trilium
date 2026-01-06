@@ -18,8 +18,8 @@ import BAttachment from "./battachment.js";
 import BAttribute from "./battribute.js";
 import type BBranch from "./bbranch.js";
 import BRevision from "./brevision.js";
-import { getSql } from "src/services/sql/index.js";
-import { isStringNote, normalize, randomString, replaceAll } from "src/services/utils";
+import { getSql } from "../../services/sql/index.js";
+import { isStringNote, normalize, randomString, replaceAll } from "../../services/utils";
 
 const LABEL = "label";
 const RELATION = "relation";
