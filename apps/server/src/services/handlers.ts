@@ -1,7 +1,6 @@
-import { events as eventService } from "@triliumnext/core";
+import { type AbstractBeccaEntity, events as eventService } from "@triliumnext/core";
 
 import becca from "../becca/becca.js";
-import type AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
 import BAttribute from "../becca/entities/battribute.js";
 import type BNote from "../becca/entities/bnote.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
