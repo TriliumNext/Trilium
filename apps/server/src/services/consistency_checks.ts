@@ -11,7 +11,6 @@ import cls from "./cls.js";
 import entityChangesService from "./entity_changes.js";
 import log from "./log.js";
 import optionsService from "./options.js";
-import sanitizeAttributeName from "./sanitize_attribute_name.js";
 import sql from "./sql.js";
 import sqlInit from "./sql_init.js";
 import syncMutexService from "./sync_mutex.js";
@@ -804,7 +803,7 @@ class ConsistencyChecks {
         const attrNames = sql.getColumn<string>(/*sql*/`SELECT DISTINCT name FROM attributes`);
 
         for (const origName of attrNames) {
-            const fixedName = sanitizeAttributeName(origName);
+            const fixedName = utils.sanitizeAttributeName(origName);
 
             if (fixedName !== origName) {
                 if (this.autoFix) {
