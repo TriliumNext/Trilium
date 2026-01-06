@@ -9,6 +9,7 @@ export * from "./services/sql/index";
 export * as protected_session from "./services/protected_session";
 export { default as data_encryption } from "./services/encryption/data_encryption"
 export * as binary_utils from "./services/utils/binary";
+export * as utils from "./services/utils/index";
 export { default as date_utils } from "./services/utils/date";
 export { default as events } from "./services/events";
 export { default as blob } from "./services/blob";

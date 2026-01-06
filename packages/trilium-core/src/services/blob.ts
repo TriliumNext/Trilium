@@ -2,8 +2,8 @@ import { BlobRow } from "@triliumnext/commons";
 import becca from "../becca/becca.js";
 import { NotFoundError } from "../errors";
 import protectedSessionService from "./protected_session.js";
-import { hash } from "./utils.js";
 import { decodeUtf8 } from "./utils/binary.js";
+import { hash } from "./utils/index.js";
 
 function getBlobPojo(entityName: string, entityId: string, opts?: { preview: boolean }) {
     // TODO: Unused opts.

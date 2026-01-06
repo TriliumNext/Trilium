@@ -6,11 +6,11 @@ import dateUtils from "../../services/utils/date";
 import { getLog } from "../../services/log.js";
 import noteService from "../../services/notes.js";
 import protectedSessionService from "../../services/protected_session.js";
-import utils from "../../services/utils.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import type BBranch from "./bbranch.js";
 import type BNote from "./bnote.js";
 import { getSql } from "src/services/sql/index.js";
+import { isStringNote, replaceAll } from "src/services/utils";
 
 const attachmentRoleToNoteTypeMapping = {
     image: "image",
@@ -105,7 +105,7 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
 
     /** @returns true if the note has string content (not binary) */
     override hasStringContent(): boolean {
-        return utils.isStringNote(this.type, this.mime); // here was !== undefined && utils.isStringNote(this.type, this.mime); I dont know why we need !=undefined. But it filters out canvas libary items
+        return isStringNote(this.type, this.mime); // here was !== undefined && utils.isStringNote(this.type, this.mime); I dont know why we need !=undefined. But it filters out canvas libary items
     }
 
     isContentAvailable() {
@@ -186,7 +186,7 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
             const oldAttachmentUrl = `api/attachments/${this.attachmentId}/image/`;
             const newNoteUrl = `api/images/${note.noteId}/`;
 
-            const fixedContent = utils.replaceAll(origContent, oldAttachmentUrl, newNoteUrl);
+            const fixedContent = replaceAll(origContent, oldAttachmentUrl, newNoteUrl);
 
             if (fixedContent !== origContent) {
                 parentNote.setContent(fixedContent);

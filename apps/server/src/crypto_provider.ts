@@ -1,5 +1,8 @@
 import { CryptoProvider } from "@triliumnext/core";
 import crypto from "crypto";
+import { generator } from "rand-token";
+
+const randtoken = generator({ source: "crypto" });
 
 export default class NodejsCryptoProvider implements CryptoProvider {
 
@@ -17,6 +20,10 @@ export default class NodejsCryptoProvider implements CryptoProvider {
 
     randomBytes(size: number): Uint8Array {
         return crypto.randomBytes(size);
+    }
+
+    randomString(length: number): string {
+        return randtoken.generate(length);
     }
 
 }

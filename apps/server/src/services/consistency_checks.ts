@@ -1,14 +1,12 @@
-
-
 import type { BranchRow } from "@triliumnext/commons";
 import type { EntityChange } from "@triliumnext/commons";
-import { becca_loader } from "@triliumnext/core";
+import { becca_loader, utils } from "@triliumnext/core";
 
 import becca from "../becca/becca.js";
 import BBranch from "../becca/entities/bbranch.js";
 import eraseService from "../services/erase.js";
 import noteTypesService from "../services/note_types.js";
-import { hash as getHash, hashedBlobId, randomString } from "../services/utils.js";
+import { hashedBlobId, randomString } from "../services/utils.js";
 import cls from "./cls.js";
 import entityChangesService from "./entity_changes.js";
 import log from "./log.js";
@@ -85,11 +83,11 @@ class ConsistencyChecks {
                         }
 
                         return true;
-                    } 
+                    }
                     logError(`Tree cycle detected at parent-child relationship: '${parentNoteId}' - '${noteId}', whole path: '${path}'`);
 
                     this.unrecoveredConsistencyErrors = true;
-                    
+
                 } else {
                     const newPath = path.slice();
                     newPath.push(noteId);
@@ -492,7 +490,7 @@ class ConsistencyChecks {
                             dateModified: fakeDate
                         });
 
-                        const hash = getHash(randomString(10));
+                        const hash = utils.hash(randomString(10));
 
                         entityChangesService.putEntityChange({
                             entityName: "blobs",

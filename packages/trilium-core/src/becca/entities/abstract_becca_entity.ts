@@ -6,11 +6,11 @@ import dateUtils from "../../services/utils/date";
 import entityChangesService from "../../services/entity_changes.js";
 import { getLog } from "../../services/log.js";
 import protectedSessionService from "../../services/protected_session.js";
-import utils from "../../services/utils.js";
 import becca from "../becca.js";
 import type { ConstructorData,default as Becca } from "../becca-interface.js";
 import { getSql } from "src/services/sql";
 import { concat2, encodeUtf8, unwrapStringOrBuffer, wrapStringOrBuffer } from "src/services/utils/binary";
+import { hash, hashedBlobId, newEntityId, randomString } from "src/services/utils";
 
 interface ContentOpts {
     forceSave?: boolean;
@@ -36,7 +36,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
     protected beforeSaving(opts?: {}) {
         const constructorData = this.constructor as unknown as ConstructorData<T>;
         if (!(this as any)[constructorData.primaryKeyName]) {
-            (this as any)[constructorData.primaryKeyName] = utils.newEntityId();
+            (this as any)[constructorData.primaryKeyName] = newEntityId();
         }
     }
 
@@ -72,7 +72,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
             contentToHash += "|deleted";
         }
 
-        return utils.hash(contentToHash).substr(0, 10);
+        return hash(contentToHash).substr(0, 10);
     }
 
     protected getPojoToSave() {
@@ -224,7 +224,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
          * This has minor security implications (it's easy to infer that given content is shared between different
          * notes/attachments), but the trade-off comes out clearly positive.
          */
-        const newBlobId = utils.hashedBlobId(unencryptedContentForHashCalculation);
+        const newBlobId = hashedBlobId(unencryptedContentForHashCalculation);
         const sql = getSql();
         const blobNeedsInsert = !sql.getValue("SELECT 1 FROM blobs WHERE blobId = ?", [newBlobId]);
 
@@ -254,7 +254,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
             isSynced: true,
             // overriding componentId will cause the frontend to think the change is coming from a different component
             // and thus reload
-            componentId: opts.forceFrontendReload ? utils.randomString(10) : null
+            componentId: opts.forceFrontendReload ? randomString(10) : null
         });
 
         eventService.emit(eventService.ENTITY_CHANGED, {

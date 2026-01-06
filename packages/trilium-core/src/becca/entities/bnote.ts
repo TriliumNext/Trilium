@@ -6,13 +6,12 @@ import cloningService from "../../services/cloning.js";
 import dateUtils from "../../services/utils/date";
 import eraseService from "../../services/erase.js";
 import handlers from "../../services/handlers.js";
-import log, { getLog } from "../../services/log.js";
+import { getLog } from "../../services/log.js";
 import noteService from "../../services/notes.js";
 import optionService from "../../services/options.js";
 import protectedSessionService from "../../services/protected_session.js";
 import searchService from "../../services/search/services/search.js";
 import TaskContext from "../../services/task_context.js";
-import utils from "../../services/utils.js";
 import type { NotePojo } from "../becca-interface.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import BAttachment from "./battachment.js";
@@ -20,6 +19,7 @@ import BAttribute from "./battribute.js";
 import type BBranch from "./bbranch.js";
 import BRevision from "./brevision.js";
 import { getSql } from "src/services/sql/index.js";
+import { isStringNote, normalize, randomString, replaceAll } from "src/services/utils";
 
 const LABEL = "label";
 const RELATION = "relation";
@@ -316,7 +316,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
 
     /** @returns true if the note has string content (not binary) */
     override hasStringContent() {
-        return utils.isStringNote(this.type, this.mime);
+        return isStringNote(this.type, this.mime);
     }
 
     /** @returns JS script environment - either "frontend" or "backend" */
@@ -798,7 +798,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
                 this.__flatTextCache += " ";
             }
 
-            this.__flatTextCache = utils.normalize(this.__flatTextCache);
+            this.__flatTextCache = normalize(this.__flatTextCache);
         }
 
         return this.__flatTextCache as string;
@@ -1481,7 +1481,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
             throw new Error("Unable to convert image note into attachment because parent note does not have a string content.");
         }
 
-        const fixedContent = utils.replaceAll(parentContent, oldNoteUrl, newAttachmentUrl);
+        const fixedContent = replaceAll(parentContent, oldNoteUrl, newAttachmentUrl);
 
         parentNote.setContent(fixedContent);
 
@@ -1503,7 +1503,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         }
 
         if (!deleteId) {
-            deleteId = utils.randomString(10);
+            deleteId = randomString(10);
         }
 
         if (!taskContext) {

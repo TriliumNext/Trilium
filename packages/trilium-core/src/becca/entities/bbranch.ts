@@ -6,10 +6,10 @@ import dateUtils from "../../services/utils/date";
 import handlers from "../../services/handlers.js";
 import { getLog } from "../../services/log.js";
 import TaskContext from "../../services/task_context.js";
-import utils from "../../services/utils.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import BNote from "./bnote.js";
 import { getHoistedNoteId } from "src/services/context";
+import { randomString } from "src/services/utils";
 
 /**
  * Branch represents a relationship between a child note and its parent note. Trilium allows a note to have multiple
@@ -140,7 +140,7 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
      */
     deleteBranch(deleteId?: string, taskContext?: TaskContext<"deleteNotes">): boolean {
         if (!deleteId) {
-            deleteId = utils.randomString(10);
+            deleteId = randomString(10);
         }
 
         if (!taskContext) {

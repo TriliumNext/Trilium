@@ -1,22 +1,22 @@
-"use strict";
 
+
+import { utils as coreUtils } from "@triliumnext/core";
 import chardet from "chardet";
-import stripBom from "strip-bom";
 import crypto from "crypto";
-import { generator } from "rand-token";
-import unescape from "unescape";
 import escape from "escape-html";
-import sanitize from "sanitize-filename";
-import mimeTypes from "mime-types";
-import path from "path";
-import type NoteMeta from "./meta/note_meta.js";
-import log from "./log.js";
 import { t } from "i18next";
+import mimeTypes from "mime-types";
 import { release as osRelease } from "os";
+import path from "path";
+import { generator } from "rand-token";
+import sanitize from "sanitize-filename";
+import stripBom from "strip-bom";
+import unescape from "unescape";
+
+import log from "./log.js";
+import type NoteMeta from "./meta/note_meta.js";
 
 const osVersion = osRelease().split('.').map(Number);
-
-const randtoken = generator({ source: "crypto" });
 
 export const isMac = process.platform === "darwin";
 
@@ -28,12 +28,14 @@ export const isElectron = !!process.versions["electron"];
 
 export const isDev = !!(process.env.TRILIUM_ENV && process.env.TRILIUM_ENV === "dev");
 
+/** @deprecated */
 export function newEntityId() {
-    return randomString(12);
+    return coreUtils.newEntityId();
 }
 
+/** @deprecated */
 export function randomString(length: number): string {
-    return randtoken.generate(length);
+    return coreUtils.randomString(length);
 }
 
 export function randomSecureToken(bytes = 32) {
@@ -44,19 +46,9 @@ export function md5(content: crypto.BinaryLike) {
     return crypto.createHash("md5").update(content).digest("hex");
 }
 
+/** @deprecated */
 export function hashedBlobId(content: string | Buffer) {
-    if (content === null || content === undefined) {
-        content = "";
-    }
-
-    // sha512 is faster than sha256
-    const base64Hash = crypto.createHash("sha512").update(content).digest("base64");
-
-    // we don't want such + and / in the IDs
-    const kindaBase62Hash = base64Hash.replaceAll("+", "X").replaceAll("/", "Y");
-
-    // 20 characters of base62 gives us ~120 bit of entropy which is plenty enough
-    return kindaBase62Hash.substr(0, 20);
+    return coreUtils.hashedBlobId(content);
 }
 
 export function toBase64(plainText: string | Buffer) {
@@ -102,12 +94,6 @@ export function constantTimeCompare(a: string | null | undefined, b: string | nu
     }
 
     return crypto.timingSafeEqual(bufA, bufB);
-}
-
-export function hash(text: string) {
-    text = text.normalize();
-
-    return crypto.createHash("sha1").update(text).digest("base64");
 }
 
 export function isEmptyOrWhitespace(str: string | null | undefined) {
@@ -160,22 +146,18 @@ export function getContentDisposition(filename: string) {
     return `file; filename="${uriEncodedFilename}"; filename*=UTF-8''${uriEncodedFilename}`;
 }
 
-// render and book are string note in the sense that they are expected to contain empty string
-const STRING_NOTE_TYPES = new Set(["text", "code", "relationMap", "search", "render", "book", "mermaid", "canvas", "webView"]);
-const STRING_MIME_TYPES = new Set(["application/javascript", "application/x-javascript", "application/json", "application/x-sql", "image/svg+xml"]);
-
 export function isStringNote(type: string | undefined, mime: string) {
-    return (type && STRING_NOTE_TYPES.has(type)) || mime.startsWith("text/") || STRING_MIME_TYPES.has(mime);
+    return coreUtils.isStringNote(type, mime);
 }
 
+/** @deprecated */
 export function quoteRegex(url: string) {
-    return url.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&");
+    return coreUtils.quoteRegex(url);
 }
 
+/** @deprecated */
 export function replaceAll(string: string, replaceWhat: string, replaceWith: string) {
-    const quotedReplaceWhat = quoteRegex(replaceWhat);
-
-    return string.replace(new RegExp(quotedReplaceWhat, "g"), replaceWith);
+    return coreUtils.replaceAll(string, replaceWhat, replaceWith);
 }
 
 export function formatDownloadTitle(fileName: string, type: string | null, mime: string) {
@@ -259,16 +241,14 @@ export function timeLimit<T>(promise: Promise<T>, limitMs: number, errorMessage?
     });
 }
 
+/** @deprecated */
 export function removeDiacritic(str: string) {
-    if (!str) {
-        return "";
-    }
-    str = str.toString();
-    return str.normalize("NFD").replace(/\p{Diacritic}/gu, "");
+    return coreUtils.removeDiacritic(str);
 }
 
+/** @deprecated */
 export function normalize(str: string) {
-    return removeDiacritic(str).toLowerCase();
+    return coreUtils.normalize(str);
 }
 
 export function toMap<T extends Record<string, any>>(list: T[], key: keyof T) {
@@ -467,28 +447,28 @@ export function normalizeCustomHandlerPattern(pattern: string | null | undefined
 
         // If already ends with slash, create both versions
         if (basePattern.endsWith('/')) {
-            const withoutSlash = basePattern.slice(0, -1) + '$';
+            const withoutSlash = `${basePattern.slice(0, -1)  }$`;
             const withSlash = pattern;
             return [withoutSlash, withSlash];
-        } else {
-            // Add optional trailing slash
-            const withSlash = basePattern + '/?$';
-            return [withSlash];
         }
+        // Add optional trailing slash
+        const withSlash = `${basePattern  }/?$`;
+        return [withSlash];
+
     }
 
     // For patterns without $, add both versions
     if (pattern.endsWith('/')) {
         const withoutSlash = pattern.slice(0, -1);
         return [withoutSlash, pattern];
-    } else {
-        const withSlash = pattern + '/';
-        return [pattern, withSlash];
     }
+    const withSlash = `${pattern  }/`;
+    return [pattern, withSlash];
+
 }
 
 export function formatUtcTime(time: string) {
-    return time.replace("T", " ").substring(0, 19)
+    return time.replace("T", " ").substring(0, 19);
 }
 
 // TODO: Deduplicate with client utils
@@ -501,9 +481,9 @@ export function formatSize(size: number | null | undefined) {
 
     if (size < 1024) {
         return `${size} KiB`;
-    } else {
-        return `${Math.round(size / 102.4) / 10} MiB`;
     }
+    return `${Math.round(size / 102.4) / 10} MiB`;
+
 }
 
 function slugify(text: string) {
@@ -526,7 +506,6 @@ export default {
     getContentDisposition,
     getNoteTitle,
     getResourceDir,
-    hash,
     hashedBlobId,
     hmac,
     isDev,

@@ -1,7 +1,6 @@
 "use strict";
 
 import protectedSessionService from "../../services/protected_session.js";
-import utils from "../../services/utils.js";
 import dateUtils from "../../services/utils/date";
 import becca from "../becca.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
@@ -9,6 +8,7 @@ import BAttachment from "./battachment.js";
 import type { AttachmentRow, NoteType, RevisionPojo, RevisionRow } from "@triliumnext/commons";
 import eraseService from "../../services/erase.js";
 import { getSql } from "src/services/sql/index.js";
+import { isStringNote } from "src/services/utils/index.js";
 
 interface ContentOpts {
     /** will also save this BRevision entity */
@@ -76,7 +76,7 @@ class BRevision extends AbstractBeccaEntity<BRevision> {
 
     /** @returns true if the note has string content (not binary) */
     override hasStringContent(): boolean {
-        return utils.isStringNote(this.type, this.mime);
+        return isStringNote(this.type, this.mime);
     }
 
     isContentAvailable() {
