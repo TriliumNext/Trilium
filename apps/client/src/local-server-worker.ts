@@ -2,9 +2,66 @@
 // This will eventually import your core server and DB provider.
 // import { createCoreServer } from "@trilium/core"; (bundled)
 
-import { resizeMultipleElements } from '@excalidraw/excalidraw/element/resizeElements';
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
-import { routes } from "@triliumnext/core";
+
+// Global error handlers - MUST be set up before any async imports
+self.onerror = (message, source, lineno, colno, error) => {
+    console.error("[Worker] Uncaught error:", message, source, lineno, colno, error);
+    // Try to notify the main thread about the error
+    try {
+        self.postMessage({
+            type: "WORKER_ERROR",
+            error: {
+                message: String(message),
+                source,
+                lineno,
+                colno,
+                stack: error?.stack
+            }
+        });
+    } catch (e) {
+        // Can't even post message, just log
+        console.error("[Worker] Failed to report error:", e);
+    }
+    return false; // Don't suppress the error
+};
+
+self.onunhandledrejection = (event) => {
+    console.error("[Worker] Unhandled rejection:", event.reason);
+    try {
+        self.postMessage({
+            type: "WORKER_ERROR",
+            error: {
+                message: String(event.reason?.message || event.reason),
+                stack: event.reason?.stack
+            }
+        });
+    } catch (e) {
+        console.error("[Worker] Failed to report rejection:", e);
+    }
+};
+
+console.log("[Worker] Error handlers installed");
+
+// Deferred import for @triliumnext/core to catch initialization errors
+let coreModule: typeof import("@triliumnext/core") | null = null;
+let coreInitError: Error | null = null;
+
+async function loadCoreModule() {
+    if (coreModule) return coreModule;
+    if (coreInitError) throw coreInitError;
+
+    try {
+        console.log("[Worker] Loading @triliumnext/core...");
+        coreModule = await import("@triliumnext/core");
+        console.log("[Worker] @triliumnext/core loaded successfully");
+        return coreModule;
+    } catch (e) {
+        coreInitError = e instanceof Error ? e : new Error(String(e));
+        console.error("[Worker] Failed to load @triliumnext/core:", coreInitError);
+        throw coreInitError;
+    }
+}
 
 const encoder = new TextEncoder();
 
@@ -151,17 +208,28 @@ async function dispatch(request) {
     }
 
     if (request.method === "GET" && url.pathname === "/api/options") {
-        // console.log("Options route", routes);
-        //     console.log("Got options request");
-        //     try {
-        //         // console.log(routes.optionsApiRoute.getOptions());
-        //         // return jsonResponse(routes.optionsApiRoute.getOptions());
-        //     } catch (e) {
-        //         return jsonResponse({ ok: true, method: request.method, url: request.url });
-        //     }
-        //     console.log("Got ", routes.optionsApiRoute.getOptions());
-        //     // return routes.optionsApiRoute.getOptions();
-        return jsonResponse("Hi");
+        try {
+            // Use dynamic import to defer loading until after initialization
+            const core = await loadCoreModule();
+            console.log("[Worker] Options route - core module loaded");
+
+            // Note: core.routes.optionsApiRoute.getOptions() requires
+            // initializeCore() to be called first with proper db/crypto config
+            console.log("[Worker] Available routes:", Object.keys(core.routes));
+
+            // For now, return a placeholder until core is properly initialized
+            return jsonResponse({
+                message: "Core module loaded successfully",
+                availableRoutes: Object.keys(core.routes)
+            });
+        } catch (e) {
+            console.error("[Worker] Error loading core module:", e);
+            return jsonResponse({
+                error: "Failed to load core module",
+                details: e instanceof Error ? e.message : String(e),
+                stack: e instanceof Error ? e.stack : undefined
+            }, 500);
+        }
     }
 
     if (url.pathname.startsWith("/api/echo")) {
