@@ -1,8 +1,7 @@
-import { ValidationError } from "@triliumnext/core";
+import { becca_service, ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 
 import becca from "../../becca/becca.js";
-import beccaService from "../../becca/becca_service.js";
 import cls from "../../services/cls.js";
 import log from "../../services/log.js";
 import searchService from "../../services/search/services/search.js";
@@ -67,8 +66,8 @@ function getRecentNotes(activeNoteId: string) {
     return recentNotes.map((rn) => {
         const notePathArray = rn.notePath.split("/");
 
-        const { title, icon } = beccaService.getNoteTitleAndIcon(notePathArray[notePathArray.length - 1]);
-        const notePathTitle = beccaService.getNoteTitleForPath(notePathArray);
+        const { title, icon } = becca_service.getNoteTitleAndIcon(notePathArray[notePathArray.length - 1]);
+        const notePathTitle = becca_service.getNoteTitleForPath(notePathArray);
 
         return {
             notePath: rn.notePath,

@@ -1,14 +1,12 @@
-"use strict";
+import { becca_service } from "@triliumnext/core";
 
-import type BNote from "../../../becca/entities/bnote.js";
-import type SearchContext from "../search_context.js";
-
-import Expression from "./expression.js";
-import NoteSet from "../note_set.js";
 import becca from "../../../becca/becca.js";
+import type BNote from "../../../becca/entities/bnote.js";
 import { normalize } from "../../utils.js";
-import { normalizeSearchText, fuzzyMatchWord, fuzzyMatchWordWithResult } from "../utils/text_utils.js";
-import beccaService from "../../../becca/becca_service.js";
+import NoteSet from "../note_set.js";
+import type SearchContext from "../search_context.js";
+import { fuzzyMatchWord, fuzzyMatchWordWithResult,normalizeSearchText } from "../utils/text_utils.js";
+import Expression from "./expression.js";
 
 class NoteFlatTextExp extends Expression {
     tokens: string[];
@@ -60,7 +58,7 @@ class NoteFlatTextExp extends Expression {
                 // Add defensive checks for undefined properties
                 const typeMatches = note.type && note.type.includes(token);
                 const mimeMatches = note.mime && note.mime.includes(token);
-                
+
                 if (typeMatches || mimeMatches) {
                     foundAttrTokens.push(token);
                 }
@@ -78,7 +76,7 @@ class NoteFlatTextExp extends Expression {
             }
 
             for (const parentNote of note.parents) {
-                const title = normalizeSearchText(beccaService.getNoteTitle(note.noteId, parentNote.noteId));
+                const title = normalizeSearchText(becca_service.getNoteTitle(note.noteId, parentNote.noteId));
                 const foundTokens: string[] = foundAttrTokens.slice();
 
                 for (const token of remainingTokens) {
@@ -112,7 +110,7 @@ class NoteFlatTextExp extends Expression {
                 // Add defensive checks for undefined properties
                 const typeMatches = note.type && note.type.includes(token);
                 const mimeMatches = note.mime && note.mime.includes(token);
-                
+
                 if (typeMatches || mimeMatches) {
                     foundAttrTokens.push(token);
                 }
@@ -125,7 +123,7 @@ class NoteFlatTextExp extends Expression {
             }
 
             for (const parentNote of note.parents) {
-                const title = normalizeSearchText(beccaService.getNoteTitle(note.noteId, parentNote.noteId));
+                const title = normalizeSearchText(becca_service.getNoteTitle(note.noteId, parentNote.noteId));
                 const foundTokens = foundAttrTokens.slice();
 
                 for (const token of this.tokens) {
@@ -190,7 +188,7 @@ class NoteFlatTextExp extends Expression {
         if (text.includes(token)) {
             return true;
         }
-        
+
         // Fuzzy fallback only if enabled and for tokens >= 4 characters
         if (searchContext?.enableFuzzyMatching && token.length >= 4) {
             const matchedWord = fuzzyMatchWordWithResult(token, text);
@@ -202,7 +200,7 @@ class NoteFlatTextExp extends Expression {
                 return true;
             }
         }
-        
+
         return false;
     }
 }

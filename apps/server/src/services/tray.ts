@@ -1,15 +1,15 @@
-import electron from "electron";
+import type { KeyboardActionNames } from "@triliumnext/commons";
+import { becca_service } from "@triliumnext/core";
 import type { BrowserWindow, Tray } from "electron";
+import electron from "electron";
 import { default as i18next, t } from "i18next";
 import path from "path";
 
 import becca from "../becca/becca.js";
-import becca_service from "../becca/becca_service.js";
 import type BNote from "../becca/entities/bnote.js";
 import type BRecentNote from "../becca/entities/brecent_note.js";
 import cls from "./cls.js";
 import date_notes from "./date_notes.js";
-import type { KeyboardActionNames } from "@triliumnext/commons";
 import optionService from "./options.js";
 import { getResourceDir, isDev, isMac } from "./utils.js";
 import windowService from "./window.js";
@@ -31,9 +31,9 @@ function getTrayIconPath() {
 
     if (process.env.NODE_ENV === "development") {
         return path.join(__dirname, "../../../desktop/src/assets/images/tray", `${name}.png`);
-    } else {
-        return path.resolve(path.join(getResourceDir(), "assets", "images", "tray", `${name}.png`));
-    }
+    } 
+    return path.resolve(path.join(getResourceDir(), "assets", "images", "tray", `${name}.png`));
+    
 }
 
 function getIconPath(name: string) {
@@ -41,9 +41,9 @@ function getIconPath(name: string) {
 
     if (process.env.NODE_ENV === "development") {
         return path.join(__dirname, "../../../desktop/src/assets/images/tray", `${name}Template${suffix}.png`);
-    } else {
-        return path.resolve(path.join(getResourceDir(), "assets", "images", "tray", `${name}Template${suffix}.png`));
-    }
+    } 
+    return path.resolve(path.join(getResourceDir(), "assets", "images", "tray", `${name}Template${suffix}.png`));
+    
 }
 
 function registerVisibilityListener(window: BrowserWindow) {
@@ -74,7 +74,7 @@ function getWindowTitle(window: BrowserWindow | null) {
 
     // Limit title maximum length to 17
     if (titleWithoutAppName.length > 20) {
-        return titleWithoutAppName.substring(0, 17) + '...';
+        return `${titleWithoutAppName.substring(0, 17)  }...`;
     }
 
     return titleWithoutAppName;

@@ -17,6 +17,7 @@ export type { CryptoProvider } from "./services/encryption/crypto";
 
 export { default as becca } from "./becca/becca";
 export { default as becca_loader } from "./becca/becca_loader";
+export { default as becca_service } from "./becca/becca_service";
 export { default as BAttachment } from "./becca/entities/battachment";
 export { default as BAttribute } from "./becca/entities/battribute";
 export { default as BBlob } from "./becca/entities/bblob";
