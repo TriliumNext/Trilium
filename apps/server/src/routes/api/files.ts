@@ -121,7 +121,7 @@ function attachmentContentProvider(req: Request) {
     return streamContent(attachment.getContent(), attachment.getFileName(), attachment.mime);
 }
 
-async function streamContent(content: string | Buffer, fileName: string, mimeType: string) {
+async function streamContent(content: string | Uint8Array, fileName: string, mimeType: string) {
     if (typeof content === "string") {
         content = Buffer.from(content, "utf8");
     }
@@ -168,7 +168,7 @@ function saveAttachmentToTmpDir(req: Request) {
 
 const createdTemporaryFiles = new Set<string>();
 
-function saveToTmpDir(fileName: string, content: string | Buffer, entityType: string, entityId: string) {
+function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType: string, entityId: string) {
     const tmpObj = tmp.fileSync({
         postfix: fileName,
         tmpdir: dataDirs.TMP_DIR

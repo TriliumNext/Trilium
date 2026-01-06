@@ -61,7 +61,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
         metaFile.files.push(this.indexMeta);
     }
 
-    prepareContent(title: string, content: string | Buffer, noteMeta: NoteMeta, note: BNote | undefined, branch: BBranch): string | Buffer {
+    prepareContent(title: string, content: string | Uint8Array, noteMeta: NoteMeta, note: BNote | undefined, branch: BBranch): string | Uint8Array {
         if (!noteMeta?.notePath?.length) {
             throw new Error("Missing note path.");
         }
@@ -150,7 +150,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
 
         const note = this.branch.getNote();
         const fullHtml = this.prepareContent(rootMeta.title ?? "", note.getContent(), rootMeta, note, this.branch);
-        this.archive.append(fullHtml, { name: this.indexMeta.dataFileName });
+        this.archive.append(fullHtml as Buffer, { name: this.indexMeta.dataFileName });
     }
 
     #saveAssets(rootMeta: NoteMeta, assetsMeta: NoteMeta[]) {
@@ -166,7 +166,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
         // Inject the custom fonts.
         for (const iconPack of this.iconPacks) {
             const extension = MIME_TO_EXTENSION_MAPPINGS[iconPack.fontMime];
-            let fontData: Buffer | undefined;
+            let fontData: Uint8Array | undefined;
             if (iconPack.builtin) {
                 fontData = readFileSync(join(getClientDir(), "fonts", `${iconPack.fontAttachmentId}.${extension}`));
             } else {
@@ -178,7 +178,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
                 continue;
             };
             const fontFileName = `assets/icon-pack-${iconPack.prefix.toLowerCase()}.${extension}`;
-            this.archive.append(fontData, { name: fontFileName });
+            this.archive.append(fontData as Buffer, { name: fontFileName });
         }
     }
 

@@ -1,3 +1,4 @@
+import { binary_utils } from "@triliumnext/core";
 import { transform } from "sucrase";
 
 import becca from "../becca/becca.js";
@@ -217,8 +218,8 @@ return module.exports;
     return bundle;
 }
 
-export function buildJsx(contentRaw: string | Buffer) {
-    const content = Buffer.isBuffer(contentRaw) ? contentRaw.toString("utf-8") : contentRaw;
+export function buildJsx(contentRaw: string | Uint8Array) {
+    const content = binary_utils.unwrapStringOrBuffer(contentRaw);
     const output = transform(content, {
         transforms: ["jsx", "imports"],
         jsxPragma: "api.preact.h",

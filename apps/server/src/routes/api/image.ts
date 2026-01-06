@@ -1,11 +1,12 @@
-"use strict";
 
-import imageService from "../../services/image.js";
-import becca from "../../becca/becca.js";
-import fs from "fs";
+
 import type { Request, Response } from "express";
+import fs from "fs";
+
+import becca from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
 import type BRevision from "../../becca/entities/brevision.js";
+import imageService from "../../services/image.js";
 import { RESOURCE_DIR } from "../../services/resource_dir.js";
 
 function returnImageFromNote(req: Request, res: Response) {
@@ -42,7 +43,7 @@ function returnImageInt(image: BNote | BRevision | null, res: Response) {
 }
 
 export function renderSvgAttachment(image: BNote | BRevision, res: Response, attachmentName: string) {
-    let svg: string | Buffer = `<svg xmlns="http://www.w3.org/2000/svg"></svg>`;
+    let svg: string | Uint8Array = `<svg xmlns="http://www.w3.org/2000/svg"></svg>`;
     const attachment = image.getAttachmentByTitle(attachmentName);
 
     if (attachment) {

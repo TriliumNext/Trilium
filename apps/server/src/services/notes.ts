@@ -670,7 +670,7 @@ function saveAttachments(note: BNote, content: string) {
     return content;
 }
 
-function saveLinks(note: BNote, content: string | Buffer) {
+function saveLinks(note: BNote, content: string | Uint8Array) {
     if ((note.type !== "text" && note.type !== "relationMap") || (note.isProtected && !protectedSessionService.isProtectedSessionAvailable())) {
         return {
             forceFrontendReload: false,
@@ -889,7 +889,7 @@ function getUndeletedParentBranchIds(noteId: string, deleteId: string) {
     );
 }
 
-function scanForLinks(note: BNote, content: string | Buffer) {
+function scanForLinks(note: BNote, content: string | Uint8Array) {
     if (!note || !["text", "relationMap"].includes(note.type)) {
         return;
     }
@@ -910,7 +910,7 @@ function scanForLinks(note: BNote, content: string | Buffer) {
 /**
  * Things which have to be executed after updating content, but asynchronously (separate transaction)
  */
-async function asyncPostProcessContent(note: BNote, content: string | Buffer) {
+async function asyncPostProcessContent(note: BNote, content: string | Uint8Array) {
     if (cls.isMigrationRunning()) {
         // this is rarely needed for migrations, but can cause trouble by e.g. triggering downloads
         return;

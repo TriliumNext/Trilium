@@ -318,7 +318,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         }
     }
 
-    function prepareContent(title: string, content: string | Buffer, noteMeta: NoteMeta, note?: BNote): string | Buffer {
+    function prepareContent(title: string, content: string | Uint8Array, noteMeta: NoteMeta, note?: BNote): string | Uint8Array {
         const isText = ["html", "markdown"].includes(noteMeta?.format || "");
         if (isText) {
             content = content.toString();
@@ -339,11 +339,11 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         if (noteMeta.isClone) {
             const targetUrl = getNoteTargetUrl(noteMeta.noteId, noteMeta);
 
-            let content: string | Buffer = `<p>This is a clone of a note. Go to its <a href="${targetUrl}">primary location</a>.</p>`;
+            let content: string | Uint8Array = `<p>This is a clone of a note. Go to its <a href="${targetUrl}">primary location</a>.</p>`;
 
             content = prepareContent(noteMeta.title, content, noteMeta, undefined);
 
-            archive.append(content, { name: filePathPrefix + noteMeta.dataFileName });
+            archive.append(content as Buffer, { name: filePathPrefix + noteMeta.dataFileName });
 
             return;
         }
@@ -359,7 +359,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         if (noteMeta.dataFileName) {
             const content = prepareContent(noteMeta.title, note.getContent(), noteMeta, note);
 
-            archive.append(content, {
+            archive.append(content as string | Buffer, {
                 name: filePathPrefix + noteMeta.dataFileName,
                 date: dateUtils.parseDateTime(note.utcDateModified)
             });
@@ -375,7 +375,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             const attachment = note.getAttachmentById(attachmentMeta.attachmentId);
             const content = attachment.getContent();
 
-            archive.append(content, {
+            archive.append(content as Buffer, {
                 name: filePathPrefix + attachmentMeta.dataFileName,
                 date: dateUtils.parseDateTime(note.utcDateModified)
             });
