@@ -1,20 +1,8 @@
 import type { EntityChange } from "@triliumnext/commons";
 import { cls } from "@triliumnext/core";
 
-type Callback = (...args: any[]) => any;
-
 function init<T>(callback: () => T) {
     return cls.getContext().init(callback);
-}
-
-function wrap(callback: Callback) {
-    return () => {
-        try {
-            init(callback);
-        } catch (e: any) {
-            console.log(`Error occurred: ${e.message}: ${e.stack}`);
-        }
-    };
 }
 
 function getHoistedNoteId() {
@@ -76,6 +64,8 @@ function set(key: string, value: unknown) {
 function reset() {
     cls.getContext().reset();
 }
+
+export const wrap = cls.wrap;
 
 export default {
     init,

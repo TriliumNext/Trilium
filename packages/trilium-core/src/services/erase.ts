@@ -1,17 +1,18 @@
-import sql from "./sql.js";
-import log from "./log.js";
+import { getLog } from "./log.js";
 import entityChangesService from "./entity_changes.js";
 import optionService from "./options.js";
-import dateUtils from "./date_utils.js";
+import dateUtils from "./utils/date.js";
 import sqlInit from "./sql_init.js";
-import cls from "./cls.js";
+import * as cls from "./context.js";
 import type { EntityChange } from "@triliumnext/commons";
+import { getSql } from "./sql/index.js";
 
 function eraseNotes(noteIdsToErase: string[]) {
     if (noteIdsToErase.length === 0) {
         return;
     }
 
+    const sql = getSql();
     sql.executeMany(/*sql*/`DELETE FROM notes WHERE noteId IN (???)`, noteIdsToErase);
     setEntityChangesAsErased(sql.getManyRows(/*sql*/`SELECT * FROM entity_changes WHERE entityName = 'notes' AND entityId IN (???)`, noteIdsToErase));
 
@@ -28,8 +29,7 @@ function eraseNotes(noteIdsToErase: string[]) {
 
     eraseRevisions(revisionIdsToErase);
 
-
-    log.info(`Erased notes: ${JSON.stringify(noteIdsToErase)}`);
+    getLog().info(`Erased notes: ${JSON.stringify(noteIdsToErase)}`);
 }
 
 function setEntityChangesAsErased(entityChanges: EntityChange[]) {
@@ -48,11 +48,12 @@ function eraseBranches(branchIdsToErase: string[]) {
         return;
     }
 
+    const sql = getSql();
     sql.executeMany(/*sql*/`DELETE FROM branches WHERE branchId IN (???)`, branchIdsToErase);
 
     setEntityChangesAsErased(sql.getManyRows(/*sql*/`SELECT * FROM entity_changes WHERE entityName = 'branches' AND entityId IN (???)`, branchIdsToErase));
 
-    log.info(`Erased branches: ${JSON.stringify(branchIdsToErase)}`);
+    getLog().info(`Erased branches: ${JSON.stringify(branchIdsToErase)}`);
 }
 
 function eraseAttributes(attributeIdsToErase: string[]) {
@@ -60,11 +61,12 @@ function eraseAttributes(attributeIdsToErase: string[]) {
         return;
     }
 
+    const sql = getSql();
     sql.executeMany(/*sql*/`DELETE FROM attributes WHERE attributeId IN (???)`, attributeIdsToErase);
 
     setEntityChangesAsErased(sql.getManyRows(/*sql*/`SELECT * FROM entity_changes WHERE entityName = 'attributes' AND entityId IN (???)`, attributeIdsToErase));
 
-    log.info(`Erased attributes: ${JSON.stringify(attributeIdsToErase)}`);
+    getLog().info(`Erased attributes: ${JSON.stringify(attributeIdsToErase)}`);
 }
 
 function eraseAttachments(attachmentIdsToErase: string[]) {
@@ -72,11 +74,12 @@ function eraseAttachments(attachmentIdsToErase: string[]) {
         return;
     }
 
+    const sql = getSql();
     sql.executeMany(/*sql*/`DELETE FROM attachments WHERE attachmentId IN (???)`, attachmentIdsToErase);
 
     setEntityChangesAsErased(sql.getManyRows(/*sql*/`SELECT * FROM entity_changes WHERE entityName = 'attachments' AND entityId IN (???)`, attachmentIdsToErase));
 
-    log.info(`Erased attachments: ${JSON.stringify(attachmentIdsToErase)}`);
+    getLog().info(`Erased attachments: ${JSON.stringify(attachmentIdsToErase)}`);
 }
 
 function eraseRevisions(revisionIdsToErase: string[]) {
@@ -84,14 +87,16 @@ function eraseRevisions(revisionIdsToErase: string[]) {
         return;
     }
 
+    const sql = getSql();
     sql.executeMany(/*sql*/`DELETE FROM revisions WHERE revisionId IN (???)`, revisionIdsToErase);
 
     setEntityChangesAsErased(sql.getManyRows(/*sql*/`SELECT * FROM entity_changes WHERE entityName = 'revisions' AND entityId IN (???)`, revisionIdsToErase));
 
-    log.info(`Removed revisions: ${JSON.stringify(revisionIdsToErase)}`);
+    getLog().info(`Removed revisions: ${JSON.stringify(revisionIdsToErase)}`);
 }
 
 function eraseUnusedBlobs() {
+    const sql = getSql();
     const unusedBlobIds = sql.getColumn(`
         SELECT blobs.blobId
         FROM blobs
@@ -111,10 +116,11 @@ function eraseUnusedBlobs() {
     // this is because technically every keystroke can create a new blob and there would be just too many
     sql.executeMany(/*sql*/`DELETE FROM entity_changes WHERE entityName = 'blobs' AND entityId IN (???)`, unusedBlobIds);
 
-    log.info(`Erased unused blobs: ${JSON.stringify(unusedBlobIds)}`);
+    getLog().info(`Erased unused blobs: ${JSON.stringify(unusedBlobIds)}`);
 }
 
 function eraseDeletedEntities(eraseEntitiesAfterTimeInSeconds: number | null = null) {
+    const sql = getSql();
     // this is important also so that the erased entity changes are sent to the connected clients
     sql.transactional(() => {
         if (eraseEntitiesAfterTimeInSeconds === null) {
@@ -140,6 +146,7 @@ function eraseDeletedEntities(eraseEntitiesAfterTimeInSeconds: number | null = n
 }
 
 function eraseNotesWithDeleteId(deleteId: string) {
+    const sql = getSql();
     const noteIdsToErase = sql.getColumn<string>("SELECT noteId FROM notes WHERE isDeleted = 1 AND deleteId = ?", [deleteId]);
     eraseNotes(noteIdsToErase);
 
@@ -170,7 +177,7 @@ function eraseScheduledAttachments(eraseUnusedAttachmentsAfterSeconds: number | 
     }
 
     const cutOffDate = dateUtils.utcDateTimeStr(new Date(Date.now() - eraseUnusedAttachmentsAfterSeconds * 1000));
-    const attachmentIdsToErase = sql.getColumn<string>("SELECT attachmentId FROM attachments WHERE utcDateScheduledForErasureSince < ?", [cutOffDate]);
+    const attachmentIdsToErase = getSql().getColumn<string>("SELECT attachmentId FROM attachments WHERE utcDateScheduledForErasureSince < ?", [cutOffDate]);
 
     eraseAttachments(attachmentIdsToErase);
 }

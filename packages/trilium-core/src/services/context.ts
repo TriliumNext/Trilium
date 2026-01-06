@@ -19,10 +19,19 @@ export function getContext(): ExecutionContext {
     return ctx;
 }
 
+export function wrap(callback: (...args: any[]) => any) {
+    return () => {
+        try {
+            getContext().init(callback);
+        } catch (e: any) {
+            console.log(`Error occurred: ${e.message}: ${e.stack}`);
+        }
+    };
+}
+
 export function getHoistedNoteId() {
     return getContext().get("hoistedNoteId") || "root";
 }
-
 
 export function getComponentId() {
     return getContext().get("componentId");
