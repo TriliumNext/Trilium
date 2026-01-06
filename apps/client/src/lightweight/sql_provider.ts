@@ -13,6 +13,8 @@ type Sqlite3PreparedStatement = ReturnType<Sqlite3Database["prepare"]>;
  * expected by trilium-core.
  */
 class WasmStatement implements Statement {
+    private isRawMode = false;
+    
     constructor(
         private stmt: Sqlite3PreparedStatement,
         private db: Sqlite3Database
@@ -36,7 +38,7 @@ class WasmStatement implements Statement {
         this.bindParams(Array.isArray(params) ? params : params !== undefined ? [params] : []);
         try {
             if (this.stmt.step()) {
-                return this.stmt.get({});
+                return this.isRawMode ? this.stmt.get([]) : this.stmt.get({});
             }
             return undefined;
         } finally {
@@ -49,7 +51,7 @@ class WasmStatement implements Statement {
         const results: unknown[] = [];
         try {
             while (this.stmt.step()) {
-                results.push(this.stmt.get({}));
+                results.push(this.isRawMode ? this.stmt.get([]) : this.stmt.get({}));
             }
             return results;
         } finally {
@@ -60,6 +62,7 @@ class WasmStatement implements Statement {
     iterate(...params: unknown[]): IterableIterator<unknown> {
         this.bindParams(params);
         const stmt = this.stmt;
+        const isRaw = this.isRawMode;
 
         return {
             [Symbol.iterator]() {
@@ -67,7 +70,7 @@ class WasmStatement implements Statement {
             },
             next(): IteratorResult<unknown> {
                 if (stmt.step()) {
-                    return { value: stmt.get({}), done: false };
+                    return { value: isRaw ? stmt.get([]) : stmt.get({}), done: false };
                 }
                 stmt.reset();
                 return { value: undefined, done: true };
@@ -75,10 +78,10 @@ class WasmStatement implements Statement {
         };
     }
 
-    raw(_toggleState?: boolean): this {
-        // SQLite WASM doesn't have a direct equivalent to raw mode
-        // raw mode returns arrays instead of objects
-        console.warn("raw() mode is not fully supported in WASM SQLite provider");
+    raw(toggleState?: boolean): this {
+        // In raw mode, rows are returned as arrays instead of objects
+        // If toggleState is undefined, enable raw mode (better-sqlite3 behavior)
+        this.isRawMode = toggleState !== undefined ? toggleState : true;
         return this;
     }
 
