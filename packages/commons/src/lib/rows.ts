@@ -16,7 +16,7 @@ export interface AttachmentRow {
     isDeleted?: boolean;
     deleteId?: string;
     contentLength?: number;
-    content?: Buffer | string;
+    content?: Uint8Array | string;
 }
 
 export interface RevisionRow {
