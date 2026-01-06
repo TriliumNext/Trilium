@@ -3,7 +3,7 @@ import { type KeyboardShortcutWithRequiredActionName, type OptionMap, type Optio
 import appInfo from "./app_info.js";
 import dateUtils from "./utils/date.js";
 import keyboardActions from "./keyboard_actions.js";
-import log from "./log.js";
+import { getLog } from "./log.js";
 import optionService from "./options.js";
 import { isWindows, randomSecureToken } from "./utils.js";
 
@@ -238,6 +238,7 @@ function initStartupOptions() {
 
     const allDefaultOptions = defaultOptions.concat(getKeyboardDefaultOptions());
 
+    const log = getLog();
     for (const { name, value, isSynced } of allDefaultOptions) {
         if (!(name in optionsMap)) {
             let resolvedValue;

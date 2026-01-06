@@ -1,7 +1,7 @@
 "use strict";
 
 import optionService from "./options.js";
-import log from "./log.js";
+import { getLog } from "./log.js";
 import { isElectron, isMac } from "./utils.js";
 import type { ActionKeyboardShortcut, KeyboardShortcut } from "@triliumnext/commons";
 import { t } from "i18next";
@@ -854,6 +854,7 @@ function getKeyboardActions() {
         }
     }
 
+    const log = getLog();
     for (const option of optionService.getOptions()) {
         if (option.name.startsWith("keyboardShortcuts")) {
             let actionName = option.name.substring(17);
