@@ -1,7 +1,7 @@
 
 
 import { EditedNotesResponse, RevisionItem, RevisionPojo } from "@triliumnext/commons";
-import { becca_service, blob as blobService, NotePojo } from "@triliumnext/core";
+import { becca_service, binary_utils, blob as blobService, NotePojo } from "@triliumnext/core";
 import type { Request, Response } from "express";
 import path from "path";
 
@@ -55,7 +55,7 @@ function getRevision(req: Request) {
         revision.content = revision.getContent();
 
         if (revision.content && revision.type === "image") {
-            revision.content = revision.content.toString("base64");
+            revision.content = binary_utils.encodeBase64(revision.content);
         }
     }
 

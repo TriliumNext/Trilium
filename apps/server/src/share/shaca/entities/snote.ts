@@ -1,5 +1,5 @@
 import { BlobRow } from "@triliumnext/commons";
-import { NOTE_TYPE_ICONS } from "@triliumnext/core";
+import { binary_utils, NOTE_TYPE_ICONS } from "@triliumnext/core";
 import escape from "escape-html";
 
 import utils from "../../../services/utils.js";
@@ -107,7 +107,7 @@ class SNote extends AbstractShacaEntity {
         const content = row.content;
 
         if (this.hasStringContent()) {
-            return content === null ? "" : content.toString("utf-8");
+            return content === null ? "" : binary_utils.decodeUtf8(content);
         }
         return content;
     }

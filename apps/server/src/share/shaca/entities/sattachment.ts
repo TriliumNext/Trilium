@@ -1,6 +1,7 @@
 
 
 import { BlobRow } from "@triliumnext/commons";
+import { binary_utils } from "@triliumnext/core";
 
 import utils from "../../../services/utils.js";
 import sql from "../../sql.js";
@@ -43,18 +44,18 @@ class SAttachment extends AbstractShacaEntity {
         if (!row) {
             if (silentNotFoundError) {
                 return undefined;
-            } 
+            }
             throw new Error(`Cannot find blob for attachment '${this.attachmentId}', blob '${this.blobId}'`);
-            
+
         }
 
         const content = row.content;
 
         if (this.hasStringContent()) {
-            return content === null ? "" : content.toString("utf-8");
-        } 
+            return content === null ? "" : binary_utils.decodeUtf8(content);
+        }
         return content;
-        
+
     }
 
     /** @returns true if the attachment has string content (not binary) */

@@ -8,7 +8,8 @@ export function concat2(a: Uint8Array, b: Uint8Array): Uint8Array {
     return out;
 }
 
-export function encodeBase64(bytes: Uint8Array): string {
+export function encodeBase64(stringOrBuffer: string | Uint8Array): string {
+    const bytes = wrapStringOrBuffer(stringOrBuffer);
     let binary = "";
     const len = bytes.length;
 
@@ -31,12 +32,16 @@ export function decodeBase64(base64: string): Uint8Array {
     return bytes;
 }
 
-export function decodeUtf8(bytes: Uint8Array) {
-    return utf8Decoder.decode(bytes);
+export function decodeUtf8(stringOrBuffer: string | Uint8Array) {
+    if (typeof stringOrBuffer === "string") {
+        return stringOrBuffer;
+    } else {
+        return utf8Decoder.decode(stringOrBuffer);
+    }
 }
 
-export function encodeUtf8(string: string) {
-    return utf8Encoder.encode(string);
+export function encodeUtf8(string: string | Uint8Array) {
+    return utf8Encoder.encode(wrapStringOrBuffer(string));
 }
 
 export function unwrapStringOrBuffer(stringOrBuffer: string | Uint8Array) {

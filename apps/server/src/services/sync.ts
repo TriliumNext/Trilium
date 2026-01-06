@@ -1,7 +1,7 @@
 
 
 import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
-import { becca_loader, entity_constructor } from "@triliumnext/core";
+import { becca_loader, binary_utils, entity_constructor } from "@triliumnext/core";
 
 import becca from "../becca/becca.js";
 import appInfo from "./app_info.js";
@@ -360,7 +360,7 @@ function getEntityChangeRow(entityChange: EntityChange) {
         }
 
         if (entityRow.content) {
-            entityRow.content = entityRow.content.toString("base64");
+            entityRow.content = binary_utils.encodeBase64(entityRow.content);
         }
     }
 
