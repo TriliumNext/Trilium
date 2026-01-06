@@ -10,9 +10,14 @@ export * as protected_session from "./services/protected_session";
 export { default as data_encryption } from "./services/encryption/data_encryption"
 export * as binary_utils from "./services/utils/binary";
 export * as utils from "./services/utils/index";
+export * from "./services/build";
 export { default as date_utils } from "./services/utils/date";
 export { default as events } from "./services/events";
 export { default as blob } from "./services/blob";
+export { default as options } from "./services/options";
+export { default as options_init } from "./services/options_init";
+export { default as app_info } from "./services/app_info";
+export { default as keyboard_actions } from "./services/keyboard_actions";
 export { getContext, type ExecutionContext } from "./services/context";
 export * from "./errors";
 export type { CryptoProvider } from "./services/encryption/crypto";
