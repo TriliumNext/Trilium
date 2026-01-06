@@ -10,7 +10,7 @@ import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import type BBranch from "./bbranch.js";
 import type BNote from "./bnote.js";
 import { getSql } from "../../services/sql/index.js";
-import { isStringNote, replaceAll } from "../../services/utils";
+import { formatDownloadTitle, isStringNote, replaceAll } from "../../services/utils";
 
 const attachmentRoleToNoteTypeMapping = {
     image: "image",
@@ -201,7 +201,7 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
     getFileName() {
         const type = this.role === "image" ? "image" : "file";
 
-        return utils.formatDownloadTitle(this.title, type, this.mime);
+        return formatDownloadTitle(this.title, type, this.mime);
     }
 
     override beforeSaving() {

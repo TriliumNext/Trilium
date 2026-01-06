@@ -5,11 +5,8 @@ import chardet from "chardet";
 import crypto from "crypto";
 import escape from "escape-html";
 import { t } from "i18next";
-import mimeTypes from "mime-types";
 import { release as osRelease } from "os";
 import path from "path";
-import { generator } from "rand-token";
-import sanitize from "sanitize-filename";
 import stripBom from "strip-bom";
 import unescape from "unescape";
 
@@ -140,12 +137,12 @@ export async function crash(message: string) {
     }
 }
 
+/** @deprecated */
 export function getContentDisposition(filename: string) {
-    const sanitizedFilename = sanitize(filename).trim() || "file";
-    const uriEncodedFilename = encodeURIComponent(sanitizedFilename);
-    return `file; filename="${uriEncodedFilename}"; filename*=UTF-8''${uriEncodedFilename}`;
+    return coreUtils.getContentDisposition(filename);
 }
 
+/** @deprecated */
 export function isStringNote(type: string | undefined, mime: string) {
     return coreUtils.isStringNote(type, mime);
 }
@@ -160,30 +157,9 @@ export function replaceAll(string: string, replaceWhat: string, replaceWith: str
     return coreUtils.replaceAll(string, replaceWhat, replaceWith);
 }
 
+/** @deprecated */
 export function formatDownloadTitle(fileName: string, type: string | null, mime: string) {
-    const fileNameBase = !fileName ? "untitled" : sanitize(fileName);
-
-    const getExtension = () => {
-        if (type === "text") return ".html";
-        if (type === "relationMap" || type === "canvas" || type === "search") return ".json";
-        if (!mime) return "";
-
-        const mimeLc = mime.toLowerCase();
-
-        // better to just return the current name without a fake extension
-        // it's possible that the title still preserves the correct extension anyways
-        if (mimeLc === "application/octet-stream") return "";
-
-        // if fileName has an extension matching the mime already - reuse it
-        const mimeTypeFromFileName = mimeTypes.lookup(fileName);
-        if (mimeTypeFromFileName === mimeLc) return "";
-
-        // as last resort try to get extension from mimeType
-        const extensions = mimeTypes.extension(mime);
-        return extensions ? `.${extensions}` : "";
-    };
-
-    return `${fileNameBase}${getExtension()}`;
+    return coreUtils.formatDownloadTitle(fileName, type, mime);
 }
 
 export function removeTextFileExtension(filePath: string) {

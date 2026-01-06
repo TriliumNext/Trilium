@@ -3,6 +3,7 @@ import { ALLOWED_PROTOCOLS, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/
 
 import optionService from "./options.js";
 import sanitize from "sanitize-html";
+import sanitizeFileNameInternal from "sanitize-filename";
 
 // intended mainly as protection against XSS via import
 // secondarily, it (partly) protects against "CSS takeover"
@@ -87,4 +88,8 @@ export function sanitizeHtmlCustom(dirtyHtml: string, config: sanitize.IOptions)
 
 export function sanitizeUrl(url: string) {
     return sanitizeUrlInternal(url).trim();
+}
+
+export function sanitizeFileName(fileName: string) {
+    return sanitizeFileNameInternal(fileName);
 }

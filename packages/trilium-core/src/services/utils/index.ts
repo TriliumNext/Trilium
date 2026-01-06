@@ -1,5 +1,7 @@
 import { getCrypto } from "../encryption/crypto";
+import { sanitizeFileName } from "../sanitizer";
 import { encodeBase64 } from "./binary";
+import mimeTypes from "mime-types";
 
 // render and book are string note in the sense that they are expected to contain empty string
 const STRING_NOTE_TYPES = new Set(["text", "code", "relationMap", "search", "render", "book", "mermaid", "canvas", "webView"]);
@@ -64,4 +66,36 @@ export function sanitizeAttributeName(origName: string) {
     // any not allowed character should be replaced with underscore
 
     return fixedName;
+}
+
+export function getContentDisposition(filename: string) {
+    const sanitizedFilename = sanitizeFileName(filename).trim() || "file";
+    const uriEncodedFilename = encodeURIComponent(sanitizedFilename);
+    return `file; filename="${uriEncodedFilename}"; filename*=UTF-8''${uriEncodedFilename}`;
+}
+
+export function formatDownloadTitle(fileName: string, type: string | null, mime: string) {
+    const fileNameBase = !fileName ? "untitled" : sanitizeFileName(fileName);
+
+    const getExtension = () => {
+        if (type === "text") return ".html";
+        if (type === "relationMap" || type === "canvas" || type === "search") return ".json";
+        if (!mime) return "";
+
+        const mimeLc = mime.toLowerCase();
+
+        // better to just return the current name without a fake extension
+        // it's possible that the title still preserves the correct extension anyways
+        if (mimeLc === "application/octet-stream") return "";
+
+        // if fileName has an extension matching the mime already - reuse it
+        const mimeTypeFromFileName = mimeTypes.lookup(fileName);
+        if (mimeTypeFromFileName === mimeLc) return "";
+
+        // as last resort try to get extension from mimeType
+        const extensions = mimeTypes.extension(mime);
+        return extensions ? `.${extensions}` : "";
+    };
+
+    return `${fileNameBase}${getExtension()}`;
 }

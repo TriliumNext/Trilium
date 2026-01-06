@@ -2,10 +2,10 @@ import type { BlobRow, EntityChange } from "@triliumnext/commons";
 
 import becca from "../becca/becca.js";
 import dateUtils from "./utils/date.js";
-import  { getLog } from "./log.js";
+import { getLog } from "./log.js";
 import { randomString } from "./utils/index.js";
 import { getSql } from "./sql/index.js";
-import { getComponentId } from "./context.js";
+import * as cls from "./context.js";
 import events from "./events.js";
 import blobService from "./blob.js";
 import getInstanceId from "./instance_id.js";
@@ -33,7 +33,7 @@ function putEntityChange(origEntityChange: EntityChange) {
         ec.changeId = randomString(12);
     }
 
-    ec.componentId = ec.componentId || getComponentId() || "NA"; // NA = not available
+    ec.componentId = ec.componentId || cls.getComponentId() || "NA"; // NA = not available
     ec.instanceId = ec.instanceId || getInstanceId();
     ec.isSynced = ec.isSynced ? 1 : 0;
     ec.isErased = ec.isErased ? 1 : 0;

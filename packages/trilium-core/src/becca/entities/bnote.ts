@@ -19,7 +19,7 @@ import BAttribute from "./battribute.js";
 import type BBranch from "./bbranch.js";
 import BRevision from "./brevision.js";
 import { getSql } from "../../services/sql/index.js";
-import { isStringNote, normalize, randomString, replaceAll } from "../../services/utils";
+import { formatDownloadTitle, isStringNote, normalize, randomString, replaceAll } from "../../services/utils";
 
 const LABEL = "label";
 const RELATION = "relation";
@@ -1654,7 +1654,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
     }
 
     getFileName() {
-        return utils.formatDownloadTitle(this.title, this.type, this.mime);
+        return formatDownloadTitle(this.title, this.type, this.mime);
     }
 
     override beforeSaving() {
