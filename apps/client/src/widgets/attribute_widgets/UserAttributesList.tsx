@@ -1,14 +1,16 @@
-import { useState } from "preact/hooks";
-import FNote from "../../entities/fnote";
 import "./UserAttributesList.css";
-import { useTriliumEvent } from "../react/hooks";
-import attributes from "../../services/attributes";
-import { DefinitionObject } from "../../services/promoted_attribute_definition_parser";
-import { formatDateTime } from "../../utils/formatters";
+
+import type { DefinitionObject } from "@triliumnext/commons";
 import { ComponentChildren, CSSProperties } from "preact";
+import { useState } from "preact/hooks";
+
+import FNote from "../../entities/fnote";
+import attributes from "../../services/attributes";
+import { getReadableTextColor } from "../../services/css_class_manager";
+import { formatDateTime } from "../../utils/formatters";
+import { useTriliumEvent } from "../react/hooks";
 import Icon from "../react/Icon";
 import NoteLink from "../react/NoteLink";
-import { getReadableTextColor } from "../../services/css_class_manager";
 
 interface UserAttributesListProps {
     note: FNote;
@@ -29,7 +31,7 @@ export default function UserAttributesDisplay({ note, ignoredAttributes }: UserA
         <div className="user-attributes">
             {userAttributes?.map(attr => buildUserAttribute(attr))}
         </div>
-    )
+    );
 
 }
 
@@ -46,13 +48,13 @@ function useNoteAttributesWithDefinitions(note: FNote, attributesToIgnore:  stri
 }
 
 function UserAttribute({ attr, children, style }: { attr: AttributeWithDefinitions, children: ComponentChildren, style?: CSSProperties }) {
-    const className = `${attr.type === "label" ? "label" + " " + attr.def.labelType : "relation"}`;
+    const className = `${attr.type === "label" ? `label` + ` ${  attr.def.labelType}` : "relation"}`;
 
     return (
         <span key={attr.friendlyName} className={`user-attribute type-${className}`} style={style}>
             {children}
         </span>
-    )
+    );
 }
 
 function buildUserAttribute(attr: AttributeWithDefinitions): ComponentChildren {
@@ -61,7 +63,7 @@ function buildUserAttribute(attr: AttributeWithDefinitions): ComponentChildren {
     let style: CSSProperties | undefined;
 
     if (attr.type === "label") {
-        let value = attr.value;
+        const value = attr.value;
         switch (attr.def.labelType) {
             case "number":
                 let formattedValue = value;
@@ -102,7 +104,7 @@ function buildUserAttribute(attr: AttributeWithDefinitions): ComponentChildren {
         content = <>{defaultLabel}<NoteLink notePath={attr.value} showNoteIcon /></>;
     }
 
-    return <UserAttribute attr={attr} style={style}>{content}</UserAttribute>
+    return <UserAttribute attr={attr} style={style}>{content}</UserAttribute>;
 }
 
 function getAttributesWithDefinitions(note: FNote, attributesToIgnore: string[] = []): AttributeWithDefinitions[] {

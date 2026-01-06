@@ -21,7 +21,7 @@ export interface RunResult {
 export interface DatabaseProvider {
     loadFromFile(path: string, isReadOnly: boolean): void;
     loadFromMemory(): void;
-    loadFromBuffer(buffer: NonSharedBuffer): void;
+    loadFromBuffer(buffer: Uint8Array): void;
     backup(destinationFile: string): void;
     prepare(query: string): Statement;
     transaction<T>(func: (statement: Statement) => T): Transaction;

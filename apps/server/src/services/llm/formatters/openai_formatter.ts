@@ -1,16 +1,16 @@
-import sanitizeHtml from 'sanitize-html';
+import { sanitize } from '@triliumnext/core';
+
+import log from '../../log.js';
 import type { Message } from '../ai_interface.js';
-import { BaseMessageFormatter } from './base_formatter.js';
+import {
+    FORMATTER_LOGS,
+    HTML_ALLOWED_ATTRIBUTES,
+    HTML_ALLOWED_TAGS,
+    HTML_ENTITY_REPLACEMENTS,
+    HTML_TO_MARKDOWN_PATTERNS} from '../constants/formatter_constants.js';
 import { PROVIDER_PROMPTS } from '../constants/llm_prompt_constants.js';
 import { LLM_CONSTANTS } from '../constants/provider_constants.js';
-import {
-    HTML_ALLOWED_TAGS,
-    HTML_ALLOWED_ATTRIBUTES,
-    HTML_TO_MARKDOWN_PATTERNS,
-    HTML_ENTITY_REPLACEMENTS,
-    FORMATTER_LOGS
-} from '../constants/formatter_constants.js';
-import log from '../../log.js';
+import { BaseMessageFormatter } from './base_formatter.js';
 
 /**
  * OpenAI-specific message formatter
@@ -54,18 +54,18 @@ export class OpenAIMessageFormatter extends BaseMessageFormatter {
         // If we don't have explicit context but have a system prompt
         else if (!hasSystemMessage && systemPrompt) {
             let baseSystemPrompt = systemPrompt || PROVIDER_PROMPTS.COMMON.DEFAULT_ASSISTANT_INTRO;
-            
+
             // Check if this is a tool-using conversation
             const hasPreviousToolCalls = messages.some(msg => msg.tool_calls && msg.tool_calls.length > 0);
             const hasToolResults = messages.some(msg => msg.role === 'tool');
             const isToolUsingConversation = useTools || hasPreviousToolCalls || hasToolResults;
-            
+
             // Add tool instructions for OpenAI when tools are being used
             if (isToolUsingConversation && PROVIDER_PROMPTS.OPENAI.TOOL_INSTRUCTIONS) {
                 log.info('Adding tool instructions to system prompt for OpenAI');
                 baseSystemPrompt = `${baseSystemPrompt}\n\n${PROVIDER_PROMPTS.OPENAI.TOOL_INSTRUCTIONS}`;
             }
-            
+
             formattedMessages.push({
                 role: 'system',
                 content: baseSystemPrompt
@@ -111,7 +111,7 @@ export class OpenAIMessageFormatter extends BaseMessageFormatter {
 
         try {
             // Convert HTML to Markdown for better readability
-            const cleaned = sanitizeHtml(content, {
+            const cleaned = sanitize.sanitizeHtmlCustom(content, {
                 allowedTags: HTML_ALLOWED_TAGS.STANDARD,
                 allowedAttributes: HTML_ALLOWED_ATTRIBUTES.STANDARD
             });

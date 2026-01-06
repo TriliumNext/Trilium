@@ -26,7 +26,7 @@ async function startApplication() {
             },
             async onTransactionRollback() {
                 const cls = (await import("./services/cls.js")).default;
-                const becca_loader = (await import("./becca/becca_loader.js")).default;
+                const becca_loader = (await import("@triliumnext/core")).becca_loader;
                 const entity_changes = (await import("./services/entity_changes.js")).default;
                 const log = (await import("./services/log")).default;
 

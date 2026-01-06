@@ -1,10 +1,8 @@
+import { AbstractBeccaEntity,NotFoundError, ValidationError } from "@triliumnext/core";
 import express, { type RequestHandler } from "express";
 import multer from "multer";
 
-import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
 import { namespace } from "../cls_provider.js";
-import NotFoundError from "../errors/not_found_error.js";
-import ValidationError from "../errors/validation_error.js";
 import auth from "../services/auth.js";
 import cls from "../services/cls.js";
 import entityChangesService from "../services/entity_changes.js";

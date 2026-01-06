@@ -34,7 +34,7 @@ export default class HtmlExportProvider extends ZipExportProvider {
         metaFile.files.push(this.cssMeta);
     }
 
-    prepareContent(title: string, content: string | Buffer, noteMeta: NoteMeta): string | Buffer {
+    prepareContent(title: string, content: string | Uint8Array, noteMeta: NoteMeta): string | Uint8Array {
         if (noteMeta.format === "html" && typeof content === "string") {
             if (!content.substr(0, 100).toLowerCase().includes("<html") && !this.zipExportOptions?.skipHtmlTemplate) {
                 if (!noteMeta?.notePath?.length) {

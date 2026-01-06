@@ -1,25 +1,25 @@
+import("@triliumnext/core");
+
+import { erase } from "@triliumnext/core";
+import compression from "compression";
+import cookieParser from "cookie-parser";
 import express from "express";
+import { auth } from "express-openid-connect";
+import helmet from "helmet";
+import { t } from "i18next";
 import path from "path";
 import favicon from "serve-favicon";
-import cookieParser from "cookie-parser";
-import helmet from "helmet";
-import compression from "compression";
-import config from "./services/config.js";
-import utils, { getResourceDir, isDev } from "./services/utils.js";
+
 import assets from "./routes/assets.js";
-import routes from "./routes/routes.js";
 import custom from "./routes/custom.js";
 import error_handlers from "./routes/error_handlers.js";
-import { startScheduledCleanup } from "./services/erase.js";
-import sql_init from "./services/sql_init.js";
-import { auth } from "express-openid-connect";
-import openID from "./services/open_id.js";
-import { t } from "i18next";
-import eventService from "./services/events.js";
+import routes from "./routes/routes.js";
+import config from "./services/config.js";
 import log from "./services/log.js";
-import "./services/handlers.js";
-import "./becca/becca_loader.js";
+import openID from "./services/open_id.js";
 import { RESOURCE_DIR } from "./services/resource_dir.js";
+import sql_init from "./services/sql_init.js";
+import utils, { getResourceDir, isDev } from "./services/utils.js";
 
 export default async function buildApp() {
     const app = express();
@@ -107,7 +107,7 @@ export default async function buildApp() {
 
     await import("./services/scheduler.js");
 
-    startScheduledCleanup();
+    erase.startScheduledCleanup();
 
     if (utils.isElectron) {
         (await import("@electron/remote/main/index.js")).initialize();

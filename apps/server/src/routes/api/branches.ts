@@ -1,17 +1,14 @@
-"use strict";
-
-import sql from "../../services/sql.js";
-import utils from "../../services/utils.js";
-import entityChangesService from "../../services/entity_changes.js";
-import treeService from "../../services/tree.js";
-import eraseService from "../../services/erase.js";
-import becca from "../../becca/becca.js";
-import TaskContext from "../../services/task_context.js";
-import branchService from "../../services/branches.js";
-import log from "../../services/log.js";
-import ValidationError from "../../errors/validation_error.js";
-import eventService from "../../services/events.js";
+import { erase as eraseService, events as eventService, ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
+
+import becca from "../../becca/becca.js";
+import branchService from "../../services/branches.js";
+import entityChangesService from "../../services/entity_changes.js";
+import log from "../../services/log.js";
+import sql from "../../services/sql.js";
+import TaskContext from "../../services/task_context.js";
+import treeService from "../../services/tree.js";
+import utils from "../../services/utils.js";
 
 /**
  * Code in this file deals with moving and cloning branches. The relationship between note and parent note is unique
@@ -256,7 +253,7 @@ function deleteBranch(req: Request) {
     }
 
     return {
-        noteDeleted: noteDeleted
+        noteDeleted
     };
 }
 
@@ -272,7 +269,7 @@ function setPrefix(req: Request) {
 
 function setPrefixBatch(req: Request) {
     const { branchIds, prefix } = req.body;
-    
+
     if (!Array.isArray(branchIds)) {
         throw new ValidationError("branchIds must be an array");
     }

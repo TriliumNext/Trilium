@@ -1,16 +1,16 @@
-import sanitizeHtml from 'sanitize-html';
+import { sanitize } from '@triliumnext/core';
+
 import type { Message } from '../ai_interface.js';
-import type { MessageFormatter } from '../interfaces/message_formatter.js';
-import { DEFAULT_SYSTEM_PROMPT, PROVIDER_PROMPTS } from '../constants/llm_prompt_constants.js';
 import {
-    HTML_ALLOWED_TAGS,
-    HTML_ALLOWED_ATTRIBUTES,
-    HTML_TRANSFORMS,
-    HTML_TO_MARKDOWN_PATTERNS,
-    HTML_ENTITY_REPLACEMENTS,
     ENCODING_FIXES,
-    FORMATTER_LOGS
-} from '../constants/formatter_constants.js';
+    FORMATTER_LOGS,
+    HTML_ALLOWED_ATTRIBUTES,
+    HTML_ALLOWED_TAGS,
+    HTML_ENTITY_REPLACEMENTS,
+    HTML_TO_MARKDOWN_PATTERNS,
+    HTML_TRANSFORMS} from '../constants/formatter_constants.js';
+import { DEFAULT_SYSTEM_PROMPT, PROVIDER_PROMPTS } from '../constants/llm_prompt_constants.js';
+import type { MessageFormatter } from '../interfaces/message_formatter.js';
 
 /**
  * Base formatter with common functionality for all providers
@@ -49,7 +49,7 @@ export abstract class BaseMessageFormatter implements MessageFormatter {
             const fixedContent = this.fixEncodingIssues(content);
 
             // Convert HTML to markdown for better readability
-            const cleaned = sanitizeHtml(fixedContent, {
+            const cleaned = sanitize.sanitizeHtmlCustom(fixedContent, {
                 allowedTags: HTML_ALLOWED_TAGS.STANDARD,
                 allowedAttributes: HTML_ALLOWED_ATTRIBUTES.STANDARD,
                 transformTags: HTML_TRANSFORMS.STANDARD

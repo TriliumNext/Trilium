@@ -2,10 +2,10 @@
 
 import { getMimeTypeFromMarkdownName, MIME_TYPE_AUTO } from "@triliumnext/commons";
 import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import { sanitize } from "@triliumnext/core";
 import { parse, Renderer, type Tokens,use } from "marked";
 
 import { ADMONITION_TYPE_MAPPINGS } from "../export/markdown.js";
-import htmlSanitizer from "../html_sanitizer.js";
 import utils from "../utils.js";
 import wikiLinkInternalLink from "./markdown/wikilink_internal_link.js";
 import wikiLinkTransclusion from "./markdown/wikilink_transclusion.js";
@@ -151,7 +151,7 @@ function renderToHtml(content: string, title: string) {
 
     // h1 handling needs to come before sanitization
     html = importUtils.handleH1(html, title);
-    html = htmlSanitizer.sanitize(html);
+    html = sanitize.sanitizeHtml(html);
 
     // Add a trailing semicolon to CSS styles.
     html = html.replaceAll(/(<(img|figure|col).*?style=".*?)"/g, "$1;\"");

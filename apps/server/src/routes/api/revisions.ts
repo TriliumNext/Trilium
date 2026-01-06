@@ -1,18 +1,14 @@
-"use strict";
-
-import beccaService from "../../becca/becca_service.js";
-import utils from "../../services/utils.js";
-import sql from "../../services/sql.js";
-import cls from "../../services/cls.js";
-import path from "path";
-import becca from "../../becca/becca.js";
-import blobService from "../../services/blob.js";
-import eraseService from "../../services/erase.js";
+import { EditedNotesResponse, RevisionItem, RevisionPojo } from "@triliumnext/commons";
+import { becca_service, binary_utils, blob as blobService, erase as eraseService, NotePojo } from "@triliumnext/core";
 import type { Request, Response } from "express";
-import type BRevision from "../../becca/entities/brevision.js";
+import path from "path";
+
+import becca from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
-import type { NotePojo } from "../../becca/becca-interface.js";
-import { EditedNotesResponse, RevisionItem, RevisionPojo, RevisionRow } from "@triliumnext/commons";
+import type BRevision from "../../becca/entities/brevision.js";
+import cls from "../../services/cls.js";
+import sql from "../../services/sql.js";
+import utils from "../../services/utils.js";
 
 interface NotePath {
     noteId: string;
@@ -56,7 +52,7 @@ function getRevision(req: Request) {
         revision.content = revision.getContent();
 
         if (revision.content && revision.type === "image") {
-            revision.content = revision.content.toString("base64");
+            revision.content = binary_utils.encodeBase64(revision.content);
         }
     }
 
@@ -166,7 +162,7 @@ function getEditedNotesOnDate(req: Request) {
         )
         ORDER BY isDeleted
         LIMIT 50`,
-        { date: `${req.params.date}%` }
+    { date: `${req.params.date}%` }
     );
 
     let notes = becca.getNotes(noteIds, true);
@@ -191,7 +187,7 @@ function getNotePathData(note: BNote): NotePath | undefined {
     const retPath = note.getBestNotePath();
 
     if (retPath) {
-        const noteTitle = beccaService.getNoteTitleForPath(retPath);
+        const noteTitle = becca_service.getNoteTitleForPath(retPath);
 
         let branchId;
 
@@ -204,7 +200,7 @@ function getNotePathData(note: BNote): NotePath | undefined {
 
         return {
             noteId: note.noteId,
-            branchId: branchId,
+            branchId,
             title: noteTitle,
             notePath: retPath,
             path: retPath.join("/")

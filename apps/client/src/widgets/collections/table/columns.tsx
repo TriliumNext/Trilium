@@ -1,11 +1,12 @@
-import type { CellComponent, ColumnDefinition, EmptyCallback, FormatterParams, ValueBooleanCallback, ValueVoidCallback } from "tabulator-tables";
-import { LabelType } from "../../../services/promoted_attribute_definition_parser.js";
+import { LabelType } from "@triliumnext/commons";
 import { JSX } from "preact";
-import { renderReactWidget } from "../../react/react_utils.jsx";
-import Icon from "../../react/Icon.jsx";
 import { useEffect, useRef, useState } from "preact/hooks";
+import type { CellComponent, ColumnDefinition, EmptyCallback, FormatterParams, ValueBooleanCallback, ValueVoidCallback } from "tabulator-tables";
+
 import froca from "../../../services/froca.js";
+import Icon from "../../react/Icon.jsx";
 import NoteAutocomplete from "../../react/NoteAutocomplete.jsx";
+import { renderReactWidget } from "../../react/react_utils.jsx";
 
 type ColumnType = LabelType | "relation";
 
@@ -78,7 +79,7 @@ export function buildColumnDefinitions({ info, movableRows, existingColumnData, 
             rowHandle: movableRows,
             width: calculateIndexColumnWidth(rowNumberHint, movableRows),
             formatter: wrapFormatter(({ cell, formatterParams }) => <div>
-                {(formatterParams as RowNumberFormatterParams).movableRows && <><span class="bx bx-dots-vertical-rounded"></span>{" "}</>}
+                {(formatterParams as RowNumberFormatterParams).movableRows && <><span class="bx bx-dots-vertical-rounded" />{" "}</>}
                 {cell.getRow().getPosition(true)}
             </div>),
             formatterParams: { movableRows } satisfies RowNumberFormatterParams
@@ -200,14 +201,14 @@ function wrapEditor(Component: (opts: EditorOpts) => JSX.Element): ((
     editorParams: {},
 ) => HTMLElement | false) {
     return (cell, _, success, cancel, editorParams) => {
-        const elWithParams = <Component cell={cell} success={success} cancel={cancel} editorParams={editorParams} />
+        const elWithParams = <Component cell={cell} success={success} cancel={cancel} editorParams={editorParams} />;
         return renderReactWidget(null, elWithParams)[0];
     };
 }
 
 function NoteFormatter({ cell }: FormatterOpts) {
     const noteId = cell.getValue();
-    const [ note, setNote ] = useState(noteId ? froca.getNoteFromCache(noteId) : null)
+    const [ note, setNote ] = useState(noteId ? froca.getNoteFromCache(noteId) : null);
 
     useEffect(() => {
         if (!noteId || note?.noteId === noteId) return;
@@ -231,5 +232,5 @@ function RelationEditor({ cell, success }: EditorOpts) {
             hideAllButtons: true
         }}
         noteIdChanged={success}
-    />
+    />;
 }

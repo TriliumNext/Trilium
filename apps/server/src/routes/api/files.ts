@@ -1,5 +1,4 @@
-
-
+import { ValidationError } from "@triliumnext/core";
 import chokidar from "chokidar";
 import type { Request, Response } from "express";
 import fs from "fs";
@@ -9,7 +8,6 @@ import tmp from "tmp";
 import becca from "../../becca/becca.js";
 import type BAttachment from "../../becca/entities/battachment.js";
 import type BNote from "../../becca/entities/bnote.js";
-import ValidationError from "../../errors/validation_error.js";
 import dataDirs from "../../services/data_dir.js";
 import log from "../../services/log.js";
 import noteService from "../../services/notes.js";
@@ -123,7 +121,7 @@ function attachmentContentProvider(req: Request) {
     return streamContent(attachment.getContent(), attachment.getFileName(), attachment.mime);
 }
 
-async function streamContent(content: string | Buffer, fileName: string, mimeType: string) {
+async function streamContent(content: string | Uint8Array, fileName: string, mimeType: string) {
     if (typeof content === "string") {
         content = Buffer.from(content, "utf8");
     }
@@ -170,7 +168,7 @@ function saveAttachmentToTmpDir(req: Request) {
 
 const createdTemporaryFiles = new Set<string>();
 
-function saveToTmpDir(fileName: string, content: string | Buffer, entityType: string, entityId: string) {
+function saveToTmpDir(fileName: string, content: string | Uint8Array, entityType: string, entityId: string) {
     const tmpObj = tmp.fileSync({
         postfix: fileName,
         tmpdir: dataDirs.TMP_DIR

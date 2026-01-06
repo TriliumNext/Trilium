@@ -1,7 +1,7 @@
+import { BlobRow } from "@triliumnext/commons";
+import { binary_utils, NOTE_TYPE_ICONS } from "@triliumnext/core";
 import escape from "escape-html";
 
-import { NOTE_TYPE_ICONS } from "../../../becca/entities/bnote.js";
-import type { Blob } from "../../../services/blob-interface.js";
 import utils from "../../../services/utils.js";
 import sql from "../../sql.js";
 import AbstractShacaEntity from "./abstract_shaca_entity.js";
@@ -95,7 +95,7 @@ class SNote extends AbstractShacaEntity {
     }
 
     getContent(silentNotFoundError = false) {
-        const row = sql.getRow<Pick<Blob, "content">>(/*sql*/`SELECT content FROM blobs WHERE blobId = ?`, [this.blobId]);
+        const row = sql.getRow<Pick<BlobRow, "content">>(/*sql*/`SELECT content FROM blobs WHERE blobId = ?`, [this.blobId]);
 
         if (!row) {
             if (silentNotFoundError) {
@@ -107,7 +107,7 @@ class SNote extends AbstractShacaEntity {
         const content = row.content;
 
         if (this.hasStringContent()) {
-            return content === null ? "" : content.toString("utf-8");
+            return content === null ? "" : binary_utils.decodeUtf8(content);
         }
         return content;
     }

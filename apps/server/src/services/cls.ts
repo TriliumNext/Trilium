@@ -1,90 +1,71 @@
 import type { EntityChange } from "@triliumnext/commons";
-import { getContext } from "@triliumnext/core/src/services/context";
-
-type Callback = (...args: any[]) => any;
+import { cls } from "@triliumnext/core";
 
 function init<T>(callback: () => T) {
-    return getContext().init(callback);
-}
-
-function wrap(callback: Callback) {
-    return () => {
-        try {
-            init(callback);
-        } catch (e: any) {
-            console.log(`Error occurred: ${e.message}: ${e.stack}`);
-        }
-    };
+    return cls.getContext().init(callback);
 }
 
 function getHoistedNoteId() {
-    return getContext().get("hoistedNoteId") || "root";
+    return cls.getHoistedNoteId();
 }
 
 function getComponentId() {
-    return getContext().get("componentId");
+    return cls.getComponentId();
 }
 
-function getLocalNowDateTime() {
-    return getContext().get("localNowDateTime");
-}
-
+/** @deprecated */
 function disableEntityEvents() {
-    getContext().set("disableEntityEvents", true);
+    cls.disableEntityEvents();
 }
 
+/** @deprecated */
 function enableEntityEvents() {
-    getContext().set("disableEntityEvents", false);
+    cls.enableEntityEvents();
 }
 
 function isEntityEventsDisabled() {
-    return !!getContext().get("disableEntityEvents");
+    return cls.isEntityEventsDisabled();
 }
 
+/** @deprecated */
 function setMigrationRunning(running: boolean) {
-    getContext().set("migrationRunning", !!running);
+    cls.setMigrationRunning(running);
 }
 
+/** @deprecated */
 function isMigrationRunning() {
-    return !!getContext().get("migrationRunning");
+    return cls.isMigrationRunning();
 }
 
 function getAndClearEntityChangeIds() {
-    const entityChangeIds = getContext().get("entityChangeIds") || [];
+    const entityChangeIds = cls.getContext().get("entityChangeIds") || [];
 
-    getContext().set("entityChangeIds", []);
+    cls.getContext().set("entityChangeIds", []);
 
     return entityChangeIds;
 }
 
 function putEntityChange(entityChange: EntityChange) {
-    if (getContext().get("ignoreEntityChangeIds")) {
-        return;
-    }
-
-    const entityChangeIds = getContext().get("entityChangeIds") || [];
-
-    // store only ID since the record can be modified (e.g., in erase)
-    entityChangeIds.push(entityChange.id);
-
-    getContext().set("entityChangeIds", entityChangeIds);
+    cls.putEntityChange(entityChange);
 }
 
 function ignoreEntityChangeIds() {
-    getContext().set("ignoreEntityChangeIds", true);
+    cls.getContext().set("ignoreEntityChangeIds", true);
 }
 
 function get(key: string) {
-    return getContext().get(key);
+    return cls.getContext().get(key);
 }
 
 function set(key: string, value: unknown) {
-    getContext().set(key, value);
+    cls.getContext().set(key, value);
 }
 
 function reset() {
-    getContext().reset();
+    cls.getContext().reset();
 }
+
+export const wrap = cls.wrap;
 
 export default {
     init,
@@ -93,7 +74,6 @@ export default {
     set,
     getHoistedNoteId,
     getComponentId,
-    getLocalNowDateTime,
     disableEntityEvents,
     enableEntityEvents,
     isEntityEventsDisabled,

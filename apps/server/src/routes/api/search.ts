@@ -1,17 +1,14 @@
-"use strict";
-
+import { becca_service,ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 
 import becca from "../../becca/becca.js";
-import SearchContext from "../../services/search/search_context.js";
-import searchService, { EMPTY_RESULT, type SearchNoteResult } from "../../services/search/services/search.js";
+import attributeFormatter from "../../services/attribute_formatter.js";
 import bulkActionService from "../../services/bulk_actions.js";
 import cls from "../../services/cls.js";
-import attributeFormatter from "../../services/attribute_formatter.js";
-import ValidationError from "../../errors/validation_error.js";
-import type SearchResult from "../../services/search/search_result.js";
 import hoistedNoteService from "../../services/hoisted_note.js";
-import beccaService from "../../becca/becca_service.js";
+import SearchContext from "../../services/search/search_context.js";
+import type SearchResult from "../../services/search/search_result.js";
+import searchService, { EMPTY_RESULT, type SearchNoteResult } from "../../services/search/services/search.js";
 
 function searchFromNote(req: Request): SearchNoteResult {
     const note = becca.getNoteOrThrow(req.params.noteId);
@@ -72,7 +69,7 @@ function quickSearch(req: Request) {
 
     // Map to API format
     const searchResults = trimmed.map((result) => {
-        const { title, icon } = beccaService.getNoteTitleAndIcon(result.noteId);
+        const { title, icon } = becca_service.getNoteTitleAndIcon(result.noteId);
         return {
             notePath: result.notePath,
             noteTitle: title,
@@ -82,7 +79,7 @@ function quickSearch(req: Request) {
             highlightedContentSnippet: result.highlightedContentSnippet,
             attributeSnippet: result.attributeSnippet,
             highlightedAttributeSnippet: result.highlightedAttributeSnippet,
-            icon: icon
+            icon
         };
     });
 
@@ -90,7 +87,7 @@ function quickSearch(req: Request) {
 
     return {
         searchResultNoteIds: resultNoteIds,
-        searchResults: searchResults,
+        searchResults,
         error: searchContext.getError()
     };
 }

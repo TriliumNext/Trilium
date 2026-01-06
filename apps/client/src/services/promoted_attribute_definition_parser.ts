@@ -1,14 +1,4 @@
-export type LabelType = "text" | "number" | "boolean" | "date" | "datetime" | "time" | "url" | "color";
-type Multiplicity = "single" | "multi";
-
-export interface DefinitionObject {
-    isPromoted?: boolean;
-    labelType?: LabelType;
-    multiplicity?: Multiplicity;
-    numberPrecision?: number;
-    promotedAlias?: string;
-    inverseRelation?: string;
-}
+import { DefinitionObject, LabelType, Multiplicity } from "@triliumnext/commons";
 
 function parse(value: string) {
     const tokens = value.split(",").map((t) => t.trim());

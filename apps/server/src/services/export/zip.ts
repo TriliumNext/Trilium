@@ -1,29 +1,28 @@
-"use strict";
-
-import dateUtils from "../date_utils.js";
-import path from "path";
-import packageInfo from "../../../package.json" with { type: "json" };
-import { getContentDisposition } from "../utils.js";
-import protectedSessionService from "../protected_session.js";
-import sanitize from "sanitize-filename";
-import fs from "fs";
-import becca from "../../becca/becca.js";
+import { NoteType } from "@triliumnext/commons";
+import { ValidationError } from "@triliumnext/core";
 import archiver from "archiver";
+import type { Response } from "express";
+import fs from "fs";
+import path from "path";
+import sanitize from "sanitize-filename";
+
+import packageInfo from "../../../package.json" with { type: "json" };
+import becca from "../../becca/becca.js";
+import BBranch from "../../becca/entities/bbranch.js";
+import type BNote from "../../becca/entities/bnote.js";
+import dateUtils from "../date_utils.js";
 import log from "../log.js";
-import TaskContext from "../task_context.js";
-import ValidationError from "../../errors/validation_error.js";
-import type NoteMeta from "../meta/note_meta.js";
 import type AttachmentMeta from "../meta/attachment_meta.js";
 import type AttributeMeta from "../meta/attribute_meta.js";
-import BBranch from "../../becca/entities/bbranch.js";
-import type { Response } from "express";
+import type NoteMeta from "../meta/note_meta.js";
 import type { NoteMetaFile } from "../meta/note_meta.js";
-import HtmlExportProvider from "./zip/html.js";
+import protectedSessionService from "../protected_session.js";
+import TaskContext from "../task_context.js";
+import { getContentDisposition } from "../utils.js";
 import { AdvancedExportOptions, type ExportFormat, ZipExportProviderData } from "./zip/abstract_provider.js";
+import HtmlExportProvider from "./zip/html.js";
 import MarkdownExportProvider from "./zip/markdown.js";
 import ShareThemeExportProvider from "./zip/share_theme.js";
-import type BNote from "../../becca/entities/bnote.js";
-import { NoteType } from "@triliumnext/commons";
 
 async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, format: ExportFormat, res: Response | fs.WriteStream, setHeaders = true, zipExportOptions?: AdvancedExportOptions) {
     if (!["html", "markdown", "share"].includes(format)) {
@@ -73,11 +72,11 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             } while (newName in existingFileNames);
 
             return `${index}_${fileName}`;
-        } else {
-            existingFileNames[lcFileName] = 1;
-
-            return fileName;
         }
+        existingFileNames[lcFileName] = 1;
+
+        return fileName;
+
     }
 
     function getDataFileName(type: NoteType | null, mime: string, baseFileName: string, existingFileNames: Record<string, number>): string {
@@ -89,15 +88,15 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         // Crop fileName to avoid its length exceeding 30 and prevent cutting into the extension.
         if (fileName.length > 30) {
             // We use regex to match the extension to preserve multiple dots in extensions (e.g. .tar.gz).
-            let match = fileName.match(/(\.[a-zA-Z0-9_.!#-]+)$/);
-            let ext = match ? match[0] : "";
+            const match = fileName.match(/(\.[a-zA-Z0-9_.!#-]+)$/);
+            const ext = match ? match[0] : "";
             // Crop the extension if extension length exceeds 30
             const croppedExt = ext.slice(-30);
             // Crop the file name section and append the cropped extension
             fileName = fileName.slice(0, 30 - croppedExt.length) + croppedExt;
         }
 
-        let existingExtension = path.extname(fileName).toLowerCase();
+        const existingExtension = path.extname(fileName).toLowerCase();
         const newExtension = provider.mapExtension(type, mime, existingExtension, format);
 
         // if the note is already named with the extension (e.g. "image.jpg"), then it's silly to append the exact same extension again
@@ -140,7 +139,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             const meta: NoteMeta = {
                 isClone: true,
                 noteId: note.noteId,
-                notePath: notePath,
+                notePath,
                 title: note.getTitleOrProtected(),
                 prefix: branch.prefix,
                 dataFileName: fileName,
@@ -198,16 +197,16 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         meta.attachments = attachments
             .toSorted((a, b) => ((a.attachmentId ?? "").localeCompare(b.attachmentId ?? "", "en") ?? 1))
             .map((attachment) => {
-            const attMeta: AttachmentMeta = {
-                attachmentId: attachment.attachmentId,
-                title: attachment.title,
-                role: attachment.role,
-                mime: attachment.mime,
-                position: attachment.position,
-                dataFileName: getDataFileName(null, attachment.mime, baseFileName + "_" + attachment.title, existingFileNames)
-            };
-            return attMeta;
-        });
+                const attMeta: AttachmentMeta = {
+                    attachmentId: attachment.attachmentId,
+                    title: attachment.title,
+                    role: attachment.role,
+                    mime: attachment.mime,
+                    position: attachment.position,
+                    dataFileName: getDataFileName(null, attachment.mime, `${baseFileName  }_${  attachment.title}`, existingFileNames)
+                };
+                return attMeta;
+            });
 
         if (childBranches.length > 0) {
             meta.dirFileName = getUniqueFilename(existingFileNames, baseFileName);
@@ -319,7 +318,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         }
     }
 
-    function prepareContent(title: string, content: string | Buffer, noteMeta: NoteMeta, note?: BNote): string | Buffer {
+    function prepareContent(title: string, content: string | Uint8Array, noteMeta: NoteMeta, note?: BNote): string | Uint8Array {
         const isText = ["html", "markdown"].includes(noteMeta?.format || "");
         if (isText) {
             content = content.toString();
@@ -340,11 +339,11 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         if (noteMeta.isClone) {
             const targetUrl = getNoteTargetUrl(noteMeta.noteId, noteMeta);
 
-            let content: string | Buffer = `<p>This is a clone of a note. Go to its <a href="${targetUrl}">primary location</a>.</p>`;
+            let content: string | Uint8Array = `<p>This is a clone of a note. Go to its <a href="${targetUrl}">primary location</a>.</p>`;
 
             content = prepareContent(noteMeta.title, content, noteMeta, undefined);
 
-            archive.append(content, { name: filePathPrefix + noteMeta.dataFileName });
+            archive.append(content as Buffer, { name: filePathPrefix + noteMeta.dataFileName });
 
             return;
         }
@@ -360,7 +359,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
         if (noteMeta.dataFileName) {
             const content = prepareContent(noteMeta.title, note.getContent(), noteMeta, note);
 
-            archive.append(content, {
+            archive.append(content as string | Buffer, {
                 name: filePathPrefix + noteMeta.dataFileName,
                 date: dateUtils.parseDateTime(note.utcDateModified)
             });
@@ -376,7 +375,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             const attachment = note.getAttachmentById(attachmentMeta.attachmentId);
             const content = attachment.getContent();
 
-            archive.append(content, {
+            archive.append(content as Buffer, {
                 name: filePathPrefix + attachmentMeta.dataFileName,
                 date: dateUtils.parseDateTime(note.utcDateModified)
             });
@@ -421,9 +420,9 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
                 } else if (attr.value === "root" || attr.value?.startsWith("_")) {
                     // relations to "named" noteIds can be preserved
                     return true;
-                } else {
-                    return false;
                 }
+                return false;
+
             });
         }
 

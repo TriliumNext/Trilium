@@ -11,11 +11,11 @@ type Response = {
 export interface AppInfo {
     appVersion: string;
     dbVersion: number;
-    nodeVersion: string;
+    nodeVersion?: string;
     syncVersion: number;
     buildDate: string;
     buildRevision: string;
-    dataDirectory: string;
+    dataDirectory?: string;
     clipperProtocolVersion: string;
     /** for timezone inference */
     utcDateTime: string;
@@ -50,7 +50,7 @@ export interface RevisionPojo {
     utcDateLastEdited?: string;
     utcDateCreated?: string;
     utcDateModified?: string;
-    content?: string | Buffer<ArrayBufferLike>;
+    content?: string | Uint8Array;
     contentLength?: number;
 }
 
@@ -297,4 +297,16 @@ export interface IconRegistry {
             terms: string[];
         }[]
     }[];
+}
+
+export type LabelType = "text" | "number" | "boolean" | "date" | "datetime" | "time" | "url" | "color";
+export type Multiplicity = "single" | "multi";
+
+export interface DefinitionObject {
+    isPromoted?: boolean;
+    labelType?: LabelType;
+    multiplicity?: Multiplicity;
+    numberPrecision?: number;
+    promotedAlias?: string;
+    inverseRelation?: string;
 }

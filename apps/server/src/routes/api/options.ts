@@ -1,9 +1,9 @@
 
 
 import type { OptionNames } from "@triliumnext/commons";
+import { ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 
-import ValidationError from "../../errors/validation_error.js";
 import config from "../../services/config.js";
 import { changeLanguage, getLocales } from "../../services/i18n.js";
 import log from "../../services/log.js";

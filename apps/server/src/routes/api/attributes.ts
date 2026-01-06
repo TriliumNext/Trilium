@@ -1,13 +1,12 @@
-"use strict";
-
-import sql from "../../services/sql.js";
-import log from "../../services/log.js";
-import attributeService from "../../services/attributes.js";
-import BAttribute from "../../becca/entities/battribute.js";
-import becca from "../../becca/becca.js";
-import ValidationError from "../../errors/validation_error.js";
-import type { Request } from "express";
 import { UpdateAttributeResponse } from "@triliumnext/commons";
+import { ValidationError } from "@triliumnext/core";
+import type { Request } from "express";
+
+import becca from "../../becca/becca.js";
+import BAttribute from "../../becca/entities/battribute.js";
+import attributeService from "../../services/attributes.js";
+import log from "../../services/log.js";
+import sql from "../../services/sql.js";
 
 function getEffectiveNoteAttributes(req: Request) {
     const note = becca.getNote(req.params.noteId);
@@ -47,7 +46,7 @@ function updateNoteAttribute(req: Request) {
         }
 
         attribute = new BAttribute({
-            noteId: noteId,
+            noteId,
             name: body.name,
             type: body.type,
             isInheritable: body.isInheritable
@@ -208,7 +207,7 @@ function createRelation(req: Request) {
     if (!attribute) {
         attribute = new BAttribute({
             noteId: sourceNoteId,
-            name: name,
+            name,
             type: "relation",
             value: targetNoteId
         }).save();
