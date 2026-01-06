@@ -251,7 +251,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         }
     }
 
-    setContent(content: Buffer | string, opts: ContentOpts = {}) {
+    setContent(content: Uint8Array | string, opts: ContentOpts = {}) {
         this._setContent(content, opts);
 
         eventService.emit(eventService.NOTE_CONTENT_CHANGE, { entity: this });

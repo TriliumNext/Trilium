@@ -10,6 +10,7 @@ import utils from "../../services/utils.js";
 import becca from "../becca.js";
 import type { ConstructorData,default as Becca } from "../becca-interface.js";
 import { getSql } from "src/services/sql";
+import { concat2, encodeUtf8, unwrapStringOrBuffer, wrapStringOrBuffer } from "src/services/utils/binary";
 
 interface ContentOpts {
     forceSave?: boolean;
@@ -137,7 +138,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
         return this;
     }
 
-    protected _setContent(content: string | Buffer, opts: ContentOpts = {}) {
+    protected _setContent(content: string | Uint8Array, opts: ContentOpts = {}) {
         // client code asks to save entity even if blobId didn't change (something else was changed)
         opts.forceSave = !!opts.forceSave;
         opts.forceFrontendReload = !!opts.forceFrontendReload;
@@ -148,9 +149,9 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
         }
 
         if (this.hasStringContent()) {
-            content = content.toString();
+            content = unwrapStringOrBuffer(content);
         } else {
-            content = Buffer.isBuffer(content) ? content : Buffer.from(content);
+            content = wrapStringOrBuffer(content);
         }
 
         const unencryptedContentForHashCalculation = this.getUnencryptedContentForHashCalculation(content);
@@ -202,17 +203,21 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
         sql.execute("DELETE FROM entity_changes WHERE entityName = 'blobs' AND entityId = ?", [oldBlobId]);
     }
 
-    private getUnencryptedContentForHashCalculation(unencryptedContent: Buffer | string) {
+    private getUnencryptedContentForHashCalculation(unencryptedContent: Uint8Array | string) {
         if (this.isProtected) {
             // a "random" prefix makes sure that the calculated hash/blobId is different for a decrypted/encrypted content
             const encryptedPrefixSuffix = "t$[nvQg7q)&_ENCRYPTED_?M:Bf&j3jr_";
-            return Buffer.isBuffer(unencryptedContent) ? Buffer.concat([Buffer.from(encryptedPrefixSuffix), unencryptedContent]) : `${encryptedPrefixSuffix}${unencryptedContent}`;
+            if (typeof unencryptedContent === "string") {
+                return `${encryptedPrefixSuffix}${unencryptedContent}`;
+            } else {
+                return concat2(encodeUtf8(encryptedPrefixSuffix), unencryptedContent)
+            }
         }
         return unencryptedContent;
 
     }
 
-    private saveBlob(content: string | Buffer, unencryptedContentForHashCalculation: string | Buffer, opts: ContentOpts = {}) {
+    private saveBlob(content: string | Uint8Array, unencryptedContentForHashCalculation: string | Uint8Array, opts: ContentOpts = {}) {
         /*
          * We're using the unencrypted blob for the hash calculation, because otherwise the random IV would
          * cause every content blob to be unique which would balloon the database size (esp. with revisioning).
@@ -260,16 +265,16 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
         return newBlobId;
     }
 
-    protected _getContent(): string | Buffer {
+    protected _getContent(): string | Uint8Array {
         const sql = getSql();
-        const row = sql.getRow<{ content: string | Buffer }>(/*sql*/`SELECT content FROM blobs WHERE blobId = ?`, [this.blobId]);
+        const row = sql.getRow<{ content: string | Uint8Array }>(/*sql*/`SELECT content FROM blobs WHERE blobId = ?`, [this.blobId]);
 
         if (!row) {
             const constructorData = this.constructor as unknown as ConstructorData<T>;
             throw new Error(`Cannot find content for ${constructorData.primaryKeyName} '${(this as any)[constructorData.primaryKeyName]}', blobId '${this.blobId}'`);
         }
 
-        return blobService.processContent(row.content, this.isProtected || false, this.hasStringContent()) as string | Buffer;
+        return blobService.processContent(row.content, this.isProtected || false, this.hasStringContent()) as string | Uint8Array;
     }
 
     /**

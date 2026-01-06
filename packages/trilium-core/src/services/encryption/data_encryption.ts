@@ -1,5 +1,5 @@
 import { getLog } from "../log.js";
-import { concat2, decodeBase64, decodeUtf8, encodeBase64 } from "../utils/binary.js";
+import { concat2, decodeBase64, decodeUtf8, encodeBase64, encodeUtf8 } from "../utils/binary.js";
 import { getCrypto } from "./crypto.js";
 
 function arraysIdentical(a: any[] | Uint8Array, b: any[] | Uint8Array) {
@@ -55,7 +55,7 @@ function decrypt(key: Uint8Array, cipherText: string | Uint8Array): Uint8Array |
     }
 
     if (!key) {
-        return Uint8Array.from("[protected]");
+        return encodeUtf8("[protected]");
     }
 
     try {

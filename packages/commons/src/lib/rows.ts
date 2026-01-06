@@ -68,7 +68,7 @@ export interface EtapiTokenRow {
 
 export interface BlobRow {
     blobId: string;
-    content: string | Buffer;
+    content: string | Uint8Array;
     contentLength: number;
     dateModified: string;
     utcDateModified: string;
@@ -137,6 +137,6 @@ export interface NoteRow {
     dateModified?: string;
     utcDateCreated?: string;
     utcDateModified?: string;
-    content?: string | Buffer;
+    content?: string | Uint8Array;
 }
 

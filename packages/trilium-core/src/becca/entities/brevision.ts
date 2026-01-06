@@ -42,7 +42,7 @@ class BRevision extends AbstractBeccaEntity<BRevision> {
     dateLastEdited?: string;
     utcDateLastEdited?: string;
     contentLength?: number;
-    content?: string | Buffer;
+    content?: string | Uint8Array;
 
     constructor(row: RevisionRow, titleDecrypted = false) {
         super();
@@ -95,7 +95,7 @@ class BRevision extends AbstractBeccaEntity<BRevision> {
      *
      * This is the same approach as is used for Note's content.
      */
-    getContent(): string | Buffer {
+    getContent(): string | Uint8Array {
         return this._getContent();
     }
 
@@ -120,7 +120,7 @@ class BRevision extends AbstractBeccaEntity<BRevision> {
         }
     }
 
-    setContent(content: string | Buffer, opts: ContentOpts = {}) {
+    setContent(content: string | Uint8Array, opts: ContentOpts = {}) {
         this._setContent(content, opts);
     }
 

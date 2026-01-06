@@ -23,13 +23,13 @@ function getBlobPojo(entityName: string, entityId: string, opts?: { preview: boo
     if (!entity.hasStringContent()) {
         pojo.content = null;
     } else {
-        pojo.content = processContent(pojo.content, !!entity.isProtected, true) as string | Buffer;
+        pojo.content = processContent(pojo.content, !!entity.isProtected, true) as string | Uint8Array;
     }
 
     return pojo;
 }
 
-function processContent(content: Buffer | Uint8Array | string | null, isProtected: boolean, isStringContent: boolean) {
+function processContent(content: Uint8Array | string | null, isProtected: boolean, isStringContent: boolean) {
     if (isProtected) {
         if (protectedSessionService.isProtectedSessionAvailable()) {
             content = content === null ? null : protectedSessionService.decrypt(content as Uint8Array);
@@ -47,7 +47,7 @@ function processContent(content: Buffer | Uint8Array | string | null, isProtecte
     // IIRC a zero-sized buffer can be returned as null from the database
     if (content === null) {
         // this will force de/encryption
-        content = Buffer.alloc(0);
+        content = new Uint8Array(0);
     }
 
     return content;

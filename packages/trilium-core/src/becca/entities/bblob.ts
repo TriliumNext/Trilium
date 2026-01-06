@@ -13,7 +13,7 @@ class BBlob extends AbstractBeccaEntity<BBlob> {
         return ["blobId", "content"];
     }
 
-    content!: string | Buffer;
+    content!: string | Uint8Array;
     contentLength!: number;
 
     constructor(row: BlobRow) {

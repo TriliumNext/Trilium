@@ -50,7 +50,7 @@ export interface RevisionPojo {
     utcDateLastEdited?: string;
     utcDateCreated?: string;
     utcDateModified?: string;
-    content?: string | Buffer<ArrayBufferLike>;
+    content?: string | Uint8Array;
     contentLength?: number;
 }
 
