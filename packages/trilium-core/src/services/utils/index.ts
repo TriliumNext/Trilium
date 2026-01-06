@@ -5,6 +5,11 @@ import mimeTypes from "mime-types";
 import escape from "escape-html";
 import unescape from "unescape";
 
+// TODO: Implement platform detection.
+export const isElectron = false;
+export const isMac = false;
+export const isWindows = false;
+
 // render and book are string note in the sense that they are expected to contain empty string
 const STRING_NOTE_TYPES = new Set(["text", "code", "relationMap", "search", "render", "book", "mermaid", "canvas", "webView"]);
 const STRING_MIME_TYPES = new Set(["application/javascript", "application/x-javascript", "application/json", "application/x-sql", "image/svg+xml"]);
@@ -117,3 +122,7 @@ export function toMap<T extends Record<string, any>>(list: T[], key: keyof T) {
 export const escapeHtml = escape;
 
 export const unescapeHtml = unescape;
+
+export function randomSecureToken(bytes = 32) {
+    return encodeBase64(getCrypto().randomBytes(32));
+}

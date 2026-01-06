@@ -2,7 +2,7 @@
 
 import optionService from "./options.js";
 import { getLog } from "./log.js";
-import { isElectron, isMac } from "./utils.js";
+import { isElectron, isMac } from "./utils/index.js";
 import type { ActionKeyboardShortcut, KeyboardShortcut } from "@triliumnext/commons";
 import { t } from "i18next";
 

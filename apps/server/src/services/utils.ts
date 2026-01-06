@@ -33,10 +33,6 @@ export function randomString(length: number): string {
     return coreUtils.randomString(length);
 }
 
-export function randomSecureToken(bytes = 32) {
-    return crypto.randomBytes(bytes).toString("base64");
-}
-
 export function md5(content: crypto.BinaryLike) {
     return crypto.createHash("md5").update(content).digest("hex");
 }
@@ -459,6 +455,7 @@ function slugify(text: string) {
 
 export const escapeHtml = coreUtils.escapeHtml;
 export const unescapeHtml = coreUtils.unescapeHtml;
+export const randomSecureToken = coreUtils.randomSecureToken;
 
 export default {
     compareVersions,
