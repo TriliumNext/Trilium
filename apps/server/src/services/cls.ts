@@ -25,10 +25,6 @@ function getComponentId() {
     return getContext().get("componentId");
 }
 
-function getLocalNowDateTime() {
-    return getContext().get("localNowDateTime");
-}
-
 function disableEntityEvents() {
     getContext().set("disableEntityEvents", true);
 }
@@ -93,7 +89,6 @@ export default {
     set,
     getHoistedNoteId,
     getComponentId,
-    getLocalNowDateTime,
     disableEntityEvents,
     enableEntityEvents,
     isEntityEventsDisabled,

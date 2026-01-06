@@ -1444,7 +1444,11 @@ importers:
         specifier: 5.1.0
         version: 5.1.0(karma@6.4.4(bufferutil@4.0.9)(utf-8-validate@6.0.5))
 
-  packages/trilium-core: {}
+  packages/trilium-core:
+    dependencies:
+      '@triliumnext/commons':
+        specifier: workspace:*
+        version: link:../commons
 
   packages/turndown-plugin-gfm:
     devDependencies:
@@ -15558,6 +15562,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-editor-classic@47.3.0':
     dependencies:

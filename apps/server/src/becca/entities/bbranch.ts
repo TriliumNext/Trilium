@@ -1,14 +1,15 @@
-"use strict";
 
-import BNote from "./bnote.js";
-import AbstractBeccaEntity from "./abstract_becca_entity.js";
-import dateUtils from "../../services/date_utils.js";
-import utils from "../../services/utils.js";
-import TaskContext from "../../services/task_context.js";
-import cls from "../../services/cls.js";
-import log from "../../services/log.js";
+
 import type { BranchRow } from "@triliumnext/commons";
+
+import cls from "../../services/cls.js";
+import dateUtils from "../../services/date_utils.js";
 import handlers from "../../services/handlers.js";
+import log from "../../services/log.js";
+import TaskContext from "../../services/task_context.js";
+import utils from "../../services/utils.js";
+import AbstractBeccaEntity from "./abstract_becca_entity.js";
+import BNote from "./bnote.js";
 
 /**
  * Branch represents a relationship between a child note and its parent note. Trilium allows a note to have multiple
@@ -199,9 +200,9 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
             note.markAsDeleted(deleteId);
 
             return true;
-        } else {
-            return false;
-        }
+        } 
+        return false;
+        
     }
 
     override beforeSaving() {
@@ -268,15 +269,15 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
                 existingBranch.notePosition = notePosition;
             }
             return existingBranch;
-        } else {
-            return new BBranch({
-                noteId: this.noteId,
-                parentNoteId: parentNoteId,
-                notePosition: notePosition || null,
-                prefix: this.prefix,
-                isExpanded: this.isExpanded
-            });
-        }
+        } 
+        return new BBranch({
+            noteId: this.noteId,
+            parentNoteId,
+            notePosition: notePosition || null,
+            prefix: this.prefix,
+            isExpanded: this.isExpanded
+        });
+        
     }
 
     getParentNote() {
