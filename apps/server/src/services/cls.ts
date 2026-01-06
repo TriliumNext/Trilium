@@ -25,24 +25,28 @@ function getComponentId() {
     return cls.getComponentId();
 }
 
+/** @deprecated */
 function disableEntityEvents() {
-    cls.getContext().set("disableEntityEvents", true);
+    cls.disableEntityEvents();
 }
 
+/** @deprecated */
 function enableEntityEvents() {
-    cls.getContext().set("disableEntityEvents", false);
+    cls.enableEntityEvents();
 }
 
 function isEntityEventsDisabled() {
     return cls.isEntityEventsDisabled();
 }
 
+/** @deprecated */
 function setMigrationRunning(running: boolean) {
-    cls.getContext().set("migrationRunning", !!running);
+    cls.setMigrationRunning(running);
 }
 
+/** @deprecated */
 function isMigrationRunning() {
-    return !!cls.getContext().get("migrationRunning");
+    return cls.isMigrationRunning();
 }
 
 function getAndClearEntityChangeIds() {

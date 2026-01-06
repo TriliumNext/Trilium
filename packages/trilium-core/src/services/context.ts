@@ -23,12 +23,29 @@ export function getHoistedNoteId() {
     return getContext().get("hoistedNoteId") || "root";
 }
 
+
+export function getComponentId() {
+    return getContext().get("componentId");
+}
+
 export function isEntityEventsDisabled() {
     return !!getContext().get("disableEntityEvents");
 }
 
-export function getComponentId() {
-    return getContext().get("componentId");
+export function disableEntityEvents() {
+    getContext().set("disableEntityEvents", true);
+}
+
+export function enableEntityEvents() {
+    getContext().set("disableEntityEvents", false);
+}
+
+export function setMigrationRunning(running: boolean) {
+    getContext().set("migrationRunning", !!running);
+}
+
+export function isMigrationRunning() {
+    return !!getContext().get("migrationRunning");
 }
 
 export function putEntityChange(entityChange: EntityChange) {
