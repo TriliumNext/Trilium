@@ -1,20 +1,21 @@
-import becca from "../becca/becca.js";
-import utils from "../services/utils.js";
-import eu from "./etapi_utils.js";
-import mappers from "./mappers.js";
-import noteService from "../services/notes.js";
-import TaskContext from "../services/task_context.js";
-import v from "./validators.js";
-import searchService from "../services/search/services/search.js";
-import SearchContext from "../services/search/search_context.js";
-import zipExportService from "../services/export/zip.js";
-import zipImportService from "../services/import/zip.js";
+import { NoteParams } from "@triliumnext/core";
 import type { Request, Router } from "express";
 import type { ParsedQs } from "qs";
-import type { NoteParams } from "../services/note-interface.js";
-import type { SearchParams } from "../services/search/services/types.js";
-import type { ValidatorMap } from "./etapi-interface.js";
+
+import becca from "../becca/becca.js";
+import zipExportService from "../services/export/zip.js";
 import type { ExportFormat } from "../services/export/zip/abstract_provider.js";
+import zipImportService from "../services/import/zip.js";
+import noteService from "../services/notes.js";
+import SearchContext from "../services/search/search_context.js";
+import searchService from "../services/search/services/search.js";
+import type { SearchParams } from "../services/search/services/types.js";
+import TaskContext from "../services/task_context.js";
+import utils from "../services/utils.js";
+import eu from "./etapi_utils.js";
+import type { ValidatorMap } from "./etapi-interface.js";
+import mappers from "./mappers.js";
+import v from "./validators.js";
 
 function register(router: Router) {
     eu.route(router, "get", "/etapi/notes", (req, res, next) => {

@@ -1,5 +1,5 @@
 import { type AttributeRow, dayjs, formatLogMessage } from "@triliumnext/commons";
-import { type AbstractBeccaEntity, Becca } from "@triliumnext/core";
+import { type AbstractBeccaEntity, Becca, NoteParams } from "@triliumnext/core";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import xml2js from "xml2js";
@@ -22,7 +22,6 @@ import config from "./config.js";
 import dateNoteService from "./date_notes.js";
 import exportService from "./export/zip.js";
 import log from "./log.js";
-import type { NoteParams } from "./note-interface.js";
 import noteService from "./notes.js";
 import optionsService from "./options.js";
 import SearchContext from "./search/search_context.js";

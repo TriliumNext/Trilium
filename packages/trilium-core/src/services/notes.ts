@@ -38,7 +38,7 @@ interface Attachment {
     title: string;
 }
 
-interface NoteParams {
+export interface NoteParams {
     /** optionally can force specific noteId */
     noteId?: string;
     branchId?: string;
