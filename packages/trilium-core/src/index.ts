@@ -18,8 +18,11 @@ export { default as options } from "./services/options";
 export { default as options_init } from "./services/options_init";
 export { default as app_info } from "./services/app_info";
 export { default as keyboard_actions } from "./services/keyboard_actions";
+export { default as entity_changes } from "./services/entity_changes";
 export { getContext, type ExecutionContext } from "./services/context";
+export * as cls from "./services/context";
 export * from "./errors";
+export { default as instance_id } from "./services/instance_id";
 export type { CryptoProvider } from "./services/encryption/crypto";
 
 export { default as becca } from "./becca/becca";

@@ -1,10 +1,10 @@
 import type { EntityChange } from "@triliumnext/commons";
-import { getContext, getHoistedNoteId as getHoistedNoteIdInternal, isEntityEventsDisabled as isEntityEventsDisabledInternal } from "@triliumnext/core/src/services/context";
+import { cls } from "@triliumnext/core";
 
 type Callback = (...args: any[]) => any;
 
 function init<T>(callback: () => T) {
-    return getContext().init(callback);
+    return cls.getContext().init(callback);
 }
 
 function wrap(callback: Callback) {
@@ -18,68 +18,59 @@ function wrap(callback: Callback) {
 }
 
 function getHoistedNoteId() {
-    return getHoistedNoteIdInternal();
+    return cls.getHoistedNoteId();
 }
 
 function getComponentId() {
-    return getContext().get("componentId");
+    return cls.getComponentId();
 }
 
 function disableEntityEvents() {
-    getContext().set("disableEntityEvents", true);
+    cls.getContext().set("disableEntityEvents", true);
 }
 
 function enableEntityEvents() {
-    getContext().set("disableEntityEvents", false);
+    cls.getContext().set("disableEntityEvents", false);
 }
 
 function isEntityEventsDisabled() {
-    return isEntityEventsDisabledInternal();
+    return cls.isEntityEventsDisabled();
 }
 
 function setMigrationRunning(running: boolean) {
-    getContext().set("migrationRunning", !!running);
+    cls.getContext().set("migrationRunning", !!running);
 }
 
 function isMigrationRunning() {
-    return !!getContext().get("migrationRunning");
+    return !!cls.getContext().get("migrationRunning");
 }
 
 function getAndClearEntityChangeIds() {
-    const entityChangeIds = getContext().get("entityChangeIds") || [];
+    const entityChangeIds = cls.getContext().get("entityChangeIds") || [];
 
-    getContext().set("entityChangeIds", []);
+    cls.getContext().set("entityChangeIds", []);
 
     return entityChangeIds;
 }
 
 function putEntityChange(entityChange: EntityChange) {
-    if (getContext().get("ignoreEntityChangeIds")) {
-        return;
-    }
-
-    const entityChangeIds = getContext().get("entityChangeIds") || [];
-
-    // store only ID since the record can be modified (e.g., in erase)
-    entityChangeIds.push(entityChange.id);
-
-    getContext().set("entityChangeIds", entityChangeIds);
+    cls.putEntityChange(entityChange);
 }
 
 function ignoreEntityChangeIds() {
-    getContext().set("ignoreEntityChangeIds", true);
+    cls.getContext().set("ignoreEntityChangeIds", true);
 }
 
 function get(key: string) {
-    return getContext().get(key);
+    return cls.getContext().get(key);
 }
 
 function set(key: string, value: unknown) {
-    getContext().set(key, value);
+    cls.getContext().set(key, value);
 }
 
 function reset() {
-    getContext().reset();
+    cls.getContext().reset();
 }
 
 export default {

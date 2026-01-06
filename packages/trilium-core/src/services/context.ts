@@ -1,3 +1,5 @@
+import { EntityChange } from "@triliumnext/commons";
+
 export interface ExecutionContext {
     init<T>(fn: () => T): T;
     get<T = any>(key: string): T | undefined;
@@ -23,4 +25,21 @@ export function getHoistedNoteId() {
 
 export function isEntityEventsDisabled() {
     return !!getContext().get("disableEntityEvents");
+}
+
+export function getComponentId() {
+    return getContext().get("componentId");
+}
+
+export function putEntityChange(entityChange: EntityChange) {
+    if (getContext().get("ignoreEntityChangeIds")) {
+        return;
+    }
+
+    const entityChangeIds = getContext().get("entityChangeIds") || [];
+
+    // store only ID since the record can be modified (e.g., in erase)
+    entityChangeIds.push(entityChange.id);
+
+    getContext().set("entityChangeIds", entityChangeIds);
 }

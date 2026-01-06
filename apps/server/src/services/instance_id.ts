@@ -1,5 +1,2 @@
-import { randomString } from "./utils.js";
-
-const instanceId = randomString(12);
-
-export default instanceId;
+import { instance_id } from "@triliumnext/core";
+export default instance_id;
