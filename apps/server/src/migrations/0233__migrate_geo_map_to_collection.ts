@@ -1,5 +1,6 @@
+import { becca_loader } from "@triliumnext/core";
+
 import becca from "../becca/becca";
-import becca_loader from "../becca/becca_loader";
 import cls from "../services/cls.js";
 import hidden_subtree from "../services/hidden_subtree";
 

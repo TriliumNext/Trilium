@@ -1,27 +1,28 @@
-"use strict";
 
-import log from "./log.js";
-import sql from "./sql.js";
-import optionService from "./options.js";
-import { hmac, randomString, timeLimit } from "./utils.js";
-import instanceId from "./instance_id.js";
-import dateUtils from "./date_utils.js";
-import syncUpdateService from "./sync_update.js";
-import contentHashService from "./content_hash.js";
-import appInfo from "./app_info.js";
-import syncOptions from "./sync_options.js";
-import syncMutexService from "./sync_mutex.js";
-import cls from "./cls.js";
-import request from "./request.js";
-import ws from "./ws.js";
-import entityChangesService from "./entity_changes.js";
-import entityConstructor from "../becca/entity_constructor.js";
-import becca from "../becca/becca.js";
+
 import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
+import { becca_loader } from "@triliumnext/core";
+
+import becca from "../becca/becca.js";
+import entityConstructor from "../becca/entity_constructor.js";
+import appInfo from "./app_info.js";
+import cls from "./cls.js";
+import consistency_checks from "./consistency_checks.js";
+import contentHashService from "./content_hash.js";
+import dateUtils from "./date_utils.js";
+import entityChangesService from "./entity_changes.js";
+import instanceId from "./instance_id.js";
+import log from "./log.js";
+import optionService from "./options.js";
+import request from "./request.js";
 import type { CookieJar, ExecOpts } from "./request_interface.js";
 import setupService from "./setup.js";
-import consistency_checks from "./consistency_checks.js";
-import becca_loader from "../becca/becca_loader.js";
+import sql from "./sql.js";
+import syncMutexService from "./sync_mutex.js";
+import syncOptions from "./sync_options.js";
+import syncUpdateService from "./sync_update.js";
+import { hmac, randomString, timeLimit } from "./utils.js";
+import ws from "./ws.js";
 
 let proxyToggle = true;
 
@@ -94,16 +95,16 @@ async function sync() {
                 success: false,
                 message: "No connection to sync server."
             };
-        } else {
-            log.info(`Sync failed: '${e.message}', stack: ${e.stack}`);
+        } 
+        log.info(`Sync failed: '${e.message}', stack: ${e.stack}`);
 
-            ws.syncFailed();
+        ws.syncFailed();
 
-            return {
-                success: false,
-                message: e.message
-            };
-        }
+        return {
+            success: false,
+            message: e.message
+        };
+        
     }
 }
 
@@ -123,9 +124,9 @@ async function doLogin(): Promise<SyncContext> {
 
     const syncContext: SyncContext = { cookieJar: {} };
     const resp = await syncRequest<SyncResponse>(syncContext, "POST", "/api/login/sync", {
-        timestamp: timestamp,
+        timestamp,
         syncVersion: appInfo.syncVersion,
-        hash: hash
+        hash
     });
 
     if (!resp) {
@@ -219,9 +220,9 @@ async function pushChanges(syncContext: SyncContext) {
                 lastSyncedPush = entityChange.id;
 
                 return false;
-            } else {
-                return true;
-            }
+            } 
+            return true;
+            
         });
 
         if (filteredEntityChanges.length === 0 && lastSyncedPush) {
@@ -319,7 +320,7 @@ async function syncRequest<T extends {}>(syncContext: SyncContext, method: strin
             method,
             url: syncOptions.getSyncServerHost() + requestPath,
             cookieJar: syncContext.cookieJar,
-            timeout: timeout,
+            timeout,
             paging: {
                 pageIndex,
                 pageCount,
@@ -340,33 +341,33 @@ function getEntityChangeRow(entityChange: EntityChange) {
 
     if (entityName === "note_reordering") {
         return sql.getMap("SELECT branchId, notePosition FROM branches WHERE parentNoteId = ? AND isDeleted = 0", [entityId]);
-    } else {
-        const primaryKey = entityConstructor.getEntityFromEntityName(entityName).primaryKeyName;
+    } 
+    const primaryKey = entityConstructor.getEntityFromEntityName(entityName).primaryKeyName;
 
-        if (!primaryKey) {
-            throw new Error(`Unknown entity for entity change ${JSON.stringify(entityChange)}`);
-        }
-
-        const entityRow = sql.getRow<EntityRow>(/*sql*/`SELECT * FROM ${entityName} WHERE ${primaryKey} = ?`, [entityId]);
-
-        if (!entityRow) {
-            log.error(`Cannot find entity for entity change ${JSON.stringify(entityChange)}`);
-            return null;
-        }
-
-        if (entityName === "blobs" && entityRow.content !== null) {
-            if (typeof entityRow.content === "string") {
-                entityRow.content = Buffer.from(entityRow.content, "utf-8");
-            }
-
-            if (entityRow.content) {
-                entityRow.content = entityRow.content.toString("base64");
-            }
-        }
-
-
-        return entityRow;
+    if (!primaryKey) {
+        throw new Error(`Unknown entity for entity change ${JSON.stringify(entityChange)}`);
     }
+
+    const entityRow = sql.getRow<EntityRow>(/*sql*/`SELECT * FROM ${entityName} WHERE ${primaryKey} = ?`, [entityId]);
+
+    if (!entityRow) {
+        log.error(`Cannot find entity for entity change ${JSON.stringify(entityChange)}`);
+        return null;
+    }
+
+    if (entityName === "blobs" && entityRow.content !== null) {
+        if (typeof entityRow.content === "string") {
+            entityRow.content = Buffer.from(entityRow.content, "utf-8");
+        }
+
+        if (entityRow.content) {
+            entityRow.content = entityRow.content.toString("base64");
+        }
+    }
+
+
+    return entityRow;
+    
 }
 
 function getEntityChangeRecords(entityChanges: EntityChange[]) {

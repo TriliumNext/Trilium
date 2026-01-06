@@ -1,8 +1,7 @@
 import { BackupDatabaseNowResponse, DatabaseCheckIntegrityResponse } from "@triliumnext/commons";
-import { ValidationError } from "@triliumnext/core";
+import { becca_loader, ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 
-import becca_loader from "../../becca/becca_loader.js";
 import anonymizationService from "../../services/anonymization.js";
 import backupService from "../../services/backup.js";
 import consistencyChecksService from "../../services/consistency_checks.js";

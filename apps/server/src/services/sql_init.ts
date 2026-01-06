@@ -89,7 +89,7 @@ async function createInitialDatabase(skipDemoDb?: boolean) {
 
     // We have to import async since options init requires keyboard actions which require translations.
     const optionsInitService = (await import("./options_init.js")).default;
-    const becca_loader = (await import("../becca/becca_loader.js")).default;
+    const becca_loader = (await import("@triliumnext/core")).becca_loader;
 
     sql.transactional(() => {
         log.info("Creating database schema ...");

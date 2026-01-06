@@ -1,9 +1,8 @@
-import { ValidationError } from "@triliumnext/core";
+import { becca_loader,ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 import path from "path";
 
 import becca from "../../becca/becca.js";
-import beccaLoader from "../../becca/becca_loader.js";
 import type BNote from "../../becca/entities/bnote.js";
 import cls from "../../services/cls.js";
 import enexImportService from "../../services/import/enex.js";
@@ -95,7 +94,7 @@ async function importNotesToBranch(req: Request) {
     }
 
     // import has deactivated note events so becca is not updated, instead we force it to reload
-    beccaLoader.load();
+    becca_loader.load();
 
     return note.getPojo();
 }
