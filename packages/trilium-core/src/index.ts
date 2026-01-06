@@ -12,6 +12,7 @@ export * as binary_utils from "./services/utils/binary";
 export { default as date_utils } from "./services/utils/date";
 export { default as events } from "./services/events";
 export { getContext, type ExecutionContext } from "./services/context";
+export * from "./errors";
 export type { CryptoProvider } from "./services/encryption/crypto";
 
 export function initializeCore({ dbConfig, executionContext, crypto }: {

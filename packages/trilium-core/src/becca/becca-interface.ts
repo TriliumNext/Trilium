@@ -1,5 +1,5 @@
 import NoteSet from "../services/search/note_set.js";
-import NotFoundError from "../errors/not_found_error.js";
+import { NotFoundError } from "../errors.js";
 import type BOption from "./entities/boption.js";
 import type BNote from "./entities/bnote.js";
 import type BEtapiToken from "./entities/betapi_token.js";

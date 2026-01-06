@@ -1,7 +1,7 @@
 import { binary_utils } from "@triliumnext/core";
 
 import becca from "../becca/becca.js";
-import NotFoundError from "../errors/not_found_error.js";
+import { NotFoundError } from "../errors";
 import type { Blob } from "./blob-interface.js";
 import protectedSessionService from "./protected_session.js";
 import { hash } from "./utils.js";

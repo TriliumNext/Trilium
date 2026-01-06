@@ -1,11 +1,10 @@
-"use strict";
+import type { AttributeRow, BranchRow, NoteRow } from "@triliumnext/commons";
+import { NotFoundError } from "@triliumnext/core";
+import type { Request } from "express";
 
 import becca from "../../becca/becca.js";
-import log from "../../services/log.js";
-import NotFoundError from "../../errors/not_found_error.js";
-import type { Request } from "express";
 import type BNote from "../../becca/entities/bnote.js";
-import type { AttributeRow, BranchRow, NoteRow } from "@triliumnext/commons";
+import log from "../../services/log.js";
 
 function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
     const noteIds = new Set(_noteIds);
