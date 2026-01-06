@@ -1,6 +1,6 @@
+import { BlobRow } from "@triliumnext/commons";
 import becca from "../becca/becca.js";
 import { NotFoundError } from "../errors";
-import type { Blob } from "./blob-interface.js";
 import protectedSessionService from "./protected_session.js";
 import { hash } from "./utils.js";
 import { decodeUtf8 } from "./utils/binary.js";
@@ -52,7 +52,7 @@ function processContent(content: Uint8Array | string | null, isProtected: boolea
     return content;
 }
 
-function calculateContentHash({ blobId, content }: Blob) {
+function calculateContentHash({ blobId, content }: Pick<BlobRow, "blobId" | "content">) {
     return hash(`${blobId}|${content.toString()}`);
 }
 

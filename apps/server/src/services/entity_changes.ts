@@ -1,8 +1,7 @@
-import type { EntityChange } from "@triliumnext/commons";
+import type { BlobRow, EntityChange } from "@triliumnext/commons";
 import { blob as blobService, events as eventService } from "@triliumnext/core";
 
 import becca from "../becca/becca.js";
-import type { Blob } from "./blob-interface.js";
 import cls from "./cls.js";
 import dateUtils from "./date_utils.js";
 import instanceId from "./instance_id.js";
@@ -146,7 +145,7 @@ function fillEntityChanges(entityName: string, entityPrimaryKey: string, conditi
             };
 
             if (entityName === "blobs") {
-                const blob = sql.getRow<Blob>("SELECT blobId, content, utcDateModified FROM blobs WHERE blobId = ?", [entityId]);
+                const blob = sql.getRow<Pick<BlobRow, "blobId" | "content" | "utcDateModified">>("SELECT blobId, content, utcDateModified FROM blobs WHERE blobId = ?", [entityId]);
                 ec.hash = blobService.calculateContentHash(blob);
                 ec.utcDateChanged = blob.utcDateModified;
                 ec.isSynced = true; // blobs are always synced

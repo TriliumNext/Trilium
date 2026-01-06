@@ -1,11 +1,12 @@
-"use strict";
 
-import sql from "../../sql.js";
+
+import { BlobRow } from "@triliumnext/commons";
+
 import utils from "../../../services/utils.js";
+import sql from "../../sql.js";
 import AbstractShacaEntity from "./abstract_shaca_entity.js";
-import type SNote from "./snote.js";
-import type { Blob } from "../../../services/blob-interface.js";
 import type { SAttachmentRow } from "./rows.js";
+import type SNote from "./snote.js";
 
 class SAttachment extends AbstractShacaEntity {
     private attachmentId: string;
@@ -37,23 +38,23 @@ class SAttachment extends AbstractShacaEntity {
     }
 
     getContent(silentNotFoundError = false) {
-        const row = sql.getRow<Pick<Blob, "content">>(/*sql*/`SELECT content FROM blobs WHERE blobId = ?`, [this.blobId]);
+        const row = sql.getRow<Pick<BlobRow, "content">>(/*sql*/`SELECT content FROM blobs WHERE blobId = ?`, [this.blobId]);
 
         if (!row) {
             if (silentNotFoundError) {
                 return undefined;
-            } else {
-                throw new Error(`Cannot find blob for attachment '${this.attachmentId}', blob '${this.blobId}'`);
-            }
+            } 
+            throw new Error(`Cannot find blob for attachment '${this.attachmentId}', blob '${this.blobId}'`);
+            
         }
 
         const content = row.content;
 
         if (this.hasStringContent()) {
             return content === null ? "" : content.toString("utf-8");
-        } else {
-            return content;
-        }
+        } 
+        return content;
+        
     }
 
     /** @returns true if the attachment has string content (not binary) */
