@@ -3,12 +3,10 @@
 import { utils as coreUtils } from "@triliumnext/core";
 import chardet from "chardet";
 import crypto from "crypto";
-import escape from "escape-html";
 import { t } from "i18next";
 import { release as osRelease } from "os";
 import path from "path";
 import stripBom from "strip-bom";
-import unescape from "unescape";
 
 import log from "./log.js";
 import type NoteMeta from "./meta/note_meta.js";
@@ -101,10 +99,6 @@ export function isEmptyOrWhitespace(str: string | null | undefined) {
 export function sanitizeSqlIdentifier(str: string) {
     return str.replace(/[^A-Za-z0-9_]/g, "");
 }
-
-export const escapeHtml = escape;
-
-export const unescapeHtml = unescape;
 
 export function toObject<T, K extends string | number | symbol, V>(array: T[], fn: (item: T) => [K, V]): Record<K, V> {
     const obj: Record<K, V> = {} as Record<K, V>; // TODO: unsafe?
@@ -227,16 +221,9 @@ export function normalize(str: string) {
     return coreUtils.normalize(str);
 }
 
+/** @deprecated */
 export function toMap<T extends Record<string, any>>(list: T[], key: keyof T) {
-    const map = new Map<string, T>();
-    for (const el of list) {
-        const keyForMap = el[key];
-        if (!keyForMap) continue;
-        // TriliumNextTODO: do we need to handle the case when the same key is used?
-        // currently this will overwrite the existing entry in the map
-        map.set(keyForMap, el);
-    }
-    return map;
+    return coreUtils.toMap(list, key);
 }
 
 // try to turn 'true' and 'false' strings from process.env variables into boolean values or undefined
@@ -469,6 +456,9 @@ function slugify(text: string) {
         .replace(/[^\p{Letter}\p{Number}]+/gu, "-") // replace non-letter/number with "-"
         .replace(/(^-|-$)+/g, ""); // trim dashes
 }
+
+export const escapeHtml = coreUtils.escapeHtml;
+export const unescapeHtml = coreUtils.unescapeHtml;
 
 export default {
     compareVersions,

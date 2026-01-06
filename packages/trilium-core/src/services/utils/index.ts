@@ -2,6 +2,8 @@ import { getCrypto } from "../encryption/crypto";
 import { sanitizeFileName } from "../sanitizer";
 import { encodeBase64 } from "./binary";
 import mimeTypes from "mime-types";
+import escape from "escape-html";
+import unescape from "unescape";
 
 // render and book are string note in the sense that they are expected to contain empty string
 const STRING_NOTE_TYPES = new Set(["text", "code", "relationMap", "search", "render", "book", "mermaid", "canvas", "webView"]);
@@ -99,3 +101,19 @@ export function formatDownloadTitle(fileName: string, type: string | null, mime:
 
     return `${fileNameBase}${getExtension()}`;
 }
+
+export function toMap<T extends Record<string, any>>(list: T[], key: keyof T) {
+    const map = new Map<string, T>();
+    for (const el of list) {
+        const keyForMap = el[key];
+        if (!keyForMap) continue;
+        // TriliumNextTODO: do we need to handle the case when the same key is used?
+        // currently this will overwrite the existing entry in the map
+        map.set(keyForMap, el);
+    }
+    return map;
+}
+
+export const escapeHtml = escape;
+
+export const unescapeHtml = unescape;
