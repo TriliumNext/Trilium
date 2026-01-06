@@ -16,6 +16,15 @@ export * from "./errors";
 export type { CryptoProvider } from "./services/encryption/crypto";
 
 export { default as becca } from "./becca/becca";
+export { default as BAttachment } from "./becca/entities/battachment";
+export { default as BAttribute } from "./becca/entities/battribute";
+export { default as BBlob } from "./becca/entities/bblob";
+export { default as BBranch } from "./becca/entities/bbranch";
+export { default as BEtapiToken } from "./becca/entities/betapi_token";
+export { default as BNote } from "./becca/entities/bnote";
+export { default as BOption } from "./becca/entities/boption";
+export { default as BRecentNote } from "./becca/entities/brecent_note";
+export { default as BRevision } from "./becca/entities/brevision";
 
 export function initializeCore({ dbConfig, executionContext, crypto }: {
     dbConfig: SqlServiceParams,
