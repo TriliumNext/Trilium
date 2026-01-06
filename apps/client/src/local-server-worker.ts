@@ -120,7 +120,8 @@ async function handleBootstrap() {
 
     // Later: return real globals from your core state/config.
     return jsonResponse({
-        assetPath: "assets",
+        assetPath: "./",
+        baseApiUrl: "../api/",
         themeCssUrl: null,
         themeUseNextAsBase: "next",
         iconPackCss: "",
