@@ -11,6 +11,7 @@ export { default as data_encryption } from "./services/encryption/data_encryptio
 export * as binary_utils from "./services/utils/binary";
 export { default as date_utils } from "./services/utils/date";
 export { default as events } from "./services/events";
+export { default as blob } from "./services/blob";
 export { getContext, type ExecutionContext } from "./services/context";
 export * from "./errors";
 export type { CryptoProvider } from "./services/encryption/crypto";

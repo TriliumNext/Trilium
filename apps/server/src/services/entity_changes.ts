@@ -1,8 +1,7 @@
 import type { EntityChange } from "@triliumnext/commons";
-import { events as eventService } from "@triliumnext/core";
+import { blob as blobService, events as eventService } from "@triliumnext/core";
 
 import becca from "../becca/becca.js";
-import blobService from "../services/blob.js";
 import type { Blob } from "./blob-interface.js";
 import cls from "./cls.js";
 import dateUtils from "./date_utils.js";
