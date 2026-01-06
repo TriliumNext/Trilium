@@ -57,7 +57,8 @@ export default defineConfig(() => ({
     base: "",
     plugins,
     optimizeDeps: {
-        exclude: ['@sqlite.org/sqlite-wasm']
+        exclude: ['@sqlite.org/sqlite-wasm'],
+        include: ['@triliumnext/core']
     },
     worker: {
         format: 'es'
