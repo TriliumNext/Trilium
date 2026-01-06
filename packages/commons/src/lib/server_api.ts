@@ -298,3 +298,15 @@ export interface IconRegistry {
         }[]
     }[];
 }
+
+export type LabelType = "text" | "number" | "boolean" | "date" | "datetime" | "time" | "url" | "color";
+export type Multiplicity = "single" | "multi";
+
+export interface DefinitionObject {
+    isPromoted?: boolean;
+    labelType?: LabelType;
+    multiplicity?: Multiplicity;
+    numberPrecision?: number;
+    promotedAlias?: string;
+    inverseRelation?: string;
+}

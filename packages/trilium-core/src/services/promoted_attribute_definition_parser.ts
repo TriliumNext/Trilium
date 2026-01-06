@@ -1,4 +1,4 @@
-import type { DefinitionObject } from "./promoted_attribute_definition_interface.js";
+import { DefinitionObject, LabelType, Multiplicity } from "@triliumnext/commons";
 
 function parse(value: string): DefinitionObject {
     const tokens = value.split(",").map((t) => t.trim());
@@ -8,9 +8,9 @@ function parse(value: string): DefinitionObject {
         if (token === "promoted") {
             defObj.isPromoted = true;
         } else if (["text", "number", "boolean", "date", "datetime", "time", "url"].includes(token)) {
-            defObj.labelType = token;
+            defObj.labelType = token as LabelType;
         } else if (["single", "multi"].includes(token)) {
-            defObj.multiplicity = token;
+            defObj.multiplicity = token as Multiplicity;
         } else if (token.startsWith("precision")) {
             const chunks = token.split("=");
 

@@ -1,3 +1,4 @@
+import { DefinitionObject } from "@triliumnext/commons";
 import { type AbstractBeccaEntity, events as eventService } from "@triliumnext/core";
 
 import becca from "../becca/becca.js";
@@ -6,7 +7,6 @@ import type BNote from "../becca/entities/bnote.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
 import noteService from "./notes.js";
 import oneTimeTimer from "./one_time_timer.js";
-import type { DefinitionObject } from "./promoted_attribute_definition_interface.js";
 import scriptService from "./script.js";
 import treeService from "./tree.js";
 
