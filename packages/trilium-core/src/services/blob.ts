@@ -1,10 +1,9 @@
-import { binary_utils } from "@triliumnext/core";
-
 import becca from "../becca/becca.js";
 import { NotFoundError } from "../errors";
 import type { Blob } from "./blob-interface.js";
 import protectedSessionService from "./protected_session.js";
 import { hash } from "./utils.js";
+import { decodeUtf8 } from "./utils/binary.js";
 
 function getBlobPojo(entityName: string, entityId: string, opts?: { preview: boolean }) {
     // TODO: Unused opts.
@@ -41,7 +40,7 @@ function processContent(content: Uint8Array | string | null, isProtected: boolea
     if (isStringContent) {
         if (content === null) return "";
         if (typeof content === "string") return content;
-        return binary_utils.decodeUtf8(content as Uint8Array);
+        return decodeUtf8(content as Uint8Array);
     }
     // see https://github.com/zadam/trilium/issues/3523
     // IIRC a zero-sized buffer can be returned as null from the database

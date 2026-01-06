@@ -1,6 +1,6 @@
 import type { AttachmentRow, AttributeType, CloneResponse, NoteRow, NoteType, RevisionRow } from "@triliumnext/commons";
 import { dayjs } from "@triliumnext/commons";
-import { events as eventService } from "@triliumnext/core";
+import eventService from "../../services/events";
 
 import cloningService from "../../services/cloning.js";
 import dateUtils from "../../services/utils/date";
