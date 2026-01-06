@@ -6,7 +6,7 @@ import { SqlService, SqlServiceParams } from "./services/sql/sql";
 
 export type * from "./services/sql/types";
 export * from "./services/sql/index";
-export * as protected_session from "./services/encryption/protected_session";
+export * as protected_session from "./services/protected_session";
 export { default as data_encryption } from "./services/encryption/data_encryption"
 export * as binary_utils from "./services/utils/binary";
 export { default as date_utils } from "./services/utils/date";

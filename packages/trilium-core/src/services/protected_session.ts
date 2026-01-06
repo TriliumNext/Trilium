@@ -1,6 +1,6 @@
 "use strict";
 
-import dataEncryptionService from "./data_encryption.js";
+import dataEncryptionService from "./encryption/data_encryption";
 
 let dataKey: Uint8Array | null = null;
 
