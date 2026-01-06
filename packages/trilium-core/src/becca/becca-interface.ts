@@ -1,4 +1,3 @@
-import sql from "../services/sql.js";
 import NoteSet from "../services/search/note_set.js";
 import NotFoundError from "../errors/not_found_error.js";
 import type BOption from "./entities/boption.js";
@@ -12,6 +11,7 @@ import type { AttachmentRow, BlobRow, RevisionRow } from "@triliumnext/commons";
 import BBlob from "./entities/bblob.js";
 import BRecentNote from "./entities/brecent_note.js";
 import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
+import { getSql } from "src/services/sql/index.js";
 
 /**
  * Becca is a backend cache of all notes, branches, and attributes.
@@ -151,7 +151,7 @@ export default class Becca {
     }
 
     getRevision(revisionId: string): BRevision | null {
-        const row = sql.getRow<RevisionRow | null>("SELECT * FROM revisions WHERE revisionId = ?", [revisionId]);
+        const row = getSql().getRow<RevisionRow | null>("SELECT * FROM revisions WHERE revisionId = ?", [revisionId]);
         return row ? new BRevision(row) : null;
     }
 
@@ -170,7 +170,7 @@ export default class Becca {
             JOIN blobs USING (blobId)
             WHERE attachmentId = ? AND isDeleted = 0`;
 
-        return sql.getRows<AttachmentRow>(query, [attachmentId]).map((row) => new BAttachment(row))[0];
+        return getSql().getRows<AttachmentRow>(query, [attachmentId]).map((row) => new BAttachment(row))[0];
     }
 
     getAttachmentOrThrow(attachmentId: string): BAttachment {
@@ -182,7 +182,7 @@ export default class Becca {
     }
 
     getAttachments(attachmentIds: string[]): BAttachment[] {
-        return sql.getManyRows<AttachmentRow>("SELECT * FROM attachments WHERE attachmentId IN (???) AND isDeleted = 0", attachmentIds).map((row) => new BAttachment(row));
+        return getSql().getManyRows<AttachmentRow>("SELECT * FROM attachments WHERE attachmentId IN (???) AND isDeleted = 0", attachmentIds).map((row) => new BAttachment(row));
     }
 
     getBlob(entity: { blobId?: string }): BBlob | null {
@@ -190,7 +190,7 @@ export default class Becca {
             return null;
         }
 
-        const row = sql.getRow<BlobRow | null>("SELECT *, LENGTH(content) AS contentLength FROM blobs WHERE blobId = ?", [entity.blobId]);
+        const row = getSql().getRow<BlobRow | null>("SELECT *, LENGTH(content) AS contentLength FROM blobs WHERE blobId = ?", [entity.blobId]);
         return row ? new BBlob(row) : null;
     }
 
@@ -227,12 +227,12 @@ export default class Becca {
     }
 
     getRecentNotesFromQuery(query: string, params: string[] = []): BRecentNote[] {
-        const rows = sql.getRows<BRecentNote>(query, params);
+        const rows = getSql().getRows<BRecentNote>(query, params);
         return rows.map((row) => new BRecentNote(row));
     }
 
     getRevisionsFromQuery(query: string, params: string[] = []): BRevision[] {
-        const rows = sql.getRows<RevisionRow>(query, params);
+        const rows = getSql().getRows<RevisionRow>(query, params);
         return rows.map((row) => new BRevision(row));
     }
 

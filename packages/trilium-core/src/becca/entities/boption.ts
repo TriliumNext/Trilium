@@ -1,6 +1,6 @@
 "use strict";
 
-import dateUtils from "../../services/date_utils.js";
+import dateUtils from "../../services/utils/date";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import type { OptionRow } from "@triliumnext/commons";
 

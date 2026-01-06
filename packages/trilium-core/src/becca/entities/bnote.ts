@@ -3,15 +3,14 @@ import { dayjs } from "@triliumnext/commons";
 import { events as eventService } from "@triliumnext/core";
 
 import cloningService from "../../services/cloning.js";
-import dateUtils from "../../services/date_utils.js";
+import dateUtils from "../../services/utils/date";
 import eraseService from "../../services/erase.js";
 import handlers from "../../services/handlers.js";
-import log from "../../services/log.js";
+import log, { getLog } from "../../services/log.js";
 import noteService from "../../services/notes.js";
 import optionService from "../../services/options.js";
 import protectedSessionService from "../../services/protected_session.js";
 import searchService from "../../services/search/services/search.js";
-import sql from "../../services/sql.js";
 import TaskContext from "../../services/task_context.js";
 import utils from "../../services/utils.js";
 import type { NotePojo } from "../becca-interface.js";
@@ -20,6 +19,7 @@ import BAttachment from "./battachment.js";
 import BAttribute from "./battribute.js";
 import type BBranch from "./bbranch.js";
 import BRevision from "./brevision.js";
+import { getSql } from "src/services/sql/index.js";
 
 const LABEL = "label";
 const RELATION = "relation";
@@ -891,7 +891,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
             const becca = this.becca;
             return result.searchResultNoteIds.map((resultNoteId) => becca.notes[resultNoteId]).filter((note) => !!note);
         } catch (e: any) {
-            log.error(`Could not resolve search note ${this.noteId}: ${e.message}`);
+            getLog().error(`Could not resolve search note ${this.noteId}: ${e.message}`);
             return [];
         }
     }
@@ -909,7 +909,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
                     addSubtreeNotesInner(resultNote, searchNote);
                 }
             } catch (e: any) {
-                log.error(`Could not resolve search note ${searchNote?.noteId}: ${e.message}`);
+                getLog().error(`Could not resolve search note ${searchNote?.noteId}: ${e.message}`);
             }
         }
 
@@ -1093,7 +1093,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
     }
 
     getRevisions(): BRevision[] {
-        return sql.getRows<RevisionRow>("SELECT * FROM revisions WHERE noteId = ? ORDER BY revisions.utcDateCreated ASC", [this.noteId]).map((row) => new BRevision(row));
+        return getSql().getRows<RevisionRow>("SELECT * FROM revisions WHERE noteId = ? ORDER BY revisions.utcDateCreated ASC", [this.noteId]).map((row) => new BRevision(row));
     }
 
     getAttachments() {
@@ -1104,7 +1104,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
             WHERE ownerId = ? AND isDeleted = 0
             ORDER BY position`;
 
-        return sql.getRows<AttachmentRow>(query, [this.noteId]).map((row) => new BAttachment(row));
+        return getSql().getRows<AttachmentRow>(query, [this.noteId]).map((row) => new BAttachment(row));
     }
 
     getAttachmentById(attachmentId: string) {
@@ -1114,11 +1114,11 @@ class BNote extends AbstractBeccaEntity<BNote> {
             JOIN blobs USING (blobId)
             WHERE ownerId = ? AND attachmentId = ? AND isDeleted = 0`;
 
-        return sql.getRows<AttachmentRow>(query, [this.noteId, attachmentId]).map((row) => new BAttachment(row))[0];
+        return getSql().getRows<AttachmentRow>(query, [this.noteId, attachmentId]).map((row) => new BAttachment(row))[0];
     }
 
     getAttachmentsByRole(role: string): BAttachment[] {
-        return sql
+        return getSql()
             .getRows<AttachmentRow>(
                 `
                 SELECT attachments.*
@@ -1527,7 +1527,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
 
                 this.isDecrypted = true;
             } catch (e: any) {
-                log.error(`Could not decrypt note ${this.noteId}: ${e.message} ${e.stack}`);
+                getLog().error(`Could not decrypt note ${this.noteId}: ${e.message} ${e.stack}`);
             }
         }
     }
@@ -1549,7 +1549,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
     }
 
     saveRevision(): BRevision {
-        return sql.transactional(() => {
+        return getSql().transactional(() => {
             let noteContent = this.getContent();
 
             const revision = new BRevision(

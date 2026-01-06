@@ -1,15 +1,15 @@
-import { events as eventService } from "@triliumnext/core";
+import eventService from "../../services/events";
 
 import blobService from "../../services/blob.js";
-import cls from "../../services/cls.js";
-import dateUtils from "../../services/date_utils.js";
+import * as cls from "../../services/context";
+import dateUtils from "../../services/utils/date";
 import entityChangesService from "../../services/entity_changes.js";
-import log from "../../services/log.js";
+import { getLog } from "../../services/log.js";
 import protectedSessionService from "../../services/protected_session.js";
-import sql from "../../services/sql.js";
 import utils from "../../services/utils.js";
 import becca from "../becca.js";
 import type { ConstructorData,default as Becca } from "../becca-interface.js";
+import { getSql } from "src/services/sql";
 
 interface ContentOpts {
     forceSave?: boolean;
@@ -110,6 +110,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
 
         const pojo = this.getPojoToSave();
 
+        const sql = getSql();
         sql.transactional(() => {
             sql.upsert(entityName, primaryKeyName, pojo);
 
@@ -166,7 +167,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
             }
         }
 
-        sql.transactional(() => {
+        getSql().transactional(() => {
             const newBlobId = this.saveBlob(content, unencryptedContentForHashCalculation, opts);
             const oldBlobId = this.blobId;
 
@@ -182,6 +183,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
     }
 
     private deleteBlobIfNotUsed(oldBlobId: string) {
+        const sql = getSql();
         if (sql.getValue("SELECT 1 FROM notes WHERE blobId = ? LIMIT 1", [oldBlobId])) {
             return;
         }
@@ -218,6 +220,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
          * notes/attachments), but the trade-off comes out clearly positive.
          */
         const newBlobId = utils.hashedBlobId(unencryptedContentForHashCalculation);
+        const sql = getSql();
         const blobNeedsInsert = !sql.getValue("SELECT 1 FROM blobs WHERE blobId = ?", [newBlobId]);
 
         if (!blobNeedsInsert) {
@@ -258,6 +261,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
     }
 
     protected _getContent(): string | Buffer {
+        const sql = getSql();
         const row = sql.getRow<{ content: string | Buffer }>(/*sql*/`SELECT content FROM blobs WHERE blobId = ?`, [this.blobId]);
 
         if (!row) {
@@ -280,6 +284,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
 
         this.utcDateModified = dateUtils.utcNowDateTime();
 
+        const sql = getSql();
         sql.execute(
             /*sql*/`UPDATE ${entityName} SET isDeleted = 1, deleteId = ?, utcDateModified = ?
                             WHERE ${constructorData.primaryKeyName} = ?`,
@@ -292,7 +297,7 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
             sql.execute(/*sql*/`UPDATE ${entityName} SET dateModified = ? WHERE ${constructorData.primaryKeyName} = ?`, [this.dateModified, entityId]);
         }
 
-        log.info(`Marking ${entityName} ${entityId} as deleted`);
+        getLog().info(`Marking ${entityName} ${entityId} as deleted`);
 
         this.putEntityChange(true);
 
@@ -306,13 +311,14 @@ abstract class AbstractBeccaEntity<T extends AbstractBeccaEntity<T>> {
 
         this.utcDateModified = dateUtils.utcNowDateTime();
 
+        const sql = getSql();
         sql.execute(
             /*sql*/`UPDATE ${entityName} SET isDeleted = 1, utcDateModified = ?
                             WHERE ${constructorData.primaryKeyName} = ?`,
             [this.utcDateModified, entityId]
         );
 
-        log.info(`Marking ${entityName} ${entityId} as deleted`);
+        getLog().info(`Marking ${entityName} ${entityId} as deleted`);
 
         this.putEntityChange(true);
 

@@ -1,8 +1,8 @@
 "use strict";
 
 import becca from "./becca.js";
-import cls from "../services/cls.js";
-import log from "../services/log.js";
+import { getLog } from "../services/log.js";
+import { getContext } from "src/services/context.js";
 
 function isNotePathArchived(notePath: string[]) {
     const noteId = notePath[notePath.length - 1];
@@ -29,7 +29,7 @@ function getNoteTitle(childNoteId: string, parentNoteId?: string) {
     const parentNote = parentNoteId ? becca.notes[parentNoteId] : null;
 
     if (!childNote) {
-        log.info(`Cannot find note '${childNoteId}'`);
+        getLog().info(`Cannot find note '${childNoteId}'`);
         return "[error fetching title]";
     }
 
@@ -50,7 +50,7 @@ function getNoteTitleAndIcon(childNoteId: string, parentNoteId?: string) {
     const parentNote = parentNoteId ? becca.notes[parentNoteId] : null;
 
     if (!childNote) {
-        log.info(`Cannot find note '${childNoteId}'`);
+        getLog().info(`Cannot find note '${childNoteId}'`);
         return {
             title: "[error fetching title]"
         }
@@ -82,7 +82,7 @@ function getNoteTitleArrayForPath(notePathArray: string[]) {
     let hoistedNotePassed = false;
 
     // this is a notePath from outside of hoisted subtree, so the full title path needs to be returned
-    const hoistedNoteId = cls.getHoistedNoteId();
+    const hoistedNoteId = getContext().getHoistedNoteId();
     const outsideOfHoistedSubtree = !notePathArray.includes(hoistedNoteId);
 
     for (const noteId of notePathArray) {

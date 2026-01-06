@@ -1,10 +1,8 @@
 import type { AttributeRow, BranchRow, EtapiTokenRow, NoteRow, OptionRow } from "@triliumnext/commons";
-import { events as eventService } from "@triliumnext/core";
+import eventService from "../services/events";
 
 import entityConstructor from "../becca/entity_constructor.js";
-import cls from "../services/cls.js";
-import log from "../services/log.js";
-import sql from "../services/sql.js";
+import { getLog } from "../services/log.js";
 import { dbReady } from "../services/sql_init.js";
 import ws from "../services/ws.js";
 import becca from "./becca.js";
@@ -14,13 +12,15 @@ import BBranch from "./entities/bbranch.js";
 import BEtapiToken from "./entities/betapi_token.js";
 import BNote from "./entities/bnote.js";
 import BOption from "./entities/boption.js";
+import { getSql } from "src/services/sql/index.js";
+import { getContext } from "src/services/context.js";
 
 export const beccaLoaded = new Promise<void>(async (res, rej) => {
     // We have to import async since options init requires keyboard actions which require translations.
     const options_init = (await import("../services/options_init.js")).default;
 
     dbReady.then(() => {
-        cls.init(() => {
+        getContext().init(() => {
             load();
 
             options_init.initStartupOptions();
@@ -35,6 +35,7 @@ function load() {
     becca.reset();
 
     // we know this is slow and the total becca load time is logged
+    const sql = getSql();
     sql.disableSlowQueryLogging(() => {
         // using a raw query and passing arrays to avoid allocating new objects,
         // this is worth it for the becca load since it happens every run and blocks the app until finished
@@ -71,7 +72,7 @@ function load() {
 
     becca.loaded = true;
 
-    log.info(`Becca (note cache) load took ${Date.now() - start}ms`);
+    getLog().info(`Becca (note cache) load took ${Date.now() - start}ms`);
 }
 
 function reload(reason: string) {
@@ -283,7 +284,7 @@ eventService.subscribeBeccaLoader(eventService.ENTER_PROTECTED_SESSION, () => {
     try {
         becca.decryptProtectedNotes();
     } catch (e: any) {
-        log.error(`Could not decrypt protected notes: ${e.message} ${e.stack}`);
+        getLog().error(`Could not decrypt protected notes: ${e.message} ${e.stack}`);
     }
 });
 

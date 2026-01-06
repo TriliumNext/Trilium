@@ -2,15 +2,15 @@
 
 import type { AttachmentRow } from "@triliumnext/commons";
 
-import dateUtils from "../../services/date_utils.js";
-import log from "../../services/log.js";
+import dateUtils from "../../services/utils/date";
+import { getLog } from "../../services/log.js";
 import noteService from "../../services/notes.js";
 import protectedSessionService from "../../services/protected_session.js";
-import sql from "../../services/sql.js";
 import utils from "../../services/utils.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import type BBranch from "./bbranch.js";
 import type BNote from "./bnote.js";
+import { getSql } from "src/services/sql/index.js";
 
 const attachmentRoleToNoteTypeMapping = {
     image: "image",
@@ -131,7 +131,7 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
                 this.title = protectedSessionService.decryptString(this.title) || "";
                 this.isDecrypted = true;
             } catch (e: any) {
-                log.error(`Could not decrypt attachment ${this.attachmentId}: ${e.message} ${e.stack}`);
+                getLog().error(`Could not decrypt attachment ${this.attachmentId}: ${e.message} ${e.stack}`);
             }
         }
     }
@@ -210,7 +210,7 @@ class BAttachment extends AbstractBeccaEntity<BAttachment> {
         if (this.position === undefined || this.position === null) {
             this.position =
                 10 +
-                sql.getValue<number>(
+                getSql().getValue<number>(
                     /*sql*/`SELECT COALESCE(MAX(position), 0)
                                                         FROM attachments
                                                         WHERE ownerId = ?`,

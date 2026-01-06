@@ -1,7 +1,7 @@
 import becca from "./becca.js";
-import log from "../services/log.js";
+import { getLog } from "../services/log.js";
 import beccaService from "./becca_service.js";
-import dateUtils from "../services/date_utils.js";
+import dateUtils from "../services/utils/date";
 import { parse } from "node-html-parser";
 import type BNote from "./entities/bnote.js";
 import { SimilarNote } from "@triliumnext/commons";
@@ -359,7 +359,7 @@ async function findSimilarNotes(noteId: string): Promise<SimilarNote[] | undefin
             let factor = 1;
 
             if (!value.startsWith) {
-                log.info(`Unexpected falsy value for attribute ${JSON.stringify(attr.getPojo())}`);
+                getLog().info(`Unexpected falsy value for attribute ${JSON.stringify(attr.getPojo())}`);
                 continue;
             } else if (value.startsWith("http")) {
                 value = filterUrlValue(value);

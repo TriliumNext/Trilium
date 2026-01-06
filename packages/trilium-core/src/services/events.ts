@@ -1,4 +1,4 @@
-import log from "./log.js";
+import log, { getLog } from "./log.js";
 
 const NOTE_TITLE_CHANGED = "NOTE_TITLE_CHANGED";
 const ENTER_PROTECTED_SESSION = "ENTER_PROTECTED_SESSION";
@@ -52,7 +52,7 @@ function emit(eventType: string, data?: any) {
             try {
                 listener(data);
             } catch (e: any) {
-                log.error(`Listener threw error: ${e.message}, stack: ${e.stack}`);
+                getLog().error(`Listener threw error: ${e.message}, stack: ${e.stack}`);
                 // we won't stop execution because of listener
             }
         }

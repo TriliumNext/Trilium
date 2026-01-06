@@ -2,13 +2,13 @@
 
 import protectedSessionService from "../../services/protected_session.js";
 import utils from "../../services/utils.js";
-import dateUtils from "../../services/date_utils.js";
+import dateUtils from "../../services/utils/date";
 import becca from "../becca.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
-import sql from "../../services/sql.js";
 import BAttachment from "./battachment.js";
 import type { AttachmentRow, NoteType, RevisionPojo, RevisionRow } from "@triliumnext/commons";
 import eraseService from "../../services/erase.js";
+import { getSql } from "src/services/sql/index.js";
 
 interface ContentOpts {
     /** will also save this BRevision entity */
@@ -125,7 +125,7 @@ class BRevision extends AbstractBeccaEntity<BRevision> {
     }
 
     getAttachments(): BAttachment[] {
-        return sql
+        return getSql()
             .getRows<AttachmentRow>(
                 `
                 SELECT attachments.*
@@ -147,11 +147,11 @@ class BRevision extends AbstractBeccaEntity<BRevision> {
                 WHERE ownerId = ? AND attachmentId = ? AND isDeleted = 0`
             : /*sql*/`SELECT * FROM attachments WHERE ownerId = ? AND attachmentId = ? AND isDeleted = 0`;
 
-        return sql.getRows<AttachmentRow>(query, [this.revisionId, attachmentId]).map((row) => new BAttachment(row))[0];
+        return getSql().getRows<AttachmentRow>(query, [this.revisionId, attachmentId]).map((row) => new BAttachment(row))[0];
     }
 
     getAttachmentsByRole(role: string): BAttachment[] {
-        return sql
+        return getSql()
             .getRows<AttachmentRow>(
                 `
                 SELECT attachments.*

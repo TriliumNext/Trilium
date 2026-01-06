@@ -2,14 +2,14 @@
 
 import type { BranchRow } from "@triliumnext/commons";
 
-import cls from "../../services/cls.js";
-import dateUtils from "../../services/date_utils.js";
+import dateUtils from "../../services/utils/date";
 import handlers from "../../services/handlers.js";
-import log from "../../services/log.js";
+import { getLog } from "../../services/log.js";
 import TaskContext from "../../services/task_context.js";
 import utils from "../../services/utils.js";
 import AbstractBeccaEntity from "./abstract_becca_entity.js";
 import BNote from "./bnote.js";
+import { getContext } from "src/services/context";
 
 /**
  * Branch represents a relationship between a child note and its parent note. Trilium allows a note to have multiple
@@ -160,7 +160,7 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
             }
         }
 
-        if ((this.noteId === "root" || this.noteId === cls.getHoistedNoteId()) && !this.isWeak) {
+        if ((this.noteId === "root" || this.noteId === getContext().getHoistedNoteId()) && !this.isWeak) {
             throw new Error("Can't delete root or hoisted branch/note");
         }
 
@@ -181,7 +181,7 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
 
             // first delete children and then parent - this will show up better in recent changes
 
-            log.info(`Deleting note '${note.noteId}'`);
+            getLog().info(`Deleting note '${note.noteId}'`);
 
             this.becca.notes[note.noteId].isBeingDeleted = true;
 
@@ -200,9 +200,9 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
             note.markAsDeleted(deleteId);
 
             return true;
-        } 
+        }
         return false;
-        
+
     }
 
     override beforeSaving() {
@@ -269,7 +269,7 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
                 existingBranch.notePosition = notePosition;
             }
             return existingBranch;
-        } 
+        }
         return new BBranch({
             noteId: this.noteId,
             parentNoteId,
@@ -277,7 +277,7 @@ class BBranch extends AbstractBeccaEntity<BBranch> {
             prefix: this.prefix,
             isExpanded: this.isExpanded
         });
-        
+
     }
 
     getParentNote() {
