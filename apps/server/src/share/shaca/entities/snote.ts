@@ -1,6 +1,6 @@
+import { NOTE_TYPE_ICONS } from "@triliumnext/core";
 import escape from "escape-html";
 
-import { NOTE_TYPE_ICONS } from "../../../becca/entities/bnote.js";
 import type { Blob } from "../../../services/blob-interface.js";
 import utils from "../../../services/utils.js";
 import sql from "../../sql.js";

@@ -1,10 +1,9 @@
 
 
 import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
-import { becca_loader } from "@triliumnext/core";
+import { becca_loader, entity_constructor } from "@triliumnext/core";
 
 import becca from "../becca/becca.js";
-import entityConstructor from "../becca/entity_constructor.js";
 import appInfo from "./app_info.js";
 import cls from "./cls.js";
 import consistency_checks from "./consistency_checks.js";
@@ -95,7 +94,7 @@ async function sync() {
                 success: false,
                 message: "No connection to sync server."
             };
-        } 
+        }
         log.info(`Sync failed: '${e.message}', stack: ${e.stack}`);
 
         ws.syncFailed();
@@ -104,7 +103,7 @@ async function sync() {
             success: false,
             message: e.message
         };
-        
+
     }
 }
 
@@ -220,9 +219,9 @@ async function pushChanges(syncContext: SyncContext) {
                 lastSyncedPush = entityChange.id;
 
                 return false;
-            } 
+            }
             return true;
-            
+
         });
 
         if (filteredEntityChanges.length === 0 && lastSyncedPush) {
@@ -341,8 +340,8 @@ function getEntityChangeRow(entityChange: EntityChange) {
 
     if (entityName === "note_reordering") {
         return sql.getMap("SELECT branchId, notePosition FROM branches WHERE parentNoteId = ? AND isDeleted = 0", [entityId]);
-    } 
-    const primaryKey = entityConstructor.getEntityFromEntityName(entityName).primaryKeyName;
+    }
+    const primaryKey = entity_constructor.getEntityFromEntityName(entityName).primaryKeyName;
 
     if (!primaryKey) {
         throw new Error(`Unknown entity for entity change ${JSON.stringify(entityChange)}`);
@@ -367,7 +366,7 @@ function getEntityChangeRow(entityChange: EntityChange) {
 
 
     return entityRow;
-    
+
 }
 
 function getEntityChangeRecords(entityChanges: EntityChange[]) {

@@ -1,7 +1,6 @@
 import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
-import { events as eventService } from "@triliumnext/core";
+import { entity_constructor, events as eventService } from "@triliumnext/core";
 
-import entityConstructor from "../becca/entity_constructor.js";
 import entityChangesService from "./entity_changes.js";
 import log from "./log.js";
 import sql from "./sql.js";
@@ -155,7 +154,7 @@ function eraseEntity(entityChange: EntityChange) {
         return;
     }
 
-    const primaryKeyName = entityConstructor.getEntityFromEntityName(entityName).primaryKeyName;
+    const primaryKeyName = entity_constructor.getEntityFromEntityName(entityName).primaryKeyName;
 
     sql.execute(/*sql*/`DELETE FROM ${entityName} WHERE ${primaryKeyName} = ?`, [entityId]);
 }

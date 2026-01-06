@@ -1,6 +1,5 @@
-import { data_encryption } from "@triliumnext/core";
+import { data_encryption, OpenIdError } from "@triliumnext/core";
 
-import OpenIdError from "../../errors/open_id_error.js";
 import sql from "../sql.js";
 import sqlInit from "../sql_init.js";
 import utils, { constantTimeCompare } from "../utils.js";
