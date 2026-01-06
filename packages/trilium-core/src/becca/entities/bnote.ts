@@ -1515,7 +1515,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         taskContext.noteDeletionHandlerTriggered = true;
 
         for (const branch of this.getParentBranches()) {
-            branch.deleteBranch(deleteId, taskContext);
+            branch.deleteBranch(deleteId ?? undefined, taskContext);
         }
     }
 
