@@ -3,6 +3,8 @@
 // import { createCoreServer } from "@trilium/core"; (bundled)
 
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
+import BrowserExecutionContext from './lightweight/cls_provider';
+import BrowserSqlProvider from './lightweight/sql_provider';
 
 // Global error handlers - MUST be set up before any async imports
 self.onerror = (message, source, lineno, colno, error) => {
@@ -54,6 +56,19 @@ async function loadCoreModule() {
     try {
         console.log("[Worker] Loading @triliumnext/core...");
         coreModule = await import("@triliumnext/core");
+        coreModule.initializeCore({
+            executionContext: new BrowserExecutionContext(),
+            dbConfig: {
+                provider: new BrowserSqlProvider(),
+                isReadOnly: false,
+                onTransactionCommit: () => {
+                    // No-op for now
+                },
+                onTransactionRollback: () => {
+                    // No-op for now
+                }
+            }
+        })
         console.log("[Worker] @triliumnext/core loaded successfully");
         return coreModule;
     } catch (e) {

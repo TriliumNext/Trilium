@@ -1,0 +1,283 @@
+import type { DatabaseProvider, RunResult, Statement, Transaction } from "@triliumnext/core";
+import type sqlite3InitModule from "@sqlite.org/sqlite-wasm";
+import type { BindableValue } from "@sqlite.org/sqlite-wasm";
+
+// Type definitions for SQLite WASM (the library doesn't export these directly)
+type Sqlite3Module = Awaited<ReturnType<typeof sqlite3InitModule>>;
+type Sqlite3Database = InstanceType<Sqlite3Module["oo1"]["DB"]>;
+type Sqlite3PreparedStatement = ReturnType<Sqlite3Database["prepare"]>;
+
+/**
+ * Wraps an SQLite WASM PreparedStatement to match the Statement interface
+ * expected by trilium-core.
+ */
+class WasmStatement implements Statement {
+    constructor(
+        private stmt: Sqlite3PreparedStatement,
+        private db: Sqlite3Database
+    ) {}
+
+    run(...params: unknown[]): RunResult {
+        this.bindParams(params);
+        try {
+            this.stmt.stepFinalize();
+            return {
+                changes: this.db.changes(),
+                lastInsertRowid: 0 // Would need sqlite3_last_insert_rowid for this
+            };
+        } catch (e) {
+            this.stmt.finalize();
+            throw e;
+        }
+    }
+
+    get(params: unknown): unknown {
+        this.bindParams(Array.isArray(params) ? params : params !== undefined ? [params] : []);
+        try {
+            if (this.stmt.step()) {
+                return this.stmt.get({});
+            }
+            return undefined;
+        } finally {
+            this.stmt.reset();
+        }
+    }
+
+    all(...params: unknown[]): unknown[] {
+        this.bindParams(params);
+        const results: unknown[] = [];
+        try {
+            while (this.stmt.step()) {
+                results.push(this.stmt.get({}));
+            }
+            return results;
+        } finally {
+            this.stmt.reset();
+        }
+    }
+
+    iterate(...params: unknown[]): IterableIterator<unknown> {
+        this.bindParams(params);
+        const stmt = this.stmt;
+
+        return {
+            [Symbol.iterator]() {
+                return this;
+            },
+            next(): IteratorResult<unknown> {
+                if (stmt.step()) {
+                    return { value: stmt.get({}), done: false };
+                }
+                stmt.reset();
+                return { value: undefined, done: true };
+            }
+        };
+    }
+
+    raw(_toggleState?: boolean): this {
+        // SQLite WASM doesn't have a direct equivalent to raw mode
+        // raw mode returns arrays instead of objects
+        console.warn("raw() mode is not fully supported in WASM SQLite provider");
+        return this;
+    }
+
+    pluck(_toggleState?: boolean): this {
+        // pluck mode returns only the first column of each row
+        console.warn("pluck() mode is not fully supported in WASM SQLite provider");
+        return this;
+    }
+
+    private bindParams(params: unknown[]): void {
+        this.stmt.clearBindings();
+        if (params.length === 0) {
+            return;
+        }
+
+        // Handle single object with named parameters
+        if (params.length === 1 && typeof params[0] === "object" && params[0] !== null && !Array.isArray(params[0])) {
+            const bindings = params[0] as { [paramName: string]: BindableValue };
+            this.stmt.bind(bindings);
+        } else {
+            // Handle positional parameters - flatten and cast to BindableValue[]
+            const flatParams = params.flat() as BindableValue[];
+            if (flatParams.length > 0) {
+                this.stmt.bind(flatParams);
+            }
+        }
+    }
+
+    finalize(): void {
+        this.stmt.finalize();
+    }
+}
+
+/**
+ * SQLite database provider for browser environments using SQLite WASM.
+ *
+ * This provider wraps the official @sqlite.org/sqlite-wasm package to provide
+ * a DatabaseProvider implementation compatible with trilium-core.
+ */
+export default class BrowserSqlProvider implements DatabaseProvider {
+    private db?: Sqlite3Database;
+    private sqlite3?: Sqlite3Module;
+    private _inTransaction = false;
+
+    /**
+     * Initialize the provider with an already-initialized SQLite WASM module.
+     * This must be called before using any database operations.
+     */
+    initialize(sqlite3: Sqlite3Module): void {
+        this.sqlite3 = sqlite3;
+    }
+
+    loadFromFile(_path: string, _isReadOnly: boolean): void {
+        // Browser environment doesn't have direct file system access.
+        // For OPFS support, we would need to use the OPFS VFS.
+        throw new Error(
+            "loadFromFile is not supported in browser environment. " +
+            "Use loadFromMemory() or loadFromBuffer() instead, or implement OPFS VFS support."
+        );
+    }
+
+    loadFromMemory(): void {
+        this.ensureSqlite3();
+        this.db = new this.sqlite3!.oo1.DB(":memory:", "c");
+        this.db.exec("PRAGMA journal_mode = WAL");
+    }
+
+    loadFromBuffer(buffer: Uint8Array): void {
+        this.ensureSqlite3();
+        // SQLite WASM can deserialize a database from a byte array
+        const p = this.sqlite3!.wasm.allocFromTypedArray(buffer);
+        try {
+            this.db = new this.sqlite3!.oo1.DB({ filename: ":memory:", flags: "c" });
+            const rc = this.sqlite3!.capi.sqlite3_deserialize(
+                this.db.pointer!,
+                "main",
+                p,
+                buffer.byteLength,
+                buffer.byteLength,
+                this.sqlite3!.capi.SQLITE_DESERIALIZE_FREEONCLOSE |
+                this.sqlite3!.capi.SQLITE_DESERIALIZE_RESIZEABLE
+            );
+            if (rc !== 0) {
+                throw new Error(`Failed to deserialize database: ${rc}`);
+            }
+        } catch (e) {
+            this.sqlite3!.wasm.dealloc(p);
+            throw e;
+        }
+    }
+
+    backup(_destinationFile: string): void {
+        // In browser, we can serialize the database to a byte array
+        // For actual file backup, we'd need to use File System Access API or download
+        throw new Error(
+            "backup to file is not supported in browser environment. " +
+            "Use serialize() to get the database as a Uint8Array instead."
+        );
+    }
+
+    /**
+     * Serialize the database to a byte array.
+     * This can be used to save the database to IndexedDB, download it, etc.
+     */
+    serialize(): Uint8Array {
+        this.ensureDb();
+        // Use the convenience wrapper which handles all the memory management
+        return this.sqlite3!.capi.sqlite3_js_db_export(this.db!);
+    }
+
+    prepare(query: string): Statement {
+        this.ensureDb();
+        const stmt = this.db!.prepare(query);
+        return new WasmStatement(stmt, this.db!);
+    }
+
+    transaction<T>(func: (statement: Statement) => T): Transaction {
+        this.ensureDb();
+
+        const self = this;
+
+        // Helper function to execute within a transaction
+        const executeTransaction = (beginStatement: string, ...args: unknown[]): T => {
+            self._inTransaction = true;
+            self.db!.exec(beginStatement);
+            try {
+                const result = func.apply(null, args as [Statement]);
+                self.db!.exec("COMMIT");
+                return result;
+            } catch (e) {
+                self.db!.exec("ROLLBACK");
+                throw e;
+            } finally {
+                self._inTransaction = false;
+            }
+        };
+
+        // Create the transaction function that acts like better-sqlite3's Transaction interface
+        // In better-sqlite3, the transaction function is callable and has .deferred(), .immediate(), etc.
+        const transactionWrapper = Object.assign(
+            // Default call executes with BEGIN (same as immediate)
+            (...args: unknown[]): T => executeTransaction("BEGIN", ...args),
+            {
+                // Deferred transaction - locks acquired on first data access
+                deferred: (...args: unknown[]): T => executeTransaction("BEGIN DEFERRED", ...args),
+                // Immediate transaction - acquires write lock immediately
+                immediate: (...args: unknown[]): T => executeTransaction("BEGIN IMMEDIATE", ...args),
+                // Exclusive transaction - exclusive lock
+                exclusive: (...args: unknown[]): T => executeTransaction("BEGIN EXCLUSIVE", ...args),
+                // Default is same as calling directly
+                default: (...args: unknown[]): T => executeTransaction("BEGIN", ...args)
+            }
+        );
+
+        return transactionWrapper as unknown as Transaction;
+    }
+
+    get inTransaction(): boolean {
+        return this._inTransaction;
+    }
+
+    exec(query: string): void {
+        this.ensureDb();
+        this.db!.exec(query);
+    }
+
+    close(): void {
+        if (this.db) {
+            this.db.close();
+            this.db = undefined;
+        }
+    }
+
+    /**
+     * Get the number of rows changed by the last INSERT, UPDATE, or DELETE statement.
+     */
+    changes(): number {
+        this.ensureDb();
+        return this.db!.changes();
+    }
+
+    /**
+     * Check if the database is currently open.
+     */
+    isOpen(): boolean {
+        return this.db !== undefined && this.db.isOpen();
+    }
+
+    private ensureSqlite3(): void {
+        if (!this.sqlite3) {
+            throw new Error(
+                "SQLite WASM module not initialized. Call initialize() first with the sqlite3 module."
+            );
+        }
+    }
+
+    private ensureDb(): void {
+        this.ensureSqlite3();
+        if (!this.db) {
+            throw new Error("Database not opened. Call loadFromMemory() or loadFromBuffer() first.");
+        }
+    }
+}
