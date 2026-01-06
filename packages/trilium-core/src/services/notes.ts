@@ -1,6 +1,8 @@
 import type { AttachmentRow, AttributeRow, BranchRow, NoteRow, NoteType } from "@triliumnext/commons";
 import { dayjs } from "@triliumnext/commons";
-import { date_utils, events as eventService, ValidationError } from "@triliumnext/core";
+import date_utils from "../services/utils/date";
+import eventService from "../services/events";
+import { ValidationError } from "../errors.js";
 import fs from "fs";
 import html2plaintext from "html2plaintext";
 import { t } from "i18next";
