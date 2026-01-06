@@ -1,24 +1,25 @@
-import log from "./log.js";
+import { deferred, type OptionRow } from "@triliumnext/commons";
+import { events as eventService } from "@triliumnext/core";
 import fs from "fs";
-import resourceDir from "./resource_dir.js";
-import sql from "./sql.js";
-import { isElectron } from "./utils.js";
-import optionService from "./options.js";
-import port from "./port.js";
+import { t } from "i18next";
+
+import BBranch from "../becca/entities/bbranch.js";
+import BNote from "../becca/entities/bnote.js";
 import BOption from "../becca/entities/boption.js";
-import TaskContext from "./task_context.js";
-import migrationService from "./migration.js";
+import backup from "./backup.js";
 import cls from "./cls.js";
 import config from "./config.js";
-import { deferred, type OptionRow } from "@triliumnext/commons";
-import BNote from "../becca/entities/bnote.js";
-import BBranch from "../becca/entities/bbranch.js";
-import zipImportService from "./import/zip.js";
 import password from "./encryption/password.js";
-import backup from "./backup.js";
-import eventService from "./events.js";
-import { t } from "i18next";
 import hidden_subtree from "./hidden_subtree.js";
+import zipImportService from "./import/zip.js";
+import log from "./log.js";
+import migrationService from "./migration.js";
+import optionService from "./options.js";
+import port from "./port.js";
+import resourceDir from "./resource_dir.js";
+import sql from "./sql.js";
+import TaskContext from "./task_context.js";
+import { isElectron } from "./utils.js";
 
 export const dbReady = deferred<void>();
 
@@ -65,7 +66,7 @@ async function initDbConnection() {
         isSetup TEXT DEFAULT "false",
         UNIQUE (tmpID),
         PRIMARY KEY (tmpID)
-    );`)
+    );`);
 
     dbReady.resolve();
 }

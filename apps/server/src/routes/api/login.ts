@@ -1,20 +1,19 @@
-"use strict";
-
-import options from "../../services/options.js";
-import utils from "../../services/utils.js";
-import dateUtils from "../../services/date_utils.js";
-import instanceId from "../../services/instance_id.js";
-import passwordEncryptionService from "../../services/encryption/password_encryption.js";
-import protectedSessionService from "../../services/protected_session.js";
-import appInfo from "../../services/app_info.js";
-import eventService from "../../services/events.js";
-import sqlInit from "../../services/sql_init.js";
-import sql from "../../services/sql.js";
-import ws from "../../services/ws.js";
-import etapiTokenService from "../../services/etapi_tokens.js";
+import { events as eventService } from "@triliumnext/core";
 import type { Request } from "express";
-import totp from "../../services/totp";
+
+import appInfo from "../../services/app_info.js";
+import dateUtils from "../../services/date_utils.js";
+import passwordEncryptionService from "../../services/encryption/password_encryption.js";
 import recoveryCodeService from "../../services/encryption/recovery_codes";
+import etapiTokenService from "../../services/etapi_tokens.js";
+import instanceId from "../../services/instance_id.js";
+import options from "../../services/options.js";
+import protectedSessionService from "../../services/protected_session.js";
+import sql from "../../services/sql.js";
+import sqlInit from "../../services/sql_init.js";
+import totp from "../../services/totp";
+import utils from "../../services/utils.js";
+import ws from "../../services/ws.js";
 
 /**
  * @swagger
@@ -115,7 +114,7 @@ function loginSync(req: Request) {
     req.session.loggedIn = true;
 
     return {
-        instanceId: instanceId,
+        instanceId,
         maxEntityChangeId: sql.getValue("SELECT COALESCE(MAX(id), 0) FROM entity_changes WHERE isSynced = 1")
     };
 }

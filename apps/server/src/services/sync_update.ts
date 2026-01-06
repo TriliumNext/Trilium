@@ -1,10 +1,11 @@
-import sql from "./sql.js";
-import log from "./log.js";
-import entityChangesService from "./entity_changes.js";
-import eventService from "./events.js";
-import entityConstructor from "../becca/entity_constructor.js";
-import ws from "./ws.js";
 import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
+import { events as eventService } from "@triliumnext/core";
+
+import entityConstructor from "../becca/entity_constructor.js";
+import entityChangesService from "./entity_changes.js";
+import log from "./log.js";
+import sql from "./sql.js";
+import ws from "./ws.js";
 
 interface UpdateContext {
     alreadyErased: number;

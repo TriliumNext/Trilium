@@ -1,14 +1,15 @@
-import sql from "./sql.js";
-import dateUtils from "./date_utils.js";
-import log from "./log.js";
-import cls from "./cls.js";
-import { randomString } from "./utils.js";
-import instanceId from "./instance_id.js";
+import type { EntityChange } from "@triliumnext/commons";
+import { events as eventService } from "@triliumnext/core";
+
 import becca from "../becca/becca.js";
 import blobService from "../services/blob.js";
-import type { EntityChange } from "@triliumnext/commons";
 import type { Blob } from "./blob-interface.js";
-import eventService from "./events.js";
+import cls from "./cls.js";
+import dateUtils from "./date_utils.js";
+import instanceId from "./instance_id.js";
+import log from "./log.js";
+import sql from "./sql.js";
+import { randomString } from "./utils.js";
 
 let maxEntityChangeId = 0;
 

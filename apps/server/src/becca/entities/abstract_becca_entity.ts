@@ -1,8 +1,9 @@
+import { events as eventService } from "@triliumnext/core";
+
 import blobService from "../../services/blob.js";
 import cls from "../../services/cls.js";
 import dateUtils from "../../services/date_utils.js";
 import entityChangesService from "../../services/entity_changes.js";
-import eventService from "../../services/events.js";
 import log from "../../services/log.js";
 import protectedSessionService from "../../services/protected_session.js";
 import sql from "../../services/sql.js";

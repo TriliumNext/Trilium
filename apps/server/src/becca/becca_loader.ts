@@ -1,20 +1,19 @@
-"use strict";
-
-import sql from "../services/sql.js";
-import eventService from "../services/events.js";
-import becca from "./becca.js";
-import log from "../services/log.js";
-import BNote from "./entities/bnote.js";
-import BBranch from "./entities/bbranch.js";
-import BAttribute from "./entities/battribute.js";
-import BOption from "./entities/boption.js";
-import BEtapiToken from "./entities/betapi_token.js";
-import cls from "../services/cls.js";
-import entityConstructor from "../becca/entity_constructor.js";
 import type { AttributeRow, BranchRow, EtapiTokenRow, NoteRow, OptionRow } from "@triliumnext/commons";
-import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
-import ws from "../services/ws.js";
+import { events as eventService } from "@triliumnext/core";
+
+import entityConstructor from "../becca/entity_constructor.js";
+import cls from "../services/cls.js";
+import log from "../services/log.js";
+import sql from "../services/sql.js";
 import { dbReady } from "../services/sql_init.js";
+import ws from "../services/ws.js";
+import becca from "./becca.js";
+import type AbstractBeccaEntity from "./entities/abstract_becca_entity.js";
+import BAttribute from "./entities/battribute.js";
+import BBranch from "./entities/bbranch.js";
+import BEtapiToken from "./entities/betapi_token.js";
+import BNote from "./entities/bnote.js";
+import BOption from "./entities/boption.js";
 
 export const beccaLoaded = new Promise<void>(async (res, rej) => {
     // We have to import async since options init requires keyboard actions which require translations.
