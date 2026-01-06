@@ -1,3 +1,4 @@
+import { routes } from "@triliumnext/core";
 import { createPartialContentHandler } from "@triliumnext/express-partial-content";
 import express from "express";
 import rateLimit from "express-rate-limit";
@@ -41,7 +42,6 @@ import noteMapRoute from "./api/note_map.js";
 import notesApiRoute from "./api/notes.js";
 import ollamaRoute from "./api/ollama.js";
 import openaiRoute from "./api/openai.js";
-import optionsApiRoute from "./api/options.js";
 import otherRoute from "./api/other.js";
 import passwordApiRoute from "./api/password.js";
 import recentChangesApiRoute from "./api/recent_changes.js";
@@ -211,6 +211,7 @@ function register(app: express.Application) {
     route(GET, "/api/images/:noteId/:filename", [auth.checkApiAuthOrElectron], imageRoute.returnImageFromNote);
     route(PUT, "/api/images/:noteId", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], imageRoute.updateImage, apiResultHandler);
 
+    const { optionsApiRoute } = routes;
     apiRoute(GET, "/api/options", optionsApiRoute.getOptions);
     // FIXME: possibly change to sending value in the body to avoid host of HTTP server issues with slashes
     apiRoute(PUT, "/api/options/:name/:value", optionsApiRoute.updateOption);

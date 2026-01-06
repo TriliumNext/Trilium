@@ -2,7 +2,9 @@
 // This will eventually import your core server and DB provider.
 // import { createCoreServer } from "@trilium/core"; (bundled)
 
+import { resizeMultipleElements } from '@excalidraw/excalidraw/element/resizeElements';
 import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
+import { routes } from "@triliumnext/core";
 
 const encoder = new TextEncoder();
 
@@ -146,6 +148,20 @@ async function dispatch(request) {
     // NOTE: your core router will do this later.
     if (request.method === "GET" && url.pathname === "/bootstrap") {
         return handleBootstrap();
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/options") {
+        // console.log("Options route", routes);
+        //     console.log("Got options request");
+        //     try {
+        //         // console.log(routes.optionsApiRoute.getOptions());
+        //         // return jsonResponse(routes.optionsApiRoute.getOptions());
+        //     } catch (e) {
+        //         return jsonResponse({ ok: true, method: request.method, url: request.url });
+        //     }
+        //     console.log("Got ", routes.optionsApiRoute.getOptions());
+        //     // return routes.optionsApiRoute.getOptions();
+        return jsonResponse("Hi");
     }
 
     if (url.pathname.startsWith("/api/echo")) {

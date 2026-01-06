@@ -1,5 +1,5 @@
 // public/sw.js
-const VERSION = "localserver-v1.3";
+const VERSION = "localserver-v1.4";
 const STATIC_CACHE = `static-${VERSION}`;
 
 // Check if running in dev mode (passed via URL parameter)

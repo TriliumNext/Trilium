@@ -54,6 +54,7 @@ export type { NotePojo } from "./becca/becca-interface";
 export { default as NoteSet } from "./services/search/note_set";
 export { default as note_service, NoteParams } from "./services/notes";
 export * as sanitize from "./services/sanitizer";
+export * as routes from "./routes";
 
 export function initializeCore({ dbConfig, executionContext, crypto }: {
     dbConfig: SqlServiceParams,

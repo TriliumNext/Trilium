@@ -1,10 +1,11 @@
+import { type Dayjs, dayjs, type Locale, type LOCALE_IDS,LOCALES, setDayjsLocale } from "@triliumnext/commons";
 import i18next from "i18next";
+import { join } from "path";
+
+import hidden_subtree from "./hidden_subtree.js";
 import options from "./options.js";
 import sql_init from "./sql_init.js";
-import { join } from "path";
 import { getResourceDir } from "./utils.js";
-import hidden_subtree from "./hidden_subtree.js";
-import { dayjs, LOCALES, setDayjsLocale, type Dayjs, type Locale, type LOCALE_IDS } from "@triliumnext/commons";
 
 export async function initializeTranslations() {
     const resourceDir = getResourceDir();
