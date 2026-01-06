@@ -1,13 +1,10 @@
-import type { AttributeRow } from "@triliumnext/commons";
-import { dayjs } from "@triliumnext/commons";
-import { formatLogMessage } from "@triliumnext/commons";
-import type { AbstractBeccaEntity } from "@triliumnext/core";
+import { type AttributeRow, dayjs, formatLogMessage } from "@triliumnext/commons";
+import { type AbstractBeccaEntity, Becca } from "@triliumnext/core";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import xml2js from "xml2js";
 
 import becca from "../becca/becca.js";
-import type Becca from "../becca/becca-interface.js";
 import type BAttachment from "../becca/entities/battachment.js";
 import type BAttribute from "../becca/entities/battribute.js";
 import type BBranch from "../becca/entities/bbranch.js";

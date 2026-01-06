@@ -28,6 +28,8 @@ export { default as BOption } from "./becca/entities/boption";
 export { default as BRecentNote } from "./becca/entities/brecent_note";
 export { default as BRevision } from "./becca/entities/brevision";
 export { default as AbstractBeccaEntity } from "./becca/entities/abstract_becca_entity";
+export { default as Becca } from "./becca/becca-interface";
+export type { NotePojo } from "./becca/becca-interface";
 
 export function initializeCore({ dbConfig, executionContext, crypto }: {
     dbConfig: SqlServiceParams,

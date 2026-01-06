@@ -1,12 +1,11 @@
 
 
-import { EditedNotesResponse, RevisionItem, RevisionPojo, RevisionRow } from "@triliumnext/commons";
-import { becca_service } from "@triliumnext/core";
+import { EditedNotesResponse, RevisionItem, RevisionPojo } from "@triliumnext/commons";
+import { becca_service, NotePojo } from "@triliumnext/core";
 import type { Request, Response } from "express";
 import path from "path";
 
 import becca from "../../becca/becca.js";
-import type { NotePojo } from "../../becca/becca-interface.js";
 import type BNote from "../../becca/entities/bnote.js";
 import type BRevision from "../../becca/entities/brevision.js";
 import blobService from "../../services/blob.js";
