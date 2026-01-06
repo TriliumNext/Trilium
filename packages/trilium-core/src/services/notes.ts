@@ -19,7 +19,6 @@ import entityChangesService from "./entity_changes.js";
 import htmlSanitizer from "./html_sanitizer.js";
 import imageService from "./image.js";
 import noteTypesService from "./note_types.js";
-import type { NoteParams } from "./note-interface.js";
 import optionService from "./options.js";
 import request from "./request.js";
 import revisionService from "./revisions.js";
