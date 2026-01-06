@@ -15,6 +15,8 @@ export { getContext, type ExecutionContext } from "./services/context";
 export * from "./errors";
 export type { CryptoProvider } from "./services/encryption/crypto";
 
+export { default as becca } from "./becca/becca";
+
 export function initializeCore({ dbConfig, executionContext, crypto }: {
     dbConfig: SqlServiceParams,
     executionContext: ExecutionContext,
