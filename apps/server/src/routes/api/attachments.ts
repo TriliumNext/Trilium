@@ -1,9 +1,10 @@
+import { ConvertAttachmentToNoteResponse } from "@triliumnext/commons";
+import { ValidationError } from "@triliumnext/core";
+import type { Request } from "express";
+
 import becca from "../../becca/becca.js";
 import blobService from "../../services/blob.js";
-import ValidationError from "../../errors/validation_error.js";
 import imageService from "../../services/image.js";
-import type { Request } from "express";
-import { ConvertAttachmentToNoteResponse } from "@triliumnext/commons";
 
 function getAttachmentBlob(req: Request) {
     const preview = req.query.preview === "true";
@@ -34,7 +35,7 @@ function getAllAttachments(req: Request) {
 function saveAttachment(req: Request) {
     const { noteId } = req.params;
     const { attachmentId, role, mime, title, content } = req.body;
-    const matchByQuery = req.query.matchBy
+    const matchByQuery = req.query.matchBy;
     const isValidMatchBy = (typeof matchByQuery === "string") && (matchByQuery === "attachmentId" || matchByQuery === "title");
     const matchBy = isValidMatchBy ? matchByQuery : undefined;
 

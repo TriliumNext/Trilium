@@ -1,8 +1,8 @@
+import { ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 
 import becca from "../../becca/becca.js";
 import beccaService from "../../becca/becca_service.js";
-import ValidationError from "../../errors/validation_error.js";
 import cls from "../../services/cls.js";
 import log from "../../services/log.js";
 import searchService from "../../services/search/services/search.js";

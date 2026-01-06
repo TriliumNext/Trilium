@@ -1,18 +1,19 @@
+import { ValidationError } from "@triliumnext/core";
 import crypto from "crypto";
-import utils from "../services/utils.js";
-import optionService from "../services/options.js";
-import myScryptService from "../services/encryption/my_scrypt.js";
-import log from "../services/log.js";
-import passwordService from "../services/encryption/password.js";
-import assetPath, { assetUrlFragment } from "../services/asset_path.js";
-import appPath from "../services/app_path.js";
-import ValidationError from "../errors/validation_error.js";
 import type { Request, Response } from 'express';
-import totp from '../services/totp.js';
-import recoveryCodeService from '../services/encryption/recovery_codes.js';
-import openID from '../services/open_id.js';
+
+import appPath from "../services/app_path.js";
+import assetPath, { assetUrlFragment } from "../services/asset_path.js";
+import myScryptService from "../services/encryption/my_scrypt.js";
 import openIDEncryption from '../services/encryption/open_id_encryption.js';
+import passwordService from "../services/encryption/password.js";
+import recoveryCodeService from '../services/encryption/recovery_codes.js';
 import { getCurrentLocale } from "../services/i18n.js";
+import log from "../services/log.js";
+import openID from '../services/open_id.js';
+import optionService from "../services/options.js";
+import totp from '../services/totp.js';
+import utils from "../services/utils.js";
 
 function loginPage(req: Request, res: Response) {
     // Login page is triggered twice. Once here, and another time (see sendLoginError) if the password is failed.
@@ -23,9 +24,9 @@ function loginPage(req: Request, res: Response) {
         ssoEnabled: openID.isOpenIDEnabled(),
         ssoIssuerName: openID.getSSOIssuerName(),
         ssoIssuerIcon: openID.getSSOIssuerIcon(),
-        assetPath: assetPath,
+        assetPath,
         assetPathFragment: assetUrlFragment,
-        appPath: appPath,
+        appPath,
         currentLocale: getCurrentLocale()
     });
 }
@@ -181,9 +182,9 @@ function sendLoginError(req: Request, res: Response, errorType: 'password' | 'to
         wrongTotp: errorType === 'totp',
         totpEnabled: totp.isTotpEnabled(),
         ssoEnabled: openID.isOpenIDEnabled(),
-        assetPath: assetPath,
+        assetPath,
         assetPathFragment: assetUrlFragment,
-        appPath: appPath,
+        appPath,
         currentLocale: getCurrentLocale()
     });
 }

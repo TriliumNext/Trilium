@@ -1,7 +1,6 @@
 import type { AttachmentRow, AttributeRow, BranchRow, NoteRow } from "@triliumnext/commons";
 import { dayjs } from "@triliumnext/commons";
-import { date_utils } from "@triliumnext/core";
-import { events as eventService } from "@triliumnext/core";
+import { date_utils, events as eventService, ValidationError } from "@triliumnext/core";
 import fs from "fs";
 import html2plaintext from "html2plaintext";
 import { t } from "i18next";
@@ -13,7 +12,6 @@ import BAttachment from "../becca/entities/battachment.js";
 import BAttribute from "../becca/entities/battribute.js";
 import BBranch from "../becca/entities/bbranch.js";
 import BNote from "../becca/entities/bnote.js";
-import ValidationError from "../errors/validation_error.js";
 import cls from "../services/cls.js";
 import log from "../services/log.js";
 import protectedSessionService from "../services/protected_session.js";

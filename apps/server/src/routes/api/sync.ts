@@ -1,21 +1,20 @@
-"use strict";
+import { type EntityChange,SyncTestResponse } from "@triliumnext/commons";
+import { ValidationError } from "@triliumnext/core";
+import type { Request } from "express";
+import { t } from "i18next";
 
-import syncService from "../../services/sync.js";
-import syncUpdateService from "../../services/sync_update.js";
+import consistencyChecksService from "../../services/consistency_checks.js";
+import contentHashService from "../../services/content_hash.js";
 import entityChangesService from "../../services/entity_changes.js";
+import log from "../../services/log.js";
+import optionService from "../../services/options.js";
 import sql from "../../services/sql.js";
 import sqlInit from "../../services/sql_init.js";
-import optionService from "../../services/options.js";
-import contentHashService from "../../services/content_hash.js";
-import log from "../../services/log.js";
+import syncService from "../../services/sync.js";
 import syncOptions from "../../services/sync_options.js";
+import syncUpdateService from "../../services/sync_update.js";
 import utils, { safeExtractMessageAndStackFromError } from "../../services/utils.js";
 import ws from "../../services/ws.js";
-import type { Request } from "express";
-import ValidationError from "../../errors/validation_error.js";
-import consistencyChecksService from "../../services/consistency_checks.js";
-import { t } from "i18next";
-import { SyncTestResponse, type EntityChange } from "@triliumnext/commons";
 
 async function testSync(): Promise<SyncTestResponse> {
     try {
@@ -287,10 +286,10 @@ function update(req: Request) {
 
         if (pageIndex !== pageCount - 1) {
             return;
-        } else {
-            body = JSON.parse(partialRequests[requestId].payload);
-            delete partialRequests[requestId];
-        }
+        } 
+        body = JSON.parse(partialRequests[requestId].payload);
+        delete partialRequests[requestId];
+        
     }
 
     const { entities, instanceId } = body;

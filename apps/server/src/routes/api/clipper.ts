@@ -1,9 +1,9 @@
+import { ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 import { parse } from "node-html-parser";
 import path from "path";
 
 import type BNote from "../../becca/entities/bnote.js";
-import ValidationError from "../../errors/validation_error.js";
 import appInfo from "../../services/app_info.js";
 import attributeFormatter from "../../services/attribute_formatter.js";
 import attributeService from "../../services/attributes.js";
@@ -38,7 +38,7 @@ async function addClipping(req: Request) {
     if (!clippingNote) {
         clippingNote = noteService.createNewNote({
             parentNoteId: clipperInbox.noteId,
-            title: title,
+            title,
             content: "",
             type: "text"
         }).note;
@@ -198,11 +198,11 @@ function openNote(req: Request) {
         return {
             result: "ok"
         };
-    } else {
-        return {
-            result: "open-in-browser"
-        };
-    }
+    } 
+    return {
+        result: "open-in-browser"
+    };
+    
 }
 
 function handshake() {

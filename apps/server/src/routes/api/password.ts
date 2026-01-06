@@ -1,16 +1,15 @@
-"use strict";
+import { ChangePasswordResponse } from "@triliumnext/commons";
+import { ValidationError } from "@triliumnext/core";
+import type { Request } from "express";
 
 import passwordService from "../../services/encryption/password.js";
-import ValidationError from "../../errors/validation_error.js";
-import type { Request } from "express";
-import { ChangePasswordResponse } from "@triliumnext/commons";
 
 function changePassword(req: Request): ChangePasswordResponse {
     if (passwordService.isPasswordSet()) {
         return passwordService.changePassword(req.body.current_password, req.body.new_password);
-    } else {
-        return passwordService.setPassword(req.body.new_password);
     }
+    return passwordService.setPassword(req.body.new_password);
+
 }
 
 function resetPassword(req: Request) {

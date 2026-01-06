@@ -1,5 +1,4 @@
-
-
+import { ValidationError } from "@triliumnext/core";
 import chokidar from "chokidar";
 import type { Request, Response } from "express";
 import fs from "fs";
@@ -9,7 +8,6 @@ import tmp from "tmp";
 import becca from "../../becca/becca.js";
 import type BAttachment from "../../becca/entities/battachment.js";
 import type BNote from "../../becca/entities/bnote.js";
-import ValidationError from "../../errors/validation_error.js";
 import dataDirs from "../../services/data_dir.js";
 import log from "../../services/log.js";
 import noteService from "../../services/notes.js";
