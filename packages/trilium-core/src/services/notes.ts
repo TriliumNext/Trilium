@@ -1,4 +1,4 @@
-import type { AttachmentRow, AttributeRow, BranchRow, NoteRow } from "@triliumnext/commons";
+import type { AttachmentRow, AttributeRow, BranchRow, NoteRow, NoteType } from "@triliumnext/commons";
 import { dayjs } from "@triliumnext/commons";
 import { date_utils, events as eventService, ValidationError } from "@triliumnext/core";
 import fs from "fs";
@@ -37,6 +37,32 @@ interface FoundLink {
 interface Attachment {
     attachmentId?: string;
     title: string;
+}
+
+interface NoteParams {
+    /** optionally can force specific noteId */
+    noteId?: string;
+    branchId?: string;
+    parentNoteId: string;
+    templateNoteId?: string;
+    title: string;
+    content: string | Uint8Array;
+    /** text, code, file, image, search, book, relationMap, canvas, webView */
+    type: NoteType;
+    /** default value is derived from default mimes for type */
+    mime?: string;
+    /** default is false */
+    isProtected?: boolean;
+    /** default is false */
+    isExpanded?: boolean;
+    /** default is empty string */
+    prefix?: string;
+    /** default is the last existing notePosition in a parent + 10 */
+    notePosition?: number;
+    dateCreated?: string;
+    utcDateCreated?: string;
+    ignoreForbiddenParents?: boolean;
+    target?: "into";
 }
 
 function getNewNotePosition(parentNote: BNote) {
