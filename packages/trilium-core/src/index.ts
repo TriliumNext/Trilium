@@ -43,6 +43,8 @@ export { default as AbstractBeccaEntity } from "./becca/entities/abstract_becca_
 export { default as Becca } from "./becca/becca-interface";
 export type { NotePojo } from "./becca/becca-interface";
 
+export { default as NoteSet } from "./services/search/note_set";
+
 export function initializeCore({ dbConfig, executionContext, crypto }: {
     dbConfig: SqlServiceParams,
     executionContext: ExecutionContext,
