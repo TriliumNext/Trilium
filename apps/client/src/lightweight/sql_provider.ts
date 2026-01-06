@@ -1,5 +1,5 @@
 import type { DatabaseProvider, RunResult, Statement, Transaction } from "@triliumnext/core";
-import type sqlite3InitModule from "@sqlite.org/sqlite-wasm";
+import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 import type { BindableValue } from "@sqlite.org/sqlite-wasm";
 
 // Type definitions for SQLite WASM (the library doesn't export these directly)
@@ -116,18 +116,81 @@ class WasmStatement implements Statement {
  *
  * This provider wraps the official @sqlite.org/sqlite-wasm package to provide
  * a DatabaseProvider implementation compatible with trilium-core.
+ *
+ * @example
+ * ```typescript
+ * const provider = new BrowserSqlProvider();
+ * await provider.initWasm(); // Initialize SQLite WASM module
+ * provider.loadFromMemory(); // Open an in-memory database
+ * // or
+ * provider.loadFromBuffer(existingDbBuffer); // Load from existing data
+ * ```
  */
 export default class BrowserSqlProvider implements DatabaseProvider {
     private db?: Sqlite3Database;
     private sqlite3?: Sqlite3Module;
     private _inTransaction = false;
+    private initPromise?: Promise<void>;
+    private initError?: Error;
 
     /**
-     * Initialize the provider with an already-initialized SQLite WASM module.
-     * This must be called before using any database operations.
+     * Get the SQLite WASM module version info.
+     * Returns undefined if the module hasn't been initialized yet.
      */
-    initialize(sqlite3: Sqlite3Module): void {
-        this.sqlite3 = sqlite3;
+    get version(): { libVersion: string; sourceId: string } | undefined {
+        return this.sqlite3?.version;
+    }
+
+    /**
+     * Initialize the SQLite WASM module.
+     * This must be called before using any database operations.
+     * Safe to call multiple times - subsequent calls return the same promise.
+     *
+     * @returns A promise that resolves when the module is initialized
+     * @throws Error if initialization fails
+     */
+    async initWasm(): Promise<void> {
+        // Return existing promise if already initializing/initialized
+        if (this.initPromise) {
+            return this.initPromise;
+        }
+
+        // Fail fast if we already tried and failed
+        if (this.initError) {
+            throw this.initError;
+        }
+
+        this.initPromise = this.doInitWasm();
+        return this.initPromise;
+    }
+
+    private async doInitWasm(): Promise<void> {
+        try {
+            console.log("[BrowserSqlProvider] Initializing SQLite WASM...");
+            const startTime = performance.now();
+
+            this.sqlite3 = await sqlite3InitModule({
+                print: console.log,
+                printErr: console.error,
+            });
+
+            const initTime = performance.now() - startTime;
+            console.log(
+                `[BrowserSqlProvider] SQLite WASM initialized in ${initTime.toFixed(2)}ms:`,
+                this.sqlite3.version.libVersion
+            );
+        } catch (e) {
+            this.initError = e instanceof Error ? e : new Error(String(e));
+            console.error("[BrowserSqlProvider] SQLite WASM initialization failed:", this.initError);
+            throw this.initError;
+        }
+    }
+
+    /**
+     * Check if the SQLite WASM module has been initialized.
+     */
+    get isInitialized(): boolean {
+        return this.sqlite3 !== undefined;
     }
 
     loadFromFile(_path: string, _isReadOnly: boolean): void {

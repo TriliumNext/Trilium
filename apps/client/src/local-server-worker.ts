@@ -2,9 +2,9 @@
 // This will eventually import your core server and DB provider.
 // import { createCoreServer } from "@trilium/core"; (bundled)
 
-import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
 import BrowserExecutionContext from './lightweight/cls_provider';
 import BrowserSqlProvider from './lightweight/sql_provider';
+import BrowserCryptoProvider from './lightweight/crypto_provider';
 
 // Global error handlers - MUST be set up before any async imports
 self.onerror = (message, source, lineno, colno, error) => {
@@ -45,6 +45,54 @@ self.onunhandledrejection = (event) => {
 
 console.log("[Worker] Error handlers installed");
 
+// Shared SQL provider instance
+const sqlProvider = new BrowserSqlProvider();
+let sqlInitPromise: Promise<void> | null = null;
+let sqlInitError: string | null = null;
+
+// Initialize SQLite WASM via the provider
+async function initSQLite(): Promise<void> {
+    if (sqlProvider.isInitialized && sqlProvider.isOpen()) {
+        return; // Already initialized and database open
+    }
+    if (sqlInitError) {
+        throw new Error(sqlInitError); // Failed before, don't retry
+    }
+    if (sqlInitPromise) {
+        return sqlInitPromise; // Already initializing
+    }
+
+    sqlInitPromise = (async () => {
+        try {
+            // Initialize the WASM module
+            await sqlProvider.initWasm();
+
+            // Open an in-memory database
+            sqlProvider.loadFromMemory();
+            console.log("[Worker] Database opened via provider");
+
+            // Create a simple test table
+            sqlProvider.exec(`
+                CREATE TABLE IF NOT EXISTS options (
+                    name TEXT PRIMARY KEY,
+                    value TEXT
+                );
+                INSERT INTO options (name, value) VALUES
+                    ('theme', 'dark'),
+                    ('layoutOrientation', 'vertical'),
+                    ('headingStyle', 'default');
+            `);
+            console.log("[Worker] Test table created and populated");
+        } catch (error) {
+            sqlInitError = String(error);
+            console.error("[Worker] SQLite initialization failed:", error);
+            throw error;
+        }
+    })();
+
+    return sqlInitPromise;
+}
+
 // Deferred import for @triliumnext/core to catch initialization errors
 let coreModule: typeof import("@triliumnext/core") | null = null;
 let coreInitError: Error | null = null;
@@ -54,12 +102,16 @@ async function loadCoreModule() {
     if (coreInitError) throw coreInitError;
 
     try {
+        // Ensure SQLite is initialized before loading core
+        await initSQLite();
+
         console.log("[Worker] Loading @triliumnext/core...");
         coreModule = await import("@triliumnext/core");
         coreModule.initializeCore({
             executionContext: new BrowserExecutionContext(),
+            crypto: new BrowserCryptoProvider(),
             dbConfig: {
-                provider: new BrowserSqlProvider(),
+                provider: sqlProvider,
                 isReadOnly: false,
                 onTransactionCommit: () => {
                     // No-op for now
@@ -80,13 +132,7 @@ async function loadCoreModule() {
 
 const encoder = new TextEncoder();
 
-// SQLite WASM instance
-let sqlite3: any = null;
-let db: any = null;
-let sqliteInitPromise: Promise<void> | null = null;
-let sqliteInitError: string | null = null;
-
-function jsonResponse(obj, status = 200, extraHeaders = {}) {
+function jsonResponse(obj: unknown, status = 200, extraHeaders = {}) {
     const body = encoder.encode(JSON.stringify(obj)).buffer;
     return {
         status,
@@ -95,7 +141,7 @@ function jsonResponse(obj, status = 200, extraHeaders = {}) {
     };
 }
 
-function textResponse(text, status = 200, extraHeaders = {}) {
+function textResponse(text: string, status = 200, extraHeaders = {}) {
     const body = encoder.encode(text).buffer;
     return {
         status,
@@ -104,62 +150,15 @@ function textResponse(text, status = 200, extraHeaders = {}) {
     };
 }
 
-// Initialize SQLite WASM
-async function initSQLite() {
-    if (sqlite3) return; // Already initialized
-    if (sqliteInitError) return; // Failed before, don't retry
-    if (sqliteInitPromise) return sqliteInitPromise; // Already initializing
-
-    sqliteInitPromise = (async () => {
-        try {
-            console.log("[Worker] Initializing SQLite WASM...");
-            const startTime = performance.now();
-
-            // Just call the init module without custom locateFile
-            // The module will use import.meta.url to find sqlite3.wasm
-            sqlite3 = await sqlite3InitModule({
-                print: console.log,
-                printErr: console.error,
-            });
-
-            const initTime = performance.now() - startTime;
-            console.log(`[Worker] SQLite WASM initialized in ${initTime.toFixed(2)}ms:`, sqlite3.version);
-
-            // Open a database in memory for now
-            db = new sqlite3.oo1.DB(':memory:', 'c');
-            console.log("[Worker] Database opened");
-
-            // Create a simple test table
-            db.exec(`
-                CREATE TABLE IF NOT EXISTS options (
-                    name TEXT PRIMARY KEY,
-                    value TEXT
-                );
-                INSERT INTO options (name, value) VALUES
-                    ('theme', 'dark'),
-                    ('layoutOrientation', 'vertical'),
-                    ('headingStyle', 'default');
-            `);
-            console.log("[Worker] Test table created and populated");
-        } catch (error) {
-            sqliteInitError = String(error);
-            console.error("[Worker] SQLite initialization failed:", error);
-            throw error;
-        }
-    })();
-
-    return sqliteInitPromise;
-}
-
 // Example: your /bootstrap handler placeholder
 async function handleBootstrap() {
     console.log("[Worker] Bootstrap request received");
 
     // Try to initialize SQLite with timeout
-    let dbInfo: any = { dbStatus: 'not initialized' };
+    let dbInfo: Record<string, unknown> = { dbStatus: 'not initialized' };
 
-    if (sqliteInitError) {
-        dbInfo = { dbStatus: 'failed', error: sqliteInitError };
+    if (sqlInitError) {
+        dbInfo = { dbStatus: 'failed', error: sqlInitError };
     } else {
         try {
             // Don't wait too long for SQLite initialization
@@ -169,17 +168,16 @@ async function handleBootstrap() {
             ]);
 
             // Query the database if initialized
-            if (db) {
-                const stmt = db.prepare('SELECT * FROM options');
+            if (sqlProvider.isOpen()) {
+                const stmt = sqlProvider.prepare('SELECT * FROM options');
+                const rows = stmt.all() as Array<{ name: string; value: string }>;
                 const options: Record<string, string> = {};
-                while (stmt.step()) {
-                    const row = stmt.get({});
+                for (const row of rows) {
                     options[row.name] = row.value;
                 }
-                stmt.finalize();
 
                 dbInfo = {
-                    sqliteVersion: sqlite3.version.libVersion,
+                    sqliteVersion: sqlProvider.version?.libVersion,
                     optionsFromDB: options,
                     dbStatus: 'connected'
                 };
@@ -212,8 +210,13 @@ async function handleBootstrap() {
     });
 }
 
+interface LocalRequest {
+    method: string;
+    url: string;
+}
+
 // Main dispatch
-async function dispatch(request) {
+async function dispatch(request: LocalRequest) {
     const url = new URL(request.url);
 
     console.log("[Worker] Dispatch:", url.pathname);
@@ -271,18 +274,18 @@ self.onmessage = async (event) => {
         const response = await dispatch(request);
         console.log("[Worker] Dispatch completed, sending response:", id);
 
-        // Transfer body back (if any)
-        self.postMessage({
+        // Transfer body back (if any) - use options object for proper typing
+        (self as unknown as Worker).postMessage({
             type: "LOCAL_RESPONSE",
             id,
             response
-        }, response.body ? [response.body] : []);
+        }, { transfer: response.body ? [response.body] : [] });
     } catch (e) {
         console.error("[Worker] Dispatch error:", e);
-        self.postMessage({
+        (self as unknown as Worker).postMessage({
             type: "LOCAL_RESPONSE",
             id,
-            error: String(e?.message || e)
+            error: String((e as Error)?.message || e)
         });
     }
 };
