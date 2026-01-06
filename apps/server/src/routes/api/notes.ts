@@ -1,10 +1,9 @@
 import type { AttributeRow, CreateChildrenResponse, DeleteNotesPreview, MetadataResponse } from "@triliumnext/commons";
-import { blob as blobService, ValidationError } from "@triliumnext/core";
+import { blob as blobService, erase as eraseService, ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 
 import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
-import eraseService from "../../services/erase.js";
 import log from "../../services/log.js";
 import noteService from "../../services/notes.js";
 import sql from "../../services/sql.js";

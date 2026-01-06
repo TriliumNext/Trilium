@@ -1,7 +1,5 @@
-
-
 import { EditedNotesResponse, RevisionItem, RevisionPojo } from "@triliumnext/commons";
-import { becca_service, binary_utils, blob as blobService, NotePojo } from "@triliumnext/core";
+import { becca_service, binary_utils, blob as blobService, erase as eraseService, NotePojo } from "@triliumnext/core";
 import type { Request, Response } from "express";
 import path from "path";
 
@@ -9,7 +7,6 @@ import becca from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
 import type BRevision from "../../becca/entities/brevision.js";
 import cls from "../../services/cls.js";
-import eraseService from "../../services/erase.js";
 import sql from "../../services/sql.js";
 import utils from "../../services/utils.js";
 

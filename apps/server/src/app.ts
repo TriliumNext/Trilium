@@ -1,6 +1,6 @@
-import "./services/handlers.js";
-import "./becca/becca_loader.js";
+import("@triliumnext/core");
 
+import { erase } from "@triliumnext/core";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import express from "express";
@@ -15,7 +15,6 @@ import custom from "./routes/custom.js";
 import error_handlers from "./routes/error_handlers.js";
 import routes from "./routes/routes.js";
 import config from "./services/config.js";
-import { startScheduledCleanup } from "./services/erase.js";
 import log from "./services/log.js";
 import openID from "./services/open_id.js";
 import { RESOURCE_DIR } from "./services/resource_dir.js";
@@ -108,7 +107,7 @@ export default async function buildApp() {
 
     await import("./services/scheduler.js");
 
-    startScheduledCleanup();
+    erase.startScheduledCleanup();
 
     if (utils.isElectron) {
         (await import("@electron/remote/main/index.js")).initialize();

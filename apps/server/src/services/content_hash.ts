@@ -1,6 +1,5 @@
-import { utils } from "@triliumnext/core";
+import { erase as eraseService,utils } from "@triliumnext/core";
 
-import eraseService from "./erase.js";
 import log from "./log.js";
 import sql from "./sql.js";
 

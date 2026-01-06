@@ -2,7 +2,7 @@ import { getLog } from "./log.js";
 import entityChangesService from "./entity_changes.js";
 import optionService from "./options.js";
 import dateUtils from "./utils/date.js";
-import sqlInit from "./sql_init.js";
+import * as sqlInit from "./sql_init.js";
 import * as cls from "./context.js";
 import type { EntityChange } from "@triliumnext/commons";
 import { getSql } from "./sql/index.js";
@@ -182,8 +182,7 @@ function eraseScheduledAttachments(eraseUnusedAttachmentsAfterSeconds: number | 
     eraseAttachments(attachmentIdsToErase);
 }
 
-
-export function startScheduledCleanup() {
+function startScheduledCleanup() {
     sqlInit.dbReady.then(() => {
         // first cleanup kickoff 5 minutes after startup
         setTimeout(
@@ -212,5 +211,6 @@ export default {
     eraseNotesWithDeleteId,
     eraseUnusedBlobs,
     eraseAttachments,
-    eraseRevisions
+    eraseRevisions,
+    startScheduledCleanup
 };

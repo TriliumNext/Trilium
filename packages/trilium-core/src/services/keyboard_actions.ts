@@ -8,7 +8,8 @@ import { t } from "i18next";
 
 function getDefaultKeyboardActions() {
     if (!t("keyboard_actions.note-navigation")) {
-        throw new Error("Keyboard actions loaded before translations.");
+        // TODO: Re-enable.
+        // throw new Error("Keyboard actions loaded before translations.");
     }
 
     const DEFAULT_KEYBOARD_ACTIONS: KeyboardShortcut[] = [

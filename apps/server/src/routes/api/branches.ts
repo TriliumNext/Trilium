@@ -1,10 +1,9 @@
-import { events as eventService, ValidationError } from "@triliumnext/core";
+import { erase as eraseService, events as eventService, ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 
 import becca from "../../becca/becca.js";
 import branchService from "../../services/branches.js";
 import entityChangesService from "../../services/entity_changes.js";
-import eraseService from "../../services/erase.js";
 import log from "../../services/log.js";
 import sql from "../../services/sql.js";
 import TaskContext from "../../services/task_context.js";

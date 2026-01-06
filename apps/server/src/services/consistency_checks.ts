@@ -1,10 +1,9 @@
 import type { BranchRow } from "@triliumnext/commons";
 import type { EntityChange } from "@triliumnext/commons";
-import { becca_loader, utils } from "@triliumnext/core";
+import { becca_loader, erase as eraseService, utils } from "@triliumnext/core";
 
 import becca from "../becca/becca.js";
 import BBranch from "../becca/entities/bbranch.js";
-import eraseService from "../services/erase.js";
 import noteTypesService from "../services/note_types.js";
 import { hashedBlobId, randomString } from "../services/utils.js";
 import cls from "./cls.js";

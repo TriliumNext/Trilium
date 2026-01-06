@@ -31,6 +31,7 @@ export { default as cloning } from "./services/cloning";
 export { default as handlers } from "./services/handlers";
 export { default as TaskContext } from "./services/task_context";
 export { default as revisions } from "./services/revisions";
+export { default as erase } from "./services/erase";
 
 export { default as becca } from "./becca/becca";
 export { default as becca_loader } from "./becca/becca_loader";
