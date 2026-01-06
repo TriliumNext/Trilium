@@ -1,6 +1,7 @@
 import type { DatabaseProvider, RunResult, Statement, Transaction } from "@triliumnext/core";
 import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
 import type { BindableValue } from "@sqlite.org/sqlite-wasm";
+import demoDbSql from "./db.sql?raw";
 
 // Type definitions for SQLite WASM (the library doesn't export these directly)
 type Sqlite3Module = Awaited<ReturnType<typeof sqlite3InitModule>>;
@@ -204,8 +205,17 @@ export default class BrowserSqlProvider implements DatabaseProvider {
 
     loadFromMemory(): void {
         this.ensureSqlite3();
+        console.log("[BrowserSqlProvider] Loading demo database...");
+        const startTime = performance.now();
+        
         this.db = new this.sqlite3!.oo1.DB(":memory:", "c");
         this.db.exec("PRAGMA journal_mode = WAL");
+        
+        // Load the demo database by default
+        this.db.exec(demoDbSql);
+        
+        const loadTime = performance.now() - startTime;
+        console.log(`[BrowserSqlProvider] Demo database loaded in ${loadTime.toFixed(2)}ms`);
     }
 
     loadFromBuffer(buffer: Uint8Array): void {

@@ -3,8 +3,8 @@
 // import { createCoreServer } from "@trilium/core"; (bundled)
 
 import BrowserExecutionContext from './lightweight/cls_provider';
-import BrowserSqlProvider from './lightweight/sql_provider';
 import BrowserCryptoProvider from './lightweight/crypto_provider';
+import BrowserSqlProvider from './lightweight/sql_provider';
 
 // Global error handlers - MUST be set up before any async imports
 self.onerror = (message, source, lineno, colno, error) => {
@@ -70,19 +70,6 @@ async function initSQLite(): Promise<void> {
             // Open an in-memory database
             sqlProvider.loadFromMemory();
             console.log("[Worker] Database opened via provider");
-
-            // Create a simple test table
-            sqlProvider.exec(`
-                CREATE TABLE IF NOT EXISTS options (
-                    name TEXT PRIMARY KEY,
-                    value TEXT
-                );
-                INSERT INTO options (name, value) VALUES
-                    ('theme', 'dark'),
-                    ('layoutOrientation', 'vertical'),
-                    ('headingStyle', 'default');
-            `);
-            console.log("[Worker] Test table created and populated");
         } catch (error) {
             sqlInitError = String(error);
             console.error("[Worker] SQLite initialization failed:", error);
@@ -120,7 +107,7 @@ async function loadCoreModule() {
                     // No-op for now
                 }
             }
-        })
+        });
         console.log("[Worker] @triliumnext/core loaded successfully");
         return coreModule;
     } catch (e) {
