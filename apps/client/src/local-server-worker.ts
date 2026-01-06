@@ -47,74 +47,68 @@ console.log("[Worker] Error handlers installed");
 
 // Shared SQL provider instance
 const sqlProvider = new BrowserSqlProvider();
-let sqlInitPromise: Promise<void> | null = null;
-let sqlInitError: string | null = null;
 
-// Initialize SQLite WASM via the provider
-async function initSQLite(): Promise<void> {
-    if (sqlProvider.isInitialized && sqlProvider.isOpen()) {
-        return; // Already initialized and database open
+// Core module and initialization state
+let coreModule: typeof import("@triliumnext/core") | null = null;
+let initPromise: Promise<void> | null = null;
+let initError: Error | null = null;
+
+/**
+ * Initialize SQLite WASM and load the core module.
+ * This happens once at worker startup.
+ */
+async function initialize(): Promise<void> {
+    if (initPromise) {
+        return initPromise; // Already initializing
     }
-    if (sqlInitError) {
-        throw new Error(sqlInitError); // Failed before, don't retry
-    }
-    if (sqlInitPromise) {
-        return sqlInitPromise; // Already initializing
+    if (initError) {
+        throw initError; // Failed before, don't retry
     }
 
-    sqlInitPromise = (async () => {
+    initPromise = (async () => {
         try {
-            // Initialize the WASM module
+            console.log("[Worker] Initializing SQLite WASM...");
             await sqlProvider.initWasm();
-
-            // Open an in-memory database
             sqlProvider.loadFromMemory();
-            console.log("[Worker] Database opened via provider");
+            console.log("[Worker] Database loaded");
+
+            console.log("[Worker] Loading @triliumnext/core...");
+            coreModule = await import("@triliumnext/core");
+            coreModule.initializeCore({
+                executionContext: new BrowserExecutionContext(),
+                crypto: new BrowserCryptoProvider(),
+                dbConfig: {
+                    provider: sqlProvider,
+                    isReadOnly: false,
+                    onTransactionCommit: () => {
+                        // No-op for now
+                    },
+                    onTransactionRollback: () => {
+                        // No-op for now
+                    }
+                }
+            });
+            console.log("[Worker] Initialization complete");
         } catch (error) {
-            sqlInitError = String(error);
-            console.error("[Worker] SQLite initialization failed:", error);
-            throw error;
+            initError = error instanceof Error ? error : new Error(String(error));
+            console.error("[Worker] Initialization failed:", initError);
+            throw initError;
         }
     })();
 
-    return sqlInitPromise;
+    return initPromise;
 }
 
-// Deferred import for @triliumnext/core to catch initialization errors
-let coreModule: typeof import("@triliumnext/core") | null = null;
-let coreInitError: Error | null = null;
-
-async function loadCoreModule() {
-    if (coreModule) return coreModule;
-    if (coreInitError) throw coreInitError;
-
-    try {
-        // Ensure SQLite is initialized before loading core
-        await initSQLite();
-
-        console.log("[Worker] Loading @triliumnext/core...");
-        coreModule = await import("@triliumnext/core");
-        coreModule.initializeCore({
-            executionContext: new BrowserExecutionContext(),
-            crypto: new BrowserCryptoProvider(),
-            dbConfig: {
-                provider: sqlProvider,
-                isReadOnly: false,
-                onTransactionCommit: () => {
-                    // No-op for now
-                },
-                onTransactionRollback: () => {
-                    // No-op for now
-                }
-            }
-        });
-        console.log("[Worker] @triliumnext/core loaded successfully");
-        return coreModule;
-    } catch (e) {
-        coreInitError = e instanceof Error ? e : new Error(String(e));
-        console.error("[Worker] Failed to load @triliumnext/core:", coreInitError);
-        throw coreInitError;
+/**
+ * Ensure the worker is initialized before processing requests.
+ * Returns the core module if initialization was successful.
+ */
+async function ensureInitialized() {
+    await initialize();
+    if (!coreModule) {
+        throw new Error("Core module not loaded");
     }
+    return coreModule;
 }
 
 const encoder = new TextEncoder();
@@ -141,38 +135,32 @@ function textResponse(text: string, status = 200, extraHeaders = {}) {
 async function handleBootstrap() {
     console.log("[Worker] Bootstrap request received");
 
-    // Try to initialize SQLite with timeout
+    // Try to initialize with timeout
     let dbInfo: Record<string, unknown> = { dbStatus: 'not initialized' };
 
-    if (sqlInitError) {
-        dbInfo = { dbStatus: 'failed', error: sqlInitError };
-    } else {
-        try {
-            // Don't wait too long for SQLite initialization
-            await Promise.race([
-                initSQLite(),
-                new Promise((_, reject) => setTimeout(() => reject(new Error("SQLite init timeout")), 5000))
-            ]);
+    try {
+        // Wait for initialization (with timeout)
+        await Promise.race([
+            ensureInitialized(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("Initialization timeout")), 10000))
+        ]);
 
-            // Query the database if initialized
-            if (sqlProvider.isOpen()) {
-                const stmt = sqlProvider.prepare('SELECT * FROM options');
-                const rows = stmt.all() as Array<{ name: string; value: string }>;
-                const options: Record<string, string> = {};
-                for (const row of rows) {
-                    options[row.name] = row.value;
-                }
-
-                dbInfo = {
-                    sqliteVersion: sqlProvider.version?.libVersion,
-                    optionsFromDB: options,
-                    dbStatus: 'connected'
-                };
-            }
-        } catch (e) {
-            console.error("[Worker] Error during bootstrap:", e);
-            dbInfo = { dbStatus: 'error', error: String(e) };
+        // Query the database
+        const stmt = sqlProvider.prepare('SELECT * FROM options');
+        const rows = stmt.all() as Array<{ name: string; value: string }>;
+        const options: Record<string, string> = {};
+        for (const row of rows) {
+            options[row.name] = row.value;
         }
+
+        dbInfo = {
+            sqliteVersion: sqlProvider.version?.libVersion,
+            optionsFromDB: options,
+            dbStatus: 'connected'
+        };
+    } catch (e) {
+        console.error("[Worker] Error during bootstrap:", e);
+        dbInfo = { dbStatus: 'error', error: String(e) };
     }
 
     console.log("[Worker] Sending bootstrap response");
@@ -214,15 +202,9 @@ async function dispatch(request: LocalRequest) {
 
     if (request.method === "GET" && url.pathname === "/api/options") {
         try {
-            // Use dynamic import to defer loading until after initialization
-            const core = await loadCoreModule();
-            console.log("[Worker] Options route - core module loaded");
-
-            // Note: core.routes.optionsApiRoute.getOptions() requires
-            // initializeCore() to be called first with proper db/crypto config
+            const core = await ensureInitialized();
             console.log("[Worker] Available routes:", Object.keys(core.routes));
 
-            // For now, return a placeholder until core is properly initialized
             return jsonResponse({
                 message: "Core module loaded successfully",
                 availableRoutes: Object.keys(core.routes)
@@ -244,10 +226,18 @@ async function dispatch(request: LocalRequest) {
     return textResponse("Not found", 404);
 }
 
-// Start SQLite initialization as soon as the worker loads (in background)
-console.log("[Worker] Starting background SQLite initialization...");
-initSQLite().catch(err => {
-    console.error("[Worker] Background SQLite init failed:", err);
+// Start initialization immediately when the worker loads
+console.log("[Worker] Starting initialization...");
+initialize().catch(err => {
+    console.error("[Worker] Initialization failed:", err);
+    // Post error to main thread
+    self.postMessage({
+        type: "WORKER_ERROR",
+        error: {
+            message: String(err?.message || err),
+            stack: err?.stack
+        }
+    });
 });
 
 self.onmessage = async (event) => {
