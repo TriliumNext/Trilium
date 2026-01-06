@@ -27,6 +27,7 @@ export type { CryptoProvider } from "./services/encryption/crypto";
 export { default as note_types } from "./services/note_types";
 export { default as tree } from "./services/tree";
 export { default as cloning } from "./services/cloning";
+export { default as handlers } from "./services/handlers";
 
 export { default as becca } from "./becca/becca";
 export { default as becca_loader } from "./becca/becca_loader";
