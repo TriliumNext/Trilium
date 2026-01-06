@@ -2,6 +2,8 @@
 // This will eventually import your core server and DB provider.
 // import { createCoreServer } from "@trilium/core"; (bundled)
 
+import { routes } from '@triliumnext/core';
+
 import BrowserExecutionContext from './lightweight/cls_provider';
 import BrowserCryptoProvider from './lightweight/crypto_provider';
 import BrowserSqlProvider from './lightweight/sql_provider';
@@ -200,23 +202,15 @@ async function dispatch(request: LocalRequest) {
         return handleBootstrap();
     }
 
-    if (request.method === "GET" && url.pathname === "/api/options") {
-        try {
-            const core = await ensureInitialized();
-            console.log("[Worker] Available routes:", Object.keys(core.routes));
+    // Ensure initialization is complete before accessing routes
+    await ensureInitialized();
 
-            return jsonResponse({
-                message: "Core module loaded successfully",
-                availableRoutes: Object.keys(core.routes)
-            });
-        } catch (e) {
-            console.error("[Worker] Error loading core module:", e);
-            return jsonResponse({
-                error: "Failed to load core module",
-                details: e instanceof Error ? e.message : String(e),
-                stack: e instanceof Error ? e.stack : undefined
-            }, 500);
-        }
+    if (request.method === "GET" && url.pathname === "/api/options") {
+        return jsonResponse(routes.optionsApiRoute.getOptions());
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/tree") {
+        return jsonResponse(routes.treeApiRoute.getTree());
     }
 
     if (url.pathname.startsWith("/api/echo")) {
