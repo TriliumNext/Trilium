@@ -6,7 +6,7 @@ import type BNote from "../becca/entities/bnote.js";
 import hiddenSubtreeService from "./hidden_subtree.js";
 import noteService from "./notes.js";
 import oneTimeTimer from "./one_time_timer.js";
-import scriptService from "./script.js";
+import * as scriptService from "./script.js";
 import treeService from "./tree.js";
 import eventService from "./events.js";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
