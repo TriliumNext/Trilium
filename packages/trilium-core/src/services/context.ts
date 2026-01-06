@@ -20,3 +20,7 @@ export function getContext(): ExecutionContext {
 export function getHoistedNoteId() {
     return getContext().get("hoistedNoteId") || "root";
 }
+
+export function isEntityEventsDisabled() {
+    return !!getContext().get("disableEntityEvents");
+}

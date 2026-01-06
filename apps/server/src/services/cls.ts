@@ -1,5 +1,5 @@
 import type { EntityChange } from "@triliumnext/commons";
-import { getContext, getHoistedNoteId as getHoistedNoteIdInternal } from "@triliumnext/core/src/services/context";
+import { getContext, getHoistedNoteId as getHoistedNoteIdInternal, isEntityEventsDisabled as isEntityEventsDisabledInternal } from "@triliumnext/core/src/services/context";
 
 type Callback = (...args: any[]) => any;
 
@@ -34,7 +34,7 @@ function enableEntityEvents() {
 }
 
 function isEntityEventsDisabled() {
-    return !!getContext().get("disableEntityEvents");
+    return isEntityEventsDisabledInternal();
 }
 
 function setMigrationRunning(running: boolean) {
