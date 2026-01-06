@@ -775,7 +775,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
      *
      * @returns - returns flattened textual representation of note, prefixes and attributes
      */
-    getFlatText() {
+    getFlatText(): string {
         if (!this.__flatTextCache) {
             this.__flatTextCache = `${this.noteId} ${this.type} ${this.mime} `;
 
@@ -801,7 +801,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
             this.__flatTextCache = utils.normalize(this.__flatTextCache);
         }
 
-        return this.__flatTextCache;
+        return this.__flatTextCache as string;
     }
 
     invalidateThisCache() {
