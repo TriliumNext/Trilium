@@ -1,0 +1,65 @@
+name: Deploy Documentation
+
+on:
+  # Trigger on push to main branch
+  push:
+    branches:
+      - main
+    # Only run when docs files change
+    paths:
+      - 'apps/client/**'
+      - 'apps/client-standalone/**'
+      - 'packages/trilium-core/**'
+
+  # Allow manual triggering from Actions tab
+  workflow_dispatch:
+
+  # Run on pull requests for preview deployments
+  pull_request:
+    paths:
+      - 'apps/client/**'
+      - 'apps/client-standalone/**'
+      - 'packages/trilium-core/**'
+jobs:
+  build-and-deploy:
+    name: Build and Deploy App
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    # Required permissions for deployment
+    permissions:
+      contents: read
+      deployments: write
+      pull-requests: write # For PR preview comments
+      id-token: write # For OIDC authentication (if needed)
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Trigger build of app
+        run: pnpm --filter=client-standalone build
+
+      - name: Deploy
+        uses: ./.github/actions/deploy-to-cloudflare-pages
+        if: github.repository == ${{ vars.REPO_MAIN }}
+        with:
+          project_name: "trilium-app"
+          comment_body: "🖥️ App preview is ready"
+          production_url: "https://app.triliumnotes.org"
+          deploy_dir: "apps/client-standalone/dist"
+          cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          cloudflare_account_id: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
