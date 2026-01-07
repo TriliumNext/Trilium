@@ -24,24 +24,6 @@
         <!-- This works even when the user directly changes --root-background in CSS -->
         <div id="background-color-tracker" style="position: absolute; visibility: hidden; color: var(--root-background); transition: color 1ms;"></div>
 
-        <!-- Inject service worker -->
-        <script type="module">
-            import { attachServiceWorkerBridge, startLocalServerWorker } from "./local-bridge.js";
-
-            // 1) Start local worker ASAP (so /bootstrap is fast)
-            startLocalServerWorker();
-
-            // 2) Bridge SW -> local worker
-            attachServiceWorkerBridge();
-
-            // 3) Register SW
-            if ("serviceWorker" in navigator) {
-                const reg = await navigator.serviceWorker.register("./sw.js", { scope: "/src/" });
-                // Optionally wait for activation
-                await navigator.serviceWorker.ready;
-            }
-        </script>
-
         <!-- Bootstrap (request server for required information) -->
         <script>
             async function bootstrap() {
