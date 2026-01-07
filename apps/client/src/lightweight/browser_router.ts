@@ -3,7 +3,7 @@
  * Supports path parameters (e.g., /api/notes/:noteId) and query strings.
  */
 
-import { getContext } from "@triliumnext/core";
+import { getContext, routes } from "@triliumnext/core";
 
 export interface BrowserRequest {
     method: string;
@@ -74,7 +74,8 @@ function parseQuery(search: string): Record<string, string | undefined> {
  * Convert a result to a JSON response.
  */
 function jsonResponse(obj: unknown, status = 200, extraHeaders: Record<string, string> = {}): BrowserResponse {
-    const body = encoder.encode(JSON.stringify(obj)).buffer as ArrayBuffer;
+    const parsedObj = routes.convertEntitiesToPojo(obj);
+    const body = encoder.encode(JSON.stringify(parsedObj)).buffer as ArrayBuffer;
     return {
         status,
         headers: { "content-type": "application/json; charset=utf-8", ...extraHeaders },

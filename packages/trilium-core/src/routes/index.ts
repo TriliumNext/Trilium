@@ -2,6 +2,7 @@ import optionsApiRoute from "./api/options";
 import treeApiRoute from "./api/tree";
 import keysApiRoute from "./api/keys";
 import notesApiRoute from "./api/notes";
+import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 
 // TODO: Deduplicate with routes.ts
 const GET = "get",
@@ -41,4 +42,32 @@ export function buildSharedApiRoutes(apiRoute: any) {
 
     apiRoute(GET, "/api/keyboard-actions", keysApiRoute.getKeyboardActions);
     apiRoute(GET, "/api/keyboard-shortcuts-for-notes", keysApiRoute.getShortcutsForNotes);
+}
+
+/** Handling common patterns. If entity is not caught, serialization to JSON will fail */
+export function convertEntitiesToPojo(result: unknown) {
+    if (result instanceof AbstractBeccaEntity) {
+        result = result.getPojo();
+    } else if (Array.isArray(result)) {
+        for (const idx in result) {
+            if (result[idx] instanceof AbstractBeccaEntity) {
+                result[idx] = result[idx].getPojo();
+            }
+        }
+    } else if (result && typeof result === "object") {
+        if ("note" in result && result.note instanceof AbstractBeccaEntity) {
+            result.note = result.note.getPojo();
+        }
+
+        if ("branch" in result && result.branch instanceof AbstractBeccaEntity) {
+            result.branch = result.branch.getPojo();
+        }
+    }
+
+    if (result && typeof result === "object" && "executionResult" in result) {
+        // from runOnBackend()
+        result.executionResult = convertEntitiesToPojo(result.executionResult);
+    }
+
+    return result;
 }
