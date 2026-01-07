@@ -34,7 +34,6 @@ import filesRoute from "./api/files.js";
 import fontsRoute from "./api/fonts.js";
 import imageRoute from "./api/image.js";
 import importRoute from "./api/import.js";
-import keysRoute from "./api/keys.js";
 import llmRoute from "./api/llm.js";
 import loginApiRoute from "./api/login.js";
 import metricsRoute from "./api/metrics.js";
@@ -332,8 +331,8 @@ function register(app: express.Application) {
     asyncRoute(PST, "/api/sender/image", [auth.checkEtapiToken, uploadMiddlewareWithErrorHandling], senderRoute.uploadImage, apiResultHandler);
     asyncRoute(PST, "/api/sender/note", [auth.checkEtapiToken], senderRoute.saveNote, apiResultHandler);
 
-    apiRoute(GET, "/api/keyboard-actions", keysRoute.getKeyboardActions);
-    apiRoute(GET, "/api/keyboard-shortcuts-for-notes", keysRoute.getShortcutsForNotes);
+    apiRoute(GET, "/api/keyboard-actions", routes.keysApiRoute.getKeyboardActions);
+    apiRoute(GET, "/api/keyboard-shortcuts-for-notes", routes.keysApiRoute.getShortcutsForNotes);
 
     apiRoute(PST, "/api/relation-map", relationMapApiRoute.getRelationMap);
     apiRoute(PST, "/api/notes/erase-deleted-notes-now", notesApiRoute.eraseDeletedNotesNow);

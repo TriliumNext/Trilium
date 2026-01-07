@@ -89,6 +89,8 @@ async function initialize(): Promise<void> {
                 }
             });
 
+            console.log("[Worker] Supported routes", Object.keys(coreModule.routes));
+
             console.log("[Worker] Initializing becca...");
             await coreModule.becca_loader.beccaLoaded;
 
@@ -217,6 +219,14 @@ async function dispatch(request: LocalRequest) {
                 subTreeNoteId: url.searchParams.get("subTreeNoteId") || undefined
             }
         }));
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/keyboard-actions") {
+        return jsonResponse(core.routes.keysApiRoute.getKeyboardActions());
+    }
+
+    if (request.method === "GET" && url.pathname === "/api/keyboard-shortcuts-for-notes") {
+        return jsonResponse(core.routes.keysApiRoute.getShortcutsForNotes());
     }
 
     if (url.pathname.startsWith("/api/echo")) {
