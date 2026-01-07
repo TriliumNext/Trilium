@@ -14,7 +14,8 @@ type Sqlite3PreparedStatement = ReturnType<Sqlite3Database["prepare"]>;
  */
 class WasmStatement implements Statement {
     private isRawMode = false;
-    
+    private isPluckMode = false;
+
     constructor(
         private stmt: Sqlite3PreparedStatement,
         private db: Sqlite3Database
@@ -38,6 +39,11 @@ class WasmStatement implements Statement {
         this.bindParams(Array.isArray(params) ? params : params !== undefined ? [params] : []);
         try {
             if (this.stmt.step()) {
+                if (this.isPluckMode) {
+                    // In pluck mode, return only the first column value
+                    const row = this.stmt.get([]);
+                    return Array.isArray(row) && row.length > 0 ? row[0] : undefined;
+                }
                 return this.isRawMode ? this.stmt.get([]) : this.stmt.get({});
             }
             return undefined;
@@ -51,7 +57,15 @@ class WasmStatement implements Statement {
         const results: unknown[] = [];
         try {
             while (this.stmt.step()) {
-                results.push(this.isRawMode ? this.stmt.get([]) : this.stmt.get({}));
+                if (this.isPluckMode) {
+                    // In pluck mode, return only the first column value for each row
+                    const row = this.stmt.get([]);
+                    if (Array.isArray(row) && row.length > 0) {
+                        results.push(row[0]);
+                    }
+                } else {
+                    results.push(this.isRawMode ? this.stmt.get([]) : this.stmt.get({}));
+                }
             }
             return results;
         } finally {
@@ -63,6 +77,7 @@ class WasmStatement implements Statement {
         this.bindParams(params);
         const stmt = this.stmt;
         const isRaw = this.isRawMode;
+        const isPluck = this.isPluckMode;
 
         return {
             [Symbol.iterator]() {
@@ -70,6 +85,11 @@ class WasmStatement implements Statement {
             },
             next(): IteratorResult<unknown> {
                 if (stmt.step()) {
+                    if (isPluck) {
+                        const row = stmt.get([]);
+                        const value = Array.isArray(row) && row.length > 0 ? row[0] : undefined;
+                        return { value, done: false };
+                    }
                     return { value: isRaw ? stmt.get([]) : stmt.get({}), done: false };
                 }
                 stmt.reset();
@@ -85,9 +105,10 @@ class WasmStatement implements Statement {
         return this;
     }
 
-    pluck(_toggleState?: boolean): this {
-        // pluck mode returns only the first column of each row
-        console.warn("pluck() mode is not fully supported in WASM SQLite provider");
+    pluck(toggleState?: boolean): this {
+        // In pluck mode, only the first column of each row is returned
+        // If toggleState is undefined, enable pluck mode (better-sqlite3 behavior)
+        this.isPluckMode = toggleState !== undefined ? toggleState : true;
         return this;
     }
 
@@ -210,13 +231,13 @@ export default class BrowserSqlProvider implements DatabaseProvider {
         this.ensureSqlite3();
         console.log("[BrowserSqlProvider] Loading demo database...");
         const startTime = performance.now();
-        
+
         this.db = new this.sqlite3!.oo1.DB(":memory:", "c");
         this.db.exec("PRAGMA journal_mode = WAL");
-        
+
         // Load the demo database by default
         this.db.exec(demoDbSql);
-        
+
         const loadTime = performance.now() - startTime;
         console.log(`[BrowserSqlProvider] Demo database loaded in ${loadTime.toFixed(2)}ms`);
     }
@@ -292,7 +313,7 @@ export default class BrowserSqlProvider implements DatabaseProvider {
                     throw e;
                 }
             }
-            
+
             // Not in a transaction, start a new one
             self._inTransaction = true;
             self.db!.exec(beginStatement);
