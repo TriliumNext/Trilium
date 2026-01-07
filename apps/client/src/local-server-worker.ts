@@ -2,8 +2,6 @@
 // This will eventually import your core server and DB provider.
 // import { createCoreServer } from "@trilium/core"; (bundled)
 
-import { routes } from '@triliumnext/core';
-
 import BrowserExecutionContext from './lightweight/cls_provider';
 import BrowserCryptoProvider from './lightweight/crypto_provider';
 import BrowserSqlProvider from './lightweight/sql_provider';
@@ -203,14 +201,18 @@ async function dispatch(request: LocalRequest) {
     }
 
     // Ensure initialization is complete before accessing routes
-    await ensureInitialized();
+    const core = await ensureInitialized();
 
     if (request.method === "GET" && url.pathname === "/api/options") {
-        return jsonResponse(routes.optionsApiRoute.getOptions());
+        return jsonResponse(core.routes.optionsApiRoute.getOptions());
     }
 
     if (request.method === "GET" && url.pathname === "/api/tree") {
-        return jsonResponse(routes.treeApiRoute.getTree());
+        return jsonResponse(core.routes.treeApiRoute.getTree({
+            query: {
+                subTreeNoteId: url.searchParams.get("subTreeNoteId") || undefined
+            }
+        }));
     }
 
     if (url.pathname.startsWith("/api/echo")) {
