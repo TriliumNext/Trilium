@@ -10,13 +10,18 @@
         "title": "Organiser tankene dine. Bygg din personlige kunnskapsbase.",
         "github": "GitHub",
         "get_started": "Kom i gang",
-        "dockerhub": "Docker Hub"
+        "dockerhub": "Docker Hub",
+        "screenshot_alt": "Screenshot fra Trilium Notes skrivebordsprogram",
+        "subtitle": "Trilium er en open-source-løsning for å ta notater og organisere en personlig kunnskapsbase. Kan brukes lokalt på arbeidsstasjonen din eller synkroniseres med en selv-hostet løsning for å ha dine notater med deg overalt."
     },
     "organization_benefits": {
         "title": "Organisering",
         "note_structure_title": "Notatstruktur",
         "hoisting_title": "Arbeidsflate og fokusering",
-        "attributes_description": "Bruk relasjoner mellom notater eller legg til etiketter for enkel kategorisering. Bruk fremhevede attributter for å legge inn strukturert informasjon som kan brukes i tabeller og tavler."
+        "attributes_description": "Bruk relasjoner mellom notater eller legg til etiketter for enkel kategorisering. Bruk fremhevede attributter for å legge inn strukturert informasjon som kan brukes i tabeller og tavler.",
+        "note_structure_description": "Notater kan arrangeres herarkisk. Det trengs ikke mapper, siden alle notater kan inneholde undernotater. Ett notat kan legges inn flere steder i herarkiet.",
+        "attributes_title": "Notatetiketter og -relasjoner",
+        "hoisting_description": "Du kan enkelt skille personlige og arbeidsnotater ved å gruppere de under arbeidsrom, som fokuserer notat-treet ditt på kun ønskede notater."
     },
     "productivity_benefits": {
         "sync_title": "Synkronisering",
@@ -26,7 +31,12 @@
         "protected_notes_title": "Beskyttede notater",
         "title": "Produktivitet og sikkerhet",
         "sync_content": "Bruk en selv-hostet eller cloud-instans for å enkelt synkronisere notater på tvers av enheter, og ha de tilgjengelige fra din mobiltelefon ved hjelp av progressiv web-app.",
-        "jump_to_content": "Hopp raskt til notater eller grensesnittkommandoer over hele hierarkiet ved å søke etter tittel, med \"fuzzy\" matching for å ta hensyn til skrivefeil eller små differanser."
+        "jump_to_content": "Hopp raskt til notater eller grensesnittkommandoer over hele hierarkiet ved å søke etter tittel, med \"fuzzy\" matching for å ta hensyn til skrivefeil eller små differanser.",
+        "revisions_content": "Notater lagres periodisk i bakgrunnen og revisjonshistorikk kan brukes for tilbakeblikk eller å omgjøre uønskede endringer. Revisjoner kan også lages manuelt.",
+        "protected_notes_content": "Beskytt sensitiv personlig informasjon ved å kryptere notater og låse de med en passordkryptert sesjon.",
+        "jump_to_title": "Hurtigsøk og kommandoer",
+        "search_content": "Eller søk etter tekst i notatene og finjuster søket ved å filtrere på foreldrenotat eller dybde.",
+        "web_clipper_content": "Hent nettsider (eller screenshots) og legg de direkte i Trilium ved hjelp av web clipper nettleserutvidelse."
     },
     "note_types": {
         "canvas_title": "Kanvas",
@@ -34,7 +44,14 @@
         "text_title": "Tekstnotat",
         "code_title": "Kodenotat",
         "file_title": "Filnotat",
-        "mermaid_title": "Mermaid diagrammer"
+        "mermaid_title": "Mermaid diagrammer",
+        "title": "Flere måter å presentere informasjonen din",
+        "text_description": "Notatene redigeres med en visuell editor (WYSIWYG), som støtter tabeller, bilder, matematiske uttrykk og kodeblokker med syntaksutheving. Formater tekst hurtig med Markdown-inspirert syntaks eller \"slash-kommandoer\".",
+        "code_description": "Store samlinger med kildekode eller skript bruker en dedikert editor med syntaksfremheving for mange programmeringsspråk og med flere fargetema.",
+        "file_description": "Integrer multimediafiler som PDFer, bilder og video med forhåndsvisning i programmet.",
+        "mermaid_description": "Lag diagrammer som flytskjema, klasse- og sekvensdiagrammer, Ganttdiagrammer og mye mer ved hjelp av Mermaidsyntaks.",
+        "mindmap_description": "Organiser dine tanker visuelt eller gjør en brainstorming.",
+        "others_list": "og andre: <0>notatkart</0>, <1>relasjonskart</1>, <2>lagrede søk</2>, <3>rendret notat</3>, og <4>web view</4>."
     },
     "extensibility_benefits": {
         "import_export_title": "Import/eksport",

@@ -10,6 +10,7 @@
     "creating-and-moving-notes": "नोट्स बनाना और स्थानांतरित करना",
     "move-note-up": "नोट को ऊपर ले जाएं",
     "move-note-down": "नोट को नीचे ले जाएं",
-    "note-clipboard": "नोट क्लिपबोर्ड"
+    "note-clipboard": "नोट क्लिपबोर्ड",
+    "duplicate-subtree": "डुप्लिकेट सबट्री"
   }
 }

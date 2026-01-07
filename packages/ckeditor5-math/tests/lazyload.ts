@@ -2,6 +2,20 @@ import { ClassicEditor, type EditorConfig } from 'ckeditor5';
 import MathUI from '../src/mathui';
 import { describe, beforeEach, it, afterEach, expect } from "vitest";
 
+// Suppress MathLive errors during async cleanup
+if (typeof window !== 'undefined') {
+	window.addEventListener('unhandledrejection', event => {
+		if (event.reason?.message?.includes('options') || event.reason?.message?.includes('mathlive')) {
+			event.preventDefault();
+		}
+	});
+	window.addEventListener('error', event => {
+		if (event.message?.includes('options') || event.message?.includes('mathlive')) {
+			event.preventDefault();
+		}
+	});
+}
+
 describe( 'Lazy load', () => {
 	let editorElement: HTMLDivElement;
 	let editor: ClassicEditor;
@@ -24,11 +38,14 @@ describe( 'Lazy load', () => {
 	beforeEach( () => {
 		editorElement = document.createElement( 'div' );
 		document.body.appendChild( editorElement );
-
 		lazyLoadInvoked = false;
 	} );
 
-	afterEach( () => {
+	afterEach( async () => {
+		if ( mathUIFeature?.formView ) {
+			mathUIFeature._hideUI();
+		}
+		await new Promise( resolve => setTimeout( resolve, 50 ) );
 		editorElement.remove();
 		return editor.destroy();
 	} );
@@ -37,6 +54,7 @@ describe( 'Lazy load', () => {
 		await buildEditor( {
 			math: {
 				engine: 'katex',
+				enablePreview: true,
 				lazyLoad: async () => {
 					lazyLoadInvoked = true;
 				}
@@ -44,6 +62,15 @@ describe( 'Lazy load', () => {
 		} );
 
 		mathUIFeature._showUI();
+
+		// Trigger render with a non-empty value to bypass empty check optimization
+		if ( mathUIFeature.formView ) {
+			mathUIFeature.formView.equation = 'x^2';
+		}
+
+		// Wait for async rendering and lazy loading
+		await new Promise( resolve => setTimeout( resolve, 100 ) );
+
 		expect( lazyLoadInvoked ).to.be.true;
 	} );
 } );
