@@ -8,6 +8,7 @@
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=4096 vite build",
     "dev": "vite dev",
     "test": "vitest",
+    "start-prod": "pnpm build && pnpm http-server dist -p 8888",
     "coverage": "vitest --coverage"
   },
   "dependencies": {
