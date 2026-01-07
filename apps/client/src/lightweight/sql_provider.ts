@@ -15,6 +15,7 @@ type Sqlite3PreparedStatement = ReturnType<Sqlite3Database["prepare"]>;
 class WasmStatement implements Statement {
     private isRawMode = false;
     private isPluckMode = false;
+    private isFinalized = false;
 
     constructor(
         private stmt: Sqlite3PreparedStatement,
@@ -22,20 +23,33 @@ class WasmStatement implements Statement {
     ) {}
 
     run(...params: unknown[]): RunResult {
+        if (this.isFinalized) {
+            throw new Error("Cannot call run() on finalized statement");
+        }
+        
         this.bindParams(params);
         try {
-            this.stmt.stepFinalize();
+            // Use step() and then reset instead of stepFinalize()
+            // This allows the statement to be reused
+            this.stmt.step();
+            const changes = this.db.changes();
+            this.stmt.reset();
             return {
-                changes: this.db.changes(),
+                changes,
                 lastInsertRowid: 0 // Would need sqlite3_last_insert_rowid for this
             };
         } catch (e) {
-            this.stmt.finalize();
+            // Reset on error to allow reuse
+            this.stmt.reset();
             throw e;
         }
     }
 
     get(params: unknown): unknown {
+        if (this.isFinalized) {
+            throw new Error("Cannot call get() on finalized statement");
+        }
+        
         this.bindParams(Array.isArray(params) ? params : params !== undefined ? [params] : []);
         try {
             if (this.stmt.step()) {
@@ -53,6 +67,10 @@ class WasmStatement implements Statement {
     }
 
     all(...params: unknown[]): unknown[] {
+        if (this.isFinalized) {
+            throw new Error("Cannot call all() on finalized statement");
+        }
+        
         this.bindParams(params);
         const results: unknown[] = [];
         try {
@@ -74,6 +92,10 @@ class WasmStatement implements Statement {
     }
 
     iterate(...params: unknown[]): IterableIterator<unknown> {
+        if (this.isFinalized) {
+            throw new Error("Cannot call iterate() on finalized statement");
+        }
+        
         this.bindParams(params);
         const stmt = this.stmt;
         const isRaw = this.isRawMode;
@@ -147,7 +169,15 @@ class WasmStatement implements Statement {
     }
 
     finalize(): void {
-        this.stmt.finalize();
+        if (!this.isFinalized) {
+            try {
+                this.stmt.finalize();
+            } catch (e) {
+                console.warn("Error finalizing SQLite statement:", e);
+            } finally {
+                this.isFinalized = true;
+            }
+        }
     }
 }
 
@@ -172,6 +202,7 @@ export default class BrowserSqlProvider implements DatabaseProvider {
     private _inTransaction = false;
     private initPromise?: Promise<void>;
     private initError?: Error;
+    private statementCache: Map<string, WasmStatement> = new Map();
 
     /**
      * Get the SQLite WASM module version info.
@@ -302,8 +333,17 @@ export default class BrowserSqlProvider implements DatabaseProvider {
 
     prepare(query: string): Statement {
         this.ensureDb();
+        
+        // Check if we already have this statement cached
+        if (this.statementCache.has(query)) {
+            return this.statementCache.get(query)!;
+        }
+        
+        // Create new statement and cache it
         const stmt = this.db!.prepare(query);
-        return new WasmStatement(stmt, this.db!);
+        const wasmStatement = new WasmStatement(stmt, this.db!);
+        this.statementCache.set(query, wasmStatement);
+        return wasmStatement;
     }
 
     transaction<T>(func: (statement: Statement) => T): Transaction {
@@ -374,6 +414,17 @@ export default class BrowserSqlProvider implements DatabaseProvider {
     }
 
     close(): void {
+        // Clean up all cached statements first
+        for (const statement of this.statementCache.values()) {
+            try {
+                statement.finalize();
+            } catch (e) {
+                // Ignore errors during cleanup
+                console.warn("Error finalizing statement during cleanup:", e);
+            }
+        }
+        this.statementCache.clear();
+        
         if (this.db) {
             this.db.close();
             this.db = undefined;
