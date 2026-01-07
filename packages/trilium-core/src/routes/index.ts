@@ -3,6 +3,7 @@ import treeApiRoute from "./api/tree";
 import keysApiRoute from "./api/keys";
 import notesApiRoute from "./api/notes";
 import attachmentsApiRoute from "./api/attachments";
+import noteMapRoute from "./api/note_map";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 
 // TODO: Deduplicate with routes.ts
@@ -49,6 +50,8 @@ export function buildSharedApiRoutes(apiRoute: any) {
     apiRoute(DEL, "/api/attachments/:attachmentId", attachmentsApiRoute.deleteAttachment);
     apiRoute(PUT, "/api/attachments/:attachmentId/rename", attachmentsApiRoute.renameAttachment);
     apiRoute(GET, "/api/attachments/:attachmentId/blob", attachmentsApiRoute.getAttachmentBlob);
+
+    apiRoute(GET, "/api/note-map/:noteId/backlink-count", noteMapRoute.getBacklinkCount);
 
     apiRoute(GET, "/api/keyboard-actions", keysApiRoute.getKeyboardActions);
     apiRoute(GET, "/api/keyboard-shortcuts-for-notes", keysApiRoute.getShortcutsForNotes);

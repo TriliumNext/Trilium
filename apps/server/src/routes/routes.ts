@@ -312,7 +312,6 @@ function register(app: express.Application) {
 
     apiRoute(PST, "/api/note-map/:noteId/tree", noteMapRoute.getTreeMap);
     apiRoute(PST, "/api/note-map/:noteId/link", noteMapRoute.getLinkMap);
-    apiRoute(GET, "/api/note-map/:noteId/backlink-count", noteMapRoute.getBacklinkCount);
     apiRoute(GET, "/api/note-map/:noteId/backlinks", noteMapRoute.getBacklinks);
 
     shareRoutes.register(router);
