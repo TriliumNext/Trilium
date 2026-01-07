@@ -1,80 +1,54 @@
 /**
  * Browser route definitions.
- * This mirrors the server's routes.ts but for the browser worker.
+ * This integrates with the shared route builder from @triliumnext/core.
  */
 
-import type { routes as coreRoutes } from '@triliumnext/core';
+import { routes } from '@triliumnext/core';
 import { BrowserRouter, type BrowserRequest } from './browser_router';
 
-type CoreRoutes = typeof coreRoutes;
+type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
 
 /**
- * Register all API routes on the browser router.
- * 
- * @param router - The browser router instance
- * @param routes - The core routes module from @triliumnext/core
+ * Wraps a core route handler to work with the BrowserRouter.
+ * Core handlers expect an Express-like request object with params, query, and body.
  */
-export function registerRoutes(router: BrowserRouter, routes: CoreRoutes): void {
-    const { optionsApiRoute, treeApiRoute, keysApiRoute } = routes;
-
-    // Tree routes
-    router.get('/api/tree', (req) => 
-        treeApiRoute.getTree({
-            query: {
-                subTreeNoteId: req.query.subTreeNoteId
-            }
-        } as any)
-    );
-    
-    router.post('/api/tree/load', (req) => 
-        treeApiRoute.load({
+function wrapHandler(handler: (req: any) => unknown) {
+    return (req: BrowserRequest) => {
+        // Create an Express-like request object
+        const expressLikeReq = {
+            params: req.params,
+            query: req.query,
             body: req.body
-        } as any)
-    );
+        };
+        return handler(expressLikeReq);
+    };
+}
 
-    // Options routes
-    router.get('/api/options', () => 
-        optionsApiRoute.getOptions()
-    );
-    
-    router.put('/api/options/:name/:value', (req) => 
-        optionsApiRoute.updateOption({
-            params: req.params
-        } as any)
-    );
-    
-    router.put('/api/options', (req) => 
-        optionsApiRoute.updateOptions({
-            body: req.body
-        } as any)
-    );
-    
-    router.get('/api/options/user-themes', () => 
-        optionsApiRoute.getUserThemes()
-    );
-    
-    router.get('/api/options/locales', () => 
-        optionsApiRoute.getSupportedLocales()
-    );
+/**
+ * Creates an apiRoute function compatible with buildSharedApiRoutes.
+ * This bridges the core's route registration to the BrowserRouter.
+ */
+function createApiRoute(router: BrowserRouter) {
+    return (method: HttpMethod, path: string, handler: (req: any) => unknown) => {
+        router.register(method, path, wrapHandler(handler));
+    };
+}
 
-    // Keyboard actions routes
-    router.get('/api/keyboard-actions', () => 
-        keysApiRoute.getKeyboardActions()
-    );
-    
-    router.get('/api/keyboard-shortcuts-for-notes', () => 
-        keysApiRoute.getShortcutsForNotes()
-    );
-
-    // Add more routes here as they are implemented in @triliumnext/core
-    // Follow the pattern from apps/server/src/routes/routes.ts
+/**
+ * Register all API routes on the browser router using the shared builder.
+ *
+ * @param router - The browser router instance
+ */
+export function registerRoutes(router: BrowserRouter): void {
+    const apiRoute = createApiRoute(router);
+    routes.buildSharedApiRoutes(apiRoute);
 }
 
 /**
  * Create and configure a router with all routes registered.
  */
-export function createConfiguredRouter(routes: CoreRoutes): BrowserRouter {
+export function createConfiguredRouter(): BrowserRouter {
     const router = new BrowserRouter();
-    registerRoutes(router, routes);
+    registerRoutes(router);
     return router;
 }

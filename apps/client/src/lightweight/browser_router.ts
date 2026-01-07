@@ -32,14 +32,14 @@ const encoder = new TextEncoder();
 /**
  * Convert an Express-style path pattern to a RegExp.
  * Supports :param syntax for path parameters.
- * 
+ *
  * Examples:
  *   /api/notes/:noteId -> /^\/api\/notes\/([^\/]+)$/
  *   /api/notes/:noteId/revisions -> /^\/api\/notes\/([^\/]+)\/revisions$/
  */
 function pathToRegex(path: string): { pattern: RegExp; paramNames: string[] } {
     const paramNames: string[] = [];
-    
+
     // Escape special regex characters except for :param patterns
     const regexPattern = path
         .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // Escape special chars
@@ -47,7 +47,7 @@ function pathToRegex(path: string): { pattern: RegExp; paramNames: string[] } {
             paramNames.push(paramName);
             return '([^/]+)';
         });
-    
+
     return {
         pattern: new RegExp(`^${regexPattern}$`),
         paramNames
@@ -60,7 +60,7 @@ function pathToRegex(path: string): { pattern: RegExp; paramNames: string[] } {
 function parseQuery(search: string): Record<string, string | undefined> {
     const query: Record<string, string | undefined> = {};
     if (!search || search === '?') return query;
-    
+
     const params = new URLSearchParams(search);
     for (const [key, value] of params) {
         query[key] = value;
@@ -206,11 +206,11 @@ export class BrowserRouter {
         // Check for known error types
         if (error && typeof error === 'object') {
             const err = error as { constructor?: { name?: string }; message?: string };
-            
+
             if (err.constructor?.name === 'NotFoundError') {
                 return jsonResponse({ message: err.message || 'Not found' }, 404);
             }
-            
+
             if (err.constructor?.name === 'ValidationError') {
                 return jsonResponse({ message: err.message || 'Validation error' }, 400);
             }

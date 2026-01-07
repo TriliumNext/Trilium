@@ -95,7 +95,7 @@ async function initialize(): Promise<void> {
             console.log("[Worker] Supported routes", Object.keys(coreModule.routes));
 
             // Create and configure the router
-            router = createConfiguredRouter(coreModule.routes);
+            router = createConfiguredRouter();
             console.log("[Worker] Router configured");
 
             console.log("[Worker] Initializing becca...");
@@ -200,7 +200,7 @@ async function dispatch(request: LocalRequest) {
     const url = new URL(request.url);
 
     console.log("[Worker] Dispatch:", url.pathname);
-    
+
     // Bootstrap is handled specially before the router is ready
     if (request.method === "GET" && url.pathname === "/bootstrap") {
         return handleBootstrap();

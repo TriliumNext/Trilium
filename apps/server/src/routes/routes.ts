@@ -1,4 +1,3 @@
-import { routes } from "@triliumnext/core";
 import { createPartialContentHandler } from "@triliumnext/express-partial-content";
 import express from "express";
 import rateLimit from "express-rate-limit";
@@ -66,6 +65,7 @@ import loginRoute from "./login.js";
 import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, route, router, uploadMiddlewareWithErrorHandling } from "./route_api.js";
 // page routes
 import setupRoute from "./setup.js";
+import { routes } from "@triliumnext/core";
 
 const GET = "get",
     PST = "post",
@@ -103,9 +103,7 @@ function register(app: express.Application) {
     apiRoute(GET, '/api/totp_recovery/enabled', recoveryCodes.checkForRecoveryKeys);
     apiRoute(GET, '/api/totp_recovery/used', recoveryCodes.getUsedRecoveryCodes);
 
-    const { treeApiRoute } = routes;
-    apiRoute(GET, '/api/tree', treeApiRoute.getTree);
-    apiRoute(PST, '/api/tree/load', treeApiRoute.load);
+    routes.buildSharedApiRoutes(apiRoute);
 
     apiRoute(GET, "/api/notes/:noteId", notesApiRoute.getNote);
     apiRoute(GET, "/api/notes/:noteId/blob", notesApiRoute.getNoteBlob);
@@ -209,14 +207,6 @@ function register(app: express.Application) {
     // :filename is not used by trilium, but instead used for "save as" to assign a human-readable filename
     route(GET, "/api/images/:noteId/:filename", [auth.checkApiAuthOrElectron], imageRoute.returnImageFromNote);
     route(PUT, "/api/images/:noteId", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], imageRoute.updateImage, apiResultHandler);
-
-    const { optionsApiRoute } = routes;
-    apiRoute(GET, "/api/options", optionsApiRoute.getOptions);
-    // FIXME: possibly change to sending value in the body to avoid host of HTTP server issues with slashes
-    apiRoute(PUT, "/api/options/:name/:value", optionsApiRoute.updateOption);
-    apiRoute(PUT, "/api/options", optionsApiRoute.updateOptions);
-    apiRoute(GET, "/api/options/user-themes", optionsApiRoute.getUserThemes);
-    apiRoute(GET, "/api/options/locales", optionsApiRoute.getSupportedLocales);
 
     apiRoute(PST, "/api/password/change", passwordApiRoute.changePassword);
     apiRoute(PST, "/api/password/reset", passwordApiRoute.resetPassword);
@@ -330,9 +320,6 @@ function register(app: express.Application) {
     route(PST, "/api/sender/login", [loginRateLimiter], loginApiRoute.token, apiResultHandler);
     asyncRoute(PST, "/api/sender/image", [auth.checkEtapiToken, uploadMiddlewareWithErrorHandling], senderRoute.uploadImage, apiResultHandler);
     asyncRoute(PST, "/api/sender/note", [auth.checkEtapiToken], senderRoute.saveNote, apiResultHandler);
-
-    apiRoute(GET, "/api/keyboard-actions", routes.keysApiRoute.getKeyboardActions);
-    apiRoute(GET, "/api/keyboard-shortcuts-for-notes", routes.keysApiRoute.getShortcutsForNotes);
 
     apiRoute(PST, "/api/relation-map", relationMapApiRoute.getRelationMap);
     apiRoute(PST, "/api/notes/erase-deleted-notes-now", notesApiRoute.eraseDeletedNotesNow);
