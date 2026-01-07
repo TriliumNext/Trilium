@@ -47,7 +47,7 @@ export function registerRoutes(router: BrowserRouter): void {
 
 function bootstrapRoute() {
    const iconPacks = iconPackService.getIconPacks();
-   const assetPath = "./";
+   const assetPath = ".";
 
    return {
         assetPath,
