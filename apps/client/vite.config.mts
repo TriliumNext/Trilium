@@ -56,9 +56,14 @@ export default defineConfig(() => ({
     cacheDir: '../../node_modules/.vite/apps/client',
     base: "",
     plugins,
+    server: {
+        watch: {
+            // Watch workspace packages for changes
+            ignored: ['!**/node_modules/@triliumnext/**']
+        }
+    },
     optimizeDeps: {
-        exclude: ['@sqlite.org/sqlite-wasm'],
-        include: ['@triliumnext/core']
+        exclude: ['@sqlite.org/sqlite-wasm', '@triliumnext/core']
     },
     worker: {
         format: 'es'
