@@ -49,6 +49,8 @@ export function registerRoutes(router: BrowserRouter): void {
     apiRoute("get", "/api/script/startup", () => []);
     apiRoute("get", "/api/system-checks", () => ({ isCpuArchMismatch: false }))
     apiRoute("get", "/api/search/:searchString", () => []);
+    apiRoute("get", "/api/search-templates", () => []);
+    apiRoute("get", "/api/autocomplete", () => []);
 }
 
 function bootstrapRoute() {
