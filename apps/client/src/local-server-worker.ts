@@ -88,6 +88,10 @@ async function initialize(): Promise<void> {
                     }
                 }
             });
+
+            console.log("[Worker] Initializing becca...");
+            await coreModule.becca_loader.beccaLoaded;
+
             console.log("[Worker] Initialization complete");
         } catch (error) {
             initError = error instanceof Error ? error : new Error(String(error));
