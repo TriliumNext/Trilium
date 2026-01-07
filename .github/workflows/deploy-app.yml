@@ -1,4 +1,4 @@
-name: Deploy Documentation
+name: Deploy Standalone App
 
 on:
   # Trigger on push to main branch
