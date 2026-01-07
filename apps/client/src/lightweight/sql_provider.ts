@@ -120,7 +120,22 @@ class WasmStatement implements Statement {
 
         // Handle single object with named parameters
         if (params.length === 1 && typeof params[0] === "object" && params[0] !== null && !Array.isArray(params[0])) {
-            const bindings = params[0] as { [paramName: string]: BindableValue };
+            const inputBindings = params[0] as { [paramName: string]: BindableValue };
+            
+            // SQLite WASM expects parameter names to include the prefix (@ : or $)
+            // better-sqlite3 automatically maps unprefixed names to @name
+            // We need to add the @ prefix for compatibility
+            const bindings: { [paramName: string]: BindableValue } = {};
+            for (const [key, value] of Object.entries(inputBindings)) {
+                // If the key already has a prefix, use it as-is
+                if (key.startsWith('@') || key.startsWith(':') || key.startsWith('$')) {
+                    bindings[key] = value;
+                } else {
+                    // Add @ prefix to match better-sqlite3 behavior
+                    bindings[`@${key}`] = value;
+                }
+            }
+            
             this.stmt.bind(bindings);
         } else {
             // Handle positional parameters - flatten and cast to BindableValue[]

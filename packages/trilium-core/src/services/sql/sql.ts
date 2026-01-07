@@ -277,6 +277,8 @@ export class SqlService {
                 return null;
             }
 
+            console.error(`Error executing query: ${query} with parameters ${JSON.stringify((e as any).params || [])}`);
+
             throw e;
         }
 
