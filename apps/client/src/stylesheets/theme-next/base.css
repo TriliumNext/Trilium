@@ -658,7 +658,7 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
     margin: 5px 10px 5px 0;
 }
 
-:root .note-list .note-book-card:hover {
+:root .note-list.grid-view .note-book-card:hover {
     background-color: var(--card-background-hover-color);
     transition: background-color 200ms ease-out;
 }
