@@ -18,7 +18,19 @@ export default defineConfig(() => ({
     server: {
         watch: {
             ignored: ['!**/node_modules/@triliumnext/**']
+        },
+        headers: {
+            // Required for SharedArrayBuffer which is needed by SQLite WASM OPFS VFS
+            // See: https://sqlite.org/wasm/doc/trunk/persistence.md#coop-coep
+            "Cross-Origin-Opener-Policy": "same-origin",
+            "Cross-Origin-Embedder-Policy": "require-corp"
         }
+    },
+    optimizeDeps: {
+        exclude: ['@sqlite.org/sqlite-wasm', '@triliumnext/core']
+    },
+    commonjsOptions: {
+        transformMixedEsModules: true,
     },
     build: {
         target: "esnext",
@@ -29,5 +41,8 @@ export default defineConfig(() => ({
                 main: join(__dirname, 'src', 'index.html')
             }
         }
+    },
+    define: {
+        "process.env.IS_PREACT": JSON.stringify("true"),
     }
 }));
