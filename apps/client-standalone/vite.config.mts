@@ -79,6 +79,7 @@ export default defineConfig(() => ({
     cacheDir: '../../../node_modules/.vite/apps/client-standalone',
     base: "",
     plugins,
+    publicDir: join(__dirname, 'public'),
     resolve: {
         alias: [
             {
