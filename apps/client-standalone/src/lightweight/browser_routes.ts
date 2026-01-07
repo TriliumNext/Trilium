@@ -46,7 +46,9 @@ export function registerRoutes(router: BrowserRouter): void {
 
     // Dummy routes for compatibility.
     apiRoute("get", "/api/script/widgets", () => []);
+    apiRoute("get", "/api/script/startup", () => []);
     apiRoute("get", "/api/system-checks", () => ({ isCpuArchMismatch: false }))
+    apiRoute("get", "/api/search/:searchString", () => []);
 }
 
 function bootstrapRoute() {
