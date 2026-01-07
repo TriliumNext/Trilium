@@ -135,11 +135,11 @@ export default defineConfig(() => ({
     },
     build: {
         target: "esnext",
-        outDir: join(__dirname, 'dist'),  // Keep output in parent directory
+        outDir: join(__dirname, 'dist'),
         emptyOutDir: true,
         rollupOptions: {
             input: {
-                main: join(__dirname, 'src', 'index.html')  // Input relative to config file
+                main: join(__dirname, 'src', 'index.html')
             }
         }
     },

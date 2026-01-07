@@ -117,9 +117,9 @@
             }
 
             async function loadScripts() {
-                const assetPath = glob.assetPath;
-                await import(`./${assetPath}/runtime.js`);
-                await import(`./${assetPath}/desktop.js`);
+                // Import from local re-export files that reference client source
+                await import("./runtime.ts");
+                await import("./desktop.ts");
             }
             
             bootstrap();
