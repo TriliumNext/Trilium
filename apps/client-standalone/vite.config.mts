@@ -30,8 +30,8 @@ const sqliteWasmPlugin = viteStaticCopy({
     targets: [
         {
             // Copy the entire jswasm directory to maintain the module's expected structure
-            src: "../../../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/*",
-            dest: "node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm"
+            src: "../../../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm",
+            dest: "assets"
         }
     ]
 });
@@ -129,6 +129,9 @@ export default defineConfig(() => ({
     },
     optimizeDeps: {
         exclude: ['@sqlite.org/sqlite-wasm', '@triliumnext/core']
+    },
+    worker: {
+        format: "es" as const
     },
     commonjsOptions: {
         transformMixedEsModules: true,
