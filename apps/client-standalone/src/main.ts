@@ -1,6 +1,9 @@
 import { attachServiceWorkerBridge, startLocalServerWorker } from "./local-bridge.js";
 
 async function bootstrap() {
+    /* fixes https://github.com/webpack/webpack/issues/10035 */
+    window.global = globalThis;
+
     // 1) Start local worker ASAP (so /bootstrap is fast)
     startLocalServerWorker();
 
