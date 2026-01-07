@@ -41,7 +41,6 @@ import openaiRoute from "./api/openai.js";
 import otherRoute from "./api/other.js";
 import passwordApiRoute from "./api/password.js";
 import recentChangesApiRoute from "./api/recent_changes.js";
-import recentNotesRoute from "./api/recent_notes.js";
 import recoveryCodes from './api/recovery_codes.js';
 import relationMapApiRoute from "./api/relation-map.js";
 import revisionsApiRoute from "./api/revisions.js";
@@ -200,7 +199,6 @@ function register(app: express.Application) {
     route(PST, "/api/sync/queue-sector/:entityName/:sector", [auth.checkApiAuth], syncApiRoute.queueSector, apiResultHandler);
     route(GET, "/api/sync/stats", [], syncApiRoute.getStats, apiResultHandler);
 
-    apiRoute(PST, "/api/recent-notes", recentNotesRoute.addRecentNote);
     apiRoute(GET, "/api/app-info", appInfoRoute.getAppInfo);
     apiRoute(GET, "/api/metrics", metricsRoute.getMetrics);
     apiRoute(GET, "/api/system-checks", systemInfoRoute.systemChecks);
