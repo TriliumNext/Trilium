@@ -17,7 +17,7 @@ export interface BrowserRequest {
 export interface BrowserResponse {
     status: number;
     headers: Record<string, string>;
-    body: ArrayBuffer;
+    body: ArrayBuffer | null;
 }
 
 export type RouteHandler = (req: BrowserRequest) => unknown | Promise<unknown>;
@@ -188,7 +188,7 @@ export class BrowserRouter {
                 const result = await getContext().init(async () => await route.handler(request));
                 return this.formatResult(result);
             } catch (error) {
-                return this.formatError(error);
+                return this.formatError(error, `Error handling ${method} ${path}`);
             }
         }
 
@@ -211,7 +211,8 @@ export class BrowserRouter {
         if (result === undefined) {
             return {
                 status: 204,
-                headers: {}
+                headers: {},
+                body: null
             };
         }
 
@@ -222,8 +223,8 @@ export class BrowserRouter {
     /**
      * Format an error into a response.
      */
-    private formatError(error: unknown): BrowserResponse {
-        console.error('[Router] Handler error:', error);
+    private formatError(error: unknown, context: string): BrowserResponse {
+        console.error('[Router] Handler error:', context, error);
 
         // Check for known error types
         if (error && typeof error === 'object') {
