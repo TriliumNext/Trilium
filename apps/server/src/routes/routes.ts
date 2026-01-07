@@ -302,7 +302,6 @@ function register(app: express.Application) {
     apiRoute(GET, "/api/stats/note-size/:noteId", statsRoute.getNoteSize);
     apiRoute(GET, "/api/stats/subtree-size/:noteId", statsRoute.getSubtreeSize);
     route(GET, "/api/fonts", [auth.checkApiAuthOrElectron], fontsRoute.getFontCss);
-    apiRoute(GET, "/api/other/icon-usage", otherRoute.getIconUsage);
     apiRoute(PST, "/api/other/render-markdown", otherRoute.renderMarkdown);
     apiRoute(PST, "/api/other/to-markdown", otherRoute.toMarkdown);
     apiRoute(GET, "/api/recent-changes/:ancestorNoteId", recentChangesApiRoute.getRecentChanges);

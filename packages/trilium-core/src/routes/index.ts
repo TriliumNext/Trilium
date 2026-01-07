@@ -5,6 +5,7 @@ import notesApiRoute from "./api/notes";
 import attachmentsApiRoute from "./api/attachments";
 import noteMapRoute from "./api/note_map";
 import recentNotesRoute from "./api/recent_notes";
+import otherRoute from "./api/others";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 
 // TODO: Deduplicate with routes.ts
@@ -58,6 +59,8 @@ export function buildSharedApiRoutes(apiRoute: any) {
 
     apiRoute(GET, "/api/keyboard-actions", keysApiRoute.getKeyboardActions);
     apiRoute(GET, "/api/keyboard-shortcuts-for-notes", keysApiRoute.getShortcutsForNotes);
+
+    apiRoute(GET, "/api/other/icon-usage", otherRoute.getIconUsage);
 }
 
 /** Handling common patterns. If entity is not caught, serialization to JSON will fail */
