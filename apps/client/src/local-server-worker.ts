@@ -135,60 +135,6 @@ function jsonResponse(obj: unknown, status = 200, extraHeaders = {}) {
     };
 }
 
-// Example: your /bootstrap handler placeholder
-async function handleBootstrap() {
-    console.log("[Worker] Bootstrap request received");
-
-    // Try to initialize with timeout
-    let dbInfo: Record<string, unknown> = { dbStatus: 'not initialized' };
-
-    try {
-        // Wait for initialization (with timeout)
-        await Promise.race([
-            ensureInitialized(),
-            new Promise((_, reject) => setTimeout(() => reject(new Error("Initialization timeout")), 10000))
-        ]);
-
-        // Query the database
-        const stmt = sqlProvider.prepare('SELECT * FROM options');
-        const rows = stmt.all() as Array<{ name: string; value: string }>;
-        const options: Record<string, string> = {};
-        for (const row of rows) {
-            options[row.name] = row.value;
-        }
-
-        dbInfo = {
-            sqliteVersion: sqlProvider.version?.libVersion,
-            optionsFromDB: options,
-            dbStatus: 'connected'
-        };
-    } catch (e) {
-        console.error("[Worker] Error during bootstrap:", e);
-        dbInfo = { dbStatus: 'error', error: String(e) };
-    }
-
-    console.log("[Worker] Sending bootstrap response");
-
-    // Later: return real globals from your core state/config.
-    return jsonResponse({
-        assetPath: "./",
-        baseApiUrl: "../api/",
-        themeCssUrl: null,
-        themeUseNextAsBase: "next",
-        iconPackCss: "",
-        device: "desktop",
-        headingStyle: "default",
-        layoutOrientation: "vertical",
-        platform: "web",
-        isElectron: false,
-        hasNativeTitleBar: false,
-        hasBackgroundEffects: true,
-        currentLocale: { id: "en", rtl: false },
-        // Add SQLite info for testing
-        sqlite: dbInfo
-    });
-}
-
 interface LocalRequest {
     method: string;
     url: string;
@@ -200,11 +146,6 @@ async function dispatch(request: LocalRequest) {
     const url = new URL(request.url);
 
     console.log("[Worker] Dispatch:", url.pathname);
-
-    // Bootstrap is handled specially before the router is ready
-    if (request.method === "GET" && url.pathname === "/bootstrap") {
-        return handleBootstrap();
-    }
 
     // Ensure initialization is complete and get the router
     const appRouter = await ensureInitialized();

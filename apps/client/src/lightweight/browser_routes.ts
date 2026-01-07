@@ -42,6 +42,25 @@ function createApiRoute(router: BrowserRouter) {
 export function registerRoutes(router: BrowserRouter): void {
     const apiRoute = createApiRoute(router);
     routes.buildSharedApiRoutes(apiRoute);
+    apiRoute('get', '/bootstrap', bootstrapRoute);
+}
+
+function bootstrapRoute() {
+   return {
+        assetPath: "./",
+        baseApiUrl: "../api/",
+        themeCssUrl: null,
+        themeUseNextAsBase: "next",
+        iconPackCss: "",
+        device: "desktop",
+        headingStyle: "default",
+        layoutOrientation: "vertical",
+        platform: "web",
+        isElectron: false,
+        hasNativeTitleBar: false,
+        hasBackgroundEffects: true,
+        currentLocale: { id: "en", rtl: false }
+    };
 }
 
 /**
