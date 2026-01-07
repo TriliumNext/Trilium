@@ -29,8 +29,11 @@ const clientWatchPlugin = () => ({
 const sqliteWasmPlugin = viteStaticCopy({
     targets: [
         {
-            // Copy the entire jswasm directory to maintain the module's expected structure
             src: "../../../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3.wasm",
+            dest: "assets"
+        },
+        {
+            src: "../../../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/sqlite3-opfs-async-proxy.js",
             dest: "assets"
         }
     ]
