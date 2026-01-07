@@ -7,6 +7,24 @@ const assets = ["assets", "stylesheets", "fonts", "translations"];
 
 const isDev = process.env.NODE_ENV === "development";
 
+// Watch client files and trigger reload in development
+const clientWatchPlugin = () => ({
+    name: 'client-watch',
+    configureServer(server: any) {
+        if (isDev) {
+            // Watch client source files
+            server.watcher.add('../client/src/**/*');
+            server.watcher.on('change', (file: string) => {
+                if (file.includes('../client/src/')) {
+                    server.ws.send({
+                        type: 'full-reload'
+                    });
+                }
+            });
+        }
+    }
+});
+
 // Always copy SQLite WASM files so they're available to the module
 const sqliteWasmPlugin = viteStaticCopy({
     targets: [
@@ -29,8 +47,16 @@ let plugins: any = [
         targets: assets.map((asset) => ({
             src: `../client/src/${asset}/*`,
             dest: asset
-        }))
-    })
+        })),
+        // Enable watching in development
+        ...(isDev && {
+            watch: {
+                reloadPageOnChange: true
+            }
+        })
+    }),
+    // Watch client files for changes in development
+    ...(isDev ? [clientWatchPlugin()] : [])
 ];
 
 if (!isDev) {
@@ -78,7 +104,21 @@ export default defineConfig(() => ({
     },
     server: {
         watch: {
-            ignored: ['!**/node_modules/@triliumnext/**']
+            // Watch workspace packages
+            ignored: ['!**/node_modules/@triliumnext/**'],
+            // Also watch client assets for live reload
+            usePolling: false,
+            interval: 100,
+            binaryInterval: 300
+        },
+        // Watch additional directories for changes
+        fs: {
+            allow: [
+                // Allow access to workspace root
+                '../../',
+                // Explicitly allow client directory
+                '../client/src/'
+            ]
         },
         headers: {
             // Required for SharedArrayBuffer which is needed by SQLite WASM OPFS VFS
