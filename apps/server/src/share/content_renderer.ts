@@ -12,7 +12,6 @@ import BAttachment from '../becca/entities/battachment.js';
 import type BBranch from "../becca/entities/bbranch.js";
 import BNote from "../becca/entities/bnote.js";
 import assetPath, { assetUrlFragment } from "../services/asset_path.js";
-import { generateCss, getIconPacks, MIME_TO_EXTENSION_MAPPINGS, ProcessedIconPack } from "../services/icon_packs.js";
 import log from "../services/log.js";
 import options from "../services/options.js";
 import utils, { getResourceDir, isDev, safeExtractMessageAndStackFromError } from "../services/utils.js";
@@ -21,6 +20,7 @@ import SBranch from "./shaca/entities/sbranch.js";
 import type SNote from "./shaca/entities/snote.js";
 import shaca from "./shaca/shaca.js";
 import shareRoot from "./share_root.js";
+import { icon_packs as iconPackService } from "@triliumnext/core";
 
 const shareAdjustedAssetPath = isDev ? assetPath : `../${assetPath}`;
 const templateCache: Map<string, string> = new Map();
@@ -69,7 +69,7 @@ function getSharedSubTreeRoot(note: SNote | BNote | undefined): Subroot {
     return getSharedSubTreeRoot(parentBranch.getParentNote());
 }
 
-export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath: string, ancestors: string[], iconPacks: ProcessedIconPack[]) {
+export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath: string, ancestors: string[], iconPacks: iconPackService.ProcessedIconPack[]) {
     const subRoot: Subroot = {
         branch: parentBranch,
         note: parentBranch.getNote()
@@ -95,7 +95,7 @@ export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath
         faviconUrl: `${basePath}favicon.ico`,
         ancestors,
         isStatic: true,
-        iconPackCss: iconPacks.map(p => generateCss(p, `${basePath}assets/icon-pack-${p.prefix.toLowerCase()}.${MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`))
+        iconPackCss: iconPacks.map(p => iconPackService.generateCss(p, `${basePath}assets/icon-pack-${p.prefix.toLowerCase()}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`))
             .filter(Boolean)
             .join("\n\n"),
         iconPackSupportedPrefixes: iconPacks.map(p => p.prefix)
@@ -136,7 +136,7 @@ export function renderNoteContent(note: SNote) {
 
     const customLogoId = note.getRelation("shareLogo")?.value;
     const logoUrl = customLogoId ? `api/images/${customLogoId}/image.png` : `../${assetUrlFragment}/images/icon-color.svg`;
-    const iconPacks = getIconPacks().filter(p => p.builtin || !!shaca.notes[p.manifestNoteId]);
+    const iconPacks = iconPackService.getIconPacks().filter(p => p.builtin || !!shaca.notes[p.manifestNoteId]);
 
     return renderNoteContentInternal(note, {
         subRoot,
@@ -147,8 +147,8 @@ export function renderNoteContent(note: SNote) {
         ancestors,
         isStatic: false,
         faviconUrl: note.hasRelation("shareFavicon") ? `api/notes/${note.getRelationValue("shareFavicon")}/download` : `../favicon.ico`,
-        iconPackCss: iconPacks.map(p => generateCss(p, p.builtin
-            ? `/share/assets/fonts/${p.fontAttachmentId}.${MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
+        iconPackCss: iconPacks.map(p => iconPackService.generateCss(p, p.builtin
+            ? `/share/assets/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
             : `/share/api/attachments/${p.fontAttachmentId}/download`
         ))
             .filter(Boolean)

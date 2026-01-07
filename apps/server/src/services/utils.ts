@@ -343,10 +343,6 @@ export function processStringOrBuffer(data: string | Buffer | null) {
     }
 }
 
-export function safeExtractMessageAndStackFromError(err: unknown): [errMessage: string, errStack: string | undefined] {
-    return (err instanceof Error) ? [err.message, err.stack] as const : ["Unknown Error", undefined] as const;
-}
-
 /**
  * Normalizes URL by removing trailing slashes and fixing double slashes.
  * Preserves the protocol (http://, https://) but removes trailing slashes from the rest.
@@ -453,9 +449,14 @@ function slugify(text: string) {
         .replace(/(^-|-$)+/g, ""); // trim dashes
 }
 
+/** @deprecated */
 export const escapeHtml = coreUtils.escapeHtml;
+/** @deprecated */
 export const unescapeHtml = coreUtils.unescapeHtml;
+/** @deprecated */
 export const randomSecureToken = coreUtils.randomSecureToken;
+/** @deprecated */
+export const safeExtractMessageAndStackFromError = coreUtils.safeExtractMessageAndStackFromError;
 
 export default {
     compareVersions,

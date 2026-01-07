@@ -7,7 +7,7 @@ import assetPath from "../services/asset_path.js";
 import attributeService from "../services/attributes.js";
 import config from "../services/config.js";
 import { getCurrentLocale } from "../services/i18n.js";
-import { generateCss, generateIconRegistry, getIconPacks, MIME_TO_EXTENSION_MAPPINGS } from "../services/icon_packs.js";
+import { icon_packs as iconPackService } from "@triliumnext/core";
 import log from "../services/log.js";
 import optionService from "../services/options.js";
 import protectedSessionService from "../services/protected_session.js";
@@ -30,7 +30,7 @@ export function bootstrap(req: Request, res: Response) {
     const theme = options.theme;
     const themeNote = attributeService.getNoteWithLabel("appTheme", theme);
     const nativeTitleBarVisible = options.nativeTitleBarVisible === "true";
-    const iconPacks = getIconPacks();
+    const iconPacks = iconPackService.getIconPacks();
     const currentLocale = getCurrentLocale();
 
     res.send({
@@ -62,12 +62,12 @@ export function bootstrap(req: Request, res: Response) {
         currentLocale,
         isRtl: !!currentLocale.rtl,
         iconPackCss: iconPacks
-            .map(p => generateCss(p, p.builtin
-                ? `${assetPath}/fonts/${p.fontAttachmentId}.${MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
+            .map(p => iconPackService.generateCss(p, p.builtin
+                ? `${assetPath}/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
                 : `api/attachments/download/${p.fontAttachmentId}`))
             .filter(Boolean)
             .join("\n\n"),
-        iconRegistry: generateIconRegistry(iconPacks),
+        iconRegistry: iconPackService.generateIconRegistry(iconPacks),
         TRILIUM_SAFE_MODE: !!process.env.TRILIUM_SAFE_MODE
     });
 }

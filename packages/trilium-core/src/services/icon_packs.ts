@@ -3,9 +3,9 @@ import { IconRegistry } from "@triliumnext/commons";
 import type BAttachment from "../becca/entities/battachment";
 import type BNote from "../becca/entities/bnote";
 import boxiconsManifest from "./icon_pack_boxicons-v2.json" with { type: "json" };
-import log from "./log";
+import { getLog } from "./log";
 import search from "./search/services/search";
-import { safeExtractMessageAndStackFromError } from "./utils";
+import { safeExtractMessageAndStackFromError } from "./utils/index";
 
 const PREFERRED_MIME_TYPE = [
     "font/woff2",
@@ -64,7 +64,7 @@ export function getIconPacks() {
             if (!iconPack) return false;
 
             if (iconPack.prefix === "bx" || usedPrefixes.has(iconPack.prefix)) {
-                log.info(`Skipping icon pack with duplicate prefix '${iconPack.prefix}': ${iconPack.title} (${iconPack.manifestNoteId})`);
+                getLog().info(`Skipping icon pack with duplicate prefix '${iconPack.prefix}': ${iconPack.title} (${iconPack.manifestNoteId})`);
                 return false;
             }
             usedPrefixes.add(iconPack.prefix);
@@ -103,25 +103,25 @@ export function generateIconRegistry(iconPacks: ProcessedIconPack[]): IconRegist
 export function processIconPack(iconPackNote: BNote): ProcessedIconPack | undefined {
     const manifest = iconPackNote.getJsonContentSafely() as IconPackManifest;
     if (!manifest) {
-        log.error(`Icon pack is missing JSON manifest (or has syntax errors): ${iconPackNote.title} (${iconPackNote.noteId})`);
+        getLog().error(`Icon pack is missing JSON manifest (or has syntax errors): ${iconPackNote.title} (${iconPackNote.noteId})`);
         return;
     }
 
     const attachment = determineBestFontAttachment(iconPackNote);
     if (!attachment || !attachment.attachmentId) {
-        log.error(`Icon pack is missing WOFF/WOFF2/TTF attachment: ${iconPackNote.title} (${iconPackNote.noteId})`);
+        getLog().error(`Icon pack is missing WOFF/WOFF2/TTF attachment: ${iconPackNote.title} (${iconPackNote.noteId})`);
         return;
     }
 
     const prefix = iconPackNote.getLabelValue("iconPack");
     if (!prefix) {
-        log.error(`Icon pack is missing 'iconPack' label defining its prefix: ${iconPackNote.title} (${iconPackNote.noteId})`);
+        getLog().error(`Icon pack is missing 'iconPack' label defining its prefix: ${iconPackNote.title} (${iconPackNote.noteId})`);
         return;
     }
 
     // Ensure prefix is alphanumeric only, dashes and underscores.
     if (!/^[a-zA-Z0-9-_]+$/.test(prefix)) {
-        log.error(`Icon pack has invalid 'iconPack' prefix (only alphanumeric characters, dashes and underscores are allowed): ${iconPackNote.title} (${iconPackNote.noteId})`);
+        getLog().error(`Icon pack has invalid 'iconPack' prefix (only alphanumeric characters, dashes and underscores are allowed): ${iconPackNote.title} (${iconPackNote.noteId})`);
         return;
     }
 
@@ -185,7 +185,7 @@ export function generateCss({ manifest, fontMime, builtin, fontAttachmentId, pre
             ${iconDeclarations.join("\n")}
         `;
     } catch (e) {
-        log.error(safeExtractMessageAndStackFromError(e));
+        getLog().error(safeExtractMessageAndStackFromError(e));
         return null;
     }
 }
