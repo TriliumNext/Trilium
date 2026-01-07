@@ -26,7 +26,7 @@ class WasmStatement implements Statement {
         if (this.isFinalized) {
             throw new Error("Cannot call run() on finalized statement");
         }
-        
+
         this.bindParams(params);
         try {
             // Use step() and then reset instead of stepFinalize()
@@ -49,7 +49,7 @@ class WasmStatement implements Statement {
         if (this.isFinalized) {
             throw new Error("Cannot call get() on finalized statement");
         }
-        
+
         this.bindParams(Array.isArray(params) ? params : params !== undefined ? [params] : []);
         try {
             if (this.stmt.step()) {
@@ -70,7 +70,7 @@ class WasmStatement implements Statement {
         if (this.isFinalized) {
             throw new Error("Cannot call all() on finalized statement");
         }
-        
+
         this.bindParams(params);
         const results: unknown[] = [];
         try {
@@ -95,7 +95,7 @@ class WasmStatement implements Statement {
         if (this.isFinalized) {
             throw new Error("Cannot call iterate() on finalized statement");
         }
-        
+
         this.bindParams(params);
         const stmt = this.stmt;
         const isRaw = this.isRawMode;
@@ -143,7 +143,7 @@ class WasmStatement implements Statement {
         // Handle single object with named parameters
         if (params.length === 1 && typeof params[0] === "object" && params[0] !== null && !Array.isArray(params[0])) {
             const inputBindings = params[0] as { [paramName: string]: BindableValue };
-            
+
             // SQLite WASM expects parameter names to include the prefix (@ : or $)
             // better-sqlite3 automatically maps unprefixed names to @name
             // We need to add the @ prefix for compatibility
@@ -157,7 +157,7 @@ class WasmStatement implements Statement {
                     bindings[`@${key}`] = value;
                 }
             }
-            
+
             this.stmt.bind(bindings);
         } else {
             // Handle positional parameters - flatten and cast to BindableValue[]
@@ -203,6 +203,9 @@ export default class BrowserSqlProvider implements DatabaseProvider {
     private initPromise?: Promise<void>;
     private initError?: Error;
     private statementCache: Map<string, WasmStatement> = new Map();
+
+    // OPFS state tracking
+    private opfsDbPath?: string;
 
     /**
      * Get the SQLite WASM module version info.
@@ -264,28 +267,172 @@ export default class BrowserSqlProvider implements DatabaseProvider {
         return this.sqlite3 !== undefined;
     }
 
+    // ==================== OPFS Support ====================
+
+    /**
+     * Check if the OPFS VFS is available.
+     * This requires:
+     * - Running in a Worker context
+     * - Browser support for OPFS APIs
+     * - COOP/COEP headers sent by the server (for SharedArrayBuffer)
+     *
+     * @returns true if OPFS VFS is available for use
+     */
+    isOpfsAvailable(): boolean {
+        this.ensureSqlite3();
+        // SQLite WASM automatically installs the OPFS VFS if the environment supports it
+        // We can check for its presence via sqlite3_vfs_find or the OpfsDb class
+        return this.sqlite3!.oo1.OpfsDb !== undefined;
+    }
+
+    /**
+     * Load or create a database stored in OPFS for persistent storage.
+     * The database will persist across browser sessions.
+     *
+     * Requires COOP/COEP headers to be set by the server:
+     * - Cross-Origin-Opener-Policy: same-origin
+     * - Cross-Origin-Embedder-Policy: require-corp
+     *
+     * @param path - The path for the database file in OPFS (e.g., "/trilium.db")
+     *               Paths without a leading slash are treated as relative to OPFS root.
+     *               Leading directories are created automatically.
+     * @param options - Additional options
+     * @throws Error if OPFS VFS is not available
+     *
+     * @example
+     * ```typescript
+     * const provider = new BrowserSqlProvider();
+     * await provider.initWasm();
+     * if (provider.isOpfsAvailable()) {
+     *     provider.loadFromOpfs("/my-database.db");
+     * } else {
+     *     console.warn("OPFS not available, using in-memory database");
+     *     provider.loadFromMemory();
+     * }
+     * ```
+     */
+    loadFromOpfs(path: string, options: { createIfNotExists?: boolean } = {}): void {
+        this.ensureSqlite3();
+
+        if (!this.isOpfsAvailable()) {
+            throw new Error(
+                "OPFS VFS is not available. This requires:\n" +
+                "1. Running in a Worker context\n" +
+                "2. Browser support for OPFS (Chrome 102+, Firefox 111+, Safari 17+)\n" +
+                "3. COOP/COEP headers from the server:\n" +
+                "   Cross-Origin-Opener-Policy: same-origin\n" +
+                "   Cross-Origin-Embedder-Policy: require-corp"
+            );
+        }
+
+        console.log(`[BrowserSqlProvider] Loading database from OPFS: ${path}`);
+        const startTime = performance.now();
+
+        try {
+            // OpfsDb automatically creates directories in the path
+            // Mode 'c' = create if not exists
+            const mode = options.createIfNotExists !== false ? 'c' : '';
+            this.db = new this.sqlite3!.oo1.OpfsDb(path, mode);
+            this.opfsDbPath = path;
+
+            // Configure the database for OPFS
+            // Note: WAL mode requires exclusive locking in OPFS environment
+            this.db.exec("PRAGMA journal_mode = DELETE");
+            this.db.exec("PRAGMA synchronous = NORMAL");
+
+            const loadTime = performance.now() - startTime;
+            console.log(`[BrowserSqlProvider] OPFS database loaded in ${loadTime.toFixed(2)}ms`);
+        } catch (e) {
+            const error = e instanceof Error ? e : new Error(String(e));
+            console.error(`[BrowserSqlProvider] Failed to load OPFS database: ${error.message}`);
+            throw error;
+        }
+    }
+
+    /**
+     * Check if the currently open database is stored in OPFS.
+     */
+    get isUsingOpfs(): boolean {
+        return this.opfsDbPath !== undefined;
+    }
+
+    /**
+     * Get the OPFS path of the currently open database.
+     * Returns undefined if not using OPFS.
+     */
+    get currentOpfsPath(): string | undefined {
+        return this.opfsDbPath;
+    }
+
+    /**
+     * Check if the database has been initialized with a schema.
+     * This is a simple sanity check that looks for the existence of core tables.
+     *
+     * @returns true if the database appears to be initialized
+     */
+    isDbInitialized(): boolean {
+        this.ensureDb();
+
+        // Check if the 'notes' table exists (a core table that must exist in an initialized DB)
+        const tableExists = this.db!.selectValue(
+            "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'notes'"
+        );
+
+        return tableExists !== undefined;
+    }
+
+    // ==================== End OPFS Support ====================
+
     loadFromFile(_path: string, _isReadOnly: boolean): void {
         // Browser environment doesn't have direct file system access.
-        // For OPFS support, we would need to use the OPFS VFS.
+        // Use OPFS for persistent storage.
         throw new Error(
             "loadFromFile is not supported in browser environment. " +
-            "Use loadFromMemory() or loadFromBuffer() instead, or implement OPFS VFS support."
+            "Use loadFromMemory() for temporary databases, loadFromBuffer() to load from data, " +
+            "or loadFromOpfs() for persistent storage."
         );
     }
 
+    /**
+     * Create an empty in-memory database.
+     * Data will be lost when the page is closed.
+     *
+     * For persistent storage, use loadFromOpfs() instead.
+     * To load demo data, call initializeDemoDatabase() after this.
+     */
     loadFromMemory(): void {
         this.ensureSqlite3();
-        console.log("[BrowserSqlProvider] Loading demo database...");
+        console.log("[BrowserSqlProvider] Creating in-memory database...");
         const startTime = performance.now();
 
         this.db = new this.sqlite3!.oo1.DB(":memory:", "c");
+        this.opfsDbPath = undefined; // Not using OPFS
         this.db.exec("PRAGMA journal_mode = WAL");
 
-        // Load the demo database by default
-        this.db.exec(demoDbSql);
+        // Initialize with demo data for in-memory databases
+        // (since they won't persist anyway)
+        this.initializeDemoDatabase();
 
         const loadTime = performance.now() - startTime;
-        console.log(`[BrowserSqlProvider] Demo database loaded in ${loadTime.toFixed(2)}ms`);
+        console.log(`[BrowserSqlProvider] In-memory database created in ${loadTime.toFixed(2)}ms`);
+    }
+
+    /**
+     * Initialize the database with demo/starter data.
+     * This should only be called once when creating a new database.
+     *
+     * For OPFS databases, this is called automatically only if the database
+     * doesn't already exist.
+     */
+    initializeDemoDatabase(): void {
+        this.ensureDb();
+        console.log("[BrowserSqlProvider] Initializing database with demo data...");
+        const startTime = performance.now();
+
+        this.db!.exec(demoDbSql);
+
+        const loadTime = performance.now() - startTime;
+        console.log(`[BrowserSqlProvider] Demo data loaded in ${loadTime.toFixed(2)}ms`);
     }
 
     loadFromBuffer(buffer: Uint8Array): void {
@@ -294,6 +441,8 @@ export default class BrowserSqlProvider implements DatabaseProvider {
         const p = this.sqlite3!.wasm.allocFromTypedArray(buffer);
         try {
             this.db = new this.sqlite3!.oo1.DB({ filename: ":memory:", flags: "c" });
+            this.opfsDbPath = undefined; // Not using OPFS
+
             const rc = this.sqlite3!.capi.sqlite3_deserialize(
                 this.db.pointer!,
                 "main",
@@ -333,12 +482,12 @@ export default class BrowserSqlProvider implements DatabaseProvider {
 
     prepare(query: string): Statement {
         this.ensureDb();
-        
+
         // Check if we already have this statement cached
         if (this.statementCache.has(query)) {
             return this.statementCache.get(query)!;
         }
-        
+
         // Create new statement and cache it
         const stmt = this.db!.prepare(query);
         const wasmStatement = new WasmStatement(stmt, this.db!);
@@ -424,11 +573,14 @@ export default class BrowserSqlProvider implements DatabaseProvider {
             }
         }
         this.statementCache.clear();
-        
+
         if (this.db) {
             this.db.close();
             this.db = undefined;
         }
+
+        // Reset OPFS state
+        this.opfsDbPath = undefined;
     }
 
     /**
@@ -457,7 +609,7 @@ export default class BrowserSqlProvider implements DatabaseProvider {
     private ensureDb(): void {
         this.ensureSqlite3();
         if (!this.db) {
-            throw new Error("Database not opened. Call loadFromMemory() or loadFromBuffer() first.");
+            throw new Error("Database not opened. Call loadFromMemory(), loadFromBuffer(), or loadFromOpfs() first.");
         }
     }
 }

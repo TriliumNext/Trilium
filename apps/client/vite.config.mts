@@ -60,6 +60,12 @@ export default defineConfig(() => ({
         watch: {
             // Watch workspace packages for changes
             ignored: ['!**/node_modules/@triliumnext/**']
+        },
+        headers: {
+            // Required for SharedArrayBuffer which is needed by SQLite WASM OPFS VFS
+            // See: https://sqlite.org/wasm/doc/trunk/persistence.md#coop-coep
+            "Cross-Origin-Opener-Policy": "same-origin",
+            "Cross-Origin-Embedder-Policy": "require-corp"
         }
     },
     optimizeDeps: {

@@ -72,7 +72,27 @@ async function initialize(): Promise<void> {
         try {
             console.log("[Worker] Initializing SQLite WASM...");
             await sqlProvider.initWasm();
-            sqlProvider.loadFromMemory();
+
+            // Try to use OPFS for persistent storage
+            if (sqlProvider.isOpfsAvailable()) {
+                console.log("[Worker] OPFS available, loading persistent database...");
+                sqlProvider.loadFromOpfs("/trilium.db");
+
+                // Check if database is initialized (schema exists)
+                if (!sqlProvider.isDbInitialized()) {
+                    console.log("[Worker] Database not initialized, loading demo data...");
+                    sqlProvider.initializeDemoDatabase();
+                    console.log("[Worker] Demo data loaded");
+                } else {
+                    console.log("[Worker] Existing initialized database loaded");
+                }
+            } else {
+                // Fall back to in-memory database (non-persistent)
+                console.warn("[Worker] OPFS not available, using in-memory database (data will not persist)");
+                console.warn("[Worker] To enable persistence, ensure COOP/COEP headers are set by the server");
+                sqlProvider.loadFromMemory();
+            }
+
             console.log("[Worker] Database loaded");
 
             console.log("[Worker] Loading @triliumnext/core...");
