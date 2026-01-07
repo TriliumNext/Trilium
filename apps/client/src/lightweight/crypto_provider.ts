@@ -1,4 +1,6 @@
 import type { CryptoProvider } from "@triliumnext/core";
+import { sha1 } from "js-sha1";
+import { sha512 } from "js-sha512";
 
 interface Cipher {
     update(data: Uint8Array): Uint8Array;
@@ -13,27 +15,17 @@ const CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 export default class BrowserCryptoProvider implements CryptoProvider {
 
     createHash(algorithm: "sha1" | "sha512", content: string | Uint8Array): Uint8Array {
-        // Web Crypto API is async, but the interface expects sync.
-        // We'll use a synchronous fallback or throw if not available.
-        // For now, we'll implement a simple synchronous hash using SubtleCrypto
-        // Note: This is a limitation - we may need to make the interface async
-        throw new Error(
-            "Synchronous hash not available in browser. " +
-            "Use createHashAsync() instead or refactor to support async hashing."
-        );
-    }
+        const data = typeof content === "string" ? content :
+                new TextDecoder().decode(content);
 
-    /**
-     * Async version of createHash using Web Crypto API.
-     */
-    async createHashAsync(algorithm: "sha1" | "sha512", content: string | Uint8Array): Promise<Uint8Array> {
-        const webAlgorithm = algorithm === "sha1" ? "SHA-1" : "SHA-512";
-        const data = typeof content === "string"
-            ? new TextEncoder().encode(content)
-            : new Uint8Array(content);
+        const hexHash = algorithm === "sha1" ? sha1(data) : sha512(data);
 
-        const hashBuffer = await crypto.subtle.digest(webAlgorithm, data);
-        return new Uint8Array(hashBuffer);
+        // Convert hex string to Uint8Array
+        const bytes = new Uint8Array(hexHash.length / 2);
+        for (let i = 0; i < hexHash.length; i += 2) {
+            bytes[i / 2] = parseInt(hexHash.substr(i, 2), 16);
+        }
+        return bytes;
     }
 
     createCipheriv(algorithm: "aes-128-cbc", key: Uint8Array, iv: Uint8Array): Cipher {

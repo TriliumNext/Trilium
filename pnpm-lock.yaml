@@ -259,6 +259,12 @@ importers:
       jquery.fancytree:
         specifier: 2.38.5
         version: 2.38.5(jquery@3.7.1)
+      js-sha1:
+        specifier: 0.7.0
+        version: 0.7.0
+      js-sha512:
+        specifier: 0.9.0
+        version: 0.9.0
       jsplumb:
         specifier: 2.15.6
         version: 2.15.6
@@ -9728,6 +9734,12 @@ packages:
     resolution: {integrity: sha512-X2BB11YZtrRqY4EnQcLX5Rh373zbK4alC1FW7D7MBhL2gtcC17cTnr6DmfHZeS0s2rTHjUTMMHfG7gO8SSdw+g==}
     engines: {node: '>=0.10.0'}
 
+  js-sha1@0.7.0:
+    resolution: {integrity: sha512-oQZ1Mo7440BfLSv9TX87VNEyU52pXPVG19F9PL3gTgNt0tVxlZ8F4O6yze3CLuLx28TxotxvlyepCNaaV0ZjMw==}
+
+  js-sha512@0.9.0:
+    resolution: {integrity: sha512-mirki9WS/SUahm+1TbAPkqvbCiCfOAAsyXeHxK1UkullnJVVqoJG2pL9ObvT05CN+tM7fxhfYm0NbXn+1hWoZg==}
+
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
@@ -16107,8 +16119,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-restricted-editing@47.3.0':
     dependencies:
@@ -25661,6 +25671,10 @@ snapshots:
   jquery@3.7.1: {}
 
   js-levenshtein@1.1.6: {}
+
+  js-sha1@0.7.0: {}
+
+  js-sha512@0.9.0: {}
 
   js-tokens@4.0.0: {}
 
