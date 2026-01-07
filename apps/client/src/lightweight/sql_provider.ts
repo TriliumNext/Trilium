@@ -274,9 +274,26 @@ export default class BrowserSqlProvider implements DatabaseProvider {
         this.ensureDb();
 
         const self = this;
+        let savepointCounter = 0;
 
         // Helper function to execute within a transaction
         const executeTransaction = (beginStatement: string, ...args: unknown[]): T => {
+            // If we're already in a transaction, use SAVEPOINTs for nesting
+            // This mimics better-sqlite3's behavior
+            if (self._inTransaction) {
+                const savepointName = `sp_${++savepointCounter}_${Date.now()}`;
+                self.db!.exec(`SAVEPOINT ${savepointName}`);
+                try {
+                    const result = func.apply(null, args as [Statement]);
+                    self.db!.exec(`RELEASE SAVEPOINT ${savepointName}`);
+                    return result;
+                } catch (e) {
+                    self.db!.exec(`ROLLBACK TO SAVEPOINT ${savepointName}`);
+                    throw e;
+                }
+            }
+            
+            // Not in a transaction, start a new one
             self._inTransaction = true;
             self.db!.exec(beginStatement);
             try {
