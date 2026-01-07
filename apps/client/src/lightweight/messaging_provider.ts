@@ -3,11 +3,11 @@ import type { MessagingProvider, MessageHandler } from "@triliumnext/core";
 
 /**
  * Messaging provider for browser Worker environments.
- * 
+ *
  * This provider uses the Worker's postMessage API to communicate
  * with the main thread. It's designed to be used inside a Web Worker
  * that runs the core services.
- * 
+ *
  * Message flow:
  * - Outbound (worker → main): Uses self.postMessage() with type: "WS_MESSAGE"
  * - Inbound (main → worker): Listens to onmessage for type: "WS_MESSAGE"
@@ -24,9 +24,9 @@ export default class WorkerMessagingProvider implements MessagingProvider {
 
     private handleIncomingMessage = (event: MessageEvent) => {
         if (this.isDisposed) return;
-        
+
         const { type, message } = event.data || {};
-        
+
         if (type === "WS_MESSAGE" && message) {
             // Dispatch to all registered handlers
             for (const handler of this.messageHandlers) {
@@ -64,7 +64,7 @@ export default class WorkerMessagingProvider implements MessagingProvider {
      */
     onMessage(handler: MessageHandler): () => void {
         this.messageHandlers.push(handler);
-        
+
         return () => {
             this.messageHandlers = this.messageHandlers.filter(h => h !== handler);
         };
@@ -83,7 +83,7 @@ export default class WorkerMessagingProvider implements MessagingProvider {
      */
     dispose(): void {
         if (this.isDisposed) return;
-        
+
         this.isDisposed = true;
         self.removeEventListener("message", this.handleIncomingMessage);
         this.messageHandlers = [];

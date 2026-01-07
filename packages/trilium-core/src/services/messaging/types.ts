@@ -19,7 +19,7 @@ export interface MessageClient {
 
 /**
  * Provider interface for server-to-client messaging.
- * 
+ *
  * This abstraction allows different transport mechanisms:
  * - WebSocket for traditional server environments
  * - Worker postMessage for browser environments

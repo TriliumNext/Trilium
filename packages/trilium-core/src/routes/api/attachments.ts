@@ -1,5 +1,6 @@
 import { ConvertAttachmentToNoteResponse } from "@triliumnext/commons";
-import { blob as blobService, ValidationError } from "@triliumnext/core";
+import blobService from "../../services/blob";
+import { ValidationError } from "../../errors";
 import type { Request } from "express";
 
 import becca from "../../becca/becca.js";

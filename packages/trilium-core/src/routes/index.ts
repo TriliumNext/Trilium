@@ -2,6 +2,7 @@ import optionsApiRoute from "./api/options";
 import treeApiRoute from "./api/tree";
 import keysApiRoute from "./api/keys";
 import notesApiRoute from "./api/notes";
+import attachmentsApiRoute from "./api/attachments";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 
 // TODO: Deduplicate with routes.ts
@@ -39,6 +40,15 @@ export function buildSharedApiRoutes(apiRoute: any) {
     apiRoute(PST, "/api/notes/erase-deleted-notes-now", notesApiRoute.eraseDeletedNotesNow);
     apiRoute(PST, "/api/notes/erase-unused-attachments-now", notesApiRoute.eraseUnusedAttachmentsNow);
     apiRoute(PST, "/api/delete-notes-preview", notesApiRoute.getDeleteNotesPreview);
+
+    apiRoute(GET, "/api/notes/:noteId/attachments", attachmentsApiRoute.getAttachments);
+    apiRoute(PST, "/api/notes/:noteId/attachments", attachmentsApiRoute.saveAttachment);
+    apiRoute(GET, "/api/attachments/:attachmentId", attachmentsApiRoute.getAttachment);
+    apiRoute(GET, "/api/attachments/:attachmentId/all", attachmentsApiRoute.getAllAttachments);
+    apiRoute(PST, "/api/attachments/:attachmentId/convert-to-note", attachmentsApiRoute.convertAttachmentToNote);
+    apiRoute(DEL, "/api/attachments/:attachmentId", attachmentsApiRoute.deleteAttachment);
+    apiRoute(PUT, "/api/attachments/:attachmentId/rename", attachmentsApiRoute.renameAttachment);
+    apiRoute(GET, "/api/attachments/:attachmentId/blob", attachmentsApiRoute.getAttachmentBlob);
 
     apiRoute(GET, "/api/keyboard-actions", keysApiRoute.getKeyboardActions);
     apiRoute(GET, "/api/keyboard-shortcuts-for-notes", keysApiRoute.getShortcutsForNotes);
