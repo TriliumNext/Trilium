@@ -3,7 +3,7 @@
  * This integrates with the shared route builder from @triliumnext/core.
  */
 
-import { routes } from '@triliumnext/core';
+import { routes, icon_packs as iconPackService } from '@triliumnext/core';
 import { BrowserRouter, type BrowserRequest } from './browser_router';
 
 type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
@@ -46,12 +46,14 @@ export function registerRoutes(router: BrowserRouter): void {
 }
 
 function bootstrapRoute() {
+   const iconPacks = iconPackService.getIconPacks();
+   const assetPath = "./";
+
    return {
-        assetPath: "./",
+        assetPath,
         baseApiUrl: "../api/",
         themeCssUrl: null,
         themeUseNextAsBase: "next",
-        iconPackCss: "",
         device: "desktop",
         headingStyle: "default",
         layoutOrientation: "vertical",
@@ -59,7 +61,14 @@ function bootstrapRoute() {
         isElectron: false,
         hasNativeTitleBar: false,
         hasBackgroundEffects: true,
-        currentLocale: { id: "en", rtl: false }
+        currentLocale: { id: "en", rtl: false },
+        iconPackCss: iconPacks
+            .map(p => iconPackService.generateCss(p, p.builtin
+                ? `${assetPath}/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
+                : `api/attachments/download/${p.fontAttachmentId}`))
+            .filter(Boolean)
+            .join("\n\n"),
+        iconRegistry: iconPackService.generateIconRegistry(iconPacks),
     };
 }
 
