@@ -2,9 +2,9 @@ import type { AttributeRow, BranchRow, NoteRow } from "@triliumnext/commons";
 import type { Request } from "express";
 
 import becca from "../../becca/becca.js";
-import { NotFoundError } from "src/errors.js";
-import { getLog } from "src/services/log.js";
-import type BNote from "src/becca/entities/bnote.js";
+import { NotFoundError } from "../../errors.js";
+import { getLog } from "../../services/log.js";
+import type BNote from "../../becca/entities/bnote.js";
 
 function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
     const noteIds = new Set(_noteIds);
