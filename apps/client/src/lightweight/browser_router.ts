@@ -3,6 +3,8 @@
  * Supports path parameters (e.g., /api/notes/:noteId) and query strings.
  */
 
+import { getContext } from "@triliumnext/core";
+
 export interface BrowserRequest {
     method: string;
     url: string;
@@ -166,7 +168,7 @@ export class BrowserRouter {
             };
 
             try {
-                const result = await route.handler(request);
+                const result = await getContext().init(async () => await route.handler(request));
                 return this.formatResult(result);
             } catch (error) {
                 return this.formatError(error);

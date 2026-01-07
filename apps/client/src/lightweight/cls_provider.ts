@@ -24,10 +24,23 @@ export default class BrowserExecutionContext implements ExecutionContext {
         this.store = new Map();
 
         try {
-            return callback();
-        } finally {
-            // Always clean up
+            const result = callback();
+            
+            // If the result is a Promise, we need to handle cleanup after it resolves
+            if (result && typeof result === 'object' && 'then' in result && 'catch' in result) {
+                const promise = result as unknown as Promise<any>;
+                return promise.finally(() => {
+                    this.store = prev;
+                }) as T;
+            } else {
+                // Synchronous result, clean up immediately
+                this.store = prev;
+                return result;
+            }
+        } catch (error) {
+            // Always clean up on error (for synchronous errors)
             this.store = prev;
+            throw error;
         }
     }
 }
