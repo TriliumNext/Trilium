@@ -37,7 +37,6 @@ import llmRoute from "./api/llm.js";
 import loginApiRoute from "./api/login.js";
 import metricsRoute from "./api/metrics.js";
 import noteMapRoute from "./api/note_map.js";
-import notesApiRoute from "./api/notes.js";
 import ollamaRoute from "./api/ollama.js";
 import openaiRoute from "./api/openai.js";
 import otherRoute from "./api/other.js";
@@ -105,19 +104,6 @@ function register(app: express.Application) {
 
     routes.buildSharedApiRoutes(apiRoute);
 
-    apiRoute(GET, "/api/notes/:noteId", notesApiRoute.getNote);
-    apiRoute(GET, "/api/notes/:noteId/blob", notesApiRoute.getNoteBlob);
-    apiRoute(GET, "/api/notes/:noteId/metadata", notesApiRoute.getNoteMetadata);
-    apiRoute(PUT, "/api/notes/:noteId/data", notesApiRoute.updateNoteData);
-    apiRoute(DEL, "/api/notes/:noteId", notesApiRoute.deleteNote);
-    apiRoute(PUT, "/api/notes/:noteId/undelete", notesApiRoute.undeleteNote);
-    apiRoute(PST, "/api/notes/:noteId/revision", notesApiRoute.forceSaveRevision);
-    apiRoute(PST, "/api/notes/:parentNoteId/children", notesApiRoute.createNote);
-    apiRoute(PUT, "/api/notes/:noteId/sort-children", notesApiRoute.sortChildNotes);
-    apiRoute(PUT, "/api/notes/:noteId/protect/:isProtected", notesApiRoute.protectNote);
-    apiRoute(PUT, "/api/notes/:noteId/type", notesApiRoute.setNoteTypeMime);
-    apiRoute(PUT, "/api/notes/:noteId/title", notesApiRoute.changeTitle);
-    apiRoute(PST, "/api/notes/:noteId/duplicate/:parentNoteId", notesApiRoute.duplicateSubtree);
     apiRoute(PUT, "/api/notes/:noteId/clone-to-branch/:parentBranchId", cloningApiRoute.cloneNoteToBranch);
     apiRoute(PUT, "/api/notes/:noteId/toggle-in-parent/:parentNoteId/:present", cloningApiRoute.toggleNoteInParent);
     apiRoute(PUT, "/api/notes/:noteId/clone-to-note/:parentNoteId", cloningApiRoute.cloneNoteToParentNote);
@@ -139,7 +125,6 @@ function register(app: express.Application) {
     route(GET, "/api/notes/download/:noteId", [auth.checkApiAuthOrElectron], filesRoute.downloadFile);
     apiRoute(PST, "/api/notes/:noteId/save-to-tmp-dir", filesRoute.saveNoteToTmpDir);
     apiRoute(PST, "/api/notes/:noteId/upload-modified-file", filesRoute.uploadModifiedFileToNote);
-    apiRoute(PST, "/api/notes/:noteId/convert-to-attachment", notesApiRoute.convertNoteToAttachment);
 
     apiRoute(PUT, "/api/branches/:branchId/move-to/:parentBranchId", branchesApiRoute.moveBranchToParent);
     apiRoute(PUT, "/api/branches/:branchId/move-before/:beforeBranchId", branchesApiRoute.moveBranchBeforeNote);
@@ -322,13 +307,10 @@ function register(app: express.Application) {
     asyncRoute(PST, "/api/sender/note", [auth.checkEtapiToken], senderRoute.saveNote, apiResultHandler);
 
     apiRoute(PST, "/api/relation-map", relationMapApiRoute.getRelationMap);
-    apiRoute(PST, "/api/notes/erase-deleted-notes-now", notesApiRoute.eraseDeletedNotesNow);
-    apiRoute(PST, "/api/notes/erase-unused-attachments-now", notesApiRoute.eraseUnusedAttachmentsNow);
     asyncApiRoute(GET, "/api/similar-notes/:noteId", similarNotesRoute.getSimilarNotes);
     asyncApiRoute(GET, "/api/backend-log", backendLogRoute.getBackendLog);
     apiRoute(GET, "/api/stats/note-size/:noteId", statsRoute.getNoteSize);
     apiRoute(GET, "/api/stats/subtree-size/:noteId", statsRoute.getSubtreeSize);
-    apiRoute(PST, "/api/delete-notes-preview", notesApiRoute.getDeleteNotesPreview);
     route(GET, "/api/fonts", [auth.checkApiAuthOrElectron], fontsRoute.getFontCss);
     apiRoute(GET, "/api/other/icon-usage", otherRoute.getIconUsage);
     apiRoute(PST, "/api/other/render-markdown", otherRoute.renderMarkdown);

@@ -1,15 +1,17 @@
 import type { AttributeRow, CreateChildrenResponse, DeleteNotesPreview, MetadataResponse } from "@triliumnext/commons";
-import { blob as blobService, erase as eraseService, ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 
+import blobService from "../../services/blob";
+import eraseService from "../../services/erase.js";
+import { ValidationError } from "../../errors.js";
 import becca from "../../becca/becca.js";
 import type BBranch from "../../becca/entities/bbranch.js";
-import log from "../../services/log.js";
+import { getLog } from "../../services/log.js";
 import noteService from "../../services/notes.js";
-import sql from "../../services/sql.js";
+import { getSql } from "../../services/sql/index";
 import TaskContext from "../../services/task_context.js";
 import treeService from "../../services/tree.js";
-import utils from "../../services/utils.js";
+import { randomString } from "../../services/utils/index";
 
 /**
  * @swagger
@@ -174,7 +176,7 @@ function deleteNote(req: Request) {
     const last = req.query.last === "true";
 
     // note how deleteId is separate from taskId - single taskId produces separate deleteId for each "top level" deleted note
-    const deleteId = utils.randomString(10);
+    const deleteId = randomString(10);
 
     const note = becca.getNoteOrThrow(noteId);
 
@@ -195,7 +197,7 @@ function deleteNote(req: Request) {
 }
 
 function undeleteNote(req: Request) {
-    const taskContext = TaskContext.getInstance(utils.randomString(10), "undeleteNotes", null);
+    const taskContext = TaskContext.getInstance(randomString(10), "undeleteNotes", null);
 
     noteService.undeleteNote(req.params.noteId, taskContext);
 
@@ -206,7 +208,7 @@ function sortChildNotes(req: Request) {
     const noteId = req.params.noteId;
     const { sortBy, sortDirection, foldersFirst, sortNatural, sortLocale } = req.body;
 
-    log.info(`Sorting '${noteId}' children with ${sortBy} ${sortDirection}, foldersFirst=${foldersFirst}, sortNatural=${sortNatural}, sortLocale=${sortLocale}`);
+    getLog().info(`Sorting '${noteId}' children with ${sortBy} ${sortDirection}, foldersFirst=${foldersFirst}, sortNatural=${sortNatural}, sortLocale=${sortLocale}`);
 
     const reverse = sortDirection === "desc";
 
@@ -219,7 +221,7 @@ function protectNote(req: Request) {
     const protect = !!parseInt(req.params.isProtected);
     const includingSubTree = !!parseInt(req.query?.subtree as string);
 
-    const taskContext = new TaskContext(utils.randomString(10), "protectNotes", { protect });
+    const taskContext = new TaskContext(randomString(10), "protectNotes", { protect });
 
     noteService.protectNoteRecursively(note, protect, includingSubTree, taskContext);
 
@@ -307,7 +309,7 @@ function getDeleteNotesPreview(req: Request) {
         const branch = becca.getBranch(branchId);
 
         if (!branch) {
-            log.error(`Branch ${branchId} was not found and delete preview can't be calculated for this note.`);
+            getLog().error(`Branch ${branchId} was not found and delete preview can't be calculated for this note.`);
 
             continue;
         }
@@ -318,6 +320,7 @@ function getDeleteNotesPreview(req: Request) {
     let brokenRelations: AttributeRow[] = [];
 
     if (noteIdsToBeDeleted.size > 0) {
+        const sql = getSql();
         sql.fillParamList(noteIdsToBeDeleted);
 
         // FIXME: No need to do this in database, can be done with becca data
