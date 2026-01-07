@@ -133,6 +133,8 @@ export function isElectron() {
     return !!(window && window.process && window.process.type);
 }
 
+export const isStandalone = window.glob.isStandalone;
+
 /**
  * Returns `true` if the client is running as a PWA, otherwise `false`.
  */
@@ -814,7 +816,7 @@ function compareVersions(v1: string, v2: string): number {
 /**
  * Compares two semantic version strings and returns `true` if the latest version is greater than the current version.
  */
-function isUpdateAvailable(latestVersion: string | null | undefined, currentVersion: string): boolean {
+export function isUpdateAvailable(latestVersion: string | null | undefined, currentVersion: string): boolean {
     if (!latestVersion) {
         return false;
     }

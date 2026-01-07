@@ -58,6 +58,7 @@ function bootstrapRoute() {
    const assetPath = ".";
 
    return {
+        triliumVersion: "1.2.3",
         assetPath,
         baseApiUrl: "../api/",
         themeCssUrl: null,
@@ -67,6 +68,7 @@ function bootstrapRoute() {
         layoutOrientation: "vertical",
         platform: "web",
         isElectron: false,
+        isStandalone: true,
         hasNativeTitleBar: false,
         hasBackgroundEffects: true,
         currentLocale: { id: "en", rtl: false },
