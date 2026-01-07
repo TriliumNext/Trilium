@@ -5,6 +5,7 @@
 import BrowserExecutionContext from './lightweight/cls_provider';
 import BrowserCryptoProvider from './lightweight/crypto_provider';
 import BrowserSqlProvider from './lightweight/sql_provider';
+import WorkerMessagingProvider from './lightweight/messaging_provider';
 import { BrowserRouter } from './lightweight/browser_router';
 import { createConfiguredRouter } from './lightweight/browser_routes';
 
@@ -49,6 +50,9 @@ console.log("[Worker] Error handlers installed");
 
 // Shared SQL provider instance
 const sqlProvider = new BrowserSqlProvider();
+
+// Messaging provider for worker-to-main-thread communication
+const messagingProvider = new WorkerMessagingProvider();
 
 // Core module, router, and initialization state
 let coreModule: typeof import("@triliumnext/core") | null = null;
@@ -100,6 +104,7 @@ async function initialize(): Promise<void> {
             coreModule.initializeCore({
                 executionContext: new BrowserExecutionContext(),
                 crypto: new BrowserCryptoProvider(),
+                messaging: messagingProvider,
                 dbConfig: {
                     provider: sqlProvider,
                     isReadOnly: false,

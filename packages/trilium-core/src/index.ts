@@ -3,6 +3,7 @@ import { CryptoProvider, initCrypto } from "./services/encryption/crypto";
 import { getLog, initLog } from "./services/log";
 import { initSql } from "./services/sql/index";
 import { SqlService, SqlServiceParams } from "./services/sql/sql";
+import { initMessaging, MessagingProvider } from "./services/messaging/index";
 
 export type * from "./services/sql/types";
 export * from "./services/sql/index";
@@ -34,6 +35,10 @@ export { default as TaskContext } from "./services/task_context";
 export { default as revisions } from "./services/revisions";
 export { default as erase } from "./services/erase";
 
+// Messaging system
+export * from "./services/messaging/index";
+export type { MessagingProvider, ServerMessagingProvider, MessageClient, MessageHandler } from "./services/messaging/types";
+
 export { default as becca } from "./becca/becca";
 export { default as becca_loader } from "./becca/becca_loader";
 export { default as becca_service } from "./becca/becca_service";
@@ -58,13 +63,17 @@ export type { NoteParams } from "./services/notes";
 export * as sanitize from "./services/sanitizer";
 export * as routes from "./routes";
 
-export function initializeCore({ dbConfig, executionContext, crypto }: {
+export function initializeCore({ dbConfig, executionContext, crypto, messaging }: {
     dbConfig: SqlServiceParams,
     executionContext: ExecutionContext,
-    crypto: CryptoProvider
+    crypto: CryptoProvider,
+    messaging?: MessagingProvider
 }) {
     initLog();
     initCrypto(crypto);
     initSql(new SqlService(dbConfig, getLog()));
     initContext(executionContext);
+    if (messaging) {
+        initMessaging(messaging);
+    }
 };
