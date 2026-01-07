@@ -139,12 +139,29 @@ export class BrowserRouter {
     /**
      * Dispatch a request to the appropriate handler.
      */
-    async dispatch(method: string, urlString: string, body?: unknown): Promise<BrowserResponse> {
+    async dispatch(method: string, urlString: string, body?: unknown, headers?: Record<string, string>): Promise<BrowserResponse> {
         const url = new URL(urlString);
         const path = url.pathname;
         const query = parseQuery(url.search);
         const upperMethod = method.toUpperCase();
 
+        // Parse JSON body if it's an ArrayBuffer and content-type suggests JSON
+        let parsedBody = body;
+        if (body instanceof ArrayBuffer && headers) {
+            const contentType = headers['content-type'] || headers['Content-Type'] || '';
+            if (contentType.includes('application/json')) {
+                try {
+                    const text = new TextDecoder().decode(body);
+                    if (text.trim()) {
+                        parsedBody = JSON.parse(text);
+                    }
+                } catch (e) {
+                    console.warn('[Router] Failed to parse JSON body:', e);
+                    // Keep original body if JSON parsing fails
+                    parsedBody = body;
+                }
+            }
+        }
         // Find matching route
         for (const route of this.routes) {
             if (route.method !== upperMethod) continue;
@@ -164,7 +181,7 @@ export class BrowserRouter {
                 path,
                 params,
                 query,
-                body
+                body: parsedBody
             };
 
             try {
@@ -190,9 +207,12 @@ export class BrowserRouter {
             return jsonResponse(response, statusCode);
         }
 
-        // Handle undefined (no content)
+        // Handle undefined (no content) - 204 should have no body
         if (result === undefined) {
-            return jsonResponse('', 204);
+            return {
+                status: 204,
+                headers: {}
+            };
         }
 
         // Default: JSON response with 200

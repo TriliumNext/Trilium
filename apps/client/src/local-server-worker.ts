@@ -139,6 +139,7 @@ interface LocalRequest {
     method: string;
     url: string;
     body?: unknown;
+    headers?: Record<string, string>;
 }
 
 // Main dispatch
@@ -151,7 +152,7 @@ async function dispatch(request: LocalRequest) {
     const appRouter = await ensureInitialized();
 
     // Dispatch to the router
-    return appRouter.dispatch(request.method, request.url, request.body);
+    return appRouter.dispatch(request.method, request.url, request.body, request.headers);
 }
 
 // Start initialization immediately when the worker loads
