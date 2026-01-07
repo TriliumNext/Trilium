@@ -134,11 +134,12 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             defaultProtocol: "https://",
             allowedProtocols: ALLOWED_PROTOCOLS
         },
-        emoji: {
-            definitionsUrl: window.glob.isDev
-                ? new URL(import.meta.url).origin + emojiDefinitionsUrl
-                : emojiDefinitionsUrl
-        },
+        // TODO: Disabled for now
+        // emoji: {
+        //     definitionsUrl: window.glob.isDev
+        //         ? new URL(import.meta.url).origin + emojiDefinitionsUrl
+        //         : emojiDefinitionsUrl
+        // },
         syntaxHighlighting: {
             loadHighlightJs: async () => {
                 await ensureMimeTypesForHighlighting();

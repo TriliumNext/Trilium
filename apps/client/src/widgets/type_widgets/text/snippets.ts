@@ -3,7 +3,6 @@ import froca from "../../../services/froca.js";
 import type LoadResults from "../../../services/load_results.js";
 import search from "../../../services/search.js";
 import type { TemplateDefinition } from "@triliumnext/ckeditor5";
-import appContext from "../../../components/app_context.js";
 import type FNote from "../../../entities/fnote.js";
 
 interface TemplateData {
@@ -21,20 +20,25 @@ const debouncedHandleContentUpdate = debounce(handleContentUpdate, 1000);
  * @returns the list of templates.
  */
 export default async function getTemplates() {
-    // Build the definitions and populate the cache.
-    const snippets = await search.searchForNotes("#textSnippet");
-    const definitions: TemplateDefinition[] = [];
-    for (const snippet of snippets) {
-        const { description } = await invalidateCacheFor(snippet);
+    try {
+        // Build the definitions and populate the cache.
+        const snippets = await search.searchForNotes("#textSnippet");
+        const definitions: TemplateDefinition[] = [];
+        for (const snippet of snippets) {
+            const { description } = await invalidateCacheFor(snippet);
 
-        definitions.push({
-            title: snippet.title,
-            data: () => templateCache.get(snippet.noteId)?.content ?? "",
-            icon: buildIcon(snippet),
-            description
-        });
+            definitions.push({
+                title: snippet.title,
+                data: () => templateCache.get(snippet.noteId)?.content ?? "",
+                icon: buildIcon(snippet),
+                description
+            });
+        }
+        return definitions;
+    } catch (e) {
+        logError("Error while building text snippet templates: ", e);
+        return [];
     }
-    return definitions;
 }
 
 async function invalidateCacheFor(snippet: FNote) {
