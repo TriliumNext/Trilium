@@ -1,20 +1,81 @@
+import preact from "@preact/preset-vite";
 import { defineConfig } from 'vite';
 import { join } from 'path';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 const assets = ["assets", "stylesheets", "fonts", "translations"];
 
+const isDev = process.env.NODE_ENV === "development";
+
+// Always copy SQLite WASM files so they're available to the module
+const sqliteWasmPlugin = viteStaticCopy({
+    targets: [
+        {
+            // Copy the entire jswasm directory to maintain the module's expected structure
+            src: "../../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/*",
+            dest: "node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm"
+        }
+    ]
+});
+
+let plugins: any = [
+    preact({
+        babel: {
+            compact: !isDev
+        }
+    }),
+    sqliteWasmPlugin,  // Always include SQLite WASM files
+    viteStaticCopy({
+        targets: assets.map((asset) => ({
+            src: `../client/src/${asset}/*`,
+            dest: asset
+        }))
+    })
+];
+
+if (!isDev) {
+    plugins = [
+        ...plugins,
+        viteStaticCopy({
+            structured: true,
+            targets: [
+                {
+                    src: "../../node_modules/@excalidraw/excalidraw/dist/prod/fonts/*",
+                    dest: "",
+                }
+            ]
+        })
+    ]
+}
+
 export default defineConfig(() => ({
     root: __dirname,
+    cacheDir: '../../node_modules/.vite/apps/client-standalone',
     base: "",
-    plugins: [
-        viteStaticCopy({
-            targets: assets.map((asset) => ({
-                src: `../${asset}/*`,
-                dest: asset
-            }))
-        })
-    ],
+    plugins,
+    resolve: {
+        alias: [
+            {
+                find: "react",
+                replacement: "preact/compat"
+            },
+            {
+                find: "react-dom",
+                replacement: "preact/compat"
+            },
+            {
+                find: "@client",
+                replacement: join(__dirname, "../client/src")
+            }
+        ],
+        dedupe: [
+            "react",
+            "react-dom",
+            "preact",
+            "preact/compat",
+            "preact/hooks"
+        ]
+    },
     server: {
         watch: {
             ignored: ['!**/node_modules/@triliumnext/**']
@@ -41,6 +102,9 @@ export default defineConfig(() => ({
                 main: join(__dirname, 'src', 'index.html')
             }
         }
+    },
+    test: {
+        environment: "happy-dom"
     },
     define: {
         "process.env.IS_PREACT": JSON.stringify("true"),
