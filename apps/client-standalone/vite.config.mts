@@ -12,10 +12,10 @@ const clientWatchPlugin = () => ({
     name: 'client-watch',
     configureServer(server: any) {
         if (isDev) {
-            // Watch client source files
-            server.watcher.add('../client/src/**/*');
+            // Watch client source files (adjusted for new root)
+            server.watcher.add('../../client/src/**/*');
             server.watcher.on('change', (file: string) => {
-                if (file.includes('../client/src/')) {
+                if (file.includes('../../client/src/')) {
                     server.ws.send({
                         type: 'full-reload'
                     });
@@ -30,7 +30,7 @@ const sqliteWasmPlugin = viteStaticCopy({
     targets: [
         {
             // Copy the entire jswasm directory to maintain the module's expected structure
-            src: "../../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/*",
+            src: "../../../node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm/*",
             dest: "node_modules/@sqlite.org/sqlite-wasm/sqlite-wasm/jswasm"
         }
     ]
@@ -45,7 +45,7 @@ let plugins: any = [
     sqliteWasmPlugin,  // Always include SQLite WASM files
     viteStaticCopy({
         targets: assets.map((asset) => ({
-            src: `../client/src/${asset}/*`,
+            src: `../../client/src/${asset}/*`,
             dest: asset
         })),
         // Enable watching in development
@@ -66,7 +66,7 @@ if (!isDev) {
             structured: true,
             targets: [
                 {
-                    src: "../../node_modules/@excalidraw/excalidraw/dist/prod/fonts/*",
+                    src: "../../../node_modules/@excalidraw/excalidraw/dist/prod/fonts/*",
                     dest: "",
                 }
             ]
@@ -75,8 +75,8 @@ if (!isDev) {
 }
 
 export default defineConfig(() => ({
-    root: __dirname,
-    cacheDir: '../../node_modules/.vite/apps/client-standalone',
+    root: join(__dirname, 'src'),  // Set src as root so index.html is served from /
+    cacheDir: '../../../node_modules/.vite/apps/client-standalone',
     base: "",
     plugins,
     resolve: {
@@ -115,9 +115,9 @@ export default defineConfig(() => ({
         fs: {
             allow: [
                 // Allow access to workspace root
-                '../../',
+                '../../../',
                 // Explicitly allow client directory
-                '../client/src/'
+                '../../client/src/'
             ]
         },
         headers: {
@@ -135,11 +135,11 @@ export default defineConfig(() => ({
     },
     build: {
         target: "esnext",
-        outDir: join(__dirname, 'dist'),
+        outDir: join(__dirname, 'dist'),  // Keep output in parent directory
         emptyOutDir: true,
         rollupOptions: {
             input: {
-                main: join(__dirname, 'src', 'index.html')
+                main: join(__dirname, 'src', 'index.html')  // Input relative to config file
             }
         }
     },
