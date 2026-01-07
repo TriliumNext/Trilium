@@ -142,7 +142,21 @@ export default defineConfig(() => ({
         emptyOutDir: true,
         rollupOptions: {
             input: {
-                main: join(__dirname, 'src', 'index.html')
+                main: join(__dirname, 'src', 'index.html'),
+                sw: join(__dirname, 'src', 'sw.ts'),
+                'local-bridge': join(__dirname, 'src', 'local-bridge.ts'),
+                'local-server-worker': join(__dirname, 'src', 'local-server-worker.ts')
+            },
+            output: {
+                entryFileNames: (chunkInfo) => {
+                    // Service worker and other workers should be at root level
+                    if (chunkInfo.name === 'sw' || chunkInfo.name === 'local-server-worker') {
+                        return '[name].js';
+                    }
+                    return 'src/[name].js';
+                },
+                chunkFileNames: "src/[name].js",
+                assetFileNames: "src/[name].[ext]"
             }
         }
     },
