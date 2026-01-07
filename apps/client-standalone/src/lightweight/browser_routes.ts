@@ -43,6 +43,10 @@ export function registerRoutes(router: BrowserRouter): void {
     const apiRoute = createApiRoute(router);
     routes.buildSharedApiRoutes(apiRoute);
     apiRoute('get', '/bootstrap', bootstrapRoute);
+
+    // Dummy routes for compatibility.
+    apiRoute("get", "/api/script/widgets", () => []);
+    apiRoute("get", "/api/system-checks", () => ({ isCpuArchMismatch: false }))
 }
 
 function bootstrapRoute() {
