@@ -5,6 +5,8 @@
 import BrowserExecutionContext from './lightweight/cls_provider';
 import BrowserCryptoProvider from './lightweight/crypto_provider';
 import BrowserSqlProvider from './lightweight/sql_provider';
+import { BrowserRouter } from './lightweight/browser_router';
+import { createConfiguredRouter } from './lightweight/browser_routes';
 
 // Global error handlers - MUST be set up before any async imports
 self.onerror = (message, source, lineno, colno, error) => {
@@ -48,8 +50,9 @@ console.log("[Worker] Error handlers installed");
 // Shared SQL provider instance
 const sqlProvider = new BrowserSqlProvider();
 
-// Core module and initialization state
+// Core module, router, and initialization state
 let coreModule: typeof import("@triliumnext/core") | null = null;
+let router: BrowserRouter | null = null;
 let initPromise: Promise<void> | null = null;
 let initError: Error | null = null;
 
@@ -91,6 +94,10 @@ async function initialize(): Promise<void> {
 
             console.log("[Worker] Supported routes", Object.keys(coreModule.routes));
 
+            // Create and configure the router
+            router = createConfiguredRouter(coreModule.routes);
+            console.log("[Worker] Router configured");
+
             console.log("[Worker] Initializing becca...");
             await coreModule.becca_loader.beccaLoaded;
 
@@ -107,14 +114,14 @@ async function initialize(): Promise<void> {
 
 /**
  * Ensure the worker is initialized before processing requests.
- * Returns the core module if initialization was successful.
+ * Returns the router if initialization was successful.
  */
 async function ensureInitialized() {
     await initialize();
-    if (!coreModule) {
-        throw new Error("Core module not loaded");
+    if (!router) {
+        throw new Error("Router not initialized");
     }
-    return coreModule;
+    return router;
 }
 
 const encoder = new TextEncoder();
@@ -124,15 +131,6 @@ function jsonResponse(obj: unknown, status = 200, extraHeaders = {}) {
     return {
         status,
         headers: { "content-type": "application/json; charset=utf-8", ...extraHeaders },
-        body
-    };
-}
-
-function textResponse(text: string, status = 200, extraHeaders = {}) {
-    const body = encoder.encode(text).buffer;
-    return {
-        status,
-        headers: { "content-type": "text/plain; charset=utf-8", ...extraHeaders },
         body
     };
 }
@@ -194,6 +192,7 @@ async function handleBootstrap() {
 interface LocalRequest {
     method: string;
     url: string;
+    body?: unknown;
 }
 
 // Main dispatch
@@ -201,39 +200,17 @@ async function dispatch(request: LocalRequest) {
     const url = new URL(request.url);
 
     console.log("[Worker] Dispatch:", url.pathname);
-    // NOTE: your core router will do this later.
+    
+    // Bootstrap is handled specially before the router is ready
     if (request.method === "GET" && url.pathname === "/bootstrap") {
         return handleBootstrap();
     }
 
-    // Ensure initialization is complete before accessing routes
-    const core = await ensureInitialized();
+    // Ensure initialization is complete and get the router
+    const appRouter = await ensureInitialized();
 
-    if (request.method === "GET" && url.pathname === "/api/options") {
-        return jsonResponse(core.routes.optionsApiRoute.getOptions());
-    }
-
-    if (request.method === "GET" && url.pathname === "/api/tree") {
-        return jsonResponse(core.routes.treeApiRoute.getTree({
-            query: {
-                subTreeNoteId: url.searchParams.get("subTreeNoteId") || undefined
-            }
-        }));
-    }
-
-    if (request.method === "GET" && url.pathname === "/api/keyboard-actions") {
-        return jsonResponse(core.routes.keysApiRoute.getKeyboardActions());
-    }
-
-    if (request.method === "GET" && url.pathname === "/api/keyboard-shortcuts-for-notes") {
-        return jsonResponse(core.routes.keysApiRoute.getShortcutsForNotes());
-    }
-
-    if (url.pathname.startsWith("/api/echo")) {
-        return jsonResponse({ ok: true, method: request.method, url: request.url });
-    }
-
-    return textResponse("Not found", 404);
+    // Dispatch to the router
+    return appRouter.dispatch(request.method, request.url, request.body);
 }
 
 // Start initialization immediately when the worker loads
