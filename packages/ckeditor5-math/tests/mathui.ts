@@ -410,7 +410,7 @@ describe( 'MathUI', () => {
 				it( 'should bind mainFormView.mathInputView#value to math command value', () => {
 					const command = editor.commands.get( 'math' );
 
-					expect( formView!.mathInputView.value ).to.null;
+					expect( formView!.mathInputView.value ).to.be.null;
 
 					command!.value = 'x^2';
 					expect( formView!.mathInputView.value ).to.equal( 'x^2' );
@@ -419,10 +419,18 @@ describe( 'MathUI', () => {
 				it( 'should execute math command on mainFormView#submit event', () => {
 					const executeSpy = vi.spyOn( editor, 'execute' );
 
-					formView!.mathInputView.fieldView.element!.value = 'x^2';
+					formView!.mathInputView.value = 'x^2';
 					formView!.fire( 'submit' );
 
-					expect(executeSpy.mock.lastCall?.slice(0, 2)).toMatchObject(['math', 'x^2']);
+					expect( executeSpy.mock.lastCall?.slice( 0, 2 ) ).toMatchObject( [ 'math', 'x^2' ] );
+				} );
+
+				it( 'should update equation value when mathInputView changes', () => {
+					formView!.mathInputView.value = 'x^2';
+					expect( formView!.equation ).to.equal( 'x^2' );
+
+					formView!.mathInputView.value = '\\frac{1}{2}';
+					expect( formView!.equation ).to.equal( '\\frac{1}{2}' );
 				} );
 
 				it( 'should hide the balloon on mainFormView#cancel if math command does not have a value', () => {

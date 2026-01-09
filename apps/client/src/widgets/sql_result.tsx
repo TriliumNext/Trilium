@@ -23,7 +23,7 @@ export default function SqlResults() {
                         {t("sql_result.no_rows")}
                     </Alert>
                 ) : (
-                    <div class="sql-console-result-container">
+                    <div className="sql-console-result-container selectable-text">
                         {results?.map(rows => {
                             // inserts, updates
                             if (typeof rows === "object" && !Array.isArray(rows)) {

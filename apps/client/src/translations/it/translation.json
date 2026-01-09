@@ -1895,7 +1895,11 @@
     "create-child-note": "Crea nota figlio",
     "unhoist": "Sganciare",
     "toggle-sidebar": "Attiva/disattiva la barra laterale",
-    "dropping-not-allowed": "Non è consentito lasciare appunti in questa posizione."
+    "dropping-not-allowed": "Non è consentito lasciare appunti in questa posizione.",
+    "clone-indicator-tooltip": "Questa nota ha {{- count}} genitori: {{- parents}}",
+    "clone-indicator-tooltip-single": "Questa nota è stata clonata (1 genitore aggiuntivo: {{- parent}})",
+    "shared-indicator-tooltip": "Questa nota è condivisa pubblicamente",
+    "shared-indicator-tooltip-with-url": "Questa nota è condivisa pubblicamente all'indirizzo: {{- url}}"
   },
   "title_bar_buttons": {
     "window-on-top": "Mantieni la finestra in primo piano"
@@ -2200,7 +2204,14 @@
     "execute_sql_description": "Questa nota è una nota SQL. Clicca per eseguire la query SQL.",
     "shared_copy_to_clipboard": "Copia link negli appunti",
     "shared_open_in_browser": "Apri il link nel browser",
-    "shared_unshare": "Rimuovi condivisione"
+    "shared_unshare": "Rimuovi condivisione",
+    "save_status_saved": "Salvato",
+    "save_status_saving": "Salvataggio in corso...",
+    "save_status_unsaved": "Non salvato",
+    "save_status_error": "Salvataggio non riuscito",
+    "save_status_saving_tooltip": "Le modifiche sono state salvate.",
+    "save_status_unsaved_tooltip": "Ci sono modifiche non salvate. Verranno salvate automaticamente tra un attimo.",
+    "save_status_error_tooltip": "Si è verificato un errore durante il salvataggio della nota. Se possibile, prova a copiare il contenuto della nota altrove e a ricaricare l'applicazione."
   },
   "breadcrumb": {
     "workspace_badge": "Area di lavoro",
@@ -2243,5 +2254,18 @@
     "empty_button": "Nascondi il pannello",
     "toggle": "Attiva/disattiva pannello destro",
     "custom_widget_go_to_source": "Vai al codice sorgente"
+  },
+  "pdf": {
+    "attachments_one": "{{count}} allegato",
+    "attachments_many": "{{count}} allegati",
+    "attachments_other": "{{count}} allegati",
+    "layers_one": "{{count}} livello",
+    "layers_many": "{{count}} livelli",
+    "layers_other": "{{count}} livelli",
+    "pages_one": "{{count}} pagina",
+    "pages_many": "{{count}} pagine",
+    "pages_other": "{{count}} pagine",
+    "pages_alt": "Pagina {{pageNumber}}",
+    "pages_loading": "Caricamento in corso..."
   }
 }

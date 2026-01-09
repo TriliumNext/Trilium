@@ -31,5 +31,17 @@
   },
   "add_link": {
     "note": "नोट"
+  },
+  "bulk_actions": {
+    "other": "अन्य"
+  },
+  "clone_to": {
+    "search_for_note_by_its_name": "नोट क नाम से नोट खोजें"
+  },
+  "confirm": {
+    "also_delete_note": "नोट भी डिलीट करें"
+  },
+  "delete_notes": {
+    "delete_notes_preview": "नोट्स प्रिव्यू डिलीट करें"
   }
 }

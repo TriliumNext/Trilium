@@ -5,7 +5,7 @@ import { Dropdown as BootstrapDropdown } from "bootstrap";
 import clsx from "clsx";
 import { type ComponentChildren, RefObject } from "preact";
 import { createPortal } from "preact/compat";
-import { useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { CommandNames } from "../../components/app_context";
 import NoteContext from "../../components/note_context";
@@ -338,15 +338,19 @@ interface AttributesProps extends StatusBarContext {
 function AttributesButton({ note, attributesShown, setAttributesShown }: AttributesProps) {
     const [ count, setCount ] = useState(note.attributes.length);
 
+    const refreshCount = useCallback((note: FNote) => {
+        return note.getAttributes().filter(a => !a.isAutoLink).length;
+    }, []);
+
     // React to note changes.
     useEffect(() => {
-        setCount(note.getAttributes().filter(a => !a.isAutoLink).length);
-    }, [ note ]);
+        setCount(refreshCount(note));
+    }, [ note, refreshCount ]);
 
     // React to changes in count.
     useTriliumEvent("entitiesReloaded", (({loadResults}) => {
         if (loadResults.getAttributeRows().some(attr => attributes.isAffecting(attr, note))) {
-            setCount(note.attributes.length);
+            setCount(refreshCount(note));
         }
     }));
 

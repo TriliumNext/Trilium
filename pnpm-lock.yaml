@@ -104,8 +104,8 @@ importers:
         specifier: 0.18.0
         version: 0.18.0
       rollup-plugin-webpack-stats:
-        specifier: 2.1.8
-        version: 2.1.8(rolldown@1.0.0-beta.29)(rollup@4.52.0)(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
+        specifier: 2.1.9
+        version: 2.1.9(rolldown@1.0.0-beta.29)(rollup@4.52.0)(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
       tslib:
         specifier: 2.8.1
         version: 2.8.1
@@ -1073,6 +1073,9 @@ importers:
       '@ckeditor/ckeditor5-icons':
         specifier: 47.3.0
         version: 47.3.0
+      mathlive:
+        specifier: 0.108.2
+        version: 0.108.2
     devDependencies:
       '@ckeditor/ckeditor5-dev-build-tools':
         specifier: 54.2.3
@@ -2128,6 +2131,10 @@ packages:
   '@colors/colors@1.5.0':
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
     engines: {node: '>=0.1.90'}
+
+  '@cortex-js/compute-engine@0.30.2':
+    resolution: {integrity: sha512-Zx+iisk9WWdbxjm8EYsneIBszvjfUs7BHNwf1jBtSINIgfWGpHrTTq9vW0J59iGCFt6bOFxbmWyxNMRSmksHMA==}
+    engines: {node: '>=21.7.3', npm: '>=10.5.0'}
 
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
@@ -7076,6 +7083,10 @@ packages:
   compare-versions@6.1.1:
     resolution: {integrity: sha512-4hm4VPpIecmlg59CHXnRDnqGplJFrbLG4aFEl5vl6cK1u76ws3LLvX7ikFnTDl5vo39sjWD6AaDPYodJp/NNHg==}
 
+  complex-esm@2.1.1-esm1:
+    resolution: {integrity: sha512-IShBEWHILB9s7MnfyevqNGxV0A1cfcSnewL/4uPFiSxkcQL4Mm3FxJ0pXMtCXuWLjYz3lRRyk6OfkeDZcjD6nw==}
+    engines: {node: '>=16.14.2', npm: '>=8.5.0'}
+
   component-emitter@1.3.1:
     resolution: {integrity: sha512-T0+barUSQRTUQASh8bx02dl+DhF54GtIDY13Y3m9oWTklKbb3Wv974meRpeZ3lp1JpLVECWWNHC4vaG2XHXouQ==}
 
@@ -10269,6 +10280,9 @@ packages:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
 
+  mathlive@0.108.2:
+    resolution: {integrity: sha512-GIZkfprGTxrbHckOvwo92ZmOOxdD018BHDzlrEwYUU+pzR5KabhqI1s43lxe/vqXdF5RLiQKgDcuk5jxEjhkYg==}
+
   mathml-tag-names@2.1.3:
     resolution: {integrity: sha512-APMBEanjybaPzUrfqU0IMU5I0AswKMH7k8OTLs0vvV4KZpExkTkY87nR/zpbuTPj+gARop7aGUbl11pnDfW6xg==}
 
@@ -12389,8 +12403,8 @@ packages:
     resolution: {integrity: sha512-EsoOi8moHN6CAYyTZipxDDVTJn0j2nBCWor4wRU45RQ8ER2qREDykXLr3Ulz6hBh6oBKCFTQIjo21i0FXNo/IA==}
     hasBin: true
 
-  rollup-plugin-stats@1.5.3:
-    resolution: {integrity: sha512-0IYVGhsFTjcddpqcElzU7Mi4vmDLihCCTH5QgCCgWpNY1VKMXVoEpxmCmGjivtJKLzI6t5QIicsPBC93UWWN2g==}
+  rollup-plugin-stats@1.5.4:
+    resolution: {integrity: sha512-b1hYagYLTyr8mCVUb7e1x9fjxOXFyeWmV9hIr7vYqq/agN+WDaGNzz+KmM3GAx0KGGI2qllOL+zAUi/l39s/Sg==}
     engines: {node: '>=18'}
     peerDependencies:
       rolldown: ^1.0.0-beta.0
@@ -12416,8 +12430,8 @@ packages:
     peerDependencies:
       rollup: ^3.0.0||^4.0.0
 
-  rollup-plugin-webpack-stats@2.1.8:
-    resolution: {integrity: sha512-agc1OE+QwG3sGeTSdruh16DkxPb6QkgR7I3gntPDFHMXsK1bR2ADHUVod1eoE+epAOqiv3idx/hcSqZAI3a1yg==}
+  rollup-plugin-webpack-stats@2.1.9:
+    resolution: {integrity: sha512-ft1vdp3xPjE+zw8A22yCToo5cpymoWCjNDefWNO1awywsDrSDoRJhkoZTENkhJwmfh6oe5ztpGu7PfnJOMXc2g==}
     engines: {node: '>=18'}
     peerDependencies:
       rolldown: ^1.0.0-beta.0
@@ -15285,8 +15299,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-block-quote@47.3.0':
     dependencies:
@@ -15297,8 +15309,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-bookmark@47.3.0':
     dependencies:
@@ -15361,8 +15371,6 @@ snapshots:
       '@ckeditor/ckeditor5-core': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-code-block@47.3.0(patch_hash=2361d8caad7d6b5bddacc3a3b4aa37dbfba260b1c1b22a450413a79c1bb1ce95)':
     dependencies:
@@ -15536,6 +15544,8 @@ snapshots:
       '@ckeditor/ckeditor5-widget': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-easy-image@47.3.0':
     dependencies:
@@ -15573,6 +15583,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-editor-inline@47.3.0':
     dependencies:
@@ -15582,8 +15594,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-editor-multi-root@47.3.0':
     dependencies:
@@ -15606,8 +15616,6 @@ snapshots:
       '@ckeditor/ckeditor5-table': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-emoji@47.3.0':
     dependencies:
@@ -15633,6 +15641,8 @@ snapshots:
       '@ckeditor/ckeditor5-core': 47.3.0
       '@ckeditor/ckeditor5-engine': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-essentials@47.3.0':
     dependencies:
@@ -15664,8 +15674,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-export-word@47.3.0':
     dependencies:
@@ -15690,6 +15698,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-font@47.3.0':
     dependencies:
@@ -15699,8 +15709,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-footnotes@47.3.0':
     dependencies:
@@ -15731,8 +15739,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-heading@47.3.0':
     dependencies:
@@ -15764,6 +15770,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       '@ckeditor/ckeditor5-widget': 47.3.0
       ckeditor5: 47.3.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-html-embed@47.3.0':
     dependencies:
@@ -15823,8 +15831,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-indent@47.3.0':
     dependencies:
@@ -15859,6 +15865,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-link@47.3.0':
     dependencies:
@@ -15885,6 +15893,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-list@47.3.0':
     dependencies:
@@ -15937,8 +15947,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       '@ckeditor/ckeditor5-widget': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-mention@47.3.0(patch_hash=5981fb59ba35829e4dff1d39cf771000f8a8fdfa7a34b51d8af9549541f2d62d)':
     dependencies:
@@ -15948,8 +15956,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-merge-fields@47.3.0':
     dependencies:
@@ -15962,8 +15968,6 @@ snapshots:
       '@ckeditor/ckeditor5-widget': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-minimap@47.3.0':
     dependencies:
@@ -15972,8 +15976,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-operations-compressor@47.3.0':
     dependencies:
@@ -16093,8 +16095,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-restricted-editing@47.3.0':
     dependencies:
@@ -16216,8 +16216,6 @@ snapshots:
       '@ckeditor/ckeditor5-widget': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-template@47.3.0':
     dependencies:
@@ -16498,6 +16496,11 @@ snapshots:
       w3c-keyname: 2.2.8
 
   '@colors/colors@1.5.0': {}
+
+  '@cortex-js/compute-engine@0.30.2':
+    dependencies:
+      complex-esm: 2.1.1-esm1
+      decimal.js: 10.6.0
 
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
@@ -22305,6 +22308,8 @@ snapshots:
 
   compare-versions@6.1.1: {}
 
+  complex-esm@2.1.1-esm1: {}
+
   component-emitter@1.3.1: {}
 
   compress-commons@6.0.2:
@@ -22991,8 +22996,7 @@ snapshots:
 
   decimal.js@10.5.0: {}
 
-  decimal.js@10.6.0:
-    optional: true
+  decimal.js@10.6.0: {}
 
   decko@1.2.0: {}
 
@@ -26338,6 +26342,10 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
+  mathlive@0.108.2:
+    dependencies:
+      '@cortex-js/compute-engine': 0.30.2
+
   mathml-tag-names@2.1.3: {}
 
   mdast-util-find-and-replace@3.0.2:
@@ -28808,7 +28816,7 @@ snapshots:
       '@rolldown/binding-win32-x64-msvc': 1.0.0-beta.29
     optional: true
 
-  rollup-plugin-stats@1.5.3(rolldown@1.0.0-beta.29)(rollup@4.52.0)(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1)):
+  rollup-plugin-stats@1.5.4(rolldown@1.0.0-beta.29)(rollup@4.52.0)(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1)):
     optionalDependencies:
       rolldown: 1.0.0-beta.29
       rollup: 4.52.0
@@ -28841,9 +28849,9 @@ snapshots:
       '@rollup/pluginutils': 5.1.4(rollup@4.52.0)
       rollup: 4.52.0
 
-  rollup-plugin-webpack-stats@2.1.8(rolldown@1.0.0-beta.29)(rollup@4.52.0)(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1)):
+  rollup-plugin-webpack-stats@2.1.9(rolldown@1.0.0-beta.29)(rollup@4.52.0)(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1)):
     dependencies:
-      rollup-plugin-stats: 1.5.3(rolldown@1.0.0-beta.29)(rollup@4.52.0)(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
+      rollup-plugin-stats: 1.5.4(rolldown@1.0.0-beta.29)(rollup@4.52.0)(vite@7.3.0(@types/node@24.10.4)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.1)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
     optionalDependencies:
       rolldown: 1.0.0-beta.29
       rollup: 4.52.0

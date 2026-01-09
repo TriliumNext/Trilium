@@ -11,6 +11,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  sanity-check:
+    name: Sanity Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Check version consistency
+        run: pnpm tsx ${{ github.workspace }}/scripts/check-version-consistency.ts ${{ github.ref_name }}
   make-electron:
     name: Make Electron
     strategy:

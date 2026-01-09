@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/desktop",
-  "version": "0.101.1",
+  "version": "0.101.3",
   "description": "Build your personal knowledge base with Trilium Notes",
   "private": true,
   "main": "src/main.ts",

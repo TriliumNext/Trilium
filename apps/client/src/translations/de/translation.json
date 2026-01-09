@@ -25,7 +25,8 @@
     },
     "widget-list-error": {
       "title": "Abruf der Liste von Widgets vom Server ist fehlgeschlagen"
-    }
+    },
+    "open-script-note": "Script-Notiz öffnen"
   },
   "add_link": {
     "add_link": "Link hinzufügen",
@@ -208,7 +209,8 @@
   "info": {
     "modalTitle": "Infonachricht",
     "closeButton": "Schließen",
-    "okButton": "OK"
+    "okButton": "OK",
+    "copy_to_clipboard": "In die Zwischenablage kopieren"
   },
   "jump_to_note": {
     "search_button": "Suche im Volltext",
@@ -695,7 +697,9 @@
     "export_as_image": "Als Bild exportieren",
     "export_as_image_png": "PNG (Raster)",
     "export_as_image_svg": "SVG (Vektor)",
-    "note_map": "Notizen Karte"
+    "note_map": "Notizen Karte",
+    "view_revisions": "Notizrevisionen",
+    "advanced": "Erweitert"
   },
   "onclick_button": {
     "no_click_handler": "Das Schaltflächen-Widget „{{componentId}}“ hat keinen definierten Klick-Handler"

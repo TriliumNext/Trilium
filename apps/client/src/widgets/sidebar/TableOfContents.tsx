@@ -2,12 +2,14 @@ import "./TableOfContents.css";
 
 import { CKTextEditor, ModelElement } from "@triliumnext/ckeditor5";
 import clsx from "clsx";
-import { useCallback, useEffect, useState } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
+import math from "../../services/math";
 import { randomString } from "../../services/utils";
 import { useActiveNoteContext, useContentElement, useGetContextData, useIsNoteReadOnly, useNoteProperty, useTextEditor } from "../react/hooks";
 import Icon from "../react/Icon";
+import RawHtml from "../react/RawHtml";
 import RightPanelWidget from "./RightPanelWidget";
 
 //#region Generic impl.
@@ -80,6 +82,22 @@ function TableOfContentsHeading({ heading, scrollToHeading, activeHeadingId }: {
 }) {
     const [ collapsed, setCollapsed ] = useState(false);
     const isActive = heading.id === activeHeadingId;
+    const contentRef = useRef<HTMLElement>(null);
+
+    // Render math equations after component mounts/updates
+    useEffect(() => {
+        if (!contentRef.current) return;
+        const mathElements = contentRef.current.querySelectorAll(".ck-math-tex");
+
+        for (const mathEl of mathElements ?? []) {
+            try {
+                math.render(mathEl.textContent || "", mathEl as HTMLElement);
+            } catch (e) {
+                console.warn("Failed to render math in TOC:", e);
+            }
+        }
+    }, [heading.text]);
+
     return (
         <>
             <li className={clsx(collapsed && "collapsed", isActive && "active")}>
@@ -90,10 +108,12 @@ function TableOfContentsHeading({ heading, scrollToHeading, activeHeadingId }: {
                         onClick={() => setCollapsed(!collapsed)}
                     />
                 )}
-                <span
+                <RawHtml
+                    containerRef={contentRef}
                     className="item-content"
                     onClick={() => scrollToHeading(heading)}
-                >{heading.text}</span>
+                    html={heading.text}
+                />
             </li>
             {heading.children && (
                 <ol>
@@ -189,9 +209,23 @@ function extractTocFromTextEditor(editor: CKTextEditor) {
             if (type !== "elementStart" || !item.is('element') || !item.name.startsWith('heading')) continue;
 
             const level = Number(item.name.replace( 'heading', '' ));
-            const text = Array.from( item.getChildren() )
-                .map( c => c.is( '$text' ) ? c.data : '' )
-                .join( '' );
+
+            // Convert model element to view, then to DOM to get HTML
+            const viewEl = editor.editing.mapper.toViewElement(item);
+            let text = '';
+            if (viewEl) {
+                const domEl = editor.editing.view.domConverter.mapViewToDom(viewEl);
+                if (domEl instanceof HTMLElement) {
+                    text = domEl.innerHTML;
+                }
+            }
+
+            // Fallback to plain text if conversion fails
+            if (!text) {
+                text = Array.from( item.getChildren() )
+                    .map( c => c.is( '$text' ) ? c.data : '' )
+                    .join( '' );
+            }
 
             // Assign a unique ID
             let tocId = item.getAttribute(TOC_ID) as string | undefined;

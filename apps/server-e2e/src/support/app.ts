@@ -37,7 +37,7 @@ export default class App {
         this.noteTreeHoistedNote = this.noteTree.locator(".fancytree-node", { has: page.locator(".unhoist-button") });
         this.launcherBar = page.locator("#launcher-container");
         this.currentNoteSplit = page.locator(".note-split:not(.hidden-ext)");
-        this.currentNoteSplitTitle = this.currentNoteSplit.locator(".note-title");
+        this.currentNoteSplitTitle = this.currentNoteSplit.locator(".note-title").first();
         this.currentNoteSplitContent = this.currentNoteSplit.locator(".note-detail-printable.visible");
         this.sidebar = page.locator("#right-pane");
     }

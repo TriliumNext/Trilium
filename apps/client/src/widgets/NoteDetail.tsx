@@ -215,7 +215,7 @@ export default function NoteDetail() {
     return (
         <div
             ref={containerRef}
-            class={`note-detail ${isFullHeight ? "full-height" : ""}`}
+            class={`component note-detail ${isFullHeight ? "full-height" : ""}`}
         >
             {Object.entries(noteTypesToRender).map(([ itemType, Element ]) => {
                 return <NoteDetailWrapper

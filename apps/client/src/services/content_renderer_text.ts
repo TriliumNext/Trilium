@@ -15,7 +15,14 @@ export default async function renderText(note: FNote | FAttachment, $renderedCon
 
     if (blob && !isHtmlEmpty(blob.content)) {
         $renderedContent.append($('<div class="ck-content">').html(blob.content));
-        await renderIncludedNotes($renderedContent[0]);
+
+        const seenNoteIds = options.seenNoteIds ?? new Set<string>();
+        seenNoteIds.add("noteId" in note ? note.noteId : note.attachmentId);
+        if (!options.noIncludedNotes) {
+            await renderIncludedNotes($renderedContent[0], seenNoteIds);
+        } else {
+            $renderedContent.find("section.include-note").remove();
+        }
 
         if ($renderedContent.find("span.math-tex").length > 0) {
             renderMathInElement($renderedContent[0], { trust: true });
@@ -35,11 +42,11 @@ export default async function renderText(note: FNote | FAttachment, $renderedCon
         await rewriteMermaidDiagramsInContainer($renderedContent[0] as HTMLDivElement);
         await formatCodeBlocks($renderedContent);
     } else if (note instanceof FNote && !options.noChildrenList) {
-        await renderChildrenList($renderedContent, note);
+        await renderChildrenList($renderedContent, note, options.includeArchivedNotes ?? false);
     }
 }
 
-async function renderIncludedNotes(contentEl: HTMLElement) {
+async function renderIncludedNotes(contentEl: HTMLElement, seenNoteIds: Set<string>) {
     // TODO: Consider duplicating with server's share/content_renderer.ts.
     const includeNoteEls = contentEl.querySelectorAll("section.include-note");
 
@@ -66,8 +73,18 @@ async function renderIncludedNotes(contentEl: HTMLElement) {
             continue;
         }
 
-        const renderedContent = (await content_renderer.getRenderedContent(note)).$renderedContent;
+        if (seenNoteIds.has(noteId)) {
+            console.warn(`Skipping inclusion of ${noteId} to avoid circular reference.`);
+            includeNoteEl.remove();
+            continue;
+        }
+
+        const renderedContent = (await content_renderer.getRenderedContent(note, {
+            seenNoteIds
+        })).$renderedContent;
         includeNoteEl.replaceChildren(...renderedContent);
+
+        seenNoteIds.add(noteId);
     }
 }
 
@@ -98,7 +115,7 @@ export async function applyInlineMermaid(container: HTMLDivElement) {
     }
 }
 
-async function renderChildrenList($renderedContent: JQuery<HTMLElement>, note: FNote) {
+async function renderChildrenList($renderedContent: JQuery<HTMLElement>, note: FNote, includeArchivedNotes: boolean) {
     let childNoteIds = note.getChildNoteIds();
 
     if (!childNoteIds.length) {
@@ -108,14 +125,16 @@ async function renderChildrenList($renderedContent: JQuery<HTMLElement>, note: F
     $renderedContent.css("padding", "10px");
     $renderedContent.addClass("text-with-ellipsis");
 
+    // just load the first 10 child notes
     if (childNoteIds.length > 10) {
         childNoteIds = childNoteIds.slice(0, 10);
     }
 
-    // just load the first 10 child notes
     const childNotes = await froca.getNotes(childNoteIds);
 
     for (const childNote of childNotes) {
+        if (childNote.isArchived && !includeArchivedNotes) continue;
+
         $renderedContent.append(
             await link.createLink(`${note.noteId}/${childNote.noteId}`, {
                 showTooltip: false,

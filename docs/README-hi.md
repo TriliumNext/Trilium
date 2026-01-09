@@ -107,7 +107,7 @@ Our documentation is available in multiple formats:
   maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
   [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
   for visualizing notes and their relations
-* Mind maps, based on [Mind Elixir](https://docs.mind-elixir.com/)
+* [Mind Elixir](https://docs.mind-elixir.com/) पर आधारित माइंड मैप्स
 * [Geo maps](https://docs.triliumnotes.org/user-guide/collections/geomap) with
   location pins and GPX tracks
 * [Scripting](https://docs.triliumnotes.org/user-guide/scripts) - see [Advanced
@@ -157,7 +157,7 @@ compatible with the latest zadam/trilium version of
 versions of TriliumNext/Trilium have their sync versions incremented which
 prevents direct migration.
 
-## 💬 Discuss with us
+## 💬 हमारे साथ चर्चा करें
 
 Feel free to join our official conversations. We would love to hear what
 features, suggestions, or issues you may have!
