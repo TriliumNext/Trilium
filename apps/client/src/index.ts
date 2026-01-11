@@ -33,7 +33,9 @@ async function setupGlob() {
 function getDevice() {
     // Respect user's manual override via URL.
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has("desktop")) {
+    if (urlParams.has("print")) {
+        return "print";
+    } else if (urlParams.has("desktop")) {
         return "desktop";
     } else if (urlParams.has("mobile")) {
         return "mobile";
@@ -116,10 +118,16 @@ function setBodyAttributes() {
 }
 
 async function loadScripts() {
-    if (glob.device === "mobile") {
-        await import("./mobile.js");
-    } else {
-        await import("./desktop.js");
+    switch (glob.device) {
+        case "mobile":
+            await import("./mobile.js");
+            break;
+        case "print":
+            await import("./print.js");
+            break;
+        case "desktop":
+        default:
+            await import("./desktop.js");
     }
 }
 
