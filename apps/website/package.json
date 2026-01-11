@@ -11,7 +11,7 @@
 	"dependencies": {
 		"i18next": "25.7.3",
 		"i18next-http-backend": "3.0.2",
-		"preact": "10.28.1",
+		"preact": "10.28.2",
 		"preact-iso": "2.11.1",
 		"preact-render-to-string": "6.6.5",
 		"react-i18next": "16.5.1"
