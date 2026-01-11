@@ -1,6 +1,6 @@
-import preact from "@preact/preset-vite";
-import { defineConfig } from 'vite';
+import prefresh from '@prefresh/vite';
 import { join } from 'path';
+import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
 const assets = ["assets", "stylesheets", "fonts", "translations"];
@@ -40,11 +40,6 @@ const sqliteWasmPlugin = viteStaticCopy({
 });
 
 let plugins: any = [
-    preact({
-        babel: {
-            compact: !isDev
-        }
-    }),
     sqliteWasmPlugin,  // Always include SQLite WASM files
     viteStaticCopy({
         targets: assets.map((asset) => ({
@@ -59,7 +54,10 @@ let plugins: any = [
         })
     }),
     // Watch client files for changes in development
-    ...(isDev ? [clientWatchPlugin()] : [])
+    ...(isDev ? [
+        prefresh(),
+        clientWatchPlugin()
+    ] : [])
 ];
 
 if (!isDev) {
@@ -82,6 +80,15 @@ export default defineConfig(() => ({
     cacheDir: '../../../node_modules/.vite/apps/client-standalone',
     base: "",
     plugins,
+    esbuild: {
+        jsx: 'automatic',
+        jsxImportSource: 'preact',
+        jsxDev: isDev
+    },
+    css: {
+        transformer: 'lightningcss',
+        devSourcemap: isDev
+    },
     publicDir: join(__dirname, 'public'),
     resolve: {
         alias: [
