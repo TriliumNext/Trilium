@@ -25,8 +25,22 @@ async function setupGlob() {
     window.global = globalThis; /* fixes https://github.com/webpack/webpack/issues/10035 */
     window.glob = {
         ...json,
-        activeDialog: null
+        activeDialog: null,
+        device: getDevice()
     };
+}
+
+function getDevice() {
+    // Respect user's manual override via URL.
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("desktop")) {
+        return "desktop";
+    } else if (urlParams.has("mobile")) {
+        return "mobile";
+    }
+
+    const deviceCookie = document.cookie.split("; ").find(row => row.startsWith("trilium-device="))?.split("=")[1];
+    return deviceCookie ?? "desktop";
 }
 
 async function loadBootstrapCss() {
