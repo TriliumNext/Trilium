@@ -1,6 +1,6 @@
 {
     "formatVersion": 2,
-    "appVersion": "0.101.1",
+    "appVersion": "0.101.3",
     "files": [
         {
             "isClone": false,
@@ -2426,6 +2426,122 @@
                                             "format": "markdown",
                                             "dataFileName": "Keyboard shortcuts.md",
                                             "attachments": []
+                                        },
+                                        {
+                                            "isClone": false,
+                                            "noteId": "wyaGBBQrl4i3",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "gh7bpGYxajRS",
+                                                "Vc8PjrjAGuOp",
+                                                "oPVyFC7WL2Lp",
+                                                "wyaGBBQrl4i3"
+                                            ],
+                                            "title": "Hiding the subtree",
+                                            "notePosition": 40,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "text",
+                                            "mime": "text/html",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "hiding-subtree",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                },
+                                                {
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-hide",
+                                                    "isInheritable": false,
+                                                    "position": 40
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "GTwFsgaA0lCt",
+                                                    "isInheritable": false,
+                                                    "position": 50
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "CtBQqbwXDx1w",
+                                                    "isInheritable": false,
+                                                    "position": 60
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "2FvYrpmOXm29",
+                                                    "isInheritable": false,
+                                                    "position": 70
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "IjZS7iK5EXtb",
+                                                    "isInheritable": false,
+                                                    "position": 80
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "oPVyFC7WL2Lp",
+                                                    "isInheritable": false,
+                                                    "position": 90
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "zP3PMqaG71Ct",
+                                                    "isInheritable": false,
+                                                    "position": 100
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "hrZ1D00cLbal",
+                                                    "isInheritable": false,
+                                                    "position": 110
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "eIg8jdvaoNNd",
+                                                    "isInheritable": false,
+                                                    "position": 120
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "TBwsyfadTA18",
+                                                    "isInheritable": false,
+                                                    "position": 130
+                                                }
+                                            ],
+                                            "format": "markdown",
+                                            "dataFileName": "Hiding the subtree.md",
+                                            "attachments": [
+                                                {
+                                                    "attachmentId": "d9Sq9avKDptU",
+                                                    "title": "image.png",
+                                                    "role": "image",
+                                                    "mime": "image/png",
+                                                    "position": 10,
+                                                    "dataFileName": "Hiding the subtree_image.png"
+                                                },
+                                                {
+                                                    "attachmentId": "VmRtx3vS97v1",
+                                                    "title": "image.png",
+                                                    "role": "image",
+                                                    "mime": "image/png",
+                                                    "position": 10,
+                                                    "dataFileName": "1_Hiding the subtree_image.png"
+                                                }
+                                            ]
                                         }
                                     ]
                                 },

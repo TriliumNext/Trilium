@@ -800,7 +800,8 @@
     "geo-map": "Geo Map",
     "board": "Board",
     "presentation": "Presentation",
-    "include_archived_notes": "Show archived notes"
+    "include_archived_notes": "Show archived notes",
+    "hide_child_notes": "Hide child notes in tree"
   },
   "edited_notes": {
     "no_edited_notes_found": "No edited notes on this day yet...",
@@ -1643,6 +1644,7 @@
   "tree-context-menu": {
     "open-in-a-new-tab": "Open in a new tab",
     "open-in-a-new-split": "Open in a new split",
+    "open-in-a-new-window": "Open in a new window",
     "insert-note-after": "Insert note after",
     "insert-child-note": "Insert child note",
     "archive": "Archive",
@@ -1655,6 +1657,8 @@
     "advanced": "Advanced",
     "expand-subtree": "Expand subtree",
     "collapse-subtree": "Collapse subtree",
+    "hide-subtree": "Hide subtree",
+    "show-subtree": "Show subtree",
     "sort-by": "Sort by...",
     "recent-changes-in-subtree": "Recent changes in subtree",
     "convert-to-attachment": "Convert to attachment",
@@ -1772,7 +1776,12 @@
     "clone-indicator-tooltip": "This note has {{- count}} parents: {{- parents}}",
     "clone-indicator-tooltip-single": "This note is cloned (1 additional parent: {{- parent}})",
     "shared-indicator-tooltip": "This note is shared publicly",
-    "shared-indicator-tooltip-with-url": "This note is shared publicly at: {{- url}}"
+    "shared-indicator-tooltip-with-url": "This note is shared publicly at: {{- url}}",
+    "subtree-hidden-tooltip_one": "{{count}} child note that is hidden from the tree",
+    "subtree-hidden-tooltip_other": "{{count}} child notes that are hidden from the tree",
+    "subtree-hidden-moved-title": "Added to {{title}}",
+    "subtree-hidden-moved-description-collection": "This collection hides its child notes in the tree.",
+    "subtree-hidden-moved-description-other": "Child notes are hidden in the tree for this note."
   },
   "title_bar_buttons": {
     "window-on-top": "Keep Window on Top"

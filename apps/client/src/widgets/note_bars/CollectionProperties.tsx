@@ -84,6 +84,13 @@ function ViewOptions({ note, viewType }: { note: FNote, viewType: ViewTypeOption
 
             <ViewProperty note={note} property={{
                 type: "checkbox",
+                icon: "bx bx-hide",
+                label: t("book_properties.hide_child_notes"),
+                bindToLabel: "subtreeHidden"
+            } as CheckBoxProperty} />
+
+            <ViewProperty note={note} property={{
+                type: "checkbox",
                 icon: "bx bx-archive",
                 label: t("book_properties.include_archived_notes"),
                 bindToLabel: "includeArchived"

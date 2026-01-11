@@ -1,12 +1,12 @@
-import test, { BrowserContext, expect, Page } from "@playwright/test";
+import test, { expect, Page } from "@playwright/test";
 
 import App from "../support/app";
 
 test.beforeEach(async ({ page, context }) => {
-    const app = await setLayout({ page, context }, true);
+    const app = new App(page, context);
+    await app.goto();
     await app.setOption("rightPaneCollapsedItems", "[]");
 });
-test.afterEach(async ({ page, context }) => await setLayout({ page, context }, false));
 
 test("Table of contents works", async ({ page, context }) => {
     const app = new App(page, context);
@@ -73,13 +73,15 @@ test("Attachments listing works", async ({ page, context }) => {
 test("Download original PDF works", async ({ page, context }) => {
     const app = new App(page, context);
     await app.goto();
-    await app.goToNoteInNewTab("Dacia Logan.pdf");
+    await app.goToNoteInNewTab("Layers test.pdf");
     const pdfHelper = new PdfHelper(app);
     await pdfHelper.toBeInitialized();
 
+    const downloadButton = app.currentNoteSplit.locator(".icon-action.bx.bx-download");
+    await expect(downloadButton).toBeVisible();
     const [ download ] = await Promise.all([
         page.waitForEvent("download"),
-        app.currentNoteSplit.locator(".icon-action.bx.bx-download").click()
+        downloadButton.click()
     ]);
     expect(download).toBeDefined();
 });
@@ -105,13 +107,6 @@ test("Layers listing works", async ({ page, context }) => {
     await expect(layersList.locator(".pdf-layer-item")).toHaveCount(0);
 });
 
-async function setLayout({ page, context}: { page: Page; context: BrowserContext }, newLayout: boolean) {
-    const app = new App(page, context);
-    await app.goto();
-    await app.setOption("newLayout", newLayout ? "true" : "false");
-    return app;
-}
-
 class PdfHelper {
     private contentFrame: ReturnType<Page["frameLocator"]>;
 
@@ -125,5 +120,6 @@ class PdfHelper {
 
     async toBeInitialized() {
         await expect(this.contentFrame.locator("#pageNumber")).toBeVisible();
+        await expect(this.contentFrame.locator(".page")).toBeVisible();
     }
 }

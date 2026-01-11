@@ -21,7 +21,7 @@
     },
     "bundle-error": {
       "title": "Echec du chargement d'un script personnalisé",
-      "message": "Le script de la note avec l'ID \"{{id}}\", intitulé \"{{title}}\" n'a pas pu être exécuté à cause de\n\n{{message}}"
+      "message": "Le script n'a pas pu être exécuté à cause de\n\n{{message}}"
     },
     "widget-list-error": {
       "title": "Impossible d'obtenir la liste des widgets depuis le serveur"

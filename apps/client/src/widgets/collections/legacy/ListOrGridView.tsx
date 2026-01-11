@@ -44,6 +44,7 @@ export function ListView({ note, noteIds: unfilteredNoteIds, highlightedTokens }
 export function GridView({ note, noteIds: unfilteredNoteIds, highlightedTokens }: ViewModeProps<{}>) {
     const noteIds = useFilteredNoteIds(note, unfilteredNoteIds);
     const { pageNotes, ...pagination } = usePagination(note, noteIds);
+    const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
 
     return (
         <div class="note-list grid-view">
@@ -52,7 +53,7 @@ export function GridView({ note, noteIds: unfilteredNoteIds, highlightedTokens }
 
                 <div class="note-list-container use-tn-links">
                     {pageNotes?.map(childNote => (
-                        <GridNoteCard note={childNote} parentNote={note} highlightedTokens={highlightedTokens} />
+                        <GridNoteCard note={childNote} parentNote={note} highlightedTokens={highlightedTokens} includeArchived={includeArchived} />
                     ))}
                 </div>
 
@@ -94,14 +95,16 @@ function ListNoteCard({ note, parentNote, highlightedTokens, currentLevel, expan
             </h5>
 
             {isExpanded && <>
-                <NoteContent note={note} highlightedTokens={highlightedTokens} noChildrenList />
+                <NoteContent note={note} highlightedTokens={highlightedTokens} noChildrenList includeArchivedNotes={includeArchived} />
                 <NoteChildren note={note} parentNote={parentNote} highlightedTokens={highlightedTokens} currentLevel={currentLevel} expandDepth={expandDepth} includeArchived={includeArchived} />
             </>}
         </div>
     );
 }
 
-function GridNoteCard({ note, parentNote, highlightedTokens }: { note: FNote, parentNote: FNote, highlightedTokens: string[] | null | undefined }) {
+function GridNoteCard({ note, parentNote, highlightedTokens, includeArchived }: { note: FNote, parentNote: FNote, highlightedTokens: string[] | null | undefined, includeArchived: boolean }) {
+    const titleRef = useRef<HTMLSpanElement>(null);
+    const [ noteTitle, setNoteTitle ] = useState<string>();
     const notePath = getNotePath(parentNote, note);
 
     return (
@@ -120,6 +123,7 @@ function GridNoteCard({ note, parentNote, highlightedTokens }: { note: FNote, pa
                 note={note}
                 trim
                 highlightedTokens={highlightedTokens}
+                includeArchivedNotes={includeArchived}
             />
         </div>
     );
@@ -136,14 +140,22 @@ function NoteAttributes({ note }: { note: FNote }) {
     return <span className="note-list-attributes" ref={ref} />;
 }
 
-function NoteContent({ note, trim, noChildrenList, highlightedTokens }: { note: FNote, trim?: boolean, noChildrenList?: boolean, highlightedTokens: string[] | null | undefined }) {
+function NoteContent({ note, trim, noChildrenList, highlightedTokens, includeArchivedNotes }: {
+    note: FNote;
+    trim?: boolean;
+    noChildrenList?: boolean;
+    highlightedTokens: string[] | null | undefined;
+    includeArchivedNotes: boolean;
+}) {
     const contentRef = useRef<HTMLDivElement>(null);
     const highlightSearch = useImperativeSearchHighlighlighting(highlightedTokens);
 
     useEffect(() => {
         content_renderer.getRenderedContent(note, {
             trim,
-            noChildrenList
+            noChildrenList,
+            noIncludedNotes: true,
+            includeArchivedNotes
         })
             .then(({ $renderedContent, type }) => {
                 if (!contentRef.current) return;

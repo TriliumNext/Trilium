@@ -23,6 +23,12 @@ export interface RenderOptions {
     imageHasZoom?: boolean;
     /** If enabled, it will prevent the default behavior in which an empty note would display a list of children. */
     noChildrenList?: boolean;
+    /** If enabled, it will prevent rendering of included notes. */
+    noIncludedNotes?: boolean;
+    /** If enabled, it will include archived notes when rendering children list. */
+    includeArchivedNotes?: boolean;
+    /** Set of note IDs that have already been seen during rendering to prevent infinite recursion. */
+    seenNoteIds?: Set<string>;
 }
 
 const CODE_MIME_TYPES = new Set(["application/json"]);

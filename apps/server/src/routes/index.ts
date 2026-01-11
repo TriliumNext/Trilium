@@ -44,10 +44,6 @@ export function bootstrap(req: Request, res: Response) {
         isElectron,
         hasNativeTitleBar: isElectron && nativeTitleBarVisible,
         hasBackgroundEffects: isElectron && isWindows11 && !nativeTitleBarVisible && options.backgroundEffects === "true",
-        // TODO: These font size don't actually seem to be used.
-        mainFontSize: parseInt(options.mainFontSize, 10),
-        treeFontSize: parseInt(options.treeFontSize, 10),
-        detailFontSize: parseInt(options.detailFontSize, 10),
         maxEntityChangeIdAtLoad: sql.getValue("SELECT COALESCE(MAX(id), 0) FROM entity_changes"),
         maxEntityChangeSyncIdAtLoad: sql.getValue("SELECT COALESCE(MAX(id), 0) FROM entity_changes WHERE isSynced = 1"),
         instanceName: config.General ? config.General.instanceName : null,

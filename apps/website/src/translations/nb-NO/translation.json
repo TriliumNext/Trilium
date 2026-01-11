@@ -51,13 +51,19 @@
         "file_description": "Integrer multimediafiler som PDFer, bilder og video med forhåndsvisning i programmet.",
         "mermaid_description": "Lag diagrammer som flytskjema, klasse- og sekvensdiagrammer, Ganttdiagrammer og mye mer ved hjelp av Mermaidsyntaks.",
         "mindmap_description": "Organiser dine tanker visuelt eller gjør en brainstorming.",
-        "others_list": "og andre: <0>notatkart</0>, <1>relasjonskart</1>, <2>lagrede søk</2>, <3>rendret notat</3>, og <4>web view</4>."
+        "others_list": "og andre: <0>notatkart</0>, <1>relasjonskart</1>, <2>lagrede søk</2>, <3>rendret notat</3>, og <4>web view</4>.",
+        "canvas_description": "Arranger figurer, bilder og tekst på et uendelig lerret som bruker samme teknologi som excalidraw.com. Ideelt for diagrammer, skisser og visuell planlegging."
     },
     "extensibility_benefits": {
         "import_export_title": "Import/eksport",
         "scripting_title": "Avansert skripting",
         "api_title": "REST API",
-        "title": "Deling og utvidbarhet"
+        "title": "Deling og utvidbarhet",
+        "share_title": "Del notater på nett",
+        "share_description": "Hvis du har en server, kan den brukes til å dele valgfrie notater med andre.",
+        "scripting_description": "Lag dine egne integrasjoner i Trilium med egendefinerte widgets, eller serversidelogikk.",
+        "import_export_description": "Samhandle med andre programmer ved hjelp av Markdown, ENEX og OML.",
+        "api_description": "Ved hjelp av den innebygde REST-APIen kan du programmatisk samhandle med Trilium."
     },
     "collections": {
         "title": "Samlinger",
@@ -66,7 +72,11 @@
         "geomap_title": "Geokart",
         "presentation_title": "Presentasjon",
         "board_title": "Kanbantavle",
-        "geomap_description": "Planlegg ferien din eller merk deg dine interessepunkter på et geografisk kart ved hjelp av definerbare markører. Vis lagrede GPX-spor for å se reisen din."
+        "geomap_description": "Planlegg ferien din eller merk deg dine interessepunkter på et geografisk kart ved hjelp av definerbare markører. Vis lagrede GPX-spor for å se reisen din.",
+        "calendar_description": "Organiser dine personlige eller jobb-arrangement ved hjelp av kalender, med støtte for heldags- og flerdagsarrangement. Få rask oversikt over dine arrangementer med ukes- måneds- og årsvisning. Dra og slipp hendelser for enkelt å gjøre endringer.",
+        "table_description": "Vis og rediger informasjon om notater i tabellform, med ulike kolonnetyper som tekst, nummer, avkrysningsbokser, dato og tid, lenker, farger og støtte for relasjoner. Du kan også vise notater i et hierarkisk tre i tabellen.",
+        "board_description": "Organiser oppgaver eller prosjekter i en Kanbantavle hvor du enkelt kan lage nye elementer og kolonner, og endre status på elementer ved å dra de rundt på tavlen.",
+        "presentation_description": "Organiser informasjon i lysbilder og presenter dem i fullskjermmodus med myke overganger. Lysbildene kan også eksporteres til PDF for enkel deling."
     },
     "header": {
         "documentation": "Dokumentasjon",
@@ -84,14 +94,19 @@
         "title": "Støtt oss",
         "financial_donations_title": "Finansiell donasjon",
         "github_sponsors": "GitHub Sponsors",
-        "financial_donations_description": "Trilium er bygget og vedlikeholdt med <Link>flere hundre timers arbeid</Link>. Ditt bidrag hjelper å holde det åpen kildekode, forbedre funksjonalitet og dekker driftskostnader."
+        "financial_donations_description": "Trilium er bygget og vedlikeholdt med <Link>flere hundre timers arbeid</Link>. Ditt bidrag hjelper å holde det åpen kildekode, forbedre funksjonalitet og dekker driftskostnader.",
+        "financial_donations_cta": "Vurder gjerne å støtte hovedutvikleren (<Link>eliandoran</Link>) av programmet via:",
+        "buy_me_a_coffee": "Buy Me A Coffee"
     },
     "download_helper_desktop_windows": {
         "download_scoop": "Scoop",
         "title_x64": "Windows 64-bit",
         "download_zip": "Portable (.zip)",
         "title_arm64": "Windows på ARM",
-        "download_exe": "Last ned installasjonsprogram (.exe)"
+        "download_exe": "Last ned installasjonsprogram (.exe)",
+        "description_x64": "Kompatibel med Intel- eller AMD-enheter som kjører Windows 10 og 11.",
+        "description_arm64": "Kompatibel med ARM-enheter (for eksempel Qualcomm Snapdragon).",
+        "quick_start": "For å installere via Winget:"
     },
     "download_helper_desktop_linux": {
         "download_deb": ".deb",
@@ -101,21 +116,31 @@
         "download_aur": "AUR",
         "title_x64": "Linux 64-bit",
         "download_zip": "Portable (.zip)",
-        "title_arm64": "Linux på ARM"
+        "title_arm64": "Linux på ARM",
+        "description_x64": "For de fleste Linux-distribusjoner, kompatibelt med x86_64-arkitektur.",
+        "description_arm64": "For ARM-baserte Linux-distribusjoner, kompatibelt med aarch64-arkitektur.",
+        "quick_start": "Velg egnet pakkeformat avhengig av din distribusjon:"
     },
     "download_helper_server_docker": {
         "download_ghcr": "ghcr.io",
         "download_dockerhub": "Docker Hub",
-        "title": "Selv-hostet med Docker"
+        "title": "Selv-hostet med Docker",
+        "description": "Installer enkelt på Windows, Linux eller macOS ved bruk av en Docker-container."
     },
     "download_helper_desktop_macos": {
         "download_homebrew_cask": "Homebrew Cask",
         "download_zip": "Portable (.zip)",
         "title_x64": "macOS for Intel",
-        "download_dmg": "Last ned installasjonsprogram (.dmg)"
+        "download_dmg": "Last ned installasjonsprogram (.dmg)",
+        "title_arm64": "macOS for Apple Silicon",
+        "description_x64": "For Intel-baserte Mac-er med macOS Monterey eller nyere.",
+        "description_arm64": "For Apple Silicon Mac-er som de med M1- og M2-chiper.",
+        "quick_start": "For å installere via Homebrew:"
     },
     "final_cta": {
-        "get_started": "Kom i gang"
+        "get_started": "Kom i gang",
+        "title": "Klar for å begynne med Trilium Notes?",
+        "description": "Skap din personlige kunnskapsbase med kraftig funksjonalitet og fullt personvern."
     },
     "components": {
         "link_learn_more": "Lær mer..."
@@ -125,7 +150,8 @@
         "platform_small": "for {{platform}}",
         "linux_small": "for Linux",
         "platform_big": "v{{version}} for {{platform}}",
-        "linux_big": "v{{version}} for Linux"
+        "linux_big": "v{{version}} for Linux",
+        "more_platforms": "Flere plattformer og serveroppsett"
     },
     "footer": {
         "copyright_and_the": " og ",
@@ -135,16 +161,40 @@
         "download_tar_x64": "x64 (.tar.xz)",
         "download_tar_arm64": "ARM (.tar.xz)",
         "download_nixos": "NixOS modul",
-        "title": "Selv-hostet på Linux"
+        "title": "Selv-hostet på Linux",
+        "description": "Installer Trilium Notes på din egen server eller VPS, kompatibel med de fleste distribusjoner."
     },
     "download_helper_server_hosted": {
         "title": "Betalt hosting",
-        "download_triliumcc": "Alternativt sjekk trilium.cc"
+        "download_triliumcc": "Alternativt sjekk trilium.cc",
+        "description": "Trilium Notes driftet på PikaPods, en betalt tjeneste for enkel tilgang og administrasjon. Ikke direkte tilknyttet Trilium-teamet.",
+        "download_pikapod": "Installer på PikaPods"
     },
     "faq": {
-        "title": "Ofte stilte spørsmål"
+        "title": "Ofte stilte spørsmål",
+        "mobile_question": "Finnes det en mobil applikasjon?",
+        "mobile_answer": "Foreløpig er det ikke noe offisiell mobil applikasjon. Men hvis du har en serverinstans kan du koble til denne med en nettleser, og også installere den som en progressiv web-app. For Android finnes det en uoffisiell applikasjon med navn TriliumDroid som også fungerer offline (samme som en skrivebordsklient).",
+        "database_question": "Hvor lagres dataene?",
+        "database_answer": "Alle notater lagres i en SQLite-database i en programmappe. Årsaken til at Trilium bruker database i stedet for rene tekstfiler er både ytelse og at visse funksjoner ellers ville vært vanskelig å implementere, slik som klonede notater (samme notat flere steder). For å finne programmappen, åpne \"om\"-vinduet i programmet.",
+        "server_question": "Trenger jeg en server for å bruke Trilium?",
+        "server_answer": "Nei, serveren tillater tilgang via nettleser og håndterer synkronisering hvis du har flere enheter. For å komme i gang er det nok å laste ned skrivebordsprogrammet og begynne med det.",
+        "scaling_question": "Hvor godt skalerer programmet med store mengder notater?",
+        "scaling_answer": "Avhengig av bruk burde programmet kunne håndtere minst 100.000 notater uten problemer. Merk at synkroniseringen noen ganger kan feile ved opplasting av mange store filer (1GB per fil) siden Trilium er ment for å være en kunnskapsbase mer enn et fillager (som for eksempel NextCloud).",
+        "network_share_question": "Kan jeg dele databasen min over nettverksdeling?",
+        "network_share_answer": "Nei, det er stort sett ikke en god ide å dele en SQLite-database over nettverksdeling. Selv om det kan fungere, er det sjanser for at databasen kan bli ødelagt grunnet problemer med fillåsing over nettverk.",
+        "security_question": "Hvordan er mine data beskyttet?",
+        "security_answer": "Som standard blir ikke notater kryptert og kan leses direkte fra databasen. Når et notat er markert kryptert, blir det kryptert med AES-128-CBC."
     },
     "404": {
-        "title": "404: Siden ble ikke funnet"
+        "title": "404: Siden ble ikke funnet",
+        "description": "Siden ble ikke funnet. Den kan ha blitt slettet eller adressen er feil."
+    },
+    "contribute": {
+        "title": "Andre måter å bidra",
+        "way_translate": "Oversett programmet til ditt språk via <Link>Weblate</Link>.",
+        "way_community": "Ta del i felleskapet på <Discussions>GitHub Discussions</Discussions> eller på <Matrix>Matrix</Matrix>.",
+        "way_reports": "Meld feil via <Link>GitHub issues</Link>.",
+        "way_document": "Hjelp oss å forbedre dokumentasjonen ved å fortelle om mangler, eller bidra med veiledninger, Ofte Stilte Spørsmål eller tutorials.",
+        "way_market": "Spre ordet: Del Trilium Notes med venner, på blogger eller i sosiale media."
     }
 }

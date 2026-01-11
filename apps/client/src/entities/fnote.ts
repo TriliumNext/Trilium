@@ -616,7 +616,9 @@ export default class FNote {
     }
 
     isFolder() {
-        return this.type === "search" || this.getFilteredChildBranches().length > 0;
+        if (this.isLabelTruthy("subtreeHidden")) return false;
+        if (this.type === "search") return true;
+        return this.getFilteredChildBranches().length > 0;
     }
 
     getFilteredChildBranches() {

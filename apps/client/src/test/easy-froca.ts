@@ -69,24 +69,6 @@ export function buildNote(noteDef: NoteDefinition) {
     });
     note.getBlob = async () => blob;
 
-    // Manage children.
-    if (noteDef.children) {
-        for (const childDef of noteDef.children) {
-            const childNote = buildNote(childDef);
-            const branchId = `${note.noteId}_${childNote.noteId}`;
-            const branch = new FBranch(froca, {
-                branchId,
-                noteId: childNote.noteId,
-                parentNoteId: note.noteId,
-                notePosition: childNotePosition,
-                fromSearchNote: false
-            });
-            froca.branches[branchId] = branch;
-            note.addChild(childNote.noteId, branchId, false);
-            childNotePosition += 10;
-        }
-    }
-
     let position = 0;
     for (const [ key, value ] of Object.entries(noteDef)) {
         const attributeId = utils.randomString(12);
@@ -136,5 +118,25 @@ export function buildNote(noteDef: NoteDefinition) {
         }
         noteAttributeCache.attributes[note.noteId].push(attribute);
     }
+
+    // Manage children.
+    if (noteDef.children) {
+        for (const childDef of noteDef.children) {
+            const childNote = buildNote(childDef);
+            const branchId = `${note.noteId}_${childNote.noteId}`;
+            const branch = new FBranch(froca, {
+                branchId,
+                noteId: childNote.noteId,
+                parentNoteId: note.noteId,
+                notePosition: childNotePosition,
+                fromSearchNote: false
+            });
+            froca.branches[branchId] = branch;
+            note.addChild(childNote.noteId, branchId, false);
+            childNote.addParent(note.noteId, branchId, false);
+            childNotePosition += 10;
+        }
+    }
+
     return note;
 }

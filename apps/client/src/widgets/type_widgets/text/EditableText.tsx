@@ -286,7 +286,7 @@ function useWatchdogCrashHandling() {
         const currentState = watchdog.state;
         logInfo(`CKEditor state changed to ${currentState}`);
 
-        if (currentState === "ready") {
+        if (currentState === "ready" && hasCrashed.current) {
             hasCrashed.current = false;
             watchdog.editor?.focus();
         }

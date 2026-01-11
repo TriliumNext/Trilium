@@ -1,0 +1,20 @@
+#left-pane .tree-wrapper {
+    .note-indicator-icon.subtree-hidden-badge {
+        font-family: inherit !important;
+        margin-inline: 0.5em;
+        margin-top: 0.3em;
+        background: var(--left-pane-item-action-button-background);
+        color: var(--left-pane-item-action-button-color);
+        padding: 0.1em 0.6em;
+        border-radius: 0.5em;
+        font-size: 0.7rem;
+        font-weight: normal;
+        float: right;
+        vertical-align: middle;
+    }
+
+    .spotlighted-node {
+        opacity: 0.8;
+        font-style: italic;
+    }
+}
