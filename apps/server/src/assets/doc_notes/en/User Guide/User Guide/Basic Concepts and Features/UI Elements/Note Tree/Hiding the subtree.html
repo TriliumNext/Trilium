@@ -1,0 +1,95 @@
+<figure class="image image-style-align-right">
+  <img style="aspect-ratio:328/45;" src="1_Hiding the subtree_image.png"
+  width="328" height="45">
+  <figcaption>An example of a collection with a relatively large number of children
+    that are hidden from the tree.</figcaption>
+</figure>
+<p>The tree works well when the notes are structured in a hierarchy so that
+  the number of items stays small. When a note has a large number of notes
+  (in the order of thousands or tens of thousands), two problems arise:</p>
+<ul>
+  <li data-list-item-id="e536c86d371061c12f76f7de2a0af67be">Navigating between notes becomes cumbersome and the tree itself gets cluttered
+    with a large amount of notes.</li>
+  <li data-list-item-id="ecc37d6c4d0430254e98615842b94429d">The large amount of notes can slow down the application considerably.</li>
+</ul>
+<p>Since v0.102.0, Trilium allows the tree to hide the child notes of particular
+  notes. This works for both&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/_help_GTwFsgaA0lCt">Collections</a>&nbsp;and
+  normal notes.</p>
+<h2>Interaction</h2>
+<p>When the subtree of a note is hidden, there are a few subtle changes:</p>
+<ul>
+  <li data-list-item-id="ec1ce3d2030f36e4847f3bbd9468d28e3">To indicate that the subtree is hidden, the note will not have an expand
+    button and it will display the number of children to the right.</li>
+  <li
+  data-list-item-id="ea99d38ea6c8a816cf2ab7a7e73cfcac5">It's not possible to add a new note directly from the tree.
+    <ul>
+      <li data-list-item-id="ef0132a903a11e9f667b2b2f4c4fff17a">For&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/_help_GTwFsgaA0lCt">Collections</a>,
+        it's best to use the built-in mechanism to create notes (for example by
+        creating a new point on a geo-map, or by adding a new row in a table).</li>
+      <li
+      data-list-item-id="e7db44100046c8c79bf79841285aacd1f">For normal notes, it's still possible to create children via other means
+        such as using the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/iPIMuisry3hd/QEAPj01N5f7w/_help_hrZ1D00cLbal">Internal (reference) links</a>&nbsp;system.</li>
+    </ul>
+    </li>
+    <li data-list-item-id="eb049f46cf91db6de113af1099a14944e">Notes can be dragged from outside the note, case in which they will be
+      cloned into it.
+      <ul>
+        <li data-list-item-id="e96d9b7a0755e9c054bab5db4fc1aa25e">Instead of switching to the child notes that were copied, the parent note
+          is highlighted instead.</li>
+        <li data-list-item-id="ec667e3f94a0cfa3fa41ce38d3ed6ee95">A notification will indicate this behavior.</li>
+      </ul>
+    </li>
+    <li data-list-item-id="eb64670dd7ace6764c18602b440f88049">Similarly, features such as cut/copy and then paste into the note will
+      also work.</li>
+</ul>
+<h2>Spotlighting</h2>
+<figure class="image image-style-align-right">
+  <img style="aspect-ratio:322/83;" src="Hiding the subtree_image.png"
+  width="322" height="83">
+</figure>
+<p>Even if the subtree of a note is hidden, if a child note manages to become
+  active, it will still appear inside the tree in a special state called <em>spotlighted</em>.</p>
+<p>During this state, the note remains under its normal hierarchy, so that
+  its easy to tell its location. In addition, this means that:</p>
+<ul>
+  <li data-list-item-id="e2490369eb3d99ca694dba23a3410abef">The note position is clearly visible when using the&nbsp;<a class="reference-link"
+    href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/wArbEsdSae6g/_help_eIg8jdvaoNNd">Search</a>.</li>
+  <li
+  data-list-item-id="e041d3807f80dc77b022540b0551b8376">The note can still be operated on from the tree, such as adding a&nbsp;
+    <a
+    class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/BFs8mudNFgCS/IakOLONlIfGI/_help_TBwsyfadTA18">Branch prefix</a>&nbsp;or moving it outside the collection.</li>
+</ul>
+<p>The note appears in italics to indicate its temporary display. When switching
+  to another note, the spotlighted note will disappear.</p>
+<aside class="admonition note">
+  <p>Only one note can be highlighted at the time. When working with multiple
+    notes such as dragging them into the collection, no note will be spotlighted.
+    This is intentional to avoid displaying a partial state of the subtree.</p>
+</aside>
+<h2>Working with collections</h2>
+<p>By default, some of the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/_help_GTwFsgaA0lCt">Collections</a>&nbsp;will
+  automatically hide their child notes, for example the&nbsp;<a class="reference-link"
+  href="#root/pOsGYCXsbNQG/GTwFsgaA0lCt/_help_CtBQqbwXDx1w">Kanban Board</a>&nbsp;or
+  the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/GTwFsgaA0lCt/_help_2FvYrpmOXm29">Table</a>.</p>
+<p>The reasoning behind this is that collections are generally opaque to
+  the rest of the notes and they can generate a large amount of sub-notes
+  since they intentionally lack structure (in order to allow easy swapping
+  between views).</p>
+<p>Some types of collections have the child notes intentionally shown, for
+  example the legacy ones (Grid and List), but also the&nbsp;<a class="reference-link"
+  href="#root/pOsGYCXsbNQG/GTwFsgaA0lCt/_help_zP3PMqaG71Ct">Presentation</a>&nbsp;which
+  requires the tree structure in order to organize and edit the slides.</p>
+<p>To toggle this behavior:</p>
+<ul>
+  <li data-list-item-id="e6d8c8c98802d70f13df626ea1f062122">In the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_IjZS7iK5EXtb">New Layout</a>,
+    press the Options button underneath the title and uncheck <em>Hide child notes in tree</em>.</li>
+  <li
+  data-list-item-id="e2398432e127c54239d679a6b13d8390b">Right click the collection note in the&nbsp;<a class="reference-link"
+    href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;and
+    select <em>Advanced</em> → <em>Show subtree</em>.</li>
+</ul>
+<h2>Working with normal notes</h2>
+<p>It's possible to hide the subtree for normal notes as well, not just collections.
+  To do so, right click the note in the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;and
+  select <em>Advanced</em> → <em>Hide subtree.</em>
+</p>

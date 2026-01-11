@@ -6,13 +6,89 @@
     },
     "hero_section": {
         "title": "अपने विचारों को व्यवस्थित करें। अपना व्यक्तिगत नॉलेज बेस बनाएं।",
-        "screenshot_alt": "ट्रिलियम नोट्स डेस्कटॉप एप्लिकेशन का स्क्रीनशॉट"
+        "screenshot_alt": "ट्रिलियम नोट्स डेस्कटॉप एप्लिकेशन का स्क्रीनशॉट",
+        "get_started": "शुरू करें",
+        "github": "गिटहब"
     },
     "organization_benefits": {
         "note_structure_title": "नोट संरचना",
         "note_structure_description": "नोटों को पदानुक्रमिक रूप से व्यवस्थित किया जा सकता है। फ़ोल्डर्स की कोई आवश्यकता नहीं है, क्योंकि प्रत्येक नोट में उप-नोट हो सकते हैं। एक एकल नोट को पदानुक्रम में कई स्थानों पर जोड़ा जा सकता है।"
     },
     "productivity_benefits": {
-        "protected_notes_title": "संरक्षित नोट्स"
+        "protected_notes_title": "संरक्षित नोट्स",
+        "web_clipper_title": "वेब क्लिपर"
+    },
+    "note_types": {
+        "canvas_title": "कैनवास",
+        "mindmap_title": "माइंडमैप"
+    },
+    "extensibility_benefits": {
+        "share_title": "वेब पर नोट्स शेयर करें"
+    },
+    "collections": {
+        "calendar_title": "कैलेंडर",
+        "table_title": "टेबल"
+    },
+    "download_now": {
+        "linux_small": "लिनक्स के लिए",
+        "more_platforms": "अधिक प्लेटफॉर्म और सर्वर सेटअप"
+    },
+    "header": {
+        "get-started": "शुरू करें",
+        "support-us": "हमें सपोर्ट करें"
+    },
+    "social_buttons": {
+        "github": "गिटहब",
+        "matrix": "मैट्रिक्स",
+        "reddit": "रेडिट"
+    },
+    "support_us": {
+        "title": "हमें सपोर्ट करें"
+    },
+    "404": {
+        "description": "आप जो पेज खोज रहे थे वह नहीं मिल पाया। शायद वह डिलीट हो चुका है या यूआरएल (URL) गलत है।"
+    },
+    "download_helper_desktop_windows": {
+        "title_x64": "Windows 64-bit",
+        "title_arm64": "ARM पर Windows",
+        "quick_start": "Winget द्वारा इंस्टॉल करने के लिए:",
+        "download_exe": "इंस्टॉलर (.exe) डाउनलोड करें",
+        "download_zip": "पोर्टेबल (.zip)"
+    },
+    "download_helper_desktop_linux": {
+        "title_x64": "Linux 64-bit",
+        "title_arm64": "ARM पर लिनक्स",
+        "download_deb": ".deb",
+        "download_rpm": ".rpm",
+        "download_flatpak": ".flatpak",
+        "download_zip": "पोर्टेबल (.zip)",
+        "download_nixpkgs": "nixpkgs"
+    },
+    "download_helper_desktop_macos": {
+        "title_x64": "Intel के लिए macOS",
+        "title_arm64": "Apple Silicon के लिए macOS",
+        "description_x64": "macOS Monterey या उसके बाद के वर्ज़न पर चलने वाले Intel-आधारित Macs के लिए।",
+        "description_arm64": "Apple Silicon Macs के लिए, जैसे कि M1 और M2 चिप्स वाले मॉडल।",
+        "quick_start": "Homebrew द्वारा इंस्टॉल करने के लिए:",
+        "download_dmg": "इंस्टॉलर (.dmg) डाउनलोड करें",
+        "download_homebrew_cask": "Homebrew Cask",
+        "download_zip": "पोर्टेबल (.zip)"
+    },
+    "download_helper_server_docker": {
+        "title": "Docker द्वारा सेल्फ-होस्टेड",
+        "description": "Docker कंटेनर का उपयोग करके Windows, Linux या macOS पर आसानी से डिप्लॉय करें।",
+        "download_ghcr": "ghcr.io"
+    },
+    "download_helper_server_linux": {
+        "title": "Linux पर सेल्फ-होस्टेड",
+        "description": "ट्रिलियम नोट्स को अपने खुद के सर्वर या VPS पर डिप्लॉय करें, जो अधिकांश डिस्ट्रीब्यूशनो के साथ कम्पेटिबल है।",
+        "download_tar_x64": "x64 (.tar.xz)",
+        "download_tar_arm64": "ARM (.tar.xz)",
+        "download_nixos": "NixOS मॉड्यूल"
+    },
+    "download_helper_server_hosted": {
+        "title": "पेड होस्टिंग",
+        "download_pikapod": "PikaPods पर सेटअप करें",
+        "download_triliumcc": "वैकल्पिक रूप से trilium.cc देखें"
     }
 }

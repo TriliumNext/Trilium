@@ -55,9 +55,9 @@ export default class MathUI extends Plugin {
 
 		this._balloon.showStack( 'main' );
 
-		requestAnimationFrame(() => {
-			this.formView?.mathInputView.fieldView.element?.focus();
-		});
+		requestAnimationFrame( () => {
+			this.formView?.mathInputView.focus();
+		} );
 	}
 
 	private _createFormView() {
@@ -71,31 +71,37 @@ export default class MathUI extends Plugin {
 			throw new CKEditorError( 'math-command' );
 		}
 
-		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 		const mathConfig = editor.config.get( 'math' )!;
 
 		const formView = new MainFormView(
 			editor.locale,
-			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			mathConfig.engine!,
-			mathConfig.lazyLoad,
+			{
+				engine: mathConfig.engine!,
+				lazyLoad: mathConfig.lazyLoad,
+				previewUid: this._previewUid,
+				previewClassName: mathConfig.previewClassName!,
+				katexRenderOptions: mathConfig.katexRenderOptions!
+			},
 			mathConfig.enablePreview,
-			this._previewUid,
-			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			mathConfig.previewClassName!,
-			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			mathConfig.popupClassName!,
-			// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-			mathConfig.katexRenderOptions!
+			mathConfig.popupClassName!
 		);
 
 		formView.mathInputView.bind( 'value' ).to( mathCommand, 'value' );
 		formView.displayButtonView.bind( 'isOn' ).to( mathCommand, 'display' );
 
 		// Form elements should be read-only when corresponding commands are disabled.
-		formView.mathInputView.bind( 'isReadOnly' ).to( mathCommand, 'isEnabled', value => !value );
-		formView.saveButtonView.bind( 'isEnabled' ).to( mathCommand );
-		formView.displayButtonView.bind( 'isEnabled' ).to( mathCommand );
+		formView.mathInputView.bind( 'isReadOnly' ).to( mathCommand, 'isEnabled', ( value: boolean ) => !value );
+		formView.saveButtonView.bind( 'isEnabled' ).to(
+			mathCommand,
+			'isEnabled',
+			formView.mathInputView,
+			'value',
+			( commandEnabled, equation ) => {
+				const normalizedEquation = ( equation ?? '' ).trim();
+				return commandEnabled && normalizedEquation.length > 0;
+			}
+		);
+		formView.displayButtonView.bind( 'isEnabled' ).to( mathCommand, 'isEnabled' );
 
 		// Listen to submit button click
 		this.listenTo( formView, 'submit', () => {
@@ -115,24 +121,12 @@ export default class MathUI extends Plugin {
 		} );
 
 		// Allow pressing Enter to submit changes, and use Shift+Enter to insert a new line
-		formView.keystrokes.set('enter', (data, cancel) => {
-			if (!data.shiftKey) {
-				formView.fire('submit');
+		formView.keystrokes.set( 'enter', ( data, cancel ) => {
+			if ( !data.shiftKey ) {
+				formView.fire( 'submit' );
 				cancel();
 			}
-		});
-
-		// Allow the textarea to be resizable
-		formView.mathInputView.fieldView.once('render', () => {
-			const textarea = formView.mathInputView.fieldView.element;
-			if (!textarea) return;
-			Object.assign(textarea.style, {
-				resize: 'both',
-				height: '100px',
-				width: '400px',
-				minWidth: '100%',
-			});
-		});
+		} );
 
 		return formView;
 	}
@@ -162,14 +156,12 @@ export default class MathUI extends Plugin {
 		} );
 
 		if ( this._balloon.visibleView === this.formView ) {
-			this.formView.mathInputView.fieldView.element?.select();
+			this.formView.mathInputView.focus();
 		}
 
-		// Show preview element
 		const previewEl = document.getElementById( this._previewUid );
-		if ( previewEl && this.formView.previewEnabled ) {
-			// Force refresh preview
-			this.formView.mathView?.updateMath();
+		if ( previewEl && this.formView.mathView ) {
+			this.formView.mathView.updateMath();
 		}
 
 		this.formView.equation = mathCommand.value ?? '';
@@ -206,8 +198,10 @@ export default class MathUI extends Plugin {
 
 	private _removeFormView() {
 		if ( this._isFormInPanel && this.formView ) {
-			this.formView.saveButtonView.focus();
+			// Hide virtual keyboard before removing the form
+			this.formView.hideKeyboard();
 
+			this.formView.saveButtonView.focus();
 			this._balloon.remove( this.formView );
 
 			// Hide preview element

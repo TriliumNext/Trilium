@@ -22,6 +22,9 @@ export default defineConfig( {
 		include: [
 			'tests/**/*.[jt]s'
 		],
+		exclude: [
+			'tests/setup.ts'
+		],
 		globals: true,
 		watch: false,
 		coverage: {

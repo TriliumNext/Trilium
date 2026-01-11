@@ -646,17 +646,13 @@ export function useNoteLabelBoolean(note: FNote | undefined | null, labelName: F
 
     const setter = useCallback((value: boolean) => {
         if (note) {
-            if (value) {
-                attributes.setLabel(note.noteId, labelName, "");
-            } else {
-                attributes.removeOwnedLabelByName(note, labelName);
-            }
+            attributes.setBooleanWithInheritance(note, labelName, value);
         }
-    }, [note]);
+    }, [note, labelName]);
 
     useDebugValue(labelName);
 
-    const labelValue = !!note?.hasLabel(labelName);
+    const labelValue = !!note?.isLabelTruthy(labelName);
     return [ labelValue, setter ] as const;
 }
 

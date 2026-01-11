@@ -1,4 +1,4 @@
-import { IconRegistry } from "@triliumnext/commons";
+import { IconRegistry, Locale } from "@triliumnext/commons";
 
 import appContext, { AppContext } from "./components/app_context";
 import type FNote from "./entities/fnote";
@@ -47,14 +47,25 @@ interface CustomGlobals {
     platform?: typeof process.platform;
     linter: typeof lint;
     hasNativeTitleBar: boolean;
+    hasBackgroundEffects: boolean;
+    isElectron: boolean;
     isRtl: boolean;
     iconRegistry: IconRegistry;
+    themeCssUrl: string;
+    themeUseNextAsBase?: "next" | "next-light" | "next-dark";
+    iconPackCss: string;
+    headingStyle: "plain" | "underline" | "markdown";
+    layoutOrientation: "vertical" | "horizontal";
+    currentLocale: Locale;
 }
 
 type RequireMethod = (moduleName: string) => any;
 
 declare global {
     interface Window {
+        $: JQueryStatic;
+        jQuery: JQueryStatic;
+
         logError(message: string);
         logInfo(message: string);
 

@@ -1,21 +1,21 @@
-import NoteColorPicker from "./custom-items/NoteColorPicker.jsx";
-import treeService from "../services/tree.js";
-import froca from "../services/froca.js";
-import clipboard from "../services/clipboard.js";
-import noteCreateService from "../services/note_create.js";
-import contextMenu, { type MenuCommandItem, type MenuItem } from "./context_menu.js";
 import appContext, { type ContextMenuCommandData, type FilteredCommandNames } from "../components/app_context.js";
+import type { SelectMenuItemEventListener } from "../components/events.js";
+import type FAttachment from "../entities/fattachment.js";
+import attributes from "../services/attributes.js";
+import { executeBulkActions } from "../services/bulk_action.js";
+import clipboard from "../services/clipboard.js";
+import dialogService from "../services/dialog.js";
+import froca from "../services/froca.js";
+import { t } from "../services/i18n.js";
+import noteCreateService from "../services/note_create.js";
 import noteTypesService from "../services/note_types.js";
 import server from "../services/server.js";
 import toastService from "../services/toast.js";
-import dialogService from "../services/dialog.js";
-import { t } from "../services/i18n.js";
-import type NoteTreeWidget from "../widgets/note_tree.js";
-import type FAttachment from "../entities/fattachment.js";
-import type { SelectMenuItemEventListener } from "../components/events.js";
+import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
-import attributes from "../services/attributes.js";
-import { executeBulkActions } from "../services/bulk_action.js";
+import type NoteTreeWidget from "../widgets/note_tree.js";
+import contextMenu, { type MenuCommandItem, type MenuItem } from "./context_menu.js";
+import NoteColorPicker from "./custom-items/NoteColorPicker.jsx";
 
 // TODO: Deduplicate once client/server is well split.
 interface ConvertToAttachmentResponse {
@@ -72,6 +72,8 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
         const noSelectedNotes = selNodes.length === 0 || (selNodes.length === 1 && selNodes[0] === this.node);
 
         const notSearch = note?.type !== "search";
+        const hasSubtreeHidden = note?.isLabelTruthy("subtreeHidden") ?? false;
+        const isSpotlighted = this.node.extraClasses.includes("spotlighted-node");
         const notOptionsOrHelp = !note?.noteId.startsWith("_options") && !note?.noteId.startsWith("_help");
         const parentNotSearch = !parentNote || parentNote.type !== "search";
         const insertNoteAfterEnabled = isNotRoot && !isHoisted && parentNotSearch;
@@ -79,17 +81,18 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
         const items: (MenuItem<TreeCommandNames> | null)[] = [
             { title: t("tree-context-menu.open-in-a-new-tab"), command: "openInTab", shortcut: "Ctrl+Click", uiIcon: "bx bx-link-external", enabled: noSelectedNotes },
             { title: t("tree-context-menu.open-in-a-new-split"), command: "openNoteInSplit", uiIcon: "bx bx-dock-right", enabled: noSelectedNotes },
+            { title: t("tree-context-menu.open-in-a-new-window"), command: "openNoteInWindow", uiIcon: "bx bx-window-open", enabled: noSelectedNotes },
             { title: t("tree-context-menu.open-in-popup"), command: "openNoteInPopup", uiIcon: "bx bx-edit", enabled: noSelectedNotes },
 
             isHoisted
                 ? null
                 : {
-                      title: `${t("tree-context-menu.hoist-note")}`,
-                      command: "toggleNoteHoisting",
-                      keyboardShortcut: "toggleNoteHoisting",
-                      uiIcon: "bx bxs-chevrons-up",
-                      enabled: noSelectedNotes && notSearch
-                  },
+                    title: `${t("tree-context-menu.hoist-note")}`,
+                    command: "toggleNoteHoisting",
+                    keyboardShortcut: "toggleNoteHoisting",
+                    uiIcon: "bx bxs-chevrons-up",
+                    enabled: noSelectedNotes && notSearch
+                },
             !isHoisted || !isNotRoot
                 ? null
                 : { title: t("tree-context-menu.unhoist-note"), command: "toggleNoteHoisting", keyboardShortcut: "toggleNoteHoisting", uiIcon: "bx bx-door-open" },
@@ -112,7 +115,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
                 keyboardShortcut: "createNoteInto",
                 uiIcon: "bx bx-plus",
                 items: notSearch ? await noteTypesService.getNoteTypeItems("insertChildNote") : null,
-                enabled: notSearch && noSelectedNotes && notOptionsOrHelp,
+                enabled: notSearch && noSelectedNotes && notOptionsOrHelp && !hasSubtreeHidden && !isSpotlighted,
                 columns: 2
             },
 
@@ -150,8 +153,17 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
 
                     { kind: "separator" },
 
-                    { title: t("tree-context-menu.expand-subtree"), command: "expandSubtree", keyboardShortcut: "expandSubtree", uiIcon: "bx bx-expand", enabled: noSelectedNotes },
-                    { title: t("tree-context-menu.collapse-subtree"), command: "collapseSubtree", keyboardShortcut: "collapseSubtree", uiIcon: "bx bx-collapse", enabled: noSelectedNotes },
+                    !hasSubtreeHidden && { title: t("tree-context-menu.expand-subtree"), command: "expandSubtree", keyboardShortcut: "expandSubtree", uiIcon: "bx bx-expand", enabled: noSelectedNotes },
+                    !hasSubtreeHidden && { title: t("tree-context-menu.collapse-subtree"), command: "collapseSubtree", keyboardShortcut: "collapseSubtree", uiIcon: "bx bx-collapse", enabled: noSelectedNotes },
+                    {
+                        title: hasSubtreeHidden ? t("tree-context-menu.show-subtree") : t("tree-context-menu.hide-subtree"),
+                        uiIcon: "bx bx-show",
+                        handler: async () => {
+                            const note = await froca.getNote(this.node.data.noteId);
+                            if (!note) return;
+                            attributes.setBooleanWithInheritance(note, "subtreeHidden", !hasSubtreeHidden);
+                        }
+                    },
                     {
                         title: t("tree-context-menu.sort-by"),
                         command: "sortChildNotes",
@@ -164,7 +176,7 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
 
                     { title: t("tree-context-menu.copy-note-path-to-clipboard"), command: "copyNotePathToClipboard", uiIcon: "bx bx-directions", enabled: true },
                     { title: t("tree-context-menu.recent-changes-in-subtree"), command: "recentChangesInSubtree", uiIcon: "bx bx-history", enabled: noSelectedNotes && notOptionsOrHelp }
-                ]
+                ].filter(Boolean) as MenuItem<TreeCommandNames>[]
             },
 
             { kind: "separator" },
@@ -292,25 +304,30 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
             noteCreateService.createNote(parentNotePath, {
                 target: "after",
                 targetBranchId: this.node.data.branchId,
-                type: type,
-                isProtected: isProtected,
-                templateNoteId: templateNoteId
+                type,
+                isProtected,
+                templateNoteId
             });
         } else if (command === "insertChildNote") {
             const parentNotePath = treeService.getNotePath(this.node);
 
             noteCreateService.createNote(parentNotePath, {
-                type: type,
+                type,
                 isProtected: this.node.data.isProtected,
-                templateNoteId: templateNoteId
+                templateNoteId
             });
         } else if (command === "openNoteInSplit") {
             const subContexts = appContext.tabManager.getActiveContext()?.getSubContexts();
             const { ntxId } = subContexts?.[subContexts.length - 1] ?? {};
 
             this.treeWidget.triggerCommand("openNewNoteSplit", { ntxId, notePath });
+        } else if (command === "openNoteInWindow") {
+            appContext.triggerCommand("openInWindow", {
+                notePath,
+                hoistedNoteId: appContext.tabManager.getActiveContext()?.hoistedNoteId
+            });
         } else if (command === "openNoteInPopup") {
-            appContext.triggerCommand("openInPopup", { noteIdOrPath: notePath })
+            appContext.triggerCommand("openInPopup", { noteIdOrPath: notePath });
         } else if (command === "convertNoteToAttachment") {
             if (!(await dialogService.confirm(t("tree-context-menu.convert-to-attachment-confirm")))) {
                 return;
@@ -332,11 +349,11 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
 
             toastService.showMessage(t("tree-context-menu.converted-to-attachments", { count: converted }));
         } else if (command === "copyNotePathToClipboard") {
-            navigator.clipboard.writeText("#" + notePath);
+            navigator.clipboard.writeText(`#${  notePath}`);
         } else if (command) {
             this.treeWidget.triggerCommand<TreeCommandNames>(command, {
                 node: this.node,
-                notePath: notePath,
+                notePath,
                 noteId: this.node.data.noteId,
                 selectedOrActiveBranchIds: this.treeWidget.getSelectedOrActiveBranchIds(this.node),
                 selectedOrActiveNoteIds: this.treeWidget.getSelectedOrActiveNoteIds(this.node)

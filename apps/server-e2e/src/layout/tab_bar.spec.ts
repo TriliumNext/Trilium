@@ -1,4 +1,5 @@
-import { test, expect } from "@playwright/test";
+import { expect,test } from "@playwright/test";
+
 import App from "../support/app";
 
 const NOTE_TITLE = "Trilium Integration Test DB";
@@ -65,21 +66,21 @@ test("Tabs are restored in right order", async ({ page, context }) => {
     // Open three tabs.
     await app.closeAllTabs();
     await app.goToNoteInNewTab("Code notes");
+    await expect(app.getActiveTab()).toContainText("Code notes");
     await app.addNewTab();
     await app.goToNoteInNewTab("Text notes");
+    await expect(app.getActiveTab()).toContainText("Text notes");
     await app.addNewTab();
     await app.goToNoteInNewTab("Mermaid");
+    await expect(app.getActiveTab()).toContainText("Mermaid");
 
     // Select the mid one.
     await app.getTab(1).click();
     await expect(app.noteTreeActiveNote).toContainText("Text notes");
-    await expect(app.getTab(0)).toContainText("Code notes");
-    await expect(app.getTab(1)).toContainText("Text notes");
-    await expect(app.getTab(2)).toContainText("Mermaid");
 
     // Refresh the page and check the order.
     await app.goto( { preserveTabs: true });
-    await expect(app.getTab(0)).toContainText("Code notes", { timeout: 15_000 });
+    await expect(app.getTab(0)).toContainText("Code notes");
     await expect(app.getTab(1)).toContainText("Text notes");
     await expect(app.getTab(2)).toContainText("Mermaid");
 
@@ -128,8 +129,8 @@ test("New tab displays workspaces", async ({ page, context }) => {
 
     const workspaceNotesEl = app.currentNoteSplitContent.locator(".workspace-notes");
     await expect(workspaceNotesEl).toBeVisible();
-    expect(workspaceNotesEl).toContainText("Personal");
-    expect(workspaceNotesEl).toContainText("Work");
+    await expect(workspaceNotesEl).toContainText("Personal");
+    await expect(workspaceNotesEl).toContainText("Work");
     await expect(workspaceNotesEl.locator(".bx.bxs-user")).toBeVisible();
     await expect(workspaceNotesEl.locator(".bx.bx-briefcase-alt")).toBeVisible();
 

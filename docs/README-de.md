@@ -96,8 +96,8 @@ Unsere Dokumentation ist verfügbar in mehreren Formaten:
   für eine sicherere Anmeldung
 * [Synchronisierung](https://docs.triliumnotes.org/user-guide/setup/synchronization)
   mit einem selbst gehosteten Synchronisierungsserver
-  * there are [3rd party services for hosting synchronisation
-    server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+  * Es gibt [Drittanbieter-Dienste für das Hosting von
+    Synchronisationsservern](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [Freigabe](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
   (Veröffentlichung) von Notizen im öffentlichen Internet
 * Starke
@@ -105,10 +105,10 @@ Unsere Dokumentation ist verfügbar in mehreren Formaten:
   mit Granularität pro Notiz
 * Skizzieren von Diagrammen basierend auf [Excalidraw](https://excalidraw.com/)
   (Notiztyp „Canvas“)
-* [Relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
-  for visualizing notes and their relations
+* [Beziehungskarten](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
+  und
+  [Notiz-/Link-Karten](https://docs.triliumnotes.org/user-guide/note-types/note-map)
+  zur Visualisierung von Notizen und ihren Beziehungen
 * Mindmaps, basierend auf [Mind Elixir](https://docs.mind-elixir.com/)
 * [Geokarten](https://docs.triliumnotes.org/user-guide/collections/geomap) mit
   Standortmarkierungen und GPX-Tracks
@@ -132,8 +132,8 @@ Unsere Dokumentation ist verfügbar in mehreren Formaten:
   einfachen Speichern von Webinhalten
 * Anpassbare Benutzeroberfläche (Seitenleisten-Schaltflächen, benutzerdefinierte
   Widgets, ...)
-* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
-  along with a Grafana Dashboard.
+* [Metriken](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics)
+  zusammen mit einem Grafana-Dashboard.
 
 ✨ Weitere Informationen zu TriliumNext findet man in den folgenden
 Ressourcen/Communities von Drittanbietern:

@@ -21,7 +21,13 @@
     },
     "bundle-error": {
       "title": "Hubo un fallo al cargar un script personalizado",
-      "message": "El script de la nota con ID \"{{id}}\", titulado \"{{title}}\" no pudo ser ejecutado debido a:\n\n{{message}}"
+      "message": "El script no pudo ser ejecutado debido a:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "Hubo un fallo al obtener la lista de widgets del servidor"
+    },
+    "widget-render-error": {
+      "title": "Hubo un fallo al renderizar un widget personalizado de React"
     }
   },
   "add_link": {
@@ -162,7 +168,8 @@
     "other": "Otro",
     "quickSearch": "centrarse en la entrada de búsqueda rápida",
     "inPageSearch": "búsqueda en la página",
-    "title": "Hoja de ayuda"
+    "title": "Hoja de ayuda",
+    "editShortcuts": "Editar atajos de teclado"
   },
   "import": {
     "importIntoNote": "Importar a nota",
@@ -690,7 +697,7 @@
     "convert_into_attachment_successful": "La nota '{{title}}' ha sido convertida a un archivo adjunto.",
     "convert_into_attachment_prompt": "¿Está seguro que desea convertir la nota '{{title}}' en un archivo adjunto de la nota padre?",
     "print_pdf": "Exportar como PDF...",
-    "open_note_on_server": "Abrir nota en el servidor"
+    "open_note_on_server": "Abrir nota en servidor"
   },
   "onclick_button": {
     "no_click_handler": "El widget de botón '{{componentId}}' no tiene un controlador de clics definido"
@@ -736,7 +743,7 @@
   "zpetne_odkazy": {
     "relation": "relación",
     "backlink_one": "{{count}} Vínculo de retroceso",
-    "backlink_many": "",
+    "backlink_many": "{{count}} Vínculos de retroceso",
     "backlink_other": "{{count}} vínculos de retroceso"
   },
   "mobile_detail_menu": {
@@ -749,7 +756,10 @@
   "note_icon": {
     "change_note_icon": "Cambiar icono de nota",
     "search": "Búsqueda:",
-    "reset-default": "Restablecer a icono por defecto"
+    "reset-default": "Restablecer a icono por defecto",
+    "search_placeholder_one": "Buscar {{number}} icono a través de {{count}} paquetes",
+    "search_placeholder_many": "Buscar {{number}} iconos a través de {{count}} paquetes",
+    "search_placeholder_other": "Buscar {{number}} iconos a través de {{count}} paquetes"
   },
   "basic_properties": {
     "note_type": "Tipo de nota",
@@ -789,7 +799,7 @@
     "file_type": "Tipo de archivo",
     "file_size": "Tamaño del archivo",
     "download": "Descargar",
-    "open": "Abrir",
+    "open": "Abrir externamente",
     "upload_new_revision": "Subir nueva revisión",
     "upload_success": "Se ha subido una nueva revisión de archivo.",
     "upload_failed": "Error al cargar una nueva revisión de archivo.",
@@ -1302,11 +1312,11 @@
   "code_mime_types": {
     "title": "Tipos MIME disponibles en el menú desplegable",
     "tooltip_syntax_highlighting": "Resaltado de sintaxis",
-    "tooltip_code_block_syntax": "Bloques de código en notas de texto",
-    "tooltip_code_note_syntax": "Notas de código"
+    "tooltip_code_block_syntax": "Bloques de Código en notas de Texto",
+    "tooltip_code_note_syntax": "Notas de Código"
   },
   "vim_key_bindings": {
-    "use_vim_keybindings_in_code_notes": "Atajos de teclas de Vim",
+    "use_vim_keybindings_in_code_notes": "Combinaciones de teclas Vim",
     "enable_vim_keybindings": "Habilitar los atajos de teclas de Vim en la notas de código (no es modo ex)"
   },
   "wrap_lines": {
@@ -1571,7 +1581,7 @@
     "will_be_deleted_in": "Este archivo adjunto se eliminará automáticamente en {{time}}",
     "will_be_deleted_soon": "Este archivo adjunto se eliminará automáticamente pronto",
     "deletion_reason": ", porque el archivo adjunto no está vinculado en el contenido de la nota. Para evitar la eliminación, vuelva a agregar el enlace del archivo adjunto al contenido o convierta el archivo adjunto en una nota.",
-    "role_and_size": "Rol: {{role}}, Tamaño: {{size}}",
+    "role_and_size": "Rol: {{role}}, tamaño: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "Enlace del archivo adjunto copiado al portapapeles.",
     "unrecognized_role": "Rol de archivo adjunto no reconocido '{{role}}'."
   },
@@ -1622,7 +1632,7 @@
     "import-into-note": "Importar a nota",
     "apply-bulk-actions": "Aplicar acciones en lote",
     "converted-to-attachments": "{{count}} notas han sido convertidas en archivos adjuntos.",
-    "convert-to-attachment-confirm": "¿Está seguro que desea convertir las notas seleccionadas en archivos adjuntos de sus notas padres?",
+    "convert-to-attachment-confirm": "¿Está seguro que desea convertir las notas seleccionadas en archivos adjuntos de sus notas padres? Esta operación solo aplica a notas de Imagen, otras notas serán omitidas.",
     "open-in-popup": "Edición rápida",
     "archive": "Archivar",
     "unarchive": "Desarchivar"
@@ -1717,7 +1727,10 @@
   "note_detail": {
     "could_not_find_typewidget": "No se pudo encontrar typeWidget para el tipo '{{type}}'",
     "printing": "Impresión en curso...",
-    "printing_pdf": "Exportando a PDF en curso.."
+    "printing_pdf": "Exportando a PDF en curso..",
+    "print_report_collection_content_one": "{{count}} nota en la colección no se puede imprimir porque no son compatibles o está protegida.",
+    "print_report_collection_content_many": "{{count}} notas en la colección no se pueden imprimir porque no son compatibles o están protegidas.",
+    "print_report_collection_content_other": "{{count}} notas en la colección no se pueden imprimir porque no son compatibles o están protegidas."
   },
   "note_title": {
     "placeholder": "escriba el título de la nota aquí..."
@@ -1929,7 +1942,7 @@
     "unknown_widget": "Widget desconocido para \"{{id}}\"."
   },
   "note_language": {
-    "not_set": "No establecido",
+    "not_set": "Idioma no establecido",
     "configure-languages": "Configurar idiomas..."
   },
   "content_language": {
@@ -1968,7 +1981,7 @@
     "hide-weekends": "Ocultar fines de semana",
     "show-scale": "Mostrar escala",
     "display-week-numbers": "Mostrar números de semana",
-    "map-style": "Estilo de mapa:",
+    "map-style": "Estilo de mapa",
     "max-nesting-depth": "Máxima profundidad de anidamiento:",
     "vector_light": "Vector (claro)",
     "vector_dark": "Vector (oscuro)",
@@ -2097,5 +2110,36 @@
     "clear-color": "Borrar color de nota",
     "set-color": "Asignar color de nota",
     "set-custom-color": "Asignar color de nota personalizado"
+  },
+  "status_bar": {
+    "backlinks_one": "{{count}} vínculo de retroceso",
+    "backlinks_many": "{{count}} vínculos de retroceso",
+    "backlinks_other": "{{count}} vínculos de retroceso",
+    "backlinks_title_one": "Ver vínculo de retroceso",
+    "backlinks_title_many": "Ver vínculos de retroceso",
+    "backlinks_title_other": "Ver vínculos de retroceso",
+    "attachments_one": "{{count}} adjunto",
+    "attachments_many": "{{count}} adjuntos",
+    "attachments_other": "{{count}} adjuntos",
+    "attachments_title_one": "Ver adjunto en una nueva pestaña",
+    "attachments_title_many": "Ver adjuntos en una nueva pestaña",
+    "attachments_title_other": "Ver adjuntos en una nueva pestaña",
+    "attributes_one": "{{count}} atributo",
+    "attributes_many": "{{count}} atributos",
+    "attributes_other": "{{count}} atributos",
+    "note_paths_one": "{{count}} ruta",
+    "note_paths_many": "{{count}} rutas",
+    "note_paths_other": "{{count}} rutas"
+  },
+  "pdf": {
+    "attachments_one": "{{count}} adjunto",
+    "attachments_many": "{{count}} adjuntos",
+    "attachments_other": "{{count}} adjuntos",
+    "layers_one": "{{count}} capa",
+    "layers_many": "{{count}} capas",
+    "layers_other": "{{count}} capas",
+    "pages_one": "{{count}} página",
+    "pages_many": "{{count}} páginas",
+    "pages_other": "{{count}} páginas"
   }
 }

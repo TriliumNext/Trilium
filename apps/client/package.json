@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/client",
-  "version": "0.101.1",
+  "version": "0.101.3",
   "description": "JQuery-based client for TriliumNext, used for both web and desktop (via Electron)",
   "private": true,
   "license": "AGPL-3.0-only",
@@ -56,12 +56,12 @@
     "mark.js": "8.11.1",
     "marked": "17.0.1",
     "mermaid": "11.12.2",
-    "mind-elixir": "5.4.0",
+    "mind-elixir": "5.5.0",
     "normalize.css": "8.0.1",
     "panzoom": "9.4.3",
     "preact": "10.28.1",
     "react-i18next": "16.5.1",
-    "react-window": "2.2.3",
+    "react-window": "2.2.4",
     "reveal.js": "5.2.1",
     "svg-pan-zoom": "3.6.2",
     "tabulator-tables": "6.3.1",
@@ -69,7 +69,7 @@
   },
   "devDependencies": {
     "@ckeditor/ckeditor5-inspector": "5.0.0",
-    "@preact/preset-vite": "2.10.2",
+    "@prefresh/vite": "2.4.11",
     "@types/bootstrap": "5.2.10",
     "@types/jquery": "3.5.33",
     "@types/leaflet": "1.9.21",
@@ -79,6 +79,7 @@
     "@types/tabulator-tables": "6.3.1",
     "copy-webpack-plugin": "13.0.1",
     "happy-dom": "20.0.11",
+    "lightningcss": "1.30.2",
     "script-loader": "0.7.2",
     "vite-plugin-static-copy": "3.1.4"
   }
