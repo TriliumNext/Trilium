@@ -2,13 +2,13 @@
 // This will eventually import your core server and DB provider.
 // import { createCoreServer } from "@trilium/core"; (bundled)
 
-import BrowserExecutionContext from './lightweight/cls_provider';
-import BrowserCryptoProvider from './lightweight/crypto_provider';
-import BrowserSqlProvider from './lightweight/sql_provider';
-import WorkerMessagingProvider from './lightweight/messaging_provider';
+import initTranslations from './i18n';
 import { BrowserRouter } from './lightweight/browser_router';
 import { createConfiguredRouter } from './lightweight/browser_routes';
-import initTranslations from './i18n';
+import BrowserExecutionContext from './lightweight/cls_provider';
+import BrowserCryptoProvider from './lightweight/crypto_provider';
+import WorkerMessagingProvider from './lightweight/messaging_provider';
+import BrowserSqlProvider from './lightweight/sql_provider';
 
 // Global error handlers - MUST be set up before any async imports
 self.onerror = (message, source, lineno, colno, error) => {
@@ -201,11 +201,9 @@ self.onmessage = async (event) => {
     if (!msg || msg.type !== "LOCAL_REQUEST") return;
 
     const { id, request } = msg;
-    console.log("[Worker] Received LOCAL_REQUEST:", id, request.method, request.url);
 
     try {
         const response = await dispatch(request);
-        console.log("[Worker] Dispatch completed, sending response:", id);
 
         // Transfer body back (if any) - use options object for proper typing
         (self as unknown as Worker).postMessage({
