@@ -3,7 +3,7 @@ import { join } from 'path';
 import { defineConfig } from 'vite';
 import { viteStaticCopy } from 'vite-plugin-static-copy';
 
-const assets = ["assets", "stylesheets", "fonts", "translations"];
+const clientAssets = ["assets", "stylesheets", "fonts", "translations"];
 
 const isDev = process.env.NODE_ENV === "development";
 
@@ -42,7 +42,7 @@ const sqliteWasmPlugin = viteStaticCopy({
 let plugins: any = [
     sqliteWasmPlugin,  // Always include SQLite WASM files
     viteStaticCopy({
-        targets: assets.map((asset) => ({
+        targets: clientAssets.map((asset) => ({
             src: `../../client/src/${asset}/*`,
             dest: asset
         })),
@@ -52,6 +52,14 @@ let plugins: any = [
                 reloadPageOnChange: true
             }
         })
+    }),
+    viteStaticCopy({
+        targets: [
+            {
+                src: "../../server/src/assets/*",
+                dest: "server-assets"
+            }
+        ]
     }),
     // Watch client files for changes in development
     ...(isDev ? [

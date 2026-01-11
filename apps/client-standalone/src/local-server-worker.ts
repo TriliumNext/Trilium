@@ -8,6 +8,7 @@ import BrowserSqlProvider from './lightweight/sql_provider';
 import WorkerMessagingProvider from './lightweight/messaging_provider';
 import { BrowserRouter } from './lightweight/browser_router';
 import { createConfiguredRouter } from './lightweight/browser_routes';
+import initTranslations from './i18n';
 
 // Global error handlers - MUST be set up before any async imports
 self.onerror = (message, source, lineno, colno, error) => {
@@ -100,6 +101,7 @@ async function initialize(): Promise<void> {
             console.log("[Worker] Database loaded");
 
             console.log("[Worker] Loading @triliumnext/core...");
+            initTranslations();
             coreModule = await import("@triliumnext/core");
             coreModule.initializeCore({
                 executionContext: new BrowserExecutionContext(),
