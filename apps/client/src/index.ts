@@ -26,7 +26,7 @@ async function setupGlob() {
     window.glob = {
         ...json,
         activeDialog: null,
-        device: getDevice()
+        device: json.device || getDevice()
     };
 }
 
@@ -40,7 +40,18 @@ function getDevice() {
     }
 
     const deviceCookie = document.cookie.split("; ").find(row => row.startsWith("trilium-device="))?.split("=")[1];
-    return deviceCookie ?? "desktop";
+    if (deviceCookie === "desktop" || deviceCookie === "mobile") return deviceCookie;
+    return isMobile() ? "mobile" : "desktop";
+}
+
+// https://stackoverflow.com/a/73731646/944162
+function isMobile() {
+    const mQ = matchMedia?.("(pointer:coarse)");
+    if (mQ?.media === "(pointer:coarse)") return !!mQ.matches;
+
+    if ("orientation" in window) return true;
+    const userAgentsRegEx = /\b(Android|iPhone|iPad|iPod|Windows Phone|BlackBerry|webOS|IEMobile)\b/i;
+    return userAgentsRegEx.test(navigator.userAgent);
 }
 
 async function loadBootstrapCss() {
