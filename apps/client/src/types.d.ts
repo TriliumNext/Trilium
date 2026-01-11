@@ -1,4 +1,4 @@
-import { IconRegistry, Locale } from "@triliumnext/commons";
+import { BootstrapDefinition } from "@triliumnext/commons";
 
 import appContext, { AppContext } from "./components/app_context";
 import type FNote from "./entities/fnote";
@@ -15,10 +15,9 @@ interface ElectronProcess {
     platform: string;
 }
 
-interface CustomGlobals {
+interface CustomGlobals extends BootstrapDefinition {
     isDesktop: typeof utils.isDesktop;
     isMobile: typeof utils.isMobile;
-    device: "mobile" | "desktop" | "print";
     getComponentByEl: typeof appContext.getComponentByEl;
     getHeaders: typeof server.getHeaders;
     getReferenceLinkTitle: (href: string) => Promise<string>;
@@ -31,33 +30,7 @@ interface CustomGlobals {
     SEARCH_HELP_TEXT: string;
     activeDialog: JQuery<HTMLElement> | null;
     componentId: string;
-    csrfToken: string;
-    baseApiUrl: string;
-    isProtectedSessionAvailable: boolean;
-    isDev: boolean;
-    isMainWindow: boolean;
-    isStandalone?: boolean;
-    maxEntityChangeIdAtLoad: number;
-    maxEntityChangeSyncIdAtLoad: number;
-    assetPath: string;
-    appPath: string;
-    instanceName: string;
-    appCssNoteIds: string[];
-    triliumVersion: string;
-    TRILIUM_SAFE_MODE: boolean;
-    platform?: typeof process.platform;
     linter: typeof lint;
-    hasNativeTitleBar: boolean;
-    hasBackgroundEffects: boolean;
-    isElectron: boolean;
-    isRtl: boolean;
-    iconRegistry: IconRegistry;
-    themeCssUrl: string;
-    themeUseNextAsBase?: "next" | "next-light" | "next-dark";
-    iconPackCss: string;
-    headingStyle: "plain" | "underline" | "markdown";
-    layoutOrientation: "vertical" | "horizontal";
-    currentLocale: Locale;
 }
 
 type RequireMethod = (moduleName: string) => any;

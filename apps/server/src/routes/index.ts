@@ -1,3 +1,5 @@
+import { BootstrapDefinition } from "@triliumnext/commons";
+import { getSharedBootstrapItems, icon_packs as iconPackService } from "@triliumnext/core";
 import type { Request, Response } from "express";
 
 import packageJson from "../../package.json" with { type: "json" };
@@ -7,11 +9,8 @@ import assetPath from "../services/asset_path.js";
 import attributeService from "../services/attributes.js";
 import config from "../services/config.js";
 import { getCurrentLocale } from "../services/i18n.js";
-import { icon_packs as iconPackService } from "@triliumnext/core";
 import log from "../services/log.js";
 import optionService from "../services/options.js";
-import protectedSessionService from "../services/protected_session.js";
-import sql from "../services/sql.js";
 import { isDev, isElectron, isWindows11 } from "../services/utils.js";
 import { generateToken as generateCsrfToken } from "./csrf_protection.js";
 
@@ -34,38 +33,32 @@ export function bootstrap(req: Request, res: Response) {
     const currentLocale = getCurrentLocale();
 
     res.send({
+        ...getSharedBootstrapItems(assetPath),
         device: view,
         csrfToken,
         themeCssUrl: getThemeCssUrl(theme, themeNote),
-        themeUseNextAsBase: themeNote?.getAttributeValue("label", "appThemeBase"),
-        headingStyle: options.headingStyle,
-        layoutOrientation: options.layoutOrientation,
+        themeUseNextAsBase: themeNote?.getAttributeValue("label", "appThemeBase") as "next" | "next-light" | "next-dark",
         platform: process.platform,
         isElectron,
         hasNativeTitleBar: isElectron && nativeTitleBarVisible,
         hasBackgroundEffects: isElectron && isWindows11 && !nativeTitleBarVisible && options.backgroundEffects === "true",
-        maxEntityChangeIdAtLoad: sql.getValue("SELECT COALESCE(MAX(id), 0) FROM entity_changes"),
-        maxEntityChangeSyncIdAtLoad: sql.getValue("SELECT COALESCE(MAX(id), 0) FROM entity_changes WHERE isSynced = 1"),
         instanceName: config.General ? config.General.instanceName : null,
         appCssNoteIds: getAppCssNoteIds(),
         isDev,
         isMainWindow: view === "mobile" ? true : !req.query.extraWindow,
-        isProtectedSessionAvailable: protectedSessionService.isProtectedSessionAvailable(),
         triliumVersion: packageJson.version,
-        assetPath,
         appPath,
         baseApiUrl: 'api/',
         currentLocale,
         isRtl: !!currentLocale.rtl,
         iconPackCss: iconPacks
-            .map(p => iconPackService.generateCss(p, p.builtin
+            .map((p: iconPackService.ProcessedIconPack) => iconPackService.generateCss(p, p.builtin
                 ? `${assetPath}/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
                 : `api/attachments/download/${p.fontAttachmentId}`))
             .filter(Boolean)
             .join("\n\n"),
-        iconRegistry: iconPackService.generateIconRegistry(iconPacks),
         TRILIUM_SAFE_MODE: !!process.env.TRILIUM_SAFE_MODE
-    });
+    } satisfies BootstrapDefinition);
 }
 
 function getView(req: Request): View {

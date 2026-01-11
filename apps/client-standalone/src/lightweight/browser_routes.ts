@@ -3,8 +3,11 @@
  * This integrates with the shared route builder from @triliumnext/core.
  */
 
-import { routes, icon_packs as iconPackService } from '@triliumnext/core';
-import { BrowserRouter, type BrowserRequest } from './browser_router';
+import { BootstrapDefinition } from '@triliumnext/commons';
+import { getSharedBootstrapItems, routes } from '@triliumnext/core';
+
+import packageJson from '../../package.json' with { type: 'json' };
+import { type BrowserRequest,BrowserRouter } from './browser_router';
 
 type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
 
@@ -47,39 +50,42 @@ export function registerRoutes(router: BrowserRouter): void {
     // Dummy routes for compatibility.
     apiRoute("get", "/api/script/widgets", () => []);
     apiRoute("get", "/api/script/startup", () => []);
-    apiRoute("get", "/api/system-checks", () => ({ isCpuArchMismatch: false }))
+    apiRoute("get", "/api/system-checks", () => ({ isCpuArchMismatch: false }));
     apiRoute("get", "/api/search/:searchString", () => []);
     apiRoute("get", "/api/search-templates", () => []);
     apiRoute("get", "/api/autocomplete", () => []);
 }
 
 function bootstrapRoute() {
-   const iconPacks = iconPackService.getIconPacks();
-   const assetPath = ".";
 
-   return {
-        triliumVersion: "1.2.3",
-        assetPath,
-        baseApiUrl: "../api/",
-        themeCssUrl: null,
+    const assetPath = ".";
+
+    return {
+        ...getSharedBootstrapItems(assetPath),
+        appPath: assetPath,
+        device: false, // Let the client detect device type.
+        csrfToken: "dummy-csrf-token",
+        themeCssUrl: false,
         themeUseNextAsBase: "next",
-        device: "desktop",
-        headingStyle: "default",
+        triliumVersion: packageJson.version,
+        baseApiUrl: "../api/",
+        headingStyle: "plain",
         layoutOrientation: "vertical",
         platform: "web",
+        isDev: import.meta.env.DEV,
+        isMainWindow: true,
         isElectron: false,
         isStandalone: true,
         hasNativeTitleBar: false,
         hasBackgroundEffects: true,
-        currentLocale: { id: "en", rtl: false },
-        iconPackCss: iconPacks
-            .map(p => iconPackService.generateCss(p, p.builtin
-                ? `${assetPath}/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
-                : `api/attachments/download/${p.fontAttachmentId}`))
-            .filter(Boolean)
-            .join("\n\n"),
-        iconRegistry: iconPackService.generateIconRegistry(iconPacks),
-    };
+
+        // TODO: Fill properly
+        currentLocale: { id: "en", name: "English", rtl: false },
+        isRtl: false,
+        instanceName: null,
+        appCssNoteIds: [],
+        TRILIUM_SAFE_MODE: false
+    } satisfies BootstrapDefinition;
 }
 
 /**
