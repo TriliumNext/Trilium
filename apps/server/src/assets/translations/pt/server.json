@@ -220,7 +220,6 @@
     "password-confirmation": "Confirmar Palavra-passe",
     "button": "Definir palavra-passe"
   },
-  "javascript-required": "Trilium precisa que JavaScript esteja ativado.",
   "setup": {
     "heading": "Trilium Notes setup",
     "new-document": "Sou um novo utilizador e quero criar um documento Trilium para as minhas notas",

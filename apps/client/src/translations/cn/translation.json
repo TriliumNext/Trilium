@@ -798,7 +798,8 @@
     "expand_tooltip": "展开此集合的直接子代（单层深度）。点击右方箭头以查看更多选项。",
     "expand_first_level": "展开直接子代",
     "expand_nth_level": "展开 {{depth}} 层",
-    "expand_all_levels": "展开所有层级"
+    "expand_all_levels": "展开所有层级",
+    "hide_child_notes": "隐藏树中的子笔记"
   },
   "edited_notes": {
     "no_edited_notes_found": "今天还没有编辑过的笔记...",
@@ -1505,7 +1506,10 @@
     "duplicate": "复制",
     "open-in-popup": "快速编辑",
     "archive": "归档",
-    "unarchive": "解压"
+    "unarchive": "解压",
+    "open-in-a-new-window": "在新窗口中打开",
+    "hide-subtree": "隐藏子树",
+    "show-subtree": "显示子树"
   },
   "shared_info": {
     "help_link": "访问 <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a> 获取帮助。",
@@ -1598,7 +1602,9 @@
     "shared-indicator-tooltip": "此笔记已公开分享",
     "shared-indicator-tooltip-with-url": "此笔记已公开分享至：{{- url}}",
     "clone-indicator-tooltip": "此笔记有 {{- count}} 个父级： {{- parents}}",
-    "clone-indicator-tooltip-single": "此笔记已克隆（1 个额外的父级：{{- parent}}）"
+    "clone-indicator-tooltip-single": "此笔记已克隆（1 个额外的父级：{{- parent}}）",
+    "subtree-hidden-tooltip_other": "从树中隐藏的 {{count}} 篇子笔记",
+    "subtree-hidden-moved-title": "已添加到 {{title}}"
   },
   "title_bar_buttons": {
     "window-on-top": "保持此窗口置顶"

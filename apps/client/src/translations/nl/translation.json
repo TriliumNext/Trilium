@@ -12,7 +12,7 @@
   "toast": {
     "critical-error": {
       "title": "Kritische Error",
-      "message": "Een kritieke fout heeft plaatsgevonden waardoor de cliënt zich aanmeldt vanaf het begin:\n\n84X\n\nDit is waarschijnlijk veroorzaakt door een script dat op een onverwachte manier faalt. Probeer de sollicitatie in veilige modus te starten en de kwestie aan te spreken."
+      "message": "Een kritieke fout heeft plaatsgevonden waardoor de applicatie niet kon opstarten:\n\n{{message}}\n\nDit is waarschijnlijk veroorzaakt door een onverwachte fout in een script. Probeer de applicatie op te starten in veilige modus en het probleem op te lossen."
     },
     "widget-error": {
       "title": "Starten widget mislukt",
@@ -22,7 +22,16 @@
     "bundle-error": {
       "title": "Custom script laden mislukt",
       "message": "Script van notitie met ID \"{{id}}\", getiteld \"{{title}}\" kon niet worden uitgevoerd vanwege:\n\n{{message}}"
-    }
+    },
+    "scripting-error": "Error met script: {{title}}",
+    "widget-list-error": {
+      "title": "Kon geen lijst met widgets ophalen van de server"
+    },
+    "widget-render-error": {
+      "title": "React-widget kon niet geladen worden"
+    },
+    "widget-missing-parent": "Widget heeft niet het verplichte '{{property}}'-veld gedefinieerd.\n\nAls dit script is bedoeld om zonder interface te draaien, gebruik dan in plaats daarvan '#run=frontendStartup'.",
+    "open-script-note": "Open scriptnotitie"
   },
   "add_link": {
     "add_link": "Voeg link toe",
@@ -41,7 +50,8 @@
     "help_on_tree_prefix": "Help bij boomvoorvoegsel",
     "prefix": "Voorvoegsel: ",
     "edit_branch_prefix_multiple": "Bewerk zijtakvoorvoegsel voor {{count}} zijtakken",
-    "branch_prefix_saved_multiple": "Vertakkingsvoorvoegsel opgeslagen voor {{count}} vertakkingen."
+    "branch_prefix_saved_multiple": "Vertakkingsvoorvoegsel opgeslagen voor {{count}} vertakkingen.",
+    "affected_branches": "Aangetaste takken ({{count}}):"
   },
   "bulk_actions": {
     "bulk_actions": "Bulk acties",
@@ -54,7 +64,8 @@
     "labels": "Labels",
     "relations": "Relaties",
     "notes": "Notities",
-    "other": "Andere"
+    "other": "Andere",
+    "include_descendants": "Tel afstammelingen van de geselecteerde notities mee"
   },
   "calendar": {
     "april": "April",
@@ -78,5 +89,35 @@
   },
   "show_toc_widget_button": {
     "show_toc": "Laat Inhoudsopgave zien"
+  },
+  "status_bar": {
+    "note_paths_one": "{{count}} pad",
+    "note_paths_other": "{{count}} paden",
+    "note_paths_title": "Notitiepaden",
+    "code_note_switcher": "Verander de taalmodus"
+  },
+  "attributes_panel": {
+    "title": "Notitie-attributen"
+  },
+  "right_pane": {
+    "empty_message": "Geen informatie voor deze notitie",
+    "empty_button": "Verberg dit paneel",
+    "toggle": "Schakel rechterpaneel in/uit",
+    "custom_widget_go_to_source": "Go naar de broncode"
+  },
+  "pdf": {
+    "attachments_one": "{{count}} bijlage",
+    "attachments_other": "{{count}} bijlagen",
+    "layers_one": "{{count}} laag",
+    "layers_other": "{{count}} lagen",
+    "pages_one": "{{count}} pagina",
+    "pages_other": "{{count}} pagina's",
+    "pages_alt": "Pagina {{pageNumber}}",
+    "pages_loading": "Laden..."
+  },
+  "clone_to": {
+    "clone_notes_to": "Kloon de notities naar...",
+    "help_on_links": "Hulp op links",
+    "notes_to_clone": "Notities om te klonen"
   }
 }
