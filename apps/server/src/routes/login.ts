@@ -1,4 +1,5 @@
 import { ValidationError } from "@triliumnext/core";
+import { i18n } from "@triliumnext/core";
 import crypto from "crypto";
 import type { Request, Response } from 'express';
 
@@ -8,7 +9,6 @@ import myScryptService from "../services/encryption/my_scrypt.js";
 import openIDEncryption from '../services/encryption/open_id_encryption.js';
 import passwordService from "../services/encryption/password.js";
 import recoveryCodeService from '../services/encryption/recovery_codes.js';
-import { getCurrentLocale } from "../services/i18n.js";
 import log from "../services/log.js";
 import openID from '../services/open_id.js';
 import optionService from "../services/options.js";
@@ -27,7 +27,7 @@ function loginPage(req: Request, res: Response) {
         assetPath,
         assetPathFragment: assetUrlFragment,
         appPath,
-        currentLocale: getCurrentLocale()
+        currentLocale: i18n.getCurrentLocale()
     });
 }
 
@@ -36,7 +36,7 @@ function setPasswordPage(req: Request, res: Response) {
         error: false,
         assetPath,
         appPath,
-        currentLocale: getCurrentLocale()
+        currentLocale: i18n.getCurrentLocale()
     });
 }
 
@@ -62,7 +62,7 @@ function setPassword(req: Request, res: Response) {
             error,
             assetPath,
             appPath,
-            currentLocale: getCurrentLocale()
+            currentLocale: i18n.getCurrentLocale()
         });
         return;
     }
@@ -185,7 +185,7 @@ function sendLoginError(req: Request, res: Response, errorType: 'password' | 'to
         assetPath,
         assetPathFragment: assetUrlFragment,
         appPath,
-        currentLocale: getCurrentLocale()
+        currentLocale: i18n.getCurrentLocale()
     });
 }
 
