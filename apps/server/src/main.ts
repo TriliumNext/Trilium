@@ -43,10 +43,9 @@ async function startApplication() {
             }
         },
         crypto: new NodejsCryptoProvider(),
-        executionContext: new ClsHookedExecutionContext()
+        executionContext: new ClsHookedExecutionContext(),
+        translations: (await import("./services/i18n.js")).initializeTranslations
     });
-    const { initializeTranslations } = (await import("./services/i18n.js"));
-    await initializeTranslations();
     const startTriliumServer = (await import("./www.js")).default;
     await startTriliumServer();
 }

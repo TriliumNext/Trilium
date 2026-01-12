@@ -1,11 +1,8 @@
+import { LOCALE_IDS } from "@triliumnext/commons";
 import i18next from "i18next";
 import I18NextHttpBackend from "i18next-http-backend";
 
-export default async function initTranslations() {
-    // TODO: Use proper locale.
-    const locale = "en";
-
-    // Initialize translations.
+export default async function translationProvider(locale: LOCALE_IDS) {
     await i18next.use(I18NextHttpBackend).init({
         lng: locale,
         fallbackLng: "en",

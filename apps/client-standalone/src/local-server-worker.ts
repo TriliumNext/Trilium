@@ -2,13 +2,13 @@
 // This will eventually import your core server and DB provider.
 // import { createCoreServer } from "@trilium/core"; (bundled)
 
-import initTranslations from './i18n';
 import { BrowserRouter } from './lightweight/browser_router';
 import { createConfiguredRouter } from './lightweight/browser_routes';
 import BrowserExecutionContext from './lightweight/cls_provider';
 import BrowserCryptoProvider from './lightweight/crypto_provider';
 import WorkerMessagingProvider from './lightweight/messaging_provider';
 import BrowserSqlProvider from './lightweight/sql_provider';
+import translationProvider from './lightweight/translation_provider';
 
 // Global error handlers - MUST be set up before any async imports
 self.onerror = (message, source, lineno, colno, error) => {
@@ -101,12 +101,12 @@ async function initialize(): Promise<void> {
             console.log("[Worker] Database loaded");
 
             console.log("[Worker] Loading @triliumnext/core...");
-            initTranslations();
             coreModule = await import("@triliumnext/core");
             coreModule.initializeCore({
                 executionContext: new BrowserExecutionContext(),
                 crypto: new BrowserCryptoProvider(),
                 messaging: messagingProvider,
+                translations: translationProvider,
                 dbConfig: {
                     provider: sqlProvider,
                     isReadOnly: false,

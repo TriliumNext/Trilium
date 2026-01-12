@@ -4,6 +4,7 @@ import { getLog, initLog } from "./services/log";
 import { initSql } from "./services/sql/index";
 import { SqlService, SqlServiceParams } from "./services/sql/sql";
 import { initMessaging, MessagingProvider } from "./services/messaging/index";
+import { initTranslations, TranslationProvider } from "./services/i18n";
 
 export type * from "./services/sql/types";
 export * from "./services/sql/index";
@@ -24,6 +25,7 @@ export { default as hidden_subtree } from "./services/hidden_subtree";
 export * as icon_packs from "./services/icon_packs";
 export { getContext, type ExecutionContext } from "./services/context";
 export * as cls from "./services/context";
+export * as i18n from "./services/i18n";
 export * from "./errors";
 export { default as getInstanceId } from "./services/instance_id";
 export type { CryptoProvider } from "./services/encryption/crypto";
@@ -64,16 +66,18 @@ export type { NoteParams } from "./services/notes";
 export * as sanitize from "./services/sanitizer";
 export * as routes from "./routes";
 
-export function initializeCore({ dbConfig, executionContext, crypto, messaging }: {
+export function initializeCore({ dbConfig, executionContext, crypto, translations, messaging }: {
     dbConfig: SqlServiceParams,
     executionContext: ExecutionContext,
     crypto: CryptoProvider,
+    translations: TranslationProvider,
     messaging?: MessagingProvider
 }) {
     initLog();
     initCrypto(crypto);
     initSql(new SqlService(dbConfig, getLog()));
     initContext(executionContext);
+    initTranslations(translations);
     if (messaging) {
         initMessaging(messaging);
     }

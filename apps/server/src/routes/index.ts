@@ -8,7 +8,6 @@ import appPath from "../services/app_path.js";
 import assetPath from "../services/asset_path.js";
 import attributeService from "../services/attributes.js";
 import config from "../services/config.js";
-import { getCurrentLocale } from "../services/i18n.js";
 import log from "../services/log.js";
 import optionService from "../services/options.js";
 import { isDev, isElectron, isWindows11 } from "../services/utils.js";
@@ -30,7 +29,6 @@ export function bootstrap(req: Request, res: Response) {
     const themeNote = attributeService.getNoteWithLabel("appTheme", theme);
     const nativeTitleBarVisible = options.nativeTitleBarVisible === "true";
     const iconPacks = iconPackService.getIconPacks();
-    const currentLocale = getCurrentLocale();
 
     res.send({
         ...getSharedBootstrapItems(assetPath),
@@ -49,8 +47,6 @@ export function bootstrap(req: Request, res: Response) {
         triliumVersion: packageJson.version,
         appPath,
         baseApiUrl: 'api/',
-        currentLocale,
-        isRtl: !!currentLocale.rtl,
         iconPackCss: iconPacks
             .map((p: iconPackService.ProcessedIconPack) => iconPackService.generateCss(p, p.builtin
                 ? `${assetPath}/fonts/${p.fontAttachmentId}.${iconPackService.MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
