@@ -175,15 +175,15 @@
 }
 
 
-.gallery-toolbar .btn-delete.btn.btn-primary {
-    background-color: var(--dropdown-item-icon-destructive-color) !important;
-    border-color: var(--dropdown-item-icon-destructive-color) !important;
-    color: white !important;
+.gallery-view .gallery-toolbar .btn-delete.btn.btn-primary {
+    background-color: var(--dropdown-item-icon-destructive-color);
+    border-color: var(--dropdown-item-icon-destructive-color);
+    color: white;
 }
 
-.gallery-toolbar .btn-delete.btn.btn-primary:hover:not(.disabled) {
-    background-color: color-mix(in srgb, var(--dropdown-item-icon-destructive-color) 80%, black) !important;
-    border-color: color-mix(in srgb, var(--dropdown-item-icon-destructive-color) 70%, black) !important;
+.gallery-view .gallery-toolbar .btn-delete.btn.btn-primary:hover:not(.disabled) {
+    background-color: color-mix(in srgb, var(--dropdown-item-icon-destructive-color) 80%, black);
+    border-color: color-mix(in srgb, var(--dropdown-item-icon-destructive-color) 70%, black);
 }
 
 .gallery-view.gallery-drag-over {
