@@ -1,15 +1,14 @@
-import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, MIME_TYPE_AUTO } from "@triliumnext/commons";
-import { buildExtraCommands, type EditorConfig, getCkLocale, PREMIUM_PLUGINS, TemplateDefinition } from "@triliumnext/ckeditor5";
-import { getHighlightJsNameForMime } from "../../../services/mime_types.js";
-import options from "../../../services/options.js";
-import { ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled } from "../../../services/syntax_highlight.js";
+import { buildExtraCommands, type EditorConfig, getCkLocale, loadPremiumPlugins, TemplateDefinition } from "@triliumnext/ckeditor5";
 import emojiDefinitionsUrl from "@triliumnext/ckeditor5/src/emoji_definitions/en.json?url";
+import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+
 import { copyTextWithToast } from "../../../services/clipboard_ext.js";
 import { t } from "../../../services/i18n.js";
 import { getMermaidConfig } from "../../../services/mermaid.js";
+import { default as mimeTypesService, getHighlightJsNameForMime } from "../../../services/mime_types.js";
 import noteAutocompleteService, { type Suggestion } from "../../../services/note_autocomplete.js";
-import mimeTypesService from "../../../services/mime_types.js";
-import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import options from "../../../services/options.js";
+import { ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled } from "../../../services/syntax_highlight.js";
 import { buildToolbarConfig } from "./toolbar.js";
 
 export const OPEN_SOURCE_LICENSE_KEY = "GPL";
@@ -36,7 +35,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
             engine: "katex",
             outputType: "span", // or script
             lazyLoad: async () => {
-                (window as any).katex = (await import("../../../services/math.js")).default
+                (window as any).katex = (await import("../../../services/math.js")).default;
             },
             forceOutputType: false, // forces output to use outputType
             enablePreview: true // Enable preview view
@@ -172,7 +171,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         config.language = {
             ui: (typeof config.language === "string" ? config.language : "en"),
             content: contentLanguage
-        }
+        };
     }
 
     // Mention customisation.
@@ -195,11 +194,9 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
         };
     }
 
-    // Enable premium plugins.
+    // Enable premium plugins dynamically to avoid eager loading.
     if (hasPremiumLicense) {
-        config.extraPlugins = [
-            ...PREMIUM_PLUGINS
-        ];
+        config.extraPlugins = await loadPremiumPlugins();
     }
 
     return {
@@ -237,7 +234,7 @@ function getLicenseKey() {
 }
 
 function getDisabledPlugins() {
-    let disabledPlugins: string[] = [];
+    const disabledPlugins: string[] = [];
 
     if (options.get("textNoteEmojiCompletionEnabled") !== "true") {
         disabledPlugins.push("EmojiMention");

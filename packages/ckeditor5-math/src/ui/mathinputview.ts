@@ -2,6 +2,7 @@
 // and keeps them in sync for the CKEditor 5 math dialog.
 import { View, type Locale, type FocusableView } from 'ckeditor5';
 import 'mathlive/fonts.css'; // Auto-bundles offline fonts
+import 'mathlive/static.css'; // Static styles for mathlive
 
 declare global {
 	interface Window {

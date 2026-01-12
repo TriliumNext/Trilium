@@ -1,7 +1,12 @@
-import { HiddenSubtreeItem } from "@triliumnext/commons";
+import { HiddenSubtreeAttribute, HiddenSubtreeItem } from "@triliumnext/commons";
 import { t } from "i18next";
 
 export default function buildHiddenSubtreeTemplates() {
+    const hideSubtreeAttributes: HiddenSubtreeAttribute = {
+        name: "subtreeHidden",
+        type: "label"
+    };
+
     const templates: HiddenSubtreeItem = {
         id: "_templates",
         title: t("hidden_subtree_templates.built-in-templates"),
@@ -93,6 +98,7 @@ export default function buildHiddenSubtreeTemplates() {
                         name: "hidePromotedAttributes",
                         type: "label"
                     },
+                    hideSubtreeAttributes,
                     {
                         name: "label:startDate",
                         type: "label",
@@ -133,6 +139,7 @@ export default function buildHiddenSubtreeTemplates() {
                         name: "collection",
                         type: "label"
                     },
+                    hideSubtreeAttributes,
                     {
                         name: "viewType",
                         type: "label",
@@ -163,6 +170,7 @@ export default function buildHiddenSubtreeTemplates() {
                         name: "hidePromotedAttributes",
                         type: "label"
                     },
+                    hideSubtreeAttributes,
                     {
                         name: "label:geolocation",
                         type: "label",
@@ -194,6 +202,7 @@ export default function buildHiddenSubtreeTemplates() {
                         name: "hidePromotedAttributes",
                         type: "label"
                     },
+                    hideSubtreeAttributes,
                     {
                         name: "label:status",
                         type: "label",

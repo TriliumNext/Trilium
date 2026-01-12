@@ -64,7 +64,9 @@ test("Displays math popup", async ({ page, context }) => {
     const mathForm = page.locator(".ck-math-form");
     await expect(mathForm).toBeVisible();
 
-    const input = mathForm.locator(".ck-input").first();
+    const input = mathForm.locator(".ck-latex-textarea").first();
+    await expect(input).toBeVisible();
+    await expect(input).toBeEnabled();
     await input.click();
     await input.fill("e=mc^2");
     await page.waitForTimeout(100);

@@ -83,8 +83,6 @@ async function renderIncludedNotes(contentEl: HTMLElement, seenNoteIds: Set<stri
             seenNoteIds
         })).$renderedContent;
         includeNoteEl.replaceChildren(...renderedContent);
-
-        seenNoteIds.add(noteId);
     }
 }
 

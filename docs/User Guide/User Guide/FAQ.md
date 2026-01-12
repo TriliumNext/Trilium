@@ -44,7 +44,7 @@ No.
 
 These general purpose sync apps are not suitable to sync database files which are open and being worked on by another application. The result is that they will corrupt the database file, resulting in data loss and this message in the Trilium logs:
 
-```plain
+```
 SqliteError: database disk image is malformed
 ```
 

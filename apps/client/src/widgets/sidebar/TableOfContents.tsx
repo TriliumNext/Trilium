@@ -115,7 +115,7 @@ function TableOfContentsHeading({ heading, scrollToHeading, activeHeadingId }: {
                     html={heading.text}
                 />
             </li>
-            {heading.children && (
+            {heading.children.length > 0 && (
                 <ol>
                     {heading.children.map(heading => <TableOfContentsHeading key={heading.id} heading={heading} scrollToHeading={scrollToHeading} activeHeadingId={activeHeadingId} />)}
                 </ol>

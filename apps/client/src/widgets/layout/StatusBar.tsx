@@ -338,19 +338,19 @@ interface AttributesProps extends StatusBarContext {
 function AttributesButton({ note, attributesShown, setAttributesShown }: AttributesProps) {
     const [ count, setCount ] = useState(note.attributes.length);
 
-    const refreshCount = useCallback((note: FNote) => {
+    const getAttributeCount = useCallback((note: FNote) => {
         return note.getAttributes().filter(a => !a.isAutoLink).length;
     }, []);
 
     // React to note changes.
     useEffect(() => {
-        setCount(refreshCount(note));
-    }, [ note, refreshCount ]);
+        setCount(getAttributeCount(note));
+    }, [ note, getAttributeCount ]);
 
     // React to changes in count.
     useTriliumEvent("entitiesReloaded", (({loadResults}) => {
         if (loadResults.getAttributeRows().some(attr => attributes.isAffecting(attr, note))) {
-            setCount(refreshCount(note));
+            setCount(getAttributeCount(note));
         }
     }));
 

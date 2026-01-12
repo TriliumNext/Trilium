@@ -22,6 +22,9 @@ type Labels = {
     pageUrl: string;
     dateNote: string;
 
+    // Tree specific
+    subtreeHidden: boolean;
+
     // Search
     searchString: string;
     ancestorDepth: string;
