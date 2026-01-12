@@ -26,6 +26,7 @@ import { useFilteredNoteIds } from "../legacy/utils";
 
 const INITIAL_LOAD = 50;
 const LOAD_MORE_INCREMENT = 50;
+const UPLOAD_PROGRESS_TOAST_ID = "gallery-upload-progress";
 
 const VISUAL_NOTE_TYPES = ['image', 'canvas', 'mermaid', 'mindMap'] as const;
 
@@ -183,14 +184,13 @@ export default function GalleryView({ note, noteIds: unfilteredNoteIds }: ViewMo
         setIsUploading(true);
         const totalFiles = files.length;
         let successCount = 0;
-        const toastId = "gallery-upload-progress";
 
         try {
             for (let i = 0; i < totalFiles; i++) {
                 const file = files[i];
                 try {
                     toast.showPersistent({
-                        id: toastId,
+                        id: UPLOAD_PROGRESS_TOAST_ID,
                         icon: "bx bx-upload",
                         message: t("import.in-progress", { progress: `${i + 1}/${totalFiles}` }),
                         progress: ((i + 1) / totalFiles) * 100
@@ -222,7 +222,7 @@ export default function GalleryView({ note, noteIds: unfilteredNoteIds }: ViewMo
                 }
             }
 
-            toast.closePersistent(toastId);
+            toast.closePersistent(UPLOAD_PROGRESS_TOAST_ID);
 
             if (successCount > 0) {
                 toast.showMessage(t("import.successful"));
@@ -263,16 +263,14 @@ export default function GalleryView({ note, noteIds: unfilteredNoteIds }: ViewMo
     const deleteNotes = async (noteIdsToDelete: string[]) => {
         if (noteIdsToDelete.length === 0) return;
 
-        const branchIds: string[] = [];
-        for (const noteId of noteIdsToDelete) {
-            const noteToDelete = froca.notes[noteId];
-            if (noteToDelete) {
-                const branch = noteToDelete.getParentBranches().find(b => b.parentNoteId === note.noteId);
-                if (branch) {
-                    branchIds.push(branch.branchId);
-                }
-            }
-        }
+        const branchIds = noteIdsToDelete
+            .map(noteId =>
+                froca.notes[noteId]
+                    ?.getParentBranches()
+                    .find(b => b.parentNoteId === note.noteId)
+                    ?.branchId
+            )
+            .filter((branchId): branchId is string => !!branchId);
 
         if (branchIds.length > 0) {
             await branches.deleteNotes(branchIds, false, false);
@@ -482,6 +480,9 @@ function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSele
     const notePath = getNotePath(parentNote, note);
     const isGallery = isGalleryNote(note);
 
+    // Track loaded children to trigger recalculation when notes are loaded into froca
+    const loadedChildCount = (note.children || []).filter(id => froca.notes[id]).length;
+
     const childCount = useMemo(() => {
         if (!isGallery) {
             return 0;
@@ -493,7 +494,7 @@ function GalleryCard({ note, parentNote, isSelected, selectedNoteIds, toggleSele
             if (!child) return false;
             return isVisualType(child.type) || isGalleryNote(child);
         }).length;
-    }, [isGallery, note.children]);
+    }, [isGallery, note.children, loadedChildCount]);
 
     const refreshData = useCallback(() => {
         tree.getNoteTitle(note.noteId, parentNote.noteId).then(setNoteTitle);
