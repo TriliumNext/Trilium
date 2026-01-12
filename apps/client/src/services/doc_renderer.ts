@@ -5,7 +5,7 @@ import { formatCodeBlocks } from "./syntax_highlight.js";
 
 export default function renderDoc(note: FNote) {
     return new Promise<JQuery<HTMLElement>>((resolve) => {
-        let docName = note.getLabelValue("docName");
+        const docName = note.getLabelValue("docName");
         const $content = $("<div>");
 
         if (docName) {
@@ -16,7 +16,7 @@ export default function renderDoc(note: FNote) {
                 if (status === "error") {
                     const fallbackUrl = getUrl(docName, "en");
                     $content.load(fallbackUrl, async () => {
-                        await processContent(fallbackUrl, $content)
+                        await processContent(fallbackUrl, $content);
                         resolve($content);
                     });
                     return;
@@ -37,9 +37,9 @@ async function processContent(url: string, $content: JQuery<HTMLElement>) {
     const dir = url.substring(0, url.lastIndexOf("/"));
 
     // Images are relative to the docnote but that will not work when rendered in the application since the path breaks.
-    $content.find("img").each((i, el) => {
+    $content.find("img").each((_i, el) => {
         const $img = $(el);
-        $img.attr("src", dir + "/" + $img.attr("src"));
+        $img.attr("src", `${dir}/${$img.attr("src")}`);
     });
 
     formatCodeBlocks($content);
@@ -51,7 +51,16 @@ async function processContent(url: string, $content: JQuery<HTMLElement>) {
 function getUrl(docNameValue: string, language: string) {
     // Cannot have spaces in the URL due to how JQuery.load works.
     docNameValue = docNameValue.replaceAll(" ", "%20");
+    if (docNameValue.includes("User%20Guide")) language = "en";
+    return `${getBasePath()}/doc_notes/${language}/${docNameValue}.html`;
+}
 
-    const basePath = window.glob.isDev ? window.glob.assetPath + "/.." : window.glob.assetPath;
-    return `${basePath}/doc_notes/${language}/${docNameValue}.html`;
+function getBasePath() {
+    if (window.glob.isStandalone) {
+        return `server-assets`;
+    }
+    if (window.glob.isDev) {
+        return `${window.glob.assetPath  }/..`;
+    }
+    return window.glob.assetPath;
 }
