@@ -2279,7 +2279,6 @@
     "gallery_creation_failed": "Failed to create new gallery.",
     "default_gallery_name": "New Gallery",
     "no_image_files": "No image files found.",
-    "drop_images_here": "Drop Images Here",
     "back_to_parent": "Back To Parent",
     "image_count": "{{count}} image",
     "image_count_other": "{{count}} images",
