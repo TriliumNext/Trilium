@@ -5,6 +5,7 @@ import { initSql } from "./services/sql/index";
 import { SqlService, SqlServiceParams } from "./services/sql/sql";
 import { initMessaging, MessagingProvider } from "./services/messaging/index";
 import { initTranslations, TranslationProvider } from "./services/i18n";
+import appInfo from "./services/app_info";
 
 export type * from "./services/sql/types";
 export * from "./services/sql/index";
@@ -67,18 +68,23 @@ export type { NoteParams } from "./services/notes";
 export * as sanitize from "./services/sanitizer";
 export * as routes from "./routes";
 
-export function initializeCore({ dbConfig, executionContext, crypto, translations, messaging }: {
+export function initializeCore({ dbConfig, executionContext, crypto, translations, messaging, extraAppInfo }: {
     dbConfig: SqlServiceParams,
     executionContext: ExecutionContext,
     crypto: CryptoProvider,
     translations: TranslationProvider,
-    messaging?: MessagingProvider
+    messaging?: MessagingProvider,
+    extraAppInfo?: {
+        nodeVersion: string;
+        dataDirectory: string;
+    };
 }) {
     initLog();
     initCrypto(crypto);
     initSql(new SqlService(dbConfig, getLog()));
     initContext(executionContext);
     initTranslations(translations);
+    Object.assign(appInfo, extraAppInfo);
     if (messaging) {
         initMessaging(messaging);
     }

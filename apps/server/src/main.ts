@@ -4,9 +4,11 @@
  */
 
 import { initializeCore } from "@triliumnext/core";
+import path from "path";
 
 import ClsHookedExecutionContext from "./cls_provider.js";
 import NodejsCryptoProvider from "./crypto_provider.js";
+import dataDirs from "./services/data_dir.js";
 import BetterSqlite3Provider from "./sql_provider.js";
 
 async function startApplication() {
@@ -40,11 +42,15 @@ async function startApplication() {
 
                 // the maxEntityChangeId has been incremented during failed transaction, need to recalculate
                 entity_changes.recalculateMaxEntityChangeId();
-            }
+            },
         },
         crypto: new NodejsCryptoProvider(),
         executionContext: new ClsHookedExecutionContext(),
-        translations: (await import("./services/i18n.js")).initializeTranslations
+        translations: (await import("./services/i18n.js")).initializeTranslations,
+        extraAppInfo: {
+            nodeVersion: process.version,
+            dataDirectory: path.resolve(dataDirs.TRILIUM_DATA_DIR)
+        }
     });
     const startTriliumServer = (await import("./www.js")).default;
     await startTriliumServer();
