@@ -87,11 +87,6 @@ export function constantTimeCompare(a: string | null | undefined, b: string | nu
     return crypto.timingSafeEqual(bufA, bufB);
 }
 
-export function isEmptyOrWhitespace(str: string | null | undefined) {
-    if (!str) return true;
-    return str.match(/^ *$/) !== null;
-}
-
 export function sanitizeSqlIdentifier(str: string) {
     return str.replace(/[^A-Za-z0-9_]/g, "");
 }
@@ -457,6 +452,8 @@ export const unescapeHtml = coreUtils.unescapeHtml;
 export const randomSecureToken = coreUtils.randomSecureToken;
 /** @deprecated */
 export const safeExtractMessageAndStackFromError = coreUtils.safeExtractMessageAndStackFromError;
+/** @deprecated */
+export const isEmptyOrWhitespace = coreUtils.isEmptyOrWhitespace;
 
 export default {
     compareVersions,

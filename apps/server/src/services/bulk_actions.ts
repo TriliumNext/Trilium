@@ -1,9 +1,8 @@
 import { ActionHandlers, BulkAction, BulkActionData } from "@triliumnext/commons";
-import { erase as eraseService } from "@triliumnext/core";
+import { branches as branchService, erase as eraseService } from "@triliumnext/core";
 
 import becca from "../becca/becca.js";
 import type BNote from "../becca/entities/bnote.js";
-import branchService from "./branches.js";
 import cloningService from "./cloning.js";
 import log from "./log.js";
 import { randomString } from "./utils.js";

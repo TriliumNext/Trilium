@@ -37,6 +37,7 @@ export { default as TaskContext } from "./services/task_context";
 export { default as revisions } from "./services/revisions";
 export { default as erase } from "./services/erase";
 export { default as getSharedBootstrapItems } from "./services/bootstrap_utils";
+export { default as branches } from "./services/branches";
 
 // Messaging system
 export * from "./services/messaging/index";
