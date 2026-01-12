@@ -16,7 +16,7 @@
     "fs-extra": "11.3.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "typedoc": "0.28.15",
+    "typedoc": "0.28.16",
     "typedoc-plugin-missing-exports": "4.1.2"
   }
 }

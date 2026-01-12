@@ -398,7 +398,6 @@
     "parent": "родитель:",
     "clipped-from": "Эта заметка изначально была вырезана из {{- url}}"
   },
-  "javascript-required": "Для работы Trilium требуется JavaScript.",
   "setup_sync-from-desktop": {
     "heading": "Синхронизация с приложения ПК",
     "description": "Эту настройку необходимо инициировать из приложения для ПК:",

@@ -220,7 +220,6 @@
     "button": "パスワードの設定",
     "password-confirmation": "パスワードの再入力"
   },
-  "javascript-required": "Triliumを使用するにはJavaScriptを有効にする必要があります。",
   "setup": {
     "heading": "Trilium Notes セットアップ",
     "new-document": "私は新しいユーザーで、ノートを取るために新しいTriliumドキュメントを作成したい",

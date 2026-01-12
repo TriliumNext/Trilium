@@ -18,5 +18,47 @@
   "zpetne_odkazy": {
     "backlink_one": "{{count}} Tilbakelenke",
     "backlink_other": "{{count}} Tilbakelenker"
+  },
+  "add_link": {
+    "note": "Notat"
+  },
+  "branch_prefix": {
+    "prefix": "Prefiks : ",
+    "save": "Lagre"
+  },
+  "bulk_actions": {
+    "labels": "Etiketter",
+    "relations": "Relasjoner",
+    "notes": "Notater",
+    "other": "Andre"
+  },
+  "confirm": {
+    "confirmation": "Bekreftelse",
+    "cancel": "Avbryt",
+    "ok": "OK"
+  },
+  "delete_notes": {
+    "close": "Lukk",
+    "cancel": "Avbryt",
+    "ok": "OK"
+  },
+  "export": {
+    "close": "Lukk",
+    "export": "Eksporter"
+  },
+  "note_type_chooser": {
+    "templates": "Maler"
+  },
+  "help": {
+    "title": "Hurtigveiledning",
+    "troubleshooting": "Feilsøking",
+    "other": "Andre"
+  },
+  "import": {
+    "options": "Alternativer",
+    "import": "Importer"
+  },
+  "include_note": {
+    "label_note": "Notat"
   }
 }

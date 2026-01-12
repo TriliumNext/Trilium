@@ -220,7 +220,6 @@
     "password-confirmation": "Підтвердження пароля",
     "button": "Встановити пароль"
   },
-  "javascript-required": "Для роботи Trilium потрібен JavaScript.",
   "setup": {
     "heading": "Налаштування Trilium Notes",
     "new-document": "Я новий користувач і хочу створити новий документ Trilium для своїх нотаток",

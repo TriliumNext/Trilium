@@ -22,7 +22,16 @@
     "bundle-error": {
       "title": "Falha para carregar o script customizado",
       "message": "O script da nota com ID \"{{id}}\", intitulada \"{{title}}\", não pôde ser executado devido a:\n\n{{message}}"
-    }
+    },
+    "widget-list-error": {
+      "title": "Falha ao obter a lista de widgets do servidor"
+    },
+    "scripting-error": "Erro do script específicado: {{title}}",
+    "open-script-note": "Abrir script da nota",
+    "widget-render-error": {
+      "title": "Falha do renderizar um widget React personalizado"
+    },
+    "widget-missing-parent": "Widget adaptado não tem a propriedade '{{property}}' mandatória definida.\n\nSe este script é para ser executado sem um element de UI, usar '#run=frontendStartup'."
   },
   "add_link": {
     "add_link": "Adicionar ligação",
@@ -39,7 +48,10 @@
     "help_on_tree_prefix": "Ajuda sobre o prefixo da árvore de notas",
     "prefix": "Prefixo: ",
     "save": "Gravar",
-    "branch_prefix_saved": "O prefixo de ramificação foi gravado."
+    "branch_prefix_saved": "O prefixo de ramificação foi gravado.",
+    "edit_branch_prefix_multiple": "Editar prefixo para {{count}} branches",
+    "branch_prefix_saved_multiple": "Prefixo dos branches foi editado para {{count}} branches.",
+    "affected_branches": "Alterados ({{count}}) branches:"
   },
   "bulk_actions": {
     "bulk_actions": "Ações em massa",
@@ -104,7 +116,8 @@
     "export_status": "Estado da exportação",
     "export_in_progress": "Exportação em andamento: {{progressCount}}",
     "export_finished_successfully": "Exportação concluída com sucesso.",
-    "format_pdf": "PDF – para impressão ou compartilhamento."
+    "format_pdf": "PDF – para impressão ou compartilhamento.",
+    "share-format": "HTML para publicação web - usa o mesmo tema que é usado para notas partilhadas, mas pode ser publicado como um site estatico."
   },
   "help": {
     "title": "Folha de Dicas",
@@ -158,7 +171,8 @@
     "showSQLConsole": "mostrar console SQL",
     "other": "Outros",
     "quickSearch": "focar no campo de pesquisa rápida",
-    "inPageSearch": "pesquisa na página"
+    "inPageSearch": "pesquisa na página",
+    "editShortcuts": "Editar atalhos do teclado"
   },
   "import": {
     "importIntoNote": "Importar para a nota",
@@ -184,7 +198,8 @@
     },
     "import-status": "Estado da importação",
     "in-progress": "Importação em andamento: {{progress}}",
-    "successful": "Importação concluída com sucesso."
+    "successful": "Importação concluída com sucesso.",
+    "importZipRecommendation": "Quando a importar ficheiro ZIP, a hierarquia de notas vai reflectir a estrutura da sub directoria dentro do ficheiro."
   },
   "include_note": {
     "dialog_title": "Incluir nota",
@@ -199,7 +214,8 @@
   "info": {
     "modalTitle": "Mensagem informativa",
     "closeButton": "Fechar",
-    "okButton": "OK"
+    "okButton": "OK",
+    "copy_to_clipboard": "Copiar para a área de transferência"
   },
   "jump_to_note": {
     "search_placeholder": "Pesquise uma nota pelo nome ou digite > para comandos...",
@@ -274,7 +290,12 @@
     "download_button": "Descarregar",
     "mime": "MIME: ",
     "file_size": "Tamanho do ficheiro:",
-    "preview_not_available": "A visualização não está disponível para este tipo de nota."
+    "preview_not_available": "A visualização não está disponível para este tipo de nota.",
+    "diff_on": "Mostrar diferenças",
+    "diff_off": "Mostrar conteúdos",
+    "diff_on_hint": "Carregar para mostrar diferenças da fonte da nota",
+    "diff_off_hint": "Carregar para mostrar conteúdos da nota",
+    "diff_not_available": "Diferenças não disponível."
   },
   "sort_child_notes": {
     "sort_children_by": "Ordenar notas filhas por...",
@@ -585,7 +606,18 @@
     "september": "Setembro",
     "october": "Outubro",
     "november": "Novembro",
-    "december": "Dezembro"
+    "december": "Dezembro",
+    "week": "Semana",
+    "week_previous": "Semana anterior",
+    "week_next": "Próxima semana",
+    "month": "Mês",
+    "month_previous": "Mês anterior",
+    "month_next": "Próximo mês",
+    "year": "Ano",
+    "year_previous": "Ano anterior",
+    "year_next": "Próximo ano",
+    "list": "Lista",
+    "today": "Hoje"
   },
   "close_pane_button": {
     "close_this_pane": "Fechar este painel"
@@ -628,7 +660,9 @@
     "about": "Sobre o Trilium Notes",
     "logout": "Sair",
     "show-cheatsheet": "Exibir Cheatsheet",
-    "toggle-zen-mode": "Modo Zen"
+    "toggle-zen-mode": "Modo Zen",
+    "new-version-available": "Nova actualização disponível",
+    "download-update": "Obter versão {{latestVersion}}"
   },
   "zen_mode": {
     "button_exit": "Sair do Modo Zen"
@@ -666,7 +700,14 @@
     "convert_into_attachment_failed": "A conversão da nota '{{title}}' falhou.",
     "convert_into_attachment_successful": "A nota '{{title}}' foi convertida para anexo.",
     "convert_into_attachment_prompt": "Tem certeza que quer converter a nota '{{title}}' num anexo da nota pai?",
-    "print_pdf": "Exportar como PDF…"
+    "print_pdf": "Exportar como PDF…",
+    "open_note_on_server": "Abrir nota no servidor",
+    "export_as_image": "Exportar como imagem",
+    "note_map": "Mapa de notas",
+    "advanced": "Avançadas",
+    "view_revisions": "Revisões da nota...",
+    "export_as_image_svg": "SVG (vectorial)",
+    "export_as_image_png": "PNG (matricial)"
   },
   "onclick_button": {
     "no_click_handler": "Componente de botão '{{componentId}}' não possui manipulador de clique definido"
@@ -712,19 +753,26 @@
   "zpetne_odkazy": {
     "relation": "relação",
     "backlink_one": "{{count}} Ligação Reversa",
-    "backlink_many": "",
+    "backlink_many": "{{count}} Ligações Reversas",
     "backlink_other": "{{count}} Ligações Reversas"
   },
   "mobile_detail_menu": {
     "insert_child_note": "Inserir nota filha",
     "delete_this_note": "Apagar esta nota",
     "error_cannot_get_branch_id": "Não foi possível obter o branchId para o notePath '{{notePath}} '",
-    "error_unrecognized_command": "Comando não reconhecido {{command}}"
+    "error_unrecognized_command": "Comando não reconhecido {{command}}",
+    "note_revisions": "Revisões da nota"
   },
   "note_icon": {
     "change_note_icon": "Alterar ícone da nota",
     "search": "Pesquisa:",
-    "reset-default": "Redefinir para o ícone padrão"
+    "reset-default": "Redefinir para o ícone padrão",
+    "filter": "Filtrar",
+    "filter-none": "Todos os icons",
+    "filter-default": "Icons default",
+    "no_results": "Não foram encontrados icons.",
+    "search_placeholder_filtered": "Procurar {{number}} icons no {{name}}",
+    "icon_tooltip": "{{name}}\nPacote de icons: {{iconPack}}"
   },
   "basic_properties": {
     "note_type": "Tipo da nota",
@@ -745,7 +793,13 @@
     "calendar": "Calendário",
     "table": "Tabela",
     "geo-map": "Mapa geográfico",
-    "board": "Quadro"
+    "board": "Quadro",
+    "expand_first_level": "Expandir descendentes directos",
+    "presentation": "Apresentação",
+    "expand_nth_level": "Expandir {{depth}} níveis",
+    "expand_all_levels": "Expandir todos os níveis",
+    "include_archived_notes": "Mostrar notas arquivadas",
+    "expand_tooltip": "Expande a direcção dos descendentes desta colecção (um nível). Para mais opções, carregar na seta à direita."
   },
   "edited_notes": {
     "no_edited_notes_found": "Ainda não há nenhuma nota editada neste dia…",
@@ -778,7 +832,8 @@
   },
   "inherited_attribute_list": {
     "title": "Atributos Herdados",
-    "no_inherited_attributes": "Nenhum atributo herdado."
+    "no_inherited_attributes": "Nenhum atributo herdado.",
+    "none": "Nenhum"
   },
   "note_info_widget": {
     "note_id": "ID da Nota",
@@ -789,7 +844,9 @@
     "note_size_info": "O tamanho da nota fornece uma estimativa aproximada dos requisitos de armazenamento para esta nota. Leva em conta o conteúdo e o conteúdo das suas revisões de nota.",
     "calculate": "calcular",
     "subtree_size": "(tamanho da subárvore: {{size}} em {{count}} notas)",
-    "title": "Informações da nota"
+    "title": "Informações da nota",
+    "mime": "Tipo MIME",
+    "show_similar_notes": "Mostrar notas semelhantes"
   },
   "note_map": {
     "open_full": "Expandir completamente",
@@ -852,7 +909,8 @@
     "search_parameters": "Parâmetros de Pesquisa",
     "unknown_search_option": "Opção de pesquisa desconhecida {{searchOptionName}}",
     "search_note_saved": "Nota de pesquisa foi gravada em {{- notePathTitle}}",
-    "actions_executed": "As ações foram executadas."
+    "actions_executed": "As ações foram executadas.",
+    "view_options": "Ver opções:"
   },
   "similar_notes": {
     "title": "Notas Similares",
@@ -946,14 +1004,20 @@
     "no_attachments": "Esta nota não possuí anexos."
   },
   "book": {
-    "no_children_help": "Esta coleção não possui nenhum nota filha, então não há nada para exibir. Veja <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> para pormenores."
+    "no_children_help": "Esta coleção não possui nenhum nota filha, então não há nada para exibir. Veja <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> para pormenores.",
+    "drag_locked_title": "Bloqueado para edição",
+    "drag_locked_message": "Arrastar não permitida pois a coleção está bloqueada para edição."
   },
   "editable_code": {
     "placeholder": "Digite o conteúdo da sua nota de código aqui…"
   },
   "editable_text": {
     "placeholder": "Digite o conteúdo da sua nota aqui…",
-    "auto-detect-language": "Detetado automaticamente"
+    "auto-detect-language": "Detetado automaticamente",
+    "editor_crashed_title": "O editor de texto quebrou",
+    "editor_crashed_details_button": "Ver mais detalhes...",
+    "editor_crashed_details_title": "Informação técnica",
+    "editor_crashed_details_intro": "Se teve este erro várias vezes, considerer reportar no GitHub disponibilizando a informação abaixo."
   },
   "empty": {
     "open_note_instruction": "Abra uma nota a digitar o título da nota no campo abaixo ou escolha uma nota na árvore.",
