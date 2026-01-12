@@ -25,7 +25,7 @@ export const byNoteType: Record<Exclude<NoteType, "book">, string | null> = {
 export const byBookType: Record<ViewTypeOptions, string | null> = {
     list: "mULW0Q3VojwY",
     grid: "8QqnMzx393bx",
-    gallery: "W1x7XN1KRSWo",
+    gallery: null,
     calendar: "xWbu3jpNWapp",
     table: "2FvYrpmOXm29",
     geoMap: "81SGnPGMk7Xc",
