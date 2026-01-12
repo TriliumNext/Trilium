@@ -5,11 +5,11 @@ export default class LogService {
     }
 
     info(message: string | Error) {
-        this.log(message);
+        console.info(message);
     }
 
     error(message: string | Error | unknown) {
-        this.log(`ERROR: ${message}`);
+        console.error("ERROR: ", message);
     }
 
 }

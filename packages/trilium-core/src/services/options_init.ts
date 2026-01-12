@@ -28,7 +28,7 @@ interface DefaultOption {
     /**
      * The value to initialize the option with, if the option is not already present in the database.
      *
-     * If a function is passed Gin instead, the function is called if the option does not exist (with access to the current options) and the return value is used instead. Useful to migrate a new option with a value depending on some other option that might be initialized.
+     * If a function is passed in instead, the function is called if the option does not exist (with access to the current options) and the return value is used instead. Useful to migrate a new option with a value depending on some other option that might be initialized.
      */
     value: string | ((options: OptionMap) => string);
     isSynced: boolean;

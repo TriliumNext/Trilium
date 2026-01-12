@@ -110,7 +110,7 @@
     "openai": "6.16.0",
     "rand-token": "1.0.1",
     "safe-compare": "1.1.4",    
-    "sax": "1.4.3",
+    "sax": "1.4.4",
     "serve-favicon": "2.5.1",
     "stream-throttle": "0.1.3",
     "strip-bom": "5.0.0",
@@ -120,8 +120,8 @@
     "time2fa": "1.4.2",
     "tmp": "0.2.5",
     "turndown": "7.2.2",
-    "vite": "7.3.0",
-    "ws": "8.18.3",
+    "vite": "7.3.1",
+    "ws": "8.19.0",
     "xml2js": "0.6.2",
     "yauzl": "3.2.0"
   }
