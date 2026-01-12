@@ -18,7 +18,6 @@ import openID from '../services/open_id.js';
 import { isElectron } from "../services/utils.js";
 import shareRoutes from "../share/routes.js";
 import anthropicRoute from "./api/anthropic.js";
-import appInfoRoute from "./api/app_info.js";
 import attributesRoute from "./api/attributes.js";
 import autocompleteApiRoute from "./api/autocomplete.js";
 import backendLogRoute from "./api/backend_log.js";
@@ -189,7 +188,6 @@ function register(app: express.Application) {
     route(PST, "/api/sync/queue-sector/:entityName/:sector", [auth.checkApiAuth], syncApiRoute.queueSector, apiResultHandler);
     route(GET, "/api/sync/stats", [], syncApiRoute.getStats, apiResultHandler);
 
-    apiRoute(GET, "/api/app-info", appInfoRoute.getAppInfo);
     apiRoute(GET, "/api/metrics", metricsRoute.getMetrics);
     apiRoute(GET, "/api/system-checks", systemInfoRoute.systemChecks);
 
