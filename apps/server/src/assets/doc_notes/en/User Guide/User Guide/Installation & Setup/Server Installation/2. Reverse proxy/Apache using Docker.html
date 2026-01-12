@@ -1,4 +1,4 @@
-<p>This tutorial assumes that you have created a DNS A record for <code>trilium.yourdomain.com</code> that
+<p>This tutorial assumes that you have created a DNS A record for <code spellcheck="false">trilium.yourdomain.com</code> that
   you want to use for your Trilium server.</p>
 <h2>Docker setup</h2>
 <p>Download docker image and create container</p><pre><code class="language-text-x-trilium-auto"> docker pull triliumnext/trilium:[VERSION]
@@ -17,7 +17,7 @@
       (typically /etc/letsencrypt/live/...)</p>
   </li>
   <li>
-    <p>Create a new virtual host file for apache (you may want to use <code>apachectl -S</code> to
+    <p>Create a new virtual host file for apache (you may want to use <code spellcheck="false">apachectl -S</code> to
       determine the server root location, mine is /etc/apache2)</p><pre><code class="language-text-x-trilium-auto"> sudo nano /etc/apache2/sites-available/trilium.yourdomain.com.conf</code></pre>
     <p>Paste (and customize) the following text into the configuration file</p><pre><code class="language-text-x-trilium-auto"> 
      ServerName http://trilium.yourdomain.com
@@ -39,11 +39,11 @@
  </code></pre>
   </li>
   <li>
-    <p>Enable the virtual host with <code>sudo a2ensite trilium.yourdomain.com.conf</code>
+    <p>Enable the virtual host with <code spellcheck="false">sudo a2ensite trilium.yourdomain.com.conf</code>
     </p>
   </li>
   <li>
-    <p>Reload apache2 with <code>sudo systemctl reload apache2</code>
+    <p>Reload apache2 with <code spellcheck="false">sudo systemctl reload apache2</code>
     </p>
   </li>
 </ol>
@@ -54,7 +54,7 @@
 <p>Create and enable a systemd service to start the docker container on boot</p>
 <ol>
   <li>
-    <p>Create a new empty file called <code>/lib/systemd/system/trilium.service</code> with
+    <p>Create a new empty file called <code spellcheck="false">/lib/systemd/system/trilium.service</code> with
       the contents</p><pre><code class="language-text-x-trilium-auto"> [Unit]
  Description=Trilium Server
  Requires=docker.service

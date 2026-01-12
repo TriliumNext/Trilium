@@ -28,7 +28,9 @@ function updateFile(req: Request) {
         };
     }
 
-    note.saveRevision();
+    if (req.query.replace !== "1") {
+        note.saveRevision();
+    }
 
     note.mime = file.mimetype.toLowerCase();
     note.save();

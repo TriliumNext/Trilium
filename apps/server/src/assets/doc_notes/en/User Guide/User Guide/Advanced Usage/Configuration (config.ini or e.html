@@ -1,11 +1,12 @@
-<p>Trilium supports configuration via a file named <code>config.ini</code> and
+<p>Trilium supports configuration via a file named <code spellcheck="false">config.ini</code> and
   environment variables. This document provides a comprehensive reference
   for all configuration options.</p>
 <h2>Location of the configuration file</h2>
 <p>The configuration file is not located in the same directory as the application.
-  Instead, the <code>config.ini</code> is located in the&nbsp;<a class="reference-link"
-  href="#root/_help_tAassRL4RSQL">Data directory</a>. As such, the configuration
-  file is only available after starting the application and creating a database.</p>
+  Instead, the <code spellcheck="false">config.ini</code> is located in the&nbsp;
+  <a
+  class="reference-link" href="#root/_help_tAassRL4RSQL">Data directory</a>. As such, the configuration file is only available
+    after starting the application and creating a database.</p>
 <h2>Configuration Precedence</h2>
 <p>Configuration values are loaded in the following order of precedence (highest
   to lowest):</p>
@@ -18,13 +19,15 @@
 </ol>
 <h2>Environment Variable Patterns</h2>
 <p>Trilium supports multiple environment variable patterns for flexibility.
-  The primary pattern is: <code>TRILIUM_[SECTION]_[KEY]</code>
+  The primary pattern is: <code spellcheck="false">TRILIUM_[SECTION]_[KEY]</code>
 </p>
 <p>Where:</p>
 <ul>
-  <li><code>SECTION</code> is the INI section name in UPPERCASE</li>
-  <li><code>KEY</code> is the camelCase configuration key converted to UPPERCASE
-    (e.g., <code>instanceName</code> → <code>INSTANCENAME</code>)</li>
+  <li><code spellcheck="false">SECTION</code> is the INI section name in UPPERCASE</li>
+  <li><code spellcheck="false">KEY</code> is the camelCase configuration key
+    converted to UPPERCASE (e.g., <code spellcheck="false">instanceName</code> →
+    <code
+    spellcheck="false">INSTANCENAME</code>)</li>
 </ul>
 <p>Additionally, shorter aliases are available for common configurations
   (see Alternative Variables section below).</p>
@@ -41,35 +44,35 @@
   </thead>
   <tbody>
     <tr>
-      <td><code>TRILIUM_GENERAL_INSTANCENAME</code>
+      <td><code spellcheck="false">TRILIUM_GENERAL_INSTANCENAME</code>
       </td>
       <td>string</td>
       <td>""</td>
       <td>Instance name for API identification</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_GENERAL_NOAUTHENTICATION</code>
+      <td><code spellcheck="false">TRILIUM_GENERAL_NOAUTHENTICATION</code>
       </td>
       <td>boolean</td>
       <td>false</td>
       <td>Disable authentication (server only)</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_GENERAL_NOBACKUP</code>
+      <td><code spellcheck="false">TRILIUM_GENERAL_NOBACKUP</code>
       </td>
       <td>boolean</td>
       <td>false</td>
       <td>Disable automatic backups</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_GENERAL_NODESKTOPICON</code>
+      <td><code spellcheck="false">TRILIUM_GENERAL_NODESKTOPICON</code>
       </td>
       <td>boolean</td>
       <td>false</td>
       <td>Disable desktop icon creation</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_GENERAL_READONLY</code>
+      <td><code spellcheck="false">TRILIUM_GENERAL_READONLY</code>
       </td>
       <td>boolean</td>
       <td>false</td>
@@ -90,70 +93,70 @@
   </thead>
   <tbody>
     <tr>
-      <td><code>TRILIUM_NETWORK_HOST</code>
+      <td><code spellcheck="false">TRILIUM_NETWORK_HOST</code>
       </td>
       <td>string</td>
       <td>"0.0.0.0"</td>
       <td>Server host binding</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_NETWORK_PORT</code>
+      <td><code spellcheck="false">TRILIUM_NETWORK_PORT</code>
       </td>
       <td>string</td>
       <td>"3000"</td>
       <td>Server port</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_NETWORK_HTTPS</code>
+      <td><code spellcheck="false">TRILIUM_NETWORK_HTTPS</code>
       </td>
       <td>boolean</td>
       <td>false</td>
       <td>Enable HTTPS</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_NETWORK_CERTPATH</code>
+      <td><code spellcheck="false">TRILIUM_NETWORK_CERTPATH</code>
       </td>
       <td>string</td>
       <td>""</td>
       <td>SSL certificate path</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_NETWORK_KEYPATH</code>
+      <td><code spellcheck="false">TRILIUM_NETWORK_KEYPATH</code>
       </td>
       <td>string</td>
       <td>""</td>
       <td>SSL key path</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_NETWORK_TRUSTEDREVERSEPROXY</code>
+      <td><code spellcheck="false">TRILIUM_NETWORK_TRUSTEDREVERSEPROXY</code>
       </td>
       <td>boolean/string</td>
       <td>false</td>
       <td>Reverse proxy trust settings</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_NETWORK_CORSALLOWORIGIN</code>
+      <td><code spellcheck="false">TRILIUM_NETWORK_CORSALLOWORIGIN</code>
       </td>
       <td>string</td>
       <td>""</td>
       <td>CORS allowed origins</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_NETWORK_CORSALLOWMETHODS</code>
+      <td><code spellcheck="false">TRILIUM_NETWORK_CORSALLOWMETHODS</code>
       </td>
       <td>string</td>
       <td>""</td>
       <td>CORS allowed methods</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_NETWORK_CORSALLOWHEADERS</code>
+      <td><code spellcheck="false">TRILIUM_NETWORK_CORSALLOWHEADERS</code>
       </td>
       <td>string</td>
       <td>""</td>
       <td>CORS allowed headers</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_NETWORK_CORSRESOURCEPOLICY</code>
+      <td><code spellcheck="false">TRILIUM_NETWORK_CORSRESOURCEPOLICY</code>
       </td>
       <td>string</td>
       <td>same-origin</td>
@@ -175,7 +178,7 @@
   </thead>
   <tbody>
     <tr>
-      <td><code>TRILIUM_SESSION_COOKIEMAXAGE</code>
+      <td><code spellcheck="false">TRILIUM_SESSION_COOKIEMAXAGE</code>
       </td>
       <td>integer</td>
       <td>1814400</td>
@@ -196,21 +199,21 @@
   </thead>
   <tbody>
     <tr>
-      <td><code>TRILIUM_SYNC_SYNCSERVERHOST</code>
+      <td><code spellcheck="false">TRILIUM_SYNC_SYNCSERVERHOST</code>
       </td>
       <td>string</td>
       <td>""</td>
       <td>Sync server host URL</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_SYNC_SYNCSERVERTIMEOUT</code>
+      <td><code spellcheck="false">TRILIUM_SYNC_SYNCSERVERTIMEOUT</code>
       </td>
       <td>string</td>
       <td>"120000"</td>
       <td>Sync server timeout in milliseconds</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_SYNC_SYNCPROXY</code>
+      <td><code spellcheck="false">TRILIUM_SYNC_SYNCPROXY</code>
       </td>
       <td>string</td>
       <td>""</td>
@@ -231,42 +234,42 @@
   </thead>
   <tbody>
     <tr>
-      <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL</code>
+      <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL</code>
       </td>
       <td>string</td>
       <td>""</td>
       <td>OAuth/OpenID base URL</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID</code>
+      <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID</code>
       </td>
       <td>string</td>
       <td>""</td>
       <td>OAuth client ID</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET</code>
+      <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET</code>
       </td>
       <td>string</td>
       <td>""</td>
       <td>OAuth client secret</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL</code>
+      <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL</code>
       </td>
       <td>string</td>
       <td>"<a href="https://accounts.google.com">https://accounts.google.com</a>"</td>
       <td>OAuth issuer base URL</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME</code>
+      <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME</code>
       </td>
       <td>string</td>
       <td>"Google"</td>
       <td>OAuth issuer display name</td>
     </tr>
     <tr>
-      <td><code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON</code>
+      <td><code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON</code>
       </td>
       <td>string</td>
       <td>""</td>
@@ -287,7 +290,7 @@
   </thead>
   <tbody>
     <tr>
-      <td><code>TRILIUM_LOGGING_RETENTIONDAYS</code>
+      <td><code spellcheck="false">TRILIUM_LOGGING_RETENTIONDAYS</code>
       </td>
       <td>integer</td>
       <td>90</td>
@@ -301,38 +304,59 @@
   and work identically to their longer counterparts:</p>
 <h3>Network CORS Variables</h3>
 <ul>
-  <li><code>TRILIUM_NETWORK_CORS_ALLOW_ORIGIN</code> (alternative to <code>TRILIUM_NETWORK_CORSALLOWORIGIN</code>)</li>
-  <li><code>TRILIUM_NETWORK_CORS_ALLOW_METHODS</code> (alternative to <code>TRILIUM_NETWORK_CORSALLOWMETHODS</code>)</li>
-  <li><code>TRILIUM_NETWORK_CORS_ALLOW_HEADERS</code> (alternative to <code>TRILIUM_NETWORK_CORSALLOWHEADERS</code>)</li>
-  <li><code>TRILIUM_NETWORK_CORS_RESOURCE_POLICY</code> (alternative to <code>TRILIUM_NETWORK_CORSRESOURCEPOLICY</code>)</li>
+  <li><code spellcheck="false">TRILIUM_NETWORK_CORS_ALLOW_ORIGIN</code> (alternative
+    to <code spellcheck="false">TRILIUM_NETWORK_CORSALLOWORIGIN</code>)</li>
+  <li><code spellcheck="false">TRILIUM_NETWORK_CORS_ALLOW_METHODS</code> (alternative
+    to <code spellcheck="false">TRILIUM_NETWORK_CORSALLOWMETHODS</code>)</li>
+  <li><code spellcheck="false">TRILIUM_NETWORK_CORS_ALLOW_HEADERS</code> (alternative
+    to <code spellcheck="false">TRILIUM_NETWORK_CORSALLOWHEADERS</code>)</li>
+  <li><code spellcheck="false">TRILIUM_NETWORK_CORS_RESOURCE_POLICY</code> (alternative
+    to <code spellcheck="false">TRILIUM_NETWORK_CORSRESOURCEPOLICY</code>)</li>
 </ul>
 <h3>Sync Variables</h3>
 <ul>
-  <li><code>TRILIUM_SYNC_SERVER_HOST</code> (alternative to <code>TRILIUM_SYNC_SYNCSERVERHOST</code>)</li>
-  <li><code>TRILIUM_SYNC_SERVER_TIMEOUT</code> (alternative to <code>TRILIUM_SYNC_SYNCSERVERTIMEOUT</code>)</li>
-  <li><code>TRILIUM_SYNC_SERVER_PROXY</code> (alternative to <code>TRILIUM_SYNC_SYNCPROXY</code>)</li>
+  <li><code spellcheck="false">TRILIUM_SYNC_SERVER_HOST</code> (alternative to
+    <code
+    spellcheck="false">TRILIUM_SYNC_SYNCSERVERHOST</code>)</li>
+  <li><code spellcheck="false">TRILIUM_SYNC_SERVER_TIMEOUT</code> (alternative
+    to <code spellcheck="false">TRILIUM_SYNC_SYNCSERVERTIMEOUT</code>)</li>
+  <li><code spellcheck="false">TRILIUM_SYNC_SERVER_PROXY</code> (alternative
+    to <code spellcheck="false">TRILIUM_SYNC_SYNCPROXY</code>)</li>
 </ul>
 <h3>OAuth/MFA Variables</h3>
 <ul>
-  <li><code>TRILIUM_OAUTH_BASE_URL</code> (alternative to <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL</code>)</li>
-  <li><code>TRILIUM_OAUTH_CLIENT_ID</code> (alternative to <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID</code>)</li>
-  <li><code>TRILIUM_OAUTH_CLIENT_SECRET</code> (alternative to <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET</code>)</li>
-  <li><code>TRILIUM_OAUTH_ISSUER_BASE_URL</code> (alternative to <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL</code>)</li>
-  <li><code>TRILIUM_OAUTH_ISSUER_NAME</code> (alternative to <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME</code>)</li>
-  <li><code>TRILIUM_OAUTH_ISSUER_ICON</code> (alternative to <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON</code>)</li>
+  <li><code spellcheck="false">TRILIUM_OAUTH_BASE_URL</code> (alternative to
+    <code
+    spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL</code>)</li>
+  <li><code spellcheck="false">TRILIUM_OAUTH_CLIENT_ID</code> (alternative to
+    <code
+    spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID</code>)</li>
+  <li><code spellcheck="false">TRILIUM_OAUTH_CLIENT_SECRET</code> (alternative
+    to <code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET</code>)</li>
+  <li><code spellcheck="false">TRILIUM_OAUTH_ISSUER_BASE_URL</code> (alternative
+    to <code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL</code>)</li>
+  <li><code spellcheck="false">TRILIUM_OAUTH_ISSUER_NAME</code> (alternative
+    to <code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME</code>)</li>
+  <li><code spellcheck="false">TRILIUM_OAUTH_ISSUER_ICON</code> (alternative
+    to <code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON</code>)</li>
 </ul>
 <h3>Logging Variables</h3>
 <ul>
-  <li><code>TRILIUM_LOGGING_RETENTION_DAYS</code> (alternative to <code>TRILIUM_LOGGING_RETENTIONDAYS</code>)</li>
+  <li><code spellcheck="false">TRILIUM_LOGGING_RETENTION_DAYS</code> (alternative
+    to <code spellcheck="false">TRILIUM_LOGGING_RETENTIONDAYS</code>)</li>
 </ul>
 <h2>Boolean Values</h2>
 <p>Boolean environment variables accept the following values:</p>
 <ul>
-  <li><strong>True</strong>: <code>"true"</code>, <code>"1"</code>, <code>1</code>
+  <li><strong>True</strong>: <code spellcheck="false">"true"</code>, <code spellcheck="false">"1"</code>,
+    <code
+    spellcheck="false">1</code>
   </li>
-  <li><strong>False</strong>: <code>"false"</code>, <code>"0"</code>, <code>0</code>
+  <li><strong>False</strong>: <code spellcheck="false">"false"</code>, <code spellcheck="false">"0"</code>,
+    <code
+    spellcheck="false">0</code>
   </li>
-  <li>Any other value defaults to <code>false</code>
+  <li>Any other value defaults to <code spellcheck="false">false</code>
   </li>
 </ul>
 <h2>Using Environment Variables</h2>

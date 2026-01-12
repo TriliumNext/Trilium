@@ -1,12 +1,12 @@
-import utils from "./utils.js";
-import server from "./server.js";
-import toastService, { type ToastOptionsWithRequiredId } from "./toast.js";
+import appContext from "../components/app_context.js";
+import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
 import froca from "./froca.js";
 import hoistedNoteService from "./hoisted_note.js";
-import ws from "./ws.js";
-import appContext from "../components/app_context.js";
 import { t } from "./i18n.js";
-import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
+import server from "./server.js";
+import toastService, { type ToastOptionsWithRequiredId } from "./toast.js";
+import utils from "./utils.js";
+import ws from "./ws.js";
 
 // TODO: Deduplicate type with server
 interface Response {
@@ -66,7 +66,7 @@ async function moveAfterBranch(branchIdsToMove: string[], afterBranchId: string)
     }
 }
 
-async function moveToParentNote(branchIdsToMove: string[], newParentBranchId: string) {
+async function moveToParentNote(branchIdsToMove: string[], newParentBranchId: string, componentId?: string) {
     const newParentBranch = froca.getBranch(newParentBranchId);
     if (!newParentBranch) {
         return;
@@ -86,7 +86,7 @@ async function moveToParentNote(branchIdsToMove: string[], newParentBranchId: st
             continue;
         }
 
-        const resp = await server.put<Response>(`branches/${branchIdToMove}/move-to/${newParentBranchId}`);
+        const resp = await server.put<Response>(`branches/${branchIdToMove}/move-to/${newParentBranchId}`, undefined, componentId);
 
         if (!resp.success) {
             toastService.showError(resp.message);

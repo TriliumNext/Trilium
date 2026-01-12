@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/source",
-  "version": "0.101.1",
+  "version": "0.101.3",
   "description": "Build your personal knowledge base with Trilium Notes",
   "directories": {
     "doc": "docs"
@@ -38,7 +38,8 @@
     "dev:format-fix": "eslint -c eslint.format.config.mjs . --fix",
     "dev:linter-check": "cross-env NODE_OPTIONS=--max_old_space_size=4096 eslint .",
     "dev:linter-fix": "cross-env NODE_OPTIONS=--max_old_space_size=4096 eslint . --fix",
-    "postinstall": "tsx scripts/electron-rebuild.mts"
+    "postinstall": "tsx scripts/electron-rebuild.mts && pnpm prepare",
+    "prepare": "pnpm run --filter pdfjs-viewer --filter share-theme build"
   },
   "private": true,
   "devDependencies": {
@@ -47,7 +48,7 @@
     "@playwright/test": "1.57.0",
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.6",
-    "@types/node": "24.10.4",
+    "@types/node": "24.10.7",
     "@vitest/browser-webdriverio": "4.0.16",
     "@vitest/coverage-v8": "4.0.16",
     "@vitest/ui": "4.0.16",
@@ -58,20 +59,20 @@
     "eslint": "9.39.2",
     "eslint-config-preact": "2.0.0",
     "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-playwright": "2.4.0",
+    "eslint-plugin-playwright": "2.4.1",
     "eslint-plugin-simple-import-sort": "12.1.1",
     "happy-dom": "~20.0.0",
     "http-server": "14.1.1",
     "jiti": "2.6.1",
     "jsonc-eslint-parser": "2.4.2",
     "react-refresh": "0.18.0",
-    "rollup-plugin-webpack-stats": "2.1.8",
+    "rollup-plugin-webpack-stats": "2.1.9",
     "tslib": "2.8.1",
     "tsx": "4.21.0",
     "typescript": "~5.9.0",
-    "typescript-eslint": "8.51.0",
+    "typescript-eslint": "8.52.0",
     "upath": "2.0.1",
-    "vite": "7.3.0",
+    "vite": "7.3.1",
     "vite-plugin-dts": "~4.5.0",
     "vitest": "4.0.16"
   },
@@ -89,7 +90,7 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@10.26.2",
+  "packageManager": "pnpm@10.28.0",
   "pnpm": {
     "patchedDependencies": {
       "@ckeditor/ckeditor5-mention": "patches/@ckeditor__ckeditor5-mention.patch",

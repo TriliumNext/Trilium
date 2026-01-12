@@ -29,6 +29,11 @@
     hyphens: auto;
 }
 
+.toc li.active > .item-content {
+    font-weight: bold;
+    color: var(--main-text-color);
+}
+
 .toc > ol {
     --toc-depth-level: 1;
 }

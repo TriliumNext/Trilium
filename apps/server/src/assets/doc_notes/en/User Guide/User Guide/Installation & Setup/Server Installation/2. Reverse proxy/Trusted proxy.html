@@ -5,7 +5,7 @@
 <p>To do so, simply modify&nbsp;<a class="reference-link" href="#root/_help_Gzjqa934BdH4">Configuration (config.ini or environment variables)</a>&nbsp;and
   set:</p><pre><code class="language-text-x-trilium-auto">[Network]
 trustedReverseProxy=true</code></pre>
-<p>This will use the left-most IP in the <code>X-Forwarded-For</code> header.
-  Alternatively, instead of <code>true</code> use the IP address of the reverse
-  proxy or Express.js shortcuts such as:</p><pre><code class="language-text-x-trilium-auto">loopback(127.0.0.1/8, ::1/128), linklocal(169.254.0.0/16, fe80::/10), uniquelocal(10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, fc00::/7)</code></pre>
+<p>This will use the left-most IP in the <code spellcheck="false">X-Forwarded-For</code> header.
+  Alternatively, instead of <code spellcheck="false">true</code> use the IP
+  address of the reverse proxy or Express.js shortcuts such as:</p><pre><code class="language-text-x-trilium-auto">loopback(127.0.0.1/8, ::1/128), linklocal(169.254.0.0/16, fe80::/10), uniquelocal(10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, fc00::/7)</code></pre>
 <p>For more information, consult <a href="https://expressjs.com/en/guide/behind-proxies.html">Express behind proxies</a>.</p>

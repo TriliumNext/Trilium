@@ -1,14 +1,15 @@
 <h2>Key highlights</h2>
 <ul>
-  <li><code>doRender</code> must not be overridden, instead <code>doRenderBody()</code> has
-    to be overridden.
-    <ul>
-      <li><code>doRenderBody</code> can optionally be <code>async</code>.</li>
-    </ul>
+  <li><code spellcheck="false">doRender</code> must not be overridden, instead
+    <code
+    spellcheck="false">doRenderBody()</code>has to be overridden.
+      <ul>
+        <li><code spellcheck="false">doRenderBody</code> can optionally be <code spellcheck="false">async</code>.</li>
+      </ul>
   </li>
-  <li><code>parentWidget()</code> must be set to <code>“rightPane”</code>.</li>
-  <li><code>widgetTitle()</code> getter can optionally be overriden, otherwise
-    the widget will be displayed as “Untitled widget”.</li>
+  <li><code spellcheck="false">parentWidget()</code> must be set to <code spellcheck="false">“rightPane”</code>.</li>
+  <li><code spellcheck="false">widgetTitle()</code> getter can optionally be
+    overriden, otherwise the widget will be displayed as “Untitled widget”.</li>
 </ul>
 <h2>Example for new layout</h2>
 <aside class="admonition important">
@@ -101,14 +102,14 @@ class HelloWorldWidget extends api.RightPanelWidget {
 
 module.exports = new HelloWorldWidget();</code></pre>
 <h3>Conditionally changing visibility</h3>
-<p>In <code>refreshWithNote</code>:</p><pre><code class="language-text-x-trilium-auto">const visible = true;	// replace with your own visibility logic
+<p>In <code spellcheck="false">refreshWithNote</code>:</p><pre><code class="language-text-x-trilium-auto">const visible = true;	// replace with your own visibility logic
 this.toggleInt(visible);
 this.triggerCommand("reEvaluateRightPaneVisibility");</code></pre>
 <h2>Altering the position within the sidebar</h2>
 <p>By default, the sidebar items are displayed in the order they are found
-  by the application when searching for <code>#widget</code> notes.</p>
+  by the application when searching for <code spellcheck="false">#widget</code> notes.</p>
 <p>It is possible to make a widget appear higher or lower up, by adjusting
-  its <code>position</code> property:</p><pre><code class="language-text-x-trilium-auto">class MyWidget extends api.RightPanelWidget {
+  its <code spellcheck="false">position</code> property:</p><pre><code class="language-text-x-trilium-auto">class MyWidget extends api.RightPanelWidget {
 
 +    get position() { return 20 };
         

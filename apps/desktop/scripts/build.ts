@@ -1,7 +1,8 @@
+import { writeFileSync } from "fs";
 import { join } from "path";
+
 import BuildHelper from "../../../scripts/build-utils";
 import originalPackageJson from "../package.json" with { type: "json" };
-import { writeFileSync } from "fs";
 
 const build = new BuildHelper("apps/desktop");
 
@@ -18,9 +19,7 @@ async function main() {
     build.copyNodeModules([ "better-sqlite3", "bindings", "file-uri-to-path", "@electron/remote" ]);
     build.copy("/node_modules/ckeditor5/dist/ckeditor5-content.css", "ckeditor5-content.css");
 
-    // Integrate the client.
-    build.triggerBuildAndCopyTo("apps/client", "public/");
-    build.deleteFromOutput("public/webpack-stats.json");
+    build.buildFrontend();
 
     generatePackageJson();
 }

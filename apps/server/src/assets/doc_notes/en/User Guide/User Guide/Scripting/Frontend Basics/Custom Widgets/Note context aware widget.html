@@ -2,11 +2,13 @@
   react to changes in the current note.</p>
 <p>Important aspects:</p>
 <ul>
-  <li>The widget must export a <code>class</code> and not an instance of the class
-    (e.g. <code>no new</code>) because it needs to be multiplied for each note,
-    so that splits work correctly.</li>
-  <li>Since the <code>class</code> is exported instead of an instance, the <code>parentWidget</code> getter
-    must be <code>static</code>, otherwise the widget is ignored.</li>
+  <li>The widget must export a <code spellcheck="false">class</code> and not an
+    instance of the class (e.g. <code spellcheck="false">no new</code>) because
+    it needs to be multiplied for each note, so that splits work correctly.</li>
+  <li>Since the <code spellcheck="false">class</code> is exported instead of an
+    instance, the <code spellcheck="false">parentWidget</code> getter must be
+    <code
+    spellcheck="false">static</code>, otherwise the widget is ignored.</li>
 </ul>
 <h2>Example displaying the current note title</h2>
 <p>This is a note context-aware widget that simply displays the name the

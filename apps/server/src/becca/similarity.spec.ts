@@ -1,4 +1,6 @@
 import { trimIndentation } from "@triliumnext/commons";
+import { describe, expect, it } from "vitest";
+
 import { buildNote } from "../test/becca_easy_mocking";
 import { buildRewardMap } from "./similarity";
 

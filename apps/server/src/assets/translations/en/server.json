@@ -220,7 +220,6 @@
     "password-confirmation": "Password confirmation",
     "button": "Set password"
   },
-  "javascript-required": "Trilium requires JavaScript to be enabled.",
   "setup": {
     "heading": "Trilium Notes setup",
     "new-document": "I'm a new user, and I want to create a new Trilium document for my notes",

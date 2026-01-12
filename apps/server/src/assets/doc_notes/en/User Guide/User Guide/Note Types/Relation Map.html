@@ -67,7 +67,7 @@ width="812" height="585">
 <p>There are several steps here:</p>
 <ul>
   <li>we start with empty relation map and two existing notes representing Prince
-    Philip and Queen Elizabeth II. These two notes already have <code>isPartnerOf</code> 
+    Philip and Queen Elizabeth II. These two notes already have <code spellcheck="false">isPartnerOf</code> 
     <a
     href="#root/_help_zEY4DaJG4YT5">relations</a>defined.
       <ul>
@@ -76,24 +76,28 @@ width="812" height="585">
       </ul>
   </li>
   <li>we drag both notes to relation map and place to suitable position. Notice
-    how the existing <code>isPartnerOf</code> relations are displayed.</li>
+    how the existing <code spellcheck="false">isPartnerOf</code> relations are
+    displayed.</li>
   <li>now we create new note - we name it "Prince Charles" and place it on the
     relation map by clicking on the desired position. The note is by default
     created under the relation map note (visible in the note tree on the left).</li>
-  <li>we create two new relations <code>isChildOf</code> targeting both Philip
-    and Elizabeth
+  <li>we create two new relations <code spellcheck="false">isChildOf</code> targeting
+    both Philip and Elizabeth
     <ul>
       <li>now there's something unexpected - we can also see the relation to display
-        another <code>hasChild</code> relation. This is because there's a <a href="#root/_help_OFXdgB2nNk1F">relation definition</a> which
-        puts <code>isChildOf</code> as an "<a href="#root/_help_OFXdgB2nNk1F">inverse</a>"
-        relation of <code>hasChildOf</code> (and vice versa) and thus it is created
-        automatically.</li>
+        another <code spellcheck="false">hasChild</code> relation. This is because
+        there's a <a href="#root/_help_OFXdgB2nNk1F">relation definition</a> which puts
+        <code
+        spellcheck="false">isChildOf</code>as an "<a href="#root/_help_OFXdgB2nNk1F">inverse</a>" relation
+          of <code spellcheck="false">hasChildOf</code> (and vice versa) and thus it
+          is created automatically.</li>
     </ul>
   </li>
-  <li>we create another note for Princess Diana and create <code>isPartnerOf</code> relation
+  <li>we create another note for Princess Diana and create <code spellcheck="false">isPartnerOf</code> relation
     from Charles. Again notice how the relation has arrows both ways - this
-    is because <code>isPartnerOf</code> definition specifies its inverse relation
-    as again "isPartnerOf" so the opposite relation is created automatically.</li>
+    is because <code spellcheck="false">isPartnerOf</code> definition specifies
+    its inverse relation as again "isPartnerOf" so the opposite relation is
+    created automatically.</li>
   <li>as the last step we pan &amp; zoom the map to fit better to window dimensions.</li>
 </ul>
 <p>Relation definitions mentioned above come from "Person template" note
@@ -101,10 +105,10 @@ width="812" height="585">
   play with the whole thing in the <a href="#root/_help_wX4HbRucYSDD">demo notes</a>.</p>
 <h2>Details</h2>
 <p>You can specify which relations should be displayed with comma delimited
-  names of relations in <code>displayRelations</code> label.</p>
+  names of relations in <code spellcheck="false">displayRelations</code> label.</p>
 <p>Alternatively, you can specify comma delimited list of relation names
-  in <code>hideRelations</code> which will display all relations, except for
-  the ones defined in the label.</p>
+  in <code spellcheck="false">hideRelations</code> which will display all relations,
+  except for the ones defined in the label.</p>
 <h2>See also</h2>
 <ul>
   <li><a class="reference-link" href="#root/_help_bdUJEHsAPYQR">Note Map</a>&nbsp;is

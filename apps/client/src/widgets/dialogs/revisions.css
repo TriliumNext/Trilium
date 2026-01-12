@@ -14,7 +14,7 @@ body.mobile .revisions-dialog {
         flex-grow: 1;
         width: 100%;
     }
-    
+
     .modal-body {
         height: fit-content !important;
         flex-direction: column;
@@ -24,7 +24,7 @@ body.mobile .revisions-dialog {
     .modal-footer {
         font-size: 0.9em;
     }
-    
+
     .revision-list {
         height: fit-content !important;
         max-height: 20vh;
@@ -32,7 +32,7 @@ body.mobile .revisions-dialog {
         padding: 0 1em;
         flex-shrink: 0;
     }
-    
+
     .modal-body > .revision-content-wrapper {
         flex-grow: 1;
         max-width: unset !important;
@@ -40,24 +40,68 @@ body.mobile .revisions-dialog {
         margin: 0;
         display: block !important;
     }
-    
+
     .modal-body > .revision-content-wrapper > div:first-of-type {
         flex-direction: column;
     }
-    
+
     .revision-title {
         font-size: 1rem;
     }
-    
+
     .revision-title-buttons {
         text-align: center;
         display: flex;
         gap: 0.25em;
         flex-wrap: wrap;
     }
-    
+
     .revision-content {
         padding: 0.5em;
         height: fit-content;
     }
+}
+
+.revisions-dialog {
+    .revision-title-buttons {
+        flex-shrink: 0;
+    }
+
+    .revision-list {
+        flex-shrink: 0;
+    }
+
+    .revision-content.type-file {
+        display: flex;
+        min-width: 0;
+        min-height: 0;
+        flex-grow: 1;
+
+        .file-preview-table {
+            th,
+            td {
+                padding: 0.25em 0;
+            }
+        }
+
+        .revision-file-preview {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+            flex-grow: 1;
+        }
+
+        .revision-file-preview-content {
+            flex-grow: 1;
+            min-height: 0;
+            display: flex;
+            flex-direction: column;
+
+            > * {
+                height: 100%;
+            }
+        }
+    }
+
 }

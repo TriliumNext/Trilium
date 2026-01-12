@@ -1,4 +1,5 @@
 import type { AttachmentRow, EtapiTokenRow, NoteType, OptionNames } from "@triliumnext/commons";
+
 import type { AttributeType } from "../entities/fattribute.js";
 import type { EntityChange } from "../server_types.js";
 
@@ -135,7 +136,14 @@ export default class LoadResults {
     }
 
     getBranchRows() {
-        return this.branchRows.map((row) => this.getEntityRow("branches", row.branchId)).filter((branch) => !!branch);
+        return this.branchRows.map((row) => {
+            const branch = this.getEntityRow("branches", row.branchId);
+            if (branch) {
+                // Merge the componentId from the tracked row with the entity data
+                return { ...branch, componentId: row.componentId };
+            }
+            return null;
+        }).filter((branch) => !!branch) as BranchRow[];
     }
 
     addNoteReordering(parentNoteId: string, componentId: string) {
@@ -153,7 +161,14 @@ export default class LoadResults {
     getAttributeRows(componentId = "none"): AttributeRow[] {
         return this.attributeRows
             .filter((row) => row.componentId !== componentId)
-            .map((row) => this.getEntityRow("attributes", row.attributeId))
+            .map((row) => {
+                const attr = this.getEntityRow("attributes", row.attributeId);
+                if (attr) {
+                    // Merge the componentId from the tracked row with the entity data
+                    return { ...attr, componentId: row.componentId };
+                }
+                return null;
+            })
             .filter((attr) => !!attr) as AttributeRow[];
     }
 

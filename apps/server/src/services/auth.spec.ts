@@ -1,9 +1,11 @@
-import supertest from "supertest";
-import options from "./options";
-import cls from "./cls";
 import { Application } from "express";
-import config from "./config";
+import supertest from "supertest";
+import { beforeAll, describe, expect, it } from "vitest";
+
 import { refreshAuth } from "./auth";
+import cls from "./cls";
+import config from "./config";
+import options from "./options";
 
 let app: Application;
 
@@ -39,7 +41,7 @@ describe("Auth", () => {
             const response = await supertest(app)
                 .get("/")
                 .redirects(1)
-                .expect(200)
+                .expect(200);
             expect(response.text).not.toContain(`id="totpToken"`);
         });
     });

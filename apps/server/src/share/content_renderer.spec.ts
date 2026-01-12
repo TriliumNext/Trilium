@@ -1,5 +1,5 @@
 import { trimIndentation } from "@triliumnext/commons";
-import { describe, expect,it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 
 import { buildShareNote, buildShareNotes } from "../test/shaca_mocking.js";
 import { getContent, renderCode, type Result } from "./content_renderer.js";

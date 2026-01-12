@@ -8,11 +8,11 @@
 <ul>
   <li><em>My render note</em>
     <br>Note type: Render Note
-    <br>Link <code>~renderNote</code> to the child note (<em>Render note with subcomponents</em>)
+    <br>Link <code spellcheck="false">~renderNote</code> to the child note (<em>Render note with subcomponents</em>)
     <ul>
       <li>
         <p><em>Render note with subcomponents</em>
-          <br>Type: JSX</p><pre><code class="language-application-javascript-env-backend">export default function() {
+          <br>Type: JSX</p><pre><code class="language-text-jsx">export default function() {
     return (
         &lt;MyComponent /&gt;        
     );
@@ -20,7 +20,7 @@
         <ul>
           <li>
             <p><em>MyComponent</em>
-              <br>Type: Code / JSX</p><pre><code class="language-application-javascript-env-backend">export default function MyComponent() {
+              <br>Type: Code / JSX</p><pre><code class="language-text-jsx">export default function MyComponent() {
     return &lt;p&gt;Hi&lt;/p&gt;;
 }</code></pre>
           </li>
@@ -30,16 +30,17 @@
   </li>
 </ul>
 <h2>Multiple components per note</h2>
-<p>To export multiple components, use the <code>export</code> keyword next
-  to each of the function components.</p>
-<p>Here's how a sub-note called <code>MyComponents</code> would look like:</p><pre><code class="language-application-javascript-env-backend">export function MyFirstComponent() {
+<p>To export multiple components, use the <code spellcheck="false">export</code> keyword
+  next to each of the function components.</p>
+<p>Here's how a sub-note called <code spellcheck="false">MyComponents</code> would
+  look like:</p><pre><code class="language-text-jsx">export function MyFirstComponent() {
     return &lt;p&gt;First&lt;/p&gt;;
 }
 
 export function MySecondComponent() {
     return &lt;p&gt;Bar&lt;/p&gt;;
 }</code></pre>
-<p>Then in its parent note:</p><pre><code class="language-application-javascript-env-backend">const { MyFirstComponent, MySecondComponent } = MyComponents;
+<p>Then in its parent note:</p><pre><code class="language-text-jsx">const { MyFirstComponent, MySecondComponent } = MyComponents;
 
 export default function() {
     return (
@@ -50,5 +51,5 @@ export default function() {
     );
 }</code></pre>
 <p>Alternatively, it's also possible to use the components directly without
-  assigning them to a <code>const</code> first:</p><pre><code class="language-application-javascript-env-backend">&lt;MyComponents.MyFirstComponent /&gt;
+  assigning them to a <code spellcheck="false">const</code> first:</p><pre><code class="language-text-jsx">&lt;MyComponents.MyFirstComponent /&gt;
 &lt;MyComponents.MySecondComponent /&gt;</code></pre>

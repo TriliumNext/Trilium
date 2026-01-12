@@ -1,0 +1,54 @@
+.pdf-layers-list {
+    width: 100%;
+}
+
+.pdf-layer-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--main-border-color);
+    transition: background-color 0.2s;
+}
+
+.pdf-layer-item:hover {
+    background-color: var(--hover-item-background-color);
+}
+
+.pdf-layer-item:last-child {
+    border-bottom: none;
+}
+
+.pdf-layer-item.hidden {
+    opacity: 0.5;
+}
+
+.pdf-layer-name {
+    flex: 1;
+    font-size: 13px;
+    color: var(--main-text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.no-layers {
+    padding: 16px;
+    text-align: center;
+    color: var(--muted-text-color);
+}
+
+.pdf-layer-item .bx {
+    flex-shrink: 0;
+    font-size: 18px;
+    color: var(--muted-text-color);
+}
+
+.pdf-layer-item:hover .bx {
+    color: var(--main-text-color);
+}
+
+.pdf-layer-item.visible .bx {
+    color: var(--main-text-color);
+}

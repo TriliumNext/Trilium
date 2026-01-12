@@ -16,7 +16,7 @@ export default function FileTypeWidget({ note, parentComponent, noteContext }: T
     if (blob?.content) {
         return <TextPreview content={blob.content} />;
     } else if (note.mime === "application/pdf") {
-        return <PdfPreview blob={blob} note={note} ntxId={noteContext?.ntxId} componentId={parentComponent?.componentId} />;
+        return noteContext && <PdfPreview blob={blob} note={note} componentId={parentComponent?.componentId} noteContext={noteContext} />;
     } else if (note.mime.startsWith("video/")) {
         return <VideoPreview note={note} />;
     } else if (note.mime.startsWith("audio/")) {

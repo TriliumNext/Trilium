@@ -2,9 +2,9 @@
   Trilium instance, designed for external monitoring systems like Prometheus.</p>
 <h2><strong>Endpoint</strong></h2>
 <ul>
-  <li><strong>URL</strong>: <code>/etapi/metrics</code>
+  <li><strong>URL</strong>: <code spellcheck="false">/etapi/metrics</code>
   </li>
-  <li><strong>Method</strong>: <code>GET</code>
+  <li><strong>Method</strong>: <code spellcheck="false">GET</code>
   </li>
   <li><strong>Authentication</strong>: ETAPI token required</li>
   <li><strong>Default Format</strong>: Prometheus text format</li>
@@ -34,39 +34,50 @@ trilium_notes_total 1234 1701432000
 <h2><strong>Available Metrics</strong></h2>
 <h3><strong>Instance Information</strong></h3>
 <ul>
-  <li><code>trilium_info</code> - Version and build information with labels</li>
+  <li><code spellcheck="false">trilium_info</code> - Version and build information
+    with labels</li>
 </ul>
 <h3><strong>Database Metrics</strong></h3>
 <ul>
-  <li><code>trilium_notes_total</code> - Total notes (including deleted)</li>
-  <li><code>trilium_notes_deleted</code> - Number of deleted notes</li>
-  <li><code>trilium_notes_active</code> - Number of active notes</li>
-  <li><code>trilium_notes_protected</code> - Number of protected notes</li>
-  <li><code>trilium_attachments_total</code> - Total attachments</li>
-  <li><code>trilium_attachments_active</code> - Active attachments</li>
-  <li><code>trilium_revisions_total</code> - Total note revisions</li>
-  <li><code>trilium_branches_total</code> - Active branches</li>
-  <li><code>trilium_attributes_total</code> - Active attributes</li>
-  <li><code>trilium_blobs_total</code> - Total blob records</li>
-  <li><code>trilium_etapi_tokens_total</code> - Active ETAPI tokens</li>
-  <li><code>trilium_embeddings_total</code> - Note embeddings (if available)</li>
+  <li><code spellcheck="false">trilium_notes_total</code> - Total notes (including
+    deleted)</li>
+  <li><code spellcheck="false">trilium_notes_deleted</code> - Number of deleted
+    notes</li>
+  <li><code spellcheck="false">trilium_notes_active</code> - Number of active
+    notes</li>
+  <li><code spellcheck="false">trilium_notes_protected</code> - Number of protected
+    notes</li>
+  <li><code spellcheck="false">trilium_attachments_total</code> - Total attachments</li>
+  <li><code spellcheck="false">trilium_attachments_active</code> - Active attachments</li>
+  <li><code spellcheck="false">trilium_revisions_total</code> - Total note revisions</li>
+  <li><code spellcheck="false">trilium_branches_total</code> - Active branches</li>
+  <li><code spellcheck="false">trilium_attributes_total</code> - Active attributes</li>
+  <li><code spellcheck="false">trilium_blobs_total</code> - Total blob records</li>
+  <li><code spellcheck="false">trilium_etapi_tokens_total</code> - Active ETAPI
+    tokens</li>
+  <li><code spellcheck="false">trilium_embeddings_total</code> - Note embeddings
+    (if available)</li>
 </ul>
 <h3><strong>Categorized Metrics</strong></h3>
 <ul>
-  <li><code>trilium_notes_by_type{type="text|code|image|file"}</code> - Notes
-    by type</li>
-  <li><code>trilium_attachments_by_type{mime_type="..."}</code> - Attachments
-    by MIME type</li>
+  <li><code spellcheck="false">trilium_notes_by_type{type="text|code|image|file"}</code> -
+    Notes by type</li>
+  <li><code spellcheck="false">trilium_attachments_by_type{mime_type="..."}</code> -
+    Attachments by MIME type</li>
 </ul>
 <h3><strong>Statistics</strong></h3>
 <ul>
-  <li><code>trilium_database_size_bytes</code> - Database size in bytes</li>
-  <li><code>trilium_oldest_note_timestamp</code> - Timestamp of oldest note</li>
-  <li><code>trilium_newest_note_timestamp</code> - Timestamp of newest note</li>
-  <li><code>trilium_last_modified_timestamp</code> - Last modification timestamp</li>
+  <li><code spellcheck="false">trilium_database_size_bytes</code> - Database
+    size in bytes</li>
+  <li><code spellcheck="false">trilium_oldest_note_timestamp</code> - Timestamp
+    of oldest note</li>
+  <li><code spellcheck="false">trilium_newest_note_timestamp</code> - Timestamp
+    of newest note</li>
+  <li><code spellcheck="false">trilium_last_modified_timestamp</code> - Last
+    modification timestamp</li>
 </ul>
 <h2><strong>Prometheus Configuration</strong></h2>
-<p>Add to your <code>prometheus.yml</code>:</p><pre><code class="language-text-x-trilium-auto">scrape_configs:
+<p>Add to your <code spellcheck="false">prometheus.yml</code>:</p><pre><code class="language-text-x-trilium-auto">scrape_configs:
   - job_name: 'trilium'
     static_configs:
       - targets: ['localhost:8080']
@@ -76,9 +87,9 @@ trilium_notes_total 1234 1701432000
 </code></pre>
 <h2><strong>Error Responses</strong></h2>
 <ul>
-  <li><code>400</code> - Invalid format parameter</li>
-  <li><code>401</code> - Missing or invalid ETAPI token</li>
-  <li><code>500</code> - Internal server error</li>
+  <li><code spellcheck="false">400</code> - Invalid format parameter</li>
+  <li><code spellcheck="false">401</code> - Missing or invalid ETAPI token</li>
+  <li><code spellcheck="false">500</code> - Internal server error</li>
 </ul>
 <h2><strong>Grafana Dashboard</strong></h2>
 <figure class="image">

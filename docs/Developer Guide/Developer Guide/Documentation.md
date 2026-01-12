@@ -1,5 +1,5 @@
 # Documentation
-There are multiple types of documentation for Trilium:<img class="image-style-align-right" src="api/images/elhSPST0fyf2/Documentation_image.png" width="205" height="162">
+There are multiple types of documentation for Trilium:<img class="image-style-align-right" src="api/images/ywZE36YO8YGQ/Documentation_image.png" width="205" height="162">
 
 *   The _User Guide_ represents the user-facing documentation. This documentation can be browsed by users directly from within Trilium, by pressing <kbd>F1</kbd>.
 *   The _Developer's Guide_ represents a set of Markdown documents that present the internals of Trilium, for developers.

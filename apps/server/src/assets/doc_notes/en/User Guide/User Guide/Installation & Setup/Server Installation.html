@@ -26,33 +26,36 @@
 <h2>Configuration</h2>
 <p>After setting up your server installation, you may want to configure settings
   such as the port or enable <a href="#root/_help_l2VkvOwUNfZj">TLS</a>. Configuration
-  is managed via the Trilium <code>config.ini</code> file, which is located
-  in the <a href="#root/_help_tAassRL4RSQL">data directory</a> by default. To begin
-  customizing your setup, copy the provided <code>config-sample.ini</code> file
-  with default values to <code>config.ini</code>.</p>
+  is managed via the Trilium <code spellcheck="false">config.ini</code> file,
+  which is located in the <a href="#root/_help_tAassRL4RSQL">data directory</a> by
+  default. To begin customizing your setup, copy the provided <code spellcheck="false">config-sample.ini</code> file
+  with default values to <code spellcheck="false">config.ini</code>.</p>
 <p>You can also review the <a href="#root/_help_Gzjqa934BdH4">configuration</a> file
-  to provide all <code>config.ini</code> values as environment variables instead.</p>
+  to provide all <code spellcheck="false">config.ini</code> values as environment
+  variables instead.</p>
 <h3>Config Location</h3>
-<p>By default, <code>config.ini</code>, the <a href="#root/_help_wX4HbRucYSDD">database</a>,
+<p>By default, <code spellcheck="false">config.ini</code>, the <a href="#root/_help_wX4HbRucYSDD">database</a>,
   and other important Trilium data files are stored in the <a href="#root/_help_tAassRL4RSQL">data directory</a>.
-  If you prefer a different location, you can change it by setting the <code>TRILIUM_DATA_DIR</code> environment
-  variable:</p><pre><code class="language-text-x-trilium-auto">export TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data</code></pre>
+  If you prefer a different location, you can change it by setting the
+  <code
+  spellcheck="false">TRILIUM_DATA_DIR</code>environment variable:</p><pre><code class="language-text-x-trilium-auto">export TRILIUM_DATA_DIR=/home/myuser/data/my-trilium-data</code></pre>
 <h3>Disabling / Modifying the Upload Limit</h3>
 <p>If you're running into the 250MB limit imposed on the server by default,
-  and you'd like to increase the upload limit, you can set the <code>TRILIUM_NO_UPLOAD_LIMIT</code> environment
-  variable to <code>true</code> to disable it completely:</p><pre><code class="language-text-x-trilium-auto">export TRILIUM_NO_UPLOAD_LIMIT=true </code></pre>
+  and you'd like to increase the upload limit, you can set the <code spellcheck="false">TRILIUM_NO_UPLOAD_LIMIT</code> environment
+  variable to <code spellcheck="false">true</code> to disable it completely:</p><pre><code class="language-text-x-trilium-auto">export TRILIUM_NO_UPLOAD_LIMIT=true </code></pre>
 <p>Or, if you'd simply like to <em>increase</em> the upload limit size to something
-  beyond 250MB, you can set the <code>MAX_ALLOWED_FILE_SIZE_MB</code> environment
-  variable to something larger than the integer <code>250</code> (e.g. <code>450</code> in
-  the following example):</p><pre><code class="language-text-x-trilium-auto">export MAX_ALLOWED_FILE_SIZE_MB=450</code></pre>
+  beyond 250MB, you can set the <code spellcheck="false">MAX_ALLOWED_FILE_SIZE_MB</code> environment
+  variable to something larger than the integer <code spellcheck="false">250</code> (e.g.
+  <code
+  spellcheck="false">450</code>in the following example):</p><pre><code class="language-text-x-trilium-auto">export MAX_ALLOWED_FILE_SIZE_MB=450</code></pre>
 <h3>Disabling Authentication</h3>
 <p>See&nbsp;<a class="reference-link" href="#root/_help_0hzsNCP31IAB">Authentication</a>.</p>
 <h2>Reverse Proxy Setup</h2>
 <p>To configure a reverse proxy for Trilium, you can use either <strong>nginx</strong> or <strong>Apache</strong>.
   You can also check out the documentation stored in the Reverse proxy folder.</p>
 <h3>nginx</h3>
-<p>Add the following configuration to your <code>nginx</code> setup to proxy
-  requests to Trilium:</p><pre><code class="language-text-x-trilium-auto">location /trilium/ {
+<p>Add the following configuration to your <code spellcheck="false">nginx</code> setup
+  to proxy requests to Trilium:</p><pre><code class="language-text-x-trilium-auto">location /trilium/ {
     proxy_pass http://127.0.0.1:8080/;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
@@ -60,7 +63,7 @@
     proxy_set_header Host $host;
     proxy_cache_bypass $http_upgrade;
 }</code></pre>
-<p>To avoid limiting the size of payloads, include this in the <code>server {}</code> block:</p><pre><code class="language-text-x-trilium-auto"># Set to 0 for unlimited. Default is 1M.
+<p>To avoid limiting the size of payloads, include this in the <code spellcheck="false">server {}</code> block:</p><pre><code class="language-text-x-trilium-auto"># Set to 0 for unlimited. Default is 1M.
 client_max_body_size 0;</code></pre>
 <h3>Apache</h3>
 <p>For an Apache setup, refer to the <a href="#root/_help_fDLvzOx29Pfg">Apache proxy setup</a> guide.</p>

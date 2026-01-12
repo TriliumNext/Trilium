@@ -64,7 +64,8 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         this.$widget.addClass(utils.getMimeTypeClass(note.mime));
         this.$widget.addClass(`view-mode-${this.noteContext?.viewScope?.viewMode ?? "default"}`);
         this.$widget.addClass(note.getColorClass());
-        this.$widget.toggleClass(["bgfx", "options"], note.isOptions());
+        this.$widget.toggleClass("options", note.isOptions());
+        this.$widget.toggleClass("bgfx", this.#hasBackgroundEffects(note));
         this.$widget.toggleClass("protected", note.isProtected);
 
         const noteLanguage = note?.getLabelValue("language");
@@ -86,6 +87,22 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         }
 
         return !!note?.isLabelTruthy("fullContentWidth");
+    }
+
+    #hasBackgroundEffects(note: FNote): boolean {
+        const MIME_TYPES_WITH_BACKGROUND_EFFECTS = [
+            "application/pdf"
+        ]
+
+        if (note.isOptions()) {
+            return true;
+        }
+
+        if (note.type === "file" && MIME_TYPES_WITH_BACKGROUND_EFFECTS.includes(note.mime)) {
+            return true;
+        }
+
+        return false;
     }
 
     async entitiesReloadedEvent({ loadResults }: EventData<"entitiesReloaded">) {

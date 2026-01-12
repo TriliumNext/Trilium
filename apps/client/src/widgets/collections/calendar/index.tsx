@@ -1,27 +1,29 @@
-import { DateSelectArg, EventChangeArg, EventMountArg, EventSourceFuncArg, LocaleInput, PluginDef } from "@fullcalendar/core/index.js";
-import { ViewModeProps } from "../interface";
-import Calendar from "./calendar";
-import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 import "./index.css";
-import { useNoteLabel, useNoteLabelBoolean, useResizeObserver, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
-import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
+
 import { Calendar as FullCalendar } from "@fullcalendar/core";
-import { parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
-import dialog from "../../../services/dialog";
-import { t } from "../../../services/i18n";
-import { buildEvents, buildEventsForCalendar } from "./event_builder";
-import { changeEvent, newEvent } from "./api";
-import froca from "../../../services/froca";
-import date_notes from "../../../services/date_notes";
-import appContext from "../../../components/app_context";
+import { DateSelectArg, EventChangeArg, EventMountArg, EventSourceFuncArg, LocaleInput, PluginDef } from "@fullcalendar/core/index.js";
 import { DateClickArg } from "@fullcalendar/interaction";
-import FNote from "../../../entities/fnote";
-import Button, { ButtonGroup } from "../../react/Button";
-import ActionButton from "../../react/ActionButton";
+import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { RefObject } from "preact";
-import TouchBar, { TouchBarButton, TouchBarLabel, TouchBarSegmentedControl, TouchBarSpacer } from "../../react/TouchBar";
-import { openCalendarContextMenu } from "./context_menu";
+import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
+
+import appContext from "../../../components/app_context";
+import FNote from "../../../entities/fnote";
+import date_notes from "../../../services/date_notes";
+import dialog from "../../../services/dialog";
+import froca from "../../../services/froca";
+import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
+import ActionButton from "../../react/ActionButton";
+import Button, { ButtonGroup } from "../../react/Button";
+import { useNoteLabel, useNoteLabelBoolean, useResizeObserver, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
+import TouchBar, { TouchBarButton, TouchBarLabel, TouchBarSegmentedControl, TouchBarSpacer } from "../../react/TouchBar";
+import { ViewModeProps } from "../interface";
+import { changeEvent, newEvent } from "./api";
+import Calendar from "./calendar";
+import { openCalendarContextMenu } from "./context_menu";
+import { buildEvents, buildEventsForCalendar } from "./event_builder";
+import { parseStartEndDateFromEvent, parseStartEndTimeFromEvent } from "./utils";
 
 interface CalendarViewData {
 
@@ -59,7 +61,7 @@ const CALENDAR_VIEWS = [
         previousText: t("calendar.month_previous"),
         nextText: t("calendar.month_next")
     }
-]
+];
 
 const SUPPORTED_CALENDAR_VIEW_TYPE = CALENDAR_VIEWS.map(v => v.type);
 
@@ -75,6 +77,7 @@ export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ de
     ru: () => import("@fullcalendar/core/locales/ru"),
     ja: () => import("@fullcalendar/core/locales/ja"),
     pt: () => import("@fullcalendar/core/locales/pt"),
+    pl: () => import("@fullcalendar/core/locales/pl"),
     "pt_br": () => import("@fullcalendar/core/locales/pt-br"),
     uk: () => import("@fullcalendar/core/locales/uk"),
     en: null,
@@ -102,9 +105,9 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     const eventBuilder = useMemo(() => {
         if (!isCalendarRoot) {
             return async () => await buildEvents(noteIds);
-        } else {
-            return async (e: EventSourceFuncArg) => await buildEventsForCalendar(note, e);
-        }
+        } 
+        return async (e: EventSourceFuncArg) => await buildEventsForCalendar(note, e);
+        
     }, [isCalendarRoot, noteIds]);
 
     const plugins = usePlugins(isEditable, isCalendarRoot);
@@ -178,7 +181,7 @@ function CalendarHeader({ calendarRef }: { calendarRef: RefObject<FullCalendar> 
                 <ActionButton icon="bx bx-chevron-right" text={currentViewData?.nextText ?? ""} frame onClick={() => calendarRef.current?.next()} />
             </ButtonGroup>
         </div>
-    )
+    );
 }
 
 function usePlugins(isEditable: boolean, isCalendarRoot: boolean) {
@@ -293,7 +296,7 @@ function useEventDisplayCustomization(parentNote: FNote) {
         if (promotedAttributes) {
             let promotedAttributesHtml = "";
             for (const [name, value] of promotedAttributes) {
-                promotedAttributesHtml = promotedAttributesHtml + /*html*/`\
+                promotedAttributesHtml = `${promotedAttributesHtml  /*html*/}\
                 <div class="promoted-attribute">
                     <span class="promoted-attribute-name">${name}</span>: <span class="promoted-attribute-value">${value}</span>
                 </div>`;

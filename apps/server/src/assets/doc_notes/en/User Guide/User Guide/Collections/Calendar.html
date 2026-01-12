@@ -61,7 +61,7 @@
     <br>
     <img src="Calendar_image.png">
   </li>
-  <li>Creating new notes from the calendar will respect the <code>~child:template</code> relation
+  <li>Creating new notes from the calendar will respect the <code spellcheck="false">~child:template</code> relation
     if set on the Collection note.</li>
 </ul>
 <h2>Interacting with events</h2>
@@ -180,62 +180,68 @@
   </thead>
   <tbody>
     <tr>
-      <td><code>#startDate</code>
+      <td><code spellcheck="false">#startDate</code>
       </td>
       <td>The date the event starts, which will display it in the calendar. The
-        format is <code>YYYY-MM-DD</code> (year, month and day separated by a minus
-        sign).</td>
+        format is <code spellcheck="false">YYYY-MM-DD</code> (year, month and day
+        separated by a minus sign).</td>
     </tr>
     <tr>
-      <td><code>#endDate</code>
+      <td><code spellcheck="false">#endDate</code>
       </td>
-      <td>Similar to <code>startDate</code>, mentions the end date if the event spans
-        across multiple days. The date is inclusive, so the end day is also considered.
-        The attribute can be missing for single-day events.</td>
+      <td>Similar to <code spellcheck="false">startDate</code>, mentions the end
+        date if the event spans across multiple days. The date is inclusive, so
+        the end day is also considered. The attribute can be missing for single-day
+        events.</td>
     </tr>
     <tr>
-      <td><code>#startTime</code>
+      <td><code spellcheck="false">#startTime</code>
       </td>
       <td>The time the event starts at. If this value is missing, then the event
-        is considered a full-day event. The format is <code>HH:MM</code> (hours in
-        24-hour format and minutes).</td>
+        is considered a full-day event. The format is <code spellcheck="false">HH:MM</code> (hours
+        in 24-hour format and minutes).</td>
     </tr>
     <tr>
-      <td><code>#endTime</code>
+      <td><code spellcheck="false">#endTime</code>
       </td>
-      <td>Similar to <code>startTime</code>, it mentions the time at which the event
-        ends (in relation with <code>endDate</code> if present, or <code>startDate</code>).</td>
+      <td>Similar to <code spellcheck="false">startTime</code>, it mentions the time
+        at which the event ends (in relation with <code spellcheck="false">endDate</code> if
+        present, or <code spellcheck="false">startDate</code>).</td>
     </tr>
     <tr>
-      <td><code>#color</code>
+      <td><code spellcheck="false">#color</code>
       </td>
-      <td>Displays the event with a specified color (named such as <code>red</code>, <code>gray</code> or
-        hex such as <code>#FF0000</code>). This will also change the color of the
-        note in other places such as the note tree.</td>
+      <td>Displays the event with a specified color (named such as <code spellcheck="false">red</code>,
+        <code
+        spellcheck="false">gray</code>or hex such as <code spellcheck="false">#FF0000</code>). This
+          will also change the color of the note in other places such as the note
+          tree.</td>
     </tr>
     <tr>
-      <td><code>#calendar:color</code>
+      <td><code spellcheck="false">#calendar:color</code>
       </td>
-      <td><strong>❌️ Removed since v0.100.0. Use</strong>  <code>**#color**</code>  <strong>instead.</strong> 
+      <td><strong>❌️ Removed since v0.100.0. Use</strong>  <code spellcheck="false">**#color**</code>  <strong>instead.</strong> 
         <br>
-        <br>Similar to <code>#color</code>, but applies the color only for the event
-        in the calendar and not for other places such as the note tree.</td>
+        <br>Similar to <code spellcheck="false">#color</code>, but applies the color
+        only for the event in the calendar and not for other places such as the
+        note tree.</td>
     </tr>
     <tr>
-      <td><code>#iconClass</code>
+      <td><code spellcheck="false">#iconClass</code>
       </td>
       <td>If present, the icon of the note will be displayed to the left of the
         event title.</td>
     </tr>
     <tr>
-      <td><code>#calendar:title</code>
+      <td><code spellcheck="false">#calendar:title</code>
       </td>
       <td>Changes the title of an event to point to an attribute of the note other
-        than the title, can either a label or a relation (without the <code>#</code> or <code>~</code> symbol).
-        See <em>Use-cases</em> for more information.</td>
+        than the title, can either a label or a relation (without the <code spellcheck="false">#</code> or
+        <code
+        spellcheck="false">~</code>symbol). See <em>Use-cases</em> for more information.</td>
     </tr>
     <tr>
-      <td><code>#calendar:displayedAttributes</code>
+      <td><code spellcheck="false">#calendar:displayedAttributes</code>
       </td>
       <td>Allows displaying the value of one or more attributes in the calendar
         like this:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -243,38 +249,40 @@
         <br>
         <img src="9_Calendar_image.png">&nbsp;&nbsp;&nbsp;
         <br>
-        <br><code>#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"</code>&nbsp;&nbsp;&nbsp;
+        <br><code spellcheck="false">#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"</code>&nbsp;&nbsp;&nbsp;
         <br>
         <br>It can also be used with relations, case in which it will display the
         title of the target note:&nbsp;&nbsp;&nbsp;&nbsp;
         <br>
-        <br><code>~assignee=@My assignee #calendar:displayedAttributes="assignee"</code>
+        <br><code spellcheck="false">~assignee=@My assignee #calendar:displayedAttributes="assignee"</code>
       </td>
     </tr>
     <tr>
-      <td><code>#calendar:startDate</code>
+      <td><code spellcheck="false">#calendar:startDate</code>
       </td>
-      <td>Allows using a different label to represent the start date, other than <code>startDate</code> (e.g. <code>expiryDate</code>).
-        The label name <strong>must not be</strong> prefixed with <code>#</code>.
-        If the label is not defined for a note, the default will be used instead.</td>
+      <td>Allows using a different label to represent the start date, other than
+        <code
+        spellcheck="false">startDate</code>(e.g. <code spellcheck="false">expiryDate</code>). The
+          label name <strong>must not be</strong> prefixed with <code spellcheck="false">#</code>.
+          If the label is not defined for a note, the default will be used instead.</td>
     </tr>
     <tr>
-      <td><code>#calendar:endDate</code>
+      <td><code spellcheck="false">#calendar:endDate</code>
       </td>
-      <td>Similar to <code>#calendar:startDate</code>, allows changing the attribute
-        which is being used to read the end date.</td>
+      <td>Similar to <code spellcheck="false">#calendar:startDate</code>, allows
+        changing the attribute which is being used to read the end date.</td>
     </tr>
     <tr>
-      <td><code>#calendar:startTime</code>
+      <td><code spellcheck="false">#calendar:startTime</code>
       </td>
-      <td>Similar to <code>#calendar:startDate</code>, allows changing the attribute
-        which is being used to read the start time.</td>
+      <td>Similar to <code spellcheck="false">#calendar:startDate</code>, allows
+        changing the attribute which is being used to read the start time.</td>
     </tr>
     <tr>
-      <td><code>#calendar:endTime</code>
+      <td><code spellcheck="false">#calendar:endTime</code>
       </td>
-      <td>Similar to <code>#calendar:startDate</code>, allows changing the attribute
-        which is being used to read the end time.</td>
+      <td>Similar to <code spellcheck="false">#calendar:startDate</code>, allows
+        changing the attribute which is being used to read the end time.</td>
     </tr>
   </tbody>
 </table>
@@ -284,7 +292,8 @@
   <img src="11_Calendar_image.png">
 </p>
 <p>The calendar displays all the child notes of the Collection that have
-  a <code>#startDate</code>. An <code>#endDate</code> can optionally be added.</p>
+  a <code spellcheck="false">#startDate</code>. An <code spellcheck="false">#endDate</code> can
+  optionally be added.</p>
 <p>If editing the start date and end date from the note itself is desirable,
   the following attributes can be added to the Collection note:</p><pre><code class="language-text-x-trilium-auto">#viewType=calendar #label:startDate(inheritable)="promoted,alias=Start Date,single,date"
 #label:endDate(inheritable)="promoted,alias=End Date,single,date"
@@ -301,19 +310,19 @@
 <p>It is possible to integrate the calendar view into the Journal with day
   notes. In order to do so change the note type of the Journal note (calendar
   root) to Collection and then select the Calendar View.</p>
-<p>Based on the <code>#calendarRoot</code> (or <code>#workspaceCalendarRoot</code>)
+<p>Based on the <code spellcheck="false">#calendarRoot</code> (or <code spellcheck="false">#workspaceCalendarRoot</code>)
   attribute, the calendar will know that it's in a calendar and apply the
   following:</p>
 <ul>
-  <li>The calendar events are now rendered based on their <code>dateNote</code> attribute
-    rather than <code>startDate</code>.</li>
+  <li>The calendar events are now rendered based on their <code spellcheck="false">dateNote</code> attribute
+    rather than <code spellcheck="false">startDate</code>.</li>
   <li>Interactive editing such as dragging over an empty era or resizing an
     event is no longer possible.</li>
   <li>Clicking on the empty space on a date will automatically open that day's
     note or create it if it does not exist.</li>
   <li>Direct children of a day note will be displayed on the calendar despite
-    not having a <code>dateNote</code> attribute. Children of the child notes
-    will not be displayed.</li>
+    not having a <code spellcheck="false">dateNote</code> attribute. Children
+    of the child notes will not be displayed.</li>
 </ul>
 <img src="8_Calendar_image.png" width="1217"
 height="724">
@@ -322,11 +331,13 @@ height="724">
 <p>By default, events are displayed on the calendar by their note title.
   However, it is possible to configure a different attribute to be displayed
   instead.</p>
-<p>To do so, assign <code>#calendar:title</code> to the child note (not the
-  calendar/Collection note), with the value being <code>name</code> where <code>name</code> can
-  be any label (make not to add the <code>#</code> prefix). The attribute can
-  also come through inheritance such as a template attribute. If the note
-  does not have the requested label, the title of the note will be used instead.</p>
+<p>To do so, assign <code spellcheck="false">#calendar:title</code> to the
+  child note (not the calendar/Collection note), with the value being
+  <code
+  spellcheck="false">name</code>where <code spellcheck="false">name</code> can be any label (make
+    not to add the <code spellcheck="false">#</code> prefix). The attribute can
+    also come through inheritance such as a template attribute. If the note
+    does not have the requested label, the title of the note will be used instead.</p>
 <table>
   <thead>
     <tr>
@@ -350,9 +361,9 @@ height="724">
 </table>
 
 <h3>Using a relation attribute as event title</h3>
-<p>Similarly to using an attribute, use <code>#calendar:title</code> and set
-  it to <code>name</code> where <code>name</code> is the name of the relation
-  to use.</p>
+<p>Similarly to using an attribute, use <code spellcheck="false">#calendar:title</code> and
+  set it to <code spellcheck="false">name</code> where <code spellcheck="false">name</code> is
+  the name of the relation to use.</p>
 <p>Moreover, if there are more relations of the same name, they will be displayed
   as multiple events coming from the same note.</p>
 <table>
@@ -373,9 +384,9 @@ height="724">
     </tr>
   </tbody>
 </table>
-<p>Note that it's even possible to have a <code>#calendar:title</code> on the
-  target note (e.g. “John Smith”) which will try to render an attribute of
-  it. Note that it's not possible to use a relation here as well for safety
+<p>Note that it's even possible to have a <code spellcheck="false">#calendar:title</code> on
+  the target note (e.g. “John Smith”) which will try to render an attribute
+  of it. Note that it's not possible to use a relation here as well for safety
   reasons (an accidental recursion &nbsp;of attributes could cause the application
   to loop infinitely).</p>
 <table>

@@ -34,7 +34,7 @@ application with focus on building large personal knowledge bases.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
-## ⏬ Download
+## ⏬ डाउनलोड कीजिए
 - [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
   stable version, recommended for most users.
 - [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
@@ -74,13 +74,13 @@ Our documentation is available in multiple formats:
 * Rich WYSIWYG note editor including e.g. tables, images and
   [math](https://docs.triliumnotes.org/user-guide/note-types/text) with markdown
   [autoformat](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
-* Support for editing [notes with source
-  code](https://docs.triliumnotes.org/user-guide/note-types/code), including
-  syntax highlighting
-* Fast and easy [navigation between
-  notes](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
-  full text search and [note
-  hoisting](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
+* [सोर्स कोड वाले
+  नोट्स](https://docs.triliumnotes.org/user-guide/note-types/code) को एडिट करने
+  की सुविधा, जिसमें सिंटैक्स हाइलाइटिंग (syntax highlighting) भी शामिल है
+* तेज़ और आसान [नोट्स के बीच
+  नेविगेशन](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
+  फुल टेक्स्ट सर्च और [नोट
+  होइस्टिंग](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
 * Seamless [note
   versioning](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
 * Note
@@ -98,16 +98,15 @@ Our documentation is available in multiple formats:
     server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [Sharing](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
   (publishing) notes to public internet
-* Strong [note
-  encryption](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
-  with per-note granularity
+* प्रति-नोट granularity के साथ मजबूत [नोट
+  एन्क्रिप्शन](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
 * Sketching diagrams, based on [Excalidraw](https://excalidraw.com/) (note type
   "canvas")
 * [Relation
   maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
   [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
   for visualizing notes and their relations
-* Mind maps, based on [Mind Elixir](https://docs.mind-elixir.com/)
+* [Mind Elixir](https://docs.mind-elixir.com/) पर आधारित माइंड मैप्स
 * [Geo maps](https://docs.triliumnotes.org/user-guide/collections/geomap) with
   location pins and GPX tracks
 * [Scripting](https://docs.triliumnotes.org/user-guide/scripts) - see [Advanced
@@ -157,7 +156,7 @@ compatible with the latest zadam/trilium version of
 versions of TriliumNext/Trilium have their sync versions incremented which
 prevents direct migration.
 
-## 💬 Discuss with us
+## 💬 हमारे साथ चर्चा करें
 
 Feel free to join our official conversations. We would love to hear what
 features, suggestions, or issues you may have!

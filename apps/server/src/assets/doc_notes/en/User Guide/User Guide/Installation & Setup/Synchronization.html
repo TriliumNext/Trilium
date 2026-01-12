@@ -76,12 +76,13 @@
 <h3>Certificate Issues</h3>
 <p>When using TLS, Trilium will verify the server certificate. If verification
   fails (e.g., due to self-signed certificates or certain corporate proxies),
-  you can run the Trilium client with the <code>NODE_TLS_REJECT_UNAUTHORIZED</code> environment
-  variable set to <code>0</code>:</p><pre><code class="language-text-x-trilium-auto">export NODE_TLS_REJECT_UNAUTHORIZED=0</code></pre>
+  you can run the Trilium client with the <code spellcheck="false">NODE_TLS_REJECT_UNAUTHORIZED</code> environment
+  variable set to <code spellcheck="false">0</code>:</p><pre><code class="language-text-x-trilium-auto">export NODE_TLS_REJECT_UNAUTHORIZED=0</code></pre>
 <p>This will disable TLS certificate verification, significantly reducing
   security and exposing the setup to MITM attacks. It is strongly recommended
   to use a valid signed server certificate. Newer Trilium versions include
-  a script called <code>trilium-no-cert-check.sh</code> for this purpose.</p>
+  a script called <code spellcheck="false">trilium-no-cert-check.sh</code> for
+  this purpose.</p>
 <h3>Conflict Resolution</h3>
 <p>If you edit the same note on multiple instances before synchronization,
   Trilium resolves conflicts by retaining the newer change and discarding

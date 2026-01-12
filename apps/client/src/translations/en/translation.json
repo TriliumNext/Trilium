@@ -295,7 +295,6 @@
     "download_button": "Download",
     "mime": "MIME: ",
     "file_size": "File size:",
-    "preview": "Preview:",
     "preview_not_available": "Preview isn't available for this note type."
   },
   "sort_child_notes": {
@@ -801,8 +800,9 @@
     "geo-map": "Geo Map",
     "board": "Board",
     "presentation": "Presentation",
+    "gallery": "Gallery",
     "include_archived_notes": "Show archived notes",
-    "gallery": "Gallery"
+    "hide_child_notes": "Hide child notes in tree"
   },
   "edited_notes": {
     "no_edited_notes_found": "No edited notes on this day yet...",
@@ -1645,6 +1645,7 @@
   "tree-context-menu": {
     "open-in-a-new-tab": "Open in a new tab",
     "open-in-a-new-split": "Open in a new split",
+    "open-in-a-new-window": "Open in a new window",
     "insert-note-after": "Insert note after",
     "insert-child-note": "Insert child note",
     "archive": "Archive",
@@ -1657,6 +1658,8 @@
     "advanced": "Advanced",
     "expand-subtree": "Expand subtree",
     "collapse-subtree": "Collapse subtree",
+    "hide-subtree": "Hide subtree",
+    "show-subtree": "Show subtree",
     "sort-by": "Sort by...",
     "recent-changes-in-subtree": "Recent changes in subtree",
     "convert-to-attachment": "Convert to attachment",
@@ -1770,7 +1773,16 @@
     "create-child-note": "Create child note",
     "unhoist": "Unhoist",
     "toggle-sidebar": "Toggle sidebar",
-    "dropping-not-allowed": "Dropping notes into this location is not allowed."
+    "dropping-not-allowed": "Dropping notes into this location is not allowed.",
+    "clone-indicator-tooltip": "This note has {{- count}} parents: {{- parents}}",
+    "clone-indicator-tooltip-single": "This note is cloned (1 additional parent: {{- parent}})",
+    "shared-indicator-tooltip": "This note is shared publicly",
+    "shared-indicator-tooltip-with-url": "This note is shared publicly at: {{- url}}",
+    "subtree-hidden-tooltip_one": "{{count}} child note that is hidden from the tree",
+    "subtree-hidden-tooltip_other": "{{count}} child notes that are hidden from the tree",
+    "subtree-hidden-moved-title": "Added to {{title}}",
+    "subtree-hidden-moved-description-collection": "This collection hides its child notes in the tree.",
+    "subtree-hidden-moved-description-other": "Child notes are hidden in the tree for this note."
   },
   "title_bar_buttons": {
     "window-on-top": "Keep Window on Top"
@@ -2206,7 +2218,14 @@
     "execute_script": "Run script",
     "execute_script_description": "This note is a script note. Click to execute the script.",
     "execute_sql": "Run SQL",
-    "execute_sql_description": "This note is a SQL note. Click to execute the SQL query."
+    "execute_sql_description": "This note is a SQL note. Click to execute the SQL query.",
+    "save_status_saved": "Saved",
+    "save_status_saving": "Saving...",
+    "save_status_unsaved": "Unsaved",
+    "save_status_error": "Save failed",
+    "save_status_saving_tooltip": "Changes are being saved.",
+    "save_status_unsaved_tooltip": "There are unsaved changes. They will be saved automatically in a moment.",
+    "save_status_error_tooltip": "An error occurred while saving the note. If possible, try copying the note content elsewhere and reloading the application."
   },
   "status_bar": {
     "language_title": "Change content language",
@@ -2258,5 +2277,15 @@
     "gallery_count_other": "{{count}} galleries",
     "loading_more": "Loading more images... ({{loaded}} of {{total}})",
     "empty_gallery": "This gallery is empty. Upload images to make them appear."
+  },
+  "pdf": {
+    "attachments_one": "{{count}} attachment",
+    "attachments_other": "{{count}} attachments",
+    "layers_one": "{{count}} layer",
+    "layers_other": "{{count}} layers",
+    "pages_one": "{{count}} page",
+    "pages_other": "{{count}} pages",
+    "pages_alt": "Page {{pageNumber}}",
+    "pages_loading": "Loading..."
   }
 }

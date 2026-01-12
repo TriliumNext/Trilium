@@ -37,7 +37,7 @@ export default class App {
         this.noteTreeHoistedNote = this.noteTree.locator(".fancytree-node", { has: page.locator(".unhoist-button") });
         this.launcherBar = page.locator("#launcher-container");
         this.currentNoteSplit = page.locator(".note-split:not(.hidden-ext)");
-        this.currentNoteSplitTitle = this.currentNoteSplit.locator(".note-title");
+        this.currentNoteSplitTitle = this.currentNoteSplit.locator(".note-title").first();
         this.currentNoteSplitContent = this.currentNoteSplit.locator(".note-detail-printable.visible");
         this.sidebar = page.locator("#right-pane");
     }
@@ -68,13 +68,15 @@ export default class App {
 
     async goToNoteInNewTab(noteTitle: string) {
         const autocomplete = this.currentNoteSplit.locator(".note-autocomplete");
+        await expect(autocomplete).toBeVisible();
         await autocomplete.fill(noteTitle);
 
         const resultsSelector = this.currentNoteSplit.locator(".note-detail-empty-results");
         await expect(resultsSelector).toContainText(noteTitle);
-        await resultsSelector.locator(".aa-suggestion", { hasText: noteTitle })
-            .nth(1) // Select the second one, as the first one is "Create a new note"
-            .click();
+        const suggestionSelector = resultsSelector.locator(".aa-suggestion")
+            .nth(1); // Select the second one (best candidate), as the first one is "Create a new note"
+        await expect(suggestionSelector).toContainText(noteTitle);
+        suggestionSelector.click();
     }
 
     async goToSettings() {

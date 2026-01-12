@@ -4,15 +4,16 @@
 <h2>Preact with JSX vs. vanilla jQuery</h2>
 <p>In older versions of Trilium, custom widgets were exclusively written
   in a combination of jQuery with Trilium's internal widget architecture
-  (e.g., <code>BasicWidget</code>, <code>NoteContextAwareWidget</code>).</p>
+  (e.g., <code spellcheck="false">BasicWidget</code>, <code spellcheck="false">NoteContextAwareWidget</code>).</p>
 <p>Starting with v0.101.0, custom widgets can also be written in JSX using
   the&nbsp;<a class="reference-link" href="#root/_help_KLsqhjaqh1QW">Preact</a>&nbsp;framework.
   Both legacy and Preact widgets have the same capabilities, with a single
   difference:</p>
 <ul>
-  <li>Preact widgets are content-sized by default whereas legacy widgets need <code>this.contentSized()</code> applied
-    in the constructor. For more information, see the corresponding section
-    in&nbsp;<a class="reference-link" href="#root/_help_gMkgcLJ6jBkg">Troubleshooting</a>.</li>
+  <li>Preact widgets are content-sized by default whereas legacy widgets need
+    <code
+    spellcheck="false">this.contentSized()</code>applied in the constructor. For more information,
+      see the corresponding section in&nbsp;<a class="reference-link" href="#root/_help_gMkgcLJ6jBkg">Troubleshooting</a>.</li>
 </ul>
 <p>Wherever possible, widget examples will be both in the legacy and Preact
   format.</p>
@@ -26,7 +27,7 @@
         the language first.</li>
     </ol>
   </li>
-  <li>Apply the <code>#widget</code>  <a href="#root/_help_HI6GBBIduIgv">label</a>.</li>
+  <li>Apply the <code spellcheck="false">#widget</code>  <a href="#root/_help_HI6GBBIduIgv">label</a>.</li>
 </ol>
 <h2>Getting started with a simple example</h2>
 <p>Let's start by creating a widget that shows a message near the content
@@ -130,10 +131,13 @@ class="ck-table-resized">
     </tr>
   </tbody>
   </table>
-  <p>To position the widget somewhere else, just change the value passed to <code>get parentWidget()</code> for
-    legacy widgets or the <code>parent</code> field for Preact. Do note that
-    some positions such as <code>note-detail-pane</code> and <code>right-pane</code> have
-    special requirements that need to be accounted for (see the table above).</p>
+  <p>To position the widget somewhere else, just change the value passed to
+    <code
+    spellcheck="false">get parentWidget()</code>for legacy widgets or the <code spellcheck="false">parent</code> field
+      for Preact. Do note that some positions such as <code spellcheck="false">note-detail-pane</code> and
+      <code
+      spellcheck="false">right-pane</code>have special requirements that need to be accounted for
+        (see the table above).</p>
   <h2>Launch bar widgets</h2>
   <p>Launch bar widgets are similar to <em>Custom widgets</em> but are specific
     to the&nbsp;<a class="reference-link" href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>.

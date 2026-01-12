@@ -1,17 +1,18 @@
 import { useCallback, useLayoutEffect, useState } from "preact/hooks";
+
 import FNote from "../../entities/fnote";
 import froca from "../../services/froca";
 import { isDesktop, isMobile } from "../../services/utils";
-import CalendarWidget from "./CalendarWidget";
-import SpacerWidget from "./SpacerWidget";
-import BookmarkButtons from "./BookmarkButtons";
-import ProtectedSessionStatusWidget from "./ProtectedSessionStatusWidget";
-import SyncStatus from "./SyncStatus";
-import HistoryNavigationButton from "./HistoryNavigation";
-import { AiChatButton, CommandButton, CustomWidget, NoteLauncher, QuickSearchLauncherWidget, ScriptLauncher, TodayLauncher } from "./LauncherDefinitions";
 import { useTriliumEvent } from "../react/hooks";
 import { onWheelHorizontalScroll } from "../widget_utils";
+import BookmarkButtons from "./BookmarkButtons";
+import CalendarWidget from "./CalendarWidget";
+import HistoryNavigationButton from "./HistoryNavigation";
 import { LaunchBarContext } from "./launch_bar_widgets";
+import { AiChatButton, CommandButton, CustomWidget, NoteLauncher, QuickSearchLauncherWidget, ScriptLauncher, TodayLauncher } from "./LauncherDefinitions";
+import ProtectedSessionStatusWidget from "./ProtectedSessionStatusWidget";
+import SpacerWidget from "./SpacerWidget";
+import SyncStatus from "./SyncStatus";
 
 export default function LauncherContainer({ isHorizontalLayout }: { isHorizontalLayout: boolean }) {
     const childNotes = useLauncherChildNotes();
@@ -34,18 +35,19 @@ export default function LauncherContainer({ isHorizontalLayout }: { isHorizontal
             }}>
                 {childNotes?.map(childNote => {
                     if (childNote.type !== "launcher") {
-                        throw new Error(`Note '${childNote.noteId}' '${childNote.title}' is not a launcher even though it's in the launcher subtree`);
+                        console.warn(`Note '${childNote.noteId}' '${childNote.title}' is not a launcher even though it's in the launcher subtree`);
+                        return false;
                     }
 
                     if (!isDesktop() && childNote.isLabelTruthy("desktopOnly")) {
                         return false;
                     }
 
-                    return <Launcher key={childNote.noteId} note={childNote} isHorizontalLayout={isHorizontalLayout} />
+                    return <Launcher key={childNote.noteId} note={childNote} isHorizontalLayout={isHorizontalLayout} />;
                 })}
             </LaunchBarContext.Provider>
         </div>
-    )
+    );
 }
 
 function Launcher({ note, isHorizontalLayout }: { note: FNote, isHorizontalLayout: boolean }) {
@@ -72,7 +74,7 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
     const builtinWidget = note.getLabelValue("builtinWidget");
     switch (builtinWidget) {
         case "calendar":
-            return <CalendarWidget launcherNote={note} />
+            return <CalendarWidget launcherNote={note} />;
         case "spacer":
             // || has to be inside since 0 is a valid value
             const baseSize = parseInt(note.getLabelValue("baseSize") || "40");
@@ -86,15 +88,15 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
         case "syncStatus":
             return <SyncStatus />;
         case "backInHistoryButton":
-            return <HistoryNavigationButton launcherNote={note} command="backInNoteHistory" />
+            return <HistoryNavigationButton launcherNote={note} command="backInNoteHistory" />;
         case "forwardInHistoryButton":
-            return <HistoryNavigationButton launcherNote={note} command="forwardInNoteHistory" />
+            return <HistoryNavigationButton launcherNote={note} command="forwardInNoteHistory" />;
         case "todayInJournal":
-            return <TodayLauncher launcherNote={note} />
+            return <TodayLauncher launcherNote={note} />;
         case "quickSearch":
-            return <QuickSearchLauncherWidget />
+            return <QuickSearchLauncherWidget />;
         case "aiChatLauncher":
-            return <AiChatButton launcherNote={note} />
+            return <AiChatButton launcherNote={note} />;
         default:
             throw new Error(`Unrecognized builtin widget ${builtinWidget} for launcher ${note.noteId} "${note.title}"`);
     }

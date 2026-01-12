@@ -37,6 +37,7 @@ const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, Options["locale"] | null> 
     it: "it",
     ja: "ja",
     pt: "pt",
+    pl: null,
     pt_br: "pt",
     ro: "ro",
     ru: "ru",

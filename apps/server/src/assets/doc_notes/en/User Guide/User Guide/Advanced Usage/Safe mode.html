@@ -1,12 +1,19 @@
-<p>Safe mode is triggered by setting the <code>TRILIUM_SAFE_MODE</code> environment
-  variable to a truthy value, usually <code>1</code>.</p>
-<p>In each artifact there is a <code>trilium-safe-mode.sh</code> (or <code>.bat</code>)
-  script to enable it.</p>
+<p>Safe mode is triggered by setting the <code spellcheck="false">TRILIUM_SAFE_MODE</code> environment
+  variable to a truthy value, usually <code spellcheck="false">1</code>.</p>
+<p>In each artifact there is a <code spellcheck="false">trilium-safe-mode.sh</code> (or
+  <code
+  spellcheck="false">.bat</code>) script to enable it.</p>
 <p>What it does:</p>
 <ul>
-  <li>Disables <code>customWidget</code> launcher types in <code>app/widgets/containers/launcher.js</code>.</li>
-  <li>Disables the running of <code>mobileStartup</code> or <code>frontendStartup</code> scripts.</li>
+  <li>Disables <code spellcheck="false">customWidget</code> launcher types in
+    <code
+    spellcheck="false">app/widgets/containers/launcher.js</code>.</li>
+  <li>Disables the running of <code spellcheck="false">mobileStartup</code> or
+    <code
+    spellcheck="false">frontendStartup</code>scripts.</li>
   <li>Displays the root note instead of the previously saved session.</li>
-  <li>Disables the running of <code>backendStartup</code>, <code>hourly</code>, <code>daily</code> scripts
-    and checks for the hidden subtree.</li>
+  <li>Disables the running of <code spellcheck="false">backendStartup</code>,
+    <code
+    spellcheck="false">hourly</code>, <code spellcheck="false">daily</code> scripts and checks
+      for the hidden subtree.</li>
 </ul>

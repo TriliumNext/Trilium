@@ -1,7 +1,8 @@
-import sanitizeHtml from "sanitize-html";
 import { sanitizeUrl } from "@braintree/sanitize-url";
-import optionService from "./options.js";
 import { ALLOWED_PROTOCOLS, SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
+import sanitizeHtml from "sanitize-html";
+
+import optionService from "./options.js";
 
 // intended mainly as protection against XSS via import
 // secondarily, it (partly) protects against "CSS takeover"
@@ -25,7 +26,7 @@ function sanitize(dirtyHtml: string) {
     }
 
     // Get allowed tags from options, with fallback to default list if option not yet set
-    let allowedTags;
+    let allowedTags: readonly string[];
     try {
         allowedTags = JSON.parse(optionService.getOption("allowedHtmlTags"));
     } catch (e) {
@@ -38,11 +39,12 @@ function sanitize(dirtyHtml: string) {
 
     // to minimize document changes, compress H
     return sanitizeHtml(dirtyHtml, {
-        allowedTags,
+        allowedTags: allowedTags as string[],
         allowedAttributes: {
             "*": ["class", "style", "title", "src", "href", "hash", "disabled", "align", "alt", "center", "data-*"],
             input: ["type", "checked"],
-            img: ["width", "height"]
+            img: ["width", "height"],
+            code: [ "spellcheck" ]
         },
         allowedStyles: {
             "*": {

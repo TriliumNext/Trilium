@@ -27,8 +27,8 @@
     "@ckeditor/ckeditor5-dev-build-tools": "54.2.3",
     "@ckeditor/ckeditor5-inspector": ">=4.1.0",
     "@ckeditor/ckeditor5-package-tools": "5.0.1",
-    "@typescript-eslint/eslint-plugin": "~8.51.0",
-    "@typescript-eslint/parser": "8.51.0",
+    "@typescript-eslint/eslint-plugin": "~8.52.0",
+    "@typescript-eslint/parser": "8.52.0",
     "@vitest/browser": "4.0.16",
     "@vitest/coverage-istanbul": "4.0.16",
     "ckeditor5": "47.3.0",
@@ -42,7 +42,7 @@
     "typescript": "5.9.3",
     "vite-plugin-svgo": "~2.0.0",
     "vitest": "4.0.16",
-    "webdriverio": "9.22.0"
+    "webdriverio": "9.23.0"
   },
   "peerDependencies": {
     "ckeditor5": "47.3.0"

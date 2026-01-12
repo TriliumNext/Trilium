@@ -15,6 +15,8 @@
 .note-detail-split .note-detail-split-editor {
     width: 100%;
     flex-grow: 1;
+    min-width: 0;
+    min-height: 0;
 }
 
 .note-detail-split .note-detail-split-editor .note-detail-code {
@@ -30,6 +32,7 @@
     margin: 5px;
     white-space: pre-wrap;
     font-size: 0.85em;
+    overflow: auto;
 }
 
 .note-detail-split .note-detail-split-preview {

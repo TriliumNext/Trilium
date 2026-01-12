@@ -1,0 +1,57 @@
+.pdf-attachments-list {
+    width: 100%;
+}
+
+.pdf-attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--main-border-color);
+    transition: background-color 0.2s;
+}
+
+.pdf-attachment-item:hover {
+    background-color: var(--hover-item-background-color);
+}
+
+.pdf-attachment-item:last-child {
+    border-bottom: none;
+}
+
+.pdf-attachment-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.pdf-attachment-filename {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--main-text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pdf-attachment-size {
+    font-size: 11px;
+    color: var(--muted-text-color);
+    margin-top: 2px;
+}
+
+.no-attachments {
+    padding: 16px;
+    text-align: center;
+    color: var(--muted-text-color);
+}
+
+.pdf-attachment-item .bx {
+    flex-shrink: 0;
+    font-size: 18px;
+    color: var(--muted-text-color);
+}
+
+.pdf-attachment-item:hover .bx {
+    color: var(--main-text-color);
+}

@@ -18609,7 +18609,7 @@ function getViewerConfiguration() {
       imageAltTextSettingsSeparator: document.getElementById("imageAltTextSettingsSeparator"),
       documentPropertiesButton: document.getElementById("documentProperties")
     },
-    viewsManager: {
+    viewsManager: window.TRILIUM_HIDE_SIDEBAR ? null : {
       outerContainer: document.getElementById("outerContainer"),
       toggleButton: document.getElementById("viewsManagerToggleButton"),
       sidebarContainer: document.getElementById("viewsManager"),

@@ -1,76 +1,73 @@
-import { isElectron } from "../services/utils.js";
-import express from "express";
-
-import auth from "../services/auth.js";
-import openID from '../services/open_id.js';
-import totp from './api/totp.js';
-import recoveryCodes from './api/recovery_codes.js';
-import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import { createPartialContentHandler } from "@triliumnext/express-partial-content";
+import express from "express";
 import rateLimit from "express-rate-limit";
 
-// page routes
-import setupRoute from "./setup.js";
-import loginRoute from "./login.js";
-import indexRoute from "./index.js";
-
-// API routes
-import treeApiRoute from "./api/tree.js";
-import notesApiRoute from "./api/notes.js";
-import branchesApiRoute from "./api/branches.js";
-import attachmentsApiRoute from "./api/attachments.js";
-import autocompleteApiRoute from "./api/autocomplete.js";
-import cloningApiRoute from "./api/cloning.js";
-import revisionsApiRoute from "./api/revisions.js";
-import recentChangesApiRoute from "./api/recent_changes.js";
-import optionsApiRoute from "./api/options.js";
-import passwordApiRoute from "./api/password.js";
-import syncApiRoute from "./api/sync.js";
-import loginApiRoute from "./api/login.js";
-import recentNotesRoute from "./api/recent_notes.js";
-import appInfoRoute from "./api/app_info.js";
-import exportRoute from "./api/export.js";
-import importRoute from "./api/import.js";
-import setupApiRoute from "./api/setup.js";
-import sqlRoute from "./api/sql.js";
-import databaseRoute from "./api/database.js";
-import imageRoute from "./api/image.js";
-import attributesRoute from "./api/attributes.js";
-import scriptRoute from "./api/script.js";
-import senderRoute from "./api/sender.js";
-import filesRoute from "./api/files.js";
-import searchRoute from "./api/search.js";
-import bulkActionRoute from "./api/bulk_action.js";
-import specialNotesRoute from "./api/special_notes.js";
-import noteMapRoute from "./api/note_map.js";
-import clipperRoute from "./api/clipper.js";
-import similarNotesRoute from "./api/similar_notes.js";
-import keysRoute from "./api/keys.js";
-import backendLogRoute from "./api/backend_log.js";
-import statsRoute from "./api/stats.js";
-import fontsRoute from "./api/fonts.js";
-import etapiTokensApiRoutes from "./api/etapi_tokens.js";
-import relationMapApiRoute from "./api/relation-map.js";
-import otherRoute from "./api/other.js";
-import metricsRoute from "./api/metrics.js";
-import shareRoutes from "../share/routes.js";
-import ollamaRoute from "./api/ollama.js";
-import openaiRoute from "./api/openai.js";
-import anthropicRoute from "./api/anthropic.js";
-import llmRoute from "./api/llm.js";
-import systemInfoRoute from "./api/system_info.js";
-
-import etapiAuthRoutes from "../etapi/auth.js";
 import etapiAppInfoRoutes from "../etapi/app_info.js";
 import etapiAttachmentRoutes from "../etapi/attachments.js";
 import etapiAttributeRoutes from "../etapi/attributes.js";
-import etapiBranchRoutes from "../etapi/branches.js";
-import etapiNoteRoutes from "../etapi/notes.js";
-import etapiSpecialNoteRoutes from "../etapi/special_notes.js";
-import etapiSpecRoute from "../etapi/spec.js";
+import etapiAuthRoutes from "../etapi/auth.js";
 import etapiBackupRoute from "../etapi/backup.js";
+import etapiBranchRoutes from "../etapi/branches.js";
 import etapiMetricsRoute from "../etapi/metrics.js";
+import etapiNoteRoutes from "../etapi/notes.js";
+import etapiSpecRoute from "../etapi/spec.js";
+import etapiSpecialNoteRoutes from "../etapi/special_notes.js";
+import auth from "../services/auth.js";
+import openID from '../services/open_id.js';
+import { isElectron } from "../services/utils.js";
+import shareRoutes from "../share/routes.js";
+import anthropicRoute from "./api/anthropic.js";
+import appInfoRoute from "./api/app_info.js";
+import attachmentsApiRoute from "./api/attachments.js";
+import attributesRoute from "./api/attributes.js";
+import autocompleteApiRoute from "./api/autocomplete.js";
+import backendLogRoute from "./api/backend_log.js";
+import branchesApiRoute from "./api/branches.js";
+import bulkActionRoute from "./api/bulk_action.js";
+import clipperRoute from "./api/clipper.js";
+import cloningApiRoute from "./api/cloning.js";
+import databaseRoute from "./api/database.js";
+import etapiTokensApiRoutes from "./api/etapi_tokens.js";
+import exportRoute from "./api/export.js";
+import filesRoute from "./api/files.js";
+import fontsRoute from "./api/fonts.js";
+import imageRoute from "./api/image.js";
+import importRoute from "./api/import.js";
+import keysRoute from "./api/keys.js";
+import llmRoute from "./api/llm.js";
+import loginApiRoute from "./api/login.js";
+import metricsRoute from "./api/metrics.js";
+import noteMapRoute from "./api/note_map.js";
+import notesApiRoute from "./api/notes.js";
+import ollamaRoute from "./api/ollama.js";
+import openaiRoute from "./api/openai.js";
+import optionsApiRoute from "./api/options.js";
+import otherRoute from "./api/other.js";
+import passwordApiRoute from "./api/password.js";
+import recentChangesApiRoute from "./api/recent_changes.js";
+import recentNotesRoute from "./api/recent_notes.js";
+import recoveryCodes from './api/recovery_codes.js';
+import relationMapApiRoute from "./api/relation-map.js";
+import revisionsApiRoute from "./api/revisions.js";
+import scriptRoute from "./api/script.js";
+import searchRoute from "./api/search.js";
+import senderRoute from "./api/sender.js";
+import setupApiRoute from "./api/setup.js";
+import similarNotesRoute from "./api/similar_notes.js";
+import specialNotesRoute from "./api/special_notes.js";
+import sqlRoute from "./api/sql.js";
+import statsRoute from "./api/stats.js";
+import syncApiRoute from "./api/sync.js";
+import systemInfoRoute from "./api/system_info.js";
+import totp from './api/totp.js';
+// API routes
+import treeApiRoute from "./api/tree.js";
+import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
+import * as indexRoute from "./index.js";
+import loginRoute from "./login.js";
 import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, route, router, uploadMiddlewareWithErrorHandling } from "./route_api.js";
+// page routes
+import setupRoute from "./setup.js";
 
 const GET = "get",
     PST = "post",
@@ -79,7 +76,6 @@ const GET = "get",
     DEL = "delete";
 
 function register(app: express.Application) {
-    route(GET, "/", [auth.checkAuth, csrfMiddleware], indexRoute.index);
     route(GET, "/login", [auth.checkAppInitialized, auth.checkPasswordSet], loginRoute.loginPage);
     route(GET, "/set-password", [auth.checkAppInitialized, auth.checkPasswordNotSet], loginRoute.setPasswordPage);
 
@@ -89,6 +85,7 @@ function register(app: express.Application) {
         skipSuccessfulRequests: true // successful auth to rate-limited ETAPI routes isn't counted. However, successful auth to /login is still counted!
     });
 
+    route(GET, "/bootstrap", [ auth.checkAuth ], indexRoute.bootstrap);
     route(PST, "/login", [loginRateLimiter], loginRoute.login);
     route(PST, "/logout", [csrfMiddleware, auth.checkAuth], loginRoute.logout);
     route(PST, "/set-password", [auth.checkAppInitialized, auth.checkPasswordNotSet], loginRoute.setPassword);

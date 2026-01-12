@@ -4,8 +4,8 @@
 Icon packs are specific to Trilium, so they must either be created from scratch (see below) or imported from a ZIP file from a third-party developer.
 
 > [!NOTE]
-> **Icon packs are third-party content**  
->   
+> **Icon packs are third-party content**
+> 
 > The Trilium maintainers are not responsible for keeping these icon packs up to date. If you have an issue with a specific icon pack, then the issue must be reported to the third-party developer responsible for it, not the Trilium team.
 
 To import an icon pack:

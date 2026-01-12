@@ -9,7 +9,7 @@ At the bottom of the window there is a new bar called the _Status bar_. This bar
 
 For more information, consult the [dedicated page](New%20Layout/Status%20bar.md).
 
-<figure class="image"><img style="aspect-ratio:1150/27;" src="4_New Layout_image.png" width="1150" height="27"></figure>
+<figure class="image"><img style="aspect-ratio:1150/27;" src="5_New Layout_image.png" width="1150" height="27"></figure>
 
 ### Inline title
 
@@ -21,7 +21,7 @@ This only affects <a class="reference-link" href="../../Note%20Types/Text.md">T
 
 Depending on the note type, the inline title will also present some more interactive options such as being able to switch the note type (see below).
 
-<figure class="image"><img style="aspect-ratio:899/122;" src="New Layout_image.png" width="899" height="122"><figcaption>The <em>Inline title</em>, which is displayed at the top of the note and can be scrolled past.</figcaption></figure><figure class="image"><img style="aspect-ratio:910/104;" src="3_New Layout_image.png" width="910" height="104"><figcaption>The fixed title bar. The title only appears after scrolling past the <em>Inline title</em>.</figcaption></figure>
+<figure class="image"><img style="aspect-ratio:899/122;" src="New Layout_image.png" width="899" height="122"><figcaption>The <em>Inline title</em>, which is displayed at the top of the note and can be scrolled past.</figcaption></figure><figure class="image"><img style="aspect-ratio:910/104;" src="4_New Layout_image.png" width="910" height="104"><figcaption>The fixed title bar. The title only appears after scrolling past the <em>Inline title</em>.</figcaption></figure>
 
 ### New note type switcher
 
@@ -29,13 +29,13 @@ When a new <a class="reference-link" href="../../Note%20Types/Text.md">Text</a>
 
 The switcher will disappear as soon as a text is entered.
 
-<img src="5_New Layout_image.png" width="735" height="143">
+<img src="6_New Layout_image.png" width="735" height="143">
 
 ### Note badges
 
 Note badges appear near the fixed note title and indicate important information about the note such as whether it is read-only. Some of the badges are also interactive.
 
-<figure class="image"><img style="aspect-ratio:910/49;" src="2_New Layout_image.png" width="910" height="49"></figure>
+<figure class="image"><img style="aspect-ratio:910/49;" src="3_New Layout_image.png" width="910" height="49"></figure>
 
 The following badges are available:
 
@@ -58,6 +58,19 @@ The following sections have been made collapsible:
 *   _Edited Notes_, which appears for <a class="reference-link" href="../../Advanced%20Usage/Advanced%20Showcases/Day%20Notes.md">Day Notes</a> is now shown underneath the title.
     *   Whether the section is collapsed or not depends on the choice in <a class="reference-link" href="Options.md">Options</a> → Appearance.
 *   _Search Properties_, which appears for the full <a class="reference-link" href="../Navigation/Search.md">Search</a> and <a class="reference-link" href="../../Note%20Types/Saved%20Search.md">Saved Search</a>.
+
+### Save status indicator
+
+<img class="image-style-align-right" src="2_New Layout_image.png" width="168" height="47">To the right of the note title, a temporary indicators appears after making a change to the document that indicates whether the document has been saved.
+
+It indicates the following states:
+
+*   _Unsaved_, if the changes will be saved soon.
+*   _Saving_, if the changes are being saved.
+*   _Saved_, if all the changes were successfully saved to the server.
+*   _Error_, if the changes could not be saved, for example due to a communication server with the server.
+
+After all changes have been saved, the indicator will hide automatically after a few seconds.
 
 ## Changing to the existing layout
 

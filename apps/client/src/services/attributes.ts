@@ -1,14 +1,15 @@
-import server from "./server.js";
-import froca from "./froca.js";
-import type FNote from "../entities/fnote.js";
-import type { AttributeRow } from "./load_results.js";
 import { AttributeType } from "@triliumnext/commons";
+
+import type FNote from "../entities/fnote.js";
+import froca from "./froca.js";
+import type { AttributeRow } from "./load_results.js";
+import server from "./server.js";
 
 async function addLabel(noteId: string, name: string, value: string = "", isInheritable = false) {
     await server.put(`notes/${noteId}/attribute`, {
         type: "label",
-        name: name,
-        value: value,
+        name,
+        value,
         isInheritable
     });
 }
@@ -16,8 +17,8 @@ async function addLabel(noteId: string, name: string, value: string = "", isInhe
 export async function setLabel(noteId: string, name: string, value: string = "", isInheritable = false) {
     await server.put(`notes/${noteId}/set-attribute`, {
         type: "label",
-        name: name,
-        value: value,
+        name,
+        value,
         isInheritable
     });
 }
@@ -25,10 +26,40 @@ export async function setLabel(noteId: string, name: string, value: string = "",
 export async function setRelation(noteId: string, name: string, value: string = "", isInheritable = false) {
     await server.put(`notes/${noteId}/set-attribute`, {
         type: "relation",
-        name: name,
-        value: value,
+        name,
+        value,
         isInheritable
     });
+}
+
+/**
+ * Sets a boolean label on the given note, taking inheritance into account. If the desired value matches the inherited
+ * value, any owned label will be removed to allow the inherited value to take effect. If the desired value differs
+ * from the inherited value, an owned label will be created or updated to reflect the desired value.
+ *
+ * When checking if the boolean value is set, don't use `note.hasLabel`; instead use `note.isLabelTruthy`.
+ *
+ * @param note the note on which to set the boolean label.
+ * @param labelName the name of the label to set.
+ * @param value the boolean value to set for the label.
+ */
+export async function setBooleanWithInheritance(note: FNote, labelName: string, value: boolean) {
+    const actualValue = note.isLabelTruthy(labelName);
+    if (actualValue === value) return;
+    const hasInheritedValue = !note.hasOwnedLabel(labelName) && note.hasLabel(labelName);
+
+    if (hasInheritedValue) {
+        if (value) {
+            setLabel(note.noteId, labelName, "");
+        } else {
+            // Label is inherited - override to false.
+            setLabel(note.noteId, labelName, "false");
+        }
+    } else if (value) {
+        setLabel(note.noteId, labelName, "");
+    } else {
+        removeOwnedLabelByName(note, labelName);
+    }
 }
 
 async function removeAttributeById(noteId: string, attributeId: string) {
@@ -142,6 +173,7 @@ export default {
     setLabel,
     setRelation,
     setAttribute,
+    setBooleanWithInheritance,
     removeAttributeById,
     removeOwnedLabelByName,
     removeOwnedRelationByName,

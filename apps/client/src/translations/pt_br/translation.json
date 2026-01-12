@@ -439,7 +439,6 @@
     "download_button": "Download",
     "mime": "MIME: ",
     "file_size": "Tamanho do arquivo:",
-    "preview": "Visualizar:",
     "preview_not_available": "A visualização não está disponível para este tipo de nota.",
     "diff_on": "Exibir diferença",
     "diff_off": "Exibir conteúdo",

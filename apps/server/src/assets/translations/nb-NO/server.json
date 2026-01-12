@@ -6,6 +6,7 @@
     "open-command-palette": "Åpne kommandopalett",
     "scroll-to-active-note": "Skroll notat-treet til aktivt notat",
     "quick-search": "Aktiver hurtigsøk-feltet",
-    "search-in-subtree": "Søk etter notater i det aktive notatets understruktur"
+    "search-in-subtree": "Søk etter notater i det aktive notatets understruktur",
+    "creating-and-moving-notes": "Lage og flytte notater"
   }
 }

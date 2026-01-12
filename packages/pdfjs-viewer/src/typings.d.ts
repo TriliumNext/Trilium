@@ -14,10 +14,32 @@ declare global {
         _readFromStorage: () => Promise<string>;
     }
 
+    interface PdfJsDestination {
+
+    }
+
     interface Window {
         PDFViewerApplication?: {
             initializedPromise: Promise<void>;
             pdfDocument: PDFDocumentProxy;
+            pdfViewer: {
+                currentPageNumber: number;
+                optionalContentConfigPromise: {
+                    setVisibility(groupId: string, visible: boolean);
+                    getGroup(groupId: string): {
+                        name: string;
+                        usage: {};
+                    };
+                    getOrder(): {}[]
+                };
+                getPageView(pageIndex: number): {
+                    div: HTMLDivElement;
+                };
+                container: HTMLElement;
+            };
+            pdfLinkService: {
+                goToDestination(dest: PdfJsDestination);
+            };
             eventBus: {
                 on(event: string, listener: (...args: any[]) => void): void;
                 dispatch(event: string, data?: any): void;

@@ -8,7 +8,7 @@ import { MutableRef, useCallback, useContext, useDebugValue, useEffect, useLayou
 
 import appContext, { EventData, EventNames } from "../../components/app_context";
 import Component from "../../components/component";
-import NoteContext from "../../components/note_context";
+import NoteContext, { NoteContextDataMap } from "../../components/note_context";
 import FBlob from "../../entities/fblob";
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
@@ -19,7 +19,7 @@ import options, { type OptionValue } from "../../services/options";
 import protected_session_holder from "../../services/protected_session_holder";
 import server from "../../services/server";
 import shortcuts, { Handler, removeIndividualBinding } from "../../services/shortcuts";
-import SpacedUpdate from "../../services/spaced_update";
+import SpacedUpdate, { type StateCallback } from "../../services/spaced_update";
 import toast, { ToastOptions } from "../../services/toast";
 import tree from "../../services/tree";
 import utils, { escapeRegExp, getErrorMessage, randomString, reloadFrontendApp } from "../../services/utils";
@@ -63,22 +63,29 @@ export function useTriliumEvents<T extends EventNames>(eventNames: T[], handler:
     useDebugValue(() => eventNames.join(", "));
 }
 
-export function useSpacedUpdate(callback: () => void | Promise<void>, interval = 1000) {
+export function useSpacedUpdate(callback: () => void | Promise<void>, interval = 1000, stateCallback?: StateCallback) {
     const callbackRef = useRef(callback);
+    const stateCallbackRef = useRef(stateCallback);
     const spacedUpdateRef = useRef<SpacedUpdate>(new SpacedUpdate(
         () => callbackRef.current(),
-        interval
+        interval,
+        (state) => stateCallbackRef.current?.(state)
     ));
 
     // Update callback ref when it changes
     useEffect(() => {
         callbackRef.current = callback;
-    }, [callback]);
+    }, [ callback ]);
+
+    // Update state callback when it changes.
+    useEffect(() => {
+        stateCallbackRef.current = stateCallback;
+    }, [ stateCallback ]);
 
     // Update interval if it changes
     useEffect(() => {
         spacedUpdateRef.current?.setUpdateInterval(interval);
-    }, [interval]);
+    }, [ interval ]);
 
     return spacedUpdateRef.current;
 }
@@ -121,13 +128,85 @@ export function useEditorSpacedUpdate({ note, noteType, noteContext, getData, on
             dataSaved?.(data);
         };
     }, [ note, getData, dataSaved, noteType, parentComponent ]);
-    const spacedUpdate = useSpacedUpdate(callback);
+    const stateCallback = useCallback<StateCallback>((state) => {
+        noteContext?.setContextData("saveState", {
+            state
+        });
+    }, [ noteContext ]);
+    const spacedUpdate = useSpacedUpdate(callback, updateInterval, stateCallback);
 
     // React to note/blob changes.
     useEffect(() => {
         if (!blob) return;
         noteSavedDataStore.set(note.noteId, blob.content);
         spacedUpdate.allowUpdateWithoutChange(() => onContentChange(blob.content));
+    }, [ blob ]);
+
+    // React to update interval changes.
+    useEffect(() => {
+        if (!updateInterval) return;
+        spacedUpdate.setUpdateInterval(updateInterval);
+    }, [ updateInterval ]);
+
+    // Save if needed upon switching tabs.
+    useTriliumEvent("beforeNoteSwitch", async ({ noteContext: eventNoteContext }) => {
+        if (eventNoteContext.ntxId !== noteContext?.ntxId) return;
+        await spacedUpdate.updateNowIfNecessary();
+    });
+
+    // Save if needed upon tab closing.
+    useTriliumEvent("beforeNoteContextRemove", async ({ ntxIds }) => {
+        if (!noteContext?.ntxId || !ntxIds.includes(noteContext.ntxId)) return;
+        await spacedUpdate.updateNowIfNecessary();
+    });
+
+    // Save if needed upon window/browser closing.
+    useEffect(() => {
+        const listener = () => spacedUpdate.isAllSavedAndTriggerUpdate();
+        appContext.addBeforeUnloadListener(listener);
+        return () => appContext.removeBeforeUnloadListener(listener);
+    }, []);
+
+    return spacedUpdate;
+}
+
+export function useBlobEditorSpacedUpdate({ note, noteType, noteContext, getData, onContentChange, dataSaved, updateInterval, replaceWithoutRevision }: {
+    noteType: NoteType;
+    note: FNote,
+    noteContext: NoteContext | null | undefined,
+    getData: () => Promise<Blob | undefined> | Blob | undefined,
+    onContentChange: (newBlob: FBlob) => void,
+    dataSaved?: (savedData: Blob) => void,
+    updateInterval?: number;
+    /** If set to true, then the blob is replaced directly without saving a revision before. */
+    replaceWithoutRevision?: boolean;
+}) {
+    const parentComponent = useContext(ParentComponent);
+    const blob = useNoteBlob(note, parentComponent?.componentId);
+
+    const callback = useMemo(() => {
+        return async () => {
+            const data = await getData();
+
+            // for read only notes
+            if (data === undefined || note.type !== noteType) return;
+
+            protected_session_holder.touchProtectedSessionIfNecessary(note);
+            await server.upload(`notes/${note.noteId}/file?replace=${replaceWithoutRevision ? "1" : "0"}`, new File([ data ], note.title, { type: note.mime }), parentComponent?.componentId);
+            dataSaved?.(data);
+        };
+    }, [ note, getData, dataSaved, noteType, parentComponent, replaceWithoutRevision ]);
+    const stateCallback = useCallback<StateCallback>((state) => {
+        noteContext?.setContextData("saveState", {
+            state
+        });
+    }, [ noteContext ]);
+    const spacedUpdate = useSpacedUpdate(callback, updateInterval, stateCallback);
+
+    // React to note/blob changes.
+    useEffect(() => {
+        if (!blob) return;
+        spacedUpdate.allowUpdateWithoutChange(() => onContentChange(blob));
     }, [ blob ]);
 
     // React to update interval changes.
@@ -567,17 +646,13 @@ export function useNoteLabelBoolean(note: FNote | undefined | null, labelName: F
 
     const setter = useCallback((value: boolean) => {
         if (note) {
-            if (value) {
-                attributes.setLabel(note.noteId, labelName, "");
-            } else {
-                attributes.removeOwnedLabelByName(note, labelName);
-            }
+            attributes.setBooleanWithInheritance(note, labelName, value);
         }
-    }, [note]);
+    }, [note, labelName]);
 
     useDebugValue(labelName);
 
-    const labelValue = !!note?.hasLabel(labelName);
+    const labelValue = !!note?.isLabelTruthy(labelName);
     return [ labelValue, setter ] as const;
 }
 
@@ -634,7 +709,8 @@ export function useLegacyWidget<T extends BasicWidget>(widgetFactory: () => T, {
     const ref = useRef<HTMLDivElement>(null);
     const parentComponent = useContext(ParentComponent);
 
-    // Render the widget once.
+    // Render the widget once - note that noteContext is intentionally NOT a dependency
+    // to prevent creating new widget instances on every note switch.
     const [ widget, renderedWidget ] = useMemo(() => {
         const widget = widgetFactory();
 
@@ -642,14 +718,21 @@ export function useLegacyWidget<T extends BasicWidget>(widgetFactory: () => T, {
             parentComponent.child(widget);
         }
 
-        if (noteContext && widget instanceof NoteContextAwareWidget) {
-            widget.setNoteContextEvent({ noteContext });
-        }
-
         const renderedWidget = widget.render();
         return [ widget, renderedWidget ];
-    }, [ noteContext, parentComponent ]); // eslint-disable-line react-hooks/exhaustive-deps
-    // widgetFactory() is intentionally left out
+    }, [ parentComponent ]); // eslint-disable-line react-hooks/exhaustive-deps
+    // widgetFactory() and noteContext are intentionally left out - widget should be created once
+    // and updated via activeContextChangedEvent when noteContext changes.
+
+    // Cleanup: remove widget from parent's children when unmounted
+    useEffect(() => {
+        return () => {
+            if (parentComponent) {
+                parentComponent.removeChild(widget);
+            }
+            widget.cleanup();
+        };
+    }, [ parentComponent, widget ]);
 
     // Attach the widget to the parent.
     useEffect(() => {
@@ -660,10 +743,17 @@ export function useLegacyWidget<T extends BasicWidget>(widgetFactory: () => T, {
         }
     }, [ renderedWidget ]);
 
-    // Inject the note context.
+    // Inject the note context - this updates the existing widget without recreating it.
+    // We check if the context actually changed to avoid double refresh when the event system
+    // also delivers activeContextChanged to the widget through component tree propagation.
     useEffect(() => {
         if (noteContext && widget instanceof NoteContextAwareWidget) {
-            widget.activeContextChangedEvent({ noteContext });
+            // Only trigger refresh if the context actually changed.
+            // The event system may have already updated the widget, in which case
+            // widget.noteContext will already equal noteContext.
+            if (widget.noteContext !== noteContext) {
+                widget.activeContextChangedEvent({ noteContext });
+            }
         }
     }, [ noteContext, widget ]);
 
@@ -1192,3 +1282,92 @@ export function useContentElement(noteContext: NoteContext | null | undefined) {
 
     return contentElement;
 }
+
+/**
+ * Set context data on the current note context.
+ * This allows type widgets to publish data (e.g., table of contents, PDF pages)
+ * that can be consumed by sidebar/toolbar components.
+ *
+ * Data is automatically cleared when navigating to a different note.
+ *
+ * @param key - Unique identifier for the data type (e.g., "toc", "pdfPages")
+ * @param value - The data to publish
+ *
+ * @example
+ * // In a PDF viewer widget:
+ * const { noteContext } = useActiveNoteContext();
+ * useSetContextData(noteContext, "pdfPages", pages);
+ */
+export function useSetContextData<K extends keyof NoteContextDataMap>(
+    noteContext: NoteContext | null | undefined,
+    key: K,
+    value: NoteContextDataMap[K] | undefined
+) {
+    useEffect(() => {
+        if (!noteContext) return;
+
+        if (value !== undefined) {
+            noteContext.setContextData(key, value);
+        } else {
+            noteContext.clearContextData(key);
+        }
+
+        return () => {
+            noteContext.clearContextData(key);
+        };
+    }, [noteContext, key, value]);
+}
+
+/**
+ * Get context data from the active note context.
+ * This is typically used in sidebar/toolbar components that need to display
+ * data published by type widgets.
+ *
+ * The component will automatically re-render when the data changes.
+ *
+ * @param key - The data key to retrieve (e.g., "toc", "pdfPages")
+ * @returns The current data, or undefined if not available
+ *
+ * @example
+ * // In a Table of Contents sidebar widget:
+ * function TableOfContents() {
+ *   const headings = useGetContextData<Heading[]>("toc");
+ *   if (!headings) return <div>No headings available</div>;
+ *   return <ul>{headings.map(h => <li>{h.text}</li>)}</ul>;
+ * }
+ */
+export function useGetContextData<K extends keyof NoteContextDataMap>(key: K): NoteContextDataMap[K] | undefined {
+    const { noteContext } = useActiveNoteContext();
+    return useGetContextDataFrom(noteContext, key);
+}
+
+/**
+ * Get context data from a specific note context (not necessarily the active one).
+ *
+ * @param noteContext - The specific note context to get data from
+ * @param key - The data key to retrieve
+ * @returns The current data, or undefined if not available
+ */
+export function useGetContextDataFrom<K extends keyof NoteContextDataMap>(
+    noteContext: NoteContext | null | undefined,
+    key: K
+): NoteContextDataMap[K] | undefined {
+    const [data, setData] = useState<NoteContextDataMap[K] | undefined>(() =>
+        noteContext?.getContextData(key)
+    );
+
+    // Update initial value when noteContext changes
+    useEffect(() => {
+        setData(noteContext?.getContextData(key));
+    }, [noteContext, key]);
+
+    // Subscribe to changes via Trilium event system
+    useTriliumEvent("contextDataChanged", ({ noteContext: eventNoteContext, key: changedKey, value }) => {
+        if (eventNoteContext === noteContext && changedKey === key) {
+            setData(value as NoteContextDataMap[K]);
+        }
+    });
+
+    return data;
+}
+

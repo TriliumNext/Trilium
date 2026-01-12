@@ -1,1 +1,27 @@
-{}
+{
+  "keyboard_actions": {
+    "back-in-note-history": "इतिहास में पिछले नोट पर जाएं",
+    "forward-in-note-history": "इतिहास में अगले नोट पर जाएं",
+    "open-jump-to-note-dialog": "\"Jump to Note\" डायलॉग खोलें",
+    "open-command-palette": "कमांड पैलेट खोलें",
+    "collapse-tree": "पूरे नोट ट्री को बंद करता है",
+    "collapse-subtree": "वर्तमान नोट के सबट्री को बंद करता है",
+    "sort-child-notes": "चाइल्ड नोट्स को सॉर्ट करें",
+    "creating-and-moving-notes": "नोट्स बनाना और स्थानांतरित करना",
+    "move-note-up": "नोट को ऊपर ले जाएं",
+    "move-note-down": "नोट को नीचे ले जाएं",
+    "note-clipboard": "नोट क्लिपबोर्ड",
+    "duplicate-subtree": "डुप्लिकेट सबट्री",
+    "open-new-tab": "नया टैब खोलें",
+    "second-tab": "लिस्ट में दूसरी टैब एक्टिवेट करें",
+    "third-tab": "लिस्ट में तीसरी टैब एक्टिवेट करें",
+    "fourth-tab": "लिस्ट में चौथी टैब एक्टिवेट करें",
+    "sixth-tab": "लिस्ट में छठी टैब एक्टिवेट करें",
+    "seventh-tab": "लिस्ट में सातवीं टैब एक्टिवेट करें",
+    "eight-tab": "लिस्ट में आठवीं टैब एक्टिवेट करें",
+    "ninth-tab": "लिस्ट में नौवीं टैब एक्टिवेट करें",
+    "last-tab": "लिस्ट में आखिरी टैब एक्टिवेट करें",
+    "show-sql-console": "\"SQL कंसोल\" पेज खोलें",
+    "show-backend-log": "\"बैकेंड लॉग\" पेज खोलें"
+  }
+}

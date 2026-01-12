@@ -3,7 +3,7 @@ import "./RightPanelContainer.css";
 
 import Split from "@triliumnext/split.js";
 import { VNode } from "preact";
-import { useEffect, useRef } from "preact/hooks";
+import { useState, useEffect, useRef, useCallback } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import { WidgetsByParent } from "../../services/bundle";
@@ -11,10 +11,13 @@ import { t } from "../../services/i18n";
 import options from "../../services/options";
 import { DEFAULT_GUTTER_SIZE } from "../../services/resizer";
 import Button from "../react/Button";
-import { useActiveNoteContext, useLegacyWidget, useNoteProperty, useTriliumEvent, useTriliumOptionBool, useTriliumOptionJson } from "../react/hooks";
+import { useActiveNoteContext, useLegacyWidget, useNoteProperty, useTriliumEvent, useTriliumOptionJson } from "../react/hooks";
 import Icon from "../react/Icon";
 import LegacyRightPanelWidget from "../right_panel_widget";
 import HighlightsList from "./HighlightsList";
+import PdfAttachments from "./pdf/PdfAttachments";
+import PdfLayers from "./pdf/PdfLayers";
+import PdfPages from "./pdf/PdfPages";
 import RightPanelWidget from "./RightPanelWidget";
 import TableOfContents from "./TableOfContents";
 
@@ -27,12 +30,16 @@ interface RightPanelWidgetDefinition {
 }
 
 export default function RightPanelContainer({ widgetsByParent }: { widgetsByParent: WidgetsByParent }) {
-    const [ rightPaneVisible, setRightPaneVisible ] = useTriliumOptionBool("rightPaneVisible");
+    const [ rightPaneVisible, setRightPaneVisible ] = useState(options.is("rightPaneVisible"));
     const items = useItems(rightPaneVisible, widgetsByParent);
     useSplit(rightPaneVisible);
-    useTriliumEvent("toggleRightPane", () => {
-        setRightPaneVisible(!rightPaneVisible);
-    });
+    useTriliumEvent("toggleRightPane", useCallback(() => {
+        setRightPaneVisible(current => {
+            const newValue = !current;
+            options.save("rightPaneVisible", newValue.toString());
+            return newValue;
+        });
+    }, []));
 
     return (
         <div id="right-pane">
@@ -45,7 +52,7 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
                         {t("right_pane.empty_message")}
                         <Button
                             text={t("right_pane.empty_button")}
-                            onClick={() => setRightPaneVisible(!rightPaneVisible)}
+                            triggerCommand="toggleRightPane"
                         />
                     </div>
                 )
@@ -57,13 +64,27 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
 function useItems(rightPaneVisible: boolean, widgetsByParent: WidgetsByParent) {
     const { note } = useActiveNoteContext();
     const noteType = useNoteProperty(note, "type");
+    const noteMime = useNoteProperty(note, "mime");
     const [ highlightsList ] = useTriliumOptionJson<string[]>("highlightsList");
+    const isPdf = noteType === "file" && noteMime === "application/pdf";
 
     if (!rightPaneVisible) return [];
     const definitions: RightPanelWidgetDefinition[] = [
         {
             el: <TableOfContents />,
-            enabled: (noteType === "text" || noteType === "doc"),
+            enabled: (noteType === "text" || noteType === "doc" || isPdf),
+        },
+        {
+            el: <PdfPages />,
+            enabled: isPdf,
+        },
+        {
+            el: <PdfAttachments />,
+            enabled: isPdf,
+        },
+        {
+            el: <PdfLayers />,
+            enabled: isPdf,
         },
         {
             el: <HighlightsList />,

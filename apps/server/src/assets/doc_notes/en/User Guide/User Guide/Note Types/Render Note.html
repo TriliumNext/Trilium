@@ -8,9 +8,11 @@
 <h2>Creating a render note</h2>
 <ol>
   <li>Create a&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note
-    with the HTML language, with what needs to be displayed (for example <code>&lt;p&gt;Hello world.&lt;/p&gt;</code>).</li>
+    with the HTML language, with what needs to be displayed (for example
+    <code
+    spellcheck="false">&lt;p&gt;Hello world.&lt;/p&gt;</code>).</li>
   <li>Create a&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>.</li>
-  <li>Assign the <code>renderNote</code>  <a href="#root/_help_zEY4DaJG4YT5">relation</a> to
+  <li>Assign the <code spellcheck="false">renderNote</code>  <a href="#root/_help_zEY4DaJG4YT5">relation</a> to
     point at the previously created code note.</li>
 </ol>
 <h2>Legacy scripting using jQuery</h2>
@@ -19,14 +21,14 @@
   change parts of the note using JavaScript.</p>
 <p>For a simple example, we are going to create a render note that displays
   the current date in a field.</p>
-<p>To do so, first create an HTML code note with the following content:</p><pre><code class="language-text-x-trilium-auto">&lt;h1&gt;Current date &amp; time&lt;/h1&gt;
+<p>To do so, first create an HTML code note with the following content:</p><pre><code class="language-text-html">&lt;h1&gt;Current date &amp; time&lt;/h1&gt;
 The current date &amp; time is &lt;span class="date"&gt;&lt;/span&gt;</code></pre>
 <p>Now we need to add the script. Create another&nbsp;<a class="reference-link"
   href="#root/_help_6f9hih2hXXZk">Code</a>, but this time of JavaScript (frontend)
   language. Make sure the newly created note is a direct child of the HTML
   note created previously; with the following content:</p><pre><code class="language-application-javascript-env-backend">const $dateEl = api.$container.find(".date");
 $dateEl.text(new Date());</code></pre>
-<p>Now create a render note at any place and set its <code>~renderNote</code> relation
+<p>Now create a render note at any place and set its <code spellcheck="false">~renderNote</code> relation
   to point to the HTML note. When the render note is accessed it will display:</p>
 <blockquote>
   <p><strong>Current date &amp; time</strong>
@@ -45,7 +47,7 @@ $dateEl.text(new Date());</code></pre>
   <li>
     <p>Create a child&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note
       with JSX as the language.
-      <br>As an example, use the following content:</p><pre><code class="language-text-x-trilium-auto">export default function() {
+      <br>As an example, use the following content:</p><pre><code class="language-text-jsx">export default function() {
     return (
         &lt;&gt;
             &lt;p&gt;Hello world.&lt;/p&gt;
@@ -54,8 +56,8 @@ $dateEl.text(new Date());</code></pre>
 }</code></pre>
   </li>
   <li>
-    <p>In the parent render note, define a <code>~renderNote</code> relation pointing
-      to the newly created child.</p>
+    <p>In the parent render note, define a <code spellcheck="false">~renderNote</code> relation
+      pointing to the newly created child.</p>
   </li>
   <li>
     <p>Refresh the render note and it should display a “Hello world” message.</p>

@@ -47,8 +47,9 @@
 </ol>
 <h2>How attribute definitions actually work</h2>
 <p>When a new promoted attribute definition is created, it creates a corresponding
-  label prefixed with either <code>label</code> or <code>relation</code>, depending
-  on the definition type:</p><pre><code class="language-text-x-trilium-auto">#label:myColor(inheritable)="promoted,alias=Color,multi,color"</code></pre>
+  label prefixed with either <code spellcheck="false">label</code> or
+  <code
+  spellcheck="false">relation</code>, depending on the definition type:</p><pre><code class="language-text-x-trilium-auto">#label:myColor(inheritable)="promoted,alias=Color,multi,color"</code></pre>
 <p>The only purpose of the attribute definition is to set up a template.
   If the attribute was marked as promoted, then it's also displayed to the
   user for easy editing.</p>
@@ -97,7 +98,7 @@
     make use of this practice, for example:
     <ul>
       <li>Calendars add “Start Date”, “End Date”, “Start Time” and “End Time” as
-        promoted attributes. These map to system attributes such as <code>startDate</code> which
+        promoted attributes. These map to system attributes such as <code spellcheck="false">startDate</code> which
         are then interpreted by the calendar view.</li>
       <li><a class="reference-link" href="#root/_help_zP3PMqaG71Ct">Presentation</a>&nbsp;adds
         a “Background” promoted attribute for each of the slide to easily be able
@@ -105,29 +106,29 @@
     </ul>
   </li>
   <li>The Trilium documentation (which is edited in Trilium) uses a promoted
-    attribute to be able to easily edit the <code>#shareAlias</code> (see&nbsp;
+    attribute to be able to easily edit the <code spellcheck="false">#shareAlias</code> (see&nbsp;
     <a
     class="reference-link" href="#root/_help_R9pX4DGra2Vt">Sharing</a>) in order to form clean URLs.</li>
-  <li>If you always edit a particular system attribute such as <code>#color</code>,
+  <li>If you always edit a particular system attribute such as <code spellcheck="false">#color</code>,
     simply create a promoted attribute for it to make it easier.</li>
 </ul>
 <h3>Inverse relation</h3>
 <p>Some relations always occur in pairs - my favorite example is on the family.
   If you have a note representing husband and note representing wife, then
-  there might be a relation between those two of <code>isPartnerOf</code>.
+  there might be a relation between those two of <code spellcheck="false">isPartnerOf</code>.
   This is bidirectional relationship - meaning that if a relation is pointing
   from husband to wife then there should be always another relation pointing
   from wife to husband.</p>
 <p>Another example is with parent-child relationship. Again these always
   occur in pairs, but in this case it's not exact same relation - the one
-  going from parent to child might be called <code>isParentOf</code> and the
-  other one going from child to parent might be called <code>isChildOf</code>.</p>
+  going from parent to child might be called <code spellcheck="false">isParentOf</code> and
+  the other one going from child to parent might be called <code spellcheck="false">isChildOf</code>.</p>
 <p>Relation definition allows you to specify such "inverse relation" - for
   the relation you just define you specify which is the inverse relation.
   Note that in the second example we should have two relation definitions
-  - one for <code>isParentOf</code> which defines <code>isChildOf</code> as inverse
-  relation and then second relation definition for <code>isChildOf</code> which
-  defines <code>isParentOf</code> as inverse relation.</p>
+  - one for <code spellcheck="false">isParentOf</code> which defines <code spellcheck="false">isChildOf</code> as
+  inverse relation and then second relation definition for <code spellcheck="false">isChildOf</code> which
+  defines <code spellcheck="false">isParentOf</code> as inverse relation.</p>
 <p>What this does internally is that whenever we save a relation which has
   defined inverse relation, we check that this inverse relation exists on
   the relation target note. Similarly, when we delete relation, we also delete

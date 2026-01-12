@@ -43,23 +43,31 @@ class="admonition warning">
   <h3>OpenID</h3>
   <p>In order to setup OpenID, you will need to setup a authentication provider.
     This requires a bit of extra setup. Follow <a href="https://developers.google.com/identity/openid-connect/openid-connect">these instructions</a> to
-    setup an OpenID service through google. The Redirect URL of Trilium is <code>https://&lt;your-trilium-domain&gt;/callback</code>.</p>
+    setup an OpenID service through google. The Redirect URL of Trilium is
+    <code
+    spellcheck="false">https://&lt;your-trilium-domain&gt;/callback</code>.</p>
   <ol>
-    <li>Set the <code>oauthBaseUrl</code>, <code>oauthClientId</code> and <code>oauthClientSecret</code> in
-      the <code>config.ini</code> file (check&nbsp;<a class="reference-link" href="#root/_help_Gzjqa934BdH4">Configuration (config.ini or environment variables)</a>&nbsp;for
-      more information).
-      <ol>
-        <li>You can also setup through environment variables:
-          <ul>
-            <li>Standard: <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL</code>, <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID</code>, <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET</code>
-            </li>
-            <li>Legacy (still supported): <code>TRILIUM_OAUTH_BASE_URL</code>, <code>TRILIUM_OAUTH_CLIENT_ID</code>, <code>TRILIUM_OAUTH_CLIENT_SECRET</code>
-            </li>
-          </ul>
-        </li>
-        <li><code>oauthBaseUrl</code> should be the link of your Trilium instance server,
-          for example, <code>https://&lt;your-trilium-domain&gt;</code>.</li>
-      </ol>
+    <li>Set the <code spellcheck="false">oauthBaseUrl</code>, <code spellcheck="false">oauthClientId</code> and
+      <code
+      spellcheck="false">oauthClientSecret</code>in the <code spellcheck="false">config.ini</code> file
+        (check&nbsp;<a class="reference-link" href="#root/_help_Gzjqa934BdH4">Configuration (config.ini or environment variables)</a>&nbsp;for
+        more information).
+        <ol>
+          <li>You can also setup through environment variables:
+            <ul>
+              <li>Standard: <code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL</code>,
+                <code
+                spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID</code>, <code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET</code>
+              </li>
+              <li>Legacy (still supported): <code spellcheck="false">TRILIUM_OAUTH_BASE_URL</code>,
+                <code
+                spellcheck="false">TRILIUM_OAUTH_CLIENT_ID</code>, <code spellcheck="false">TRILIUM_OAUTH_CLIENT_SECRET</code>
+              </li>
+            </ul>
+          </li>
+          <li><code spellcheck="false">oauthBaseUrl</code> should be the link of your
+            Trilium instance server, for example, <code spellcheck="false">https://&lt;your-trilium-domain&gt;</code>.</li>
+        </ol>
     </li>
     <li>Restart the server</li>
     <li>Go to "Menu" -&gt; "Options" -&gt; "MFA"</li>
@@ -69,17 +77,23 @@ class="admonition warning">
   </ol>
   <aside class="admonition note">
     <p>The default OAuth issuer is Google. To use other services such as Authentik
-      or Auth0, you can configure the settings via <code>oauthIssuerBaseUrl</code>, <code>oauthIssuerName</code>,
-      and <code>oauthIssuerIcon</code> in the <code>config.ini</code> file. Alternatively,
-      these values can be set using environment variables:</p>
+      or Auth0, you can configure the settings via <code spellcheck="false">oauthIssuerBaseUrl</code>,
+      <code
+      spellcheck="false">oauthIssuerName</code>, and <code spellcheck="false">oauthIssuerIcon</code> in
+        the <code spellcheck="false">config.ini</code> file. Alternatively, these
+        values can be set using environment variables:</p>
     <ul>
-      <li>Standard: <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL</code>, <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME</code>, <code>TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON</code>
+      <li>Standard: <code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL</code>,
+        <code
+        spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME</code>, <code spellcheck="false">TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON</code>
       </li>
-      <li>Legacy (still supported): <code>TRILIUM_OAUTH_ISSUER_BASE_URL</code>, <code>TRILIUM_OAUTH_ISSUER_NAME</code>, <code>TRILIUM_OAUTH_ISSUER_ICON</code>
+      <li>Legacy (still supported): <code spellcheck="false">TRILIUM_OAUTH_ISSUER_BASE_URL</code>,
+        <code
+        spellcheck="false">TRILIUM_OAUTH_ISSUER_NAME</code>, <code spellcheck="false">TRILIUM_OAUTH_ISSUER_ICON</code>
       </li>
     </ul>
-    <p><code>oauthIssuerName</code> and <code>oauthIssuerIcon</code> are required
-      for displaying correct issuer information at the Login page.</p>
+    <p><code spellcheck="false">oauthIssuerName</code> and <code spellcheck="false">oauthIssuerIcon</code> are
+      required for displaying correct issuer information at the Login page.</p>
   </aside>
   <h4>Authentik</h4>
   <p>If you don’t already have a running Authentik instance, please follow
@@ -88,14 +102,14 @@ class="admonition warning">
   <ol>
     <li>In the Authentik admin dashboard, create a new OAuth2 application by following
       <a
-      href="https://docs.goauthentik.io/docs/add-secure-apps/providers/oauth2/create-oauth2-provider">these steps</a>. Make sure to set the Redirect URL to: <code>https://&lt;your-trilium-domain&gt;/callback</code>.</li>
+      href="https://docs.goauthentik.io/docs/add-secure-apps/providers/oauth2/create-oauth2-provider">these steps</a>. Make sure to set the Redirect URL to: <code spellcheck="false">https://&lt;your-trilium-domain&gt;/callback</code>.</li>
     <li>In your config.ini file, set the relevant OAuth variables:
       <ol>
-        <li><code>oauthIssuerBaseUrl</code> → Use the <code>OpenID Configuration Issuer</code> URL
+        <li><code spellcheck="false">oauthIssuerBaseUrl</code> → Use the <code spellcheck="false">OpenID Configuration Issuer</code> URL
           from your application's overview page.</li>
-        <li><code>oauthIssuerName</code> and <code>oauthIssuerIcon</code> → Set these
-          to customize the name and icon displayed on the login page. If omitted,
-          Google’s name and icon will be shown by default.</li>
+        <li><code spellcheck="false">oauthIssuerName</code> and <code spellcheck="false">oauthIssuerIcon</code> →
+          Set these to customize the name and icon displayed on the login page. If
+          omitted, Google’s name and icon will be shown by default.</li>
       </ol>
     </li>
     <li>Apply the changes by restarting your server.</li>
