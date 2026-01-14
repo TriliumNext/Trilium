@@ -149,8 +149,8 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
         }
 
         const note = this.branch.getNote();
-        const fullHtml = this.prepareContent(rootMeta.title ?? "", note.getContent(), rootMeta, note, this.branch);
-        this.archive.append(fullHtml as Buffer, { name: this.indexMeta.dataFileName });
+        const content = this.prepareContent(rootMeta.title ?? "", note.getContent(), rootMeta, note, this.branch);
+        this.archive.append(typeof content === "string" ? content : Buffer.from(content), { name: this.indexMeta.dataFileName });
     }
 
     #saveAssets(rootMeta: NoteMeta, assetsMeta: NoteMeta[]) {
@@ -178,7 +178,9 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
                 continue;
             };
             const fontFileName = `assets/icon-pack-${iconPack.prefix.toLowerCase()}.${extension}`;
-            this.archive.append(fontData as Buffer, { name: fontFileName });
+            this.archive.append(typeof fontData === "string" ? fontData : Buffer.from(fontData), {
+                name: fontFileName
+            });
         }
     }
 

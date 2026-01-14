@@ -343,7 +343,9 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
 
             content = prepareContent(noteMeta.title, content, noteMeta, undefined);
 
-            archive.append(content as Buffer, { name: filePathPrefix + noteMeta.dataFileName });
+            archive.append(typeof content === "string" ? content : Buffer.from(content), {
+                name: filePathPrefix + noteMeta.dataFileName
+            });
 
             return;
         }
@@ -375,7 +377,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             const attachment = note.getAttachmentById(attachmentMeta.attachmentId);
             const content = attachment.getContent();
 
-            archive.append(content as Buffer, {
+            archive.append(typeof content === "string" ? content : Buffer.from(content), {
                 name: filePathPrefix + attachmentMeta.dataFileName,
                 date: dateUtils.parseDateTime(note.utcDateModified)
             });
