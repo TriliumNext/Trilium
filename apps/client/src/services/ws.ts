@@ -304,7 +304,7 @@ async function sendPing() {
 }
 
 setTimeout(() => {
-    if (glob.device === "print") return;
+    if (glob.device === "print" || glob.isStandalone) return;
 
     ws = connectWebSocket();
 
