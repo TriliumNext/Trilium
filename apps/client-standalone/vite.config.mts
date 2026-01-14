@@ -85,6 +85,7 @@ if (!isDev) {
 
 export default defineConfig(() => ({
     root: join(__dirname, 'src'),  // Set src as root so index.html is served from /
+    envDir: __dirname,  // Load .env files from client-standalone directory, not src/
     cacheDir: '../../../node_modules/.vite/apps/client-standalone',
     base: "",
     plugins,
