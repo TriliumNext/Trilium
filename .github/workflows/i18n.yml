@@ -1,0 +1,30 @@
+name: Internationalization
+on:
+  push:
+    branches:
+      - "weblate:*"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "apps/client/src/translations/**"
+      - ".github/workflows/i18n.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  i18n-check:
+    name: Check i18n translations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - name: Set up node & dependencies
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check translations
+        run: pnpm tsx scripts/translation/check-translation-coverage.ts

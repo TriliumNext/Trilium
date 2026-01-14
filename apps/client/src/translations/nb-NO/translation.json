@@ -60,5 +60,23 @@
   },
   "include_note": {
     "label_note": "Notat"
+  },
+  "prompt": {
+    "title": "Ledetekst",
+    "ok": "OK",
+    "defaultTitle": "Ledetekst"
+  },
+  "info": {
+    "closeButton": "Lukk",
+    "okButton": "OK"
+  },
+  "markdown_import": {
+    "import_button": "Importer"
+  },
+  "protected_session_password": {
+    "close_label": "Lukk"
+  },
+  "recent_changes": {
+    "undelete_link": "gjenopprett"
   }
 }

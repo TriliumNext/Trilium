@@ -48,15 +48,15 @@ açık kaynaklı, çapraz platform hiyerarşik bir not alma uygulamasıdır.
 edin(https://docs.triliumnotes.org/)**
 
 Dokümantasyonumuz birden fazla formatta mevcuttur:
-- **Online Documentation**: Browse the full documentation at
-  [docs.triliumnotes.org](https://docs.triliumnotes.org/)
+- **Çevrimiçi Dökümantasyon**: Tüm dökümantasyonu görebilmek için
+  [docs.triliumnotes.org](https://docs.triliumnotes.org/)'a uğrayın
 - **In-App Help**: Press `F1` within Trilium to access the same documentation
   directly in the application
 - **GitHub**: Navigate through the [User Guide](./User%20Guide/User%20Guide/) in
   this repository
 
-### Quick Links
-- [Getting Started Guide](https://docs.triliumnotes.org/)
+### Hızlı linkler
+- [Başlangıç Kılavuzu](https://docs.triliumnotes.org/)
 - [Installation Instructions](https://docs.triliumnotes.org/user-guide/setup)
 - [Docker
   Setup](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)

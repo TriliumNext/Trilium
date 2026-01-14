@@ -91,8 +91,8 @@ Vår dokumentasjon er tilgjengelig i flere format:
 * Direct [OpenID and TOTP
   integration](https://docs.triliumnotes.org/user-guide/setup/server/mfa) for
   more secure login
-* [Synchronization](https://docs.triliumnotes.org/user-guide/setup/synchronization)
-  with self-hosted sync server
+* [Synkronisering](https://docs.triliumnotes.org/user-guide/setup/synchronization)
+  med selv-hostet sync server
   * there are [3rd party services for hosting synchronisation
     server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [Sharing](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)

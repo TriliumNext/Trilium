@@ -34,7 +34,7 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install --filter website --frozen-lockfile
+        run: pnpm install --filter website --frozen-lockfile --ignore-scripts
 
       - name: Build the website
         run: pnpm website:build

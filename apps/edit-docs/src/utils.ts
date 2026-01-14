@@ -1,23 +1,27 @@
 import cls from "@triliumnext/server/src/services/cls.js";
+import TaskContext from "@triliumnext/server/src/services/task_context.js";
+import windowService from "@triliumnext/server/src/services/window.js";
+import archiver, { type Archiver } from "archiver";
+import electron from "electron";
+import type { WriteStream } from "fs";
 import fs from "fs/promises";
 import fsExtra from "fs-extra";
 import path from "path";
-import electron from "electron";
-import windowService from "@triliumnext/server/src/services/window.js";
-import archiver, { type Archiver } from "archiver";
-import type { WriteStream } from "fs";
-import TaskContext from "@triliumnext/server/src/services/task_context.js";
-import { resolve } from "path";
-import { deferred, DeferredPromise } from "../../../packages/commons/src";
 
-export function initializeDatabase(skipDemoDb: boolean) {
-    return new Promise<void>(async (resolve) => {
-        const sqlInit = (await import("@triliumnext/server/src/services/sql_init.js")).default;
-        cls.init(async () => {
-            if (!sqlInit.isDbInitialized()) {
-                await sqlInit.createInitialDatabase(skipDemoDb);
-            }
-            resolve();
+import { deferred, type DeferredPromise } from "../../../packages/commons/src/index.js";
+
+export function initializeDatabase(skipDemoDb: boolean): Promise<void> {
+    return new Promise<void>((resolve) => {
+        import("@triliumnext/server/src/services/sql_init.js").then((m) => {
+            const sqlInit = m.default;
+            cls.init(async () => {
+                if (!sqlInit.isDbInitialized()) {
+                    sqlInit.createInitialDatabase(skipDemoDb).then(() => resolve());
+                } else {
+                    sqlInit.dbReady.resolve();
+                    resolve();
+                }
+            });
         });
     });
 }
@@ -32,10 +36,9 @@ export function initializeDatabase(skipDemoDb: boolean) {
  */
 export function startElectron(callback: () => void): DeferredPromise<void> {
     const initializedPromise = deferred<void>();
-    electron.app.on("ready", async () => {
-        await initializedPromise;
 
-        console.log("Electron is ready!");
+    const readyHandler = async () => {
+        await initializedPromise;
 
         // Start the server.
         const startTriliumServer = (await import("@triliumnext/server/src/www.js")).default;
@@ -45,7 +48,15 @@ export function startElectron(callback: () => void): DeferredPromise<void> {
         await windowService.createMainWindow(electron.app);
 
         callback();
-    });
+    };
+
+    // Handle race condition: Electron ready event may have already fired
+    if (electron.app.isReady()) {
+        readyHandler();
+    } else {
+        electron.app.on("ready", readyHandler);
+    }
+
     return initializedPromise;
 }
 
@@ -70,7 +81,6 @@ async function createImportZip(path: string) {
         zlib: { level: 0 }
     });
 
-    console.log("Archive path is ", resolve(path))
     archive.directory(path, "/");
 
     const outputStream = fsExtra.createWriteStream(inputFile);
@@ -85,14 +95,16 @@ async function createImportZip(path: string) {
 }
 
 function waitForEnd(archive: Archiver, stream: WriteStream) {
-    return new Promise<void>(async (res, rej) => {
-        stream.on("finish", () => res());
-        await archive.finalize();
+    return new Promise<void>((res, rej) => {
+        stream.on("finish", res);
+        stream.on("error", rej);
+        archive.on("error", rej);
+        archive.finalize().catch(rej);
     });
 }
 
 export async function extractZip(zipFilePath: string, outputPath: string, ignoredFiles?: Set<string>) {
-    const promise = deferred<void>()
+    const promise = deferred<void>();
     setTimeout(async () => {
         // Then extract the zip.
         const { readZipFile, readContent } = (await import("@triliumnext/server/src/services/import/zip.js"));

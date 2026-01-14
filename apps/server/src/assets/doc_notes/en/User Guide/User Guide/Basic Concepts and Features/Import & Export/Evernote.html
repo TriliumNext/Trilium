@@ -1,16 +1,82 @@
-<p>Trilium can import ENEX files which are used by Evernote for backup/export.
-  One ENEX file represents content (notes and resources) of one notebook.</p>
+<p>
+  <meta>Trilium can import ENEX files, which are used by Evernote for backup/export.
+  One ENEX file represents the content (notes and resources) of one notebook.</p>
 <h2>Export ENEX from Evernote</h2>
-<p>To export ENEX file, you need to have a <em>legacy</em> desktop version
-  of Evernote (i.e. not web/mobile). Right click on notebook and select export
-  and follow the wizard.</p>
+<p>To export ENEX files from Evernote, you can use:</p>
+<ul>
+  <li data-list-item-id="eabf6814a75b1ddc665781ed732fa65ff">Evernote desktop application. See Evernote&nbsp;documentation. Note that
+    the limitation of this method is that you can only export 100 notes at
+    a time or one notebook at a time.</li>
+  <li data-list-item-id="e7c66b50692c80eb3a325841ae5218eb7">A third-party&nbsp;evernote-backup CLI tool. This tool can export all
+    of your notebooks in bulk.</li>
+</ul>
 <h2>Import ENEX in Trilium</h2>
-<p>Once you have ENEX file, you can import it to Trilium. Right click on
-  some note (to which you want to import the file), click on "Import" and
-  select the ENEX file.</p>
-<p>After importing the ENEX file, go over the imported notes and resources
-  to be sure the import went well, and you didn't lose any data.</p>
+<p>Once you have your ENEX files, do the following to import them in Trilium:</p>
+<ol>
+  <li data-list-item-id="e86484b3caf72ef69321bc8639024a991">In the Trilium note tree, right-click the note under which you want to
+    import one or more of your ENEX files. The notes in the files will be imported
+    as child notes of the selected note.</li>
+  <li data-list-item-id="ec8593d763d8375e841f68731e454b548">Click&nbsp;Import into note.</li>
+  <li data-list-item-id="e1fb52a96a47f9d881342148ace1353ce">Choose your ENEX file or files and click&nbsp;Import.</li>
+  <li data-list-item-id="e44b2f10dc3fdd60956774647c440c9c3">During the import, you will see "Import in progress" message. If the import
+    is successful, the message will change to “Import finished successfully”
+    and then disappear.</li>
+  <li data-list-item-id="ebcec83cfa6d093376cd6fbcfff3db532">We recommend you to check the imported notes and their attachments to
+    verify that you haven’t lost any data.</li>
+</ol>
+<p>A non-exhaustive list of what the importer preserves:</p>
+<ul>
+  <li data-list-item-id="e3180fcb6ac86b4543e514a9209c5e789">Attachments</li>
+  <li data-list-item-id="e7e9720e6bbadf04dde505b2ec56159ec">The hierarchy of headings (these are shifted to start with H2 because
+    H1 is reserved for note title, see&nbsp;Headings)</li>
+  <li data-list-item-id="e6798ed61930845577e1f0750378bc52c">Tables</li>
+  <li data-list-item-id="ef9ddc278d5a093dfd5488c2e07b6278d">Bulleted lists</li>
+  <li data-list-item-id="ed8ef6d14f74b4fffd08bd66d9c859d36">Numbered lists</li>
+  <li data-list-item-id="e989884d7888ef1d6ce062c4e71b68636">Bold</li>
+  <li data-list-item-id="e438a5188d95036c5bfa91def39b38259">Italics</li>
+  <li data-list-item-id="eda9f7b42b3e02ba4e54a805b2def949b">Strikethrough</li>
+  <li data-list-item-id="e095a40c46c7f8d1083e9d74258ee85e4">Highlights</li>
+  <li data-list-item-id="e822d52533a7e7876e0963e043de49e48">Font colors</li>
+  <li data-list-item-id="ece8974b757a014f25208911706a0462d">Soft line breaks</li>
+  <li data-list-item-id="eb22c11732fea1beee2976ede9d81ca5e">External links</li>
+</ul>
+<p>However, we do not guarantee that all of your formatting will be imported
+  100% correctly.</p>
 <h2>Limitations</h2>
-<p>All resources (except for images) are created as note's attachments.</p>
-<p>HTML inside ENEX files is not exactly valid so some formatting maybe broken
-  or lost. You can report major problems into <a href="https://github.com/TriliumNext/Trilium/issues">Trilium issue tracker</a>.</p>
+<ul>
+  <li data-list-item-id="ece66c1841631b7250ddb6c101d28afd6">The size limit of one import is 250Mb. If the total size of your files
+    is larger, you can increase the&nbsp;upload limit, or divide your files,
+    and run the import as many times as necessary.</li>
+  <li data-list-item-id="ece322cd2ca2b9332154a25f48c16309d">All resources (except for images) are created as notes’ attachments.</li>
+  <li
+  data-list-item-id="ee13e15fa378905573e13b348441be574">If you have HTML inside ENEX files, the HTML formatting may be broken
+    or lost after import in Trilium. You can report major problems at&nbsp;Trilium
+    issue tracker.</li>
+</ul>
+<h3>Internal links</h3>
+<p>The importer cannot transform Evernote internal links into Trilium internal
+  links because Evernote internal note IDs are not preserved in ENEX files.</p>
+<p>If you want to restore the internal links in Trilium after you import
+  all of your ENEX files, you can use or adapt this custom script:&nbsp;
+  <a
+  class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/mHbBMPDPkVV5/syuSEKf2rUGr/_help_dj3j8dG4th4l">Process internal links by title</a>
+</p>
+<p>The script does the following:</p>
+<ol>
+  <li data-list-item-id="e6c3f7477c6a241ef97cb9bf15623a2c0">It finds all Evernote internal links.</li>
+  <li data-list-item-id="e928015e4a024f40ebdb85b2e5b77844f">For each one, it checks if its link text matches a note title, and if
+    yes, it replaces the Evernote link with an internal Trilium link. If not,
+    it leaves the Evernote link in place.</li>
+  <li data-list-item-id="e5fb070b954d7cba355c3c9065e8e4b1f">If it finds more than one note with a matching note title, it leaves the
+    Evernote link in place.</li>
+  <li data-list-item-id="eea5e5efb229b5a731e3c980160de29f8">It outputs the results in a log that you can see in the respective code
+    note in Trilium.&nbsp;</li>
+</ol>
+<p>The script has the following limitations:</p>
+<ul>
+  <li data-list-item-id="e467615aa997504c5aa55f2f169d0028f">It will not fix links to anchors and links to notes that you renamed in
+    Evernote after you created the links.</li>
+  <li data-list-item-id="e83d3745ce3531ae99a9619274ad42440">Some note titles might not be well identified, even if they exist. This
+    is especially the case if the note title contains some special characters.
+    Should this be problematic, consider&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/BgmBlOIl72jZ/_help_wy8So3yZZlH9">Reporting issues</a>.</li>
+</ul>
