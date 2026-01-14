@@ -132,8 +132,8 @@ Unsere Dokumentation ist verfügbar in mehreren Formaten:
   einfachen Speichern von Webinhalten
 * Anpassbare Benutzeroberfläche (Seitenleisten-Schaltflächen, benutzerdefinierte
   Widgets, ...)
-* [Metriken](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics)
-  zusammen mit einem Grafana-Dashboard.
+* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
+  zusätzlich mit dem Grafana Dashboard.
 
 ✨ Weitere Informationen zu TriliumNext findet man in den folgenden
 Ressourcen/Communities von Drittanbietern:

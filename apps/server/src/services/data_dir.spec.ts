@@ -10,6 +10,7 @@ describe("data_dir.ts unit tests", async () => {
     const mockFn = {
         existsSyncMock: vi.fn(),
         mkdirSyncMock: vi.fn(),
+        statSyncMock: vi.fn(),
         osHomedirMock: vi.fn(),
         osPlatformMock: vi.fn(),
         pathJoinMock: vi.fn()
@@ -21,7 +22,8 @@ describe("data_dir.ts unit tests", async () => {
         return {
             default: {
                 existsSync: mockFn.existsSyncMock,
-                mkdirSync: mockFn.mkdirSyncMock
+                mkdirSync: mockFn.mkdirSyncMock,
+                statSync: mockFn.statSyncMock
             }
         };
     });
@@ -109,34 +111,36 @@ describe("data_dir.ts unit tests", async () => {
          */
 
         describe("case A", () => {
-            it("when folder exists – it should return the path, without attempting to create the folder", async () => {
+            it("when folder exists – it should return the path, handling EEXIST gracefully", async () => {
                 const mockTriliumDataPath = "/home/mock/trilium-data-ENV-A1";
                 process.env.TRILIUM_DATA_DIR = mockTriliumDataPath;
 
-                // set fs.existsSync to true, i.e. the folder does exist
-                mockFn.existsSyncMock.mockImplementation(() => true);
+                // mkdirSync throws EEXIST when folder already exists (EAFP pattern)
+                const eexistError = new Error("EEXIST: file already exists") as NodeJS.ErrnoException;
+                eexistError.code = "EEXIST";
+                mockFn.mkdirSyncMock.mockImplementation(() => { throw eexistError; });
+
+                // statSync confirms it's a directory
+                mockFn.statSyncMock.mockImplementation(() => ({ isDirectory: () => true }));
 
                 const result = getTriliumDataDir("trilium-data");
 
-                // createDirIfNotExisting should call existsync 1 time and mkdirSync 0 times -> as it does not need to create the folder
-                // and return value should be TRILIUM_DATA_DIR value from process.env
-                expect(mockFn.existsSyncMock).toHaveBeenCalledTimes(1);
-                expect(mockFn.mkdirSyncMock).toHaveBeenCalledTimes(0);
+                // createDirIfNotExisting tries mkdirSync first (EAFP), then statSync to verify it's a directory
+                expect(mockFn.mkdirSyncMock).toHaveBeenCalledTimes(1);
+                expect(mockFn.statSyncMock).toHaveBeenCalledTimes(1);
                 expect(result).toEqual(process.env.TRILIUM_DATA_DIR);
             });
 
-            it("when folder does not exist – it should attempt to create the folder and return the path", async () => {
+            it("when folder does not exist – it should create the folder and return the path", async () => {
                 const mockTriliumDataPath = "/home/mock/trilium-data-ENV-A2";
                 process.env.TRILIUM_DATA_DIR = mockTriliumDataPath;
 
-                // set fs.existsSync mock to return false, i.e. the folder does not exist
-                mockFn.existsSyncMock.mockImplementation(() => false);
+                // mkdirSync succeeds when folder doesn't exist
+                mockFn.mkdirSyncMock.mockImplementation(() => undefined);
 
                 const result = getTriliumDataDir("trilium-data");
 
-                // createDirIfNotExisting should call existsync 1 time and mkdirSync 1 times -> as it has to create the folder
-                // and return value should be TRILIUM_DATA_DIR value from process.env
-                expect(mockFn.existsSyncMock).toHaveBeenCalledTimes(1);
+                // createDirIfNotExisting calls mkdirSync which succeeds
                 expect(mockFn.mkdirSyncMock).toHaveBeenCalledTimes(1);
                 expect(result).toEqual(process.env.TRILIUM_DATA_DIR);
             });
@@ -171,19 +175,19 @@ describe("data_dir.ts unit tests", async () => {
 
                 // use Generator to precisely control order of fs.existSync return values
                 const existsSyncMockGen = (function* () {
-                    // 1) fs.existSync -> case B
+                    // 1) fs.existSync -> case B -> checking if folder exists in home dir
                     yield false;
                     // 2) fs.existSync -> case C -> checking if default OS PlatformAppDataDir exists
                     yield true;
-                    // 3) fs.existSync -> case C -> checking if Trilium Data folder exists
-                    yield false;
                 })();
 
                 mockFn.existsSyncMock.mockImplementation(() => existsSyncMockGen.next().value);
+                // mkdirSync succeeds (folder doesn't exist)
+                mockFn.mkdirSyncMock.mockImplementation(() => undefined);
 
                 const result = getTriliumDataDir(dataDirName);
 
-                expect(mockFn.existsSyncMock).toHaveBeenCalledTimes(3);
+                expect(mockFn.existsSyncMock).toHaveBeenCalledTimes(2);
                 expect(mockFn.mkdirSyncMock).toHaveBeenCalledTimes(1);
                 expect(result).toEqual(mockPlatformDataPath);
             });
@@ -198,21 +202,26 @@ describe("data_dir.ts unit tests", async () => {
 
                 // use Generator to precisely control order of fs.existSync return values
                 const existsSyncMockGen = (function* () {
-                    // 1) fs.existSync -> case B
+                    // 1) fs.existSync -> case B -> checking if folder exists in home dir
                     yield false;
                     // 2) fs.existSync -> case C -> checking if default OS PlatformAppDataDir exists
-                    yield true;
-                    // 3) fs.existSync -> case C -> checking if Trilium Data folder exists
                     yield true;
                 })();
 
                 mockFn.existsSyncMock.mockImplementation(() => existsSyncMockGen.next().value);
 
+                // mkdirSync throws EEXIST (folder already exists), statSync confirms it's a directory
+                const eexistError = new Error("EEXIST: file already exists") as NodeJS.ErrnoException;
+                eexistError.code = "EEXIST";
+                mockFn.mkdirSyncMock.mockImplementation(() => { throw eexistError; });
+                mockFn.statSyncMock.mockImplementation(() => ({ isDirectory: () => true }));
+
                 const result = getTriliumDataDir(dataDirName);
 
                 expect(result).toEqual(mockPlatformDataPath);
-                expect(mockFn.existsSyncMock).toHaveBeenCalledTimes(3);
-                expect(mockFn.mkdirSyncMock).toHaveBeenCalledTimes(0);
+                expect(mockFn.existsSyncMock).toHaveBeenCalledTimes(2);
+                expect(mockFn.mkdirSyncMock).toHaveBeenCalledTimes(1);
+                expect(mockFn.statSyncMock).toHaveBeenCalledTimes(1);
             });
 
             it("w/ Platform 'win32' and set process.env.APPDATA behaviour", async () => {
@@ -227,20 +236,20 @@ describe("data_dir.ts unit tests", async () => {
 
                 // use Generator to precisely control order of fs.existSync return values
                 const existsSyncMockGen = (function* () {
-                    // 1) fs.existSync -> case B
+                    // 1) fs.existSync -> case B -> checking if folder exists in home dir
                     yield false;
                     // 2) fs.existSync -> case C -> checking if default OS PlatformAppDataDir exists
                     yield true;
-                    // 3) fs.existSync -> case C -> checking if Trilium Data folder exists
-                    yield false;
                 })();
 
                 mockFn.existsSyncMock.mockImplementation(() => existsSyncMockGen.next().value);
+                // mkdirSync succeeds (folder doesn't exist)
+                mockFn.mkdirSyncMock.mockImplementation(() => undefined);
 
                 const result = getTriliumDataDir(dataDirName);
 
                 expect(result).toEqual(mockPlatformDataPath);
-                expect(mockFn.existsSyncMock).toHaveBeenCalledTimes(3);
+                expect(mockFn.existsSyncMock).toHaveBeenCalledTimes(2);
                 expect(mockFn.mkdirSyncMock).toHaveBeenCalledTimes(1);
             });
         });
@@ -253,19 +262,15 @@ describe("data_dir.ts unit tests", async () => {
 
                 setMockPlatform("aix", homedir, mockPlatformDataPath);
 
-                const existsSyncMockGen = (function* () {
-                    // first fs.existSync -> case B -> checking if folder exists in home folder
-                    yield false;
-                    // second fs.existSync -> case D -> triggered by createDirIfNotExisting
-                    yield false;
-                })();
-
-                mockFn.existsSyncMock.mockImplementation(() => existsSyncMockGen.next().value);
+                // fs.existSync -> case B -> checking if folder exists in home folder
+                mockFn.existsSyncMock.mockImplementation(() => false);
+                // mkdirSync succeeds (folder doesn't exist)
+                mockFn.mkdirSyncMock.mockImplementation(() => undefined);
 
                 const result = getTriliumDataDir(dataDirName);
 
                 expect(result).toEqual(mockPlatformDataPath);
-                expect(mockFn.existsSyncMock).toHaveBeenCalledTimes(2);
+                expect(mockFn.existsSyncMock).toHaveBeenCalledTimes(1);
                 expect(mockFn.mkdirSyncMock).toHaveBeenCalledTimes(1);
             });
         });

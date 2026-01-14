@@ -8,7 +8,8 @@
         "title": "अपने विचारों को व्यवस्थित करें। अपना व्यक्तिगत नॉलेज बेस बनाएं।",
         "screenshot_alt": "ट्रिलियम नोट्स डेस्कटॉप एप्लिकेशन का स्क्रीनशॉट",
         "get_started": "शुरू करें",
-        "github": "गिटहब"
+        "github": "गिटहब",
+        "dockerhub": "डॉकर हब"
     },
     "organization_benefits": {
         "note_structure_title": "नोट संरचना",

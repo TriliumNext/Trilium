@@ -100,6 +100,20 @@ describe("shortcuts", () => {
             expect(consoleSpy).toHaveBeenCalled();
             consoleSpy.mockRestore();
         });
+
+        it("should match letter keys using code when key is a special character (macOS Alt behavior)", () => {
+            // On macOS, pressing Option/Alt + A produces 'å' as the key, but code is still 'KeyA'
+            const macOSAltAEvent = createKeyboardEvent("å", "KeyA");
+            expect(keyMatches(macOSAltAEvent, "a")).toBe(true);
+
+            // Option + H produces '˙'
+            const macOSAltHEvent = createKeyboardEvent("˙", "KeyH");
+            expect(keyMatches(macOSAltHEvent, "h")).toBe(true);
+
+            // Option + S produces 'ß'
+            const macOSAltSEvent = createKeyboardEvent("ß", "KeyS");
+            expect(keyMatches(macOSAltSEvent, "s")).toBe(true);
+        });
     });
 
     describe("matchesShortcut", () => {
@@ -199,6 +213,33 @@ describe("shortcuts", () => {
 
             expect(consoleSpy).toHaveBeenCalled();
             consoleSpy.mockRestore();
+        });
+
+        it("should match Alt+letter shortcuts on macOS where key is a special character", () => {
+            // On macOS, pressing Option/Alt + A produces 'å' but code remains 'KeyA'
+            const macOSAltAEvent = createKeyboardEvent({
+                key: "å",
+                code: "KeyA",
+                altKey: true
+            });
+            expect(matchesShortcut(macOSAltAEvent, "alt+a")).toBe(true);
+
+            // Option/Alt + H produces '˙'
+            const macOSAltHEvent = createKeyboardEvent({
+                key: "˙",
+                code: "KeyH",
+                altKey: true
+            });
+            expect(matchesShortcut(macOSAltHEvent, "alt+h")).toBe(true);
+
+            // Combined with Ctrl: Ctrl+Alt+S where Alt produces 'ß'
+            const macOSCtrlAltSEvent = createKeyboardEvent({
+                key: "ß",
+                code: "KeyS",
+                ctrlKey: true,
+                altKey: true
+            });
+            expect(matchesShortcut(macOSCtrlAltSEvent, "ctrl+alt+s")).toBe(true);
         });
     });
 

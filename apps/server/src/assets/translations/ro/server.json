@@ -123,7 +123,6 @@
     "password": "Parolă",
     "password-confirmation": "Confirmarea parolei"
   },
-  "javascript-required": "Trilium necesită JavaScript să fie activat pentru a putea funcționa.",
   "setup": {
     "heading": "Instalarea Trilium Notes",
     "init-in-progress": "Se inițializează documentul",

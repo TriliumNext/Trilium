@@ -165,6 +165,17 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
+Alternatively, if you have Nix installed:
+```shell
+# Run directly
+nix run .#edit-docs
+
+# Or install to your profile
+nix profile install .#edit-docs
+trilium-edit-docs
+```
+
+
 ### Building the Executable
 Download the repository, install dependencies using `pnpm` and then build the desktop app for Windows:
 ```shell

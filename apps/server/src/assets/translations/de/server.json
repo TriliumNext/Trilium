@@ -123,7 +123,6 @@
     "password-confirmation": "Passwortbestätigung",
     "button": "Passwort festlegen"
   },
-  "javascript-required": "Trilium erfordert, dass JavaScript aktiviert ist.",
   "setup": {
     "heading": "Trilium Notes Setup",
     "new-document": "Ich bin ein neuer Benutzer und möchte ein neues Trilium-Dokument für meine Notizen erstellen",

@@ -54,6 +54,7 @@ export default function buildExtraCommands(): SlashCommandDefinition[] {
             id: "math",
             title: "Math equation",
             description: "Insert a math equation",
+            aliases: [ "latex", "equation" ],
             icon: mathIcons.ckeditor,
             execute: (editor: Editor) => editor.plugins.get(MathUI)._showUI()
         },

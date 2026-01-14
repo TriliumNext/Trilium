@@ -112,7 +112,7 @@
                 nodejs.python
                 removeReferencesTo                
               ]
-              ++ lib.optionals (app == "desktop") [
+              ++ lib.optionals (app == "desktop" || app == "edit-docs") [
                 copyDesktopItems
                 # required for NIXOS_OZONE_WL expansion
                 # https://github.com/NixOS/nixpkgs/issues/172583
@@ -252,10 +252,33 @@
               --add-flags $out/opt/trilium-server/main.cjs
           '';
         };
+
+        edit-docs = makeApp {
+          app = "edit-docs";
+          preBuildCommands = ''
+            export npm_config_nodedir=${electron.headers}
+            pnpm postinstall
+          '';
+          buildTask = "edit-docs:build";
+          mainProgram = "trilium-edit-docs";
+          installCommands = ''
+            #remove-references-to -t ${electron.headers} apps/edit-docs/dist/node_modules/better-sqlite3/build/config.gypi
+            #remove-references-to -t ${nodejs.python} apps/edit-docs/dist/node_modules/better-sqlite3/build/config.gypi
+
+            mkdir -p $out/{bin,opt/trilium-edit-docs}
+            cp --archive apps/edit-docs/dist/* $out/opt/trilium-edit-docs
+            makeShellWrapper ${lib.getExe electron} $out/bin/trilium-edit-docs \
+              --set-default ELECTRON_IS_DEV 0 \
+              --set TRILIUM_RESOURCE_DIR $out/opt/trilium-edit-docs \
+              --add-flags $out/opt/trilium-edit-docs/edit-docs.cjs
+          '';
+        };
+
       in
       {
         packages.desktop = desktop;
         packages.server = server;
+        packages.edit-docs = edit-docs;
 
         packages.default = desktop;
 

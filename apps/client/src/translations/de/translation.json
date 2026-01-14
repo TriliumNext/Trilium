@@ -1,6 +1,6 @@
 {
   "about": {
-    "title": "Über Trilium Notes",
+    "title": "Über Trilium Notizen",
     "homepage": "Startseite:",
     "app_version": "App-Version:",
     "db_version": "DB-Version:",
@@ -26,7 +26,12 @@
     "widget-list-error": {
       "title": "Abruf der Liste von Widgets vom Server ist fehlgeschlagen"
     },
-    "open-script-note": "Script-Notiz öffnen"
+    "open-script-note": "Script-Notiz öffnen",
+    "widget-render-error": {
+      "title": "Eine externe React Integration konnte nicht dargestellt werden"
+    },
+    "widget-missing-parent": "Der externen Integration fehlt die erforderliche Eigenschaft '{{property}}'\n\nFalls dieses Skript ohne UI-Element ausgeführt werden soll, benutze stattdessen '#run=frontendStartup'.",
+    "scripting-error": "Benutzerdefinierter Skriptfehler: {{title}}"
   },
   "add_link": {
     "add_link": "Link hinzufügen",
@@ -210,7 +215,7 @@
     "modalTitle": "Infonachricht",
     "closeButton": "Schließen",
     "okButton": "OK",
-    "copy_to_clipboard": "In die Zwischenablage kopieren"
+    "copy_to_clipboard": "In Zwischenablage kopieren"
   },
   "jump_to_note": {
     "search_button": "Suche im Volltext",
@@ -698,8 +703,8 @@
     "export_as_image_png": "PNG (Raster)",
     "export_as_image_svg": "SVG (Vektor)",
     "note_map": "Notizen Karte",
-    "view_revisions": "Notizrevisionen",
-    "advanced": "Erweitert"
+    "view_revisions": "Änderungshistorie...",
+    "advanced": "Fortgeschritten"
   },
   "onclick_button": {
     "no_click_handler": "Das Schaltflächen-Widget „{{componentId}}“ hat keinen definierten Klick-Handler"
@@ -792,7 +797,8 @@
     "expand_all_levels": "Alle Ebenen erweitern",
     "expand_tooltip": "Erweitert die direkten Unterelemente dieser Sammlung (eine Ebene tiefer). Für weitere Optionen auf den Pfeil rechts klicken.",
     "expand_first_level": "Direkte Unterelemente erweitern",
-    "expand_nth_level": "{{depth}} Ebenen erweitern"
+    "expand_nth_level": "{{depth}} Ebenen erweitern",
+    "hide_child_notes": "Unterknoten im Baum ausblenden"
   },
   "edited_notes": {
     "no_edited_notes_found": "An diesem Tag wurden noch keine Notizen bearbeitet...",
@@ -805,7 +811,7 @@
     "file_type": "Dateityp",
     "file_size": "Dateigröße",
     "download": "Herunterladen",
-    "open": "Offen",
+    "open": "Extern öffnen",
     "upload_new_revision": "Neue Revision hochladen",
     "upload_success": "Neue Dateirevision wurde hochgeladen.",
     "upload_failed": "Das Hochladen einer neuen Dateirevision ist fehlgeschlagen.",
@@ -903,7 +909,7 @@
     "unknown_search_option": "Unbekannte Suchoption {{searchOptionName}}",
     "search_note_saved": "Suchnotiz wurde in {{-notePathTitle}} gespeichert",
     "actions_executed": "Aktionen wurden ausgeführt.",
-    "view_options": "Anzeigeoptionen:"
+    "view_options": "Optionen anzeigen:"
   },
   "similar_notes": {
     "title": "Ähnliche Notizen",
@@ -1009,9 +1015,9 @@
     "auto-detect-language": "Automatisch erkannt",
     "keeps-crashing": "Die Bearbeitungskomponente stürzt immer wieder ab. Bitte starten Sie Trilium neu. Wenn das Problem weiterhin besteht, erstellen Sie einen Fehlerbericht.",
     "editor_crashed_title": "Der Text Editor ist abgestürzt",
-    "editor_crashed_content": "Ihr Inhalt wurde erfolgreich wiederhergestellt, aber einzelne Ihrer letzten Änderungen waren möglicherweise noch nicht gespeichert.",
-    "editor_crashed_details_button": "Zeige mehr Details…",
-    "editor_crashed_details_intro": "Falls Sie diesen Fehler mehrmals sehen, melden Sie dies auf GitHub mit den folgenden Informationen.",
+    "editor_crashed_content": "Ihr Inhalt wurde erfolgreich wiederhergestellt, aber kürzlich gemachte Änderungen wurden unter Umständen nicht gespeichert.",
+    "editor_crashed_details_button": "Mehr Details anzeigen...",
+    "editor_crashed_details_intro": "Falls dieser Fehler häufiger auftritt, ziehen Sie in Betracht uns diesen über GitHub zu melden, indem Sie die folgenden Informationen bereitstellen.",
     "editor_crashed_details_title": "Technische Informationen"
   },
   "empty": {
@@ -1412,7 +1418,7 @@
     "will_be_deleted_in": "Dieser Anhang wird in {{time}} automatisch gelöscht",
     "will_be_deleted_soon": "Dieser Anhang wird bald automatisch gelöscht",
     "deletion_reason": ", da der Anhang nicht im Inhalt der Notiz verlinkt ist. Um das Löschen zu verhindern, füge den Anhangslink wieder in den Inhalt ein oder wandel den Anhang in eine Notiz um.",
-    "role_and_size": "Rolle: {{role}}, Größe: {{size}}",
+    "role_and_size": "Rolle: {{role}}, Größe: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "Anhangslink in die Zwischenablage kopiert.",
     "unrecognized_role": "Unbekannte Anhangsrolle „{{role}}“."
   },
@@ -1463,10 +1469,13 @@
     "import-into-note": "In Notiz importieren",
     "apply-bulk-actions": "Massenaktionen anwenden",
     "converted-to-attachments": "{{count}} Notizen wurden als Anhang konvertiert.",
-    "convert-to-attachment-confirm": "Bist du sicher, dass du die ausgewählten Notizen in Anhänge ihrer übergeordneten Notizen umwandeln möchtest?",
+    "convert-to-attachment-confirm": "Bist du sicher, dass du die ausgewählten Notizen in Anhänge ihrer übergeordneten Notizen umwandeln möchtest? Diese Operation wird nur auf Bildnotizes angewandt. Andere Notizen werden übersprungen.",
     "open-in-popup": "Schnellbearbeitung",
     "archive": "Archiviere",
-    "unarchive": "Entarchivieren"
+    "unarchive": "Entarchivieren",
+    "open-in-a-new-window": "In neuem Fenster öffnen",
+    "hide-subtree": "Teilbaum ausblenden",
+    "show-subtree": "Teilbaum anzeigen"
   },
   "shared_info": {
     "shared_publicly": "Diese Notiz ist öffentlich geteilt auf {{- link}}.",
@@ -1556,7 +1565,16 @@
     "create-child-note": "Unternotiz anlegen",
     "unhoist": "Fokus verlassen",
     "toggle-sidebar": "Seitenleiste ein-/ausblenden",
-    "dropping-not-allowed": "Ablegen von Notizen an dieser Stelle ist nicht zulässig."
+    "dropping-not-allowed": "Ablegen von Notizen an dieser Stelle ist nicht zulässig.",
+    "clone-indicator-tooltip": "Diese Notiz hat {{- count}} Elterknoten: {{- parents}}",
+    "clone-indicator-tooltip-single": "Diese Notiz ist geklont (1 weiterer Elternknoten: {{- parent}})",
+    "shared-indicator-tooltip": "Diese Notiz ist öffentlich einsehbar",
+    "shared-indicator-tooltip-with-url": "Diese Notiz ist unter {{- url}} öffentlich einsehbar",
+    "subtree-hidden-tooltip_one": "{{count}} Unterknoten, der im Baum ausgeblendet ist",
+    "subtree-hidden-tooltip_other": "{{count}} Unterknoten, die im Baum ausgeblendet sind",
+    "subtree-hidden-moved-title": "Zu {{title}} hinzugefügt",
+    "subtree-hidden-moved-description-collection": "Diese Sammlung blendet ihre Unternotizem im Baum aus.",
+    "subtree-hidden-moved-description-other": "Diese Sammlung blendet ihre Unterknoten im Baum aus."
   },
   "title_bar_buttons": {
     "window-on-top": "Dieses Fenster immer oben halten"
@@ -1567,7 +1585,9 @@
     "printing_pdf": "PDF-Export läuft…",
     "print_report_title": "Druckreport",
     "print_report_collection_details_button": "Details anzeigen",
-    "print_report_collection_details_ignored_notes": "Ignorierte Notizen"
+    "print_report_collection_details_ignored_notes": "Ignorierte Notizen",
+    "print_report_collection_content_one": "{{count}} Notiz in der Sammlung konnte nicht gedruckt werden, weil sie nicht unterstützt ist oder geschützt ist.",
+    "print_report_collection_content_other": "{{count}} Notizen in der Sammlung konnten nicht gedruckt werden, weil sie nicht unterstützt sind oder geschützt sind."
   },
   "note_title": {
     "placeholder": "Titel der Notiz hier eingeben…",
@@ -1720,7 +1740,8 @@
     "open_note_in_new_tab": "Notiz in neuen Tab öffnen",
     "open_note_in_new_split": "Notiz in neuen geteilten Tab öffnen",
     "open_note_in_new_window": "Notiz in neuen Fenster öffnen",
-    "open_note_in_popup": "Schnellbearbeitung"
+    "open_note_in_popup": "Schnellbearbeitung",
+    "open_note_in_other_split": "Notiz in neuer Spalte öffnen"
   },
   "electron_integration": {
     "desktop-application": "Desktop Anwendung",
@@ -1988,8 +2009,9 @@
     "unknown_widget": "Unbekanntes Widget für '{{id}}'."
   },
   "note_language": {
-    "not_set": "Nicht gesetzt",
-    "configure-languages": "Konfiguriere Sprachen..."
+    "not_set": "Keine Sprache ausgewählt",
+    "configure-languages": "Konfiguriere Sprachen...",
+    "help-on-languages": "Zu Übersetzungen beitragen..."
   },
   "content_language": {
     "title": "Inhaltssprachen",
@@ -2007,7 +2029,8 @@
     "button_title": "Exportiere Diagramm als PNG"
   },
   "svg": {
-    "export_to_png": "Das Diagramm konnte als PNG nicht exportiert werden."
+    "export_to_png": "Das Diagramm konnte als PNG nicht exportiert werden.",
+    "export_to_svg": "Das Diagramm konnte nicht als SVG exportiert werden."
   },
   "code_theme": {
     "title": "Aussehen",
@@ -2055,7 +2078,7 @@
   "book_properties_config": {
     "hide-weekends": "Wochenenden ausblenden",
     "display-week-numbers": "Zeige Kalenderwoche",
-    "map-style": "Kartenstil:",
+    "map-style": "Kartenstil",
     "max-nesting-depth": "Maximale Verschachtelungstiefe:",
     "raster": "Raster",
     "vector_light": "Vektor (Hell)",
@@ -2108,14 +2131,20 @@
     "background_effects_title": "Hintergrundeffekte sind jetzt zuverlässig nutzbar",
     "background_effects_message": "Auf Windows-Geräten sind die Hintergrundeffekte nun vollständig stabil. Die Hintergrundeffekte verleihen der Benutzeroberfläche einen Farbakzent, indem der Hintergrund dahinter weichgezeichnet wird. Diese Technik wird auch in anderen Anwendungen wie dem Windows-Explorer eingesetzt.",
     "background_effects_button": "Aktiviere Hintergrundeffekte",
-    "dismiss": "Ablehnen"
+    "dismiss": "Ablehnen",
+    "new_layout_title": "Neues Layout",
+    "new_layout_message": "Wir haben ein modernisiertes Layout für Trilium eingeführt. Die Multifunktionsleiste wurde entfernt und als neue Statusanzeige und ausklappbaren Sektionen (wie hervorgehobenen Attributen), welche Schlüsselfunktionen übernehmen, nahtlos in das Hauptinterface integriert.\n\nDas neue Layout ist standardmäßig aktiviert und kann temporär in Optionen → Anzeige deaktiviert werden.",
+    "new_layout_button": "Mehr Informationen"
   },
   "settings": {
     "related_settings": "Ähnliche Einstellungen"
   },
   "settings_appearance": {
     "related_code_blocks": "Farbschema für Code-Blöcke in Textnotizen",
-    "related_code_notes": "Farbschema für Code-Notizen"
+    "related_code_notes": "Farbschema für Code-Notizen",
+    "ui": "Benutzeroberfläche",
+    "ui_old_layout": "Altes Layout",
+    "ui_new_layout": "Neues Layout"
   },
   "units": {
     "percentage": "%"
@@ -2151,6 +2180,88 @@
   "experimental_features": {
     "title": "Experimentelle Optionen",
     "disclaimer": "Diese Optionen sind experimentell und können Instabilitäten verursachen. Achtsam zu verwenden.",
-    "new_layout_name": "Neues Layout"
+    "new_layout_name": "Neues Layout",
+    "new_layout_description": "Probiere das neue Layout für eine modernere Darstellung und verbesserte Benutzbarkeit aus. Kann sich in Zukunft stark ändern."
+  },
+  "server": {
+    "unknown_http_error_title": "Bei der Kommunikation mit dem Server ist ein Fehler aufgetreten",
+    "unknown_http_error_content": "Statuscode: {{statusCode}}\nURL: {{method}} {{url}}\nNachricht: {{message}}",
+    "traefik_blocks_requests": "Der Traefik Reverse-Proxy hat ein fatales Update bekommen, welche die Kommunikation mit dem Server stört."
+  },
+  "tab_history_navigation_buttons": {
+    "go-back": "Zur vorherigen Notiz zurück kehren",
+    "go-forward": "Zur nächsten Notiz"
+  },
+  "breadcrumb": {
+    "hoisted_badge": "Gehoben",
+    "hoisted_badge_title": "Abgesenkt",
+    "workspace_badge": "Arbeitsfläche",
+    "scroll_to_top_title": "Zum Anfang der Notiz springen",
+    "create_new_note": "Neue Unternotiz erstellen",
+    "empty_hide_archived_notes": "Archivierte Notizen ausblenden"
+  },
+  "breadcrumb_badges": {
+    "read_only_explicit": "Nicht Änderbar",
+    "read_only_explicit_description": "Diese Notiz wurde händisch als nicht änderbar markiert.\nKlicke hier um sie temporär zu bearbeiten.",
+    "read_only_auto": "Automatisch nicht änderbar",
+    "read_only_auto_description": "Diese Notiz wurde automatisch aus Leistungsgründen als nicht änderbar markiert. Dieses automatische Limit kann in den Einstellungen angepasst werden.\n\nKlicke hier, um sie temporär zu bearbeiten.",
+    "read_only_temporarily_disabled": "Temporär bearbeitbar",
+    "read_only_temporarily_disabled_description": "Diese Notiz ist aktuell bearbeitbar, ist aber normalerweise nicht änderbar. Sobald du zu einer anderen Notiz navigierst, kehrt diese Notiz in ihren Normalzustand zurück.\n\nKlicke hier, um die Notiz wieder nicht änderbar zu machen.",
+    "shared_publicly": "Öffentlich geteilt",
+    "shared_locally": "Lokal geteilt",
+    "shared_copy_to_clipboard": "Link in die Zwischenablage kopieren",
+    "shared_open_in_browser": "Link öffnen",
+    "shared_unshare": "Teilen aufheben",
+    "clipped_note": "Internetschnellverweis",
+    "clipped_note_description": "Diese Notiz wurde von {{url}} übernommen.\n\nKlicke hier, um zum Ursprung zu gehen.",
+    "execute_script": "Skript ausführen",
+    "execute_script_description": "Diese Notiz ist eine Skriptnotiz. Klicke hier, um das Skript auszuführen.",
+    "execute_sql": "SQL ausführen",
+    "execute_sql_description": "Diese Notiz ist eine SQL-Notiz. Klicke hier, um die SQL-Abfrage auszuführen.",
+    "save_status_saved": "Gespeichert",
+    "save_status_saving": "Speichern...",
+    "save_status_unsaved": "Nicht gespeichert",
+    "save_status_error": "Speichern fehlgeschlagen",
+    "save_status_saving_tooltip": "Änderungen werden gespeichert.",
+    "save_status_unsaved_tooltip": "Es gibt ungespeicherte Änderungen, welche gleich automatisch gespeichert werden.",
+    "save_status_error_tooltip": "Beim speichern der Notiz ist ein Fehler aufgetreten. Wenn möglich, versuche die Notiz woandershin zu kopieren und die Applikation neu zu laden."
+  },
+  "status_bar": {
+    "language_title": "Inhaltssprache ändern",
+    "note_info_title": "Notizinfo anzeigen (z.B.: Datum, Notizgröße)",
+    "backlinks_one": "{{count}} Rücklink",
+    "backlinks_other": "{{count}} Rücklinks",
+    "backlinks_title_one": "Rücklink anzeigen",
+    "backlinks_title_other": "Rücklinks anzeigen",
+    "attachments_one": "{{count}} Anhang",
+    "attachments_other": "{{count}} Anhänge",
+    "attachments_title_one": "Anhang in einem neuen Tab öffnen",
+    "attachments_title_other": "Anhänge in einem neuen Tab öffnen",
+    "attributes_one": "{{count}} Eigenschaft",
+    "attributes_other": "{{count}} Eigenschaften",
+    "attributes_title": "Eigene und gererbte Eigenschaften",
+    "note_paths_one": "{{count}} Pfad",
+    "note_paths_other": "{{count}} Pfade",
+    "note_paths_title": "Notizpfade",
+    "code_note_switcher": "Sprachmodus ändern"
+  },
+  "attributes_panel": {
+    "title": "Notizeigenschaften"
+  },
+  "right_pane": {
+    "empty_message": "Für diese Notiz gibt es nichts anzuzeigen",
+    "empty_button": "Anzeige ausblenden",
+    "toggle": "Rechte Anzeige umschalten",
+    "custom_widget_go_to_source": "Zum Ursprungscode"
+  },
+  "pdf": {
+    "attachments_one": "{{count}} Anhang",
+    "attachments_other": "{{count}} Anhänge",
+    "layers_one": "{{count}} Ebene",
+    "layers_other": "{{count}} Ebenen",
+    "pages_one": "{{count}} Seite",
+    "pages_other": "{{count}} Seiten",
+    "pages_alt": "Seite {{pageNumber}}",
+    "pages_loading": "Laden..."
   }
 }

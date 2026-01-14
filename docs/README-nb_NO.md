@@ -60,8 +60,8 @@ Vår dokumentasjon er tilgjengelig i flere format:
   Docker](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
 - [Oppgradere
   TriliumNext](https://docs.triliumnotes.org/user-guide/setup/upgrading)
-- [Basic Concepts and
-  Features](https://docs.triliumnotes.org/user-guide/concepts/notes)
+- [Grunnleggende konsepter og
+  funksjoner](https://docs.triliumnotes.org/user-guide/concepts/notes)
 - [Patterns of Personal Knowledge
   Base](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
@@ -91,8 +91,8 @@ Vår dokumentasjon er tilgjengelig i flere format:
 * Direct [OpenID and TOTP
   integration](https://docs.triliumnotes.org/user-guide/setup/server/mfa) for
   more secure login
-* [Synchronization](https://docs.triliumnotes.org/user-guide/setup/synchronization)
-  with self-hosted sync server
+* [Synkronisering](https://docs.triliumnotes.org/user-guide/setup/synchronization)
+  med selv-hostet sync server
   * there are [3rd party services for hosting synchronisation
     server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [Sharing](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
@@ -112,7 +112,7 @@ Vår dokumentasjon er tilgjengelig i flere format:
 * [Scripting](https://docs.triliumnotes.org/user-guide/scripts) - see [Advanced
   showcases](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
 * [REST API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi) for
-  automation
+  automatisering
 * Scales well in both usability and performance upwards of 100 000 notes
 * Touch optimized [mobile
   frontend](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) for
@@ -254,7 +254,7 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
-### Building the Executable
+### Opprette kjørbar fil
 Download the repository, install dependencies using `pnpm` and then build the
 desktop app for Windows:
 ```shell

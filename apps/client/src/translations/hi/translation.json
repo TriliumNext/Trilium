@@ -1,7 +1,10 @@
 {
   "about": {
     "title": "ट्रिलियम नोट्स के बारें में",
-    "build_date": "निर्माण की तारीख:"
+    "build_date": "निर्माण की तारीख:",
+    "app_version": "ऐप वर्ज़न:",
+    "db_version": "DB वर्ज़न:",
+    "build_revision": "बिल्ड रिविज़न:"
   },
   "toast": {
     "widget-error": {

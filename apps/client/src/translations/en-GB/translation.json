@@ -69,5 +69,8 @@
     "clear-color": "Clear note colour",
     "set-color": "Set note colour",
     "set-custom-color": "Set custom note colour"
+  },
+  "about": {
+    "title": "About Trilium Notes"
   }
 }

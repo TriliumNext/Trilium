@@ -21,7 +21,7 @@
         "note_structure_description": "Notizen lassen sich hierarchisch anordnen. Ordner sind nicht nötig, da jede Notiz Unternotizen enthalten kann. Eine einzelne Notiz kann an mehreren Stellen in der Hierarchie hinzugefügt werden.",
         "hoisting_description": "Trennen Sie Ihre persönlichen und beruflichen Notizen ganz einfach, indem Sie sie in einem Arbeitsbereich gruppieren. Dadurch wird Ihre Notizstruktur so fokussiert, dass nur ein bestimmter Satz von Notizen angezeigt wird.",
         "hoisting_title": "Arbeitsbereiche und Fokusansicht",
-        "attributes_description": "Verwenden Sie Beziehungen zwischen Notizen oder fügen Sie Beschriftungen hinzu, um die Kategorisierung zu vereinfachen. Verwenden Sie hervorgehobene Attribute, um strukturierte Informationen einzugeben, die in Tabellen und Boards verwendet werden können."
+        "attributes_description": "Für leichtes kategorsieren, nutze Verbindungen zwischen Notizen oder füge Label hinzu. Verwende hervorgehobene Attribute, um sie als strukturierte Informationen in Tabellen oder Anschlagbretter zu verwenden."
     },
     "productivity_benefits": {
         "revisions_title": "Notizrevisionen",
@@ -30,7 +30,7 @@
         "protected_notes_title": "Geschützte Notizen",
         "jump_to_title": "Schnellsuche und Kommandos",
         "search_title": "Leistungsstarke Suche",
-        "web_clipper_title": "Web clipper",
+        "web_clipper_title": "Webschnipsel",
         "revisions_content": "Notizen werden regelmäßig im Hintergrund gespeichert und Revisionen können zur Überprüfung oder zum Rückgängigmachen versehentlicher Änderungen verwendet werden. Revisionen können auch bei Bedarf erstellt werden.",
         "sync_content": "Verwenden Sie eine selbst gehostete oder Cloud-Instanz, um Ihre Notizen ganz einfach auf mehreren Geräten zu synchronisieren und über eine WebApp von Ihrem mobilen Gerät aus darauf zuzugreifen.",
         "protected_notes_content": "Halten Sie vertrauliche Informationen sicher, indem Sie Notizen verschlüsseln und mit einem Passwort schützen.",
@@ -41,7 +41,7 @@
     "note_types": {
         "text_title": "Text Notizen",
         "code_title": "Code Notizen",
-        "canvas_title": "Canvas",
+        "canvas_title": "Leinwand",
         "mermaid_title": "Mermaid Diagramm",
         "mindmap_title": "Mind Map",
         "text_description": "Die Notizen werden mit einem visuellen Editor (WYSIWYG) bearbeitet, der Tabellen, Bilder, mathematische Ausdrücke und Code-Blöcke mit Syntaxhervorhebung unterstützt. Formatieren Sie den Text schnell mit einer Markdown-ähnlichen Syntax oder mit Slash-Befehlen.",
@@ -162,7 +162,7 @@
     },
     "social_buttons": {
         "github": "GitHub",
-        "github_discussions": "GitHub Discussions",
+        "github_discussions": "GitHub Diskussionen",
         "matrix": "Matrix",
         "reddit": "Reddit"
     },
@@ -184,7 +184,7 @@
         "way_market": "Weitersagen: Teilen Sie Trilium Notes mit Freunden, in Blogs und sozialen Medien."
     },
     "404": {
-        "title": "404: Not Found",
+        "title": "404: Nicht gefunden",
         "description": "Die gesuchte Seite konnte nicht gefunden werden. Möglicherweise wurde sie gelöscht oder die URL ist falsch."
     },
     "download_helper_desktop_windows": {
@@ -193,7 +193,7 @@
         "description_x64": "Kompatibel mit Intel- oder AMD-Geräten unter Windows 10 und 11.",
         "description_arm64": "Kompatibel mit ARM-Geräten (z. B. mit Qualcomm Snapdragon).",
         "quick_start": "Installation über Winget:",
-        "download_exe": "Download Installer (.exe)",
+        "download_exe": "Installationsdatei herunterladen (.exe)",
         "download_zip": "Portable (.zip)",
         "download_scoop": "Scoop"
     }

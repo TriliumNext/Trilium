@@ -1,14 +1,17 @@
-import fs from "fs/promises";
-import fsExtra from "fs-extra";
-import path from "path";
-import type { NoteMetaFile } from "@triliumnext/server/src/services/meta/note_meta.js";
-import { initializeTranslations } from "@triliumnext/server/src/services/i18n.js";
 import debounce from "@triliumnext/client/src/services/debounce.js";
-import { extractZip, importData, initializeDatabase, startElectron } from "./utils.js";
 import cls from "@triliumnext/server/src/services/cls.js";
 import type { AdvancedExportOptions, ExportFormat } from "@triliumnext/server/src/services/export/zip/abstract_provider.js";
+import { initializeTranslations } from "@triliumnext/server/src/services/i18n.js";
 import { parseNoteMetaFile } from "@triliumnext/server/src/services/in_app_help.js";
+import type { NoteMetaFile } from "@triliumnext/server/src/services/meta/note_meta.js";
 import type NoteMeta from "@triliumnext/server/src/services/meta/note_meta.js";
+import fs from "fs/promises";
+import fsExtra from "fs-extra";
+import yaml from "js-yaml";
+import path from "path";
+
+import packageJson from "../package.json" with { type: "json" };
+import { extractZip, importData, initializeDatabase, startElectron } from "./utils.js";
 
 interface NoteMapping {
     rootNoteId: string;
@@ -18,46 +21,112 @@ interface NoteMapping {
     exportOnly?: boolean;
 }
 
-const { DOCS_ROOT, USER_GUIDE_ROOT } = process.env;
-if (!DOCS_ROOT || !USER_GUIDE_ROOT) {
-    throw new Error("Missing DOCS_ROOT or USER_GUIDE_ROOT environment variable.");
+interface Config {
+    baseUrl: string;
+    noteMappings: NoteMapping[];
 }
 
-const BASE_URL = "https://docs.triliumnotes.org";
+// Parse command-line arguments
+function parseArgs() {
+    const args = process.argv.slice(2);
+    let configPath: string | undefined;
+    let showHelp = false;
+    let showVersion = false;
 
-const NOTE_MAPPINGS: NoteMapping[] = [
-    {
-        rootNoteId: "pOsGYCXsbNQG",
-        path: path.join(__dirname, DOCS_ROOT, "User Guide"),
-        format: "markdown"
-    },
-    {
-        rootNoteId: "pOsGYCXsbNQG",
-        path: path.join(__dirname, USER_GUIDE_ROOT),
-        format: "html",
-        ignoredFiles: ["index.html", "navigation.html", "style.css", "User Guide.html"],
-        exportOnly: true
-    },
-    {
-        rootNoteId: "jdjRLhLV3TtI",
-        path: path.join(__dirname, DOCS_ROOT, "Developer Guide"),
-        format: "markdown"
-    },
-    {
-        rootNoteId: "hD3V4hiu2VW4",
-        path: path.join(__dirname, DOCS_ROOT, "Release Notes"),
-        format: "markdown"
+    for (let i = 0; i < args.length; i++) {
+        if (args[i] === '--config' || args[i] === '-c') {
+            configPath = args[i + 1];
+            if (!configPath) {
+                console.error("Error: --config/-c requires a path argument");
+                process.exit(1);
+            }
+            i++; // Skip the next argument as it's the value
+        } else if (args[i] === '--help' || args[i] === '-h') {
+            showHelp = true;
+        } else if (args[i] === '--version' || args[i] === '-v') {
+            showVersion = true;
+        }
     }
-];
+
+    return { configPath, showHelp, showVersion };
+}
+
+function getVersion(): string {
+    return packageJson.version;
+}
+
+function printHelp() {
+    const version = getVersion();
+    console.log(`
+Usage: trilium-edit-docs [options]
+
+Options:
+  -c, --config <path>  Path to the configuration file (default: edit-docs-config.yaml in the root)
+  -h, --help           Display this help message
+  -v, --version        Display version information
+
+Version: ${version}
+`);
+}
+
+function printVersion() {
+    const version = getVersion();
+    console.log(version);
+}
+
+const { configPath, showHelp, showVersion } = parseArgs();
+
+if (showHelp) {
+    printHelp();
+    process.exit(0);
+} else if (showVersion) {
+    printVersion();
+    process.exit(0);
+}
+
+// Configuration variables to be initialized
+let BASE_URL: string;
+let NOTE_MAPPINGS: NoteMapping[];
+
+// Load configuration from edit-docs-config.yaml
+async function loadConfig() {
+    let CONFIG_PATH = configPath
+        ? path.resolve(configPath)
+        : path.join(process.cwd(), "edit-docs-config.yaml");
+
+    const exists = await fs.access(CONFIG_PATH).then(() => true).catch(() => false);
+    if (!exists && !configPath) {
+        // Fallback to project root if running from within a subproject
+        CONFIG_PATH = path.join(__dirname, "../../../edit-docs-config.yaml");
+    }
+
+    const configContent = await fs.readFile(CONFIG_PATH, "utf-8");
+    const config = yaml.load(configContent) as Config;
+
+    BASE_URL = config.baseUrl;
+    // Resolve all paths relative to the config file's directory (for flexibility with external configs)
+    const CONFIG_DIR = path.dirname(CONFIG_PATH);
+    NOTE_MAPPINGS = config.noteMappings.map((mapping) => ({
+        ...mapping,
+        path: path.resolve(CONFIG_DIR, mapping.path)
+    }));
+}
 
 async function main() {
+    await loadConfig();
     const initializedPromise = startElectron(() => {
         // Wait for the import to be finished and the application to be loaded before we listen to changes.
-        setTimeout(() => registerHandlers(), 10_000);
+        setTimeout(() => {
+            registerHandlers();
+        }, 10_000);
     });
 
     await initializeTranslations();
     await initializeDatabase(true);
+
+    // Wait for becca to be loaded before importing data
+    const beccaLoader = await import("@triliumnext/server/src/becca/becca_loader.js");
+    await beccaLoader.beccaLoaded;
 
     cls.init(async () => {
         for (const mapping of NOTE_MAPPINGS) {
@@ -142,7 +211,7 @@ async function exportData(noteId: string, format: ExportFormat, outputPath: stri
         }
     }
 
-    const minifyMeta = (format === "html");
+    const minifyMeta = (format === "html" || format === "share");
     await cleanUpMeta(outputPath, minifyMeta);
 }
 
@@ -195,7 +264,6 @@ async function registerHandlers() {
             return;
         }
 
-        console.log("Got entity changed", e.entityName, e.entity.title);
         debouncer();
     });
 }
