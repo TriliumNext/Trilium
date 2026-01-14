@@ -62,4 +62,4 @@ The application by default starts up on port 8080, so you can open your browser 
 
 ## TLS
 
-Don't forget to [configure TLS](../HTTPS%20\(TLS\).md) which is required for secure usage!
+Don't forget to [configure TLS](../TLS%20Configuration.md) which is required for secure usage!

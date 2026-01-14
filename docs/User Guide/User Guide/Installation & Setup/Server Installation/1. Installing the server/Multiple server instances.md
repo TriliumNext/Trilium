@@ -1,5 +1,5 @@
 # Multiple server instances
-Trilium does not support multiple users. In order to have two or more persons with their own set of notes, multiple server instances must be set up. It is also not possible to use multiple [sync](../../Synchronization.md) servers.
+Trilium does not support multiple users. In order to have two or more persons with their own set of notes, multiple server instances must be set up. It is also not possible to use multiple [sync](#root/KFhm9yCthQOh) servers.
 
 To allow multiple server instances on a single physical server:
 

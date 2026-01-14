@@ -25,7 +25,7 @@ When “Remember me” is unchecked, the behavior is different. At client/browse
 
 ## Viewing active sessions
 
-The login sessions are now stored in the same <a class="reference-link" href="../../Advanced%20Usage/Database.md">Database</a> as the user data. In order to view which sessions are active, open the <a class="reference-link" href="../../Advanced%20Usage/Database/Manually%20altering%20the%20database/SQL%20Console.md">SQL Console</a> and run the following query:
+The login sessions are now stored in the same <a class="reference-link" href="#root/lvXOQ00dcRlk">Database</a> as the user data. In order to view which sessions are active, open the <a class="reference-link" href="#root/hDJ4mPkZJQ4E">SQL Console</a> and run the following query:
 
 ```
 SELECT * FROM sessions

@@ -36,7 +36,7 @@ MFA can only be set up on a server instance.
 
 In order to setup OpenID, you will need to setup a authentication provider. This requires a bit of extra setup. Follow [these instructions](https://developers.google.com/identity/openid-connect/openid-connect) to setup an OpenID service through google. The Redirect URL of Trilium is `https://<your-trilium-domain>/callback`.
 
-1.  Set the `oauthBaseUrl`, `oauthClientId` and `oauthClientSecret` in the `config.ini` file (check <a class="reference-link" href="../../Advanced%20Usage/Configuration%20(config.ini%20or%20e.md">Configuration (config.ini or environment variables)</a> for more information).
+1.  Set the `oauthBaseUrl`, `oauthClientId` and `oauthClientSecret` in the `config.ini` file (check <a class="reference-link" href="#root/SneMubD5wTR6">Configuration (config.ini or environment variables)</a> for more information).
     1.  You can also setup through environment variables:
         *   Standard: `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL`, `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID`, `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET`
         *   Legacy (still supported): `TRILIUM_OAUTH_BASE_URL`, `TRILIUM_OAUTH_CLIENT_ID`, `TRILIUM_OAUTH_CLIENT_SECRET`
