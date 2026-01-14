@@ -48,7 +48,7 @@ function useNoteAttributesWithDefinitions(note: FNote, attributesToIgnore:  stri
 }
 
 function UserAttribute({ attr, children, style }: { attr: AttributeWithDefinitions, children: ComponentChildren, style?: CSSProperties }) {
-    const className = `${attr.type === "label" ? `label` + ` ${  attr.def.labelType}` : "relation"}`;
+    const className = attr.type === "label" ? `label ${attr.def.labelType}` : "relation";
 
     return (
         <span key={attr.friendlyName} className={`user-attribute type-${className}`} style={style}>

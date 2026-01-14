@@ -553,7 +553,7 @@ async function downloadImage(noteId: string, imageUrl: string) {
         if (attachment.attachmentId) {
             imageUrlToAttachmentIdMapping[imageUrl] = attachment.attachmentId;
         } else {
-            log.error(`Download of '${imageUrl}' due to no attachment ID.`);
+            log.error(`Download of '${imageUrl}' for note '${noteId}' failed due to no attachment ID.`);
         }
 
         log.info(`Download of '${imageUrl}' succeeded and was saved as image attachment '${attachment.attachmentId}' of note '${noteId}'`);

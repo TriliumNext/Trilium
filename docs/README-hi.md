@@ -41,26 +41,27 @@ application with focus on building large personal knowledge bases.
   unstable development version, updated daily with the latest features and
   fixes.
 
-## 📚 Documentation
+## 📚 डॉक्यूमेंटेशन
 
-**Visit our comprehensive documentation at
-[docs.triliumnotes.org](https://docs.triliumnotes.org/)**
+**हमारे विस्तृत डॉक्यूमेंटेशन को
+[docs.triliumnotes.org](https://docs.triliumnotes.org/) पर देखें**
 
-Our documentation is available in multiple formats:
-- **Online Documentation**: Browse the full documentation at
-  [docs.triliumnotes.org](https://docs.triliumnotes.org/)
-- **In-App Help**: Press `F1` within Trilium to access the same documentation
-  directly in the application
+हमारा डॉक्यूमेंटेशन कई फॉर्मेट्स में उपलब्ध है:
+- **ऑनलाइन डॉक्यूमेंटेशन**:
+  [docs.triliumnotes.org](https://docs.triliumnotes.org/) पर पूरा डॉक्यूमेंटेशन
+  देखें
+- **इन-ऐप हेल्प**: उसी डॉक्यूमेंटेशन को सीधे ऐप में एक्सेस करने के लिए ट्रिलियम
+  के अंदर `F1` दबाएँ
 - **GitHub**: Navigate through the [User Guide](./User%20Guide/User%20Guide/) in
   this repository
 
 ### Quick Links
 - [Getting Started Guide](https://docs.triliumnotes.org/)
 - [Installation Instructions](https://docs.triliumnotes.org/user-guide/setup)
-- [Docker
-  Setup](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
-- [Upgrading
-  TriliumNext](https://docs.triliumnotes.org/user-guide/setup/upgrading)
+- [डॉकर
+  सेटअप](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
+- [TriliumNext को अपग्रेड
+  करना](https://docs.triliumnotes.org/user-guide/setup/upgrading)
 - [Basic Concepts and
   Features](https://docs.triliumnotes.org/user-guide/concepts/notes)
 - [Patterns of Personal Knowledge

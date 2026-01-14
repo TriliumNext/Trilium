@@ -6,7 +6,7 @@ settings:
 
 overrides:
   mermaid: 11.12.2
-  preact: 10.28.1
+  preact: 10.28.2
   roughjs: 4.6.6
   '@types/express-serve-static-core': 5.1.0
   flat@<5.0.1: '>=5.0.1'
@@ -149,11 +149,11 @@ importers:
         specifier: 19.2.3
         version: 19.2.3(react@19.2.3)
       typedoc:
-        specifier: 0.28.15
-        version: 0.28.15(typescript@5.9.3)
+        specifier: 0.28.16
+        version: 0.28.16(typescript@5.9.3)
       typedoc-plugin-missing-exports:
         specifier: 4.1.2
-        version: 4.1.2(typedoc@0.28.15(typescript@5.9.3))
+        version: 4.1.2(typedoc@0.28.16(typescript@5.9.3))
 
   apps/client:
     dependencies:
@@ -192,7 +192,7 @@ importers:
         version: 2.11.8
       '@preact/signals':
         specifier: 2.5.1
-        version: 2.5.1(preact@10.28.1)
+        version: 2.5.1(preact@10.28.2)
       '@triliumnext/ckeditor5':
         specifier: workspace:*
         version: link:../../packages/ckeditor5
@@ -287,14 +287,14 @@ importers:
         specifier: 9.4.3
         version: 9.4.3
       preact:
-        specifier: 10.28.1
-        version: 10.28.1
+        specifier: 10.28.2
+        version: 10.28.2
       react-i18next:
         specifier: 16.5.1
         version: 16.5.1(i18next@25.7.3(typescript@5.9.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
       react-window:
-        specifier: 2.2.4
-        version: 2.2.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+        specifier: 2.2.5
+        version: 2.2.5(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       reveal.js:
         specifier: 5.2.1
         version: 5.2.1
@@ -313,7 +313,7 @@ importers:
         version: 5.0.0
       '@prefresh/vite':
         specifier: 2.4.11
-        version: 2.4.11(preact@10.28.1)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
+        version: 2.4.11(preact@10.28.2)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
       '@types/bootstrap':
         specifier: 5.2.10
         version: 5.2.10
@@ -388,7 +388,7 @@ importers:
         version: 2.11.8
       '@preact/signals':
         specifier: 2.5.1
-        version: 2.5.1(preact@10.28.1)
+        version: 2.5.1(preact@10.28.2)
       '@sqlite.org/sqlite-wasm':
         specifier: 3.51.1-build2
         version: 3.51.1-build2
@@ -495,8 +495,8 @@ importers:
         specifier: 9.4.3
         version: 9.4.3
       preact:
-        specifier: 10.28.1
-        version: 10.28.1
+        specifier: 10.28.2
+        version: 10.28.2
       react-i18next:
         specifier: 16.5.1
         version: 16.5.1(i18next@25.7.3(typescript@5.9.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
@@ -521,7 +521,7 @@ importers:
         version: 5.0.0
       '@preact/preset-vite':
         specifier: 2.10.2
-        version: 2.10.2(@babel/core@7.28.0)(preact@10.28.1)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
+        version: 2.10.2(@babel/core@7.28.0)(preact@10.28.2)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
       '@types/bootstrap':
         specifier: 5.2.10
         version: 5.2.10
@@ -939,7 +939,7 @@ importers:
         version: 0.6.3
       openai:
         specifier: 6.16.0
-        version: 6.16.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5))(zod@4.1.12)
+        version: 6.16.0(ws@8.19.0(bufferutil@4.0.9)(utf-8-validate@6.0.5))(zod@4.1.12)
       rand-token:
         specifier: 1.0.1
         version: 1.0.1
@@ -947,8 +947,8 @@ importers:
         specifier: 1.1.4
         version: 1.1.4
       sax:
-        specifier: 1.4.3
-        version: 1.4.3
+        specifier: 1.4.4
+        version: 1.4.4
       serve-favicon:
         specifier: 2.5.1
         version: 2.5.1
@@ -977,11 +977,11 @@ importers:
         specifier: 7.2.2
         version: 7.2.2
       vite:
-        specifier: 7.3.0
-        version: 7.3.0(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1)
+        specifier: 7.3.1
+        version: 7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1)
       ws:
-        specifier: 8.18.3
-        version: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+        specifier: 8.19.0
+        version: 8.19.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
       xml2js:
         specifier: 0.6.2
         version: 0.6.2
@@ -1004,21 +1004,21 @@ importers:
         specifier: 3.0.2
         version: 3.0.2(encoding@0.1.13)
       preact:
-        specifier: 10.28.1
-        version: 10.28.1
+        specifier: 10.28.2
+        version: 10.28.2
       preact-iso:
         specifier: 2.11.1
-        version: 2.11.1(preact-render-to-string@6.6.5(preact@10.28.1))(preact@10.28.1)
+        version: 2.11.1(preact-render-to-string@6.6.5(preact@10.28.2))(preact@10.28.2)
       preact-render-to-string:
         specifier: 6.6.5
-        version: 6.6.5(preact@10.28.1)
+        version: 6.6.5(preact@10.28.2)
       react-i18next:
         specifier: 16.5.1
         version: 16.5.1(i18next@25.7.3(typescript@5.9.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
     devDependencies:
       '@preact/preset-vite':
         specifier: 2.10.2
-        version: 2.10.2(@babel/core@7.28.0)(preact@10.28.1)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
+        version: 2.10.2(@babel/core@7.28.0)(preact@10.28.2)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
       eslint:
         specifier: 9.39.2
         version: 9.39.2(jiti@2.6.1)
@@ -4224,7 +4224,7 @@ packages:
   '@preact/signals@2.5.1':
     resolution: {integrity: sha512-VPjk5YFt7i11Fi4UK0tzaEe5xLwfhUxXL3l89ocxQ5aPz7bRo8M5+N73LjBMPklyXKYKz6YsNo4Smp8n6nplng==}
     peerDependencies:
-      preact: 10.28.1
+      preact: 10.28.2
 
   '@prefresh/babel-plugin@0.5.2':
     resolution: {integrity: sha512-AOl4HG6dAxWkJ5ndPHBgBa49oo/9bOiJuRDKHLSTyH+Fd9x00shTXpdiTj1W41l6oQIwUOAgJeHMn4QwIDpHkA==}
@@ -4232,7 +4232,7 @@ packages:
   '@prefresh/core@1.5.5':
     resolution: {integrity: sha512-H6GTXUl4V4fe3ijz7yhSa/mZ+pGSOh7XaJb6uP/sQsagBx9yl0D1HKDaeoMQA8Ad2Xm27LqvbitMGSdY9UFSKQ==}
     peerDependencies:
-      preact: 10.28.1
+      preact: 10.28.2
 
   '@prefresh/utils@1.2.1':
     resolution: {integrity: sha512-vq/sIuN5nYfYzvyayXI4C2QkprfNaHUQ9ZX+3xLD8nL3rWyzpxOm1+K7RtMbhd+66QcaISViK7amjnheQ/4WZw==}
@@ -4240,7 +4240,7 @@ packages:
   '@prefresh/vite@2.4.11':
     resolution: {integrity: sha512-/XjURQqdRiCG3NpMmWqE9kJwrg9IchIOWHzulCfqg2sRe/8oQ1g5De7xrk9lbqPIQLn7ntBkKdqWXIj4E9YXyg==}
     peerDependencies:
-      preact: 10.28.1
+      preact: 10.28.2
       vite: '>=2.0.0'
 
   '@promptbook/utils@0.69.5':
@@ -11866,16 +11866,16 @@ packages:
   preact-iso@2.11.1:
     resolution: {integrity: sha512-rLy0RmzP/hrDjnFdnEblxFgKtzUj4njkHrpGJBGS7S4QuYw1zv0lA38qsWpeAAB10JAz/hF2CsHrLen9ufCtbw==}
     peerDependencies:
-      preact: 10.28.1
+      preact: 10.28.2
       preact-render-to-string: '>=6.4.0'
 
   preact-render-to-string@6.6.5:
     resolution: {integrity: sha512-O6MHzYNIKYaiSX3bOw0gGZfEbOmlIDtDfWwN1JJdc/T3ihzRT6tGGSEWE088dWrEDGa1u7101q+6fzQnO9XCPA==}
     peerDependencies:
-      preact: 10.28.1
+      preact: 10.28.2
 
-  preact@10.28.1:
-    resolution: {integrity: sha512-u1/ixq/lVQI0CakKNvLDEcW5zfCjUQfZdK9qqWuIJtsezuyG6pk9TWj75GMuI/EzRSZB/VAE43sNWWZfiy8psw==}
+  preact@10.28.2:
+    resolution: {integrity: sha512-lbteaWGzGHdlIuiJ0l2Jq454m6kcpI1zNje6d8MlGAFlYvP2GO4ibnat7P74Esfz4sPTdM6UxtTwh/d3pwM9JA==}
 
   prebuild-install@7.1.3:
     resolution: {integrity: sha512-8Mf2cbV7x1cXPUILADGI3wuhfqWvtiLA1iclTDbFRZkgRQS0NqsPZphna9V+HyTEadheuPmjaJMsbzKQFOzLug==}
@@ -12151,8 +12151,8 @@ packages:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
 
-  react-window@2.2.4:
-    resolution: {integrity: sha512-FiZsQHvt2qbnTz6cN+/FXvX62v2xukQ+AajUivkm/Ivdp9rnU3bp0B1eDcCNpQXNaDBdqkEVGNYHlvIUGU9yBw==}
+  react-window@2.2.5:
+    resolution: {integrity: sha512-6viWvPSZvVuMIe9hrl4IIZoVfO/npiqOb03m4Z9w+VihmVzBbiudUrtUqDpsWdKvd/Ai31TCR25CBcFFAUm28w==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
@@ -12628,8 +12628,9 @@ packages:
     engines: {node: '>=14.0.0'}
     hasBin: true
 
-  sax@1.4.3:
-    resolution: {integrity: sha512-yqYn1JhPczigF94DMS+shiDMjDowYO6y9+wB/4WgO0Y19jWYk0lQ4tuG5KI7kj4FTp1wxPj5IFfcrz/s1c3jjQ==}
+  sax@1.4.4:
+    resolution: {integrity: sha512-1n3r/tGXO6b6VXMdFT54SHzT9ytu9yr7TaELowdYpMqY/Ao7EnlQGmAQ1+RatX7Tkkdm6hONI2owqNx2aZj5Sw==}
+    engines: {node: '>=11.0.0'}
 
   saxes@5.0.1:
     resolution: {integrity: sha512-5LBh1Tls8c9xgGjw3QrMwETmTMVk0oFgvrFSvWx62llR2hcEInrKNZ2GZCCuuy2lvWrdl5jhbpeqc5hRYKFOcw==}
@@ -13680,8 +13681,8 @@ packages:
     peerDependencies:
       typedoc: ^0.28.1
 
-  typedoc@0.28.15:
-    resolution: {integrity: sha512-mw2/2vTL7MlT+BVo43lOsufkkd2CJO4zeOSuWQQsiXoV2VuEn7f6IZp2jsUDPmBMABpgR0R5jlcJ2OGEFYmkyg==}
+  typedoc@0.28.16:
+    resolution: {integrity: sha512-x4xW77QC3i5DUFMBp0qjukOTnr/sSg+oEs86nB3LjDslvAmwe/PUGDWbe3GrIqt59oTqoXK5GRK9tAa0sYMiog==}
     engines: {node: '>= 18', pnpm: '>= 10'}
     hasBin: true
     peerDependencies:
@@ -14014,46 +14015,6 @@ packages:
     resolution: {integrity: sha512-xWOhb8Ef2zoJIiinYVunIf3omRfUbEXcPEvrkQcrDpJ2yjDokxhvQ26eSJbkthRhymntWx6816jpATrJphh+ug==}
     peerDependencies:
       vite: 5.x || 6.x || 7.x
-
-  vite@7.3.0:
-    resolution: {integrity: sha512-dZwN5L1VlUBewiP6H9s2+B3e3Jg96D0vzN+Ry73sOefebhYr9f94wwkMNN/9ouoU8pV1BqA1d1zGk8928cx0rg==}
-    engines: {node: ^20.19.0 || >=22.12.0}
-    hasBin: true
-    peerDependencies:
-      '@types/node': ^20.19.0 || >=22.12.0
-      jiti: '>=1.21.0'
-      less: ^4.0.0
-      lightningcss: ^1.21.0
-      sass: ^1.70.0
-      sass-embedded: ^1.70.0
-      stylus: '>=0.54.8'
-      sugarss: ^5.0.0
-      terser: ^5.16.0
-      tsx: ^4.8.1
-      yaml: ^2.4.2
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
-      jiti:
-        optional: true
-      less:
-        optional: true
-      lightningcss:
-        optional: true
-      sass:
-        optional: true
-      sass-embedded:
-        optional: true
-      stylus:
-        optional: true
-      sugarss:
-        optional: true
-      terser:
-        optional: true
-      tsx:
-        optional: true
-      yaml:
-        optional: true
 
   vite@7.3.1:
     resolution: {integrity: sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA==}
@@ -14428,8 +14389,8 @@ packages:
       utf-8-validate:
         optional: true
 
-  ws@8.18.3:
-    resolution: {integrity: sha512-PEIGCY5tSlUt50cqyMXfCzX+oOPqN0vuGqWzbcJ2xvnkzkq46oOpz7dQaTDBdfICb4N14+GARUDw2XV2N4tvzg==}
+  ws@8.19.0:
+    resolution: {integrity: sha512-blAT2mjOEIi0ZzruJfIhb3nps74PRWTCz1IjglWEEpQl5XS/UNama6u2/rjFkDDouqr4L67ry+1aGIALViWjDg==}
     engines: {node: '>=10.0.0'}
     peerDependencies:
       bufferutil: ^4.0.1
@@ -15787,6 +15748,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-highlight@47.3.0':
     dependencies:
@@ -15795,6 +15758,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-horizontal-line@47.3.0':
     dependencies:
@@ -15804,6 +15769,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       '@ckeditor/ckeditor5-widget': 47.3.0
       ckeditor5: 47.3.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-html-embed@47.3.0':
     dependencies:
@@ -15813,6 +15780,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       '@ckeditor/ckeditor5-widget': 47.3.0
       ckeditor5: 47.3.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-html-support@47.3.0':
     dependencies:
@@ -15828,6 +15797,8 @@ snapshots:
       '@ckeditor/ckeditor5-widget': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-icons@47.3.0': {}
 
@@ -15845,6 +15816,8 @@ snapshots:
       '@ckeditor/ckeditor5-widget': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-import-word@47.3.0':
     dependencies:
@@ -15970,8 +15943,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-merge-fields@47.3.0':
     dependencies:
@@ -15992,6 +15963,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-operations-compressor@47.3.0':
     dependencies:
@@ -17388,7 +17361,7 @@ snapshots:
 
   '@file-type/xml@0.4.3':
     dependencies:
-      sax: 1.4.3
+      sax: 1.4.4
       strtok3: 10.2.2
 
   '@floating-ui/core@1.6.9':
@@ -17578,7 +17551,7 @@ snapshots:
 
   '@fullcalendar/core@6.1.20':
     dependencies:
-      preact: 10.28.1
+      preact: 10.28.2
 
   '@fullcalendar/daygrid@6.1.20(@fullcalendar/core@6.1.20)':
     dependencies:
@@ -18607,12 +18580,12 @@ snapshots:
 
   '@popperjs/core@2.11.8': {}
 
-  '@preact/preset-vite@2.10.2(@babel/core@7.28.0)(preact@10.28.1)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))':
+  '@preact/preset-vite@2.10.2(@babel/core@7.28.0)(preact@10.28.2)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))':
     dependencies:
       '@babel/core': 7.28.0
       '@babel/plugin-transform-react-jsx': 7.27.1(@babel/core@7.28.0)
       '@babel/plugin-transform-react-jsx-development': 7.27.1(@babel/core@7.28.0)
-      '@prefresh/vite': 2.4.11(preact@10.28.1)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
+      '@prefresh/vite': 2.4.11(preact@10.28.2)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
       '@rollup/pluginutils': 4.2.1
       babel-plugin-transform-hook-names: 1.0.2(@babel/core@7.28.0)
       debug: 4.4.3(supports-color@8.1.1)
@@ -18625,27 +18598,27 @@ snapshots:
 
   '@preact/signals-core@1.12.1': {}
 
-  '@preact/signals@2.5.1(preact@10.28.1)':
+  '@preact/signals@2.5.1(preact@10.28.2)':
     dependencies:
       '@preact/signals-core': 1.12.1
-      preact: 10.28.1
+      preact: 10.28.2
 
   '@prefresh/babel-plugin@0.5.2': {}
 
-  '@prefresh/core@1.5.5(preact@10.28.1)':
+  '@prefresh/core@1.5.5(preact@10.28.2)':
     dependencies:
-      preact: 10.28.1
+      preact: 10.28.2
 
   '@prefresh/utils@1.2.1': {}
 
-  '@prefresh/vite@2.4.11(preact@10.28.1)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))':
+  '@prefresh/vite@2.4.11(preact@10.28.2)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))':
     dependencies:
       '@babel/core': 7.28.0
       '@prefresh/babel-plugin': 0.5.2
-      '@prefresh/core': 1.5.5(preact@10.28.1)
+      '@prefresh/core': 1.5.5(preact@10.28.2)
       '@prefresh/utils': 1.2.1
       '@rollup/pluginutils': 4.2.1
-      preact: 10.28.1
+      preact: 10.28.2
       vite: 7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1)
     transitivePeerDependencies:
       - supports-color
@@ -20695,7 +20668,7 @@ snapshots:
   '@uploadcare/upload-client@6.14.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)':
     dependencies:
       form-data: 4.0.4
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.19.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -20703,7 +20676,7 @@ snapshots:
   '@uploadcare/upload-client@6.17.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)':
     dependencies:
       form-data: 4.0.4
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.19.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -20729,7 +20702,7 @@ snapshots:
       sirv: 3.0.2
       tinyrainbow: 3.0.3
       vitest: 4.0.16(@opentelemetry/api@1.9.0)(@types/node@24.10.7)(@vitest/browser-webdriverio@4.0.16)(@vitest/ui@4.0.16)(happy-dom@20.0.11)(jiti@2.6.1)(jsdom@26.1.0(bufferutil@4.0.9)(utf-8-validate@6.0.5))(less@4.1.3)(lightningcss@1.30.2)(msw@2.7.5(@types/node@24.10.7)(typescript@5.9.3))(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1)
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.19.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
     transitivePeerDependencies:
       - bufferutil
       - msw
@@ -24130,7 +24103,7 @@ snapshots:
     dependencies:
       d3-selection: 3.0.0
       kapsule: 1.16.3
-      preact: 10.28.1
+      preact: 10.28.2
 
   flora-colossus@2.0.0:
     dependencies:
@@ -25522,7 +25495,7 @@ snapshots:
       whatwg-encoding: 3.1.1
       whatwg-mimetype: 4.0.0
       whatwg-url: 14.2.0
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.19.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - bufferutil
@@ -26844,7 +26817,7 @@ snapshots:
   needle@3.3.1:
     dependencies:
       iconv-lite: 0.6.3
-      sax: 1.4.3
+      sax: 1.4.4
     optional: true
 
   negotiator@0.6.3: {}
@@ -27172,9 +27145,9 @@ snapshots:
       is-inside-container: 1.0.0
       wsl-utils: 0.1.0
 
-  openai@6.16.0(ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5))(zod@4.1.12):
+  openai@6.16.0(ws@8.19.0(bufferutil@4.0.9)(utf-8-validate@6.0.5))(zod@4.1.12):
     optionalDependencies:
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.19.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
       zod: 4.1.12
 
   openapi-sampler@1.6.2:
@@ -27974,16 +27947,16 @@ snapshots:
 
   potpack@2.1.0: {}
 
-  preact-iso@2.11.1(preact-render-to-string@6.6.5(preact@10.28.1))(preact@10.28.1):
+  preact-iso@2.11.1(preact-render-to-string@6.6.5(preact@10.28.2))(preact@10.28.2):
     dependencies:
-      preact: 10.28.1
-      preact-render-to-string: 6.6.5(preact@10.28.1)
+      preact: 10.28.2
+      preact-render-to-string: 6.6.5(preact@10.28.2)
 
-  preact-render-to-string@6.6.5(preact@10.28.1):
+  preact-render-to-string@6.6.5(preact@10.28.2):
     dependencies:
-      preact: 10.28.1
+      preact: 10.28.2
 
-  preact@10.28.1: {}
+  preact@10.28.2: {}
 
   prebuild-install@7.1.3:
     dependencies:
@@ -28277,7 +28250,7 @@ snapshots:
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
 
-  react-window@2.2.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+  react-window@2.2.5(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
@@ -28877,7 +28850,7 @@ snapshots:
       '@parcel/watcher': 2.5.1
     optional: true
 
-  sax@1.4.3: {}
+  sax@1.4.4: {}
 
   saxes@5.0.1:
     dependencies:
@@ -29835,7 +29808,7 @@ snapshots:
       css-what: 6.2.2
       csso: 5.0.5
       picocolors: 1.1.1
-      sax: 1.4.3
+      sax: 1.4.4
 
   swagger-jsdoc@6.2.8(openapi-types@12.1.3):
     dependencies:
@@ -30290,11 +30263,11 @@ snapshots:
 
   typedarray@0.0.6: {}
 
-  typedoc-plugin-missing-exports@4.1.2(typedoc@0.28.15(typescript@5.9.3)):
+  typedoc-plugin-missing-exports@4.1.2(typedoc@0.28.16(typescript@5.9.3)):
     dependencies:
-      typedoc: 0.28.15(typescript@5.9.3)
+      typedoc: 0.28.16(typescript@5.9.3)
 
-  typedoc@0.28.15(typescript@5.9.3):
+  typedoc@0.28.16(typescript@5.9.3):
     dependencies:
       '@gerrit0/mini-shiki': 3.17.0
       lunr: 2.3.9
@@ -30619,26 +30592,6 @@ snapshots:
       stack-trace: 1.0.0-pre2
       vite: 7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1)
 
-  vite@7.3.0(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1):
-    dependencies:
-      esbuild: 0.27.2
-      fdir: 6.5.0(picomatch@4.0.3)
-      picomatch: 4.0.3
-      postcss: 8.5.6
-      rollup: 4.52.0
-      tinyglobby: 0.2.15
-    optionalDependencies:
-      '@types/node': 24.10.7
-      fsevents: 2.3.3
-      jiti: 2.6.1
-      less: 4.1.3
-      lightningcss: 1.30.2
-      sass: 1.91.0
-      sass-embedded: 1.91.0
-      terser: 5.44.0
-      tsx: 4.21.0
-      yaml: 2.8.1
-
   vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1):
     dependencies:
       esbuild: 0.27.2
@@ -30786,7 +30739,7 @@ snapshots:
       deepmerge-ts: 7.1.5
       https-proxy-agent: 7.0.6
       undici: 6.21.3
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.19.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
     transitivePeerDependencies:
       - bare-buffer
       - bufferutil
@@ -30875,7 +30828,7 @@ snapshots:
       sockjs: 0.3.24
       spdy: 4.0.2
       webpack-dev-middleware: 7.4.3(webpack@5.101.3(@swc/core@1.11.29(@swc/helpers@0.5.17))(esbuild@0.27.2))
-      ws: 8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5)
+      ws: 8.19.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
     optionalDependencies:
       webpack: 5.101.3(@swc/core@1.11.29(@swc/helpers@0.5.17))(esbuild@0.27.2)
     transitivePeerDependencies:
@@ -31122,7 +31075,7 @@ snapshots:
       bufferutil: 4.0.9
       utf-8-validate: 6.0.5
 
-  ws@8.18.3(bufferutil@4.0.9)(utf-8-validate@6.0.5):
+  ws@8.19.0(bufferutil@4.0.9)(utf-8-validate@6.0.5):
     optionalDependencies:
       bufferutil: 4.0.9
       utf-8-validate: 6.0.5
@@ -31140,12 +31093,12 @@ snapshots:
 
   xml2js@0.5.0:
     dependencies:
-      sax: 1.4.3
+      sax: 1.4.4
       xmlbuilder: 11.0.1
 
   xml2js@0.6.2:
     dependencies:
-      sax: 1.4.3
+      sax: 1.4.4
       xmlbuilder: 11.0.1
 
   xmlbuilder@11.0.1: {}

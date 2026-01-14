@@ -443,7 +443,10 @@
     "unhoist-note": "ノートのホイストを解除",
     "edit-branch-prefix": "ブランチの接頭辞を編集",
     "archive": "アーカイブ",
-    "unarchive": "アーカイブ解除"
+    "unarchive": "アーカイブ解除",
+    "open-in-a-new-window": "新しいウィンドウで開く",
+    "hide-subtree": "サブツリーを非表示",
+    "show-subtree": "サブツリーを表示"
   },
   "zen_mode": {
     "button_exit": "禅モードを退出"
@@ -568,7 +571,8 @@
     "expand_tooltip": "このコレクションの直下の子（1階層下）を展開します。その他のオプションについては、右側の矢印を押してください。",
     "expand_first_level": "直下の子を展開",
     "expand_nth_level": "{{depth}} 階層下まで展開",
-    "expand_all_levels": "すべての階層を展開"
+    "expand_all_levels": "すべての階層を展開",
+    "hide_child_notes": "ツリー内の子ノートを非表示"
   },
   "note_types": {
     "geo-map": "ジオマップ",
@@ -1248,7 +1252,11 @@
     "clone-indicator-tooltip": "このノートには {{- count}} 個の親があります: {{- parents}}",
     "clone-indicator-tooltip-single": "このノートは複製されています (親が 1 件追加: {{- parent}})",
     "shared-indicator-tooltip": "このノートは公開されています",
-    "shared-indicator-tooltip-with-url": "このノートは以下で公開されています: {{- url}}"
+    "shared-indicator-tooltip-with-url": "このノートは以下で公開されています: {{- url}}",
+    "subtree-hidden-tooltip_other": "{{count}} 個の子ノートがツリーで非表示になっています",
+    "subtree-hidden-moved-title": "{{title}} に追加されました",
+    "subtree-hidden-moved-description-collection": "このコレクションはツリー内の子ノートを非表示にします。",
+    "subtree-hidden-moved-description-other": "このノートのツリーでは子ノートは非表示になっています。"
   },
   "bulk_actions": {
     "bulk_actions": "一括操作",

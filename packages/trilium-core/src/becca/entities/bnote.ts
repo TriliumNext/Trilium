@@ -1602,7 +1602,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
     // Limit the number of Snapshots to revisionSnapshotNumberLimit
     // Delete older Snapshots that exceed the limit
     eraseExcessRevisionSnapshots() {
-        // lable has a higher priority
+        // label has a higher priority
         let revisionSnapshotNumberLimit = parseInt(this.getLabelValue("versioningLimit") ?? "");
         if (!Number.isInteger(revisionSnapshotNumberLimit)) {
             revisionSnapshotNumberLimit = parseInt(optionService.getOption("revisionSnapshotNumberLimit"));
