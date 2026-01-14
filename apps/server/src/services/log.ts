@@ -1,12 +1,12 @@
-"use strict";
-
+import { getLog } from "@triliumnext/core/src/services/log.js";
 import type { Request, Response } from "express";
 import fs from "fs";
-import path from "path";
 import { EOL } from "os";
-import dataDir from "./data_dir.js";
+import path from "path";
+
 import cls from "./cls.js";
 import config, { LOGGING_DEFAULT_RETENTION_DAYS } from "./config.js";
+import dataDir from "./data_dir.js";
 
 if (!fs.existsSync(dataDir.LOG_DIR)) {
     fs.mkdirSync(dataDir.LOG_DIR, 0o700);
@@ -40,7 +40,7 @@ async function cleanupOldLogFiles() {
             retentionDays = customRetentionDays;
         } else if (customRetentionDays <= -1){
             info(`Log cleanup: keeping all log files, as specified by configuration.`);
-            return
+            return;
         }
 
         const cutoffDate = new Date();
@@ -150,11 +150,11 @@ function log(str: string | Error) {
 }
 
 function info(message: string | Error) {
-    log(message);
+    getLog().info(message);
 }
 
 function error(message: string | Error | unknown) {
-    log(`ERROR: ${message}`);
+    getLog().error(message);
 }
 
 const requestBlacklist = ["/app", "/images", "/stylesheets", "/api/recent-notes"];
@@ -170,7 +170,7 @@ function request(req: Request, res: Response, timeMs: number, responseLength: nu
         return;
     }
 
-    info((timeMs >= 10 ? "Slow " : "") + `${res.statusCode} ${req.method} ${req.url} with ${responseLength} bytes took ${timeMs}ms`);
+    info(`${timeMs >= 10 ? "Slow " : ""  }${res.statusCode} ${req.method} ${req.url} with ${responseLength} bytes took ${timeMs}ms`);
 }
 
 function pad(num: number) {
@@ -184,9 +184,9 @@ function padMilli(num: number) {
         return `00${num}`;
     } else if (num < 100) {
         return `0${num}`;
-    } else {
-        return num.toString();
     }
+    return num.toString();
+
 }
 
 function formatTime(millisSinceMidnight: number) {

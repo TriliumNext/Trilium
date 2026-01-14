@@ -1,11 +1,12 @@
-import sanitizeHtml from 'sanitize-html';
+import { sanitize } from '@triliumnext/core';
+
 import log from '../../../log.js';
+import type { Message } from '../../ai_interface.js';
 import { CONTEXT_PROMPTS, FORMATTING_PROMPTS } from '../../constants/llm_prompt_constants.js';
 import { LLM_CONSTANTS } from '../../constants/provider_constants.js';
 import type { IContextFormatter, NoteSearchResult } from '../../interfaces/context_interfaces.js';
-import modelCapabilitiesService from '../../model_capabilities_service.js';
 import { calculateAvailableContextSize } from '../../interfaces/model_capabilities.js';
-import type { Message } from '../../ai_interface.js';
+import modelCapabilitiesService from '../../model_capabilities_service.js';
 
 // Use constants from the centralized file
 // const CONTEXT_WINDOW = {
@@ -44,7 +45,7 @@ export class ContextFormatter implements IContextFormatter {
 
         try {
             // Get model name from provider
-            let modelName = providerId;
+            const modelName = providerId;
 
             // Look up model capabilities
             const modelCapabilities = await modelCapabilitiesService.getChatModelCapabilities(modelName);
@@ -59,9 +60,9 @@ export class ContextFormatter implements IContextFormatter {
             // Use the calculated size or fall back to constants
             const maxTotalLength = availableContextSize || (
                 providerId === 'openai' ? LLM_CONSTANTS.CONTEXT_WINDOW.OPENAI :
-                providerId === 'anthropic' ? LLM_CONSTANTS.CONTEXT_WINDOW.ANTHROPIC :
-                providerId === 'ollama' ? LLM_CONSTANTS.CONTEXT_WINDOW.OLLAMA :
-                LLM_CONSTANTS.CONTEXT_WINDOW.DEFAULT
+                    providerId === 'anthropic' ? LLM_CONSTANTS.CONTEXT_WINDOW.ANTHROPIC :
+                        providerId === 'ollama' ? LLM_CONSTANTS.CONTEXT_WINDOW.OLLAMA :
+                            LLM_CONSTANTS.CONTEXT_WINDOW.DEFAULT
             );
 
             // DEBUG: Log context window size
@@ -239,11 +240,11 @@ export class ContextFormatter implements IContextFormatter {
                     // Handle line breaks
                     .replace(/<br\s*\/?>/gi, '\n');
 
-                // Then use sanitize-html to remove remaining HTML
-                const sanitized = sanitizeHtml(contentWithMarkdown, {
+                // Then sanitize to remove remaining HTML
+                const sanitized = sanitize.sanitizeHtmlCustom(contentWithMarkdown, {
                     allowedTags: [], // No tags allowed (strip all HTML)
                     allowedAttributes: {}, // No attributes allowed
-                    textFilter: function(text) {
+                    textFilter(text) {
                         return text
                             .replace(/&nbsp;/g, ' ')
                             .replace(/&lt;/g, '<')
@@ -264,7 +265,7 @@ export class ContextFormatter implements IContextFormatter {
             if (type === 'code' || mime?.includes('application/')) {
                 // For code, limit to a reasonable size
                 if (content.length > 2000) {
-                    return content.substring(0, 2000) + '...\n\n[Content truncated for brevity]';
+                    return `${content.substring(0, 2000)  }...\n\n[Content truncated for brevity]`;
                 }
                 return content;
             }
@@ -288,7 +289,7 @@ export class ContextFormatter implements IContextFormatter {
 
         try {
             // First remove any HTML
-            let plaintext = sanitizeHtml(content, {
+            let plaintext = sanitize.sanitizeHtmlCustom(content, {
                 allowedTags: [],
                 allowedAttributes: {},
                 textFilter: (text) => text

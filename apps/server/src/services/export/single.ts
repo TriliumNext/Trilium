@@ -1,14 +1,15 @@
-"use strict";
 
-import mimeTypes from "mime-types";
-import html from "html";
-import { getContentDisposition, escapeHtml } from "../utils.js";
-import mdService from "./markdown.js";
-import becca from "../../becca/becca.js";
-import type TaskContext from "../task_context.js";
-import type BBranch from "../../becca/entities/bbranch.js";
+
 import type { Response } from "express";
+import html from "html";
+import mimeTypes from "mime-types";
+
+import becca from "../../becca/becca.js";
+import type BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
+import type TaskContext from "../task_context.js";
+import { escapeHtml,getContentDisposition } from "../utils.js";
+import mdService from "./markdown.js";
 import type { ExportFormat } from "./zip/abstract_provider.js";
 
 function exportSingleNote(taskContext: TaskContext<"export">, branch: BBranch, format: ExportFormat, res: Response) {
@@ -34,7 +35,7 @@ function exportSingleNote(taskContext: TaskContext<"export">, branch: BBranch, f
     taskContext.taskSucceeded(null);
 }
 
-export function mapByNoteType(note: BNote, content: string | Buffer<ArrayBufferLike>, format: ExportFormat) {
+export function mapByNoteType(note: BNote, content: string | Uint8Array, format: ExportFormat) {
     let payload, extension, mime;
 
     if (typeof content !== "string") {

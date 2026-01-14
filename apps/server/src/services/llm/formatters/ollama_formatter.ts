@@ -1,15 +1,15 @@
+import { sanitize } from '@triliumnext/core';
+
+import log from '../../log.js';
 import type { Message } from '../ai_interface.js';
-import { BaseMessageFormatter } from './base_formatter.js';
-import sanitizeHtml from 'sanitize-html';
+import {
+    FORMATTER_LOGS,
+    HTML_ALLOWED_ATTRIBUTES,
+    HTML_ALLOWED_TAGS,
+    OLLAMA_CLEANING} from '../constants/formatter_constants.js';
 import { PROVIDER_PROMPTS } from '../constants/llm_prompt_constants.js';
 import { LLM_CONSTANTS } from '../constants/provider_constants.js';
-import {
-    HTML_ALLOWED_TAGS,
-    HTML_ALLOWED_ATTRIBUTES,
-    OLLAMA_CLEANING,
-    FORMATTER_LOGS
-} from '../constants/formatter_constants.js';
-import log from '../../log.js';
+import { BaseMessageFormatter } from './base_formatter.js';
 
 /**
  * Ollama-specific message formatter
@@ -196,7 +196,7 @@ export class OllamaMessageFormatter extends BaseMessageFormatter {
 
             // Then apply Ollama-specific aggressive cleaning
             // Remove any remaining HTML using sanitizeHtml while keeping our markers
-            let plaintext = sanitizeHtml(sanitized, {
+            let plaintext = sanitize.sanitizeHtmlCustom(sanitized, {
                 allowedTags: HTML_ALLOWED_TAGS.NONE,
                 allowedAttributes: HTML_ALLOWED_ATTRIBUTES.NONE,
                 textFilter: (text) => text

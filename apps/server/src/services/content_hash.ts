@@ -1,9 +1,7 @@
-"use strict";
+import { erase as eraseService,utils } from "@triliumnext/core";
 
-import sql from "./sql.js";
-import { hash } from "./utils.js";
 import log from "./log.js";
-import eraseService from "./erase.js";
+import sql from "./sql.js";
 
 type SectorHash = Record<string, string>;
 
@@ -48,7 +46,7 @@ function getEntityHashes() {
 
     for (const entityHashMap of Object.values(hashMap)) {
         for (const key in entityHashMap) {
-            entityHashMap[key] = hash(entityHashMap[key]);
+            entityHashMap[key] = utils.hash(entityHashMap[key]);
         }
     }
 

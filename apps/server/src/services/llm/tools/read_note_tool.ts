@@ -4,16 +4,16 @@
  * This tool allows the LLM to read the content of a specific note.
  */
 
-import type { Tool, ToolHandler } from './tool_interfaces.js';
-import log from '../../log.js';
 import becca from '../../../becca/becca.js';
+import log from '../../log.js';
+import type { Tool, ToolHandler } from './tool_interfaces.js';
 
 // Define type for note response
 interface NoteResponse {
     noteId: string;
     title: string;
     type: string;
-    content: string | Buffer;
+    content: string | Uint8Array;
     attributes?: Array<{
         name: string;
         value: string;

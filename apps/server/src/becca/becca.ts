@@ -1,7 +1,2 @@
-"use strict";
-
-import Becca from "./becca-interface.js";
-
-const becca = new Becca();
-
+import { becca } from "@triliumnext/core";
 export default becca;

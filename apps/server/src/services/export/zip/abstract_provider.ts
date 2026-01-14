@@ -52,7 +52,7 @@ export abstract class ZipExportProvider {
     }
 
     abstract prepareMeta(metaFile: NoteMetaFile): void;
-    abstract prepareContent(title: string, content: string | Buffer, noteMeta: NoteMeta, note: BNote | undefined, branch: BBranch): string | Buffer;
+    abstract prepareContent(title: string, content: string | Uint8Array, noteMeta: NoteMeta, note: BNote | undefined, branch: BBranch): string | Uint8Array;
     abstract afterDone(rootMeta: NoteMeta): void;
 
     /**

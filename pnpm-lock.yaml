@@ -516,15 +516,15 @@ importers:
       '@anthropic-ai/sdk':
         specifier: 0.71.2
         version: 0.71.2(zod@4.1.12)
-      '@braintree/sanitize-url':
-        specifier: 7.1.1
-        version: 7.1.1
       '@electron/remote':
         specifier: 2.1.3
         version: 2.1.3(electron@39.2.7)
       '@triliumnext/commons':
         specifier: workspace:*
         version: link:../../packages/commons
+      '@triliumnext/core':
+        specifier: workspace:*
+        version: link:../../packages/trilium-core
       '@triliumnext/express-partial-content':
         specifier: workspace:*
         version: link:../../packages/express-partial-content
@@ -555,9 +555,6 @@ importers:
       '@types/ejs':
         specifier: 3.1.5
         version: 3.1.5
-      '@types/escape-html':
-        specifier: 1.0.4
-        version: 1.0.4
       '@types/express-http-proxy':
         specifier: 1.6.7
         version: 1.6.7
@@ -573,18 +570,12 @@ importers:
       '@types/ini':
         specifier: 4.1.1
         version: 4.1.1
-      '@types/mime-types':
-        specifier: 3.0.1
-        version: 3.0.1
       '@types/multer':
         specifier: 2.0.0
         version: 2.0.0
       '@types/safe-compare':
         specifier: 1.1.2
         version: 1.1.2
-      '@types/sanitize-html':
-        specifier: 2.16.0
-        version: 2.16.0
       '@types/sax':
         specifier: 1.2.7
         version: 1.2.7
@@ -666,9 +657,6 @@ importers:
       electron-window-state:
         specifier: 5.0.3
         version: 5.0.3
-      escape-html:
-        specifier: 1.0.3
-        version: 1.0.3
       express:
         specifier: 5.2.1
         version: 5.2.1
@@ -732,9 +720,6 @@ importers:
       marked:
         specifier: 17.0.1
         version: 17.0.1
-      mime-types:
-        specifier: 3.0.2
-        version: 3.0.2
       multer:
         specifier: 2.0.2
         version: 2.0.2
@@ -753,12 +738,6 @@ importers:
       safe-compare:
         specifier: 1.1.4
         version: 1.1.4
-      sanitize-filename:
-        specifier: 1.6.3
-        version: 1.6.3
-      sanitize-html:
-        specifier: 2.17.0
-        version: 2.17.0
       sax:
         specifier: 1.4.4
         version: 1.4.4
@@ -789,9 +768,6 @@ importers:
       turndown:
         specifier: 7.2.2
         version: 7.2.2
-      unescape:
-        specifier: 1.0.1
-        version: 1.0.1
       vite:
         specifier: 7.3.1
         version: 7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1)
@@ -1443,6 +1419,40 @@ importers:
       karma-jasmine:
         specifier: 5.1.0
         version: 5.1.0(karma@6.4.4(bufferutil@4.0.9)(utf-8-validate@6.0.5))
+
+  packages/trilium-core:
+    dependencies:
+      '@braintree/sanitize-url':
+        specifier: 7.1.1
+        version: 7.1.1
+      '@triliumnext/commons':
+        specifier: workspace:*
+        version: link:../commons
+      escape-html:
+        specifier: 1.0.3
+        version: 1.0.3
+      mime-types:
+        specifier: 3.0.2
+        version: 3.0.2
+      sanitize-filename:
+        specifier: 1.6.3
+        version: 1.6.3
+      sanitize-html:
+        specifier: 2.17.0
+        version: 2.17.0
+      unescape:
+        specifier: 1.0.1
+        version: 1.0.1
+    devDependencies:
+      '@types/escape-html':
+        specifier: 1.0.4
+        version: 1.0.4
+      '@types/mime-types':
+        specifier: 3.0.1
+        version: 3.0.1
+      '@types/sanitize-html':
+        specifier: 2.16.0
+        version: 2.16.0
 
   packages/turndown-plugin-gfm:
     devDependencies:
@@ -11648,10 +11658,6 @@ packages:
     resolution: {integrity: sha512-OCVPnIObs4N29kxTjzLfUryOkvZEq+pf8jTF0lg8E7uETuWHA+v7j3c/xJmiqpX450191LlmZfUKkXxkTry7nA==}
     engines: {node: ^10 || ^12 || >=14}
 
-  postcss@8.5.3:
-    resolution: {integrity: sha512-dle9A3yYxlBSrt8Fu+IpjGT8SY8hN0mlaA6GY8t0P5PjIOZemULz/E2Bnm/2dcUOena75OTNkHI76uZBNUUq3A==}
-    engines: {node: ^10 || ^12 || >=14}
-
   postcss@8.5.6:
     resolution: {integrity: sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==}
     engines: {node: ^10 || ^12 || >=14}
@@ -15166,6 +15172,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       '@ckeditor/ckeditor5-widget': 47.3.0
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-cloud-services@47.3.0':
     dependencies:
@@ -15423,8 +15431,6 @@ snapshots:
       '@ckeditor/ckeditor5-table': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-emoji@47.3.0':
     dependencies:
@@ -15481,8 +15487,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-export-word@47.3.0':
     dependencies:
@@ -15644,8 +15648,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-indent@47.3.0':
     dependencies:
@@ -15668,8 +15670,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-line-height@47.3.0':
     dependencies:
@@ -15694,8 +15694,6 @@ snapshots:
       '@ckeditor/ckeditor5-widget': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-list-multi-level@47.3.0':
     dependencies:
@@ -15719,8 +15717,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-markdown-gfm@47.3.0':
     dependencies:
@@ -15758,8 +15754,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       '@ckeditor/ckeditor5-widget': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-mention@47.3.0(patch_hash=5981fb59ba35829e4dff1d39cf771000f8a8fdfa7a34b51d8af9549541f2d62d)':
     dependencies:
@@ -15783,8 +15777,6 @@ snapshots:
       '@ckeditor/ckeditor5-widget': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-minimap@47.3.0':
     dependencies:
@@ -15793,8 +15785,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-operations-compressor@47.3.0':
     dependencies:
@@ -15849,8 +15839,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       '@ckeditor/ckeditor5-widget': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-pagination@47.3.0':
     dependencies:
@@ -15884,8 +15872,6 @@ snapshots:
       '@ckeditor/ckeditor5-core': 47.3.0
       '@ckeditor/ckeditor5-engine': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-real-time-collaboration@47.3.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)':
     dependencies:
@@ -15916,8 +15902,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-restricted-editing@47.3.0':
     dependencies:
@@ -15962,8 +15946,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-slash-command@47.3.0':
     dependencies:
@@ -15976,8 +15958,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-source-editing-enhanced@47.3.0':
     dependencies:
@@ -16004,8 +15984,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-special-characters@47.3.0':
     dependencies:
@@ -16027,8 +16005,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-table@47.3.0':
     dependencies:
@@ -16041,8 +16017,6 @@ snapshots:
       '@ckeditor/ckeditor5-widget': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-template@47.3.0':
     dependencies:
@@ -16153,8 +16127,6 @@ snapshots:
       '@ckeditor/ckeditor5-engine': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-widget@47.3.0':
     dependencies:
@@ -16174,8 +16146,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@codemirror/autocomplete@6.18.6':
     dependencies:
@@ -21699,8 +21669,6 @@ snapshots:
   ckeditor5-collaboration@47.3.0:
     dependencies:
       '@ckeditor/ckeditor5-collaboration-core': 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   ckeditor5-premium-features@47.3.0(bufferutil@4.0.9)(ckeditor5@47.3.0)(utf-8-validate@6.0.5):
     dependencies:
@@ -27797,12 +27765,6 @@ snapshots:
       picocolors: 1.1.1
       source-map-js: 1.2.1
 
-  postcss@8.5.3:
-    dependencies:
-      nanoid: 3.3.11
-      picocolors: 1.1.1
-      source-map-js: 1.2.1
-
   postcss@8.5.6:
     dependencies:
       nanoid: 3.3.11
@@ -28607,7 +28569,7 @@ snapshots:
       htmlparser2: 8.0.2
       is-plain-object: 5.0.0
       parse-srcset: 1.0.2
-      postcss: 8.5.3
+      postcss: 8.5.6
 
   sass-embedded-all-unknown@1.91.0:
     dependencies:

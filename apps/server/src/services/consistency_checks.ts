@@ -1,22 +1,19 @@
-"use strict";
-
-import sql from "./sql.js";
-import sqlInit from "./sql_init.js";
-import log from "./log.js";
-import ws from "./ws.js";
-import syncMutexService from "./sync_mutex.js";
-import cls from "./cls.js";
-import entityChangesService from "./entity_changes.js";
-import optionsService from "./options.js";
-import BBranch from "../becca/entities/bbranch.js";
-import becca from "../becca/becca.js";
-import { hash as getHash, hashedBlobId, randomString } from "../services/utils.js";
-import eraseService from "../services/erase.js";
-import sanitizeAttributeName from "./sanitize_attribute_name.js";
-import noteTypesService from "../services/note_types.js";
 import type { BranchRow } from "@triliumnext/commons";
 import type { EntityChange } from "@triliumnext/commons";
-import becca_loader from "../becca/becca_loader.js";
+import { becca_loader, erase as eraseService, utils } from "@triliumnext/core";
+
+import becca from "../becca/becca.js";
+import BBranch from "../becca/entities/bbranch.js";
+import noteTypesService from "../services/note_types.js";
+import { hashedBlobId, randomString } from "../services/utils.js";
+import cls from "./cls.js";
+import entityChangesService from "./entity_changes.js";
+import log from "./log.js";
+import optionsService from "./options.js";
+import sql from "./sql.js";
+import sqlInit from "./sql_init.js";
+import syncMutexService from "./sync_mutex.js";
+import ws from "./ws.js";
 const noteTypes = noteTypesService.getNoteTypeNames();
 
 class ConsistencyChecks {
@@ -84,11 +81,11 @@ class ConsistencyChecks {
                         }
 
                         return true;
-                    } else {
-                        logError(`Tree cycle detected at parent-child relationship: '${parentNoteId}' - '${noteId}', whole path: '${path}'`);
-
-                        this.unrecoveredConsistencyErrors = true;
                     }
+                    logError(`Tree cycle detected at parent-child relationship: '${parentNoteId}' - '${noteId}', whole path: '${path}'`);
+
+                    this.unrecoveredConsistencyErrors = true;
+
                 } else {
                     const newPath = path.slice();
                     newPath.push(noteId);
@@ -186,7 +183,7 @@ class ConsistencyChecks {
                     if (note.getParentBranches().length === 0) {
                         const newBranch = new BBranch({
                             parentNoteId: "root",
-                            noteId: noteId,
+                            noteId,
                             prefix: "recovered"
                         }).save();
 
@@ -349,7 +346,7 @@ class ConsistencyChecks {
                 if (this.autoFix) {
                     const branch = new BBranch({
                         parentNoteId: "root",
-                        noteId: noteId,
+                        noteId,
                         prefix: "recovered"
                     }).save();
 
@@ -485,18 +482,18 @@ class ConsistencyChecks {
                     if (!blobAlreadyExists) {
                         // manually creating row since this can also affect deleted notes
                         sql.upsert("blobs", "blobId", {
-                            noteId: noteId,
+                            noteId,
                             content: blankContent,
                             utcDateModified: fakeDate,
                             dateModified: fakeDate
                         });
 
-                        const hash = getHash(randomString(10));
+                        const hash = utils.hash(randomString(10));
 
                         entityChangesService.putEntityChange({
                             entityName: "blobs",
                             entityId: blobId,
-                            hash: hash,
+                            hash,
                             isErased: false,
                             utcDateChanged: fakeDate,
                             isSynced: true
@@ -805,7 +802,7 @@ class ConsistencyChecks {
         const attrNames = sql.getColumn<string>(/*sql*/`SELECT DISTINCT name FROM attributes`);
 
         for (const origName of attrNames) {
-            const fixedName = sanitizeAttributeName(origName);
+            const fixedName = utils.sanitizeAttributeName(origName);
 
             if (fixedName !== origName) {
                 if (this.autoFix) {
@@ -911,7 +908,7 @@ class ConsistencyChecks {
 
             ws.sendMessageToAllClients({ type: "consistency-checks-failed" });
         } else {
-            log.info(`All consistency checks passed ` + (this.fixedIssues ? "after some fixes" : "with no errors detected") + ` (took ${elapsedTimeMs}ms)`);
+            log.info(`All consistency checks passed ${  this.fixedIssues ? "after some fixes" : "with no errors detected"  } (took ${elapsedTimeMs}ms)`);
         }
     }
 }

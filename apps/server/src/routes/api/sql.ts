@@ -1,9 +1,8 @@
-"use strict";
-
-import sql from "../../services/sql.js";
-import becca from "../../becca/becca.js";
+import { ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
-import ValidationError from "../../errors/validation_error.js";
+
+import becca from "../../becca/becca.js";
+import sql from "../../services/sql.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
 
 interface Table {

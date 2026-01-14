@@ -1,13 +1,14 @@
-import scriptService from "./script.js";
-import cls from "./cls.js";
-import sqlInit from "./sql_init.js";
-import config from "./config.js";
-import log from "./log.js";
-import attributeService from "../services/attributes.js";
-import hiddenSubtreeService from "./hidden_subtree.js";
+import { protected_session } from "@triliumnext/core";
+
 import type BNote from "../becca/entities/bnote.js";
+import attributeService from "../services/attributes.js";
+import cls from "./cls.js";
+import config from "./config.js";
+import hiddenSubtreeService from "./hidden_subtree.js";
+import log from "./log.js";
 import options from "./options.js";
-import { getLastProtectedSessionOperationDate, isProtectedSessionAvailable, resetDataKey } from "./protected_session.js";
+import scriptService from "./script.js";
+import sqlInit from "./sql_init.js";
 import ws from "./ws.js";
 
 function getRunAtHours(note: BNote): number[] {
@@ -71,9 +72,9 @@ sqlInit.dbReady.then(() => {
 
 function checkProtectedSessionExpiration() {
     const protectedSessionTimeout = options.getOptionInt("protectedSessionTimeout");
-    const lastProtectedSessionOperationDate = getLastProtectedSessionOperationDate();
-    if (isProtectedSessionAvailable() && lastProtectedSessionOperationDate && Date.now() - lastProtectedSessionOperationDate > protectedSessionTimeout * 1000) {
-        resetDataKey();
+    const lastProtectedSessionOperationDate = protected_session.getLastProtectedSessionOperationDate();
+    if (protected_session.isProtectedSessionAvailable() && lastProtectedSessionOperationDate && Date.now() - lastProtectedSessionOperationDate > protectedSessionTimeout * 1000) {
+        protected_session.resetDataKey();
         log.info("Expiring protected session");
         ws.reloadFrontend("leaving protected session");
     }

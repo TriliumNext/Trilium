@@ -1,32 +1,28 @@
-import options from '../options.js';
-import eventService from '../events.js';
-import type { AIService, ChatCompletionOptions, ChatResponse, Message } from './ai_interface.js';
-import { AnthropicService } from './providers/anthropic_service.js';
-import { ContextExtractor } from './context/index.js';
-import agentTools from './context_extractors/index.js';
-import contextService from './context/services/context_service.js';
 import log from '../log.js';
-import { OllamaService } from './providers/ollama_service.js';
-import { OpenAIService } from './providers/openai_service.js';
-
-// Import interfaces
-import type {
-  ServiceProviders,
-  IAIServiceManager,
-  ProviderMetadata
-} from './interfaces/ai_service_interfaces.js';
-import type { NoteSearchResult } from './interfaces/context_interfaces.js';
-
+import options from '../options.js';
+import type { AIService, ChatCompletionOptions, ChatResponse, Message } from './ai_interface.js';
 // Import new configuration system
 import {
-    getSelectedProvider,
-    parseModelIdentifier,
-    isAIEnabled,
-    getDefaultModelForProvider,
     clearConfigurationCache,
+    getDefaultModelForProvider,
+    getSelectedProvider,
+    isAIEnabled,
+    parseModelIdentifier,
     validateConfiguration
 } from './config/configuration_helpers.js';
+import { ContextExtractor } from './context/index.js';
+import contextService from './context/services/context_service.js';
+import agentTools from './context_extractors/index.js';
+// Import interfaces
+import type {
+    IAIServiceManager,
+    ProviderMetadata,
+    ServiceProviders} from './interfaces/ai_service_interfaces.js';
 import type { ProviderType } from './interfaces/configuration_interfaces.js';
+import type { NoteSearchResult } from './interfaces/context_interfaces.js';
+import { AnthropicService } from './providers/anthropic_service.js';
+import { OllamaService } from './providers/ollama_service.js';
+import { OpenAIService } from './providers/openai_service.js';
 
 /**
  * Interface representing relevant note context
@@ -173,7 +169,7 @@ export class AIServiceManager implements IAIServiceManager {
     /**
      * Get list of available providers
      */
-        getAvailableProviders(): ServiceProviders[] {
+    getAvailableProviders(): ServiceProviders[] {
         this.ensureInitialized();
 
         const allProviders: ServiceProviders[] = ['openai', 'anthropic', 'ollama'];

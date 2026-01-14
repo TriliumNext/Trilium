@@ -1,8 +1,7 @@
+import { ForbiddenError, HttpError, NotFoundError } from "@triliumnext/core";
 import type { Application, NextFunction, Request, Response } from "express";
+
 import log from "../services/log.js";
-import NotFoundError from "../errors/not_found_error.js";
-import ForbiddenError from "../errors/forbidden_error.js";
-import HttpError from "../errors/http_error.js";
 
 function register(app: Application) {
 

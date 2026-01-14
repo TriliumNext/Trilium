@@ -1,16 +1,16 @@
-import { WebSocketServer as WebSocketServer, WebSocket } from "ws";
-import { isElectron, randomString } from "./utils.js";
-import log from "./log.js";
-import sql from "./sql.js";
+import { type EntityChange,WebSocketMessage } from "@triliumnext/commons";
+import { AbstractBeccaEntity } from "@triliumnext/core";
+import type { IncomingMessage, Server as HttpServer } from "http";
+import { WebSocket,WebSocketServer } from "ws";
+
+import becca from "../becca/becca.js";
 import cls from "./cls.js";
 import config from "./config.js";
-import syncMutexService from "./sync_mutex.js";
+import log from "./log.js";
 import protectedSessionService from "./protected_session.js";
-import becca from "../becca/becca.js";
-import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
-
-import type { IncomingMessage, Server as HttpServer } from "http";
-import { WebSocketMessage, type EntityChange } from "@triliumnext/commons";
+import sql from "./sql.js";
+import syncMutexService from "./sync_mutex.js";
+import { isElectron, randomString } from "./utils.js";
 
 let webSocketServer!: WebSocketServer;
 let lastSyncedPush: number;
@@ -80,7 +80,7 @@ function sendMessageToAllClients(message: WebSocketMessage) {
         }
 
         let clientCount = 0;
-        webSocketServer.clients.forEach(function each(client) {
+        webSocketServer.clients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(jsonStr);
                 clientCount++;

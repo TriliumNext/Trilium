@@ -1,11 +1,13 @@
-import log from "../services/log.js";
-import fileService from "./api/files.js";
-import scriptService from "../services/script.js";
-import cls from "../services/cls.js";
-import sql from "../services/sql.js";
-import becca from "../becca/becca.js";
 import type { Request, Response, Router } from "express";
-import { safeExtractMessageAndStackFromError, normalizeCustomHandlerPattern } from "../services/utils.js";
+
+import becca from "../becca/becca.js";
+import { namespace } from "../cls_provider.js";
+import cls from "../services/cls.js";
+import log from "../services/log.js";
+import scriptService from "../services/script.js";
+import sql from "../services/sql.js";
+import { normalizeCustomHandlerPattern,safeExtractMessageAndStackFromError } from "../services/utils.js";
+import fileService from "./api/files.js";
 
 function handleRequest(req: Request, res: Response) {
 
@@ -27,7 +29,7 @@ function handleRequest(req: Request, res: Response) {
     // splitPath.map(segment => encodeURIComponent(segment)).join("/")
     // might be safer
 
-    const path = splitPath.join("/")
+    const path = splitPath.join("/");
 
     const attributeIds = sql.getColumn<string>("SELECT attributeId FROM attributes WHERE isDeleted = 0 AND type = 'label' AND name IN ('customRequestHandler', 'customResourceProvider')");
 
@@ -96,8 +98,8 @@ function register(router: Router) {
     // explicitly no CSRF middleware since it's meant to allow integration from external services
 
     router.all("/custom/*path", (req: Request, res: Response, _next) => {
-        cls.namespace.bindEmitter(req);
-        cls.namespace.bindEmitter(res);
+        namespace.bindEmitter(req);
+        namespace.bindEmitter(res);
 
         cls.init(() => handleRequest(req, res));
     });

@@ -1,20 +1,20 @@
+import type { AttributeType } from "@triliumnext/commons";
 import { dayjs } from "@triliumnext/commons";
+import { sanitize, utils } from "@triliumnext/core";
 import sax from "sax";
 import stream from "stream";
 import { Throttle } from "stream-throttle";
-import log from "../log.js";
-import { md5, escapeHtml, fromBase64 } from "../utils.js";
-import date_utils from "../date_utils.js";
-import sql from "../sql.js";
-import noteService from "../notes.js";
-import imageService from "../image.js";
-import protectedSessionService from "../protected_session.js";
-import htmlSanitizer from "../html_sanitizer.js";
-import sanitizeAttributeName from "../sanitize_attribute_name.js";
-import type TaskContext from "../task_context.js";
+
 import type BNote from "../../becca/entities/bnote.js";
+import date_utils from "../date_utils.js";
+import imageService from "../image.js";
+import log from "../log.js";
+import noteService from "../notes.js";
+import protectedSessionService from "../protected_session.js";
+import sql from "../sql.js";
+import type TaskContext from "../task_context.js";
+import { escapeHtml, fromBase64,md5 } from "../utils.js";
 import type { File } from "./common.js";
-import type { AttributeType } from "@triliumnext/commons";
 
 /**
  * date format is e.g. 20181121T193703Z or 2013-04-14T16:19:00.000Z (Mac evernote, see #3496)
@@ -25,7 +25,7 @@ function parseDate(text: string) {
     text = text.replace(/[-:]/g, "");
 
     // insert - and : to convert it to trilium format
-    text = text.substr(0, 4) + "-" + text.substr(4, 2) + "-" + text.substr(6, 2) + " " + text.substr(9, 2) + ":" + text.substr(11, 2) + ":" + text.substr(13, 2) + ".000Z";
+    text = `${text.substr(0, 4)  }-${  text.substr(4, 2)  }-${  text.substr(6, 2)  } ${  text.substr(9, 2)  }:${  text.substr(11, 2)  }:${  text.substr(13, 2)  }.000Z`;
 
     return text;
 }
@@ -117,7 +117,7 @@ function importEnex(taskContext: TaskContext<"importNotes">, file: File, parentN
             "\u2611 "
         );
 
-        content = htmlSanitizer.sanitize(content);
+        content = sanitize.sanitizeHtml(content);
 
         return content;
     }
@@ -155,7 +155,7 @@ function importEnex(taskContext: TaskContext<"importNotes">, file: File, parentN
                 labelName = "pageUrl";
             }
 
-            labelName = sanitizeAttributeName(labelName || "");
+            labelName = utils.sanitizeAttributeName(labelName || "");
 
             if (note.attributes) {
                 note.attributes.push({
@@ -201,7 +201,7 @@ function importEnex(taskContext: TaskContext<"importNotes">, file: File, parentN
             } else if (currentTag === "tag" && note.attributes) {
                 note.attributes.push({
                     type: "label",
-                    name: sanitizeAttributeName(text),
+                    name: utils.sanitizeAttributeName(text),
                     value: ""
                 });
             }
@@ -367,7 +367,7 @@ function importEnex(taskContext: TaskContext<"importNotes">, file: File, parentN
             }
         }
 
-        content = htmlSanitizer.sanitize(content);
+        content = sanitize.sanitizeHtml(content);
 
         // save updated content with links to files/images
         noteEntity.setContent(content);

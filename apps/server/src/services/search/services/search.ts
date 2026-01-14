@@ -1,24 +1,22 @@
-"use strict";
-
+import { becca_service } from "@triliumnext/core";
 import normalizeString from "normalize-strings";
-import lex from "./lex.js";
-import handleParens from "./handle_parens.js";
-import parse from "./parse.js";
-import SearchResult from "../search_result.js";
-import SearchContext from "../search_context.js";
-import becca from "../../../becca/becca.js";
-import beccaService from "../../../becca/becca_service.js";
-import { normalize, escapeHtml, escapeRegExp } from "../../utils.js";
-import log from "../../log.js";
-import hoistedNoteService from "../../hoisted_note.js";
-import type BNote from "../../../becca/entities/bnote.js";
-import type BAttribute from "../../../becca/entities/battribute.js";
-import type { SearchParams, TokenStructure } from "./types.js";
-import type Expression from "../expressions/expression.js";
-import sql from "../../sql.js";
-import scriptService from "../../script.js";
 import striptags from "striptags";
+
+import becca from "../../../becca/becca.js";
+import type BNote from "../../../becca/entities/bnote.js";
+import hoistedNoteService from "../../hoisted_note.js";
+import log from "../../log.js";
 import protectedSessionService from "../../protected_session.js";
+import scriptService from "../../script.js";
+import sql from "../../sql.js";
+import { escapeHtml, escapeRegExp } from "../../utils.js";
+import type Expression from "../expressions/expression.js";
+import SearchContext from "../search_context.js";
+import SearchResult from "../search_result.js";
+import handleParens from "./handle_parens.js";
+import lex from "./lex.js";
+import parse from "./parse.js";
+import type { SearchParams, TokenStructure } from "./types.js";
 
 export interface SearchNoteResult {
     searchResultNoteIds: string[];
@@ -67,7 +65,7 @@ function searchFromNote(note: BNote): SearchNoteResult {
     return {
         searchResultNoteIds: searchResultNoteIds.filter((resultNoteId) => !["root", note.noteId].includes(resultNoteId)),
         highlightedTokens,
-        error: error
+        error
     };
 }
 
@@ -252,21 +250,21 @@ function findResultsWithExpression(expression: Expression, searchContext: Search
 
     // Phase 1: Try exact matches first (without fuzzy matching)
     const exactResults = performSearch(expression, searchContext, false);
-    
+
     // Check if we have sufficient high-quality results
     const minResultThreshold = 5;
     const minScoreForQuality = 10; // Minimum score to consider a result "high quality"
-    
+
     const highQualityResults = exactResults.filter(result => result.score >= minScoreForQuality);
-    
+
     // If we have enough high-quality exact matches, return them
     if (highQualityResults.length >= minResultThreshold) {
         return exactResults;
     }
-    
+
     // Phase 2: Add fuzzy matching as fallback when exact matches are insufficient
     const fuzzyResults = performSearch(expression, searchContext, true);
-    
+
     // Merge results, ensuring exact matches always rank higher than fuzzy matches
     return mergeExactAndFuzzyResults(exactResults, fuzzyResults);
 }
@@ -326,10 +324,10 @@ function performSearch(expression: Expression, searchContext: SearchContext, ena
 function mergeExactAndFuzzyResults(exactResults: SearchResult[], fuzzyResults: SearchResult[]): SearchResult[] {
     // Create a map of exact result note IDs for deduplication
     const exactNoteIds = new Set(exactResults.map(result => result.noteId));
-    
+
     // Add fuzzy results that aren't already in exact results
     const additionalFuzzyResults = fuzzyResults.filter(result => !exactNoteIds.has(result.noteId));
-    
+
     // Sort exact results by score (best exact matches first)
     exactResults.sort((a, b) => {
         if (a.score > b.score) {
@@ -345,7 +343,7 @@ function mergeExactAndFuzzyResults(exactResults: SearchResult[], fuzzyResults: S
 
         return a.notePathArray.length < b.notePathArray.length ? -1 : 1;
     });
-    
+
     // Sort fuzzy results by score (best fuzzy matches first)
     additionalFuzzyResults.sort((a, b) => {
         if (a.score > b.score) {
@@ -361,7 +359,7 @@ function mergeExactAndFuzzyResults(exactResults: SearchResult[], fuzzyResults: S
 
         return a.notePathArray.length < b.notePathArray.length ? -1 : 1;
     });
-    
+
     // CRITICAL: Always put exact matches before fuzzy matches, regardless of scores
     return [...exactResults, ...additionalFuzzyResults];
 }
@@ -417,10 +415,10 @@ function findResultsWithQuery(query: string, searchContext: SearchContext): Sear
     }
 
     // If the query starts with '#', it's a pure expression query.
-    // Don't use progressive search for these as they may have complex 
+    // Don't use progressive search for these as they may have complex
     // ordering or other logic that shouldn't be interfered with.
     const isPureExpressionQuery = query.trim().startsWith('#');
-    
+
     if (isPureExpressionQuery) {
         // For pure expression queries, use standard search without progressive phases
         return performSearch(expression, searchContext, searchContext.enableFuzzyMatching);
@@ -448,7 +446,7 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
 
     try {
         let content = note.getContent();
-        
+
         if (!content || typeof content !== "string") {
             return "";
         }
@@ -489,7 +487,7 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
         for (const token of searchTokens) {
             const normalizedToken = normalizeString(token.toLowerCase());
             const matchIndex = normalizedContent.indexOf(normalizedToken);
-            
+
             if (matchIndex !== -1) {
                 // Center the snippet around the match
                 snippetStart = Math.max(0, matchIndex - maxLength / 2);
@@ -528,7 +526,7 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
                 snippet = lines.slice(0, 4).join('\n');
             }
             // Add ellipsis if we truncated lines
-            snippet = snippet + "...";
+            snippet = `${snippet  }...`;
         } else if (lines.length > 1) {
             // For multi-line snippets that are 4 or fewer lines, keep them as-is
             // No need to truncate
@@ -540,15 +538,15 @@ function extractContentSnippet(noteId: string, searchTokens: string[], maxLength
                 if (firstSpace > 0 && firstSpace < 20) {
                     snippet = snippet.substring(firstSpace + 1);
                 }
-                snippet = "..." + snippet;
+                snippet = `...${  snippet}`;
             }
-            
+
             if (snippetStart + maxLength < content.length) {
                 const lastSpace = snippet.search(/\s[^\s]*$/);
                 if (lastSpace > snippet.length - 20 && lastSpace > 0) {
                     snippet = snippet.substring(0, lastSpace);
                 }
-                snippet = snippet + "...";
+                snippet = `${snippet  }...`;
             }
         }
 
@@ -572,20 +570,20 @@ function extractAttributeSnippet(noteId: string, searchTokens: string[], maxLeng
             return "";
         }
 
-        let matchingAttributes: Array<{name: string, value: string, type: string}> = [];
-        
+        const matchingAttributes: Array<{name: string, value: string, type: string}> = [];
+
         // Look for attributes that match the search tokens
         for (const attr of attributes) {
             const attrName = attr.name?.toLowerCase() || "";
             const attrValue = attr.value?.toLowerCase() || "";
             const attrType = attr.type || "";
-            
+
             // Check if any search token matches the attribute name or value
             const hasMatch = searchTokens.some(token => {
                 const normalizedToken = normalizeString(token.toLowerCase());
                 return attrName.includes(normalizedToken) || attrValue.includes(normalizedToken);
             });
-            
+
             if (hasMatch) {
                 matchingAttributes.push({
                     name: attr.name || "",
@@ -611,20 +609,20 @@ function extractAttributeSnippet(noteId: string, searchTokens: string[], maxLeng
                 const targetTitle = targetNote ? targetNote.title : attr.value;
                 line = `~${attr.name}="${targetTitle}"`;
             }
-            
+
             if (line) {
                 lines.push(line);
             }
         }
 
         let snippet = lines.join('\n');
-        
+
         // Apply length limit while preserving line structure
         if (snippet.length > maxLength) {
             // Try to truncate at word boundaries but keep lines intact
             const truncated = snippet.substring(0, maxLength);
             const lastNewline = truncated.lastIndexOf('\n');
-            
+
             if (lastNewline > maxLength / 2) {
                 // If we can keep most content by truncating to last complete line
                 snippet = truncated.substring(0, lastNewline);
@@ -632,7 +630,7 @@ function extractAttributeSnippet(noteId: string, searchTokens: string[], maxLeng
                 // Otherwise just truncate and add ellipsis
                 const lastSpace = truncated.lastIndexOf(' ');
                 snippet = truncated.substring(0, lastSpace > maxLength / 2 ? lastSpace : maxLength - 3);
-                snippet = snippet + "...";
+                snippet = `${snippet  }...`;
             }
         }
 
@@ -645,7 +643,7 @@ function extractAttributeSnippet(noteId: string, searchTokens: string[], maxLeng
 
 function searchNotesForAutocomplete(query: string, fastSearch: boolean = true) {
     const searchContext = new SearchContext({
-        fastSearch: fastSearch,
+        fastSearch,
         includeArchivedNotes: false,
         includeHiddenNotes: true,
         fuzzyAttributeSearch: true,
@@ -666,7 +664,7 @@ function searchNotesForAutocomplete(query: string, fastSearch: boolean = true) {
     highlightSearchResults(trimmed, searchContext.highlightedTokens, searchContext.ignoreInternalAttributes);
 
     return trimmed.map((result) => {
-        const { title, icon } = beccaService.getNoteTitleAndIcon(result.noteId);
+        const { title, icon } = becca_service.getNoteTitleAndIcon(result.noteId);
         return {
             notePath: result.notePath,
             noteTitle: title,
@@ -698,7 +696,7 @@ function highlightSearchResults(searchResults: SearchResult[], highlightedTokens
 
     for (const result of searchResults) {
         result.highlightedNotePathTitle = result.notePathTitle.replace(/[<{}]/g, "");
-        
+
         // Initialize highlighted content snippet
         if (result.contentSnippet) {
             // Escape HTML but preserve newlines for later conversion to <br>
@@ -706,7 +704,7 @@ function highlightSearchResults(searchResults: SearchResult[], highlightedTokens
             // Remove any stray < { } that might interfere with our highlighting markers
             result.highlightedContentSnippet = result.highlightedContentSnippet.replace(/[<{}]/g, "");
         }
-        
+
         // Initialize highlighted attribute snippet
         if (result.attributeSnippet) {
             // Escape HTML but preserve newlines for later conversion to <br>
@@ -767,14 +765,14 @@ function highlightSearchResults(searchResults: SearchResult[], highlightedTokens
         if (result.highlightedNotePathTitle) {
             result.highlightedNotePathTitle = result.highlightedNotePathTitle.replace(/{/g, "<b>").replace(/}/g, "</b>");
         }
-        
+
         if (result.highlightedContentSnippet) {
             // Replace highlighting markers with HTML tags
             result.highlightedContentSnippet = result.highlightedContentSnippet.replace(/{/g, "<b>").replace(/}/g, "</b>");
             // Convert newlines to <br> tags for HTML display
             result.highlightedContentSnippet = result.highlightedContentSnippet.replace(/\n/g, "<br>");
         }
-        
+
         if (result.highlightedAttributeSnippet) {
             // Replace highlighting markers with HTML tags
             result.highlightedAttributeSnippet = result.highlightedAttributeSnippet.replace(/{/g, "<b>").replace(/}/g, "</b>");

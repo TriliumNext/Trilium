@@ -1,0 +1,23 @@
+{
+  "name": "@triliumnext/core",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@triliumnext/commons": "workspace:*",
+    "sanitize-html": "2.17.0",    
+    "@braintree/sanitize-url": "7.1.1",
+    "sanitize-filename": "1.6.3",
+    "mime-types": "3.0.2",
+    "unescape": "1.0.1",
+    "escape-html": "1.0.3"
+  },
+  "devDependencies": {
+    "@types/sanitize-html": "2.16.0",
+    "@types/mime-types": "3.0.1",
+    "@types/escape-html": "1.0.4"
+  }
+}

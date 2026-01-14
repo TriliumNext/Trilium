@@ -1,4 +1,5 @@
-import sanitizeHtml from 'sanitize-html';
+import { sanitize } from '@triliumnext/core';
+
 import becca from '../../../becca/becca.js';
 
 // Define interfaces for JSON structures
@@ -98,13 +99,13 @@ export function formatNoteContent(content: string, type: string, mime: string, t
     switch (type) {
         case 'text':
             // Remove HTML formatting for text notes
-            formattedContent += sanitizeHtml(content);
+            formattedContent += sanitize.sanitizeHtml(content);
             break;
 
         case 'code':
             // For code, we'll handle this in code_handlers.ts
             // Just use basic formatting here
-            formattedContent += '```\n' + content + '\n```';
+            formattedContent += `\`\`\`\n${  content  }\n\`\`\``;
             break;
 
         case 'canvas':
@@ -119,7 +120,7 @@ export function formatNoteContent(content: string, type: string, mime: string, t
                             .filter((element) => element.type === 'text' && element.text)
                             .map((element) => element.text as string);
 
-                        formattedContent += 'Canvas content:\n' + texts.join('\n');
+                        formattedContent += `Canvas content:\n${  texts.join('\n')}`;
                     } else {
                         formattedContent += '[Empty canvas]';
                     }
@@ -154,7 +155,7 @@ export function formatNoteContent(content: string, type: string, mime: string, t
                     };
 
                     if (jsonContent.root) {
-                        formattedContent += 'Mind map content:\n' + extractMindMapNodes(jsonContent.root).join('\n');
+                        formattedContent += `Mind map content:\n${  extractMindMapNodes(jsonContent.root).join('\n')}`;
                     } else {
                         formattedContent += '[Empty mind map]';
                     }
@@ -178,14 +179,14 @@ export function formatNoteContent(content: string, type: string, mime: string, t
                     let result = 'Relation map content:\n';
 
                     if (jsonContent.notes && Array.isArray(jsonContent.notes)) {
-                        result += 'Notes: ' + jsonContent.notes
+                        result += `Notes: ${  jsonContent.notes
                             .map((note) => note.title || note.name)
                             .filter(Boolean)
-                            .join(', ') + '\n';
+                            .join(', ')  }\n`;
                     }
 
                     if (jsonContent.relations && Array.isArray(jsonContent.relations)) {
-                        result += 'Relations: ' + jsonContent.relations
+                        result += `Relations: ${  jsonContent.relations
                             .map((rel) => {
                                 const sourceNote = jsonContent.notes?.find((n) => n.noteId === rel.sourceNoteId);
                                 const targetNote = jsonContent.notes?.find((n) => n.noteId === rel.targetNoteId);
@@ -193,7 +194,7 @@ export function formatNoteContent(content: string, type: string, mime: string, t
                                 const target = targetNote ? (targetNote.title || targetNote.name) : 'unknown';
                                 return `${source} → ${rel.name || ''} → ${target}`;
                             })
-                            .join('; ');
+                            .join('; ')}`;
                     }
 
                     formattedContent += result;
@@ -219,7 +220,7 @@ export function formatNoteContent(content: string, type: string, mime: string, t
                         if (jsonContent.markers.length > 0) {
                             result += jsonContent.markers
                                 .map((marker) => {
-                                    return `Location: ${marker.title || ''} (${marker.lat}, ${marker.lng})${marker.description ? ' - ' + marker.description : ''}`;
+                                    return `Location: ${marker.title || ''} (${marker.lat}, ${marker.lng})${marker.description ? ` - ${  marker.description}` : ''}`;
                                 })
                                 .join('\n');
                         } else {
@@ -242,7 +243,7 @@ export function formatNoteContent(content: string, type: string, mime: string, t
 
         case 'mermaid':
             // Format mermaid diagrams as code blocks
-            formattedContent += '```mermaid\n' + content + '\n```';
+            formattedContent += `\`\`\`mermaid\n${  content  }\n\`\`\``;
             break;
 
         case 'image':
@@ -252,7 +253,7 @@ export function formatNoteContent(content: string, type: string, mime: string, t
 
         default:
             // For other notes, just use the content as is
-            formattedContent += sanitizeHtml(content);
+            formattedContent += sanitize.sanitizeHtml(content);
     }
 
     return formattedContent;
@@ -265,7 +266,7 @@ export function sanitizeHtmlContent(html: string): string {
     if (!html) return '';
 
     // Use sanitizeHtml to remove all HTML tags
-    let content = sanitizeHtml(html, {
+    let content = sanitize.sanitizeHtmlCustom(html, {
         allowedTags: [],
         allowedAttributes: {},
         textFilter: (text) => {

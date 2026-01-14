@@ -1,12 +1,10 @@
-"use strict";
+import { becca_service } from "@triliumnext/core";
 
-import beccaService from "../../becca/becca_service.js";
 import becca from "../../becca/becca.js";
-import { 
-    normalizeSearchText, 
-    calculateOptimizedEditDistance, 
-    FUZZY_SEARCH_CONFIG 
-} from "./utils/text_utils.js";
+import {
+    calculateOptimizedEditDistance,
+    FUZZY_SEARCH_CONFIG,
+    normalizeSearchText} from "./utils/text_utils.js";
 
 // Scoring constants for better maintainability
 const SCORE_WEIGHTS = {
@@ -41,7 +39,7 @@ class SearchResult {
 
     constructor(notePathArray: string[]) {
         this.notePathArray = notePathArray;
-        this.notePathTitle = beccaService.getNoteTitleForPath(notePathArray);
+        this.notePathTitle = becca_service.getNoteTitleForPath(notePathArray);
         this.score = 0;
         this.fuzzyScore = 0;
     }
@@ -98,7 +96,7 @@ class SearchResult {
         for (const chunk of chunks) {
             for (const token of tokens) {
                 const normalizedToken = normalizeSearchText(token.toLowerCase());
-                
+
                 if (chunk === normalizedToken) {
                     tokenScore += SCORE_WEIGHTS.TOKEN_EXACT_MATCH * token.length * factor;
                 } else if (chunk.startsWith(normalizedToken)) {
@@ -108,10 +106,10 @@ class SearchResult {
                 } else {
                     // Try fuzzy matching for individual tokens with caps applied
                     const editDistance = calculateOptimizedEditDistance(chunk, normalizedToken, FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE);
-                    if (editDistance <= FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE && 
+                    if (editDistance <= FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE &&
                         normalizedToken.length >= FUZZY_SEARCH_CONFIG.MIN_FUZZY_TOKEN_LENGTH &&
                         this.fuzzyScore < SCORE_WEIGHTS.MAX_TOTAL_FUZZY_SCORE) {
-                        
+
                         const fuzzyWeight = SCORE_WEIGHTS.TOKEN_FUZZY_MATCH * (1 - editDistance / FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE);
                         // Apply caps: limit token length multiplier and per-token contribution
                         const cappedTokenLength = Math.min(token.length, SCORE_WEIGHTS.MAX_FUZZY_TOKEN_LENGTH_MULTIPLIER);
@@ -119,7 +117,7 @@ class SearchResult {
                             fuzzyWeight * cappedTokenLength * factor,
                             SCORE_WEIGHTS.MAX_FUZZY_SCORE_PER_TOKEN
                         );
-                        
+
                         tokenScore += fuzzyTokenScore;
                         this.fuzzyScore += fuzzyTokenScore;
                     }
@@ -134,8 +132,8 @@ class SearchResult {
      * Checks if the query matches as a complete word in the text
      */
     private isWordMatch(text: string, query: string): boolean {
-        return text.includes(` ${query} `) || 
-               text.startsWith(`${query} `) || 
+        return text.includes(` ${query} `) ||
+               text.startsWith(`${query} `) ||
                text.endsWith(` ${query}`);
     }
 
@@ -147,21 +145,21 @@ class SearchResult {
         if (this.fuzzyScore >= SCORE_WEIGHTS.MAX_TOTAL_FUZZY_SCORE) {
             return 0;
         }
-        
+
         const editDistance = calculateOptimizedEditDistance(title, query, FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE);
         const maxLen = Math.max(title.length, query.length);
-        
+
         // Only apply fuzzy matching if the query is reasonably long and edit distance is small
-        if (query.length >= FUZZY_SEARCH_CONFIG.MIN_FUZZY_TOKEN_LENGTH && 
-            editDistance <= FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE && 
+        if (query.length >= FUZZY_SEARCH_CONFIG.MIN_FUZZY_TOKEN_LENGTH &&
+            editDistance <= FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE &&
             editDistance / maxLen <= 0.3) {
             const similarity = 1 - (editDistance / maxLen);
             const baseFuzzyScore = SCORE_WEIGHTS.TITLE_WORD_MATCH * similarity * 0.7; // Reduced weight for fuzzy matches
-            
+
             // Apply cap to ensure fuzzy title matches don't exceed reasonable bounds
             return Math.min(baseFuzzyScore, SCORE_WEIGHTS.MAX_TOTAL_FUZZY_SCORE * 0.3);
         }
-        
+
         return 0;
     }
 
