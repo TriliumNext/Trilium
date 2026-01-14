@@ -51,6 +51,7 @@ async function processContent(url: string, $content: JQuery<HTMLElement>) {
 function getUrl(docNameValue: string, language: string) {
     // Cannot have spaces in the URL due to how JQuery.load works.
     docNameValue = docNameValue.replaceAll(" ", "%20");
+    // The user guide is available only in English, so make sure we are requesting correctly since 404s in standalone client are treated differently.
     if (docNameValue.includes("User%20Guide")) language = "en";
     return `${getBasePath()}/doc_notes/${language}/${docNameValue}.html`;
 }

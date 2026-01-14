@@ -1,4 +1,3 @@
-// public/local-bridge.js
 let localWorker: Worker | null = null;
 const pending = new Map();
 
@@ -11,7 +10,7 @@ export function startLocalServerWorker() {
     localWorker.onerror = (event) => {
         console.error("[LocalBridge] Worker error:", event);
         // Reject all pending requests
-        for (const [id, resolver] of pending) {
+        for (const [, resolver] of pending) {
             resolver.reject(new Error(`Worker error: ${event.message}`));
         }
         pending.clear();
@@ -19,18 +18,18 @@ export function startLocalServerWorker() {
 
     localWorker.onmessage = (event) => {
         const msg = event.data;
-        
+
         // Handle worker error reports
         if (msg?.type === "WORKER_ERROR") {
             console.error("[LocalBridge] Worker reported error:", msg.error);
             // Reject all pending requests with the error
-            for (const [id, resolver] of pending) {
+            for (const [, resolver] of pending) {
                 resolver.reject(new Error(msg.error?.message || "Unknown worker error"));
             }
             pending.clear();
             return;
         }
-        
+
         if (!msg || msg.type !== "LOCAL_RESPONSE") return;
 
         const { id, response, error } = msg;

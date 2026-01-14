@@ -19,7 +19,6 @@ export default class WorkerMessagingProvider implements MessagingProvider {
     constructor() {
         // Listen for incoming messages from the main thread
         self.addEventListener("message", this.handleIncomingMessage);
-        console.log("[WorkerMessagingProvider] Initialized");
     }
 
     private handleIncomingMessage = (event: MessageEvent) => {
@@ -87,6 +86,5 @@ export default class WorkerMessagingProvider implements MessagingProvider {
         this.isDisposed = true;
         self.removeEventListener("message", this.handleIncomingMessage);
         this.messageHandlers = [];
-        console.log("[WorkerMessagingProvider] Disposed");
     }
 }

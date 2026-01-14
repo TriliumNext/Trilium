@@ -14,7 +14,7 @@ async function waitForServiceWorkerControl(): Promise<void> {
     console.log("[Bootstrap] Waiting for service worker to take control...");
 
     // Register service worker
-    const registration = await navigator.serviceWorker.register("./sw.js", { scope: "/" });
+    await navigator.serviceWorker.register("./sw.js", { scope: "/" });
 
     // Wait for it to be ready (installed + activated)
     await navigator.serviceWorker.ready;
@@ -37,41 +37,6 @@ async function waitForServiceWorkerControl(): Promise<void> {
 
     // Throw to stop execution (page will reload)
     throw new Error("Reloading for service worker activation");
-}
-
-async function fetchWithRetry(url: string, maxRetries = 3, delayMs = 500): Promise<Response> {
-    let lastError: Error | null = null;
-
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
-        try {
-            console.log(`[Bootstrap] Fetching ${url} (attempt ${attempt + 1}/${maxRetries})`);
-            const response = await fetch(url);
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            // Check if response has content
-            const contentType = response.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                throw new Error(`Invalid content-type: ${contentType || "none"}`);
-            }
-
-            return response;
-        } catch (err) {
-            lastError = err as Error;
-            console.warn(`[Bootstrap] Fetch attempt ${attempt + 1} failed:`, err);
-
-            if (attempt < maxRetries - 1) {
-                // Exponential backoff
-                const delay = delayMs * Math.pow(2, attempt);
-                console.log(`[Bootstrap] Retrying in ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
-        }
-    }
-
-    throw new Error(`Failed to fetch ${url} after ${maxRetries} attempts: ${lastError?.message}`);
 }
 
 async function bootstrap() {

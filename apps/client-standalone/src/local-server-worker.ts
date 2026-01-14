@@ -1,7 +1,3 @@
-// public/local-server-worker.js
-// This will eventually import your core server and DB provider.
-// import { createCoreServer } from "@trilium/core"; (bundled)
-
 import { BrowserRouter } from './lightweight/browser_router';
 import { createConfiguredRouter } from './lightweight/browser_routes';
 import BrowserExecutionContext from './lightweight/cls_provider';
@@ -149,17 +145,6 @@ async function ensureInitialized() {
         throw new Error("Router not initialized");
     }
     return router;
-}
-
-const encoder = new TextEncoder();
-
-function jsonResponse(obj: unknown, status = 200, extraHeaders = {}) {
-    const body = encoder.encode(JSON.stringify(obj)).buffer;
-    return {
-        status,
-        headers: { "content-type": "application/json; charset=utf-8", ...extraHeaders },
-        body
-    };
 }
 
 interface LocalRequest {

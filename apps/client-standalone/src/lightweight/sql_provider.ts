@@ -19,7 +19,8 @@ class WasmStatement implements Statement {
 
     constructor(
         private stmt: Sqlite3PreparedStatement,
-        private db: Sqlite3Database
+        private db: Sqlite3Database,
+        private sqlite3: Sqlite3Module
     ) {}
 
     run(...params: unknown[]): RunResult {
@@ -33,10 +34,12 @@ class WasmStatement implements Statement {
             // This allows the statement to be reused
             this.stmt.step();
             const changes = this.db.changes();
+            // Get the last insert row ID using the C API
+            const lastInsertRowid = this.db.pointer ? this.sqlite3.capi.sqlite3_last_insert_rowid(this.db.pointer) : 0;
             this.stmt.reset();
             return {
                 changes,
-                lastInsertRowid: 0 // Would need sqlite3_last_insert_rowid for this
+                lastInsertRowid
             };
         } catch (e) {
             // Reset on error to allow reuse
@@ -490,7 +493,7 @@ export default class BrowserSqlProvider implements DatabaseProvider {
 
         // Create new statement and cache it
         const stmt = this.db!.prepare(query);
-        const wasmStatement = new WasmStatement(stmt, this.db!);
+        const wasmStatement = new WasmStatement(stmt, this.db!, this.sqlite3!);
         this.statementCache.set(query, wasmStatement);
         return wasmStatement;
     }
