@@ -39,8 +39,7 @@ function processContent(content: Uint8Array | string | null, isProtected: boolea
 
     if (isStringContent) {
         if (content === null) return "";
-        if (typeof content === "string") return content;
-        return decodeUtf8(content as Uint8Array);
+        return decodeUtf8(content);
     }
     // see https://github.com/zadam/trilium/issues/3523
     // IIRC a zero-sized buffer can be returned as null from the database
