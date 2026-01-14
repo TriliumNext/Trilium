@@ -1,3 +1,4 @@
+import type { Locale } from "./i18n.js";
 import { AttachmentRow, AttributeRow, BranchRow, NoteRow, NoteType } from "./rows.js";
 
 type Response = {
@@ -309,4 +310,34 @@ export interface DefinitionObject {
     numberPrecision?: number;
     promotedAlias?: string;
     inverseRelation?: string;
+}
+
+export interface BootstrapDefinition {
+    device: "mobile" | "desktop" | "print" | false;
+    csrfToken: string;
+    themeCssUrl: string | false;
+    themeUseNextAsBase?: "next" | "next-light" | "next-dark";
+    headingStyle: "plain" | "underline" | "markdown";
+    layoutOrientation: "vertical" | "horizontal";
+    platform?: typeof process.platform | "web";
+    isElectron: boolean;
+    isStandalone?: boolean;
+    hasNativeTitleBar: boolean;
+    hasBackgroundEffects: boolean;
+    maxEntityChangeIdAtLoad: number;
+    maxEntityChangeSyncIdAtLoad: number;
+    instanceName: string | null;
+    appCssNoteIds: string[];
+    isDev: boolean;
+    isMainWindow: boolean;
+    isProtectedSessionAvailable: boolean;
+    triliumVersion: string;
+    assetPath: string;
+    appPath: string;
+    baseApiUrl: string;
+    currentLocale: Locale;
+    isRtl: boolean;
+    iconPackCss: string;
+    iconRegistry: IconRegistry;
+    TRILIUM_SAFE_MODE: boolean;
 }

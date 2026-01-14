@@ -1,13 +1,14 @@
-import Modal from "../react/Modal.js";
+import type { AppInfo } from "@triliumnext/commons";
+import type { CSSProperties } from "preact/compat";
+import { useState } from "preact/hooks";
+
 import { t } from "../../services/i18n.js";
-import { formatDateTime } from "../../utils/formatters.js";
+import openService from "../../services/open.js";
 import server from "../../services/server.js";
 import utils from "../../services/utils.js";
-import openService from "../../services/open.js";
-import { useState } from "preact/hooks";
-import type { CSSProperties } from "preact/compat";
-import type { AppInfo } from "@triliumnext/commons";
+import { formatDateTime } from "../../utils/formatters.js";
 import { useTriliumEvent } from "../react/hooks.jsx";
+import Modal from "../react/Modal.js";
 
 export default function AboutDialog() {
     const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
@@ -54,15 +55,15 @@ export default function AboutDialog() {
                     <tr>
                         <th>{t("about.build_revision")}</th>
                         <td className="selectable-text">
-                            {appInfo?.buildRevision && <a className="tn-link build-revision external" href={`https://github.com/TriliumNext/Trilium/commit/${appInfo.buildRevision}`} target="_blank" style={forceWordBreak}>{appInfo.buildRevision}</a>}
+                            {appInfo?.buildRevision && <a className="tn-link build-revision external" href={`https://github.com/TriliumNext/Trilium/commit/${appInfo.buildRevision}`} target="_blank" style={forceWordBreak} rel="noreferrer">{appInfo.buildRevision}</a>}
                         </td>
                     </tr>
-                    <tr>
+                    { appInfo?.dataDirectory && <tr>
                         <th>{t("about.data_directory")}</th>
                         <td className="data-directory">
                             {appInfo?.dataDirectory && (<DirectoryLink directory={appInfo.dataDirectory} style={forceWordBreak} />)}
                         </td>
-                    </tr>
+                    </tr>}
                 </tbody>
             </table>
         </Modal>
@@ -76,8 +77,8 @@ function DirectoryLink({ directory, style }: { directory: string, style?: CSSPro
             openService.openDirectory(directory);
         };
 
-        return <a className="tn-link selectable-text" href="#" onClick={onClick} style={style}>{directory}</a>
-    } else {
-        return <span className="selectable-text" style={style}>{directory}</span>;
-    }
+        return <a className="tn-link selectable-text" href="#" onClick={onClick} style={style}>{directory}</a>;
+    } 
+    return <span className="selectable-text" style={style}>{directory}</span>;
+    
 }

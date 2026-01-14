@@ -341,6 +341,7 @@ export function findExcerpts(sourceNote: BNote, referencedNoteId: string) {
     return excerpts;
 }
 
+// TODO: Deduplicate with core
 function getFilteredBacklinks(note: BNote): BAttribute[] {
     return (
         note
@@ -348,16 +349,6 @@ function getFilteredBacklinks(note: BNote): BAttribute[] {
             // search notes have "ancestor" relations which are not interesting
             .filter((relation) => !!relation.getNote() && relation.getNote().type !== "search")
     );
-}
-
-function getBacklinkCount(req: Request) {
-    const { noteId } = req.params;
-
-    const note = becca.getNoteOrThrow(noteId);
-
-    return {
-        count: getFilteredBacklinks(note).length
-    } satisfies BacklinkCountResponse;
 }
 
 function getBacklinks(req: Request): BacklinksResponse {
@@ -389,6 +380,5 @@ function getBacklinks(req: Request): BacklinksResponse {
 export default {
     getLinkMap,
     getTreeMap,
-    getBacklinkCount,
     getBacklinks
 };

@@ -25,8 +25,35 @@ async function setupGlob() {
     window.global = globalThis; /* fixes https://github.com/webpack/webpack/issues/10035 */
     window.glob = {
         ...json,
-        activeDialog: null
+        activeDialog: null,
+        device: json.device || getDevice()
     };
+}
+
+function getDevice() {
+    // Respect user's manual override via URL.
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has("print")) {
+        return "print";
+    } else if (urlParams.has("desktop")) {
+        return "desktop";
+    } else if (urlParams.has("mobile")) {
+        return "mobile";
+    }
+
+    const deviceCookie = document.cookie.split("; ").find(row => row.startsWith("trilium-device="))?.split("=")[1];
+    if (deviceCookie === "desktop" || deviceCookie === "mobile") return deviceCookie;
+    return isMobile() ? "mobile" : "desktop";
+}
+
+// https://stackoverflow.com/a/73731646/944162
+function isMobile() {
+    const mQ = matchMedia?.("(pointer:coarse)");
+    if (mQ?.media === "(pointer:coarse)") return !!mQ.matches;
+
+    if ("orientation" in window) return true;
+    const userAgentsRegEx = /\b(Android|iPhone|iPad|iPod|Windows Phone|BlackBerry|webOS|IEMobile)\b/i;
+    return userAgentsRegEx.test(navigator.userAgent);
 }
 
 async function loadBootstrapCss() {
@@ -91,10 +118,16 @@ function setBodyAttributes() {
 }
 
 async function loadScripts() {
-    if (glob.device === "mobile") {
-        await import("./mobile.js");
-    } else {
-        await import("./desktop.js");
+    switch (glob.device) {
+        case "mobile":
+            await import("./mobile.js");
+            break;
+        case "print":
+            await import("./print.js");
+            break;
+        case "desktop":
+        default:
+            await import("./desktop.js");
     }
 }
 

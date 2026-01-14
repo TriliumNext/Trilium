@@ -8,7 +8,7 @@ import { CommandNames } from "../../components/app_context";
 import Component from "../../components/component";
 import { ExperimentalFeature, ExperimentalFeatureId, experimentalFeatures, isExperimentalFeatureEnabled, toggleExperimentalFeature } from "../../services/experimental_features";
 import { t } from "../../services/i18n";
-import utils, { dynamicRequire, isElectron, isMobile, reloadFrontendApp } from "../../services/utils";
+import utils, { dynamicRequire, isElectron, isMobile, isStandalone, reloadFrontendApp } from "../../services/utils";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem } from "../react/FormList";
 import { useStaticTooltip, useStaticTooltipWithKeyboardShortcut, useTriliumOption, useTriliumOptionBool, useTriliumOptionInt } from "../react/hooks";
@@ -249,7 +249,7 @@ function ToggleWindowOnTop() {
 function useTriliumUpdateStatus() {
     const [ latestVersion, setLatestVersion ] = useState<string>();
     const [ checkForUpdates ] = useTriliumOptionBool("checkForUpdates");
-    const isUpdateAvailable = utils.isUpdateAvailable(latestVersion, glob.triliumVersion);
+    const isUpdateAvailable = utils.isUpdateAvailable(latestVersion, window.glob.triliumVersion);
 
     async function updateVersionStatus() {
         const RELEASES_API_URL = "https://api.github.com/repos/TriliumNext/Trilium/releases/latest";
@@ -267,7 +267,7 @@ function useTriliumUpdateStatus() {
     }
 
     useEffect(() => {
-        if (!checkForUpdates) {
+        if (!checkForUpdates || !isStandalone) {
             setLatestVersion(undefined);
             return;
         }

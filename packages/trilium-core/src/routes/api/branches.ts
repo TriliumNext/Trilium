@@ -1,14 +1,16 @@
-import { erase as eraseService, events as eventService, ValidationError } from "@triliumnext/core";
+import branchService from "../../services/branches.js";
+import eraseService from "../../services/erase.js";
+import eventService from "../../services/events.js";
 import type { Request } from "express";
 
 import becca from "../../becca/becca.js";
-import branchService from "../../services/branches.js";
 import entityChangesService from "../../services/entity_changes.js";
-import log from "../../services/log.js";
-import sql from "../../services/sql.js";
+import { getLog } from "../../services/log.js";
 import TaskContext from "../../services/task_context.js";
 import treeService from "../../services/tree.js";
-import utils from "../../services/utils.js";
+import { isEmptyOrWhitespace, randomString } from "../../services/utils/index.js";
+import { getSql } from "../../services/sql/index.js";
+import { ValidationError } from "../../errors.js";
 
 /**
  * Code in this file deals with moving and cloning branches. The relationship between note and parent note is unique
@@ -45,7 +47,7 @@ function moveBranchBeforeNote(req: Request) {
     // we don't change utcDateModified, so other changes are prioritized in case of conflict
     // also we would have to sync all those modified branches otherwise hash checks would fail
 
-    sql.execute("UPDATE branches SET notePosition = notePosition + 10 WHERE parentNoteId = ? AND notePosition >= ? AND isDeleted = 0", [beforeBranch.parentNoteId, originalBeforeNotePosition]);
+    getSql().execute("UPDATE branches SET notePosition = notePosition + 10 WHERE parentNoteId = ? AND notePosition >= ? AND isDeleted = 0", [beforeBranch.parentNoteId, originalBeforeNotePosition]);
 
     // also need to update becca positions
     const parentNote = becca.getNoteOrThrow(beforeBranch.parentNoteId);
@@ -71,7 +73,7 @@ function moveBranchBeforeNote(req: Request) {
     // if sorting is not needed, then still the ordering might have changed above manually
     entityChangesService.putNoteReorderingEntityChange(parentNote.noteId);
 
-    log.info(`Moved note ${branchToMove.noteId}, branch ${branchId} before note ${beforeBranch.noteId}, branch ${beforeBranchId}`);
+    getLog().info(`Moved note ${branchToMove.noteId}, branch ${branchId} before note ${beforeBranch.noteId}, branch ${beforeBranchId}`);
 
     return { success: true };
 }
@@ -92,7 +94,7 @@ function moveBranchAfterNote(req: Request) {
 
     // we don't change utcDateModified, so other changes are prioritized in case of conflict
     // also we would have to sync all those modified branches otherwise hash checks would fail
-    sql.execute("UPDATE branches SET notePosition = notePosition + 10 WHERE parentNoteId = ? AND notePosition > ? AND isDeleted = 0", [afterNote.parentNoteId, originalAfterNotePosition]);
+    getSql().execute("UPDATE branches SET notePosition = notePosition + 10 WHERE parentNoteId = ? AND notePosition > ? AND isDeleted = 0", [afterNote.parentNoteId, originalAfterNotePosition]);
 
     // also need to update becca positions
     const parentNote = becca.getNoteOrThrow(afterNote.parentNoteId);
@@ -120,7 +122,7 @@ function moveBranchAfterNote(req: Request) {
     // if sorting is not needed, then still the ordering might have changed above manually
     entityChangesService.putNoteReorderingEntityChange(parentNote.noteId);
 
-    log.info(`Moved note ${branchToMove.noteId}, branch ${branchId} after note ${afterNote.noteId}, branch ${afterBranchId}`);
+    getLog().info(`Moved note ${branchToMove.noteId}, branch ${branchId} after note ${afterNote.noteId}, branch ${afterBranchId}`);
 
     return { success: true };
 }
@@ -130,7 +132,7 @@ function setExpanded(req: Request) {
     const expanded = parseInt(req.params.expanded);
 
     if (branchId !== "none_root") {
-        sql.execute("UPDATE branches SET isExpanded = ? WHERE branchId = ?", [expanded, branchId]);
+        getSql().execute("UPDATE branches SET isExpanded = ? WHERE branchId = ?", [expanded, branchId]);
         // we don't sync expanded label
         // also this does not trigger updates to the frontend, this would trigger too many reloads
 
@@ -150,6 +152,7 @@ function setExpanded(req: Request) {
 function setExpandedForSubtree(req: Request) {
     const { branchId } = req.params;
     const expanded = parseInt(req.params.expanded);
+    const sql = getSql();
 
     let branchIds = sql.getColumn<string>(
         `
@@ -236,7 +239,7 @@ function deleteBranch(req: Request) {
 
     const taskContext = TaskContext.getInstance(req.query.taskId as string, "deleteNotes", null);
 
-    const deleteId = utils.randomString(10);
+    const deleteId = randomString(10);
     let noteDeleted;
 
     if (eraseNotes) {
@@ -260,7 +263,7 @@ function deleteBranch(req: Request) {
 function setPrefix(req: Request) {
     const branchId = req.params.branchId;
     //TriliumNextTODO: req.body arrives as string, so req.body.prefix will be undefined – did the code below ever even work?
-    const prefix = utils.isEmptyOrWhitespace(req.body.prefix) ? null : req.body.prefix;
+    const prefix = isEmptyOrWhitespace(req.body.prefix) ? null : req.body.prefix;
 
     const branch = becca.getBranchOrThrow(branchId);
     branch.prefix = prefix;
@@ -279,7 +282,7 @@ function setPrefixBatch(req: Request) {
         throw new ValidationError("prefix must be a string or null");
     }
 
-    const normalizedPrefix = utils.isEmptyOrWhitespace(prefix) ? null : prefix;
+    const normalizedPrefix = isEmptyOrWhitespace(prefix) ? null : prefix;
     let updatedCount = 0;
 
     for (const branchId of branchIds) {
@@ -289,7 +292,7 @@ function setPrefixBatch(req: Request) {
             branch.save();
             updatedCount++;
         } else {
-            log.info(`Branch ${branchId} not found, skipping prefix update`);
+            getLog().info(`Branch ${branchId} not found, skipping prefix update`);
         }
     }
 

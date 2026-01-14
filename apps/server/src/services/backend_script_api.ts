@@ -1,5 +1,5 @@
 import { type AttributeRow, dayjs, formatLogMessage } from "@triliumnext/commons";
-import { type AbstractBeccaEntity, Becca, NoteParams } from "@triliumnext/core";
+import { type AbstractBeccaEntity, Becca, branches as branchService, NoteParams } from "@triliumnext/core";
 import axios from "axios";
 import * as cheerio from "cheerio";
 import xml2js from "xml2js";
@@ -16,7 +16,6 @@ import appInfo from "./app_info.js";
 import attributeService from "./attributes.js";
 import type { ApiParams } from "./backend_script_api_interface.js";
 import backupService from "./backup.js";
-import branchService from "./branches.js";
 import cloningService from "./cloning.js";
 import config from "./config.js";
 import dateNoteService from "./date_notes.js";

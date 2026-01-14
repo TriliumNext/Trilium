@@ -1,10 +1,10 @@
 import type { AttributeRow, BranchRow, NoteRow } from "@triliumnext/commons";
-import { NotFoundError } from "@triliumnext/core";
 import type { Request } from "express";
 
 import becca from "../../becca/becca.js";
+import { NotFoundError } from "../../errors.js";
+import { getLog } from "../../services/log.js";
 import type BNote from "../../becca/entities/bnote.js";
-import log from "../../services/log.js";
 
 function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
     const noteIds = new Set(_noteIds);
@@ -85,7 +85,7 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
         const branch = becca.branches[branchId];
 
         if (!branch) {
-            log.error(`Could not find branch for branchId=${branchId}`);
+            getLog().error(`Could not find branch for branchId=${branchId}`);
             continue;
         }
 
@@ -105,7 +105,7 @@ function getNotesAndBranchesAndAttributes(_noteIds: string[] | Set<string>) {
         const attribute = becca.attributes[attributeId];
 
         if (!attribute) {
-            log.error(`Could not find attribute for attributeId=${attributeId}`);
+            getLog().error(`Could not find attribute for attributeId=${attributeId}`);
             continue;
         }
 

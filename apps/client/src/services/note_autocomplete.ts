@@ -12,7 +12,7 @@ const SELECTED_NOTE_PATH_KEY = "data-note-path";
 const SELECTED_EXTERNAL_LINK_KEY = "data-external-link";
 
 // To prevent search lag when there are a large number of notes, set a delay based on the number of notes to avoid jitter.
-const notesCount = await server.get<number>(`autocomplete/notesCount`);
+const notesCount = 10000; // TODO: Replace with dynamic count from becca once available.
 let debounceTimeoutId: ReturnType<typeof setTimeout>;
 
 function getSearchDelay(notesCount: number): number {

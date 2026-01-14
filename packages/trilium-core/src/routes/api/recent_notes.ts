@@ -1,8 +1,9 @@
 "use strict";
 
 import BRecentNote from "../../becca/entities/brecent_note.js";
-import sql from "../../services/sql.js";
-import dateUtils from "../../services/date_utils.js";
+import { getSql } from "../../services/sql/index.js";
+import dateUtils from "../../services/utils/date.js";
+
 import type { Request } from "express";
 
 function addRecentNote(req: Request) {
@@ -15,7 +16,7 @@ function addRecentNote(req: Request) {
         // it's not necessary to run this every time ...
         const cutOffDate = dateUtils.utcDateTimeStr(new Date(Date.now() - 24 * 3600 * 1000));
 
-        sql.execute(/*sql*/`DELETE FROM recent_notes WHERE utcDateCreated < ?`, [cutOffDate]);
+        getSql().execute(/*sql*/`DELETE FROM recent_notes WHERE utcDateCreated < ?`, [cutOffDate]);
     }
 }
 

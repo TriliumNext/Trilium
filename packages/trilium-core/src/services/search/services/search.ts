@@ -5,7 +5,7 @@ export default {
         console.warn("Ignore search ", note.title);
     },
 
-    searchNotes(searchString: string) {
+    searchNotes(searchString: string, opts?: {}): BNote[] {
         console.warn("Ignore search", searchString);
         return [];
     }

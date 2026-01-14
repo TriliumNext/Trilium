@@ -1,14 +1,14 @@
 
 
 import type { OptionNames } from "@triliumnext/commons";
-import { ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 
 import config from "../../services/config.js";
 import { changeLanguage, getLocales } from "../../services/i18n.js";
-import log from "../../services/log.js";
+import { getLog } from "../../services/log.js";
 import optionService from "../../services/options.js";
 import searchService from "../../services/search/services/search.js";
+import { ValidationError } from "../../errors.js";
 
 interface UserTheme {
     val: string; // value of the theme, used in the URL
@@ -122,6 +122,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
 ]);
 
 function getOptions() {
+    console.log("Got opts");
     const optionMap = optionService.getOptionMap();
     const resultMap: Record<string, string> = {};
 
@@ -166,7 +167,7 @@ function update(name: string, value: string) {
     }
 
     if (name !== "openNoteContexts") {
-        log.info(`Updating option '${name}' to '${value}'`);
+        getLog().info(`Updating option '${name}' to '${value}'`);
     }
 
     optionService.setOption(name as OptionNames, value);

@@ -1,0 +1,20 @@
+{
+    "name": "Trilium Notes",
+    "short_name": "Trilium",
+    "description": "Trilium Notes is a hierarchical note taking application with focus on building large personal knowledge bases.",
+    "theme_color": "#333333",
+    "background_color": "#1F1F1F",
+    "display": "standalone",
+    "scope": "/",
+    "start_url": "/",
+    "display_override": [
+        "window-controls-overlay"
+    ],
+    "icons": [
+        {
+            "src": "assets/icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

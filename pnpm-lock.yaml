@@ -351,6 +351,214 @@ importers:
         specifier: 3.1.4
         version: 3.1.4(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
 
+  apps/client-standalone:
+    dependencies:
+      '@excalidraw/excalidraw':
+        specifier: 0.18.0
+        version: 0.18.0(@types/react-dom@19.1.6(@types/react@19.1.7))(@types/react@19.1.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      '@fullcalendar/core':
+        specifier: 6.1.20
+        version: 6.1.20
+      '@fullcalendar/daygrid':
+        specifier: 6.1.20
+        version: 6.1.20(@fullcalendar/core@6.1.20)
+      '@fullcalendar/interaction':
+        specifier: 6.1.20
+        version: 6.1.20(@fullcalendar/core@6.1.20)
+      '@fullcalendar/list':
+        specifier: 6.1.20
+        version: 6.1.20(@fullcalendar/core@6.1.20)
+      '@fullcalendar/multimonth':
+        specifier: 6.1.20
+        version: 6.1.20(@fullcalendar/core@6.1.20)
+      '@fullcalendar/timegrid':
+        specifier: 6.1.20
+        version: 6.1.20(@fullcalendar/core@6.1.20)
+      '@maplibre/maplibre-gl-leaflet':
+        specifier: 0.1.3
+        version: 0.1.3(@types/leaflet@1.9.21)(leaflet@1.9.4)(maplibre-gl@5.6.1)
+      '@mermaid-js/layout-elk':
+        specifier: 0.2.0
+        version: 0.2.0(mermaid@11.12.2)
+      '@mind-elixir/node-menu':
+        specifier: 5.0.1
+        version: 5.0.1(mind-elixir@5.4.0)
+      '@popperjs/core':
+        specifier: 2.11.8
+        version: 2.11.8
+      '@preact/signals':
+        specifier: 2.5.1
+        version: 2.5.1(preact@10.28.2)
+      '@sqlite.org/sqlite-wasm':
+        specifier: 3.51.1-build2
+        version: 3.51.1-build2
+      '@triliumnext/ckeditor5':
+        specifier: workspace:*
+        version: link:../../packages/ckeditor5
+      '@triliumnext/codemirror':
+        specifier: workspace:*
+        version: link:../../packages/codemirror
+      '@triliumnext/commons':
+        specifier: workspace:*
+        version: link:../../packages/commons
+      '@triliumnext/core':
+        specifier: workspace:*
+        version: link:../../packages/trilium-core
+      '@triliumnext/highlightjs':
+        specifier: workspace:*
+        version: link:../../packages/highlightjs
+      '@triliumnext/share-theme':
+        specifier: workspace:*
+        version: link:../../packages/share-theme
+      '@triliumnext/split.js':
+        specifier: workspace:*
+        version: link:../../packages/splitjs
+      '@zumer/snapdom':
+        specifier: 2.0.1
+        version: 2.0.1
+      autocomplete.js:
+        specifier: 0.38.1
+        version: 0.38.1
+      bootstrap:
+        specifier: 5.3.8
+        version: 5.3.8(@popperjs/core@2.11.8)
+      boxicons:
+        specifier: 2.1.4
+        version: 2.1.4
+      clsx:
+        specifier: 2.1.1
+        version: 2.1.1
+      color:
+        specifier: 5.0.3
+        version: 5.0.3
+      debounce:
+        specifier: 3.0.0
+        version: 3.0.0
+      draggabilly:
+        specifier: 3.0.0
+        version: 3.0.0
+      force-graph:
+        specifier: 1.51.0
+        version: 1.51.0
+      globals:
+        specifier: 17.0.0
+        version: 17.0.0
+      i18next:
+        specifier: 25.7.3
+        version: 25.7.3(typescript@5.9.3)
+      i18next-http-backend:
+        specifier: 3.0.2
+        version: 3.0.2(encoding@0.1.13)
+      jquery:
+        specifier: 3.7.1
+        version: 3.7.1
+      jquery.fancytree:
+        specifier: 2.38.5
+        version: 2.38.5(jquery@3.7.1)
+      js-sha1:
+        specifier: 0.7.0
+        version: 0.7.0
+      js-sha512:
+        specifier: 0.9.0
+        version: 0.9.0
+      jsplumb:
+        specifier: 2.15.6
+        version: 2.15.6
+      katex:
+        specifier: 0.16.27
+        version: 0.16.27
+      knockout:
+        specifier: 3.5.1
+        version: 3.5.1
+      leaflet:
+        specifier: 1.9.4
+        version: 1.9.4
+      leaflet-gpx:
+        specifier: 2.2.0
+        version: 2.2.0
+      mark.js:
+        specifier: 8.11.1
+        version: 8.11.1
+      marked:
+        specifier: 17.0.1
+        version: 17.0.1
+      mermaid:
+        specifier: 11.12.2
+        version: 11.12.2
+      mind-elixir:
+        specifier: 5.4.0
+        version: 5.4.0
+      normalize.css:
+        specifier: 8.0.1
+        version: 8.0.1
+      panzoom:
+        specifier: 9.4.3
+        version: 9.4.3
+      preact:
+        specifier: 10.28.2
+        version: 10.28.2
+      react-i18next:
+        specifier: 16.5.1
+        version: 16.5.1(i18next@25.7.3(typescript@5.9.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
+      react-window:
+        specifier: 2.2.3
+        version: 2.2.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      reveal.js:
+        specifier: 5.2.1
+        version: 5.2.1
+      svg-pan-zoom:
+        specifier: 3.6.2
+        version: 3.6.2
+      tabulator-tables:
+        specifier: 6.3.1
+        version: 6.3.1
+      vanilla-js-wheel-zoom:
+        specifier: 9.0.4
+        version: 9.0.4
+    devDependencies:
+      '@ckeditor/ckeditor5-inspector':
+        specifier: 5.0.0
+        version: 5.0.0
+      '@preact/preset-vite':
+        specifier: 2.10.2
+        version: 2.10.2(@babel/core@7.28.0)(preact@10.28.2)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
+      '@types/bootstrap':
+        specifier: 5.2.10
+        version: 5.2.10
+      '@types/jquery':
+        specifier: 3.5.33
+        version: 3.5.33
+      '@types/leaflet':
+        specifier: 1.9.21
+        version: 1.9.21
+      '@types/leaflet-gpx':
+        specifier: 1.3.8
+        version: 1.3.8
+      '@types/mark.js':
+        specifier: 8.11.12
+        version: 8.11.12
+      '@types/reveal.js':
+        specifier: 5.2.2
+        version: 5.2.2
+      '@types/tabulator-tables':
+        specifier: 6.3.1
+        version: 6.3.1
+      copy-webpack-plugin:
+        specifier: 13.0.1
+        version: 13.0.1(webpack@5.101.3(esbuild@0.27.2))
+      cross-env:
+        specifier: 7.0.3
+        version: 7.0.3
+      happy-dom:
+        specifier: 20.0.11
+        version: 20.0.11
+      script-loader:
+        specifier: 0.7.2
+        version: 0.7.2
+      vite-plugin-static-copy:
+        specifier: 3.1.4
+        version: 3.1.4(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
+
   apps/db-compare:
     dependencies:
       colors:
@@ -1431,6 +1639,9 @@ importers:
       escape-html:
         specifier: 1.0.3
         version: 1.0.3
+      i18next:
+        specifier: 25.7.3
+        version: 25.7.3(typescript@5.9.3)
       mime-types:
         specifier: 3.0.2
         version: 3.0.2
@@ -1733,16 +1944,8 @@ packages:
     resolution: {integrity: sha512-LPDZ85aEJyYSd18/DkjNh4/y1ntkE5KwUHWTiqgRxruuZL2F1yuHligVHLvcHY2vMHXttKFpJn6LwfI7cw7ODw==}
     engines: {node: '>=6.9.0'}
 
-  '@babel/traverse@7.28.0':
-    resolution: {integrity: sha512-mGe7UK5wWyh0bKRfupsUchrQGqvDbZDbKJw+kcRGSmdHVYrv+ltd0pnpDTVpiTqnaBru9iEvA8pz8W46v0Amwg==}
-    engines: {node: '>=6.9.0'}
-
   '@babel/traverse@7.28.4':
     resolution: {integrity: sha512-YEzuboP2qvQavAcjgQNVgsvHIDv6ZpwXvcvjmyySP2DIMuByS/6ioU5G9pYrWHM6T2YDfc7xga9iNzYOs12CFQ==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/types@7.28.1':
-    resolution: {integrity: sha512-x0LvFTekgSX+83TI28Y9wYPUfzrnl2aT5+5QLnO6v7mSJYtEEevuDRN0F0uSHRk1G1IWZC43o00Y0xDDrpBGPQ==}
     engines: {node: '>=6.9.0'}
 
   '@babel/types@7.28.4':
@@ -4040,12 +4243,6 @@ packages:
       preact: 10.28.2
       vite: '>=2.0.0'
 
-  '@prefresh/vite@2.4.8':
-    resolution: {integrity: sha512-H7vlo9UbJInuRbZhRQrdgVqLP7qKjDoX7TgYWWwIVhEHeHO0hZ4zyicvwBrV1wX5A3EPOmArgRkUaN7cPI2VXQ==}
-    peerDependencies:
-      preact: 10.28.2
-      vite: '>=2.0.0'
-
   '@promptbook/utils@0.69.5':
     resolution: {integrity: sha512-xm5Ti/Hp3o4xHrsK9Yy3MS6KbDxYbq485hDsFvxqaNA7equHLPdo8H8faTitTeb14QCDfLW4iwCxdVYu5sn6YQ==}
 
@@ -4994,6 +5191,10 @@ packages:
 
   '@socket.io/component-emitter@3.1.2':
     resolution: {integrity: sha512-9BCxFwvbGg/RsZK9tjXd8s4UcwR0MWeFQ1XEKIQVVvAGJyINdrqKMcTRyLoK8Rse1GjzLV9cwjWV1olXRWEXVA==}
+
+  '@sqlite.org/sqlite-wasm@3.51.1-build2':
+    resolution: {integrity: sha512-lVPTBlFsEijJ3wuoIbMfC9QMZKfL8huHN8D/lijNKoVxPqUDNvDtXse0wafe7USSmyfKAMb1JZ3ISSr/Vgbn5w==}
+    hasBin: true
 
   '@ssddanbrown/codemirror-lang-smarty@1.0.0':
     resolution: {integrity: sha512-F0ut1kmdbT3eORk3xVIKfQsGCZiQdh+6sLayBa0+FTex2gyIQlVQZRRA7bPSlchI3uZtWwNnqGNz5O/QLWRlFg==}
@@ -7443,15 +7644,6 @@ packages:
       supports-color:
         optional: true
 
-  debug@4.4.1:
-    resolution: {integrity: sha512-KcKCqiftBJcZr++7ykoDIEwSa3XWowTfNPo92BYxjXiyYEVrUQh2aLyhxBCwww+heortUFxEJYcRzosstTEBYQ==}
-    engines: {node: '>=6.0'}
-    peerDependencies:
-      supports-color: '*'
-    peerDependenciesMeta:
-      supports-color:
-        optional: true
-
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
     engines: {node: '>=6.0'}
@@ -9513,6 +9705,12 @@ packages:
     resolution: {integrity: sha512-X2BB11YZtrRqY4EnQcLX5Rh373zbK4alC1FW7D7MBhL2gtcC17cTnr6DmfHZeS0s2rTHjUTMMHfG7gO8SSdw+g==}
     engines: {node: '>=0.10.0'}
 
+  js-sha1@0.7.0:
+    resolution: {integrity: sha512-oQZ1Mo7440BfLSv9TX87VNEyU52pXPVG19F9PL3gTgNt0tVxlZ8F4O6yze3CLuLx28TxotxvlyepCNaaV0ZjMw==}
+
+  js-sha512@0.9.0:
+    resolution: {integrity: sha512-mirki9WS/SUahm+1TbAPkqvbCiCfOAAsyXeHxK1UkullnJVVqoJG2pL9ObvT05CN+tM7fxhfYm0NbXn+1hWoZg==}
+
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
@@ -10003,9 +10201,6 @@ packages:
   magic-string@0.25.9:
     resolution: {integrity: sha512-RmF0AsMzgt25qzqqLc1+MbHmhdx0ojF2Fvs4XnOqz2ZOBXzzkEwc/dJQZCYHAn7v1jbVOjAZfK8msRn4BxO4VQ==}
 
-  magic-string@0.30.18:
-    resolution: {integrity: sha512-yi8swmWbO17qHhwIBNeeZxTceJMeBvWJaId6dyvTSOwTipqeHhMhOrz6513r1sOKnpvQ7zkhlG8tPrpilwTxHQ==}
-
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
 
@@ -10322,6 +10517,9 @@ packages:
     resolution: {integrity: sha512-z0yWI+4FDrrweS8Zmt4Ej5HdJmky15+L2e6Wgn3+iK5fWzb6T3fhNFq2+MeTRb064c6Wr4N/wv0DzQTjNzHNGQ==}
     engines: {node: '>=10'}
 
+  mind-elixir@5.4.0:
+    resolution: {integrity: sha512-yxXajDWoSF6id8b2LKxlhXidxH/v6mx4JV+isrtsZ62RGCMsRbjUMFO9xOfTVH8vyxWhsbCkiAP6/i5hqbyk6w==}
+
   mind-elixir@5.5.0:
     resolution: {integrity: sha512-a/bOTp3wJrK/vTm2/Vn5+9kYL0fNqxWvm8SsVojJO/tltLPPU8yMPzFCZHzGRz1Aoj6bpLxN+ExfIbc28nrNxQ==}
 
@@ -10540,11 +10738,6 @@ packages:
   nanoid@3.3.11:
     resolution: {integrity: sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
-    hasBin: true
-
-  nanoid@4.0.2:
-    resolution: {integrity: sha512-7ZtY5KTCNheRGfEFxnedV5zFiORN1+Y1N6zvPTnHQd8ENUvfaDBeuJDZb2bN/oXwXxu3qkTXDzy57W5vAmDTBw==}
-    engines: {node: ^14 || ^16 || >=18}
     hasBin: true
 
   nanoid@5.1.5:
@@ -11951,6 +12144,12 @@ packages:
     resolution: {integrity: sha512-6QtbTRDKM+jA/MZTTefvigNxo0zz+gnBTVFw2CFVvq+f2BuH0nF0vDLNClL045nuTAdOoK/IL1vTP0ZLX0DAyQ==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
+
+  react-window@2.2.3:
+    resolution: {integrity: sha512-gTRqQYC8ojbiXyd9duYFiSn2TJw0ROXCgYjenOvNKITWzK0m0eCvkUsEUM08xvydkMh7ncp+LE0uS3DeNGZxnQ==}
+    peerDependencies:
+      react: ^18.0.0 || ^19.0.0
+      react-dom: ^18.0.0 || ^19.0.0
 
   react-window@2.2.5:
     resolution: {integrity: sha512-6viWvPSZvVuMIe9hrl4IIZoVfO/npiqOb03m4Z9w+VihmVzBbiudUrtUqDpsWdKvd/Ai31TCR25CBcFFAUm28w==}
@@ -14824,14 +15023,14 @@ snapshots:
   '@babel/generator@7.28.3':
     dependencies:
       '@babel/parser': 7.28.4
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
       '@jridgewell/gen-mapping': 0.3.13
       '@jridgewell/trace-mapping': 0.3.31
       jsesc: 3.1.0
 
   '@babel/helper-annotate-as-pure@7.27.3':
     dependencies:
-      '@babel/types': 7.28.1
+      '@babel/types': 7.28.5
 
   '@babel/helper-compilation-targets@7.27.2':
     dependencies:
@@ -14845,8 +15044,8 @@ snapshots:
 
   '@babel/helper-module-imports@7.27.1':
     dependencies:
-      '@babel/traverse': 7.28.0
-      '@babel/types': 7.28.1
+      '@babel/traverse': 7.28.4
+      '@babel/types': 7.28.5
     transitivePeerDependencies:
       - supports-color
 
@@ -14872,11 +15071,11 @@ snapshots:
   '@babel/helpers@7.27.6':
     dependencies:
       '@babel/template': 7.27.2
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
 
   '@babel/parser@7.28.4':
     dependencies:
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
 
   '@babel/parser@7.28.5':
     dependencies:
@@ -14906,7 +15105,7 @@ snapshots:
       '@babel/helper-module-imports': 7.27.1
       '@babel/helper-plugin-utils': 7.27.1
       '@babel/plugin-syntax-jsx': 7.27.1(@babel/core@7.28.0)
-      '@babel/types': 7.28.1
+      '@babel/types': 7.28.5
     transitivePeerDependencies:
       - supports-color
 
@@ -14916,19 +15115,7 @@ snapshots:
     dependencies:
       '@babel/code-frame': 7.27.1
       '@babel/parser': 7.28.4
-      '@babel/types': 7.28.4
-
-  '@babel/traverse@7.28.0':
-    dependencies:
-      '@babel/code-frame': 7.27.1
-      '@babel/generator': 7.28.3
-      '@babel/helper-globals': 7.28.0
-      '@babel/parser': 7.28.5
-      '@babel/template': 7.27.2
       '@babel/types': 7.28.5
-      debug: 4.4.3(supports-color@8.1.1)
-    transitivePeerDependencies:
-      - supports-color
 
   '@babel/traverse@7.28.4':
     dependencies:
@@ -14937,15 +15124,10 @@ snapshots:
       '@babel/helper-globals': 7.28.0
       '@babel/parser': 7.28.4
       '@babel/template': 7.27.2
-      '@babel/types': 7.28.4
+      '@babel/types': 7.28.5
       debug: 4.4.3(supports-color@8.1.1)
     transitivePeerDependencies:
       - supports-color
-
-  '@babel/types@7.28.1':
-    dependencies:
-      '@babel/helper-string-parser': 7.27.1
-      '@babel/helper-validator-identifier': 7.27.1
 
   '@babel/types@7.28.4':
     dependencies:
@@ -15659,8 +15841,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-inspector@5.0.0': {}
 
@@ -15763,8 +15943,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-merge-fields@47.3.0':
     dependencies:
@@ -15785,6 +15963,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.3.0
       '@ckeditor/ckeditor5-utils': 47.3.0
       ckeditor5: 47.3.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-operations-compressor@47.3.0':
     dependencies:
@@ -17129,7 +17309,7 @@ snapshots:
       jotai-scope: 0.7.2(jotai@2.11.0(@types/react@19.1.7)(react@19.2.3))(react@19.2.3)
       lodash.debounce: 4.0.8
       lodash.throttle: 4.1.1
-      nanoid: 4.0.2
+      nanoid: 5.1.5
       open-color: 1.9.1
       pako: 2.0.3
       perfect-freehand: 1.2.0
@@ -18042,6 +18222,10 @@ snapshots:
 
   '@microsoft/tsdoc@0.15.1': {}
 
+  '@mind-elixir/node-menu@5.0.1(mind-elixir@5.4.0)':
+    dependencies:
+      mind-elixir: 5.4.0
+
   '@mind-elixir/node-menu@5.0.1(mind-elixir@5.5.0)':
     dependencies:
       mind-elixir: 5.5.0
@@ -18401,10 +18585,10 @@ snapshots:
       '@babel/core': 7.28.0
       '@babel/plugin-transform-react-jsx': 7.27.1(@babel/core@7.28.0)
       '@babel/plugin-transform-react-jsx-development': 7.27.1(@babel/core@7.28.0)
-      '@prefresh/vite': 2.4.8(preact@10.28.2)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
+      '@prefresh/vite': 2.4.11(preact@10.28.2)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
       '@rollup/pluginutils': 4.2.1
       babel-plugin-transform-hook-names: 1.0.2(@babel/core@7.28.0)
-      debug: 4.4.1
+      debug: 4.4.3(supports-color@8.1.1)
       picocolors: 1.1.1
       vite: 7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1)
       vite-prerender-plugin: 0.5.11(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))
@@ -18428,18 +18612,6 @@ snapshots:
   '@prefresh/utils@1.2.1': {}
 
   '@prefresh/vite@2.4.11(preact@10.28.2)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))':
-    dependencies:
-      '@babel/core': 7.28.0
-      '@prefresh/babel-plugin': 0.5.2
-      '@prefresh/core': 1.5.5(preact@10.28.2)
-      '@prefresh/utils': 1.2.1
-      '@rollup/pluginutils': 4.2.1
-      preact: 10.28.2
-      vite: 7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1)
-    transitivePeerDependencies:
-      - supports-color
-
-  '@prefresh/vite@2.4.8(preact@10.28.2)(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1))':
     dependencies:
       '@babel/core': 7.28.0
       '@prefresh/babel-plugin': 0.5.2
@@ -19561,6 +19733,8 @@ snapshots:
       tslib: 2.8.1
 
   '@socket.io/component-emitter@3.1.2': {}
+
+  '@sqlite.org/sqlite-wasm@3.51.1-build2': {}
 
   '@ssddanbrown/codemirror-lang-smarty@1.0.0': {}
 
@@ -22605,10 +22779,6 @@ snapshots:
     dependencies:
       ms: 2.1.3
 
-  debug@4.4.1:
-    dependencies:
-      ms: 2.1.3
-
   debug@4.4.3(supports-color@8.1.1):
     dependencies:
       ms: 2.1.3
@@ -25254,6 +25424,10 @@ snapshots:
 
   js-levenshtein@1.1.6: {}
 
+  js-sha1@0.7.0: {}
+
+  js-sha512@0.9.0: {}
+
   js-tokens@4.0.0: {}
 
   js-tokens@9.0.1: {}
@@ -25786,10 +25960,6 @@ snapshots:
   magic-string@0.25.9:
     dependencies:
       sourcemap-codec: 1.4.8
-
-  magic-string@0.30.18:
-    dependencies:
-      '@jridgewell/sourcemap-codec': 1.5.5
 
   magic-string@0.30.21:
     dependencies:
@@ -26380,6 +26550,8 @@ snapshots:
 
   mimic-response@3.1.0: {}
 
+  mind-elixir@5.4.0: {}
+
   mind-elixir@5.5.0: {}
 
   mini-css-extract-plugin@2.9.4(webpack@5.101.3(@swc/core@1.11.29(@swc/helpers@0.5.17))(esbuild@0.27.2)):
@@ -26635,8 +26807,6 @@ snapshots:
   nano-spawn@2.0.0: {}
 
   nanoid@3.3.11: {}
-
-  nanoid@4.0.2: {}
 
   nanoid@5.1.5: {}
 
@@ -28074,6 +28244,11 @@ snapshots:
       clsx: 2.1.1
       prop-types: 15.8.1
       react: 19.2.3
+
+  react-window@2.2.3(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+    dependencies:
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
 
   react-window@2.2.5(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
@@ -30410,7 +30585,7 @@ snapshots:
   vite-prerender-plugin@0.5.11(vite@7.3.1(@types/node@24.10.7)(jiti@2.6.1)(less@4.1.3)(lightningcss@1.30.2)(sass-embedded@1.91.0)(sass@1.91.0)(terser@5.44.0)(tsx@4.21.0)(yaml@2.8.1)):
     dependencies:
       kolorist: 1.8.0
-      magic-string: 0.30.18
+      magic-string: 0.30.21
       node-html-parser: 6.1.13
       simple-code-frame: 1.3.0
       source-map: 0.7.6

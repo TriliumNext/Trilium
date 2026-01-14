@@ -1,3 +1,4 @@
+import { routes } from "@triliumnext/core";
 import { createPartialContentHandler } from "@triliumnext/express-partial-content";
 import express from "express";
 import rateLimit from "express-rate-limit";
@@ -17,12 +18,9 @@ import openID from '../services/open_id.js';
 import { isElectron } from "../services/utils.js";
 import shareRoutes from "../share/routes.js";
 import anthropicRoute from "./api/anthropic.js";
-import appInfoRoute from "./api/app_info.js";
-import attachmentsApiRoute from "./api/attachments.js";
 import attributesRoute from "./api/attributes.js";
 import autocompleteApiRoute from "./api/autocomplete.js";
 import backendLogRoute from "./api/backend_log.js";
-import branchesApiRoute from "./api/branches.js";
 import bulkActionRoute from "./api/bulk_action.js";
 import clipperRoute from "./api/clipper.js";
 import cloningApiRoute from "./api/cloning.js";
@@ -33,19 +31,15 @@ import filesRoute from "./api/files.js";
 import fontsRoute from "./api/fonts.js";
 import imageRoute from "./api/image.js";
 import importRoute from "./api/import.js";
-import keysRoute from "./api/keys.js";
 import llmRoute from "./api/llm.js";
 import loginApiRoute from "./api/login.js";
 import metricsRoute from "./api/metrics.js";
 import noteMapRoute from "./api/note_map.js";
-import notesApiRoute from "./api/notes.js";
 import ollamaRoute from "./api/ollama.js";
 import openaiRoute from "./api/openai.js";
-import optionsApiRoute from "./api/options.js";
 import otherRoute from "./api/other.js";
 import passwordApiRoute from "./api/password.js";
 import recentChangesApiRoute from "./api/recent_changes.js";
-import recentNotesRoute from "./api/recent_notes.js";
 import recoveryCodes from './api/recovery_codes.js';
 import relationMapApiRoute from "./api/relation-map.js";
 import revisionsApiRoute from "./api/revisions.js";
@@ -61,7 +55,6 @@ import syncApiRoute from "./api/sync.js";
 import systemInfoRoute from "./api/system_info.js";
 import totp from './api/totp.js';
 // API routes
-import treeApiRoute from "./api/tree.js";
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute from "./login.js";
@@ -105,22 +98,8 @@ function register(app: express.Application) {
     apiRoute(GET, '/api/totp_recovery/enabled', recoveryCodes.checkForRecoveryKeys);
     apiRoute(GET, '/api/totp_recovery/used', recoveryCodes.getUsedRecoveryCodes);
 
-    apiRoute(GET, '/api/tree', treeApiRoute.getTree);
-    apiRoute(PST, '/api/tree/load', treeApiRoute.load);
+    routes.buildSharedApiRoutes(apiRoute);
 
-    apiRoute(GET, "/api/notes/:noteId", notesApiRoute.getNote);
-    apiRoute(GET, "/api/notes/:noteId/blob", notesApiRoute.getNoteBlob);
-    apiRoute(GET, "/api/notes/:noteId/metadata", notesApiRoute.getNoteMetadata);
-    apiRoute(PUT, "/api/notes/:noteId/data", notesApiRoute.updateNoteData);
-    apiRoute(DEL, "/api/notes/:noteId", notesApiRoute.deleteNote);
-    apiRoute(PUT, "/api/notes/:noteId/undelete", notesApiRoute.undeleteNote);
-    apiRoute(PST, "/api/notes/:noteId/revision", notesApiRoute.forceSaveRevision);
-    apiRoute(PST, "/api/notes/:parentNoteId/children", notesApiRoute.createNote);
-    apiRoute(PUT, "/api/notes/:noteId/sort-children", notesApiRoute.sortChildNotes);
-    apiRoute(PUT, "/api/notes/:noteId/protect/:isProtected", notesApiRoute.protectNote);
-    apiRoute(PUT, "/api/notes/:noteId/type", notesApiRoute.setNoteTypeMime);
-    apiRoute(PUT, "/api/notes/:noteId/title", notesApiRoute.changeTitle);
-    apiRoute(PST, "/api/notes/:noteId/duplicate/:parentNoteId", notesApiRoute.duplicateSubtree);
     apiRoute(PUT, "/api/notes/:noteId/clone-to-branch/:parentBranchId", cloningApiRoute.cloneNoteToBranch);
     apiRoute(PUT, "/api/notes/:noteId/toggle-in-parent/:parentNoteId/:present", cloningApiRoute.toggleNoteInParent);
     apiRoute(PUT, "/api/notes/:noteId/clone-to-note/:parentNoteId", cloningApiRoute.cloneNoteToParentNote);
@@ -142,26 +121,9 @@ function register(app: express.Application) {
     route(GET, "/api/notes/download/:noteId", [auth.checkApiAuthOrElectron], filesRoute.downloadFile);
     apiRoute(PST, "/api/notes/:noteId/save-to-tmp-dir", filesRoute.saveNoteToTmpDir);
     apiRoute(PST, "/api/notes/:noteId/upload-modified-file", filesRoute.uploadModifiedFileToNote);
-    apiRoute(PST, "/api/notes/:noteId/convert-to-attachment", notesApiRoute.convertNoteToAttachment);
 
-    apiRoute(PUT, "/api/branches/:branchId/move-to/:parentBranchId", branchesApiRoute.moveBranchToParent);
-    apiRoute(PUT, "/api/branches/:branchId/move-before/:beforeBranchId", branchesApiRoute.moveBranchBeforeNote);
-    apiRoute(PUT, "/api/branches/:branchId/move-after/:afterBranchId", branchesApiRoute.moveBranchAfterNote);
-    apiRoute(PUT, "/api/branches/:branchId/expanded/:expanded", branchesApiRoute.setExpanded);
-    apiRoute(PUT, "/api/branches/:branchId/expanded-subtree/:expanded", branchesApiRoute.setExpandedForSubtree);
-    apiRoute(DEL, "/api/branches/:branchId", branchesApiRoute.deleteBranch);
-    apiRoute(PUT, "/api/branches/:branchId/set-prefix", branchesApiRoute.setPrefix);
-    apiRoute(PUT, "/api/branches/set-prefix-batch", branchesApiRoute.setPrefixBatch);
-
-    apiRoute(GET, "/api/notes/:noteId/attachments", attachmentsApiRoute.getAttachments);
-    apiRoute(PST, "/api/notes/:noteId/attachments", attachmentsApiRoute.saveAttachment);
-    route(PST, "/api/notes/:noteId/attachments/upload", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], attachmentsApiRoute.uploadAttachment, apiResultHandler);
-    apiRoute(GET, "/api/attachments/:attachmentId", attachmentsApiRoute.getAttachment);
-    apiRoute(GET, "/api/attachments/:attachmentId/all", attachmentsApiRoute.getAllAttachments);
-    apiRoute(PST, "/api/attachments/:attachmentId/convert-to-note", attachmentsApiRoute.convertAttachmentToNote);
-    apiRoute(DEL, "/api/attachments/:attachmentId", attachmentsApiRoute.deleteAttachment);
-    apiRoute(PUT, "/api/attachments/:attachmentId/rename", attachmentsApiRoute.renameAttachment);
-    apiRoute(GET, "/api/attachments/:attachmentId/blob", attachmentsApiRoute.getAttachmentBlob);
+    // TODO: Bring back attachment uploading
+    // route(PST, "/api/notes/:noteId/attachments/upload", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], attachmentsApiRoute.uploadAttachment, apiResultHandler);
     route(GET, "/api/attachments/:attachmentId/image/:filename", [auth.checkApiAuthOrElectron], imageRoute.returnAttachedImage);
     route(GET, "/api/attachments/:attachmentId/open", [auth.checkApiAuthOrElectron], filesRoute.openAttachment);
     asyncRoute(
@@ -211,13 +173,6 @@ function register(app: express.Application) {
     route(GET, "/api/images/:noteId/:filename", [auth.checkApiAuthOrElectron], imageRoute.returnImageFromNote);
     route(PUT, "/api/images/:noteId", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], imageRoute.updateImage, apiResultHandler);
 
-    apiRoute(GET, "/api/options", optionsApiRoute.getOptions);
-    // FIXME: possibly change to sending value in the body to avoid host of HTTP server issues with slashes
-    apiRoute(PUT, "/api/options/:name/:value", optionsApiRoute.updateOption);
-    apiRoute(PUT, "/api/options", optionsApiRoute.updateOptions);
-    apiRoute(GET, "/api/options/user-themes", optionsApiRoute.getUserThemes);
-    apiRoute(GET, "/api/options/locales", optionsApiRoute.getSupportedLocales);
-
     apiRoute(PST, "/api/password/change", passwordApiRoute.changePassword);
     apiRoute(PST, "/api/password/reset", passwordApiRoute.resetPassword);
 
@@ -233,8 +188,6 @@ function register(app: express.Application) {
     route(PST, "/api/sync/queue-sector/:entityName/:sector", [auth.checkApiAuth], syncApiRoute.queueSector, apiResultHandler);
     route(GET, "/api/sync/stats", [], syncApiRoute.getStats, apiResultHandler);
 
-    apiRoute(PST, "/api/recent-notes", recentNotesRoute.addRecentNote);
-    apiRoute(GET, "/api/app-info", appInfoRoute.getAppInfo);
     apiRoute(GET, "/api/metrics", metricsRoute.getMetrics);
     apiRoute(GET, "/api/system-checks", systemInfoRoute.systemChecks);
 
@@ -331,19 +284,12 @@ function register(app: express.Application) {
     asyncRoute(PST, "/api/sender/image", [auth.checkEtapiToken, uploadMiddlewareWithErrorHandling], senderRoute.uploadImage, apiResultHandler);
     asyncRoute(PST, "/api/sender/note", [auth.checkEtapiToken], senderRoute.saveNote, apiResultHandler);
 
-    apiRoute(GET, "/api/keyboard-actions", keysRoute.getKeyboardActions);
-    apiRoute(GET, "/api/keyboard-shortcuts-for-notes", keysRoute.getShortcutsForNotes);
-
     apiRoute(PST, "/api/relation-map", relationMapApiRoute.getRelationMap);
-    apiRoute(PST, "/api/notes/erase-deleted-notes-now", notesApiRoute.eraseDeletedNotesNow);
-    apiRoute(PST, "/api/notes/erase-unused-attachments-now", notesApiRoute.eraseUnusedAttachmentsNow);
     asyncApiRoute(GET, "/api/similar-notes/:noteId", similarNotesRoute.getSimilarNotes);
     asyncApiRoute(GET, "/api/backend-log", backendLogRoute.getBackendLog);
     apiRoute(GET, "/api/stats/note-size/:noteId", statsRoute.getNoteSize);
     apiRoute(GET, "/api/stats/subtree-size/:noteId", statsRoute.getSubtreeSize);
-    apiRoute(PST, "/api/delete-notes-preview", notesApiRoute.getDeleteNotesPreview);
     route(GET, "/api/fonts", [auth.checkApiAuthOrElectron], fontsRoute.getFontCss);
-    apiRoute(GET, "/api/other/icon-usage", otherRoute.getIconUsage);
     apiRoute(PST, "/api/other/render-markdown", otherRoute.renderMarkdown);
     apiRoute(PST, "/api/other/to-markdown", otherRoute.toMarkdown);
     apiRoute(GET, "/api/recent-changes/:ancestorNoteId", recentChangesApiRoute.getRecentChanges);
@@ -351,7 +297,6 @@ function register(app: express.Application) {
 
     apiRoute(PST, "/api/note-map/:noteId/tree", noteMapRoute.getTreeMap);
     apiRoute(PST, "/api/note-map/:noteId/link", noteMapRoute.getLinkMap);
-    apiRoute(GET, "/api/note-map/:noteId/backlink-count", noteMapRoute.getBacklinkCount);
     apiRoute(GET, "/api/note-map/:noteId/backlinks", noteMapRoute.getBacklinks);
 
     shareRoutes.register(router);

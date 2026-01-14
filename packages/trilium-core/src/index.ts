@@ -3,6 +3,9 @@ import { CryptoProvider, initCrypto } from "./services/encryption/crypto";
 import { getLog, initLog } from "./services/log";
 import { initSql } from "./services/sql/index";
 import { SqlService, SqlServiceParams } from "./services/sql/sql";
+import { initMessaging, MessagingProvider } from "./services/messaging/index";
+import { initTranslations, TranslationProvider } from "./services/i18n";
+import appInfo from "./services/app_info";
 
 export type * from "./services/sql/types";
 export * from "./services/sql/index";
@@ -20,8 +23,10 @@ export { default as app_info } from "./services/app_info";
 export { default as keyboard_actions } from "./services/keyboard_actions";
 export { default as entity_changes } from "./services/entity_changes";
 export { default as hidden_subtree } from "./services/hidden_subtree";
+export * as icon_packs from "./services/icon_packs";
 export { getContext, type ExecutionContext } from "./services/context";
 export * as cls from "./services/context";
+export * as i18n from "./services/i18n";
 export * from "./errors";
 export { default as getInstanceId } from "./services/instance_id";
 export type { CryptoProvider } from "./services/encryption/crypto";
@@ -32,6 +37,12 @@ export { default as handlers } from "./services/handlers";
 export { default as TaskContext } from "./services/task_context";
 export { default as revisions } from "./services/revisions";
 export { default as erase } from "./services/erase";
+export { default as getSharedBootstrapItems } from "./services/bootstrap_utils";
+export { default as branches } from "./services/branches";
+
+// Messaging system
+export * from "./services/messaging/index";
+export type { MessagingProvider, ServerMessagingProvider, MessageClient, MessageHandler } from "./services/messaging/types";
 
 export { default as becca } from "./becca/becca";
 export { default as becca_loader } from "./becca/becca_loader";
@@ -52,16 +63,29 @@ export { default as Becca } from "./becca/becca-interface";
 export type { NotePojo } from "./becca/becca-interface";
 
 export { default as NoteSet } from "./services/search/note_set";
-export { default as note_service, NoteParams } from "./services/notes";
+export { default as note_service } from "./services/notes";
+export type { NoteParams } from "./services/notes";
 export * as sanitize from "./services/sanitizer";
+export * as routes from "./routes";
 
-export function initializeCore({ dbConfig, executionContext, crypto }: {
+export function initializeCore({ dbConfig, executionContext, crypto, translations, messaging, extraAppInfo }: {
     dbConfig: SqlServiceParams,
     executionContext: ExecutionContext,
-    crypto: CryptoProvider
+    crypto: CryptoProvider,
+    translations: TranslationProvider,
+    messaging?: MessagingProvider,
+    extraAppInfo?: {
+        nodeVersion: string;
+        dataDirectory: string;
+    };
 }) {
     initLog();
     initCrypto(crypto);
     initSql(new SqlService(dbConfig, getLog()));
     initContext(executionContext);
+    initTranslations(translations);
+    Object.assign(appInfo, extraAppInfo);
+    if (messaging) {
+        initMessaging(messaging);
+    }
 };

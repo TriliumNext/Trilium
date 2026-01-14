@@ -6,7 +6,7 @@ const APP_DB_VERSION = 233;
 const SYNC_VERSION = 36;
 const CLIPPER_PROTOCOL_VERSION = "1.0";
 
-export default {
+const appInfo: AppInfo = {
     appVersion: packageJson.version,
     dbVersion: APP_DB_VERSION,
     syncVersion: SYNC_VERSION,
@@ -14,4 +14,6 @@ export default {
     buildRevision: build.buildRevision,
     clipperProtocolVersion: CLIPPER_PROTOCOL_VERSION,
     utcDateTime: new Date().toISOString()
-} satisfies AppInfo;
+}
+
+export default appInfo;

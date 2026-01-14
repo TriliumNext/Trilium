@@ -126,3 +126,12 @@ export const unescapeHtml = unescape;
 export function randomSecureToken(bytes = 32) {
     return encodeBase64(getCrypto().randomBytes(32));
 }
+
+export function safeExtractMessageAndStackFromError(err: unknown): [errMessage: string, errStack: string | undefined] {
+    return (err instanceof Error) ? [err.message, err.stack] as const : ["Unknown Error", undefined] as const;
+}
+
+export function isEmptyOrWhitespace(str: string | null | undefined) {
+    if (!str) return true;
+    return str.match(/^ *$/) !== null;
+}

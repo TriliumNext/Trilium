@@ -1,10 +1,10 @@
 "use strict";
 
-import keyboardActions from "../../services/keyboard_actions.js";
-import becca from "../../becca/becca.js";
+import becca from "../../becca/becca";
+import keyboard_actions from "../../services/keyboard_actions";
 
 function getKeyboardActions() {
-    return keyboardActions.getKeyboardActions();
+    return keyboard_actions.getKeyboardActions();
 }
 
 function getShortcutsForNotes() {

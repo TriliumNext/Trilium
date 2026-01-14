@@ -6,3 +6,9 @@ export const dbReady = deferred<void>();
 setTimeout(() => {
     dbReady.resolve();
 }, 850);
+
+function isDbInitialized() {
+    return true;
+}
+
+export default { isDbInitialized };

@@ -9,7 +9,7 @@ import type BBranch from "../../../becca/entities/bbranch.js";
 import type BNote from "../../../becca/entities/bnote.js";
 import { getClientDir, getShareThemeAssetDir } from "../../../routes/assets";
 import { getDefaultTemplatePath, readTemplate, renderNoteForExport } from "../../../share/content_renderer";
-import { getIconPacks, MIME_TO_EXTENSION_MAPPINGS, ProcessedIconPack } from "../../icon_packs";
+import { icon_packs as iconPackService } from "@triliumnext/core";
 import log from "../../log";
 import NoteMeta, { NoteMetaFile } from "../../meta/note_meta";
 import { RESOURCE_DIR } from "../../resource_dir";
@@ -31,7 +31,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
     private indexMeta: NoteMeta | null = null;
     private searchIndex: Map<string, SearchIndexEntry> = new Map();
     private rootMeta: NoteMeta | null = null;
-    private iconPacks: ProcessedIconPack[] = [];
+    private iconPacks: iconPackService.ProcessedIconPack[] = [];
 
     prepareMeta(metaFile: NoteMetaFile): void {
         const assets = [
@@ -56,7 +56,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
             dataFileName: "index.html"
         };
         this.rootMeta = metaFile.files[0];
-        this.iconPacks = getIconPacks();
+        this.iconPacks = iconPackService.getIconPacks();
 
         metaFile.files.push(this.indexMeta);
     }
@@ -165,7 +165,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
 
         // Inject the custom fonts.
         for (const iconPack of this.iconPacks) {
-            const extension = MIME_TO_EXTENSION_MAPPINGS[iconPack.fontMime];
+            const extension = iconPackService.MIME_TO_EXTENSION_MAPPINGS[iconPack.fontMime];
             let fontData: Uint8Array | undefined;
             if (iconPack.builtin) {
                 fontData = readFileSync(join(getClientDir(), "fonts", `${iconPack.fontAttachmentId}.${extension}`));
