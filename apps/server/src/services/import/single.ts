@@ -1,18 +1,16 @@
-"use strict";
+import type { NoteType } from "@triliumnext/commons";
 
 import type BNote from "../../becca/entities/bnote.js";
-import type TaskContext from "../task_context.js";
-
-import noteService from "../../services/notes.js";
 import imageService from "../../services/image.js";
+import noteService from "../../services/notes.js";
+import { getNoteTitle, processStringOrBuffer } from "../../services/utils.js";
+import htmlSanitizer from "../html_sanitizer.js";
 import protectedSessionService from "../protected_session.js";
+import type TaskContext from "../task_context.js";
+import type { File } from "./common.js";
 import markdownService from "./markdown.js";
 import mimeService from "./mime.js";
-import { getNoteTitle, processStringOrBuffer } from "../../services/utils.js";
 import importUtils from "./utils.js";
-import htmlSanitizer from "../html_sanitizer.js";
-import type { File } from "./common.js";
-import type { NoteType } from "@triliumnext/commons";
 
 function importSingleFile(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     const mime = mimeService.getMime(file.originalname) || file.mimetype;
@@ -56,13 +54,14 @@ function importImage(file: File, parentNote: BNote, taskContext: TaskContext<"im
 function importFile(taskContext: TaskContext<"importNotes">, file: File, parentNote: BNote) {
     const originalName = file.originalname;
 
+    const mime = mimeService.getMime(originalName) || file.mimetype;
     const { note } = noteService.createNewNote({
         parentNoteId: parentNote.noteId,
-        title: originalName,
+        title: getNoteTitle(originalName, mime === "application/pdf"),
         content: file.buffer,
         isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable(),
         type: "file",
-        mime: mimeService.getMime(originalName) || file.mimetype
+        mime
     });
 
     note.addLabel("originalFileName", originalName);
@@ -88,7 +87,7 @@ function importCodeNote(taskContext: TaskContext<"importNotes">, file: File, par
         title,
         content,
         type,
-        mime: mime,
+        mime,
         isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
     });
 
@@ -106,7 +105,7 @@ function importCustomType(taskContext: TaskContext<"importNotes">, file: File, p
         title,
         content,
         type,
-        mime: mime,
+        mime,
         isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable()
     });
 
@@ -214,7 +213,7 @@ function importAttachment(taskContext: TaskContext<"importNotes">, file: File, p
             title: file.originalname,
             content: file.buffer,
             role: "file",
-            mime: mime
+            mime
         });
 
         taskContext.increaseProgressCount();

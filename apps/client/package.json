@@ -78,7 +78,7 @@
     "@types/reveal.js": "5.2.2",
     "@types/tabulator-tables": "6.3.1",
     "copy-webpack-plugin": "13.0.1",
-    "happy-dom": "20.1.0",
+    "happy-dom": "20.3.0",
     "lightningcss": "1.30.2",
     "script-loader": "0.7.2",
     "vite-plugin-static-copy": "3.1.4"

@@ -1,5 +1,5 @@
 import type { AttachmentRow, AttributeType, CloneResponse, NoteRow, NoteType, RevisionRow } from "@triliumnext/commons";
-import { dayjs } from "@triliumnext/commons";
+import { dayjs, getNoteIcon } from "@triliumnext/commons";
 
 import cloningService from "../../services/cloning.js";
 import dateUtils from "../../services/date_utils.js";
@@ -23,26 +23,6 @@ import BRevision from "./brevision.js";
 
 const LABEL = "label";
 const RELATION = "relation";
-
-// TODO: Deduplicate with fnote
-export const NOTE_TYPE_ICONS = {
-    file: "bx bx-file",
-    image: "bx bx-image",
-    code: "bx bx-code",
-    render: "bx bx-extension",
-    search: "bx bx-file-find",
-    relationMap: "bx bxs-network-chart",
-    book: "bx bx-book",
-    noteMap: "bx bxs-network-chart",
-    mermaid: "bx bx-selection",
-    canvas: "bx bx-pen",
-    webView: "bx bx-globe-alt",
-    launcher: "bx bx-link",
-    doc: "bx bxs-file-doc",
-    contentWidget: "bx bxs-widget",
-    mindMap: "bx bx-sitemap",
-    geoMap: "bx bx-map-alt"
-};
 
 interface NotePathRecord {
     isArchived: boolean;
@@ -1698,30 +1678,17 @@ class BNote extends AbstractBeccaEntity<BNote> {
     }
 
     getIcon() {
-        return `tn-icon ${this.#getIconInternal()}`;
-    }
-
-    // TODO: Deduplicate with fnote
-    #getIconInternal() {
         const iconClassLabels = this.getLabels("iconClass");
+        const icon = getNoteIcon({
+            noteId: this.noteId,
+            type: this.type,
+            mime: this.mime,
+            iconClass: iconClassLabels.length > 0 ? iconClassLabels[0].value : undefined,
+            workspaceIconClass: undefined,
+            isFolder: this.isFolder.bind(this)
+        });
 
-        if (iconClassLabels && iconClassLabels.length > 0) {
-            return iconClassLabels[0].value;
-        } else if (this.noteId === "root") {
-            return "bx bx-home-alt-2";
-        }
-        if (this.noteId === "_share") {
-            return "bx bx-share-alt";
-        } else if (this.type === "text") {
-            if (this.isFolder()) {
-                return "bx bx-folder";
-            }
-            return "bx bx-note";
-
-        } else if (this.type === "code" && this.mime.startsWith("text/x-sql")) {
-            return "bx bx-data";
-        }
-        return NOTE_TYPE_ICONS[this.type];
+        return `tn-icon ${icon}`;
     }
 
     // TODO: Deduplicate with fnote
