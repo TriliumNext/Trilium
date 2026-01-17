@@ -1,6 +1,6 @@
+import { type BindableValue, default as sqlite3InitModule } from "@sqlite.org/sqlite-wasm";
 import type { DatabaseProvider, RunResult, Statement, Transaction } from "@triliumnext/core";
-import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
-import type { BindableValue } from "@sqlite.org/sqlite-wasm";
+
 import demoDbSql from "./db.sql?raw";
 
 // Type definitions for SQLite WASM (the library doesn't export these directly)
@@ -39,7 +39,7 @@ class WasmStatement implements Statement {
             this.stmt.reset();
             return {
                 changes,
-                lastInsertRowid
+                lastInsertRowid: typeof lastInsertRowid === "bigint" ? Number(lastInsertRowid) : lastInsertRowid
             };
         } catch (e) {
             // Reset on error to allow reuse

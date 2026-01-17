@@ -15,7 +15,7 @@ export interface Transaction {
 
 export interface RunResult {
     changes: number;
-    lastInsertRowid: number | bigint;
+    lastInsertRowid: number;
 }
 
 export interface DatabaseProvider {
