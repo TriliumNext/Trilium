@@ -8,7 +8,7 @@ overrides:
   mermaid: 11.12.2
   preact: 10.28.2
   roughjs: 4.6.6
-  '@types/express-serve-static-core': 5.1.0
+  '@types/express-serve-static-core': 5.1.1
   flat@<5.0.1: '>=5.0.1'
   debug@>=3.2.0 <3.2.7: '>=3.2.7'
   nanoid@<3.3.8: '>=3.3.8'
@@ -5327,8 +5327,8 @@ packages:
   '@types/express-http-proxy@1.6.7':
     resolution: {integrity: sha512-CEp9pbnwVI1RzN9PXc+KESMxwUW5r1O7tkWb5h7Wg/YAIf+KulD/zKev8fbbn+Ljt0Yvs8MXwV2W6Id+cKxe2Q==}
 
-  '@types/express-serve-static-core@5.1.0':
-    resolution: {integrity: sha512-jnHMsrd0Mwa9Cf4IdOzbz543y4XJepXrbia2T4b6+spXC2We3t1y6K44D3mR8XMFSXMCf3/l7rCgddfx7UNVBA==}
+  '@types/express-serve-static-core@5.1.1':
+    resolution: {integrity: sha512-v4zIMr/cX7/d2BpAEX3KNKL/JrT1s43s96lLvvdTmza1oEvDudCqK9aF/djc/SWgy8Yh0h30TZx5VpzqFCxk5A==}
 
   '@types/express-session@1.18.2':
     resolution: {integrity: sha512-k+I0BxwVXsnEU2hV77cCobC08kIsn4y44C3gC0b46uxZVMaXA04lSPgRLR/bSL2w0t0ShJiG8o4jPzRG/nscFg==}
@@ -15427,6 +15427,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.4.0
       ckeditor5: 47.4.0
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-editor-decoupled@47.4.0':
     dependencies:
@@ -16044,6 +16046,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.4.0
       '@ckeditor/ckeditor5-utils': 47.4.0
       ckeditor5: 47.4.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-special-characters@47.4.0':
     dependencies:
@@ -19768,7 +19772,7 @@ snapshots:
 
   '@types/connect-history-api-fallback@1.5.4':
     dependencies:
-      '@types/express-serve-static-core': 5.1.0
+      '@types/express-serve-static-core': 5.1.1
       '@types/node': 24.10.9
 
   '@types/connect@3.4.38':
@@ -19941,7 +19945,7 @@ snapshots:
     dependencies:
       '@types/express': 5.0.3
 
-  '@types/express-serve-static-core@5.1.0':
+  '@types/express-serve-static-core@5.1.1':
     dependencies:
       '@types/node': 24.10.9
       '@types/qs': 6.14.0
@@ -19955,20 +19959,20 @@ snapshots:
   '@types/express@4.17.23':
     dependencies:
       '@types/body-parser': 1.19.6
-      '@types/express-serve-static-core': 5.1.0
+      '@types/express-serve-static-core': 5.1.1
       '@types/qs': 6.14.0
       '@types/serve-static': 2.2.0
 
   '@types/express@5.0.3':
     dependencies:
       '@types/body-parser': 1.19.6
-      '@types/express-serve-static-core': 5.1.0
+      '@types/express-serve-static-core': 5.1.1
       '@types/serve-static': 2.2.0
 
   '@types/express@5.0.6':
     dependencies:
       '@types/body-parser': 1.19.6
-      '@types/express-serve-static-core': 5.1.0
+      '@types/express-serve-static-core': 5.1.1
       '@types/serve-static': 2.2.0
 
   '@types/fs-extra@11.0.4':
@@ -30681,7 +30685,7 @@ snapshots:
       '@types/bonjour': 3.5.13
       '@types/connect-history-api-fallback': 1.5.4
       '@types/express': 4.17.23
-      '@types/express-serve-static-core': 5.1.0
+      '@types/express-serve-static-core': 5.1.1
       '@types/serve-index': 1.9.4
       '@types/serve-static': 1.15.10
       '@types/sockjs': 0.3.36
