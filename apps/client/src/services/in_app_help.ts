@@ -1,4 +1,5 @@
 import { NoteType } from "@triliumnext/commons";
+
 import FNote from "../entities/fnote";
 import { ViewTypeOptions } from "../widgets/collections/interface";
 
@@ -24,6 +25,7 @@ export const byNoteType: Record<Exclude<NoteType, "book">, string | null> = {
 export const byBookType: Record<ViewTypeOptions, string | null> = {
     list: "mULW0Q3VojwY",
     grid: "8QqnMzx393bx",
+    gallery: null,
     calendar: "xWbu3jpNWapp",
     table: "2FvYrpmOXm29",
     geoMap: "81SGnPGMk7Xc",
@@ -39,6 +41,6 @@ export function getHelpUrlForNote(note: FNote | null | undefined) {
     } else if (note?.hasLabel("textSnippet")) {
         return "pwc194wlRzcH";
     } else if (note && note.type === "book") {
-        return byBookType[note.getAttributeValue("label", "viewType") as ViewTypeOptions ?? ""]
+        return byBookType[note.getAttributeValue("label", "viewType") as ViewTypeOptions ?? ""];
     }
 }

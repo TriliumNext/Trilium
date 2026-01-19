@@ -1,15 +1,16 @@
+import { FilterLabelsByType } from "@triliumnext/commons";
 import { t } from "i18next";
+import { VNode } from "preact";
+
+import Component from "../../components/component";
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
-import NoteContextAwareWidget from "../note_context_aware_widget";
 import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, type MapLayer } from "../collections/geomap/map_layer";
 import { ViewTypeOptions } from "../collections/interface";
-import { FilterLabelsByType } from "@triliumnext/commons";
 import { DEFAULT_THEME, getPresentationThemes } from "../collections/presentation/themes";
-import { VNode } from "preact";
-import { useNoteLabel } from "../react/hooks";
+import NoteContextAwareWidget from "../note_context_aware_widget";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
-import Component from "../../components/component";
+import { useNoteLabel } from "../react/hooks";
 
 interface BookConfig {
     properties: BookProperty[];
@@ -76,6 +77,9 @@ interface BookContext {
 
 export const bookPropertiesConfig: Record<ViewTypeOptions, BookConfig> = {
     grid: {
+        properties: []
+    },
+    gallery: {
         properties: []
     },
     list: {
@@ -211,7 +215,7 @@ function ListExpandDepth(context: { note: FNote, parentComponent: Component }) {
             <FormDropdownDivider />
             <ListExpandDepthButton label={t("book_properties.expand_all_levels")} depth="all" checked={currentDepth === "all"} {...context} />
         </>
-    )
+    );
 }
 
 function ListExpandDepthButton({ label, depth, note, parentComponent, checked }: { label: string, depth: number | "all", note: FNote, parentComponent: Component, checked?: boolean }) {
@@ -236,5 +240,5 @@ function buildExpandListHandler(depth: number | "all") {
 
         await attributes.setLabel(noteId, "expanded", newValue);
         triggerCommand("refreshNoteList", { noteId });
-    }
+    };
 }
