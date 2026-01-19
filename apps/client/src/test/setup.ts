@@ -13,7 +13,8 @@ function injectGlobals() {
     uncheckedWindow.$ = $;
     uncheckedWindow.WebSocket = () => {};
     uncheckedWindow.glob = {
-        isMainWindow: true
+        isMainWindow: true,
+        windowId: "main"
     };
 }
 
