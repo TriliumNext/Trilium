@@ -46,7 +46,7 @@
     "globals": "17.0.0",
     "i18next": "25.7.4",
     "i18next-http-backend": "3.0.2",
-    "jquery": "3.7.1",
+    "jquery": "4.0.0",
     "jquery.fancytree": "2.38.5",
     "jsplumb": "2.15.6",
     "katex": "0.16.27",

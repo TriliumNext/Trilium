@@ -254,11 +254,11 @@ importers:
         specifier: 3.0.2
         version: 3.0.2(encoding@0.1.13)
       jquery:
-        specifier: 3.7.1
-        version: 3.7.1
+        specifier: 4.0.0
+        version: 4.0.0
       jquery.fancytree:
         specifier: 2.38.5
-        version: 2.38.5(jquery@3.7.1)
+        version: 2.38.5(jquery@4.0.0)
       jsplumb:
         specifier: 2.15.6
         version: 2.15.6
@@ -394,7 +394,7 @@ importers:
         version: 0.2.2
       jquery.fancytree:
         specifier: 2.38.5
-        version: 2.38.5(jquery@3.7.1)
+        version: 2.38.5(jquery@4.0.0)
     devDependencies:
       '@electron-forge/cli':
         specifier: 7.11.1
@@ -9539,8 +9539,8 @@ packages:
     peerDependencies:
       jquery: '>=1.9'
 
-  jquery@3.7.1:
-    resolution: {integrity: sha512-m4avr8yL8kmFN8psrbFFFmB/If14iN5o9nw/NgnnM+kybDJpRsAynV2BsfpTYrTRysYUdADVD7CkUUizgkpLfg==}
+  jquery@4.0.0:
+    resolution: {integrity: sha512-TXCHVR3Lb6TZdtw1l3RTLf8RBWVGexdxL6AC8/e0xZKEpBflBsjh9/8LXw+dkNFuOyW9B7iB3O1sP7hS0Kiacg==}
 
   js-levenshtein@1.1.6:
     resolution: {integrity: sha512-X2BB11YZtrRqY4EnQcLX5Rh373zbK4alC1FW7D7MBhL2gtcC17cTnr6DmfHZeS0s2rTHjUTMMHfG7gO8SSdw+g==}
@@ -15246,8 +15246,6 @@ snapshots:
       '@ckeditor/ckeditor5-core': 47.4.0
       '@ckeditor/ckeditor5-utils': 47.4.0
       ckeditor5: 47.4.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-code-block@47.4.0(patch_hash=2361d8caad7d6b5bddacc3a3b4aa37dbfba260b1c1b22a450413a79c1bb1ce95)':
     dependencies:
@@ -25336,11 +25334,11 @@ snapshots:
 
   jquery-hotkeys@0.2.2: {}
 
-  jquery.fancytree@2.38.5(jquery@3.7.1):
+  jquery.fancytree@2.38.5(jquery@4.0.0):
     dependencies:
-      jquery: 3.7.1
+      jquery: 4.0.0
 
-  jquery@3.7.1: {}
+  jquery@4.0.0: {}
 
   js-levenshtein@1.1.6: {}
 
