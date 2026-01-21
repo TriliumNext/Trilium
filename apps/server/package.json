@@ -29,7 +29,7 @@
     "proxy-nginx-subdir": "docker run --name trilium-nginx-subdir --rm --network=host -v ./docker/nginx.conf:/etc/nginx/conf.d/default.conf:ro nginx:latest"
   },
   "dependencies": {
-    "better-sqlite3": "12.6.0",
+    "better-sqlite3": "12.6.2",
     "html-to-text": "9.0.5",
     "node-html-parser": "7.0.2",
     "sucrase": "3.35.1"
@@ -82,8 +82,8 @@
     "csrf-csrf": "3.2.2",
     "debounce": "3.0.0",
     "debug": "4.4.3",
-    "ejs": "3.1.10",
-    "electron": "39.2.7",
+    "ejs": "4.0.1",
+    "electron": "40.0.0",
     "electron-debug": "4.1.0",
     "electron-window-state": "5.0.3",
     "escape-html": "1.0.3",
@@ -99,7 +99,7 @@
     "html2plaintext": "2.1.4",
     "http-proxy-agent": "7.0.2",
     "https-proxy-agent": "7.0.6",
-    "i18next": "25.7.4",
+    "i18next": "25.8.0",
     "i18next-fs-backend": "2.6.1",
     "image-type": "6.0.0",
     "ini": "6.0.0",
@@ -126,7 +126,7 @@
     "swagger-jsdoc": "6.2.8",
     "time2fa": "1.4.2",
     "tmp": "0.2.5",
-    "turndown": "7.2.2",
+    "turnish": "1.8.0",
     "unescape": "1.0.1",
     "vite": "7.3.1",
     "ws": "8.19.0",

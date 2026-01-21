@@ -28,4 +28,4 @@ Sorting is done by comparing note properties or specific labels on child notes. 
     *   **Label Sorting**: If `#sorted` has any other value, this value is treated as the name of a child note's label, and sorting is based on the values of this label. For example, setting `#sorted=myOrder` on the parent note and using `#myOrder=001`, `#myOrder=002`, etc., on child notes.
 4.  **Alphabetical Sorting**: Used as a last resort when other criteria result in equality.
 
-All comparisons are made string-wise (e.g., "1" < "2" or "2020-10-10" < "2021-01-15", but also "2" > "10").
+All comparisons are made string-wise (e.g., "1" \< "2" or "2020-10-10" < "2021-01-15", but also "2" \> "10").

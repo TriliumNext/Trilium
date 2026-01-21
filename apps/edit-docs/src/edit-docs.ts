@@ -185,6 +185,9 @@ async function exportData(noteId: string, format: ExportFormat, outputPath: stri
                         return components.join("/");
                     });
 
+                    // Remove data-list-item-id created by CKEditor for lists
+                    content = content.replace(/ data-list-item-id="[^"]*"/g, "");
+
                     return content;
 
                     function findAttachment(targetAttachmentId: string) {

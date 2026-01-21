@@ -9,7 +9,7 @@
 		"preview": "pnpm build && vite preview"
 	},
 	"dependencies": {
-		"i18next": "25.7.4",
+		"i18next": "25.8.0",
 		"i18next-http-backend": "3.0.2",
 		"preact": "10.28.2",
 		"preact-iso": "2.11.1",

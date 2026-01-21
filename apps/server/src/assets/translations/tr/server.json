@@ -13,6 +13,9 @@
     "collapse-subtree": "Geçerli notun alt ağacını daraltır",
     "sort-child-notes": "Alt notları sırala",
     "creating-and-moving-notes": "Notları oluşturma ve yerlerini değiştirme",
-    "create-note-into": "Aktif nota bağlı alt not oluştur"
+    "create-note-into": "Aktif nota bağlı alt not oluştur",
+    "create-note-after": "Aktif nottan sonra yeni bir not oluştur",
+    "delete-note": "Notu sil",
+    "move-note-down": "Notu aşağıya kaydır"
   }
 }

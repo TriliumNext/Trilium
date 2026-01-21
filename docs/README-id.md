@@ -88,8 +88,8 @@ Dokumentasi kami tersedia dalam berbagai format:
   [attributes](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
   can be used for note organization, querying and advanced
   [scripting](https://docs.triliumnotes.org/user-guide/scripts)
-* UI available in English, German, Spanish, French, Romanian, and Chinese
-  (simplified and traditional)
+* Antarmuka pengguna tersedia dalam bahasa Inggris, Jerman, Spanyol, Prancis,
+  Rumania, dan Tionghoa (sederhana dan tradisional)
 * Direct [OpenID and TOTP
   integration](https://docs.triliumnotes.org/user-guide/setup/server/mfa) for
   more secure login

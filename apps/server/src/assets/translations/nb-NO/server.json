@@ -9,7 +9,8 @@
     "search-in-subtree": "Søk etter notater i det aktive notatets understruktur",
     "creating-and-moving-notes": "Lage og flytte notater",
     "dialogs": "Dialogbokser",
-    "other": "Andre"
+    "other": "Andre",
+    "expand-subtree": "Utvid undertre for gjeldende notat"
   },
   "setup_sync-from-desktop": {
     "step6-here": "her"

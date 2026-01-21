@@ -57,13 +57,10 @@ Dokümantasyonumuz birden fazla formatta mevcuttur:
 
 ### Hızlı linkler
 - [Başlangıç Kılavuzu](https://docs.triliumnotes.org/)
-- [Installation Instructions](https://docs.triliumnotes.org/user-guide/setup)
-- [Docker
-  Setup](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
-- [Upgrading
-  TriliumNext](https://docs.triliumnotes.org/user-guide/setup/upgrading)
-- [Basic Concepts and
-  Features](https://docs.triliumnotes.org/user-guide/concepts/notes)
+- Kurulum Klavuzu
+- Docker kurulumu
+- [TrilliumNext Güncelleme]
+- Basit Kavramlar ve Özellikler
 - [Patterns of Personal Knowledge
   Base](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 

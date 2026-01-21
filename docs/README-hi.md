@@ -69,12 +69,14 @@ application with focus on building large personal knowledge bases.
 
 ## 🎁 खासियतें
 
-* Notes can be arranged into arbitrarily deep tree. Single note can be placed
-  into multiple places in the tree (see
+* नोट्स को मनचाहे गहरे ट्री (tree) स्ट्रक्चर में व्यवस्थित किया जा सकता है। एक
+  ही नोट को ट्री में कई जगहों पर रखा जा सकता है (देखें
   [cloning](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
-* Rich WYSIWYG note editor including e.g. tables, images and
-  [math](https://docs.triliumnotes.org/user-guide/note-types/text) with markdown
+* बेहतरीन WYSIWYG नोट एडिटर, जिसमें टेबल, इमेज और
+  [math](https://docs.triliumnotes.org/user-guide/note-types/text) के साथ-साथ
+  मार्कडाउन
   [autoformat](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
+  की सुविधा शामिल है
 * [सोर्स कोड वाले
   नोट्स](https://docs.triliumnotes.org/user-guide/note-types/code) को एडिट करने
   की सुविधा, जिसमें सिंटैक्स हाइलाइटिंग (syntax highlighting) भी शामिल है

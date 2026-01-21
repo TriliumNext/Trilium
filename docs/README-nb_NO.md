@@ -28,8 +28,8 @@ script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
 [Spanish](./README-es.md)
 <!-- translate:on -->
 
-Trilium Notes is a free and open-source, cross-platform hierarchical note taking
-application with focus on building large personal knowledge bases.
+Trilium Notes er et gratis og åpen kildekode-basert, plattformuavhengig
+hierarkisk notatprogram med fokus på å bygge store personlige kunnskapsbaser.
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
@@ -62,8 +62,8 @@ Vår dokumentasjon er tilgjengelig i flere format:
   TriliumNext](https://docs.triliumnotes.org/user-guide/setup/upgrading)
 - [Grunnleggende konsepter og
   funksjoner](https://docs.triliumnotes.org/user-guide/concepts/notes)
-- [Patterns of Personal Knowledge
-  Base](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
+- [Modeller for personlig
+  kunnskapsbase](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
 ## 🎁 Funksjoner
 
@@ -109,8 +109,8 @@ Vår dokumentasjon er tilgjengelig i flere format:
 * Mind maps, based on [Mind Elixir](https://docs.mind-elixir.com/)
 * [Geo maps](https://docs.triliumnotes.org/user-guide/collections/geomap) with
   location pins and GPX tracks
-* [Scripting](https://docs.triliumnotes.org/user-guide/scripts) - see [Advanced
-  showcases](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
+* [Skripting](https://docs.triliumnotes.org/user-guide/scripts) - se [Avanserte
+  bruksområder](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
 * [REST API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi) for
   automatisering
 * Scales well in both usability and performance upwards of 100 000 notes
@@ -156,13 +156,13 @@ compatible with the latest zadam/trilium version of
 versions of TriliumNext/Trilium have their sync versions incremented which
 prevents direct migration.
 
-## 💬 Discuss with us
+## 💬Diskuter med oss
 
 Feel free to join our official conversations. We would love to hear what
 features, suggestions, or issues you may have!
 
-- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (For synchronous
-  discussions.)
+- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (For synkrone
+  diskusjoner.)
   - The `General` Matrix room is also bridged to
     [XMPP](xmpp:discuss@trilium.thisgreat.party?join)
 - [Github Discussions](https://github.com/TriliumNext/Trilium/discussions) (For
@@ -322,7 +322,7 @@ Consider supporting the main developer
 
 - [GitHub Sponsors](https://github.com/sponsors/eliandoran)
 - [PayPal](https://paypal.me/eliandoran)
-- [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
+- [Spander en kaffe](https://buymeacoffee.com/eliandoran)
 
 ## 🔑 Lisens
 

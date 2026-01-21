@@ -184,7 +184,8 @@ function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: N
 
 function ToggleReadOnlyButton({ note, viewType, isDefaultViewMode }: NoteActionsCustomInnerProps) {
     const [ isReadOnly, setReadOnly ] = useNoteLabelBoolean(note, "readOnly");
-    const isEnabled = ([ "mermaid", "mindMap", "canvas" ].includes(note.type) || viewType === "geoMap")
+    const isSavedSqlite = note.isTriliumSqlite() && !note.isHiddenCompletely();
+    const isEnabled = ([ "mermaid", "mindMap", "canvas" ].includes(note.type) || viewType === "geoMap" || isSavedSqlite)
             && note.isContentAvailable() && isDefaultViewMode;
 
     return isEnabled && <ActionButton

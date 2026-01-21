@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "preact/hooks";
+
 import { useNoteContext } from "./react/hooks";
 
 export default function ScrollPadding() {
     const { note, parentComponent, ntxId, viewScope } = useNoteContext();
     const ref = useRef<HTMLDivElement>(null);
     const [height, setHeight] = useState<number>(10);
-    const isEnabled = ["text", "code"].includes(note?.type ?? "") && viewScope?.viewMode === "default";
+    const isEnabled = ["text", "code"].includes(note?.type ?? "")
+        && viewScope?.viewMode === "default"
+        && !note?.isTriliumSqlite();
 
     const refreshHeight = () => {
         if (!ref.current) return;
@@ -37,6 +40,6 @@ export default function ScrollPadding() {
             style={{ height }}
             onClick={() => parentComponent.triggerCommand("scrollToEnd", { ntxId })}
         />
-        : <div></div>
-    )
+        : <div />
+    );
 }

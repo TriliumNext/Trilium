@@ -1,16 +1,17 @@
-import utils from "../services/utils.js";
+import { CreateChildrenResponse, SqlExecuteResponse } from "@triliumnext/commons";
+
+import bundleService from "../services/bundle.js";
 import dateNoteService from "../services/date_notes.js";
+import froca from "../services/froca.js";
+import { t } from "../services/i18n.js";
+import linkService from "../services/link.js";
 import protectedSessionHolder from "../services/protected_session_holder.js";
 import server from "../services/server.js";
+import toastService from "../services/toast.js";
+import utils from "../services/utils.js";
+import ws from "../services/ws.js";
 import appContext, { type NoteCommandData } from "./app_context.js";
 import Component from "./component.js";
-import toastService from "../services/toast.js";
-import ws from "../services/ws.js";
-import bundleService from "../services/bundle.js";
-import froca from "../services/froca.js";
-import linkService from "../services/link.js";
-import { t } from "../services/i18n.js";
-import { CreateChildrenResponse, SqlExecuteResponse } from "@triliumnext/commons";
 
 export default class Entrypoints extends Component {
     constructor() {
@@ -187,13 +188,8 @@ export default class Entrypoints extends Component {
         } else if (note.mime.endsWith("env=backend")) {
             await server.post(`script/run/${note.noteId}`);
         } else if (note.mime === "text/x-sqlite;schema=trilium") {
-            const resp = await server.post<SqlExecuteResponse>(`sql/execute/${note.noteId}`);
-
-            if (!resp.success) {
-                toastService.showError(t("entrypoints.sql-error", { message: resp.error }));
-            }
-
-            await appContext.triggerEvent("sqlQueryResults", { ntxId: ntxId, results: resp.results });
+            const response = await server.post<SqlExecuteResponse>(`sql/execute/${note.noteId}`);
+            await appContext.triggerEvent("sqlQueryResults", { ntxId, response });
         }
 
         toastService.showMessage(t("entrypoints.note-executed"));

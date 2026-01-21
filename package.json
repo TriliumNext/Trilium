@@ -63,7 +63,7 @@
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-playwright": "2.5.0",
     "eslint-plugin-simple-import-sort": "12.1.1",
-    "happy-dom": "20.3.0",
+    "happy-dom": "20.3.4",
     "http-server": "14.1.1",
     "jiti": "2.6.1",
     "js-yaml": "4.1.1",
@@ -93,7 +93,7 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@10.28.1",
   "pnpm": {
     "patchedDependencies": {
       "@ckeditor/ckeditor5-mention": "patches/@ckeditor__ckeditor5-mention.patch",
@@ -115,7 +115,7 @@
       "on-headers@<1.1.0": ">=1.1.0",
       "form-data@>=4.0.0 <4.0.4": ">=4.0.4",
       "form-data@>=3.0.0 <3.0.4": ">=3.0.4",
-      "node-abi": "4.24.0"
+      "node-abi": "4.26.0"
     },
     "ignoredBuiltDependencies": [
       "sqlite3"

@@ -1,13 +1,15 @@
+import "./SplitEditor.css";
+
+import Split from "@triliumnext/split.js";
+import { ComponentChildren } from "preact";
 import { useEffect, useRef } from "preact/hooks";
+
+import { DEFAULT_GUTTER_SIZE } from "../../../services/resizer";
 import utils, { isMobile } from "../../../services/utils";
+import ActionButton, { ActionButtonProps } from "../../react/ActionButton";
 import Admonition from "../../react/Admonition";
 import { useNoteLabelBoolean, useTriliumOption } from "../../react/hooks";
-import "./SplitEditor.css";
-import Split from "@triliumnext/split.js";
-import { DEFAULT_GUTTER_SIZE } from "../../../services/resizer";
 import { EditableCode, EditableCodeProps } from "../code/Code";
-import { ComponentChildren } from "preact";
-import ActionButton, { ActionButtonProps } from "../../react/ActionButton";
 
 export interface SplitEditorProps extends EditableCodeProps {
     className?: string;
@@ -15,6 +17,8 @@ export interface SplitEditorProps extends EditableCodeProps {
     splitOptions?: Split.Options;
     previewContent: ComponentChildren;
     previewButtons?: ComponentChildren;
+    editorBefore?: ComponentChildren;
+    forceOrientation?: "horizontal" | "vertical";
 }
 
 /**
@@ -26,13 +30,14 @@ export interface SplitEditorProps extends EditableCodeProps {
  * - Can display errors to the user via {@link setError}.
  * - Horizontal or vertical orientation for the editor/preview split, adjustable via the switch split orientation button floating button.
  */
-export default function SplitEditor({ note, error, splitOptions, previewContent, previewButtons, className, ...editorProps }: SplitEditorProps) {
-    const splitEditorOrientation = useSplitOrientation();
+export default function SplitEditor({ note, error, splitOptions, previewContent, previewButtons, className, editorBefore, forceOrientation, ...editorProps }: SplitEditorProps) {
+    const splitEditorOrientation = useSplitOrientation(forceOrientation);
     const [ readOnly ] = useNoteLabelBoolean(note, "readOnly");
     const containerRef = useRef<HTMLDivElement>(null);
 
     const editor = (!readOnly &&
         <div className="note-detail-split-editor-col">
+            {editorBefore}
             <div className="note-detail-split-editor">
                 <EditableCode
                     note={note}
@@ -74,12 +79,12 @@ export default function SplitEditor({ note, error, splitOptions, previewContent,
     }, [ readOnly, splitEditorOrientation ]);
 
     return (
-        <div ref={containerRef} className={`note-detail-split note-detail-printable ${"split-" + splitEditorOrientation} ${readOnly ? "split-read-only" : ""} ${className ?? ""}`}>
+        <div ref={containerRef} className={`note-detail-split note-detail-printable ${`split-${splitEditorOrientation}`} ${readOnly ? "split-read-only" : ""} ${className ?? ""}`}>
             {splitEditorOrientation === "horizontal"
-            ? <>{editor}{preview}</>
-            : <>{preview}{editor}</>}
+                ? <>{editor}{preview}</>
+                : <>{preview}{editor}</>}
         </div>
-    )
+    );
 }
 
 export function PreviewButton(props: Omit<ActionButtonProps, "titlePosition">) {
@@ -88,11 +93,12 @@ export function PreviewButton(props: Omit<ActionButtonProps, "titlePosition">) {
         className="tn-tool-button"
         noIconActionClass
         titlePosition="top"
-    />
+    />;
 }
 
-function useSplitOrientation() {
+function useSplitOrientation(forceOrientation?: "horizontal" | "vertical") {
     const [ splitEditorOrientation ] = useTriliumOption("splitEditorOrientation");
+    if (forceOrientation) return forceOrientation;
     if (isMobile()) return "vertical";
     if (!splitEditorOrientation) return "horizontal";
     return splitEditorOrientation as "horizontal" | "vertical";

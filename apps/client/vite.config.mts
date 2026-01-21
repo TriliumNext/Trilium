@@ -93,7 +93,15 @@ export default defineConfig(() => ({
                 print: join(__dirname, "src", "print.tsx")
             },
             output: {
-                entryFileNames: "src/[name].js",
+                entryFileNames: (chunk) => {
+                    // We enforce a hash in the main index file to avoid caching issues, this only works because we have the HTML entry point.
+                    if (chunk.name === "index") {
+                        return "src/[name]-[hash].js";
+                    }
+
+                    // For EJS-rendered pages (e.g. login) we need to have a stable name.
+                    return "src/[name].js";
+                },
                 chunkFileNames: "src/[name]-[hash].js",
                 assetFileNames: "src/[name]-[hash].[ext]",
                 manualChunks: {

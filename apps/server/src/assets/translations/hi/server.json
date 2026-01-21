@@ -27,6 +27,8 @@
     "search-in-subtree": "एक्टिव नोट के सब-ट्री में नोट्स खोजें",
     "expand-subtree": "मौजूदा नोट के सब-ट्री को (subtree) एक्सपैंड करें",
     "delete-note": "नोट डिलीट करें",
-    "move-note-up-in-hierarchy": "नोट एक लेवल ऊपर मूव करें"
+    "move-note-up-in-hierarchy": "नोट एक लेवल ऊपर मूव करें",
+    "move-note-down-in-hierarchy": "नोट एक लेवल नीचे ले जाएँ",
+    "dialogs": "डायलॉग्स"
   }
 }

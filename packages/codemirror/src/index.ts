@@ -1,5 +1,5 @@
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { EditorView, highlightActiveLine, keymap, lineNumbers, placeholder, ViewPlugin, ViewUpdate, type EditorViewConfig } from "@codemirror/view";
+import { EditorView, highlightActiveLine, keymap, lineNumbers, placeholder, ViewPlugin, ViewUpdate, type EditorViewConfig, KeyBinding } from "@codemirror/view";
 import { defaultHighlightStyle, StreamLanguage, syntaxHighlighting, indentUnit, bracketMatching, foldGutter, codeFolding } from "@codemirror/language";
 import { Compartment, EditorSelection, EditorState, type Extension } from "@codemirror/state";
 import { highlightSelectionMatches } from "@codemirror/search";
@@ -11,6 +11,17 @@ import type { ThemeDefinition } from "./color_themes.js";
 import { createSearchHighlighter, SearchHighlighter, searchMatchHighlightTheme } from "./find_replace.js";
 
 export { default as ColorThemes, type ThemeDefinition, getThemeById } from "./color_themes.js";
+
+// Custom keymap to prevent Ctrl+Enter from inserting a newline
+// This allows the parent application to handle the shortcut (e.g., for "Run Active Note")
+const preventCtrlEnterKeymap: readonly KeyBinding[] = [
+    {
+        key: "Ctrl-Enter",
+        mac: "Cmd-Enter",
+        run: () => true, // Return true to mark event as handled, preventing default newline insertion
+        preventDefault: true
+    }
+];
 
 type ContentChangedListener = () => void;
 
@@ -59,6 +70,7 @@ export default class CodeMirror extends EditorView {
             lineNumbers(),
             indentUnit.of(" ".repeat(4)),
             keymap.of([
+                ...preventCtrlEnterKeymap,
                 ...defaultKeymap,
                 ...historyKeymap,
                 ...smartIndentWithTab

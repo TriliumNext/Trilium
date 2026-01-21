@@ -1,0 +1,18 @@
+.no-items {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    flex-direction: column;
+    padding: 0.75em;
+    color: var(--muted-text-color);
+    height: 100%;
+
+    .tn-icon {
+        font-size: 3em;
+    }
+
+    button {
+        margin-top: 1em;
+    }
+}

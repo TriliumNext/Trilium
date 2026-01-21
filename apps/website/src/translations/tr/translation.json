@@ -17,6 +17,8 @@
     "organization_benefits": {
         "title": "Organizasyon",
         "note_structure_title": "Not yapısı",
-        "note_structure_description": "Notlar hiyerarşik olarak düzenlenebilir. Her not 'alt notlar' içerebildiği için klasörlere ihtiyaç duyulmaz. Tek bir not, hiyerarşinin birden fazla noktasına eklenebilir."
+        "note_structure_description": "Notlar hiyerarşik olarak düzenlenebilir. Her not 'alt notlar' içerebildiği için klasörlere ihtiyaç duyulmaz. Tek bir not, hiyerarşinin birden fazla noktasına eklenebilir.",
+        "attributes_description": "Notlar arasında ilişkiler kurun veya kolay kategorizasyon için etiketler ekleyin. Tablolarda ve panolarda kullanılabilen yapılandırılmış bilgileri eklemek için öne çıkan öznitelikleri kullanın.",
+        "hoisting_description": "Kişisel ve iş notlarınızı bir çalışma alanı altında gruplandırarak kolayca ayırın; bu sayede not ağacınız yalnızca belirli bir not kümesini gösterecek şekilde odaklanacaktır."
     }
 }

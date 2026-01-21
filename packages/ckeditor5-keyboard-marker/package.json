@@ -31,7 +31,7 @@
     "@typescript-eslint/parser": "8.53.0",
     "@vitest/browser": "4.0.17",
     "@vitest/coverage-istanbul": "4.0.17",
-    "ckeditor5": "47.3.0",
+    "ckeditor5": "47.4.0",
     "eslint": "9.39.2",
     "eslint-config-ckeditor5": ">=9.1.0",
     "http-server": "14.1.1",
@@ -42,10 +42,10 @@
     "typescript": "5.9.3",
     "vite-plugin-svgo": "2.0.0",
     "vitest": "4.0.17",
-    "webdriverio": "9.23.0"
+    "webdriverio": "9.23.2"
   },
   "peerDependencies": {
-    "ckeditor5": "47.3.0"
+    "ckeditor5": "47.4.0"
   },
   "scripts": {
     "build": "node ./scripts/build-dist.mjs",

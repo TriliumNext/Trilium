@@ -5,8 +5,8 @@ Trilium can import ENEX files, which are used by Evernote for backup/export. One
 
 To export ENEX files from Evernote, you can use:
 
-*   Evernote desktop application. See Evernote documentation. Note that the limitation of this method is that you can only export 100 notes at a time or one notebook at a time.
-*   A third-party evernote-backup CLI tool. This tool can export all of your notebooks in bulk.
+*   Evernote desktop application. See Evernote [documentation](https://help.evernote.com/hc/en-us/articles/209005557-Export-Notes-and-Notebooks-as-ENEX-or-HTML). Note that the limitation of this method is that you can only export 100 notes at a time or one notebook at a time.
+*   A third-party [evernote-backup](https://github.com/vzhd1701/evernote-backup) CLI tool. This tool can export all of your notebooks in bulk.
 
 ## Import ENEX in Trilium
 
@@ -21,7 +21,7 @@ Once you have your ENEX files, do the following to import them in Trilium:
 A non-exhaustive list of what the importer preserves:
 
 *   Attachments
-*   The hierarchy of headings (these are shifted to start with H2 because H1 is reserved for note title, see Headings)
+*   The hierarchy of headings (these are shifted to start with H2 because H1 is reserved for note title, see [Headings](../../Note%20Types/Text/General%20formatting.md))
 *   Tables
 *   Bulleted lists
 *   Numbered lists
@@ -37,9 +37,9 @@ However, we do not guarantee that all of your formatting will be imported 100% c
 
 ## Limitations
 
-*   The size limit of one import is 250Mb. If the total size of your files is larger, you can increase the upload limit, or divide your files, and run the import as many times as necessary.
+*   The size limit of one import is 250Mb. If the total size of your files is larger, you can increase the [upload limit](../../Installation%20%26%20Setup/Server%20Installation.md), or divide your files, and run the import as many times as necessary.
 *   All resources (except for images) are created as notes’ attachments.
-*   If you have HTML inside ENEX files, the HTML formatting may be broken or lost after import in Trilium. You can report major problems at Trilium issue tracker.
+*   If you have HTML inside ENEX files, the HTML formatting may be broken or lost after import in Trilium. See <a class="reference-link" href="../../Troubleshooting/Reporting%20issues.md">Reporting issues</a>.
 
 ### Internal links
 

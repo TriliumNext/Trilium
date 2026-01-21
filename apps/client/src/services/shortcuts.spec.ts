@@ -1,5 +1,6 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import shortcuts, { keyMatches, matchesShortcut, isIMEComposing } from "./shortcuts.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import shortcuts, { isIMEComposing, keyMatches, matchesShortcut } from "./shortcuts.js";
 
 // Mock utils module
 vi.mock("./utils.js", () => ({

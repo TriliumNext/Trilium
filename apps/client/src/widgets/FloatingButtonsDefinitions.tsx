@@ -7,7 +7,6 @@ import Component from "../components/component";
 import NoteContext from "../components/note_context";
 import FNote from "../entities/fnote";
 import attributes from "../services/attributes";
-import { isExperimentalFeatureEnabled } from "../services/experimental_features";
 import froca from "../services/froca";
 import { t } from "../services/i18n";
 import { copyImageReferenceToClipboard } from "../services/image";
@@ -101,7 +100,8 @@ function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: F
 
 function ToggleReadOnlyButton({ note, viewType, isDefaultViewMode }: FloatingButtonContext) {
     const [ isReadOnly, setReadOnly ] = useNoteLabelBoolean(note, "readOnly");
-    const isEnabled = ([ "mermaid", "mindMap", "canvas" ].includes(note.type) || viewType === "geoMap")
+    const isSavedSqlite = note.isTriliumSqlite() && !note.isHiddenCompletely();
+    const isEnabled = ([ "mermaid", "mindMap", "canvas" ].includes(note.type) || viewType === "geoMap" || isSavedSqlite)
             && note.isContentAvailable() && isDefaultViewMode;
 
     return isEnabled && <FloatingButton

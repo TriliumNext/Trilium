@@ -1,18 +1,20 @@
-import { useContext, useEffect, useLayoutEffect, useRef } from "preact/hooks";
-import { EventCallBackMethods, Module, Options, Tabulator as VanillaTabulator } from "tabulator-tables";
 import "tabulator-tables/dist/css/tabulator.css";
 import "../../../../src/stylesheets/table.css";
-import { ParentComponent, renderReactWidget } from "../../react/react_utils";
-import { JSX } from "preact/jsx-runtime";
+
 import { isValidElement, RefObject } from "preact";
+import { useContext, useEffect, useLayoutEffect, useRef } from "preact/hooks";
+import { JSX } from "preact/jsx-runtime";
+import { EventCallBackMethods, Module, Options, Tabulator as VanillaTabulator } from "tabulator-tables";
+
+import { ParentComponent, renderReactWidget } from "../../react/react_utils";
 
 interface TableProps<T> extends Omit<Options, "data" | "footerElement" | "index"> {
-    tabulatorRef: RefObject<VanillaTabulator>;
+    tabulatorRef?: RefObject<VanillaTabulator>;
     className?: string;
     data?: T[];
     modules?: (new (table: VanillaTabulator) => Module)[];
     events?: Partial<EventCallBackMethods>;
-    index: keyof T;
+    index?: keyof T;
     footerElement?: string | HTMLElement | JSX.Element;
     onReady?: () => void;
 }
@@ -43,7 +45,9 @@ export default function Tabulator<T>({ className, columns, data, modules, tabula
 
         tabulator.on("tableBuilt", () => {
             tabulatorRef.current = tabulator;
-            externalTabulatorRef.current = tabulator;
+            if (externalTabulatorRef) {
+                externalTabulatorRef.current = tabulator;
+            }
             onReady?.();
         });
 
@@ -62,12 +66,15 @@ export default function Tabulator<T>({ className, columns, data, modules, tabula
             for (const [ eventName, handler ] of Object.entries(events)) {
                 tabulator.off(eventName as keyof EventCallBackMethods, handler);
             }
-        }
+        };
     }, Object.values(events ?? {}));
 
     // Change in data.
-    useEffect(() => { tabulatorRef.current?.setData(data) }, [ data ]);
-    useEffect(() => { columns && tabulatorRef.current?.setColumns(columns)}, [ data]);
+    useEffect(() => { tabulatorRef.current?.setData(data); }, [ data ]);
+    useEffect(() => {
+        if (!columns) return;
+        tabulatorRef.current?.setColumns(columns);
+    }, [ columns ]);
 
     return (
         <div ref={containerRef} className={className} />
