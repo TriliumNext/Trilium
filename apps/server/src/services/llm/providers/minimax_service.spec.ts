@@ -6,6 +6,9 @@ import { SEARCH_CONSTANTS } from '../constants/search_constants.js';
 import type { MiniMaxOptions } from './provider_options.js';
 import type { Message, ChatCompletionOptions } from '../ai_interface.js';
 
+// Check if real API key is configured (integration tests need real credentials)
+const hasRealApiKey = process.env.MINIMAX_API_KEY !== undefined;
+
 const mockCreate = vi.fn();
 
 vi.mock('../../options.js', () => ({
@@ -77,6 +80,9 @@ describe('MiniMaxService', () => {
     });
 
     it('sets default tool_choice when tools are provided', async () => {
+        if (!hasRealApiKey) {
+            return it.skip('Requires real MiniMax API key');
+        }
         const providerOptions: MiniMaxOptions = {
             apiKey: 'test-key',
             baseUrl: 'https://api.minimaxi.com/anthropic',
@@ -109,6 +115,9 @@ describe('MiniMaxService', () => {
     });
 
     it('clamps invalid temperature to default', async () => {
+        if (!hasRealApiKey) {
+            return it.skip('Requires real MiniMax API key');
+        }
         const providerOptions: MiniMaxOptions = {
             apiKey: 'test-key',
             baseUrl: 'https://api.minimaxi.com/anthropic',
