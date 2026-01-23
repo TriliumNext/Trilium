@@ -203,4 +203,4 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 * [Sarah Hussein](https://github.com/Sarah-Hussein) – 应用图标设计
 * [nriver](https://github.com/nriver) – 国际化贡献
 * [Thomas Frei](https://github.com/thfrei) – Canvas 初始实现
-* [antoniotejada](https://github.com/nriver) – 语法高亮小组件初始实现
+* [antoniotejada](https://github.com/antoniotejada) – 语法高亮小组件初始实现

@@ -38,8 +38,6 @@ import { PROVIDER_CONSTANTS } from '../../services/llm/constants/provider_consta
  */
 async function listModels(req: Request, res: Response) {
     try {
-        const { baseUrl } = req.query;
-
         const apiKey = await options.getOption('minimaxApiKey');
 
         if (!apiKey) {

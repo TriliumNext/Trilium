@@ -74,11 +74,12 @@ export class MiniMaxService extends BaseAIService {
 
         // Add tool instructions to system prompt if tools are enabled
         const willUseTools = opts.tools && opts.tools.length > 0;
+        let finalSystemPrompt: string;
         if (willUseTools && PROVIDER_PROMPTS.MINIMAX.TOOL_INSTRUCTIONS) {
             log.info('Adding tool instructions to system prompt for MiniMax');
-            var finalSystemPrompt = `${systemPrompt}\n\n${PROVIDER_PROMPTS.MINIMAX.TOOL_INSTRUCTIONS}`;
+            finalSystemPrompt = `${systemPrompt}\n\n${PROVIDER_PROMPTS.MINIMAX.TOOL_INSTRUCTIONS}`;
         } else {
-            var finalSystemPrompt = systemPrompt;
+            finalSystemPrompt = systemPrompt;
         }
 
         // Format messages for MiniMax API (Anthropic-compatible format)
