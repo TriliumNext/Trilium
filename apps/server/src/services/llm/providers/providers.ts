@@ -2,11 +2,12 @@ import options from "../../options.js";
 import log from "../../log.js";
 import type { OptionDefinitions } from "@triliumnext/commons";
 import type { ChatCompletionOptions } from '../ai_interface.js';
-import type { OpenAIOptions, AnthropicOptions, OllamaOptions, ModelMetadata } from './provider_options.js';
+import type { OpenAIOptions, AnthropicOptions, OllamaOptions, MiniMaxOptions, ModelMetadata } from './provider_options.js';
 import {
     createOpenAIOptions,
     createAnthropicOptions,
-    createOllamaOptions
+    createOllamaOptions,
+    createMiniMaxOptions
 } from './provider_options.js';
 import { PROVIDER_CONSTANTS } from '../constants/provider_constants.js';
 import { SEARCH_CONSTANTS, MODEL_CAPABILITIES } from '../constants/search_constants.js';
@@ -260,5 +261,71 @@ async function getOllamaModelContextWindow(modelName: string): Promise<number> {
     } catch (error) {
         log.info(`Error getting context window for model ${modelName}: ${error}`);
         return MODEL_CAPABILITIES['default'].contextWindowTokens; // Default fallback
+    }
+}
+
+/**
+ * Get MiniMax provider options from chat options and configuration
+ * MiniMax uses Anthropic-compatible API format
+ * Documentation: https://platform.minimax.io/docs/
+ */
+export function getMiniMaxOptions(
+    opts: ChatCompletionOptions = {}
+): MiniMaxOptions {
+    try {
+        const apiKey = options.getOption('minimaxApiKey');
+        
+        if (!apiKey) {
+            // Log warning but don't throw - allow checking availability
+            log.info('MiniMax API key is not configured');
+        }
+
+        const baseUrl = options.getOption('minimaxBaseUrl') 
+            || PROVIDER_CONSTANTS.MINIMAX.BASE_URL;
+        
+        const modelName = opts.model || options.getOption('minimaxDefaultModel') 
+            || PROVIDER_CONSTANTS.MINIMAX.DEFAULT_MODEL;
+
+        if (!modelName) {
+            throw new Error(
+                'No MiniMax model configured. ' +
+                'Please set a default model in your AI settings.'
+            );
+        }
+
+        // Create provider metadata
+        const providerMetadata: ModelMetadata = {
+            provider: 'minimax',
+            modelId: modelName,
+            displayName: modelName,
+            capabilities: {
+                supportsTools: true,
+                supportsStreaming: true,
+                supportsVision: false,
+                contextWindow: PROVIDER_CONSTANTS.MINIMAX.CONTEXT_WINDOW
+            }
+        };
+
+        // Get temperature from options or global setting
+        const temperature = opts.temperature !== undefined
+            ? opts.temperature
+            : parseFloat(options.getOption('aiTemperature') || String(SEARCH_CONSTANTS.TEMPERATURE.DEFAULT));
+
+        // Create options and pass through provider metadata
+        const optionsResult = createMiniMaxOptions(
+            opts,
+            apiKey || '',
+            baseUrl,
+            modelName,
+            PROVIDER_CONSTANTS.MINIMAX.API_VERSION
+        );
+
+        // Pass through provider metadata
+        optionsResult.providerMetadata = providerMetadata;
+
+        return optionsResult;
+    } catch (error) {
+        log.error(`Error creating MiniMax provider options: ${error}`);
+        throw error;
     }
 }

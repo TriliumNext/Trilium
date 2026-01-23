@@ -38,7 +38,7 @@ export interface IAIServiceManager {
 /**
  * Type for service providers
  */
-export type ServiceProviders = 'openai' | 'anthropic' | 'ollama';
+export type ServiceProviders = 'openai' | 'anthropic' | 'ollama' | 'minimax';
 
 /**
  * LLM model configuration

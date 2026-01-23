@@ -51,6 +51,7 @@ export interface ProviderSettings {
     openai?: OpenAISettings;
     anthropic?: AnthropicSettings;
     ollama?: OllamaSettings;
+    minimax?: MiniMaxSettings;
 }
 
 export interface OpenAISettings {
@@ -71,10 +72,16 @@ export interface OllamaSettings {
     timeout?: number;
 }
 
+export interface MiniMaxSettings {
+    apiKey?: string;
+    baseUrl?: string;
+    defaultModel?: string;
+}
+
 /**
  * Valid provider types
  */
-export type ProviderType = 'openai' | 'anthropic' | 'ollama';
+export type ProviderType = 'openai' | 'anthropic' | 'ollama' | 'minimax';
 
 
 /**

@@ -54,6 +54,27 @@ export interface ToolCall {
 }
 
 /**
+ * Parsed tool arguments and any warnings captured during parsing.
+ */
+export interface ParsedToolArguments {
+    args: Record<string, unknown>;
+    warnings: string[];
+}
+
+/**
+ * Argument parser function for tool calls.
+ */
+export type ToolArgumentParser = (input: string | Record<string, unknown>) => ParsedToolArguments;
+
+/**
+ * Metadata for tool execution helpers.
+ */
+export interface ToolMetadata {
+    name: string;
+    parseArguments: ToolArgumentParser;
+}
+
+/**
  * Interface for a tool handler that executes a tool
  */
 export interface ToolHandler {
@@ -66,4 +87,9 @@ export interface ToolHandler {
      * Execute the tool with the given arguments
      */
     execute(args: Record<string, unknown>): Promise<string | object>;
+
+    /**
+     * Optional argument parser override for this tool.
+     */
+    parseArguments?: ToolArgumentParser;
 }

@@ -8,6 +8,8 @@ import type { Tool, ToolHandler } from './tool_interfaces.js';
 import log from '../../log.js';
 import becca from '../../../becca/becca.js';
 import notes from '../../notes.js';
+import { normalizeTextNoteContent } from './note_content_utils.js';
+import { NOTE_WRITE_RULES } from './note_tool_prompt_rules.js';
 
 /**
  * Definition of the note update tool
@@ -16,7 +18,9 @@ export const noteUpdateToolDefinition: Tool = {
     type: 'function',
     function: {
         name: 'update_note',
-        description: 'Update the content or title of an existing note',
+        description: `Update the content or title of an existing note.
+
+${NOTE_WRITE_RULES}`,
         parameters: {
             type: 'object',
             properties: {
@@ -30,7 +34,7 @@ export const noteUpdateToolDefinition: Tool = {
                 },
                 content: {
                     type: 'string',
-                    description: 'New content for the note (if you want to change it)'
+                    description: 'New content for the note (if you want to change it). Must match the note type rules in the tool description.'
                 },
                 mode: {
                     type: 'string',
@@ -98,17 +102,26 @@ export class NoteUpdateTool implements ToolHandler {
                 const contentStartTime = Date.now();
 
                 try {
-                    let newContent = content;
+                    const targetTitle = title || note.title;
+                    const normalized = normalizeTextNoteContent(content, targetTitle, note.type, note.mime);
+                    let newContent = normalized.content;
+
+                    if (normalized.converted) {
+                        log.info(`Converted markdown content to HTML for note "${targetTitle}"`);
+                    }
 
                     // For append or prepend modes, get the current content first
                     if (mode === 'append' || mode === 'prepend') {
                         const currentContent = await note.getContent();
+                        const currentContentText = typeof currentContent === 'string'
+                            ? currentContent
+                            : currentContent.toString();
 
                         if (mode === 'append') {
-                            newContent = currentContent + '\n\n' + content;
+                            newContent = currentContentText + '\n\n' + newContent;
                             log.info(`Appending content to existing note content`);
                         } else if (mode === 'prepend') {
-                            newContent = content + '\n\n' + currentContent;
+                            newContent = newContent + '\n\n' + currentContentText;
                             log.info(`Prepending content to existing note content`);
                         }
                     }

@@ -10,7 +10,8 @@ import type {
     ProviderSettings,
     OpenAISettings,
     AnthropicSettings,
-    OllamaSettings
+    OllamaSettings,
+    MiniMaxSettings
 } from '../interfaces/configuration_interfaces.js';
 
 /**
@@ -88,7 +89,7 @@ export class ConfigurationManager {
 
         // Check if first part is a known provider
         const potentialProvider = parts[0].toLowerCase();
-        const knownProviders: ProviderType[] = ['openai', 'anthropic', 'ollama'];
+        const knownProviders: ProviderType[] = ['openai', 'anthropic', 'ollama', 'minimax'];
 
         if (knownProviders.includes(potentialProvider as ProviderType)) {
             // Provider prefix format
@@ -124,18 +125,20 @@ export class ConfigurationManager {
     }
 
     /**
-     * Get default models for each provider - ONLY from user configuration
-     */
+      * Get default models for each provider - ONLY from user configuration
+      */
     public async getDefaultModels(): Promise<Record<ProviderType, string | undefined>> {
         try {
             const openaiModel = options.getOption('openaiDefaultModel');
             const anthropicModel = options.getOption('anthropicDefaultModel');
             const ollamaModel = options.getOption('ollamaDefaultModel');
+            const minimaxModel = options.getOption('minimaxDefaultModel');
 
             return {
                 openai: openaiModel || undefined,
                 anthropic: anthropicModel || undefined,
-                ollama: ollamaModel || undefined
+                ollama: ollamaModel || undefined,
+                minimax: minimaxModel || undefined
             };
         } catch (error) {
             log.error(`Error loading default models: ${error}`);
@@ -143,14 +146,15 @@ export class ConfigurationManager {
             return {
                 openai: undefined,
                 anthropic: undefined,
-                ollama: undefined
+                ollama: undefined,
+                minimax: undefined
             };
         }
     }
 
     /**
-     * Get provider-specific settings
-     */
+      * Get provider-specific settings
+      */
     public async getProviderSettings(): Promise<ProviderSettings> {
         try {
             const openaiApiKey = options.getOption('openaiApiKey');
@@ -161,6 +165,9 @@ export class ConfigurationManager {
             const anthropicDefaultModel = options.getOption('anthropicDefaultModel');
             const ollamaBaseUrl = options.getOption('ollamaBaseUrl');
             const ollamaDefaultModel = options.getOption('ollamaDefaultModel');
+            const minimaxApiKey = options.getOption('minimaxApiKey');
+            const minimaxBaseUrl = options.getOption('minimaxBaseUrl');
+            const minimaxDefaultModel = options.getOption('minimaxDefaultModel');
 
             const settings: ProviderSettings = {};
 
@@ -184,6 +191,14 @@ export class ConfigurationManager {
                 settings.ollama = {
                     baseUrl: ollamaBaseUrl,
                     defaultModel: ollamaDefaultModel
+                };
+            }
+
+            if (minimaxApiKey || minimaxBaseUrl || minimaxDefaultModel) {
+                settings.minimax = {
+                    apiKey: minimaxApiKey,
+                    baseUrl: minimaxBaseUrl,
+                    defaultModel: minimaxDefaultModel
                 };
             }
 
@@ -238,6 +253,13 @@ export class ConfigurationManager {
                     const ollamaConfig = providerConfig as OllamaSettings | undefined;
                     if (!ollamaConfig?.baseUrl) {
                         result.warnings.push('Ollama base URL is not configured');
+                    }
+                }
+
+                if (config.selectedProvider === 'minimax') {
+                    const minimaxConfig = providerConfig as MiniMaxSettings | undefined;
+                    if (!minimaxConfig?.apiKey) {
+                        result.warnings.push('MiniMax API key is not configured');
                     }
                 }
             }
@@ -298,7 +320,8 @@ export class ConfigurationManager {
             defaultModels: {
                 openai: undefined,
                 anthropic: undefined,
-                ollama: undefined
+                ollama: undefined,
+                minimax: undefined
             },
             providerSettings: {}
         };

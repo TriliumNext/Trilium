@@ -8,6 +8,7 @@ import contextService from './context/services/context_service.js';
 import log from '../log.js';
 import { OllamaService } from './providers/ollama_service.js';
 import { OpenAIService } from './providers/openai_service.js';
+import { MiniMaxService } from './providers/minimax_service.js';
 
 // Import interfaces
 import type {
@@ -176,7 +177,7 @@ export class AIServiceManager implements IAIServiceManager {
         getAvailableProviders(): ServiceProviders[] {
         this.ensureInitialized();
 
-        const allProviders: ServiceProviders[] = ['openai', 'anthropic', 'ollama'];
+        const allProviders: ServiceProviders[] = ['openai', 'anthropic', 'ollama', 'minimax'];
         const availableProviders: ServiceProviders[] = [];
 
         for (const providerName of allProviders) {
@@ -195,6 +196,11 @@ export class AIServiceManager implements IAIServiceManager {
                         break;
                     case 'ollama':
                         if (options.getOption('ollamaBaseUrl')) {
+                            availableProviders.push(providerName);
+                        }
+                        break;
+                    case 'minimax':
+                        if (options.getOption('minimaxApiKey')) {
                             availableProviders.push(providerName);
                         }
                         break;
@@ -440,6 +446,29 @@ export class AIServiceManager implements IAIServiceManager {
                     }
                     break;
                 }
+
+                case 'minimax': {
+                    const apiKey = options.getOption('minimaxApiKey');
+                    if (!apiKey) {
+                        log.info('MiniMax API key not configured');
+                        return null;
+                    }
+
+                    try {
+                        service = new MiniMaxService();
+                        if (!service.isAvailable()) {
+                            throw new Error('MiniMax service not available');
+                        }
+                        log.info('MiniMax service created successfully');
+                    } catch (error: any) {
+                        log.error(`Failed to create MiniMax service: ${error.message || String(error)}`);
+                        throw new Error(
+                            `Failed to initialize MiniMax service: ${error.message}. ` +
+                            'Please check your MiniMax API key and settings.'
+                        );
+                    }
+                    break;
+                }
             }
 
             if (service) {
@@ -661,6 +690,8 @@ export class AIServiceManager implements IAIServiceManager {
                     return !!options.getOption('anthropicApiKey');
                 case 'ollama':
                     return !!options.getOption('ollamaBaseUrl');
+                case 'minimax':
+                    return !!options.getOption('minimaxApiKey');
                 default:
                     return false;
             }
@@ -670,24 +701,94 @@ export class AIServiceManager implements IAIServiceManager {
     }
 
     /**
-     * Get metadata about a provider
-     */
+      * Get metadata about a provider
+      */
     getProviderMetadata(provider: string): ProviderMetadata | null {
         // Only return metadata if this is the current active provider
         if (this.currentProvider === provider && this.currentService) {
+            const models = this.getProviderModels(provider);
             return {
                 name: provider,
                 capabilities: {
                     chat: true,
                     streaming: true,
-                    functionCalling: provider === 'openai' // Only OpenAI has function calling
+                    // OpenAI, Anthropic, and MiniMax support function calling
+                    functionCalling: ['openai', 'anthropic', 'minimax'].includes(provider)
                 },
-                models: ['default'], // Placeholder, could be populated from the service
-                defaultModel: 'default'
+                models: models,
+                defaultModel: this.getDefaultModelForProvider(provider)
             };
         }
 
         return null;
+    }
+
+    /**
+     * Get available models for a specific provider
+     */
+    private getProviderModels(provider: string): string[] {
+        switch (provider) {
+            case 'openai':
+                return [
+                    'gpt-4o',
+                    'gpt-4o-mini',
+                    'gpt-4-turbo',
+                    'gpt-4',
+                    'gpt-3.5-turbo'
+                ];
+            case 'anthropic':
+                return [
+                    'claude-sonnet-4-20250514',
+                    'claude-sonnet-4',
+                    'claude-opus-4',
+                    'claude-sonnet-3-20250520',
+                    'claude-sonnet-3',
+                    'claude-haiku-3',
+                    'claude-3-5-sonnet',
+                    'claude-3-opus',
+                    'claude-3-sonnet',
+                    'claude-3-haiku'
+                ];
+            case 'ollama':
+                // Ollama models are dynamic, return a common set
+                return [
+                    'llama3.3',
+                    'llama3.2',
+                    'llama3.1',
+                    'llama3',
+                    'mistral',
+                    'codellama',
+                    'qwen2.5',
+                    'deepseek-r1',
+                    'deepseek-v3'
+                ];
+            case 'minimax':
+                return [
+                    'MiniMax-M2.1',
+                    'MiniMax-M2.1-lightning',
+                    'MiniMax-M2'
+                ];
+            default:
+                return ['default'];
+        }
+    }
+
+    /**
+     * Get default model for a provider
+     */
+    private getDefaultModelForProvider(provider: string): string {
+        switch (provider) {
+            case 'openai':
+                return 'gpt-4o-mini';
+            case 'anthropic':
+                return 'claude-sonnet-4-20250514';
+            case 'ollama':
+                return 'llama3.3';
+            case 'minimax':
+                return 'MiniMax-M2.1';
+            default:
+                return 'default';
+        }
     }
 
 

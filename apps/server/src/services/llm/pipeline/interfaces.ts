@@ -1,4 +1,4 @@
-import type { Message, ChatCompletionOptions, ChatResponse, StreamChunk } from '../ai_interface.js';
+import type { Message, ChatCompletionOptions, NormalizedChatResponse, StreamChunk } from '../ai_interface.js';
 import type { LLMServiceInterface } from '../interfaces/agent_tool_interfaces.js';
 
 /**
@@ -142,7 +142,7 @@ export interface LLMCompletionInput extends PipelineInput {
  * Interface for the pipeline stage that performs response processing
  */
 export interface ResponseProcessingInput extends PipelineInput {
-    response: ChatResponse;
+    response: NormalizedChatResponse;
     options: ChatCompletionOptions;
 }
 
@@ -150,7 +150,7 @@ export interface ResponseProcessingInput extends PipelineInput {
  * Interface for the pipeline stage that handles tool execution
  */
 export interface ToolExecutionInput extends PipelineInput {
-    response: ChatResponse;
+    response: NormalizedChatResponse;
     messages: Message[];
     options: ChatCompletionOptions;
     maxIterations?: number;

@@ -4,7 +4,8 @@
  * This file defines the registry for tools that can be called by LLMs.
  */
 
-import type { Tool, ToolHandler } from './tool_interfaces.js';
+import type { Tool, ToolHandler, ToolMetadata } from './tool_interfaces.js';
+import { parseToolArguments } from './tool_argument_parser.js';
 import log from '../../log.js';
 
 /**
@@ -13,6 +14,7 @@ import log from '../../log.js';
 export class ToolRegistry {
     private static instance: ToolRegistry;
     private tools: Map<string, ToolHandler> = new Map();
+    private metadata: Map<string, ToolMetadata> = new Map();
     private initializationAttempted = false;
 
     private constructor() {}
@@ -100,12 +102,14 @@ export class ToolRegistry {
         }
 
         const name = handler.definition.function.name;
+        const parseArguments = handler.parseArguments || parseToolArguments;
 
         if (this.tools.has(name)) {
             log.info(`Tool '${name}' already registered, replacing...`);
         }
 
         this.tools.set(name, handler);
+        this.metadata.set(name, { name, parseArguments });
     }
 
     /**
@@ -144,6 +148,13 @@ export class ToolRegistry {
 
         // Filter out any tools that fail validation
         return Array.from(this.tools.values()).filter(tool => this.validateToolHandler(tool));
+    }
+
+    /**
+     * Get tool metadata by name
+     */
+    public getToolMetadata(name: string): ToolMetadata | undefined {
+        return this.metadata.get(name);
     }
 
     /**

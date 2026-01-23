@@ -183,7 +183,7 @@ export class ModelSelectionStage extends BasePipelineStage<ModelSelectionInput, 
         // Set the provider metadata in the options
         if (selectedProvider) {
             // Ensure the provider is one of the valid types
-            const validProvider = selectedProvider as 'openai' | 'anthropic' | 'ollama' | 'local';
+            const validProvider = selectedProvider as 'openai' | 'anthropic' | 'ollama' | 'local' | 'minimax';
 
             options.providerMetadata = {
                 provider: validProvider,

@@ -566,6 +566,9 @@ async function handleStreamingProcess(
             throw new Error("No valid AI model configuration found");
         }
 
+        let accumulatedResponse = '';
+        let savedFinalResponse = false;
+
         const pipelineInput = {
             messages: chat.messages.map(msg => ({
                 role: msg.role as 'user' | 'assistant' | 'system',
@@ -588,6 +591,14 @@ async function handleStreamingProcess(
                 };
 
                 if (data) {
+                    const isCompletePayload = rawChunk?.raw && typeof rawChunk.raw === 'object' && (rawChunk.raw as { complete?: boolean }).complete;
+                    if (isCompletePayload) {
+                        accumulatedResponse = data;
+                    } else if (done && accumulatedResponse && data.startsWith(accumulatedResponse)) {
+                        accumulatedResponse = data;
+                    } else {
+                        accumulatedResponse += data;
+                    }
                     (message as any).content = data;
                 }
 
@@ -611,11 +622,16 @@ async function handleStreamingProcess(
                 wsService.sendMessageToAllClients(message);
 
                 // Save final response when done
-                if (done && data) {
+                if (done) {
+                    const finalResponse = accumulatedResponse || data || '';
+                    if (!finalResponse) {
+                        return;
+                    }
                     chat.messages.push({
                         role: 'assistant',
-                        content: data
+                        content: finalResponse
                     });
+                    savedFinalResponse = true;
                     chatStorageService.updateChat(chat.id, chat.messages, chat.title).catch(err => {
                         log.error(`Error saving streamed response: ${err}`);
                     });
@@ -624,7 +640,16 @@ async function handleStreamingProcess(
         };
 
         // Execute the pipeline
-        await pipeline.execute(pipelineInput);
+        const pipelineResult = await pipeline.execute(pipelineInput);
+        if (!savedFinalResponse && pipelineResult?.text) {
+            chat.messages.push({
+                role: 'assistant',
+                content: pipelineResult.text
+            });
+            chatStorageService.updateChat(chat.id, chat.messages, chat.title).catch(err => {
+                log.error(`Error saving final response after streaming: ${err}`);
+            });
+        }
 
     } catch (error: any) {
         log.error(`Error in direct streaming: ${error.message}`);
