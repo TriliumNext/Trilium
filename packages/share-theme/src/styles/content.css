@@ -80,3 +80,9 @@ body.type-webView {
         }
     }
 }
+
+/* table styles */
+.ck-content table td,
+.ck-content table th {
+    min-width: 120px;
+}
