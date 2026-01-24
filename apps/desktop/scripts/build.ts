@@ -16,7 +16,13 @@ async function main() {
     build.copy("/packages/share-theme/src/templates", "share-theme/templates/");
 
     // Copy node modules dependencies
-    build.copyNodeModules([ "better-sqlite3", "bindings", "file-uri-to-path", "@electron/remote" ]);
+    build.copyNodeModules([
+        "better-sqlite3",
+        "bindings",
+        "file-uri-to-path",
+        "@electron/remote",
+        "@trilium/search-native"
+    ]);
     build.copy("/node_modules/ckeditor5/dist/ckeditor5-content.css", "ckeditor5-content.css");
 
     build.buildFrontend();
@@ -32,6 +38,7 @@ function generatePackageJson() {
         version, author, license, description,
         dependencies: {
             "better-sqlite3": dependencies["better-sqlite3"],
+            "@trilium/search-native": dependencies["@trilium/search-native"],
         },
         devDependencies: {
             electron: devDependencies.electron

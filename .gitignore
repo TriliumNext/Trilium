@@ -5,6 +5,8 @@
 dist
 tmp
 out-tsc
+target
+*.node
 
 # dependencies
 node_modules

@@ -46,6 +46,7 @@
   "devDependencies": {
     "@electron/rebuild": "4.0.2",
     "@fast-csv/parse": "5.0.5",
+    "@napi-rs/cli": "3.5.1",
     "@playwright/test": "1.57.0",
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.6",
@@ -133,5 +134,8 @@
       "macos-alias",
       "utf-8-validate"
     ]
+  },
+  "dependencies": {
+    "@trilium/search-native": "workspace:*"
   }
 }

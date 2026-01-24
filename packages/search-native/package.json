@@ -1,0 +1,12 @@
+{
+  "name": "@trilium/search-native",
+  "version": "0.1.0",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "private": true,
+  "scripts": {
+    "build": "napi build --platform",
+    "debug": "napi build"
+  }
+}
+

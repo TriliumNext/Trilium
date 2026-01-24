@@ -52,7 +52,8 @@ export default class BuildHelper {
                 "@electron/remote",
                 "better-sqlite3",
                 "./xhr-sync-worker.js",
-                "vite"
+                "vite",
+                "@trilium/search-native"
             ],
             metafile: true,
             splitting: false,
