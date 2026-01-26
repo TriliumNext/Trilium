@@ -73,7 +73,7 @@
     "tslib": "2.8.1",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.53.0",
+    "typescript-eslint": "8.54.0",
     "upath": "2.0.1",
     "vite": "7.3.1",
     "vite-plugin-dts": "4.5.4",
