@@ -10,6 +10,8 @@ import cls from "../../services/cls.js";
 import attributeFormatter from "../../services/attribute_formatter.js";
 import ValidationError from "../../errors/validation_error.js";
 import type SearchResult from "../../services/search/search_result.js";
+import { ftsSearchService } from "../../services/search/fts/index.js";
+import log from "../../services/log.js";
 import hoistedNoteService from "../../services/hoisted_note.js";
 import beccaService from "../../becca/becca_service.js";
 
@@ -159,11 +161,86 @@ function searchTemplates() {
         .map((note) => note.noteId);
 }
 
+/**
+ * Syncs missing notes to the FTS index
+ * This endpoint is useful for maintenance or after imports where FTS triggers might not have fired
+ */
+function syncFtsIndex(req: Request) {
+    try {
+        const noteIds = req.body?.noteIds;
+        
+        log.info(`FTS sync requested for ${noteIds?.length || 'all'} notes`);
+        
+        const syncedCount = ftsSearchService.syncMissingNotes(noteIds);
+        
+        return {
+            success: true,
+            syncedCount,
+            message: syncedCount > 0 
+                ? `Successfully synced ${syncedCount} notes to FTS index` 
+                : 'FTS index is already up to date'
+        };
+    } catch (error) {
+        log.error(`FTS sync failed: ${error}`);
+        throw new ValidationError(`Failed to sync FTS index: ${error}`);
+    }
+}
+
+/**
+ * Rebuilds the entire FTS index from scratch
+ * This is a more intensive operation that should be used sparingly
+ */
+function rebuildFtsIndex() {
+    try {
+        log.info('FTS index rebuild requested');
+        
+        ftsSearchService.rebuildIndex();
+        
+        return {
+            success: true,
+            message: 'FTS index rebuild completed successfully'
+        };
+    } catch (error) {
+        log.error(`FTS rebuild failed: ${error}`);
+        throw new ValidationError(`Failed to rebuild FTS index: ${error}`);
+    }
+}
+
+/**
+ * Gets statistics about the FTS index
+ */
+function getFtsIndexStats() {
+    try {
+        const stats = ftsSearchService.getIndexStats();
+        
+        // Get count of notes that should be indexed
+        const eligibleNotesCount = searchService.searchNotes('', {
+            includeArchivedNotes: false,
+            ignoreHoistedNote: true
+        }).filter(note => 
+            ['text', 'code', 'mermaid', 'canvas', 'mindMap'].includes(note.type) &&
+            !note.isProtected
+        ).length;
+        
+        return {
+            ...stats,
+            eligibleNotesCount,
+            missingFromIndex: Math.max(0, eligibleNotesCount - stats.totalDocuments)
+        };
+    } catch (error) {
+        log.error(`Failed to get FTS stats: ${error}`);
+        throw new ValidationError(`Failed to get FTS index statistics: ${error}`);
+    }
+}
+
 export default {
     searchFromNote,
     searchAndExecute,
     getRelatedNotes,
     quickSearch,
     search,
-    searchTemplates
+    searchTemplates,
+    syncFtsIndex,
+    rebuildFtsIndex,
+    getFtsIndexStats
 };
