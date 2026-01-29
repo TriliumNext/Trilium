@@ -2,7 +2,7 @@ import type BNote from "../becca/entities/bnote.js";
 
 import attributeService from "./attributes.js";
 import cloningService from "./cloning.js";
-import { dayjs, Dayjs } from "@triliumnext/commons";
+import { dayjs, Dayjs, getFirstDayOfWeek1, getWeekInfo, WeekSettings } from "@triliumnext/commons";
 import hoistedNoteService from "./hoisted_note.js";
 import noteService from "./notes.js";
 import optionService from "./options.js";
@@ -63,7 +63,8 @@ function getJournalNoteTitle(
     rootNote: BNote,
     timeUnit: TimeUnit,
     dateObj: Dayjs,
-    number: number
+    number: number,
+    weekYear?: number  // Optional: the week year for cross-year weeks
 ) {
     const patterns = {
         year: rootNote.getOwnedLabelValue("yearPattern") || "{year}",
@@ -79,9 +80,14 @@ function getJournalNoteTitle(
     const numberStr = number.toString();
     const ordinalStr = ordinal(dateObj);
 
+    // For week notes, use the weekYear if provided (handles cross-year weeks)
+    const yearForDisplay = (timeUnit === "week" && weekYear !== undefined)
+        ? weekYear.toString()
+        : dateObj.format("YYYY");
+
     const allReplacements: Record<string, string> = {
         // Common date formats
-        "{year}": dateObj.format("YYYY"),
+        "{year}": yearForDisplay,
 
         // Month related
         "{isoMonth}": dateObj.format("YYYY-MM"),
@@ -286,6 +292,14 @@ function getMonthNote(dateStr: string, _rootNote: BNote | null = null): BNote {
     return monthNote as unknown as BNote;
 }
 
+function getWeekSettings(): WeekSettings {
+    return {
+        firstDayOfWeek: parseInt(optionService.getOptionOrNull("firstDayOfWeek") ?? "1", 10),
+        firstWeekOfYear: parseInt(optionService.getOptionOrNull("firstWeekOfYear") ?? "0", 10),
+        minDaysInFirstWeek: parseInt(optionService.getOptionOrNull("minDaysInFirstWeek") ?? "4", 10)
+    };
+}
+
 function getWeekStartDate(date: Dayjs): Dayjs {
     const firstDayISO = parseInt(optionService.getOptionOrNull("firstDayOfWeek") ?? "1", 10);
     const day = date.isoWeekday();
@@ -294,9 +308,8 @@ function getWeekStartDate(date: Dayjs): Dayjs {
 }
 
 function getWeekNumberStr(date: Dayjs): string {
-    const isoYear = date.isoWeekYear();
-    const isoWeekNum = date.isoWeek();
-    return `${isoYear}-W${isoWeekNum.toString().padStart(2, "0")}`;
+    const { weekYear, weekNumber } = getWeekInfo(date, getWeekSettings());
+    return `${weekYear}-W${weekNumber.toString().padStart(2, "0")}`;
 }
 
 function getWeekFirstDayNote(dateStr: string, rootNote: BNote | null = null) {
@@ -329,17 +342,19 @@ function getWeekNote(weekStr: string, _rootNote: BNote | null = null): BNote | n
 
     const [ yearStr, weekNumStr ] = weekStr.trim().split("-W");
     const weekNumber = parseInt(weekNumStr);
+    const weekYear = parseInt(yearStr);
 
-    const firstDayOfYear = dayjs().year(parseInt(yearStr)).month(0).date(1);
-    const weekStartDate = firstDayOfYear.add(weekNumber - 1, "week");
-    const startDate = getWeekStartDate(weekStartDate);
-    const endDate = dayjs(startDate).add(6, "day");
+    // Calculate week start date based on user's first week of year settings.
+    // This correctly handles cross-year weeks based on user preferences.
+    const firstDayOfWeek1 = getFirstDayOfWeek1(weekYear, getWeekSettings());
+    const startDate = firstDayOfWeek1.add(weekNumber - 1, "week");
+    const endDate = startDate.add(6, "day");
 
     const startMonth = startDate.month();
     const endMonth = endDate.month();
 
     const monthNote = getMonthNote(startDate.format("YYYY-MM-DD"), rootNote);
-    const noteTitle = getJournalNoteTitle(rootNote, "week", startDate, weekNumber);
+    const noteTitle = getJournalNoteTitle(rootNote, "week", startDate, weekNumber, weekYear);
 
     sql.transactional(() => {
         weekNote = createNote(monthNote, noteTitle);
