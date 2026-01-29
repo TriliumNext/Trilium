@@ -325,7 +325,10 @@
     "apply-bulk-actions": "Applica azioni in blocco",
     "converted-to-attachments": "{{count}} note sono state convertite in allegati.",
     "convert-to-attachment-confirm": "Sei sicuro di voler convertire le note selezionate in allegati delle note principali? Questa operazione si applica solo alle note immagine, le altre note verranno ignorate.",
-    "open-in-popup": "Modifica rapida"
+    "open-in-popup": "Modifica rapida",
+    "open-in-a-new-window": "Apri in una nuova finestra",
+    "hide-subtree": "Nascondi sottostruttura",
+    "show-subtree": "Mostra sottoalbero"
   },
   "electron_context_menu": {
     "cut": "Taglia",
@@ -1378,7 +1381,8 @@
     "expand_tooltip": "Espande i figli diretti di questa raccolta (a un livello di profondità). Per ulteriori opzioni, premere la freccia a destra.",
     "expand_first_level": "Espandi figli diretti",
     "expand_nth_level": "Espandi {{depth}} livelli",
-    "expand_all_levels": "Espandi tutti i livelli"
+    "expand_all_levels": "Espandi tutti i livelli",
+    "hide_child_notes": "Nascondi note secondarie nell'albero"
   },
   "edited_notes": {
     "no_edited_notes_found": "Nessuna nota modificata per questo giorno...",
@@ -1899,7 +1903,13 @@
     "clone-indicator-tooltip": "Questa nota ha {{- count}} genitori: {{- parents}}",
     "clone-indicator-tooltip-single": "Questa nota è stata clonata (1 genitore aggiuntivo: {{- parent}})",
     "shared-indicator-tooltip": "Questa nota è condivisa pubblicamente",
-    "shared-indicator-tooltip-with-url": "Questa nota è condivisa pubblicamente all'indirizzo: {{- url}}"
+    "shared-indicator-tooltip-with-url": "Questa nota è condivisa pubblicamente all'indirizzo: {{- url}}",
+    "subtree-hidden-tooltip_one": "{{count}} nota secondaria nascosta dall'albero",
+    "subtree-hidden-tooltip_many": "{{count}} note secondarie nascoste dall'albero",
+    "subtree-hidden-tooltip_other": "{{count}} note secondarie nascoste dall'albero",
+    "subtree-hidden-moved-title": "Aggiunto a {{title}}",
+    "subtree-hidden-moved-description-collection": "Questa raccolta nasconde le sue note secondarie nell'albero.",
+    "subtree-hidden-moved-description-other": "Le note secondarie sono nascoste nell'albero di questa nota."
   },
   "title_bar_buttons": {
     "window-on-top": "Mantieni la finestra in primo piano"
@@ -1934,7 +1944,11 @@
     "configure_launchbar": "Configura Launchbar"
   },
   "sql_result": {
-    "no_rows": "Nessuna riga è stata restituita per questa query"
+    "no_rows": "Nessuna riga è stata restituita per questa query",
+    "not_executed": "La query non è stata ancora eseguita.",
+    "failed": "Esecuzione query SQL non riuscita",
+    "statement_result": "Risultato della dichiarazione",
+    "execute_now": "Esegui ora"
   },
   "watched_file_update_status": {
     "file_last_modified": "Il file <code class=\"file-path\"></code> è stato modificato l'ultima volta il <span class=\"file-last-modified\"></span>.",

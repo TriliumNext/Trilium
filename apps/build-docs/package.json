@@ -9,13 +9,13 @@
   "keywords": [],
   "author": "Elian Doran <contact@eliandoran.me>",
   "license": "AGPL-3.0-only",
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@10.28.2",
   "devDependencies": {
-    "@redocly/cli": "2.14.4",
+    "@redocly/cli": "2.14.9",
     "archiver": "7.0.1",
     "fs-extra": "11.3.3",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
     "typedoc": "0.28.16",
     "typedoc-plugin-missing-exports": "4.1.2"
   }

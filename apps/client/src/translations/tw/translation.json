@@ -1566,6 +1566,7 @@
     "shared-indicator-tooltip": "此筆記已公開分享",
     "shared-indicator-tooltip-with-url": "此筆記已公開分享至：{{- url}}",
     "subtree-hidden-tooltip_one": "從樹中隱藏的 {{count}} 篇子筆記",
+    "subtree-hidden-tooltip_other": "",
     "subtree-hidden-moved-title": "已新增至 {{title}}",
     "subtree-hidden-moved-description-collection": "此集合隱藏其樹中的子筆記。",
     "subtree-hidden-moved-description-other": "子筆記隱藏於此筆記的樹中。"
@@ -1602,7 +1603,11 @@
     "configure_launchbar": "設定啟動欄"
   },
   "sql_result": {
-    "no_rows": "此次查詢沒有返回任何數據"
+    "no_rows": "此次查詢沒有返回任何數據",
+    "not_executed": "查詢尚未執行。",
+    "failed": "SQL 查詢執行失敗",
+    "statement_result": "查詢結果",
+    "execute_now": "立即執行"
   },
   "sql_table_schemas": {
     "tables": "表"

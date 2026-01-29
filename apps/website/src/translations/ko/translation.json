@@ -48,7 +48,8 @@
     },
     "header": {
         "get-started": "시작하기",
-        "documentation": "문서"
+        "documentation": "문서",
+        "support-us": "후원하기"
     },
     "support_us": {
         "financial_donations_title": "금전적 기부",
@@ -56,7 +57,8 @@
         "financial_donations_cta": "애플리케이션의 주요 개발자 (<Link>eliandoran</Link>)을 다음 방법으로 후원하는 것을 고려해 주십시오.",
         "github_sponsors": "GitHub Sponsors",
         "paypal": "페이팔",
-        "buy_me_a_coffee": "Buy Me A Coffee"
+        "buy_me_a_coffee": "Buy Me A Coffee",
+        "title": "후원하기"
     },
     "contribute": {
         "title": "기여할 수 있는 다른 방법",
@@ -84,7 +86,14 @@
         "title_x64": "리눅스 64비트",
         "title_arm64": "ARM 기반 리눅스",
         "description_x64": "대부분의 리눅스 배포판에서 x86_64 아키텍처와 호환됩니다.",
-        "description_arm64": "ARM 기반 리눅스 배포판에서 aarch64 아키텍처와 호환됩니다."
+        "description_arm64": "ARM 기반 리눅스 배포판에서 aarch64 아키텍처와 호환됩니다.",
+        "quick_start": "사용하시는 배포판에 따라 적절한 패키지 형식을 선택해주세요:",
+        "download_deb": ".deb",
+        "download_rpm": ".rpm",
+        "download_flatpak": ".flatpak",
+        "download_zip": "포터블 (.zip)",
+        "download_nixpkgs": "nixpkgs",
+        "download_aur": "AUR"
     },
     "note_types": {
         "text_title": "텍스트 노트",
@@ -148,5 +157,44 @@
     },
     "components": {
         "link_learn_more": "자세히 알아보기..."
+    },
+    "footer": {
+        "copyright_and_the": " 그리고 ",
+        "copyright_community": "커뮤니티"
+    },
+    "social_buttons": {
+        "github": "GitHub",
+        "github_discussions": "GitHub Discussions",
+        "matrix": "Matrix",
+        "reddit": "Reddit"
+    },
+    "download_helper_desktop_macos": {
+        "title_x64": "macOS (Intel)",
+        "title_arm64": "macOS (Apple Silicon)",
+        "description_x64": "Intel Mac은 Monterey 버전 이상 macOS에서 지원합니다.",
+        "description_arm64": "M1, M2 칩과 같은 Apple Silicon이 탑재된 Macs 전용.",
+        "quick_start": "Homebrew로 설치하는 경우:",
+        "download_dmg": "설치 프로그램 내려받기 (.dmg)",
+        "download_homebrew_cask": "Homebrew Cask",
+        "download_zip": "포터블 (.zip)"
+    },
+    "download_helper_server_docker": {
+        "title": "Docker를 사용한 셀프 호스팅",
+        "description": "Docker 컨테이너를 사용하여 Windows, Linux 또는 macOS에 간편하게 배포할 수 있습니다.",
+        "download_dockerhub": "도커 허브",
+        "download_ghcr": "ghcr.io"
+    },
+    "download_helper_server_linux": {
+        "title": "리눅스에서 셀프 호스팅",
+        "description": "Trilium Notes를 자체 서버 또는 VPS에 배포하세요. 대부분의 배포판과 호환됩니다.",
+        "download_tar_x64": "x64 (.tar.xz)",
+        "download_tar_arm64": "ARM (.tar.xz)",
+        "download_nixos": "NixOS 모듈"
+    },
+    "download_helper_server_hosted": {
+        "title": "유료 호스팅",
+        "description": "Trilium Notes는 간편한 접근 및 관리를 위해 유료 서비스인 PikaPods에서 호스팅할 수 있습니다. Trilium 팀과 직접 제휴되어있지는 않습니다.",
+        "download_pikapod": "PikaPods에서 설치하기",
+        "download_triliumcc": "또는 trilium.cc를 참조하세요"
     }
 }

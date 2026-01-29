@@ -22,7 +22,6 @@ export async function ensureMimeTypes(mimeTypes: MimeType[]) {
             continue;
         }
 
-        registeredMimeTypes.add(mime);
         const loader = syntaxDefinitions[mime];
         if (!loader) {
             unsupportedMimeTypes.add(mime);
@@ -31,6 +30,7 @@ export async function ensureMimeTypes(mimeTypes: MimeType[]) {
 
         const language = (await loader()).default;
         hljs.registerLanguage(mime, language);
+        registeredMimeTypes.add(mime);
     }
 }
 

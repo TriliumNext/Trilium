@@ -5,7 +5,7 @@ import { DateSelectArg, EventChangeArg, EventMountArg, EventSourceFuncArg, Local
 import { DateClickArg } from "@fullcalendar/interaction";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { RefObject } from "preact";
-import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
@@ -17,6 +17,7 @@ import { isMobile } from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
 import Button, { ButtonGroup } from "../../react/Button";
 import { useNoteLabel, useNoteLabelBoolean, useResizeObserver, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
+import { ParentComponent } from "../../react/react_utils";
 import TouchBar, { TouchBarButton, TouchBarLabel, TouchBarSegmentedControl, TouchBarSpacer } from "../../react/TouchBar";
 import { ViewModeProps } from "../interface";
 import { changeEvent, newEvent } from "./api";
@@ -87,6 +88,7 @@ export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ de
 };
 
 export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarViewData>) {
+    const parentComponent = useContext(ParentComponent);
     const containerRef = useRef<HTMLDivElement>(null);
     const calendarRef = useRef<FullCalendar>(null);
 
@@ -105,26 +107,34 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     const eventBuilder = useMemo(() => {
         if (!isCalendarRoot) {
             return async () => await buildEvents(noteIds);
-        } 
+        }
         return async (e: EventSourceFuncArg) => await buildEventsForCalendar(note, e);
-        
     }, [isCalendarRoot, noteIds]);
 
     const plugins = usePlugins(isEditable, isCalendarRoot);
     const locale = useLocale();
 
-    const { eventDidMount } = useEventDisplayCustomization(note);
-    const editingProps = useEditing(note, isEditable, isCalendarRoot);
+    const { eventDidMount } = useEventDisplayCustomization(note, parentComponent?.componentId);
+    const editingProps = useEditing(note, isEditable, isCalendarRoot, parentComponent?.componentId);
 
     // React to changes.
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
-        if (loadResults.getNoteIds().some(noteId => noteIds.includes(noteId)) // note title change.
-            || loadResults.getAttributeRows().some((a) => noteIds.includes(a.noteId ?? ""))) // subnote change.
-        {
+        const api = calendarRef.current;
+        if (!api) return;
+
+        // Subnote attribute change.
+        if (loadResults.getAttributeRows(parentComponent?.componentId).some((a) => noteIds.includes(a.noteId ?? ""))) {
             // Defer execution after the load results are processed so that the event builder has the updated data to work with.
-            setTimeout(() => {
-                calendarRef.current?.refetchEvents();
-            }, 0);
+            setTimeout(() => api.refetchEvents(), 0);
+            return; // early return since we'll refresh the events anyway
+        }
+
+        // Title change.
+        for (const noteId of loadResults.getNoteIds().filter(noteId => noteIds.includes(noteId))) {
+            const event = api.getEventById(noteId);
+            const note = froca.getNoteFromCache(noteId);
+            if (!event || !note) continue;
+            event.setProp("title", note.title);
         }
     });
 
@@ -169,13 +179,13 @@ function CalendarHeader({ calendarRef }: { calendarRef: RefObject<FullCalendar> 
             <ButtonGroup>
                 {CALENDAR_VIEWS.map(viewData => (
                     <Button
-                        text={viewData.name.toLocaleLowerCase()}
+                        text={viewData.name}
                         className={currentViewType === viewData.type ? "active" : ""}
                         onClick={() => calendarRef.current?.changeView(viewData.type)}
                     />
                 ))}
             </ButtonGroup>
-            <Button text={t("calendar.today").toLocaleLowerCase()} onClick={() => calendarRef.current?.today()} />
+            <Button text={t("calendar.today")} onClick={() => calendarRef.current?.today()} />
             <ButtonGroup>
                 <ActionButton icon="bx bx-chevron-left" text={currentViewData?.previousText ?? ""} frame onClick={() => calendarRef.current?.prev()} />
                 <ActionButton icon="bx bx-chevron-right" text={currentViewData?.nextText ?? ""} frame onClick={() => calendarRef.current?.next()} />
@@ -207,22 +217,23 @@ function usePlugins(isEditable: boolean, isCalendarRoot: boolean) {
 }
 
 function useLocale() {
+    const [ locale ] = useTriliumOption("locale");
     const [ formattingLocale ] = useTriliumOption("formattingLocale");
     const [ calendarLocale, setCalendarLocale ] = useState<LocaleInput>();
 
     useEffect(() => {
-        const correspondingLocale = LOCALE_MAPPINGS[formattingLocale];
+        const correspondingLocale = LOCALE_MAPPINGS[formattingLocale] ?? LOCALE_MAPPINGS[locale];
         if (correspondingLocale) {
             correspondingLocale().then((locale) => setCalendarLocale(locale.default));
         } else {
             setCalendarLocale(undefined);
         }
-    });
+    }, [formattingLocale, locale]);
 
     return calendarLocale;
 }
 
-function useEditing(note: FNote, isEditable: boolean, isCalendarRoot: boolean) {
+function useEditing(note: FNote, isEditable: boolean, isCalendarRoot: boolean, componentId: string | undefined) {
     const onCalendarSelection = useCallback(async (e: DateSelectArg) => {
         const { startDate, endDate } = parseStartEndDateFromEvent(e);
         if (!startDate) return;
@@ -234,8 +245,8 @@ function useEditing(note: FNote, isEditable: boolean, isCalendarRoot: boolean) {
             return;
         }
 
-        newEvent(note, { title, startDate, endDate, startTime, endTime });
-    }, [ note ]);
+        newEvent(note, { title, startDate, endDate, startTime, endTime, componentId });
+    }, [ note, componentId ]);
 
     const onEventChange = useCallback(async (e: EventChangeArg) => {
         const { startDate, endDate } = parseStartEndDateFromEvent(e.event);
@@ -244,8 +255,8 @@ function useEditing(note: FNote, isEditable: boolean, isCalendarRoot: boolean) {
         const { startTime, endTime } = parseStartEndTimeFromEvent(e.event);
         const note = await froca.getNote(e.event.extendedProps.noteId);
         if (!note) return;
-        changeEvent(note, { startDate, endDate, startTime, endTime });
-    }, []);
+        changeEvent(note, { startDate, endDate, startTime, endTime, componentId });
+    }, [ componentId ]);
 
     // Called upon when clicking the day number in the calendar, opens or creates the day note but only if in a calendar root.
     const onDateClick = useCallback(async (e: DateClickArg) => {
@@ -264,7 +275,7 @@ function useEditing(note: FNote, isEditable: boolean, isCalendarRoot: boolean) {
     };
 }
 
-function useEventDisplayCustomization(parentNote: FNote) {
+function useEventDisplayCustomization(parentNote: FNote, componentId: string | undefined) {
     const eventDidMount = useCallback((e: EventMountArg) => {
         const { iconClass, promotedAttributes } = e.event.extendedProps;
 
@@ -321,7 +332,7 @@ function useEventDisplayCustomization(parentNote: FNote) {
             const note = await froca.getNote(e.event.extendedProps.noteId);
             if (!note) return;
 
-            openCalendarContextMenu(contextMenuEvent, note, parentNote);
+            openCalendarContextMenu(contextMenuEvent, note, parentNote, componentId);
         }
 
         if (isMobile()) {

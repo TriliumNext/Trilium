@@ -1,5 +1,5 @@
 import type { AttachmentRow, AttributeType, CloneResponse, NoteRow, NoteType, RevisionRow } from "@triliumnext/commons";
-import { dayjs } from "@triliumnext/commons";
+import { dayjs, getNoteIcon } from "@triliumnext/commons";
 import eventService from "../../services/events";
 
 import cloningService from "../../services/cloning.js";
@@ -1698,30 +1698,17 @@ class BNote extends AbstractBeccaEntity<BNote> {
     }
 
     getIcon() {
-        return `tn-icon ${this.#getIconInternal()}`;
-    }
-
-    // TODO: Deduplicate with fnote
-    #getIconInternal() {
         const iconClassLabels = this.getLabels("iconClass");
+        const icon = getNoteIcon({
+            noteId: this.noteId,
+            type: this.type,
+            mime: this.mime,
+            iconClass: iconClassLabels.length > 0 ? iconClassLabels[0].value : undefined,
+            workspaceIconClass: undefined,
+            isFolder: this.isFolder.bind(this)
+        });
 
-        if (iconClassLabels && iconClassLabels.length > 0) {
-            return iconClassLabels[0].value;
-        } else if (this.noteId === "root") {
-            return "bx bx-home-alt-2";
-        }
-        if (this.noteId === "_share") {
-            return "bx bx-share-alt";
-        } else if (this.type === "text") {
-            if (this.isFolder()) {
-                return "bx bx-folder";
-            }
-            return "bx bx-note";
-
-        } else if (this.type === "code" && this.mime.startsWith("text/x-sql")) {
-            return "bx bx-data";
-        }
-        return NOTE_TYPE_ICONS[this.type];
+        return `tn-icon ${icon}`;
     }
 
     // TODO: Deduplicate with fnote

@@ -1,0 +1,81 @@
+.sql-console-widget-container {
+    .note-detail-split.split-vertical {
+        flex-direction: column-reverse;
+    }
+
+    .note-detail-split-preview {
+        overflow: auto;
+    }
+
+    .gutter {
+        background-color: var(--accented-background-color) !important;
+    }
+
+    .sql-result-widget  {
+        height: 100%;
+
+        > .sql-console-result-container {
+            width: 100%;
+            height: 100%;
+            font-size: smaller;
+            flex-grow: 1;
+            overflow: auto;
+            min-height: 0;
+
+            > .tabulator {
+                --cell-vert-padding-size: 4px;
+
+                > .tabulator-tableholder {
+                    padding: 0;
+                }
+
+                > .tabulator-footer,
+                > .tabulator-footer .tabulator-footer-contents {
+                    padding: 2px 4px;
+                }
+            }
+        }
+    }
+
+    .sql-table-schemas-widget {
+        padding: 12px;
+        padding-inline-end: 10%;
+        contain: none !important;
+
+        .sql-table-schemas {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.25em;
+        }
+
+        > .dropdown {
+            display: inline-block !important;
+        }
+
+        button.btn {
+            padding: 0.25rem 0.4rem;
+            font-size: 0.875rem;
+            line-height: 0.5;
+            border: 1px solid var(--button-border-color);
+            border-radius: var(--button-border-radius);
+            background: var(--button-background-color);
+            color: var(--button-text-color);
+            cursor: pointer;
+        }
+
+        .table-schema td {
+            padding: 5px;
+        }
+
+        .dropdown .table-schema {
+            font-family: var(--monospace-font-family);
+            font-size: .85em;
+        }
+
+        /* Data type */
+        .dropdown .table-schema td:nth-child(2) {
+            color: var(--muted-text-color);
+        }
+    }
+}
+

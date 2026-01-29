@@ -1,6 +1,6 @@
 import "./StatusBar.css";
 
-import { Locale, NoteType } from "@triliumnext/commons";
+import { Locale, NOTE_TYPE_ICONS, NoteType } from "@triliumnext/commons";
 import { Dropdown as BootstrapDropdown } from "bootstrap";
 import clsx from "clsx";
 import { type ComponentChildren, RefObject } from "preact";
@@ -9,7 +9,7 @@ import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "p
 
 import { CommandNames } from "../../components/app_context";
 import NoteContext from "../../components/note_context";
-import FNote, { NOTE_TYPE_ICONS } from "../../entities/fnote";
+import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
 import { t } from "../../services/i18n";
 import { ViewScope } from "../../services/link";

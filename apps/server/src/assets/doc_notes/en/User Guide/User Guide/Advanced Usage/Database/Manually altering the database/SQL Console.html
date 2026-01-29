@@ -1,36 +1,43 @@
 <p>The SQL Console is Trilium's built-in database editor.</p>
-<p>It can be accessed by going to the <a href="#root/_help_Vc8PjrjAGuOp">global menu</a> →
+<p>It can be accessed by going to the&nbsp;<a class="reference-link" href="#root/_help_x3i7MxGccDuM">Global menu</a>&nbsp;→
   Advanced → Open SQL Console.</p>
 <p>
   <img src="SQL Console_image.png">
 </p>
 <h3>Interaction</h3>
 <ul>
-  <li>
-    <p>Hovering the mouse over one of the tables listed at the top of the document
-      will show the columns and their data type.</p>
-  </li>
-  <li>
-    <p>Only one SQL statement can be run at once.</p>
-  </li>
-  <li>
-    <p>To run the statement, press the
-      <img src="3_SQL Console_image.png">icon.</p>
-  </li>
-  <li>
-    <p>For queries that return a result, the data will displayed in a table.</p>
-    <p>
-      <img src="1_SQL Console_image.png">
-    </p>
-  </li>
+  <li>Hovering the mouse over one of the tables listed at the top of the document
+    will show the columns and their data type.</li>
+  <li>Only one SQL statement can be run at once.</li>
+  <li>To run the statement, press the <em>Execute</em> icon.</li>
+  <li>For queries that return a result, the data will displayed in a table.</li>
+  <li>For statements (e.g. <code spellcheck="false">INSERT</code>, <code spellcheck="false">UPDATE</code>),
+    the number of affected rows is displayed.</li>
+</ul>
+<figure class="image">
+  <img style="aspect-ratio:1124/571;" src="2_SQL Console_image.png"
+  width="1124" height="571">
+</figure>
+
+<h3>Interacting with the table</h3>
+<p>After executing a query, a table with the results will be displayed:</p>
+<ul>
+  <li>Clicking on a column allows sorting ascending or descending.</li>
+  <li>Underneath each column there is an input field which allows filtering
+    by text.</li>
+  <li>Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy the current cell to clipboard.</li>
+  <li>Multiple cells can be selected by dragging or by holding <kbd>Shift</kbd> +
+    arrow keys</li>
+  <li>Results are paginated for performance reasons. The controls at the bottom
+    of the table can be used to navigate through pages.</li>
 </ul>
 <h3>Saved SQL console</h3>
 <p>SQL queries or commands can be saved into a dedicated note.</p>
 <p>To do so, simply write the query and press the
-  <img src="2_SQL Console_image.png">button. Once saved, the note will appear in&nbsp;<a href="#root/_help_l0tKav7yLHGF">Day Notes</a>.</p>
-<ul>
-  <li>The SQL expression will not be displayed by default, but it can still
-    be viewed by going to the note context menu and selecting <em>Note source</em>.</li>
-  <li>The expression cannot be modified. If needed, recreate it by copying the
-    statement back into the SQL console and then saving it again.</li>
-</ul>
+  <img src="1_SQL Console_image.png">button. Once saved, the note will appear in&nbsp;<a class="reference-link"
+  href="#root/_help_l0tKav7yLHGF">Day Notes</a>.</p>
+<p>The note can be locked for editing by pressing the <em>Lock</em> button
+  in the note actions section near the title bar (on the&nbsp;<a class="reference-link"
+  href="#root/_help_IjZS7iK5EXtb">New Layout</a>, or in the&nbsp;<a class="reference-link"
+  href="#root/_help_XpOYSgsLkTJy">Floating buttons</a>&nbsp;area if using the old
+  layout). When editing is locked, the SQL statement is hidden from view.</p>

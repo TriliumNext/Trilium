@@ -213,7 +213,13 @@ export function keyMatches(e: KeyboardEvent, key: string): boolean {
     }
 
     // For letter keys, use the physical key code for consistency
+    // On macOS, Option/Alt key produces special characters, so we must use e.code
     if (key.length === 1 && key >= 'a' && key <= 'z') {
+        if (e.altKey) {
+            // e.code is like "KeyA", "KeyB", etc.
+            const expectedCode = `Key${key.toUpperCase()}`;
+            return e.code === expectedCode || e.key.toLowerCase() === key.toLowerCase();
+        }
         return e.key.toLowerCase() === key.toLowerCase();
     }
 

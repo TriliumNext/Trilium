@@ -387,4 +387,58 @@ describe("Markdown export", () => {
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 
+    it("maintains escaped HTML tags", () => {
+        const html = /*html*/`<p>&lt;div&gt;Hello World&lt;/div&gt;</p>`;
+        const expected = `\\<div\\>Hello World\\</div\\>`;
+        expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    it("escapes HTML tags inside list", () => {
+        const html = trimIndentation/*html*/`\
+            <ul>
+                <li data-list-item-id="e07fda078f7dd7103a3b9017f49eb1589">
+                    &lt;note&gt; is note.
+                </li>
+            </ul>
+        `;
+        const expected = trimIndentation`\
+            *   \\<note\\> is note.`;
+        expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    it("exports jQuery code in table properly", () => {
+        const html = trimIndentation`\
+            <figure class="table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>
+                                Code
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <pre>
+            <code class="language-text-x-trilium-auto">this.$widget = $("&lt;div&gt;");</code>
+                                </pre>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </figure>
+        `;
+        const expected = trimIndentation`\
+            <table><thead><tr><th>Code</th></tr></thead><tbody><tr><td><pre><code class="language-text-x-trilium-auto">this.$widget = $("&lt;div&gt;");</code>
+                                </pre></td></tr></tbody></table>`;
+        expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    it("renders emphasis with underscore", () => {
+        const html = /*html*/`<p>This is <em>underlined</em> text.</p>`;
+        const expected = `This is _underlined_ text.`;
+        expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
 });

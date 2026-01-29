@@ -14,7 +14,7 @@ import type BNote from "../../becca/entities/bnote.js";
 import attributeService from "../../services/attributes.js";
 import log from "../../services/log.js";
 import noteService from "../../services/notes.js";
-import { getNoteTitle, newEntityId, processStringOrBuffer, removeTextFileExtension, unescapeHtml } from "../../services/utils.js";
+import { getNoteTitle, newEntityId, processStringOrBuffer, removeFileExtension, unescapeHtml } from "../../services/utils.js";
 import type AttributeMeta from "../meta/attribute_meta.js";
 import type NoteMeta from "../meta/note_meta.js";
 import protectedSessionService from "../protected_session.js";
@@ -162,7 +162,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
 
         // in case we lack metadata, we treat e.g. "Programming.html" and "Programming" as the same note
         // (one data file, the other directory for children)
-        const filePathNoExt = removeTextFileExtension(filePath);
+        const filePathNoExt = removeFileExtension(filePath);
 
         if (filePathNoExt in createdPaths) {
             return createdPaths[filePathNoExt];
@@ -300,7 +300,6 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
         return {
             noteId: getNoteId(noteMeta, absUrl)
         };
-
     }
 
     function processTextNoteContent(content: string, noteTitle: string, filePath: string, noteMeta?: NoteMeta) {

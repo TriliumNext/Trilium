@@ -24,7 +24,8 @@
         "mindmap_title": "माइंडमैप"
     },
     "extensibility_benefits": {
-        "share_title": "वेब पर नोट्स शेयर करें"
+        "share_title": "वेब पर नोट्स शेयर करें",
+        "share_description": "अगर आपके पास सर्वर है, तो इसका उपयोग अपने नोट्स के एक हिस्से को अन्य लोगों के साथ शेयर करने के लिए किया जा सकता है।"
     },
     "collections": {
         "calendar_title": "कैलेंडर",

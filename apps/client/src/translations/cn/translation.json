@@ -1604,7 +1604,9 @@
     "clone-indicator-tooltip": "此笔记有 {{- count}} 个父级： {{- parents}}",
     "clone-indicator-tooltip-single": "此笔记已克隆（1 个额外的父级：{{- parent}}）",
     "subtree-hidden-tooltip_other": "从树中隐藏的 {{count}} 篇子笔记",
-    "subtree-hidden-moved-title": "已添加到 {{title}}"
+    "subtree-hidden-moved-title": "已添加到 {{title}}",
+    "subtree-hidden-moved-description-collection": "此集合隐藏其树中的子笔记。",
+    "subtree-hidden-moved-description-other": "子笔记隐藏于此笔记的树中。"
   },
   "title_bar_buttons": {
     "window-on-top": "保持此窗口置顶"
@@ -1637,7 +1639,11 @@
     "configure_launchbar": "配置启动栏"
   },
   "sql_result": {
-    "no_rows": "此查询没有返回任何数据"
+    "no_rows": "此查询没有返回任何数据",
+    "not_executed": "查询尚未执行。",
+    "failed": "SQL 查询执行失败",
+    "execute_now": "立即执行",
+    "statement_result": "执行结果"
   },
   "sql_table_schemas": {
     "tables": "表"

@@ -1288,7 +1288,11 @@
     "search_not_executed": "検索はまだ実行されていません。上の「検索」ボタンをクリックすると、検索結果が表示されます。"
   },
   "sql_result": {
-    "no_rows": "このクエリでは行が返されませんでした"
+    "no_rows": "このクエリでは行が返されませんでした",
+    "not_executed": "クエリはまだ実行されていません。",
+    "failed": "SQLクエリの実行に失敗しました",
+    "statement_result": "ステートメント結果",
+    "execute_now": "今すぐ実行"
   },
   "sql_table_schemas": {
     "tables": "テーブル"

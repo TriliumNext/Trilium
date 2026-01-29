@@ -47,10 +47,10 @@ async function register(app: express.Application) {
             vite.middlewares(req, res, next);
         });
         app.get(`/`, [ rootLimiter, auth.checkAuth, csrfMiddleware ], (req, res, next) => {
-            req.url = `/${assetUrlFragment}/src/index.html`;
+            req.url = `/${assetUrlFragment}/index.html`;
             vite.middlewares(req, res, next);
         });
-        app.get(`/index.ts`, [ rootLimiter ], (req, res, next) => {
+        app.get(`/src/index.ts`, [ rootLimiter ], (req, res, next) => {
             req.url = `/${assetUrlFragment}/src/index.ts`;
             vite.middlewares(req, res, next);
         });
@@ -66,7 +66,7 @@ async function register(app: express.Application) {
             // broken when closing the browser and coming back in to the page.
             // The page is restored from cache, but the API call fail.
             res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-            res.sendFile(path.join(publicDir, "src", "index.html"));
+            res.sendFile(path.join(publicDir, "index.html"));
         });
         app.use("/assets", persistentCacheStatic(path.join(publicDir, "assets")));
         app.use(`/src`, persistentCacheStatic(path.join(publicDir, "src")));

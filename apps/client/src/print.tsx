@@ -29,7 +29,9 @@ async function main() {
     const froca = (await import("./services/froca")).default;
     const note = await froca.getNote(noteId);
 
-    render(<App note={note} noteId={noteId} />, document.body);
+    const bodyWrapper = document.createElement("div");
+    render(<App note={note} noteId={noteId} />, bodyWrapper);
+    document.body.appendChild(bodyWrapper);
 }
 
 function App({ note, noteId }: { note: FNote | null | undefined, noteId: string }) {

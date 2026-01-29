@@ -1,10 +1,11 @@
-import { ensureMimeTypes, highlight, highlightAuto, loadTheme, Themes, type AutoHighlightResult, type HighlightResult, type Theme } from "@triliumnext/highlightjs";
+import { MimeType } from "@triliumnext/commons";
+import { type AutoHighlightResult, ensureMimeTypes, highlight, highlightAuto, type HighlightResult, loadTheme, type Theme,Themes } from "@triliumnext/highlightjs";
+
+import { copyText, copyTextWithToast } from "./clipboard_ext.js";
+import { t } from "./i18n.js";
 import mime_types from "./mime_types.js";
 import options from "./options.js";
-import { t } from "./i18n.js";
-import { copyText, copyTextWithToast } from "./clipboard_ext.js";
 import { isShare } from "./utils.js";
-import { MimeType } from "@triliumnext/commons";
 
 let highlightingLoaded = false;
 
@@ -76,13 +77,15 @@ export async function applySingleBlockSyntaxHighlight($codeBlock: JQuery<HTMLEle
 }
 
 export async function ensureMimeTypesForHighlighting(mimeTypeHint?: string) {
-    if (highlightingLoaded) {
+    if (!mimeTypeHint && highlightingLoaded) {
         return;
     }
 
     // Load theme.
-    const currentThemeName = String(options.get("codeBlockTheme"));
-    await loadHighlightingTheme(currentThemeName);
+    if (!highlightingLoaded) {
+        const currentThemeName = String(options.get("codeBlockTheme"));
+        await loadHighlightingTheme(currentThemeName);
+    }
 
     // Load mime types.
     let mimeTypes: MimeType[];
@@ -94,7 +97,7 @@ export async function ensureMimeTypesForHighlighting(mimeTypeHint?: string) {
                 enabled: true,
                 mime: mimeTypeHint.replace("-", "/")
             }
-        ]
+        ];
     } else {
         mimeTypes = mime_types.getMimeTypes();
     }
@@ -124,9 +127,9 @@ export function isSyntaxHighlightEnabled() {
     if (!isShare) {
         const theme = options.get("codeBlockTheme");
         return !!theme && theme !== "none";
-    } else {
-        return true;
     }
+    return true;
+
 }
 
 /**

@@ -29,7 +29,7 @@ function processVersion(version) {
 function patchPackageJson(packageJsonPath) {
     // Read the version from package.json and process it.
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf-8"));
-    const currentVersion = packageJson.version;
+    const currentVersion = packageJson.version.split("-test-")[0];
     const adjustedVersion = processVersion(currentVersion);
     console.log("Current version is", currentVersion);
     console.log("Adjusted version is", adjustedVersion);
@@ -46,7 +46,7 @@ function main() {
     const rootPackageJson = join(scriptDir, "..", "package.json");
     patchPackageJson(rootPackageJson);
 
-    for (const app of ["server", "client", "client-standalone"]) {
+    for (const app of ["server", "client", "client-standalone", "desktop"]) {
         const appPackageJsonPath = join(scriptDir, "..", "apps", app, "package.json");
         patchPackageJson(appPackageJsonPath);
     }

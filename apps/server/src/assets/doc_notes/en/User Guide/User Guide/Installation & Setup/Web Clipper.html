@@ -4,17 +4,30 @@
 <p>Trilium Web Clipper is a web browser extension which allows user to clip
   text, screenshots, whole pages and short notes and save them directly to
   Trilium Notes.</p>
-<p>Project is hosted <a href="https://github.com/TriliumNext/web-clipper">here</a>.</p>
-<p>Firefox and Chrome are supported browsers, but the chrome build should
-  work on other chromium based browsers as well.</p>
+<h2>Supported browsers</h2>
+<p>Trilium Web Clipper officially supports the following web browsers:</p>
+<ul>
+  <li>Mozilla Firefox, using Manifest v2.</li>
+  <li>Google Chrome, using Manifest v3. Theoretically the extension should work
+    on other Chromium-based browsers as well, but they are not officially supported.</li>
+</ul>
+<h2>Obtaining the extension</h2>
+<aside class="admonition warning">
+  <p>The extension is currently under development. A preview with unsigned
+    extensions is available on <a href="https://github.com/TriliumNext/Trilium/actions/runs/21318809414">GitHub Actions</a>.</p>
+  <p>We have already submitted the extension to both Chrome and Firefox web
+    stores, but they are pending validation.</p>
+</aside>
 <h2>Functionality</h2>
 <ul>
   <li>select text and clip it with the right-click context menu</li>
   <li>click on an image or link and save it through context menu</li>
   <li>save whole page from the popup or context menu</li>
   <li>save screenshot (with crop tool) from either popup or context menu</li>
-  <li>create short text note from popup</li>
+  <li
+ >create short text note from popup</li>
 </ul>
+<h2>Location of clippings</h2>
 <p>Trilium will save these clippings as a new child note under a "clipper
   inbox" note.</p>
 <p>By default, that's the <a href="#root/_help_l0tKav7yLHGF">day note</a> but you
@@ -23,21 +36,76 @@
   spellcheck="false">clipperInbox</code>, on any other note.</p>
 <p>If there's multiple clippings from the same page (and on the same day),
   then they will be added to the same note.</p>
-<p><strong>Extension is available from:</strong>
-</p>
+<h2>Keyboard shortcuts</h2>
+<p>Keyboard shortcuts are available for most functions:</p>
 <ul>
-  <li><a href="https://github.com/TriliumNext/web-clipper/releases">Project release page</a> -
-    .xpi for Firefox and .zip for Chromium based browsers.</li>
-  <li><a href="https://chromewebstore.google.com/detail/trilium-web-clipper/dfhgmnfclbebfobmblelddiejjcijbjm">Chrome Web Store</a>
+  <li>Save selected text: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> (Mac: <kbd>⌘</kbd>+<kbd>⇧</kbd>+<kbd>S</kbd>)</li>
+  <li
+ >Save whole page: <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>S</kbd> (Mac: <kbd>⌥</kbd>+<kbd>⇧</kbd>+<kbd>S</kbd>)</li>
+    <li
+   >Save screenshot: <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>E</kbd> (Mac: <kbd>⌘</kbd>+<kbd>⇧</kbd>+<kbd>E</kbd>)</li>
+</ul>
+<p>To set custom shortcuts, follow the directions for your browser.</p>
+<ul>
+  <li><strong>Firefox</strong>: <code spellcheck="false">about:addons</code> →
+    Gear icon ⚙️ → Manage extension shortcuts</li>
+  <li><strong>Chrome</strong>: <code spellcheck="false">chrome://extensions/shortcuts</code>
   </li>
 </ul>
+<aside class="admonition note">
+  <p>On Firefox, the default shortcuts interfere with some browser features.
+    As such, the keyboard combinations will not trigger the Web Clipper action.
+    To fix this, simply change the keyboard shortcut to something that works.
+    The defaults will be adjusted in future versions.</p>
+</aside>
 <h2>Configuration</h2>
 <p>The extension needs to connect to a running Trilium instance. By default,
   it scans a port range on the local computer to find a desktop Trilium instance.</p>
 <p>It's also possible to configure the <a href="#root/_help_WOcw2SLH6tbX">server</a> address
   if you don't run the desktop application, or want it to work without the
   desktop application running.</p>
-<h2>Username</h2>
-<p>Older versions of Trilium (before 0.50) required username &amp; password
-  to authenticate, but this is no longer the case. You may enter anything
-  in that field, it will not have any effect.</p>
+<h2>Testing development versions</h2>
+<p>Development versions are version pre-release versions, generally meant
+  for testing purposes. These are not available in the Google or Firefox
+  web stores, but can be downloaded from either:</p>
+<ul>
+  <li><a href="https://github.com/TriliumNext/Trilium/releases">GitHub Releases</a> by
+    looking for releases starting with <em>Web Clipper.</em>
+  </li>
+  <li>Artifacts in GitHub Actions, by looking for the <a href="https://github.com/TriliumNext/Trilium/actions/workflows/web-clipper.yml"><em>Deploy web clipper extension </em>workflow</a>.
+    Once a workflow run is selected, the ZIP files are available in the <em>Artifacts</em> section,
+    under the name <code spellcheck="false">web-clipper-extension</code>.</li>
+</ul>
+<h3>For Chrome</h3>
+<ol>
+  <li>Download <code spellcheck="false">trilium-web-clipper-[x.y.z]-chrome.zip</code>.</li>
+  <li
+ >Extract the archive.</li>
+    <li>In Chrome, navigate to <code spellcheck="false">chrome://extensions/</code>
+    </li>
+    <li>Toggle <em>Developer Mode</em> in top-right of the page.</li>
+    <li>Press the <em>Load unpacked</em> button near the header.</li>
+    <li>Point to the extracted directory from step (2).</li>
+</ol>
+<h3>For Firefox</h3>
+<aside class="admonition warning">
+  <p>Firefox prevents installation of unsigned packages in the “retail” version.
+    To be able to install extensions from disk, consider using <em>Firefox Developer Edition</em> or
+    a non-branded version of Firefox (e.g. <em>GNU IceCat</em>).</p>
+  <p>One time, go to <code spellcheck="false">about:config</code> and change
+    <code
+    spellcheck="false">xpinstall.signatures.required</code>to <code spellcheck="false">false</code>.</p>
+</aside>
+<ol>
+  <li>Navigate to <code spellcheck="false">about:addons</code>.</li>
+  <li>Select <em>Extensions</em> in the left-side navigation.</li>
+  <li>Press the <em>Gear</em> icon on the right of the <em>Manage Your Extensions</em> title.</li>
+  <li
+ >Select <em>Install Add-on From File…</em>
+    </li>
+    <li>Point it to <code spellcheck="false">trilium-web-clipper-[x.y.z]-firefox.zip</code>.</li>
+    <li
+   >Press the <em>Add</em> button to confirm.</li>
+</ol>
+<h2>Credits</h2>
+<p>Some parts of the code are based on the <a href="https://github.com/laurent22/joplin/tree/master/Clipper">Joplin Notes browser extension</a>.</p>

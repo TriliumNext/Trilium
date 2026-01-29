@@ -26,7 +26,7 @@
     "productivity_benefits": {
         "sync_title": "Synkronisering",
         "search_title": "Kraftig søk",
-        "web_clipper_title": "Web clipper",
+        "web_clipper_title": "Webklipper",
         "revisions_title": "Notatrevisjon",
         "protected_notes_title": "Beskyttede notater",
         "title": "Produktivitet og sikkerhet",
@@ -87,7 +87,7 @@
         "github": "GitHub",
         "matrix": "Matrix",
         "reddit": "Reddit",
-        "github_discussions": "GitHub Discussions"
+        "github_discussions": "GitHub-diskusjoner"
     },
     "support_us": {
         "paypal": "PayPal",

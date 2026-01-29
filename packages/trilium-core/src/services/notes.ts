@@ -64,6 +64,8 @@ export interface NoteParams {
     utcDateCreated?: string;
     ignoreForbiddenParents?: boolean;
     target?: "into";
+    /** Attributes to be set on the note. These are set atomically on note creation, so entity changes are not sent for attributes defined here. */
+    attributes?: Omit<AttributeRow, "noteId" | "attributeId">[];
 }
 
 function getNewNotePosition(parentNote: BNote) {
@@ -248,6 +250,14 @@ function createNewNote(params: NoteParams): {
                 dateCreated: params.dateCreated,
                 utcDateCreated: params.utcDateCreated
             }).save();
+
+            // Create attributes atomically.
+            for (const attribute of params.attributes || []) {
+                new BAttribute({
+                    ...attribute,
+                    noteId: note.noteId
+                }).save();
+            }
 
             note.setContent(params.content);
 

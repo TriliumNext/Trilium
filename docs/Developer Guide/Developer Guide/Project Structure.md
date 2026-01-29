@@ -9,6 +9,7 @@ The mono-repo is mainly structured in:
     *   `client`, representing the front-end that is used both by the server and the desktop application.
     *   `server`, representing the Node.js / server version of the application.
     *   `desktop`, representing the Electron-based desktop application.
+    *   `web-clipper`, representing the browser extension to easily clip web pages into Trilium, with support for both Firefox and Chrome (manifest V3).
 *   `packages`, containing dependencies used by one or more `apps`.
     *   `commons`, containing shared code for all the apps.
 

@@ -25,7 +25,7 @@
  * @param {HTMLDocument} doc     The document to parse.
  * @param {Object}       options The options object.
  */
-function Readability(doc, options) {
+export default function Readability(doc, options) {
   // In some older versions, people passed a URI as the first argument. Cope:
   if (options && options.documentElement) {
     doc = options;
@@ -2277,7 +2277,3 @@ Readability.prototype = {
     };
   }
 };
-
-if (typeof module === "object") {
-  module.exports = Readability;
-}

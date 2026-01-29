@@ -2445,37 +2445,51 @@
                                             "mime": "text/html",
                                             "attributes": [
                                                 {
-                                                    "type": "label",
-                                                    "name": "shareAlias",
-                                                    "value": "hiding-subtree",
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "GTwFsgaA0lCt",
+                                                    "isInheritable": false,
+                                                    "position": 10
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "hrZ1D00cLbal",
+                                                    "isInheritable": false,
+                                                    "position": 20
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "eIg8jdvaoNNd",
                                                     "isInheritable": false,
                                                     "position": 30
                                                 },
                                                 {
-                                                    "type": "label",
-                                                    "name": "iconClass",
-                                                    "value": "bx bx-hide",
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "TBwsyfadTA18",
                                                     "isInheritable": false,
                                                     "position": 40
                                                 },
                                                 {
                                                     "type": "relation",
                                                     "name": "internalLink",
-                                                    "value": "GTwFsgaA0lCt",
+                                                    "value": "CtBQqbwXDx1w",
                                                     "isInheritable": false,
                                                     "position": 50
                                                 },
                                                 {
                                                     "type": "relation",
                                                     "name": "internalLink",
-                                                    "value": "CtBQqbwXDx1w",
+                                                    "value": "2FvYrpmOXm29",
                                                     "isInheritable": false,
                                                     "position": 60
                                                 },
                                                 {
                                                     "type": "relation",
                                                     "name": "internalLink",
-                                                    "value": "2FvYrpmOXm29",
+                                                    "value": "zP3PMqaG71Ct",
                                                     "isInheritable": false,
                                                     "position": 70
                                                 },
@@ -2494,32 +2508,18 @@
                                                     "position": 90
                                                 },
                                                 {
-                                                    "type": "relation",
-                                                    "name": "internalLink",
-                                                    "value": "zP3PMqaG71Ct",
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "hiding-subtree",
                                                     "isInheritable": false,
-                                                    "position": 100
+                                                    "position": 30
                                                 },
                                                 {
-                                                    "type": "relation",
-                                                    "name": "internalLink",
-                                                    "value": "hrZ1D00cLbal",
+                                                    "type": "label",
+                                                    "name": "iconClass",
+                                                    "value": "bx bx-hide",
                                                     "isInheritable": false,
-                                                    "position": 110
-                                                },
-                                                {
-                                                    "type": "relation",
-                                                    "name": "internalLink",
-                                                    "value": "eIg8jdvaoNNd",
-                                                    "isInheritable": false,
-                                                    "position": 120
-                                                },
-                                                {
-                                                    "type": "relation",
-                                                    "name": "internalLink",
-                                                    "value": "TBwsyfadTA18",
-                                                    "isInheritable": false,
-                                                    "position": 130
+                                                    "position": 40
                                                 }
                                             ],
                                             "format": "markdown",
@@ -6170,6 +6170,34 @@
                                     "mime": "text/markdown",
                                     "attributes": [
                                         {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "Gr6xFaF6ioJ5",
+                                            "isInheritable": false,
+                                            "position": 10
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "WOcw2SLH6tbX",
+                                            "isInheritable": false,
+                                            "position": 20
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "wy8So3yZZlH9",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "dj3j8dG4th4l",
+                                            "isInheritable": false,
+                                            "position": 40
+                                        },
+                                        {
                                             "type": "label",
                                             "name": "shareAlias",
                                             "value": "evernote",
@@ -6186,7 +6214,38 @@
                                     ],
                                     "format": "markdown",
                                     "dataFileName": "Evernote.md",
-                                    "attachments": []
+                                    "attachments": [],
+                                    "dirFileName": "Evernote",
+                                    "children": [
+                                        {
+                                            "isClone": false,
+                                            "noteId": "dj3j8dG4th4l",
+                                            "notePath": [
+                                                "pOsGYCXsbNQG",
+                                                "gh7bpGYxajRS",
+                                                "mHbBMPDPkVV5",
+                                                "syuSEKf2rUGr",
+                                                "dj3j8dG4th4l"
+                                            ],
+                                            "title": "Process internal links by title",
+                                            "notePosition": 10,
+                                            "prefix": null,
+                                            "isExpanded": false,
+                                            "type": "code",
+                                            "mime": "application/javascript;env=frontend",
+                                            "attributes": [
+                                                {
+                                                    "type": "label",
+                                                    "name": "shareAlias",
+                                                    "value": "internal-links.js",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                }
+                                            ],
+                                            "dataFileName": "Process internal links by titl.js",
+                                            "attachments": []
+                                        }
+                                    ]
                                 },
                                 {
                                     "isClone": false,
@@ -14144,7 +14203,7 @@
                                                 {
                                                     "type": "relation",
                                                     "name": "internalLink",
-                                                    "value": "Vc8PjrjAGuOp",
+                                                    "value": "x3i7MxGccDuM",
                                                     "isInheritable": false,
                                                     "position": 10
                                                 },
@@ -14154,6 +14213,20 @@
                                                     "value": "l0tKav7yLHGF",
                                                     "isInheritable": false,
                                                     "position": 20
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "IjZS7iK5EXtb",
+                                                    "isInheritable": false,
+                                                    "position": 30
+                                                },
+                                                {
+                                                    "type": "relation",
+                                                    "name": "internalLink",
+                                                    "value": "XpOYSgsLkTJy",
+                                                    "isInheritable": false,
+                                                    "position": 40
                                                 },
                                                 {
                                                     "type": "label",
@@ -14182,28 +14255,20 @@
                                                     "dataFileName": "SQL Console_image.png"
                                                 },
                                                 {
-                                                    "attachmentId": "827EgLgWhZWF",
-                                                    "title": "image.png",
-                                                    "role": "image",
-                                                    "mime": "image/jpg",
-                                                    "position": 10,
-                                                    "dataFileName": "1_SQL Console_image.png"
-                                                },
-                                                {
                                                     "attachmentId": "gIbK7NNLu3iZ",
                                                     "title": "image.png",
                                                     "role": "image",
                                                     "mime": "image/png",
                                                     "position": 10,
-                                                    "dataFileName": "2_SQL Console_image.png"
+                                                    "dataFileName": "1_SQL Console_image.png"
                                                 },
                                                 {
-                                                    "attachmentId": "pP87PB9ELjQn",
+                                                    "attachmentId": "wdBs3e0MApgs",
                                                     "title": "image.png",
                                                     "role": "image",
                                                     "mime": "image/png",
                                                     "position": 10,
-                                                    "dataFileName": "3_SQL Console_image.png"
+                                                    "dataFileName": "2_SQL Console_image.png"
                                                 }
                                             ]
                                         }
@@ -17521,6 +17586,40 @@
                                     "dataFileName": "Logging_image.png"
                                 }
                             ]
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "cNpC0ITcfX0N",
+                            "notePath": [
+                                "pOsGYCXsbNQG",
+                                "CdNpE2pqjmI6",
+                                "cNpC0ITcfX0N"
+                            ],
+                            "title": "Breaking changes",
+                            "notePosition": 130,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-up-arrow-alt",
+                                    "isInheritable": false,
+                                    "position": 30
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "breaking-changes",
+                                    "isInheritable": false,
+                                    "position": 40
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Breaking changes.md",
+                            "attachments": []
                         }
                     ]
                 },

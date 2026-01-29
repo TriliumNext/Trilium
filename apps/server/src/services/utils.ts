@@ -1,5 +1,3 @@
-
-
 import { utils as coreUtils } from "@triliumnext/core";
 import chardet from "chardet";
 import crypto from "crypto";
@@ -147,7 +145,7 @@ export function formatDownloadTitle(fileName: string, type: string | null, mime:
     return coreUtils.formatDownloadTitle(fileName, type, mime);
 }
 
-export function removeTextFileExtension(filePath: string) {
+export function removeFileExtension(filePath: string) {
     const extension = path.extname(filePath).toLowerCase();
 
     switch (extension) {
@@ -159,6 +157,7 @@ export function removeTextFileExtension(filePath: string) {
         case ".excalidraw":
         case ".mermaid":
         case ".mmd":
+        case ".pdf":
             return filePath.substring(0, filePath.length - extension.length);
         default:
             return filePath;
@@ -169,7 +168,7 @@ export function getNoteTitle(filePath: string, replaceUnderscoresWithSpaces: boo
     const trimmedNoteMeta = noteMeta?.title?.trim();
     if (trimmedNoteMeta) return trimmedNoteMeta;
 
-    const basename = path.basename(removeTextFileExtension(filePath));
+    const basename = path.basename(removeFileExtension(filePath));
     return replaceUnderscoresWithSpaces ? basename.replace(/_/g, " ").trim() : basename;
 }
 
@@ -484,7 +483,7 @@ export default {
     randomSecureToken,
     randomString,
     removeDiacritic,
-    removeTextFileExtension,
+    removeFileExtension,
     replaceAll,
     safeExtractMessageAndStackFromError,
     sanitizeSqlIdentifier,

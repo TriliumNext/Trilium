@@ -14,7 +14,10 @@
     "edit_branch_prefix": "Редагувати префікс гілки",
     "help_on_tree_prefix": "Довідка щодо префіксу дерева",
     "prefix": "Префікс: ",
-    "branch_prefix_saved": "Префікс гілки збережено."
+    "branch_prefix_saved": "Префікс гілки збережено.",
+    "edit_branch_prefix_multiple": "Редагувати префікс гілки для {{count}} гілок",
+    "branch_prefix_saved_multiple": "Префікс гілки збережено для {{count}} гілок.",
+    "affected_branches": "Уражені гілки ({{count}}):"
   },
   "about": {
     "app_version": "Версія програми:",
@@ -70,8 +73,17 @@
     },
     "bundle-error": {
       "title": "Не вдалося завантажити користувацький скрипт",
-      "message": "Скрипт з нотатки ID \"{{id}}\" з заголовком \"{{title}}\" не вдалося виконати через:\n\n{{message}}"
-    }
+      "message": "Скрипт не вдалося виконати через:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "Не вдалося отримати список віджетів з сервера"
+    },
+    "widget-render-error": {
+      "title": "Не вдалося відобразити користувацький віджет"
+    },
+    "widget-missing-parent": "Для власного віджета не визначено {{property}} обов'язкову властивість\n\nЯкщо цей скрипт призначений для запуску без елемента інтерфейсу користувача, використовуйте замість нього '#run=frontendStartup'.",
+    "open-script-note": "Відкрити нотатку сценарію",
+    "scripting-error": "Помилка користувацького скрипта: {{title}}"
   },
   "bulk_actions": {
     "bulk_actions": "Масові дії",
@@ -199,7 +211,8 @@
     "export_status": "Статус експорту",
     "export_in_progress": "Триває експорт: {{progressCount}}",
     "export_finished_successfully": "Експорт успішно завершено.",
-    "format_pdf": "PDF – для друку або спільного використання."
+    "format_pdf": "PDF – для друку або спільного використання.",
+    "share-format": "HTML для веб-публікацій – використовує ту саму тему, що й для спільних нотаток, але може бути опублікований як статичний веб-сайт."
   },
   "help": {
     "title": "Шпаргалка",
@@ -253,7 +266,8 @@
     "showSQLConsole": "показати консоль SQL",
     "other": "Інше",
     "quickSearch": "фокус на швидкому введенні пошуку",
-    "inPageSearch": "пошук на сторінці"
+    "inPageSearch": "пошук на сторінці",
+    "editShortcuts": "Редагувати комбінації клавіш"
   },
   "import": {
     "importIntoNote": "Імпортувати в нотатку",
@@ -849,7 +863,10 @@
   "note_icon": {
     "change_note_icon": "Змінити значок нотатки",
     "search": "Пошук:",
-    "reset-default": "Скинути значок до стандартного значення"
+    "reset-default": "Скинути значок до стандартного значення",
+    "search_placeholder_one": "Пошук {{number}} значка у {{count}} пакеті",
+    "search_placeholder_few": "Пошук {{number}} значків у {{count}} пакетах",
+    "search_placeholder_many": "Пошук {{number}} значків у {{count}} пакетах"
   },
   "basic_properties": {
     "note_type": "Тип нотатки",
@@ -884,7 +901,7 @@
     "file_type": "Тип файлу",
     "file_size": "Розмір файлу",
     "download": "Завантажити",
-    "open": "Відкрити",
+    "open": "Відкрити зовні",
     "upload_new_revision": "Завантажити нову версію",
     "upload_success": "Завантажено нову версію файлу.",
     "upload_failed": "Не вдалося завантажити нову версію файлу.",
@@ -1589,13 +1606,19 @@
     "refresh-saved-search-results": "Оновити збережені результати пошуку",
     "create-child-note": "Створити дочірню нотатку",
     "unhoist": "Відкріпити",
-    "toggle-sidebar": "Перемикання бічної панелі"
+    "toggle-sidebar": "Перемикання бічної панелі",
+    "subtree-hidden-tooltip_one": "{{count}} дочірня нотатка, прихована від дерев",
+    "subtree-hidden-tooltip_few": "{{count}} дочірніх нотатки, прихованих від дерев",
+    "subtree-hidden-tooltip_many": "{{count}} дочірніх нотаток, прихованих від дерев"
   },
   "title_bar_buttons": {
     "window-on-top": "Тримати вікно зверху"
   },
   "note_detail": {
-    "could_not_find_typewidget": "Не вдалося знайти typeWidget для типу '{{type}}'"
+    "could_not_find_typewidget": "Не вдалося знайти typeWidget для типу '{{type}}'",
+    "print_report_collection_content_one": "{{count}} нотатку з колекції не вдалося роздрукувати, тому що вони не підтримуються або захищені.",
+    "print_report_collection_content_few": "{{count}} нотатки з колекції не вдалося роздрукувати, тому що вони не підтримуються або захищені.",
+    "print_report_collection_content_many": "{{count}} нотаток з колекції не вдалося роздрукувати, тому що вони не підтримуються або захищені."
   },
   "note_title": {
     "placeholder": "введіть тут заголовок нотатки..."
@@ -1743,7 +1766,7 @@
     "unknown_widget": "Невідомий віджет для \"{{id}}\"."
   },
   "note_language": {
-    "not_set": "Не встановлено",
+    "not_set": "Мову не встановлено",
     "configure-languages": "Налаштувати мови..."
   },
   "content_language": {
@@ -1810,7 +1833,7 @@
   "book_properties_config": {
     "hide-weekends": "Приховати вихідні",
     "display-week-numbers": "Відображення номерів тижнів",
-    "map-style": "Стиль карти:",
+    "map-style": "Стиль карти",
     "max-nesting-depth": "Максимальна глибина вкладення:",
     "raster": "Растр",
     "vector_light": "Вектор (Світла)",
@@ -1863,7 +1886,7 @@
     "will_be_deleted_in": "Це вкладення буде автоматично видалено через {{time}}",
     "will_be_deleted_soon": "Це вкладення незабаром буде автоматично видалено",
     "deletion_reason": ", оскільки вкладення не має посилання у вмісті нотатки. Щоб запобігти видаленню, додайте посилання на вкладення назад у вміст або перетворіть вкладення на нотатку.",
-    "role_and_size": "Роль: {{role}}, Розмір: {{size}}",
+    "role_and_size": "Роль: {{role}}, розмір: {{size}}, формат даних: {{- mimeType}}",
     "link_copied": "Посилання на вкладення скопійовано в буфер обміну.",
     "unrecognized_role": "Нерозпізнана роль вкладення '{{role}}'."
   },
@@ -1914,7 +1937,7 @@
     "import-into-note": "Імпортувати в нотатку",
     "apply-bulk-actions": "Застосувати масові дії",
     "converted-to-attachments": "({{count}}) нотаток перетворено на вкладення.",
-    "convert-to-attachment-confirm": "Ви впевнені, що хочете конвертувати вибрані нотатки у вкладення до їхніх батьківських нотаток?",
+    "convert-to-attachment-confirm": "Ви впевнені, що хочете конвертувати вибрані нотатки у вкладення до їхніх батьківських нотаток? Ця операція застосовується лише до нотаток із зображеннями, інші нотатки будуть пропущені.",
     "open-in-popup": "Швидке редагування",
     "archive": "Архівувати",
     "unarchive": "Розархівувати"
@@ -1978,7 +2001,10 @@
   },
   "highlights_list_2": {
     "title": "Список основних моментів",
-    "options": "Параметри"
+    "options": "Параметри",
+    "title_with_count_one": "{{count}} виділення",
+    "title_with_count_few": "{{count}} виділення",
+    "title_with_count_many": "{{count}} виділень"
   },
   "table_context_menu": {
     "delete_row": "Видалити рядок"
@@ -2051,5 +2077,36 @@
   },
   "collections": {
     "rendering_error": "Не вдалося показати вміст через помилку."
+  },
+  "status_bar": {
+    "backlinks_one": "{{count}} зворотне посилання",
+    "backlinks_few": "{{count}} зворотні посилання",
+    "backlinks_many": "{{count}} зворотних посилань",
+    "backlinks_title_one": "Переглянути зворотне посилання",
+    "backlinks_title_few": "Переглянути зворотні посилання",
+    "backlinks_title_many": "Переглянути зворотніх посилань",
+    "attachments_one": "{{count}} вкладення",
+    "attachments_few": "{{count}} вкладення",
+    "attachments_many": "{{count}} вкладень",
+    "attachments_title_one": "Переглянути вкладення в новій вкладці",
+    "attachments_title_few": "Переглянути вкладення в новій вкладці",
+    "attachments_title_many": "Переглянути вкладень в новій вкладці",
+    "attributes_one": "{{count}} атрибут",
+    "attributes_few": "{{count}} атрибути",
+    "attributes_many": "{{count}} атрибутів",
+    "note_paths_one": "{{count}} шлях",
+    "note_paths_few": "{{count}} шляхи",
+    "note_paths_many": "{{count}} шляхів"
+  },
+  "pdf": {
+    "attachments_one": "{{count}} вкладення",
+    "attachments_few": "{{count}} вкладення",
+    "attachments_many": "{{count}} вкладень",
+    "layers_one": "{{count}} шар",
+    "layers_few": "{{count}} шари",
+    "layers_many": "{{count}} шарів",
+    "pages_one": "{{count}} сторінка",
+    "pages_few": "{{count}} сторінки",
+    "pages_many": "{{count}} сторінок"
   }
 }

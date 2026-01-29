@@ -42,7 +42,7 @@ describe("Set boolean with inheritance", () => {
             name: "foo",
             value: "",
             isInheritable: false
-        });
+        }, undefined);
     });
 
     it("removes boolean normally without inheritance", async () => {
@@ -91,7 +91,7 @@ describe("Set boolean with inheritance", () => {
             name: "foo",
             value: "false",
             isInheritable: false
-        });
+        }, undefined);
     });
 
     it("overrides boolean with inherited false", async () => {
@@ -112,7 +112,7 @@ describe("Set boolean with inheritance", () => {
             name: "foo",
             value: "",
             isInheritable: false
-        });
+        }, undefined);
     });
 
     it("deletes override boolean with inherited false with already existing value", async () => {
@@ -134,6 +134,6 @@ describe("Set boolean with inheritance", () => {
             name: "foo",
             value: "",
             isInheritable: false
-        });
+        }, undefined);
     });
 });

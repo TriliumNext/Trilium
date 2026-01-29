@@ -103,7 +103,7 @@ async function moveToParentNote(branchIdsToMove: string[], newParentBranchId: st
  * @param moveToParent whether to automatically go to the parent note path after a succesful delete. Usually makes sense if deleting the active note(s).
  * @returns promise that returns false if the operation was cancelled or there was nothing to delete, true if the operation succeeded.
  */
-async function deleteNotes(branchIdsToDelete: string[], forceDeleteAllClones = false, moveToParent = true) {
+async function deleteNotes(branchIdsToDelete: string[], forceDeleteAllClones = false, moveToParent = true, componentId?: string) {
     branchIdsToDelete = filterRootNote(branchIdsToDelete);
 
     if (branchIdsToDelete.length === 0) {
@@ -139,9 +139,9 @@ async function deleteNotes(branchIdsToDelete: string[], forceDeleteAllClones = f
         const branch = froca.getBranch(branchIdToDelete);
 
         if (deleteAllClones && branch) {
-            await server.remove(`notes/${branch.noteId}${query}`);
+            await server.remove(`notes/${branch.noteId}${query}`, componentId);
         } else {
-            await server.remove(`branches/${branchIdToDelete}${query}`);
+            await server.remove(`branches/${branchIdToDelete}${query}`, componentId);
         }
     }
 

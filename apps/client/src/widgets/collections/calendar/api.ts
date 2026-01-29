@@ -1,8 +1,8 @@
-import { CreateChildrenResponse } from "@triliumnext/commons";
-import server from "../../../services/server";
+import { AttributeRow, CreateChildrenResponse } from "@triliumnext/commons";
+
 import FNote from "../../../entities/fnote";
 import { setAttribute, setLabel } from "../../../services/attributes";
-import froca from "../../../services/froca";
+import server from "../../../services/server";
 
 interface NewEventOpts {
     title: string;
@@ -10,6 +10,7 @@ interface NewEventOpts {
     endDate?: string | null;
     startTime?: string | null;
     endTime?: string | null;
+    componentId?: string;
 }
 
 interface ChangeEventOpts {
@@ -17,30 +18,48 @@ interface ChangeEventOpts {
     endDate?: string | null;
     startTime?: string | null;
     endTime?: string | null;
+    componentId?: string;
 }
 
-export async function newEvent(parentNote: FNote, { title, startDate, endDate, startTime, endTime }: NewEventOpts) {
-    // Create the note.
-    const { note } = await server.post<CreateChildrenResponse>(`notes/${parentNote.noteId}/children?target=into`, {
-        title,
-        content: "",
-        type: "text"
+export async function newEvent(parentNote: FNote, { title, startDate, endDate, startTime, endTime, componentId }: NewEventOpts) {
+    const attributes: Omit<AttributeRow, "noteId" | "attributeId">[] = [];
+    attributes.push({
+        type: "label",
+        name: "startDate",
+        value: startDate
     });
-
-    // Set the attributes.
-    setLabel(note.noteId, "startDate", startDate);
     if (endDate) {
-        setLabel(note.noteId, "endDate", endDate);
+        attributes.push({
+            type: "label",
+            name: "endDate",
+            value: endDate
+        });
     }
     if (startTime) {
-        setLabel(note.noteId, "startTime", startTime);
+        attributes.push({
+            type: "label",
+            name: "startTime",
+            value: startTime
+        });
     }
     if (endTime) {
-        setLabel(note.noteId, "endTime", endTime);
+        attributes.push({
+            type: "label",
+            name: "endTime",
+            value: endTime
+        });
     }
+
+    // Create the note.
+    await server.post<CreateChildrenResponse>(`notes/${parentNote.noteId}/children?target=into`, {
+        title,
+        content: "",
+        type: "text",
+        attributes
+    }, componentId);
 }
 
-export async function changeEvent(note: FNote, { startDate, endDate, startTime, endTime }: ChangeEventOpts) {
+export async function changeEvent(note: FNote, { startDate, endDate, startTime, endTime, componentId }: ChangeEventOpts) {
     // Don't store the end date if it's empty.
     if (endDate === startDate) {
         endDate = undefined;
@@ -52,12 +71,12 @@ export async function changeEvent(note: FNote, { startDate, endDate, startTime, 
     let endAttribute = note.getAttributes("label").filter(attr => attr.name == "calendar:endDate").shift()?.value||"endDate";
 
     const noteId = note.noteId;
-    setLabel(noteId, startAttribute, startDate);
-    setAttribute(note, "label", endAttribute, endDate);
+    setLabel(noteId, startAttribute, startDate, false, componentId);
+    setAttribute(note, "label", endAttribute, endDate, componentId);
 
     startAttribute = note.getAttributes("label").filter(attr => attr.name == "calendar:startTime").shift()?.value||"startTime";
     endAttribute = note.getAttributes("label").filter(attr => attr.name == "calendar:endTime").shift()?.value||"endTime";
 
-    setAttribute(note, "label", startAttribute, startTime);
-    setAttribute(note, "label", endAttribute, endTime);
+    setAttribute(note, "label", startAttribute, startTime, componentId);
+    setAttribute(note, "label", endAttribute, endTime, componentId);
 }

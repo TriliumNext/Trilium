@@ -1,24 +1,31 @@
 # Trilium Web Clipper
 
-## This repo is dead
+## Context
 
-**Trilium is in maintenance mode and Web Clipper is not likely to get new releases.**
+The Web Clipper is an extension for the Trilium Notes application, an open-source note-taking application that can be used either in standalone mode via the desktop application or connected to a server.
 
-Trilium Web Clipper is a web browser extension which allows user to clip text, screenshots, whole pages and short notes and save them directly to [Trilium Notes](https://github.com/zadam/trilium). 
+The source is extracted from the official monorepo, where it can be found under `apps/web-clipper`. The only change made to the provided source code is to have `tsconfig.base.json` in the same directory as the Web Clipper. The submitted source code is a snapshot of the following commit: [https://github.com/TriliumNext/Trilium/commit/1cf93ff0dec89ee1a80654934cb30fad74920043](https://github.com/TriliumNext/Trilium/commit/1cf93ff0dec89ee1a80654934cb30fad74920043) 
 
-For more details, see the [wiki page](https://github.com/zadam/trilium/wiki/Web-clipper).
+There are some warnings regarding the use of `innerHTML` but they come from a third-party library (Readability). We plan to update to a newer version of that library soon, but we would like to publish the extension first (if possible).
 
-## Keyboard shortcuts
-Keyboard shortcuts are available for most functions:  
-* Save selected text: `Ctrl+Shift+S` (Mac: `Cmd+Shift+S`)
-* Save whole page: `Alt+Shift+S` (Mac: `Opt+Shift+S`)
-* Save screenshot: `Ctrl+Shift+E` (Mac: `Cmd+Shift+E`)
+## Building from source
 
-To set custom shortcuts, follow the directions for your browser.
+To build from the provided sources:
 
-**Firefox**: `about:addons` > Gear icon ⚙️ > Manage extension shortcuts
+1.  `pnpm i` to install the dependencies.
+2.  `pnpm build:firefox` to trigger the Firefox build.
+3.  The output will be available in `.output/firefox-mv2`.
 
-**Chrome**: `chrome://extensions/shortcuts`
+> [!NOTE]
+> To generate the ZIP instead that can be imported into Firefox, run `pnpm zip;firefox` which will generate `.output\triliumnextweb-clipper-1.0.1-sources.zip`.
 
-## Credits
-Some parts of the code are based on the [Joplin Notes browser extension](https://github.com/laurent22/joplin/tree/master/Clipper).
+## Testing
+
+To test it, a functional Trilium Notes desktop application is required:
+
+1.  Download the latest version of Trilium Notes from [https://triliumnotes.org/](https://triliumnotes.org/) (top-right bottom automatically detects the platform).
+2.  During the first setup, create a new database.
+3.  Allow the Firewall port if asked.
+4.  Install the Web Clipper extension into the browser.
+5.  The extension should be able to see the Trilium instance and become active.
+6.  Web pages can now be clipped and they will appear in the local Trilium instance.

@@ -293,7 +293,7 @@
   "migration": {
     "old_version": "La migración directa desde tu versión actual no está soportada. Por favor actualice a v0.60.4 primero y solo después a esta versión.",
     "error_message": "Error durante la migración a la versión {{version}}: {{stack}}",
-    "wrong_db_version": "La versión de la DB {{version}} es más nueva que la versión de la DB actual {{targetVersion}}, lo que significa que fue creada por una versión más reciente e incompatible de Trilium. Actualice a la última versión de Trilium para resolver este problema."
+    "wrong_db_version": "La versión de la base de datos {{version}} es más nueva de lo que la aplicación espera {{targetVersion}}, lo que significa que fue creada por una versión más reciente e incompatible de Trilium. Actualice a la última versión de Trilium para resolver este problema."
   },
   "modals": {
     "error_title": "Error"

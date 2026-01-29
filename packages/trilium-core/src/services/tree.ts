@@ -99,15 +99,6 @@ function sortNotes(parentNoteId: string, customSortBy: string = "title", reverse
         }
 
         notes.sort((a, b) => {
-            if (foldersFirst) {
-                const aHasChildren = a.hasChildren();
-                const bHasChildren = b.hasChildren();
-
-                if ((aHasChildren && !bHasChildren) || (!aHasChildren && bHasChildren)) {
-                    // exactly one note of the two is a directory, so the sorting will be done based on this status
-                    return aHasChildren ? -1 : 1;
-                }
-            }
 
             function fetchValue(note: BNote, key: string) {
                 let rawValue: string | null;
@@ -153,6 +144,16 @@ function sortNotes(parentNoteId: string, customSortBy: string = "title", reverse
 
                 // since "bottom" should not be reversible, we'll reverse it once more to nullify this effect
                 return compare(bottomBEl, bottomAEl) * (reverse ? -1 : 1);
+            }
+
+            if (foldersFirst) {
+                const aHasChildren = a.hasChildren();
+                const bHasChildren = b.hasChildren();
+
+                if ((aHasChildren && !bHasChildren) || (!aHasChildren && bHasChildren)) {
+                    // exactly one note of the two is a directory, so the sorting will be done based on this status
+                    return aHasChildren ? -1 : 1;
+                }
             }
 
             const customAEl = fetchValue(a, customSortBy) ?? fetchValue(a, "title") as string;
@@ -233,7 +234,6 @@ function setNoteToParent(noteId: string, prefix: string, parentNoteId: string) {
     }
 
     // case where there might be more such branches is ignored. It's expected there should be just one
-    const sql = getSql();
     const branchId = sql.getValue<string>("SELECT branchId FROM branches WHERE isDeleted = 0 AND noteId = ? AND prefix = ?", [noteId, prefix]);
     const branch = becca.getBranch(branchId);
 

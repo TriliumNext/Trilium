@@ -3,7 +3,7 @@ import "./RightPanelContainer.css";
 
 import Split from "@triliumnext/split.js";
 import { VNode } from "preact";
-import { useState, useEffect, useRef, useCallback } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import { WidgetsByParent } from "../../services/bundle";
@@ -12,7 +12,7 @@ import options from "../../services/options";
 import { DEFAULT_GUTTER_SIZE } from "../../services/resizer";
 import Button from "../react/Button";
 import { useActiveNoteContext, useLegacyWidget, useNoteProperty, useTriliumEvent, useTriliumOptionJson } from "../react/hooks";
-import Icon from "../react/Icon";
+import NoItems from "../react/NoItems";
 import LegacyRightPanelWidget from "../right_panel_widget";
 import HighlightsList from "./HighlightsList";
 import PdfAttachments from "./pdf/PdfAttachments";
@@ -47,14 +47,15 @@ export default function RightPanelContainer({ widgetsByParent }: { widgetsByPare
                 items.length > 0 ? (
                     items
                 ) : (
-                    <div className="no-items">
-                        <Icon icon="bx bx-sidebar" />
-                        {t("right_pane.empty_message")}
+                    <NoItems
+                        icon="bx bx-sidebar"
+                        text={t("right_pane.empty_message")}
+                    >
                         <Button
                             text={t("right_pane.empty_button")}
                             triggerCommand="toggleRightPane"
                         />
-                    </div>
+                    </NoItems>
                 )
             )}
         </div>

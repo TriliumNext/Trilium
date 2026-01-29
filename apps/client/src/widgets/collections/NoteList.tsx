@@ -1,7 +1,7 @@
 import "./NoteList.css";
 
 import { WebSocketMessage } from "@triliumnext/commons";
-import { VNode } from "preact";
+import { Component, VNode } from "preact";
 import { lazy, Suspense } from "preact/compat";
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -120,7 +120,9 @@ export function CustomNoteList({ note, viewType, isEnabled: shouldEnable, notePa
     }
 
     const ComponentToRender = viewType && props && isEnabled && (
-        props.media === "print" ? ViewComponents[viewType].print : ViewComponents[viewType].normal
+        props.media === "print"
+            ? ViewComponents[viewType].print ?? ViewComponents[viewType].normal
+            : ViewComponents[viewType].normal
     );
 
     return (
