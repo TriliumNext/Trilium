@@ -2,24 +2,24 @@ import parents from "../common/parents.js";
 
 
 export default function setupMobileMenu() {
-    function toggleMobileMenu(event: MouseEvent) {
-        event.stopPropagation(); // Don't prevent default for links
-
-        const isOpen = document.body.classList.contains("menu-open");
-        if (isOpen) return document.body.classList.remove("menu-open");
-        return document.body.classList.add("menu-open");
+    function closeMobileMenus() {
+        document.body.classList.remove("menu-open");
+        document.body.classList.remove("toc-open");
     }
 
-    const showMenuButton = document.getElementById("show-menu-button");
-    showMenuButton?.addEventListener("click", toggleMobileMenu);
-
     window.addEventListener("click", e => {
-        const isOpen = document.body.classList.contains("menu-open");
-        if (!isOpen) return; // This listener is only to close
+        const isMenuOpen = document.body.classList.contains("menu-open");
+        const isTocOpen = document.body.classList.contains("toc-open");
+        if (!isMenuOpen && !isTocOpen) return;
 
-        // If the click was anywhere in  the mobile nav, don't close
+        // If the click was anywhere in the mobile nav or TOC, don't close
         if (parents(e.target as HTMLElement, "#left-pane").length) return;
-        return toggleMobileMenu(e);
+        if (parents(e.target as HTMLElement, "#toc-pane").length) return;
+
+        // If the click was on one of the toggle buttons, the button's own listener will handle it
+        if (parents(e.target as HTMLElement, ".header-button").length) return;
+
+        return closeMobileMenus();
     });
 
 }

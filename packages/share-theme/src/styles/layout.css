@@ -2,28 +2,76 @@ html,
 body {
     width: 100vw;
     height: 100vh;
+    overflow: hidden;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
 }
 
 #split-pane {
     display: flex;
     flex-direction: row;
     width: 100vw;
-    height: 100vh;
+    flex: 1;
     overflow: hidden;
 }
 
 #left-pane {
     display: flex;
-    min-width: fit-content;
-    max-width: 20vw;
-    height: calc(100vh);
+    flex-direction: column;
+    min-width: 0;
+    width: 20vw;
+    height: 100%;
     background: var(--background-secondary);
     border-right: 5px solid var(--background-highlight);
-    justify-content: flex-end;
+    justify-content: flex-start;
     position: sticky;
     top: 0;
     overflow-y: auto;
     flex-shrink: 0;
+    transition: width 0.3s ease, margin-left 0.3s ease;
+}
+
+.left-pane-collapsed #left-pane {
+    width: 0;
+    min-width: 0;
+    margin-left: -5px; /* offset the border */
+    overflow: hidden;
+    border-right-width: 0;
+}
+
+.pane-toggle {
+    position: absolute;
+    top: 60px;
+    background: var(--background-highlight);
+    border: none;
+    color: var(--text-primary);
+    width: 24px;
+    height: 48px;
+    cursor: pointer;
+    z-index: 100;
+    display: none; /* Hide standard toggles, using header buttons instead */
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border-radius: 0 4px 4px 0;
+    opacity: 0.5;
+    transition: opacity 0.2s ease, left 0.3s ease, right 0.3s ease;
+}
+
+.pane-toggle:hover {
+    opacity: 1;
+}
+
+#left-pane-toggle {
+    left: 20vw;
+}
+
+#toc-pane-toggle {
+    left: -24px;
+    border-radius: 4px 0 0 4px;
 }
 
 #right-pane {
@@ -31,6 +79,7 @@ body {
     margin: 0 auto;
     flex: 1;
     overflow: auto;
+    position: relative;
 }
 
 #main {
@@ -40,6 +89,16 @@ body {
     padding: 0 20px;
     box-sizing: border-box;
     width: 100%;
+    transition: max-width 0.3s ease;
+}
+
+.left-pane-collapsed #main,
+.toc-pane-collapsed #main {
+    max-width: 1100px;
+}
+
+.left-pane-collapsed.toc-pane-collapsed #main {
+    max-width: 100%;
 }
 
 @media (min-width: 1200px) {

@@ -5,7 +5,26 @@
     position: sticky;
     top: 0;
     order: 3;
-/*         padding: 16px 16px 16px 32px; */
+    transition: width 0.3s ease, margin-right 0.3s ease;
+    width: 250px;
+}
+
+.toc-pane-collapsed #toc-pane {
+    width: 0;
+}
+
+.toc-pane-collapsed #toc-pane h3,
+.toc-pane-collapsed #toc-pane #toc {
+    display: none !important;
+}
+
+.toc-pane-collapsed #toc-pane-toggle {
+    right: 0;
+    left: auto;
+}
+
+.toc-pane-collapsed #toc-pane-toggle svg {
+    transform: rotate(180deg);
 }
 
 #toc-pane h3 {
