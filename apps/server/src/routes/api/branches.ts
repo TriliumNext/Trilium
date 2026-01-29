@@ -152,25 +152,60 @@ function setExpanded(req: Request) {
 
 function setExpandedForSubtree(req: Request) {
     const { branchId } = req.params;
-    const expanded = parseInt(req.params.expanded);
+    const expanded = parseInt(req.params.expanded, 10);
 
-    let branchIds = sql.getColumn<string>(
+    // Validate input: only accept 0 or 1
+    if (![0, 1].includes(expanded)) {
+        // You can change to throw new Error() if preferred
+        return { branchIds: [], updatedCount: 0, error: "expanded must be 0 or 1" };
+    }
+
+    // We want to update branches where current state != target state
+    const currentExpandedWeWantToChange = 1 - expanded;
+
+    // Limit depth only when expanding (expanded = 1)
+    const maxDepth = expanded === 1 ? 4 : 9999;
+
+    const branchIds = sql.getColumn<string>(
         `
         WITH RECURSIVE
-        tree(branchId, noteId) AS (
-            SELECT branchId, noteId FROM branches WHERE branchId = ?
-            UNION
-            SELECT branches.branchId, branches.noteId FROM branches
-                JOIN tree ON branches.parentNoteId = tree.noteId
-            WHERE branches.isDeleted = 0
-                AND branches.isExpanded = 1
+        tree(branchId, noteId, depth) AS (
+            -- Anchor: starting node (depth 0)
+            SELECT branchId, noteId, 0
+            FROM branches
+            WHERE branchId = ?
+
+            UNION ALL
+
+            -- Recursive part
+            SELECT 
+                b.branchId, 
+                b.noteId, 
+                t.depth + 1
+            FROM branches b
+            JOIN tree t ON b.parentNoteId = t.noteId
+            WHERE b.isDeleted = 0
+              AND b.isExpanded = ?
+              AND t.depth < ?
         )
-        SELECT branchId FROM tree`,
-        [branchId]
+        SELECT branchId
+        FROM tree
+        WHERE depth <= ?
+          AND branchId != 'none_root'
+        `,
+        [branchId, currentExpandedWeWantToChange, maxDepth, maxDepth]
     );
 
-    // root is always expanded
-    branchIds = branchIds.filter((branchId) => branchId !== "none_root");
+    // Extra safety filter (though SQL already excludes it)
+    const filteredBranchIds = branchIds.filter((id) => id !== "none_root");
+
+    if (filteredBranchIds.length === 0) {
+        return {
+            branchIds: [],
+            updatedCount: 0,
+            maxDepthApplied: maxDepth
+        };
+    }
 
     sql.executeMany(/*sql*/`UPDATE branches SET isExpanded = ${expanded} WHERE branchId IN (???)`, branchIds);
 
@@ -272,7 +307,7 @@ function setPrefix(req: Request) {
 
 function setPrefixBatch(req: Request) {
     const { branchIds, prefix } = req.body;
-    
+
     if (!Array.isArray(branchIds)) {
         throw new ValidationError("branchIds must be an array");
     }
