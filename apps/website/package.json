@@ -17,7 +17,7 @@
 		"react-i18next": "16.5.4"
 	},
 	"devDependencies": {
-		"@preact/preset-vite": "2.10.2",
+		"@preact/preset-vite": "2.10.3",
 		"eslint": "9.39.2",
 		"eslint-config-preact": "2.0.0",
 		"typescript": "5.9.3",
