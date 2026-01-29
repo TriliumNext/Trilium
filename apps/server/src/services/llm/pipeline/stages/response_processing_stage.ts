@@ -1,6 +1,5 @@
 import { BasePipelineStage } from '../pipeline_stage.js';
 import type { ResponseProcessingInput } from '../interfaces.js';
-import type { ChatResponse } from '../../ai_interface.js';
 import log from '../../../log.js';
 
 /**

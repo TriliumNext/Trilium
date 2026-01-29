@@ -117,6 +117,9 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "anthropicDefaultModel",
     "ollamaBaseUrl",
     "ollamaDefaultModel",
+    "minimaxApiKey",
+    "minimaxBaseUrl",
+    "minimaxDefaultModel",
     "mfaEnabled",
     "mfaMethod"
 ]);

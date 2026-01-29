@@ -1,14 +1,15 @@
 import { BasePipelineStage } from '../pipeline_stage.js';
 import type { LLMCompletionInput } from '../interfaces.js';
-import type { ChatCompletionOptions, ChatResponse, StreamChunk } from '../../ai_interface.js';
+import type { ChatCompletionOptions, NormalizedChatResponse, StreamChunk } from '../../ai_interface.js';
 import aiServiceManager from '../../ai_service_manager.js';
 import toolRegistry from '../../tools/tool_registry.js';
 import log from '../../../log.js';
+import { normalizeChatResponse } from '../../response_normalizer.js';
 
 /**
  * Pipeline stage for LLM completion with enhanced streaming support
  */
-export class LLMCompletionStage extends BasePipelineStage<LLMCompletionInput, { response: ChatResponse }> {
+export class LLMCompletionStage extends BasePipelineStage<LLMCompletionInput, { response: NormalizedChatResponse }> {
     constructor() {
         super('LLMCompletion');
     }
@@ -19,7 +20,7 @@ export class LLMCompletionStage extends BasePipelineStage<LLMCompletionInput, { 
      * This enhanced version supports better streaming by forwarding raw provider data
      * and ensuring consistent handling of stream options.
      */
-    protected async process(input: LLMCompletionInput): Promise<{ response: ChatResponse }> {
+    protected async process(input: LLMCompletionInput): Promise<{ response: NormalizedChatResponse }> {
         const { messages, options } = input;
 
         // Add detailed logging about the input messages, particularly useful for tool follow-ups
@@ -98,6 +99,16 @@ export class LLMCompletionStage extends BasePipelineStage<LLMCompletionInput, { 
         if (updatedOptions.providerMetadata?.provider) {
             selectedProvider = updatedOptions.providerMetadata.provider;
             log.info(`Using provider ${selectedProvider} from metadata for model ${updatedOptions.model}`);
+        } else {
+            try {
+                const configuredProvider = aiServiceManager.getSelectedProvider();
+                if (configuredProvider) {
+                    selectedProvider = configuredProvider;
+                    log.info(`Using configured provider ${selectedProvider} for model ${updatedOptions.model}`);
+                }
+            } catch (error: unknown) {
+                log.error(`Failed to resolve configured provider: ${error}`);
+            }
         }
 
         log.info(`Generating LLM completion, provider: ${selectedProvider || 'auto'}, model: ${updatedOptions?.model || 'default'}`);
@@ -109,13 +120,14 @@ export class LLMCompletionStage extends BasePipelineStage<LLMCompletionInput, { 
 
             // Generate completion and wrap with enhanced stream handling
             const response = await service.generateChatCompletion(messages, updatedOptions);
+            const normalizedResponse = service.toNormalizedResponse(response);
 
             // If streaming is enabled, enhance the stream method
-            if (response.stream && typeof response.stream === 'function' && updatedOptions.stream) {
-                const originalStream = response.stream;
+            if (normalizedResponse.stream && typeof normalizedResponse.stream === 'function' && updatedOptions.stream) {
+                const originalStream = normalizedResponse.stream;
 
                 // Replace the stream method with an enhanced version that captures and forwards raw data
-                response.stream = async (callback) => {
+                normalizedResponse.stream = async (callback) => {
                     return originalStream(async (chunk) => {
                         // Forward the chunk with any additional provider-specific data
                         // Create an enhanced chunk with provider info
@@ -124,7 +136,7 @@ export class LLMCompletionStage extends BasePipelineStage<LLMCompletionInput, { 
                             // If the provider didn't include raw data, add minimal info
                             raw: chunk.raw || {
                                 provider: selectedProvider,
-                                model: response.model
+                                model: normalizedResponse.model
                             }
                         };
                         return callback(enhancedChunk);
@@ -134,9 +146,9 @@ export class LLMCompletionStage extends BasePipelineStage<LLMCompletionInput, { 
 
             // Add enhanced logging for debugging tool execution follow-ups
             if (toolMessages.length > 0) {
-                if (response.tool_calls && response.tool_calls.length > 0) {
-                    log.info(`Response contains ${response.tool_calls.length} tool calls`);
-                    response.tool_calls.forEach((toolCall: any, idx: number) => {
+                if (normalizedResponse.tool_calls.length > 0) {
+                    log.info(`Response contains ${normalizedResponse.tool_calls.length} tool calls`);
+                    normalizedResponse.tool_calls.forEach((toolCall, idx: number) => {
                         log.info(`Tool call ${idx + 1}: ${toolCall.function?.name || 'unnamed'}`);
                         const args = typeof toolCall.function?.arguments === 'string'
                             ? toolCall.function?.arguments
@@ -147,31 +159,32 @@ export class LLMCompletionStage extends BasePipelineStage<LLMCompletionInput, { 
                     log.info(`Response contains no tool calls - plain text response`);
                 }
 
-                if (toolMessages.length > 0 && !response.tool_calls) {
+                if (toolMessages.length > 0 && normalizedResponse.tool_calls.length === 0) {
                     log.info(`This appears to be a final response after tool execution (no new tool calls)`);
-                } else if (toolMessages.length > 0 && response.tool_calls && response.tool_calls.length > 0) {
+                } else if (toolMessages.length > 0 && normalizedResponse.tool_calls.length > 0) {
                     log.info(`This appears to be a continued tool execution flow (tools followed by more tools)`);
                 }
             }
 
-            return { response };
+            return { response: normalizedResponse };
         }
 
         // Use auto-selection if no specific provider
         log.info(`[LLMCompletionStage] Using auto-selected service`);
         const response = await aiServiceManager.generateChatCompletion(messages, updatedOptions);
+        const normalizedResponse = normalizeChatResponse(response);
 
         // Add similar stream enhancement for auto-selected provider
-        if (response.stream && typeof response.stream === 'function' && updatedOptions.stream) {
-            const originalStream = response.stream;
-            response.stream = async (callback) => {
+        if (normalizedResponse.stream && typeof normalizedResponse.stream === 'function' && updatedOptions.stream) {
+            const originalStream = normalizedResponse.stream;
+            normalizedResponse.stream = async (callback) => {
                 return originalStream(async (chunk) => {
                     // Create an enhanced chunk with provider info
                     const enhancedChunk: StreamChunk = {
                         ...chunk,
                         raw: chunk.raw || {
-                            provider: response.provider,
-                            model: response.model
+                            provider: normalizedResponse.provider,
+                            model: normalizedResponse.model
                         }
                     };
                     return callback(enhancedChunk);
@@ -181,9 +194,9 @@ export class LLMCompletionStage extends BasePipelineStage<LLMCompletionInput, { 
 
         // Add enhanced logging for debugging tool execution follow-ups
         if (toolMessages.length > 0) {
-            if (response.tool_calls && response.tool_calls.length > 0) {
-                log.info(`Response contains ${response.tool_calls.length} tool calls`);
-                response.tool_calls.forEach((toolCall: any, idx: number) => {
+            if (normalizedResponse.tool_calls.length > 0) {
+                log.info(`Response contains ${normalizedResponse.tool_calls.length} tool calls`);
+                normalizedResponse.tool_calls.forEach((toolCall, idx: number) => {
                     log.info(`Tool call ${idx + 1}: ${toolCall.function?.name || 'unnamed'}`);
                     const args = typeof toolCall.function?.arguments === 'string'
                         ? toolCall.function?.arguments
@@ -194,13 +207,13 @@ export class LLMCompletionStage extends BasePipelineStage<LLMCompletionInput, { 
                 log.info(`Response contains no tool calls - plain text response`);
             }
 
-            if (toolMessages.length > 0 && !response.tool_calls) {
+            if (toolMessages.length > 0 && normalizedResponse.tool_calls.length === 0) {
                 log.info(`This appears to be a final response after tool execution (no new tool calls)`);
-            } else if (toolMessages.length > 0 && response.tool_calls && response.tool_calls.length > 0) {
+            } else if (toolMessages.length > 0 && normalizedResponse.tool_calls.length > 0) {
                 log.info(`This appears to be a continued tool execution flow (tools followed by more tools)`);
             }
         }
 
-        return { response };
+        return { response: normalizedResponse };
     }
 }

@@ -227,6 +227,10 @@ describe('ChatStorageService', () => {
                 expect.stringContaining('SELECT notes.noteId, notes.title'),
                 ['label', 'triliumChat']
             );
+            expect(mockSql.getRows).toHaveBeenCalledWith(
+                expect.stringContaining('notes.isDeleted = 0'),
+                ['label', 'triliumChat']
+            );
         });
 
         it('should handle chats with invalid JSON content', async () => {
@@ -291,12 +295,12 @@ describe('ChatStorageService', () => {
             });
 
             expect(mockSql.getRow).toHaveBeenCalledWith(
-                expect.stringContaining('SELECT notes.noteId, notes.title'),
+                expect.stringContaining('notes.isDeleted = 0'),
                 ['chat-123']
             );
         });
 
-        it('should return null if chat not found', async () => {
+        it('should return null if chat not found or deleted', async () => {
             mockSql.getRow.mockResolvedValueOnce(null);
 
             const result = await chatStorageService.getChat('nonexistent');

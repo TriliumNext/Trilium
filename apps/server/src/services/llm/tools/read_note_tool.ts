@@ -7,6 +7,7 @@
 import type { Tool, ToolHandler } from './tool_interfaces.js';
 import log from '../../log.js';
 import becca from '../../../becca/becca.js';
+import { NOTE_READ_RULES } from './note_tool_prompt_rules.js';
 
 // Define type for note response
 interface NoteResponse {
@@ -34,7 +35,9 @@ export const readNoteToolDefinition: Tool = {
     type: 'function',
     function: {
         name: 'read_note',
-        description: 'Read the content of a specific note by its ID',
+        description: `Read the content of a specific note by its ID.
+
+${NOTE_READ_RULES}`,
         parameters: {
             type: 'object',
             properties: {
@@ -44,7 +47,7 @@ export const readNoteToolDefinition: Tool = {
                 },
                 includeAttributes: {
                     type: 'boolean',
-                    description: 'Whether to include note attributes in the response (default: false)'
+                    description: 'Whether to include note attributes in the response (default: false). Use this for render/web/search labels and relations.'
                 }
             },
             required: ['noteId']

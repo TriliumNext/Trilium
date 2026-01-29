@@ -126,7 +126,7 @@ export class ChatStorageService {
     }
 
     /**
-     * Get all chats
+     * Get all chats (excludes soft-deleted chats)
      */
     async getAllChats(): Promise<StoredChat[]> {
         const chats = await sql.getRows<{noteId: string, title: string, dateCreated: string, dateModified: string, content: string}>(
@@ -135,6 +135,7 @@ export class ChatStorageService {
              JOIN blobs ON notes.blobId = blobs.blobId
              JOIN attributes ON notes.noteId = attributes.noteId
              WHERE attributes.name = ? AND attributes.value = ?
+             AND notes.isDeleted = 0
              ORDER BY notes.dateModified DESC`,
             ['label', ChatStorageService.CHAT_LABEL]
         );
@@ -174,14 +175,14 @@ export class ChatStorageService {
     }
 
     /**
-     * Get a specific chat
+     * Get a specific chat (returns null if not found or soft-deleted)
      */
     async getChat(chatId: string): Promise<StoredChat | null> {
         const chat = await sql.getRow<{noteId: string, title: string, dateCreated: string, dateModified: string, content: string}>(
             `SELECT notes.noteId, notes.title, notes.dateCreated, notes.dateModified, blobs.content
              FROM notes
              JOIN blobs ON notes.blobId = blobs.blobId
-             WHERE notes.noteId = ?`,
+             WHERE notes.noteId = ? AND notes.isDeleted = 0`,
             [chatId]
         );
 

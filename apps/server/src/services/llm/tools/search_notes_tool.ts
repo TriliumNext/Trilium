@@ -9,6 +9,7 @@ import log from '../../log.js';
 import aiServiceManager from '../ai_service_manager.js';
 import becca from '../../../becca/becca.js';
 import { ContextExtractor } from '../context/index.js';
+import searchService from '../../search/services/search.js';
 
 /**
  * Definition of the search notes tool
@@ -189,6 +190,58 @@ export class SearchNotesTool implements ToolHandler {
         }
     }
 
+    private async executeKeywordFallback(args: {
+        query: string;
+        parentNoteId?: string;
+        maxResults: number;
+        summarize: boolean;
+    }): Promise<string | object> {
+        const { query, parentNoteId, maxResults, summarize } = args;
+        log.info(`Vector search unavailable, using keyword fallback for query: "${query}"`);
+
+        const searchContext = {
+            includeArchivedNotes: false,
+            includeHiddenNotes: false,
+            ancestorNoteId: parentNoteId,
+            fuzzyAttributeSearch: false
+        };
+
+        const searchResults = searchService.searchNotes(query, searchContext);
+        const limitedResults = searchResults.slice(0, maxResults);
+
+        const enhancedResults = await Promise.all(
+            limitedResults.map(async note => {
+                const preview = await this.getRichContentPreview(note.noteId, summarize);
+                return {
+                    noteId: note.noteId,
+                    title: note.title,
+                    preview,
+                    dateCreated: note.dateCreated,
+                    dateModified: note.dateModified,
+                    type: note.type,
+                    mime: note.mime,
+                    matchType: 'keyword'
+                };
+            })
+        );
+
+        if (enhancedResults.length === 0) {
+            return {
+                count: 0,
+                results: [],
+                query,
+                message: 'No notes found matching your query. Try broader terms or different keywords. Note: Use the noteId (not the title) when performing operations on specific notes with other tools.'
+            };
+        }
+
+        return {
+            count: enhancedResults.length,
+            totalFound: searchResults.length,
+            results: enhancedResults,
+            message: 'Vector search unavailable. Results are from keyword search; use noteId for follow-up operations.'
+        };
+    }
+
     /**
      * Execute the search notes tool
      */
@@ -212,7 +265,7 @@ export class SearchNotesTool implements ToolHandler {
             const vectorSearchTool = await getOrCreateVectorSearchTool();
 
             if (!vectorSearchTool) {
-                return `Error: Vector search tool is not available. The system may still be initializing or there could be a configuration issue.`;
+                return await this.executeKeywordFallback({ query, parentNoteId, maxResults, summarize });
             }
 
             log.info(`Retrieved vector search tool from AI service manager`);
@@ -220,13 +273,19 @@ export class SearchNotesTool implements ToolHandler {
             // Check if searchNotes method exists
             if (!vectorSearchTool.searchNotes || typeof vectorSearchTool.searchNotes !== 'function') {
                 log.error(`Vector search tool is missing searchNotes method`);
-                return `Error: Vector search tool is improperly configured (missing searchNotes method).`;
+                return await this.executeKeywordFallback({ query, parentNoteId, maxResults, summarize });
             }
 
             // Execute the search
             log.info(`Performing semantic search for: "${query}"`);
             const searchStartTime = Date.now();
-            const response = await vectorSearchTool.searchNotes(query, parentNoteId, maxResults);
+            let response;
+            try {
+                response = await vectorSearchTool.searchNotes(query, parentNoteId, maxResults);
+            } catch (error: any) {
+                log.error(`Semantic search failed, falling back to keyword search: ${error.message || String(error)}`);
+                return await this.executeKeywordFallback({ query, parentNoteId, maxResults, summarize });
+            }
             const results: Array<Record<string, unknown>> = response?.matches ?? [];
             const searchDuration = Date.now() - searchStartTime;
 

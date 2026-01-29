@@ -43,7 +43,7 @@ export function parseModelIdentifier(modelString: string): ModelIdentifier {
 
     // Check if first part is a known provider
     const potentialProvider = parts[0].toLowerCase();
-    const knownProviders: ProviderType[] = ['openai', 'anthropic', 'ollama'];
+    const knownProviders: ProviderType[] = ['openai', 'anthropic', 'ollama', 'minimax'];
 
     if (knownProviders.includes(potentialProvider as ProviderType)) {
         // Provider prefix format
@@ -87,8 +87,8 @@ export async function getDefaultModelForProvider(provider: ProviderType): Promis
 }
 
 /**
- * Get provider settings for a specific provider - always fresh from options
- */
+  * Get provider settings for a specific provider - always fresh from options
+  */
 export async function getProviderSettings(provider: ProviderType) {
     switch (provider) {
         case 'openai':
@@ -108,6 +108,12 @@ export async function getProviderSettings(provider: ProviderType) {
                 baseUrl: optionService.getOption('ollamaBaseUrl'),
                 defaultModel: optionService.getOption('ollamaDefaultModel')
             };
+        case 'minimax':
+            return {
+                apiKey: optionService.getOption('minimaxApiKey'),
+                baseUrl: optionService.getOption('minimaxBaseUrl'),
+                defaultModel: optionService.getOption('minimaxDefaultModel')
+            };
         default:
             return {};
     }
@@ -121,8 +127,8 @@ export async function isAIEnabled(): Promise<boolean> {
 }
 
 /**
- * Check if a provider has required configuration
- */
+  * Check if a provider has required configuration
+  */
 export async function isProviderConfigured(provider: ProviderType): Promise<boolean> {
     const settings = await getProviderSettings(provider);
 
@@ -133,6 +139,8 @@ export async function isProviderConfigured(provider: ProviderType): Promise<bool
             return Boolean((settings as any)?.apiKey);
         case 'ollama':
             return Boolean((settings as any)?.baseUrl);
+        case 'minimax':
+            return Boolean((settings as any)?.apiKey);
         default:
             return false;
     }
@@ -191,6 +199,10 @@ export async function validateConfiguration() {
 
     if (selectedProvider === 'ollama' && !(settings as any)?.baseUrl) {
         result.warnings.push('Ollama base URL is not configured');
+    }
+
+    if (selectedProvider === 'minimax' && !(settings as any)?.apiKey) {
+        result.warnings.push('MiniMax API key is not configured');
     }
 
     return result;

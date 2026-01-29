@@ -70,6 +70,11 @@ export interface StreamChunk {
     raw?: Record<string, unknown>;
 
     /**
+     * Thinking/reasoning output from models that support it (e.g., MiniMax)
+     */
+    thinking?: string;
+
+    /**
      * Tool calls from the LLM (if any)
      * These may be accumulated over multiple chunks during streaming
      */
@@ -213,11 +218,25 @@ export interface ChatResponse {
     tool_calls?: ToolCall[] | null;
 }
 
+/**
+ * Normalized chat response used internally by the pipeline.
+ * Guarantees that tool_calls is always an array.
+ */
+export interface NormalizedChatResponse extends ChatResponse {
+    text: string;
+    tool_calls: ToolCall[];
+}
+
 export interface AIService {
     /**
      * Generate a chat completion response
      */
     generateChatCompletion(messages: Message[], options?: ChatCompletionOptions): Promise<ChatResponse>;
+
+    /**
+     * Normalize provider response for pipeline processing.
+     */
+    toNormalizedResponse(response: ChatResponse): NormalizedChatResponse;
 
     /**
      * Check if the service can be used (API key is set, etc.)

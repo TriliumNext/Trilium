@@ -87,8 +87,10 @@ export async function setupStreamingResponse(
                     }
                 });
 
-                if (!streamResponse || !streamResponse.success) {
-                    console.error(`[${responseId}] Failed to initiate streaming`);
+                // Check for explicit success: false, not just falsy
+                // This handles Electron IPC JSON parsing issues where success might be undefined
+                if (!streamResponse || streamResponse.success === false) {
+                    console.error(`[${responseId}] Failed to initiate streaming:`, streamResponse);
                     reject(new Error('Failed to initiate streaming'));
                     return;
                 }
@@ -203,6 +205,10 @@ export async function setupStreamingResponse(
             if (message.done) {
                 console.log(`[${responseId}] Stream completed for chat note ${noteId}, final response: ${assistantResponse.length} chars`);
 
+                if (!message.content && receivedAnyContent) {
+                    onContentUpdate(assistantResponse, true);
+                }
+
                 // Clear all timeouts
                 if (timeoutId !== null) {
                     window.clearTimeout(timeoutId);
@@ -257,4 +263,3 @@ export async function getDirectResponse(noteId: string, messageParams: any): Pro
         throw error;
     }
 }
-
