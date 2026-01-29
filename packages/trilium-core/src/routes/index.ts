@@ -8,6 +8,7 @@ import recentNotesRoute from "./api/recent_notes";
 import otherRoute from "./api/others";
 import branchesApiRoute from "./api/branches";
 import appInfoRoute from "./api/app_info";
+import statsRoute from "./api/stats";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 
 // TODO: Deduplicate with routes.ts
@@ -70,6 +71,9 @@ export function buildSharedApiRoutes(apiRoute: any) {
 
     apiRoute(GET, "/api/keyboard-actions", keysApiRoute.getKeyboardActions);
     apiRoute(GET, "/api/keyboard-shortcuts-for-notes", keysApiRoute.getShortcutsForNotes);
+
+    apiRoute(GET, "/api/stats/note-size/:noteId", statsRoute.getNoteSize);
+    apiRoute(GET, "/api/stats/subtree-size/:noteId", statsRoute.getSubtreeSize);
 
     apiRoute(GET, "/api/app-info", appInfoRoute.getAppInfo);
     apiRoute(GET, "/api/other/icon-usage", otherRoute.getIconUsage);

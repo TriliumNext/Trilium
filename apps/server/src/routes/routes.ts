@@ -50,7 +50,6 @@ import setupApiRoute from "./api/setup.js";
 import similarNotesRoute from "./api/similar_notes.js";
 import specialNotesRoute from "./api/special_notes.js";
 import sqlRoute from "./api/sql.js";
-import statsRoute from "./api/stats.js";
 import syncApiRoute from "./api/sync.js";
 import systemInfoRoute from "./api/system_info.js";
 import totp from './api/totp.js';
@@ -287,8 +286,6 @@ function register(app: express.Application) {
     apiRoute(PST, "/api/relation-map", relationMapApiRoute.getRelationMap);
     asyncApiRoute(GET, "/api/similar-notes/:noteId", similarNotesRoute.getSimilarNotes);
     asyncApiRoute(GET, "/api/backend-log", backendLogRoute.getBackendLog);
-    apiRoute(GET, "/api/stats/note-size/:noteId", statsRoute.getNoteSize);
-    apiRoute(GET, "/api/stats/subtree-size/:noteId", statsRoute.getSubtreeSize);
     route(GET, "/api/fonts", [auth.checkApiAuthOrElectron], fontsRoute.getFontCss);
     apiRoute(PST, "/api/other/render-markdown", otherRoute.renderMarkdown);
     apiRoute(PST, "/api/other/to-markdown", otherRoute.toMarkdown);
