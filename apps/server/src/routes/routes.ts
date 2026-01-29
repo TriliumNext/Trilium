@@ -37,6 +37,7 @@ import keysRoute from "./api/keys.js";
 import llmRoute from "./api/llm.js";
 import loginApiRoute from "./api/login.js";
 import metricsRoute from "./api/metrics.js";
+import minimaxRoute from "./api/minimax.js";
 import noteMapRoute from "./api/note_map.js";
 import notesApiRoute from "./api/notes.js";
 import ollamaRoute from "./api/ollama.js";
@@ -380,6 +381,7 @@ function register(app: express.Application) {
     asyncApiRoute(GET, "/api/llm/providers/ollama/models", ollamaRoute.listModels);
     asyncApiRoute(GET, "/api/llm/providers/openai/models", openaiRoute.listModels);
     asyncApiRoute(GET, "/api/llm/providers/anthropic/models", anthropicRoute.listModels);
+    asyncApiRoute(GET, "/api/llm/providers/minimax/models", minimaxRoute.listModels);
 
     app.use("", router);
 }

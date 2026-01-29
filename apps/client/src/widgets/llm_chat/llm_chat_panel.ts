@@ -178,6 +178,11 @@ export default class LlmChatPanel extends BasicWidget {
             toolbar: {
                 items: [] // No toolbar for chat input
             },
+            // Remove plugins that require toolbar items but aren't used in chat input
+            removePlugins: [
+                'Image', 'ImageToolbar', 'ImageCaption', 'ImageStyle', 'ImageResize',
+                'ImageInsert', 'ImageUpload', 'PictureEditing', 'AutoImage'
+            ],
             placeholder: this.noteContextChatInput.getAttribute('data-placeholder') || 'Enter your message...',
             mention: {
                 feeds: mentionSetup
@@ -824,6 +829,10 @@ export default class LlmChatPanel extends BasicWidget {
         showLoadingIndicator(this.loadingIndicator);
         this.hideSources();
 
+        // Track assistant messages count before sending to detect if we got a valid response
+        // This handles cases where streaming "fails" but content was already received via WebSocket
+        const assistantMessagesCountBefore = this.messages.filter(m => m.role === 'assistant').length;
+
         try {
             const useAdvancedContext = this.useAdvancedContextCheckbox.checked;
             const showThinking = this.showThinkingCheckbox.checked;
@@ -843,6 +852,19 @@ export default class LlmChatPanel extends BasicWidget {
             try {
                 await this.setupStreamingResponse(messageParams);
             } catch (streamingError) {
+                // Check if we already received valid content via WebSocket before the error
+                const assistantMessagesCountAfter = this.messages.filter(m => m.role === 'assistant').length;
+                const receivedValidResponse = assistantMessagesCountAfter > assistantMessagesCountBefore;
+
+                if (receivedValidResponse) {
+                    // Streaming had an error but content was already received
+                    console.warn("WebSocket streaming ended with error but valid response was already received, ignoring error");
+                    hideLoadingIndicator(this.loadingIndicator);
+                    // Still save even if there was an error, as we may have received partial content
+                    await this.saveCurrentData();
+                    return;
+                }
+
                 console.warn("WebSocket streaming failed, falling back to direct response:", streamingError);
 
                 // If streaming fails, fall back to direct response
@@ -859,12 +881,18 @@ export default class LlmChatPanel extends BasicWidget {
             console.error('Error processing user message:', error);
             toastService.showError('Failed to process message');
 
-            // Add a generic error message to the UI
-            this.addMessageToChat('assistant', 'Sorry, I encountered an error processing your message. Please try again.');
-            this.messages.push({
-                role: 'assistant',
-                content: 'Sorry, I encountered an error processing your message. Please try again.'
-            });
+            // Double-check if we received valid content before showing error
+            const assistantMessagesCountAfter = this.messages.filter(m => m.role === 'assistant').length;
+            const receivedValidResponse = assistantMessagesCountAfter > assistantMessagesCountBefore;
+
+            // Only add "Sorry" message if we haven't received a valid response
+            if (!receivedValidResponse) {
+                this.addMessageToChat('assistant', 'Sorry, I encountered an error processing your message. Please try again.');
+                this.messages.push({
+                    role: 'assistant',
+                    content: 'Sorry, I encountered an error processing your message. Please try again.'
+                });
+            }
 
             // Save the data even after error
             await this.saveCurrentData();

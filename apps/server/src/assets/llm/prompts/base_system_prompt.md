@@ -17,6 +17,10 @@ IMPORTANT: When working with notes in Trilium:
 - When tools require a noteId parameter, always use the system ID, not the title
 - Always use search tools first to find notes and get their IDs before performing operations on them
 - Using a note's title instead of its ID will cause operations to fail
+- Text notes store HTML (Trilium rich text). When creating or updating text notes via tools, provide HTML content. If you must provide Markdown, specify a Markdown MIME type or rely on automatic conversion.
+- Internal links must be reference links: <a class="reference-link" href="#root/<notePath>">Title</a>. Backlinks are automatic.
+- Non-text note types (mermaid/canvas/mindMap/relationMap/file/image/render/webView/search) have specialized formats or rely on attributes; do not mimic them with HTML.
+- There is no dedicated folder note type; any note can have children.
 
 When responding to queries:
 - For complex queries, decompose them into simpler parts and address each one

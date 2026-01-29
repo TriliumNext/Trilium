@@ -61,6 +61,7 @@ function ProviderSettings() {
                         { value: "", text: t("ai_llm.select_provider") },
                         { value: "openai", text: "OpenAI" },
                         { value: "anthropic", text: "Anthropic" },
+                        { value: "minimax", text: t("ai_llm.minimax_tab") },
                         { value: "ollama", text: "Ollama" }
                     ]}
                     currentValue={aiSelectedProvider} onChange={setAiSelectedProvider}
@@ -97,6 +98,16 @@ function ProviderSettings() {
                         validationErrorMessage={t("ai_llm.ollama_no_url")}
                         baseUrlOption="ollamaBaseUrl"
                         provider={aiSelectedProvider} modelOption="ollamaDefaultModel"
+                    />
+                : aiSelectedProvider === "minimax" ?
+                    <SingleProviderSettings
+                        title={t("ai_llm.minimax_settings")}
+                        apiKeyDescription={t("ai_llm.minimax_api_key_description")}
+                        baseUrlDescription={t("ai_llm.minimax_url_description")}
+                        modelDescription={t("ai_llm.minimax_model_description")}
+                        validationErrorMessage={t("ai_llm.empty_key_warning.minimax")}
+                        apiKeyOption="minimaxApiKey" baseUrlOption="minimaxBaseUrl" modelOption="minimaxDefaultModel"
+                        provider={aiSelectedProvider}
                     />
                 :
                     <></>
@@ -179,7 +190,8 @@ function ModelSelector({ provider, baseUrl, modelOption }: { provider: string; b
     const loadProviders = useCallback(async () => {
         switch (provider) {
             case "openai":
-            case "anthropic": {
+            case "anthropic":
+            case "minimax": {
                 try {
                     const response = await server.get<OpenAiOrAnthropicModelResponse>(`llm/providers/${provider}/models?baseUrl=${encodeURIComponent(baseUrl)}`);
                     if (response.success) {

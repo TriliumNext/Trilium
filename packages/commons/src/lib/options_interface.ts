@@ -154,6 +154,9 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     ollamaEnabled: boolean;
     ollamaBaseUrl: string;
     ollamaDefaultModel: string;
+    minimaxApiKey: string;
+    minimaxDefaultModel: string;
+    minimaxBaseUrl: string;
     codeOpenAiModel: string;
     aiSelectedProvider: string;
     seenCallToActions: string;

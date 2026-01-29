@@ -106,6 +106,56 @@ export const PROVIDER_CONSTANTS = {
             mixtral: 8192,
             'mistral': 8192
         }
+    },
+
+    /**
+     * MiniMax provider constants
+     * Uses Anthropic-compatible API endpoint
+     * Documentation: https://platform.minimax.io/docs/
+     */
+    MINIMAX: {
+        BASE_URL: 'https://api.minimax.io/anthropic',
+        DEFAULT_MODEL: 'MiniMax-M2.1',
+        API_VERSION: '2023-06-01',
+        CONTEXT_WINDOW: 200000,
+        AVAILABLE_MODELS: [
+            {
+                id: 'MiniMax-M2.1',
+                name: 'MiniMax M2.1',
+                description: 'Full capability model with 230B parameters, 10B activated',
+                maxTokens: 128000,
+                contextWindow: 200000,
+                capabilities: {
+                    supportsTools: true,
+                    supportsStreaming: true,
+                    supportsVision: false
+                }
+            },
+            {
+                id: 'MiniMax-M2.1-lightning',
+                name: 'MiniMax M2.1 Lightning',
+                description: 'Fast model for low-latency responses (~100 tps)',
+                maxTokens: 128000,
+                contextWindow: 200000,
+                capabilities: {
+                    supportsTools: true,
+                    supportsStreaming: true,
+                    supportsVision: false
+                }
+            },
+            {
+                id: 'MiniMax-M2',
+                name: 'MiniMax M2',
+                description: 'Balanced model with agentic capabilities, 200k context',
+                maxTokens: 128000,
+                contextWindow: 200000,
+                capabilities: {
+                    supportsTools: true,
+                    supportsStreaming: true,
+                    supportsVision: false
+                }
+            }
+        ]
     }
 } as const;
 
@@ -158,5 +208,8 @@ export const LLM_CONSTANTS = {
     // AI Feature Exclusion
     AI_EXCLUSION: {
         LABEL_NAME: 'aiExclude'  // Label used to exclude notes from all AI/LLM features
-    }
+    },
+    
+    // MiniMax provider constants (for anthropic-compatible API)
+    MINIMAX: 'minimax'
 };

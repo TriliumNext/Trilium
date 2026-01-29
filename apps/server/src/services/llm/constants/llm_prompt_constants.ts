@@ -195,7 +195,7 @@ When using tools to search for information, follow these requirements:
    - Try broader terms (e.g., "Kubernetes" instead of "Kubernetes deployment")
    - Use synonyms (e.g., "meeting" instead of "conference")
    - Remove specific qualifiers (e.g., "report" instead of "Q3 financial report")
-   - Try different search tools (vector_search for conceptual matches, keyword_search for exact matches)
+   - Try different search tools (search_notes for conceptual matches, keyword_search_notes for exact matches)
 4. NEVER tell the user "there are no notes about X" until you've tried multiple search variations
 5. EXPLAIN your search strategy when adjusting parameters (e.g., "I'll try a broader search for...")
 6. When searches fail, AUTOMATICALLY try different approaches rather than asking the user what to do
@@ -230,7 +230,7 @@ Be concise and informative in your responses.
    - Try broader terms (e.g., "Kubernetes" instead of "Kubernetes deployment")
    - Use synonyms (e.g., "meeting" instead of "conference")
    - Remove specific qualifiers (e.g., "report" instead of "Q3 financial report")
-   - Try different search tools (vector_search for conceptual matches, keyword_search for exact matches)
+   - Try different search tools (search_notes for conceptual matches, keyword_search_notes for exact matches)
 4. NEVER tell the user "there are no notes about X" until you've tried multiple search variations
 5. EXPLAIN your search strategy when adjusting parameters (e.g., "I'll try a broader search for...")
 6. When searches fail, AUTOMATICALLY try different approaches rather than asking the user what to do`
@@ -253,13 +253,56 @@ CRITICAL INSTRUCTIONS FOR TOOL USAGE:
 3. If a search returns no results, IMMEDIATELY TRY ANOTHER SEARCH with different parameters:
    - Use broader terms: If "Kubernetes deployment" fails, try just "Kubernetes" or "container orchestration"
    - Try synonyms: If "meeting notes" fails, try "conference", "discussion", or "conversation"
-   - Remove specific qualifiers: If "quarterly financial report 2024" fails, try just "financial report"
-   - Try semantic variations: If keyword_search fails, use vector_search which finds conceptually related content
-4. CHAIN TOOLS TOGETHER: Use the results of one tool to inform parameters for the next tool
-5. NEVER respond with "there are no notes about X" until you've tried at least 3 different search variations
-6. DO NOT ask the user what to do next when searches fail - AUTOMATICALLY try different approaches
-7. ALWAYS EXPLAIN what you're doing: "I didn't find results for X, so I'm now searching for Y instead"
-8. If all reasonable search variations fail (minimum 3 attempts), THEN you may inform the user that the information might not be in their notes`
+    - Remove specific qualifiers: If "quarterly financial report 2024" fails, try just "financial report"
+    - Try semantic variations: If keyword_search_notes fails, use search_notes which finds conceptually related content
+  4. CHAIN TOOLS TOGETHER: Use the results of one tool to inform parameters for the next tool
+  5. NEVER respond with "there are no notes about X" until you've tried at least 3 different search variations
+  6. DO NOT ask the user what to do next when searches fail - AUTOMATICALLY try different approaches
+  7. ALWAYS EXPLAIN what you're doing: "I didn't find results for X, so I'm now searching for Y instead"
+  8. If all reasonable search variations fail (minimum 3 attempts), THEN you may inform the user that the information might not be in their notes`
+    },
+
+    MINIMAX: {
+        // MiniMax uses Anthropic-compatible API, so we use similar prompts
+        SYSTEM_WITH_CONTEXT: (context: string) =>
+            `<instructions>
+${DEFAULT_SYSTEM_PROMPT}
+
+Use the following information from the user's notes to answer their questions:
+
+<user_notes>
+${context}
+</user_notes>
+
+When responding:
+- Focus on the most relevant information from the notes
+- Be concise and direct in your answers
+- If quoting from notes, mention which note it's from
+- If the notes don't contain relevant information, say so clearly
+</instructions>`,
+
+        INSTRUCTIONS_WRAPPER: (instructions: string) =>
+            `<instructions>\n${instructions}\n</instructions>`,
+
+        // Tool instructions for MiniMax (Anthropic-compatible)
+        TOOL_INSTRUCTIONS: `<instructions>
+When using tools to search for information, follow these requirements:
+
+1. ALWAYS TRY MULTIPLE SEARCH APPROACHES before concluding information isn't available
+2. YOU MUST PERFORM AT LEAST 3 DIFFERENT SEARCHES with varied parameters before giving up
+3. If a search returns no results:
+   - Try broader terms (e.g., "Kubernetes" instead of "Kubernetes deployment")
+   - Use synonyms (e.g., "meeting" instead of "conference")
+   - Remove specific qualifiers (e.g., "report" instead of "Q3 financial report")
+   - Try different search tools (search_notes for conceptual matches, keyword_search_notes for exact matches)
+4. NEVER tell the user "there are no notes about X" until you've tried multiple search variations
+5. EXPLAIN your search strategy when adjusting parameters (e.g., "I'll try a broader search for...")
+6. When searches fail, AUTOMATICALLY try different approaches rather than asking the user what to do
+</instructions>`,
+
+        ACKNOWLEDGMENT: "I understand. I'll follow those instructions.",
+        CONTEXT_ACKNOWLEDGMENT: "I'll help you with your notes based on the context provided.",
+        CONTEXT_QUERY_ACKNOWLEDGMENT: "I'll help you with your notes based on the context provided. What would you like to know?"
     },
 
     // Common prompts across providers

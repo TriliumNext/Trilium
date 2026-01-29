@@ -87,7 +87,8 @@ function setOption<T extends OptionNames>(name: T, value: string | OptionDefinit
     const aiOptions = [
         'aiSelectedProvider', 'openaiApiKey', 'openaiBaseUrl', 'openaiDefaultModel',
         'anthropicApiKey', 'anthropicBaseUrl', 'anthropicDefaultModel',
-        'ollamaBaseUrl', 'ollamaDefaultModel'
+        'ollamaBaseUrl', 'ollamaDefaultModel',
+        'minimaxApiKey', 'minimaxBaseUrl', 'minimaxDefaultModel'
     ];
 
     if (aiOptions.includes(name)) {

@@ -10,6 +10,8 @@ import becca from '../../../becca/becca.js';
 import notes from '../../notes.js';
 import attributes from '../../attributes.js';
 import BNote from '../../../becca/entities/bnote.js';
+import { normalizeTextNoteContent } from './note_content_utils.js';
+import { NOTE_WRITE_RULES } from './note_tool_prompt_rules.js';
 
 /**
  * Definition of the note creation tool
@@ -18,7 +20,9 @@ export const noteCreationToolDefinition: Tool = {
     type: 'function',
     function: {
         name: 'create_note',
-        description: 'Create a new note in Trilium with the specified content and attributes',
+        description: `Create a new note in Trilium with the specified content and attributes.
+
+${NOTE_WRITE_RULES}`,
         parameters: {
             type: 'object',
             properties: {
@@ -32,7 +36,7 @@ export const noteCreationToolDefinition: Tool = {
                 },
                 content: {
                     type: 'string',
-                    description: 'Content of the new note'
+                    description: 'Content of the new note. Must match the note type rules in the tool description.'
                 },
                 type: {
                     type: 'string',
@@ -128,12 +132,18 @@ export class NoteCreationTool implements ToolHandler {
                 }
             }
 
+            const normalized = normalizeTextNoteContent(content, title, type, noteMime);
+            const noteContent = normalized.content;
+            if (normalized.converted) {
+                log.info(`Converted markdown content to HTML for note "${title}"`);
+            }
+
             // Create the note
             const createStartTime = Date.now();
             const result = notes.createNewNote({
                 parentNoteId: parent.noteId,
                 title: title,
-                content: content,
+                content: noteContent,
                 type: type as any, // Cast as any since not all string values may match the exact NoteType union
                 mime: noteMime
             });

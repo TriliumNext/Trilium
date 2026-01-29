@@ -1208,6 +1208,7 @@
     "anthropic_tab": "Anthropic",
     "voyage_tab": "Voyage AI",
     "ollama_tab": "Ollama",
+    "minimax_tab": "MiniMax",
     "enable_ai": "Enable AI/LLM features",
     "enable_ai_desc": "Enable AI features like note summarization, content generation, and other LLM capabilities",
     "provider_configuration": "AI Provider Configuration",
@@ -1233,8 +1234,12 @@
     "anthropic_model_description": "Anthropic Claude models for chat completion",
     "voyage_settings": "Voyage AI Settings",
     "ollama_settings": "Ollama Settings",
+    "minimax_settings": "MiniMax Settings",
     "ollama_url_description": "URL for the Ollama API (default: http://localhost:11434)",
     "ollama_model_description": "Ollama model to use for chat completion",
+    "minimax_api_key_description": "Your MiniMax API key",
+    "minimax_url_description": "Base URL for the MiniMax API (default: https://api.minimax.io/anthropic)",
+    "minimax_model_description": "MiniMax model to use for chat completion",
     "anthropic_configuration": "Anthropic Configuration",
     "voyage_configuration": "Voyage AI Configuration",
     "voyage_url_description": "Default: https://api.voyageai.com/v1",
@@ -1288,7 +1293,8 @@
       "anthropic": "Anthropic API key is empty. Please enter a valid API key.",
       "openai": "OpenAI API key is empty. Please enter a valid API key.",
       "voyage": "Voyage API key is empty. Please enter a valid API key.",
-      "ollama": "Ollama API key is empty. Please enter a valid API key."
+      "ollama": "Ollama API key is empty. Please enter a valid API key.",
+      "minimax": "MiniMax API key is empty. Please enter a valid API key."
     },
     "agent": {
       "processing": "Processing...",
