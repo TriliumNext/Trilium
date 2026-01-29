@@ -140,8 +140,8 @@ importers:
   apps/build-docs:
     devDependencies:
       '@redocly/cli':
-        specifier: 2.14.9
-        version: 2.14.9(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(core-js@3.46.0)(encoding@0.1.13)(utf-8-validate@6.0.5)
+        specifier: 2.15.0
+        version: 2.15.0(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(core-js@3.46.0)(encoding@0.1.13)(utf-8-validate@6.0.5)
       archiver:
         specifier: 7.0.1
         version: 7.0.1
@@ -4622,8 +4622,8 @@ packages:
   '@redocly/ajv@8.17.2':
     resolution: {integrity: sha512-rcbDZOfXAgGEJeJ30aWCVVJvxV9ooevb/m1/SFblO2qHs4cqTk178gx7T/vdslf57EA4lTofrwsq5K8rxK9g+g==}
 
-  '@redocly/cli@2.14.9':
-    resolution: {integrity: sha512-eueSFzydep5jwOHxlYW6rFOSRP1b5vY7gVOzQBd2/I6XQJnG31hgrDACqx/heD4vv3hhdpoumopz24erxLe0zQ==}
+  '@redocly/cli@2.15.0':
+    resolution: {integrity: sha512-PjqCE1HDSHgHOrNxixeJSrumy8an2O4rcjXCIfdiHAjB1HOlMEtdgrz5OCx9f0lzcOXrgi61ThFNvO5jG56tUw==}
     engines: {node: '>=22.12.0 || >=20.19.0 <21.0.0', npm: '>=10'}
     hasBin: true
 
@@ -4637,12 +4637,12 @@ packages:
     resolution: {integrity: sha512-0EbE8LRbkogtcCXU7liAyC00n9uNG9hJ+eMyHFdUsy9lB/WGqnEBgwjA9q2cyzAVcdTkQqTBBU1XePNnN3OijA==}
     engines: {node: '>=18.17.0', npm: '>=9.5.0'}
 
-  '@redocly/openapi-core@2.14.9':
-    resolution: {integrity: sha512-PIWVxm7Os3U276XMhLIh+qftaA6TxVwOuoyDaobGSkd609fp25tp57G2k/uzzKjrhUD4g2QzeJ4lfCoaBgEjhg==}
+  '@redocly/openapi-core@2.15.0':
+    resolution: {integrity: sha512-q/2UM5tA9mgk4zaIDUkKOG9KBUqIdSIhp5DugHmFOszOE+WMiL23BIV40K79jNF9aSU3zF1p1c/Zu0UoBmBsZg==}
     engines: {node: '>=22.12.0 || >=20.19.0 <21.0.0', npm: '>=10'}
 
-  '@redocly/respect-core@2.14.9':
-    resolution: {integrity: sha512-kP3rylB04NZV52IoEa1t8ObkSxpRZy3zpkRAxYOiLtggRETOnLdcDbYep4ipbk6t0suZamznOLOgiAeBYHo/ig==}
+  '@redocly/respect-core@2.15.0':
+    resolution: {integrity: sha512-0LFtQXNUE+e9OdGDLS+yt4RBx0JTGhM7UAaBC4tzLqPvhtbdWo/WB/WdasGIt4vMM9K47KivxPHmX13sSLEO2Q==}
     engines: {node: '>=22.12.0 || >=20.19.0 <21.0.0', npm: '>=10'}
 
   '@replit/codemirror-indentation-markers@6.5.3':
@@ -14342,10 +14342,6 @@ packages:
   undici-types@7.16.0:
     resolution: {integrity: sha512-Zz+aZWSj8LE6zoxD+xrjh4VfkIG8Ya6LvYkZqtUQGJPZjYl53ypCaUwWqo7eI0x66KBGeRo+mlBEkMSeSZ38Nw==}
 
-  undici@6.21.3:
-    resolution: {integrity: sha512-gBLkYIlEnSp8pFbT64yFgGE6UIB9tAkhukC23PmMDCe5Nd+cRqKxSjw5y54MK2AZMgZfJWMaNE4nYUHgi1XEOw==}
-    engines: {node: '>=18.17'}
-
   undici@6.23.0:
     resolution: {integrity: sha512-VfQPToRA5FZs/qJxLIinmU59u0r7LXqoJkCzinq3ckNJp3vKEh7jTWN589YQ5+aoAC/TGRLyJLCPKcLQbM8r9g==}
     engines: {node: '>=18.17'}
@@ -19814,18 +19810,17 @@ snapshots:
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
-  '@redocly/cli@2.14.9(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(core-js@3.46.0)(encoding@0.1.13)(utf-8-validate@6.0.5)':
+  '@redocly/cli@2.15.0(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(core-js@3.46.0)(encoding@0.1.13)(utf-8-validate@6.0.5)':
     dependencies:
       '@opentelemetry/exporter-trace-otlp-http': 0.202.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/resources': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-node': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/semantic-conventions': 1.34.0
-      '@redocly/openapi-core': 2.14.9
-      '@redocly/respect-core': 2.14.9
+      '@redocly/openapi-core': 2.15.0
+      '@redocly/respect-core': 2.15.0
       abort-controller: 3.0.0
       ajv: '@redocly/ajv@8.17.1'
       ajv-formats: 3.0.1(@redocly/ajv@8.17.1)
-      chokidar: 3.6.0
       colorette: 1.4.0
       cookie: 0.7.2
       dotenv: 16.4.7
@@ -19873,7 +19868,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@redocly/openapi-core@2.14.9':
+  '@redocly/openapi-core@2.15.0':
     dependencies:
       '@redocly/ajv': 8.17.2
       '@redocly/config': 0.41.2
@@ -19886,12 +19881,12 @@ snapshots:
       pluralize: 8.0.0
       yaml-ast-parser: 0.0.43
 
-  '@redocly/respect-core@2.14.9':
+  '@redocly/respect-core@2.15.0':
     dependencies:
       '@faker-js/faker': 7.6.0
       '@noble/hashes': 1.8.0
       '@redocly/ajv': 8.17.1
-      '@redocly/openapi-core': 2.14.9
+      '@redocly/openapi-core': 2.15.0
       ajv: '@redocly/ajv@8.17.1'
       better-ajv-errors: 1.2.0(@redocly/ajv@8.17.1)
       colorette: 2.0.20
@@ -31730,8 +31725,6 @@ snapshots:
 
   undici-types@7.16.0: {}
 
-  undici@6.21.3: {}
-
   undici@6.23.0: {}
 
   undici@7.19.0: {}
@@ -32225,7 +32218,7 @@ snapshots:
       '@wdio/utils': 9.23.2
       deepmerge-ts: 7.1.5
       https-proxy-agent: 7.0.6
-      undici: 6.21.3
+      undici: 6.23.0
       ws: 8.19.0(bufferutil@4.0.9)(utf-8-validate@6.0.5)
     transitivePeerDependencies:
       - bare-buffer
