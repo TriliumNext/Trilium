@@ -337,6 +337,130 @@ paths:
                         application/json; charset=utf-8:
                             schema:
                                 $ref: "#/components/schemas/Error"
+    /notes/{noteId}/revisions:
+        parameters:
+            - name: noteId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/EntityId"
+        get:
+            description: Returns all revisions for a note identified by its ID
+            operationId: getNoteRevisions
+            responses:
+                "200":
+                    description: list of revisions
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/Revision"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /notes/{noteId}/undelete:
+        parameters:
+            - name: noteId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/EntityId"
+        post:
+            description: Restore a deleted note. The note must be deleted and must have at least one undeleted parent.
+            operationId: undeleteNote
+            responses:
+                "200":
+                    description: note restored successfully
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                type: object
+                                properties:
+                                    success:
+                                        type: boolean
+                                        example: true
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /notes/history:
+        get:
+            description: Returns recent changes including note creations, modifications, and deletions
+            operationId: getNoteHistory
+            parameters:
+                - name: ancestorNoteId
+                  in: query
+                  required: false
+                  description: Limit changes to a subtree identified by this note ID. Defaults to "root" (all notes).
+                  schema:
+                      $ref: "#/components/schemas/EntityId"
+            responses:
+                "200":
+                    description: list of recent changes
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                type: array
+                                items:
+                                    $ref: "#/components/schemas/RecentChange"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /revisions/{revisionId}:
+        parameters:
+            - name: revisionId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/EntityId"
+        get:
+            description: Returns a revision identified by its ID
+            operationId: getRevisionById
+            responses:
+                "200":
+                    description: revision response
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Revision"
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
+    /revisions/{revisionId}/content:
+        parameters:
+            - name: revisionId
+              in: path
+              required: true
+              schema:
+                  $ref: "#/components/schemas/EntityId"
+        get:
+            description: Returns revision content identified by its ID
+            operationId: getRevisionContent
+            responses:
+                "200":
+                    description: revision content response
+                    content:
+                        text/html:
+                            schema:
+                                type: string
+                default:
+                    description: unexpected error
+                    content:
+                        application/json; charset=utf-8:
+                            schema:
+                                $ref: "#/components/schemas/Error"
     /branches:
         post:
             description: >
@@ -1186,3 +1310,93 @@ components:
                     type: string
                     description: Human readable error, potentially with more details,
                     example: Note 'evnnmvHTCgIn' is protected and cannot be modified through ETAPI
+        Revision:
+            type: object
+            description: Revision represents a snapshot of note's title and content at some point in the past.
+            properties:
+                revisionId:
+                    $ref: "#/components/schemas/EntityId"
+                    readOnly: true
+                noteId:
+                    $ref: "#/components/schemas/EntityId"
+                    readOnly: true
+                type:
+                    type: string
+                    enum:
+                        [
+                            text,
+                            code,
+                            render,
+                            file,
+                            image,
+                            search,
+                            relationMap,
+                            book,
+                            noteMap,
+                            mermaid,
+                            webView,
+                            shortcut,
+                            doc,
+                            contentWidget,
+                            launcher,
+                        ]
+                mime:
+                    type: string
+                isProtected:
+                    type: boolean
+                    readOnly: true
+                title:
+                    type: string
+                blobId:
+                    type: string
+                    description: ID of the blob object which effectively serves as a content hash
+                dateLastEdited:
+                    $ref: "#/components/schemas/LocalDateTime"
+                    readOnly: true
+                dateCreated:
+                    $ref: "#/components/schemas/LocalDateTime"
+                    readOnly: true
+                utcDateLastEdited:
+                    $ref: "#/components/schemas/UtcDateTime"
+                    readOnly: true
+                utcDateCreated:
+                    $ref: "#/components/schemas/UtcDateTime"
+                    readOnly: true
+                utcDateModified:
+                    $ref: "#/components/schemas/UtcDateTime"
+                    readOnly: true
+                contentLength:
+                    type: integer
+                    format: int32
+                    readOnly: true
+        RecentChange:
+            type: object
+            description: Represents a recent change event (creation, modification, or deletion).
+            properties:
+                noteId:
+                    $ref: "#/components/schemas/EntityId"
+                    readOnly: true
+                title:
+                    type: string
+                    description: Title at the time of the change (may be "[protected]" for protected notes)
+                current_title:
+                    type: string
+                    description: Current title of the note (may be "[protected]" for protected notes)
+                current_isDeleted:
+                    type: boolean
+                    description: Whether the note is currently deleted
+                current_deleteId:
+                    type: string
+                    description: Delete ID if the note is deleted
+                current_isProtected:
+                    type: boolean
+                    description: Whether the note is protected
+                utcDate:
+                    $ref: "#/components/schemas/UtcDateTime"
+                    description: UTC timestamp of the change
+                date:
+                    $ref: "#/components/schemas/LocalDateTime"
+                    description: Local timestamp of the change
+                canBeUndeleted:
+                    type: boolean
+                    description: Whether the note can be undeleted (only present for deleted notes)
