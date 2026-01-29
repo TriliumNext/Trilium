@@ -40,13 +40,30 @@ body.mobile {
 
 /* #region Mica */
 
+/* Quirk: --background-material is read before "theme-supports-background-effects" class
+ * is applied. Apply the matterial even if the theme doesn't support it. */
 body.background-effects.platform-win32 {
-    /* Quirk: --background-material is read before "theme-supports-background-effects" class
-     * is applied. Apply the matterial even if the theme doesn't support it. */
-    --background-material: tabbed;
+    &.layout-vertical {
+        --background-material: mica;
+    }
+
+    &.layout-horizontal {
+        --background-material: tabbed;
+    }
 }
 
-body.background-effects.theme-supports-background-effects.platform-win32 {
+body.background-effects.platform-darwin {
+    /** Reference: https://developer.apple.com/documentation/appkit/nsvisualeffectview?preferredLanguage=objc **/
+    &.layout-vertical {
+        --background-material: under-window;
+    }
+
+    &.layout-horizontal {
+        --background-material: hud;
+    }
+}
+
+body.background-effects.theme-supports-background-effects {
     --launcher-pane-horiz-border-color: var(--launcher-pane-horiz-border-color-bgfx);
     --launcher-pane-horiz-background-color: var(--launcher-pane-horiz-background-color-bgfx);
     --launcher-pane-vert-background-color: var(--launcher-pane-vert-background-color-bgfx);
@@ -56,33 +73,29 @@ body.background-effects.theme-supports-background-effects.platform-win32 {
     --root-background: transparent;
 }
 
-body.background-effects.platform-win32.layout-vertical {
-    --background-material: mica;
-}
-
-body.background-effects.theme-supports-background-effects.platform-win32.layout-vertical {
+body.background-effects.theme-supports-background-effects.layout-vertical {
     --left-pane-background-color: var(--window-background-color-bgfx);
     --center-pane-background-color-bgfx: var(--center-pane-vert-layout-background-color-bgfx);
     --right-pane-background-color: var(--right-pane-background-color-bgfx);
 }
 
-body.background-effects.theme-supports-background-effects.platform-win32.layout-horizontal {
+body.background-effects.theme-supports-background-effects.layout-horizontal {
     --center-pane-background-color-bgfx: var(--center-pane-horiz-layout-background-color-bgfx);
     --gutter-color: var(--left-pane-background-color);
 }
 
-body.background-effects.theme-supports-background-effects.platform-win32,
-body.background-effects.theme-supports-background-effects.platform-win32 #root-widget {
+body.background-effects.theme-supports-background-effects,
+body.background-effects.theme-supports-background-effects #root-widget {
     background: var(--window-background-color-bgfx) !important;
 }
 
-body.background-effects.theme-supports-background-effects.platform-win32.layout-horizontal #horizontal-main-container,
-body.background-effects.theme-supports-background-effects.platform-win32.layout-vertical #vertical-main-container {
+body.background-effects.theme-supports-background-effects.layout-horizontal #horizontal-main-container,
+body.background-effects.theme-supports-background-effects.layout-vertical #vertical-main-container {
     background-color: var(--root-background);
 }
 
 /* Note split with background effects */
-body.background-effects.theme-supports-background-effects.platform-win32 #center-pane .note-split.bgfx {
+body.background-effects.theme-supports-background-effects #center-pane .note-split.bgfx {
     --note-split-background-color: var(--center-pane-background-color-bgfx);
 }
 
@@ -1054,7 +1067,7 @@ body.layout-horizontal .tab-row-widget-container {
     overflow: hidden;
 }
 
-body.desktop:not(.background-effects.platform-win32) #root-widget.horizontal-layout {
+body.desktop:not(.background-effects) #root-widget.horizontal-layout {
     background-color: var(--root-background) !important;
 }
 
