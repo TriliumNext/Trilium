@@ -10,6 +10,7 @@ import branchesApiRoute from "./api/branches";
 import appInfoRoute from "./api/app_info";
 import statsRoute from "./api/stats";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
+import cloningApiRoute from "./api/cloning";
 
 // TODO: Deduplicate with routes.ts
 const GET = "get",
@@ -64,6 +65,11 @@ export function buildSharedApiRoutes(apiRoute: any) {
     apiRoute(DEL, "/api/branches/:branchId", branchesApiRoute.deleteBranch);
     apiRoute(PUT, "/api/branches/:branchId/set-prefix", branchesApiRoute.setPrefix);
     apiRoute(PUT, "/api/branches/set-prefix-batch", branchesApiRoute.setPrefixBatch);
+
+    apiRoute(PUT, "/api/notes/:noteId/clone-to-branch/:parentBranchId", cloningApiRoute.cloneNoteToBranch);
+    apiRoute(PUT, "/api/notes/:noteId/toggle-in-parent/:parentNoteId/:present", cloningApiRoute.toggleNoteInParent);
+    apiRoute(PUT, "/api/notes/:noteId/clone-to-note/:parentNoteId", cloningApiRoute.cloneNoteToParentNote);
+    apiRoute(PUT, "/api/notes/:noteId/clone-after/:afterBranchId", cloningApiRoute.cloneNoteAfter);
 
     apiRoute(GET, "/api/note-map/:noteId/backlink-count", noteMapRoute.getBacklinkCount);
 

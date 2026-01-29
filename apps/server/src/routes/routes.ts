@@ -23,7 +23,6 @@ import autocompleteApiRoute from "./api/autocomplete.js";
 import backendLogRoute from "./api/backend_log.js";
 import bulkActionRoute from "./api/bulk_action.js";
 import clipperRoute from "./api/clipper.js";
-import cloningApiRoute from "./api/cloning.js";
 import databaseRoute from "./api/database.js";
 import etapiTokensApiRoutes from "./api/etapi_tokens.js";
 import exportRoute from "./api/export.js";
@@ -99,10 +98,6 @@ function register(app: express.Application) {
 
     routes.buildSharedApiRoutes(apiRoute);
 
-    apiRoute(PUT, "/api/notes/:noteId/clone-to-branch/:parentBranchId", cloningApiRoute.cloneNoteToBranch);
-    apiRoute(PUT, "/api/notes/:noteId/toggle-in-parent/:parentNoteId/:present", cloningApiRoute.toggleNoteInParent);
-    apiRoute(PUT, "/api/notes/:noteId/clone-to-note/:parentNoteId", cloningApiRoute.cloneNoteToParentNote);
-    apiRoute(PUT, "/api/notes/:noteId/clone-after/:afterBranchId", cloningApiRoute.cloneNoteAfter);
     route(PUT, "/api/notes/:noteId/file", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], filesRoute.updateFile, apiResultHandler);
     route(GET, "/api/notes/:noteId/open", [auth.checkApiAuthOrElectron], filesRoute.openFile);
     asyncRoute(

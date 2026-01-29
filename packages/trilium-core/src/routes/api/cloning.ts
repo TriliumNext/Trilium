@@ -1,5 +1,3 @@
-"use strict";
-
 import type { Request } from "express";
 import cloningService from "../../services/cloning.js";
 
