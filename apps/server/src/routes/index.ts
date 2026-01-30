@@ -50,6 +50,7 @@ export function bootstrap(req: Request, res: Response) {
         appCssNoteIds: getAppCssNoteIds(),
         isDev,
         isMainWindow: view === "mobile" ? true : !req.query.extraWindow,
+        windowId: req.query.extraWindow ?? "main",
         isProtectedSessionAvailable: protectedSessionService.isProtectedSessionAvailable(),
         triliumVersion: packageJson.version,
         assetPath,

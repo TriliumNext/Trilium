@@ -6,6 +6,11 @@
 
 // Migrations should be kept in descending order, so the latest migration is first.
 const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Migrate openNoteContexts option to the new structured format with window metadata
+    {
+        version: 234,
+        module: async () => import("./0234__migrate_open_note_contexts_format")
+    },
     // Migrate geo map to collection
     {
         version: 233,

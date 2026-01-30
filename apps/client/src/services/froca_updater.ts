@@ -27,10 +27,6 @@ async function processEntityChanges(entityChanges: EntityChange[]) {
                 loadResults.addRevision(ec.entityId, ec.noteId, ec.componentId);
             } else if (ec.entityName === "options") {
                 const attributeEntity = ec.entity as FAttributeRow;
-                if (attributeEntity.name === "openNoteContexts") {
-                    continue; // only noise
-                }
-
                 options.set(attributeEntity.name as OptionNames, attributeEntity.value);
                 loadResults.addOption(attributeEntity.name as OptionNames);
             } else if (ec.entityName === "attachments") {

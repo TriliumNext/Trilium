@@ -143,14 +143,15 @@ export default class Entrypoints extends Component {
     }
 
     async openInWindowCommand({ notePath, hoistedNoteId, viewScope }: NoteCommandData) {
+        const extraWindowId = utils.randomString(4);
         const extraWindowHash = linkService.calculateHash({ notePath, hoistedNoteId, viewScope });
 
         if (utils.isElectron()) {
             const { ipcRenderer } = utils.dynamicRequire("electron");
 
-            ipcRenderer.send("create-extra-window", { extraWindowHash });
+            ipcRenderer.send("create-extra-window", { extraWindowId, extraWindowHash });
         } else {
-            const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}?extraWindow=1${extraWindowHash}`;
+            const url = `${window.location.protocol}//${window.location.host}${window.location.pathname}?extraWindow=${extraWindowId}${extraWindowHash}`;
 
             window.open(url, "", "width=1000,height=800");
         }

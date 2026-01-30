@@ -147,8 +147,15 @@ async function createInitialDatabase(skipDemoDb?: boolean) {
             "openNoteContexts",
             JSON.stringify([
                 {
-                    notePath: startNoteId,
-                    active: true
+                    windowId: "main",
+                    createdAt: 0,
+                    closedAt: 0,
+                    contexts: [
+                        {
+                            notePath: startNoteId,
+                            active: true
+                        }
+                    ]
                 }
             ])
         );

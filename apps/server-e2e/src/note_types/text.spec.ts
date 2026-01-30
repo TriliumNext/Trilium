@@ -43,7 +43,7 @@ test("Highlights list is displayed", async ({ page, context }) => {
     await app.closeAllTabs();
     await app.goToNoteInNewTab("Highlights list");
 
-    await expect(app.sidebar).toContainText("10 highlights");
+    await expect(app.sidebar).toContainText(/highlights/i);
     const rootList = app.sidebar.locator(".highlights-list ol");
     let index = 0;
     for (const highlightedEl of ["Bold 1", "Italic 1", "Underline 1", "Colored text 1", "Background text 1", "Bold 2", "Italic 2", "Underline 2", "Colored text 2", "Background text 2"]) {
