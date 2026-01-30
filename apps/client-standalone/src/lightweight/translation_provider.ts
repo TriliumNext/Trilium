@@ -8,7 +8,7 @@ export default async function translationProvider(locale: LOCALE_IDS) {
         fallbackLng: "en",
         ns: "server",
         backend: {
-            loadPath: "server-assets/translations/{{lng}}/{{ns}}.json"
+            loadPath: `${import.meta.resolve("../server-assets/translations")}/{{lng}}/{{ns}}.json`
         },
         returnEmptyString: false,
         debug: true
