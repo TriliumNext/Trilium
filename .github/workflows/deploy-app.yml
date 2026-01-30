@@ -4,7 +4,7 @@ on:
   # Trigger on push to main branch
   push:
     branches:
-      - main
+      - standalone
     # Only run when docs files change
     paths:
       - 'apps/client/**'
