@@ -68,7 +68,7 @@ export type { NoteParams } from "./services/notes";
 export * as sanitize from "./services/sanitizer";
 export * as routes from "./routes";
 
-export function initializeCore({ dbConfig, executionContext, crypto, translations, messaging, extraAppInfo }: {
+export async function initializeCore({ dbConfig, executionContext, crypto, translations, messaging, extraAppInfo }: {
     dbConfig: SqlServiceParams,
     executionContext: ExecutionContext,
     crypto: CryptoProvider,
@@ -80,10 +80,10 @@ export function initializeCore({ dbConfig, executionContext, crypto, translation
     };
 }) {
     initLog();
+    await initTranslations(translations);
     initCrypto(crypto);
     initSql(new SqlService(dbConfig, getLog()));
     initContext(executionContext);
-    initTranslations(translations);
     Object.assign(appInfo, extraAppInfo);
     if (messaging) {
         initMessaging(messaging);

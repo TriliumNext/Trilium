@@ -18,7 +18,7 @@ async function startApplication() {
     const dbProvider = new BetterSqlite3Provider();
     dbProvider.loadFromFile(DOCUMENT_PATH, config.General.readOnly);
 
-    initializeCore({
+    await initializeCore({
         dbConfig: {
             provider: dbProvider,
             isReadOnly: config.General.readOnly,

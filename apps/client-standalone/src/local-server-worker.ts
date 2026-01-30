@@ -98,7 +98,7 @@ async function initialize(): Promise<void> {
 
             console.log("[Worker] Loading @triliumnext/core...");
             coreModule = await import("@triliumnext/core");
-            coreModule.initializeCore({
+            await coreModule.initializeCore({
                 executionContext: new BrowserExecutionContext(),
                 crypto: new BrowserCryptoProvider(),
                 messaging: messagingProvider,
