@@ -3,43 +3,49 @@
   generally in parent-child relations (or anywhere if using templates).</p>
 <h2>Standard Inheritance</h2>
 <p>In Trilium, attributes can be automatically inherited by child notes if
-  they have the <code>isInheritable</code> flag set to <code>true</code>. This
-  means the attribute (a key-value pair) is applied to the note and all its
-  descendants.</p>
+  they have the <code spellcheck="false">isInheritable</code> flag set to
+  <code
+  spellcheck="false">true</code>. This means the attribute (a key-value pair) is applied to
+    the note and all its descendants.</p>
 <p>To make an attribute inheritable, simply use the visual editor for&nbsp;
   <a
   class="reference-link" href="#root/_help_HI6GBBIduIgv">Labels</a>&nbsp;or&nbsp;<a class="reference-link" href="#root/_help_Cq5X6iKQop6R">Relations</a>.
-    Alternatively, the attribute can be manually defined where <code>#myLabel=value</code> becomes <code>#myLabel(inheritable)=value</code> when
-    inheritable.</p>
-<p>As an example, the <code>archived</code> label can be set to be inheritable,
-  allowing you to hide a whole subtree of notes from searches and other dialogs
-  by applying this label at the top level.</p>
+    Alternatively, the attribute can be manually defined where <code spellcheck="false">#myLabel=value</code> becomes
+    <code
+    spellcheck="false">#myLabel(inheritable)=value</code>when inheritable.</p>
+<p>As an example, the <code spellcheck="false">archived</code> label can be
+  set to be inheritable, allowing you to hide a whole subtree of notes from
+  searches and other dialogs by applying this label at the top level.</p>
 <p>Standard inheritance forces all the notes that are children (and sub-children)
   of a note to have that particular label or relation. If there is a need
   to have some notes not inherit one of the labels, then <em>copying inheritance</em> or <em>template inheritance</em> needs
   to be used instead.</p>
 <h2>Copying Inheritance</h2>
-<p>Copying inheritance differs from standard inheritance by using a <code>child:</code> prefix
-  in the attribute name. This prefix causes new child notes to automatically
-  receive specific attributes from the parent note. These attributes are
-  independent of the parent and will persist even if the note is moved elsewhere.</p>
-<p>If a parent note has the label <code>#child:exampleAttribute</code>, all
-  newly created child notes (one level deep) will inherit the <code>#exampleAttribute</code> label.
+<p>Copying inheritance differs from standard inheritance by using a
+  <code
+  spellcheck="false">child:</code>prefix in the attribute name. This prefix causes new child
+    notes to automatically receive specific attributes from the parent note.
+    These attributes are independent of the parent and will persist even if
+    the note is moved elsewhere.</p>
+<p>If a parent note has the label <code spellcheck="false">#child:exampleAttribute</code>,
+  all newly created child notes (one level deep) will inherit the <code spellcheck="false">#exampleAttribute</code> label.
   This can be useful for setting default properties for notes in a specific
   section.</p>
-<p>Similarly, for relations use <code>~child:myRelation</code>.</p>
+<p>Similarly, for relations use <code spellcheck="false">~child:myRelation</code>.</p>
 <p>Due to the way it's designed, copying inheritance cannot be used to cascade
   infinitely within a hierarchy. For that use case, consider using either
   standard inheritance or templates.</p>
 <h3>Chained inheritance</h3>
-<p>It is possible to define labels across multiple levels of depth. For example, <code>#child:child:child:foo</code> applied
-  to a root note would create:</p>
+<p>It is possible to define labels across multiple levels of depth. For example,
+  <code
+  spellcheck="false">#child:child:child:foo</code>applied to a root note would create:</p>
 <ul>
-  <li><code>#child:child:foo</code> on the first-level children.</li>
-  <li><code>#child:foo</code> on the second-level children.</li>
-  <li><code>#foo</code> on the third-level children.</li>
+  <li><code spellcheck="false">#child:child:foo</code> on the first-level children.</li>
+  <li><code spellcheck="false">#child:foo</code> on the second-level children.</li>
+  <li><code spellcheck="false">#foo</code> on the third-level children.</li>
 </ul>
-<p>Similarly, use <code>~child:child:child:foo</code> if dealing with relations.</p>
+<p>Similarly, use <code spellcheck="false">~child:child:child:foo</code> if
+  dealing with relations.</p>
 <p>Do note that same as simple copying inheritance, the changes will not
   apply retroactively to existing notes in the hierarchy, it will only apply
   to the newly created notes.</p>

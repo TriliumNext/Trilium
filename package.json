@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/source",
-  "version": "0.101.1",
+  "version": "0.101.3",
   "description": "Build your personal knowledge base with Trilium Notes",
   "directories": {
     "doc": "docs"
@@ -17,6 +17,8 @@
     "desktop:start": "pnpm run --filter desktop dev",
     "desktop:build": "pnpm run --filter desktop build",
     "desktop:start-prod": "pnpm run --filter desktop start-prod",
+    "edit-docs:edit-docs": "pnpm run --filter edit-docs edit-docs",
+    "edit-docs:build": "pnpm run --filter edit-docs build",
     "website:start": "pnpm run --filter website dev",
     "website:build": "pnpm run --filter website build",
     "electron:build": "pnpm desktop:build",
@@ -28,7 +30,6 @@
     "chore:update-version": "tsx ./scripts/update-version.ts",
     "docs:build": "pnpm run --filter build-docs start",
     "docs:preview": "pnpm http-server site -p 9000",
-    "edit-docs:edit-docs": "pnpm run --filter edit-docs edit-docs",
     "edit-docs:edit-demo": "pnpm run --filter edit-docs edit-demo",
     "test:all": "pnpm test:parallel && pnpm test:sequential",
     "test:parallel": "pnpm --filter=!server --filter=!ckeditor5-mermaid --filter=!ckeditor5-math --parallel test",
@@ -38,19 +39,21 @@
     "dev:format-fix": "eslint -c eslint.format.config.mjs . --fix",
     "dev:linter-check": "cross-env NODE_OPTIONS=--max_old_space_size=4096 eslint .",
     "dev:linter-fix": "cross-env NODE_OPTIONS=--max_old_space_size=4096 eslint . --fix",
-    "postinstall": "tsx scripts/electron-rebuild.mts"
+    "postinstall": "tsx scripts/electron-rebuild.mts && pnpm prepare",
+    "prepare": "pnpm run --filter pdfjs-viewer --filter share-theme build && pnpm run --filter web-clipper postinstall"
   },
   "private": true,
   "devDependencies": {
-    "@electron/rebuild": "4.0.2",
+    "@electron/rebuild": "4.0.3",
     "@fast-csv/parse": "5.0.5",
-    "@playwright/test": "1.57.0",
+    "@playwright/test": "1.58.0",
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.6",
-    "@types/node": "24.10.4",
-    "@vitest/browser-webdriverio": "4.0.16",
-    "@vitest/coverage-v8": "4.0.16",
-    "@vitest/ui": "4.0.16",
+    "@types/js-yaml": "4.0.9",
+    "@types/node": "24.10.9",
+    "@vitest/browser-webdriverio": "4.0.18",
+    "@vitest/coverage-v8": "4.0.18",
+    "@vitest/ui": "4.0.18",
     "chalk": "5.6.2",
     "cross-env": "10.1.0",
     "dpdm": "3.14.0",
@@ -58,22 +61,23 @@
     "eslint": "9.39.2",
     "eslint-config-preact": "2.0.0",
     "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-playwright": "2.4.0",
+    "eslint-plugin-playwright": "2.5.1",
     "eslint-plugin-simple-import-sort": "12.1.1",
-    "happy-dom": "~20.0.0",
+    "happy-dom": "20.4.0",
     "http-server": "14.1.1",
     "jiti": "2.6.1",
+    "js-yaml": "4.1.1",
     "jsonc-eslint-parser": "2.4.2",
     "react-refresh": "0.18.0",
-    "rollup-plugin-webpack-stats": "2.1.8",
+    "rollup-plugin-webpack-stats": "2.1.10",
     "tslib": "2.8.1",
     "tsx": "4.21.0",
-    "typescript": "~5.9.0",
-    "typescript-eslint": "8.50.1",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.54.0",
     "upath": "2.0.1",
-    "vite": "7.3.0",
-    "vite-plugin-dts": "~4.5.0",
-    "vitest": "4.0.16"
+    "vite": "7.3.1",
+    "vite-plugin-dts": "4.5.4",
+    "vitest": "4.0.18"
   },
   "license": "AGPL-3.0-only",
   "author": {
@@ -89,7 +93,7 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@10.26.2",
+  "packageManager": "pnpm@10.28.2",
   "pnpm": {
     "patchedDependencies": {
       "@ckeditor/ckeditor5-mention": "patches/@ckeditor__ckeditor5-mention.patch",
@@ -97,7 +101,7 @@
     },
     "overrides": {
       "mermaid": "11.12.2",
-      "preact": "10.28.1",
+      "preact": "10.28.2",
       "roughjs": "4.6.6",
       "@types/express-serve-static-core": "5.1.0",
       "flat@<5.0.1": ">=5.0.1",
@@ -111,7 +115,7 @@
       "on-headers@<1.1.0": ">=1.1.0",
       "form-data@>=4.0.0 <4.0.4": ">=4.0.4",
       "form-data@>=3.0.0 <3.0.4": ">=3.0.4",
-      "node-abi": "4.24.0"
+      "node-abi": "4.26.0"
     },
     "ignoredBuiltDependencies": [
       "sqlite3"

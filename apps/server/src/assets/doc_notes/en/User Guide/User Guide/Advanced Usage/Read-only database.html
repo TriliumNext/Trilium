@@ -27,15 +27,16 @@
     <ul>
       <li>However, the database is still read-only, so all modifications will be
         reset if the server is restarted.</li>
-      <li>Whenever this occurs, <code>ERROR: read-only DB ignored</code> will be shown
-        in the logs.</li>
+      <li>Whenever this occurs, <code spellcheck="false">ERROR: read-only DB ignored</code> will
+        be shown in the logs.</li>
     </ul>
   </li>
 </ul>
 <h2>Setting a database as read-only</h2>
 <p>First, make sure the database is initialized (e.g. the first set up is
   complete). Then modify the <a href="#root/_help_Gzjqa934BdH4">config.ini</a> by
-  looking for the <code>[General]</code> section and adding a new <code>readOnly</code> field:</p><pre><code class="language-text-x-trilium-auto">[General]
+  looking for the <code spellcheck="false">[General]</code> section and adding
+  a new <code spellcheck="false">readOnly</code> field:</p><pre><code class="language-text-x-trilium-auto">[General]
 readOnly=true</code></pre>
 <p>If your server is already running, restart it to apply the changes.</p>
-<p>Similarly, to disable read-only remove the line or set it to <code>false</code>.</p>
+<p>Similarly, to disable read-only remove the line or set it to <code spellcheck="false">false</code>.</p>

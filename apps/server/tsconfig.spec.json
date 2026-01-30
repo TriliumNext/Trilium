@@ -6,9 +6,6 @@
     "target": "ES2020",
     "outDir": "./out-tsc/vitest",
     "types": [
-      "vitest/globals",
-      "vitest/importMeta",
-      "vite/client",
       "node",
       "vitest"
     ]
@@ -28,6 +25,7 @@
     "src/**/*.spec.jsx",
     "src/**/*.d.ts",
     "src/**/*.ts",
+    "src/**/*.json",
     "package.json"
   ]
 }

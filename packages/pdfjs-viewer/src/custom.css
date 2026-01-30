@@ -1,0 +1,52 @@
+:root {
+    color-scheme: var(--tn-theme-style);
+
+    --body-bg-color: transparent;
+    --toolbar-bg-color: transparent;
+    --main-color: var(--tn-main-text-color);
+    --toolbar-border-color: var(--tn-main-border-color);
+    --toolbar-icon-opacity: 1;
+
+    --page-margin: 12px auto;
+    --spreadHorizontalWrapped-margin-LR: 4px;
+}
+
+.pdfViewer {
+    .page,
+    .page > .canvasWrapper,
+    .page > .canvasWrapper > canvas {
+        border-radius: 6px;
+    }
+
+    .page {
+        border: 1px solid var(--tn-main-border-color);
+        box-shadow: 7px 7px 15px #00000010;
+    }
+}
+
+/* #region Toolbar */
+
+/* Permanently removed buttons */
+#viewsManagerToggleButton,
+#downloadButton,
+#secondaryDownload,
+#secondaryOpenFile {
+    display: none;
+}
+
+/* The separator after the hidden "Open" item */
+#secondaryToolbarButtonContainer div.visibleMediumView + .horizontalToolbarSeparator {
+    display: none;
+}
+
+/* #endregion */
+
+/* #region Properties Dialog */
+
+/* Hide irrelevant properties */
+#documentPropertiesDialog > .row:has(#fileNameField),
+#documentPropertiesDialog > .row:has(#linearizedField) {
+    display: none;
+}
+
+/* #endregion */

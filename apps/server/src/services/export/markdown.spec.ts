@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
-import markdownExportService from "./markdown.js";
 import { trimIndentation } from "@triliumnext/commons";
+import { describe, expect,it } from "vitest";
+
+import markdownExportService from "./markdown.js";
 
 describe("Markdown export", () => {
 
@@ -10,7 +11,9 @@ describe("Markdown export", () => {
             "language-text-x-diff": "diff",
             "language-application-javascript-env-frontend": "javascript",
             "language-application-javascript-env-backend": "javascript",
-            "language-text-x-asm-mips": "mips"
+            "language-text-x-asm-mips": "mips",
+            "language-text-jsx": "jsx",
+            "language-text-html": "html"
         };
 
         for (const [ input, output ] of Object.entries(conversionTable)) {
@@ -381,6 +384,60 @@ describe("Markdown export", () => {
     it("preserves superscript and subscript", () => {
         const html = /*html*/`<p>Hello <sup><strong>superscript</strong></sup> <sub><strong>subscript</strong></sub></p>`;
         const expected = `Hello <sup><strong>superscript</strong></sup> <sub><strong>subscript</strong></sub>`;
+        expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    it("maintains escaped HTML tags", () => {
+        const html = /*html*/`<p>&lt;div&gt;Hello World&lt;/div&gt;</p>`;
+        const expected = `\\<div\\>Hello World\\</div\\>`;
+        expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    it("escapes HTML tags inside list", () => {
+        const html = trimIndentation/*html*/`\
+            <ul>
+                <li data-list-item-id="e07fda078f7dd7103a3b9017f49eb1589">
+                    &lt;note&gt; is note.
+                </li>
+            </ul>
+        `;
+        const expected = trimIndentation`\
+            *   \\<note\\> is note.`;
+        expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    it("exports jQuery code in table properly", () => {
+        const html = trimIndentation`\
+            <figure class="table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>
+                                Code
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <pre>
+            <code class="language-text-x-trilium-auto">this.$widget = $("&lt;div&gt;");</code>
+                                </pre>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </figure>
+        `;
+        const expected = trimIndentation`\
+            <table><thead><tr><th>Code</th></tr></thead><tbody><tr><td><pre><code class="language-text-x-trilium-auto">this.$widget = $("&lt;div&gt;");</code>
+                                </pre></td></tr></tbody></table>`;
+        expect(markdownExportService.toMarkdown(html)).toBe(expected);
+    });
+
+    it("renders emphasis with underscore", () => {
+        const html = /*html*/`<p>This is <em>underlined</em> text.</p>`;
+        const expected = `This is _underlined_ text.`;
         expect(markdownExportService.toMarkdown(html)).toBe(expected);
     });
 

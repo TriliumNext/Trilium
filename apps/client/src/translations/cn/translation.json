@@ -290,7 +290,6 @@
     "download_button": "下载",
     "mime": "MIME 类型： ",
     "file_size": "文件大小：",
-    "preview": "预览：",
     "preview_not_available": "无法预览此类型的笔记。",
     "diff_on": "显示差异",
     "diff_off": "显示内容",
@@ -764,9 +763,15 @@
   },
   "note_icon": {
     "change_note_icon": "更改笔记图标",
-    "category": "类别:",
     "search": "搜索:",
-    "reset-default": "重置为默认图标"
+    "reset-default": "重置为默认图标",
+    "search_placeholder_other": "在 {{count}} 个图标包中搜索 {{number}} 个图标",
+    "search_placeholder_filtered": "在 {{name}} 中搜索 {{number}} 个图标",
+    "filter": "筛选",
+    "filter-none": "所有图标",
+    "filter-default": "默认图标",
+    "icon_tooltip": "{{name}}\n图标包：{{iconPack}}",
+    "no_results": "没有找到图标。"
   },
   "basic_properties": {
     "note_type": "笔记类型",
@@ -793,7 +798,8 @@
     "expand_tooltip": "展开此集合的直接子代（单层深度）。点击右方箭头以查看更多选项。",
     "expand_first_level": "展开直接子代",
     "expand_nth_level": "展开 {{depth}} 层",
-    "expand_all_levels": "展开所有层级"
+    "expand_all_levels": "展开所有层级",
+    "hide_child_notes": "隐藏树中的子笔记"
   },
   "edited_notes": {
     "no_edited_notes_found": "今天还没有编辑过的笔记...",
@@ -1446,7 +1452,7 @@
     "will_be_deleted_in": "此附件将在 {{time}} 后自动删除",
     "will_be_deleted_soon": "该附件在不久后将被自动删除",
     "deletion_reason": "，因为该附件未链接在笔记的内容中。为防止被删除，请将附件链接重新添加到内容中或将附件转换为笔记。",
-    "role_and_size": "角色：{{role}}，大小：{{size}}",
+    "role_and_size": "角色：{{role}}，大小：{{size}}，文件类型：{{- mimeType}}",
     "link_copied": "附件链接已复制到剪贴板。",
     "unrecognized_role": "无法识别的附件角色 '{{role}}'。"
   },
@@ -1500,7 +1506,10 @@
     "duplicate": "复制",
     "open-in-popup": "快速编辑",
     "archive": "归档",
-    "unarchive": "解压"
+    "unarchive": "解压",
+    "open-in-a-new-window": "在新窗口中打开",
+    "hide-subtree": "隐藏子树",
+    "show-subtree": "显示子树"
   },
   "shared_info": {
     "help_link": "访问 <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a> 获取帮助。",
@@ -1589,7 +1598,15 @@
     "create-child-note": "创建子笔记",
     "unhoist": "取消聚焦",
     "toggle-sidebar": "切换侧边栏",
-    "dropping-not-allowed": "不允许移动笔记到此处。"
+    "dropping-not-allowed": "不允许移动笔记到此处。",
+    "shared-indicator-tooltip": "此笔记已公开分享",
+    "shared-indicator-tooltip-with-url": "此笔记已公开分享至：{{- url}}",
+    "clone-indicator-tooltip": "此笔记有 {{- count}} 个父级： {{- parents}}",
+    "clone-indicator-tooltip-single": "此笔记已克隆（1 个额外的父级：{{- parent}}）",
+    "subtree-hidden-tooltip_other": "从树中隐藏的 {{count}} 篇子笔记",
+    "subtree-hidden-moved-title": "已添加到 {{title}}",
+    "subtree-hidden-moved-description-collection": "此集合隐藏其树中的子笔记。",
+    "subtree-hidden-moved-description-other": "子笔记隐藏于此笔记的树中。"
   },
   "title_bar_buttons": {
     "window-on-top": "保持此窗口置顶"
@@ -1622,7 +1639,11 @@
     "configure_launchbar": "配置启动栏"
   },
   "sql_result": {
-    "no_rows": "此查询没有返回任何数据"
+    "no_rows": "此查询没有返回任何数据",
+    "not_executed": "查询尚未执行。",
+    "failed": "SQL 查询执行失败",
+    "execute_now": "立即执行",
+    "statement_result": "执行结果"
   },
   "sql_table_schemas": {
     "tables": "表"
@@ -2187,7 +2208,14 @@
     "execute_sql_description": "这是一篇 SQL 笔记。点击即可执行 SQL 查询。",
     "shared_copy_to_clipboard": "复制链接到剪贴板",
     "shared_open_in_browser": "在浏览器中打开链接",
-    "shared_unshare": "取消共享"
+    "shared_unshare": "取消共享",
+    "save_status_saved": "已保存",
+    "save_status_saving": "保存中...",
+    "save_status_unsaved": "未保存",
+    "save_status_error": "保存失败",
+    "save_status_unsaved_tooltip": "还有一些更改尚未保存。它们将稍后自动保存。",
+    "save_status_error_tooltip": "保存笔记时出错。如果可以，请尝试将笔记内容复制到其他位置并重新加载应用程序。",
+    "save_status_saving_tooltip": "更改正在保存。"
   },
   "status_bar": {
     "language_title": "更改内容语言",
@@ -2218,5 +2246,12 @@
   },
   "attributes_panel": {
     "title": "笔记属性"
+  },
+  "pdf": {
+    "attachments_other": "{{count}} 个附件",
+    "pages_other": "共{{count}}页",
+    "pages_alt": "第{{pageNumber}}页",
+    "pages_loading": "加载中...",
+    "layers_other": "{{count}} 层"
   }
 }

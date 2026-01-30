@@ -1,12 +1,15 @@
-import { useEffect, useRef, useState } from "preact/hooks";
-import { TypeWidgetProps } from "./type_widget";
-import render from "../../services/render";
-import { refToJQuerySelector } from "../react/react_utils";
-import Alert from "../react/Alert";
 import "./Render.css";
+
+import { useEffect, useRef, useState } from "preact/hooks";
+
+import attributes from "../../services/attributes";
 import { t } from "../../services/i18n";
-import RawHtml from "../react/RawHtml";
+import render from "../../services/render";
+import Alert from "../react/Alert";
 import { useTriliumEvent } from "../react/hooks";
+import RawHtml from "../react/RawHtml";
+import { refToJQuerySelector } from "../react/react_utils";
+import { TypeWidgetProps } from "./type_widget";
 
 export default function Render({ note, noteContext, ntxId }: TypeWidgetProps) {
     const contentRef = useRef<HTMLDivElement>(null);
@@ -29,6 +32,13 @@ export default function Render({ note, noteContext, ntxId }: TypeWidgetProps) {
     useTriliumEvent("refreshData", ({ ntxId: eventNtxId }) => {
         if (eventNtxId !== ntxId) return;
         refresh();
+    });
+
+    // Refresh on attribute change.
+    useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
+        if (loadResults.getAttributeRows().some(a => a.type === "relation" && a.name === "renderNote" && attributes.isAffecting(a, note))) {
+            refresh();
+        }
     });
 
     // Integration with search.

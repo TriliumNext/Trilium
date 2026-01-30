@@ -11,9 +11,11 @@
   appearance. To create a custom theme, follow these steps:</p>
 <ol>
   <li><strong>Create a CSS Code Note</strong>: Start by creating a new <a href="#root/_help_6f9hih2hXXZk">code note</a> with
-    the <code>CSS</code> type.</li>
-  <li><strong>Annotate with</strong>  <code>#appTheme</code>: Add the <a href="#root/_help_zEY4DaJG4YT5">attribute</a>  <code>#appTheme=my-theme-name</code> to
-    your note, where <code>my-theme-name</code> is the name of your custom theme.</li>
+    the <code spellcheck="false">CSS</code> type.</li>
+  <li><strong>Annotate with</strong>  <code spellcheck="false">#appTheme</code>:
+    Add the <a href="#root/_help_zEY4DaJG4YT5">attribute</a>  <code spellcheck="false">#appTheme=my-theme-name</code> to
+    your note, where <code spellcheck="false">my-theme-name</code> is the name
+    of your custom theme.</li>
   <li><strong>Define Your Styles</strong>: Write your custom CSS within the
     note. Below is an example of a custom theme:</li>
 </ol><pre><code class="language-text-x-trilium-auto">@font-face {
@@ -74,16 +76,18 @@ body .CodeMirror {
 <ol>
   <li>Go to "Menu" -&gt; "Options" -&gt; "Appearance."</li>
   <li>In the theme selection dropdown, you should see your custom theme listed
-    under the name you provided with the <code>#appTheme</code>  <a href="#root/_help_zEY4DaJG4YT5">label</a>.</li>
+    under the name you provided with the <code spellcheck="false">#appTheme</code> 
+    <a
+    href="#root/_help_zEY4DaJG4YT5">label</a>.</li>
   <li>Select your custom theme to activate it.</li>
 </ol>
 <p>If you make changes to your theme, press <kbd>Ctrl</kbd> + <kbd>R</kbd> to
   reload the frontend and apply your updates.</p>
 <h3>Sharing and Importing Themes</h3>
-<p>Custom themes can be exported as <code>.tar</code> archives, which can be
-  shared with other users. However, be cautious when importing themes from
-  untrusted sources, as they may contain executable scripts that could pose
-  security risks.</p>
+<p>Custom themes can be exported as <code spellcheck="false">.tar</code> archives,
+  which can be shared with other users. However, be cautious when importing
+  themes from untrusted sources, as they may contain executable scripts that
+  could pose security risks.</p>
 <p>An example user theme, <em>Steel Blue</em>, is available in the demo document.</p>
 <p>
   <img src="Themes_steel-blue.png" alt="Steel Blue Theme">
@@ -97,16 +101,16 @@ body .CodeMirror {
 <p>To use custom CSS:</p>
 <ol>
   <li><strong>Create a CSS Code Note</strong>: Create a new&nbsp;<a class="reference-link"
-    href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note with the <code>CSS</code> type.</li>
-  <li><strong>Add the</strong>  <code>appCss</code>  <strong>Label</strong>: Annotate
-    the note with the <code>#appCss</code>  <a href="#root/_help_zEY4DaJG4YT5">label</a>.</li>
+    href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note with the <code spellcheck="false">CSS</code> type.</li>
+  <li><strong>Add the</strong>  <code spellcheck="false">appCss</code>  <strong>Label</strong>:
+    Annotate the note with the <code spellcheck="false">#appCss</code>  <a href="#root/_help_zEY4DaJG4YT5">label</a>.</li>
   <li><strong>Write Your CSS</strong>: Add your custom CSS rules to the note.</li>
 </ol>
 <p>For example:</p><pre><code class="language-text-x-trilium-auto">/* Custom CSS to style specific elements */
 .tree-item {
     color: #ff6347; /* Change tree item color */
 }</code></pre>
-<p>When Trilium's frontend starts, all notes labeled with <code>appCss</code> are
+<p>When Trilium's frontend starts, all notes labeled with <code spellcheck="false">appCss</code> are
   automatically included in the style element of the HTML page.</p>
 <p>After making changes, press <kbd>Ctrl</kbd> + <kbd>R</kbd> to reload the frontend
   and apply your new styles.</p>
@@ -116,22 +120,23 @@ body .CodeMirror {
 <h3>Styling Specific Notes in the Tree</h3>
 <p>To apply specific styles to certain notes in the tree:</p>
 <ul>
-  <li><strong>Use the</strong>  <code>cssClass</code>  <strong>Attribute</strong>:
-    Add the <code>cssClass</code>  <a href="#root/_help_zEY4DaJG4YT5">attribute</a> to
+  <li><strong>Use the</strong>  <code spellcheck="false">cssClass</code>  <strong>Attribute</strong>:
+    Add the <code spellcheck="false">cssClass</code>  <a href="#root/_help_zEY4DaJG4YT5">attribute</a> to
     a note, and assign it a value representing the desired CSS class.</li>
-  <li><strong>Define an</strong>  <code>iconClass</code>: You can also define
-    a custom icon for a note using the <code>iconClass</code> attribute, selecting
-    from <a href="https://boxicons.com">Box Icons</a> or your own custom classes.</li>
+  <li><strong>Define an</strong>  <code spellcheck="false">iconClass</code>: You
+    can also define a custom icon for a note using the <code spellcheck="false">iconClass</code> attribute,
+    selecting from <a href="https://boxicons.com">Box Icons</a> or your own custom
+    classes.</li>
 </ul>
 <p>For example, if you want to style notes of a specific type, such as notes
-  containing PNG images, you can target them with classes like <code>type-image mime-image-png</code>.</p>
+  containing PNG images, you can target them with classes like <code spellcheck="false">type-image mime-image-png</code>.</p>
 <h3>User-Provided Themes</h3>
 <p>A gallery of user-created themes is available, showcasing the variety
   of customizations that the Trilium community has developed. For more information,
   check the&nbsp;<a class="reference-link" href="#root/_help_VbjZvtUek0Ln">Theme Gallery</a>.</p>
 <h3>Asset Path Management</h3>
 <p>When referencing built-in assets like images in your custom themes or
-  CSS, you can avoid hardcoding version numbers by using the <code>vX</code> alias.
-  For example, instead of specifying <code>/assets/v0.57.0-beta/images/icon-grey.png</code>,
-  you can use <code>/assets/vX/images/icon-grey.png</code> to keep your theme
-  compatible with future versions of Trilium.</p>
+  CSS, you can avoid hardcoding version numbers by using the <code spellcheck="false">vX</code> alias.
+  For example, instead of specifying <code spellcheck="false">/assets/v0.57.0-beta/images/icon-grey.png</code>,
+  you can use <code spellcheck="false">/assets/vX/images/icon-grey.png</code> to
+  keep your theme compatible with future versions of Trilium.</p>

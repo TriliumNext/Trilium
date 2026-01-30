@@ -1,17 +1,20 @@
+import ejs from "ejs";
+import fs, { readdirSync, readFileSync } from "fs";
+import { convert as convertToText } from "html-to-text";
+import { t } from "i18next";
 import { join } from "path";
+
+import becca from "../../../becca/becca";
+import type BBranch from "../../../becca/entities/bbranch.js";
+import type BNote from "../../../becca/entities/bnote.js";
+import { getClientDir, getShareThemeAssetDir } from "../../../routes/assets";
+import { getDefaultTemplatePath, readTemplate, renderNoteForExport } from "../../../share/content_renderer";
+import { getIconPacks, MIME_TO_EXTENSION_MAPPINGS, ProcessedIconPack } from "../../icon_packs";
+import log from "../../log";
 import NoteMeta, { NoteMetaFile } from "../../meta/note_meta";
-import { ExportFormat, ZipExportProvider } from "./abstract_provider.js";
 import { RESOURCE_DIR } from "../../resource_dir";
 import { getResourceDir, isDev } from "../../utils";
-import fs, { readdirSync } from "fs";
-import { getDefaultTemplatePath, readTemplate, renderNoteForExport } from "../../../share/content_renderer";
-import type BNote from "../../../becca/entities/bnote.js";
-import type BBranch from "../../../becca/entities/bbranch.js";
-import { getShareThemeAssetDir } from "../../../routes/assets";
-import { convert as convertToText } from "html-to-text";
-import becca from "../../../becca/becca";
-import ejs from "ejs";
-import { t } from "i18next";
+import { ExportFormat, ZipExportProvider } from "./abstract_provider.js";
 
 const shareThemeAssetDir = getShareThemeAssetDir();
 
@@ -28,6 +31,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
     private indexMeta: NoteMeta | null = null;
     private searchIndex: Map<string, SearchIndexEntry> = new Map();
     private rootMeta: NoteMeta | null = null;
+    private iconPacks: ProcessedIconPack[] = [];
 
     prepareMeta(metaFile: NoteMetaFile): void {
         const assets = [
@@ -52,6 +56,7 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
             dataFileName: "index.html"
         };
         this.rootMeta = metaFile.files[0];
+        this.iconPacks = getIconPacks();
 
         metaFile.files.push(this.indexMeta);
     }
@@ -69,8 +74,19 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
                 whitespaceCharacters: "\t\r\n\f\u200b\u00a0\u2002"
             }) : "";
 
-            content = renderNoteForExport(note, branch, basePath, noteMeta.notePath.slice(0, -1));
+            // TODO: This will probably never match, but should it be exclude from running on code/jsFrontend notes?
+            content = renderNoteForExport(note, branch, basePath, noteMeta.notePath.slice(0, -1), this.iconPacks);
             if (typeof content === "string") {
+                // Rewrite attachment download links
+                content = content.replace(/href="api\/attachments\/([a-zA-Z0-9_]+)\/download"/g, (match, attachmentId) => {
+                    const attachmentMeta = (noteMeta.attachments || []).find((attMeta) => attMeta.attachmentId === attachmentId);
+                    if (attachmentMeta?.dataFileName) {
+                        return `href="${attachmentMeta.dataFileName}"`;
+                    }
+                    return match;
+                });
+
+                // Rewrite note links
                 content = content.replace(/href="[^"]*\.\/([a-zA-Z0-9_\/]{12})[^"]*"/g, (match, id) => {
                     if (match.includes("/assets/")) return match;
                     if (id === this.rootMeta?.noteId) {
@@ -115,6 +131,15 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
             return null;
         }
 
+        if (mime.startsWith("application/javascript")) {
+            return "js";
+        }
+
+        // Don't add .html if the file already has .zip extension (for attachments).
+        if (existingExtension === ".zip") {
+            return null;
+        }
+
         return "html";
     }
 
@@ -134,8 +159,26 @@ export default class ShareThemeExportProvider extends ZipExportProvider {
                 continue;
             }
 
-            let cssContent = getShareThemeAssets(assetMeta.dataFileName);
+            const cssContent = getShareThemeAssets(assetMeta.dataFileName);
             this.archive.append(cssContent, { name: assetMeta.dataFileName });
+        }
+
+        // Inject the custom fonts.
+        for (const iconPack of this.iconPacks) {
+            const extension = MIME_TO_EXTENSION_MAPPINGS[iconPack.fontMime];
+            let fontData: Buffer | undefined;
+            if (iconPack.builtin) {
+                fontData = readFileSync(join(getClientDir(), "fonts", `${iconPack.fontAttachmentId}.${extension}`));
+            } else {
+                fontData = becca.getAttachment(iconPack.fontAttachmentId)?.getContent();
+            }
+
+            if (!fontData) {
+                log.error(`Failed to find font data for icon pack ${iconPack.prefix} with attachment ID ${iconPack.fontAttachmentId}`);
+                continue;
+            };
+            const fontFileName = `assets/icon-pack-${iconPack.prefix.toLowerCase()}.${extension}`;
+            this.archive.append(fontData, { name: fontFileName });
         }
     }
 

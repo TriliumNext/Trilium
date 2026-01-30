@@ -215,7 +215,7 @@ export default function NoteDetail() {
     return (
         <div
             ref={containerRef}
-            class={`note-detail ${isFullHeight ? "full-height" : ""}`}
+            class={`component note-detail ${isFullHeight ? "full-height" : ""}`}
         >
             {Object.entries(noteTypesToRender).map(([ itemType, Element ]) => {
                 return <NoteDetailWrapper
@@ -265,9 +265,13 @@ function useNoteInfo() {
     const [ note, setNote ] = useState<FNote | null | undefined>();
     const [ type, setType ] = useState<ExtendedNoteType>();
     const [ mime, setMime ] = useState<string>();
+    const refreshIdRef = useRef(0);
 
     function refresh() {
+        const refreshId = ++refreshIdRef.current;
+
         getExtendedWidgetType(actualNote, noteContext).then(type => {
+            if (refreshId !== refreshIdRef.current) return;
             setNote(actualNote);
             setType(type);
             setMime(actualNote?.mime);
@@ -318,6 +322,8 @@ export async function getExtendedWidgetType(note: FNote | null | undefined, note
         resultingType = "noteMap";
     } else if (type === "text" && (await noteContext?.isReadOnly())) {
         resultingType = "readOnlyText";
+    } else if (note.isTriliumSqlite()) {
+        resultingType = "sqlConsole";
     } else if ((type === "code" || type === "mermaid") && (await noteContext?.isReadOnly())) {
         resultingType = "readOnlyCode";
     } else if (type === "text") {
@@ -342,9 +348,8 @@ export function checkFullHeight(noteContext: NoteContext | undefined, type: Exte
 
     // https://github.com/zadam/trilium/issues/2522
     const isBackendNote = noteContext?.noteId === "_backendLog";
-    const isSqlNote = noteContext.note?.mime === "text/x-sqlite;schema=trilium";
     const isFullHeightNoteType = type && TYPE_MAPPINGS[type].isFullHeight;
-    return (!noteContext?.hasNoteList() && isFullHeightNoteType && !isSqlNote)
+    return (!noteContext?.hasNoteList() && isFullHeightNoteType)
         || noteContext?.viewScope?.viewMode === "attachments"
         || isBackendNote;
 }
@@ -358,8 +363,8 @@ function showToast(type: "printing" | "exporting_pdf", progress: number = 0) {
     });
 }
 
-function handlePrintReport(printReport: PrintReport) {
-    if (printReport.type === "collection" && printReport.ignoredNoteIds.length > 0) {
+function handlePrintReport(printReport?: PrintReport) {
+    if (printReport?.type === "collection" && printReport.ignoredNoteIds.length > 0) {
         toast.showPersistent({
             id: "print-report",
             icon: "bx bx-collection",

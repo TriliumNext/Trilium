@@ -423,6 +423,6 @@ div.tn-tool-dialog {
     font-size: unset;
 }
 
-.note-type-chooser-dialog div.note-type-dropdown .dropdown-item span.bx {
+.note-type-chooser-dialog div.note-type-dropdown .dropdown-item span.tn-icon {
     margin-inline-end: .25em;
 }

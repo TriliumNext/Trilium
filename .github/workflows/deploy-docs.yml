@@ -67,7 +67,7 @@ jobs:
 
       - name: Deploy
         uses: ./.github/actions/deploy-to-cloudflare-pages
-        if: github.repository == ${{ vars.REPO_MAIN }}
+        if: ${{ github.repository == vars.REPO_MAIN }}
         with:
           project_name: "trilium-docs"
           comment_body: "📚 Documentation preview is ready"

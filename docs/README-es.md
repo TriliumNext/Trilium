@@ -97,8 +97,8 @@ La documentación está disponible en varios formatos:
   inicio de sesión más seguro
 * [Sincronización](https://docs.triliumnotes.org/user-guide/setup/synchronization)
   con servidor de sincronización autohospedado
-  * there are [3rd party services for hosting synchronisation
-    server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+  * existen [servicios de terceros para alojar servidores de
+    sincronización](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [Compartir](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
   (publicar) notas en Internet público
 * Fuerte [cifrado de
@@ -106,10 +106,11 @@ La documentación está disponible en varios formatos:
   con granularidad por nota
 * Esbozo de diagramas, basado en [Excalidraw](https://excalidraw.com/) (tipo de
   nota "lienzo")
-* [Relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
-  for visualizing notes and their relations
+* [Mapas de
+  relaciones](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
+  y [mapas de
+  notas/enlaces](https://docs.triliumnotes.org/user-guide/note-types/note-map)
+  para visualizar notas y sus relaciones
 * Mapas mentales, basados en [Mind Elixir](https://docs.mind-elixir.com/)
 * [Mapas
   geográficos](https://docs.triliumnotes.org/user-guide/collections/geomap) con
@@ -134,8 +135,8 @@ La documentación está disponible en varios formatos:
   guardar fácilmente contenido web
 * Interfaz personalizable (botones de la barra lateral, widgets definidos por el
   usuario, …)
-* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
-  along with a Grafana Dashboard.
+* [Métricas](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
+  junto con un panel de control de Grafana.
 
 ✨ Consulta los siguientes recursos y comunidades de terceros para obtener más
 contenido relacionado con TriliumNext:

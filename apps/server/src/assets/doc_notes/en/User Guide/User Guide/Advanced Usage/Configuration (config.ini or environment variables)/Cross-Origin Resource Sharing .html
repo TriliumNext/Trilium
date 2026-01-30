@@ -1,40 +1,40 @@
 <p>By default, Trilium cannot be accessed in web browsers by requests coming
   from other domains/origins than Trilium itself.&nbsp;</p>
 <p>However, it is possible to manually configure <a href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS">Cross-Origin Resource Sharing (CORS)</a> since
-  Trilium v0.93.0 using environment variables or <code>config.ini</code>,
+  Trilium v0.93.0 using environment variables or <code spellcheck="false">config.ini</code>,
   as follows:</p>
 <table>
   <thead>
     <tr>
       <th>CORS Header</th>
-      <th>Corresponding option in <code>config.ini</code>
+      <th>Corresponding option in <code spellcheck="false">config.ini</code>
       </th>
-      <th>Corresponding option in environment variables in the <code>Network</code> section</th>
+      <th>Corresponding option in environment variables in the <code spellcheck="false">Network</code> section</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td><code>Access-Control-Allow-Origin</code>
+      <td><code spellcheck="false">Access-Control-Allow-Origin</code>
       </td>
-      <td><code>TRILIUM_NETWORK_CORS_ALLOW_ORIGIN</code>
+      <td><code spellcheck="false">TRILIUM_NETWORK_CORS_ALLOW_ORIGIN</code>
       </td>
-      <td><code>corsAllowOrigin</code>
-      </td>
-    </tr>
-    <tr>
-      <td><code>Access-Control-Allow-Methods</code>
-      </td>
-      <td><code>TRILIUM_NETWORK_CORS_ALLOW_METHODS</code>
-      </td>
-      <td><code>corsAllowMethods</code>
+      <td><code spellcheck="false">corsAllowOrigin</code>
       </td>
     </tr>
     <tr>
-      <td><code>Access-Control-Allow-Headers</code>
+      <td><code spellcheck="false">Access-Control-Allow-Methods</code>
       </td>
-      <td><code>TRILIUM_NETWORK_CORS_ALLOW_HEADERS</code>
+      <td><code spellcheck="false">TRILIUM_NETWORK_CORS_ALLOW_METHODS</code>
       </td>
-      <td><code>corsAllowHeaders</code>
+      <td><code spellcheck="false">corsAllowMethods</code>
+      </td>
+    </tr>
+    <tr>
+      <td><code spellcheck="false">Access-Control-Allow-Headers</code>
+      </td>
+      <td><code spellcheck="false">TRILIUM_NETWORK_CORS_ALLOW_HEADERS</code>
+      </td>
+      <td><code spellcheck="false">corsAllowHeaders</code>
       </td>
     </tr>
   </tbody>

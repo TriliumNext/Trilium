@@ -1,7 +1,7 @@
 <h2>Disabling authentication</h2>
-<p>If you are running Trilium on <code>localhost</code> only or if authentication
-  is handled by another component, you can disable Trilium’s authentication
-  by adding the following to <code>config.ini</code>:</p><pre><code class="language-text-x-trilium-auto">[General]
+<p>If you are running Trilium on <code spellcheck="false">localhost</code> only
+  or if authentication is handled by another component, you can disable Trilium’s
+  authentication by adding the following to <code spellcheck="false">config.ini</code>:</p><pre><code class="language-text-x-trilium-auto">[General]
 noAuthentication=true</code></pre>
 <p>Disabling authentication will bypass even the&nbsp;<a class="reference-link"
   href="#root/_help_7DAiwaf8Z7Rz">Multi-Factor Authentication</a>&nbsp;since v0.94.1.</p>
@@ -10,9 +10,9 @@ noAuthentication=true</code></pre>
   about the login into a cookie on the browser, but also as a session on
   the server.</p>
 <p>If “Remember me” is checked, then the login will expire in 21 days. This
-  period can be adjusted by modifying the <code>Session.cookieMaxAge</code> value
-  in <code>config.ini</code>. For example, to have the session expire in one
-  day:</p><pre><code class="language-text-x-trilium-auto">[Session]
+  period can be adjusted by modifying the <code spellcheck="false">Session.cookieMaxAge</code> value
+  in <code spellcheck="false">config.ini</code>. For example, to have the
+  session expire in one day:</p><pre><code class="language-text-x-trilium-auto">[Session]
 cookieMaxAge=86400</code></pre>
 <p>When “Remember me” is unchecked, the behavior is different. At client/browser
   level the authentication does not have any expiration date, but it will

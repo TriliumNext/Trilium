@@ -295,6 +295,14 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
             return url ? `href="${url}"` : match;
         });
 
+        if (format === "share") {
+            content = content.replace(/src="[^"]*api\/notes\/([a-zA-Z0-9_]+)\/download"/g, (match, targetNoteId) => {
+                const url = getNoteTargetUrl(targetNoteId, noteMeta);
+
+                return url ? `src="${url}"` : match;
+            });
+        }
+
         return content;
 
         function findAttachment(targetAttachmentId: string) {

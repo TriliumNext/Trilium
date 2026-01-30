@@ -1,0 +1,24 @@
+{
+  "name": "@triliumnext/web-clipper",
+  "version": "1.1.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "postinstall": "wxt prepare"
+  },
+  "keywords": [],
+  "packageManager": "pnpm@10.28.2",
+  "devDependencies": {
+    "@wxt-dev/auto-icons": "1.1.0",
+    "wxt": "0.20.13"
+  },
+  "dependencies": {
+    "cash-dom": "8.1.5"
+  }
+}

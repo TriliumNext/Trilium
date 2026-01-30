@@ -1,5 +1,6 @@
 import { Autoformat, AutoLink, BlockQuote, BlockToolbar, Bold, CKFinderUploadAdapter, Clipboard, Code, CodeBlock, Enter, Font, FontBackgroundColor, FontColor, GeneralHtmlSupport, Heading, HeadingButtonsUI, HorizontalLine, Image, ImageCaption, ImageInline, ImageResize, ImageStyle, ImageToolbar, ImageUpload, Alignment, Indent, IndentBlock, Italic, Link, List, ListProperties, Mention, PageBreak, Paragraph, ParagraphButtonUI, PasteFromOffice, PictureEditing, RemoveFormat, SelectAll, ShiftEnter, SpecialCharacters, SpecialCharactersEssentials, Strikethrough, Style, Subscript, Superscript, Table, TableCaption, TableCellProperties, TableColumnResize, TableProperties, TableSelection, TableToolbar, TextPartLanguage, TextTransformation, TodoList, Typing, Underline, Undo, Bookmark, EmojiMention, EmojiPicker, FindAndReplaceEditing } from "ckeditor5";
-import { SlashCommand, Template, FormatPainter } from "ckeditor5-premium-features";
+// Premium features loaded dynamically to improve initial load time
+// import { SlashCommand, Template, FormatPainter } from "ckeditor5-premium-features";
 import type { Plugin } from "ckeditor5";
 import CutToNotePlugin from "./plugins/cuttonote.js";
 import UploadimagePlugin from "./plugins/uploadimage.js";
@@ -81,13 +82,15 @@ export const CORE_PLUGINS: typeof Plugin[] = [
 ];
 
 /**
- * Plugins that require a premium CKEditor license key to work.
+ * Dynamically loads plugins that require a premium CKEditor license key.
+ * This avoids loading ~6 seconds of premium features code during initial app startup.
  */
-export const PREMIUM_PLUGINS: typeof Plugin[] = [
-    SlashCommand,
-    Template,
-	FormatPainter
-];
+export async function loadPremiumPlugins(): Promise<(typeof Plugin)[]> {
+    const { SlashCommand, Template, FormatPainter } = await import('ckeditor5-premium-features');
+    // Also load the CSS when premium features are used
+    await import('ckeditor5-premium-features/ckeditor5-premium-features.css');
+    return [SlashCommand, Template, FormatPainter];
+}
 
 /**
  * The set of plugins that are required for the editor to work. This is used in normal text editors (floating or fixed toolbar) but not in the attribute editor.

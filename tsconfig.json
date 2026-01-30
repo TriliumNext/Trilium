@@ -25,6 +25,9 @@
       "path": "./apps/website"
     },
     {
+      "path": "./apps/web-clipper"
+    },
+    {
       "path": "./apps/dump-db"
     },
     {
@@ -62,6 +65,9 @@
     },
     {
       "path": "./packages/share-theme"
+    },
+    {
+      "path": "./packages/pdfjs-viewer"
     },
     {
       "path": "./scripts"

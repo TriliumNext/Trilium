@@ -1,6 +1,7 @@
 import "./code.css";
 
 import { default as VanillaCodeMirror, getThemeById } from "@triliumnext/codemirror";
+import { NoteType } from "@triliumnext/commons";
 import { useEffect, useRef, useState } from "preact/hooks";
 
 import appContext, { CommandListenerData } from "../../../components/app_context";
@@ -24,6 +25,7 @@ export interface EditableCodeProps extends TypeWidgetProps, Omit<CodeEditorProps
     debounceUpdate?: boolean;
     lineWrapping?: boolean;
     updateInterval?: number;
+    noteType?: NoteType;
     /** Invoked when the content of the note is changed, such as a different revision or a note switch. */
     onContentChanged?: (content: string) => void;
     /** Invoked after the content of the note has been uploaded to the server, using a spaced update. */
@@ -72,14 +74,14 @@ function formatViewSource(note: FNote, content: string) {
     return content;
 }
 
-export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentComponent, updateInterval, onContentChanged, dataSaved, ...editorProps }: EditableCodeProps) {
+export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentComponent, updateInterval, noteType = "code", onContentChanged, dataSaved, ...editorProps }: EditableCodeProps) {
     const editorRef = useRef<VanillaCodeMirror>(null);
     const containerRef = useRef<HTMLPreElement>(null);
     const [ vimKeymapEnabled ] = useTriliumOptionBool("vimKeymapEnabled");
     const mime = useNoteProperty(note, "mime");
     const spacedUpdate = useEditorSpacedUpdate({
         note,
-        noteType: "code",
+        noteType,
         noteContext,
         getData: () => ({ content: editorRef.current?.getText() ?? "" }),
         onContentChange: (content) => {

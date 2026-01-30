@@ -1,0 +1,27 @@
+<h2>v0.102.0: Upgrade to jQuery 4.0.0</h2>
+<p>jQuery 4 removes legacy browser support (such as IE11 support), but it
+  also removes some APIs that are considered deprecated such as:</p>
+<blockquote>
+  <p><code spellcheck="false">jQuery.isArray</code>, <code spellcheck="false">jQuery.parseJSON</code>,
+    <code
+    spellcheck="false">jQuery.trim</code>, <code spellcheck="false">jQuery.type</code>, <code spellcheck="false">jQuery.now</code>,
+      <code
+      spellcheck="false">jQuery.isNumeric</code>, <code spellcheck="false">jQuery.isFunction</code>,
+        <code
+        spellcheck="false">jQuery.isWindow</code>, <code spellcheck="false">jQuery.camelCase</code>,
+          <code
+          spellcheck="false">jQuery.nodeName</code>, <code spellcheck="false">jQuery.cssNumber</code>,
+            <code
+            spellcheck="false">jQuery.cssProps</code>, and <code spellcheck="false">jQuery.fx.interval</code>.</p>
+  <p>Use native equivalents like <code spellcheck="false">Array.isArray()</code>,
+    <code
+    spellcheck="false">JSON.parse()</code>, <code spellcheck="false">String.prototype.trim()</code>,
+      and <code spellcheck="false">Date.now()</code> instead.</p>
+</blockquote>
+<p>This may affect custom scripts if they (or the custom jQuery libraries
+  used) depend on the deprecated APIs.</p>
+<p>Note that Trilium polyfills <code spellcheck="false">jQuery.isArray</code>,
+  <code
+  spellcheck="false">isFunction</code>and <code spellcheck="false">isPlainObject</code> because
+    they were required by one of our dependencies (the autocomplete).</p>
+<p>For more information, consult <a href="https://blog.jquery.com/2026/01/17/jquery-4-0-0/">the official blog post</a>.</p>

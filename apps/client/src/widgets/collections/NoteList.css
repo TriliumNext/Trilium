@@ -12,7 +12,7 @@ body.prefers-centered-content .note-list-widget:not(.full-height) {
 }
 
 .note-list-widget .note-list {
-    padding: 10px;
+    padding-block: 10px;
 }
 
 .note-list-widget.full-height,

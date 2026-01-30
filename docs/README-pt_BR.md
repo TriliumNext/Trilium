@@ -40,23 +40,23 @@ conhecimento pessoal.
 - [Último lançamento](https://github.com/TriliumNext/Trilium/releases/latest) -
   versão estável, recomendada para a maioria dos usuários.
 - [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  unstable development version, updated daily with the latest features and
-  fixes.
+  versão de desenvolvimento instável, atualizada diariamente com os recursos e
+  correções mais recentes.
 
 ## 📚 Documentação
 
-**Visit our comprehensive documentation at
+**Visite nossa documentação completa em
 [docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 
-Our documentation is available in multiple formats:
-- **Online Documentation**: Browse the full documentation at
+Nossa documentação está disponível em vários formatos:
+- **Documentação online:** Navegue pela documentação completa em
   [docs.triliumnotes.org](https://docs.triliumnotes.org/)
-- **In-App Help**: Press `F1` within Trilium to access the same documentation
-  directly in the application
-- **GitHub**: Navigate through the [User Guide](./User%20Guide/User%20Guide/) in
-  this repository
+- **Ajuda no aplicativo**: Pressione `F1` dentro do Trilium para acessar a mesma
+  documentação diretamente no aplicativo
+- **GitHub**: Navegue pelo [User Guide](./User%20Guide/User%20Guide/) neste
+  repositório
 
-### Quick Links
+### Links rápidos
 - [Getting Started Guide](https://docs.triliumnotes.org/)
 - [Installation Instructions](https://docs.triliumnotes.org/user-guide/setup)
 - [Docker

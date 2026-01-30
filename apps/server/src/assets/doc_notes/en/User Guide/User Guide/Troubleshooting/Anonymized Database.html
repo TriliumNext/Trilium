@@ -12,18 +12,21 @@
   metadata, such as modification dates. After anonymization, the database
   undergoes a <a href="https://sqlite.org/lang_vacuum.html">vacuuming process</a> to
   ensure no sensitive data remnants remain in the file. The anonymized database
-  is saved in the <code>anonymized</code> directory within the <a href="#root/_help_tAassRL4RSQL">data directory</a>,
-  making it safe to share with bug reports.</p>
+  is saved in the <code spellcheck="false">anonymized</code> directory within
+  the <a href="#root/_help_tAassRL4RSQL">data directory</a>, making it safe to share
+  with bug reports.</p>
 <p>This will create a copy of your document and remove all sensitive data
   (currently note titles, contents, revisions, history and some of the options,
   and non-system attributes) while leaving all structure and metadata (e.g.
   date of last change). After this is done, the database is <a href="https://sqlite.org/lang_vacuum.html">VACUUMed</a> to
   make sure there's no stale sensitive data in the document file. The resulting
-  file is stored in <code>anonymized</code> directory (placed in the <a href="#root/_help_tAassRL4RSQL">data directory</a>).
-  You can safely attach it to a bug report.</p>
+  file is stored in <code spellcheck="false">anonymized</code> directory (placed
+  in the <a href="#root/_help_tAassRL4RSQL">data directory</a>). You can safely
+  attach it to a bug report.</p>
 <h2>Command Line Anonymization</h2>
 <p>If your <a href="#root/_help_wX4HbRucYSDD">database</a> is corrupted to the point
   where Trilium cannot start, the anonymization process can still be executed
   via the command line:</p><pre><code class="language-text-x-trilium-auto">node src/anonymize.js</code></pre>
 <p>Run this command from the directory containing Trilium's source files,
-  typically found in the <code>resources/app</code> directory for desktop builds.</p>
+  typically found in the <code spellcheck="false">resources/app</code> directory
+  for desktop builds.</p>

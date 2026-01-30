@@ -1,12 +1,12 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
-import { SqlExecuteResults } from "@triliumnext/commons";
+import { SqlExecuteResponse } from "@triliumnext/commons";
 import type { NativeImage, TouchBar } from "electron";
 import { ColumnComponent } from "tabulator-tables";
 
 import type { Attribute } from "../services/attribute_parser.js";
 import froca from "../services/froca.js";
-import { initLocale,t } from "../services/i18n.js";
+import { initLocale, t } from "../services/i18n.js";
 import keyboardActionsService from "../services/keyboard_actions.js";
 import linkService, { type ViewScope } from "../services/link.js";
 import type LoadResults from "../services/load_results.js";
@@ -154,6 +154,7 @@ export type CommandMappings = {
     };
     openInTab: ContextMenuCommandData;
     openNoteInSplit: ContextMenuCommandData;
+    openNoteInWindow: ContextMenuCommandData;
     openNoteInPopup: ContextMenuCommandData;
     toggleNoteHoisting: ContextMenuCommandData;
     insertNoteAfter: ContextMenuCommandData;
@@ -382,7 +383,8 @@ export type CommandMappings = {
     reloadTextEditor: CommandData;
     chooseNoteType: CommandData & {
         callback: ChooseNoteTypeCallback
-    }
+    };
+    customDownload: CommandData;
 };
 
 type EventMappings = {
@@ -408,7 +410,7 @@ type EventMappings = {
     addNewLabel: CommandData;
     addNewRelation: CommandData;
     sqlQueryResults: CommandData & {
-        results: SqlExecuteResults;
+        response: SqlExecuteResponse;
     };
     readOnlyTemporarilyDisabled: {
         noteContext: NoteContext;
@@ -472,6 +474,11 @@ type EventMappings = {
     };
     noteContextRemoved: {
         ntxIds: string[];
+    };
+    contextDataChanged: {
+        noteContext: NoteContext;
+        key: string;
+        value: unknown;
     };
     exportSvg: { ntxId: string | null | undefined; };
     exportPng: { ntxId: string | null | undefined; };

@@ -1,9 +1,10 @@
-import { Application } from "express";
-import { beforeAll, describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import supertest from "supertest";
-import config from "../../services/config.js";
-import { refreshAuth } from "../../services/auth.js";
 import { sleepFor } from "@triliumnext/commons";
+import { Application } from "express";
+import supertest from "supertest";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { refreshAuth } from "../../services/auth.js";
+import config from "../../services/config.js";
 
 // Mock the CSRF protection middleware to allow tests to pass
 vi.mock("../csrf_protection.js", () => ({
@@ -841,7 +842,7 @@ describe("LLM API Tests", () => {
             try {
                 await supertest(app)
                     .delete(`/api/llm/chat/${createdChatId}`)
-                    ;
+                ;
             } catch (error) {
                 // Ignore cleanup errors
             }

@@ -217,6 +217,7 @@ function LabelInput({ inputId, ...props }: CellProps & { inputId: string }) {
         id={inputId}
         type={LABEL_MAPPINGS[definition.labelType ?? "text"]}
         value={valueAttr.value}
+        checked={definition.labelType === "boolean" ? valueAttr.value === "true" : undefined}
         placeholder={t("promoted_attributes.unset-field-placeholder")}
         data-attribute-id={valueAttr.attributeId}
         data-attribute-type={valueAttr.type}

@@ -1,42 +1,15 @@
-import { readFile, stat, writeFile,  } from "fs/promises";
+import { readFile, writeFile } from "fs/promises";
 import { join } from "path";
+
+import { getLanguageStats } from "./utils";
 
 const scriptDir = __dirname;
 const rootDir = join(scriptDir, "../..");
 const docsDir = join(rootDir, "docs");
 
-async function getLanguageStats() {
-    const cacheFile = join(scriptDir, ".language-stats.json");
-
-    // Try to read from the cache.
-    try {
-        const cacheStats = await stat(cacheFile);
-        const now = new Date();
-        const oneDay = 24 * 60 * 60 * 1000; // milliseconds
-        if (cacheStats.mtimeMs < now.getTime() + oneDay) {
-            console.log("Reading language stats from cache.");
-            return JSON.parse(await readFile(cacheFile, "utf-8"));
-        }
-    } catch (e) {
-        if (!(e && typeof e === "object" && "code" in e && e.code === "ENOENT")) {
-            throw e;
-        }
-    }
-
-    // Make the request
-    console.log("Reading language stats from Weblate API.");
-    const request = await fetch("https://hosted.weblate.org/api/components/trilium/readme/translations/");
-    const stats = JSON.parse(await request.text());
-
-    // Update the cache
-    await writeFile(cacheFile, JSON.stringify(stats, null, 4));
-
-    return stats;
-}
-
 async function rewriteLanguageBar(readme: string) {
     // Filter languages by their availability.
-    const languageStats = await getLanguageStats();
+    const languageStats = await getLanguageStats("readme");
     const languagesWithCoverage: any[] = languageStats.results.filter(language => language.translated_percent > 75);
     const languageLinks = languagesWithCoverage
         .map(language => `[${language.language.name}](./${language.filename})`)

@@ -39,27 +39,30 @@
 <p>In the <em>Owned Attributes</em> section in the&nbsp;<a class="reference-link"
   href="#root/_help_BlN9DFI679QC">Ribbon</a>:</p>
 <ul>
-  <li>To create a relation called <code>myRelation</code>:
+  <li>To create a relation called <code spellcheck="false">myRelation</code>:
     <ul>
-      <li>First type <code>~myRelation=@</code> .</li>
+      <li>First type <code spellcheck="false">~myRelation=@</code> .</li>
       <li>After this, an autocompletion box should appear.</li>
       <li>Type the title of the note to point to and press <kbd>Enter</kbd> to confirm
         (or click the desired note).</li>
       <li>Alternatively copy a note from the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;and
-        paste it after the <code>=</code> sign (without the <code>@</code> , in this
-        case).</li>
+        paste it after the <code spellcheck="false">=</code> sign (without the
+        <code
+        spellcheck="false">@</code> , in this case).</li>
     </ul>
   </li>
   <li>To create an inheritable relation, follow the same steps as previously
-    described but instead of <code>~myRelation</code> write <code>~myRelation(inheritable)</code>.</li>
+    described but instead of <code spellcheck="false">~myRelation</code> write
+    <code
+    spellcheck="false">~myRelation(inheritable)</code>.</li>
 </ul>
 <h2>Predefined relations</h2>
 <p>These relations are supported and used internally by Trilium.</p>
 <aside
 class="admonition tip">
-  <p>Some relations presented here end with a <code>*</code>. That means that
-    there are multiple relations with the same prefix, consult the specific
-    page linked in the description of that relation for more information.</p>
+  <p>Some relations presented here end with a <code spellcheck="false">*</code>.
+    That means that there are multiple relations with the same prefix, consult
+    the specific page linked in the description of that relation for more information.</p>
   </aside>
   <table>
     <thead>
@@ -70,20 +73,20 @@ class="admonition tip">
     </thead>
     <tbody>
       <tr>
-        <td><code>runOn*</code>
+        <td><code spellcheck="false">runOn*</code>
         </td>
         <td>See&nbsp;<a class="reference-link" href="#root/_help_GPERMystNGTB">Events</a>
         </td>
       </tr>
       <tr>
-        <td><code>template</code>
+        <td><code spellcheck="false">template</code>
         </td>
         <td>note's attributes will be inherited even without a parent-child relationship,
           note's content and subtree will be added to instance notes if empty. See
           documentation for details.</td>
       </tr>
       <tr>
-        <td><code>inherit</code>
+        <td><code spellcheck="false">inherit</code>
         </td>
         <td>note's attributes will be inherited even without a parent-child relationship.
           See&nbsp;<a class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>&nbsp;for
@@ -91,50 +94,53 @@ class="admonition tip">
           the documentation.</td>
       </tr>
       <tr>
-        <td><code>renderNote</code>
+        <td><code spellcheck="false">renderNote</code>
         </td>
         <td>notes of type&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>&nbsp;will
           be rendered using a code note (HTML or script) and it is necessary to point
           using this relation to which note should be rendered</td>
       </tr>
       <tr>
-        <td><code>widget_relation</code>
+        <td><code spellcheck="false">widget_relation</code>
         </td>
         <td>target of this relation will be executed and rendered as a widget in the
           sidebar</td>
       </tr>
       <tr>
-        <td><code>shareCss</code>
+        <td><code spellcheck="false">shareCss</code>
         </td>
         <td>CSS note which will be injected into the share page. CSS note must be
-          in the shared sub-tree as well. Consider using <code>share_hidden_from_tree</code> and <code>share_omit_default_css</code> as
-          well.</td>
+          in the shared sub-tree as well. Consider using <code spellcheck="false">share_hidden_from_tree</code> and
+          <code
+          spellcheck="false">share_omit_default_css</code>as well.</td>
       </tr>
       <tr>
-        <td><code>shareJs</code>
+        <td><code spellcheck="false">shareJs</code>
         </td>
         <td>JavaScript note which will be injected into the share page. JS note must
-          be in the shared sub-tree as well. Consider using <code>share_hidden_from_tree</code>.</td>
+          be in the shared sub-tree as well. Consider using <code spellcheck="false">share_hidden_from_tree</code>.</td>
       </tr>
       <tr>
-        <td><code>shareHtml</code>
+        <td><code spellcheck="false">shareHtml</code>
         </td>
         <td>HTML note which will be injected into the share page at locations specified
-          by the <code>shareHtmlLocation</code> label. HTML note must be in the shared
-          sub-tree as well. Consider using <code>share_hidden_from_tree</code>.</td>
+          by the <code spellcheck="false">shareHtmlLocation</code> label. HTML note
+          must be in the shared sub-tree as well. Consider using <code spellcheck="false">share_hidden_from_tree</code>.</td>
       </tr>
       <tr>
-        <td><code>shareTemplate</code>
+        <td><code spellcheck="false">shareTemplate</code>
         </td>
         <td>Embedded JavaScript note that will be used as the template for displaying
-          the shared note. Falls back to the default template. Consider using <code>share_hidden_from_tree</code>.</td>
+          the shared note. Falls back to the default template. Consider using
+          <code
+          spellcheck="false">share_hidden_from_tree</code>.</td>
       </tr>
       <tr>
-        <td><code>shareFavicon</code>
+        <td><code spellcheck="false">shareFavicon</code>
         </td>
         <td>Favicon note to be set in the shared page. Typically you want to set it
           to share root and make it inheritable. Favicon note must be in the shared
-          sub-tree as well. Consider using <code>share_hidden_from_tree</code>.</td>
+          sub-tree as well. Consider using <code spellcheck="false">share_hidden_from_tree</code>.</td>
       </tr>
     </tbody>
   </table>

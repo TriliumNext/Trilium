@@ -13,7 +13,7 @@ Here's an example child hierarchy using <a class="reference-link" href="../../.
     *   _Render note with subcomponents_  
         Type: JSX
         
-        ```javascript
+        ```jsx
         export default function() {
             return (
                 <MyComponent />        
@@ -24,7 +24,7 @@ Here's an example child hierarchy using <a class="reference-link" href="../../.
         *   _MyComponent_  
             Type: Code / JSX
             
-            ```javascript
+            ```jsx
             export default function MyComponent() {
                 return <p>Hi</p>;
             }
@@ -36,7 +36,7 @@ To export multiple components, use the `export` keyword next to each of the func
 
 Here's how a sub-note called `MyComponents` would look like:
 
-```javascript
+```jsx
 export function MyFirstComponent() {
     return <p>First</p>;
 }
@@ -48,7 +48,7 @@ export function MySecondComponent() {
 
 Then in its parent note:
 
-```javascript
+```jsx
 const { MyFirstComponent, MySecondComponent } = MyComponents;
 
 export default function() {
@@ -63,7 +63,7 @@ export default function() {
 
 Alternatively, it's also possible to use the components directly without assigning them to a `const` first:
 
-```javascript
+```jsx
 <MyComponents.MyFirstComponent />
 <MyComponents.MySecondComponent />
 ```

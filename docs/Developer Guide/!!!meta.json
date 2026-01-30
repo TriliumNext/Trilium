@@ -1,6 +1,6 @@
 {
     "formatVersion": 2,
-    "appVersion": "0.100.0",
+    "appVersion": "0.101.3",
     "files": [
         {
             "isClone": false,
@@ -2838,6 +2838,40 @@
                             ],
                             "format": "markdown",
                             "dataFileName": "Themes.md",
+                            "attachments": []
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "YTAxJMA3uWwn",
+                            "notePath": [
+                                "jdjRLhLV3TtI",
+                                "yeqU0zo0ZQ83",
+                                "YTAxJMA3uWwn"
+                            ],
+                            "title": "Web Clipper",
+                            "notePosition": 210,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "web-clipper",
+                                    "isInheritable": false,
+                                    "position": 20
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bx-paperclip",
+                                    "isInheritable": false,
+                                    "position": 30
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Web Clipper.md",
                             "attachments": []
                         }
                     ]

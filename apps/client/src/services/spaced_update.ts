@@ -1,4 +1,9 @@
+import type { SaveState } from "../components/note_context";
+import { getErrorMessage } from "./utils";
+
 type Callback = () => Promise<void> | void;
+
+export type StateCallback = (state: SaveState) => void;
 
 export default class SpacedUpdate {
     private updater: Callback;
@@ -6,17 +11,20 @@ export default class SpacedUpdate {
     private changed: boolean;
     private updateInterval: number;
     private changeForbidden?: boolean;
+    private stateCallback?: StateCallback;
 
-    constructor(updater: Callback, updateInterval = 1000) {
+    constructor(updater: Callback, updateInterval = 1000, stateCallback?: StateCallback) {
         this.updater = updater;
         this.lastUpdated = Date.now();
         this.changed = false;
         this.updateInterval = updateInterval;
+        this.stateCallback = stateCallback;
     }
 
     scheduleUpdate() {
         if (!this.changeForbidden) {
             this.changed = true;
+            this.stateCallback?.("unsaved");
             setTimeout(() => this.triggerUpdate());
         }
     }
@@ -26,10 +34,13 @@ export default class SpacedUpdate {
             this.changed = false; // optimistic...
 
             try {
+                this.stateCallback?.("saving");
                 await this.updater();
+                this.stateCallback?.("saved");
             } catch (e) {
                 this.changed = true;
-
+                this.stateCallback?.("error");
+                logError(getErrorMessage(e));
                 throw e;
             }
         }
@@ -59,15 +70,22 @@ export default class SpacedUpdate {
         this.updateInterval = interval;
     }
 
-    triggerUpdate() {
+    async triggerUpdate() {
         if (!this.changed) {
             return;
         }
 
         if (Date.now() - this.lastUpdated > this.updateInterval) {
-            this.updater();
+            this.stateCallback?.("saving");
+            try {
+                await this.updater();
+                this.stateCallback?.("saved");
+                this.changed = false;
+            } catch (e) {
+                this.stateCallback?.("error");
+                logError(getErrorMessage(e));
+            }
             this.lastUpdated = Date.now();
-            this.changed = false;
         } else {
             // update isn't triggered but changes are still pending, so we need to schedule another check
             this.scheduleUpdate();

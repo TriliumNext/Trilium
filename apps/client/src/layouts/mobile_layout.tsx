@@ -1,35 +1,35 @@
-import { applyModals } from "./layout_commons.js";
-import { MOBILE_FLOATING_BUTTONS } from "../widgets/FloatingButtonsDefinitions.jsx";
-import { useNoteContext } from "../widgets/react/hooks.jsx";
-import CloseZenModeButton from "../widgets/close_zen_button.js";
-import FilePropertiesTab from "../widgets/ribbon/FilePropertiesTab.jsx";
-import FlexContainer from "../widgets/containers/flex_container.js";
-import FloatingButtons from "../widgets/FloatingButtons.jsx";
+import type AppContext from "../components/app_context.js";
 import GlobalMenuWidget from "../widgets/buttons/global_menu.js";
-import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
+import CloseZenModeButton from "../widgets/close_zen_button.js";
 import NoteList from "../widgets/collections/NoteList.jsx";
-import NoteTitleWidget from "../widgets/note_title.js";
 import ContentHeader from "../widgets/containers/content_header.js";
+import FlexContainer from "../widgets/containers/flex_container.js";
+import RootContainer from "../widgets/containers/root_container.js";
+import ScrollingContainer from "../widgets/containers/scrolling_container.js";
+import SplitNoteContainer from "../widgets/containers/split_note_container.js";
+import FloatingButtons from "../widgets/FloatingButtons.jsx";
+import { MOBILE_FLOATING_BUTTONS } from "../widgets/FloatingButtonsDefinitions.jsx";
+import LauncherContainer from "../widgets/launch_bar/LauncherContainer.jsx";
+import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
+import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
+import SidebarContainer from "../widgets/mobile_widgets/sidebar_container.js";
+import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button.jsx";
+import NoteTitleWidget from "../widgets/note_title.js";
 import NoteTreeWidget from "../widgets/note_tree.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
+import NoteDetail from "../widgets/NoteDetail.jsx";
+import PromotedAttributes from "../widgets/PromotedAttributes.jsx";
 import QuickSearchWidget from "../widgets/quick_search.js";
+import { useNoteContext } from "../widgets/react/hooks.jsx";
 import ReadOnlyNoteInfoBar from "../widgets/ReadOnlyNoteInfoBar.jsx";
-import RootContainer from "../widgets/containers/root_container.js";
-import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
-import ScrollingContainer from "../widgets/containers/scrolling_container.js";
+import StandaloneRibbonAdapter from "../widgets/ribbon/components/StandaloneRibbonAdapter.jsx";
+import FilePropertiesTab from "../widgets/ribbon/FilePropertiesTab.jsx";
 import SearchDefinitionTab from "../widgets/ribbon/SearchDefinitionTab.jsx";
 import SearchResult from "../widgets/search_result.jsx";
 import SharedInfoWidget from "../widgets/shared_info.js";
-import SidebarContainer from "../widgets/mobile_widgets/sidebar_container.js";
-import StandaloneRibbonAdapter from "../widgets/ribbon/components/StandaloneRibbonAdapter.jsx";
 import TabRowWidget from "../widgets/tab_row.js";
-import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button.jsx";
-import type AppContext from "../components/app_context.js";
-import NoteDetail from "../widgets/NoteDetail.jsx";
 import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.jsx";
-import PromotedAttributes from "../widgets/PromotedAttributes.jsx";
-import SplitNoteContainer from "../widgets/containers/split_note_container.js";
-import LauncherContainer from "../widgets/launch_bar/LauncherContainer.jsx";
+import { applyModals } from "./layout_commons.js";
 
 const MOBILE_CSS = `
 <style>
@@ -194,11 +194,11 @@ export default class MobileLayout {
 }
 
 function FilePropertiesWrapper() {
-    const { note } = useNoteContext();
+    const { note, ntxId } = useNoteContext();
 
     return (
         <div>
-            {note?.type === "file" && <FilePropertiesTab note={note} />}
+            {note?.type === "file" && <FilePropertiesTab note={note} ntxId={ntxId} />}
         </div>
     );
 }

@@ -4,6 +4,10 @@
     height: 100%;
     user-select: none;
     padding: 0 5px 0 10px;
+
+    .tabulator-tableholder {
+        height: unset !important;
+    }
 }
 
 .table-view-container {

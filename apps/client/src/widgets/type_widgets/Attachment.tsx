@@ -195,7 +195,11 @@ function AttachmentInfo({ attachment, isFullDetail }: { attachment: FAttachment,
                         ) : (attachment.title)}
                     </h4>
                     <div className="attachment-details">
-                        {t("attachment_detail_2.role_and_size", { role: attachment.role, size: utils.formatSize(attachment.contentLength) })}
+                        {t("attachment_detail_2.role_and_size", {
+                            role: attachment.role,
+                            size: utils.formatSize(attachment.contentLength),
+                            mimeType: attachment.mime
+                        })}
                     </div>
                     <div style="flex: 1 1;" />
                 </div>

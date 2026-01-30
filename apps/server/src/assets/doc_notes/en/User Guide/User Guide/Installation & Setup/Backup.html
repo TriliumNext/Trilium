@@ -9,7 +9,8 @@
 </ul>
 <p>So in total you'll have at most 4 backups from different points in time
   which should protect you from various problems. These backups are stored
-  by default in <code>backup</code> directory placed in the <a href="#root/_help_tAassRL4RSQL">data directory</a>.</p>
+  by default in <code spellcheck="false">backup</code> directory placed in
+  the <a href="#root/_help_tAassRL4RSQL">data directory</a>.</p>
 <p>This is only very basic backup solution, and you're encouraged to add
   some better backup solution - e.g. backing up the&nbsp;<a class="reference-link"
   href="#root/_help_wX4HbRucYSDD">Database</a>&nbsp;to cloud / different computer
@@ -24,18 +25,22 @@
     way is to open "About Trilium Notes" from "Menu" in upper left corner and
     looking at "data directory"
     <ul>
-      <li>I'll refer to <code>~/trilium-data</code> as data directory from now on</li>
+      <li>I'll refer to <code spellcheck="false">~/trilium-data</code> as data directory
+        from now on</li>
     </ul>
   </li>
-  <li>find <code>~/trilium-data/backup/backup-weekly.db</code> - this is the&nbsp;
-    <a
-    class="reference-link" href="#root/_help_wX4HbRucYSDD">Database</a>&nbsp;backup</li>
+  <li>find <code spellcheck="false">~/trilium-data/backup/backup-weekly.db</code> -
+    this is the&nbsp;<a class="reference-link" href="#root/_help_wX4HbRucYSDD">Database</a>&nbsp;backup</li>
   <li>at this point stop/kill Trilium</li>
-  <li>delete <code>~/trilium-data/document.db</code>, <code>~/trilium-data/document.db-wal</code> and <code>~/trilium-data/document.db-shm</code> (latter
-    two files are auto generated)</li>
-  <li>copy and rename this <code>~/trilium-data/backup/backup-weekly.db</code> to <code>~/trilium-data/document.db</code>
+  <li>delete <code spellcheck="false">~/trilium-data/document.db</code>,
+    <code
+    spellcheck="false">~/trilium-data/document.db-wal</code>and <code spellcheck="false">~/trilium-data/document.db-shm</code> (latter
+      two files are auto generated)</li>
+  <li>copy and rename this <code spellcheck="false">~/trilium-data/backup/backup-weekly.db</code> to
+    <code
+    spellcheck="false">~/trilium-data/document.db</code>
   </li>
-  <li>make sure that the file is writable, e.g. with <code>chmod 600 document.db</code>
+  <li>make sure that the file is writable, e.g. with <code spellcheck="false">chmod 600 document.db</code>
   </li>
   <li>start Trilium again</li>
 </ul>
@@ -43,11 +48,13 @@
   of the sync cluster, otherwise older version (restored backup) of the document
   will be detected and synced to the newer version.</p>
 <h2>Disabling backup</h2>
-<p>Although this is not recommended, it is possible to disable backup in <code>config.ini</code> in
-  the <a href="#root/_help_tAassRL4RSQL">data directory</a>:</p><pre><code class="language-text-x-trilium-auto">[General]
+<p>Although this is not recommended, it is possible to disable backup in
+  <code
+  spellcheck="false">config.ini</code>in the <a href="#root/_help_tAassRL4RSQL">data directory</a>:</p><pre><code class="language-text-x-trilium-auto">[General]
 ... some other configs
 # set to true to disable backups (e.g. because of limited space on server)
 noBackup=true</code></pre>
 <p>You can also review the <a href="#root/_help_Gzjqa934BdH4">configuration</a> file
-  to provide all <code>config.ini</code> values as environment variables instead.</p>
+  to provide all <code spellcheck="false">config.ini</code> values as environment
+  variables instead.</p>
 <p>See <a href="https://github.com/TriliumNext/Trilium/blob/master/config-sample.ini">sample config</a>.</p>

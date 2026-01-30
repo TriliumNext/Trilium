@@ -1,33 +1,33 @@
-import sql from "./sql.js";
-import optionService from "./options.js";
+import { type AttachmentRow, type AttributeRow, type BranchRow, dayjs, type NoteRow } from "@triliumnext/commons";
+import fs from "fs";
+import html2plaintext from "html2plaintext";
+import { t } from "i18next";
+import path from "path";
+import url from "url";
+
+import becca from "../becca/becca.js";
+import BAttachment from "../becca/entities/battachment.js";
+import BAttribute from "../becca/entities/battribute.js";
+import BBranch from "../becca/entities/bbranch.js";
+import BNote from "../becca/entities/bnote.js";
+import ValidationError from "../errors/validation_error.js";
+import cls from "../services/cls.js";
+import log from "../services/log.js";
+import protectedSessionService from "../services/protected_session.js";
+import { newEntityId, quoteRegex, toMap, unescapeHtml } from "../services/utils.js";
 import dateUtils from "./date_utils.js";
 import entityChangesService from "./entity_changes.js";
 import eventService from "./events.js";
-import cls from "../services/cls.js";
-import protectedSessionService from "../services/protected_session.js";
-import log from "../services/log.js";
-import { newEntityId, unescapeHtml, quoteRegex, toMap } from "../services/utils.js";
-import revisionService from "./revisions.js";
-import request from "./request.js";
-import path from "path";
-import url from "url";
-import becca from "../becca/becca.js";
-import BBranch from "../becca/entities/bbranch.js";
-import BNote from "../becca/entities/bnote.js";
-import BAttribute from "../becca/entities/battribute.js";
-import BAttachment from "../becca/entities/battachment.js";
-import { dayjs } from "@triliumnext/commons";
 import htmlSanitizer from "./html_sanitizer.js";
-import ValidationError from "../errors/validation_error.js";
-import noteTypesService from "./note_types.js";
-import fs from "fs";
-import ws from "./ws.js";
-import html2plaintext from "html2plaintext";
-import type { AttachmentRow, AttributeRow, BranchRow, NoteRow } from "@triliumnext/commons";
-import type TaskContext from "./task_context.js";
-import type { NoteParams } from "./note-interface.js";
 import imageService from "./image.js";
-import { t } from "i18next";
+import noteTypesService from "./note_types.js";
+import type { NoteParams } from "./note-interface.js";
+import optionService from "./options.js";
+import request from "./request.js";
+import revisionService from "./revisions.js";
+import sql from "./sql.js";
+import type TaskContext from "./task_context.js";
+import ws from "./ws.js";
 
 interface FoundLink {
     name: "imageLink" | "internalLink" | "includeNoteLink" | "relationMapLink";
@@ -47,14 +47,13 @@ function getNewNotePosition(parentNote: BNote) {
             .reduce((min, note) => Math.min(min, note?.notePosition || 0), 0);
 
         return minNotePos - 10;
-    } else {
-        const maxNotePos = parentNote
-            .getChildBranches()
-            .filter((branch) => branch?.noteId !== "_hidden") // has "always last" note position
-            .reduce((max, note) => Math.max(max, note?.notePosition || 0), 0);
-
-        return maxNotePos + 10;
     }
+    const maxNotePos = parentNote
+        .getChildBranches()
+        .filter((branch) => branch?.noteId !== "_hidden") // has "always last" note position
+        .reduce((max, note) => Math.max(max, note?.notePosition || 0), 0);
+
+    return maxNotePos + 10;
 }
 
 function triggerNoteTitleChanged(note: BNote) {
@@ -88,7 +87,7 @@ function copyChildAttributes(parentNote: BNote, childNote: BNote) {
             new BAttribute({
                 noteId: childNote.noteId,
                 type: attr.type,
-                name: name,
+                name,
                 value: attr.value,
                 position: attr.position,
                 isInheritable: attr.isInheritable
@@ -222,6 +221,14 @@ function createNewNote(params: NoteParams): {
                 utcDateCreated: params.utcDateCreated
             }).save();
 
+            // Create attributes atomically.
+            for (const attribute of params.attributes || []) {
+                new BAttribute({
+                    ...attribute,
+                    noteId: note.noteId
+                }).save();
+            }
+
             note.setContent(params.content);
 
             branch = new BBranch({
@@ -268,7 +275,7 @@ function createNewNote(params: NoteParams): {
         eventService.emit(eventService.ENTITY_CHANGED, { entityName: "blobs", entity: note });
         eventService.emit(eventService.ENTITY_CREATED, { entityName: "branches", entity: branch });
         eventService.emit(eventService.ENTITY_CHANGED, { entityName: "branches", entity: branch });
-        eventService.emit(eventService.CHILD_NOTE_CREATED, { childNote: note, parentNote: parentNote });
+        eventService.emit(eventService.CHILD_NOTE_CREATED, { childNote: note, parentNote });
 
         log.info(`Created new note '${note.noteId}', branch '${branch.branchId}' of type '${note.type}', mime '${note.mime}'`);
 
@@ -316,9 +323,8 @@ function createNewNoteWithTarget(target: "into" | "after" | "before", targetBran
         entityChangesService.putNoteReorderingEntityChange(params.parentNoteId);
 
         return retObject;
-    } else {
-        throw new Error(`Unknown target '${target}'`);
     }
+    throw new Error(`Unknown target '${target}'`);
 }
 
 function protectNoteRecursively(note: BNote, protect: boolean, includingSubTree: boolean, taskContext: TaskContext<"protectNotes">) {
@@ -496,7 +502,7 @@ function findRelationMapLinks(content: string, foundLinks: FoundLink[]) {
             });
         }
     } catch (e: any) {
-        log.error("Could not scan for relation map links: " + e.message);
+        log.error(`Could not scan for relation map links: ${e.message}`);
     }
 }
 
@@ -664,8 +670,8 @@ function saveAttachments(note: BNote, content: string) {
 
         const attachment = note.saveAttachment({
             role: "file",
-            mime: mime,
-            title: title,
+            mime,
+            title,
             content: buffer
         });
 
@@ -961,7 +967,7 @@ function duplicateSubtree(origNoteId: string, newParentNoteId: string) {
     const duplicateNoteSuffix = t("notes.duplicate-note-suffix");
 
     if (!res.note.title.endsWith(duplicateNoteSuffix) && !res.note.title.startsWith(duplicateNoteSuffix)) {
-        res.note.title = t("notes.duplicate-note-title", { noteTitle: res.note.title, duplicateNoteSuffix: duplicateNoteSuffix });
+        res.note.title = t("notes.duplicate-note-title", { noteTitle: res.note.title, duplicateNoteSuffix });
     }
 
     res.note.save();
@@ -1058,13 +1064,12 @@ function duplicateSubtreeInner(origNote: BNote, origBranch: BBranch | null | und
             note: existingNote,
             branch: createDuplicatedBranch()
         };
-    } else {
-        return {
-            // order here is important, note needs to be created first to not mess up the becca
-            note: createDuplicatedNote(),
-            branch: createDuplicatedBranch()
-        };
     }
+    return {
+        // order here is important, note needs to be created first to not mess up the becca
+        note: createDuplicatedNote(),
+        branch: createDuplicatedBranch()
+    };
 }
 
 function getNoteIdMapping(origNote: BNote) {

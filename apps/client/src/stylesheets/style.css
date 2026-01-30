@@ -1,3 +1,5 @@
+@import "./boxicons-compat.css";
+
 @font-face {
     font-family: Montserrat;
     src: url(../fonts/Montserrat-Light.ttf);
@@ -1128,11 +1130,6 @@ a.external:not(.no-arrow):after, a[href^="http://"]:not(.no-arrow):after, a[href
     border-color: var(--main-border-color) !important;
 }
 
-.bx-empty {
-    width: 1em;
-    display: inline-block;
-}
-
 .modal-header {
     padding: 0.5rem 1rem 0.5rem 1rem !important; /* make modal header padding slightly smaller */
 }
@@ -1799,7 +1796,7 @@ button.close:hover {
     display: none;
 }
 
-.reference-link .bx {
+.reference-link .tn-icon {
     position: relative;
     top: 1px;
     margin-inline-end: 3px;
@@ -2418,7 +2415,7 @@ footer.webview-footer button {
     gap: 5px;
 }
 
-.right-pane-tab .tab-title .bx {
+.right-pane-tab .tab-title .tn-icon {
     font-size: 1.1em;
 }
 
@@ -2546,16 +2543,9 @@ footer.webview-footer button {
     inset-inline-end: 10px;
 }
 
-.content-floating-buttons button.bx {
+.content-floating-buttons button.tn-icon {
     font-size: 130%;
     padding: 1px 10px 1px 10px;
-}
-
-/* Customized icons */
-
-.bx-tn-toc::before {
-    content: "\ec24";
-    transform: rotate(180deg);
 }
 
 /* CK Editor */

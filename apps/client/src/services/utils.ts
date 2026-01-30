@@ -187,13 +187,15 @@ export function formatSize(size: number | null | undefined) {
         return "";
     }
 
-    size = Math.max(Math.round(size / 1024), 1);
-
-    if (size < 1024) {
-        return `${size} KiB`;
+    if (size === 0) {
+        return "0 B";
     }
-    return `${Math.round(size / 102.4) / 10} MiB`;
 
+    const k = 1024;
+    const sizes = ["B", "KiB", "MiB", "GiB"];
+    const i = Math.floor(Math.log(size) / Math.log(k));
+
+    return `${Math.round((size / Math.pow(k, i)) * 100) / 100} ${sizes[i]}`;
 }
 
 function toObject<T, R>(array: T[], fn: (arg0: T) => [key: string, value: R]) {

@@ -223,7 +223,6 @@
     "backlink_other": ""
   },
   "note_icon": {
-    "category": "الفئة:",
     "search": "بحث:",
     "change_note_icon": "تغيير ايقونة الملاحظة",
     "reset-default": "اعادة تعيين الى الايقونة الافتراضية"
@@ -485,7 +484,6 @@
     "delete_button": "حذف",
     "download_button": "تنزيل",
     "restore_button": "أستعادة",
-    "preview": "معاينة:",
     "note_revisions": "مراجعات الملاحظة",
     "diff_on": "عرض الفروقات",
     "diff_off": "عرض المحتوى",

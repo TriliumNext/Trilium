@@ -1,18 +1,19 @@
-"use strict";
+
 
 import chardet from "chardet";
-import stripBom from "strip-bom";
 import crypto from "crypto";
-import { generator } from "rand-token";
-import unescape from "unescape";
 import escape from "escape-html";
-import sanitize from "sanitize-filename";
-import mimeTypes from "mime-types";
-import path from "path";
-import type NoteMeta from "./meta/note_meta.js";
-import log from "./log.js";
 import { t } from "i18next";
+import mimeTypes from "mime-types";
 import { release as osRelease } from "os";
+import path from "path";
+import { generator } from "rand-token";
+import sanitize from "sanitize-filename";
+import stripBom from "strip-bom";
+import unescape from "unescape";
+
+import log from "./log.js";
+import type NoteMeta from "./meta/note_meta.js";
 
 const osVersion = osRelease().split('.').map(Number);
 
@@ -204,7 +205,7 @@ export function formatDownloadTitle(fileName: string, type: string | null, mime:
     return `${fileNameBase}${getExtension()}`;
 }
 
-export function removeTextFileExtension(filePath: string) {
+export function removeFileExtension(filePath: string) {
     const extension = path.extname(filePath).toLowerCase();
 
     switch (extension) {
@@ -216,6 +217,7 @@ export function removeTextFileExtension(filePath: string) {
         case ".excalidraw":
         case ".mermaid":
         case ".mmd":
+        case ".pdf":
             return filePath.substring(0, filePath.length - extension.length);
         default:
             return filePath;
@@ -226,7 +228,7 @@ export function getNoteTitle(filePath: string, replaceUnderscoresWithSpaces: boo
     const trimmedNoteMeta = noteMeta?.title?.trim();
     if (trimmedNoteMeta) return trimmedNoteMeta;
 
-    const basename = path.basename(removeTextFileExtension(filePath));
+    const basename = path.basename(removeFileExtension(filePath));
     return replaceUnderscoresWithSpaces ? basename.replace(/_/g, " ").trim() : basename;
 }
 
@@ -467,28 +469,28 @@ export function normalizeCustomHandlerPattern(pattern: string | null | undefined
 
         // If already ends with slash, create both versions
         if (basePattern.endsWith('/')) {
-            const withoutSlash = basePattern.slice(0, -1) + '$';
+            const withoutSlash = `${basePattern.slice(0, -1)  }$`;
             const withSlash = pattern;
             return [withoutSlash, withSlash];
-        } else {
-            // Add optional trailing slash
-            const withSlash = basePattern + '/?$';
-            return [withSlash];
         }
+        // Add optional trailing slash
+        const withSlash = `${basePattern  }/?$`;
+        return [withSlash];
+
     }
 
     // For patterns without $, add both versions
     if (pattern.endsWith('/')) {
         const withoutSlash = pattern.slice(0, -1);
         return [withoutSlash, pattern];
-    } else {
-        const withSlash = pattern + '/';
-        return [pattern, withSlash];
     }
+    const withSlash = `${pattern  }/`;
+    return [pattern, withSlash];
+
 }
 
 export function formatUtcTime(time: string) {
-    return time.replace("T", " ").substring(0, 19)
+    return time.replace("T", " ").substring(0, 19);
 }
 
 // TODO: Deduplicate with client utils
@@ -501,9 +503,9 @@ export function formatSize(size: number | null | undefined) {
 
     if (size < 1024) {
         return `${size} KiB`;
-    } else {
-        return `${Math.round(size / 102.4) / 10} MiB`;
     }
+    return `${Math.round(size / 102.4) / 10} MiB`;
+
 }
 
 function slugify(text: string) {
@@ -544,7 +546,7 @@ export default {
     randomSecureToken,
     randomString,
     removeDiacritic,
-    removeTextFileExtension,
+    removeFileExtension,
     replaceAll,
     safeExtractMessageAndStackFromError,
     sanitizeSqlIdentifier,

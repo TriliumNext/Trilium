@@ -1,0 +1,10454 @@
+{
+  "icons": {
+    "bx-child": {
+      "glyph": "",
+      "terms": [
+        "child"
+      ]
+    },
+    "bxs-balloon": {
+      "glyph": "",
+      "terms": [
+        "balloon"
+      ]
+    },
+    "bxs-coffee-bean": {
+      "glyph": "",
+      "terms": [
+        "coffee-bean"
+      ]
+    },
+    "bxs-pear": {
+      "glyph": "",
+      "terms": [
+        "pear"
+      ]
+    },
+    "bxs-sushi": {
+      "glyph": "",
+      "terms": [
+        "sushi"
+      ]
+    },
+    "bx-sushi": {
+      "glyph": "",
+      "terms": [
+        "sushi"
+      ]
+    },
+    "bxs-shower": {
+      "glyph": "",
+      "terms": [
+        "shower"
+      ]
+    },
+    "bx-shower": {
+      "glyph": "",
+      "terms": [
+        "shower"
+      ]
+    },
+    "bxl-typescript": {
+      "glyph": "",
+      "terms": [
+        "typescript"
+      ]
+    },
+    "bxl-graphql": {
+      "glyph": "",
+      "terms": [
+        "graphql"
+      ]
+    },
+    "bx-rfid": {
+      "glyph": "",
+      "terms": [
+        "rfid"
+      ]
+    },
+    "bxs-universal-access": {
+      "glyph": "",
+      "terms": [
+        "universal-access"
+      ]
+    },
+    "bx-universal-access": {
+      "glyph": "",
+      "terms": [
+        "universal-access"
+      ]
+    },
+    "bxs-castle": {
+      "glyph": "",
+      "terms": [
+        "castle",
+        "fort",
+        "secure"
+      ]
+    },
+    "bxs-shield-minus": {
+      "glyph": "",
+      "terms": [
+        "shield-minus"
+      ]
+    },
+    "bx-shield-minus": {
+      "glyph": "",
+      "terms": [
+        "shield-minus"
+      ]
+    },
+    "bxs-shield-plus": {
+      "glyph": "",
+      "terms": [
+        "shield-plus"
+      ]
+    },
+    "bx-shield-plus": {
+      "glyph": "",
+      "terms": [
+        "shield-plus"
+      ]
+    },
+    "bx-vertical-bottom": {
+      "glyph": "",
+      "terms": [
+        "vertical-bottom"
+      ]
+    },
+    "bx-vertical-top": {
+      "glyph": "",
+      "terms": [
+        "vertical-top"
+      ]
+    },
+    "bx-horizontal-right": {
+      "glyph": "",
+      "terms": [
+        "horizontal-right"
+      ]
+    },
+    "bx-horizontal-left": {
+      "glyph": "",
+      "terms": [
+        "horizontal-left"
+      ]
+    },
+    "bxs-objects-vertical-bottom": {
+      "glyph": "",
+      "terms": [
+        "objects-vertical-bottom"
+      ]
+    },
+    "bx-objects-vertical-bottom": {
+      "glyph": "",
+      "terms": [
+        "objects-vertical-bottom"
+      ]
+    },
+    "bxs-objects-vertical-center": {
+      "glyph": "",
+      "terms": [
+        "objects-vertical-center"
+      ]
+    },
+    "bx-objects-vertical-center": {
+      "glyph": "",
+      "terms": [
+        "objects-vertical-center"
+      ]
+    },
+    "bxs-objects-vertical-top": {
+      "glyph": "",
+      "terms": [
+        "objects-vertical-top"
+      ]
+    },
+    "bx-objects-vertical-top": {
+      "glyph": "",
+      "terms": [
+        "objects-vertical-top"
+      ]
+    },
+    "bxs-objects-horizontal-right": {
+      "glyph": "",
+      "terms": [
+        "objects-horizontal-right"
+      ]
+    },
+    "bx-objects-horizontal-right": {
+      "glyph": "",
+      "terms": [
+        "objects-horizontal-right"
+      ]
+    },
+    "bxs-objects-horizontal-center": {
+      "glyph": "",
+      "terms": [
+        "objects-horizontal-center"
+      ]
+    },
+    "bx-objects-horizontal-center": {
+      "glyph": "",
+      "terms": [
+        "objects-horizontal-center"
+      ]
+    },
+    "bxs-objects-horizontal-left": {
+      "glyph": "",
+      "terms": [
+        "objects-horizontal-left"
+      ]
+    },
+    "bx-objects-horizontal-left": {
+      "glyph": "",
+      "terms": [
+        "objects-horizontal-left"
+      ]
+    },
+    "bxs-color": {
+      "glyph": "",
+      "terms": [
+        "color",
+        "palette",
+        "wheel"
+      ]
+    },
+    "bx-color": {
+      "glyph": "",
+      "terms": [
+        "color",
+        "palette",
+        "wheel"
+      ]
+    },
+    "bx-reflect-horizontal": {
+      "glyph": "",
+      "terms": [
+        "reflect-horizontal",
+        "flip"
+      ]
+    },
+    "bx-reflect-vertical": {
+      "glyph": "",
+      "terms": [
+        "reflect-vertical",
+        "flip"
+      ]
+    },
+    "bxl-postgresql": {
+      "glyph": "",
+      "terms": [
+        "postgresql",
+        "database",
+        "db",
+        "sql"
+      ]
+    },
+    "bxl-mongodb": {
+      "glyph": "",
+      "terms": [
+        "mongodb",
+        "database",
+        "db"
+      ]
+    },
+    "bxl-deezer": {
+      "glyph": "",
+      "terms": [
+        "deezer",
+        "music"
+      ]
+    },
+    "bxl-xing": {
+      "glyph": "",
+      "terms": [
+        "xing",
+        "search"
+      ]
+    },
+    "bx-cart-add": {
+      "glyph": "",
+      "terms": [
+        "cart-add",
+        "buy"
+      ]
+    },
+    "bx-cart-download": {
+      "glyph": "",
+      "terms": [
+        "cart-download",
+        "buy"
+      ]
+    },
+    "bx-no-signal": {
+      "glyph": "",
+      "terms": [
+        "no-signal",
+        "network",
+        "connection"
+      ]
+    },
+    "bx-signal-5": {
+      "glyph": "",
+      "terms": [
+        "signal-5",
+        "network",
+        "connection"
+      ]
+    },
+    "bx-signal-4": {
+      "glyph": "",
+      "terms": [
+        "signal-4",
+        "network",
+        "connection"
+      ]
+    },
+    "bx-signal-3": {
+      "glyph": "",
+      "terms": [
+        "signal-3",
+        "network",
+        "connection"
+      ]
+    },
+    "bx-signal-2": {
+      "glyph": "",
+      "terms": [
+        "signal-2",
+        "network",
+        "connection"
+      ]
+    },
+    "bx-signal-1": {
+      "glyph": "",
+      "terms": [
+        "signal-1",
+        "network",
+        "connection"
+      ]
+    },
+    "bxs-cheese": {
+      "glyph": "",
+      "terms": [
+        "cheese"
+      ]
+    },
+    "bx-cheese": {
+      "glyph": "",
+      "terms": [
+        "cheese"
+      ]
+    },
+    "bxs-hard-hat": {
+      "glyph": "",
+      "terms": [
+        "hard-hat",
+        "construction",
+        "worker",
+        "labour"
+      ]
+    },
+    "bx-hard-hat": {
+      "glyph": "",
+      "terms": [
+        "hard-hat",
+        "construction",
+        "worker",
+        "labour"
+      ]
+    },
+    "bxs-home-alt-2": {
+      "glyph": "",
+      "terms": [
+        "home-alt-2"
+      ]
+    },
+    "bx-home-alt-2": {
+      "glyph": "",
+      "terms": [
+        "home-alt-2"
+      ]
+    },
+    "bxl-meta": {
+      "glyph": "",
+      "terms": [
+        "meta",
+        "facebook",
+        "social media"
+      ]
+    },
+    "bxs-lemon": {
+      "glyph": "",
+      "terms": [
+        "lemon",
+        "lime",
+        "fruit",
+        "vegetable"
+      ]
+    },
+    "bx-lemon": {
+      "glyph": "",
+      "terms": [
+        "lemon",
+        "lime",
+        "fruit",
+        "vegetable"
+      ]
+    },
+    "bxs-cable-car": {
+      "glyph": "",
+      "terms": [
+        "cable-car",
+        "transportation",
+        "hill",
+        "travel"
+      ]
+    },
+    "bx-cable-car": {
+      "glyph": "",
+      "terms": [
+        "cable-car",
+        "transportation",
+        "hill",
+        "travel"
+      ]
+    },
+    "bxs-cricket-ball": {
+      "glyph": "",
+      "terms": [
+        "cricket-ball",
+        "sport"
+      ]
+    },
+    "bx-cricket-ball": {
+      "glyph": "",
+      "terms": [
+        "cricket-ball",
+        "sport"
+      ]
+    },
+    "bxs-tree-alt": {
+      "glyph": "",
+      "terms": [
+        "tree-alt",
+        "forest",
+        "christmas"
+      ]
+    },
+    "bx-male-female": {
+      "glyph": "",
+      "terms": [
+        "male-female"
+      ]
+    },
+    "bxs-invader": {
+      "glyph": "",
+      "terms": [
+        "invader"
+      ]
+    },
+    "bxs-baguette": {
+      "glyph": "",
+      "terms": [
+        "baguette",
+        "bread",
+        "bake",
+        "baking",
+        "food",
+        "nutrition"
+      ]
+    },
+    "bx-baguette": {
+      "glyph": "",
+      "terms": [
+        "baguette",
+        "bread",
+        "bake",
+        "baking",
+        "food",
+        "nutrition"
+      ]
+    },
+    "bx-fork": {
+      "glyph": "",
+      "terms": [
+        "fork",
+        "utensil",
+        "restaurant"
+      ]
+    },
+    "bx-knife": {
+      "glyph": "",
+      "terms": [
+        "knife",
+        "utensil",
+        "restaurant"
+      ]
+    },
+    "bxs-circle-half": {
+      "glyph": "",
+      "terms": [
+        "circle-half"
+      ]
+    },
+    "bx-circle-half": {
+      "glyph": "",
+      "terms": [
+        "circle-half"
+      ]
+    },
+    "bxs-circle-three-quarter": {
+      "glyph": "",
+      "terms": [
+        "circle-three-quarter"
+      ]
+    },
+    "bx-circle-three-quarter": {
+      "glyph": "",
+      "terms": [
+        "circle-three-quarter"
+      ]
+    },
+    "bxs-circle-quarter": {
+      "glyph": "",
+      "terms": [
+        "circle-quarter"
+      ]
+    },
+    "bx-circle-quarter": {
+      "glyph": "",
+      "terms": [
+        "circle-quarter"
+      ]
+    },
+    "bxs-bowl-rice": {
+      "glyph": "",
+      "terms": [
+        "bowl-rice",
+        "food"
+      ]
+    },
+    "bx-bowl-rice": {
+      "glyph": "",
+      "terms": [
+        "bowl-rice",
+        "food"
+      ]
+    },
+    "bxs-bowl-hot": {
+      "glyph": "",
+      "terms": [
+        "bowl-hot",
+        "food",
+        "heat"
+      ]
+    },
+    "bx-bowl-hot": {
+      "glyph": "",
+      "terms": [
+        "bowl-hot",
+        "food",
+        "heat"
+      ]
+    },
+    "bxs-popsicle": {
+      "glyph": "",
+      "terms": [
+        "popsicle",
+        "ice cream",
+        "dessert"
+      ]
+    },
+    "bx-popsicle": {
+      "glyph": "",
+      "terms": [
+        "popsicle",
+        "ice cream",
+        "dessert"
+      ]
+    },
+    "bx-cross": {
+      "glyph": "",
+      "terms": [
+        "cross",
+        "gaming",
+        "crosshair",
+        "aim"
+      ]
+    },
+    "bx-scatter-chart": {
+      "glyph": "",
+      "terms": [
+        "scatter-chart"
+      ]
+    },
+    "bx-money-withdraw": {
+      "glyph": "",
+      "terms": [
+        "money-withdraw",
+        "atm"
+      ]
+    },
+    "bx-candles": {
+      "glyph": "",
+      "terms": [
+        "candles",
+        "trading",
+        "stock"
+      ]
+    },
+    "bx-math": {
+      "glyph": "",
+      "terms": [
+        "math"
+      ]
+    },
+    "bx-party": {
+      "glyph": "",
+      "terms": [
+        "party",
+        "celebration"
+      ]
+    },
+    "bx-leaf": {
+      "glyph": "",
+      "terms": [
+        "leaf",
+        "plant",
+        "crop",
+        "nature"
+      ]
+    },
+    "bx-injection": {
+      "glyph": "",
+      "terms": [
+        "injection",
+        "syringe",
+        "dose"
+      ]
+    },
+    "bx-expand-vertical": {
+      "glyph": "",
+      "terms": [
+        "expand-vertical"
+      ]
+    },
+    "bx-expand-horizontal": {
+      "glyph": "",
+      "terms": [
+        "expand-horizontal"
+      ]
+    },
+    "bx-collapse-vertical": {
+      "glyph": "",
+      "terms": [
+        "collapse-vertical"
+      ]
+    },
+    "bx-collapse-horizontal": {
+      "glyph": "",
+      "terms": [
+        "collapse-horizontal"
+      ]
+    },
+    "bx-collapse-alt": {
+      "glyph": "",
+      "terms": [
+        "collapse-alt"
+      ]
+    },
+    "bxs-party": {
+      "glyph": "",
+      "terms": [
+        "party",
+        "celebration"
+      ]
+    },
+    "bxs-leaf": {
+      "glyph": "",
+      "terms": [
+        "leaf",
+        "plant",
+        "crop",
+        "nature"
+      ]
+    },
+    "bxs-injection": {
+      "glyph": "",
+      "terms": [
+        "injection",
+        "syringe",
+        "dose"
+      ]
+    },
+    "bxs-dog": {
+      "glyph": "",
+      "terms": [
+        "dog",
+        "pet",
+        "canine"
+      ]
+    },
+    "bxs-cat": {
+      "glyph": "",
+      "terms": [
+        "cat",
+        "pet"
+      ]
+    },
+    "bxl-upwork": {
+      "glyph": "",
+      "terms": [
+        "upwork"
+      ]
+    },
+    "bxl-netlify": {
+      "glyph": "",
+      "terms": [
+        "netlify"
+      ]
+    },
+    "bxl-java": {
+      "glyph": "",
+      "terms": [
+        "java"
+      ]
+    },
+    "bxl-heroku": {
+      "glyph": "",
+      "terms": [
+        "heroku"
+      ]
+    },
+    "bxl-go-lang": {
+      "glyph": "",
+      "terms": [
+        "go-lang"
+      ]
+    },
+    "bxl-gmail": {
+      "glyph": "",
+      "terms": [
+        "gmail"
+      ]
+    },
+    "bxl-flask": {
+      "glyph": "",
+      "terms": [
+        "flask"
+      ]
+    },
+    "bxl-99designs": {
+      "glyph": "",
+      "terms": [
+        "99designs"
+      ]
+    },
+    "bxl-venmo": {
+      "glyph": "",
+      "terms": [
+        "venmo"
+      ]
+    },
+    "bx-qr": {
+      "glyph": "",
+      "terms": [
+        "qr"
+      ]
+    },
+    "bx-qr-scan": {
+      "glyph": "",
+      "terms": [
+        "qr-scan"
+      ]
+    },
+    "bxl-docker": {
+      "glyph": "",
+      "terms": [
+        "docker"
+      ]
+    },
+    "bxl-aws": {
+      "glyph": "",
+      "terms": [
+        "aws"
+      ]
+    },
+    "bxs-hand": {
+      "glyph": "",
+      "terms": [
+        "hand",
+        "palm",
+        "stop"
+      ]
+    },
+    "bx-podcast": {
+      "glyph": "",
+      "terms": [
+        "podcast",
+        "audiobook",
+        "radio"
+      ]
+    },
+    "bxs-checkbox-minus": {
+      "glyph": "",
+      "terms": [
+        "checkbox-minus"
+      ]
+    },
+    "bx-checkbox-minus": {
+      "glyph": "",
+      "terms": [
+        "checkbox-minus"
+      ]
+    },
+    "bxs-speaker": {
+      "glyph": "",
+      "terms": [
+        "speaker"
+      ]
+    },
+    "bx-speaker": {
+      "glyph": "",
+      "terms": [
+        "speaker"
+      ]
+    },
+    "bxs-registered": {
+      "glyph": "",
+      "terms": [
+        "registered"
+      ]
+    },
+    "bx-registered": {
+      "glyph": "",
+      "terms": [
+        "registered"
+      ]
+    },
+    "bxs-phone-off": {
+      "glyph": "",
+      "terms": [
+        "phone-off"
+      ]
+    },
+    "bx-phone-off": {
+      "glyph": "",
+      "terms": [
+        "phone-off"
+      ]
+    },
+    "bxl-tiktok": {
+      "glyph": "",
+      "terms": [
+        "tiktok",
+        "social media",
+        "entertainment"
+      ]
+    },
+    "bxl-sketch": {
+      "glyph": "",
+      "terms": [
+        "sketch",
+        "web design"
+      ]
+    },
+    "bxl-steam": {
+      "glyph": "",
+      "terms": [
+        "steam"
+      ]
+    },
+    "bxl-trip-advisor": {
+      "glyph": "",
+      "terms": [
+        "trip-advisor",
+        "travel"
+      ]
+    },
+    "bxl-visual-studio": {
+      "glyph": "",
+      "terms": [
+        "visual-studio"
+      ]
+    },
+    "bxl-unity": {
+      "glyph": "",
+      "terms": [
+        "unity"
+      ]
+    },
+    "bxl-php": {
+      "glyph": "",
+      "terms": [
+        "php"
+      ]
+    },
+    "bxl-discord-alt": {
+      "glyph": "",
+      "terms": [
+        "discord-alt"
+      ]
+    },
+    "bxl-flutter": {
+      "glyph": "",
+      "terms": [
+        "flutter"
+      ]
+    },
+    "bxl-mastodon": {
+      "glyph": "",
+      "terms": [
+        "mastodon"
+      ]
+    },
+    "bxl-tailwind-css": {
+      "glyph": "",
+      "terms": [
+        "tailwind-css"
+      ]
+    },
+    "bx-buildings": {
+      "glyph": "",
+      "terms": [
+        "buildings",
+        "city",
+        "colony",
+        "skyline",
+        "skyscrapers"
+      ]
+    },
+    "bxs-buildings": {
+      "glyph": "",
+      "terms": [
+        "buildings",
+        "city",
+        "colony",
+        "skyline",
+        "skyscrapers"
+      ]
+    },
+    "bx-store-alt": {
+      "glyph": "",
+      "terms": [
+        "store-alt",
+        "shop",
+        "market"
+      ]
+    },
+    "bxs-store-alt": {
+      "glyph": "",
+      "terms": [
+        "store-alt",
+        "shop",
+        "market"
+      ]
+    },
+    "bx-bar-chart-alt-2": {
+      "glyph": "",
+      "terms": [
+        "bar-chart-alt-2"
+      ]
+    },
+    "bxs-bar-chart-alt-2": {
+      "glyph": "",
+      "terms": [
+        "bar-chart-alt-2"
+      ]
+    },
+    "bx-message-dots": {
+      "glyph": "",
+      "terms": [
+        "message-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bxs-message-dots": {
+      "glyph": "",
+      "terms": [
+        "message-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bx-message-rounded-dots": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bxs-message-rounded-dots": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bxs-devices": {
+      "glyph": "",
+      "terms": [
+        "devices",
+        "mobile",
+        "tab"
+      ]
+    },
+    "bx-memory-card": {
+      "glyph": "",
+      "terms": [
+        "memory-card",
+        "sd card",
+        "storage"
+      ]
+    },
+    "bxs-memory-card": {
+      "glyph": "",
+      "terms": [
+        "memory-card",
+        "sd card",
+        "storage"
+      ]
+    },
+    "bx-wallet-alt": {
+      "glyph": "",
+      "terms": [
+        "wallet-alt",
+        "money"
+      ]
+    },
+    "bxs-wallet-alt": {
+      "glyph": "",
+      "terms": [
+        "wallet-alt",
+        "money"
+      ]
+    },
+    "bxs-bank": {
+      "glyph": "",
+      "terms": [
+        "bank",
+        "institution",
+        "money",
+        "safe"
+      ]
+    },
+    "bx-slideshow": {
+      "glyph": "",
+      "terms": [
+        "slideshow",
+        "presentation",
+        "keynote"
+      ]
+    },
+    "bxs-slideshow": {
+      "glyph": "",
+      "terms": [
+        "slideshow",
+        "presentation",
+        "keynote"
+      ]
+    },
+    "bx-message-square": {
+      "glyph": "",
+      "terms": [
+        "message-square"
+      ]
+    },
+    "bx-message-square-dots": {
+      "glyph": "",
+      "terms": [
+        "message-square-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bxs-message-square": {
+      "glyph": "",
+      "terms": [
+        "message-square"
+      ]
+    },
+    "bxs-message-square-dots": {
+      "glyph": "",
+      "terms": [
+        "message-square-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bx-book-content": {
+      "glyph": "",
+      "terms": [
+        "book-content"
+      ]
+    },
+    "bxs-book-content": {
+      "glyph": "",
+      "terms": [
+        "book-content"
+      ]
+    },
+    "bx-chat": {
+      "glyph": "",
+      "terms": [
+        "chat",
+        "discussion",
+        "talk",
+        "comments",
+        "messages"
+      ]
+    },
+    "bxs-chat": {
+      "glyph": "",
+      "terms": [
+        "chat",
+        "discussion",
+        "talk",
+        "comments",
+        "messages"
+      ]
+    },
+    "bx-edit-alt": {
+      "glyph": "",
+      "terms": [
+        "edit-alt",
+        "writing",
+        "note",
+        "pencil"
+      ]
+    },
+    "bxs-edit-alt": {
+      "glyph": "",
+      "terms": [
+        "edit-alt",
+        "writing",
+        "note",
+        "pencil"
+      ]
+    },
+    "bx-mouse-alt": {
+      "glyph": "",
+      "terms": [
+        "mouse-alt"
+      ]
+    },
+    "bxs-mouse-alt": {
+      "glyph": "",
+      "terms": [
+        "mouse-alt"
+      ]
+    },
+    "bx-bug-alt": {
+      "glyph": "",
+      "terms": [
+        "bug-alt",
+        "error",
+        "warning"
+      ]
+    },
+    "bxs-bug-alt": {
+      "glyph": "",
+      "terms": [
+        "bug-alt",
+        "error",
+        "warning"
+      ]
+    },
+    "bx-notepad": {
+      "glyph": "",
+      "terms": [
+        "notepad"
+      ]
+    },
+    "bxs-notepad": {
+      "glyph": "",
+      "terms": [
+        "notepad"
+      ]
+    },
+    "bx-video-recording": {
+      "glyph": "",
+      "terms": [
+        "video-recording"
+      ]
+    },
+    "bxs-video-recording": {
+      "glyph": "",
+      "terms": [
+        "video-recording"
+      ]
+    },
+    "bx-shape-square": {
+      "glyph": "",
+      "terms": [
+        "shape-square"
+      ]
+    },
+    "bx-shape-triangle": {
+      "glyph": "",
+      "terms": [
+        "shape-triangle"
+      ]
+    },
+    "bxs-direction-left": {
+      "glyph": "",
+      "terms": [
+        "direction-left"
+      ]
+    },
+    "bx-ghost": {
+      "glyph": "",
+      "terms": [
+        "ghost",
+        "spooky",
+        "horror",
+        "scary"
+      ]
+    },
+    "bxs-ghost": {
+      "glyph": "",
+      "terms": [
+        "ghost",
+        "spooky",
+        "horror",
+        "scary"
+      ]
+    },
+    "bx-mail-send": {
+      "glyph": "",
+      "terms": [
+        "mail-send"
+      ]
+    },
+    "bx-code-alt": {
+      "glyph": "",
+      "terms": [
+        "code-alt"
+      ]
+    },
+    "bx-grid": {
+      "glyph": "",
+      "terms": [
+        "grid"
+      ]
+    },
+    "bxs-quote-single-left": {
+      "glyph": "",
+      "terms": [
+        "quote-single-left"
+      ]
+    },
+    "bxs-quote-single-right": {
+      "glyph": "",
+      "terms": [
+        "quote-single-right"
+      ]
+    },
+    "bx-user-pin": {
+      "glyph": "",
+      "terms": [
+        "user-pin"
+      ]
+    },
+    "bxs-user-pin": {
+      "glyph": "",
+      "terms": [
+        "user-pin"
+      ]
+    },
+    "bx-run": {
+      "glyph": "",
+      "terms": [
+        "run"
+      ]
+    },
+    "bx-copy-alt": {
+      "glyph": "",
+      "terms": [
+        "copy-alt"
+      ]
+    },
+    "bxs-copy-alt": {
+      "glyph": "",
+      "terms": [
+        "copy-alt"
+      ]
+    },
+    "bx-transfer-alt": {
+      "glyph": "",
+      "terms": [
+        "transfer-alt"
+      ]
+    },
+    "bxs-file-doc": {
+      "glyph": "",
+      "terms": [
+        "file-doc"
+      ]
+    },
+    "bxs-file-html": {
+      "glyph": "",
+      "terms": [
+        "file-html"
+      ]
+    },
+    "bxs-comment-detail": {
+      "glyph": "",
+      "terms": [
+        "comment-detail"
+      ]
+    },
+    "bxs-comment-add": {
+      "glyph": "",
+      "terms": [
+        "comment-add",
+        "chat",
+        "message",
+        "new",
+        "plus"
+      ]
+    },
+    "bxs-file-css": {
+      "glyph": "",
+      "terms": [
+        "file-css"
+      ]
+    },
+    "bxs-file-js": {
+      "glyph": "",
+      "terms": [
+        "file-js"
+      ]
+    },
+    "bxs-file-json": {
+      "glyph": "",
+      "terms": [
+        "file-json"
+      ]
+    },
+    "bxs-file-md": {
+      "glyph": "",
+      "terms": [
+        "file-md"
+      ]
+    },
+    "bxs-file-txt": {
+      "glyph": "",
+      "terms": [
+        "file-txt"
+      ]
+    },
+    "bxs-file-png": {
+      "glyph": "",
+      "terms": [
+        "file-png"
+      ]
+    },
+    "bxs-file-jpg": {
+      "glyph": "",
+      "terms": [
+        "file-jpg"
+      ]
+    },
+    "bxs-file-gif": {
+      "glyph": "",
+      "terms": [
+        "file-gif"
+      ]
+    },
+    "bxs-analyse": {
+      "glyph": "",
+      "terms": [
+        "analyse"
+      ]
+    },
+    "bx-book-open": {
+      "glyph": "",
+      "terms": [
+        "book-open"
+      ]
+    },
+    "bxs-plane-take-off": {
+      "glyph": "",
+      "terms": [
+        "plane-take-off",
+        "flight",
+        "fly"
+      ]
+    },
+    "bxs-plane-land": {
+      "glyph": "",
+      "terms": [
+        "plane-land",
+        "flight",
+        "fly",
+        "landing"
+      ]
+    },
+    "bxs-parking": {
+      "glyph": "",
+      "terms": [
+        "parking"
+      ]
+    },
+    "bxs-id-card": {
+      "glyph": "",
+      "terms": [
+        "id-card"
+      ]
+    },
+    "bxs-adjust-alt": {
+      "glyph": "",
+      "terms": [
+        "adjust-alt"
+      ]
+    },
+    "bx-landscape": {
+      "glyph": "",
+      "terms": [
+        "landscape"
+      ]
+    },
+    "bxs-landscape": {
+      "glyph": "",
+      "terms": [
+        "landscape"
+      ]
+    },
+    "bxs-traffic": {
+      "glyph": "",
+      "terms": [
+        "traffic"
+      ]
+    },
+    "bx-comment": {
+      "glyph": "",
+      "terms": [
+        "comment"
+      ]
+    },
+    "bxs-comment": {
+      "glyph": "",
+      "terms": [
+        "comment"
+      ]
+    },
+    "bx-comment-dots": {
+      "glyph": "",
+      "terms": [
+        "comment-dots",
+        "loading",
+        "message",
+        "chat"
+      ]
+    },
+    "bxs-comment-dots": {
+      "glyph": "",
+      "terms": [
+        "comment-dots",
+        "loading",
+        "message",
+        "chat"
+      ]
+    },
+    "bxs-wine": {
+      "glyph": "",
+      "terms": [
+        "wine"
+      ]
+    },
+    "bx-pyramid": {
+      "glyph": "",
+      "terms": [
+        "pyramid"
+      ]
+    },
+    "bxs-pyramid": {
+      "glyph": "",
+      "terms": [
+        "pyramid"
+      ]
+    },
+    "bx-cylinder": {
+      "glyph": "",
+      "terms": [
+        "cylinder"
+      ]
+    },
+    "bxs-cylinder": {
+      "glyph": "",
+      "terms": [
+        "cylinder"
+      ]
+    },
+    "bxs-graduation": {
+      "glyph": "",
+      "terms": [
+        "graduation",
+        "scholar",
+        "college"
+      ]
+    },
+    "bx-lock-alt": {
+      "glyph": "",
+      "terms": [
+        "lock-alt"
+      ]
+    },
+    "bxs-lock-alt": {
+      "glyph": "",
+      "terms": [
+        "lock-alt"
+      ]
+    },
+    "bx-lock-open-alt": {
+      "glyph": "",
+      "terms": [
+        "lock-open-alt"
+      ]
+    },
+    "bxs-lock-open-alt": {
+      "glyph": "",
+      "terms": [
+        "lock-open-alt"
+      ]
+    },
+    "bxs-hourglass-top": {
+      "glyph": "",
+      "terms": [
+        "hourglass-top"
+      ]
+    },
+    "bxs-hourglass-bottom": {
+      "glyph": "",
+      "terms": [
+        "hourglass-bottom"
+      ]
+    },
+    "bx-left-arrow-alt": {
+      "glyph": "",
+      "terms": [
+        "left-arrow-alt"
+      ]
+    },
+    "bx-right-arrow-alt": {
+      "glyph": "",
+      "terms": [
+        "right-arrow-alt"
+      ]
+    },
+    "bx-up-arrow-alt": {
+      "glyph": "",
+      "terms": [
+        "up-arrow-alt"
+      ]
+    },
+    "bx-down-arrow-alt": {
+      "glyph": "",
+      "terms": [
+        "down-arrow-alt"
+      ]
+    },
+    "bx-shape-circle": {
+      "glyph": "",
+      "terms": [
+        "shape-circle"
+      ]
+    },
+    "bx-cycling": {
+      "glyph": "",
+      "terms": [
+        "cycling"
+      ]
+    },
+    "bx-dna": {
+      "glyph": "",
+      "terms": [
+        "dna"
+      ]
+    },
+    "bx-bowling-ball": {
+      "glyph": "",
+      "terms": [
+        "bowling-ball"
+      ]
+    },
+    "bxs-bowling-ball": {
+      "glyph": "",
+      "terms": [
+        "bowling-ball"
+      ]
+    },
+    "bx-search-alt-2": {
+      "glyph": "",
+      "terms": [
+        "search-alt-2",
+        "magnifying glass"
+      ]
+    },
+    "bxs-search-alt-2": {
+      "glyph": "",
+      "terms": [
+        "search-alt-2",
+        "magnifying glass"
+      ]
+    },
+    "bx-plus-medical": {
+      "glyph": "",
+      "terms": [
+        "plus-medical",
+        "hospital",
+        "doctor",
+        "medicine"
+      ]
+    },
+    "bx-street-view": {
+      "glyph": "",
+      "terms": [
+        "street-view"
+      ]
+    },
+    "bx-droplet": {
+      "glyph": "",
+      "terms": [
+        "droplet"
+      ]
+    },
+    "bxs-droplet-half": {
+      "glyph": "",
+      "terms": [
+        "droplet-half"
+      ]
+    },
+    "bx-paint-roll": {
+      "glyph": "",
+      "terms": [
+        "paint-roll"
+      ]
+    },
+    "bxs-paint-roll": {
+      "glyph": "",
+      "terms": [
+        "paint-roll"
+      ]
+    },
+    "bx-shield-alt-2": {
+      "glyph": "",
+      "terms": [
+        "shield-alt-2"
+      ]
+    },
+    "bxs-shield-alt-2": {
+      "glyph": "",
+      "terms": [
+        "shield-alt-2"
+      ]
+    },
+    "bx-error-alt": {
+      "glyph": "",
+      "terms": [
+        "error-alt"
+      ]
+    },
+    "bxs-error-alt": {
+      "glyph": "",
+      "terms": [
+        "error-alt"
+      ]
+    },
+    "bx-square": {
+      "glyph": "",
+      "terms": [
+        "square"
+      ]
+    },
+    "bxs-square": {
+      "glyph": "",
+      "terms": [
+        "square"
+      ]
+    },
+    "bx-square-rounded": {
+      "glyph": "",
+      "terms": [
+        "square-rounded"
+      ]
+    },
+    "bxs-square-rounded": {
+      "glyph": "",
+      "terms": [
+        "square-rounded"
+      ]
+    },
+    "bx-polygon": {
+      "glyph": "",
+      "terms": [
+        "polygon"
+      ]
+    },
+    "bxs-polygon": {
+      "glyph": "",
+      "terms": [
+        "polygon"
+      ]
+    },
+    "bx-cube-alt": {
+      "glyph": "",
+      "terms": [
+        "cube-alt"
+      ]
+    },
+    "bxs-cube-alt": {
+      "glyph": "",
+      "terms": [
+        "cube-alt"
+      ]
+    },
+    "bx-cuboid": {
+      "glyph": "",
+      "terms": [
+        "cuboid"
+      ]
+    },
+    "bxs-cuboid": {
+      "glyph": "",
+      "terms": [
+        "cuboid"
+      ]
+    },
+    "bx-user-voice": {
+      "glyph": "",
+      "terms": [
+        "user-voice"
+      ]
+    },
+    "bxs-user-voice": {
+      "glyph": "",
+      "terms": [
+        "user-voice"
+      ]
+    },
+    "bx-accessibility": {
+      "glyph": "",
+      "terms": [
+        "accessibility",
+        "handicap",
+        "wheelchair",
+        "injury"
+      ]
+    },
+    "bx-building-house": {
+      "glyph": "",
+      "terms": [
+        "building-house"
+      ]
+    },
+    "bxs-building-house": {
+      "glyph": "",
+      "terms": [
+        "building-house"
+      ]
+    },
+    "bx-doughnut-chart": {
+      "glyph": "",
+      "terms": [
+        "doughnut-chart"
+      ]
+    },
+    "bxs-doughnut-chart": {
+      "glyph": "",
+      "terms": [
+        "doughnut-chart"
+      ]
+    },
+    "bxs-circle": {
+      "glyph": "",
+      "terms": [
+        "circle"
+      ]
+    },
+    "bx-log-in-circle": {
+      "glyph": "",
+      "terms": [
+        "log-in-circle"
+      ]
+    },
+    "bxs-log-in-circle": {
+      "glyph": "",
+      "terms": [
+        "log-in-circle"
+      ]
+    },
+    "bx-log-out-circle": {
+      "glyph": "",
+      "terms": [
+        "log-out-circle"
+      ]
+    },
+    "bxs-log-out-circle": {
+      "glyph": "",
+      "terms": [
+        "log-out-circle"
+      ]
+    },
+    "bxs-log-in": {
+      "glyph": "",
+      "terms": [
+        "log-in"
+      ]
+    },
+    "bxs-log-out": {
+      "glyph": "",
+      "terms": [
+        "log-out"
+      ]
+    },
+    "bxs-notification": {
+      "glyph": "",
+      "terms": [
+        "notification"
+      ]
+    },
+    "bxs-notification-off": {
+      "glyph": "",
+      "terms": [
+        "notification-off"
+      ]
+    },
+    "bx-check-square": {
+      "glyph": "",
+      "terms": [
+        "check-square"
+      ]
+    },
+    "bxs-check-square": {
+      "glyph": "",
+      "terms": [
+        "check-square"
+      ]
+    },
+    "bx-message-alt": {
+      "glyph": "",
+      "terms": [
+        "message-alt"
+      ]
+    },
+    "bxs-message-alt": {
+      "glyph": "",
+      "terms": [
+        "message-alt"
+      ]
+    },
+    "bx-message-alt-dots": {
+      "glyph": "",
+      "terms": [
+        "message-alt-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bxs-message-alt-dots": {
+      "glyph": "",
+      "terms": [
+        "message-alt-dots",
+        "loading",
+        "chat",
+        "comment"
+      ]
+    },
+    "bx-no-entry": {
+      "glyph": "",
+      "terms": [
+        "no-entry"
+      ]
+    },
+    "bxs-no-entry": {
+      "glyph": "",
+      "terms": [
+        "no-entry"
+      ]
+    },
+    "bxs-traffic-barrier": {
+      "glyph": "",
+      "terms": [
+        "traffic-barrier"
+      ]
+    },
+    "bxs-component": {
+      "glyph": "",
+      "terms": [
+        "component"
+      ]
+    },
+    "bxs-plane-alt": {
+      "glyph": "",
+      "terms": [
+        "plane-alt",
+        "flight",
+        "fly"
+      ]
+    },
+    "bx-palette": {
+      "glyph": "",
+      "terms": [
+        "palette",
+        "color",
+        "colour",
+        "painting"
+      ]
+    },
+    "bxs-palette": {
+      "glyph": "",
+      "terms": [
+        "palette",
+        "color",
+        "colour",
+        "painting"
+      ]
+    },
+    "bx-basket": {
+      "glyph": "",
+      "terms": [
+        "basket"
+      ]
+    },
+    "bxs-basket": {
+      "glyph": "",
+      "terms": [
+        "basket"
+      ]
+    },
+    "bx-purchase-tag-alt": {
+      "glyph": "",
+      "terms": [
+        "purchase-tag-alt",
+        "price",
+        "cost"
+      ]
+    },
+    "bxs-purchase-tag-alt": {
+      "glyph": "",
+      "terms": [
+        "purchase-tag-alt",
+        "price",
+        "cost"
+      ]
+    },
+    "bx-receipt": {
+      "glyph": "",
+      "terms": [
+        "receipt"
+      ]
+    },
+    "bxs-receipt": {
+      "glyph": "",
+      "terms": [
+        "receipt"
+      ]
+    },
+    "bx-line-chart": {
+      "glyph": "",
+      "terms": [
+        "line-chart"
+      ]
+    },
+    "bx-map-pin": {
+      "glyph": "",
+      "terms": [
+        "map-pin"
+      ]
+    },
+    "bxs-map-pin": {
+      "glyph": "",
+      "terms": [
+        "map-pin"
+      ]
+    },
+    "bx-hive": {
+      "glyph": "",
+      "terms": [
+        "hive"
+      ]
+    },
+    "bx-band-aid": {
+      "glyph": "",
+      "terms": [
+        "band-aid"
+      ]
+    },
+    "bxs-band-aid": {
+      "glyph": "",
+      "terms": [
+        "band-aid"
+      ]
+    },
+    "bx-credit-card-alt": {
+      "glyph": "",
+      "terms": [
+        "credit-card-alt",
+        "finance",
+        "money",
+        "debit"
+      ]
+    },
+    "bxs-credit-card-alt": {
+      "glyph": "",
+      "terms": [
+        "credit-card-alt",
+        "finance",
+        "money",
+        "debit"
+      ]
+    },
+    "bxs-credit-card": {
+      "glyph": "",
+      "terms": [
+        "credit-card",
+        "finance",
+        "money",
+        "debit"
+      ]
+    },
+    "bx-wifi-off": {
+      "glyph": "",
+      "terms": [
+        "wifi-off"
+      ]
+    },
+    "bxs-paint": {
+      "glyph": "",
+      "terms": [
+        "paint"
+      ]
+    },
+    "bx-brightness-half": {
+      "glyph": "",
+      "terms": [
+        "brightness-half"
+      ]
+    },
+    "bxs-brightness-half": {
+      "glyph": "",
+      "terms": [
+        "brightness-half"
+      ]
+    },
+    "bx-brightness": {
+      "glyph": "",
+      "terms": [
+        "brightness"
+      ]
+    },
+    "bxs-brightness": {
+      "glyph": "",
+      "terms": [
+        "brightness"
+      ]
+    },
+    "bx-filter-alt": {
+      "glyph": "",
+      "terms": [
+        "filter-alt"
+      ]
+    },
+    "bx-dialpad-alt": {
+      "glyph": "",
+      "terms": [
+        "dialpad-alt",
+        "keypad"
+      ]
+    },
+    "bx-border-right": {
+      "glyph": "",
+      "terms": [
+        "border-right"
+      ]
+    },
+    "bx-border-left": {
+      "glyph": "",
+      "terms": [
+        "border-left"
+      ]
+    },
+    "bx-border-top": {
+      "glyph": "",
+      "terms": [
+        "border-top"
+      ]
+    },
+    "bx-border-bottom": {
+      "glyph": "",
+      "terms": [
+        "border-bottom"
+      ]
+    },
+    "bx-border-all": {
+      "glyph": "",
+      "terms": [
+        "border-all"
+      ]
+    },
+    "bx-mobile-landscape": {
+      "glyph": "",
+      "terms": [
+        "mobile-landscape"
+      ]
+    },
+    "bx-mobile-vibration": {
+      "glyph": "",
+      "terms": [
+        "mobile-vibration"
+      ]
+    },
+    "bxs-rectangle": {
+      "glyph": "",
+      "terms": [
+        "rectangle"
+      ]
+    },
+    "bxs-right-arrow": {
+      "glyph": "",
+      "terms": [
+        "right-arrow"
+      ]
+    },
+    "bxs-left-arrow": {
+      "glyph": "",
+      "terms": [
+        "left-arrow"
+      ]
+    },
+    "bxs-up-arrow": {
+      "glyph": "",
+      "terms": [
+        "up-arrow"
+      ]
+    },
+    "bxs-down-arrow": {
+      "glyph": "",
+      "terms": [
+        "down-arrow"
+      ]
+    },
+    "bxs-right-top-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "right-top-arrow-circle"
+      ]
+    },
+    "bxs-right-down-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "right-down-arrow-circle"
+      ]
+    },
+    "bxs-left-top-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "left-top-arrow-circle"
+      ]
+    },
+    "bxs-left-down-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "left-down-arrow-circle"
+      ]
+    },
+    "bxs-institution": {
+      "glyph": "",
+      "terms": [
+        "institution"
+      ]
+    },
+    "bxs-school": {
+      "glyph": "",
+      "terms": [
+        "school"
+      ]
+    },
+    "bxs-chalkboard": {
+      "glyph": "",
+      "terms": [
+        "chalkboard",
+        "whiteboard",
+        "teaching"
+      ]
+    },
+    "bxs-skip-previous-circle": {
+      "glyph": "",
+      "terms": [
+        "skip-previous-circle"
+      ]
+    },
+    "bxs-skip-next-circle": {
+      "glyph": "",
+      "terms": [
+        "skip-next-circle"
+      ]
+    },
+    "bxs-data": {
+      "glyph": "",
+      "terms": [
+        "data"
+      ]
+    },
+    "bxs-mobile": {
+      "glyph": "",
+      "terms": [
+        "mobile"
+      ]
+    },
+    "bxs-folder-minus": {
+      "glyph": "",
+      "terms": [
+        "folder-minus",
+        "remove",
+        "delete"
+      ]
+    },
+    "bxs-bell-plus": {
+      "glyph": "",
+      "terms": [
+        "bell-plus",
+        "alert",
+        "notification"
+      ]
+    },
+    "bxs-bell-minus": {
+      "glyph": "",
+      "terms": [
+        "bell-minus",
+        "alert",
+        "notification"
+      ]
+    },
+    "bxs-search": {
+      "glyph": "",
+      "terms": [
+        "search",
+        "magnifying glass"
+      ]
+    },
+    "bxs-zoom-in": {
+      "glyph": "",
+      "terms": [
+        "zoom-in"
+      ]
+    },
+    "bxs-zoom-out": {
+      "glyph": "",
+      "terms": [
+        "zoom-out"
+      ]
+    },
+    "bxs-grid": {
+      "glyph": "",
+      "terms": [
+        "grid"
+      ]
+    },
+    "bxs-user-x": {
+      "glyph": "",
+      "terms": [
+        "user-x"
+      ]
+    },
+    "bxs-user-check": {
+      "glyph": "",
+      "terms": [
+        "user-check"
+      ]
+    },
+    "bxs-compass": {
+      "glyph": "",
+      "terms": [
+        "compass"
+      ]
+    },
+    "bx-gas-pump": {
+      "glyph": "",
+      "terms": [
+        "gas-pump"
+      ]
+    },
+    "bxs-stopwatch": {
+      "glyph": "",
+      "terms": [
+        "stopwatch"
+      ]
+    },
+    "bxs-timer": {
+      "glyph": "",
+      "terms": [
+        "timer"
+      ]
+    },
+    "bxs-time": {
+      "glyph": "",
+      "terms": [
+        "time"
+      ]
+    },
+    "bx-pie-chart-alt-2": {
+      "glyph": "",
+      "terms": [
+        "pie-chart-alt-2"
+      ]
+    },
+    "bxs-pie-chart-alt-2": {
+      "glyph": "",
+      "terms": [
+        "pie-chart-alt-2"
+      ]
+    },
+    "bx-time-five": {
+      "glyph": "",
+      "terms": [
+        "time-five"
+      ]
+    },
+    "bxs-time-five": {
+      "glyph": "",
+      "terms": [
+        "time-five"
+      ]
+    },
+    "bxl-instagram-alt": {
+      "glyph": "",
+      "terms": [
+        "instagram-alt",
+        "social media"
+      ]
+    },
+    "bxs-bookmarks": {
+      "glyph": "",
+      "terms": [
+        "bookmarks"
+      ]
+    },
+    "bxs-bookmark-minus": {
+      "glyph": "",
+      "terms": [
+        "bookmark-minus"
+      ]
+    },
+    "bx-briefcase-alt-2": {
+      "glyph": "",
+      "terms": [
+        "briefcase-alt-2",
+        "work",
+        "travel",
+        "suitcase"
+      ]
+    },
+    "bxs-briefcase-alt-2": {
+      "glyph": "",
+      "terms": [
+        "briefcase-alt-2",
+        "work",
+        "travel",
+        "suitcase"
+      ]
+    },
+    "bx-brush-alt": {
+      "glyph": "",
+      "terms": [
+        "brush-alt"
+      ]
+    },
+    "bxs-calendar": {
+      "glyph": "",
+      "terms": [
+        "calendar"
+      ]
+    },
+    "bxs-calendar-alt": {
+      "glyph": "",
+      "terms": [
+        "calendar-alt"
+      ]
+    },
+    "bxs-calendar-plus": {
+      "glyph": "",
+      "terms": [
+        "calendar-plus"
+      ]
+    },
+    "bxs-calendar-minus": {
+      "glyph": "",
+      "terms": [
+        "calendar-minus"
+      ]
+    },
+    "bxs-calendar-x": {
+      "glyph": "",
+      "terms": [
+        "calendar-x"
+      ]
+    },
+    "bxs-calendar-check": {
+      "glyph": "",
+      "terms": [
+        "calendar-check"
+      ]
+    },
+    "bxs-calendar-event": {
+      "glyph": "",
+      "terms": [
+        "calendar-event"
+      ]
+    },
+    "bx-customize": {
+      "glyph": "",
+      "terms": [
+        "customize"
+      ]
+    },
+    "bxs-customize": {
+      "glyph": "",
+      "terms": [
+        "customize"
+      ]
+    },
+    "bxs-carousel": {
+      "glyph": "",
+      "terms": [
+        "carousel"
+      ]
+    },
+    "bxs-rewind-circle": {
+      "glyph": "",
+      "terms": [
+        "rewind-circle"
+      ]
+    },
+    "bxs-fast-forward-circle": {
+      "glyph": "",
+      "terms": [
+        "fast-forward-circle"
+      ]
+    },
+    "bxs-mobile-vibration": {
+      "glyph": "",
+      "terms": [
+        "mobile-vibration"
+      ]
+    },
+    "bxs-quote-alt-left": {
+      "glyph": "",
+      "terms": [
+        "quote-alt-left"
+      ]
+    },
+    "bxs-quote-alt-right": {
+      "glyph": "",
+      "terms": [
+        "quote-alt-right"
+      ]
+    },
+    "bxs-layout": {
+      "glyph": "",
+      "terms": [
+        "layout"
+      ]
+    },
+    "bx-radio": {
+      "glyph": "",
+      "terms": [
+        "radio"
+      ]
+    },
+    "bx-printer": {
+      "glyph": "",
+      "terms": [
+        "printer"
+      ]
+    },
+    "bx-sort-a-z": {
+      "glyph": "",
+      "terms": [
+        "sort-a-z"
+      ]
+    },
+    "bx-sort-z-a": {
+      "glyph": "",
+      "terms": [
+        "sort-z-a"
+      ]
+    },
+    "bx-conversation": {
+      "glyph": "",
+      "terms": [
+        "conversation",
+        "chat",
+        "discussion"
+      ]
+    },
+    "bxs-brush-alt": {
+      "glyph": "",
+      "terms": [
+        "brush-alt"
+      ]
+    },
+    "bx-exit": {
+      "glyph": "",
+      "terms": [
+        "exit"
+      ]
+    },
+    "bxs-exit": {
+      "glyph": "",
+      "terms": [
+        "exit"
+      ]
+    },
+    "bx-extension": {
+      "glyph": "",
+      "terms": [
+        "extension"
+      ]
+    },
+    "bxs-extension": {
+      "glyph": "",
+      "terms": [
+        "extension"
+      ]
+    },
+    "bxs-file-find": {
+      "glyph": "",
+      "terms": [
+        "file-find",
+        "search"
+      ]
+    },
+    "bx-face": {
+      "glyph": "",
+      "terms": [
+        "face"
+      ]
+    },
+    "bxs-face": {
+      "glyph": "",
+      "terms": [
+        "face"
+      ]
+    },
+    "bx-file-find": {
+      "glyph": "",
+      "terms": [
+        "file-find",
+        "search"
+      ]
+    },
+    "bx-label": {
+      "glyph": "",
+      "terms": [
+        "label"
+      ]
+    },
+    "bxs-label": {
+      "glyph": "",
+      "terms": [
+        "label"
+      ]
+    },
+    "bx-check-shield": {
+      "glyph": "",
+      "terms": [
+        "check-shield"
+      ]
+    },
+    "bxs-check-shield": {
+      "glyph": "",
+      "terms": [
+        "check-shield"
+      ]
+    },
+    "bx-border-radius": {
+      "glyph": "",
+      "terms": [
+        "border-radius"
+      ]
+    },
+    "bx-add-to-queue": {
+      "glyph": "",
+      "terms": [
+        "add-to-queue"
+      ]
+    },
+    "bxs-add-to-queue": {
+      "glyph": "",
+      "terms": [
+        "add-to-queue"
+      ]
+    },
+    "bx-archive-in": {
+      "glyph": "",
+      "terms": [
+        "archive-in"
+      ]
+    },
+    "bxs-archive-in": {
+      "glyph": "",
+      "terms": [
+        "archive-in"
+      ]
+    },
+    "bx-archive-out": {
+      "glyph": "",
+      "terms": [
+        "archive-out"
+      ]
+    },
+    "bxs-archive-out": {
+      "glyph": "",
+      "terms": [
+        "archive-out"
+      ]
+    },
+    "bx-alarm-add": {
+      "glyph": "",
+      "terms": [
+        "alarm-add"
+      ]
+    },
+    "bxs-alarm-add": {
+      "glyph": "",
+      "terms": [
+        "alarm-add"
+      ]
+    },
+    "bx-space-bar": {
+      "glyph": "",
+      "terms": [
+        "space-bar"
+      ]
+    },
+    "bx-image-alt": {
+      "glyph": "",
+      "terms": [
+        "image-alt"
+      ]
+    },
+    "bx-image-add": {
+      "glyph": "",
+      "terms": [
+        "image-add"
+      ]
+    },
+    "bxs-image-add": {
+      "glyph": "",
+      "terms": [
+        "image-add"
+      ]
+    },
+    "bx-fridge": {
+      "glyph": "",
+      "terms": [
+        "fridge"
+      ]
+    },
+    "bxs-fridge": {
+      "glyph": "",
+      "terms": [
+        "fridge"
+      ]
+    },
+    "bx-dish": {
+      "glyph": "",
+      "terms": [
+        "dish"
+      ]
+    },
+    "bxs-dish": {
+      "glyph": "",
+      "terms": [
+        "dish"
+      ]
+    },
+    "bx-spa": {
+      "glyph": "",
+      "terms": [
+        "spa"
+      ]
+    },
+    "bxs-spa": {
+      "glyph": "",
+      "terms": [
+        "spa"
+      ]
+    },
+    "bx-cake": {
+      "glyph": "",
+      "terms": [
+        "cake"
+      ]
+    },
+    "bxs-cake": {
+      "glyph": "",
+      "terms": [
+        "cake"
+      ]
+    },
+    "bxs-city": {
+      "glyph": "",
+      "terms": [
+        "city"
+      ]
+    },
+    "bx-bolt-circle": {
+      "glyph": "",
+      "terms": [
+        "bolt-circle"
+      ]
+    },
+    "bxs-bolt-circle": {
+      "glyph": "",
+      "terms": [
+        "bolt-circle"
+      ]
+    },
+    "bx-tone": {
+      "glyph": "",
+      "terms": [
+        "tone"
+      ]
+    },
+    "bx-bitcoin": {
+      "glyph": "",
+      "terms": [
+        "bitcoin"
+      ]
+    },
+    "bx-lira": {
+      "glyph": "",
+      "terms": [
+        "lira"
+      ]
+    },
+    "bx-ruble": {
+      "glyph": "",
+      "terms": [
+        "ruble"
+      ]
+    },
+    "bxs-caret-up-circle": {
+      "glyph": "",
+      "terms": [
+        "caret-up-circle"
+      ]
+    },
+    "bxs-caret-down-circle": {
+      "glyph": "",
+      "terms": [
+        "caret-down-circle"
+      ]
+    },
+    "bxs-caret-left-circle": {
+      "glyph": "",
+      "terms": [
+        "caret-left-circle"
+      ]
+    },
+    "bxs-caret-right-circle": {
+      "glyph": "",
+      "terms": [
+        "caret-right-circle"
+      ]
+    },
+    "bx-rupee": {
+      "glyph": "",
+      "terms": [
+        "rupee"
+      ]
+    },
+    "bx-euro": {
+      "glyph": "",
+      "terms": [
+        "euro"
+      ]
+    },
+    "bx-pound": {
+      "glyph": "",
+      "terms": [
+        "pound"
+      ]
+    },
+    "bx-won": {
+      "glyph": "",
+      "terms": [
+        "won"
+      ]
+    },
+    "bx-yen": {
+      "glyph": "",
+      "terms": [
+        "yen"
+      ]
+    },
+    "bx-shekel": {
+      "glyph": "",
+      "terms": [
+        "shekel"
+      ]
+    },
+    "bxl-facebook-circle": {
+      "glyph": "",
+      "terms": [
+        "facebook-circle",
+        "social media"
+      ]
+    },
+    "bxl-jquery": {
+      "glyph": "",
+      "terms": [
+        "jquery"
+      ]
+    },
+    "bxl-imdb": {
+      "glyph": "",
+      "terms": [
+        "imdb"
+      ]
+    },
+    "bxl-pinterest-alt": {
+      "glyph": "",
+      "terms": [
+        "pinterest-alt"
+      ]
+    },
+    "bxs-tone": {
+      "glyph": "",
+      "terms": [
+        "tone"
+      ]
+    },
+    "bx-health": {
+      "glyph": "",
+      "terms": [
+        "health"
+      ]
+    },
+    "bxs-baby-carriage": {
+      "glyph": "",
+      "terms": [
+        "baby-carriage",
+        "child",
+        "pregnancy",
+        "birth"
+      ]
+    },
+    "bx-clinic": {
+      "glyph": "",
+      "terms": [
+        "clinic"
+      ]
+    },
+    "bxs-hand-up": {
+      "glyph": "",
+      "terms": [
+        "hand-up",
+        "finger",
+        "point",
+        "direction"
+      ]
+    },
+    "bxs-hand-right": {
+      "glyph": "",
+      "terms": [
+        "hand-right",
+        "finger",
+        "point",
+        "direction"
+      ]
+    },
+    "bxs-hand-down": {
+      "glyph": "",
+      "terms": [
+        "hand-down",
+        "finger",
+        "point",
+        "direction"
+      ]
+    },
+    "bxs-hand-left": {
+      "glyph": "",
+      "terms": [
+        "hand-left",
+        "finger",
+        "point",
+        "direction"
+      ]
+    },
+    "bx-male": {
+      "glyph": "",
+      "terms": [
+        "male"
+      ]
+    },
+    "bx-female": {
+      "glyph": "",
+      "terms": [
+        "female"
+      ]
+    },
+    "bx-male-sign": {
+      "glyph": "",
+      "terms": [
+        "male-sign"
+      ]
+    },
+    "bx-female-sign": {
+      "glyph": "",
+      "terms": [
+        "female-sign"
+      ]
+    },
+    "bxs-clinic": {
+      "glyph": "",
+      "terms": [
+        "clinic"
+      ]
+    },
+    "bxs-offer": {
+      "glyph": "",
+      "terms": [
+        "offer"
+      ]
+    },
+    "bx-food-tag": {
+      "glyph": "",
+      "terms": [
+        "food-tag"
+      ]
+    },
+    "bx-food-menu": {
+      "glyph": "",
+      "terms": [
+        "food-menu"
+      ]
+    },
+    "bxs-food-menu": {
+      "glyph": "",
+      "terms": [
+        "food-menu"
+      ]
+    },
+    "bxs-camera-plus": {
+      "glyph": "",
+      "terms": [
+        "camera-plus"
+      ]
+    },
+    "bxs-business": {
+      "glyph": "",
+      "terms": [
+        "business",
+        "skyline",
+        "skyscraper",
+        "city"
+      ]
+    },
+    "bx-meh-alt": {
+      "glyph": "",
+      "terms": [
+        "meh-alt"
+      ]
+    },
+    "bx-wink-tongue": {
+      "glyph": "",
+      "terms": [
+        "wink-tongue"
+      ]
+    },
+    "bx-happy-alt": {
+      "glyph": "",
+      "terms": [
+        "happy-alt"
+      ]
+    },
+    "bx-cool": {
+      "glyph": "",
+      "terms": [
+        "cool"
+      ]
+    },
+    "bx-tired": {
+      "glyph": "",
+      "terms": [
+        "tired"
+      ]
+    },
+    "bx-smile": {
+      "glyph": "",
+      "terms": [
+        "smile"
+      ]
+    },
+    "bx-angry": {
+      "glyph": "",
+      "terms": [
+        "angry"
+      ]
+    },
+    "bx-happy-heart-eyes": {
+      "glyph": "",
+      "terms": [
+        "happy-heart-eyes"
+      ]
+    },
+    "bx-dizzy": {
+      "glyph": "",
+      "terms": [
+        "dizzy"
+      ]
+    },
+    "bx-wink-smile": {
+      "glyph": "",
+      "terms": [
+        "wink-smile"
+      ]
+    },
+    "bx-confused": {
+      "glyph": "",
+      "terms": [
+        "confused"
+      ]
+    },
+    "bx-sleepy": {
+      "glyph": "",
+      "terms": [
+        "sleepy"
+      ]
+    },
+    "bx-shocked": {
+      "glyph": "",
+      "terms": [
+        "shocked"
+      ]
+    },
+    "bx-happy-beaming": {
+      "glyph": "",
+      "terms": [
+        "happy-beaming"
+      ]
+    },
+    "bx-meh-blank": {
+      "glyph": "",
+      "terms": [
+        "meh-blank"
+      ]
+    },
+    "bx-laugh": {
+      "glyph": "",
+      "terms": [
+        "laugh"
+      ]
+    },
+    "bx-upside-down": {
+      "glyph": "",
+      "terms": [
+        "upside-down"
+      ]
+    },
+    "bxs-angry": {
+      "glyph": "",
+      "terms": [
+        "angry"
+      ]
+    },
+    "bxs-happy-heart-eyes": {
+      "glyph": "",
+      "terms": [
+        "happy-heart-eyes"
+      ]
+    },
+    "bxs-dizzy": {
+      "glyph": "",
+      "terms": [
+        "dizzy"
+      ]
+    },
+    "bxs-wink-smile": {
+      "glyph": "",
+      "terms": [
+        "wink-smile"
+      ]
+    },
+    "bxs-smile": {
+      "glyph": "",
+      "terms": [
+        "smile"
+      ]
+    },
+    "bxs-meh": {
+      "glyph": "",
+      "terms": [
+        "meh"
+      ]
+    },
+    "bxs-meh-alt": {
+      "glyph": "",
+      "terms": [
+        "meh-alt"
+      ]
+    },
+    "bxs-confused": {
+      "glyph": "",
+      "terms": [
+        "confused"
+      ]
+    },
+    "bxs-sleepy": {
+      "glyph": "",
+      "terms": [
+        "sleepy"
+      ]
+    },
+    "bxs-sad": {
+      "glyph": "",
+      "terms": [
+        "sad"
+      ]
+    },
+    "bxs-happy": {
+      "glyph": "",
+      "terms": [
+        "happy"
+      ]
+    },
+    "bxs-shocked": {
+      "glyph": "",
+      "terms": [
+        "shocked"
+      ]
+    },
+    "bxs-happy-beaming": {
+      "glyph": "",
+      "terms": [
+        "happy-beaming"
+      ]
+    },
+    "bxs-tired": {
+      "glyph": "",
+      "terms": [
+        "tired"
+      ]
+    },
+    "bxs-cool": {
+      "glyph": "",
+      "terms": [
+        "cool"
+      ]
+    },
+    "bxs-meh-blank": {
+      "glyph": "",
+      "terms": [
+        "meh-blank"
+      ]
+    },
+    "bxs-laugh": {
+      "glyph": "",
+      "terms": [
+        "laugh"
+      ]
+    },
+    "bxs-happy-alt": {
+      "glyph": "",
+      "terms": [
+        "happy-alt"
+      ]
+    },
+    "bxs-upside-down": {
+      "glyph": "",
+      "terms": [
+        "upside-down"
+      ]
+    },
+    "bxs-wink-tongue": {
+      "glyph": "",
+      "terms": [
+        "wink-tongue"
+      ]
+    },
+    "bxl-adobe": {
+      "glyph": "",
+      "terms": [
+        "adobe"
+      ]
+    },
+    "bxl-algolia": {
+      "glyph": "",
+      "terms": [
+        "algolia"
+      ]
+    },
+    "bxl-audible": {
+      "glyph": "",
+      "terms": [
+        "audible"
+      ]
+    },
+    "bxl-figma": {
+      "glyph": "",
+      "terms": [
+        "figma"
+      ]
+    },
+    "bxl-etsy": {
+      "glyph": "",
+      "terms": [
+        "etsy"
+      ]
+    },
+    "bxl-gitlab": {
+      "glyph": "",
+      "terms": [
+        "gitlab"
+      ]
+    },
+    "bxl-patreon": {
+      "glyph": "",
+      "terms": [
+        "patreon"
+      ]
+    },
+    "bxl-redbubble": {
+      "glyph": "",
+      "terms": [
+        "redbubble"
+      ]
+    },
+    "bx-diamond": {
+      "glyph": "",
+      "terms": [
+        "diamond"
+      ]
+    },
+    "bxs-comment-error": {
+      "glyph": "",
+      "terms": [
+        "comment-error"
+      ]
+    },
+    "bxs-vial": {
+      "glyph": "",
+      "terms": [
+        "vial"
+      ]
+    },
+    "bx-align-left": {
+      "glyph": "",
+      "terms": [
+        "align-left"
+      ]
+    },
+    "bx-align-middle": {
+      "glyph": "",
+      "terms": [
+        "align-middle"
+      ]
+    },
+    "bx-align-right": {
+      "glyph": "",
+      "terms": [
+        "align-right"
+      ]
+    },
+    "bx-arrow-back": {
+      "glyph": "",
+      "terms": [
+        "arrow-back"
+      ]
+    },
+    "bx-bell-minus": {
+      "glyph": "",
+      "terms": [
+        "bell-minus",
+        "alert",
+        "notification"
+      ]
+    },
+    "bx-bell-off": {
+      "glyph": "",
+      "terms": [
+        "bell-off",
+        "alert",
+        "notification",
+        "silent"
+      ]
+    },
+    "bx-bell-plus": {
+      "glyph": "",
+      "terms": [
+        "bell-plus",
+        "alert",
+        "notification"
+      ]
+    },
+    "bx-bell": {
+      "glyph": "",
+      "terms": [
+        "bell",
+        "alert",
+        "notification"
+      ]
+    },
+    "bx-bookmark": {
+      "glyph": "",
+      "terms": [
+        "bookmark"
+      ]
+    },
+    "bx-bookmarks": {
+      "glyph": "",
+      "terms": [
+        "bookmarks"
+      ]
+    },
+    "bx-bullseye": {
+      "glyph": "",
+      "terms": [
+        "bullseye"
+      ]
+    },
+    "bx-camera-off": {
+      "glyph": "",
+      "terms": [
+        "camera-off"
+      ]
+    },
+    "bx-camera": {
+      "glyph": "",
+      "terms": [
+        "camera"
+      ]
+    },
+    "bx-captions": {
+      "glyph": "",
+      "terms": [
+        "captions",
+        "subtitles",
+        "subs",
+        "cc"
+      ]
+    },
+    "bx-checkbox-checked": {
+      "glyph": "",
+      "terms": [
+        "checkbox-checked"
+      ]
+    },
+    "bx-checkbox": {
+      "glyph": "",
+      "terms": [
+        "checkbox"
+      ]
+    },
+    "bx-checkbox-square": {
+      "glyph": "",
+      "terms": [
+        "checkbox-square"
+      ]
+    },
+    "bx-chevron-down": {
+      "glyph": "",
+      "terms": [
+        "chevron-down",
+        "arrow"
+      ]
+    },
+    "bx-chevron-up": {
+      "glyph": "",
+      "terms": [
+        "chevron-up",
+        "arrow"
+      ]
+    },
+    "bx-chevron-left": {
+      "glyph": "",
+      "terms": [
+        "chevron-left",
+        "arrow"
+      ]
+    },
+    "bx-chevron-right": {
+      "glyph": "",
+      "terms": [
+        "chevron-right",
+        "arrow"
+      ]
+    },
+    "bx-chevrons-down": {
+      "glyph": "",
+      "terms": [
+        "chevrons-down",
+        "arrow"
+      ]
+    },
+    "bx-chevrons-up": {
+      "glyph": "",
+      "terms": [
+        "chevrons-up",
+        "arrow"
+      ]
+    },
+    "bx-chevrons-right": {
+      "glyph": "",
+      "terms": [
+        "chevrons-right",
+        "arrow"
+      ]
+    },
+    "bx-chevrons-left": {
+      "glyph": "",
+      "terms": [
+        "chevrons-left",
+        "arrow"
+      ]
+    },
+    "bx-clipboard": {
+      "glyph": "",
+      "terms": [
+        "clipboard"
+      ]
+    },
+    "bx-code-curly": {
+      "glyph": "",
+      "terms": [
+        "code-curly"
+      ]
+    },
+    "bx-code": {
+      "glyph": "",
+      "terms": [
+        "code"
+      ]
+    },
+    "bx-coffee": {
+      "glyph": "",
+      "terms": [
+        "coffee"
+      ]
+    },
+    "bx-copy": {
+      "glyph": "",
+      "terms": [
+        "copy"
+      ]
+    },
+    "bx-copyright": {
+      "glyph": "",
+      "terms": [
+        "copyright"
+      ]
+    },
+    "bx-down-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "down-arrow-circle"
+      ]
+    },
+    "bx-error-circle": {
+      "glyph": "",
+      "terms": [
+        "error-circle"
+      ]
+    },
+    "bx-error": {
+      "glyph": "",
+      "terms": [
+        "error"
+      ]
+    },
+    "bx-exit-fullscreen": {
+      "glyph": "",
+      "terms": [
+        "exit-fullscreen"
+      ]
+    },
+    "bx-fast-forward-circle": {
+      "glyph": "",
+      "terms": [
+        "fast-forward-circle"
+      ]
+    },
+    "bx-fast-forward": {
+      "glyph": "",
+      "terms": [
+        "fast-forward"
+      ]
+    },
+    "bx-first-page": {
+      "glyph": "",
+      "terms": [
+        "first-page"
+      ]
+    },
+    "bx-folder-minus": {
+      "glyph": "",
+      "terms": [
+        "folder-minus",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx-folder-plus": {
+      "glyph": "",
+      "terms": [
+        "folder-plus",
+        "add",
+        "folder add",
+        "new folder"
+      ]
+    },
+    "bx-folder": {
+      "glyph": "",
+      "terms": [
+        "folder"
+      ]
+    },
+    "bx-fullscreen": {
+      "glyph": "",
+      "terms": [
+        "fullscreen"
+      ]
+    },
+    "bx-hide": {
+      "glyph": "",
+      "terms": [
+        "hide"
+      ]
+    },
+    "bx-image": {
+      "glyph": "",
+      "terms": [
+        "image"
+      ]
+    },
+    "bx-info-circle": {
+      "glyph": "",
+      "terms": [
+        "info-circle"
+      ]
+    },
+    "bx-align-justify": {
+      "glyph": "",
+      "terms": [
+        "align-justify"
+      ]
+    },
+    "bx-key": {
+      "glyph": "",
+      "terms": [
+        "key"
+      ]
+    },
+    "bx-last-page": {
+      "glyph": "",
+      "terms": [
+        "last-page"
+      ]
+    },
+    "bx-left-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "left-arrow-circle"
+      ]
+    },
+    "bx-left-down-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "left-down-arrow-circle"
+      ]
+    },
+    "bx-left-indent": {
+      "glyph": "",
+      "terms": [
+        "left-indent"
+      ]
+    },
+    "bx-left-top-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "left-top-arrow-circle"
+      ]
+    },
+    "bx-menu": {
+      "glyph": "",
+      "terms": [
+        "menu"
+      ]
+    },
+    "bx-microphone": {
+      "glyph": "",
+      "terms": [
+        "microphone"
+      ]
+    },
+    "bx-minus-circle": {
+      "glyph": "",
+      "terms": [
+        "minus-circle"
+      ]
+    },
+    "bx-moon": {
+      "glyph": "",
+      "terms": [
+        "moon"
+      ]
+    },
+    "bx-pause-circle": {
+      "glyph": "",
+      "terms": [
+        "pause-circle"
+      ]
+    },
+    "bx-pause": {
+      "glyph": "",
+      "terms": [
+        "pause"
+      ]
+    },
+    "bx-play-circle": {
+      "glyph": "",
+      "terms": [
+        "play-circle"
+      ]
+    },
+    "bx-play": {
+      "glyph": "",
+      "terms": [
+        "play"
+      ]
+    },
+    "bx-plus-circle": {
+      "glyph": "",
+      "terms": [
+        "plus-circle"
+      ]
+    },
+    "bx-question-mark": {
+      "glyph": "",
+      "terms": [
+        "question-mark"
+      ]
+    },
+    "bx-radio-circle-marked": {
+      "glyph": "",
+      "terms": [
+        "radio-circle-marked"
+      ]
+    },
+    "bx-radio-circle": {
+      "glyph": "",
+      "terms": [
+        "radio-circle"
+      ]
+    },
+    "bx-rectangle": {
+      "glyph": "",
+      "terms": [
+        "rectangle"
+      ]
+    },
+    "bx-rewind": {
+      "glyph": "",
+      "terms": [
+        "rewind"
+      ]
+    },
+    "bx-reset": {
+      "glyph": "",
+      "terms": [
+        "reset"
+      ]
+    },
+    "bx-right-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "right-arrow-circle"
+      ]
+    },
+    "bx-right-down-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "right-down-arrow-circle"
+      ]
+    },
+    "bx-right-indent": {
+      "glyph": "",
+      "terms": [
+        "right-indent"
+      ]
+    },
+    "bx-right-top-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "right-top-arrow-circle"
+      ]
+    },
+    "bx-rss": {
+      "glyph": "",
+      "terms": [
+        "rss"
+      ]
+    },
+    "bx-search": {
+      "glyph": "",
+      "terms": [
+        "search",
+        "magnifying glass"
+      ]
+    },
+    "bx-show": {
+      "glyph": "",
+      "terms": [
+        "show"
+      ]
+    },
+    "bx-skip-next": {
+      "glyph": "",
+      "terms": [
+        "skip-next"
+      ]
+    },
+    "bx-skip-previous": {
+      "glyph": "",
+      "terms": [
+        "skip-previous"
+      ]
+    },
+    "bx-stop-circle": {
+      "glyph": "",
+      "terms": [
+        "stop-circle"
+      ]
+    },
+    "bx-stop": {
+      "glyph": "",
+      "terms": [
+        "stop"
+      ]
+    },
+    "bx-stopwatch": {
+      "glyph": "",
+      "terms": [
+        "stopwatch"
+      ]
+    },
+    "bx-sync": {
+      "glyph": "",
+      "terms": [
+        "sync"
+      ]
+    },
+    "bx-time": {
+      "glyph": "",
+      "terms": [
+        "time"
+      ]
+    },
+    "bx-toggle-left": {
+      "glyph": "",
+      "terms": [
+        "toggle-left",
+        "switch"
+      ]
+    },
+    "bx-toggle-right": {
+      "glyph": "",
+      "terms": [
+        "toggle-right",
+        "switch"
+      ]
+    },
+    "bx-trending-down": {
+      "glyph": "",
+      "terms": [
+        "trending-down"
+      ]
+    },
+    "bx-trending-up": {
+      "glyph": "",
+      "terms": [
+        "trending-up"
+      ]
+    },
+    "bx-up-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "up-arrow-circle"
+      ]
+    },
+    "bx-vertical-center": {
+      "glyph": "",
+      "terms": [
+        "vertical-center"
+      ]
+    },
+    "bx-video": {
+      "glyph": "",
+      "terms": [
+        "video"
+      ]
+    },
+    "bx-volume-full": {
+      "glyph": "",
+      "terms": [
+        "volume-full"
+      ]
+    },
+    "bx-volume-low": {
+      "glyph": "",
+      "terms": [
+        "volume-low"
+      ]
+    },
+    "bx-volume-mute": {
+      "glyph": "",
+      "terms": [
+        "volume-mute"
+      ]
+    },
+    "bx-volume": {
+      "glyph": "",
+      "terms": [
+        "volume"
+      ]
+    },
+    "bx-x-circle": {
+      "glyph": "",
+      "terms": [
+        "x-circle"
+      ]
+    },
+    "bx-zoom-in": {
+      "glyph": "",
+      "terms": [
+        "zoom-in"
+      ]
+    },
+    "bx-zoom-out": {
+      "glyph": "",
+      "terms": [
+        "zoom-out"
+      ]
+    },
+    "bx-archive": {
+      "glyph": "",
+      "terms": [
+        "archive"
+      ]
+    },
+    "bx-at": {
+      "glyph": "",
+      "terms": [
+        "at"
+      ]
+    },
+    "bx-bar-chart-alt": {
+      "glyph": "",
+      "terms": [
+        "bar-chart-alt"
+      ]
+    },
+    "bx-bar-chart-square": {
+      "glyph": "",
+      "terms": [
+        "bar-chart-square"
+      ]
+    },
+    "bx-bar-chart": {
+      "glyph": "",
+      "terms": [
+        "bar-chart"
+      ]
+    },
+    "bx-basketball": {
+      "glyph": "",
+      "terms": [
+        "basketball",
+        "nba"
+      ]
+    },
+    "bx-block": {
+      "glyph": "",
+      "terms": [
+        "block"
+      ]
+    },
+    "bx-book-bookmark": {
+      "glyph": "",
+      "terms": [
+        "book-bookmark"
+      ]
+    },
+    "bx-book": {
+      "glyph": "",
+      "terms": [
+        "book"
+      ]
+    },
+    "bx-bookmark-minus": {
+      "glyph": "",
+      "terms": [
+        "bookmark-minus"
+      ]
+    },
+    "bx-bookmark-plus": {
+      "glyph": "",
+      "terms": [
+        "bookmark-plus"
+      ]
+    },
+    "bx-briefcase": {
+      "glyph": "",
+      "terms": [
+        "briefcase",
+        "work",
+        "travel",
+        "suitcase"
+      ]
+    },
+    "bx-broadcast": {
+      "glyph": "",
+      "terms": [
+        "broadcast"
+      ]
+    },
+    "bx-building": {
+      "glyph": "",
+      "terms": [
+        "building"
+      ]
+    },
+    "bx-bug": {
+      "glyph": "",
+      "terms": [
+        "bug",
+        "error",
+        "warning"
+      ]
+    },
+    "bx-bluetooth": {
+      "glyph": "",
+      "terms": [
+        "bluetooth"
+      ]
+    },
+    "bx-bulb": {
+      "glyph": "",
+      "terms": [
+        "bulb"
+      ]
+    },
+    "bx-buoy": {
+      "glyph": "",
+      "terms": [
+        "buoy"
+      ]
+    },
+    "bx-calendar-plus": {
+      "glyph": "",
+      "terms": [
+        "calendar-plus"
+      ]
+    },
+    "bx-calendar-check": {
+      "glyph": "",
+      "terms": [
+        "calendar-check"
+      ]
+    },
+    "bx-calendar-minus": {
+      "glyph": "",
+      "terms": [
+        "calendar-minus"
+      ]
+    },
+    "bx-calendar-x": {
+      "glyph": "",
+      "terms": [
+        "calendar-x"
+      ]
+    },
+    "bx-calendar": {
+      "glyph": "",
+      "terms": [
+        "calendar"
+      ]
+    },
+    "bx-chart": {
+      "glyph": "",
+      "terms": [
+        "chart"
+      ]
+    },
+    "bx-cloud-download": {
+      "glyph": "",
+      "terms": [
+        "cloud-download"
+      ]
+    },
+    "bx-cloud-upload": {
+      "glyph": "",
+      "terms": [
+        "cloud-upload"
+      ]
+    },
+    "bx-cloud": {
+      "glyph": "",
+      "terms": [
+        "cloud"
+      ]
+    },
+    "bx-terminal": {
+      "glyph": "",
+      "terms": [
+        "terminal",
+        "command line"
+      ]
+    },
+    "bx-crosshair": {
+      "glyph": "",
+      "terms": [
+        "crosshair"
+      ]
+    },
+    "bx-compass": {
+      "glyph": "",
+      "terms": [
+        "compass"
+      ]
+    },
+    "bx-data": {
+      "glyph": "",
+      "terms": [
+        "data"
+      ]
+    },
+    "bx-desktop": {
+      "glyph": "",
+      "terms": [
+        "desktop",
+        "monitor",
+        "display"
+      ]
+    },
+    "bx-directions": {
+      "glyph": "",
+      "terms": [
+        "directions"
+      ]
+    },
+    "bx-dollar": {
+      "glyph": "",
+      "terms": [
+        "dollar"
+      ]
+    },
+    "bx-dots-horizontal-rounded": {
+      "glyph": "",
+      "terms": [
+        "dots-horizontal-rounded"
+      ]
+    },
+    "bx-dots-horizontal": {
+      "glyph": "",
+      "terms": [
+        "dots-horizontal"
+      ]
+    },
+    "bx-dots-vertical-rounded": {
+      "glyph": "",
+      "terms": [
+        "dots-vertical-rounded"
+      ]
+    },
+    "bx-dots-vertical": {
+      "glyph": "",
+      "terms": [
+        "dots-vertical"
+      ]
+    },
+    "bx-download": {
+      "glyph": "",
+      "terms": [
+        "download"
+      ]
+    },
+    "bx-envelope": {
+      "glyph": "",
+      "terms": [
+        "envelope",
+        "letter",
+        "mail",
+        "email",
+        "communication"
+      ]
+    },
+    "bx-gift": {
+      "glyph": "",
+      "terms": [
+        "gift"
+      ]
+    },
+    "bx-globe": {
+      "glyph": "",
+      "terms": [
+        "globe"
+      ]
+    },
+    "bx-devices": {
+      "glyph": "",
+      "terms": [
+        "devices",
+        "mobile",
+        "tab"
+      ]
+    },
+    "bx-headphone": {
+      "glyph": "",
+      "terms": [
+        "headphone"
+      ]
+    },
+    "bx-heart": {
+      "glyph": "",
+      "terms": [
+        "heart",
+        "health"
+      ]
+    },
+    "bx-home": {
+      "glyph": "",
+      "terms": [
+        "home"
+      ]
+    },
+    "bx-laptop": {
+      "glyph": "",
+      "terms": [
+        "laptop"
+      ]
+    },
+    "bx-layer": {
+      "glyph": "",
+      "terms": [
+        "layer"
+      ]
+    },
+    "bx-link-alt": {
+      "glyph": "",
+      "terms": [
+        "link-alt"
+      ]
+    },
+    "bx-link": {
+      "glyph": "",
+      "terms": [
+        "link"
+      ]
+    },
+    "bx-list-plus": {
+      "glyph": "",
+      "terms": [
+        "list-plus"
+      ]
+    },
+    "bx-list-ul": {
+      "glyph": "",
+      "terms": [
+        "list-ul"
+      ]
+    },
+    "bx-list-minus": {
+      "glyph": "",
+      "terms": [
+        "list-minus"
+      ]
+    },
+    "bx-lock-open": {
+      "glyph": "",
+      "terms": [
+        "lock-open"
+      ]
+    },
+    "bx-lock": {
+      "glyph": "",
+      "terms": [
+        "lock"
+      ]
+    },
+    "bx-map-alt": {
+      "glyph": "",
+      "terms": [
+        "map-alt"
+      ]
+    },
+    "bx-map": {
+      "glyph": "",
+      "terms": [
+        "map"
+      ]
+    },
+    "bx-message-rounded": {
+      "glyph": "",
+      "terms": [
+        "message-rounded"
+      ]
+    },
+    "bx-message": {
+      "glyph": "",
+      "terms": [
+        "message"
+      ]
+    },
+    "bx-mobile-alt": {
+      "glyph": "",
+      "terms": [
+        "mobile-alt"
+      ]
+    },
+    "bx-mobile": {
+      "glyph": "",
+      "terms": [
+        "mobile"
+      ]
+    },
+    "bx-navigation": {
+      "glyph": "",
+      "terms": [
+        "navigation"
+      ]
+    },
+    "bx-phone": {
+      "glyph": "",
+      "terms": [
+        "phone"
+      ]
+    },
+    "bx-pie-chart": {
+      "glyph": "",
+      "terms": [
+        "pie-chart"
+      ]
+    },
+    "bx-send": {
+      "glyph": "",
+      "terms": [
+        "send"
+      ]
+    },
+    "bx-sidebar": {
+      "glyph": "",
+      "terms": [
+        "sidebar"
+      ]
+    },
+    "bx-sitemap": {
+      "glyph": "",
+      "terms": [
+        "sitemap"
+      ]
+    },
+    "bx-spreadsheet": {
+      "glyph": "",
+      "terms": [
+        "spreadsheet"
+      ]
+    },
+    "bx-tab": {
+      "glyph": "",
+      "terms": [
+        "tab"
+      ]
+    },
+    "bx-tag": {
+      "glyph": "",
+      "terms": [
+        "tag"
+      ]
+    },
+    "bx-target-lock": {
+      "glyph": "",
+      "terms": [
+        "target-lock"
+      ]
+    },
+    "bx-tennis-ball": {
+      "glyph": "",
+      "terms": [
+        "tennis-ball",
+        "deuce"
+      ]
+    },
+    "bx-alarm": {
+      "glyph": "",
+      "terms": [
+        "alarm",
+        "alert"
+      ]
+    },
+    "bx-upload": {
+      "glyph": "",
+      "terms": [
+        "upload"
+      ]
+    },
+    "bx-usb": {
+      "glyph": "",
+      "terms": [
+        "usb"
+      ]
+    },
+    "bx-video-off": {
+      "glyph": "",
+      "terms": [
+        "video-off"
+      ]
+    },
+    "bx-voicemail": {
+      "glyph": "",
+      "terms": [
+        "voicemail"
+      ]
+    },
+    "bx-wifi": {
+      "glyph": "",
+      "terms": [
+        "wifi"
+      ]
+    },
+    "bx-window-open": {
+      "glyph": "",
+      "terms": [
+        "window-open"
+      ]
+    },
+    "bx-window": {
+      "glyph": "",
+      "terms": [
+        "window",
+        "browser"
+      ]
+    },
+    "bx-windows": {
+      "glyph": "",
+      "terms": [
+        "windows",
+        "browser"
+      ]
+    },
+    "bx-duplicate": {
+      "glyph": "",
+      "terms": [
+        "duplicate"
+      ]
+    },
+    "bx-table": {
+      "glyph": "",
+      "terms": [
+        "table"
+      ]
+    },
+    "bx-x": {
+      "glyph": "",
+      "terms": [
+        "x"
+      ]
+    },
+    "bx-adjust": {
+      "glyph": "",
+      "terms": [
+        "adjust"
+      ]
+    },
+    "bx-album": {
+      "glyph": "",
+      "terms": [
+        "album"
+      ]
+    },
+    "bx-anchor": {
+      "glyph": "",
+      "terms": [
+        "anchor"
+      ]
+    },
+    "bx-award": {
+      "glyph": "",
+      "terms": [
+        "award"
+      ]
+    },
+    "bx-bold": {
+      "glyph": "",
+      "terms": [
+        "bold"
+      ]
+    },
+    "bx-calculator": {
+      "glyph": "",
+      "terms": [
+        "calculator"
+      ]
+    },
+    "bx-cart": {
+      "glyph": "",
+      "terms": [
+        "cart"
+      ]
+    },
+    "bx-check": {
+      "glyph": "",
+      "terms": [
+        "check"
+      ]
+    },
+    "bx-cloud-drizzle": {
+      "glyph": "",
+      "terms": [
+        "cloud-drizzle"
+      ]
+    },
+    "bx-cloud-light-rain": {
+      "glyph": "",
+      "terms": [
+        "cloud-light-rain"
+      ]
+    },
+    "bx-cloud-lightning": {
+      "glyph": "",
+      "terms": [
+        "cloud-lightning"
+      ]
+    },
+    "bx-cloud-rain": {
+      "glyph": "",
+      "terms": [
+        "cloud-rain"
+      ]
+    },
+    "bx-cloud-snow": {
+      "glyph": "",
+      "terms": [
+        "cloud-snow"
+      ]
+    },
+    "bx-cog": {
+      "glyph": "",
+      "terms": [
+        "cog",
+        "gear",
+        "setting"
+      ]
+    },
+    "bx-columns": {
+      "glyph": "",
+      "terms": [
+        "columns"
+      ]
+    },
+    "bx-credit-card": {
+      "glyph": "",
+      "terms": [
+        "credit-card",
+        "finance",
+        "money",
+        "debit"
+      ]
+    },
+    "bx-crop": {
+      "glyph": "",
+      "terms": [
+        "crop"
+      ]
+    },
+    "bx-cube": {
+      "glyph": "",
+      "terms": [
+        "cube"
+      ]
+    },
+    "bx-cut": {
+      "glyph": "",
+      "terms": [
+        "cut"
+      ]
+    },
+    "bx-detail": {
+      "glyph": "",
+      "terms": [
+        "detail"
+      ]
+    },
+    "bx-shield-quarter": {
+      "glyph": "",
+      "terms": [
+        "shield-quarter"
+      ]
+    },
+    "bx-edit": {
+      "glyph": "",
+      "terms": [
+        "edit",
+        "writing",
+        "note",
+        "pencil"
+      ]
+    },
+    "bx-file": {
+      "glyph": "",
+      "terms": [
+        "file"
+      ]
+    },
+    "bx-filter": {
+      "glyph": "",
+      "terms": [
+        "filter"
+      ]
+    },
+    "bx-font": {
+      "glyph": "",
+      "terms": [
+        "font"
+      ]
+    },
+    "bx-git-branch": {
+      "glyph": "",
+      "terms": [
+        "git-branch"
+      ]
+    },
+    "bx-git-commit": {
+      "glyph": "",
+      "terms": [
+        "git-commit"
+      ]
+    },
+    "bx-git-compare": {
+      "glyph": "",
+      "terms": [
+        "git-compare"
+      ]
+    },
+    "bx-git-merge": {
+      "glyph": "",
+      "terms": [
+        "git-merge"
+      ]
+    },
+    "bx-git-pull-request": {
+      "glyph": "",
+      "terms": [
+        "git-pull-request"
+      ]
+    },
+    "bx-git-repo-forked": {
+      "glyph": "",
+      "terms": [
+        "git-repo-forked"
+      ]
+    },
+    "bx-group": {
+      "glyph": "",
+      "terms": [
+        "group"
+      ]
+    },
+    "bx-hash": {
+      "glyph": "",
+      "terms": [
+        "hash"
+      ]
+    },
+    "bx-heading": {
+      "glyph": "",
+      "terms": [
+        "heading"
+      ]
+    },
+    "bx-home-alt": {
+      "glyph": "",
+      "terms": [
+        "home-alt"
+      ]
+    },
+    "bx-italic": {
+      "glyph": "",
+      "terms": [
+        "italic"
+      ]
+    },
+    "bx-joystick": {
+      "glyph": "",
+      "terms": [
+        "joystick"
+      ]
+    },
+    "bx-link-external": {
+      "glyph": "",
+      "terms": [
+        "link-external"
+      ]
+    },
+    "bx-log-in": {
+      "glyph": "",
+      "terms": [
+        "log-in"
+      ]
+    },
+    "bx-log-out": {
+      "glyph": "",
+      "terms": [
+        "log-out"
+      ]
+    },
+    "bx-microphone-off": {
+      "glyph": "",
+      "terms": [
+        "microphone-off"
+      ]
+    },
+    "bx-minus": {
+      "glyph": "",
+      "terms": [
+        "minus"
+      ]
+    },
+    "bx-mouse": {
+      "glyph": "",
+      "terms": [
+        "mouse"
+      ]
+    },
+    "bx-move": {
+      "glyph": "",
+      "terms": [
+        "move"
+      ]
+    },
+    "bx-music": {
+      "glyph": "",
+      "terms": [
+        "music"
+      ]
+    },
+    "bx-notification": {
+      "glyph": "",
+      "terms": [
+        "notification"
+      ]
+    },
+    "bx-package": {
+      "glyph": "",
+      "terms": [
+        "package",
+        "box",
+        "shipping",
+        "delivery"
+      ]
+    },
+    "bx-paragraph": {
+      "glyph": "",
+      "terms": [
+        "paragraph"
+      ]
+    },
+    "bx-paste": {
+      "glyph": "",
+      "terms": [
+        "paste"
+      ]
+    },
+    "bx-pencil": {
+      "glyph": "",
+      "terms": [
+        "pencil"
+      ]
+    },
+    "bx-pin": {
+      "glyph": "",
+      "terms": [
+        "pin"
+      ]
+    },
+    "bx-plus": {
+      "glyph": "",
+      "terms": [
+        "plus"
+      ]
+    },
+    "bx-power-off": {
+      "glyph": "",
+      "terms": [
+        "power-off"
+      ]
+    },
+    "bx-pulse": {
+      "glyph": "",
+      "terms": [
+        "pulse"
+      ]
+    },
+    "bx-save": {
+      "glyph": "",
+      "terms": [
+        "save",
+        "floppy disk"
+      ]
+    },
+    "bx-screenshot": {
+      "glyph": "",
+      "terms": [
+        "screenshot"
+      ]
+    },
+    "bx-select-multiple": {
+      "glyph": "",
+      "terms": [
+        "select-multiple"
+      ]
+    },
+    "bx-share-alt": {
+      "glyph": "",
+      "terms": [
+        "share-alt"
+      ]
+    },
+    "bx-share": {
+      "glyph": "",
+      "terms": [
+        "share"
+      ]
+    },
+    "bx-shield-alt": {
+      "glyph": "",
+      "terms": [
+        "shield-alt"
+      ]
+    },
+    "bx-shield": {
+      "glyph": "",
+      "terms": [
+        "shield"
+      ]
+    },
+    "bx-shopping-bag": {
+      "glyph": "",
+      "terms": [
+        "shopping-bag"
+      ]
+    },
+    "bx-shuffle": {
+      "glyph": "",
+      "terms": [
+        "shuffle"
+      ]
+    },
+    "bx-sort": {
+      "glyph": "",
+      "terms": [
+        "sort"
+      ]
+    },
+    "bx-star": {
+      "glyph": "",
+      "terms": [
+        "star"
+      ]
+    },
+    "bx-sun": {
+      "glyph": "",
+      "terms": [
+        "sun"
+      ]
+    },
+    "bx-text": {
+      "glyph": "",
+      "terms": [
+        "text"
+      ]
+    },
+    "bx-trash": {
+      "glyph": "",
+      "terms": [
+        "trash"
+      ]
+    },
+    "bx-trophy": {
+      "glyph": "",
+      "terms": [
+        "trophy"
+      ]
+    },
+    "bx-underline": {
+      "glyph": "",
+      "terms": [
+        "underline"
+      ]
+    },
+    "bx-user-check": {
+      "glyph": "",
+      "terms": [
+        "user-check"
+      ]
+    },
+    "bx-user-circle": {
+      "glyph": "",
+      "terms": [
+        "user-circle"
+      ]
+    },
+    "bx-user-minus": {
+      "glyph": "",
+      "terms": [
+        "user-minus"
+      ]
+    },
+    "bx-user-plus": {
+      "glyph": "",
+      "terms": [
+        "user-plus"
+      ]
+    },
+    "bx-user-x": {
+      "glyph": "",
+      "terms": [
+        "user-x"
+      ]
+    },
+    "bx-user": {
+      "glyph": "",
+      "terms": [
+        "user"
+      ]
+    },
+    "bx-barcode": {
+      "glyph": "",
+      "terms": [
+        "barcode"
+      ]
+    },
+    "bx-crown": {
+      "glyph": "",
+      "terms": [
+        "crown"
+      ]
+    },
+    "bx-dislike": {
+      "glyph": "",
+      "terms": [
+        "dislike"
+      ]
+    },
+    "bx-down-arrow": {
+      "glyph": "",
+      "terms": [
+        "down-arrow"
+      ]
+    },
+    "bx-export": {
+      "glyph": "",
+      "terms": [
+        "export"
+      ]
+    },
+    "bxl-facebook": {
+      "glyph": "",
+      "terms": [
+        "facebook",
+        "social media"
+      ]
+    },
+    "bx-first-aid": {
+      "glyph": "",
+      "terms": [
+        "first-aid"
+      ]
+    },
+    "bx-flag": {
+      "glyph": "",
+      "terms": [
+        "flag"
+      ]
+    },
+    "bxl-github": {
+      "glyph": "",
+      "terms": [
+        "github"
+      ]
+    },
+    "bxl-google": {
+      "glyph": "",
+      "terms": [
+        "google"
+      ]
+    },
+    "bx-history": {
+      "glyph": "",
+      "terms": [
+        "history"
+      ]
+    },
+    "bxl-instagram": {
+      "glyph": "",
+      "terms": [
+        "instagram",
+        "social media"
+      ]
+    },
+    "bx-joystick-alt": {
+      "glyph": "",
+      "terms": [
+        "joystick-alt"
+      ]
+    },
+    "bx-left-arrow": {
+      "glyph": "",
+      "terms": [
+        "left-arrow"
+      ]
+    },
+    "bx-like": {
+      "glyph": "",
+      "terms": [
+        "like"
+      ]
+    },
+    "bx-list-check": {
+      "glyph": "",
+      "terms": [
+        "list-check"
+      ]
+    },
+    "bx-poll": {
+      "glyph": "",
+      "terms": [
+        "poll"
+      ]
+    },
+    "bx-radar": {
+      "glyph": "",
+      "terms": [
+        "radar"
+      ]
+    },
+    "bx-redo": {
+      "glyph": "",
+      "terms": [
+        "redo"
+      ]
+    },
+    "bx-reply-all": {
+      "glyph": "",
+      "terms": [
+        "reply-all"
+      ]
+    },
+    "bx-reply": {
+      "glyph": "",
+      "terms": [
+        "reply"
+      ]
+    },
+    "bx-repost": {
+      "glyph": "",
+      "terms": [
+        "repost"
+      ]
+    },
+    "bx-revision": {
+      "glyph": "",
+      "terms": [
+        "revision"
+      ]
+    },
+    "bx-right-arrow": {
+      "glyph": "",
+      "terms": [
+        "right-arrow"
+      ]
+    },
+    "bx-subdirectory-left": {
+      "glyph": "",
+      "terms": [
+        "subdirectory-left"
+      ]
+    },
+    "bx-subdirectory-right": {
+      "glyph": "",
+      "terms": [
+        "subdirectory-right"
+      ]
+    },
+    "bx-support": {
+      "glyph": "",
+      "terms": [
+        "support"
+      ]
+    },
+    "bx-timer": {
+      "glyph": "",
+      "terms": [
+        "timer"
+      ]
+    },
+    "bxl-twitter": {
+      "glyph": "",
+      "terms": [
+        "twitter",
+        "social media"
+      ]
+    },
+    "bx-undo": {
+      "glyph": "",
+      "terms": [
+        "undo"
+      ]
+    },
+    "bx-up-arrow": {
+      "glyph": "",
+      "terms": [
+        "up-arrow"
+      ]
+    },
+    "bxl-youtube": {
+      "glyph": "",
+      "terms": [
+        "youtube"
+      ]
+    },
+    "bxl-whatsapp": {
+      "glyph": "",
+      "terms": [
+        "whatsapp"
+      ]
+    },
+    "bxl-tumblr": {
+      "glyph": "",
+      "terms": [
+        "tumblr"
+      ]
+    },
+    "bx-phone-call": {
+      "glyph": "",
+      "terms": [
+        "phone-call"
+      ]
+    },
+    "bxl-behance": {
+      "glyph": "",
+      "terms": [
+        "behance"
+      ]
+    },
+    "bxl-dribbble": {
+      "glyph": "",
+      "terms": [
+        "dribbble"
+      ]
+    },
+    "bx-aperture": {
+      "glyph": "",
+      "terms": [
+        "aperture"
+      ]
+    },
+    "bx-film": {
+      "glyph": "",
+      "terms": [
+        "film"
+      ]
+    },
+    "bx-folder-open": {
+      "glyph": "",
+      "terms": [
+        "folder-open"
+      ]
+    },
+    "bx-task": {
+      "glyph": "",
+      "terms": [
+        "task"
+      ]
+    },
+    "bx-server": {
+      "glyph": "",
+      "terms": [
+        "server"
+      ]
+    },
+    "bx-battery": {
+      "glyph": "",
+      "terms": [
+        "battery"
+      ]
+    },
+    "bx-calendar-alt": {
+      "glyph": "",
+      "terms": [
+        "calendar-alt"
+      ]
+    },
+    "bx-import": {
+      "glyph": "",
+      "terms": [
+        "import"
+      ]
+    },
+    "bx-ruler": {
+      "glyph": "",
+      "terms": [
+        "ruler"
+      ]
+    },
+    "bx-horizontal-center": {
+      "glyph": "",
+      "terms": [
+        "horizontal-center"
+      ]
+    },
+    "bx-rotate-right": {
+      "glyph": "",
+      "terms": [
+        "rotate-right"
+      ]
+    },
+    "bx-rename": {
+      "glyph": "",
+      "terms": [
+        "rename"
+      ]
+    },
+    "bx-collapse": {
+      "glyph": "",
+      "terms": [
+        "collapse"
+      ]
+    },
+    "bx-phone-incoming": {
+      "glyph": "",
+      "terms": [
+        "phone-incoming"
+      ]
+    },
+    "bx-phone-outgoing": {
+      "glyph": "",
+      "terms": [
+        "phone-outgoing"
+      ]
+    },
+    "bx-body": {
+      "glyph": "",
+      "terms": [
+        "body",
+        "male"
+      ]
+    },
+    "bx-cast": {
+      "glyph": "",
+      "terms": [
+        "cast"
+      ]
+    },
+    "bx-chip": {
+      "glyph": "",
+      "terms": [
+        "chip"
+      ]
+    },
+    "bx-skip-next-circle": {
+      "glyph": "",
+      "terms": [
+        "skip-next-circle"
+      ]
+    },
+    "bx-skip-previous-circle": {
+      "glyph": "",
+      "terms": [
+        "skip-previous-circle"
+      ]
+    },
+    "bx-hdd": {
+      "glyph": "",
+      "terms": [
+        "hdd",
+        "storage",
+        "hard drive"
+      ]
+    },
+    "bx-store": {
+      "glyph": "",
+      "terms": [
+        "store",
+        "shop",
+        "market"
+      ]
+    },
+    "bx-globe-alt": {
+      "glyph": "",
+      "terms": [
+        "globe-alt"
+      ]
+    },
+    "bxl-vimeo": {
+      "glyph": "",
+      "terms": [
+        "vimeo"
+      ]
+    },
+    "bx-upvote": {
+      "glyph": "",
+      "terms": [
+        "upvote"
+      ]
+    },
+    "bx-downvote": {
+      "glyph": "",
+      "terms": [
+        "downvote"
+      ]
+    },
+    "bx-news": {
+      "glyph": "",
+      "terms": [
+        "news"
+      ]
+    },
+    "bx-pie-chart-alt": {
+      "glyph": "",
+      "terms": [
+        "pie-chart-alt"
+      ]
+    },
+    "bx-images": {
+      "glyph": "",
+      "terms": [
+        "images"
+      ]
+    },
+    "bx-purchase-tag": {
+      "glyph": "",
+      "terms": [
+        "purchase-tag",
+        "price",
+        "cost"
+      ]
+    },
+    "bx-pen": {
+      "glyph": "",
+      "terms": [
+        "pen"
+      ]
+    },
+    "bx-expand": {
+      "glyph": "",
+      "terms": [
+        "expand"
+      ]
+    },
+    "bx-paperclip": {
+      "glyph": "",
+      "terms": [
+        "paperclip"
+      ]
+    },
+    "bx-closet": {
+      "glyph": "",
+      "terms": [
+        "closet"
+      ]
+    },
+    "bx-tv": {
+      "glyph": "",
+      "terms": [
+        "tv",
+        "television",
+        "monitor"
+      ]
+    },
+    "bx-collection": {
+      "glyph": "",
+      "terms": [
+        "collection"
+      ]
+    },
+    "bx-station": {
+      "glyph": "",
+      "terms": [
+        "station"
+      ]
+    },
+    "bx-wallet": {
+      "glyph": "",
+      "terms": [
+        "wallet",
+        "money"
+      ]
+    },
+    "bx-briefcase-alt": {
+      "glyph": "",
+      "terms": [
+        "briefcase-alt",
+        "work",
+        "travel",
+        "suitcase"
+      ]
+    },
+    "bx-hourglass": {
+      "glyph": "",
+      "terms": [
+        "hourglass"
+      ]
+    },
+    "bx-carousel": {
+      "glyph": "",
+      "terms": [
+        "carousel"
+      ]
+    },
+    "bx-infinite": {
+      "glyph": "",
+      "terms": [
+        "infinite"
+      ]
+    },
+    "bx-plug": {
+      "glyph": "",
+      "terms": [
+        "plug",
+        "charging"
+      ]
+    },
+    "bx-notification-off": {
+      "glyph": "",
+      "terms": [
+        "notification-off"
+      ]
+    },
+    "bx-window-close": {
+      "glyph": "",
+      "terms": [
+        "window-close"
+      ]
+    },
+    "bx-command": {
+      "glyph": "",
+      "terms": [
+        "command"
+      ]
+    },
+    "bx-grid-alt": {
+      "glyph": "",
+      "terms": [
+        "grid-alt"
+      ]
+    },
+    "bx-trash-alt": {
+      "glyph": "",
+      "terms": [
+        "trash-alt"
+      ]
+    },
+    "bx-chalkboard": {
+      "glyph": "",
+      "terms": [
+        "chalkboard",
+        "whiteboard",
+        "teaching"
+      ]
+    },
+    "bx-loader": {
+      "glyph": "",
+      "terms": [
+        "loader"
+      ]
+    },
+    "bx-slider": {
+      "glyph": "",
+      "terms": [
+        "slider"
+      ]
+    },
+    "bx-paper-plane": {
+      "glyph": "",
+      "terms": [
+        "paper-plane"
+      ]
+    },
+    "bx-selection": {
+      "glyph": "",
+      "terms": [
+        "selection"
+      ]
+    },
+    "bxl-linkedin": {
+      "glyph": "",
+      "terms": [
+        "linkedin"
+      ]
+    },
+    "bx-world": {
+      "glyph": "",
+      "terms": [
+        "world"
+      ]
+    },
+    "bx-dock-bottom": {
+      "glyph": "",
+      "terms": [
+        "dock-bottom"
+      ]
+    },
+    "bx-dock-right": {
+      "glyph": "",
+      "terms": [
+        "dock-right"
+      ]
+    },
+    "bx-dock-top": {
+      "glyph": "",
+      "terms": [
+        "dock-top"
+      ]
+    },
+    "bx-dock-left": {
+      "glyph": "",
+      "terms": [
+        "dock-left"
+      ]
+    },
+    "bx-layout": {
+      "glyph": "",
+      "terms": [
+        "layout"
+      ]
+    },
+    "bxl-bitcoin": {
+      "glyph": "",
+      "terms": [
+        "bitcoin"
+      ]
+    },
+    "bxl-facebook-square": {
+      "glyph": "",
+      "terms": [
+        "facebook-square"
+      ]
+    },
+    "bx-alarm-off": {
+      "glyph": "",
+      "terms": [
+        "alarm-off",
+        "alert",
+        "silent"
+      ]
+    },
+    "bx-wrench": {
+      "glyph": "",
+      "terms": [
+        "wrench"
+      ]
+    },
+    "bx-loader-circle": {
+      "glyph": "",
+      "terms": [
+        "loader-circle"
+      ]
+    },
+    "bx-loader-alt": {
+      "glyph": "",
+      "terms": [
+        "loader-alt"
+      ]
+    },
+    "bx-car": {
+      "glyph": "",
+      "terms": [
+        "car"
+      ]
+    },
+    "bx-cart-alt": {
+      "glyph": "",
+      "terms": [
+        "cart-alt"
+      ]
+    },
+    "bxs-adjust": {
+      "glyph": "",
+      "terms": [
+        "adjust"
+      ]
+    },
+    "bxs-alarm": {
+      "glyph": "",
+      "terms": [
+        "alarm",
+        "alert"
+      ]
+    },
+    "bxs-alarm-off": {
+      "glyph": "",
+      "terms": [
+        "alarm-off",
+        "alert",
+        "silent"
+      ]
+    },
+    "bxs-album": {
+      "glyph": "",
+      "terms": [
+        "album"
+      ]
+    },
+    "bxs-archive": {
+      "glyph": "",
+      "terms": [
+        "archive"
+      ]
+    },
+    "bxs-camera": {
+      "glyph": "",
+      "terms": [
+        "camera"
+      ]
+    },
+    "bxs-camera-off": {
+      "glyph": "",
+      "terms": [
+        "camera-off"
+      ]
+    },
+    "bxs-folder": {
+      "glyph": "",
+      "terms": [
+        "folder"
+      ]
+    },
+    "bxs-folder-plus": {
+      "glyph": "",
+      "terms": [
+        "folder-plus",
+        "add",
+        "folder add",
+        "new folder"
+      ]
+    },
+    "bxs-award": {
+      "glyph": "",
+      "terms": [
+        "award"
+      ]
+    },
+    "bxs-bar-chart-square": {
+      "glyph": "",
+      "terms": [
+        "bar-chart-square"
+      ]
+    },
+    "bxs-barcode": {
+      "glyph": "",
+      "terms": [
+        "barcode"
+      ]
+    },
+    "bxs-battery": {
+      "glyph": "",
+      "terms": [
+        "battery"
+      ]
+    },
+    "bxs-battery-charging": {
+      "glyph": "",
+      "terms": [
+        "battery-charging"
+      ]
+    },
+    "bxs-battery-full": {
+      "glyph": "",
+      "terms": [
+        "battery-full"
+      ]
+    },
+    "bxs-bell": {
+      "glyph": "",
+      "terms": [
+        "bell",
+        "alert",
+        "notification"
+      ]
+    },
+    "bxs-bell-off": {
+      "glyph": "",
+      "terms": [
+        "bell-off",
+        "alert",
+        "notification",
+        "silent"
+      ]
+    },
+    "bxs-bolt": {
+      "glyph": "",
+      "terms": [
+        "bolt",
+        "zap"
+      ]
+    },
+    "bxs-book": {
+      "glyph": "",
+      "terms": [
+        "book"
+      ]
+    },
+    "bxs-book-bookmark": {
+      "glyph": "",
+      "terms": [
+        "book-bookmark"
+      ]
+    },
+    "bxs-bookmark": {
+      "glyph": "",
+      "terms": [
+        "bookmark"
+      ]
+    },
+    "bxs-bookmark-plus": {
+      "glyph": "",
+      "terms": [
+        "bookmark-plus"
+      ]
+    },
+    "bxs-book-open": {
+      "glyph": "",
+      "terms": [
+        "book-open"
+      ]
+    },
+    "bxs-bookmark-star": {
+      "glyph": "",
+      "terms": [
+        "bookmark-star"
+      ]
+    },
+    "bxs-briefcase": {
+      "glyph": "",
+      "terms": [
+        "briefcase",
+        "work",
+        "travel",
+        "suitcase"
+      ]
+    },
+    "bxs-briefcase-alt": {
+      "glyph": "",
+      "terms": [
+        "briefcase-alt",
+        "work",
+        "travel",
+        "suitcase"
+      ]
+    },
+    "bxs-bug": {
+      "glyph": "",
+      "terms": [
+        "bug",
+        "error",
+        "warning"
+      ]
+    },
+    "bxs-building": {
+      "glyph": "",
+      "terms": [
+        "building"
+      ]
+    },
+    "bxs-bulb": {
+      "glyph": "",
+      "terms": [
+        "bulb"
+      ]
+    },
+    "bxs-buoy": {
+      "glyph": "",
+      "terms": [
+        "buoy"
+      ]
+    },
+    "bxs-calculator": {
+      "glyph": "",
+      "terms": [
+        "calculator"
+      ]
+    },
+    "bxs-captions": {
+      "glyph": "",
+      "terms": [
+        "captions",
+        "subtitles",
+        "subs",
+        "cc"
+      ]
+    },
+    "bxs-car": {
+      "glyph": "",
+      "terms": [
+        "car"
+      ]
+    },
+    "bxs-cart-alt": {
+      "glyph": "",
+      "terms": [
+        "cart-alt"
+      ]
+    },
+    "bxs-cart": {
+      "glyph": "",
+      "terms": [
+        "cart"
+      ]
+    },
+    "bxs-chart": {
+      "glyph": "",
+      "terms": [
+        "chart"
+      ]
+    },
+    "bxs-chip": {
+      "glyph": "",
+      "terms": [
+        "chip"
+      ]
+    },
+    "bxs-cloud-download": {
+      "glyph": "",
+      "terms": [
+        "cloud-download"
+      ]
+    },
+    "bxs-cloud-upload": {
+      "glyph": "",
+      "terms": [
+        "cloud-upload"
+      ]
+    },
+    "bxs-cloud": {
+      "glyph": "",
+      "terms": [
+        "cloud"
+      ]
+    },
+    "bxs-coffee": {
+      "glyph": "",
+      "terms": [
+        "coffee"
+      ]
+    },
+    "bxs-cog": {
+      "glyph": "",
+      "terms": [
+        "cog",
+        "gear",
+        "setting"
+      ]
+    },
+    "bxs-collection": {
+      "glyph": "",
+      "terms": [
+        "collection"
+      ]
+    },
+    "bxs-contact": {
+      "glyph": "",
+      "terms": [
+        "contact"
+      ]
+    },
+    "bxs-copy": {
+      "glyph": "",
+      "terms": [
+        "copy"
+      ]
+    },
+    "bxs-coupon": {
+      "glyph": "",
+      "terms": [
+        "coupon"
+      ]
+    },
+    "bxs-crown": {
+      "glyph": "",
+      "terms": [
+        "crown"
+      ]
+    },
+    "bxs-cube": {
+      "glyph": "",
+      "terms": [
+        "cube"
+      ]
+    },
+    "bxs-detail": {
+      "glyph": "",
+      "terms": [
+        "detail"
+      ]
+    },
+    "bxs-discount": {
+      "glyph": "",
+      "terms": [
+        "discount"
+      ]
+    },
+    "bxs-dislike": {
+      "glyph": "",
+      "terms": [
+        "dislike"
+      ]
+    },
+    "bxs-dock-bottom": {
+      "glyph": "",
+      "terms": [
+        "dock-bottom"
+      ]
+    },
+    "bxs-dock-left": {
+      "glyph": "",
+      "terms": [
+        "dock-left"
+      ]
+    },
+    "bxs-dock-right": {
+      "glyph": "",
+      "terms": [
+        "dock-right"
+      ]
+    },
+    "bxs-dock-top": {
+      "glyph": "",
+      "terms": [
+        "dock-top"
+      ]
+    },
+    "bxs-down-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "down-arrow-circle"
+      ]
+    },
+    "bxs-download": {
+      "glyph": "",
+      "terms": [
+        "download"
+      ]
+    },
+    "bxs-downvote": {
+      "glyph": "",
+      "terms": [
+        "downvote"
+      ]
+    },
+    "bxs-drink": {
+      "glyph": "",
+      "terms": [
+        "drink"
+      ]
+    },
+    "bxs-droplet": {
+      "glyph": "",
+      "terms": [
+        "droplet"
+      ]
+    },
+    "bxs-duplicate": {
+      "glyph": "",
+      "terms": [
+        "duplicate"
+      ]
+    },
+    "bxs-eject": {
+      "glyph": "",
+      "terms": [
+        "eject"
+      ]
+    },
+    "bxs-envelope": {
+      "glyph": "",
+      "terms": [
+        "envelope",
+        "letter",
+        "mail",
+        "email",
+        "communication"
+      ]
+    },
+    "bxs-error-circle": {
+      "glyph": "",
+      "terms": [
+        "error-circle"
+      ]
+    },
+    "bxs-error": {
+      "glyph": "",
+      "terms": [
+        "error"
+      ]
+    },
+    "bxs-file-image": {
+      "glyph": "",
+      "terms": [
+        "file-image"
+      ]
+    },
+    "bxs-file": {
+      "glyph": "",
+      "terms": [
+        "file"
+      ]
+    },
+    "bxs-filter-alt": {
+      "glyph": "",
+      "terms": [
+        "filter-alt"
+      ]
+    },
+    "bxs-first-aid": {
+      "glyph": "",
+      "terms": [
+        "first-aid"
+      ]
+    },
+    "bxs-flag-alt": {
+      "glyph": "",
+      "terms": [
+        "flag-alt"
+      ]
+    },
+    "bxs-flag": {
+      "glyph": "",
+      "terms": [
+        "flag"
+      ]
+    },
+    "bxs-gift": {
+      "glyph": "",
+      "terms": [
+        "gift"
+      ]
+    },
+    "bxs-grid-alt": {
+      "glyph": "",
+      "terms": [
+        "grid-alt"
+      ]
+    },
+    "bxs-group": {
+      "glyph": "",
+      "terms": [
+        "group"
+      ]
+    },
+    "bxs-hdd": {
+      "glyph": "",
+      "terms": [
+        "hdd",
+        "storage",
+        "hard drive"
+      ]
+    },
+    "bxs-heart": {
+      "glyph": "",
+      "terms": [
+        "heart",
+        "health"
+      ]
+    },
+    "bxs-hide": {
+      "glyph": "",
+      "terms": [
+        "hide"
+      ]
+    },
+    "bxs-home": {
+      "glyph": "",
+      "terms": [
+        "home"
+      ]
+    },
+    "bxs-hot": {
+      "glyph": "",
+      "terms": [
+        "hot",
+        "fire"
+      ]
+    },
+    "bxs-hourglass": {
+      "glyph": "",
+      "terms": [
+        "hourglass"
+      ]
+    },
+    "bxs-image": {
+      "glyph": "",
+      "terms": [
+        "image"
+      ]
+    },
+    "bxs-inbox": {
+      "glyph": "",
+      "terms": [
+        "inbox"
+      ]
+    },
+    "bxs-info-circle": {
+      "glyph": "",
+      "terms": [
+        "info-circle"
+      ]
+    },
+    "bxs-joystick-alt": {
+      "glyph": "",
+      "terms": [
+        "joystick-alt"
+      ]
+    },
+    "bxs-joystick": {
+      "glyph": "",
+      "terms": [
+        "joystick"
+      ]
+    },
+    "bxs-layer": {
+      "glyph": "",
+      "terms": [
+        "layer"
+      ]
+    },
+    "bxs-left-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "left-arrow-circle"
+      ]
+    },
+    "bxs-like": {
+      "glyph": "",
+      "terms": [
+        "like"
+      ]
+    },
+    "bxs-lock-open": {
+      "glyph": "",
+      "terms": [
+        "lock-open"
+      ]
+    },
+    "bxs-lock": {
+      "glyph": "",
+      "terms": [
+        "lock"
+      ]
+    },
+    "bxs-map-alt": {
+      "glyph": "",
+      "terms": [
+        "map-alt"
+      ]
+    },
+    "bxs-map": {
+      "glyph": "",
+      "terms": [
+        "map"
+      ]
+    },
+    "bxs-message-rounded": {
+      "glyph": "",
+      "terms": [
+        "message-rounded"
+      ]
+    },
+    "bxs-message": {
+      "glyph": "",
+      "terms": [
+        "message"
+      ]
+    },
+    "bxs-microphone-off": {
+      "glyph": "",
+      "terms": [
+        "microphone-off"
+      ]
+    },
+    "bxs-microphone": {
+      "glyph": "",
+      "terms": [
+        "microphone"
+      ]
+    },
+    "bxs-minus-circle": {
+      "glyph": "",
+      "terms": [
+        "minus-circle"
+      ]
+    },
+    "bxs-moon": {
+      "glyph": "",
+      "terms": [
+        "moon"
+      ]
+    },
+    "bxs-mouse": {
+      "glyph": "",
+      "terms": [
+        "mouse"
+      ]
+    },
+    "bxs-music": {
+      "glyph": "",
+      "terms": [
+        "music"
+      ]
+    },
+    "bxs-navigation": {
+      "glyph": "",
+      "terms": [
+        "navigation"
+      ]
+    },
+    "bxs-news": {
+      "glyph": "",
+      "terms": [
+        "news"
+      ]
+    },
+    "bxs-package": {
+      "glyph": "",
+      "terms": [
+        "package",
+        "box",
+        "shipping",
+        "delivery"
+      ]
+    },
+    "bxs-paper-plane": {
+      "glyph": "",
+      "terms": [
+        "paper-plane"
+      ]
+    },
+    "bxs-paste": {
+      "glyph": "",
+      "terms": [
+        "paste"
+      ]
+    },
+    "bxs-pen": {
+      "glyph": "",
+      "terms": [
+        "pen"
+      ]
+    },
+    "bxs-pencil": {
+      "glyph": "",
+      "terms": [
+        "pencil"
+      ]
+    },
+    "bxs-phone-call": {
+      "glyph": "",
+      "terms": [
+        "phone-call"
+      ]
+    },
+    "bxs-phone-incoming": {
+      "glyph": "",
+      "terms": [
+        "phone-incoming"
+      ]
+    },
+    "bxs-phone-outgoing": {
+      "glyph": "",
+      "terms": [
+        "phone-outgoing"
+      ]
+    },
+    "bxs-phone": {
+      "glyph": "",
+      "terms": [
+        "phone"
+      ]
+    },
+    "bxs-pie-chart-alt": {
+      "glyph": "",
+      "terms": [
+        "pie-chart-alt"
+      ]
+    },
+    "bxs-pie-chart": {
+      "glyph": "",
+      "terms": [
+        "pie-chart"
+      ]
+    },
+    "bxs-pin": {
+      "glyph": "",
+      "terms": [
+        "pin"
+      ]
+    },
+    "bxs-playlist": {
+      "glyph": "",
+      "terms": [
+        "playlist"
+      ]
+    },
+    "bxs-plug": {
+      "glyph": "",
+      "terms": [
+        "plug",
+        "charging"
+      ]
+    },
+    "bxs-plus-circle": {
+      "glyph": "",
+      "terms": [
+        "plus-circle"
+      ]
+    },
+    "bxs-printer": {
+      "glyph": "",
+      "terms": [
+        "printer"
+      ]
+    },
+    "bxs-purchase-tag": {
+      "glyph": "",
+      "terms": [
+        "purchase-tag",
+        "price",
+        "cost"
+      ]
+    },
+    "bxs-quote-left": {
+      "glyph": "",
+      "terms": [
+        "quote-left"
+      ]
+    },
+    "bxs-quote-right": {
+      "glyph": "",
+      "terms": [
+        "quote-right"
+      ]
+    },
+    "bxs-radio": {
+      "glyph": "",
+      "terms": [
+        "radio"
+      ]
+    },
+    "bxs-rename": {
+      "glyph": "",
+      "terms": [
+        "rename"
+      ]
+    },
+    "bxs-report": {
+      "glyph": "",
+      "terms": [
+        "report"
+      ]
+    },
+    "bxs-right-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "right-arrow-circle"
+      ]
+    },
+    "bxs-ruler": {
+      "glyph": "",
+      "terms": [
+        "ruler"
+      ]
+    },
+    "bxs-save": {
+      "glyph": "",
+      "terms": [
+        "save",
+        "floppy disk"
+      ]
+    },
+    "bxs-sort-alt": {
+      "glyph": "",
+      "terms": [
+        "sort-alt"
+      ]
+    },
+    "bxs-select-multiple": {
+      "glyph": "",
+      "terms": [
+        "select-multiple"
+      ]
+    },
+    "bxs-send": {
+      "glyph": "",
+      "terms": [
+        "send"
+      ]
+    },
+    "bxs-server": {
+      "glyph": "",
+      "terms": [
+        "server"
+      ]
+    },
+    "bxs-share-alt": {
+      "glyph": "",
+      "terms": [
+        "share-alt"
+      ]
+    },
+    "bxs-share": {
+      "glyph": "",
+      "terms": [
+        "share"
+      ]
+    },
+    "bxs-shield": {
+      "glyph": "",
+      "terms": [
+        "shield"
+      ]
+    },
+    "bxs-shopping-bag-alt": {
+      "glyph": "",
+      "terms": [
+        "shopping-bag-alt"
+      ]
+    },
+    "bxs-shopping-bag": {
+      "glyph": "",
+      "terms": [
+        "shopping-bag"
+      ]
+    },
+    "bxs-show": {
+      "glyph": "",
+      "terms": [
+        "show"
+      ]
+    },
+    "bx-happy": {
+      "glyph": "",
+      "terms": [
+        "happy"
+      ]
+    },
+    "bx-meh": {
+      "glyph": "",
+      "terms": [
+        "meh"
+      ]
+    },
+    "bx-sad": {
+      "glyph": "",
+      "terms": [
+        "sad"
+      ]
+    },
+    "bxs-spreadsheet": {
+      "glyph": "",
+      "terms": [
+        "spreadsheet"
+      ]
+    },
+    "bxs-star": {
+      "glyph": "",
+      "terms": [
+        "star"
+      ]
+    },
+    "bxs-store": {
+      "glyph": "",
+      "terms": [
+        "store",
+        "shop",
+        "market"
+      ]
+    },
+    "bxs-sun": {
+      "glyph": "",
+      "terms": [
+        "sun"
+      ]
+    },
+    "bxs-t-shirt": {
+      "glyph": "",
+      "terms": [
+        "t-shirt"
+      ]
+    },
+    "bxs-tag-x": {
+      "glyph": "",
+      "terms": [
+        "tag-x"
+      ]
+    },
+    "bxs-tag": {
+      "glyph": "",
+      "terms": [
+        "tag"
+      ]
+    },
+    "bxs-tennis-ball": {
+      "glyph": "",
+      "terms": [
+        "tennis-ball",
+        "deuce"
+      ]
+    },
+    "bxs-terminal": {
+      "glyph": "",
+      "terms": [
+        "terminal",
+        "command line"
+      ]
+    },
+    "bxs-to-top": {
+      "glyph": "",
+      "terms": [
+        "to-top"
+      ]
+    },
+    "bxs-toggle-left": {
+      "glyph": "",
+      "terms": [
+        "toggle-left",
+        "switch"
+      ]
+    },
+    "bxs-toggle-right": {
+      "glyph": "",
+      "terms": [
+        "toggle-right",
+        "switch"
+      ]
+    },
+    "bxs-torch": {
+      "glyph": "",
+      "terms": [
+        "torch"
+      ]
+    },
+    "bxs-trash-alt": {
+      "glyph": "",
+      "terms": [
+        "trash-alt"
+      ]
+    },
+    "bxs-trash": {
+      "glyph": "",
+      "terms": [
+        "trash"
+      ]
+    },
+    "bxs-trophy": {
+      "glyph": "",
+      "terms": [
+        "trophy"
+      ]
+    },
+    "bxs-truck": {
+      "glyph": "",
+      "terms": [
+        "truck"
+      ]
+    },
+    "bxs-up-arrow-circle": {
+      "glyph": "",
+      "terms": [
+        "up-arrow-circle"
+      ]
+    },
+    "bxs-upvote": {
+      "glyph": "",
+      "terms": [
+        "upvote"
+      ]
+    },
+    "bxs-user-circle": {
+      "glyph": "",
+      "terms": [
+        "user-circle"
+      ]
+    },
+    "bxs-user-detail": {
+      "glyph": "",
+      "terms": [
+        "user-detail"
+      ]
+    },
+    "bxs-user-minus": {
+      "glyph": "",
+      "terms": [
+        "user-minus"
+      ]
+    },
+    "bxs-user-plus": {
+      "glyph": "",
+      "terms": [
+        "user-plus"
+      ]
+    },
+    "bxs-user": {
+      "glyph": "",
+      "terms": [
+        "user"
+      ]
+    },
+    "bxs-video-off": {
+      "glyph": "",
+      "terms": [
+        "video-off"
+      ]
+    },
+    "bxs-video": {
+      "glyph": "",
+      "terms": [
+        "video"
+      ]
+    },
+    "bxs-videos": {
+      "glyph": "",
+      "terms": [
+        "videos"
+      ]
+    },
+    "bxs-volume-full": {
+      "glyph": "",
+      "terms": [
+        "volume-full"
+      ]
+    },
+    "bxs-volume-low": {
+      "glyph": "",
+      "terms": [
+        "volume-low"
+      ]
+    },
+    "bxs-volume-mute": {
+      "glyph": "",
+      "terms": [
+        "volume-mute"
+      ]
+    },
+    "bxs-volume": {
+      "glyph": "",
+      "terms": [
+        "volume"
+      ]
+    },
+    "bxs-wallet": {
+      "glyph": "",
+      "terms": [
+        "wallet",
+        "money"
+      ]
+    },
+    "bxs-watch-alt": {
+      "glyph": "",
+      "terms": [
+        "watch-alt"
+      ]
+    },
+    "bxs-watch": {
+      "glyph": "",
+      "terms": [
+        "watch"
+      ]
+    },
+    "bxs-widget": {
+      "glyph": "",
+      "terms": [
+        "widget"
+      ]
+    },
+    "bxs-wrench": {
+      "glyph": "",
+      "terms": [
+        "wrench"
+      ]
+    },
+    "bxs-x-circle": {
+      "glyph": "",
+      "terms": [
+        "x-circle"
+      ]
+    },
+    "bxs-zap": {
+      "glyph": "",
+      "terms": [
+        "zap",
+        "bolt"
+      ]
+    },
+    "bxs-folder-open": {
+      "glyph": "",
+      "terms": [
+        "folder-open"
+      ]
+    },
+    "bxs-battery-low": {
+      "glyph": "",
+      "terms": [
+        "battery-low"
+      ]
+    },
+    "bxs-conversation": {
+      "glyph": "",
+      "terms": [
+        "conversation",
+        "chat",
+        "discussion"
+      ]
+    },
+    "bxs-dashboard": {
+      "glyph": "",
+      "terms": [
+        "dashboard"
+      ]
+    },
+    "bxs-file-plus": {
+      "glyph": "",
+      "terms": [
+        "file-plus",
+        "add",
+        "file add",
+        "new file"
+      ]
+    },
+    "bx-slider-alt": {
+      "glyph": "",
+      "terms": [
+        "slider-alt"
+      ]
+    },
+    "bxl-google-plus": {
+      "glyph": "",
+      "terms": [
+        "google-plus"
+      ]
+    },
+    "bxl-google-plus-circle": {
+      "glyph": "",
+      "terms": [
+        "google-plus-circle"
+      ]
+    },
+    "bxl-linkedin-square": {
+      "glyph": "",
+      "terms": [
+        "linkedin-square"
+      ]
+    },
+    "bxl-medium": {
+      "glyph": "",
+      "terms": [
+        "medium"
+      ]
+    },
+    "bxl-medium-square": {
+      "glyph": "",
+      "terms": [
+        "medium-square"
+      ]
+    },
+    "bxl-skype": {
+      "glyph": "",
+      "terms": [
+        "skype"
+      ]
+    },
+    "bxl-slack-old": {
+      "glyph": "",
+      "terms": [
+        "slack-old"
+      ]
+    },
+    "bxl-slack": {
+      "glyph": "",
+      "terms": [
+        "slack"
+      ]
+    },
+    "bxl-twitch": {
+      "glyph": "",
+      "terms": [
+        "twitch"
+      ]
+    },
+    "bxl-discord": {
+      "glyph": "",
+      "terms": [
+        "discord"
+      ]
+    },
+    "bxl-reddit": {
+      "glyph": "",
+      "terms": [
+        "reddit",
+        "social media"
+      ]
+    },
+    "bxl-pinterest": {
+      "glyph": "",
+      "terms": [
+        "pinterest"
+      ]
+    },
+    "bxl-blogger": {
+      "glyph": "",
+      "terms": [
+        "blogger"
+      ]
+    },
+    "bx-certification": {
+      "glyph": "",
+      "terms": [
+        "certification"
+      ]
+    },
+    "bxs-certification": {
+      "glyph": "",
+      "terms": [
+        "certification"
+      ]
+    },
+    "bx-rocket": {
+      "glyph": "",
+      "terms": [
+        "rocket"
+      ]
+    },
+    "bxs-rocket": {
+      "glyph": "",
+      "terms": [
+        "rocket"
+      ]
+    },
+    "bx-check-circle": {
+      "glyph": "",
+      "terms": [
+        "check-circle"
+      ]
+    },
+    "bxs-check-circle": {
+      "glyph": "",
+      "terms": [
+        "check-circle"
+      ]
+    },
+    "bxs-checkbox": {
+      "glyph": "",
+      "terms": [
+        "checkbox"
+      ]
+    },
+    "bxs-checkbox-checked": {
+      "glyph": "",
+      "terms": [
+        "checkbox-checked"
+      ]
+    },
+    "bxs-star-half": {
+      "glyph": "",
+      "terms": [
+        "star-half"
+      ]
+    },
+    "bx-bus": {
+      "glyph": "",
+      "terms": [
+        "bus"
+      ]
+    },
+    "bxs-bus": {
+      "glyph": "",
+      "terms": [
+        "bus"
+      ]
+    },
+    "bx-check-double": {
+      "glyph": "",
+      "terms": [
+        "check-double"
+      ]
+    },
+    "bx-dumbbell": {
+      "glyph": "",
+      "terms": [
+        "dumbbell",
+        "gym",
+        "workout"
+      ]
+    },
+    "bx-bot": {
+      "glyph": "",
+      "terms": [
+        "bot"
+      ]
+    },
+    "bx-area": {
+      "glyph": "",
+      "terms": [
+        "area"
+      ]
+    },
+    "bxs-bot": {
+      "glyph": "",
+      "terms": [
+        "bot"
+      ]
+    },
+    "bxs-area": {
+      "glyph": "",
+      "terms": [
+        "area"
+      ]
+    },
+    "bx-bed": {
+      "glyph": "",
+      "terms": [
+        "bed",
+        "sleep"
+      ]
+    },
+    "bxs-bed": {
+      "glyph": "",
+      "terms": [
+        "bed",
+        "sleep"
+      ]
+    },
+    "bx-bath": {
+      "glyph": "",
+      "terms": [
+        "bath"
+      ]
+    },
+    "bxs-bath": {
+      "glyph": "",
+      "terms": [
+        "bath"
+      ]
+    },
+    "bx-train": {
+      "glyph": "",
+      "terms": [
+        "train"
+      ]
+    },
+    "bxs-train": {
+      "glyph": "",
+      "terms": [
+        "train"
+      ]
+    },
+    "bx-taxi": {
+      "glyph": "",
+      "terms": [
+        "taxi"
+      ]
+    },
+    "bxs-taxi": {
+      "glyph": "",
+      "terms": [
+        "taxi"
+      ]
+    },
+    "bx-movie": {
+      "glyph": "",
+      "terms": [
+        "movie"
+      ]
+    },
+    "bxs-movie": {
+      "glyph": "",
+      "terms": [
+        "movie"
+      ]
+    },
+    "bx-hotel": {
+      "glyph": "",
+      "terms": [
+        "hotel"
+      ]
+    },
+    "bx-planet": {
+      "glyph": "",
+      "terms": [
+        "planet"
+      ]
+    },
+    "bxs-planet": {
+      "glyph": "",
+      "terms": [
+        "planet"
+      ]
+    },
+    "bx-list-ol": {
+      "glyph": "",
+      "terms": [
+        "list-ol"
+      ]
+    },
+    "bx-video-plus": {
+      "glyph": "",
+      "terms": [
+        "video-plus"
+      ]
+    },
+    "bxs-video-plus": {
+      "glyph": "",
+      "terms": [
+        "video-plus"
+      ]
+    },
+    "bx-menu-alt-left": {
+      "glyph": "",
+      "terms": [
+        "menu-alt-left"
+      ]
+    },
+    "bx-menu-alt-right": {
+      "glyph": "",
+      "terms": [
+        "menu-alt-right"
+      ]
+    },
+    "bx-box": {
+      "glyph": "",
+      "terms": [
+        "box",
+        "archive"
+      ]
+    },
+    "bxs-box": {
+      "glyph": "",
+      "terms": [
+        "box",
+        "archive"
+      ]
+    },
+    "bxs-key": {
+      "glyph": "",
+      "terms": [
+        "key"
+      ]
+    },
+    "bx-restaurant": {
+      "glyph": "",
+      "terms": [
+        "restaurant"
+      ]
+    },
+    "bx-swim": {
+      "glyph": "",
+      "terms": [
+        "swim"
+      ]
+    },
+    "bx-water": {
+      "glyph": "",
+      "terms": [
+        "water"
+      ]
+    },
+    "bx-wind": {
+      "glyph": "",
+      "terms": [
+        "wind",
+        "breeze",
+        "gust",
+        "air"
+      ]
+    },
+    "bx-dialpad": {
+      "glyph": "",
+      "terms": [
+        "dialpad",
+        "keypad"
+      ]
+    },
+    "bx-handicap": {
+      "glyph": "",
+      "terms": [
+        "handicap",
+        "wheelchair",
+        "injury"
+      ]
+    },
+    "bx-font-size": {
+      "glyph": "",
+      "terms": [
+        "font-size"
+      ]
+    },
+    "bx-code-block": {
+      "glyph": "",
+      "terms": [
+        "code-block"
+      ]
+    },
+    "bx-photo-album": {
+      "glyph": "",
+      "terms": [
+        "photo-album"
+      ]
+    },
+    "bxs-photo-album": {
+      "glyph": "",
+      "terms": [
+        "photo-album"
+      ]
+    },
+    "bxs-bell-ring": {
+      "glyph": "",
+      "terms": [
+        "bell-ring",
+        "alert",
+        "notification"
+      ]
+    },
+    "bxl-apple": {
+      "glyph": "",
+      "terms": [
+        "apple"
+      ]
+    },
+    "bxl-android": {
+      "glyph": "",
+      "terms": [
+        "android"
+      ]
+    },
+    "bxl-play-store": {
+      "glyph": "",
+      "terms": [
+        "play-store"
+      ]
+    },
+    "bxl-windows": {
+      "glyph": "",
+      "terms": [
+        "windows",
+        "browser"
+      ]
+    },
+    "bxl-vk": {
+      "glyph": "",
+      "terms": [
+        "vk",
+        "social media"
+      ]
+    },
+    "bxl-pocket": {
+      "glyph": "",
+      "terms": [
+        "pocket"
+      ]
+    },
+    "bx-strikethrough": {
+      "glyph": "",
+      "terms": [
+        "strikethrough"
+      ]
+    },
+    "bx-file-blank": {
+      "glyph": "",
+      "terms": [
+        "file-blank"
+      ]
+    },
+    "bxs-file-blank": {
+      "glyph": "",
+      "terms": [
+        "file-blank"
+      ]
+    },
+    "bx-highlight": {
+      "glyph": "",
+      "terms": [
+        "highlight"
+      ]
+    },
+    "bx-font-color": {
+      "glyph": "",
+      "terms": [
+        "font-color"
+      ]
+    },
+    "bx-fingerprint": {
+      "glyph": "",
+      "terms": [
+        "fingerprint"
+      ]
+    },
+    "bx-transfer": {
+      "glyph": "",
+      "terms": [
+        "transfer"
+      ]
+    },
+    "bx-circle": {
+      "glyph": "",
+      "terms": [
+        "circle"
+      ]
+    },
+    "bxs-edit": {
+      "glyph": "",
+      "terms": [
+        "edit",
+        "writing",
+        "note",
+        "pencil"
+      ]
+    },
+    "bx-ball": {
+      "glyph": "",
+      "terms": [
+        "ball",
+        "football",
+        "rugby"
+      ]
+    },
+    "bxs-ball": {
+      "glyph": "",
+      "terms": [
+        "ball",
+        "football",
+        "rugby"
+      ]
+    },
+    "bx-football": {
+      "glyph": "",
+      "terms": [
+        "football",
+        "soccer",
+        "goal"
+      ]
+    },
+    "bxs-film": {
+      "glyph": "",
+      "terms": [
+        "film"
+      ]
+    },
+    "bx-dollar-circle": {
+      "glyph": "",
+      "terms": [
+        "dollar-circle"
+      ]
+    },
+    "bxs-dollar-circle": {
+      "glyph": "",
+      "terms": [
+        "dollar-circle"
+      ]
+    },
+    "bxs-skull": {
+      "glyph": "",
+      "terms": [
+        "skull"
+      ]
+    },
+    "bxl-messenger": {
+      "glyph": "",
+      "terms": [
+        "messenger"
+      ]
+    },
+    "bx-search-alt": {
+      "glyph": "",
+      "terms": [
+        "search-alt",
+        "magnifying glass"
+      ]
+    },
+    "bxs-image-alt": {
+      "glyph": "",
+      "terms": [
+        "image-alt"
+      ]
+    },
+    "bxs-microphone-alt": {
+      "glyph": "",
+      "terms": [
+        "microphone-alt"
+      ]
+    },
+    "bx-analyse": {
+      "glyph": "",
+      "terms": [
+        "analyse"
+      ]
+    },
+    "bxs-x-square": {
+      "glyph": "",
+      "terms": [
+        "x-square"
+      ]
+    },
+    "bxs-plus-square": {
+      "glyph": "",
+      "terms": [
+        "plus-square"
+      ]
+    },
+    "bxs-minus-square": {
+      "glyph": "",
+      "terms": [
+        "minus-square"
+      ]
+    },
+    "bx-disc": {
+      "glyph": "",
+      "terms": [
+        "disc"
+      ]
+    },
+    "bxs-disc": {
+      "glyph": "",
+      "terms": [
+        "disc"
+      ]
+    },
+    "bx-equalizer": {
+      "glyph": "",
+      "terms": [
+        "equalizer"
+      ]
+    },
+    "bx-stats": {
+      "glyph": "",
+      "terms": [
+        "stats"
+      ]
+    },
+    "bx-move-horizontal": {
+      "glyph": "",
+      "terms": [
+        "move-horizontal"
+      ]
+    },
+    "bx-move-vertical": {
+      "glyph": "",
+      "terms": [
+        "move-vertical"
+      ]
+    },
+    "bxs-flame": {
+      "glyph": "",
+      "terms": [
+        "flame"
+      ]
+    },
+    "bx-grid-horizontal": {
+      "glyph": "",
+      "terms": [
+        "grid-horizontal"
+      ]
+    },
+    "bx-grid-vertical": {
+      "glyph": "",
+      "terms": [
+        "grid-vertical"
+      ]
+    },
+    "bx-grid-small": {
+      "glyph": "",
+      "terms": [
+        "grid-small"
+      ]
+    },
+    "bx-badge": {
+      "glyph": "",
+      "terms": [
+        "badge"
+      ]
+    },
+    "bxs-badge": {
+      "glyph": "",
+      "terms": [
+        "badge"
+      ]
+    },
+    "bx-id-card": {
+      "glyph": "",
+      "terms": [
+        "id-card"
+      ]
+    },
+    "bx-sort-up": {
+      "glyph": "",
+      "terms": [
+        "sort-up"
+      ]
+    },
+    "bx-sort-down": {
+      "glyph": "",
+      "terms": [
+        "sort-down"
+      ]
+    },
+    "bx-note": {
+      "glyph": "",
+      "terms": [
+        "note"
+      ]
+    },
+    "bxs-note": {
+      "glyph": "",
+      "terms": [
+        "note"
+      ]
+    },
+    "bx-test-tube": {
+      "glyph": "",
+      "terms": [
+        "test-tube"
+      ]
+    },
+    "bx-help-circle": {
+      "glyph": "",
+      "terms": [
+        "help-circle"
+      ]
+    },
+    "bxs-help-circle": {
+      "glyph": "",
+      "terms": [
+        "help-circle"
+      ]
+    },
+    "bx-card": {
+      "glyph": "",
+      "terms": [
+        "card"
+      ]
+    },
+    "bxs-card": {
+      "glyph": "",
+      "terms": [
+        "card"
+      ]
+    },
+    "bx-rewind-circle": {
+      "glyph": "",
+      "terms": [
+        "rewind-circle"
+      ]
+    },
+    "bx-magnet": {
+      "glyph": "",
+      "terms": [
+        "magnet"
+      ]
+    },
+    "bxs-magnet": {
+      "glyph": "",
+      "terms": [
+        "magnet"
+      ]
+    },
+    "bxl-500px": {
+      "glyph": "",
+      "terms": [
+        "500px"
+      ]
+    },
+    "bxl-angular": {
+      "glyph": "",
+      "terms": [
+        "angular"
+      ]
+    },
+    "bxl-codepen": {
+      "glyph": "",
+      "terms": [
+        "codepen"
+      ]
+    },
+    "bxl-creative-commons": {
+      "glyph": "",
+      "terms": [
+        "creative-commons"
+      ]
+    },
+    "bxl-digitalocean": {
+      "glyph": "",
+      "terms": [
+        "digitalocean"
+      ]
+    },
+    "bxl-deviantart": {
+      "glyph": "",
+      "terms": [
+        "deviantart"
+      ]
+    },
+    "bxl-discourse": {
+      "glyph": "",
+      "terms": [
+        "discourse"
+      ]
+    },
+    "bxl-dropbox": {
+      "glyph": "",
+      "terms": [
+        "dropbox"
+      ]
+    },
+    "bxl-drupal": {
+      "glyph": "",
+      "terms": [
+        "drupal"
+      ]
+    },
+    "bxl-ebay": {
+      "glyph": "",
+      "terms": [
+        "ebay"
+      ]
+    },
+    "bxl-amazon": {
+      "glyph": "",
+      "terms": [
+        "amazon"
+      ]
+    },
+    "bxl-digg": {
+      "glyph": "",
+      "terms": [
+        "digg"
+      ]
+    },
+    "bxl-unsplash": {
+      "glyph": "",
+      "terms": [
+        "unsplash"
+      ]
+    },
+    "bxl-wikipedia": {
+      "glyph": "",
+      "terms": [
+        "wikipedia"
+      ]
+    },
+    "bxl-sass": {
+      "glyph": "",
+      "terms": [
+        "sass"
+      ]
+    },
+    "bxl-foursquare": {
+      "glyph": "",
+      "terms": [
+        "foursquare"
+      ]
+    },
+    "bxl-invision": {
+      "glyph": "",
+      "terms": [
+        "invision"
+      ]
+    },
+    "bxl-opera": {
+      "glyph": "",
+      "terms": [
+        "opera"
+      ]
+    },
+    "bxl-airbnb": {
+      "glyph": "",
+      "terms": [
+        "airbnb"
+      ]
+    },
+    "bxl-yelp": {
+      "glyph": "",
+      "terms": [
+        "yelp"
+      ]
+    },
+    "bxl-quora": {
+      "glyph": "",
+      "terms": [
+        "quora"
+      ]
+    },
+    "bxl-git": {
+      "glyph": "",
+      "terms": [
+        "git"
+      ]
+    },
+    "bxl-html5": {
+      "glyph": "",
+      "terms": [
+        "html5"
+      ]
+    },
+    "bxl-product-hunt": {
+      "glyph": "",
+      "terms": [
+        "product-hunt"
+      ]
+    },
+    "bxl-magento": {
+      "glyph": "",
+      "terms": [
+        "magento"
+      ]
+    },
+    "bxl-stack-overflow": {
+      "glyph": "",
+      "terms": [
+        "stack-overflow"
+      ]
+    },
+    "bxl-firefox": {
+      "glyph": "",
+      "terms": [
+        "firefox"
+      ]
+    },
+    "bxl-javascript": {
+      "glyph": "",
+      "terms": [
+        "javascript"
+      ]
+    },
+    "bxl-nodejs": {
+      "glyph": "",
+      "terms": [
+        "nodejs"
+      ]
+    },
+    "bxl-kickstarter": {
+      "glyph": "",
+      "terms": [
+        "kickstarter"
+      ]
+    },
+    "bxl-vuejs": {
+      "glyph": "",
+      "terms": [
+        "vuejs"
+      ]
+    },
+    "bxl-bing": {
+      "glyph": "",
+      "terms": [
+        "bing"
+      ]
+    },
+    "bxl-react": {
+      "glyph": "",
+      "terms": [
+        "react"
+      ]
+    },
+    "bxl-periscope": {
+      "glyph": "",
+      "terms": [
+        "periscope"
+      ]
+    },
+    "bxl-wordpress": {
+      "glyph": "",
+      "terms": [
+        "wordpress"
+      ]
+    },
+    "bxl-telegram": {
+      "glyph": "",
+      "terms": [
+        "telegram"
+      ]
+    },
+    "bxl-stripe": {
+      "glyph": "",
+      "terms": [
+        "stripe"
+      ]
+    },
+    "bxl-edge": {
+      "glyph": "",
+      "terms": [
+        "edge"
+      ]
+    },
+    "bxl-paypal": {
+      "glyph": "",
+      "terms": [
+        "paypal"
+      ]
+    },
+    "bxl-internet-explorer": {
+      "glyph": "",
+      "terms": [
+        "internet-explorer"
+      ]
+    },
+    "bxl-joomla": {
+      "glyph": "",
+      "terms": [
+        "joomla"
+      ]
+    },
+    "bxl-dailymotion": {
+      "glyph": "",
+      "terms": [
+        "dailymotion"
+      ]
+    },
+    "bxl-chrome": {
+      "glyph": "",
+      "terms": [
+        "chrome"
+      ]
+    },
+    "bxl-baidu": {
+      "glyph": "",
+      "terms": [
+        "baidu"
+      ]
+    },
+    "bxl-visa": {
+      "glyph": "",
+      "terms": [
+        "visa"
+      ]
+    },
+    "bxl-mastercard": {
+      "glyph": "",
+      "terms": [
+        "mastercard"
+      ]
+    },
+    "bxl-redux": {
+      "glyph": "",
+      "terms": [
+        "redux"
+      ]
+    },
+    "bxl-bootstrap": {
+      "glyph": "",
+      "terms": [
+        "bootstrap"
+      ]
+    },
+    "bxl-yahoo": {
+      "glyph": "",
+      "terms": [
+        "yahoo"
+      ]
+    },
+    "bxl-microsoft": {
+      "glyph": "",
+      "terms": [
+        "microsoft"
+      ]
+    },
+    "bxl-css3": {
+      "glyph": "",
+      "terms": [
+        "css3"
+      ]
+    },
+    "bxl-jsfiddle": {
+      "glyph": "",
+      "terms": [
+        "jsfiddle"
+      ]
+    },
+    "bxl-shopify": {
+      "glyph": "",
+      "terms": [
+        "shopify"
+      ]
+    },
+    "bxl-flickr": {
+      "glyph": "",
+      "terms": [
+        "flickr"
+      ]
+    },
+    "bxl-less": {
+      "glyph": "",
+      "terms": [
+        "less"
+      ]
+    },
+    "bxl-snapchat": {
+      "glyph": "",
+      "terms": [
+        "snapchat"
+      ]
+    },
+    "bxl-soundcloud": {
+      "glyph": "",
+      "terms": [
+        "soundcloud"
+      ]
+    },
+    "bxl-spotify": {
+      "glyph": "",
+      "terms": [
+        "spotify"
+      ]
+    },
+    "bxl-trello": {
+      "glyph": "",
+      "terms": [
+        "trello"
+      ]
+    },
+    "bxl-wix": {
+      "glyph": "",
+      "terms": [
+        "wix"
+      ]
+    },
+    "bxl-mailchimp": {
+      "glyph": "",
+      "terms": [
+        "mailchimp"
+      ]
+    },
+    "bxl-medium-old": {
+      "glyph": "",
+      "terms": [
+        "medium-old"
+      ]
+    },
+    "bxl-squarespace": {
+      "glyph": "",
+      "terms": [
+        "squarespace"
+      ]
+    },
+    "bxl-whatsapp-square": {
+      "glyph": "",
+      "terms": [
+        "whatsapp-square"
+      ]
+    },
+    "bxl-flickr-square": {
+      "glyph": "",
+      "terms": [
+        "flickr-square"
+      ]
+    },
+    "bxs-ambulance": {
+      "glyph": "",
+      "terms": [
+        "ambulance"
+      ]
+    },
+    "bxs-left-arrow-square": {
+      "glyph": "",
+      "terms": [
+        "left-arrow-square"
+      ]
+    },
+    "bxs-up-arrow-square": {
+      "glyph": "",
+      "terms": [
+        "up-arrow-square"
+      ]
+    },
+    "bxs-down-arrow-square": {
+      "glyph": "",
+      "terms": [
+        "down-arrow-square"
+      ]
+    },
+    "bxs-right-arrow-square": {
+      "glyph": "",
+      "terms": [
+        "right-arrow-square"
+      ]
+    },
+    "bxs-user-badge": {
+      "glyph": "",
+      "terms": [
+        "user-badge"
+      ]
+    },
+    "bx-calendar-event": {
+      "glyph": "",
+      "terms": [
+        "calendar-event"
+      ]
+    },
+    "bx-caret-left": {
+      "glyph": "",
+      "terms": [
+        "caret-left"
+      ]
+    },
+    "bx-caret-up": {
+      "glyph": "",
+      "terms": [
+        "caret-up"
+      ]
+    },
+    "bx-caret-right": {
+      "glyph": "",
+      "terms": [
+        "caret-right"
+      ]
+    },
+    "bx-caret-down": {
+      "glyph": "",
+      "terms": [
+        "caret-down"
+      ]
+    },
+    "bxs-gas-pump": {
+      "glyph": "",
+      "terms": [
+        "gas-pump"
+      ]
+    },
+    "bxs-landmark": {
+      "glyph": "",
+      "terms": [
+        "landmark"
+      ]
+    },
+    "bx-show-alt": {
+      "glyph": "",
+      "terms": [
+        "show-alt"
+      ]
+    },
+    "bx-badge-check": {
+      "glyph": "",
+      "terms": [
+        "badge-check"
+      ]
+    },
+    "bxs-badge-check": {
+      "glyph": "",
+      "terms": [
+        "badge-check"
+      ]
+    },
+    "bx-rotate-left": {
+      "glyph": "",
+      "terms": [
+        "rotate-left"
+      ]
+    },
+    "bxs-coffee-alt": {
+      "glyph": "",
+      "terms": [
+        "coffee-alt"
+      ]
+    },
+    "bx-brush": {
+      "glyph": "",
+      "terms": [
+        "brush",
+        "color",
+        "colour",
+        "painting"
+      ]
+    },
+    "bxs-brush": {
+      "glyph": "",
+      "terms": [
+        "brush",
+        "color",
+        "colour",
+        "painting"
+      ]
+    },
+    "bxs-keyboard": {
+      "glyph": "",
+      "terms": [
+        "keyboard"
+      ]
+    },
+    "bxs-megaphone": {
+      "glyph": "",
+      "terms": [
+        "megaphone"
+      ]
+    },
+    "bxs-directions": {
+      "glyph": "",
+      "terms": [
+        "directions"
+      ]
+    },
+    "bxs-direction-right": {
+      "glyph": "",
+      "terms": [
+        "direction-right"
+      ]
+    },
+    "bx-unlink": {
+      "glyph": "",
+      "terms": [
+        "unlink"
+      ]
+    },
+    "bx-paint": {
+      "glyph": "",
+      "terms": [
+        "paint"
+      ]
+    },
+    "bx-joystick-button": {
+      "glyph": "",
+      "terms": [
+        "joystick-button"
+      ]
+    },
+    "bxs-joystick-button": {
+      "glyph": "",
+      "terms": [
+        "joystick-button"
+      ]
+    },
+    "bx-font-family": {
+      "glyph": "",
+      "terms": [
+        "font-family"
+      ]
+    },
+    "bxs-flask": {
+      "glyph": "",
+      "terms": [
+        "flask"
+      ]
+    },
+    "bxs-capsule": {
+      "glyph": "",
+      "terms": [
+        "capsule",
+        "medicine"
+      ]
+    },
+    "bxs-color-fill": {
+      "glyph": "",
+      "terms": [
+        "color-fill"
+      ]
+    },
+    "bxs-hotel": {
+      "glyph": "",
+      "terms": [
+        "hotel"
+      ]
+    },
+    "bxs-magic-wand": {
+      "glyph": "",
+      "terms": [
+        "magic-wand"
+      ]
+    },
+    "bx-repeat": {
+      "glyph": "",
+      "terms": [
+        "repeat"
+      ]
+    },
+    "bxs-eraser": {
+      "glyph": "",
+      "terms": [
+        "eraser",
+        "rubber"
+      ]
+    },
+    "bxs-cloud-rain": {
+      "glyph": "",
+      "terms": [
+        "cloud-rain"
+      ]
+    },
+    "bxs-cloud-lightning": {
+      "glyph": "",
+      "terms": [
+        "cloud-lightning"
+      ]
+    },
+    "bxs-eyedropper": {
+      "glyph": "",
+      "terms": [
+        "eyedropper"
+      ]
+    },
+    "bxs-user-rectangle": {
+      "glyph": "",
+      "terms": [
+        "user-rectangle"
+      ]
+    },
+    "bxs-plane": {
+      "glyph": "",
+      "terms": [
+        "plane",
+        "flight",
+        "fly"
+      ]
+    },
+    "bxs-tree": {
+      "glyph": "",
+      "terms": [
+        "tree",
+        "forest",
+        "christmas"
+      ]
+    },
+    "bxs-factory": {
+      "glyph": "",
+      "terms": [
+        "factory"
+      ]
+    },
+    "bxs-ship": {
+      "glyph": "",
+      "terms": [
+        "ship"
+      ]
+    },
+    "bx-walk": {
+      "glyph": "",
+      "terms": [
+        "walk"
+      ]
+    },
+    "bxs-yin-yang": {
+      "glyph": "",
+      "terms": [
+        "yin-yang"
+      ]
+    },
+    "bxs-file-pdf": {
+      "glyph": "",
+      "terms": [
+        "file-pdf"
+      ]
+    },
+    "bx-money": {
+      "glyph": "",
+      "terms": [
+        "money"
+      ]
+    },
+    "bx-home-circle": {
+      "glyph": "",
+      "terms": [
+        "home-circle"
+      ]
+    },
+    "bxs-home-circle": {
+      "glyph": "",
+      "terms": [
+        "home-circle"
+      ]
+    },
+    "bx-location-plus": {
+      "glyph": "",
+      "terms": [
+        "location-plus"
+      ]
+    },
+    "bxs-location-plus": {
+      "glyph": "",
+      "terms": [
+        "location-plus"
+      ]
+    },
+    "bx-arch": {
+      "glyph": "",
+      "terms": [
+        "arch"
+      ]
+    },
+    "bxs-arch": {
+      "glyph": "",
+      "terms": [
+        "arch"
+      ]
+    },
+    "bx-atom": {
+      "glyph": "",
+      "terms": [
+        "atom"
+      ]
+    },
+    "bxs-badge-dollar": {
+      "glyph": "",
+      "terms": [
+        "badge-dollar"
+      ]
+    },
+    "bx-baseball": {
+      "glyph": "",
+      "terms": [
+        "baseball"
+      ]
+    },
+    "bx-beer": {
+      "glyph": "",
+      "terms": [
+        "beer"
+      ]
+    },
+    "bxs-beer": {
+      "glyph": "",
+      "terms": [
+        "beer"
+      ]
+    },
+    "bx-bible": {
+      "glyph": "",
+      "terms": [
+        "bible"
+      ]
+    },
+    "bxs-bible": {
+      "glyph": "",
+      "terms": [
+        "bible"
+      ]
+    },
+    "bx-bomb": {
+      "glyph": "",
+      "terms": [
+        "bomb"
+      ]
+    },
+    "bxs-bomb": {
+      "glyph": "",
+      "terms": [
+        "bomb"
+      ]
+    },
+    "bx-bus-school": {
+      "glyph": "",
+      "terms": [
+        "bus-school"
+      ]
+    },
+    "bxs-bus-school": {
+      "glyph": "",
+      "terms": [
+        "bus-school"
+      ]
+    },
+    "bx-cabinet": {
+      "glyph": "",
+      "terms": [
+        "cabinet"
+      ]
+    },
+    "bxs-cabinet": {
+      "glyph": "",
+      "terms": [
+        "cabinet"
+      ]
+    },
+    "bx-calendar-edit": {
+      "glyph": "",
+      "terms": [
+        "calendar-edit"
+      ]
+    },
+    "bxs-calendar-edit": {
+      "glyph": "",
+      "terms": [
+        "calendar-edit"
+      ]
+    },
+    "bxs-car-wash": {
+      "glyph": "",
+      "terms": [
+        "car-wash"
+      ]
+    },
+    "bxs-car-garage": {
+      "glyph": "",
+      "terms": [
+        "car-garage"
+      ]
+    },
+    "bxs-car-mechanic": {
+      "glyph": "",
+      "terms": [
+        "car-mechanic"
+      ]
+    },
+    "bxs-car-crash": {
+      "glyph": "",
+      "terms": [
+        "car-crash"
+      ]
+    },
+    "bx-coffee-togo": {
+      "glyph": "",
+      "terms": [
+        "coffee-togo"
+      ]
+    },
+    "bxs-coffee-togo": {
+      "glyph": "",
+      "terms": [
+        "coffee-togo"
+      ]
+    },
+    "bxs-chess": {
+      "glyph": "",
+      "terms": [
+        "chess",
+        "strategy"
+      ]
+    },
+    "bxs-dryer": {
+      "glyph": "",
+      "terms": [
+        "dryer"
+      ]
+    },
+    "bxs-washer": {
+      "glyph": "",
+      "terms": [
+        "washer"
+      ]
+    },
+    "bx-pointer": {
+      "glyph": "",
+      "terms": [
+        "pointer"
+      ]
+    },
+    "bxs-pointer": {
+      "glyph": "",
+      "terms": [
+        "pointer"
+      ]
+    },
+    "bx-microchip": {
+      "glyph": "",
+      "terms": [
+        "microchip"
+      ]
+    },
+    "bxs-microchip": {
+      "glyph": "",
+      "terms": [
+        "microchip"
+      ]
+    },
+    "bxs-piano": {
+      "glyph": "",
+      "terms": [
+        "piano"
+      ]
+    },
+    "bxs-file-export": {
+      "glyph": "",
+      "terms": [
+        "file-export"
+      ]
+    },
+    "bxs-file-import": {
+      "glyph": "",
+      "terms": [
+        "file-import"
+      ]
+    },
+    "bxs-flag-checkered": {
+      "glyph": "",
+      "terms": [
+        "flag-checkered",
+        "f1",
+        "racing"
+      ]
+    },
+    "bx-heart-circle": {
+      "glyph": "",
+      "terms": [
+        "heart-circle"
+      ]
+    },
+    "bxs-heart-circle": {
+      "glyph": "",
+      "terms": [
+        "heart-circle"
+      ]
+    },
+    "bx-heart-square": {
+      "glyph": "",
+      "terms": [
+        "heart-square"
+      ]
+    },
+    "bxs-heart-square": {
+      "glyph": "",
+      "terms": [
+        "heart-square"
+      ]
+    },
+    "bx-home-heart": {
+      "glyph": "",
+      "terms": [
+        "home-heart"
+      ]
+    },
+    "bxs-home-heart": {
+      "glyph": "",
+      "terms": [
+        "home-heart"
+      ]
+    },
+    "bx-info-square": {
+      "glyph": "",
+      "terms": [
+        "info-square"
+      ]
+    },
+    "bxs-info-square": {
+      "glyph": "",
+      "terms": [
+        "info-square"
+      ]
+    },
+    "bx-layer-plus": {
+      "glyph": "",
+      "terms": [
+        "layer-plus"
+      ]
+    },
+    "bxs-layer-plus": {
+      "glyph": "",
+      "terms": [
+        "layer-plus"
+      ]
+    },
+    "bx-layer-minus": {
+      "glyph": "",
+      "terms": [
+        "layer-minus"
+      ]
+    },
+    "bxs-layer-minus": {
+      "glyph": "",
+      "terms": [
+        "layer-minus"
+      ]
+    },
+    "bx-recycle": {
+      "glyph": "",
+      "terms": [
+        "recycle"
+      ]
+    },
+    "bx-traffic-cone": {
+      "glyph": "",
+      "terms": [
+        "traffic-cone"
+      ]
+    },
+    "bxs-traffic-cone": {
+      "glyph": "",
+      "terms": [
+        "traffic-cone"
+      ]
+    },
+    "bx-wifi-2": {
+      "glyph": "",
+      "terms": [
+        "wifi-2"
+      ]
+    },
+    "bx-wifi-1": {
+      "glyph": "",
+      "terms": [
+        "wifi-1"
+      ]
+    },
+    "bx-wifi-0": {
+      "glyph": "",
+      "terms": [
+        "wifi-0"
+      ]
+    },
+    "bx-mask": {
+      "glyph": "",
+      "terms": [
+        "mask"
+      ]
+    },
+    "bxs-mask": {
+      "glyph": "",
+      "terms": [
+        "mask"
+      ]
+    },
+    "bx-low-vision": {
+      "glyph": "",
+      "terms": [
+        "low-vision",
+        "eye",
+        "view",
+        "visibility"
+      ]
+    },
+    "bxs-low-vision": {
+      "glyph": "",
+      "terms": [
+        "low-vision",
+        "eye",
+        "view",
+        "visibility"
+      ]
+    },
+    "bxs-radiation": {
+      "glyph": "",
+      "terms": [
+        "radiation",
+        "hazard",
+        "danger"
+      ]
+    },
+    "bx-been-here": {
+      "glyph": "",
+      "terms": [
+        "been-here"
+      ]
+    },
+    "bxs-been-here": {
+      "glyph": "",
+      "terms": [
+        "been-here"
+      ]
+    },
+    "bx-current-location": {
+      "glyph": "",
+      "terms": [
+        "current-location"
+      ]
+    },
+    "bx-arrow-from-top": {
+      "glyph": "",
+      "terms": [
+        "arrow-from-top"
+      ]
+    },
+    "bxs-arrow-from-top": {
+      "glyph": "",
+      "terms": [
+        "arrow-from-top"
+      ]
+    },
+    "bx-arrow-from-bottom": {
+      "glyph": "",
+      "terms": [
+        "arrow-from-bottom"
+      ]
+    },
+    "bxs-arrow-from-bottom": {
+      "glyph": "",
+      "terms": [
+        "arrow-from-bottom"
+      ]
+    },
+    "bx-arrow-from-left": {
+      "glyph": "",
+      "terms": [
+        "arrow-from-left"
+      ]
+    },
+    "bxs-arrow-from-left": {
+      "glyph": "",
+      "terms": [
+        "arrow-from-left"
+      ]
+    },
+    "bx-arrow-from-right": {
+      "glyph": "",
+      "terms": [
+        "arrow-from-right"
+      ]
+    },
+    "bxs-arrow-from-right": {
+      "glyph": "",
+      "terms": [
+        "arrow-from-right"
+      ]
+    },
+    "bx-arrow-to-right": {
+      "glyph": "",
+      "terms": [
+        "arrow-to-right"
+      ]
+    },
+    "bxs-arrow-to-right": {
+      "glyph": "",
+      "terms": [
+        "arrow-to-right"
+      ]
+    },
+    "bx-arrow-to-left": {
+      "glyph": "",
+      "terms": [
+        "arrow-to-left"
+      ]
+    },
+    "bxs-arrow-to-left": {
+      "glyph": "",
+      "terms": [
+        "arrow-to-left"
+      ]
+    },
+    "bx-arrow-to-top": {
+      "glyph": "",
+      "terms": [
+        "arrow-to-top"
+      ]
+    },
+    "bxs-arrow-to-top": {
+      "glyph": "",
+      "terms": [
+        "arrow-to-top"
+      ]
+    },
+    "bx-arrow-to-bottom": {
+      "glyph": "",
+      "terms": [
+        "arrow-to-bottom"
+      ]
+    },
+    "bxs-arrow-to-bottom": {
+      "glyph": "",
+      "terms": [
+        "arrow-to-bottom"
+      ]
+    },
+    "bx-book-reader": {
+      "glyph": "",
+      "terms": [
+        "book-reader"
+      ]
+    },
+    "bxs-book-reader": {
+      "glyph": "",
+      "terms": [
+        "book-reader"
+      ]
+    },
+    "bxs-edit-location": {
+      "glyph": "",
+      "terms": [
+        "edit-location"
+      ]
+    },
+    "bxs-ev-station": {
+      "glyph": "",
+      "terms": [
+        "ev-station"
+      ]
+    },
+    "bxs-shapes": {
+      "glyph": "",
+      "terms": [
+        "shapes"
+      ]
+    },
+    "bxs-florist": {
+      "glyph": "",
+      "terms": [
+        "florist"
+      ]
+    },
+    "bxs-pizza": {
+      "glyph": "",
+      "terms": [
+        "pizza"
+      ]
+    },
+    "bx-scan": {
+      "glyph": "",
+      "terms": [
+        "scan"
+      ]
+    },
+    "bx-calendar-week": {
+      "glyph": "",
+      "terms": [
+        "calendar-week"
+      ]
+    },
+    "bxs-calendar-week": {
+      "glyph": "",
+      "terms": [
+        "calendar-week"
+      ]
+    },
+    "bx-glasses": {
+      "glyph": "",
+      "terms": [
+        "glasses"
+      ]
+    },
+    "bx-glasses-alt": {
+      "glyph": "",
+      "terms": [
+        "glasses-alt"
+      ]
+    },
+    "bx-border-none": {
+      "glyph": "",
+      "terms": [
+        "border-none"
+      ]
+    },
+    "bx-border-inner": {
+      "glyph": "",
+      "terms": [
+        "border-inner"
+      ]
+    },
+    "bx-dice-1": {
+      "glyph": "",
+      "terms": [
+        "dice-1",
+        "game",
+        "random"
+      ]
+    },
+    "bxs-dice-1": {
+      "glyph": "",
+      "terms": [
+        "dice-1",
+        "game",
+        "random"
+      ]
+    },
+    "bx-dice-2": {
+      "glyph": "",
+      "terms": [
+        "dice-2",
+        "game",
+        "random"
+      ]
+    },
+    "bxs-dice-2": {
+      "glyph": "",
+      "terms": [
+        "dice-2",
+        "game",
+        "random"
+      ]
+    },
+    "bx-dice-3": {
+      "glyph": "",
+      "terms": [
+        "dice-3",
+        "game",
+        "random"
+      ]
+    },
+    "bxs-dice-3": {
+      "glyph": "",
+      "terms": [
+        "dice-3",
+        "game",
+        "random"
+      ]
+    },
+    "bx-dice-4": {
+      "glyph": "",
+      "terms": [
+        "dice-4",
+        "game",
+        "random"
+      ]
+    },
+    "bxs-dice-4": {
+      "glyph": "",
+      "terms": [
+        "dice-4",
+        "game",
+        "random"
+      ]
+    },
+    "bx-dice-5": {
+      "glyph": "",
+      "terms": [
+        "dice-5",
+        "game",
+        "random"
+      ]
+    },
+    "bxs-dice-5": {
+      "glyph": "",
+      "terms": [
+        "dice-5",
+        "game",
+        "random"
+      ]
+    },
+    "bx-dice-6": {
+      "glyph": "",
+      "terms": [
+        "dice-6",
+        "game",
+        "random"
+      ]
+    },
+    "bxs-dice-6": {
+      "glyph": "",
+      "terms": [
+        "dice-6",
+        "game",
+        "random"
+      ]
+    },
+    "bx-webcam": {
+      "glyph": "",
+      "terms": [
+        "webcam"
+      ]
+    },
+    "bxs-webcam": {
+      "glyph": "",
+      "terms": [
+        "webcam"
+      ]
+    },
+    "bx-spray-can": {
+      "glyph": "",
+      "terms": [
+        "spray-can",
+        "color",
+        "colour",
+        "paint spray"
+      ]
+    },
+    "bxs-spray-can": {
+      "glyph": "",
+      "terms": [
+        "spray-can",
+        "color",
+        "colour",
+        "paint spray"
+      ]
+    },
+    "bxs-file-archive": {
+      "glyph": "",
+      "terms": [
+        "file-archive"
+      ]
+    },
+    "bx-sticker": {
+      "glyph": "",
+      "terms": [
+        "sticker"
+      ]
+    },
+    "bxs-sticker": {
+      "glyph": "",
+      "terms": [
+        "sticker"
+      ]
+    },
+    "bx-tachometer": {
+      "glyph": "",
+      "terms": [
+        "tachometer"
+      ]
+    },
+    "bxs-tachometer": {
+      "glyph": "",
+      "terms": [
+        "tachometer"
+      ]
+    },
+    "bxs-thermometer": {
+      "glyph": "",
+      "terms": [
+        "thermometer"
+      ]
+    },
+    "bx-game": {
+      "glyph": "",
+      "terms": [
+        "game",
+        "pacman"
+      ]
+    },
+    "bxs-game": {
+      "glyph": "",
+      "terms": [
+        "game",
+        "pacman"
+      ]
+    },
+    "bx-abacus": {
+      "glyph": "",
+      "terms": [
+        "abacus"
+      ]
+    },
+    "bx-alarm-snooze": {
+      "glyph": "",
+      "terms": [
+        "alarm-snooze",
+        "alert",
+        "zzz",
+        "sleep"
+      ]
+    },
+    "bxs-alarm-snooze": {
+      "glyph": "",
+      "terms": [
+        "alarm-snooze",
+        "alert",
+        "zzz",
+        "sleep"
+      ]
+    },
+    "bx-alarm-exclamation": {
+      "glyph": "",
+      "terms": [
+        "alarm-exclamation",
+        "alert",
+        "error"
+      ]
+    },
+    "bxs-alarm-exclamation": {
+      "glyph": "",
+      "terms": [
+        "alarm-exclamation",
+        "alert",
+        "error"
+      ]
+    },
+    "bxs-chevrons-left": {
+      "glyph": "",
+      "terms": [
+        "chevrons-left",
+        "arrow"
+      ]
+    },
+    "bxs-chevrons-right": {
+      "glyph": "",
+      "terms": [
+        "chevrons-right",
+        "arrow"
+      ]
+    },
+    "bxs-chevrons-up": {
+      "glyph": "",
+      "terms": [
+        "chevrons-up",
+        "arrow"
+      ]
+    },
+    "bxs-chevrons-down": {
+      "glyph": "",
+      "terms": [
+        "chevrons-down",
+        "arrow"
+      ]
+    },
+    "bxs-chevron-down": {
+      "glyph": "",
+      "terms": [
+        "chevron-down",
+        "arrow"
+      ]
+    },
+    "bxs-chevron-up": {
+      "glyph": "",
+      "terms": [
+        "chevron-up",
+        "arrow"
+      ]
+    },
+    "bxs-chevron-right": {
+      "glyph": "",
+      "terms": [
+        "chevron-right",
+        "arrow"
+      ]
+    },
+    "bxs-chevron-left": {
+      "glyph": "",
+      "terms": [
+        "chevron-left",
+        "arrow"
+      ]
+    },
+    "bxs-guitar-amp": {
+      "glyph": "",
+      "terms": [
+        "guitar-amp"
+      ]
+    },
+    "bxs-up-arrow-alt": {
+      "glyph": "",
+      "terms": [
+        "up-arrow-alt"
+      ]
+    },
+    "bxs-down-arrow-alt": {
+      "glyph": "",
+      "terms": [
+        "down-arrow-alt"
+      ]
+    },
+    "bxs-left-arrow-alt": {
+      "glyph": "",
+      "terms": [
+        "left-arrow-alt"
+      ]
+    },
+    "bxs-right-arrow-alt": {
+      "glyph": "",
+      "terms": [
+        "right-arrow-alt"
+      ]
+    },
+    "bx-medal": {
+      "glyph": "",
+      "terms": [
+        "medal",
+        "honor",
+        "honour",
+        "achievement"
+      ]
+    },
+    "bxs-medal": {
+      "glyph": "",
+      "terms": [
+        "medal",
+        "honor",
+        "honour",
+        "achievement"
+      ]
+    },
+    "bxs-shopping-bags": {
+      "glyph": "",
+      "terms": [
+        "shopping-bags"
+      ]
+    },
+    "bxs-baseball": {
+      "glyph": "",
+      "terms": [
+        "baseball"
+      ]
+    },
+    "bx-task-x": {
+      "glyph": "",
+      "terms": [
+        "task-x"
+      ]
+    },
+    "bxs-basketball": {
+      "glyph": "",
+      "terms": [
+        "basketball",
+        "nba"
+      ]
+    },
+    "bx-barcode-reader": {
+      "glyph": "",
+      "terms": [
+        "barcode-reader"
+      ]
+    },
+    "bx-blanket": {
+      "glyph": "",
+      "terms": [
+        "blanket"
+      ]
+    },
+    "bxs-blanket": {
+      "glyph": "",
+      "terms": [
+        "blanket"
+      ]
+    },
+    "bxs-binoculars": {
+      "glyph": "",
+      "terms": [
+        "binoculars"
+      ]
+    },
+    "bx-bone": {
+      "glyph": "",
+      "terms": [
+        "bone"
+      ]
+    },
+    "bxs-bone": {
+      "glyph": "",
+      "terms": [
+        "bone"
+      ]
+    },
+    "bx-bong": {
+      "glyph": "",
+      "terms": [
+        "bong"
+      ]
+    },
+    "bxs-bong": {
+      "glyph": "",
+      "terms": [
+        "bong"
+      ]
+    },
+    "bx-book-alt": {
+      "glyph": "",
+      "terms": [
+        "book-alt"
+      ]
+    },
+    "bxs-book-alt": {
+      "glyph": "",
+      "terms": [
+        "book-alt"
+      ]
+    },
+    "bx-book-heart": {
+      "glyph": "",
+      "terms": [
+        "book-heart"
+      ]
+    },
+    "bxs-book-heart": {
+      "glyph": "",
+      "terms": [
+        "book-heart"
+      ]
+    },
+    "bx-book-add": {
+      "glyph": "",
+      "terms": [
+        "book-add"
+      ]
+    },
+    "bxs-book-add": {
+      "glyph": "",
+      "terms": [
+        "book-add"
+      ]
+    },
+    "bx-bracket": {
+      "glyph": "",
+      "terms": [
+        "bracket"
+      ]
+    },
+    "bx-brain": {
+      "glyph": "",
+      "terms": [
+        "brain"
+      ]
+    },
+    "bxs-brain": {
+      "glyph": "",
+      "terms": [
+        "brain"
+      ]
+    },
+    "bx-border-outer": {
+      "glyph": "",
+      "terms": [
+        "border-outer"
+      ]
+    },
+    "bx-braille": {
+      "glyph": "",
+      "terms": [
+        "braille"
+      ]
+    },
+    "bx-window-alt": {
+      "glyph": "",
+      "terms": [
+        "window-alt",
+        "browser"
+      ]
+    },
+    "bxs-window-alt": {
+      "glyph": "",
+      "terms": [
+        "window-alt",
+        "browser"
+      ]
+    },
+    "bx-calendar-heart": {
+      "glyph": "",
+      "terms": [
+        "calendar-heart"
+      ]
+    },
+    "bxs-calendar-heart": {
+      "glyph": "",
+      "terms": [
+        "calendar-heart"
+      ]
+    },
+    "bx-wine": {
+      "glyph": "",
+      "terms": [
+        "wine"
+      ]
+    },
+    "bx-vial": {
+      "glyph": "",
+      "terms": [
+        "vial"
+      ]
+    },
+    "bx-color-fill": {
+      "glyph": "",
+      "terms": [
+        "color-fill"
+      ]
+    },
+    "bx-capsule": {
+      "glyph": "",
+      "terms": [
+        "capsule",
+        "medicine"
+      ]
+    },
+    "bx-eraser": {
+      "glyph": "",
+      "terms": [
+        "eraser",
+        "rubber"
+      ]
+    },
+    "bx-drink": {
+      "glyph": "",
+      "terms": [
+        "drink"
+      ]
+    },
+    "bx-cctv": {
+      "glyph": "",
+      "terms": [
+        "cctv"
+      ]
+    },
+    "bxs-cctv": {
+      "glyph": "",
+      "terms": [
+        "cctv"
+      ]
+    },
+    "bx-chair": {
+      "glyph": "",
+      "terms": [
+        "chair"
+      ]
+    },
+    "bx-network-chart": {
+      "glyph": "",
+      "terms": [
+        "network-chart"
+      ]
+    },
+    "bxs-network-chart": {
+      "glyph": "",
+      "terms": [
+        "network-chart"
+      ]
+    },
+    "bx-vector": {
+      "glyph": "",
+      "terms": [
+        "vector"
+      ]
+    },
+    "bxs-vector": {
+      "glyph": "",
+      "terms": [
+        "vector"
+      ]
+    },
+    "bx-calendar-exclamation": {
+      "glyph": "",
+      "terms": [
+        "calendar-exclamation"
+      ]
+    },
+    "bxs-calendar-exclamation": {
+      "glyph": "",
+      "terms": [
+        "calendar-exclamation"
+      ]
+    },
+    "bx-calendar-star": {
+      "glyph": "",
+      "terms": [
+        "calendar-star"
+      ]
+    },
+    "bxs-calendar-star": {
+      "glyph": "",
+      "terms": [
+        "calendar-star"
+      ]
+    },
+    "bx-camera-home": {
+      "glyph": "",
+      "terms": [
+        "camera-home"
+      ]
+    },
+    "bxs-camera-home": {
+      "glyph": "",
+      "terms": [
+        "camera-home"
+      ]
+    },
+    "bx-camera-movie": {
+      "glyph": "",
+      "terms": [
+        "camera-movie"
+      ]
+    },
+    "bxs-camera-movie": {
+      "glyph": "",
+      "terms": [
+        "camera-movie"
+      ]
+    },
+    "bxs-backpack": {
+      "glyph": "",
+      "terms": [
+        "backpack"
+      ]
+    },
+    "bxs-cart-download": {
+      "glyph": "",
+      "terms": [
+        "cart-download"
+      ]
+    },
+    "bxs-cart-add": {
+      "glyph": "",
+      "terms": [
+        "cart-add"
+      ]
+    },
+    "bxs-car-battery": {
+      "glyph": "",
+      "terms": [
+        "car-battery"
+      ]
+    },
+    "bx-caret-right-circle": {
+      "glyph": "",
+      "terms": [
+        "caret-right-circle"
+      ]
+    },
+    "bx-caret-left-circle": {
+      "glyph": "",
+      "terms": [
+        "caret-left-circle"
+      ]
+    },
+    "bx-caret-up-circle": {
+      "glyph": "",
+      "terms": [
+        "caret-up-circle"
+      ]
+    },
+    "bx-caret-down-circle": {
+      "glyph": "",
+      "terms": [
+        "caret-down-circle"
+      ]
+    },
+    "bx-caret-right-square": {
+      "glyph": "",
+      "terms": [
+        "caret-right-square"
+      ]
+    },
+    "bxs-caret-right-square": {
+      "glyph": "",
+      "terms": [
+        "caret-right-square"
+      ]
+    },
+    "bx-caret-up-square": {
+      "glyph": "",
+      "terms": [
+        "caret-up-square"
+      ]
+    },
+    "bxs-caret-up-square": {
+      "glyph": "",
+      "terms": [
+        "caret-up-square"
+      ]
+    },
+    "bx-caret-left-square": {
+      "glyph": "",
+      "terms": [
+        "caret-left-square"
+      ]
+    },
+    "bxs-caret-left-square": {
+      "glyph": "",
+      "terms": [
+        "caret-left-square"
+      ]
+    },
+    "bx-caret-down-square": {
+      "glyph": "",
+      "terms": [
+        "caret-down-square"
+      ]
+    },
+    "bxs-caret-down-square": {
+      "glyph": "",
+      "terms": [
+        "caret-down-square"
+      ]
+    },
+    "bx-shield-x": {
+      "glyph": "",
+      "terms": [
+        "shield-x"
+      ]
+    },
+    "bxs-shield-x": {
+      "glyph": "",
+      "terms": [
+        "shield-x"
+      ]
+    },
+    "bx-line-chart-down": {
+      "glyph": "",
+      "terms": [
+        "line-chart-down"
+      ]
+    },
+    "bx-chevron-down-circle": {
+      "glyph": "",
+      "terms": [
+        "chevron-down-circle"
+      ]
+    },
+    "bxs-chevron-down-circle": {
+      "glyph": "",
+      "terms": [
+        "chevron-down-circle"
+      ]
+    },
+    "bx-chevron-up-circle": {
+      "glyph": "",
+      "terms": [
+        "chevron-up-circle"
+      ]
+    },
+    "bxs-chevron-up-circle": {
+      "glyph": "",
+      "terms": [
+        "chevron-up-circle"
+      ]
+    },
+    "bx-chevron-left-circle": {
+      "glyph": "",
+      "terms": [
+        "chevron-left-circle"
+      ]
+    },
+    "bxs-chevron-left-circle": {
+      "glyph": "",
+      "terms": [
+        "chevron-left-circle"
+      ]
+    },
+    "bx-chevron-right-circle": {
+      "glyph": "",
+      "terms": [
+        "chevron-right-circle"
+      ]
+    },
+    "bxs-chevron-right-circle": {
+      "glyph": "",
+      "terms": [
+        "chevron-right-circle"
+      ]
+    },
+    "bx-chevron-down-square": {
+      "glyph": "",
+      "terms": [
+        "chevron-down-square"
+      ]
+    },
+    "bxs-chevron-down-square": {
+      "glyph": "",
+      "terms": [
+        "chevron-down-square"
+      ]
+    },
+    "bx-chevron-up-square": {
+      "glyph": "",
+      "terms": [
+        "chevron-up-square"
+      ]
+    },
+    "bxs-chevron-up-square": {
+      "glyph": "",
+      "terms": [
+        "chevron-up-square"
+      ]
+    },
+    "bx-chevron-left-square": {
+      "glyph": "",
+      "terms": [
+        "chevron-left-square"
+      ]
+    },
+    "bxs-chevron-left-square": {
+      "glyph": "",
+      "terms": [
+        "chevron-left-square"
+      ]
+    },
+    "bx-chevron-right-square": {
+      "glyph": "",
+      "terms": [
+        "chevron-right-square"
+      ]
+    },
+    "bxs-chevron-right-square": {
+      "glyph": "",
+      "terms": [
+        "chevron-right-square"
+      ]
+    },
+    "bx-church": {
+      "glyph": "",
+      "terms": [
+        "church"
+      ]
+    },
+    "bxs-church": {
+      "glyph": "",
+      "terms": [
+        "church"
+      ]
+    },
+    "bx-coin": {
+      "glyph": "",
+      "terms": [
+        "coin"
+      ]
+    },
+    "bxs-coin": {
+      "glyph": "",
+      "terms": [
+        "coin"
+      ]
+    },
+    "bx-coin-stack": {
+      "glyph": "",
+      "terms": [
+        "coin-stack"
+      ]
+    },
+    "bxs-coin-stack": {
+      "glyph": "",
+      "terms": [
+        "coin-stack"
+      ]
+    },
+    "bx-unite": {
+      "glyph": "",
+      "terms": [
+        "unite"
+      ]
+    },
+    "bx-minus-front": {
+      "glyph": "",
+      "terms": [
+        "minus-front"
+      ]
+    },
+    "bx-intersect": {
+      "glyph": "",
+      "terms": [
+        "intersect"
+      ]
+    },
+    "bx-exclude": {
+      "glyph": "",
+      "terms": [
+        "exclude"
+      ]
+    },
+    "bx-minus-back": {
+      "glyph": "",
+      "terms": [
+        "minus-back"
+      ]
+    },
+    "bx-merge": {
+      "glyph": "",
+      "terms": [
+        "merge"
+      ]
+    },
+    "bx-trim": {
+      "glyph": "",
+      "terms": [
+        "trim"
+      ]
+    },
+    "bx-outline": {
+      "glyph": "",
+      "terms": [
+        "outline"
+      ]
+    },
+    "bxs-bullseye": {
+      "glyph": "",
+      "terms": [
+        "bullseye"
+      ]
+    },
+    "bx-meteor": {
+      "glyph": "",
+      "terms": [
+        "meteor"
+      ]
+    },
+    "bxs-meteor": {
+      "glyph": "",
+      "terms": [
+        "meteor"
+      ]
+    },
+    "bx-refresh": {
+      "glyph": "",
+      "terms": [
+        "refresh"
+      ]
+    },
+    "bx-home-smile": {
+      "glyph": "",
+      "terms": [
+        "home-smile"
+      ]
+    },
+    "bxs-home-smile": {
+      "glyph": "",
+      "terms": [
+        "home-smile"
+      ]
+    },
+    "bx-envelope-open": {
+      "glyph": "",
+      "terms": [
+        "envelope-open"
+      ]
+    },
+    "bxs-envelope-open": {
+      "glyph": "",
+      "terms": [
+        "envelope-open"
+      ]
+    },
+    "bxl-dev-to": {
+      "glyph": "",
+      "terms": [
+        "dev-to"
+      ]
+    },
+    "bx-message-alt-add": {
+      "glyph": "",
+      "terms": [
+        "message-alt-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bxs-message-alt-add": {
+      "glyph": "",
+      "terms": [
+        "message-alt-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bx-message-alt-check": {
+      "glyph": "",
+      "terms": [
+        "message-alt-check"
+      ]
+    },
+    "bxs-message-alt-check": {
+      "glyph": "",
+      "terms": [
+        "message-alt-check"
+      ]
+    },
+    "bx-message-alt-error": {
+      "glyph": "",
+      "terms": [
+        "message-alt-error"
+      ]
+    },
+    "bxs-message-alt-error": {
+      "glyph": "",
+      "terms": [
+        "message-alt-error"
+      ]
+    },
+    "bx-message-alt-x": {
+      "glyph": "",
+      "terms": [
+        "message-alt-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bxs-message-alt-x": {
+      "glyph": "",
+      "terms": [
+        "message-alt-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx-message-alt-minus": {
+      "glyph": "",
+      "terms": [
+        "message-alt-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bxs-message-alt-minus": {
+      "glyph": "",
+      "terms": [
+        "message-alt-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx-message-alt-edit": {
+      "glyph": "",
+      "terms": [
+        "message-alt-edit"
+      ]
+    },
+    "bxs-message-alt-edit": {
+      "glyph": "",
+      "terms": [
+        "message-alt-edit"
+      ]
+    },
+    "bx-message-alt-detail": {
+      "glyph": "",
+      "terms": [
+        "message-alt-detail"
+      ]
+    },
+    "bxs-message-alt-detail": {
+      "glyph": "",
+      "terms": [
+        "message-alt-detail"
+      ]
+    },
+    "bx-message-rounded-check": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-check"
+      ]
+    },
+    "bxs-message-rounded-check": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-check"
+      ]
+    },
+    "bx-message-rounded-error": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-error"
+      ]
+    },
+    "bxs-message-rounded-error": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-error"
+      ]
+    },
+    "bx-message-rounded-x": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bxs-message-rounded-x": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx-message-rounded-minus": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bxs-message-rounded-minus": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx-message-rounded-edit": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-edit"
+      ]
+    },
+    "bxs-message-rounded-edit": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-edit"
+      ]
+    },
+    "bx-message-rounded-add": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bxs-message-rounded-add": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bx-message-rounded-detail": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-detail"
+      ]
+    },
+    "bxs-message-rounded-detail": {
+      "glyph": "",
+      "terms": [
+        "message-rounded-detail"
+      ]
+    },
+    "bx-message-check": {
+      "glyph": "",
+      "terms": [
+        "message-check"
+      ]
+    },
+    "bxs-message-check": {
+      "glyph": "",
+      "terms": [
+        "message-check"
+      ]
+    },
+    "bx-message-error": {
+      "glyph": "",
+      "terms": [
+        "message-error"
+      ]
+    },
+    "bxs-message-error": {
+      "glyph": "",
+      "terms": [
+        "message-error"
+      ]
+    },
+    "bx-message-x": {
+      "glyph": "",
+      "terms": [
+        "message-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bxs-message-x": {
+      "glyph": "",
+      "terms": [
+        "message-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx-message-minus": {
+      "glyph": "",
+      "terms": [
+        "message-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bxs-message-minus": {
+      "glyph": "",
+      "terms": [
+        "message-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx-message-edit": {
+      "glyph": "",
+      "terms": [
+        "message-edit"
+      ]
+    },
+    "bxs-message-edit": {
+      "glyph": "",
+      "terms": [
+        "message-edit"
+      ]
+    },
+    "bx-message-add": {
+      "glyph": "",
+      "terms": [
+        "message-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bxs-message-add": {
+      "glyph": "",
+      "terms": [
+        "message-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bx-message-detail": {
+      "glyph": "",
+      "terms": [
+        "message-detail"
+      ]
+    },
+    "bxs-message-detail": {
+      "glyph": "",
+      "terms": [
+        "message-detail"
+      ]
+    },
+    "bx-message-square-check": {
+      "glyph": "",
+      "terms": [
+        "message-square-check"
+      ]
+    },
+    "bxs-message-square-check": {
+      "glyph": "",
+      "terms": [
+        "message-square-check"
+      ]
+    },
+    "bx-message-square-error": {
+      "glyph": "",
+      "terms": [
+        "message-square-error"
+      ]
+    },
+    "bxs-message-square-error": {
+      "glyph": "",
+      "terms": [
+        "message-square-error"
+      ]
+    },
+    "bx-message-square-x": {
+      "glyph": "",
+      "terms": [
+        "message-square-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bxs-message-square-x": {
+      "glyph": "",
+      "terms": [
+        "message-square-x",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx-message-square-minus": {
+      "glyph": "",
+      "terms": [
+        "message-square-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bxs-message-square-minus": {
+      "glyph": "",
+      "terms": [
+        "message-square-minus",
+        "chat",
+        "comment",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx-message-square-edit": {
+      "glyph": "",
+      "terms": [
+        "message-square-edit"
+      ]
+    },
+    "bxs-message-square-edit": {
+      "glyph": "",
+      "terms": [
+        "message-square-edit"
+      ]
+    },
+    "bx-message-square-add": {
+      "glyph": "",
+      "terms": [
+        "message-square-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bxs-message-square-add": {
+      "glyph": "",
+      "terms": [
+        "message-square-add",
+        "chat",
+        "comment",
+        "new",
+        "plus"
+      ]
+    },
+    "bx-message-square-detail": {
+      "glyph": "",
+      "terms": [
+        "message-square-detail"
+      ]
+    },
+    "bxs-message-square-detail": {
+      "glyph": "",
+      "terms": [
+        "message-square-detail"
+      ]
+    },
+    "bx-comment-check": {
+      "glyph": "",
+      "terms": [
+        "comment-check"
+      ]
+    },
+    "bxs-comment-check": {
+      "glyph": "",
+      "terms": [
+        "comment-check"
+      ]
+    },
+    "bx-comment-error": {
+      "glyph": "",
+      "terms": [
+        "comment-error"
+      ]
+    },
+    "bx-comment-x": {
+      "glyph": "",
+      "terms": [
+        "comment-x",
+        "chat",
+        "message",
+        "remove",
+        "delete"
+      ]
+    },
+    "bxs-comment-x": {
+      "glyph": "",
+      "terms": [
+        "comment-x",
+        "chat",
+        "message",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx-comment-edit": {
+      "glyph": "",
+      "terms": [
+        "comment-edit"
+      ]
+    },
+    "bxs-comment-edit": {
+      "glyph": "",
+      "terms": [
+        "comment-edit"
+      ]
+    },
+    "bx-comment-minus": {
+      "glyph": "",
+      "terms": [
+        "comment-minus",
+        "chat",
+        "message",
+        "remove",
+        "delete"
+      ]
+    },
+    "bxs-comment-minus": {
+      "glyph": "",
+      "terms": [
+        "comment-minus",
+        "chat",
+        "message",
+        "remove",
+        "delete"
+      ]
+    },
+    "bx-comment-add": {
+      "glyph": "",
+      "terms": [
+        "comment-add",
+        "chat",
+        "message",
+        "new",
+        "plus"
+      ]
+    },
+    "bx-comment-detail": {
+      "glyph": "",
+      "terms": [
+        "comment-detail"
+      ]
+    },
+    "bx-cookie": {
+      "glyph": "",
+      "terms": [
+        "cookie",
+        "biscuit"
+      ]
+    },
+    "bxs-cookie": {
+      "glyph": "",
+      "terms": [
+        "cookie",
+        "biscuit"
+      ]
+    },
+    "bxs-copyright": {
+      "glyph": "",
+      "terms": [
+        "copyright"
+      ]
+    },
+    "bx-credit-card-front": {
+      "glyph": "",
+      "terms": [
+        "credit-card-front",
+        "finance",
+        "money",
+        "debit"
+      ]
+    },
+    "bxs-credit-card-front": {
+      "glyph": "",
+      "terms": [
+        "credit-card-front",
+        "finance",
+        "money",
+        "debit"
+      ]
+    },
+    "bxs-crop": {
+      "glyph": "",
+      "terms": [
+        "crop"
+      ]
+    },
+    "bxs-diamond": {
+      "glyph": "",
+      "terms": [
+        "diamond"
+      ]
+    },
+    "bx-door-open": {
+      "glyph": "",
+      "terms": [
+        "door-open"
+      ]
+    },
+    "bxs-door-open": {
+      "glyph": "",
+      "terms": [
+        "door-open"
+      ]
+    },
+    "bx-donate-heart": {
+      "glyph": "",
+      "terms": [
+        "donate-heart",
+        "donation",
+        "contribution"
+      ]
+    },
+    "bxs-donate-heart": {
+      "glyph": "",
+      "terms": [
+        "donate-heart",
+        "donation",
+        "contribution"
+      ]
+    },
+    "bx-donate-blood": {
+      "glyph": "",
+      "terms": [
+        "donate-blood"
+      ]
+    },
+    "bxs-donate-blood": {
+      "glyph": "",
+      "terms": [
+        "donate-blood"
+      ]
+    },
+    "bx-shape-polygon": {
+      "glyph": "",
+      "terms": [
+        "shape-polygon"
+      ]
+    },
+    "bxl-zoom": {
+      "glyph": "",
+      "terms": [
+        "zoom"
+      ]
+    },
+    "bxl-microsoft-teams": {
+      "glyph": "",
+      "terms": [
+        "microsoft-teams"
+      ]
+    },
+    "bxl-blender": {
+      "glyph": "",
+      "terms": [
+        "blender"
+      ]
+    },
+    "bxl-kubernetes": {
+      "glyph": "",
+      "terms": [
+        "kubernetes"
+      ]
+    },
+    "bxl-google-cloud": {
+      "glyph": "",
+      "terms": [
+        "google-cloud"
+      ]
+    },
+    "bxl-django": {
+      "glyph": "",
+      "terms": [
+        "django"
+      ]
+    },
+    "bxl-spring-boot": {
+      "glyph": "",
+      "terms": [
+        "spring-boot"
+      ]
+    },
+    "bxl-tux": {
+      "glyph": "",
+      "terms": [
+        "tux"
+      ]
+    },
+    "bxl-markdown": {
+      "glyph": "",
+      "terms": [
+        "markdown"
+      ]
+    },
+    "bxl-python": {
+      "glyph": "",
+      "terms": [
+        "python"
+      ]
+    },
+    "bxl-ok-ru": {
+      "glyph": "",
+      "terms": [
+        "ok-ru"
+      ]
+    },
+    "bxl-firebase": {
+      "glyph": "",
+      "terms": [
+        "firebase"
+      ]
+    },
+    "bxl-c-plus-plus": {
+      "glyph": "",
+      "terms": [
+        "c-plus-plus",
+        "c++"
+      ]
+    },
+    "bx-bookmark-heart": {
+      "glyph": "",
+      "terms": [
+        "bookmark-heart"
+      ]
+    },
+    "bxs-bookmark-heart": {
+      "glyph": "",
+      "terms": [
+        "bookmark-heart"
+      ]
+    },
+    "bx-sort-alt-2": {
+      "glyph": "",
+      "terms": [
+        "sort-alt-2"
+      ]
+    },
+    "bx-category": {
+      "glyph": "",
+      "terms": [
+        "category"
+      ]
+    },
+    "bxs-category": {
+      "glyph": "",
+      "terms": [
+        "category"
+      ]
+    },
+    "bx-category-alt": {
+      "glyph": "",
+      "terms": [
+        "category-alt"
+      ]
+    },
+    "bxs-category-alt": {
+      "glyph": "",
+      "terms": [
+        "category-alt"
+      ]
+    },
+    "bx-bookmark-alt": {
+      "glyph": "",
+      "terms": [
+        "bookmark-alt"
+      ]
+    },
+    "bxs-bookmark-alt": {
+      "glyph": "",
+      "terms": [
+        "bookmark-alt"
+      ]
+    },
+    "bx-bookmark-alt-plus": {
+      "glyph": "",
+      "terms": [
+        "bookmark-alt-plus"
+      ]
+    },
+    "bxs-bookmark-alt-plus": {
+      "glyph": "",
+      "terms": [
+        "bookmark-alt-plus"
+      ]
+    },
+    "bx-bookmark-alt-minus": {
+      "glyph": "",
+      "terms": [
+        "bookmark-alt-minus"
+      ]
+    },
+    "bxs-bookmark-alt-minus": {
+      "glyph": "",
+      "terms": [
+        "bookmark-alt-minus"
+      ]
+    },
+    "bxs-face-mask": {
+      "glyph": "",
+      "terms": [
+        "face-mask"
+      ]
+    },
+    "bxs-tv": {
+      "glyph": "",
+      "terms": [
+        "tv",
+        "television",
+        "monitor"
+      ]
+    },
+    "bx-tag-alt": {
+      "glyph": "",
+      "terms": [
+        "tag-alt"
+      ]
+    },
+    "bxs-tag-alt": {
+      "glyph": "",
+      "terms": [
+        "tag-alt"
+      ]
+    },
+    "bx-movie-play": {
+      "glyph": "",
+      "terms": [
+        "movie-play"
+      ]
+    },
+    "bxs-movie-play": {
+      "glyph": "",
+      "terms": [
+        "movie-play"
+      ]
+    },
+    "bxs-user-account": {
+      "glyph": "",
+      "terms": [
+        "user-account"
+      ]
+    },
+    "bx-expand-alt": {
+      "glyph": "",
+      "terms": [
+        "expand-alt"
+      ]
+    },
+    "bx-library": {
+      "glyph": "",
+      "terms": [
+        "library"
+      ]
+    },
+    "bx-trip": {
+      "glyph": "",
+      "terms": [
+        "trip"
+      ]
+    },
+    "bxs-virus": {
+      "glyph": "",
+      "terms": [
+        "virus",
+        "disease",
+        "covid",
+        "corona"
+      ]
+    },
+    "bxs-virus-block": {
+      "glyph": "",
+      "terms": [
+        "virus-block"
+      ]
+    }
+  }
+}

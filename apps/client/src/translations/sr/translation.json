@@ -271,7 +271,6 @@
     "download_button": "Preuzmi",
     "mime": "MIME: ",
     "file_size": "Veličina datoteke:",
-    "preview": "Pregled:",
     "preview_not_available": "Pregled nije dostupan za ovaj tip beleške."
   },
   "sort_child_notes": {

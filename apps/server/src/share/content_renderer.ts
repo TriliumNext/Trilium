@@ -1,24 +1,26 @@
-import { parse, HTMLElement, TextNode, Options } from "node-html-parser";
-import shaca from "./shaca/shaca.js";
-import assetPath, { assetUrlFragment } from "../services/asset_path.js";
-import shareRoot from "./share_root.js";
-import escapeHtml from "escape-html";
-import type SNote from "./shaca/entities/snote.js";
-import BNote from "../becca/entities/bnote.js";
-import type BBranch from "../becca/entities/bbranch.js";
-import { t } from "i18next";
-import SBranch from "./shaca/entities/sbranch.js";
-import options from "../services/options.js";
-import utils, { getResourceDir, isDev, safeExtractMessageAndStackFromError } from "../services/utils.js";
-import ejs from "ejs";
-import log from "../services/log.js";
-import { join } from "path";
-import { readFileSync } from "fs";
+import { sanitizeUrl } from "@braintree/sanitize-url";
 import { highlightAuto } from "@triliumnext/highlightjs";
+import ejs from "ejs";
+import escapeHtml from "escape-html";
+import { readFileSync } from "fs";
+import { t } from "i18next";
+import { HTMLElement, Options, parse, TextNode } from "node-html-parser";
+import { join } from "path";
+
 import becca from "../becca/becca.js";
 import BAttachment from '../becca/entities/battachment.js';
+import type BBranch from "../becca/entities/bbranch.js";
+import BNote from "../becca/entities/bnote.js";
+import assetPath, { assetUrlFragment } from "../services/asset_path.js";
+import { generateCss, getIconPacks, MIME_TO_EXTENSION_MAPPINGS, ProcessedIconPack } from "../services/icon_packs.js";
+import log from "../services/log.js";
+import options from "../services/options.js";
+import utils, { getResourceDir, isDev, safeExtractMessageAndStackFromError } from "../services/utils.js";
 import SAttachment from "./shaca/entities/sattachment.js";
-import { sanitizeUrl } from "@braintree/sanitize-url";
+import SBranch from "./shaca/entities/sbranch.js";
+import type SNote from "./shaca/entities/snote.js";
+import shaca from "./shaca/shaca.js";
+import shareRoot from "./share_root.js";
 
 const shareAdjustedAssetPath = isDev ? assetPath : `../${assetPath}`;
 const templateCache: Map<string, string> = new Map();
@@ -54,7 +56,7 @@ function getSharedSubTreeRoot(note: SNote | BNote | undefined): Subroot {
         return {
             note,
             branch: parentBranch
-        }
+        };
     }
 
     if (parentBranch.parentNoteId === shareRoot.SHARE_ROOT_NOTE_ID) {
@@ -67,11 +69,19 @@ function getSharedSubTreeRoot(note: SNote | BNote | undefined): Subroot {
     return getSharedSubTreeRoot(parentBranch.getParentNote());
 }
 
-export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath: string, ancestors: string[]) {
+export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath: string, ancestors: string[], iconPacks: ProcessedIconPack[]) {
     const subRoot: Subroot = {
         branch: parentBranch,
         note: parentBranch.getNote()
     };
+
+    // Determine JS to load.
+    const jsToLoad: string[] = [
+        `${basePath}assets/scripts.js`
+    ];
+    for (const jsRelation of note.getRelations("shareJs")) {
+        jsToLoad.push(`api/notes/${jsRelation.value}/download`);
+    }
 
     return renderNoteContentInternal(note, {
         subRoot,
@@ -80,13 +90,15 @@ export function renderNoteForExport(note: BNote, parentBranch: BBranch, basePath
             `${basePath}assets/styles.css`,
             `${basePath}assets/scripts.css`,
         ],
-        jsToLoad: [
-            `${basePath}assets/scripts.js`
-        ],
+        jsToLoad,
         logoUrl: `${basePath}icon-color.svg`,
         faviconUrl: `${basePath}favicon.ico`,
         ancestors,
-        isStatic: true
+        isStatic: true,
+        iconPackCss: iconPacks.map(p => generateCss(p, `${basePath}assets/icon-pack-${p.prefix.toLowerCase()}.${MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`))
+            .filter(Boolean)
+            .join("\n\n"),
+        iconPackSupportedPrefixes: iconPacks.map(p => p.prefix)
     });
 }
 
@@ -124,6 +136,7 @@ export function renderNoteContent(note: SNote) {
 
     const customLogoId = note.getRelation("shareLogo")?.value;
     const logoUrl = customLogoId ? `api/images/${customLogoId}/image.png` : `../${assetUrlFragment}/images/icon-color.svg`;
+    const iconPacks = getIconPacks().filter(p => p.builtin || !!shaca.notes[p.manifestNoteId]);
 
     return renderNoteContentInternal(note, {
         subRoot,
@@ -133,7 +146,14 @@ export function renderNoteContent(note: SNote) {
         logoUrl,
         ancestors,
         isStatic: false,
-        faviconUrl: note.hasRelation("shareFavicon") ? `api/notes/${note.getRelationValue("shareFavicon")}/download` : `../favicon.ico`
+        faviconUrl: note.hasRelation("shareFavicon") ? `api/notes/${note.getRelationValue("shareFavicon")}/download` : `../favicon.ico`,
+        iconPackCss: iconPacks.map(p => generateCss(p, p.builtin
+            ? `/share/assets/fonts/${p.fontAttachmentId}.${MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
+            : `/share/api/attachments/${p.fontAttachmentId}/download`
+        ))
+            .filter(Boolean)
+            .join("\n\n"),
+        iconPackSupportedPrefixes: iconPacks.map(p => p.prefix)
     });
 }
 
@@ -146,9 +166,20 @@ interface RenderArgs {
     ancestors: string[];
     isStatic: boolean;
     faviconUrl: string;
+    iconPackCss: string;
+    iconPackSupportedPrefixes: string[];
 }
 
 function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) {
+    // When rendering static share, non-protected JavaScript notes should be rendered as-is.
+    if (renderArgs.isStatic && note.mime.startsWith("application/javascript")) {
+        if (note.isProtected) {
+            return `console.log("Protected note cannot be exported.");`;
+        }
+
+        return note.getContent() ?? "";
+    }
+
     const { header, content, isEmpty } = getContent(note);
     const showLoginInShareTheme = options.getOption("showLoginInShareTheme");
     const opts = {
@@ -281,7 +312,7 @@ function renderText(result: Result, note: SNote | BNote) {
     if (typeof result.content !== "string") return;
     const parseOpts: Partial<Options> = {
         blockTextElements: {}
-    }
+    };
     const document = parse(result.content || "", parseOpts);
 
     // Process include notes.
@@ -397,7 +428,13 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
 function cleanUpReferenceLinks(linkEl: HTMLElement, getNote: GetNoteFunction) {
     // Note: this method is basically a reimplementation of getReferenceLinkTitleSync from the link service of the client.
     const href = linkEl.getAttribute("href") ?? "";
-    if (linkEl.classList.contains("attachment-link")) return;
+
+    // Handle attachment reference links
+    if (linkEl.classList.contains("attachment-link")) {
+        const title = linkEl.innerText;
+        linkEl.innerHTML = `<span><span class="tn-icon bx bx-download"></span>${utils.escapeHtml(title)}</span>`;
+        return;
+    }
 
     const noteId = href.split("/").at(-1);
     const note = noteId ? getNote(noteId) : undefined;
@@ -444,7 +481,7 @@ function renderImage(result: Result, note: SNote | BNote) {
 
 function renderFile(note: SNote | BNote, result: Result) {
     if (note.mime === "application/pdf") {
-        result.content = `<iframe class="pdf-view" src="api/notes/${note.noteId}/view"></iframe>`;
+        result.content = `<iframe class="pdf-view" src="../pdfjs/web/viewer.html?file=../../../share/api/notes/${note.noteId}/view"></iframe>`;
     } else {
         result.content = `<button type="button" onclick="location.href='api/notes/${note.noteId}/download'">Download file</button>`;
     }

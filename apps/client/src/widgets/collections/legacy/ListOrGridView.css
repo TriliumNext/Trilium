@@ -142,4 +142,10 @@
     border: 1px solid var(--main-border-color);
     background: var(--more-accented-background-color);
 }
+
+.note-list.grid-view .note-path {
+    margin-left: 0.5em;
+    vertical-align: middle;
+    opacity: 0.5;
+}
 /* #endregion */

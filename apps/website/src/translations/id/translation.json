@@ -18,6 +18,60 @@
         "title": "Organisasi",
         "note_structure_title": "Struktur catatan",
         "note_structure_description": "Catatan dapat disusun secara hirarkis. Tidak perlu folder, karena setiap catatan dapat mengandung catatan anak. Satu catatan dapat ditambah di beberapa tempat sekaligus dalam hirarki.",
-        "attributes_title": "Label dan hubungan catatan"
+        "attributes_title": "Label dan hubungan catatan",
+        "attributes_description": "Gunakan relasi antar catatan atau tambahkan label untuk kategorisasi yang mudah. Gunakan atribut utama untuk memasukkan informasi terstruktur yang dapat digunakan dalam tabel atau papan (boards).",
+        "hoisting_title": "Workspace dan Area Fokus",
+        "hoisting_description": "Dengan mudah memisahkan catatan personal dan kerjaan dengan grouping dalam workspace, fokus hanya ke catatan-catatan yang spesifik di workspace tertentu."
+    },
+    "productivity_benefits": {
+        "title": "Produktivitas dan Keamanan",
+        "revisions_title": "Revisi Catatan",
+        "revisions_content": "Catatan akan secara periodik disimpan dalam bentuk revisi secara otomatis dan versi revisi-revisi bisa digunakan untuk mengulas kembali atau melakukan undo jika ada kesalahan atau perubahan yang tidak disengaja. Versi revisi juga bisa dibuat sesuai kebutuhan.",
+        "sync_title": "Sinkronisasi",
+        "sync_content": "Gunakan hostinganmu sendiri atau instansi cloud untuk sinkronisasi mudah catatan-catatan anda pada beberapa perangkat, dan untuk akses dari ponsel anda dengan PWA.",
+        "search_content": "Atau cari teks di dalam catatan lalu lebih dalam dengan cari catatan induk, atau berdasarkan kedalaman.",
+        "web_clipper_title": "Penyemat Web",
+        "web_clipper_content": "Mengambil halaman web (atau foto halaman web) dan disematkan langsung ke catatan Trilium dengan ekstensi browser penyemat web.",
+        "protected_notes_title": "Catatan terlindungi",
+        "protected_notes_content": "Lindungi informasi pribadi sensitif dengan mengenkripsi catatan dan menguncinya di balik sesi yang dilindungi kata sandi.",
+        "jump_to_title": "Pencarian cepat dan perintah",
+        "jump_to_content": "Melompat dengan cepat ke catatan atau perintah UI di seluruh hierarki dengan mencari judulnya, dengan pencocokan kabur untuk memperhitungkan kesalahan ketik atau perbedaan kecil.",
+        "search_title": "Pencarian mumpuni"
+    },
+    "note_types": {
+        "title": "Cara-cara menampilkan informasi Anda",
+        "text_title": "Catatan teks",
+        "text_description": "Catatan-catatan ini diedit dengan editor visual (WYSIWYG), dengan dukungan tabel, gambar, ekspresi matematika, blok kode dengan penyorotan sintaks. Format teks catatan anda dengan sintaks Markdown atau gunakan fungsi panggilan slash(/).",
+        "code_title": "Catatan kode",
+        "code_description": "Gunakan editor khusus untuk kode source yang besar yang mempunyai penyorotan sintaks untuk banyak bahasa pemograman dengan tema-tema warna yang bervariasi.",
+        "file_title": "Catatan file",
+        "file_description": "Sematkan file multimedia (PDF, gambar, video) dengan pratinjau dalam aplikasi.",
+        "canvas_title": "Kanvas",
+        "canvas_description": "Susun bentuk, gambar, dan teks di atas kanvas tak terbatas menggunakan teknologi yang sama dengan excalidraw.com. Sangat ideal untuk diagram, sketsa, dan perencanaan visual.",
+        "mermaid_title": "Diagram mermaid",
+        "mermaid_description": "Buat diagram seperti diagram alur (flowchart), diagram kelas & urutan (class & sequence), bagan Gantt, dan banyak lagi, menggunakan sintaks Mermaid.",
+        "mindmap_title": "Peta pikiran (Mindmap)",
+        "mindmap_description": "Organisasikan pemikiran Anda secara visual atau lakukan sesi brainstorming.",
+        "others_list": "dan lainnya: <0>peta catatan</0>, <1>peta relasi</1>, <2>pencarian tersimpan</2>, <3>render catatan</3>, dan <4>tampilan web</4>."
+    },
+    "collections": {
+        "table_description": "Tampilkan dan edit informasi catatan dalam struktur tabel, dengan berbagai tipe kolom seperti teks, angka, kotak centang, tanggal & waktu, tautan, dan warna, serta dukungan untuk relasi catatan. Secara opsional, tampilkan catatan dalam hierarki pohon di dalam tabel.",
+        "board_title": "Papan Kanban",
+        "board_description": "Atur tugas atau status proyek Anda ke dalam papan Kanban dengan cara mudah untuk membuat item dan kolom baru, serta mengubah statusnya cukup dengan menyeretnya di sepanjang papan.",
+        "geomap_title": "Peta Geo",
+        "geomap_description": "Rencanakan liburan Anda atau tandai titik minat langsung pada peta geografis menggunakan penanda titik yang dapat disesuaikan. Tampilkan rekaman jalur GPX untuk melacak rencana perjalanan.",
+        "presentation_title": "Presentasi",
+        "presentation_description": "Atur informasi ke dalam slide dan presentasikan dalam layar penuh dengan transisi yang mulus. Slide juga dapat diekspor ke PDF agar mudah dibagikan."
+    },
+    "faq": {
+        "title": "Tanya Jawab",
+        "mobile_question": "Apakah ada aplikasi mobile?",
+        "mobile_answer": "Saat ini belum ada aplikasi mobile resmi. Namun, jika Anda memiliki server, Anda dapat mengaksesnya menggunakan browser web dan bahkan menginstalnya sebagai PWA. Untuk Android, tersedia aplikasi tidak resmi bernama TriliumDroid yang dapat bekerja secara offline (sama seperti aplikasi desktop).",
+        "database_question": "Di manakah data disimpan?",
+        "database_answer": "Semua catatan Anda akan disimpan dalam basis data SQLite di dalam sebuah folder aplikasi. Alasan mengapa Trilium menggunakan basis data alih-alih file teks biasa adalah demi performa dan karena beberapa fitur akan jauh lebih sulit untuk diterapkan, seperti klon (catatan yang sama di beberapa tempat dalam hierarki). Untuk menemukan folder aplikasinya, cukup buka jendela 'Tentang'.",
+        "server_question": "Apakah saya butuh server untuk menjalankan Trilium?"
+    },
+    "extensibility_benefits": {
+        "share_title": "Bagikan catatan di web"
     }
 }

@@ -1,27 +1,29 @@
-import { useNoteBlob } from "../react/hooks";
 import "./File.css";
-import { TypeWidgetProps } from "./type_widget";
+
 import FNote from "../../entities/fnote";
+import { t } from "../../services/i18n";
 import { getUrlForDownload } from "../../services/open";
 import Alert from "../react/Alert";
-import { t } from "../../services/i18n";
+import { useNoteBlob } from "../react/hooks";
+import PdfPreview from "./file/Pdf";
+import { TypeWidgetProps } from "./type_widget";
 
 const TEXT_MAX_NUM_CHARS = 5000;
 
-export default function File({ note }: TypeWidgetProps) {
-    const blob = useNoteBlob(note);
+export default function FileTypeWidget({ note, parentComponent, noteContext }: TypeWidgetProps) {
+    const blob = useNoteBlob(note, parentComponent?.componentId);
 
     if (blob?.content) {
-        return <TextPreview content={blob.content} />
+        return <TextPreview content={blob.content} />;
     } else if (note.mime === "application/pdf") {
-        return <PdfPreview note={note} />
+        return noteContext && <PdfPreview blob={blob} note={note} componentId={parentComponent?.componentId} noteContext={noteContext} />;
     } else if (note.mime.startsWith("video/")) {
-        return <VideoPreview note={note} />
+        return <VideoPreview note={note} />;
     } else if (note.mime.startsWith("audio/")) {
-        return <AudioPreview note={note} />
-    } else {
-        return <NoPreview />
+        return <AudioPreview note={note} />;
     }
+    return <NoPreview />;
+
 }
 
 function TextPreview({ content }: { content: string }) {
@@ -37,14 +39,6 @@ function TextPreview({ content }: { content: string }) {
             )}
             <pre class="file-preview-content">{trimmedContent}</pre>
         </>
-    )
-}
-
-function PdfPreview({ note }: { note: FNote }) {
-    return (
-        <iframe
-            class="pdf-preview"
-            src={getUrlForDownload(`api/notes/${note.noteId}/open`)} />
     );
 }
 
@@ -56,7 +50,7 @@ function VideoPreview({ note }: { note: FNote }) {
             datatype={note?.mime}
             controls
         />
-    )
+    );
 }
 
 function AudioPreview({ note }: { note: FNote }) {
@@ -66,7 +60,7 @@ function AudioPreview({ note }: { note: FNote }) {
             src={getUrlForDownload(`api/notes/${note.noteId}/open-partial`)}
             controls
         />
-    )
+    );
 }
 
 function NoPreview() {

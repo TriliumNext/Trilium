@@ -123,7 +123,6 @@
     "password-confirmation": "密码确认",
     "button": "设置密码"
   },
-  "javascript-required": "Trilium需要启用JavaScript。",
   "setup": {
     "heading": "TriliumNext笔记设置",
     "new-document": "我是新用户，我想为我的笔记创建一个新的Trilium文档",

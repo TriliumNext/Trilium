@@ -1,0 +1,14 @@
+{
+  "name": "@triliumnext/icon-pack-builder",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+    "start": "tsx ."
+  },
+  "keywords": [],
+  "devDependencies": {
+    "@mdi/font": "7.4.47",
+    "@phosphor-icons/web": "2.1.2"
+  }
+}

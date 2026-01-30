@@ -1,4 +1,4 @@
-import { MIME_TYPES_DICT } from "@triliumnext/commons";
+import { getNoteIcon } from "@triliumnext/commons";
 
 import cssClassManager from "../services/css_class_manager.js";
 import type { Froca } from "../services/froca-interface.js";
@@ -8,29 +8,10 @@ import search from "../services/search.js";
 import server from "../services/server.js";
 import utils from "../services/utils.js";
 import type FAttachment from "./fattachment.js";
-import type { AttributeType,default as FAttribute } from "./fattribute.js";
+import type { AttributeType, default as FAttribute } from "./fattribute.js";
 
 const LABEL = "label";
 const RELATION = "relation";
-
-export const NOTE_TYPE_ICONS = {
-    file: "bx bx-file",
-    image: "bx bx-image",
-    code: "bx bx-code",
-    render: "bx bx-extension",
-    search: "bx bx-file-find",
-    relationMap: "bx bxs-network-chart",
-    book: "bx bx-book",
-    noteMap: "bx bxs-network-chart",
-    mermaid: "bx bx-selection",
-    canvas: "bx bx-pen",
-    webView: "bx bx-globe-alt",
-    launcher: "bx bx-link",
-    doc: "bx bxs-file-doc",
-    contentWidget: "bx bxs-widget",
-    mindMap: "bx bx-sitemap",
-    aiChat: "bx bx-bot"
-};
 
 /**
  * There are many different Note types, some of which are entirely opaque to the
@@ -585,25 +566,15 @@ export default class FNote {
         const iconClassLabels = this.getLabels("iconClass");
         const workspaceIconClass = this.getWorkspaceIconClass();
 
-        if (iconClassLabels && iconClassLabels.length > 0) {
-            return iconClassLabels[0].value;
-        } else if (workspaceIconClass) {
-            return workspaceIconClass;
-        } else if (this.noteId === "root") {
-            return "bx bx-home-alt-2";
-        }
-        if (this.noteId === "_share") {
-            return "bx bx-share-alt";
-        } else if (this.type === "text") {
-            if (this.isFolder()) {
-                return "bx bx-folder";
-            }
-            return "bx bx-note";
-        } else if (this.type === "code") {
-            const correspondingMimeType = MIME_TYPES_DICT.find(m => m.mime === this.mime);
-            return correspondingMimeType?.icon ?? NOTE_TYPE_ICONS.code;
-        }
-        return NOTE_TYPE_ICONS[this.type];
+        const icon = getNoteIcon({
+            noteId: this.noteId,
+            type: this.type,
+            mime: this.mime,
+            iconClass: iconClassLabels.length > 0 ? iconClassLabels[0].value : undefined,
+            workspaceIconClass,
+            isFolder: this.isFolder.bind(this)
+        });
+        return `tn-icon ${icon}`;
     }
 
     getColorClass() {
@@ -612,7 +583,9 @@ export default class FNote {
     }
 
     isFolder() {
-        return this.type === "search" || this.getFilteredChildBranches().length > 0;
+        if (this.isLabelTruthy("subtreeHidden")) return false;
+        if (this.type === "search") return true;
+        return this.getFilteredChildBranches().length > 0;
     }
 
     getFilteredChildBranches() {

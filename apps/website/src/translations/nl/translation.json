@@ -37,5 +37,11 @@
         "search_content": "Of zoek naar tekst binnen notities en verfijn de zoekopdracht door in de bovenliggende notitie te filteren of zoekdiepte aan te geven.",
         "web_clipper_title": "Web clipper",
         "web_clipper_content": "Bewaar webpagina's (of schermafbeeldingen) en plaats deze direct in Trillium door de web clipper browser extensie te gebruiken."
+    },
+    "note_types": {
+        "title": "Meerdere manieren om je informatie te tonen",
+        "text_title": "Tekstnotities",
+        "text_description": "De notities worden bewerkt met een visuele (WYSIWYG) editor, met ondersteuning voor tabellen, plaatjes, wiskundige tekens, codeblokken met syntax-highlighting. Lijn tekst uit met Markdown-achtige syntax of met slash-commando's.",
+        "code_title": "Codenotities"
     }
 }

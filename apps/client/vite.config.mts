@@ -1,24 +1,22 @@
 /// <reference types='vitest' />
-import { join, resolve } from 'path';
-import { defineConfig, type Plugin } from 'vite';
-import { viteStaticCopy } from 'vite-plugin-static-copy'
+import prefresh from '@prefresh/vite';
+import { join } from 'path';
 import webpackStatsPlugin from 'rollup-plugin-webpack-stats';
-import preact from "@preact/preset-vite";
+import { defineConfig } from 'vite';
+import { viteStaticCopy } from 'vite-plugin-static-copy'
 
 const assets = [ "assets", "stylesheets", "fonts", "translations" ];
 
 const isDev = process.env.NODE_ENV === "development";
-let plugins: any = [
-    preact({
-        babel: {
-            compact: !isDev
-        }
-    })
-];
+let plugins: any = [];
 
-if (!isDev) {
+if (isDev) {
+    // Add Prefresh for Preact HMR in development
     plugins = [
-        ...plugins,
+        prefresh()
+    ];
+} else {
+    plugins = [
         viteStaticCopy({
             targets: assets.map((asset) => ({
                 src: `src/${asset}/*`,
@@ -40,9 +38,19 @@ if (!isDev) {
 
 export default defineConfig(() => ({
     root: __dirname,
-    cacheDir: '../../node_modules/.vite/apps/client',
+    cacheDir: '../../.cache/vite',
     base: "",
     plugins,
+    // Use esbuild for JSX transformation (much faster than Babel)
+    esbuild: {
+        jsx: 'automatic',
+        jsxImportSource: 'preact',
+        jsxDev: isDev
+    },
+    css: {
+        transformer: 'lightningcss',
+        devSourcemap: isDev
+    },
     resolve: {
         alias: [
             {
@@ -62,6 +70,13 @@ export default defineConfig(() => ({
             "preact/hooks"
         ]
     },
+    optimizeDeps: {
+        include: [
+            "ckeditor5-premium-features",
+            "ckeditor5",
+            "mathlive"
+        ]
+    },
     build: {
         target: "esnext",
         outDir: './dist',
@@ -70,8 +85,7 @@ export default defineConfig(() => ({
         sourcemap: false,
         rollupOptions: {
             input: {
-                desktop: join(__dirname, "src", "desktop.ts"),
-                mobile: join(__dirname, "src", "mobile.ts"),
+                index: join(__dirname, "index.html"),
                 login: join(__dirname, "src", "login.ts"),
                 setup: join(__dirname, "src", "setup.ts"),
                 set_password: join(__dirname, "src", "set_password.ts"),
@@ -79,12 +93,19 @@ export default defineConfig(() => ({
                 print: join(__dirname, "src", "print.tsx")
             },
             output: {
-                entryFileNames: "src/[name].js",
-                chunkFileNames: "src/[name].js",
-                assetFileNames: "src/[name].[ext]",
+                entryFileNames: (chunk) => {
+                    // We enforce a hash in the main index file to avoid caching issues, this only works because we have the HTML entry point.
+                    if (chunk.name === "index") {
+                        return "src/[name]-[hash].js";
+                    }
+
+                    // For EJS-rendered pages (e.g. login) we need to have a stable name.
+                    return "src/[name].js";
+                },
+                chunkFileNames: "src/[name]-[hash].js",
+                assetFileNames: "src/[name]-[hash].[ext]",
                 manualChunks: {
-                    "ckeditor5": [ "@triliumnext/ckeditor5" ],
-                    "boxicons": [ "../../node_modules/boxicons/css/boxicons.min.css" ]
+                    "ckeditor5": [ "@triliumnext/ckeditor5" ]
                 },
             },
             onwarn(warning, rollupWarn) {

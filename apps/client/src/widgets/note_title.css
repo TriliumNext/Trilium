@@ -92,7 +92,7 @@ body.experimental-feature-new-layout {
                 height: var(--size);
                 padding: 0;
 
-                .bx {
+                .tn-icon {
                     opacity: 1;
                     margin: 0;
                 }

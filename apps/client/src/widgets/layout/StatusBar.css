@@ -9,7 +9,7 @@
         background-color: var(--left-pane-background-color);
         padding-inline: 0.25em;
         font-size: 0.85em;
-        
+
         > .breadcrumb {
             flex-grow: 1;
             --icon-button-size: 23px;
@@ -104,7 +104,7 @@
                 /* Note path card */
                 li {
                     --border-radius: 6px;
-                    
+
                     position: relative;
                     background: var(--card-background-color);
                     padding: 8px 20px 8px 25px;
@@ -120,7 +120,7 @@
                     & + li {
                         margin-top: 2px;
                     }
-                    
+
                     /* Current path arrow */
                     &.path-current::before {
                         position: absolute;
@@ -180,7 +180,7 @@
                 &:last-child {
                     border-radius: 0 0 var(--border-radius) var(--border-radius);
                 }
-                
+
                 /* Card header */
                 & > span:first-child {
                     display: block;
@@ -202,7 +202,7 @@
                         }
 
                         /* Note icon */
-                        > .bx {
+                        > .tn-icon {
                             color: var(--menu-item-icon-color);
                         }
 

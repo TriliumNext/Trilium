@@ -1,0 +1,240 @@
+<aside class="admonition note">
+  <p>e This page describes how to create custom icon packs. For a general description
+    of how to use already existing icon packs, see&nbsp;<a class="reference-link"
+    href="#root/_help_gOKqSJgXLcIj">Icon Packs</a>.</p>
+</aside>
+<h2>Supported formats</h2>
+<p>The first step is to analyze if the icon set being packed can be integrated
+  into Trilium.</p>
+<p>Trilium only supports <strong>font-based icon sets</strong>, with the following
+  formats:</p>
+<table>
+  <thead>
+    <tr>
+      <th>Extension</th>
+      <th>MIME type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code spellcheck="false">.woff2</code>
+      </td>
+      <td><code spellcheck="false">font/woff2</code>
+      </td>
+      <td>Recommended due to great compression (low size).</td>
+    </tr>
+    <tr>
+      <td><code spellcheck="false">.woff</code>
+      </td>
+      <td><code spellcheck="false">font/woff</code>
+      </td>
+      <td>Higher compatibility, but the font file is bigger.</td>
+    </tr>
+    <tr>
+      <td><code spellcheck="false">.ttf</code>
+      </td>
+      <td><code spellcheck="false">font/ttf</code>
+      </td>
+      <td>Most common, but highest font size.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Unsupported formats</h2>
+<p>Trilium <strong>does not</strong> support the following formats:</p>
+<ul>
+  <li>SVG-based fonts.</li>
+  <li>Individual SVGs.</li>
+  <li><code spellcheck="false">.eot</code> fonts (legacy and proprietary).</li>
+  <li>Duotone icons, since it requires a special CSS format that Trilium doesn't
+    support.</li>
+  <li>Any other font format not specified in the <em>Supported formats</em> section.</li>
+</ul>
+<p>In this case, the font must be manually converted to one of the supported
+  formats (ideally <code spellcheck="false">.woff2</code>).</p>
+<h2>Prerequisites</h2>
+<p>In order to create a new icon pack from a set of icons, it must meet the
+  following criteria:</p>
+<ol>
+  <li>It must have a web font of the supported format (see above).</li>
+  <li>It must have some kind of list, containing the name of each icon and the
+    corresponding Unicode code point. If this is missing, icon fonts usually
+    ship with a <code spellcheck="false">.css</code> file that can be used to
+    extract the icon names from.</li>
+</ol>
+<h2>Step-by-step process</h2>
+<p>As an example throughout this page, we are going to go through the steps
+  of integrating <a href="https://phosphoricons.com/">Phosphor Icons</a>.</p>
+<h3>Creating the manifest</h3>
+<p>This is the most difficult part of creating an icon pack, since it requires
+  processing of the icon list to match Trilium's format.</p>
+<p>The icon pack manifest is a JSON file with the following structure:</p><pre><code class="language-application-ld-json">{
+	"icons": {
+		"bx-ball": {
+			"glyph": "\ue9c2",
+			"terms": [ "ball" ]
+		},		
+		"bxs-party": {
+			"glyph": "\uec92"
+			"terms": [ "party" ]
+		}
+	}
+}</code></pre>
+<ul>
+  <li>The JSON example is a sample from the Boxicons font.</li>
+  <li>This is simply a mapping between the CSS classes (<code spellcheck="false">bx-ball</code>),
+    to its corresponding code point in the font (<code spellcheck="false">\ue9c2</code>)
+    and the terms/aliases used for search purposes.</li>
+  <li>Note that it's also possible to use the unescaped glyph inside the JSON.
+    It will appear strange (e.g. ), but it will be rendered properly regardless.</li>
+  <li>The first term is also considered the “name” of the icon, which is displayed
+    while hovering over it in the icon selector.</li>
+</ul>
+<p>In order to generate this manifest, generally a script is needed that
+  processes an already existing list. In the case of Phosphor Icons, the
+  icon list comes in a file called <code spellcheck="false">selection.json</code> with
+  the following format:</p><pre><code class="language-application-ld-json">{
+  "icons": [
+    {
+      "icon": {
+        "paths": [ /* [...] */ ],
+        "grid": 0,
+        "attrs": [{}],
+        "isMulticolor": false,
+        "isMulticolor2": false,
+        "tags": ["acorn"]
+      },
+      "attrs": [{}],
+      "properties": {
+        "id": 0,
+        "order": 1513,
+        "name": "acorn",
+        "code": 60314,
+        "ligatures": "acorn",
+        "prevSize": 16
+      },
+      "setIdx": 0,
+      "setId": 0,
+      "iconIdx": 0
+    },
+    /* [...] */
+  ]
+}</code></pre>
+<p>As such, we can write a Node.js script to automatically process the manifest
+  file:</p><pre><code class="language-application-javascript-env-backend">import { join } from "node:path";
+import { readFileSync } from "node:fs";
+
+function processIconPack(packName) {
+    const path = join(packName);
+    const selectionMeta = JSON.parse(readFileSync(join(path, "selection.json"), "utf-8"));
+    const icons = {};
+
+    for (const icon of selectionMeta.icons) {
+        let name = icon.properties.name;
+        if (name.endsWith(`-${packName}`)) {
+            name = name.split("-").slice(0, -1).join("-");
+        }
+
+        const id = `ph-${name}`;
+        icons[id] = {
+            glyph: `${String.fromCharCode(icon.properties.code)}`,
+            terms: [ name ]
+        };
+    }
+
+    return JSON.stringify({
+        icons
+    }, null, 2);
+}
+
+console.log(processIconPack("light"));</code></pre>
+<aside class="admonition tip">
+  <p><strong>Mind the escape format when processing CSS</strong>
+  </p>
+  <p>The Unicode escape syntax is different in CSS (<code spellcheck="false">"\ea3f"</code>)
+    when compared to JSON (<code spellcheck="false">"\uea3f"</code>). Notice
+    how the JSON escape is <code spellcheck="false">\u</code> and not <code spellcheck="false">\</code>.</p>
+  <p>As a more compact alternative, provide the un-escaped character directly,
+    as UTF-8 is supported.</p>
+</aside>
+<h3>Creating the icon pack</h3>
+<ol>
+  <li>Create a note of type <em>Code</em>.</li>
+  <li>Set the language to <em>JSON</em>.</li>
+  <li>Copy and paste the manifest generated in the previous step as the content
+    of this note.</li>
+  <li>Go to the <a href="#root/_help_0vhv7lsOLy82">note attachment</a> and upload the
+    font file (in <code spellcheck="false">.woff2</code>, <code spellcheck="false">.woff</code>,
+    <code
+    spellcheck="false">.ttf</code>) format.
+      <ol>
+        <li>Trilium identifies the font to use from attachments via the MIME type,
+          make sure the MIME type is displayed correctly after uploading the attachment
+          (for example <code spellcheck="false">font/woff2</code>).</li>
+        <li>Make sure the <code spellcheck="false">role</code> appears as <code spellcheck="false">file</code>,
+          otherwise the font will not be identified.</li>
+        <li>Multiple attachments are supported, but only one font will actually be
+          used in Trilium's order of preference: <code spellcheck="false">.woff2</code>,
+          <code
+          spellcheck="false">.woff</code>, <code spellcheck="false">.ttf</code>. As such, there's not
+            much reason to upload more than one font per icon pack.</li>
+      </ol>
+  </li>
+  <li>Go back to the note and rename it. The name of the note will also be the
+    name of the icon pack as displayed in the list of icons.</li>
+</ol>
+<h3>Assigning the prefix</h3>
+<p>Before an icon pack can be used, it needs to have a prefix defined. This
+  prefix uniquely identifies the icon pack so that it can be used throughout
+  the application.</p>
+<p>To do so, Trilium makes use of the same format that was used for the internal
+  icon pack (Boxicons). For example, when an icon from Boxicons is set, it
+  looks like this: <code spellcheck="false">#iconClass="bx bxs-sushi"</code>.
+  In this case, the icon pack prefix is <code spellcheck="false">bx</code> and
+  the icon class name is <code spellcheck="false">bxs-sushi</code>.</p>
+<p>In order for an icon pack to be recognized, the prefix must be specified
+  in the <code spellcheck="false">#iconPack</code> label.&nbsp;</p>
+<p>For our example with Phosphor Icons, we can use the <code spellcheck="false">ph</code> prefix
+  since it also matches the prefix set in the original CSS. So in this case
+  it would be <code spellcheck="false">#iconPack=ph</code>.</p>
+<aside class="admonition important">
+  <p>The prefix must consist of only alphanumeric characters, hyphens and underscore.
+    If the prefix doesn't match these constraints, the icon pack will be ignored
+    and an error will be logged in&nbsp;<a class="reference-link" href="#root/_help_bnyigUA2UK7s">Backend (server) logs</a>.</p>
+</aside>
+<h3>Final steps</h3>
+<ul>
+  <li><a href="#root/_help_s8alTXmpFR61">Refresh the client</a>
+    <ul>
+      <li>Change the icon of the note and look for the <em>Filter</em> icon in the
+        top-right side.</li>
+      <li>Check if the new icon pack is displayed there and click on it to see the
+        full list of icons.</li>
+      <li>Go through most of the items to look for issues such as missing icon,
+        wrong names (some icons have aliases/terms that can cause issues).</li>
+    </ul>
+  </li>
+  <li>Optionally, assign an icon from the new icon pack to this note. This icon
+    will be used in the icon pack filter for a visual distinction.</li>
+  <li>The icon pack can then be <a href="#root/_help_mHbBMPDPkVV5">exported as ZIP</a> in
+    order to be distributed to other users.
+    <ul>
+      <li>It's important to note that icon packs are considered “unsafe” by default,
+        so “Safe mode” must be disabled when importing the ZIP.</li>
+      <li>Consider linking new users to the&nbsp;<a class="reference-link" href="#root/_help_gOKqSJgXLcIj">Icon Packs</a>&nbsp;documentation
+        in order to understand how to import and use an icon pack.</li>
+    </ul>
+  </li>
+</ul>
+<h3>Troubleshooting</h3>
+<p>If the icon pack doesn't show up, look through the&nbsp;<a class="reference-link"
+  href="#root/_help_bnyigUA2UK7s">Backend (server) logs</a>&nbsp;for clues.</p>
+<ul>
+  <li>One example is if the font could not be retrieved: <code spellcheck="false">ERROR: Icon pack is missing WOFF/WOFF2/TTF attachment: Boxicons v3 400 (dup) (XRzqDQ67fHEK)</code>.</li>
+  <li>Make sure the prefix is unique and not already taken by some other icon
+    pack. When there are two icon packs with the same prefix, only one is used.
+    The server logs will indicate if this situation occurs.</li>
+  <li>Make sure the prefix consists only of alphanumeric characters, hyphens
+    and underscore.</li>
+</ul>

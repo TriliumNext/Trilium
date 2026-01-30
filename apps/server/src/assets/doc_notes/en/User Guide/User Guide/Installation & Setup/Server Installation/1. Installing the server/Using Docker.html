@@ -11,22 +11,25 @@
 <aside class="admonition warning">
   <p>If you're using a SMB/CIFS share or folder as your Trilium data directory,
     <a
-    href="https://github.com/TriliumNext/Notes/issues/415#issuecomment-2344824400">you'll need</a>to add the mount options of <code>nobrl</code> and <code>noperm</code> when
-      mounting your SMB share.</p>
+    href="https://github.com/TriliumNext/Notes/issues/415#issuecomment-2344824400">you'll need</a>to add the mount options of <code spellcheck="false">nobrl</code> and
+      <code
+      spellcheck="false">noperm</code>when mounting your SMB share.</p>
 </aside>
 <h2>Running with Docker Compose</h2>
 <h3>Grab the latest docker-compose.yml:</h3><pre><code class="language-text-x-trilium-auto">wget https://raw.githubusercontent.com/TriliumNext/Trilium/master/docker-compose.yml</code></pre>
-<p>Optionally, edit the <code>docker-compose.yml</code> file to configure the
-  container settings prior to starting it. Unless configured otherwise, the
-  data directory will be <code>~/trilium-data</code> and the container will
-  be accessible at port 8080.</p>
+<p>Optionally, edit the <code spellcheck="false">docker-compose.yml</code> file
+  to configure the container settings prior to starting it. Unless configured
+  otherwise, the data directory will be <code spellcheck="false">~/trilium-data</code> and
+  the container will be accessible at port 8080.</p>
 <h3>Start the container:</h3>
 <p>Run the following command to start the container in the background:</p><pre><code class="language-text-x-trilium-auto">docker compose up -d</code></pre>
 <h2>Running without Docker Compose / Further Configuration</h2>
 <h3>Pulling the Docker Image</h3>
-<p>To pull the image, use the following command, replacing <code>[VERSION]</code> with
-  the desired version or tag, such as <code>v0.91.6</code> or just <code>latest</code>.
-  (See published tag names at <a href="https://hub.docker.com/r/triliumnext/trilium/tags">https://hub.docker.com/r/triliumnext/trilium/tags</a>.):</p><pre><code class="language-text-x-trilium-auto">docker pull triliumnext/trilium:v0.91.6</code></pre>
+<p>To pull the image, use the following command, replacing <code spellcheck="false">[VERSION]</code> with
+  the desired version or tag, such as <code spellcheck="false">v0.91.6</code> or
+  just <code spellcheck="false">latest</code>. (See published tag names at
+  <a
+  href="https://hub.docker.com/r/triliumnext/trilium/tags">https://hub.docker.com/r/triliumnext/trilium/tags</a>.):</p><pre><code class="language-text-x-trilium-auto">docker pull triliumnext/trilium:v0.91.6</code></pre>
 <p><strong>Warning:</strong> Avoid using the "latest" tag, as it may automatically
   upgrade your instance to a new minor version, potentially disrupting sync
   setups or causing other issues.</p>
@@ -39,26 +42,27 @@
   setup is suitable for testing or when using a proxy server like Nginx or
   Apache.</p><pre><code class="language-text-x-trilium-auto">sudo docker run -t -i -p 127.0.0.1:8080:8080 -v ~/trilium-data:/home/node/trilium-data triliumnext/trilium:[VERSION]</code></pre>
 <ol>
-  <li>Verify the container is running using <code>docker ps</code>.</li>
-  <li>Access Trilium via a web browser at <code>127.0.0.1:8080</code>.</li>
+  <li>Verify the container is running using <code spellcheck="false">docker ps</code>.</li>
+  <li>Access Trilium via a web browser at <code spellcheck="false">127.0.0.1:8080</code>.</li>
 </ol>
 <h4>Local Network Access</h4>
 <p>To make the container accessible only on your local network, first create
   a new Docker network:</p><pre><code class="language-text-x-trilium-auto">docker network create -d macvlan -o parent=eth0 --subnet 192.168.2.0/24 --gateway 192.168.2.254 --ip-range 192.168.2.252/27 mynet</code></pre>
 <p>Then, run the container with the network settings:</p><pre><code class="language-text-x-trilium-auto">docker run --net=mynet -d -p 127.0.0.1:8080:8080 -v ~/trilium-data:/home/node/trilium-data triliumnext/trilium:-latest</code></pre>
 <p>To set a different user ID (UID) and group ID (GID) for the saved data,
-  use the <code>USER_UID</code> and <code>USER_GID</code> environment variables:</p><pre><code class="language-text-x-trilium-auto">docker run --net=mynet -d -p 127.0.0.1:8080:8080 -e "USER_UID=1001" -e "USER_GID=1001" -v ~/trilium-data:/home/node/trilium-data triliumnext/trilium:-latest</code></pre>
-<p>Find the local IP address using <code>docker inspect [container_name]</code> and
+  use the <code spellcheck="false">USER_UID</code> and <code spellcheck="false">USER_GID</code> environment
+  variables:</p><pre><code class="language-text-x-trilium-auto">docker run --net=mynet -d -p 127.0.0.1:8080:8080 -e "USER_UID=1001" -e "USER_GID=1001" -v ~/trilium-data:/home/node/trilium-data triliumnext/trilium:-latest</code></pre>
+<p>Find the local IP address using <code spellcheck="false">docker inspect [container_name]</code> and
   access the service from devices on the local network.</p><pre><code class="language-text-x-trilium-auto">docker ps
 docker inspect [container_name]</code></pre>
 <h4>Global Access</h4>
 <p>To allow access from any IP address, run the container as follows:</p><pre><code class="language-text-x-trilium-auto">docker run -d -p 0.0.0.0:8080:8080 -v ~/trilium-data:/home/node/trilium-data triliumnext/trilium:[VERSION]</code></pre>
-<p>Stop the container with <code>docker stop &lt;CONTAINER ID&gt;</code>,
-  where the container ID is obtained from <code>docker ps</code>.</p>
+<p>Stop the container with <code spellcheck="false">docker stop &lt;CONTAINER ID&gt;</code>,
+  where the container ID is obtained from <code spellcheck="false">docker ps</code>.</p>
 <h3>Custom Data Directory</h3>
 <p>For a custom data directory, use:</p><pre><code class="language-text-x-trilium-auto">-v ~/YourOwnDirectory:/home/node/trilium-data triliumnext/trilium:[VERSION]</code></pre>
 <p>If you want to run your instance in a non-default way, please use the
-  volume switch as follows: <code>-v ~/YourOwnDirectory:/home/node/trilium-data triliumnext/trilium:&lt;VERSION&gt;</code>.
+  volume switch as follows: <code spellcheck="false">-v ~/YourOwnDirectory:/home/node/trilium-data triliumnext/trilium:&lt;VERSION&gt;</code>.
   It is important to be aware of how Docker works for volumes, with the first
   path being your own and the second the one to virtually bind to. <a href="https://docs.docker.com/storage/volumes/">https://docs.docker.com/storage/volumes/</a> The
   path before the colon is the host directory, and the path after the colon
@@ -71,21 +75,24 @@ docker inspect [container_name]</code></pre>
   </li>
 </ol>
 <h3>Note on --user Directive</h3>
-<p>The <code>--user</code> directive is unsupported. Instead, use the <code>USER_UID</code> and <code>USER_GID</code> environment
+<p>The <code spellcheck="false">--user</code> directive is unsupported. Instead,
+  use the <code spellcheck="false">USER_UID</code> and <code spellcheck="false">USER_GID</code> environment
   variables to set the appropriate user and group IDs.</p>
 <h3>Note on timezones</h3>
 <p>If you are having timezone issues and you are not using docker-compose,
-  you may need to add a <code>TZ</code> environment variable with the <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">TZ identifier</a> of
+  you may need to add a <code spellcheck="false">TZ</code> environment variable
+  with the <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">TZ identifier</a> of
   your local timezone.</p>
 <h2>Rootless Docker Image</h2>
 <aside class="admonition note">
-  <p>Please keep in mind that the data directory is at <code>/home/trilium/trilium-data</code> instead
-    of the typical <code>/home/node/trilium-data</code>. This is because a new
-    user is created and used to run Trilium within the rootless containers.</p>
+  <p>Please keep in mind that the data directory is at <code spellcheck="false">/home/trilium/trilium-data</code> instead
+    of the typical <code spellcheck="false">/home/node/trilium-data</code>.
+    This is because a new user is created and used to run Trilium within the
+    rootless containers.</p>
 </aside>
 <p>If you would prefer to run Trilium without having to run the Docker container
-  as <code>root</code>, you can use either of the provided Debian (default)
-  and Alpine-based images with the <code>rootless</code> tag.&nbsp;</p>
+  as <code spellcheck="false">root</code>, you can use either of the provided
+  Debian (default) and Alpine-based images with the <code spellcheck="false">rootless</code> tag.&nbsp;</p>
 <p><em><strong>If you're unsure, stick to the “rootful” Docker image referenced above.</strong></em>
 </p>
 <p>Below are some commands to pull the rootless images:</p><pre><code class="language-text-x-trilium-auto"># For Debian-based image
@@ -101,10 +108,11 @@ docker pull triliumnext/trilium:rootless-alpine</code></pre>
 <h3>How It Works</h3>
 <p>The rootless Trilium image:</p>
 <ol>
-  <li>Creates a non-root user (<code>trilium</code>) during build time</li>
+  <li>Creates a non-root user (<code spellcheck="false">trilium</code>) during
+    build time</li>
   <li>Configures the application to run as this non-root user</li>
-  <li>Allows runtime customization of the user's UID/GID via Docker's <code>--user</code> flag</li>
-  <li>Does not require a separate Docker <code>entrypoint</code> script</li>
+  <li>Allows runtime customization of the user's UID/GID via Docker's <code spellcheck="false">--user</code> flag</li>
+  <li>Does not require a separate Docker <code spellcheck="false">entrypoint</code> script</li>
 </ol>
 <h3>Usage</h3>
 <h4><strong>Using docker-compose (Recommended)</strong></h4><pre><code class="language-text-x-trilium-auto"># Run with default UID/GID (1000:1000)
@@ -127,12 +135,12 @@ docker run -d --name trilium -p 8080:8080 --user $(id -u):$(id -g) -v ~/trilium-
 </code></pre>
 <h3>Environment Variables</h3>
 <ul>
-  <li><code>TRILIUM_UID</code>: UID to use for the container process (passed
-    to Docker's <code>--user</code> flag)</li>
-  <li><code>TRILIUM_GID</code>: GID to use for the container process (passed
-    to Docker's <code>--user</code> flag)</li>
-  <li><code>TRILIUM_DATA_DIR</code>: Path to the data directory inside the container
-    (default: <code>/home/node/trilium-data</code>)</li>
+  <li><code spellcheck="false">TRILIUM_UID</code>: UID to use for the container
+    process (passed to Docker's <code spellcheck="false">--user</code> flag)</li>
+  <li><code spellcheck="false">TRILIUM_GID</code>: GID to use for the container
+    process (passed to Docker's <code spellcheck="false">--user</code> flag)</li>
+  <li><code spellcheck="false">TRILIUM_DATA_DIR</code>: Path to the data directory
+    inside the container (default: <code spellcheck="false">/home/node/trilium-data</code>)</li>
 </ul>
 <p>For a complete list of configuration environment variables (network settings,
   authentication, sync, etc.), see&nbsp;<a class="reference-link" href="#root/_help_Gzjqa934BdH4">Configuration (config.ini or environment variables)</a>.</p>
@@ -141,8 +149,9 @@ docker run -d --name trilium -p 8080:8080 --user $(id -u):$(id -g) -v ~/trilium-
 <ol>
   <li>The host directory has appropriate permissions for the UID/GID you're
     using</li>
-  <li>You're setting both <code>TRILIUM_UID</code> and <code>TRILIUM_GID</code> to
-    match the owner of the host directory</li>
+  <li>You're setting both <code spellcheck="false">TRILIUM_UID</code> and
+    <code
+    spellcheck="false">TRILIUM_GID</code>to match the owner of the host directory</li>
 </ol><pre><code class="language-text-x-trilium-auto"># For example, if your data directory is owned by UID 1001 and GID 1001:
 TRILIUM_UID=1001 TRILIUM_GID=1001 docker-compose -f docker-compose.rootless.yml up -d
 </code></pre>
@@ -151,7 +160,7 @@ TRILIUM_UID=1001 TRILIUM_GID=1001 docker-compose -f docker-compose.rootless.yml 
   <li>The container starts with a specific UID/GID which can be customized at
     runtime</li>
   <li>Unlike the traditional setup, this approach does not use a separate entrypoint
-    script with <code>usermod</code>/<code>groupmod</code> commands</li>
+    script with <code spellcheck="false">usermod</code>/<code spellcheck="false">groupmod</code> commands</li>
   <li>The container cannot modify its own UID/GID at runtime, which is a security
     feature of rootless containers</li>
 </ul>
@@ -161,7 +170,7 @@ TRILIUM_UID=1001 TRILIUM_GID=1001 docker-compose -f docker-compose.rootless.yml 
   <li><strong>Debian-based</strong> (default): Uses the Debian Bullseye Slim
     base image
     <ul>
-      <li>Dockerfile: <code>apps/server/Dockerfile.rootless</code>
+      <li>Dockerfile: <code spellcheck="false">apps/server/Dockerfile.rootless</code>
       </li>
       <li>Recommended for most users</li>
     </ul>
@@ -169,7 +178,7 @@ TRILIUM_UID=1001 TRILIUM_GID=1001 docker-compose -f docker-compose.rootless.yml 
   <li><strong>Alpine-based</strong>: Uses the Alpine base image for smaller
     size
     <ul>
-      <li>Dockerfile: <code>apps/server/Dockerfile.alpine.rootless</code>
+      <li>Dockerfile: <code spellcheck="false">apps/server/Dockerfile.alpine.rootless</code>
       </li>
       <li>Smaller image size, but may have compatibility issues with some systems</li>
     </ul>
@@ -186,7 +195,10 @@ docker build --build-arg USER=myuser --build-arg UID=1001 --build-arg GID=1001 \
 </code></pre>
 <p>Available build arguments:</p>
 <ul>
-  <li><code>USER</code>: Username for the non-root user (default: trilium)</li>
-  <li><code>UID</code>: User ID for the non-root user (default: 1000)</li>
-  <li><code>GID</code>: Group ID for the non-root user (default: 1000)</li>
+  <li><code spellcheck="false">USER</code>: Username for the non-root user (default:
+    trilium)</li>
+  <li><code spellcheck="false">UID</code>: User ID for the non-root user (default:
+    1000)</li>
+  <li><code spellcheck="false">GID</code>: Group ID for the non-root user (default:
+    1000)</li>
 </ul>

@@ -135,13 +135,13 @@ function OpenExternallyButton({ note, noteMime }: NoteActionsCustomInnerProps) {
     );
 }
 
-function DownloadFileButton({ note }: NoteActionsCustomInnerProps) {
+function DownloadFileButton({ note, parentComponent, ntxId }: NoteActionsCustomInnerProps) {
     return (
         <ActionButton
             icon="bx bx-download"
             text={t("file_properties.download")}
             disabled={!note.isContentAvailable()}
-            onClick={() => downloadFileNote(note.noteId)}
+            onClick={() => downloadFileNote(note, parentComponent, ntxId)}
         />
     );
 }
@@ -184,7 +184,8 @@ function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: N
 
 function ToggleReadOnlyButton({ note, viewType, isDefaultViewMode }: NoteActionsCustomInnerProps) {
     const [ isReadOnly, setReadOnly ] = useNoteLabelBoolean(note, "readOnly");
-    const isEnabled = ([ "mermaid", "mindMap", "canvas" ].includes(note.type) || viewType === "geoMap")
+    const isSavedSqlite = note.isTriliumSqlite() && !note.isHiddenCompletely();
+    const isEnabled = ([ "mermaid", "mindMap", "canvas" ].includes(note.type) || viewType === "geoMap" || isSavedSqlite)
             && note.isContentAvailable() && isDefaultViewMode;
 
     return isEnabled && <ActionButton

@@ -82,6 +82,10 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
     align-items: flex-start;
 }
 
+.modal.popup-editor-dialog .note-detail {
+    width: 100%;
+}
+
 .modal.popup-editor-dialog .note-detail.full-height {
     flex-grow: 0;
     height: 100%;

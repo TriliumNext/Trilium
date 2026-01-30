@@ -39,7 +39,7 @@ export default function NoteTypeSwitcher() {
     const currentNoteTypeData = useMemo(() => NOTE_TYPES.find(t => t.type === currentNoteType), [ currentNoteType ]);
     const { builtinTemplates, collectionTemplates } = useBuiltinTemplates();
 
-    return (currentNoteType && supportedNoteTypes.has(currentNoteType) &&
+    return (currentNoteType && supportedNoteTypes.has(currentNoteType) && !note?.isTriliumSqlite() &&
         <div
             className="note-type-switcher"
             onWheel={onWheelHorizontalScroll}

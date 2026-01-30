@@ -35,7 +35,7 @@
         align-items: center;
         min-width: 0;
 
-        .bx {
+        .tn-icon {
             margin-inline: 6px;
         }
 
@@ -55,7 +55,7 @@
     .icon-action {
         font-size: .9rem !important;
 
-        .bxs-chevron-right {
+        &.breadcrumb-separator {
             transform: translateY(8%);
 
             &::before {

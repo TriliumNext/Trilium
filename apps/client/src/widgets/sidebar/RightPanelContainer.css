@@ -28,7 +28,7 @@ body.experimental-feature-new-layout #right-pane {
             border-bottom: 0;
         }
 
-        &.collapsed .card-header > .bx {
+        &.collapsed .card-header > .tn-icon {
             transform: rotate(-90deg);
         }
     }
@@ -39,23 +39,5 @@ body.experimental-feature-new-layout #right-pane {
 
     .gutter-vertical + .card .card-header {
         padding-top: 0;
-    }
-
-    .no-items {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-grow: 1;
-        flex-direction: column;
-        padding: 0.75em;
-        color: var(--muted-text-color);
-
-        .bx {
-            font-size: 3em;
-        }
-
-        button {
-            margin-top: 1em;
-        }
     }
 }

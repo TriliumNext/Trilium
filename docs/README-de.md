@@ -96,19 +96,19 @@ Unsere Dokumentation ist verfügbar in mehreren Formaten:
   für eine sicherere Anmeldung
 * [Synchronisierung](https://docs.triliumnotes.org/user-guide/setup/synchronization)
   mit einem selbst gehosteten Synchronisierungsserver
-  * there are [3rd party services for hosting synchronisation
-    server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+  * Es gibt [Drittanbieter-Dienste für das Hosting von
+    Synchronisationsservern](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [Freigabe](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
   (Veröffentlichung) von Notizen im öffentlichen Internet
 * Starke
   [Notizverschlüsselung](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
   mit Granularität pro Notiz
 * Skizzieren von Diagrammen basierend auf [Excalidraw](https://excalidraw.com/)
-  (Notiztyp „Canvas“)
-* [Relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
-  for visualizing notes and their relations
+  (Notiztyp „Leinwand“)
+* [Beziehungskarten](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
+  und
+  [Notiz-/Link-Karten](https://docs.triliumnotes.org/user-guide/note-types/note-map)
+  zur Visualisierung von Notizen und ihren Beziehungen
 * Mindmaps, basierend auf [Mind Elixir](https://docs.mind-elixir.com/)
 * [Geokarten](https://docs.triliumnotes.org/user-guide/collections/geomap) mit
   Standortmarkierungen und GPX-Tracks
@@ -133,7 +133,7 @@ Unsere Dokumentation ist verfügbar in mehreren Formaten:
 * Anpassbare Benutzeroberfläche (Seitenleisten-Schaltflächen, benutzerdefinierte
   Widgets, ...)
 * [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
-  along with a Grafana Dashboard.
+  zusätzlich mit dem Grafana Dashboard.
 
 ✨ Weitere Informationen zu TriliumNext findet man in den folgenden
 Ressourcen/Communities von Drittanbietern:
@@ -298,10 +298,10 @@ enthält weitere Details. Bei offenen Fragen kann über die im Abschnitt
   Anwendungssymbols.
 * [nriver](https://github.com/nriver) für seine Arbeit zur
   Internationalisierung.
-* [Thomas Frei](https://github.com/thfrei) für seine ursprüngliche Arbeit an
+* [Thomas Frei](https://github.com/thfrei) für seine originelle Arbeit an
   Canvas.
 * [antoniotejada](https://github.com/nriver) für das ursprüngliche
-  Syntax-Highlighting-Widget.
+  Syntaxhervorhebungs-Widget.
 * [Dosu](https://dosu.dev/) für die Bereitstellung automatisierter Antworten auf
   GitHub-Issues und Diskussionen.
 * [Tabler-Icons](https://tabler.io/icons) für die Symbole in der Taskleiste.
@@ -314,7 +314,7 @@ Trilium wäre ohne die zugrundeliegenden Technologien nicht möglich:
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - Code-Editor mit
   Unterstützung für eine Vielzahl von Sprachen.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) – das unendliche
-  Whiteboard, verwendet in Canvas-Notizen.
+  Whiteboard, verwendet in Leinwand-Notizen.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) – bietet die
   Mindmap-Funktionalität.
 * [Leaflet](https://github.com/Leaflet/Leaflet) – für die Darstellung

@@ -1,3 +1,5 @@
+import { beforeAll, describe, expect, it, vi } from "vitest";
+
 import BNote from '../../becca/entities/bnote.js';
 import cls from "../../services/cls";
 import { buildNote } from "../../test/becca_easy_mocking";
@@ -17,7 +19,7 @@ describe("processContent", () => {
                     return {
                         attachmentId: "foo",
                         title: "encodedTitle",
-                    }
+                    };
                 }
             }
         }));
@@ -25,12 +27,12 @@ describe("processContent", () => {
 
     it("processes basic note", () => {
         const processed = cls.init(() => processContent([], note, "<p>Hello world.</p>"));
-        expect(processed).toStrictEqual("<p>Hello world.</p>")
+        expect(processed).toStrictEqual("<p>Hello world.</p>");
     });
 
     it("processes plain text", () => {
         const processed = cls.init(() => processContent([], note, "Hello world."));
-        expect(processed).toStrictEqual("<p>Hello world.</p>")
+        expect(processed).toStrictEqual("<p>Hello world.</p>");
     });
 
     it("replaces images", () => {

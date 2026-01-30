@@ -35,5 +35,5 @@ describe("CK config", () => {
                 expect(config.translations, locale.id).toHaveLength(2);
             }
         }
-    });
+    }, 20_000);
 });

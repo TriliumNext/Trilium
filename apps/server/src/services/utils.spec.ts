@@ -1,4 +1,5 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect,it } from "vitest";
+
 import utils from "./utils.js";
 
 type TestCase<T extends (...args: any) => any> = [desc: string, fnParams: Parameters<T>, expected: ReturnType<T>];
@@ -120,7 +121,7 @@ describe("#toObject", () => {
             { testPropA: "keyA", testPropB: "valueA" },
             { testPropA: "keyB", testPropB: "valueB" }
         ];
-        const fn: TestListFn = (testListEntry: TestListEntry) => [ testListEntry.testPropA + "_fn", testListEntry.testPropB + "_fn" ];
+        const fn: TestListFn = (testListEntry: TestListEntry) => [ `${testListEntry.testPropA  }_fn`, `${testListEntry.testPropB  }_fn` ];
 
         const result = utils.toObject(testList, fn);
         expect(result).toStrictEqual({
@@ -240,8 +241,8 @@ describe.todo("#quoteRegex", () => {});
 
 describe.todo("#replaceAll", () => {});
 
-describe("#removeTextFileExtension", () => {
-    const testCases: TestCase<typeof utils.removeTextFileExtension>[] = [
+describe("#removeFileExtension", () => {
+    const testCases: TestCase<typeof utils.removeFileExtension>[] = [
         [ "w/ 'test.md' it should strip '.md'", [ "test.md" ], "test" ],
         [ "w/ 'test.markdown' it should strip '.markdown'", [ "test.markdown" ], "test" ],
         [ "w/ 'test.html' it should strip '.html'", [ "test.html" ], "test" ],
@@ -252,7 +253,7 @@ describe("#removeTextFileExtension", () => {
     testCases.forEach((testCase) => {
         const [ desc, fnParams, expected ] = testCase;
         it(desc, () => {
-            const result = utils.removeTextFileExtension(...fnParams);
+            const result = utils.removeFileExtension(...fnParams);
             expect(result).toStrictEqual(expected);
         });
     });

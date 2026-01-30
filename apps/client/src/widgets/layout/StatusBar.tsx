@@ -1,15 +1,15 @@
 import "./StatusBar.css";
 
-import { Locale, NoteType } from "@triliumnext/commons";
+import { Locale, NOTE_TYPE_ICONS, NoteType } from "@triliumnext/commons";
 import { Dropdown as BootstrapDropdown } from "bootstrap";
 import clsx from "clsx";
 import { type ComponentChildren, RefObject } from "preact";
 import { createPortal } from "preact/compat";
-import { useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import { CommandNames } from "../../components/app_context";
 import NoteContext from "../../components/note_context";
-import FNote, { NOTE_TYPE_ICONS } from "../../entities/fnote";
+import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
 import { t } from "../../services/i18n";
 import { ViewScope } from "../../services/link";
@@ -338,15 +338,19 @@ interface AttributesProps extends StatusBarContext {
 function AttributesButton({ note, attributesShown, setAttributesShown }: AttributesProps) {
     const [ count, setCount ] = useState(note.attributes.length);
 
+    const getAttributeCount = useCallback((note: FNote) => {
+        return note.getAttributes().filter(a => !a.isAutoLink).length;
+    }, []);
+
     // React to note changes.
     useEffect(() => {
-        setCount(note.getAttributes().filter(a => !a.isAutoLink).length);
-    }, [ note ]);
+        setCount(getAttributeCount(note));
+    }, [ note, getAttributeCount ]);
 
     // React to changes in count.
     useTriliumEvent("entitiesReloaded", (({loadResults}) => {
         if (loadResults.getAttributeRows().some(attr => attributes.isAffecting(attr, note))) {
-            setCount(note.attributes.length);
+            setCount(getAttributeCount(note));
         }
     }));
 

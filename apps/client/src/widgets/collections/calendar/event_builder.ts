@@ -1,9 +1,10 @@
 import { EventInput, EventSourceFuncArg, EventSourceInput } from "@fullcalendar/core/index.js";
-import froca from "../../../services/froca";
-import { formatDateToLocalISO, getCustomisableLabel, getMonthsInDateRange, offsetDate } from "./utils";
-import FNote from "../../../entities/fnote";
-import server from "../../../services/server";
 import clsx from "clsx";
+
+import FNote from "../../../entities/fnote";
+import froca from "../../../services/froca";
+import server from "../../../services/server";
+import { formatDateToLocalISO, getCustomisableLabel, getMonthsInDateRange, offsetDate } from "./utils";
 
 interface Event {
     startDate: string,
@@ -105,7 +106,8 @@ export async function buildEvent(note: FNote, { startDate, endDate, startTime, e
 
         endDate = (endTime ? `${endDate}T${endTime}:00` : endDate);
         const eventData: EventInput = {
-            title: title,
+            id: note.noteId,
+            title,
             start: startDate,
             url: `#${note.noteId}?popup`,
             noteId: note.noteId,
@@ -148,12 +150,12 @@ async function parseCustomTitle(customTitlettributeName: string | null, note: FN
 }
 
 async function buildDisplayedAttributes(note: FNote, calendarDisplayedAttributes: string[]) {
-    const filteredDisplayedAttributes = note.getAttributes().filter((attr): boolean => calendarDisplayedAttributes.includes(attr.name))
+    const filteredDisplayedAttributes = note.getAttributes().filter((attr): boolean => calendarDisplayedAttributes.includes(attr.name));
     const result: Array<[string, string]> = [];
 
     for (const attribute of filteredDisplayedAttributes) {
         if (attribute.type === "label") result.push([attribute.name, attribute.value]);
-        else result.push([attribute.name, (await attribute.getTargetNote())?.title || ""])
+        else result.push([attribute.name, (await attribute.getTargetNote())?.title || ""]);
     }
 
     return result;

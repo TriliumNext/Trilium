@@ -1,9 +1,7 @@
-"use strict";
-
-import TurndownService, { type Rule } from "turndown";
 import { gfm } from "@triliumnext/turndown-plugin-gfm";
+import Turnish, { type Rule } from "turnish";
 
-let instance: TurndownService | null = null;
+let instance: Turnish | null = null;
 
 // TODO: Move this to a dedicated file someday.
 export const ADMONITION_TYPE_MAPPINGS: Record<string, string> = {
@@ -16,12 +14,12 @@ export const ADMONITION_TYPE_MAPPINGS: Record<string, string> = {
 
 export const DEFAULT_ADMONITION_TYPE = ADMONITION_TYPE_MAPPINGS.note;
 
-const fencedCodeBlockFilter: TurndownService.Rule = {
-    filter: function (node, options) {
+const fencedCodeBlockFilter: Rule = {
+    filter (node, options) {
         return options.codeBlockStyle === "fenced" && node.nodeName === "PRE" && node.firstChild !== null && node.firstChild.nodeName === "CODE";
     },
 
-    replacement: function (content, node, options) {
+    replacement (content, node, options) {
         if (!node.firstChild || !("getAttribute" in node.firstChild) || typeof node.firstChild.getAttribute !== "function") {
             return content;
         }
@@ -29,23 +27,25 @@ const fencedCodeBlockFilter: TurndownService.Rule = {
         const className = node.firstChild.getAttribute("class") || "";
         const language = rewriteLanguageTag((className.match(/language-(\S+)/) || [null, ""])[1]);
 
-        return "\n\n" + options.fence + language + "\n" + node.firstChild.textContent + "\n" + options.fence + "\n\n";
+        return `\n\n${options.fence}${language}\n${node.firstChild.textContent}\n${options.fence}\n\n`;
     }
 };
 
 function toMarkdown(content: string) {
     if (instance === null) {
-        instance = new TurndownService({
+        instance = new Turnish({
             headingStyle: "atx",
+            bulletListMarker: "*",
+            emDelimiter: "_",
             codeBlockStyle: "fenced",
-            blankReplacement(content, node, options) {
-                if (node.nodeName === "SECTION" && (node as HTMLElement).classList.contains("include-note")) {
-                    return (node as HTMLElement).outerHTML;
+            blankReplacement(_content, node) {
+                if (node.nodeName === "SECTION" && node.classList.contains("include-note")) {
+                    return node.outerHTML;
                 }
 
                 // Original implementation as per https://github.com/mixmark-io/turndown/blob/master/src/turndown.js.
-                return ("isBlock" in node && node.isBlock) ? '\n\n' : ''
-            }
+                return ("isBlock" in node && node.isBlock) ? '\n\n' : '';
+            },
         });
         // Filter is heavily based on: https://github.com/mixmark-io/turndown/issues/274#issuecomment-458730974
         instance.addRule("fencedCodeBlock", fencedCodeBlockFilter);
@@ -59,7 +59,7 @@ function toMarkdown(content: string) {
         instance.keep([ "kbd", "sup", "sub" ]);
     }
 
-    return instance.turndown(content);
+    return instance.render(content);
 }
 
 function rewriteLanguageTag(source: string) {
@@ -85,14 +85,14 @@ function buildImageFilter() {
     const ESCAPE_PATTERNS = {
         before: /([\\*`[\]_]|(?:^[-+>])|(?:^~~~)|(?:^#{1-6}))/g,
         after: /((?:^\d+(?=\.)))/
-    }
+    };
 
-    const escapePattern = new RegExp('(?:' + ESCAPE_PATTERNS.before.source + '|' + ESCAPE_PATTERNS.after.source + ')', 'g');
+    const escapePattern = new RegExp(`(?:${ESCAPE_PATTERNS.before.source}|${ESCAPE_PATTERNS.after.source})`, 'g');
 
     function escapeMarkdown (content: string) {
-        return content.replace(escapePattern, function (match, before, after) {
-            return before ? '\\' + before : after + '\\'
-        })
+        return content.replace(escapePattern, (match, before, after) => {
+            return before ? `\\${before}` : `${after}\\`;
+        });
     }
 
     function escapeLinkDestination(destination: string) {
@@ -102,10 +102,10 @@ function buildImageFilter() {
     }
 
     function escapeLinkTitle (title: string) {
-        return title.replace(/"/g, '\\"')
+        return title.replace(/"/g, '\\"');
     }
 
-    const imageFilter: TurndownService.Rule = {
+    const imageFilter: Rule = {
         filter: "img",
         replacement(content, _node) {
             const node = _node as HTMLElement;
@@ -117,12 +117,12 @@ function buildImageFilter() {
 
             // TODO: Deduplicate with upstream.
             const untypedNode = (node as any);
-            const alt = escapeMarkdown(cleanAttribute(untypedNode.getAttribute('alt')))
-            const src = escapeLinkDestination(untypedNode.getAttribute('src') || '')
-            const title = cleanAttribute(untypedNode.getAttribute('title'))
-            const titlePart = title ? ' "' + escapeLinkTitle(title) + '"' : ''
+            const alt = escapeMarkdown(cleanAttribute(untypedNode.getAttribute('alt')));
+            const src = escapeLinkDestination(untypedNode.getAttribute('src') || '');
+            const title = cleanAttribute(untypedNode.getAttribute('title'));
+            const titlePart = title ? ` "${escapeLinkTitle(title)}"` : '';
 
-            return src ? '![' + alt + ']' + '(' + src + titlePart + ')' : ''
+            return src ? `![${alt}](${src}${titlePart})` : '';
         }
     };
     return imageFilter;
@@ -151,7 +151,7 @@ function buildAdmonitionFilter() {
         return DEFAULT_ADMONITION_TYPE;
     }
 
-    const admonitionFilter: TurndownService.Rule = {
+    const admonitionFilter: Rule = {
         filter(node, options) {
             return node.nodeName === "ASIDE" && node.classList.contains("admonition");
         },
@@ -161,11 +161,11 @@ function buildAdmonitionFilter() {
 
             content = content.replace(/^\n+|\n+$/g, '');
             content = content.replace(/^/gm, '> ');
-            content = `> [!${admonitionType}]\n` + content;
+            content = `> [!${admonitionType}]\n${content}`;
 
-            return "\n\n" + content + "\n\n";
+            return `\n\n${content}\n\n`;
         }
-    }
+    };
     return admonitionFilter;
 }
 
@@ -178,15 +178,15 @@ function buildAdmonitionFilter() {
  */
 function buildInlineLinkFilter(): Rule {
     return {
-        filter: function (node, options) {
+        filter (node, options) {
             return (
                 options.linkStyle === 'inlined' &&
                 node.nodeName === 'A' &&
                 !!node.getAttribute('href')
-            )
+            );
         },
 
-        replacement: function (content, _node) {
+        replacement (content, _node) {
             const node = _node as HTMLElement;
 
             // Return reference links verbatim.
@@ -196,13 +196,13 @@ function buildInlineLinkFilter(): Rule {
 
             // Otherwise treat as normal.
             // TODO: Call super() somehow instead of duplicating the implementation.
-            let href = node.getAttribute('href')
-            if (href) href = href.replace(/([()])/g, '\\$1')
-            let title = cleanAttribute(node.getAttribute('title'))
-            if (title) title = ' "' + title.replace(/"/g, '\\"') + '"'
-            return '[' + content + '](' + href + title + ')'
+            let href = node.getAttribute('href');
+            if (href) href = href.replace(/([()])/g, '\\$1');
+            let title = cleanAttribute(node.getAttribute('title'));
+            if (title) title = ` "${title.replace(/"/g, '\\"')}"`;
+            return `[${content}](${href}${title})`;
         }
-    }
+    };
 }
 
 function buildFigureFilter(): Rule {
@@ -214,7 +214,7 @@ function buildFigureFilter(): Rule {
         replacement(content, node) {
             return (node as HTMLElement).outerHTML;
         }
-    }
+    };
 }
 
 // Keep in line with https://github.com/mixmark-io/turndown/blob/master/src/commonmark-rules.js.
@@ -224,13 +224,13 @@ function buildListItemFilter(): Rule {
         replacement(content, node, options) {
             content = content
                 .trim()
-                .replace(/\n/gm, '\n    ') // indent
-            let prefix = options.bulletListMarker + '   '
+                .replace(/\n/gm, '\n    '); // indent
+            let prefix = `${options.bulletListMarker}   `;
             const parent = node.parentNode as HTMLElement;
             if (parent.nodeName === 'OL') {
-                var start = parent.getAttribute('start')
-                var index = Array.prototype.indexOf.call(parent.children, node)
-                prefix = (start ? Number(start) + index : index + 1) + '.  '
+                const start = parent.getAttribute('start');
+                const index = Array.prototype.indexOf.call(parent.children, node);
+                prefix = `${start ? Number(start) + index : index + 1}.  `;
             } else if (parent.classList.contains("todo-list")) {
                 const isChecked = node.querySelector("input[type=checkbox]:checked");
                 prefix = (isChecked ? "- [x] " : "- [ ] ");
@@ -239,7 +239,7 @@ function buildListItemFilter(): Rule {
             const result = prefix + content + (node.nextSibling && !/\n$/.test(content) ? '\n' : '');
             return result;
         }
-    }
+    };
 }
 
 function buildMathFilter(): Rule {
@@ -270,13 +270,13 @@ function buildMathFilter(): Rule {
             // Unknown.
             return content;
         }
-    }
+    };
 }
 
 // Taken from upstream since it's not exposed.
 // https://github.com/mixmark-io/turndown/blob/master/src/commonmark-rules.js
 function cleanAttribute(attribute: string | null | undefined) {
-    return attribute ? attribute.replace(/(\n+\s*)+/g, '\n') : ''
+    return attribute ? attribute.replace(/(\n+\s*)+/g, '\n') : '';
 }
 
 export default {

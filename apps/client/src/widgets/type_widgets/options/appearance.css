@@ -20,7 +20,7 @@
             margin-bottom: 5px;
         }
 
-        .bx {
+        .tn-icon {
             margin: 4px 0;
             font-size: 12px;
             opacity: 0.5;
@@ -78,7 +78,7 @@
             .ribbon {
                 padding: 0 5px;
 
-                .bx {
+                .tn-icon {
                     font-size: 10px;
                 }
 

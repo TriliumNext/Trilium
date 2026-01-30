@@ -2,6 +2,13 @@
     overflow: auto;
     scroll-behavior: smooth;
     position: relative;
+
+    > .inline-title,
+    > .note-detail > .note-detail-editable-text,
+    > .note-list-widget:not(.full-height) {
+        padding-inline: 24px;
+    }
+
 }
 
 .note-split.type-code:not(.mime-text-x-sqlite) {

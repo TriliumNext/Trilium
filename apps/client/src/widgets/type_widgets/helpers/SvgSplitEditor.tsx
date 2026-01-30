@@ -1,13 +1,14 @@
-import { useEffect, useRef, useState } from "preact/hooks";
-import { t } from "../../../services/i18n";
-import SplitEditor, { PreviewButton, SplitEditorProps } from "./SplitEditor";
-import { RawHtmlBlock } from "../../react/RawHtml";
-import server from "../../../services/server";
-import svgPanZoom from "svg-pan-zoom";
 import { RefObject } from "preact";
-import { useElementSize, useTriliumEvent } from "../../react/hooks";
-import utils from "../../../services/utils";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
+import svgPanZoom from "svg-pan-zoom";
+
+import { t } from "../../../services/i18n";
+import server from "../../../services/server";
 import toast from "../../../services/toast";
+import utils from "../../../services/utils";
+import { useElementSize, useTriliumEvent } from "../../react/hooks";
+import { RawHtmlBlock } from "../../react/RawHtml";
+import SplitEditor, { PreviewButton, SplitEditorProps } from "./SplitEditor";
 
 interface SvgSplitEditorProps extends Omit<SplitEditorProps, "previewContent"> {
     /**
@@ -55,7 +56,9 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
     }
 
     // Save as attachment.
-    function onSave() {
+    const onSave = useCallback(() => {
+        if (!svg) return; // Don't save if SVG hasn't been rendered yet
+
         const payload = {
             role: "image",
             title: `${attachmentName}.svg`,
@@ -65,16 +68,18 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
         };
 
         server.post(`notes/${note.noteId}/attachments?matchBy=title`, payload);
-    }
+    }, [ svg, attachmentName, note.noteId ]);
 
     // Save the SVG when entering a note only when it does not have an attachment.
     useEffect(() => {
+        if (!svg) return; // Wait until SVG is rendered
+
         note?.getAttachments().then((attachments) => {
             if (!attachments.find((a) => a.title === `${attachmentName}.svg`)) {
                 onSave();
             }
-        });
-    }, [ note ]);
+        }).catch(e => console.error("Failed to get attachments for SVGSplitEditor", e));
+    }, [ note, svg, attachmentName, onSave ]);
 
     // Import/export
     useTriliumEvent("exportSvg", async({ ntxId: eventNtxId }) => {
@@ -140,7 +145,7 @@ export default function SvgSplitEditor({ ntxId, note, attachmentName, renderSvg,
             }
             {...props}
         />
-    )
+    );
 }
 
 function useResizer(containerRef: RefObject<HTMLDivElement>, noteId: string, svg: string | undefined) {
@@ -177,7 +182,7 @@ function useResizer(containerRef: RefObject<HTMLDivElement>, noteId: string, svg
             lastPanZoom.current = {
                 pan: zoomInstance.getPan(),
                 zoom: zoomInstance.getZoom()
-            }
+            };
             zoomRef.current = undefined;
             zoomInstance.destroy();
         };

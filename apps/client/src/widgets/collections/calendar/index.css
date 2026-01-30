@@ -77,7 +77,7 @@
     font-weight: normal;
 }
 
-body.desktop:not(.zen) .calendar-view .calendar-header {
+body.desktop:not(.zen):not(.experimental-feature-new-layout) .calendar-view .calendar-header {
     padding-block-start: 4px;
     padding-inline-end: 5em;
 }
@@ -126,7 +126,7 @@ body.desktop:not(.zen) .calendar-view .calendar-header {
 .calendar-view a.fc-timegrid-event,
 .calendar-view a.fc-daygrid-event {
     --border-color: transparent;
-    
+
     border: 2px solid;
     border-left-width: 4px;
     border-color: var(--border-color) var(--border-color) var(--border-color)
@@ -175,7 +175,7 @@ body.desktop:not(.zen) .calendar-view .calendar-header {
     opacity: .75;
 }
 
-/* 
+/*
  * List view
  */
 

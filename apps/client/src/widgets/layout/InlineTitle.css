@@ -10,7 +10,6 @@
     max-width: var(--max-content-width);
     container-type: inline-size;
     padding-top: 20px;
-    padding-inline-start: 24px;
 
     & > .inline-title-row {
         --icon-size: 35px;

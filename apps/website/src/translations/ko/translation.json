@@ -48,7 +48,8 @@
     },
     "header": {
         "get-started": "시작하기",
-        "documentation": "문서"
+        "documentation": "문서",
+        "support-us": "후원하기"
     },
     "support_us": {
         "financial_donations_title": "금전적 기부",
@@ -56,7 +57,8 @@
         "financial_donations_cta": "애플리케이션의 주요 개발자 (<Link>eliandoran</Link>)을 다음 방법으로 후원하는 것을 고려해 주십시오.",
         "github_sponsors": "GitHub Sponsors",
         "paypal": "페이팔",
-        "buy_me_a_coffee": "Buy Me A Coffee"
+        "buy_me_a_coffee": "Buy Me A Coffee",
+        "title": "후원하기"
     },
     "contribute": {
         "title": "기여할 수 있는 다른 방법",
@@ -84,7 +86,14 @@
         "title_x64": "리눅스 64비트",
         "title_arm64": "ARM 기반 리눅스",
         "description_x64": "대부분의 리눅스 배포판에서 x86_64 아키텍처와 호환됩니다.",
-        "description_arm64": "ARM 기반 리눅스 배포판에서 aarch64 아키텍처와 호환됩니다."
+        "description_arm64": "ARM 기반 리눅스 배포판에서 aarch64 아키텍처와 호환됩니다.",
+        "quick_start": "사용하시는 배포판에 따라 적절한 패키지 형식을 선택해주세요:",
+        "download_deb": ".deb",
+        "download_rpm": ".rpm",
+        "download_flatpak": ".flatpak",
+        "download_zip": "포터블 (.zip)",
+        "download_nixpkgs": "nixpkgs",
+        "download_aur": "AUR"
     },
     "note_types": {
         "text_title": "텍스트 노트",
@@ -130,6 +139,62 @@
         "mobile_question": "모바일 앱이 있나요?",
         "mobile_answer": "현재 공식적인 모바일 앱은 없습니다. 하지만, 서버 인스턴스를 가지고 있다면 웹 브라우저를 이용해 접근하거나 PWA로 설치할 수 있습니다. 안드로이드에는 (데스크탑 클라이언트처럼)오프라인에서도 작동하는 TriliumDroid라는 비공식 앱이 있습니다.",
         "database_question": "어디에 데이터가 저장되나요?",
-        "server_question": "Trilium을 사용하기 위해 서버가 필요한가요?"
+        "server_question": "Trilium을 사용하기 위해 서버가 필요한가요?",
+        "title": "자주 묻는 질문",
+        "database_answer": "모든 노트는 애플리케이션 폴더의 SQLite 데이터베이스에 저장됩니다. Trilium이 텍스트 파일 대신 데이터베이스를 사용하는 이유는 성능과 기능 모두 구현하기 훨씬 어렵기 때문입니다(트리 여러 위치에 같은 노트를 두는 Clone과 같은 기능). 애플리케이션 폴더를 찾으려면 About 창으로 가세요.",
+        "server_answer": "아니요, 서버는 웹 브라우저를 통해 접속할 수 있도록 허용하며, 여러 기기를 사용하는 경우 동기화를 관리합니다. 시작하려면 데스크톱 애플리케이션을 다운로드하여 사용하기만 하면 됩니다.",
+        "scaling_question": "이 애플리케이션은 얼마나 많은 노트를 처리할 수 있나요?",
+        "scaling_answer": "사용량에 따라 다르겠지만, 이 애플리케이션은 최소 10만 개의 노트를 문제없이 처리할 수 있습니다. 다만, Trilium은 (NextCloud와 같은) 파일 저장소라기보다는 지식 기반 애플리케이션에 가깝기 때문에, 대용량 파일(파일당 1GB 이상)을 많이 업로드할 경우 동기화 과정이 실패할 수 있다는 점에 유의하십시오.",
+        "network_share_question": "내 데이터베이스를 네트워크 드라이브로 공유할 수 있나요?",
+        "network_share_answer": "아니요, 일반적으로 SQLite 데이터베이스를 네트워크 드라이브로 공유하는 것은 좋지 않습니다. 경우에 따라 작동할 수도 있지만, 네트워크를 통한 파일 잠금이 완벽하지 않아 데이터베이스가 손상될 가능성이 있습니다.",
+        "security_question": "내 데이터는 어떻게 보호되나요?",
+        "security_answer": "기본적으로 노트는 암호화되지 않으며 데이터베이스에서 직접 읽을 수 있습니다. 노트를 암호화 대상으로 표시하면, AES-128-CBC를 사용하여 암호화됩니다."
+    },
+    "final_cta": {
+        "title": "Trilium Notes를 시작할 준비가 되셨나요?",
+        "description": "강력한 기능과 완벽한 개인 정보 보호를 통해 나만의 지식 기반을 구축하세요.",
+        "get_started": "시작하기"
+    },
+    "components": {
+        "link_learn_more": "자세히 알아보기..."
+    },
+    "footer": {
+        "copyright_and_the": " 그리고 ",
+        "copyright_community": "커뮤니티"
+    },
+    "social_buttons": {
+        "github": "GitHub",
+        "github_discussions": "GitHub Discussions",
+        "matrix": "Matrix",
+        "reddit": "Reddit"
+    },
+    "download_helper_desktop_macos": {
+        "title_x64": "macOS (Intel)",
+        "title_arm64": "macOS (Apple Silicon)",
+        "description_x64": "Intel Mac은 Monterey 버전 이상 macOS에서 지원합니다.",
+        "description_arm64": "M1, M2 칩과 같은 Apple Silicon이 탑재된 Macs 전용.",
+        "quick_start": "Homebrew로 설치하는 경우:",
+        "download_dmg": "설치 프로그램 내려받기 (.dmg)",
+        "download_homebrew_cask": "Homebrew Cask",
+        "download_zip": "포터블 (.zip)"
+    },
+    "download_helper_server_docker": {
+        "title": "Docker를 사용한 셀프 호스팅",
+        "description": "Docker 컨테이너를 사용하여 Windows, Linux 또는 macOS에 간편하게 배포할 수 있습니다.",
+        "download_dockerhub": "도커 허브",
+        "download_ghcr": "ghcr.io"
+    },
+    "download_helper_server_linux": {
+        "title": "리눅스에서 셀프 호스팅",
+        "description": "Trilium Notes를 자체 서버 또는 VPS에 배포하세요. 대부분의 배포판과 호환됩니다.",
+        "download_tar_x64": "x64 (.tar.xz)",
+        "download_tar_arm64": "ARM (.tar.xz)",
+        "download_nixos": "NixOS 모듈"
+    },
+    "download_helper_server_hosted": {
+        "title": "유료 호스팅",
+        "description": "Trilium Notes는 간편한 접근 및 관리를 위해 유료 서비스인 PikaPods에서 호스팅할 수 있습니다. Trilium 팀과 직접 제휴되어있지는 않습니다.",
+        "download_pikapod": "PikaPods에서 설치하기",
+        "download_triliumcc": "또는 trilium.cc를 참조하세요"
     }
 }

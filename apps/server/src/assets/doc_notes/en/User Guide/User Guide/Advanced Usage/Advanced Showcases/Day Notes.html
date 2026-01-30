@@ -28,125 +28,160 @@
   where you can track your daily weight. This data is then used in <a href="#root/_help_R7abl2fc6Mxi">Weight tracker</a>.</p>
 <h2>Week Note and Quarter Note</h2>
 <p>Week and quarter notes are disabled by default, since it might be too
-  much for some people. To enable them, you need to set <code>#enableWeekNote</code> and <code>#enableQuarterNote</code> attributes
-  on the root calendar note, which is identified by <code>#calendarRoot</code> label.
-  Week note is affected by the first week of year option. Be careful when
-  you already have some week notes created, it will not automatically change
-  the existing week notes and might lead to some duplicates.</p>
+  much for some people. To enable them, you need to set <code spellcheck="false">#enableWeekNote</code> and
+  <code
+  spellcheck="false">#enableQuarterNote</code>attributes on the root calendar note, which is
+    identified by <code spellcheck="false">#calendarRoot</code> label. Week note
+    is affected by the first week of year option. Be careful when you already
+    have some week notes created, it will not automatically change the existing
+    week notes and might lead to some duplicates.</p>
 <h2>Templates</h2>
 <p>Trilium provides <a href="#root/_help_KC1HB96bqqHX">template</a> functionality,
   and it could be used together with day notes.</p>
 <p>You can define one of the following relations on the root of the journal
-  (identified by <code>#calendarRoot</code> label):</p>
+  (identified by <code spellcheck="false">#calendarRoot</code> label):</p>
 <ul>
   <li>yearTemplate</li>
-  <li>quarterTemplate (if <code>#enableQuarterNote</code> is set)</li>
+  <li>quarterTemplate (if <code spellcheck="false">#enableQuarterNote</code> is
+    set)</li>
   <li>monthTemplate</li>
-  <li>weekTemplate (if <code>#enableWeekNote</code> is set)</li>
+  <li>weekTemplate (if <code spellcheck="false">#enableWeekNote</code> is set)</li>
   <li>dateTemplate</li>
 </ul>
 <p>All of these are relations. When Trilium creates a new note for year or
-  month or date, it will take a look at the root and attach a corresponding <code>~template</code> relation
-  to the newly created role. Using this, you can e.g. create your daily template
-  with e.g. checkboxes for daily routine etc.</p>
+  month or date, it will take a look at the root and attach a corresponding
+  <code
+  spellcheck="false">~template</code>relation to the newly created role. Using this, you can
+    e.g. create your daily template with e.g. checkboxes for daily routine
+    etc.</p>
 <h3>Migrate from old template usage</h3>
 <p>If you have been using Journal prior to version v0.93.0, the previous
-  template pattern likely used was <code>~child:template=</code>.
+  template pattern likely used was <code spellcheck="false">~child:template=</code>.
   <br>To transition to the new system:</p>
 <ol>
   <li>Set up the new template pattern in the Calendar root note.</li>
-  <li>Use <a href="#root/_help_ivYnonVFBxbQ">Bulk Actions</a> to remove <code>child:template</code> and <code>child:child:template</code> from
-    all notes under the Journal (calendar root).</li>
+  <li>Use <a href="#root/_help_ivYnonVFBxbQ">Bulk Actions</a> to remove <code spellcheck="false">child:template</code> and
+    <code
+    spellcheck="false">child:child:template</code>from all notes under the Journal (calendar
+      root).</li>
   <li>Ensure that all old template patterns are fully removed to prevent conflicts
     with the new setup.</li>
 </ol>
 <h2>Naming pattern</h2>
-<p>You can customize the title of generated journal notes by defining a <code>#datePattern</code>, <code>#weekPattern</code>, <code>#monthPattern</code>, <code>#quarterPattern</code> and <code>#yearPattern</code> attribute
-  on a root calendar note (identified by <code>#calendarRoot</code> label).
-  The naming pattern replacements follow a level-up compatibility - each
-  level can use replacements from itself and all levels above it. For example, <code>#monthPattern</code> can
-  use month, quarter and year replacements, while <code>#weekPattern</code> can
-  use week, month, quarter and year replacements. But it is not possible
-  to use week replacements in <code>#monthPattern</code>.</p>
+<p>You can customize the title of generated journal notes by defining a
+  <code
+  spellcheck="false">#datePattern</code>, <code spellcheck="false">#weekPattern</code>,
+    <code
+    spellcheck="false">#monthPattern</code>, <code spellcheck="false">#quarterPattern</code> and
+      <code
+      spellcheck="false">#yearPattern</code>attribute on a root calendar note (identified by
+        <code
+        spellcheck="false">#calendarRoot</code>label). The naming pattern replacements follow a level-up
+          compatibility - each level can use replacements from itself and all levels
+          above it. For example, <code spellcheck="false">#monthPattern</code> can
+          use month, quarter and year replacements, while <code spellcheck="false">#weekPattern</code> can
+          use week, month, quarter and year replacements. But it is not possible
+          to use week replacements in <code spellcheck="false">#monthPattern</code>.</p>
 <h3>Date pattern</h3>
 <p>It's possible to customize the title of generated date notes by defining
-  a <code>#datePattern</code> attribute on a root calendar note (identified
-  by <code>#calendarRoot</code> label). Following are possible values:</p>
+  a <code spellcheck="false">#datePattern</code> attribute on a root calendar
+  note (identified by <code spellcheck="false">#calendarRoot</code> label).
+  Following are possible values:</p>
 <ul>
-  <li><code>{isoDate}</code> results in an ISO 8061 formatted date (e.g. "2025-03-09"
-    for March 9, 2025)</li>
-  <li><code>{dateNumber}</code> results in a number like <code>9</code> for the
-    9th day of the month, <code>11</code> for the 11th day of the month</li>
-  <li><code>{dateNumberPadded}</code> results in a number like <code>09</code> for
-    the 9th day of the month, <code>11</code> for the 11th day of the month</li>
-  <li><code>{ordinal}</code> is replaced with the ordinal date (e.g. 1st, 2nd,
-    3rd) etc.</li>
-  <li><code>{weekDay}</code> results in the full day name (e.g. <code>Monday</code>)</li>
-  <li><code>{weekDay3}</code> is replaced with the first 3 letters of the day,
-    e.g. Mon, Tue, etc.</li>
-  <li><code>{weekDay2}</code> is replaced with the first 2 letters of the day,
-    e.g. Mo, Tu, etc.</li>
+  <li><code spellcheck="false">{isoDate}</code> results in an ISO 8061 formatted
+    date (e.g. "2025-03-09" for March 9, 2025)</li>
+  <li><code spellcheck="false">{dateNumber}</code> results in a number like
+    <code
+    spellcheck="false">9</code>for the 9th day of the month, <code spellcheck="false">11</code> for
+      the 11th day of the month</li>
+  <li><code spellcheck="false">{dateNumberPadded}</code> results in a number
+    like <code spellcheck="false">09</code> for the 9th day of the month,
+    <code
+    spellcheck="false">11</code>for the 11th day of the month</li>
+  <li><code spellcheck="false">{ordinal}</code> is replaced with the ordinal
+    date (e.g. 1st, 2nd, 3rd) etc.</li>
+  <li><code spellcheck="false">{weekDay}</code> results in the full day name
+    (e.g. <code spellcheck="false">Monday</code>)</li>
+  <li><code spellcheck="false">{weekDay3}</code> is replaced with the first 3
+    letters of the day, e.g. Mon, Tue, etc.</li>
+  <li><code spellcheck="false">{weekDay2}</code> is replaced with the first 2
+    letters of the day, e.g. Mo, Tu, etc.</li>
 </ul>
-<p>The default is <code>{dateNumberPadded} - {weekDay}</code>
+<p>The default is <code spellcheck="false">{dateNumberPadded} - {weekDay}</code>
 </p>
 <h3>Week pattern</h3>
 <p>It is also possible to customize the title of generated week notes through
-  the <code>#weekPattern</code> attribute on the root calendar note. The options
-  are:</p>
+  the <code spellcheck="false">#weekPattern</code> attribute on the root calendar
+  note. The options are:</p>
 <ul>
-  <li><code>{weekNumber}</code> results in a number like <code>9</code> for the
-    9th week of the year, <code>11</code> for the 11th week of the year</li>
-  <li><code>{weekNumberPadded}</code> results in a number like <code>09</code> for
-    the 9th week of the year, <code>11</code> for the 11th week of the year</li>
-  <li><code>{shortWeek}</code> results in a short week string like <code>W9</code> for
-    the 9th week of the year, <code>W11</code> for the 11th week of the year</li>
-  <li><code>{shortWeek3}</code> results in a short week string like <code>W09</code> for
-    the 9th week of the year, <code>W11</code> for the 11th week of the year</li>
+  <li><code spellcheck="false">{weekNumber}</code> results in a number like
+    <code
+    spellcheck="false">9</code>for the 9th week of the year, <code spellcheck="false">11</code> for
+      the 11th week of the year</li>
+  <li><code spellcheck="false">{weekNumberPadded}</code> results in a number
+    like <code spellcheck="false">09</code> for the 9th week of the year,
+    <code
+    spellcheck="false">11</code>for the 11th week of the year</li>
+  <li><code spellcheck="false">{shortWeek}</code> results in a short week string
+    like <code spellcheck="false">W9</code> for the 9th week of the year,
+    <code
+    spellcheck="false">W11</code>for the 11th week of the year</li>
+  <li><code spellcheck="false">{shortWeek3}</code> results in a short week string
+    like <code spellcheck="false">W09</code> for the 9th week of the year,
+    <code
+    spellcheck="false">W11</code>for the 11th week of the year</li>
 </ul>
-<p>The default is <code>Week {weekNumber}</code>
+<p>The default is <code spellcheck="false">Week {weekNumber}</code>
 </p>
 <h3>Month pattern</h3>
 <p>It is also possible to customize the title of generated month notes through
-  the <code>#monthPattern</code> attribute on the root calendar note. The options
-  are:</p>
+  the <code spellcheck="false">#monthPattern</code> attribute on the root calendar
+  note. The options are:</p>
 <ul>
-  <li><code>{isoMonth}</code> results in an ISO 8061 formatted month (e.g. "2025-03"
-    for March 2025)</li>
-  <li><code>{monthNumber}</code> results in a number like <code>9</code> for September,
-    and <code>11</code> for November</li>
-  <li><code>{monthNumberPadded}</code> results in a number like <code>09</code> for
-    September, and <code>11</code> for November</li>
-  <li><code>{month}</code> results in the full month name (e.g. <code>September</code> or <code>October</code>)</li>
-  <li><code>{shortMonth3}</code> is replaced with the first 3 letters of the
-    month, e.g. Jan, Feb, etc.</li>
-  <li><code>{shortMonth4}</code> is replaced with the first 4 letters of the
-    month, e.g. Sept, Octo, etc.</li>
+  <li><code spellcheck="false">{isoMonth}</code> results in an ISO 8061 formatted
+    month (e.g. "2025-03" for March 2025)</li>
+  <li><code spellcheck="false">{monthNumber}</code> results in a number like
+    <code
+    spellcheck="false">9</code>for September, and <code spellcheck="false">11</code> for November</li>
+  <li><code spellcheck="false">{monthNumberPadded}</code> results in a number
+    like <code spellcheck="false">09</code> for September, and <code spellcheck="false">11</code> for
+    November</li>
+  <li><code spellcheck="false">{month}</code> results in the full month name
+    (e.g. <code spellcheck="false">September</code> or <code spellcheck="false">October</code>)</li>
+  <li><code spellcheck="false">{shortMonth3}</code> is replaced with the first
+    3 letters of the month, e.g. Jan, Feb, etc.</li>
+  <li><code spellcheck="false">{shortMonth4}</code> is replaced with the first
+    4 letters of the month, e.g. Sept, Octo, etc.</li>
 </ul>
-<p>The default is <code>{monthNumberPadded} - {month}</code>
+<p>The default is <code spellcheck="false">{monthNumberPadded} - {month}</code>
 </p>
 <h3>Quarter pattern</h3>
 <p>It is also possible to customize the title of generated quarter notes
-  through the <code>#quarterPattern</code> attribute on the root calendar note.
-  The options are:</p>
+  through the <code spellcheck="false">#quarterPattern</code> attribute on
+  the root calendar note. The options are:</p>
 <ul>
-  <li><code>{quarterNumber}</code> results in a number like <code>1</code> for
-    the 1st quarter of the year</li>
-  <li><code>{shortQuarter}</code> results in a short quarter string like <code>Q1</code> for
-    the 1st quarter of the year</li>
+  <li><code spellcheck="false">{quarterNumber}</code> results in a number like
+    <code
+    spellcheck="false">1</code>for the 1st quarter of the year</li>
+  <li><code spellcheck="false">{shortQuarter}</code> results in a short quarter
+    string like <code spellcheck="false">Q1</code> for the 1st quarter of the
+    year</li>
 </ul>
-<p>The default is <code>Quarter {quarterNumber}</code>
+<p>The default is <code spellcheck="false">Quarter {quarterNumber}</code>
 </p>
 <h3>Year pattern</h3>
 <p>It is also possible to customize the title of generated year notes through
-  the <code>#yearPattern</code> attribute on the root calendar note. The options
-  are:</p>
+  the <code spellcheck="false">#yearPattern</code> attribute on the root calendar
+  note. The options are:</p>
 <ul>
-  <li><code>{year}</code> results in the full year (e.g. <code>2025</code>)</li>
+  <li><code spellcheck="false">{year}</code> results in the full year (e.g.
+    <code
+    spellcheck="false">2025</code>)</li>
 </ul>
-<p>The default is <code>{year}</code>
+<p>The default is <code spellcheck="false">{year}</code>
 </p>
 <h2>Implementation</h2>
 <p>Trilium has some special support for day notes in the form of <a href="https://triliumnext.github.io/Notes/backend_api/BackendScriptApi.html">backend Script API</a> -
   see e.g. getDayNote() function.</p>
-<p>Day (and year, month) notes are created with a label - e.g. <code>#dateNote="2025-03-09"</code> this
+<p>Day (and year, month) notes are created with a label - e.g. <code spellcheck="false">#dateNote="2025-03-09"</code> this
   can then be used by other scripts to add new notes to day note etc.</p>

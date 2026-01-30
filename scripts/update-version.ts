@@ -26,7 +26,7 @@ function getVersion(packageJsonPath: string) {
 function main() {
     const version = getVersion(join(__dirname, "..", "package.json"));
 
-    for (const appName of ["server", "client", "desktop"]) {
+    for (const appName of ["server", "client", "desktop", "edit-docs"]) {
         patchPackageJson(join(__dirname, "..", "apps", appName, "package.json"), version);
     }
 

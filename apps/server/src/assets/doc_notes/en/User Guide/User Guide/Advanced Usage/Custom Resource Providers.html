@@ -6,26 +6,31 @@
 <ol>
   <li>Import a file such as an image or a font into Trilium by drag &amp; drop.</li>
   <li>Select the file and go to the <em>Owned Attributes</em> section.</li>
-  <li>Add the label <code>#customResourceProvider=hello</code>.</li>
-  <li>To test if it is working, use a browser to navigate to <code>&lt;protocol&gt;://&lt;host&gt;/custom/hello</code> (where <code>&lt;protocol&gt;</code> is
-    either <code>http</code> or <code>https</code> based on your setup, and <code>&lt;host&gt;</code> is
-    the host or IP to your Trilium server instance). If you are running the
-    TriliumNext application without a server, use <code>http://localhost:37840</code> as
-    the base URL.</li>
+  <li>Add the label <code spellcheck="false">#customResourceProvider=hello</code>.</li>
+  <li>To test if it is working, use a browser to navigate to <code spellcheck="false">&lt;protocol&gt;://&lt;host&gt;/custom/hello</code> (where
+    <code
+    spellcheck="false">&lt;protocol&gt;</code>is either <code spellcheck="false">http</code> or
+      <code
+      spellcheck="false">https</code>based on your setup, and <code spellcheck="false">&lt;host&gt;</code> is
+        the host or IP to your Trilium server instance). If you are running the
+        TriliumNext application without a server, use <code spellcheck="false">http://localhost:37840</code> as
+        the base URL.</li>
   <li>If everything went well, at the previous step the browser should have
     downloaded the file uploaded in the first step.</li>
 </ol>
-<p>Instead of <code>hello</code>, the name can be:</p>
+<p>Instead of <code spellcheck="false">hello</code>, the name can be:</p>
 <ul>
-  <li>A path, such as <code>fonts/Roboto.ttf</code>, which would be accessible
-    via <code>&lt;host&gt;/custom/fonts/Roboto.ttf</code>.</li>
+  <li>A path, such as <code spellcheck="false">fonts/Roboto.ttf</code>, which
+    would be accessible via <code spellcheck="false">&lt;host&gt;/custom/fonts/Roboto.ttf</code>.</li>
   <li>As a more advanced use case, a regular expression to match multiple routes,
-    such as <code>hello/.*</code> which will be accessible via <code>/custom/hello/1</code>, <code>/custom/hello/2</code>, <code>/custom/hello/world</code>,
-    etc.</li>
+    such as <code spellcheck="false">hello/.*</code> which will be accessible
+    via <code spellcheck="false">/custom/hello/1</code>, <code spellcheck="false">/custom/hello/2</code>,
+    <code
+    spellcheck="false">/custom/hello/world</code>, etc.</li>
 </ul>
 <h2>Using it in a theme</h2>
 <p>For example, if you have a custom font to be imported by the theme, first
-  upload a font file into Trilium and assign it the <code>#customResourceProvider=fonts/myfont.ttf</code> attribute.</p>
+  upload a font file into Trilium and assign it the <code spellcheck="false">#customResourceProvider=fonts/myfont.ttf</code> attribute.</p>
 <p>Then modify the theme CSS to point to:</p><pre><code class="language-text-css">@font-face {
 	font-family: customFont;
 	src: url("/custom/fonts/myfont.ttf");

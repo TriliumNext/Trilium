@@ -62,10 +62,10 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel, .c
 }
 
 /* Button's icon */
-button.btn.btn-primary span.bx,
-button.btn.btn-secondary span.bx,
-button.btn.btn-sm span.bx,
-button.btn.btn-success span.bx {
+button.btn.btn-primary span.tn-icon,
+button.btn.btn-secondary span.tn-icon,
+button.btn.btn-sm span.tn-icon,
+button.btn.btn-success span.tn-icon {
     color: var(--cmd-button-icon-color);
     padding-inline-end: 0.35em;
     font-size: 1.2em;

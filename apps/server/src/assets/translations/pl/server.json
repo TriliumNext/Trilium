@@ -212,7 +212,6 @@
     "button": "Zaloguj",
     "sign_in_with_sso": "Zaloguj przez {{ ssoIssuerName }}"
   },
-  "javascript-required": "Trilium wymaga włączenia obsługi JavaScript.",
   "setup_sync-from-server": {
     "server-host": "Adres serwera Trilium",
     "proxy-server": "Serwer proxy (opcjonalnie)",

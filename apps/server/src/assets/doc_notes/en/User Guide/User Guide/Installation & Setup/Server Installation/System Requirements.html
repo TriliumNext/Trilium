@@ -1,15 +1,17 @@
 <ul>
   <li>Using Docker, the server can be run on Windows, Linux and macOS devices.</li>
-  <li>Native binaries are provided for Linux x64 and ARM (<code>aarch64</code>).</li>
+  <li>Native binaries are provided for Linux x64 and ARM (<code spellcheck="false">aarch64</code>).</li>
 </ul>
 <h2>Legacy ARM support</h2>
-<p>The Docker builds also provide <code>linux/arm/v7</code> and <code>linux/arm/v8</code> platforms.
-  These platforms are considered legacy since Trilium uses Node.js version
-  24 which have <a href="https://github.com/nodejs/node/commit/6682861d6f">officially downgraded support</a> for
-  these platforms to “experimental”.</p>
+<p>The Docker builds also provide <code spellcheck="false">linux/arm/v7</code> and
+  <code
+  spellcheck="false">linux/arm/v8</code>platforms. These platforms are considered legacy since
+    Trilium uses Node.js version 24 which have <a href="https://github.com/nodejs/node/commit/6682861d6f">officially downgraded support</a> for
+    these platforms to “experimental”.</p>
 <p>As a result, Trilium needs to use Node.js 22 for these versions. As soon
-  as soon Node.js 22 will no longer be compatible, support for <code>armv7</code> and <code>armv8</code> will
-  be dropped entirely.</p>
+  as soon Node.js 22 will no longer be compatible, support for <code spellcheck="false">armv7</code> and
+  <code
+  spellcheck="false">armv8</code>will be dropped entirely.</p>
 <p>Regardless of upstream support, these platforms are supported on a best-effort
   basis and are not officially supported by the Trilium development team.
   Bug reports are accepted but they will not be treated with priority; contributions

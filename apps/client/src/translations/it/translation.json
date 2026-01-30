@@ -16,13 +16,22 @@
     },
     "bundle-error": {
       "title": "Non si è riusciti a caricare uno script personalizzato",
-      "message": "Lo script della nota con ID \"{{id}}\", dal titolo \"{{title}}\" non è stato inizializzato a causa di:\n\n{{message}}"
+      "message": "Impossibile eseguire lo script a causa di:\n\n{{message}}"
     },
     "widget-error": {
       "title": "Impossibile inizializzare un widget",
       "message-custom": "Il widget personalizzato dalla nota con ID “{{id}}”, intitolato “{{title}}”, non è stato possibile inizializzare a causa di:\n\n{{message}}",
       "message-unknown": "Un widget sconosciuto non è stato inizializzato a causa di:\n\n{{message}}"
-    }
+    },
+    "widget-list-error": {
+      "title": "Impossibile ottenere l'elenco dei widget dal server"
+    },
+    "widget-render-error": {
+      "title": "Impossibile eseguire il rendering di un widget React personalizzato"
+    },
+    "widget-missing-parent": "Il widget personalizzato non ha la proprietà obbligatoria '{{property}}' definita.\n\nSe questo script deve essere eseguito senza un elemento dell'interfaccia utente, utilizzare invece '#run=frontendStartup'.",
+    "open-script-note": "Apri script note",
+    "scripting-error": "Errore script personalizzato: {{title}}"
   },
   "add_link": {
     "add_link": "Aggiungi un collegamento",
@@ -316,7 +325,10 @@
     "apply-bulk-actions": "Applica azioni in blocco",
     "converted-to-attachments": "{{count}} note sono state convertite in allegati.",
     "convert-to-attachment-confirm": "Sei sicuro di voler convertire le note selezionate in allegati delle note principali? Questa operazione si applica solo alle note immagine, le altre note verranno ignorate.",
-    "open-in-popup": "Modifica rapida"
+    "open-in-popup": "Modifica rapida",
+    "open-in-a-new-window": "Apri in una nuova finestra",
+    "hide-subtree": "Nascondi sottostruttura",
+    "show-subtree": "Mostra sottoalbero"
   },
   "electron_context_menu": {
     "cut": "Taglia",
@@ -893,7 +905,6 @@
     "download_button": "Scarica",
     "mime": "MIME: ",
     "file_size": "Dimensione del file:",
-    "preview": "Anteprima:",
     "preview_not_available": "L'anteprima non è disponibile per questo tipo di nota."
   },
   "sort_child_notes": {
@@ -1333,9 +1344,17 @@
   },
   "note_icon": {
     "change_note_icon": "Cambia icona nota",
-    "category": "Categoria:",
     "search": "Ricerca:",
-    "reset-default": "Ripristina l'icona predefinita"
+    "reset-default": "Ripristina l'icona predefinita",
+    "search_placeholder_one": "Cerca {{number}} icona in {{count}} pacchetto",
+    "search_placeholder_many": "Cerca {{number}} icone in {{count}} pacchetti",
+    "search_placeholder_other": "Cerca {{number}} icone in {{count}} pacchetti",
+    "search_placeholder_filtered": "Cerca {{number}} icone in {{name}}",
+    "filter": "Filtro",
+    "filter-none": "Tutte le icone",
+    "filter-default": "Icone predefinite",
+    "icon_tooltip": "{{name}}\nPacchetto icone: {{iconPack}}",
+    "no_results": "Nessuna icona trovata."
   },
   "basic_properties": {
     "note_type": "Tipo di nota",
@@ -1362,7 +1381,8 @@
     "expand_tooltip": "Espande i figli diretti di questa raccolta (a un livello di profondità). Per ulteriori opzioni, premere la freccia a destra.",
     "expand_first_level": "Espandi figli diretti",
     "expand_nth_level": "Espandi {{depth}} livelli",
-    "expand_all_levels": "Espandi tutti i livelli"
+    "expand_all_levels": "Espandi tutti i livelli",
+    "hide_child_notes": "Nascondi note secondarie nell'albero"
   },
   "edited_notes": {
     "no_edited_notes_found": "Nessuna nota modificata per questo giorno...",
@@ -1793,7 +1813,7 @@
     "will_be_deleted_in": "Questo allegato verrà eliminato automaticamente tra {{time}}",
     "will_be_deleted_soon": "Questo allegato verrà eliminato automaticamente a breve",
     "deletion_reason": ", perché l'allegato non è collegato al contenuto della nota. Per impedirne l'eliminazione, aggiungi nuovamente il collegamento all'allegato nel contenuto o converti l'allegato in nota.",
-    "role_and_size": "Ruolo: {{role}}, Dimensione: {{size}}",
+    "role_and_size": "Ruolo: {{role}}, dimensione: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "Link all'allegato copiato negli appunti.",
     "unrecognized_role": "Ruolo di allegato non riconosciuto '{{role}}'."
   },
@@ -1879,7 +1899,17 @@
     "create-child-note": "Crea nota figlio",
     "unhoist": "Sganciare",
     "toggle-sidebar": "Attiva/disattiva la barra laterale",
-    "dropping-not-allowed": "Non è consentito lasciare appunti in questa posizione."
+    "dropping-not-allowed": "Non è consentito lasciare appunti in questa posizione.",
+    "clone-indicator-tooltip": "Questa nota ha {{- count}} genitori: {{- parents}}",
+    "clone-indicator-tooltip-single": "Questa nota è stata clonata (1 genitore aggiuntivo: {{- parent}})",
+    "shared-indicator-tooltip": "Questa nota è condivisa pubblicamente",
+    "shared-indicator-tooltip-with-url": "Questa nota è condivisa pubblicamente all'indirizzo: {{- url}}",
+    "subtree-hidden-tooltip_one": "{{count}} nota secondaria nascosta dall'albero",
+    "subtree-hidden-tooltip_many": "{{count}} note secondarie nascoste dall'albero",
+    "subtree-hidden-tooltip_other": "{{count}} note secondarie nascoste dall'albero",
+    "subtree-hidden-moved-title": "Aggiunto a {{title}}",
+    "subtree-hidden-moved-description-collection": "Questa raccolta nasconde le sue note secondarie nell'albero.",
+    "subtree-hidden-moved-description-other": "Le note secondarie sono nascoste nell'albero di questa nota."
   },
   "title_bar_buttons": {
     "window-on-top": "Mantieni la finestra in primo piano"
@@ -1887,7 +1917,13 @@
   "note_detail": {
     "could_not_find_typewidget": "Impossibile trovare typeWidget per il tipo '{{type}}'",
     "printing": "Stampa in corso...",
-    "printing_pdf": "Esportazione in PDF in corso..."
+    "printing_pdf": "Esportazione in PDF in corso...",
+    "print_report_title": "Stampa rapporto",
+    "print_report_collection_content_one": "{{count}} la note nella raccolta non può essere stampata perché non è supportata o è protetta.",
+    "print_report_collection_content_many": "{{count}} le note nella raccolta non possono essere stampate perché non sono supportate o sono protette.",
+    "print_report_collection_content_other": "{{count}} le note nella raccolta non possono essere stampate perché non sono supportate o sono protette.",
+    "print_report_collection_details_button": "Vedi dettagli",
+    "print_report_collection_details_ignored_notes": "Note ignorate"
   },
   "note_title": {
     "placeholder": "scrivi qui il titolo della nota...",
@@ -1897,7 +1933,8 @@
     "note_type_switcher_others": "Altro tipo di nota",
     "note_type_switcher_templates": "Modello",
     "note_type_switcher_collection": "Collezione",
-    "edited_notes": "Note modificate"
+    "edited_notes": "Note modificate in questo giorno",
+    "promoted_attributes": "Attributi promossi"
   },
   "search_result": {
     "no_notes_found": "Non sono state trovate note per i parametri di ricerca specificati.",
@@ -1907,7 +1944,11 @@
     "configure_launchbar": "Configura Launchbar"
   },
   "sql_result": {
-    "no_rows": "Nessuna riga è stata restituita per questa query"
+    "no_rows": "Nessuna riga è stata restituita per questa query",
+    "not_executed": "La query non è stata ancora eseguita.",
+    "failed": "Esecuzione query SQL non riuscita",
+    "statement_result": "Risultato della dichiarazione",
+    "execute_now": "Esegui ora"
   },
   "watched_file_update_status": {
     "file_last_modified": "Il file <code class=\"file-path\"></code> è stato modificato l'ultima volta il <span class=\"file-last-modified\"></span>.",
@@ -2177,7 +2218,14 @@
     "execute_sql_description": "Questa nota è una nota SQL. Clicca per eseguire la query SQL.",
     "shared_copy_to_clipboard": "Copia link negli appunti",
     "shared_open_in_browser": "Apri il link nel browser",
-    "shared_unshare": "Rimuovi condivisione"
+    "shared_unshare": "Rimuovi condivisione",
+    "save_status_saved": "Salvato",
+    "save_status_saving": "Salvataggio in corso...",
+    "save_status_unsaved": "Non salvato",
+    "save_status_error": "Salvataggio non riuscito",
+    "save_status_saving_tooltip": "Le modifiche sono state salvate.",
+    "save_status_unsaved_tooltip": "Ci sono modifiche non salvate. Verranno salvate automaticamente tra un attimo.",
+    "save_status_error_tooltip": "Si è verificato un errore durante il salvataggio della nota. Se possibile, prova a copiare il contenuto della nota altrove e a ricaricare l'applicazione."
   },
   "breadcrumb": {
     "workspace_badge": "Area di lavoro",
@@ -2220,5 +2268,18 @@
     "empty_button": "Nascondi il pannello",
     "toggle": "Attiva/disattiva pannello destro",
     "custom_widget_go_to_source": "Vai al codice sorgente"
+  },
+  "pdf": {
+    "attachments_one": "{{count}} allegato",
+    "attachments_many": "{{count}} allegati",
+    "attachments_other": "{{count}} allegati",
+    "layers_one": "{{count}} livello",
+    "layers_many": "{{count}} livelli",
+    "layers_other": "{{count}} livelli",
+    "pages_one": "{{count}} pagina",
+    "pages_many": "{{count}} pagine",
+    "pages_other": "{{count}} pagine",
+    "pages_alt": "Pagina {{pageNumber}}",
+    "pages_loading": "Caricamento in corso..."
   }
 }

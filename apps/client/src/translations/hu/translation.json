@@ -21,7 +21,13 @@
     },
     "bundle-error": {
       "title": "Nem sikerült betölteni az egyéni szkriptet",
-      "message": "A(z) \"{{id}}\" azonosítójú, \"{{title}}\" című jegyzetből származó szkript nem hajtható végre a következő ok miatt:\n\n{{message}}"
+      "message": "A skript nem hajtható végre a következő ok miatt:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "A Widget-ek letöltése sikertelen volt"
+    },
+    "widget-render-error": {
+      "title": "Nem sikerült renderelni a React widget-et"
     }
   },
   "add_link": {

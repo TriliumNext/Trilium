@@ -3,14 +3,15 @@
 <h2>Steps</h2>
 <ul>
   <li>SSH into your server</li>
-  <li>use <code>wget</code> (or <code>curl</code>) to download latest <code>TriliumNotes-Server-[VERSION]-linux-x64.tar.xz</code> (copy
+  <li>use <code spellcheck="false">wget</code> (or <code spellcheck="false">curl</code>)
+    to download latest <code spellcheck="false">TriliumNotes-Server-[VERSION]-linux-x64.tar.xz</code> (copy
     link from <a href="https://github.com/TriliumNext/Trilium/releases">release page</a>,
-    notice <code>-Server</code> suffix) on your server.</li>
-  <li>unpack the archive, e.g. using <code>tar -xf -d TriliumNotes-Server-[VERSION]-linux-x64.tar.xz</code>
+    notice <code spellcheck="false">-Server</code> suffix) on your server.</li>
+  <li>unpack the archive, e.g. using <code spellcheck="false">tar -xf -d TriliumNotes-Server-[VERSION]-linux-x64.tar.xz</code>
   </li>
-  <li><code>cd trilium-linux-x64-server</code>
+  <li><code spellcheck="false">cd trilium-linux-x64-server</code>
   </li>
-  <li><code>./trilium.sh</code>
+  <li><code spellcheck="false">./trilium.sh</code>
   </li>
   <li>you can open the browser and open http://[your-server-hostname]:8080 and
     you should see Trilium initialization page</li>
@@ -18,9 +19,10 @@
 <p>The problem with above steps is that once you close the SSH connection,
   the Trilium process is terminated. To avoid that, you have two options:</p>
 <ul>
-  <li>Kill it (with e.g. <kbd>Ctrl</kbd> + <kbd>C</kbd>) and run again like this: <code>nohup ./trilium.sh &amp;</code>.
-    (nohup keeps the process running in the background, <code>&amp;</code> runs
-    it in the background)</li>
+  <li>Kill it (with e.g. <kbd>Ctrl</kbd> + <kbd>C</kbd>) and run again like this:
+    <code
+    spellcheck="false">nohup ./trilium.sh &amp;</code>. (nohup keeps the process running in the
+      background, <code spellcheck="false">&amp;</code> runs it in the background)</li>
   <li>Configure systemd to automatically run Trilium in the background on every
     boot</li>
 </ul>
@@ -62,7 +64,7 @@ WantedBy=multi-user.target</code></pre>
 <h2>Simple Autoupdate for Server</h2>
 <p>Run as the same User Trilium runs</p>
 <p>if you run as root please remove 'sudo' from the commands</p>
-<p>requires "jq" <code>apt install jq</code>
+<p>requires "jq" <code spellcheck="false">apt install jq</code>
 </p>
 <p>It will stop the service above, overwrite everything (i expect no config.ini),
   and start service It also creates a version file in the Trilium directory

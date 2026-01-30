@@ -5,7 +5,7 @@ All standard Preact hooks are available as an import in `trilium:api`.
 
 For example:
 
-```
+```jsx
 import { useState } from "trilium:preact";
 const [ myState, setMyState ] = useState("Hi");
 ```
@@ -18,7 +18,7 @@ Trilium comes with a large set of custom hooks for Preact, all of which are also
 
 As a replacement to <a class="reference-link" href="../Custom%20Widgets/Note%20context%20aware%20widget.md">Note context aware widget</a>, Preact exposes the current note context in the `useNoteContext` hook:
 
-```
+```jsx
 import { defineWidget, useNoteContext, useNoteProperty } from "trilium:preact";
 
 export default defineWidget({    

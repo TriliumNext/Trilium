@@ -1,0 +1,24 @@
+baseUrl: "https://docs.triliumnotes.org"
+
+noteMappings:
+  - rootNoteId: "pOsGYCXsbNQG"
+    path: "docs/User Guide"
+    format: "markdown"
+  
+  - rootNoteId: "pOsGYCXsbNQG"
+    path: "apps/server/src/assets/doc_notes/en/User Guide"
+    format: "html"
+    ignoredFiles:
+      - "index.html"
+      - "navigation.html"
+      - "style.css"
+      - "User Guide.html"
+    exportOnly: true
+  
+  - rootNoteId: "jdjRLhLV3TtI"
+    path: "docs/Developer Guide"
+    format: "markdown"
+  
+  - rootNoteId: "hD3V4hiu2VW4"
+    path: "docs/Release Notes"
+    format: "markdown"

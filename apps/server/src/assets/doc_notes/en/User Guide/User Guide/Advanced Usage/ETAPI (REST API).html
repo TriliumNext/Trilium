@@ -13,22 +13,26 @@
 <h2>Obtaining a token</h2>
 <p>All operations with the REST API have to be authenticated using a token.
   You can get this token either from Options -&gt; ETAPI or programmatically
-  using the <code>/auth/login</code> REST call (see the <a href="https://github.com/TriliumNext/Trilium/blob/master/src/etapi/etapi.openapi.yaml">spec</a>).</p>
+  using the <code spellcheck="false">/auth/login</code> REST call (see the
+  <a
+  href="https://github.com/TriliumNext/Trilium/blob/master/src/etapi/etapi.openapi.yaml">spec</a>).</p>
 <h2>Authentication</h2>
-<h3>Via the <code>Authorization</code> header</h3><pre><code class="language-text-x-trilium-auto">GET https://myserver.com/etapi/app-info
+<h3>Via the <code spellcheck="false">Authorization</code> header</h3><pre><code class="language-text-x-trilium-auto">GET https://myserver.com/etapi/app-info
 Authorization: ETAPITOKEN</code></pre>
-<p>where <code>ETAPITOKEN</code> is the token obtained in the previous step.</p>
+<p>where <code spellcheck="false">ETAPITOKEN</code> is the token obtained in
+  the previous step.</p>
 <p>For compatibility with various tools, it's also possible to specify the
-  value of the <code>Authorization</code> header in the format <code>Bearer ETAPITOKEN</code> (since
-  0.93.0).</p>
+  value of the <code spellcheck="false">Authorization</code> header in the
+  format <code spellcheck="false">Bearer ETAPITOKEN</code> (since 0.93.0).</p>
 <h3>Basic authentication</h3>
 <p>Since v0.56 you can also use basic auth format:</p><pre><code class="language-text-x-trilium-auto">GET https://myserver.com/etapi/app-info
 Authorization: Basic BATOKEN</code></pre>
 <ul>
-  <li>Where <code>BATOKEN = BASE64(username + ':' + password)</code> - this is
-    a standard Basic Auth serialization</li>
-  <li>Where <code>username</code> is "etapi"</li>
-  <li>And <code>password</code> is the generated ETAPI token described above.</li>
+  <li>Where <code spellcheck="false">BATOKEN = BASE64(username + ':' + password)</code> -
+    this is a standard Basic Auth serialization</li>
+  <li>Where <code spellcheck="false">username</code> is "etapi"</li>
+  <li>And <code spellcheck="false">password</code> is the generated ETAPI token
+    described above.</li>
 </ul>
 <p>Basic Auth is meant to be used with tools which support only basic auth.</p>
 <h2>Interaction using Bash scripts</h2>
@@ -44,13 +48,13 @@ NOTE_ID="i6ra4ZshJhgN"
 curl "$SERVER/etapi/notes/$NOTE_ID/content" -H "Authorization: $TOKEN" </code></pre>
 <p>Make sure to replace the values of:</p>
 <ul>
-  <li><code>TOKEN</code> with your ETAPI token.</li>
-  <li><code>SERVER</code> with the correct protocol, host name and port to your
-    Trilium instance.</li>
-  <li><code>NOTE_ID</code> with an existing note ID to download.</li>
+  <li><code spellcheck="false">TOKEN</code> with your ETAPI token.</li>
+  <li><code spellcheck="false">SERVER</code> with the correct protocol, host
+    name and port to your Trilium instance.</li>
+  <li><code spellcheck="false">NOTE_ID</code> with an existing note ID to download.</li>
 </ul>
 <p>As another example, to obtain a .zip export of a note and place it in
-  a directory called <code>out</code>, simply replace the last statement in
-  the script with:</p><pre><code class="language-text-x-trilium-auto">curl -H "Authorization: $TOKEN" \
+  a directory called <code spellcheck="false">out</code>, simply replace the
+  last statement in the script with:</p><pre><code class="language-text-x-trilium-auto">curl -H "Authorization: $TOKEN" \
 	-X GET "$SERVER/etapi/notes/$NOTE_ID/export" \
     --output "out/$NOTE_ID.zip"</code></pre>

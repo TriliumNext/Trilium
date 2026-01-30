@@ -7,7 +7,6 @@ import attribute_renderer from "../../../services/attribute_renderer";
 import content_renderer from "../../../services/content_renderer";
 import { t } from "../../../services/i18n";
 import link from "../../../services/link";
-import tree from "../../../services/tree";
 import { useImperativeSearchHighlighlighting, useNoteLabel, useNoteLabelBoolean } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import NoteLink from "../../react/NoteLink";
@@ -45,6 +44,7 @@ export function ListView({ note, noteIds: unfilteredNoteIds, highlightedTokens }
 export function GridView({ note, noteIds: unfilteredNoteIds, highlightedTokens }: ViewModeProps<{}>) {
     const noteIds = useFilteredNoteIds(note, unfilteredNoteIds);
     const { pageNotes, ...pagination } = usePagination(note, noteIds);
+    const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
 
     return (
         <div class="note-list grid-view">
@@ -53,7 +53,7 @@ export function GridView({ note, noteIds: unfilteredNoteIds, highlightedTokens }
 
                 <div class="note-list-container use-tn-links">
                     {pageNotes?.map(childNote => (
-                        <GridNoteCard note={childNote} parentNote={note} highlightedTokens={highlightedTokens} />
+                        <GridNoteCard note={childNote} parentNote={note} highlightedTokens={highlightedTokens} includeArchived={includeArchived} />
                     ))}
                 </div>
 
@@ -95,24 +95,17 @@ function ListNoteCard({ note, parentNote, highlightedTokens, currentLevel, expan
             </h5>
 
             {isExpanded && <>
-                <NoteContent note={note} highlightedTokens={highlightedTokens} noChildrenList />
+                <NoteContent note={note} highlightedTokens={highlightedTokens} noChildrenList includeArchivedNotes={includeArchived} />
                 <NoteChildren note={note} parentNote={parentNote} highlightedTokens={highlightedTokens} currentLevel={currentLevel} expandDepth={expandDepth} includeArchived={includeArchived} />
             </>}
         </div>
     );
 }
 
-function GridNoteCard({ note, parentNote, highlightedTokens }: { note: FNote, parentNote: FNote, highlightedTokens: string[] | null | undefined }) {
+function GridNoteCard({ note, parentNote, highlightedTokens, includeArchived }: { note: FNote, parentNote: FNote, highlightedTokens: string[] | null | undefined, includeArchived: boolean }) {
     const titleRef = useRef<HTMLSpanElement>(null);
     const [ noteTitle, setNoteTitle ] = useState<string>();
     const notePath = getNotePath(parentNote, note);
-    const highlightSearch = useImperativeSearchHighlighlighting(highlightedTokens);
-
-    useEffect(() => {
-        tree.getNoteTitle(note.noteId, parentNote.noteId).then(setNoteTitle);
-    }, [ note ]);
-
-    useEffect(() => highlightSearch(titleRef.current), [ noteTitle, highlightedTokens ]);
 
     return (
         <div
@@ -123,13 +116,14 @@ function GridNoteCard({ note, parentNote, highlightedTokens }: { note: FNote, pa
         >
             <h5 className="note-book-header">
                 <Icon className="note-icon" icon={note.getIcon()} />
-                <span ref={titleRef} className="note-book-title">{noteTitle}</span>
+                <NoteLink className="note-book-title" notePath={notePath} noPreview showNotePath={parentNote.type === "search"} highlightedTokens={highlightedTokens} />
                 <NoteAttributes note={note} />
             </h5>
             <NoteContent
                 note={note}
                 trim
                 highlightedTokens={highlightedTokens}
+                includeArchivedNotes={includeArchived}
             />
         </div>
     );
@@ -146,14 +140,22 @@ function NoteAttributes({ note }: { note: FNote }) {
     return <span className="note-list-attributes" ref={ref} />;
 }
 
-function NoteContent({ note, trim, noChildrenList, highlightedTokens }: { note: FNote, trim?: boolean, noChildrenList?: boolean, highlightedTokens: string[] | null | undefined }) {
+function NoteContent({ note, trim, noChildrenList, highlightedTokens, includeArchivedNotes }: {
+    note: FNote;
+    trim?: boolean;
+    noChildrenList?: boolean;
+    highlightedTokens: string[] | null | undefined;
+    includeArchivedNotes: boolean;
+}) {
     const contentRef = useRef<HTMLDivElement>(null);
     const highlightSearch = useImperativeSearchHighlighlighting(highlightedTokens);
 
     useEffect(() => {
         content_renderer.getRenderedContent(note, {
             trim,
-            noChildrenList
+            noChildrenList,
+            noIncludedNotes: true,
+            includeArchivedNotes
         })
             .then(({ $renderedContent, type }) => {
                 if (!contentRef.current) return;

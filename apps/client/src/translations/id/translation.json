@@ -11,8 +11,8 @@
   },
   "toast": {
     "critical-error": {
-      "title": "Kesalahan kritis",
-      "message": "Telah terjadi kesalahan kritis yang mencegah aplikasi klien untuk memulai:\n\n{{message}}\n\nHal ini kemungkinan besar disebabkan oleh skrip yang gagal secara tidak terduga. Coba jalankan aplikasi dalam mode aman dan atasi masalahnya."
+      "title": "Eror kritikal",
+      "message": "Telah terjadi eror kritikal yang mencegah aplikasi klien untuk memulai:\n\n{{message}}\n\nHal ini kemungkinan besar disebabkan oleh skrip yang gagal secara tidak terduga. Coba jalankan aplikasi dalam mode aman dan atasi masalahnya."
     },
     "widget-error": {
       "title": "Gagal menginisialisasi widget",
@@ -21,12 +21,65 @@
     },
     "bundle-error": {
       "title": "Gagal memuat skrip kustom",
-      "message": "Skrip dari catatan dengan ID \"{{id}}\", berjudul \"{{title}}\" tidak dapat dijalankan karena:\n\n{{message}}"
-    }
+      "message": "Skrip tidak dapat dijalankan:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "Gagal mendapatkan daftar widget dari server"
+    },
+    "open-script-note": "Buka skrip catatan",
+    "widget-render-error": {
+      "title": "Gagal render widget React custom"
+    },
+    "widget-missing-parent": "Widget custom '{{property}}' tidak terdefinisi.\n\nJika skrip ini bermaksud untuk bisa dijalankan tanpa elemen UI, gunakanlah '#run=frontendStartup'.",
+    "scripting-error": "Skrip custom eror : {{title}}"
   },
   "add_link": {
     "add_link": "Tambah tautan",
     "help_on_links": "Bantuan pada tautan",
-    "note": "Catatan"
+    "note": "Catatan",
+    "search_note": "cari catatan berdasarkan nama",
+    "link_title_mirrors": "judul tautan mencerminkan judul catatan saat ini",
+    "link_title_arbitrary": "judul tautan dapat diubah secara bebas",
+    "link_title": "Judul tautan",
+    "button_add_link": "Tambah tautan"
+  },
+  "branch_prefix": {
+    "edit_branch_prefix_multiple": "Edit prefiks cabang untuk {{count}} cabang",
+    "help_on_tree_prefix": "Bantuan pada prefiks pohon catatan",
+    "prefix": "Prefiks: ",
+    "save": "Simpan",
+    "branch_prefix_saved": "Prefiks cabang telah disimpan.",
+    "branch_prefix_saved_multiple": "Prefix cabang telah disimpan pada {{count}} cabang.",
+    "affected_branches": "Cabang terdampak ({{count}}):"
+  },
+  "bulk_actions": {
+    "bulk_actions": "Aksi borongan",
+    "affected_notes": "Catatan terdampak",
+    "include_descendants": "Sertakan anakan dari catatan yang dipilih",
+    "available_actions": "Pilihan aksi",
+    "chosen_actions": "Aksi terpilih",
+    "execute_bulk_actions": "Eksekusi aksi borongan",
+    "bulk_actions_executed": "Aksi borongan telah di eksekusi dengan sukses.",
+    "none_yet": "Belum ada... tambahkan aksi dengan memilih salah satu dari aksi di atas.",
+    "labels": "Label-label"
+  },
+  "confirm": {
+    "cancel": "Batal",
+    "ok": "Oke",
+    "are_you_sure_remove_note": "Apakah anda yakin mau membuang catatan \"{{title}}\" dari peta relasi? ",
+    "if_you_dont_check": "Jika Anda tidak mencentang ini, catatan hanya akan dihapus dari peta relasi.",
+    "also_delete_note": "Hapus juga catatannya"
+  },
+  "delete_notes": {
+    "delete_notes_preview": "Hapus pratinjau catatan",
+    "close": "Tutup",
+    "delete_all_clones_description": "Hapus seluruh duplikat (bisa dikembalikan di menu revisi)",
+    "erase_notes_description": "Penghapusan normal hanya menandai catatan sebagai dihapus dan dapat dipulihkan (melalui dialog versi revisi) dalam jangka waktu tertentu. Mencentang opsi ini akan menghapus catatan secara permanen seketika dan catatan tidak akan bisa dipulihkan kembali.",
+    "erase_notes_warning": "Hapus catatan secara permanen (tidak bisa dikembalikan), termasuk semua duplikat. Aksi akan memaksa aplikasi untuk mengulang kembali.",
+    "notes_to_be_deleted": "Catatan-catatan berikut akan dihapuskan ({{notesCount}})",
+    "no_note_to_delete": "Tidak ada Catatan yang akan dihapus (hanya duplikat)."
+  },
+  "clone_to": {
+    "clone_notes_to": "Duplikat catatan ke…"
   }
 }

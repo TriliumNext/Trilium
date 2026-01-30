@@ -52,9 +52,9 @@
 </ol>
 <h3>Keyboard Navigation</h3>
 <ul>
-  <li>Press <code>Enter</code> to open the first result</li>
+  <li>Press <code spellcheck="false">Enter</code> to open the first result</li>
   <li>Use arrow keys to navigate through results</li>
-  <li>Press <code>Escape</code> to close the quick search</li>
+  <li>Press <code spellcheck="false">Escape</code> to close the quick search</li>
 </ul>
 <h2>Using Quick Search</h2>
 <ol>
@@ -66,23 +66,24 @@
   <li><strong>Match locations</strong>: Bold text indicates where matches occur</li>
 </ol>
 <h2>Quick Search - Exact Match Operator</h2>
-<p>Quick Search now supports the exact match operator (<code>=</code>) at
-  the beginning of your search query. This allows you to search for notes
+<p>Quick Search now supports the exact match operator (<code spellcheck="false">=</code>)
+  at the beginning of your search query. This allows you to search for notes
   where the title or content exactly matches your search term, rather than
   just containing it.</p>
 <h3>Usage</h3>
 <p>To use exact match in Quick Search:</p>
 <ol>
-  <li>Start your search query with the <code>=</code> operator</li>
-  <li>Follow it immediately with your search term (no space after <code>=</code>)</li>
+  <li>Start your search query with the <code spellcheck="false">=</code> operator</li>
+  <li>Follow it immediately with your search term (no space after <code spellcheck="false">=</code>)</li>
 </ol>
 <h4>Examples</h4>
 <ul>
-  <li><code>=example</code> - Finds notes with title exactly "example" or content
-    exactly "example"</li>
-  <li><code>=Project Plan</code> - Finds notes with title exactly "Project Plan"
-    or content exactly "Project Plan"</li>
-  <li><code>='hello world'</code> - Use quotes for multi-word exact matches</li>
+  <li><code spellcheck="false">=example</code> - Finds notes with title exactly
+    "example" or content exactly "example"</li>
+  <li><code spellcheck="false">=Project Plan</code> - Finds notes with title
+    exactly "Project Plan" or content exactly "Project Plan"</li>
+  <li><code spellcheck="false">='hello world'</code> - Use quotes for multi-word
+    exact matches</li>
 </ul>
 <h4>Comparison with Regular Search</h4>
 <table>
@@ -94,12 +95,12 @@
   </thead>
   <tbody>
     <tr>
-      <td><code>example</code>
+      <td><code spellcheck="false">example</code>
       </td>
       <td>Finds all notes containing "example" anywhere in title or content</td>
     </tr>
     <tr>
-      <td><code>=example</code>
+      <td><code spellcheck="false">=example</code>
       </td>
       <td>Finds only notes where the title equals "example" or content equals "example"
         exactly</td>
@@ -108,7 +109,7 @@
 </table>
 
 <h3>Technical Details</h3>
-<p>When you use the <code>=</code> operator:</p>
+<p>When you use the <code spellcheck="false">=</code> operator:</p>
 <ul>
   <li>The search performs an exact match on note titles</li>
   <li>For note content, it looks for exact matches of the entire content</li>
@@ -117,11 +118,12 @@
 </ul>
 <h3>Limitations</h3>
 <ul>
-  <li>The <code>=</code> operator must be at the very beginning of the search
-    query</li>
-  <li>Spaces after <code>=</code> will treat it as a regular search</li>
-  <li>Multiple <code>=</code> operators (like <code>==example</code>) are treated
-    as regular text search</li>
+  <li>The <code spellcheck="false">=</code> operator must be at the very beginning
+    of the search query</li>
+  <li>Spaces after <code spellcheck="false">=</code> will treat it as a regular
+    search</li>
+  <li>Multiple <code spellcheck="false">=</code> operators (like <code spellcheck="false">==example</code>)
+    are treated as regular text search</li>
 </ul>
 <h3>Use Cases</h3>
 <p>This feature is particularly useful when:</p>
@@ -134,8 +136,9 @@
 <h3>Related Features</h3>
 <ul>
   <li>For more complex exact matching queries, use the full <a href="#root/_help_eIg8jdvaoNNd">Search</a> functionality</li>
-  <li>For fuzzy matching (finding results despite typos), use the <code>~=</code> operator
+  <li>For fuzzy matching (finding results despite typos), use the <code spellcheck="false">~=</code> operator
     in the full search</li>
-  <li>For partial matches with wildcards, use operators like <code>*=*</code>, <code>=*</code>,
-    or <code>*=</code> in the full search</li>
+  <li>For partial matches with wildcards, use operators like <code spellcheck="false">*=*</code>,
+    <code
+    spellcheck="false">=*</code>, or <code spellcheck="false">*=</code> in the full search</li>
 </ul>

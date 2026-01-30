@@ -152,16 +152,22 @@
   },
   "note_icon": {
     "change_note_icon": "ノートアイコンの変更",
-    "category": "カテゴリー:",
     "search": "検索:",
-    "reset-default": "アイコンをデフォルトに戻す"
+    "reset-default": "アイコンをデフォルトに戻す",
+    "search_placeholder_other": "{{count}} 個のパックから {{number}} 個のアイコンを検索",
+    "search_placeholder_filtered": "{{name}} で {{number}} 個のアイコンを検索",
+    "filter": "フィルター",
+    "filter-none": "すべてのアイコン",
+    "filter-default": "デフォルトアイコン",
+    "icon_tooltip": "{{name}}\nアイコンパック: {{iconPack}}",
+    "no_results": "アイコンが見つかりません。"
   },
   "basic_properties": {
     "note_type": "ノートタイプ",
     "editable": "編集可能",
     "basic_properties": "基本プロパティ",
     "language": "言語",
-    "configure_code_notes": "コードノートを設定しています..."
+    "configure_code_notes": "コードノートを設定..."
   },
   "i18n": {
     "title": "ローカライゼーション",
@@ -437,7 +443,10 @@
     "unhoist-note": "ノートのホイストを解除",
     "edit-branch-prefix": "ブランチの接頭辞を編集",
     "archive": "アーカイブ",
-    "unarchive": "アーカイブ解除"
+    "unarchive": "アーカイブ解除",
+    "open-in-a-new-window": "新しいウィンドウで開く",
+    "hide-subtree": "サブツリーを非表示",
+    "show-subtree": "サブツリーを表示"
   },
   "zen_mode": {
     "button_exit": "禅モードを退出"
@@ -562,7 +571,8 @@
     "expand_tooltip": "このコレクションの直下の子（1階層下）を展開します。その他のオプションについては、右側の矢印を押してください。",
     "expand_first_level": "直下の子を展開",
     "expand_nth_level": "{{depth}} 階層下まで展開",
-    "expand_all_levels": "すべての階層を展開"
+    "expand_all_levels": "すべての階層を展開",
+    "hide_child_notes": "ツリー内の子ノートを非表示"
   },
   "note_types": {
     "geo-map": "ジオマップ",
@@ -648,7 +658,6 @@
     "revision_deleted": "ノートの変更履歴は削除されました。",
     "settings": "ノートの変更履歴の設定",
     "file_size": "ファイルサイズ:",
-    "preview": "プレビュー:",
     "preview_not_available": "このノートタイプではプレビューは利用できません。",
     "diff_on": "差分を表示",
     "diff_off": "内容を表示",
@@ -1239,7 +1248,15 @@
     "saved-search-note-refreshed": "保存した検索ノートが更新されました。",
     "refresh-saved-search-results": "保存した検索結果を更新",
     "toggle-sidebar": "サイドバーを切り替え",
-    "dropping-not-allowed": "この場所にノートをドロップすることはできません。"
+    "dropping-not-allowed": "この場所にノートをドロップすることはできません。",
+    "clone-indicator-tooltip": "このノートには {{- count}} 個の親があります: {{- parents}}",
+    "clone-indicator-tooltip-single": "このノートは複製されています (親が 1 件追加: {{- parent}})",
+    "shared-indicator-tooltip": "このノートは公開されています",
+    "shared-indicator-tooltip-with-url": "このノートは以下で公開されています: {{- url}}",
+    "subtree-hidden-tooltip_other": "{{count}} 個の子ノートがツリーで非表示になっています",
+    "subtree-hidden-moved-title": "{{title}} に追加されました",
+    "subtree-hidden-moved-description-collection": "このコレクションはツリー内の子ノートを非表示にします。",
+    "subtree-hidden-moved-description-other": "このノートのツリーでは子ノートは非表示になっています。"
   },
   "bulk_actions": {
     "bulk_actions": "一括操作",
@@ -1271,7 +1288,11 @@
     "search_not_executed": "検索はまだ実行されていません。上の「検索」ボタンをクリックすると、検索結果が表示されます。"
   },
   "sql_result": {
-    "no_rows": "このクエリでは行が返されませんでした"
+    "no_rows": "このクエリでは行が返されませんでした",
+    "not_executed": "クエリはまだ実行されていません。",
+    "failed": "SQLクエリの実行に失敗しました",
+    "statement_result": "ステートメント結果",
+    "execute_now": "今すぐ実行"
   },
   "sql_table_schemas": {
     "tables": "テーブル"
@@ -2130,7 +2151,7 @@
     "will_be_deleted_in": "この添付ファイルは {{time}} 後に自動的に削除されます",
     "will_be_deleted_soon": "この添付ファイルはすぐに自動的に削除されます",
     "deletion_reason": "、添付ファイルがノートのコンテンツにリンクされていないためです。削除されないようにするには、添付ファイルのリンクをコンテンツに再度追加するか、添付ファイルをノートに変換してください。",
-    "role_and_size": "ロール: {{role}},サイズ: {{size}}",
+    "role_and_size": "ロール: {{role}},サイズ: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "添付ファイルのリンクをクリップボードにコピーしました。",
     "unrecognized_role": "添付ファイルのロール「{{role}}」は認識されません。"
   },
@@ -2187,7 +2208,14 @@
     "execute_sql_description": "このノートは SQL ノートです。クリックすると SQL クエリが実行されます。",
     "shared_copy_to_clipboard": "リンクをクリップボードにコピー",
     "shared_open_in_browser": "ブラウザでリンクを開く",
-    "shared_unshare": "共有を削除"
+    "shared_unshare": "共有を削除",
+    "save_status_saved": "保存されました",
+    "save_status_saving": "保存中...",
+    "save_status_unsaved": "未保存",
+    "save_status_error": "保存に失敗しました",
+    "save_status_saving_tooltip": "変更を保存しています。",
+    "save_status_unsaved_tooltip": "未保存の変更があります。すぐに自動的に保存されます。",
+    "save_status_error_tooltip": "ノートの保存中にエラーが発生しました。可能であれば、ノートの内容を別の場所にコピーして、アプリケーションを再読み込みしてください。"
   },
   "status_bar": {
     "language_title": "コンテンツの言語を変更",
@@ -2218,5 +2246,12 @@
   },
   "attributes_panel": {
     "title": "ノート属性"
+  },
+  "pdf": {
+    "attachments_other": "{{count}} 添付ファイル",
+    "layers_other": "{{count}} 層",
+    "pages_other": "{{count}} ページ",
+    "pages_alt": "ページ {{pageNumber}}",
+    "pages_loading": "読み込み中..."
   }
 }

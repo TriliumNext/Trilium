@@ -1,12 +1,12 @@
-import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker";
 import FNote from "../../../entities/fnote";
 import contextMenu, { ContextMenuEvent } from "../../../menus/context_menu";
+import { getArchiveMenuItem } from "../../../menus/context_menu_utils";
+import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker";
 import link_context_menu from "../../../menus/link_context_menu";
 import branches from "../../../services/branches";
-import { getArchiveMenuItem } from "../../../menus/context_menu_utils";
 import { t } from "../../../services/i18n";
 
-export function openCalendarContextMenu(e: ContextMenuEvent, note: FNote, parentNote: FNote) {
+export function openCalendarContextMenu(e: ContextMenuEvent, note: FNote, parentNote: FNote, componentId?: string) {
     e.preventDefault();
     e.stopPropagation();
 
@@ -30,16 +30,16 @@ export function openCalendarContextMenu(e: ContextMenuEvent, note: FNote, parent
                     }
 
                     if (branchIdToDelete) {
-                        await branches.deleteNotes([ branchIdToDelete ], false, false);
+                        await branches.deleteNotes([ branchIdToDelete ], false, false, componentId);
                     }
                 }
             },
             { kind: "separator" },
             {
                 kind: "custom",
-                componentFn: () => NoteColorPicker({note: note})
+                componentFn: () => NoteColorPicker({note})
             }
         ],
         selectMenuItemHandler: ({ command }) =>  link_context_menu.handleLinkContextMenuItem(command, e, note.noteId),
-    })
+    });
 }

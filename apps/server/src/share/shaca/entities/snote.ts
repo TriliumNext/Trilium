@@ -1,15 +1,14 @@
-"use strict";
-
-import sql from "../../sql.js";
-import utils from "../../../services/utils.js";
-import AbstractShacaEntity from "./abstract_shaca_entity.js";
+import { getNoteIcon, NoteType } from "@triliumnext/commons";
 import escape from "escape-html";
+
 import type { Blob } from "../../../services/blob-interface.js";
+import utils from "../../../services/utils.js";
+import sql from "../../sql.js";
+import AbstractShacaEntity from "./abstract_shaca_entity.js";
+import type { SNoteRow } from "./rows.js";
 import type SAttachment from "./sattachment.js";
 import type SAttribute from "./sattribute.js";
 import type SBranch from "./sbranch.js";
-import type { SNoteRow } from "./rows.js";
-import { NOTE_TYPE_ICONS } from "../../../becca/entities/bnote.js";
 
 const LABEL = "label";
 const RELATION = "relation";
@@ -20,7 +19,7 @@ const isCredentials = (attr: SAttribute) => attr.type === "label" && attr.name =
 class SNote extends AbstractShacaEntity {
     noteId: string;
     title: string;
-    type: string;
+    type: NoteType;
     mime: string;
     private blobId: string;
     utcDateModified: string;
@@ -39,7 +38,7 @@ class SNote extends AbstractShacaEntity {
 
         this.noteId = noteId;
         this.title = isProtected ? "[protected]" : title;
-        this.type = type;
+        this.type = type as NoteType;
         this.mime = mime;
         this.blobId = blobId;
         this.utcDateModified = utcDateModified; // used for caching of images
@@ -101,18 +100,16 @@ class SNote extends AbstractShacaEntity {
         if (!row) {
             if (silentNotFoundError) {
                 return undefined;
-            } else {
-                throw new Error(`Cannot find note content for note '${this.noteId}', blob '${this.blobId}'`);
             }
+            throw new Error(`Cannot find note content for note '${this.noteId}', blob '${this.blobId}'`);
         }
 
         const content = row.content;
 
         if (this.hasStringContent()) {
             return content === null ? "" : content.toString("utf-8");
-        } else {
-            return content;
         }
+        return content;
     }
 
     /** @returns true if the note has string content (not binary) */
@@ -137,9 +134,8 @@ class SNote extends AbstractShacaEntity {
             return attributeCache.filter((attr) => attr.type === type && !isCredentials(attr));
         } else if (name) {
             return attributeCache.filter((attr) => attr.name === name && !isCredentials(attr));
-        } else {
-            return attributeCache.filter((attr) => !isCredentials(attr));
         }
+        return attributeCache.filter((attr) => !isCredentials(attr));
     }
 
     getCredentials() {
@@ -460,9 +456,8 @@ class SNote extends AbstractShacaEntity {
             return this.ownedAttributes.filter((attr) => attr.type === type);
         } else if (name) {
             return this.ownedAttributes.filter((attr) => attr.name === name);
-        } else {
-            return this.ownedAttributes.slice();
         }
+        return this.ownedAttributes.slice();
     }
 
     /**
@@ -532,27 +527,23 @@ class SNote extends AbstractShacaEntity {
         };
     }
 
-    getIcon() {
-        const iconClassLabels = this.getLabels("iconClass");
-
-        if (iconClassLabels && iconClassLabels.length > 0) {
-            return iconClassLabels[0].value;
-        } else if (this.noteId === "root") {
-            return "bx bx-home-alt-2";
-        }
-        if (this.noteId === "_share") {
-            return "bx bx-share-alt";
-        } else if (this.type === "text") {
-            if (this.isFolder()) {
-                return "bx bx-folder";
-            } else {
-                return "bx bx-note";
+    getIcon(filterByPrefix: string[] = []) {
+        const iconClassLabels = this.getLabels("iconClass").filter(label => {
+            if (filterByPrefix.length === 0) {
+                return true;
             }
-        } else if (this.type === "code" && this.mime.startsWith("text/x-sql")) {
-            return "bx bx-data";
-        } else {
-            return NOTE_TYPE_ICONS[this.type];
-        }
+            return filterByPrefix.some(prefix => label.value.startsWith(prefix));
+        });
+        const icon = getNoteIcon({
+            noteId: this.noteId,
+            type: this.type,
+            mime: this.mime,
+            workspaceIconClass: undefined,
+            iconClass: iconClassLabels.length > 0 ? iconClassLabels[0].value : undefined,
+            isFolder: this.isFolder.bind(this)
+        });
+
+        return `tn-icon ${icon}`;
     }
 
     isFolder() {

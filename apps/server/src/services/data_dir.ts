@@ -75,9 +75,56 @@ export function getPlatformAppDataDir(platform: ReturnType<typeof os.platform>, 
     }
 }
 
+function outputPermissionDiagnostics(targetPath: fs.PathLike) {
+    const pathStr = targetPath.toString();
+    const parentDir = pathJoin(pathStr, "..");
+
+    console.error("\n========== PERMISSION ERROR DIAGNOSTICS ==========");
+    console.error(`Failed to create directory: ${pathStr}`);
+
+    // Output current process UID:GID (Unix only)
+    if (typeof process.getuid === "function" && typeof process.getgid === "function") {
+        console.error(`Process running as UID:GID = ${process.getuid()}:${process.getgid()}`);
+    }
+
+    // Try to get parent directory stats
+    try {
+        const stats = fs.statSync(parentDir);
+        console.error(`Parent directory: ${parentDir}`);
+        console.error(`  Owner UID:GID = ${stats.uid}:${stats.gid}`);
+        console.error(`  Permissions = ${(stats.mode & 0o777).toString(8)} (octal)`);
+    } catch {
+        console.error(`Parent directory ${parentDir} is not accessible`);
+    }
+
+    console.error("\nTo fix this issue:");
+    console.error("  - Ensure the data directory is owned by the user running Trilium");
+    console.error("  - Or set USER_UID and USER_GID environment variables to match the directory owner");
+    console.error("  - Example: docker run -e USER_UID=$(id -u) -e USER_GID=$(id -g) ...");
+    console.error("====================================================\n");
+}
+
 function createDirIfNotExisting(path: fs.PathLike, permissionMode: fs.Mode = FOLDER_PERMISSIONS) {
-    if (!fs.existsSync(path)) {
+    try {
         fs.mkdirSync(path, permissionMode);
+    } catch (err: unknown) {
+        if (err && typeof err === "object" && "code" in err) {
+            const code = (err as { code: string }).code;
+
+            if (code === "EACCES") {
+                outputPermissionDiagnostics(path);
+            } else if (code === "EEXIST") {
+                // Directory already exists - verify it's actually a directory
+                try {
+                    if (fs.statSync(path).isDirectory()) {
+                        return;
+                    }
+                } catch {
+                    // If we can't stat it, fall through to re-throw original error
+                }
+            }
+        }
+        throw err;
     }
 }
 

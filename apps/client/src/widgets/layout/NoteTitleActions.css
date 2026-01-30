@@ -4,12 +4,21 @@ body.experimental-feature-new-layout {
     }
 
     .title-actions {
+        --title-actions-padding-start: 12px;
+        --title-actions-padding-end: 8px;
+
         display: flex;
+        max-width: var(--max-content-width);
         flex-direction: column;
         gap: 0.5em;
+        padding-inline: var(--title-actions-padding-start) var(--title-actions-padding-end);
+
+        body.prefers-centered-content .note-split:not(.full-content-width) & {
+            margin-inline: auto;
+        }
 
         &:not(:empty) {
-            padding: 0.75em 15px;
+            padding-block: 0.75em;
         }
 
         .edited-notes {
@@ -39,6 +48,12 @@ body.experimental-feature-new-layout {
                 margin: 0;
                 padding: 0;
             }
+        }
+
+        > .collapsible,
+        > .note-type-switcher {
+            padding-inline-start: calc(24px - var(--title-actions-padding-start));
+            padding-inline-end: calc(24px - var(--title-actions-padding-end));
         }
     }
 }

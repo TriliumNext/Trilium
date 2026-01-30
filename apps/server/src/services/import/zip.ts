@@ -1,26 +1,27 @@
-"use strict";
 
-import BAttribute from "../../becca/entities/battribute.js";
-import { removeTextFileExtension, newEntityId, getNoteTitle, processStringOrBuffer, unescapeHtml } from "../../services/utils.js";
-import log from "../../services/log.js";
-import noteService from "../../services/notes.js";
-import attributeService from "../../services/attributes.js";
-import BBranch from "../../becca/entities/bbranch.js";
+
+import { ALLOWED_NOTE_TYPES, type NoteType } from "@triliumnext/commons";
 import path from "path";
-import protectedSessionService from "../protected_session.js";
-import mimeService from "./mime.js";
-import treeService from "../tree.js";
+import type { Stream } from "stream";
 import yauzl from "yauzl";
-import htmlSanitizer from "../html_sanitizer.js";
+
 import becca from "../../becca/becca.js";
 import BAttachment from "../../becca/entities/battachment.js";
-import markdownService from "./markdown.js";
-import type TaskContext from "../task_context.js";
+import BAttribute from "../../becca/entities/battribute.js";
+import BBranch from "../../becca/entities/bbranch.js";
 import type BNote from "../../becca/entities/bnote.js";
-import type NoteMeta from "../meta/note_meta.js";
+import attributeService from "../../services/attributes.js";
+import log from "../../services/log.js";
+import noteService from "../../services/notes.js";
+import { getNoteTitle, newEntityId, processStringOrBuffer, removeFileExtension, unescapeHtml } from "../../services/utils.js";
+import htmlSanitizer from "../html_sanitizer.js";
 import type AttributeMeta from "../meta/attribute_meta.js";
-import type { Stream } from "stream";
-import { ALLOWED_NOTE_TYPES, type NoteType } from "@triliumnext/commons";
+import type NoteMeta from "../meta/note_meta.js";
+import protectedSessionService from "../protected_session.js";
+import type TaskContext from "../task_context.js";
+import treeService from "../tree.js";
+import markdownService from "./markdown.js";
+import mimeService from "./mime.js";
 
 interface MetaFile {
     files: NoteMeta[];
@@ -108,7 +109,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
             dataFileName: ""
         };
 
-        let parent: NoteMeta | undefined = undefined;
+        let parent: NoteMeta | undefined;
 
         for (let segment of pathSegments) {
             if (!cursor?.children?.length) {
@@ -161,7 +162,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
 
         // in case we lack metadata, we treat e.g. "Programming.html" and "Programming" as the same note
         // (one data file, the other directory for children)
-        const filePathNoExt = removeTextFileExtension(filePath);
+        const filePathNoExt = removeFileExtension(filePath);
 
         if (filePathNoExt in createdPaths) {
             return createdPaths[filePathNoExt];
@@ -241,10 +242,10 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
         }
 
         const { note } = noteService.createNewNote({
-            parentNoteId: parentNoteId,
+            parentNoteId,
             title: noteTitle || "",
             content: "",
-            noteId: noteId,
+            noteId,
             type: resolveNoteType(noteMeta?.type),
             mime: noteMeta ? noteMeta.mime : "text/html",
             prefix: noteMeta?.prefix || "",
@@ -294,12 +295,12 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
                 attachmentId: getNewAttachmentId(attachmentMeta.attachmentId),
                 noteId: getNewNoteId(noteMeta.noteId)
             };
-        } else {
-            // don't check for noteMeta since it's not mandatory for notes
-            return {
-                noteId: getNoteId(noteMeta, absUrl)
-            };
-        }
+        } 
+        // don't check for noteMeta since it's not mandatory for notes
+        return {
+            noteId: getNoteId(noteMeta, absUrl)
+        };
+        
     }
 
     function processTextNoteContent(content: string, noteTitle: string, filePath: string, noteMeta?: NoteMeta) {
@@ -312,9 +313,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
         content = content.replace(/<h1>([^<]*)<\/h1>/gi, (match, text) => {
             if (noteTitle.trim() === text.trim()) {
                 return ""; // remove whole H1 tag
-            } else {
-                return `<h2>${text}</h2>`;
-            }
+            } 
+            return `<h2>${text}</h2>`;
+            
         });
 
         if (taskContext.data?.safeImport) {
@@ -347,9 +348,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
                 return `src="api/attachments/${target.attachmentId}/image/${path.basename(url)}"`;
             } else if (target.noteId) {
                 return `src="api/images/${target.noteId}/${path.basename(url)}"`;
-            } else {
-                return match;
-            }
+            } 
+            return match;
+            
         });
 
         content = content.replace(/href="([^"]*)"/g, (match, url) => {
@@ -373,9 +374,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
                 return `href="#root/${target.noteId}?viewMode=attachments&attachmentId=${target.attachmentId}"`;
             } else if (target.noteId) {
                 return `href="#root/${target.noteId}"`;
-            } else {
-                return match;
-            }
+            } 
+            return match;
+            
         });
 
         if (noteMeta) {
@@ -525,9 +526,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
             }
 
             ({ note } = noteService.createNewNote({
-                parentNoteId: parentNoteId,
+                parentNoteId,
                 title: noteTitle || "",
-                content: content,
+                content,
                 noteId,
                 type,
                 mime,
@@ -536,7 +537,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
                 // root notePosition should be ignored since it relates to the original document
                 // now import root should be placed after existing notes into new parent
                 notePosition: noteMeta && firstNote ? noteMeta.notePosition : undefined,
-                isProtected: isProtected
+                isProtected
             }));
 
             createdNoteIds.add(note.noteId);
@@ -648,7 +649,7 @@ function streamToBuffer(stream: Stream): Promise<Buffer> {
 
 export function readContent(zipfile: yauzl.ZipFile, entry: yauzl.Entry): Promise<Buffer> {
     return new Promise((res, rej) => {
-        zipfile.openReadStream(entry, function (err, readStream) {
+        zipfile.openReadStream(entry, (err, readStream) => {
             if (err) rej(err);
             if (!readStream) throw new Error("Unable to read content.");
 
@@ -659,7 +660,7 @@ export function readContent(zipfile: yauzl.ZipFile, entry: yauzl.Entry): Promise
 
 export function readZipFile(buffer: Buffer, processEntryCallback: (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => Promise<void>) {
     return new Promise<void>((res, rej) => {
-        yauzl.fromBuffer(buffer, { lazyEntries: true, validateEntrySizes: false }, function (err, zipfile) {
+        yauzl.fromBuffer(buffer, { lazyEntries: true, validateEntrySizes: false }, (err, zipfile) => {
             if (err) rej(err);
             if (!zipfile) throw new Error("Unable to read zip file.");
 
@@ -691,9 +692,9 @@ function resolveNoteType(type: string | undefined): NoteType {
 
     if (type && (ALLOWED_NOTE_TYPES as readonly string[]).includes(type)) {
         return type as NoteType;
-    } else {
-        return "text";
-    }
+    } 
+    return "text";
+    
 }
 
 export function removeTriliumTags(content: string) {
@@ -702,7 +703,7 @@ export function removeTriliumTags(content: string) {
         "<title data-trilium-title>([^<]*)<\/title>"
     ];
     for (const tag of tagsToRemove) {
-        let re = new RegExp(tag, "gi");
+        const re = new RegExp(tag, "gi");
         content = content.replace(re, "");
     }
 

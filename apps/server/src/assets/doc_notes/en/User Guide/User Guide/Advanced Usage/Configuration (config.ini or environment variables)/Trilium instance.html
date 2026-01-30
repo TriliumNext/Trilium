@@ -4,14 +4,15 @@
   is set up with), sometimes it can be useful to distinguish the instance
   you are running on.</p>
 <h2>Setting the instance name</h2>
-<p>To set up a name for the instance, modify the <code>config.ini</code>:</p><pre><code class="language-text-x-trilium-auto">[General]
+<p>To set up a name for the instance, modify the <code spellcheck="false">config.ini</code>:</p><pre><code class="language-text-x-trilium-auto">[General]
 instanceName=Hello</code></pre>
 <h2>Distinguishing the instance on back-end</h2>
-<p>Use <code>api.getInstanceName()</code> to obtain the instance name of the
-  current server, as specified in the config file or in environment variables.</p>
+<p>Use <code spellcheck="false">api.getInstanceName()</code> to obtain the
+  instance name of the current server, as specified in the config file or
+  in environment variables.</p>
 <h2>Limiting script runs based on instance</h2>
 <p>For a script that is run periodically or on a certain event, it's possible
   to limit it to certain instances without having to change the code. Just
-  add <code>runOnInstance</code> and set as the value the instance name where
-  the script should run. To run on multiple named instances, simply add the
-  label multiple times.</p>
+  add <code spellcheck="false">runOnInstance</code> and set as the value the
+  instance name where the script should run. To run on multiple named instances,
+  simply add the label multiple times.</p>

@@ -136,7 +136,7 @@
     the <em>Read-only</em> section for more information.</p>
 </aside>
 <h2>How the location of the markers is stored</h2>
-<p>The location of a marker is stored in the <code>#geolocation</code> attribute
+<p>The location of a marker is stored in the <code spellcheck="false">#geolocation</code> attribute
   of the child notes:</p>
 <img src="18_Geo Map_image.png"
 width="1288" height="278">
@@ -185,7 +185,7 @@ width="1288" height="278">
       <li>Open the location using an external application (if the operating system
         supports it).</li>
       <li>Open the note in a new tab, split or window.</li>
-      <li>Remove the marker from the map, which will remove the <code>#geolocation</code> attribute
+      <li>Remove the marker from the map, which will remove the <code spellcheck="false">#geolocation</code> attribute
         of the note. To add it back again, the coordinates have to be manually
         added back in.</li>
     </ol>
@@ -197,10 +197,11 @@ width="1288" height="278">
   alt="image" width="523" height="295">
 </figure>
 <p>The markers will have the same icon as the note.</p>
-<p>It's possible to add a custom color to a marker by assigning them a <code>#color</code> attribute
-  such as <code>#color=green</code>.</p>
+<p>It's possible to add a custom color to a marker by assigning them a
+  <code
+  spellcheck="false">#color</code>attribute such as <code spellcheck="false">#color=green</code>.</p>
 <h2>Adding the coordinates manually</h2>
-<p>In a nutshell, create a child note and set the <code>#geolocation</code> attribute
+<p>In a nutshell, create a child note and set the <code spellcheck="false">#geolocation</code> attribute
   to the coordinates.</p>
 <p>The value of the attribute is made up of the latitude and longitude separated
   by a comma.</p>
@@ -228,8 +229,10 @@ width="1288" height="278">
         <br>Simply click on the first item displaying the coordinates and they will
         be copied to clipboard.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         <br>
-        <br>Then paste the value inside the text box into the <code>#geolocation</code> attribute
-        of a child note of the map (don't forget to surround the value with a <code>"</code> character).</td>
+        <br>Then paste the value inside the text box into the <code spellcheck="false">#geolocation</code> attribute
+        of a child note of the map (don't forget to surround the value with a
+        <code
+        spellcheck="false">"</code>character).</td>
     </tr>
     <tr>
       <td>2</td>
@@ -249,8 +252,8 @@ width="1288" height="278">
           width="1074" height="276">
         </figure>
       </td>
-      <td>And then go to Owned Attributes and type <code>#geolocation="</code>, then
-        paste from the clipboard as-is and then add the ending <code>"</code> character.
+      <td>And then go to Owned Attributes and type <code spellcheck="false">#geolocation="</code>,
+        then paste from the clipboard as-is and then add the ending <code spellcheck="false">"</code> character.
         Press Enter to confirm and the map should now be updated to contain the
         new note.</td>
     </tr>
@@ -294,7 +297,7 @@ width="1288" height="278">
         <img class="image_resized" style="aspect-ratio:640/276;width:100%;" src="5_Geo Map_image.png"
         width="640" height="276">
       </td>
-      <td>Simply paste the value inside the text box into the <code>#geolocation</code> attribute
+      <td>Simply paste the value inside the text box into the <code spellcheck="false">#geolocation</code> attribute
         of a child note of the map and then it should be displayed on the map.</td>
     </tr>
   </tbody>
@@ -331,7 +334,7 @@ width="1288" height="278">
         </figure>
       </td>
       <td>In order for the file to be recognized as a GPS track, it needs to show
-        up as <code>application/gpx+xml</code> in the <em>File type</em> field.</td>
+        up as <code spellcheck="false">application/gpx+xml</code> in the <em>File type</em> field.</td>
     </tr>
     <tr>
       <td>3</td>
@@ -350,8 +353,8 @@ width="1288" height="278">
 <aside class="admonition note">
   <p>The starting point of the track will be displayed as a marker, with the
     name of the note underneath. The start marker will also respect the icon
-    and the <code>color</code> of the note. The end marker is displayed with
-    a distinct icon.</p>
+    and the <code spellcheck="false">color</code> of the note. The end marker
+    is displayed with a distinct icon.</p>
   <p>If the GPX contains waypoints, they will also be displayed. If they have
     a name, it is displayed when hovering over it with the mouse.</p>
 </aside>
@@ -370,7 +373,7 @@ width="1288" height="278">
 <h3>Map Style</h3>
 <p>The styling of the map can be adjusted in the <em>Collection Properties</em> tab
   in the&nbsp;<a class="reference-link" href="#root/_help_BlN9DFI679QC">Ribbon</a>&nbsp;or
-  manually via the <code>#map:style</code> attribute.</p>
+  manually via the <code spellcheck="false">#map:style</code> attribute.</p>
 <p>The geo map comes with two different types of styles:</p>
 <ul>
   <li>Raster styles
@@ -398,8 +401,8 @@ width="1288" height="278">
 </aside>
 <h3>Scale</h3>
 <p>Activating this option via the&nbsp;<a class="reference-link" href="#root/_help_BlN9DFI679QC">Ribbon</a>&nbsp;or
-  manually via <code>#map:scale</code> will display an indicator in the bottom-left
-  of the scale of the map.</p>
+  manually via <code spellcheck="false">#map:scale</code> will display an indicator
+  in the bottom-left of the scale of the map.</p>
 <h2>Troubleshooting</h2>
 <figure class="image image-style-align-right image_resized" style="width:34.06%;">
   <img style="aspect-ratio:678/499;" src="13_Geo Map_image.png"

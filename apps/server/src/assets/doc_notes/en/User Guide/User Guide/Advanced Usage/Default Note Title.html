@@ -1,7 +1,7 @@
 <p>When a new note is created, its name is by default "new note". In some
   cases, it can be desirable to have a different or even a dynamic default
   note title.</p>
-<p>For this use case, Trilium (since v0.52) supports <code>#titleTemplate</code> 
+<p>For this use case, Trilium (since v0.52) supports <code spellcheck="false">#titleTemplate</code> 
   <a
   href="#root/_help_zEY4DaJG4YT5">label</a>. You can create such a label for a given note, assign it a value,
     and this value will be used as a default title when creating child notes.
@@ -18,17 +18,17 @@
     </ul>
   </li>
 </ul>
-<p>Now, to the parent note "2022 Books" you can assign label <code>#titleTemplate="[Author name]: [Book title], [Publication year]"</code>.</p>
+<p>Now, to the parent note "2022 Books" you can assign label <code spellcheck="false">#titleTemplate="[Author name]: [Book title], [Publication year]"</code>.</p>
 <p>And all children of "2022 Books" will be created with initial title "[Author
   name]: [Book title], [Publication year]". There's no artificial intelligence
   here, the idea is to just prompt you to manually fill in the pieces of
   information into the note title by yourself.</p>
 <h2>Dynamic value</h2>
-<p>The value of <code>#titleTemplate</code> is evaluated at the point of note's
-  creation as a JavaScript string, which means it can be enriched with the
-  help of JS string interpolation with dynamic data.</p>
-<p>Second variable injected is <code>parentNote</code> which gives access to
-  the parent <a href="#root/_help_habiZ3HU8Kw8"><code>FNote</code></a>.</p>
+<p>The value of <code spellcheck="false">#titleTemplate</code> is evaluated
+  at the point of note's creation as a JavaScript string, which means it
+  can be enriched with the help of JS string interpolation with dynamic data.</p>
+<p>Second variable injected is <code spellcheck="false">parentNote</code> which
+  gives access to the parent <a href="#root/_help_habiZ3HU8Kw8"><code spellcheck="false">FNote</code></a>.</p>
 <p>See also&nbsp;<a class="reference-link" href="#root/_help_KC1HB96bqqHX">Templates</a>&nbsp;which
   provides similar capabilities, including default note's content.</p>
 <h3>Examples</h3>
@@ -42,13 +42,13 @@
           <li>2022-05-15: Backup delay</li>
         </ul>
       </li>
-      <li>You can automatize the date assignment by assigning a label <code>#titleTemplate="${now.format('YYYY-MM-DD')}: "</code> to
+      <li>You can automatize the date assignment by assigning a label <code spellcheck="false">#titleTemplate="${now.format('YYYY-MM-DD')}: "</code> to
         the parent note "Incidents". Whenever a new child note is created, the
         title template is evaluated with the injected <a href="https://day.js.org/docs/en/display/format">now</a> object.</li>
     </ul>
   </li>
-  <li>To use a parent's attribute in the title of new notes: <code>#titleTemplate="${parentNote.getLabelValue('authorName')}'s literary works"</code>
+  <li>To use a parent's attribute in the title of new notes: <code spellcheck="false">#titleTemplate="${parentNote.getLabelValue('authorName')}'s literary works"</code>
   </li>
-  <li>To mirror the parent's note title: <code>${parentNote.title}</code>
+  <li>To mirror the parent's note title: <code spellcheck="false">${parentNote.title}</code>
   </li>
 </ul>

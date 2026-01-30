@@ -324,7 +324,6 @@
     "password-confirmation": "Conferma della password",
     "button": "Imposta password"
   },
-  "javascript-required": "Trilium richiede JavaScript abilitato per funzionare.",
   "setup": {
     "heading": "Configurazione di Trilium Notes",
     "new-document": "Sono un nuovo utente, e desidero creare un nuovo documento Trilium per le mie note",

@@ -14,13 +14,13 @@
   note and doneDate note (with <a href="#root/_help_kBrnXNG3Hplm">prefix</a> of either
   "TODO" or "DONE").</p>
 <h2>Implementation</h2>
-<p>New tasks are created in the TODO note which has <code>~child:template</code> 
+<p>New tasks are created in the TODO note which has <code spellcheck="false">~child:template</code> 
   <a
   href="#root/_help_zEY4DaJG4YT5">relation</a>(see <a href="#root/_help_bwZpz2ajCEwO">attribute inheritance</a>)
     pointing to the task template.</p>
 <h3>Attributes</h3>
 <p>Task template defines several <a href="#root/_help_OFXdgB2nNk1F">promoted attributes</a> -
-  todoDate, doneDate, tags, location. Importantly it also defines <code>~runOnAttributeChange</code> relation
+  todoDate, doneDate, tags, location. Importantly it also defines <code spellcheck="false">~runOnAttributeChange</code> relation
   - <a href="#root/_help_GPERMystNGTB">event</a> handler which is run on attribute
   change. This <a href="#root/_help_CdNpE2pqjmI6">script</a> handles when e.g. we
   fill out the doneDate attribute - meaning the task is done and should be
@@ -56,10 +56,10 @@
 span.fancytree-node.done .fancytree-title {
     color: green !important;
 }</code></pre>
-<p>This <a href="#root/_help_6f9hih2hXXZk">code note</a> has <code>#appCss</code> 
+<p>This <a href="#root/_help_6f9hih2hXXZk">code note</a> has <code spellcheck="false">#appCss</code> 
   <a
   href="#root/_help_zEY4DaJG4YT5">label</a>which is recognized by Trilium on startup and loaded as CSS into
     the application.</p>
 <p>Second part of this functionality is based in event handler described
-  above which assigns <code>#cssClass</code> label to the task to either "done"
-  or "todo" based on the task status.</p>
+  above which assigns <code spellcheck="false">#cssClass</code> label to the
+  task to either "done" or "todo" based on the task status.</p>

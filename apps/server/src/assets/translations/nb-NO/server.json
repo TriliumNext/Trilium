@@ -6,6 +6,39 @@
     "open-command-palette": "Åpne kommandopalett",
     "scroll-to-active-note": "Skroll notat-treet til aktivt notat",
     "quick-search": "Aktiver hurtigsøk-feltet",
-    "search-in-subtree": "Søk etter notater i det aktive notatets understruktur"
+    "search-in-subtree": "Søk etter notater i det aktive notatets understruktur",
+    "creating-and-moving-notes": "Lage og flytte notater",
+    "dialogs": "Dialogbokser",
+    "other": "Andre",
+    "expand-subtree": "Utvid undertre for gjeldende notat"
+  },
+  "setup_sync-from-desktop": {
+    "step6-here": "her"
+  },
+  "set_password": {
+    "password": "Passord"
+  },
+  "setup": {
+    "next": "Neste",
+    "title": "Konfigurasjon"
+  },
+  "login": {
+    "title": "Logg inn",
+    "password": "Passord",
+    "button": "Logg inn"
+  },
+  "setup_sync-from-server": {
+    "server-host-placeholder": "https://<hostnavn>:<port>",
+    "proxy-server-placeholder": "https://<hostnavn>:<port>",
+    "note": "Obs:",
+    "password": "Passord",
+    "password-placeholder": "Passord",
+    "back": "Tilbake"
+  },
+  "setup_sync-in-progress": {
+    "outstanding-items-default": "N/A"
+  },
+  "share_page": {
+    "parent": "overordnet notat:"
   }
 }

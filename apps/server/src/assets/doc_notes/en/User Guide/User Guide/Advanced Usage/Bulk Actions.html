@@ -116,8 +116,9 @@
         <a
         class="reference-link" href="#root/_help_habiZ3HU8Kw8">FNote</a>, for example:
           <ul>
-            <li><code>NEW: ${note.title}</code> will prefix all notes with <code>NEW:</code> .</li>
-            <li><code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> will
+            <li><code spellcheck="false">NEW: ${note.title}</code> will prefix all notes
+              with <code spellcheck="false">NEW:</code> .</li>
+            <li><code spellcheck="false">${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> will
               prefix the note titles with each note's creation date (in month-day format).</li>
           </ul>
       </li>
@@ -155,12 +156,13 @@
       <li>Examples:
         <ul>
           <li>
-            <p>To apply a suffix (<code>- suffix</code> in this example), to the note
-              title:</p><pre><code class="language-application-javascript-env-backend">note.title = note.title + " - suffix";</code></pre>
+            <p>To apply a suffix (<code spellcheck="false">- suffix</code> in this example),
+              to the note title:</p><pre><code class="language-application-javascript-env-backend">note.title = note.title + " - suffix";</code></pre>
           </li>
           <li>
             <p>To alter attributes of a note based on another attribute, such as setting
-              the <code>#shareAlias</code> label to the title of the note:</p><pre><code class="language-application-javascript-env-backend">note.setLabel("shareAlias", note.title)</code></pre>
+              the <code spellcheck="false">#shareAlias</code> label to the title of the
+              note:</p><pre><code class="language-application-javascript-env-backend">note.setLabel("shareAlias", note.title)</code></pre>
           </li>
         </ul>
       </li>
