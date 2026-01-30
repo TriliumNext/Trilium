@@ -1,10 +1,10 @@
+import LocalServerWorker from "./local-server-worker?worker";
 let localWorker: Worker | null = null;
 const pending = new Map();
 
 export function startLocalServerWorker() {
     if (localWorker) return localWorker;
-
-    localWorker = new Worker(new URL("./local-server-worker.js", import.meta.url), { type: "module" });
+    localWorker = new LocalServerWorker();
 
     // Handle worker errors during initialization
     localWorker.onerror = (event) => {

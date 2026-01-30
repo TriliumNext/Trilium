@@ -165,12 +165,11 @@ export default defineConfig(() => ({
                 main: join(__dirname, 'src', 'index.html'),
                 sw: join(__dirname, 'src', 'sw.ts'),
                 'local-bridge': join(__dirname, 'src', 'local-bridge.ts'),
-                'local-server-worker': join(__dirname, 'src', 'local-server-worker.ts')
             },
             output: {
                 entryFileNames: (chunkInfo) => {
                     // Service worker and other workers should be at root level
-                    if (chunkInfo.name === 'sw' || chunkInfo.name === 'local-server-worker') {
+                    if (chunkInfo.name === 'sw') {
                         return '[name].js';
                     }
                     return 'src/[name].js';
