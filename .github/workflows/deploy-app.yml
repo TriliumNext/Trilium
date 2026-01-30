@@ -5,11 +5,12 @@ on:
   push:
     branches:
       - standalone
-    # Only run when docs files change
+    # Only run when app files change
     paths:
       - 'apps/client/**'
       - 'apps/client-standalone/**'
       - 'packages/trilium-core/**'
+      - '.github/workflows/deploy-app.yml'
 
   # Allow manual triggering from Actions tab
   workflow_dispatch:
@@ -20,6 +21,7 @@ on:
       - 'apps/client/**'
       - 'apps/client-standalone/**'
       - 'packages/trilium-core/**'
+      - '.github/workflows/deploy-app.yml'
 jobs:
   build-and-deploy:
     name: Build and Deploy App
