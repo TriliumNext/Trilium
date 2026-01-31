@@ -497,12 +497,12 @@ export function searchAttributesSync(
         // Build FTS5 query for exact match
         const ftsQuery = operator === "=" ? `"${phrase}"` : phrase;
 
-        // Search both name and value columns
+        // Search both name and value columns using parameterized query
         const whereConditions: string[] = [
-            `attributes_fts MATCH '${ftsQuery.replace(/'/g, "''")}'`
+            `attributes_fts MATCH ?`
         ];
 
-        const params: any[] = [];
+        const params: any[] = [ftsQuery];
 
         // Filter by noteIds if provided
         if (noteIds && noteIds.size > 0 && noteIds.size < 1000) {
