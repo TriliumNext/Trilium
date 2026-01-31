@@ -242,7 +242,8 @@ function getWindowExtraOpts() {
     // Window effects (Mica)
     if (optionService.getOptionBool("backgroundEffects")) {
         if (isMac) {
-            // Vibrancy not yet supported.
+            extraOpts.transparent = true;
+            extraOpts.visualEffectState = "active";
         } else if (isWindows) {
             extraOpts.backgroundMaterial = "auto";
         } else {

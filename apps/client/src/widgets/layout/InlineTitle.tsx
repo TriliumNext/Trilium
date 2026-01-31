@@ -5,6 +5,7 @@ import { Tooltip } from "bootstrap";
 import clsx from "clsx";
 import { ComponentChild } from "preact";
 import { useLayoutEffect, useMemo, useRef, useState } from "preact/hooks";
+import type React from "react";
 import { Trans } from "react-i18next";
 
 import FNote from "../../entities/fnote";

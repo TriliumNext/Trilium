@@ -182,10 +182,10 @@ function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: N
     />;
 }
 
-function ToggleReadOnlyButton({ note, viewType, isDefaultViewMode }: NoteActionsCustomInnerProps) {
+export function ToggleReadOnlyButton({ note, isDefaultViewMode }: NoteActionsCustomInnerProps) {
     const [ isReadOnly, setReadOnly ] = useNoteLabelBoolean(note, "readOnly");
     const isSavedSqlite = note.isTriliumSqlite() && !note.isHiddenCompletely();
-    const isEnabled = ([ "mermaid", "mindMap", "canvas" ].includes(note.type) || viewType === "geoMap" || isSavedSqlite)
+    const isEnabled = ([ "mermaid", "mindMap", "canvas" ].includes(note.type) || isSavedSqlite)
             && note.isContentAvailable() && isDefaultViewMode;
 
     return isEnabled && <ActionButton
@@ -234,9 +234,9 @@ function OpenTriliumApiDocsButton({ noteMime }: NoteActionsCustomInnerProps) {
     />;
 }
 
-function InAppHelpButton({ note, noteType }: NoteActionsCustomInnerProps) {
+function InAppHelpButton({ note }: NoteActionsCustomInnerProps) {
     const helpUrl = getHelpUrlForNote(note);
-    const isEnabled = !!helpUrl && (noteType !== "book");
+    const isEnabled = !!helpUrl;
 
     return isEnabled && (
         <ActionButton
@@ -247,15 +247,8 @@ function InAppHelpButton({ note, noteType }: NoteActionsCustomInnerProps) {
     );
 }
 
-function AddChildButton({ parentComponent, noteType, viewType, ntxId, isReadOnly }: NoteActionsCustomInnerProps) {
-    if (noteType === "book" && viewType === "geoMap") {
-        return <ActionButton
-            icon="bx bx-plus-circle"
-            text={t("geo-map.create-child-note-title")}
-            onClick={() => parentComponent.triggerEvent("geoMapCreateChildNote", { ntxId })}
-            disabled={isReadOnly}
-        />;
-    } else if (noteType === "relationMap") {
+function AddChildButton({ parentComponent, noteType, ntxId, isReadOnly }: NoteActionsCustomInnerProps) {
+    if (noteType === "relationMap") {
         return <ActionButton
             icon="bx bx-folder-plus"
             text={t("relation_map_buttons.create_child_note_title")}

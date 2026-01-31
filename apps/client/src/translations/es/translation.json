@@ -1614,7 +1614,7 @@
   },
   "bookmark_switch": {
     "bookmark": "Marcador",
-    "bookmark_this_note": "Añadir esta nota a marcadores en el panel lateral izquierdo",
+    "bookmark_this_note": "Agregar esta nota a marcadores en el panel lateral izquierdo",
     "remove_bookmark": "Eliminar marcador"
   },
   "editability_select": {
@@ -1944,8 +1944,8 @@
     "desktop-application": "Aplicación de escritorio",
     "native-title-bar": "Barra de título nativa",
     "native-title-bar-description": "Para Windows y macOS, quitar la barra de título nativa hace que la aplicación se vea más compacta. En Linux, mantener la barra de título nativa hace que se integre mejor con el resto del sistema.",
-    "background-effects": "Habilitar efectos de fondo (sólo en Windows 11)",
-    "background-effects-description": "El efecto Mica agrega un fondo borroso y elegante a las ventanas de la aplicación, creando profundidad y un aspecto moderno. \"Título nativo de la barra\" debe deshabilitarse.",
+    "background-effects": "Habilitar efectos de fondo",
+    "background-effects-description": "Agrega un fondo borroso y elegante a las ventanas de la aplicación, creando profundidad y un aspecto moderno. \"Título nativo de la barra\" debe deshabilitarse.",
     "restart-app-button": "Reiniciar la aplicación para ver los cambios",
     "zoom-factor": "Factor de zoom"
   },
@@ -1964,7 +1964,8 @@
   "geo-map": {
     "create-child-note-title": "Crear una nueva subnota y agregarla al mapa",
     "create-child-note-instruction": "Dé clic en el mapa para crear una nueva nota en esa ubicación o presione Escape para cancelar.",
-    "unable-to-load-map": "No se puede cargar el mapa."
+    "unable-to-load-map": "No se puede cargar el mapa.",
+    "create-child-note-text": "Agregar marcador"
   },
   "geo-map-context": {
     "open-location": "Abrir ubicación",
@@ -2130,7 +2131,7 @@
     "next_theme_message": "Estás usando actualmente el tema heredado. ¿Te gustaría probar el nuevo tema?",
     "next_theme_button": "Prueba el nuevo tema",
     "background_effects_title": "Los efectos de fondo son ahora estables",
-    "background_effects_message": "En los dispositivos Windows, los efectos de fondo ya son totalmente estables. Los efectos de fondo añaden un toque de color a la interfaz de usuario difuminando el fondo que hay detrás. Esta técnica también se utiliza en otras aplicaciones como el Explorador de Windows.",
+    "background_effects_message": "En los dispositivos Windows y macOS, los efectos de fondo ya son estables. Los efectos de fondo añaden un toque de color a la interfaz de usuario difuminando el fondo que hay detrás.",
     "background_effects_button": "Activar efectos de fondo",
     "dismiss": "Desestimar",
     "new_layout_title": "Nuevo diseño",
@@ -2281,5 +2282,8 @@
     "empty_button": "Ocultar el panel",
     "toggle": "Alternar panel derecho",
     "custom_widget_go_to_source": "Ir al código fuente"
+  },
+  "platform_indicator": {
+    "available_on": "Disponible en {{platform}}"
   }
 }

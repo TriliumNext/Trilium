@@ -1,7 +1,7 @@
 import appContext from "../../components/app_context";
 import { t } from "../../services/i18n";
 import options from "../../services/options";
-import utils from "../../services/utils";
+import utils, { isMac } from "../../services/utils";
 
 /**
  * A "call-to-action" is an interactive message for the user, generally to present new features.
@@ -41,10 +41,6 @@ export interface CallToAction {
     }[];
 }
 
-function isNextTheme() {
-    return [ "next", "next-light", "next-dark" ].includes(options.get("theme"));
-}
-
 const CALL_TO_ACTIONS: CallToAction[] = [
     {
         id: "new_layout",
@@ -63,7 +59,7 @@ const CALL_TO_ACTIONS: CallToAction[] = [
         id: "background_effects",
         title: t("call_to_action.background_effects_title"),
         message: t("call_to_action.background_effects_message"),
-        enabled: () => false,
+        enabled: () => (isMac() && !options.is("backgroundEffects")),
         buttons: [
             {
                 text: t("call_to_action.background_effects_button"),
@@ -78,7 +74,7 @@ const CALL_TO_ACTIONS: CallToAction[] = [
         id: "next_theme",
         title: t("call_to_action.next_theme_title"),
         message: t("call_to_action.next_theme_message"),
-        enabled: () => !isNextTheme(),
+        enabled: () => ![ "next", "next-light", "next-dark" ].includes(options.get("theme")),
         buttons: [
             {
                 text: t("call_to_action.next_theme_button"),

@@ -271,13 +271,16 @@ jobs:
           REF_NAME=$(echo "${GITHUB_REF}" | sed 's/refs\/heads\///' | sed 's/refs\/tags\///')
 
           # Create and push the manifest list with both the branch/tag name and the commit SHA
+          # Note: Images are only pushed to GHCR during build, so we always reference GHCR sources
+          # and copy to DockerHub using imagetools create
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             -t ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${REF_NAME} \
             $(printf '${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
 
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+          # Copy from GHCR to DockerHub (source digests only exist on GHCR)
+          docker buildx imagetools create \
             -t ${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:${REF_NAME} \
-            $(printf '${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+            $(printf '${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
 
           # If the ref is a tag, also tag the image as stable as this is part of a 'release'
           # and only go in the `if` if there is NOT a `-` in the tag's name, due to tagging of `-alpha`, `-beta`, etc...
@@ -287,9 +290,10 @@ jobs:
               -t ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:stable \
               $(printf '${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
 
-            docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            # Copy stable tag from GHCR to DockerHub
+            docker buildx imagetools create \
               -t ${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:stable \
-              $(printf '${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+              $(printf '${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
 
             # Small delay to ensure stable tag is fully propagated
             sleep 5
@@ -301,7 +305,7 @@ jobs:
 
             docker buildx imagetools create \
               -t ${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-              ${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:stable
+              ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:stable
 
           fi
 

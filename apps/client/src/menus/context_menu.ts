@@ -1,8 +1,9 @@
 import { KeyboardActionNames } from "@triliumnext/commons";
+import { h, JSX, render } from "preact";
+
 import keyboardActionService, { getActionSync } from "../services/keyboard_actions.js";
 import note_tooltip from "../services/note_tooltip.js";
 import utils from "../services/utils.js";
-import { h, JSX, render } from "preact";
 
 export interface ContextMenuOptions<T> {
     x: number;
@@ -62,17 +63,17 @@ export type ContextMenuEvent = PointerEvent | MouseEvent | JQuery.ContextMenuEve
 
 class ContextMenu {
     private $widget: JQuery<HTMLElement>;
-    private $cover: JQuery<HTMLElement>;
+    private $cover?: JQuery<HTMLElement>;
     private options?: ContextMenuOptions<any>;
     private isMobile: boolean;
 
     constructor() {
         this.$widget = $("#context-menu-container");
-        this.$cover = $("#context-menu-cover");
         this.$widget.addClass("dropend");
         this.isMobile = utils.isMobile();
 
         if (this.isMobile) {
+            this.$cover = $("#context-menu-cover");
             this.$cover.on("click", () => this.hide());
         } else {
             $(document).on("click", (e) => this.hide());
@@ -91,7 +92,7 @@ class ContextMenu {
         }
 
         this.$widget.toggleClass("mobile-bottom-menu", !this.options.forcePositionOnMobile);
-        this.$cover.addClass("show");
+        this.$cover?.addClass("show");
         $("body").addClass("context-menu-shown");
 
         this.$widget.empty();
@@ -140,16 +141,14 @@ class ContextMenu {
             } else {
                 left = this.options.x - contextMenuWidth + CONTEXT_MENU_OFFSET;
             }
+        } else if (contextMenuWidth && this.options.x + contextMenuWidth - CONTEXT_MENU_OFFSET > clientWidth - CONTEXT_MENU_PADDING) {
+            // Overflow: right
+            left = clientWidth - contextMenuWidth - CONTEXT_MENU_PADDING;
+        } else if (this.options.x - CONTEXT_MENU_OFFSET < CONTEXT_MENU_PADDING) {
+            // Overflow: left
+            left = CONTEXT_MENU_PADDING;
         } else {
-            if (contextMenuWidth && this.options.x + contextMenuWidth - CONTEXT_MENU_OFFSET > clientWidth - CONTEXT_MENU_PADDING) {
-                // Overflow: right
-                left = clientWidth - contextMenuWidth - CONTEXT_MENU_PADDING;
-            } else if (this.options.x - CONTEXT_MENU_OFFSET < CONTEXT_MENU_PADDING) {
-                // Overflow: left
-                left = CONTEXT_MENU_PADDING;
-            } else {
-                left = this.options.x - CONTEXT_MENU_OFFSET;
-            }
+            left = this.options.x - CONTEXT_MENU_OFFSET;
         }
 
         this.$widget
@@ -261,7 +260,7 @@ class ContextMenu {
             .append(item.title);
 
         if ("badges" in item && item.badges) {
-            for (let badge of item.badges) {
+            for (const badge of item.badges) {
                 const badgeElement = $(`<span class="badge">`).text(badge.title);
 
                 if (badge.className) {
@@ -352,7 +351,7 @@ class ContextMenu {
     async hide() {
         this.options?.onHide?.();
         this.$widget.removeClass("show");
-        this.$cover.removeClass("show");
+        this.$cover?.removeClass("show");
         $("body").removeClass("context-menu-shown");
         this.$widget.hide();
     }

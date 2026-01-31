@@ -1958,8 +1958,8 @@
     "desktop-application": "Desktop Application",
     "native-title-bar": "Native title bar",
     "native-title-bar-description": "For Windows and macOS, keeping the native title bar off makes the application look more compact. On Linux, keeping the native title bar on integrates better with the rest of the system.",
-    "background-effects": "Enable background effects (Windows 11 only)",
-    "background-effects-description": "The Mica effect adds a blurred, stylish background to app windows, creating depth and a modern look. \"Native title bar\" must be disabled.",
+    "background-effects": "Enable background effects",
+    "background-effects-description": "Adds a blurred, stylish background to app windows, creating depth and a modern look. \"Native title bar\" must be disabled.",
     "restart-app-button": "Restart the application to view the changes",
     "zoom-factor": "Zoom factor"
   },
@@ -1977,6 +1977,7 @@
   },
   "geo-map": {
     "create-child-note-title": "Create a new child note and add it to the map",
+    "create-child-note-text": "Add marker",
     "create-child-note-instruction": "Click on the map to create a new note at that location or press Escape to dismiss.",
     "unable-to-load-map": "Unable to load map."
   },
@@ -2152,7 +2153,7 @@
     "next_theme_message": "You are currently using the legacy theme, would you like to try the new theme?",
     "next_theme_button": "Try the new theme",
     "background_effects_title": "Background effects are now stable",
-    "background_effects_message": "On Windows devices, background effects are now fully stable. The background effects adds a touch of color to the user interface by blurring the background behind it. This technique is also used in other applications such as Windows Explorer.",
+    "background_effects_message": "On Windows and macOS devices, background effects are now stable. The background effects adds a touch of color to the user interface by blurring the background behind it.",
     "background_effects_button": "Enable background effects",
     "new_layout_title": "New layout",
     "new_layout_message": "We’ve introduced a modernized layout for Trilium. The ribbon has been removed and seamlessly integrated into the main interface, with a new status bar and expandable sections (such as promoted attributes) taking over key functions.\n\nThe new layout is enabled by default, and can be temporarily disabled via Options → Appearance.",
@@ -2267,5 +2268,13 @@
     "pages_other": "{{count}} pages",
     "pages_alt": "Page {{pageNumber}}",
     "pages_loading": "Loading..."
+  },
+  "platform_indicator": {
+    "available_on": "Available on {{platform}}"
+  },
+  "mobile_tab_switcher": {
+    "title_one": "{{count}} tab",
+    "title_other": "{{count}} tabs",
+    "more_options": "More options"
   }
 }

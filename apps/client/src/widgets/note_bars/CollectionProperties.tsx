@@ -1,24 +1,22 @@
 import "./CollectionProperties.css";
 
 import { t } from "i18next";
+import { ComponentChildren } from "preact";
 import { useContext, useRef } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
 
 import FNote from "../../entities/fnote";
-import { getHelpUrlForNote } from "../../services/in_app_help";
-import { openInAppHelpFromUrl } from "../../services/utils";
 import { ViewTypeOptions } from "../collections/interface";
-import ActionButton from "../react/ActionButton";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem, FormListToggleableItem } from "../react/FormList";
 import FormTextBox from "../react/FormTextBox";
-import { useNoteLabel, useNoteLabelBoolean, useNoteLabelWithDefault, useTriliumEvent } from "../react/hooks";
+import { useNoteLabel, useNoteLabelBoolean, useNoteLabelWithDefault, useNoteProperty, useTriliumEvent } from "../react/hooks";
 import Icon from "../react/Icon";
 import { ParentComponent } from "../react/react_utils";
 import { bookPropertiesConfig, BookProperty, ButtonProperty, CheckBoxProperty, ComboBoxItem, ComboBoxProperty, NumberProperty, SplitButtonProperty } from "../ribbon/collection-properties-config";
 import { useViewType, VIEW_TYPE_MAPPINGS } from "../ribbon/CollectionPropertiesTab";
 
-const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
+export const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
     grid: "bx bxs-grid",
     list: "bx bx-list-ul",
     calendar: "bx bx-calendar",
@@ -28,15 +26,26 @@ const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
     presentation: "bx bx-rectangle"
 };
 
-export default function CollectionProperties({ note }: { note: FNote }) {
+export default function CollectionProperties({ note, centerChildren, rightChildren }: {
+    note: FNote;
+    centerChildren?: ComponentChildren;
+    rightChildren?: ComponentChildren;
+}) {
     const [ viewType, setViewType ] = useViewType(note);
+    const noteType = useNoteProperty(note, "type");
 
-    return (
+    return ([ "book", "search" ].includes(noteType ?? "") &&
         <div className="collection-properties">
-            <ViewTypeSwitcher viewType={viewType} setViewType={setViewType} />
-            <ViewOptions note={note} viewType={viewType} />
-            <div className="spacer" />
-            <HelpButton note={note} />
+            <div className="left-container">
+                <ViewTypeSwitcher viewType={viewType} setViewType={setViewType} />
+                <ViewOptions note={note} viewType={viewType} />
+            </div>
+            <div className="center-container">
+                {centerChildren}
+            </div>
+            <div className="right-container">
+                {rightChildren}
+            </div>
         </div>
     );
 }
@@ -221,16 +230,4 @@ function CheckBoxPropertyView({ note, property }: { note: FNote, property: Check
             onChange={setValue}
         />
     );
-}
-
-function HelpButton({ note }: { note: FNote }) {
-    const helpUrl = getHelpUrlForNote(note);
-
-    return (helpUrl && (
-        <ActionButton
-            icon="bx bx-help-circle"
-            onClick={(() => openInAppHelpFromUrl(helpUrl))}
-            text={t("help-button.title")}
-        />
-    ));
 }

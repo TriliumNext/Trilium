@@ -12,7 +12,7 @@ import log from "../services/log.js";
 import optionService from "../services/options.js";
 import protectedSessionService from "../services/protected_session.js";
 import sql from "../services/sql.js";
-import { isDev, isElectron, isWindows11 } from "../services/utils.js";
+import { isDev, isElectron, isMac, isWindows11 } from "../services/utils.js";
 import { generateToken as generateCsrfToken } from "./csrf_protection.js";
 
 
@@ -43,7 +43,10 @@ export function bootstrap(req: Request, res: Response) {
         platform: process.platform,
         isElectron,
         hasNativeTitleBar: isElectron && nativeTitleBarVisible,
-        hasBackgroundEffects: isElectron && isWindows11 && !nativeTitleBarVisible && options.backgroundEffects === "true",
+        hasBackgroundEffects: options.backgroundEffects === "true"
+            && isElectron
+            && (isWindows11 || isMac)
+            && !nativeTitleBarVisible,
         maxEntityChangeIdAtLoad: sql.getValue("SELECT COALESCE(MAX(id), 0) FROM entity_changes"),
         maxEntityChangeSyncIdAtLoad: sql.getValue("SELECT COALESCE(MAX(id), 0) FROM entity_changes WHERE isSynced = 1"),
         instanceName: config.General ? config.General.instanceName : null,

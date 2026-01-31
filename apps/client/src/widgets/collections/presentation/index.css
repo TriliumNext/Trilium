@@ -1,11 +1,7 @@
-.presentation-button-bar {
-    position: absolute;
-    top: 1em;
-    right: 1em;
-
-    .floating-buttons-children {
-        top: 0;
-    }
+.presentation-view {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .presentation-container {

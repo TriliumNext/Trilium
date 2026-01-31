@@ -25,7 +25,8 @@
   "login": {
     "title": "Logg inn",
     "password": "Passord",
-    "button": "Logg inn"
+    "button": "Logg inn",
+    "remember-me": "Husk meg"
   },
   "setup_sync-from-server": {
     "server-host-placeholder": "https://<hostnavn>:<port>",

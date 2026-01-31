@@ -1757,8 +1757,8 @@
     "desktop-application": "デスクトップアプリケーション",
     "native-title-bar": "ネイティブタイトルバー",
     "native-title-bar-description": "WindowsとmacOSでは、ネイティブタイトルバーをオフにしておくと、アプリケーションがよりコンパクトに見えます。Linuxでは、ネイティブタイトルバーを表示したままの方が、他のシステムとの統一性が高まります。",
-    "background-effects": "背景効果を有効化（Windows 11のみ）",
-    "background-effects-description": "Mica効果は、アプリのウィンドウにぼかされたスタイリッシュな背景を追加し、奥行きとモダンな外観を演出します。「ネイティブタイトルバー」を無効にする必要があります。",
+    "background-effects": "背景効果を有効化",
+    "background-effects-description": "アプリウィンドウにぼかしの効いたスタイリッシュな背景を追加し、奥行きとモダンな外観を演出します。「ネイティブタイトルバー」を無効にする必要があります。",
     "restart-app-button": "アプリケーションを再起動して変更を反映",
     "zoom-factor": "ズーム倍率"
   },
@@ -2044,7 +2044,7 @@
     "next_theme_message": "現在、レガシーテーマを使用しています。新しいテーマを試してみませんか?",
     "next_theme_button": "新しいテーマを試す",
     "background_effects_title": "背景効果が安定しました",
-    "background_effects_message": "Windowsデバイスでは、背景効果が完全に安定しました。背景効果は、背景をぼかすことでユーザーインターフェースに彩りを添えます。この技術は、Windowsエクスプローラーなどの他のアプリケーションでも使用されています。",
+    "background_effects_message": "WindowsおよびmacOSデバイスで、背景効果が安定しました。背景効果は、背景をぼかすことでユーザーインターフェースに彩りを添えます。",
     "background_effects_button": "背景効果を有効にする",
     "dismiss": "却下",
     "new_layout_title": "新しいレイアウト",
@@ -2253,5 +2253,8 @@
     "pages_other": "{{count}} ページ",
     "pages_alt": "ページ {{pageNumber}}",
     "pages_loading": "読み込み中..."
+  },
+  "platform_indicator": {
+    "available_on": "{{platform}} で利用可能"
   }
 }

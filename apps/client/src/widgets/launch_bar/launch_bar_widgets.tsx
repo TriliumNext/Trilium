@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import { createContext } from "preact";
 import { useContext } from "preact/hooks";
 
@@ -18,12 +19,12 @@ export interface LauncherNoteProps {
     launcherNote: FNote;
 }
 
-export function LaunchBarActionButton(props: Omit<ActionButtonProps, "className" | "noIconActionClass" | "titlePosition">) {
+export function LaunchBarActionButton({ className, ...props }: Omit<ActionButtonProps, "noIconActionClass" | "titlePosition">) {
     const { isHorizontalLayout } = useContext(LaunchBarContext);
 
     return (
         <ActionButton
-            className="button-widget launcher-button"
+            className={clsx("button-widget launcher-button", className)}
             noIconActionClass
             titlePosition={isHorizontalLayout ? "bottom" : "right"}
             {...props}

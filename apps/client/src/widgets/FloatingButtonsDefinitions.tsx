@@ -54,7 +54,6 @@ export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
     OpenTriliumApiDocsButton,
     SaveToNoteButton,
     RelationMapButtons,
-    GeoMapButtons,
     CopyImageReferenceButton,
     ExportImageButtons,
     InAppHelpButton,
@@ -98,10 +97,10 @@ function SwitchSplitOrientationButton({ note, isReadOnly, isDefaultViewMode }: F
     />;
 }
 
-function ToggleReadOnlyButton({ note, viewType, isDefaultViewMode }: FloatingButtonContext) {
+function ToggleReadOnlyButton({ note, isDefaultViewMode }: FloatingButtonContext) {
     const [ isReadOnly, setReadOnly ] = useNoteLabelBoolean(note, "readOnly");
     const isSavedSqlite = note.isTriliumSqlite() && !note.isHiddenCompletely();
-    const isEnabled = ([ "mermaid", "mindMap", "canvas" ].includes(note.type) || viewType === "geoMap" || isSavedSqlite)
+    const isEnabled = ([ "mermaid", "mindMap", "canvas" ].includes(note.type) || isSavedSqlite)
             && note.isContentAvailable() && isDefaultViewMode;
 
     return isEnabled && <FloatingButton
@@ -243,17 +242,6 @@ function RelationMapButtons({ note, isDefaultViewMode, triggerEvent }: FloatingB
     );
 }
 
-function GeoMapButtons({ triggerEvent, viewType, isReadOnly }: FloatingButtonContext) {
-    const isEnabled = viewType === "geoMap" && !isReadOnly;
-    return isEnabled && (
-        <FloatingButton
-            icon="bx bx-plus-circle"
-            text={t("geo-map.create-child-note-title")}
-            onClick={() => triggerEvent("geoMapCreateChildNote")}
-        />
-    );
-}
-
 function CopyImageReferenceButton({ note, isDefaultViewMode }: FloatingButtonContext) {
     const hiddenImageCopyRef = useRef<HTMLDivElement>(null);
     const isEnabled = (
@@ -305,7 +293,7 @@ function ExportImageButtons({ note, triggerEvent, isDefaultViewMode }: FloatingB
 
 function InAppHelpButton({ note }: FloatingButtonContext) {
     const helpUrl = getHelpUrlForNote(note);
-    const isEnabled = !!helpUrl;
+    const isEnabled = note.type !== "book" && !!helpUrl;
 
     return isEnabled && (
         <FloatingButton

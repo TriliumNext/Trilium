@@ -69,7 +69,7 @@ export default defineContentScript({
         }
 
         function getRectangleArea() {
-            return new Promise<Rect>((resolve) => {
+            return new Promise<Rect | null>((resolve) => {
                 const overlay = document.createElement('div');
                 overlay.style.opacity = '0.6';
                 overlay.style.background = 'black';
@@ -177,6 +177,7 @@ export default defineContentScript({
                     console.info('selectionArea:', selectionArea);
 
                     if (!selectionArea || !selectionArea.width || !selectionArea.height) {
+                        resolve(null);
                         return;
                     }
 
@@ -189,6 +190,7 @@ export default defineContentScript({
                 function cancel(event: KeyboardEvent) {
                     if (event.key === "Escape") {
                         removeOverlay();
+                        resolve(null);
                     }
                 }
 
@@ -336,14 +338,20 @@ export default defineContentScript({
             }
         }
 
-        browser.runtime.onMessage.addListener(async (message) => {
-            try {
-                const response = await prepareMessageResponse(message);
-                return response;
-            } catch (err) {
-                console.error(err);
-                throw err;
-            }
+        browser.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+            (async () => {
+                try {
+                    const response = await prepareMessageResponse(message);
+                    sendResponse(response);
+                } catch (err) {
+                    console.error(err);
+                    sendResponse(undefined);
+                }
+            })();
+
+            // Critical for async responses in Chrome MV2
+            return true;
         });
+
     }
 });

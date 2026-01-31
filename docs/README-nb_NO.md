@@ -76,21 +76,21 @@ Vår dokumentasjon er tilgjengelig i flere format:
 * Support for editing [notes with source
   code](https://docs.triliumnotes.org/user-guide/note-types/code), including
   syntax highlighting
-* Fast and easy [navigation between
-  notes](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
-  full text search and [note
-  hoisting](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
+* Rask og enkel [navigering mellom
+  notater](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation),
+  fulltekstsøk og
+  [notat-fokusering](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
 * Sømløs
   [notathistorikk](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
-* Note
-  [attributes](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
-  can be used for note organization, querying and advanced
-  [scripting](https://docs.triliumnotes.org/user-guide/scripts)
-* UI available in English, German, Spanish, French, Romanian, and Chinese
-  (simplified and traditional)
-* Direct [OpenID and TOTP
-  integration](https://docs.triliumnotes.org/user-guide/setup/server/mfa) for
-  more secure login
+* Notaters
+  [attributter](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
+  kan brukes til å organisere notater, utføre spørringer og avansert
+  [skripting](https://docs.triliumnotes.org/user-guide/scripts)
+* Brukergrensesnitt tilgjengelig på Engelsk, Tysk, Spansk, Fransk, Rumensk, og
+  Kinesisk (forenklet og tradisjonell)
+* Direkte [OpenID og
+  TOTP-integrasjon](https://docs.triliumnotes.org/user-guide/setup/server/mfa)
+  for sikrere pålogging
 * [Synkronisering](https://docs.triliumnotes.org/user-guide/setup/synchronization)
   med selv-hostet sync server
   * there are [3rd party services for hosting synchronisation

@@ -7,7 +7,6 @@ import appContext from "../../components/app_context";
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
 import bulk_action, { ACTION_GROUPS } from "../../services/bulk_action";
-import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import server from "../../services/server";
@@ -16,7 +15,6 @@ import tree from "../../services/tree";
 import { getErrorMessage } from "../../services/utils";
 import ws from "../../services/ws";
 import RenameNoteBulkAction from "../bulk_actions/note/rename_note";
-import CollectionProperties from "../note_bars/CollectionProperties";
 import Button from "../react/Button";
 import Dropdown from "../react/Dropdown";
 import { FormListHeader, FormListItem } from "../react/FormList";
@@ -25,8 +23,6 @@ import Icon from "../react/Icon";
 import { ParentComponent } from "../react/react_utils";
 import { TabContext } from "./ribbon-interface";
 import { SEARCH_OPTIONS, SearchOption } from "./SearchDefinitionOptions";
-
-const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
 export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabContext, "note" | "ntxId" | "hidden">) {
     const parentComponent = useContext(ParentComponent);
@@ -115,11 +111,6 @@ export default function SearchDefinitionTab({ note, ntxId, hidden }: Pick<TabCon
                                     defaultValue={defaultValue}
                                 />;
                             })}
-
-                            {isNewLayout && <tr className="view-options">
-                                <td className="title-column">{t("search_definition.view_options")}</td>
-                                <td><CollectionProperties note={note} /></td>
-                            </tr>}
                         </tbody>
                         <BulkActionsList note={note} />
                         <tbody className="search-actions">

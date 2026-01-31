@@ -6,6 +6,7 @@ import clsx from "clsx";
 import { t } from "i18next";
 import { CSSProperties, RefObject } from "preact";
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+import type React from "react";
 import { CellComponentProps, Grid } from "react-window";
 
 import FNote from "../entities/fnote";
@@ -153,10 +154,10 @@ function NoteIconList({ note, dropdownRef }: {
 
 function IconItemCell({ rowIndex, columnIndex, style, filteredIcons }: CellComponentProps<{
     filteredIcons: IconWithName[];
-}>): React.JSX.Element {
+}>) {
     const iconIndex = rowIndex * 12 + columnIndex;
     const iconData = filteredIcons[iconIndex] as IconWithName | undefined;
-    if (!iconData) return <></>;
+    if (!iconData) return <></> as React.ReactElement;
 
     const { id, terms, iconPack } = iconData;
     return (
@@ -166,7 +167,7 @@ function IconItemCell({ rowIndex, columnIndex, style, filteredIcons }: CellCompo
             title={t("note_icon.icon_tooltip", { name: terms?.[0] ?? id, iconPack })}
             style={style as CSSProperties}
         />
-    );
+    ) as React.ReactElement;
 }
 
 function IconFilterContent({ filterByPrefix, setFilterByPrefix }: {

@@ -14,8 +14,11 @@ import dialog from "../../../services/dialog";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import { isMobile } from "../../../services/utils";
+import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
 import Button, { ButtonGroup } from "../../react/Button";
+import Dropdown from "../../react/Dropdown";
+import { FormListItem } from "../../react/FormList";
 import { useNoteLabel, useNoteLabelBoolean, useResizeObserver, useSpacedUpdate, useTriliumEvent, useTriliumOption, useTriliumOptionInt } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
 import TouchBar, { TouchBarButton, TouchBarLabel, TouchBarSegmentedControl, TouchBarSpacer } from "../../react/TouchBar";
@@ -41,24 +44,28 @@ const CALENDAR_VIEWS = [
     {
         type: "timeGridWeek",
         name: t("calendar.week"),
+        icon: "bx bx-calendar-week",
         previousText: t("calendar.week_previous"),
         nextText: t("calendar.week_next")
     },
     {
         type: "dayGridMonth",
         name: t("calendar.month"),
+        icon: "bx bx-calendar",
         previousText: t("calendar.month_previous"),
         nextText: t("calendar.month_next")
     },
     {
         type: "multiMonthYear",
         name: t("calendar.year"),
+        icon: "bx bx-layer",
         previousText: t("calendar.year_previous"),
         nextText: t("calendar.year_next")
     },
     {
         type: "listMonth",
         name: t("calendar.list"),
+        icon: "bx bx-list-ol",
         previousText: t("calendar.month_previous"),
         nextText: t("calendar.month_next")
     }
@@ -140,7 +147,7 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
 
     return (plugins &&
         <div className="calendar-view" ref={containerRef} tabIndex={100}>
-            <CalendarHeader calendarRef={calendarRef} />
+            <CalendarCollectionProperties note={note} calendarRef={calendarRef} />
             <Calendar
                 events={eventBuilder}
                 calendarRef={calendarRef}
@@ -169,28 +176,67 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     );
 }
 
-function CalendarHeader({ calendarRef }: { calendarRef: RefObject<FullCalendar> }) {
+function CalendarCollectionProperties({ note, calendarRef }: {
+    note: FNote;
+    calendarRef: RefObject<FullCalendar>;
+}) {
     const { title, viewType: currentViewType } = useOnDatesSet(calendarRef);
     const currentViewData = CALENDAR_VIEWS.find(v => calendarRef.current && v.type === currentViewType);
+    const isMobileLocal = isMobile();
 
     return (
-        <div className="calendar-header">
-            <span className="title">{title}</span>
+        <CollectionProperties
+            note={note}
+            centerChildren={<>
+                <ActionButton icon="bx bx-chevron-left" text={currentViewData?.previousText ?? ""} onClick={() => calendarRef.current?.prev()} />
+                <span className="title">{title}</span>
+                <ActionButton icon="bx bx-chevron-right" text={currentViewData?.nextText ?? ""} onClick={() => calendarRef.current?.next()} />
+                <Button text={t("calendar.today")} onClick={() => calendarRef.current?.today()} />
+                {isMobileLocal && <MobileCalendarViewSwitcher calendarRef={calendarRef} />}
+            </>}
+            rightChildren={<>
+                {!isMobileLocal && <DesktopCalendarViewSwitcher calendarRef={calendarRef} />}
+            </>}
+        />
+    );
+}
+
+function DesktopCalendarViewSwitcher({ calendarRef }: { calendarRef: RefObject<FullCalendar> }) {
+    const { viewType: currentViewType } = useOnDatesSet(calendarRef);
+
+    return (
+        <>
             <ButtonGroup>
                 {CALENDAR_VIEWS.map(viewData => (
                     <Button
+                        key={viewData.type}
                         text={viewData.name}
                         className={currentViewType === viewData.type ? "active" : ""}
                         onClick={() => calendarRef.current?.changeView(viewData.type)}
                     />
                 ))}
             </ButtonGroup>
-            <Button text={t("calendar.today")} onClick={() => calendarRef.current?.today()} />
-            <ButtonGroup>
-                <ActionButton icon="bx bx-chevron-left" text={currentViewData?.previousText ?? ""} frame onClick={() => calendarRef.current?.prev()} />
-                <ActionButton icon="bx bx-chevron-right" text={currentViewData?.nextText ?? ""} frame onClick={() => calendarRef.current?.next()} />
-            </ButtonGroup>
-        </div>
+        </>
+    );
+}
+
+function MobileCalendarViewSwitcher({ calendarRef }: { calendarRef: RefObject<FullCalendar> }) {
+    const { viewType: currentViewType } = useOnDatesSet(calendarRef);
+    const currentViewTypeData = CALENDAR_VIEWS.find(view => view.type === currentViewType);
+
+    return (
+        <Dropdown
+            text={currentViewTypeData?.name}
+        >
+            {CALENDAR_VIEWS.map(viewData => (
+                <FormListItem
+                    key={viewData.type}
+                    selected={currentViewType === viewData.type}
+                    icon={viewData.icon}
+                    onClick={() => calendarRef.current?.changeView(viewData.type)}
+                >{viewData.name}</FormListItem>
+            ))}
+        </Dropdown>
     );
 }
 

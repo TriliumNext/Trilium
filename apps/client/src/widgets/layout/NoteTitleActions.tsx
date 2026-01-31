@@ -26,7 +26,6 @@ export default function NoteTitleActions() {
         <div className="title-actions">
             <PromotedAttributes note={note} componentId={componentId} noteContext={noteContext} />
             {noteType === "search" && <SearchProperties note={note} ntxId={ntxId} />}
-            {!isHiddenNote && note && noteType === "book" && <CollectionProperties note={note} />}
             <EditedNotes />
             <NoteTypeSwitcher />
         </div>

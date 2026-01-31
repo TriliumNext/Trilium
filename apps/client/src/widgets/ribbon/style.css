@@ -459,7 +459,7 @@ body.experimental-feature-new-layout {
             gap: var(--button-gap);
 
             &> button:last-of-type {
-                margin-right: 1em;
+                margin-right: 0.5em;
             }
         }
     }

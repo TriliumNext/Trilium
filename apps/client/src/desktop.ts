@@ -99,13 +99,20 @@ function initFullScreenDetection(currentWindow: Electron.BrowserWindow) {
 }
 
 function initTransparencyEffects(style: CSSStyleDeclaration, currentWindow: Electron.BrowserWindow) {
+    const material = style.getPropertyValue("--background-material").trim();
     if (window.glob.platform === "win32") {
-        const material = style.getPropertyValue("--background-material");
-        // TriliumNextTODO: find a nicer way to make TypeScript happy – unfortunately TS did not like Array.includes here
         const bgMaterialOptions = ["auto", "none", "mica", "acrylic", "tabbed"] as const;
         const foundBgMaterialOption = bgMaterialOptions.find((bgMaterialOption) => material === bgMaterialOption);
         if (foundBgMaterialOption) {
             currentWindow.setBackgroundMaterial(foundBgMaterialOption);
+        }
+    }
+
+    if (window.glob.platform === "darwin") {
+        const bgMaterialOptions = [ "popover", "tooltip", "titlebar", "selection", "menu", "sidebar", "header", "sheet", "window", "hud", "fullscreen-ui", "content", "under-window", "under-page" ] as const;
+        const foundBgMaterialOption = bgMaterialOptions.find((bgMaterialOption) => material === bgMaterialOption);
+        if (foundBgMaterialOption) {
+            currentWindow.setVibrancy(foundBgMaterialOption);
         }
     }
 }

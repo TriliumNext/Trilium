@@ -26,6 +26,7 @@ export default class App {
     readonly currentNoteSplitTitle: Locator;
     readonly currentNoteSplitContent: Locator;
     readonly sidebar: Locator;
+    private isMobile: boolean = false;
 
     constructor(page: Page, context: BrowserContext) {
         this.page = page;
@@ -43,6 +44,8 @@ export default class App {
     }
 
     async goto({ url, isMobile, preserveTabs }: GotoOpts = {}) {
+        this.isMobile = !!isMobile;
+
         await this.context.addCookies([
             {
                 url: BASE_URL,
@@ -83,7 +86,12 @@ export default class App {
         await this.page.locator(".launcher-button.bx-cog").click();
     }
 
-    getTab(tabIndex: number) {
+    async getTab(tabIndex: number) {
+        if (this.isMobile) {
+            await this.launcherBar.locator(".mobile-tab-switcher").click();
+            return this.page.locator(".modal.tab-bar-modal .tab-card").nth(tabIndex);
+        }
+
         return this.tabBar.locator(".note-tab-wrapper").nth(tabIndex);
     }
 
@@ -97,7 +105,8 @@ export default class App {
     async closeAllTabs() {
         await this.triggerCommand("closeAllTabs");
         // Page in Playwright is not updated somehow, need to click on the tab to make sure it's rendered
-        await this.getTab(0).click();
+        const tab = await this.getTab(0);
+        await tab.click();
     }
 
     /**

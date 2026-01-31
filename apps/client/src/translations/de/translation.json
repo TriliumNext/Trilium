@@ -1751,8 +1751,8 @@
     "desktop-application": "Desktop Anwendung",
     "native-title-bar": "Native Anwendungsleiste",
     "native-title-bar-description": "In Windows und macOS, sorgt das Deaktivieren der nativen Anwendungsleiste für ein kompakteres Aussehen. Unter Linux, sorgt das Aktivieren der nativen Anwendungsleiste für eine bessere Integration mit anderen Teilen des Systems.",
-    "background-effects": "Hintergrundeffekte aktivieren (nur Windows 11)",
-    "background-effects-description": "Der Mica Effekt fügt einen unscharfen, stylischen Hintergrund in Anwendungsfenstern ein. Dieser erzeugt Tiefe und ein modernes Auftreten. \"Native Titelleiste\" muss deaktiviert sein.",
+    "background-effects": "Hintergrundeffekte aktivieren",
+    "background-effects-description": "Fügt einen unscharfen, stylischen Hintergrund in das Anwendungsfenstern ein. Dies erzeugt Tiefe und ein modernes Auftreten. \"Native Titelleiste\" muss deaktiviert sein.",
     "restart-app-button": "Anwendung neustarten um Änderungen anzuwenden",
     "zoom-factor": "Zoomfaktor"
   },
@@ -2133,7 +2133,7 @@
     "next_theme_message": "Es wird aktuell das alte Design verwendet. Möchten Sie das neue Design ausprobieren?",
     "next_theme_button": "Teste das neue Design",
     "background_effects_title": "Hintergrundeffekte sind jetzt zuverlässig nutzbar",
-    "background_effects_message": "Auf Windows-Geräten sind die Hintergrundeffekte nun vollständig stabil. Die Hintergrundeffekte verleihen der Benutzeroberfläche einen Farbakzent, indem der Hintergrund dahinter weichgezeichnet wird. Diese Technik wird auch in anderen Anwendungen wie dem Windows-Explorer eingesetzt.",
+    "background_effects_message": "Auf Windows- und macOS-Geräten sind die Hintergrundeffekte nun stabil. Die Hintergrundeffekte verleihen der Benutzeroberfläche einen Farbakzent, indem der Hintergrund dahinter weichgezeichnet wird.",
     "background_effects_button": "Aktiviere Hintergrundeffekte",
     "dismiss": "Ablehnen",
     "new_layout_title": "Neues Layout",
@@ -2267,5 +2267,8 @@
     "pages_other": "{{count}} Seiten",
     "pages_alt": "Seite {{pageNumber}}",
     "pages_loading": "Lädt..."
+  },
+  "platform_indicator": {
+    "available_on": "Verfügbar auf {{platform}}"
   }
 }

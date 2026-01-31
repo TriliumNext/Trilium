@@ -45,7 +45,8 @@ export interface HiddenSubtreeItem {
         | "quickSearch"
         | "aiChatLauncher"
         | "commandPalette"
-        | "toggleZenMode";
+        | "toggleZenMode"
+        | "mobileTabSwitcher";
     command?: keyof typeof Command;
     /**
      * If set to true, then branches will be enforced to be in the correct place.

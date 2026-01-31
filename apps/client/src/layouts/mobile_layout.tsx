@@ -179,7 +179,6 @@ export default class MobileLayout {
                 new FlexContainer("column")
                     .contentSized()
                     .id("mobile-bottom-bar")
-                    .child(new TabRowWidget().css("height", "40px"))
                     .child(new FlexContainer("row")
                         .class("horizontal")
                         .css("height", "53px")

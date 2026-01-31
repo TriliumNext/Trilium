@@ -1,13 +1,16 @@
 import { useContext } from "preact/hooks";
+
 import appContext, { CommandMappings } from "../../components/app_context";
 import contextMenu, { MenuItem } from "../../menus/context_menu";
 import branches from "../../services/branches";
 import { t } from "../../services/i18n";
+import { getHelpUrlForNote } from "../../services/in_app_help";
 import note_create from "../../services/note_create";
 import tree from "../../services/tree";
+import { openInAppHelpFromUrl } from "../../services/utils";
+import BasicWidget from "../basic_widget";
 import ActionButton from "../react/ActionButton";
 import { ParentComponent } from "../react/react_utils";
-import BasicWidget from "../basic_widget";
 
 export default function MobileDetailMenu() {
     const parentComponent = useContext(ParentComponent);
@@ -24,12 +27,19 @@ export default function MobileDetailMenu() {
                 const subContexts = noteContext.getMainContext().getSubContexts();
                 const isMainContext = noteContext?.isMainContext();
                 const note = noteContext.note;
+                const helpUrl = getHelpUrlForNote(note);
 
                 const items: (MenuItem<keyof CommandMappings>)[] = [
                     { title: t("mobile_detail_menu.insert_child_note"), command: "insertChildNote", uiIcon: "bx bx-plus", enabled: note?.type !== "search" },
                     { title: t("mobile_detail_menu.delete_this_note"), command: "delete", uiIcon: "bx bx-trash", enabled: note?.noteId !== "root" },
                     { kind: "separator" },
                     { title: t("mobile_detail_menu.note_revisions"), command: "showRevisions", uiIcon: "bx bx-history" },
+                    { kind: "separator" },
+                    helpUrl && {
+                        title: t("help-button.title"),
+                        uiIcon: "bx bx-help-circle",
+                        handler: () => openInAppHelpFromUrl(helpUrl)
+                    },
                     { kind: "separator" },
                     subContexts.length < 2 && { title: t("create_pane_button.create_new_split"), command: "openNewNoteSplit", uiIcon: "bx bx-dock-right" },
                     !isMainContext && { title: t("close_pane_button.close_this_pane"), command: "closeThisNoteSplit", uiIcon: "bx bx-x" }
@@ -70,5 +80,5 @@ export default function MobileDetailMenu() {
                 });
             }}
         />
-    )
+    );
 }

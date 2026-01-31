@@ -5,7 +5,7 @@
 
     > .inline-title,
     > .note-detail > .note-detail-editable-text,
-    > .note-list-widget:not(.full-height) {
+    > .note-list-widget:not(.full-height) .note-list-wrapper {
         padding-inline: 24px;
     }
 
