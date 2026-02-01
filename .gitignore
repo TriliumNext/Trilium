@@ -36,6 +36,7 @@ Thumbs.db
 vite.config.*.timestamp*
 vitest.config.*.timestamp*
 test-output
+**/__screenshots__/
 
 apps/*/data*
 apps/*/out
