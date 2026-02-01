@@ -13,8 +13,12 @@
  * Make sure to keep in line with backend's `script_context.ts`.
  */
 
-export type { default as AbstractBeccaEntity } from "../../server/src/becca/entities/abstract_becca_entity.js";
-export type { default as BAttachment } from "../../server/src/becca/entities/battachment.js";
+export type {
+    default as AbstractBeccaEntity
+} from "../../server/src/becca/entities/abstract_becca_entity.js";
+export type {
+    default as BAttachment
+} from "../../server/src/becca/entities/battachment.js";
 export type { default as BAttribute } from "../../server/src/becca/entities/battribute.js";
 export type { default as BBranch } from "../../server/src/becca/entities/bbranch.js";
 export type { default as BEtapiToken } from "../../server/src/becca/entities/betapi_token.js";
@@ -31,6 +35,7 @@ export type { Api };
 const fakeNote = new BNote();
 
 /**
- * The `api` global variable allows access to the backend script API, which is documented in {@link Api}.
+ * The `api` global variable allows access to the backend script API,
+ * which is documented in {@link Api}.
  */
 export const api: Api = new BackendScriptApi(fakeNote, {});

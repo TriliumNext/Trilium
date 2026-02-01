@@ -1,10 +1,15 @@
 {
   "name": "build-docs",
   "version": "1.0.0",
-  "description": "",
+  "description": "Build documentation from Trilium notes",
   "main": "src/main.ts",
+  "bin": {
+    "trilium-build-docs": "dist/cli.js"
+  },
   "scripts": {
-    "start": "tsx ."
+    "start": "tsx .",
+    "cli": "tsx src/cli.ts",
+    "build": "tsx scripts/build.ts"
   },
   "keywords": [],
   "author": "Elian Doran <contact@eliandoran.me>",
@@ -14,6 +19,7 @@
     "@redocly/cli": "2.15.0",
     "archiver": "7.0.1",
     "fs-extra": "11.3.3",
+    "js-yaml": "4.1.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "typedoc": "0.28.16",

@@ -3,7 +3,7 @@
 import dateUtils from "../date_utils.js";
 import path from "path";
 import packageInfo from "../../../package.json" with { type: "json" };
-import { getContentDisposition } from "../utils.js";
+import { getContentDisposition, waitForStreamToFinish } from "../utils.js";
 import protectedSessionService from "../protected_session.js";
 import sanitize from "sanitize-filename";
 import fs from "fs";
@@ -468,6 +468,7 @@ async function exportToZip(taskContext: TaskContext<"export">, branch: BBranch, 
     taskContext.taskSucceeded(null);
 }
 
+
 async function exportToZipFile(noteId: string, format: ExportFormat, zipFilePath: string, zipExportOptions?: AdvancedExportOptions) {
     const fileOutputStream = fs.createWriteStream(zipFilePath);
     const taskContext = new TaskContext("no-progress-reporting", "export", null);
@@ -479,6 +480,7 @@ async function exportToZipFile(noteId: string, format: ExportFormat, zipFilePath
     }
 
     await exportToZip(taskContext, note.getParentBranches()[0], format, fileOutputStream, false, zipExportOptions);
+    await waitForStreamToFinish(fileOutputStream);
 
     log.info(`Exported '${noteId}' with format '${format}' to '${zipFilePath}'`);
 }
