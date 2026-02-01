@@ -12,21 +12,45 @@
 // }
 
 export default function setupExpanders() {
-    const expanders = Array.from(document.querySelectorAll("#menu .submenu-item .collapse-button"));
+    const expanders = document.querySelectorAll("#menu .submenu-item .collapse-button");
     for (const expander of expanders) {
-        const li = expander.parentElement?.parentElement;
+        const li = expander.closest("li");
         if (!li) {
             continue;
         }
 
         expander.addEventListener("click", e => {
-            if ((e.target as Element).closest(".submenu-item,.item") !== li) return;
             e.preventDefault();
             e.stopPropagation();
-            const ul = li.querySelector("ul")!;
-            ul.style.height = `${ul.scrollHeight}px`;
-            setTimeout(() => li.classList.toggle("expanded"), 1);
-            setTimeout(() => ul.style.height = ``, 200);
+
+            const ul = li.querySelector("ul");
+            if (!ul) {
+                return;
+            }
+
+            const isExpanded = li.classList.contains("expanded");
+
+            if (isExpanded) {
+                // Collapsing
+                ul.style.height = `${ul.scrollHeight}px`;
+                // Force reflow
+                ul.offsetHeight;
+
+                li.classList.remove("expanded");
+                ul.style.height = "0";
+            } else {
+                // Expanding
+                ul.style.height = "0";
+                // Force reflow
+                ul.offsetHeight;
+
+                li.classList.add("expanded");
+                ul.style.height = `${ul.scrollHeight}px`;
+            }
+
+            setTimeout(() => {
+                ul.style.height = "";
+            }, 200);
         });
     }
 }

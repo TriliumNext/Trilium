@@ -80,3 +80,21 @@ body.type-webView {
         }
     }
 }
+
+/* table styles */
+.ck-content table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.ck-content table td,
+.ck-content table th {
+    min-width: 120px;
+    border: 1px solid var(--background-highlight);
+    padding: 8px;
+}
+
+.ck-content table th {
+    background-color: var(--background-secondary);
+    font-weight: bold;
+}

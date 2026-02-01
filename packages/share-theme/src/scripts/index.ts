@@ -5,6 +5,7 @@ import setupSearch from "./modules/search.js";
 import setupThemeSelector from "./modules/theme.js";
 import setupMermaid from "./modules/mermaid.js";
 import setupMath from "./modules/math.js";
+import setupSidebars from "./modules/sidebar.js";
 import api from "./modules/api.js";
 import "highlight.js/styles/default.css";
 import "@triliumnext/ckeditor5/src/theme/ck-content.css";
@@ -24,6 +25,7 @@ $try(setupToC);
 $try(setupExpanders);
 $try(setupMobileMenu);
 $try(setupSearch);
+$try(setupSidebars);
 
 function setupTextNote() {
     $try(setupMermaid);
