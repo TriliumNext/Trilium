@@ -650,11 +650,13 @@ describe('searchWithLike - Substring Search with LIKE Queries', () => {
     });
 
     describe('FTS5 availability', () => {
-        // FTS5 is now required at startup via assertFTS5Available()
-        // so we no longer test for FTSNotAvailableError in search methods
-        // The availability check has been removed from searchWithLike()
-        it('should assume FTS5 is always available (verified at startup)', () => {
-            expect(ftsSearchService.checkFTS5Availability()).toBe(true);
+        // FTS5 is required at startup via assertFTS5Available() in production.
+        // However, checkFTS5Availability() returns false during unit tests (VITEST)
+        // to allow mock-based tests to use traditional becca search instead of FTS5.
+        // This is because unit tests create in-memory mocks that aren't in the database.
+        it('should return false during unit tests to use traditional search', () => {
+            // In VITEST environment, FTS5 is disabled so mock-based tests work correctly
+            expect(ftsSearchService.checkFTS5Availability()).toBe(false);
         });
     });
 
