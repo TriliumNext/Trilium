@@ -67,6 +67,9 @@ async function initDbConnection() {
         PRIMARY KEY (tmpID)
     );`)
 
+    // Note: SQLite search functions are now initialized directly in sql.ts
+    // This ensures they're available before any queries run
+
     dbReady.resolve();
 }
 
