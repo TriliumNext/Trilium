@@ -27,6 +27,7 @@ export function ExternallyControlledCollapsible({ title, children, className, ex
     const { height } = useElementSize(innerRef) ?? {};
     const contentId = useUniqueName();
     const [ transitionEnabled, setTransitionEnabled ] = useState(false);
+    const [ fullyExpanded, setFullyExpanded ] = useState(false);
 
     useEffect(() => {
         const timeout = setTimeout(() => {
@@ -34,6 +35,21 @@ export function ExternallyControlledCollapsible({ title, children, className, ex
         }, 200);
         return () => clearTimeout(timeout);
     }, []);
+
+    useEffect(() => {
+        if (expanded) {
+            if (transitionEnabled) {
+                const timeout = setTimeout(() => {
+                    setFullyExpanded(true);
+                }, 250);
+                return () => clearTimeout(timeout);
+            } else {
+                setFullyExpanded(true);
+            }
+        } else {
+            setFullyExpanded(false);
+        }
+    }, [expanded, transitionEnabled])
 
     return (
         <div className={clsx("collapsible", className, {
@@ -53,7 +69,7 @@ export function ExternallyControlledCollapsible({ title, children, className, ex
             <div
                 id={contentId}
                 ref={bodyRef}
-                className="collapsible-body"
+                className={clsx("collapsible-body", {"fully-expanded": fullyExpanded})}
                 style={{ height: expanded ? height : "0" }}
                 aria-hidden={!expanded}
             >

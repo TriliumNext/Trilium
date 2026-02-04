@@ -1,3 +1,5 @@
+import "./Backlinks.css";
+
 import { BacklinkCountResponse, BacklinksResponse, SaveSqlConsoleResponse } from "@triliumnext/commons";
 import { VNode } from "preact";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "preact/hooks";
@@ -57,14 +59,6 @@ export const DESKTOP_FLOATING_BUTTONS: FloatingButtonsList = [
     CopyImageReferenceButton,
     ExportImageButtons,
     InAppHelpButton,
-    Backlinks
-];
-
-export const MOBILE_FLOATING_BUTTONS: FloatingButtonsList = [
-    RefreshBackendLogButton,
-    EditButton,
-    RelationMapButtons,
-    ExportImageButtons,
     Backlinks
 ];
 

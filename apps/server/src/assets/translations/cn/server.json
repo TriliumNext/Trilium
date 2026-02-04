@@ -259,7 +259,8 @@
     "ai-llm-title": "AI/LLM",
     "inbox-title": "收件箱",
     "command-palette": "打开命令面板",
-    "zen-mode": "禅模式"
+    "zen-mode": "禅模式",
+    "tab-switcher-title": "标签切换器"
   },
   "notes": {
     "new-note": "新建笔记",

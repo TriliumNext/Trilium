@@ -2,18 +2,20 @@ import type AppContext from "../components/app_context.js";
 import GlobalMenuWidget from "../widgets/buttons/global_menu.js";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
 import NoteList from "../widgets/collections/NoteList.jsx";
-import ContentHeader from "../widgets/containers/content_header.js";
 import FlexContainer from "../widgets/containers/flex_container.js";
 import RootContainer from "../widgets/containers/root_container.js";
 import ScrollingContainer from "../widgets/containers/scrolling_container.js";
 import SplitNoteContainer from "../widgets/containers/split_note_container.js";
-import FloatingButtons from "../widgets/FloatingButtons.jsx";
-import { MOBILE_FLOATING_BUTTONS } from "../widgets/FloatingButtonsDefinitions.jsx";
+import FindWidget from "../widgets/find.js";
 import LauncherContainer from "../widgets/launch_bar/LauncherContainer.jsx";
+import InlineTitle from "../widgets/layout/InlineTitle.jsx";
+import NoteBadges from "../widgets/layout/NoteBadges.jsx";
+import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
 import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
 import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
 import SidebarContainer from "../widgets/mobile_widgets/sidebar_container.js";
 import ToggleSidebarButton from "../widgets/mobile_widgets/toggle_sidebar_button.jsx";
+import NoteIconWidget from "../widgets/note_icon.jsx";
 import NoteTitleWidget from "../widgets/note_title.js";
 import NoteTreeWidget from "../widgets/note_tree.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
@@ -21,13 +23,10 @@ import NoteDetail from "../widgets/NoteDetail.jsx";
 import PromotedAttributes from "../widgets/PromotedAttributes.jsx";
 import QuickSearchWidget from "../widgets/quick_search.js";
 import { useNoteContext } from "../widgets/react/hooks.jsx";
-import ReadOnlyNoteInfoBar from "../widgets/ReadOnlyNoteInfoBar.jsx";
 import StandaloneRibbonAdapter from "../widgets/ribbon/components/StandaloneRibbonAdapter.jsx";
 import FilePropertiesTab from "../widgets/ribbon/FilePropertiesTab.jsx";
 import SearchDefinitionTab from "../widgets/ribbon/SearchDefinitionTab.jsx";
 import SearchResult from "../widgets/search_result.jsx";
-import SharedInfoWidget from "../widgets/shared_info.js";
-import TabRowWidget from "../widgets/tab_row.js";
 import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.jsx";
 import { applyModals } from "./layout_commons.js";
 
@@ -147,23 +146,22 @@ export default class MobileLayout {
                                     new NoteWrapperWidget()
                                         .child(
                                             new FlexContainer("row")
+                                                .class("title-row note-split-title")
                                                 .contentSized()
-                                                .css("font-size", "larger")
                                                 .css("align-items", "center")
                                                 .child(<ToggleSidebarButton />)
+                                                .child(<NoteIconWidget />)
                                                 .child(<NoteTitleWidget />)
+                                                .child(<NoteBadges />)
                                                 .child(<MobileDetailMenu />)
                                         )
-                                        .child(<FloatingButtons items={MOBILE_FLOATING_BUTTONS} />)
                                         .child(<PromotedAttributes />)
                                         .child(
                                             new ScrollingContainer()
                                                 .filling()
                                                 .contentSized()
-                                                .child(new ContentHeader()
-                                                    .child(<ReadOnlyNoteInfoBar />)
-                                                    .child(<SharedInfoWidget />)
-                                                )
+                                                .child(<InlineTitle />)
+                                                .child(<NoteTitleActions />)
                                                 .child(<NoteDetail />)
                                                 .child(<NoteList media="screen" />)
                                                 .child(<StandaloneRibbonAdapter component={SearchDefinitionTab} />)
@@ -171,6 +169,7 @@ export default class MobileLayout {
                                                 .child(<FilePropertiesWrapper />)
                                         )
                                         .child(<MobileEditorToolbar />)
+                                        .child(new FindWidget())
                                 )
                             )
                     )
@@ -179,7 +178,6 @@ export default class MobileLayout {
                 new FlexContainer("column")
                     .contentSized()
                     .id("mobile-bottom-bar")
-                    .child(new TabRowWidget().css("height", "40px"))
                     .child(new FlexContainer("row")
                         .class("horizontal")
                         .css("height", "53px")

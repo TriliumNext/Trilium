@@ -3,8 +3,9 @@ import { useEffect, useRef } from "preact/hooks";
 
 import ActionButton, { ActionButtonProps } from "./ActionButton";
 import Button, { ButtonProps } from "./Button";
+import { FormListItem, FormListItemOpts } from "./FormList";
 
-interface FormFileUploadProps {
+export interface FormFileUploadProps {
     name?: string;
     onChange: (files: FileList | null) => void;
     multiple?: boolean;
@@ -67,6 +68,28 @@ export function FormFileUploadActionButton({ onChange, ...buttonProps }: Omit<Ac
                 {...buttonProps}
                 onClick={() => inputRef.current?.click()}
             />
+            <FormFileUpload
+                inputRef={inputRef}
+                hidden
+                onChange={onChange}
+            />
+        </>
+    );
+}
+
+/**
+ * Similar to {@link FormFileUploadButton}, but uses an {@link FormListItem} instead of a normal {@link Button}.
+ * @param param the change listener for the file upload and the properties for the button.
+ */
+export function FormFileUploadFormListItem({ onChange, children, ...buttonProps }: Omit<FormListItemOpts, "onClick"> & Pick<FormFileUploadProps, "onChange">) {
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    return (
+        <>
+            <FormListItem
+                {...buttonProps}
+                onClick={() => inputRef.current?.click()}
+            >{children}</FormListItem>
             <FormFileUpload
                 inputRef={inputRef}
                 hidden

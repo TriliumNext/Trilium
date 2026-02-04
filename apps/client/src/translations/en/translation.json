@@ -745,7 +745,7 @@
     "button_title": "Export diagram as SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Create new child note and add it into this relation map",
+    "create_child_note_title": "Create child note and add it to map",
     "reset_pan_zoom_title": "Reset pan & zoom to initial coordinates and magnification",
     "zoom_in_title": "Zoom In",
     "zoom_out_title": "Zoom Out"
@@ -760,7 +760,8 @@
     "delete_this_note": "Delete this note",
     "note_revisions": "Note revisions",
     "error_cannot_get_branch_id": "Cannot get branchId for notePath '{{notePath}}'",
-    "error_unrecognized_command": "Unrecognized command {{command}}"
+    "error_unrecognized_command": "Unrecognized command {{command}}",
+    "backlinks": "Backlinks"
   },
   "note_icon": {
     "change_note_icon": "Change note icon",
@@ -2271,5 +2272,10 @@
   },
   "platform_indicator": {
     "available_on": "Available on {{platform}}"
+  },
+  "mobile_tab_switcher": {
+    "title_one": "{{count}} tab",
+    "title_other": "{{count}} tabs",
+    "more_options": "More options"
   }
 }

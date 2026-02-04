@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { ComponentChild, HTMLInputTypeAttribute, InputHTMLAttributes, MouseEventHandler, TargetedEvent, TargetedInputEvent } from "preact";
 import { Dispatch, StateUpdater, useEffect, useRef, useState } from "preact/hooks";
 
+import NoteContext from "../components/note_context";
 import FAttribute from "../entities/fattribute";
 import FNote from "../entities/fnote";
 import { Attribute } from "../services/attribute_parser";
@@ -40,8 +41,8 @@ type OnChangeEventData = TargetedEvent<HTMLInputElement, Event> | InputEvent | J
 type OnChangeListener = (e: OnChangeEventData) => Promise<void>;
 
 export default function PromotedAttributes() {
-    const { note, componentId } = useNoteContext();
-    const [ cells, setCells ] = usePromotedAttributeData(note, componentId);
+    const { note, componentId, noteContext } = useNoteContext();
+    const [ cells, setCells ] = usePromotedAttributeData(note, componentId, noteContext);
     return <PromotedAttributesContent note={note} componentId={componentId} cells={cells} setCells={setCells} />;
 }
 
@@ -74,12 +75,12 @@ export function PromotedAttributesContent({ note, componentId, cells, setCells }
  *
  * The cells are returned as a state since they can also be altered internally if needed, for example to add a new empty cell.
  */
-export function usePromotedAttributeData(note: FNote | null | undefined, componentId: string): [ Cell[] | undefined, Dispatch<StateUpdater<Cell[] | undefined>> ] {
+export function usePromotedAttributeData(note: FNote | null | undefined, componentId: string, noteContext: NoteContext | undefined): [ Cell[] | undefined, Dispatch<StateUpdater<Cell[] | undefined>> ] {
     const [ viewType ] = useNoteLabel(note, "viewType");
     const [ cells, setCells ] = useState<Cell[]>();
 
     function refresh() {
-        if (!note || viewType === "table") {
+        if (!note || viewType === "table" || noteContext?.viewScope?.viewMode !== "default") {
             setCells([]);
             return;
         }
@@ -124,7 +125,7 @@ export function usePromotedAttributeData(note: FNote | null | undefined, compone
         setCells(cells);
     }
 
-    useEffect(refresh, [ note, viewType ]);
+    useEffect(refresh, [ note, viewType, noteContext ]);
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         if (loadResults.getAttributeRows(componentId).find((attr) => attributes.isAffecting(attr, note))) {
             refresh();

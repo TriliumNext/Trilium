@@ -3,6 +3,7 @@ import { ComponentChildren, HTMLAttributes } from "preact";
 import { CSSProperties, HTMLProps } from "preact/compat";
 import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
 
+import { isMobile } from "../../services/utils";
 import { useTooltip, useUniqueName } from "./hooks";
 
 type DataAttributes = {
@@ -32,9 +33,10 @@ export interface DropdownProps extends Pick<HTMLProps<HTMLDivElement>, "id" | "c
     dropdownRef?: MutableRef<BootstrapDropdown | null>;
     titlePosition?: "top" | "right" | "bottom" | "left";
     titleOptions?: Partial<Tooltip.Options>;
+    mobileBackdrop?: boolean;
 }
 
-export default function Dropdown({ id, className, buttonClassName, isStatic, children, title, text, dropdownContainerStyle, dropdownContainerClassName, dropdownContainerRef: externalContainerRef, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, noDropdownListStyle, forceShown, onShown: externalOnShown, onHidden: externalOnHidden, dropdownOptions, buttonProps, dropdownRef, titlePosition, titleOptions }: DropdownProps) {
+export default function Dropdown({ id, className, buttonClassName, isStatic, children, title, text, dropdownContainerStyle, dropdownContainerClassName, dropdownContainerRef: externalContainerRef, hideToggleArrow, iconAction, disabled, noSelectButtonStyle, noDropdownListStyle, forceShown, onShown: externalOnShown, onHidden: externalOnHidden, dropdownOptions, buttonProps, dropdownRef, titlePosition, titleOptions, mobileBackdrop }: DropdownProps) {
     const containerRef = useRef<HTMLDivElement | null>(null);
     const triggerRef = useRef<HTMLButtonElement | null>(null);
     const dropdownContainerRef = useRef<HTMLUListElement | null>(null);
@@ -74,12 +76,18 @@ export default function Dropdown({ id, className, buttonClassName, isStatic, chi
         setShown(true);
         externalOnShown?.();
         hideTooltip();
-    }, [ hideTooltip ]);
+        if (mobileBackdrop && isMobile()) {
+            document.getElementById("context-menu-cover")?.classList.add("show", "global-menu-cover");
+        }
+    }, [ hideTooltip, mobileBackdrop ]);
 
     const onHidden = useCallback(() => {
         setShown(false);
         externalOnHidden?.();
-    }, []);
+        if (mobileBackdrop && isMobile()) {
+            document.getElementById("context-menu-cover")?.classList.remove("show", "global-menu-cover");
+        }
+    }, [ mobileBackdrop ]);
 
     useEffect(() => {
         if (!containerRef.current) return;

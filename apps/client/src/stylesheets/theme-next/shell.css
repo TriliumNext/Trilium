@@ -769,8 +769,8 @@ body.mobile .fancytree-node > span {
 
 #left-pane .fancytree-custom-icon {
     margin-top: 0; /* Use this to align the icon with the tree view item's caption */
+    color: var(--custom-color, var(--left-pane-icon-color));
 }
-
 
 #left-pane span.fancytree-active .fancytree-title {
     font-weight: normal;
@@ -1272,7 +1272,7 @@ body.layout-horizontal #rest-pane > .classic-toolbar-widget {
 #center-pane .note-split {
     padding-top: 2px;
     background-color: var(--note-split-background-color, var(--main-background-color));
-    transition: border-color 250ms ease-in;
+    transition: border-color 150ms ease-out;
     border: 2px solid transparent;
 }
 
@@ -1322,7 +1322,7 @@ body.mobile .note-title {
     margin-inline-start: 0;
 }
 
-.title-row {
+body.desktop .title-row {
     /* Aligns the "Create new split" button with the note menu button (the three dots button) */
     padding-inline-end: 3px;
 }

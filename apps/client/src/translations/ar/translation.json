@@ -29,7 +29,9 @@
     "widget-render-error": {
       "title": "فشل عرض عنصر واجهة مستخدم React مخصص"
     },
-    "widget-missing-parent": "لا تحتوي الأداة المخصصة على خاصية إلزامية '{{property}}'.\n\nإذا كان من المفترض تشغيل هذا البرنامج النصي بدون عنصر واجهة مستخدم، فاستخدم '#run=frontendStartup' بدلاً من ذلك."
+    "widget-missing-parent": "لا تحتوي الأداة المخصصة على خاصية إلزامية '{{property}}'.\n\nإذا كان من المفترض تشغيل هذا البرنامج النصي بدون عنصر واجهة مستخدم، فاستخدم '#run=frontendStartup' بدلاً من ذلك.",
+    "open-script-note": "فتح ملاحظة برمجية",
+    "scripting-error": "خطأ في النص البرمجي المخصص: {{title}}"
   },
   "add_link": {
     "add_link": "أضافة رابط",
@@ -37,7 +39,9 @@
     "search_note": "البحث عن الملاحظة بالاسم",
     "link_title": "عنوان الرابط",
     "button_add_link": "اضافة رابط",
-    "help_on_links": "مساعدة حول الارتباطات التشعبية"
+    "help_on_links": "مساعدة حول الارتباطات التشعبية",
+    "link_title_mirrors": "عنوان الرابط يعكس العنوان الحالي للملاحظة",
+    "link_title_arbitrary": "يمكن تغيير عنوان الرابط حسب الرغبة"
   },
   "branch_prefix": {
     "edit_branch_prefix": "تعديل بادئة الفرع",

@@ -1,6 +1,6 @@
 import { ConvertToAttachmentResponse } from "@triliumnext/commons";
 import { Dropdown as BootstrapDropdown } from "bootstrap";
-import { RefObject } from "preact";
+import { ComponentChildren, RefObject } from "preact";
 import { useContext, useEffect, useRef } from "preact/hooks";
 
 import appContext, { CommandNames } from "../../components/app_context";
@@ -63,7 +63,7 @@ function RevisionsButton({ note }: { note: FNote }) {
 
 type ItemToFocus = "basic-properties";
 
-function NoteContextMenu({ note, noteContext }: { note: FNote, noteContext?: NoteContext }) {
+export function NoteContextMenu({ note, noteContext, extraItems }: { note: FNote, noteContext?: NoteContext, extraItems?: ComponentChildren; }) {
     const dropdownRef = useRef<BootstrapDropdown>(null);
     const parentComponent = useContext(ParentComponent);
     const noteType = useNoteProperty(note, "type") ?? "";
@@ -99,12 +99,15 @@ function NoteContextMenu({ note, noteContext }: { note: FNote, noteContext?: Not
             dropdownRef={dropdownRef}
             buttonClassName={ isNewLayout ? "bx bx-dots-horizontal-rounded" : "bx bx-dots-vertical-rounded" }
             className="note-actions"
+            dropdownContainerClassName="mobile-bottom-menu"
             hideToggleArrow
             noSelectButtonStyle
             noDropdownListStyle
             iconAction
             onHidden={() => itemToFocusRef.current = null }
+            mobileBackdrop
         >
+            {extraItems}
 
             {isReadOnly && <>
                 <CommandItem icon="bx bx-pencil" text={t("read-only-info.edit-note")}
@@ -277,7 +280,7 @@ function DevelopmentActions({ note, noteContext }: { note: FNote, noteContext?: 
     );
 }
 
-function CommandItem({ icon, text, title, command, disabled }: { icon: string, text: string, title?: string, command: CommandNames | (() => void), disabled?: boolean, destructive?: boolean }) {
+export function CommandItem({ icon, text, title, command, disabled }: { icon: string, text: string, title?: string, command: CommandNames | (() => void), disabled?: boolean, destructive?: boolean }) {
     return <FormListItem
         icon={icon}
         title={title}

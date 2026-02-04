@@ -3,6 +3,7 @@ import { useCallback, useLayoutEffect, useState } from "preact/hooks";
 import FNote from "../../entities/fnote";
 import froca from "../../services/froca";
 import { isDesktop, isMobile } from "../../services/utils";
+import TabSwitcher from "../mobile_widgets/TabSwitcher";
 import { useTriliumEvent } from "../react/hooks";
 import { onWheelHorizontalScroll } from "../widget_utils";
 import BookmarkButtons from "./BookmarkButtons";
@@ -97,6 +98,8 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
             return <QuickSearchLauncherWidget />;
         case "aiChatLauncher":
             return <AiChatButton launcherNote={note} />;
+        case "mobileTabSwitcher":
+            return <TabSwitcher />;
         default:
             throw new Error(`Unrecognized builtin widget ${builtinWidget} for launcher ${note.noteId} "${note.title}"`);
     }

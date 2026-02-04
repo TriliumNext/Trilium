@@ -2008,7 +2008,8 @@
   "geo-map": {
     "create-child-note-title": "新しい子ノートを作成し、マップに追加する",
     "create-child-note-instruction": "地図をクリックしてその場所に新しいノートを作成するか、Esc キーを押して閉じます。",
-    "unable-to-load-map": "マップを読み込めません。"
+    "unable-to-load-map": "マップを読み込めません。",
+    "create-child-note-text": "マーカーを追加"
   },
   "geo-map-context": {
     "open-location": "現在位置を表示",
@@ -2256,5 +2257,9 @@
   },
   "platform_indicator": {
     "available_on": "{{platform}} で利用可能"
+  },
+  "mobile_tab_switcher": {
+    "title_other": "{{count}} タブ",
+    "more_options": "その他のオプション"
   }
 }

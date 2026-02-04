@@ -1,17 +1,17 @@
-import clsx from "clsx";
-import { useEffect, useRef, useMemo } from "preact/hooks";
-import { t } from "../../services/i18n";
-import { ComponentChildren } from "preact";
-import type { CSSProperties, RefObject } from "preact/compat";
-import { openDialog } from "../../services/dialog";
 import { Modal as BootstrapModal } from "bootstrap";
+import clsx from "clsx";
+import { ComponentChildren, CSSProperties, RefObject } from "preact";
 import { memo } from "preact/compat";
+import { useEffect, useMemo, useRef } from "preact/hooks";
+
+import { openDialog } from "../../services/dialog";
+import { t } from "../../services/i18n";
 import { useSyncedRef } from "./hooks";
 
 interface CustomTitleBarButton {
     title: string;
     iconClassName: string;
-    onClick: () => void;
+    onClick: (e: MouseEvent) => void;
 }
 
 export interface ModalProps {
@@ -80,7 +80,7 @@ export interface ModalProps {
     noFocus?: boolean;
 }
 
-export default function Modal({ children, className, size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden: onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus }: ModalProps) {
+export default function Modal({ children, className, size, title, customTitleBarButtons: titleBarButtons, header, footer, footerStyle, footerAlignment, onShown, onSubmit, helpPageId, minWidth, maxWidth, zIndex, scrollable, onHidden, modalRef: externalModalRef, formRef, bodyStyle, show, stackable, keepInDom, noFocus }: ModalProps) {
     const modalRef = useSyncedRef<HTMLDivElement>(externalModalRef);
     const modalInstanceRef = useRef<BootstrapModal>();
     const elementToFocus = useRef<Element | null>();
@@ -116,7 +116,7 @@ export default function Modal({ children, className, size, title, customTitleBar
                 focus: !noFocus
             }).then(($widget) => {
                 modalInstanceRef.current = BootstrapModal.getOrCreateInstance($widget[0]);
-            })
+            });
         } else {
             modalInstanceRef.current?.hide();
         }
@@ -159,13 +159,12 @@ export default function Modal({ children, className, size, title, customTitleBar
 
                         {titleBarButtons?.filter((b) => b !== null).map((titleBarButton) => (
                             <button type="button"
-                                    className={clsx("custom-title-bar-button bx", titleBarButton.iconClassName)}
-                                    title={titleBarButton.title}
-                                    onClick={titleBarButton.onClick}>
-                            </button>
+                                className={clsx("custom-title-bar-button bx", titleBarButton.iconClassName)}
+                                title={titleBarButton.title}
+                                onClick={titleBarButton.onClick} />
                         ))}
 
-                        <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label={t("modal.close")}></button>
+                        <button type="button" className="btn-close" data-bs-dismiss="modal" aria-label={t("modal.close")} />
 
                     </div>
 

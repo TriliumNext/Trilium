@@ -8,6 +8,12 @@ import type { AttachmentRow } from "@triliumnext/commons";
 import type { ValidatorMap } from "./etapi-interface.js";
 
 function register(router: Router) {
+    eu.route(router, "get", "/etapi/notes/:noteId/attachments", (req, res, next) => {
+        const note = eu.getAndCheckNote(req.params.noteId);
+        const attachments = note.getAttachments();
+        res.json(attachments.map((attachment) => mappers.mapAttachmentToPojo(attachment)));
+    });
+
     const ALLOWED_PROPERTIES_FOR_CREATE_ATTACHMENT: ValidatorMap = {
         ownerId: [v.notNull, v.isNoteId],
         role: [v.notNull, v.isString],

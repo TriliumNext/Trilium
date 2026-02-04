@@ -48,7 +48,7 @@ function PromotedAttributes({ note, componentId, noteContext }: {
     componentId: string,
     noteContext: NoteContext | undefined
 }) {
-    const [ cells, setCells ] = usePromotedAttributeData(note, componentId);
+    const [ cells, setCells ] = usePromotedAttributeData(note, componentId, noteContext);
     const [ expanded, setExpanded ] = useState(false);
 
     useEffect(() => {

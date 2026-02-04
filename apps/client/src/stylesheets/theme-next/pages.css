@@ -156,6 +156,10 @@
     --preferred-max-content-width: var(--options-card-max-width);
 }
 
+.note-split.options .collection-properties {
+    visibility: hidden;
+}
+
 /* Create a gap at the top of the option pages */
 .note-detail-content-widget-content.options>*:first-child {
     margin-top: var(--options-first-item-top-margin, 1em);

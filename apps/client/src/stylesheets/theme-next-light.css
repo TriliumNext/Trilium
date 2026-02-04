@@ -127,6 +127,7 @@
     --left-pane-collapsed-border-color: #0000000d;
     --left-pane-background-color: #f2f2f2;
     --left-pane-text-color: #383838;
+    --left-pane-icon-color: currentColor;
     --left-pane-item-hover-background: rgba(0, 0, 0, 0.032);
     --left-pane-item-selected-background: white;
     --left-pane-item-selected-color: black;

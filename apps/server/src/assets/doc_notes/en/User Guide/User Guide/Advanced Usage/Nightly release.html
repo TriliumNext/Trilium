@@ -26,10 +26,35 @@
 <h2>Automatically download and install the latest nightly</h2>
 <p>This is pretty useful if you are a beta tester that wants to periodically
   update their version:</p>
-<p>On Ubuntu:</p><pre><code class="language-text-x-trilium-auto">#!/usr/bin/env bash
+<h2>On Ubuntu (Bash)</h2><pre><code class="language-text-x-sh">#!/usr/bin/env bash
 
 name=TriliumNotes-linux-x64-nightly.deb
 rm -f $name*
 wget https://github.com/TriliumNext/Trilium/releases/download/nightly/$name
 sudo apt-get install ./$name
 rm $name</code></pre>
+<h2>On Windows (PowerShell)</h2><pre><code class="language-application-x-powershell">if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") {
+  $arch = "arm64";
+} else {
+  $arch = "x64";
+}
+
+$exeUrl = "https://github.com/TriliumNext/Trilium/releases/download/nightly/TriliumNotes-main-windows-$($arch).exe";
+Write-Host "Downloading $($exeUrl)"
+
+# Generate a unique path in the temp dir
+$guid = [guid]::NewGuid().ToString()
+$destination = Join-Path -Path $env:TEMP -ChildPath "$guid.exe"
+
+try {
+    $ProgressPreference = 'SilentlyContinue'
+    Invoke-WebRequest -Uri $exeUrl -OutFile $destination
+    $process = Start-Process -FilePath $destination
+} catch {
+    Write-Error "An error occurred: $_"
+} finally {
+    # Clean up
+    if (Test-Path $destination) {
+        Remove-Item -Path $destination -Force
+    }
+}</code></pre>

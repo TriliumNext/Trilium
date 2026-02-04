@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "preact/hooks";
-import { CommandNames } from "../../components/app_context";
-import { useStaticTooltip } from "./hooks";
-import keyboard_actions from "../../services/keyboard_actions";
 import { HTMLAttributes } from "preact";
+import { useEffect, useRef, useState } from "preact/hooks";
 
-export interface ActionButtonProps extends Pick<HTMLAttributes<HTMLButtonElement>, "onClick" | "onAuxClick" | "onContextMenu"> {
+import { CommandNames } from "../../components/app_context";
+import keyboard_actions from "../../services/keyboard_actions";
+import { useStaticTooltip } from "./hooks";
+
+export interface ActionButtonProps extends Pick<HTMLAttributes<HTMLButtonElement>, "onClick" | "onAuxClick" | "onContextMenu" | "style"> {
     text: string;
     titlePosition?: "top" | "right" | "bottom" | "left";
     icon: string;

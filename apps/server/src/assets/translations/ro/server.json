@@ -257,7 +257,8 @@
     "localization": "Limbă și regiune",
     "inbox-title": "Inbox",
     "command-palette": "Deschide paleta de comenzi",
-    "zen-mode": "Mod zen"
+    "zen-mode": "Mod zen",
+    "tab-switcher-title": "Schimbător de taburi"
   },
   "notes": {
     "new-note": "Notiță nouă",

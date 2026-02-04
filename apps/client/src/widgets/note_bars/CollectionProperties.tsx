@@ -6,10 +6,7 @@ import { useContext, useRef } from "preact/hooks";
 import { Fragment } from "preact/jsx-runtime";
 
 import FNote from "../../entities/fnote";
-import { getHelpUrlForNote } from "../../services/in_app_help";
-import { openInAppHelpFromUrl } from "../../services/utils";
 import { ViewTypeOptions } from "../collections/interface";
-import ActionButton from "../react/ActionButton";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem, FormListToggleableItem } from "../react/FormList";
 import FormTextBox from "../react/FormTextBox";
@@ -19,7 +16,7 @@ import { ParentComponent } from "../react/react_utils";
 import { bookPropertiesConfig, BookProperty, ButtonProperty, CheckBoxProperty, ComboBoxItem, ComboBoxProperty, NumberProperty, SplitButtonProperty } from "../ribbon/collection-properties-config";
 import { useViewType, VIEW_TYPE_MAPPINGS } from "../ribbon/CollectionPropertiesTab";
 
-const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
+export const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
     grid: "bx bxs-grid",
     list: "bx bx-list-ul",
     calendar: "bx bx-calendar",

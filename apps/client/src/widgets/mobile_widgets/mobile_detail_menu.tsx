@@ -1,84 +1,128 @@
-import { useContext } from "preact/hooks";
+import { createPortal, useState } from "preact/compat";
 
-import appContext, { CommandMappings } from "../../components/app_context";
-import contextMenu, { MenuItem } from "../../menus/context_menu";
-import branches from "../../services/branches";
+import FNote, { NotePathRecord } from "../../entities/fnote";
 import { t } from "../../services/i18n";
-import { getHelpUrlForNote } from "../../services/in_app_help";
 import note_create from "../../services/note_create";
-import tree from "../../services/tree";
-import { openInAppHelpFromUrl } from "../../services/utils";
-import BasicWidget from "../basic_widget";
+import { BacklinksList, useBacklinkCount } from "../FloatingButtonsDefinitions";
 import ActionButton from "../react/ActionButton";
-import { ParentComponent } from "../react/react_utils";
+import { FormDropdownDivider, FormListItem } from "../react/FormList";
+import { useNoteContext } from "../react/hooks";
+import Modal from "../react/Modal";
+import { NoteContextMenu } from "../ribbon/NoteActions";
+import NoteActionsCustom from "../ribbon/NoteActionsCustom";
+import { NotePathsWidget, useSortedNotePaths } from "../ribbon/NotePathsTab";
 
 export default function MobileDetailMenu() {
-    const parentComponent = useContext(ParentComponent);
+    const { note, noteContext, parentComponent, ntxId, viewScope, hoistedNoteId } = useNoteContext();
+    const subContexts = noteContext?.getMainContext().getSubContexts() ?? [];
+    const isMainContext = noteContext?.isMainContext();
+    const [ backlinksModalShown, setBacklinksModalShown ] = useState(false);
+    const [ notePathsModalShown, setNotePathsModalShown ] = useState(false);
+    const sortedNotePaths = useSortedNotePaths(note, hoistedNoteId);
+    const backlinksCount = useBacklinkCount(note, viewScope?.viewMode === "default");
+
+    function closePane() {
+        // Wait first for the context menu to be dismissed, otherwise the backdrop stays on.
+        requestAnimationFrame(() => {
+            parentComponent.triggerCommand("closeThisNoteSplit", { ntxId });
+        });
+    }
 
     return (
-        <ActionButton
-            icon="bx bx-dots-vertical-rounded"
-            text=""
-            onClick={(e) => {
-                const ntxId = (parentComponent as BasicWidget | null)?.getClosestNtxId();
-                if (!ntxId) return;
+        <div style={{ contain: "none" }}>
+            {note ? (
+                <NoteContextMenu
+                    note={note} noteContext={noteContext}
+                    extraItems={<>
+                        <div className="form-list-row">
+                            <div className="form-list-col">
+                                <FormListItem
+                                    icon="bx bx-link"
+                                    onClick={() => setBacklinksModalShown(true)}
+                                    disabled={backlinksCount === 0}
+                                >{t("status_bar.backlinks", { count: backlinksCount })}</FormListItem>
+                            </div>
+                            <div className="form-list-col">
+                                <FormListItem
+                                    icon="bx bx-directions"
+                                    onClick={() => setNotePathsModalShown(true)}
+                                    disabled={(sortedNotePaths?.length ?? 0) <= 1}
+                                >{t("status_bar.note_paths", { count: sortedNotePaths?.length })}</FormListItem>
+                            </div>
+                        </div>
+                        <FormDropdownDivider />
 
-                const noteContext = appContext.tabManager.getNoteContextById(ntxId);
-                const subContexts = noteContext.getMainContext().getSubContexts();
-                const isMainContext = noteContext?.isMainContext();
-                const note = noteContext.note;
-                const helpUrl = getHelpUrlForNote(note);
+                        {noteContext && ntxId && <NoteActionsCustom note={note} noteContext={noteContext} ntxId={ntxId} />}
+                        <FormListItem
+                            onClick={() => noteContext?.notePath && note_create.createNote(noteContext.notePath)}
+                            icon="bx bx-plus"
+                        >{t("mobile_detail_menu.insert_child_note")}</FormListItem>
+                        {subContexts.length < 2 && <>
+                            <FormDropdownDivider />
+                            <FormListItem
+                                onClick={() => parentComponent.triggerCommand("openNewNoteSplit", { ntxId })}
+                                icon="bx bx-dock-right"
+                            >{t("create_pane_button.create_new_split")}</FormListItem>
+                        </>}
+                        {!isMainContext && <>
+                            <FormDropdownDivider />
+                            <FormListItem
+                                icon="bx bx-x"
+                                onClick={closePane}
+                            >{t("close_pane_button.close_this_pane")}</FormListItem>
+                        </>}
+                        <FormDropdownDivider />
+                    </>}
+                />
+            ) : (
+                <ActionButton
+                    icon="bx bx-x"
+                    onClick={closePane}
+                    text={t("close_pane_button.close_this_pane")}
+                />
+            )}
 
-                const items: (MenuItem<keyof CommandMappings>)[] = [
-                    { title: t("mobile_detail_menu.insert_child_note"), command: "insertChildNote", uiIcon: "bx bx-plus", enabled: note?.type !== "search" },
-                    { title: t("mobile_detail_menu.delete_this_note"), command: "delete", uiIcon: "bx bx-trash", enabled: note?.noteId !== "root" },
-                    { kind: "separator" },
-                    { title: t("mobile_detail_menu.note_revisions"), command: "showRevisions", uiIcon: "bx bx-history" },
-                    { kind: "separator" },
-                    helpUrl && {
-                        title: t("help-button.title"),
-                        uiIcon: "bx bx-help-circle",
-                        handler: () => openInAppHelpFromUrl(helpUrl)
-                    },
-                    { kind: "separator" },
-                    subContexts.length < 2 && { title: t("create_pane_button.create_new_split"), command: "openNewNoteSplit", uiIcon: "bx bx-dock-right" },
-                    !isMainContext && { title: t("close_pane_button.close_this_pane"), command: "closeThisNoteSplit", uiIcon: "bx bx-x" }
-                ].filter(i => !!i) as MenuItem<keyof CommandMappings>[];
+            {createPortal((
+                <>
+                    <BacklinksModal note={note} modalShown={backlinksModalShown} setModalShown={setBacklinksModalShown} />
+                    <NotePathsModal note={note} modalShown={notePathsModalShown} notePath={noteContext?.notePath} sortedNotePaths={sortedNotePaths} setModalShown={setNotePathsModalShown} />
+                </>
+            ), document.body)}
+        </div>
+    );
+}
 
-                const lastItem = items.at(-1);
-                if (lastItem && "kind" in lastItem && lastItem.kind === "separator") {
-                    items.pop();
-                }
+function BacklinksModal({ note, modalShown, setModalShown }: { note: FNote | null | undefined, modalShown: boolean, setModalShown: (shown: boolean) => void }) {
+    return (
+        <Modal
+            className="backlinks-modal tn-backlinks-widget"
+            size="md"
+            title={t("mobile_detail_menu.backlinks")}
+            show={modalShown}
+            onHidden={() => setModalShown(false)}
+        >
+            <ul className="backlinks-items">
+                {note && <BacklinksList note={note} />}
+            </ul>
+        </Modal>
+    );
+}
 
-                contextMenu.show<keyof CommandMappings>({
-                    x: e.pageX,
-                    y: e.pageY,
-                    items,
-                    selectMenuItemHandler: async ({ command }) => {
-                        if (command === "insertChildNote") {
-                            note_create.createNote(appContext.tabManager.getActiveContextNotePath() ?? undefined);
-                        } else if (command === "delete") {
-                            const notePath = appContext.tabManager.getActiveContextNotePath();
-                            if (!notePath) {
-                                throw new Error("Cannot get note path to delete.");
-                            }
-
-                            const branchId = await tree.getBranchIdFromUrl(notePath);
-
-                            if (!branchId) {
-                                throw new Error(t("mobile_detail_menu.error_cannot_get_branch_id", { notePath }));
-                            }
-
-                            if (await branches.deleteNotes([branchId]) && parentComponent) {
-                                parentComponent.triggerCommand("setActiveScreen", { screen: "tree" });
-                            }
-                        } else if (command && parentComponent) {
-                            parentComponent.triggerCommand(command, { ntxId });
-                        }
-                    },
-                    forcePositionOnMobile: true
-                });
-            }}
-        />
+function NotePathsModal({ note, modalShown, notePath, sortedNotePaths, setModalShown }: { note: FNote | null | undefined, modalShown: boolean, sortedNotePaths: NotePathRecord[] | undefined, notePath: string | null | undefined, setModalShown: (shown: boolean) => void }) {
+    return (
+        <Modal
+            className="note-paths-modal"
+            size="md"
+            title={t("note_paths.title")}
+            show={modalShown}
+            onHidden={() => setModalShown(false)}
+        >
+            {note && (
+                <NotePathsWidget
+                    sortedNotePaths={sortedNotePaths}
+                    currentNotePath={notePath}
+                />
+            )}
+        </Modal>
     );
 }

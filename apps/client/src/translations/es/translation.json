@@ -1614,7 +1614,7 @@
   },
   "bookmark_switch": {
     "bookmark": "Marcador",
-    "bookmark_this_note": "Añadir esta nota a marcadores en el panel lateral izquierdo",
+    "bookmark_this_note": "Agregar esta nota a marcadores en el panel lateral izquierdo",
     "remove_bookmark": "Eliminar marcador"
   },
   "editability_select": {
@@ -1964,7 +1964,8 @@
   "geo-map": {
     "create-child-note-title": "Crear una nueva subnota y agregarla al mapa",
     "create-child-note-instruction": "Dé clic en el mapa para crear una nueva nota en esa ubicación o presione Escape para cancelar.",
-    "unable-to-load-map": "No se puede cargar el mapa."
+    "unable-to-load-map": "No se puede cargar el mapa.",
+    "create-child-note-text": "Agregar marcador"
   },
   "geo-map-context": {
     "open-location": "Abrir ubicación",
@@ -2284,5 +2285,11 @@
   },
   "platform_indicator": {
     "available_on": "Disponible en {{platform}}"
+  },
+  "mobile_tab_switcher": {
+    "title_one": "{{count}} pestaña",
+    "title_many": "{{count}} pestañas",
+    "title_other": "{{count}} pestañas",
+    "more_options": "Más opciones"
   }
 }

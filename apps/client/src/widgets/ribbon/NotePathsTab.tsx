@@ -1,15 +1,16 @@
+import "./NotePathsTab.css";
+
+import clsx from "clsx";
 import { useEffect, useMemo, useState } from "preact/hooks";
 
 import FNote, { NotePathRecord } from "../../entities/fnote";
 import { t } from "../../services/i18n";
 import { NOTE_PATH_TITLE_SEPARATOR } from "../../services/tree";
 import { useTriliumEvent } from "../react/hooks";
+import LinkButton from "../react/LinkButton";
 import NoteLink from "../react/NoteLink";
 import { joinElements } from "../react/react_utils";
 import { TabContext } from "./ribbon-interface";
-import LinkButton from "../react/LinkButton";
-import clsx from "clsx";
-
 
 export default function NotePathsTab({ note, hoistedNoteId, notePath }: TabContext) {
     const sortedNotePaths = useSortedNotePaths(note, hoistedNoteId);
@@ -112,9 +113,9 @@ function NotePath({ currentNotePath, notePathRecord }: { currentNotePath?: strin
         <li class={classes}>
             {joinElements(fullNotePaths.map((notePath, index, arr) => (
                 <NoteLink key={notePath}
-                          className={clsx({"basename": (index === arr.length - 1)})}
-                          notePath={notePath}
-                          noPreview />
+                    className={clsx({"basename": (index === arr.length - 1)})}
+                    notePath={notePath}
+                    noPreview />
             )), NOTE_PATH_TITLE_SEPARATOR)}
 
             {icons.map(({ icon, title }) => (

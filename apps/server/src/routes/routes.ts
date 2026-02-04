@@ -12,6 +12,7 @@ import etapiMetricsRoute from "../etapi/metrics.js";
 import etapiNoteRoutes from "../etapi/notes.js";
 import etapiSpecRoute from "../etapi/spec.js";
 import etapiSpecialNoteRoutes from "../etapi/special_notes.js";
+import etapiRevisionsRoutes from "../etapi/revisions.js";
 import auth from "../services/auth.js";
 import openID from '../services/open_id.js';
 import { isElectron } from "../services/utils.js";
@@ -361,6 +362,8 @@ function register(app: express.Application) {
     etapiAttachmentRoutes.register(router);
     etapiAttributeRoutes.register(router);
     etapiBranchRoutes.register(router);
+    // Register revisions routes BEFORE notes routes so /etapi/notes/history is matched before /etapi/notes/:noteId
+    etapiRevisionsRoutes.register(router);
     etapiNoteRoutes.register(router);
     etapiSpecialNoteRoutes.register(router);
     etapiSpecRoute.register(router);

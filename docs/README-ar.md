@@ -88,11 +88,11 @@ script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
   النصية](https://docs.triliumnotes.org/user-guide/scripts) المتقدمة
 * UI available in English, German, Spanish, French, Romanian, and Chinese
   (simplified and traditional)
-* Direct [OpenID and TOTP
-  integration](https://docs.triliumnotes.org/user-guide/setup/server/mfa) for
-  more secure login
-* [Synchronization](https://docs.triliumnotes.org/user-guide/setup/synchronization)
-  with self-hosted sync server
+* تكامل مباشر مع [أنظمة الهوية المفتوحة OpenID وكلمات المرور المؤقتة
+  TOTP](https://docs.triliumnotes.org/user-guide/setup/server/mfa) لتسجيل دخول
+  أكثر أماناً
+* [المزامنة](https://docs.triliumnotes.org/user-guide/setup/synchronization) مع
+  خادم مزامنة مُستضاف ذاتيًا
   * there are [3rd party services for hosting synchronisation
     server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [Sharing](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)

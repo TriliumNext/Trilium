@@ -49,7 +49,7 @@ function createClassForColor(colorString: string | null) {
     return clsx("use-note-color", className, colorsWithHue.has(className) && "with-hue");
 }
 
-function parseColor(color: string) {
+export function parseColor(color: string) {
     try {
         return Color(color.toLowerCase());
     } catch (ex) {
@@ -77,7 +77,7 @@ function adjustColorLightness(color: ColorInstance, lightThemeMaxLightness: numb
 }
 
 /** Returns the hue of the specified color, or undefined if the color is grayscale. */
-function getHue(color: ColorInstance) {
+export function getHue(color: ColorInstance) {
     const hslColor = color.hsl();
     if (hslColor.saturationl() > 0) {
         return hslColor.hue();

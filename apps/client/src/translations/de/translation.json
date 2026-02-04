@@ -1771,7 +1771,8 @@
   "geo-map": {
     "create-child-note-title": "Neue Unternotiz anlegen und zur Karte hinzufügen",
     "create-child-note-instruction": "Auf die Karte klicken, um eine neue Notiz an der Stelle zu erstellen oder Escape drücken um abzubrechen.",
-    "unable-to-load-map": "Karte konnte nicht geladen werden."
+    "unable-to-load-map": "Karte konnte nicht geladen werden.",
+    "create-child-note-text": "Marker hinzufügen"
   },
   "geo-map-context": {
     "open-location": "Ort öffnen",
@@ -2270,5 +2271,10 @@
   },
   "platform_indicator": {
     "available_on": "Verfügbar auf {{platform}}"
+  },
+  "mobile_tab_switcher": {
+    "title_one": "{{count}} Tab",
+    "title_other": "{{count}} Tabs",
+    "more_options": "Weitere Optionen"
   }
 }

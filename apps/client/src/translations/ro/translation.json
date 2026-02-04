@@ -1761,8 +1761,8 @@
     "show-recent-notes": "Afișează notițele recente"
   },
   "electron_integration": {
-    "background-effects": "Activează efectele de fundal (doar pentru Windows 11)",
-    "background-effects-description": "Efectul Mica adaugă un fundal estompat și elegant ferestrelor aplicațiilor, creând profunzime și un aspect modern. Opțiunea „Bară de titlu nativă” trebuie să fie dezactivată.",
+    "background-effects": "Activează efectele de fundal",
+    "background-effects-description": "Adaugă un fundal estompat și elegant ferestrelor aplicațiilor, creând profunzime și un aspect modern. Opțiunea „Bară de titlu nativă” trebuie să fie dezactivată.",
     "desktop-application": "Aplicația desktop",
     "native-title-bar": "Bară de titlu nativă",
     "native-title-bar-description": "Pentru Windows și macOS, dezactivarea bării de titlu native face aplicația să pară mai compactă. Pe Linux, păstrarea bării integrează mai bine aplicația cu restul sistemului de operare.",
@@ -1781,7 +1781,8 @@
   "geo-map": {
     "create-child-note-title": "Crează o notiță nouă și adaug-o pe hartă",
     "unable-to-load-map": "Nu s-a putut încărca harta.",
-    "create-child-note-instruction": "Click pe hartă pentru a crea o nouă notiță la acea poziție sau apăsați Escape pentru a anula."
+    "create-child-note-instruction": "Click pe hartă pentru a crea o nouă notiță la acea poziție sau apăsați Escape pentru a anula.",
+    "create-child-note-text": "Adaugă marcaj"
   },
   "duration": {
     "days": "zile",
@@ -2127,7 +2128,7 @@
   },
   "call_to_action": {
     "background_effects_title": "Efectele de fundal sunt acum stabile",
-    "background_effects_message": "Pe dispozitive cu Windows, efectele de fundal sunt complet stabile. Acestea adaugă un strop de culoare interfeței grafice prin estomparea fundalului din spatele ferestrei. Această tehnică este folosită și în alte aplicații precum Windows Explorer.",
+    "background_effects_message": "Pe dispozitive cu Windows și macOS, efectele de fundal sunt stabile. Acestea adaugă un strop de culoare interfeței grafice prin estomparea fundalului din spatele ferestrei.",
     "background_effects_button": "Activează efectele de fundal",
     "next_theme_title": "Încercați noua temă Trilium",
     "next_theme_message": "Utilizați tema clasică, doriți să încercați noua temă?",
@@ -2281,5 +2282,14 @@
     "pages_other": "{{count}} de pagini",
     "pages_alt": "Pagina {{pageNumber}}",
     "pages_loading": "Încărcare..."
+  },
+  "platform_indicator": {
+    "available_on": "Disponibil pe {{platform}}"
+  },
+  "mobile_tab_switcher": {
+    "title_one": "{{count}} tab",
+    "title_few": "{{count}} taburi",
+    "title_other": "{{count}} de taburi",
+    "more_options": "Mai multe opțiuni"
   }
 }

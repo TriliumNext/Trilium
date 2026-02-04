@@ -24,7 +24,7 @@ As a quick heads-up of some differences when compared to `npm`:
 
 ## Installing dependencies
 
-Run `pnpm i` at the top of the `Notes` repository to install the dependencies.
+Run `pnpm i` at the top of the `Trilium` repository to install the dependencies.
 
 > [!NOTE]
 > Dependencies are kept up to date periodically in the project. Generally it's a good rule to do `pnpm i` after each `git pull` on the main branch.

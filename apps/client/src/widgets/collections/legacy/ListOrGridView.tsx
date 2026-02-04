@@ -155,7 +155,7 @@ function NoteAttributes({ note }: { note: FNote }) {
     return <span className="note-list-attributes" ref={ref} />;
 }
 
-function NoteContent({ note, trim, noChildrenList, highlightedTokens, includeArchivedNotes }: {
+export function NoteContent({ note, trim, noChildrenList, highlightedTokens, includeArchivedNotes }: {
     note: FNote;
     trim?: boolean;
     noChildrenList?: boolean;

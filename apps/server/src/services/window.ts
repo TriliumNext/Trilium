@@ -237,18 +237,19 @@ function getWindowExtraOpts() {
             // Linux or other platforms.
             extraOpts.frame = false;
         }
-    }
 
-    // Window effects (Mica)
-    if (optionService.getOptionBool("backgroundEffects")) {
-        if (isMac) {
-            extraOpts.transparent = true;
-            extraOpts.visualEffectState = "active";
-        } else if (isWindows) {
-            extraOpts.backgroundMaterial = "auto";
-        } else {
-            // Linux or other platforms.
-            extraOpts.transparent = true;
+        // Window effects (Mica on Windows and Vibrancy on macOS)
+        // These only work if native title bar is not enabled.
+        if (optionService.getOptionBool("backgroundEffects")) {
+            if (isMac) {
+                extraOpts.transparent = true;
+                extraOpts.visualEffectState = "active";
+            } else if (isWindows) {
+                extraOpts.backgroundMaterial = "auto";
+            } else {
+                // Linux or other platforms.
+                extraOpts.transparent = true;
+            }
         }
     }
 

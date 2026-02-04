@@ -48,7 +48,7 @@ export default function buildLaunchBarConfig() {
             id: "_lbBackInHistory",
             ...sharedLaunchers.backInHistory
         },
-        {   
+        {
             id: "_lbForwardInHistory",
             ...sharedLaunchers.forwardInHistory
         },
@@ -59,12 +59,12 @@ export default function buildLaunchBarConfig() {
             command: "commandPalette",
             icon: "bx bx-chevron-right-square"
         },
-        { 
+        {
             id: "_lbBackendLog",
             title: t("hidden-subtree.backend-log-title"),
             type: "launcher",
             targetNoteId: "_backendLog",
-            icon: "bx bx-detail" 
+            icon: "bx bx-detail"
         },
         {
             id: "_zenMode",
@@ -128,7 +128,7 @@ export default function buildLaunchBarConfig() {
             baseSize: "50",
             growthFactor: "0"
         },
-        {   
+        {
             id: "_lbBookmarks",
             title: t("hidden-subtree.bookmarks-title"),
             type: "launcher",
@@ -139,7 +139,7 @@ export default function buildLaunchBarConfig() {
             id: "_lbToday",
             ...sharedLaunchers.openToday
         },
-        {   
+        {
             id: "_lbSpacer2",
             title: t("hidden-subtree.spacer-title"),
             type: "launcher",
@@ -179,7 +179,11 @@ export default function buildLaunchBarConfig() {
 
     const mobileAvailableLaunchers: HiddenSubtreeItem[] = [
         { id: "_lbMobileNewNote", ...sharedLaunchers.newNote },
-        { id: "_lbMobileToday", ...sharedLaunchers.openToday }
+        { id: "_lbMobileToday", ...sharedLaunchers.openToday },
+        {
+            id: "_lbMobileRecentChanges",
+            ...sharedLaunchers.recentChanges
+        }
     ];
 
     const mobileVisibleLaunchers: HiddenSubtreeItem[] = [
@@ -203,8 +207,10 @@ export default function buildLaunchBarConfig() {
             ...sharedLaunchers.calendar
         },
         {
-            id: "_lbMobileRecentChanges",
-            ...sharedLaunchers.recentChanges
+            id: "_lbMobileTabSwitcher",
+            title: t("hidden-subtree.tab-switcher-title"),
+            type: "launcher",
+            builtinWidget: "mobileTabSwitcher"
         }
     ];
 
