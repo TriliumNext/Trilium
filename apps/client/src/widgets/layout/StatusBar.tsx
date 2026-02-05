@@ -414,7 +414,7 @@ function NotePaths({ note, hoistedNoteId, notePath }: StatusBarContext) {
     const dropdownRef = useRef<BootstrapDropdown>(null);
     const sortedNotePaths = useSortedNotePaths(note, hoistedNoteId);
     const count = sortedNotePaths?.length ?? 0;
-    const enabled = count > 1;
+    const enabled = true;
 
     // Keyboard shortcut.
     useTriliumEvent("toggleRibbonTabNotePaths", () => enabled && dropdownRef.current?.show());
