@@ -9,7 +9,7 @@ import type SearchContext from "../search_context.js";
 // It also should use char(s) not allowed in relation names ([0-9a-zA-Z:_]),
 // to prevent ambiguity. As alternative in future, a more sophisticated lexer
 // might create separate token types, with relation wildcard being one of them.
-const RELATION_NAME_WILDCARD = "?"
+const RELATION_NAME_WILDCARD = "?";
 
 class RelationWhereExp extends Expression {
     private relationName: string;
