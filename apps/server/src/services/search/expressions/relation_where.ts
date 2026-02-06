@@ -50,5 +50,5 @@ class RelationWhereExp extends Expression {
     }
 }
 
-export { RELATION_NAME_WILDCARD }
+export { RELATION_NAME_WILDCARD };
 export default RelationWhereExp;
