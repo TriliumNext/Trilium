@@ -6,6 +6,6 @@
     "e2e": "playwright test"
   },
   "devDependencies": {
-    "dotenv": "17.2.3"
+    "dotenv": "17.2.4"
   }
 }
