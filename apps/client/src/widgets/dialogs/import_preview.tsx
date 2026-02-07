@@ -4,14 +4,17 @@ import { DangerousAttributeCategory, ImportPreviewResponse } from "@triliumnext/
 import { useEffect, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
+import { executeUploadWithPreview } from "../../services/import";
+import { boolToString } from "../../services/utils";
 import { Badge } from "../react/Badge";
 import Button from "../react/Button";
 import { Card } from "../react/Card";
 import FormRadioGroup from "../react/FormRadioGroup";
-import { useTriliumEvent } from "../react/hooks";
+import { useTriliumEvent, useTriliumOptionBool } from "../react/hooks";
 import Modal from "../react/Modal";
 
 export interface ImportPreviewData {
+    parentNoteId: string;
     previews: ImportPreviewResponse[];
 }
 
@@ -62,17 +65,12 @@ const SEVERITY_ORDER: Record<DangerousCategory, number> = {
 const IMPORT_BUTTON_TIMEOUT = 3;
 
 export default function ImportPreviewDialog() {
-    const [ data, setData ] = useState<ImportPreviewData | null>({
-        previews: [
-            JSON.parse(`{"fileName": "foo", "isDangerous":true,"dangerousAttributes":["iconPack"],"dangerousAttributeCategories":["webview", "codeExecution", "serverSideScripting", "clientSideScripting"],"numNotes":1,"id":"llpCPOmcBGhW5.trilium"}`),
-            JSON.parse(`{"fileName": "bar", "isDangerous":true,"dangerousAttributes":["iconPack"],"dangerousAttributeCategories":["iconPack", "webview"],"numNotes":1,"id":"llpCPOmcBGhW5.trilium"}`),
-            JSON.parse(`{"fileName": "baz","isDangerous":false,"dangerousAttributes":["iconPack"],"dangerousAttributeCategories":[],"numNotes":1,"id":"llpCPOmcBGhW5.trilium"}`)
-        ]
-    });
-    const [ shown, setShown ] = useState(true);
+    const [ data, setData ] = useState<ImportPreviewData | null>(null);
+    const [ shown, setShown ] = useState(false);
     const [ importMethod, setImportMethod ] = useState<string>("safe");
     const isDangerousImport = data?.previews.some(preview => preview.isDangerous);
     const [ importButtonTimeout, setImportButtonTimeout ] = useState(0);
+    const [ compressImages ] = useTriliumOptionBool("compressImages");
 
     useEffect(() => {
         // If safe → reset and do nothing
@@ -119,6 +117,14 @@ export default function ImportPreviewDialog() {
                 />
             </>}
             show={shown}
+            onSubmit={() => {
+                if (!data) return;
+                executeUploadWithPreview(data.parentNoteId, data.previews, {
+                    shrinkImages: boolToString(compressImages),
+                    safeImport: boolToString(importMethod === "safe")
+                });
+                setShown(false);
+            }}
             onHidden={() => {
                 setShown(false);
                 setData(null);

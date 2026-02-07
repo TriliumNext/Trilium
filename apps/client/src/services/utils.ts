@@ -913,6 +913,10 @@ export function handleRightToLeftPlacement<T extends string>(placement: T) {
     return placement;
 }
 
+export function boolToString(value: boolean) {
+    return value ? "true" : "false";
+}
+
 export default {
     reloadFrontendApp,
     restartDesktopApp,

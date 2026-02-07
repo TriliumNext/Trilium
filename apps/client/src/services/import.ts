@@ -7,7 +7,7 @@ import toastService, { type ToastOptionsWithRequiredId } from "./toast.js";
 import utils from "./utils.js";
 import ws from "./ws.js";
 
-type BooleanLike = boolean | "true" | "false";
+type BooleanLike = "true" | "false";
 
 export interface UploadFilesOptions {
     safeImport?: BooleanLike;
@@ -64,16 +64,11 @@ export async function uploadFilesWithPreview(parentNoteId: string, files: string
     }
 
     const taskId = utils.randomString(10);
-    let counter = 0;
-
     const results: ImportPreviewResponse[] = [];
     for (const file of files) {
-        counter++;
-
         const formData = new FormData();
         formData.append("upload", file);
         formData.append("taskId", taskId);
-        formData.append("last", counter === files.length ? "true" : "false");
 
         results.push(await $.ajax({
             url: `${window.glob.baseApiUrl}notes/${parentNoteId}/preview-import`,
@@ -90,6 +85,29 @@ export async function uploadFilesWithPreview(parentNoteId: string, files: string
         }));
     }
     return results;
+}
+
+export async function executeUploadWithPreview(parentNoteId: string, files: ImportPreviewResponse[], options: UploadFilesOptions) {
+    if (files.length === 0) {
+        return;
+    }
+
+    const taskId = utils.randomString(10);
+    let counter = 0;
+
+    for (const file of files) {
+        counter++;
+
+        server.post(
+            `notes/${parentNoteId}/execute-import`,
+            {
+                ...options,
+                id: file.id,
+                taskId,
+                last: counter === files.length ? "true" : "false"
+            }
+        );
+    }
 }
 
 function makeToast(id: string, message: string): ToastOptionsWithRequiredId {

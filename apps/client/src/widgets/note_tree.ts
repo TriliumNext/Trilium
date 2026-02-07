@@ -541,7 +541,10 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                         } else {
                             importService.uploadFilesWithPreview(parentNoteId, files).then((previews) => {
                                 if (!previews) return;
-                                this.triggerCommand("showImportPreviewDialog", { previews });
+                                this.triggerCommand("showImportPreviewDialog", {
+                                    parentNoteId,
+                                    previews
+                                });
                             });
                             return;
                         }
