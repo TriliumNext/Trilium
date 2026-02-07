@@ -306,6 +306,7 @@ export interface ImportPreviewResponse {
     fileName: string;
     numNotes: number;
     numAttributes: number;
+    numAttachments: number;
     isDangerous: boolean;
     dangerousAttributeCategories: string[];
     dangerousAttributes: string[];

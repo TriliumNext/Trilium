@@ -33,6 +33,7 @@ interface PreviewContext {
     dangerousAttributeCategories: Set<DangerousAttributeCategory>;
     numNotes: number;
     numAttributes: number;
+    numAttachments: number;
 }
 
 export function previewMeta(meta: NoteMetaFile): Omit<ImportPreviewResponse, "id" | "fileName"> {
@@ -40,7 +41,8 @@ export function previewMeta(meta: NoteMetaFile): Omit<ImportPreviewResponse, "id
         dangerousAttributes: new Set<string>(),
         dangerousAttributeCategories: new Set<DangerousAttributeCategory>(),
         numNotes: 0,
-        numAttributes: 0
+        numAttributes: 0,
+        numAttachments: 0
     };
     previewMetaInternal(meta.files, context);
 
@@ -49,7 +51,8 @@ export function previewMeta(meta: NoteMetaFile): Omit<ImportPreviewResponse, "id
         dangerousAttributes: Array.from(context.dangerousAttributes),
         dangerousAttributeCategories: Array.from(context.dangerousAttributeCategories),
         numNotes: context.numNotes,
-        numAttributes: context.numAttributes
+        numAttributes: context.numAttributes,
+        numAttachments: context.numAttachments
     };
 }
 
@@ -70,6 +73,10 @@ function previewMetaInternal(metaFiles: NoteMeta[], context: PreviewContext) {
                 context.dangerousAttributes.add(name);
                 context.dangerousAttributeCategories.add(dangerousAttribute.dangerCategory);
             }
+        }
+
+        if (metaFile.attachments) {
+            context.numAttachments += metaFile.attachments.length;
         }
 
         if (metaFile.children) {

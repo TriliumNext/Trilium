@@ -2295,6 +2295,8 @@
     "notes_count_other": "{{count}} notes",
     "attributes_count_one": "{{count}} attribute",
     "attributes_count_other": "{{count}} attributes",
+    "attachments_count_one": "{{count}} attachment",
+    "attachments_count_other": "{{count}} attachments",
     "cancel": "Cancel",
     "import": "Import",
     "import_with_timeout": "Import ({{timeout}})",

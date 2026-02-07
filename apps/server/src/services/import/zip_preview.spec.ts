@@ -33,11 +33,28 @@ describe("Preview meta", () => {
                     type: "label",
                     name: "customRequestHandler",
                     value: ""
+                },
+                {
+                    type: "label",
+                    name: "safe",
+                    value: ""
+                }
+            ],
+            attachments: [
+                {
+                    attachmentId: "YRAEUXCDKNtn",
+                    title: "icon-color.svg",
+                    role: "image",
+                    mime: "image/svg+xml",
+                    position: 10,
+                    dataFileName: "Trilium Demo_icon-color.svg"
                 }
             ]
         });
         const result = previewMeta(meta);
         expect(result.numNotes).toBe(3);
+        expect(result.numAttributes).toBe(4);
+        expect(result.numAttachments).toBe(1);
         expect(result.isDangerous).toBe(true);
         expect(result.dangerousAttributes).toContain("widget");
         expect(result.dangerousAttributes).toContain("customRequestHandler");
