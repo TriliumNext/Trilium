@@ -2295,6 +2295,7 @@
     "notes_count_other": "{{count}} notes",
     "cancel": "Cancel",
     "import": "Import",
+    "import_with_timeout": "Import ({{timeout}})",
     "import_safely": "Import safely (recommended)",
     "import_safely_description": "Scripts, widgets and icon packs will be disabled.",
     "import_trust": "Trust and enable active content",

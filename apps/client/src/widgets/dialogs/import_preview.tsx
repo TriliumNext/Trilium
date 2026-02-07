@@ -1,7 +1,7 @@
 import "./import_preview.css";
 
 import { DangerousAttributeCategory, ImportPreviewResponse } from "@triliumnext/commons";
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
 import { Badge } from "../react/Badge";
@@ -53,6 +53,8 @@ const DANGEROUS_CATEGORIES_MAPPINGS: Record<DangerousAttributeCategory, {
     }
 };
 
+const IMPORT_BUTTON_TIMEOUT = 3;
+
 export default function ImportPreviewDialog() {
     const [ data, setData ] = useState<ImportPreviewData | null>({
         previews: [
@@ -64,10 +66,35 @@ export default function ImportPreviewDialog() {
     const [ shown, setShown ] = useState(true);
     const [ importMethod, setImportMethod ] = useState<string>("safe");
     const isDangerousImport = data?.previews.some(preview => preview.isDangerous);
+    const [ importButtonTimeout, setImportButtonTimeout ] = useState(0);
+
+    useEffect(() => {
+        // If safe → reset and do nothing
+        if (!isDangerousImport) {
+            setImportButtonTimeout(0);
+            return;
+        }
+
+        // Start countdown
+        setImportButtonTimeout(IMPORT_BUTTON_TIMEOUT);
+
+        const interval = setInterval(() => {
+            setImportButtonTimeout(prev => {
+                if (prev <= 1) {
+                    clearInterval(interval);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [isDangerousImport]);
 
     useTriliumEvent("showImportPreviewDialog", (data) => {
         setData(data);
         setShown(true);
+        setImportButtonTimeout(IMPORT_BUTTON_TIMEOUT);
     });
 
     return (
@@ -77,12 +104,19 @@ export default function ImportPreviewDialog() {
             title={t("import_preview.title")}
             footer={<>
                 <Button text={t("import_preview.cancel")} onClick={() => setShown(false)}/>
-                <Button text={t("import_preview.import")} primary />
+                <Button
+                    text={importButtonTimeout
+                        ? t("import_preview.import_with_timeout", { timeout: importButtonTimeout })
+                        : t("import_preview.import")}
+                    disabled={importButtonTimeout > 0}
+                    primary
+                />
             </>}
             show={shown}
             onHidden={() => {
                 setShown(false);
                 setData(null);
+                setImportButtonTimeout(3);
             }}
         >
             <p>{isDangerousImport
