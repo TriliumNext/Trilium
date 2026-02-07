@@ -1,10 +1,28 @@
 .modal.import-preview-dialog {
-    .card {
-        margin-bottom: 1em;
-    }
-
     .stats {
         color: var(--muted-text-color);
+    }
+
+
+    .critical { --color: #ff7979; }
+    .warning { --color: #e2b11d; }
+    .safe { --color: var(--admonition-tip-accent-color); }
+
+    .card {
+        margin-bottom: 1em;
+        position: relative;
+        overflow: hidden;
+        padding-inline: 0.75em;
+
+        &:after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--color);
+        }
     }
 
     .dangerous-categories {
@@ -15,11 +33,6 @@
 
         .ext-badge {
             color: black;
-
-            &.critical { --color: #ff7979; }
-            &.warning { --color: #e2b11d; }
-
-            &.safe { --color: var(--admonition-tip-accent-color); }
         }
     }
 }

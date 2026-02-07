@@ -64,8 +64,8 @@ const IMPORT_BUTTON_TIMEOUT = 3;
 export default function ImportPreviewDialog() {
     const [ data, setData ] = useState<ImportPreviewData | null>({
         previews: [
-            JSON.parse(`{"fileName": "foo", "isDangerous":true,"dangerousAttributes":["iconPack"],"dangerousAttributeCategories":["codeExecution", "serverSideScripting", "clientSideScripting"],"numNotes":1,"id":"llpCPOmcBGhW5.trilium"}`),
-            JSON.parse(`{"fileName": "bar", "isDangerous":true,"dangerousAttributes":["iconPack"],"dangerousAttributeCategories":["codeExecution", "iconPack", "webview"],"numNotes":1,"id":"llpCPOmcBGhW5.trilium"}`),
+            JSON.parse(`{"fileName": "foo", "isDangerous":true,"dangerousAttributes":["iconPack"],"dangerousAttributeCategories":["webview", "codeExecution", "serverSideScripting", "clientSideScripting"],"numNotes":1,"id":"llpCPOmcBGhW5.trilium"}`),
+            JSON.parse(`{"fileName": "bar", "isDangerous":true,"dangerousAttributes":["iconPack"],"dangerousAttributeCategories":["iconPack", "webview"],"numNotes":1,"id":"llpCPOmcBGhW5.trilium"}`),
             JSON.parse(`{"fileName": "baz","isDangerous":false,"dangerousAttributes":["iconPack"],"dangerousAttributeCategories":[],"numNotes":1,"id":"llpCPOmcBGhW5.trilium"}`)
         ]
     });
@@ -149,7 +149,10 @@ function SinglePreview({ preview }: { preview: ImportPreviewResponse }) {
     const categories = sortDangerousAttributeCategoryBySeverity(preview.dangerousAttributeCategories);
 
     return (
-        <Card title={preview.fileName}>
+        <Card
+            title={preview.fileName}
+            className={DANGEROUS_CATEGORIES_MAPPINGS[categories[0]]?.category ?? "safe"}
+        >
             <div className="stats">
                 <span>{t("import_preview.notes_count", { count: preview.numNotes })}</span>
             </div>
