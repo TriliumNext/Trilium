@@ -1,9 +1,12 @@
+import "./import_preview.css";
+
 import { ImportPreviewResponse } from "@triliumnext/commons";
 import { useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
 import Button from "../react/Button";
 import { Card } from "../react/Card";
+import FormRadioGroup from "../react/FormRadioGroup";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 
@@ -18,6 +21,7 @@ export default function ImportPreviewDialog() {
         ]
     });
     const [ shown, setShown ] = useState(true);
+    const [ importMethod, setImportMethod ] = useState<string>("safe");
 
     useTriliumEvent("showImportPreviewDialog", (data) => {
         setData(data);
@@ -40,6 +44,17 @@ export default function ImportPreviewDialog() {
             }}
         >
             {data?.previews.map(preview => <SinglePreview key={preview.id} preview={preview} />)}
+
+            <div className="import-options">
+                <FormRadioGroup
+                    name="import-method"
+                    currentValue={importMethod} onChange={setImportMethod}
+                    values={[
+                        { value: "safe", label: t("import_preview.import_safely"), inlineDescription: t("import_preview.import_safely_description") },
+                        { value: "unsafe", label: t("import_preview.import_trust"), inlineDescription: t("import_preview.import_trust_description") }
+                    ]}
+                />
+            </div>
         </Modal>
     );
 }

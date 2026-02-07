@@ -2289,6 +2289,10 @@
     "notes_count_one": "{{count}} notes",
     "notes_count_other": "{{count}} note",
     "cancel": "Cancel",
-    "import": "Import"
+    "import": "Import",
+    "import_safely": "Import safely (recommended)",
+    "import_safely_description": "Scripts, widgets and icon packs will be disabled.",
+    "import_trust": "Trust and enable active content",
+    "import_trust_description": "Only do this if you trust the source."
   }
 }
