@@ -12,6 +12,7 @@ import enexImportService from "../../services/import/enex.js";
 import opmlImportService from "../../services/import/opml.js";
 import singleImportService from "../../services/import/single.js";
 import zipImportService from "../../services/import/zip.js";
+import previewZipForImport from "../../services/import/zip_preview.js";
 import log from "../../services/log.js";
 import TaskContext from "../../services/task_context.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
@@ -146,7 +147,7 @@ function importAttachmentsToNote(req: Request) {
     }
 }
 
-function importPreview(req: Request) {
+async function importPreview(req: Request) {
     const file = req.file;
     if (!file) {
         throw new ValidationError("No file has been uploaded");
@@ -155,6 +156,8 @@ function importPreview(req: Request) {
     if (!file.originalname.endsWith(".trilium")) {
         throw new ValidationError("Preview supports only .trilium files.");
     }
+
+    await previewZipForImport(file.buffer);
 
     return "OK";
 }

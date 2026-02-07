@@ -295,12 +295,12 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
                 attachmentId: getNewAttachmentId(attachmentMeta.attachmentId),
                 noteId: getNewNoteId(noteMeta.noteId)
             };
-        } 
+        }
         // don't check for noteMeta since it's not mandatory for notes
         return {
             noteId: getNoteId(noteMeta, absUrl)
         };
-        
+
     }
 
     function processTextNoteContent(content: string, noteTitle: string, filePath: string, noteMeta?: NoteMeta) {
@@ -313,9 +313,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
         content = content.replace(/<h1>([^<]*)<\/h1>/gi, (match, text) => {
             if (noteTitle.trim() === text.trim()) {
                 return ""; // remove whole H1 tag
-            } 
+            }
             return `<h2>${text}</h2>`;
-            
+
         });
 
         if (taskContext.data?.safeImport) {
@@ -348,9 +348,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
                 return `src="api/attachments/${target.attachmentId}/image/${path.basename(url)}"`;
             } else if (target.noteId) {
                 return `src="api/images/${target.noteId}/${path.basename(url)}"`;
-            } 
+            }
             return match;
-            
+
         });
 
         content = content.replace(/href="([^"]*)"/g, (match, url) => {
@@ -374,9 +374,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
                 return `href="#root/${target.noteId}?viewMode=attachments&attachmentId=${target.attachmentId}"`;
             } else if (target.noteId) {
                 return `href="#root/${target.noteId}"`;
-            } 
+            }
             return match;
-            
+
         });
 
         if (noteMeta) {
@@ -626,7 +626,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
 }
 
 /** @returns path without leading or trailing slash and backslashes converted to forward ones */
-function normalizeFilePath(filePath: string): string {
+export function normalizeFilePath(filePath: string): string {
     filePath = filePath.replace(/\\/g, "/");
 
     if (filePath.startsWith("/")) {
@@ -692,9 +692,9 @@ function resolveNoteType(type: string | undefined): NoteType {
 
     if (type && (ALLOWED_NOTE_TYPES as readonly string[]).includes(type)) {
         return type as NoteType;
-    } 
+    }
     return "text";
-    
+
 }
 
 export function removeTriliumTags(content: string) {
