@@ -2283,5 +2283,10 @@
   },
   "bookmark_buttons": {
     "bookmarks": "Bookmarks"
+  },
+  "import_preview": {
+    "title": "Import preview",
+    "notes_count_one": "{{count}} notes",
+    "notes_count_other": "{{count}} note"
   }
 }

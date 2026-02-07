@@ -1,6 +1,8 @@
 import { ImportPreviewResponse } from "@triliumnext/commons";
 import { useState } from "preact/hooks";
 
+import { t } from "../../services/i18n";
+import { Card } from "../react/Card";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
 
@@ -9,7 +11,11 @@ export interface ImportPreviewData {
 }
 
 export default function ImportPreviewDialog() {
-    const [ data, setData ] = useState<ImportPreviewData | null>(JSON.parse(`{"isDangerous":true,"dangerousAttributes":["iconPack"],"dangerousAttributeCategories":["iconPack"],"numNotes":1,"id":"llpCPOmcBGhW5.trilium"}`));
+    const [ data, setData ] = useState<ImportPreviewData | null>({
+        previews: [
+            JSON.parse(`{"isDangerous":true,"dangerousAttributes":["iconPack"],"dangerousAttributeCategories":["iconPack"],"numNotes":1,"id":"llpCPOmcBGhW5.trilium"}`)
+        ]
+    });
     const [ shown, setShown ] = useState(true);
 
     useTriliumEvent("showImportPreviewDialog", (data) => {
@@ -21,14 +27,22 @@ export default function ImportPreviewDialog() {
         <Modal
             className="import-preview-dialog"
             size="lg"
-            title="Import preview"
+            title={t("import_preview.title")}
             show={shown}
             onHidden={() => {
                 setShown(false);
                 setData(null);
             }}
         >
-            <p>Preview goes here.</p>
+            {data?.previews.map(preview => <SinglePreview key={preview.id} preview={preview} />)}
         </Modal>
+    );
+}
+
+function SinglePreview({ preview }: { preview: ImportPreviewResponse }) {
+    return (
+        <Card title={preview.id}>
+            <span>{t("import_preview.notes_count", { count: preview.numNotes })}</span>
+        </Card>
     );
 }
