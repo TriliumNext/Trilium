@@ -1,15 +1,19 @@
 import express, { type RequestHandler } from "express";
+import { mkdirSync } from "fs";
 import multer from "multer";
-import log from "../services/log.js";
-import cls from "../services/cls.js";
-import sql from "../services/sql.js";
-import entityChangesService from "../services/entity_changes.js";
+import { join } from "path";
+
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
 import NotFoundError from "../errors/not_found_error.js";
 import ValidationError from "../errors/validation_error.js";
 import auth from "../services/auth.js";
+import cls from "../services/cls.js";
+import dataDirs from "../services/data_dir.js";
+import entityChangesService from "../services/entity_changes.js";
+import log from "../services/log.js";
+import sql from "../services/sql.js";
+import { randomString, safeExtractMessageAndStackFromError } from "../services/utils.js";
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
-import { safeExtractMessageAndStackFromError } from "../services/utils.js";
 
 const MAX_ALLOWED_FILE_SIZE_MB = 250;
 export const router = express.Router();
@@ -67,9 +71,9 @@ export function apiResultHandler(req: express.Request, res: express.Response, re
         return send(res, statusCode, response);
     } else if (result === undefined) {
         return send(res, 204, "");
-    } else {
-        return send(res, 200, result);
     }
+    return send(res, 200, result);
+
 }
 
 function send(res: express.Response, statusCode: number, response: unknown) {
@@ -81,14 +85,14 @@ function send(res: express.Response, statusCode: number, response: unknown) {
         res.status(statusCode).send(response);
 
         return response.length;
-    } else {
-        const json = JSON.stringify(response);
-
-        res.setHeader("Content-Type", "application/json");
-        res.status(statusCode).send(json);
-
-        return json.length;
     }
+    const json = JSON.stringify(response);
+
+    res.setHeader("Content-Type", "application/json");
+    res.status(statusCode).send(json);
+
+    return json.length;
+
 }
 
 export function apiRoute(method: HttpMethod, path: string, routeHandler: SyncRouteRequestHandler) {
@@ -190,10 +194,51 @@ export function createUploadMiddleware(): RequestHandler {
     return multer(multerOptions).single("upload");
 }
 
+export function createImportUploadMiddleware(): RequestHandler {
+    const outDir = join(dataDirs.TMP_DIR, "upload");
+    mkdirSync(outDir, { recursive: true });
+
+    const multerOptions: multer.Options = {
+        storage: multer.diskStorage({
+            destination(req, file, cb) {
+                cb(null, outDir);
+            },
+            filename(req, file, cb) {
+                cb(null, `upload-${randomString(13)}.trilium`);
+            }
+        }),
+        fileFilter: (req: express.Request, file, cb) => {
+            // UTF-8 file names are not well decoded by multer/busboy, so we handle the conversion on our side.
+            // See https://github.com/expressjs/multer/pull/1102.
+            file.originalname = Buffer.from(file.originalname, "latin1").toString("utf-8");
+            cb(null, true);
+        }
+    };
+
+    if (!process.env.TRILIUM_NO_UPLOAD_LIMIT) {
+        multerOptions.limits = {
+            fileSize: MAX_ALLOWED_FILE_SIZE_MB * 1024 * 1024
+        };
+    }
+
+    return multer(multerOptions).single("upload");
+}
+
 const uploadMiddleware = createUploadMiddleware();
+const importUploadMiddleware = createImportUploadMiddleware();
 
 export const uploadMiddlewareWithErrorHandling = function (req: express.Request, res: express.Response, next: express.NextFunction) {
-    uploadMiddleware(req, res, function (err) {
+    uploadMiddleware(req, res, (err) => {
+        if (err?.code === "LIMIT_FILE_SIZE") {
+            res.setHeader("Content-Type", "text/plain").status(400).send(`Cannot upload file because it excceeded max allowed file size of ${MAX_ALLOWED_FILE_SIZE_MB} MiB`);
+        } else {
+            next();
+        }
+    });
+};
+
+export const importMiddlewareWithErrorHandling = function (req: express.Request, res: express.Response, next: express.NextFunction) {
+    importUploadMiddleware(req, res, (err) => {
         if (err?.code === "LIMIT_FILE_SIZE") {
             res.setHeader("Content-Type", "text/plain").status(400).send(`Cannot upload file because it excceeded max allowed file size of ${MAX_ALLOWED_FILE_SIZE_MB} MiB`);
         } else {
