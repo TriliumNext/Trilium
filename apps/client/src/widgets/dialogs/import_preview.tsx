@@ -9,9 +9,11 @@ import { boolToString } from "../../services/utils";
 import { Badge } from "../react/Badge";
 import Button from "../react/Button";
 import { Card } from "../react/Card";
+import FormGroup from "../react/FormGroup";
 import FormRadioGroup from "../react/FormRadioGroup";
 import { useTriliumEvent, useTriliumOptionBool } from "../react/hooks";
 import Modal from "../react/Modal";
+import NoteAutocomplete from "../react/NoteAutocomplete";
 
 export interface ImportPreviewData {
     parentNoteId: string;
@@ -138,6 +140,19 @@ export default function ImportPreviewDialog() {
             {data?.previews.map(preview => <SinglePreview key={preview.id} preview={preview} />)}
 
             <div className="import-options">
+                <FormGroup name="parent-note" label={t("import_preview.parent_note")}>
+                    <NoteAutocomplete
+                        noteId={data?.parentNoteId}
+                        noteIdChanged={noteId => {
+                            if (!data) return;
+                            setData({
+                                ...data,
+                                parentNoteId: noteId
+                            });
+                        }}
+                    />
+                </FormGroup>
+
                 <FormRadioGroup
                     name="import-method"
                     currentValue={importMethod} onChange={setImportMethod}

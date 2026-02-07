@@ -2304,6 +2304,7 @@
     "import_safely_description": "Scripts, widgets and icon packs will be disabled.",
     "import_trust": "Trust and enable active content",
     "import_trust_description": "Only do this if you trust the source.",
+    "parent_note": "Parent note",
     "badge_client_side_scripting_title": "Client-side scripting",
     "badge_client_side_scripting_tooltip": "Can modify the application's interface and send requests to the server. Malicious scripts can read or change your notes.",
     "badge_server_side_scripting_title": "Server-side scripting",
