@@ -1,12 +1,16 @@
+export type DangerousAttributeCategory = "codeExecution" | "serverSideScripting" | "clientSideScripting" | "iconPack" | "webview";
+
 type AttributeInfo = {
     type: "label" | "relation";
     name: string;
     isDangerous?: false;
-} | {
+} | DangerousAttributeInfo;
+
+export type DangerousAttributeInfo = {
     type: "label" | "relation";
     name: string;
     isDangerous: true;
-    dangerCategory: "codeExecution" | "serverSideScripting" | "clientSideScripting" | "widget" | "iconPack" | "webview";
+    dangerCategory: DangerousAttributeCategory;
 };
 
 const builtinAttributes: AttributeInfo[] = [
