@@ -1,4 +1,4 @@
-import { WebSocketMessage } from "@triliumnext/commons";
+import { ImportPreviewResponse, WebSocketMessage } from "@triliumnext/commons";
 
 import appContext from "../components/app_context.js";
 import { t } from "./i18n.js";
@@ -66,8 +66,7 @@ export async function uploadFilesWithPreview(parentNoteId: string, files: string
     const taskId = utils.randomString(10);
     let counter = 0;
 
-    // TODO: Use better typings.
-    const results: object[] = [];
+    const results: ImportPreviewResponse[] = [];
     for (const file of files) {
         counter++;
 

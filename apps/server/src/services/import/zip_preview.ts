@@ -1,5 +1,7 @@
+import { DangerousAttributeCategory, ImportPreviewResponse } from "@triliumnext/commons";
+
 import ValidationError from "../../errors/validation_error";
-import { DangerousAttributeCategory, DangerousAttributeInfo } from "../builtin_attributes";
+import { DangerousAttributeInfo } from "../builtin_attributes";
 import BUILTIN_ATTRIBUTES from "../builtin_attributes.js";
 import NoteMeta, { NoteMetaFile } from "../meta/note_meta";
 import { normalizeFilePath, readContent, readZipFile } from "./zip";
@@ -32,7 +34,7 @@ interface PreviewContext {
     numNotes: number;
 }
 
-export function previewMeta(meta: NoteMetaFile) {
+export function previewMeta(meta: NoteMetaFile): Omit<ImportPreviewResponse, "id"> {
     const context: PreviewContext = {
         dangerousAttributes: new Set<string>(),
         dangerousAttributeCategories: new Set<DangerousAttributeCategory>(),

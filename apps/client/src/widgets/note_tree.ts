@@ -539,9 +539,11 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                                 replaceUnderscoresWithSpaces: true
                             });
                         } else {
-                            importService.uploadFilesWithPreview(parentNoteId, files).then((result) => {
-                                console.log("Got result ", result);
+                            importService.uploadFilesWithPreview(parentNoteId, files).then((previews) => {
+                                if (!previews) return;
+                                this.triggerCommand("showImportPreviewDialog", { previews });
                             });
+                            return;
                         }
                     }
                     const jsonStr = dataTransfer.getData("text");

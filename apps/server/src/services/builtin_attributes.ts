@@ -1,4 +1,4 @@
-export type DangerousAttributeCategory = "codeExecution" | "serverSideScripting" | "clientSideScripting" | "iconPack" | "webview";
+import type { DangerousAttributeCategory } from "@triliumnext/commons";
 
 type AttributeInfo = {
     type: "label" | "relation";

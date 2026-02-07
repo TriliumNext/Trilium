@@ -1,5 +1,6 @@
 
 
+import { ImportPreviewResponse } from "@triliumnext/commons";
 import type { Request } from "express";
 import { readFileSync } from "fs";
 import path from "path";
@@ -179,7 +180,7 @@ async function importPreview(req: Request) {
         return {
             ...previewInfo,
             id
-        };
+        } satisfies ImportPreviewResponse;
     } catch (e) {
         console.warn(e);
         throw new ValidationError("Error while generating the preview.");
