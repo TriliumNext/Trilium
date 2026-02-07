@@ -34,7 +34,7 @@ interface PreviewContext {
     numNotes: number;
 }
 
-export function previewMeta(meta: NoteMetaFile): Omit<ImportPreviewResponse, "id"> {
+export function previewMeta(meta: NoteMetaFile): Omit<ImportPreviewResponse, "id" | "fileName"> {
     const context: PreviewContext = {
         dangerousAttributes: new Set<string>(),
         dangerousAttributeCategories: new Set<DangerousAttributeCategory>(),

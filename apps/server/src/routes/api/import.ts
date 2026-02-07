@@ -179,6 +179,7 @@ async function importPreview(req: Request) {
 
         return {
             ...previewInfo,
+            fileName: file.originalname,
             id
         } satisfies ImportPreviewResponse;
     } catch (e) {

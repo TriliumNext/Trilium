@@ -303,6 +303,7 @@ export type DangerousAttributeCategory = "codeExecution" | "serverSideScripting"
 
 export interface ImportPreviewResponse {
     id: string;
+    fileName: string;
     numNotes: number;
     isDangerous: boolean;
     dangerousAttributeCategories: string[];
