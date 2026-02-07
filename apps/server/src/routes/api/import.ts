@@ -1,6 +1,7 @@
 
 
 import type { Request } from "express";
+import { readFileSync } from "fs";
 import path from "path";
 
 import becca from "../../becca/becca.js";
@@ -81,6 +82,10 @@ async function importNotesToBranch(req: Request) {
         return [500, message];
     }
 
+    onImportDone(note, last, taskContext, parentNoteId);
+}
+
+function onImportDone(note: BNote | null, last: "true" | "false", taskContext: TaskContext<"importNotes">, parentNoteId: string) {
     if (!note) {
         return [500, "No note was generated as a result of the import."];
     }
@@ -173,7 +178,7 @@ async function importPreview(req: Request) {
 
         return {
             ...previewInfo,
-            id: file.filename
+            id
         };
     } catch (e) {
         console.warn(e);
@@ -186,6 +191,24 @@ async function importExecute(req: Request) {
 
     const importRecord = importStore[id];
     if (!importRecord) throw new ValidationError("Unable to find a record of the upload, maybe it expired or the ID is missing or incorrect.");
+
+    const { taskId, last } = req.body;
+    const options = {
+        safeImport: req.body.safeImport !== "false",
+        shrinkImages: req.body.shrinkImages !== "false",
+        textImportedAsText: req.body.textImportedAsText !== "false",
+        codeImportedAsCode: req.body.codeImportedAsCode !== "false",
+        explodeArchives: req.body.explodeArchives !== "false",
+        replaceUnderscoresWithSpaces: req.body.replaceUnderscoresWithSpaces !== "false"
+    };
+
+    const taskContext = TaskContext.getInstance(taskId, "importNotes", options);
+    const { parentNoteId } = req.params;
+    const parentNote = becca.getNoteOrThrow(parentNoteId);
+
+    const buffer = readFileSync(importRecord.path);
+    const note = await zipImportService.importZip(taskContext, buffer, parentNote);
+    onImportDone(note, last, taskContext, parentNoteId);
 
     return importRecord;
 }
