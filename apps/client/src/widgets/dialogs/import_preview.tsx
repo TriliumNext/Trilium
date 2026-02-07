@@ -159,7 +159,7 @@ function SinglePreview({ preview }: { preview: ImportPreviewResponse }) {
             </div>
 
             <div className="dangerous-categories">
-                {categories.length > 1
+                {categories.length > 0
                     ? categories.map(dangerousCategory => {
                         const mapping = DANGEROUS_CATEGORIES_MAPPINGS[dangerousCategory];
                         return (
