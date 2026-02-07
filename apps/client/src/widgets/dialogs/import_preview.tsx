@@ -43,6 +43,8 @@ export default function ImportPreviewDialog() {
                 setData(null);
             }}
         >
+            <p>{t("import_preview.intro", { count: data?.previews.length })}</p>
+
             {data?.previews.map(preview => <SinglePreview key={preview.id} preview={preview} />)}
 
             <div className="import-options">

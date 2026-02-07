@@ -2285,6 +2285,8 @@
     "bookmarks": "Bookmarks"
   },
   "import_preview": {
+    "intro_one": "You are about to import an archive.",
+    "intro_other": "You are about to import {{count}} archives.",
     "title": "Import preview",
     "notes_count_one": "{{count}} notes",
     "notes_count_other": "{{count}} note",
