@@ -2,6 +2,7 @@ import { ImportPreviewResponse } from "@triliumnext/commons";
 import { useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
+import Button from "../react/Button";
 import { Card } from "../react/Card";
 import { useTriliumEvent } from "../react/hooks";
 import Modal from "../react/Modal";
@@ -28,6 +29,10 @@ export default function ImportPreviewDialog() {
             className="import-preview-dialog"
             size="lg"
             title={t("import_preview.title")}
+            footer={<>
+                <Button text={t("import_preview.cancel")} onClick={() => setShown(false)}/>
+                <Button text={t("import_preview.import")} primary />
+            </>}
             show={shown}
             onHidden={() => {
                 setShown(false);

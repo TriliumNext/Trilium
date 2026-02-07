@@ -2287,6 +2287,8 @@
   "import_preview": {
     "title": "Import preview",
     "notes_count_one": "{{count}} notes",
-    "notes_count_other": "{{count}} note"
+    "notes_count_other": "{{count}} note",
+    "cancel": "Cancel",
+    "import": "Import"
   }
 }
