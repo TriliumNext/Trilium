@@ -32,13 +32,15 @@ interface PreviewContext {
     dangerousAttributes: Set<string>;
     dangerousAttributeCategories: Set<DangerousAttributeCategory>;
     numNotes: number;
+    numAttributes: number;
 }
 
 export function previewMeta(meta: NoteMetaFile): Omit<ImportPreviewResponse, "id" | "fileName"> {
     const context: PreviewContext = {
         dangerousAttributes: new Set<string>(),
         dangerousAttributeCategories: new Set<DangerousAttributeCategory>(),
-        numNotes: 0
+        numNotes: 0,
+        numAttributes: 0
     };
     previewMetaInternal(meta.files, context);
 
@@ -46,7 +48,8 @@ export function previewMeta(meta: NoteMetaFile): Omit<ImportPreviewResponse, "id
         isDangerous: context.dangerousAttributes.size > 0,
         dangerousAttributes: Array.from(context.dangerousAttributes),
         dangerousAttributeCategories: Array.from(context.dangerousAttributeCategories),
-        numNotes: context.numNotes
+        numNotes: context.numNotes,
+        numAttributes: context.numAttributes
     };
 }
 
@@ -58,6 +61,7 @@ function previewMetaInternal(metaFiles: NoteMeta[], context: PreviewContext) {
         // Look through the attributes for dangerous ones.
         if (metaFile.attributes) {
             for (const { name, type } of metaFile.attributes) {
+                context.numAttributes++;
                 const dangerousAttribute = BUILTIN_ATTRIBUTES.find((attr) =>
                     attr.type === type &&
                     attr.name.toLowerCase() === name.trim().toLowerCase() && attr.isDangerous) as DangerousAttributeInfo | undefined;

@@ -2293,6 +2293,8 @@
     "title": "Import preview",
     "notes_count_one": "{{count}} note",
     "notes_count_other": "{{count}} notes",
+    "attributes_count_one": "{{count}} attribute",
+    "attributes_count_other": "{{count}} attributes",
     "cancel": "Cancel",
     "import": "Import",
     "import_with_timeout": "Import ({{timeout}})",

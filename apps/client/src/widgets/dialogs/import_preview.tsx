@@ -155,6 +155,7 @@ function SinglePreview({ preview }: { preview: ImportPreviewResponse }) {
         >
             <div className="stats">
                 <span>{t("import_preview.notes_count", { count: preview.numNotes })}</span>
+                <span>{t("import_preview.attributes_count", { count: preview.numAttributes })}</span>
             </div>
 
             <div className="dangerous-categories">

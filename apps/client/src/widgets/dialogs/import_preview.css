@@ -1,6 +1,15 @@
 .modal.import-preview-dialog {
     .stats {
         color: var(--muted-text-color);
+        font-size: 0.9em;
+
+        span:after {
+            content: " • "
+        }
+
+        span:last-of-type:after {
+            content: unset;
+        }
     }
 
 
