@@ -1,18 +1,19 @@
-"use strict";
 
-import enexImportService from "../../services/import/enex.js";
-import opmlImportService from "../../services/import/opml.js";
-import zipImportService from "../../services/import/zip.js";
-import singleImportService from "../../services/import/single.js";
-import cls from "../../services/cls.js";
+
+import type { Request } from "express";
 import path from "path";
+
 import becca from "../../becca/becca.js";
 import beccaLoader from "../../becca/becca_loader.js";
+import type BNote from "../../becca/entities/bnote.js";
+import ValidationError from "../../errors/validation_error.js";
+import cls from "../../services/cls.js";
+import enexImportService from "../../services/import/enex.js";
+import opmlImportService from "../../services/import/opml.js";
+import singleImportService from "../../services/import/single.js";
+import zipImportService from "../../services/import/zip.js";
 import log from "../../services/log.js";
 import TaskContext from "../../services/task_context.js";
-import ValidationError from "../../errors/validation_error.js";
-import type { Request } from "express";
-import type BNote from "../../becca/entities/bnote.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
 
 async function importNotesToBranch(req: Request) {
@@ -88,7 +89,7 @@ async function importNotesToBranch(req: Request) {
         setTimeout(
             () =>
                 taskContext.taskSucceeded({
-                    parentNoteId: parentNoteId,
+                    parentNoteId,
                     importedNoteId: note?.noteId
                 }),
             1000
@@ -138,14 +139,28 @@ function importAttachmentsToNote(req: Request) {
         setTimeout(
             () =>
                 taskContext.taskSucceeded({
-                    parentNoteId: parentNoteId
+                    parentNoteId
                 }),
             1000
         );
     }
 }
 
+function importPreview(req: Request) {
+    const file = req.file;
+    if (!file) {
+        throw new ValidationError("No file has been uploaded");
+    }
+
+    if (!file.originalname.endsWith(".trilium")) {
+        throw new ValidationError("Preview supports only .trilium files.");
+    }
+
+    return "OK";
+}
+
 export default {
     importNotesToBranch,
-    importAttachmentsToNote
+    importAttachmentsToNote,
+    importPreview
 };

@@ -10,9 +10,9 @@ import etapiBackupRoute from "../etapi/backup.js";
 import etapiBranchRoutes from "../etapi/branches.js";
 import etapiMetricsRoute from "../etapi/metrics.js";
 import etapiNoteRoutes from "../etapi/notes.js";
+import etapiRevisionsRoutes from "../etapi/revisions.js";
 import etapiSpecRoute from "../etapi/spec.js";
 import etapiSpecialNoteRoutes from "../etapi/special_notes.js";
-import etapiRevisionsRoutes from "../etapi/revisions.js";
 import auth from "../services/auth.js";
 import openID from '../services/open_id.js';
 import { isElectron } from "../services/utils.js";
@@ -195,7 +195,9 @@ function register(app: express.Application) {
 
     route(GET, "/api/branches/:branchId/export/:type/:format/:version/:taskId", [auth.checkApiAuthOrElectron], exportRoute.exportBranch);
     asyncRoute(PST, "/api/notes/:parentNoteId/notes-import", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importNotesToBranch, apiResultHandler);
-    route(PST, "/api/notes/:parentNoteId/attachments-import", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importAttachmentsToNote, apiResultHandler);
+    route(PST, "/api/notes/:parentNoteId/attachments-import", [auth.checkApiAuthOrElectron,
+        uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importAttachmentsToNote, apiResultHandler);
+    route(PST, "/api/notes/:parentNoteId/preview", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importPreview, apiResultHandler);
 
     apiRoute(GET, "/api/notes/:noteId/attributes", attributesRoute.getEffectiveNoteAttributes);
     apiRoute(PST, "/api/notes/:noteId/attributes", attributesRoute.addNoteAttribute);
