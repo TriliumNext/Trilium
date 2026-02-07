@@ -1,10 +1,11 @@
-import toastService, { type ToastOptionsWithRequiredId } from "./toast.js";
-import server from "./server.js";
-import ws from "./ws.js";
-import utils from "./utils.js";
+import { WebSocketMessage } from "@triliumnext/commons";
+
 import appContext from "../components/app_context.js";
 import { t } from "./i18n.js";
-import { WebSocketMessage } from "@triliumnext/commons";
+import server from "./server.js";
+import toastService, { type ToastOptionsWithRequiredId } from "./toast.js";
+import utils from "./utils.js";
+import ws from "./ws.js";
 
 type BooleanLike = boolean | "true" | "false";
 
@@ -48,13 +49,48 @@ export async function uploadFiles(entityType: string, parentNoteId: string, file
             dataType: "json",
             type: "POST",
             timeout: 60 * 60 * 1000,
-            error: function (xhr) {
+            error (xhr) {
                 toastService.showError(t("import.failed", { message: xhr.responseText }));
             },
             contentType: false, // NEEDED, DON'T REMOVE THIS
             processData: false // NEEDED, DON'T REMOVE THIS
         });
     }
+}
+
+export async function uploadFilesWithPreview(parentNoteId: string, files: string[] | File[]) {
+    if (files.length === 0) {
+        return;
+    }
+
+    const taskId = utils.randomString(10);
+    let counter = 0;
+
+    // TODO: Use better typings.
+    const results: object[] = [];
+    for (const file of files) {
+        counter++;
+
+        const formData = new FormData();
+        formData.append("upload", file);
+        formData.append("taskId", taskId);
+        formData.append("last", counter === files.length ? "true" : "false");
+
+        results.push(await $.ajax({
+            url: `${window.glob.baseApiUrl}notes/${parentNoteId}/preview-import`,
+            headers: await server.getHeaders(),
+            data: formData,
+            dataType: "json",
+            type: "POST",
+            timeout: 60 * 60 * 1000,
+            error (xhr) {
+                toastService.showError(t("import.failed", { message: xhr.responseText }));
+            },
+            contentType: false, // NEEDED, DON'T REMOVE THIS
+            processData: false // NEEDED, DON'T REMOVE THIS
+        }));
+    }
+    return results;
 }
 
 function makeToast(id: string, message: string): ToastOptionsWithRequiredId {
