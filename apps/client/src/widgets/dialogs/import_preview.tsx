@@ -15,11 +15,12 @@ export interface ImportPreviewData {
     previews: ImportPreviewResponse[];
 }
 
+type DangerousCategory = "critical" | "warning";
 const DANGEROUS_CATEGORIES_MAPPINGS: Record<DangerousAttributeCategory, {
     title: string;
     description: string;
     icon: string;
-    category: "critical" | "warning";
+    category: DangerousCategory;
 }> = {
     clientSideScripting: {
         icon: "bx bx-window-alt",
@@ -51,6 +52,11 @@ const DANGEROUS_CATEGORIES_MAPPINGS: Record<DangerousAttributeCategory, {
         description: t("import_preview.badge_web_view_description"),
         category: "warning"
     }
+};
+
+const SEVERITY_ORDER: Record<DangerousCategory, number> = {
+    critical: 0,
+    warning: 1
 };
 
 const IMPORT_BUTTON_TIMEOUT = 3;
@@ -140,6 +146,8 @@ export default function ImportPreviewDialog() {
 }
 
 function SinglePreview({ preview }: { preview: ImportPreviewResponse }) {
+    const categories = sortDangerousAttributeCategoryBySeverity(preview.dangerousAttributeCategories);
+
     return (
         <Card title={preview.id}>
             <div className="stats">
@@ -147,8 +155,8 @@ function SinglePreview({ preview }: { preview: ImportPreviewResponse }) {
             </div>
 
             <div className="dangerous-categories">
-                {preview.dangerousAttributeCategories.length > 1
-                    ? preview.dangerousAttributeCategories.map(dangerousCategory => {
+                {categories.length > 1
+                    ? categories.map(dangerousCategory => {
                         const mapping = DANGEROUS_CATEGORIES_MAPPINGS[dangerousCategory];
                         return (
                             <Badge
@@ -171,4 +179,12 @@ function SinglePreview({ preview }: { preview: ImportPreviewResponse }) {
             </div>
         </Card>
     );
+}
+
+function sortDangerousAttributeCategoryBySeverity(categories: string[]) {
+    return categories.toSorted((a, b) => {
+        const aLevel = DANGEROUS_CATEGORIES_MAPPINGS[a].category;
+        const bLevel = DANGEROUS_CATEGORIES_MAPPINGS[b].category;
+        return SEVERITY_ORDER[aLevel] - SEVERITY_ORDER[bLevel];
+    });
 }
