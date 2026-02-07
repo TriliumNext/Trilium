@@ -2288,13 +2288,23 @@
     "intro_one": "You are about to import an archive.",
     "intro_other": "You are about to import {{count}} archives.",
     "title": "Import preview",
-    "notes_count_one": "{{count}} notes",
-    "notes_count_other": "{{count}} note",
+    "notes_count_one": "{{count}} note",
+    "notes_count_other": "{{count}} notes",
     "cancel": "Cancel",
     "import": "Import",
     "import_safely": "Import safely (recommended)",
     "import_safely_description": "Scripts, widgets and icon packs will be disabled.",
     "import_trust": "Trust and enable active content",
-    "import_trust_description": "Only do this if you trust the source."
+    "import_trust_description": "Only do this if you trust the source.",
+    "badge_client_side_scripting_title": "Client-side scripting",
+    "badge_client_side_scripting_tooltip": "Can modify the application's interface and send requests to the server. Malicious scripts can read or change your notes.",
+    "badge_server_side_scripting_title": "Server-side scripting",
+    "badge_server_side_scripting_tooltip": "Runs on the server with access to your database and local files. Malicious scripts could read, modify, or delete your data.",
+    "badge_code_execution_title": "Code execution",
+    "badge_code_execution_description": "Allows running arbitrary programs on your system or server. This can fully compromise your data and environment.",
+    "badge_icon_pack_title": "Icon pack",
+    "badge_icon_pack_description": "Provides custom icons. Usually safe, but malformed or very large icon packs may cause performance or stability issues.",
+    "badge_web_view_title": "Web view",
+    "badge_web_view_description": "Displays external web pages inside Trilium. These pages may track activity or receive information about your notes."
   }
 }
