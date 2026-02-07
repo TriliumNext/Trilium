@@ -3,6 +3,10 @@
         margin-bottom: 1em;
     }
 
+    .stats {
+        color: var(--muted-text-color);
+    }
+
     .dangerous-categories {
         display: flex;
         gap: 0.5em;

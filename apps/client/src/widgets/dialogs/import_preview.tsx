@@ -142,7 +142,9 @@ export default function ImportPreviewDialog() {
 function SinglePreview({ preview }: { preview: ImportPreviewResponse }) {
     return (
         <Card title={preview.id}>
-            <span>{t("import_preview.notes_count", { count: preview.numNotes })}</span>
+            <div className="stats">
+                <span>{t("import_preview.notes_count", { count: preview.numNotes })}</span>
+            </div>
 
             <div className="dangerous-categories">
                 {preview.dangerousAttributeCategories.length > 1
