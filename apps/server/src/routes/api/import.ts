@@ -147,6 +147,12 @@ function importAttachmentsToNote(req: Request) {
     }
 }
 
+interface ImportRecord {
+    path: string;
+}
+
+const importStore: Record<string, ImportRecord> = {};
+
 async function importPreview(req: Request) {
     const file = req.file;
     if (!file) {
@@ -159,10 +165,15 @@ async function importPreview(req: Request) {
 
     try {
         const previewInfo = await previewZipForImport(file.path);
+        const id = file.filename;
+
+        importStore[id] = {
+            path: file.path
+        };
 
         return {
             ...previewInfo,
-            file: file.filename
+            id: file.filename
         };
     } catch (e) {
         console.warn(e);
@@ -170,8 +181,18 @@ async function importPreview(req: Request) {
     }
 }
 
+async function importExecute(req: Request) {
+    const { id } = req.body;
+
+    const importRecord = importStore[id];
+    if (!importRecord) throw new ValidationError("Unable to find a record of the upload, maybe it expired or the ID is missing or incorrect.");
+
+    return importRecord;
+}
+
 export default {
     importNotesToBranch,
     importAttachmentsToNote,
-    importPreview
+    importPreview,
+    importExecute
 };

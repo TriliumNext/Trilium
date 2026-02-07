@@ -197,7 +197,8 @@ function register(app: express.Application) {
     asyncRoute(PST, "/api/notes/:parentNoteId/notes-import", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importNotesToBranch, apiResultHandler);
     route(PST, "/api/notes/:parentNoteId/attachments-import", [auth.checkApiAuthOrElectron,
         uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importAttachmentsToNote, apiResultHandler);
-    asyncRoute(PST, "/api/notes/:parentNoteId/preview", [auth.checkApiAuthOrElectron, importMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importPreview, apiResultHandler);
+    asyncRoute(PST, "/api/notes/:parentNoteId/preview-import", [auth.checkApiAuthOrElectron, importMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importPreview, apiResultHandler);
+    asyncRoute(PST, "/api/notes/:parentNoteId/execute-import", [auth.checkApiAuthOrElectron, csrfMiddleware], importRoute.importExecute, apiResultHandler);
 
     apiRoute(GET, "/api/notes/:noteId/attributes", attributesRoute.getEffectiveNoteAttributes);
     apiRoute(PST, "/api/notes/:noteId/attributes", attributesRoute.addNoteAttribute);
