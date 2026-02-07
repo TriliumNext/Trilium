@@ -63,6 +63,7 @@ export default function ImportPreviewDialog() {
     });
     const [ shown, setShown ] = useState(true);
     const [ importMethod, setImportMethod ] = useState<string>("safe");
+    const isDangerousImport = data?.previews.some(preview => preview.isDangerous);
 
     useTriliumEvent("showImportPreviewDialog", (data) => {
         setData(data);
@@ -84,7 +85,9 @@ export default function ImportPreviewDialog() {
                 setData(null);
             }}
         >
-            <p>{t("import_preview.intro", { count: data?.previews.length })}</p>
+            <p>{isDangerousImport
+                ? t("import_preview.intro_unsafe", { count: data?.previews.length })
+                : t("import_preview.intro_safe", { count: data?.previews.length })}</p>
 
             {data?.previews.map(preview => <SinglePreview key={preview.id} preview={preview} />)}
 

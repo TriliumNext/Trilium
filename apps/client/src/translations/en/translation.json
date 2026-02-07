@@ -2285,8 +2285,11 @@
     "bookmarks": "Bookmarks"
   },
   "import_preview": {
-    "intro_one": "You are about to import an archive.",
-    "intro_other": "You are about to import {{count}} archives.",
+    "intro_safe_one": "You are about to import an archive with no unsafe content.",
+    "intro_safe_other": "You are about to import {{count}} archives with no unsafe content.",
+    "intro_unsafe_one": "You are about to import an archive with active content.",
+    "intro_unsafe_other": "You are about to import {{count}} archives, some of which have active content.",
+
     "title": "Import preview",
     "notes_count_one": "{{count}} note",
     "notes_count_other": "{{count}} notes",
