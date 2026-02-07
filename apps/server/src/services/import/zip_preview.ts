@@ -1,21 +1,29 @@
+import ValidationError from "../../errors/validation_error";
 import { DangerousAttributeCategory, DangerousAttributeInfo } from "../builtin_attributes";
 import BUILTIN_ATTRIBUTES from "../builtin_attributes.js";
 import NoteMeta, { NoteMetaFile } from "../meta/note_meta";
 import { normalizeFilePath, readContent, readZipFile } from "./zip";
 
 export default async function previewZipForImport(buffer: Buffer) {
+    let metaFile: NoteMetaFile | null = null;
+
     await readZipFile(buffer, async (zipfile, entry) => {
         const filePath = normalizeFilePath(entry.fileName);
 
         if (filePath === "!!!meta.json") {
             const content = await readContent(zipfile, entry);
-            const meta = JSON.parse(content.toString("utf-8"));
-
-            console.log("Got ", meta);
+            metaFile = JSON.parse(content.toString("utf-8")) as NoteMetaFile;
         }
 
         zipfile.readEntry();
     });
+
+    if (!metaFile) {
+        throw new ValidationError("Missing meta file.");
+    }
+
+    const previewResults = previewMeta(metaFile);
+    return previewResults;
 }
 
 interface PreviewContext {
@@ -33,8 +41,9 @@ export function previewMeta(meta: NoteMetaFile) {
     });
 
     return {
-        dangerousAttributes,
-        dangerousAttributeCategories
+        isDangerous: dangerousAttributes.size > 0,
+        dangerousAttributes: Array.from(dangerousAttributes),
+        dangerousAttributeCategories: Array.from(dangerousAttributeCategories)
     };
 }
 

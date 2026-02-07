@@ -157,9 +157,7 @@ async function importPreview(req: Request) {
         throw new ValidationError("Preview supports only .trilium files.");
     }
 
-    await previewZipForImport(file.buffer);
-
-    return "OK";
+    return await previewZipForImport(file.buffer);
 }
 
 export default {
