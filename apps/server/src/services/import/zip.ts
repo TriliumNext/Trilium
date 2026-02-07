@@ -658,22 +658,41 @@ export function readContent(zipfile: yauzl.ZipFile, entry: yauzl.Entry): Promise
     });
 }
 
-export function readZipFile(buffer: Buffer, processEntryCallback: (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => Promise<void>) {
+export function readZipFile(bufferOrPath: Buffer | string, processEntryCallback: (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => Promise<void>) {
     return new Promise<void>((res, rej) => {
-        yauzl.fromBuffer(buffer, { lazyEntries: true, validateEntrySizes: false }, (err, zipfile) => {
-            if (err) rej(err);
-            if (!zipfile) throw new Error("Unable to read zip file.");
+        const options: yauzl.Options = { lazyEntries: true, validateEntrySizes: false };
+        const callback = (err, zipfile) => {
+            if (err) {
+                rej(err);
+                return;
+            }
+            if (!zipfile) {
+                rej("Unable to read zip file.");
+                return;
+            }
 
-            zipfile.readEntry();
+            try {
+                zipfile.readEntry();
+            } catch (err) {
+                rej(err);
+                return;
+            }
             zipfile.on("entry", async (entry) => {
                 try {
                     await processEntryCallback(zipfile, entry);
                 } catch (e) {
                     rej(e);
+                    return;
                 }
             });
             zipfile.on("end", res);
-        });
+        };
+
+        if (typeof bufferOrPath === "string") {
+            yauzl.open(bufferOrPath, options, callback);
+        } else {
+            yauzl.fromBuffer(bufferOrPath, options, callback);
+        }
     });
 }
 

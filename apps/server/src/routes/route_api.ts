@@ -204,7 +204,7 @@ export function createImportUploadMiddleware(): RequestHandler {
                 cb(null, outDir);
             },
             filename(req, file, cb) {
-                cb(null, `upload-${randomString(13)}.trilium`);
+                cb(null, `${randomString(13)}.trilium`);
             }
         }),
         fileFilter: (req: express.Request, file, cb) => {

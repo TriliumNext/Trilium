@@ -4,10 +4,10 @@ import BUILTIN_ATTRIBUTES from "../builtin_attributes.js";
 import NoteMeta, { NoteMetaFile } from "../meta/note_meta";
 import { normalizeFilePath, readContent, readZipFile } from "./zip";
 
-export default async function previewZipForImport(buffer: Buffer) {
+export default async function previewZipForImport(bufferOrPath: string | Buffer) {
     let metaFile: NoteMetaFile | null = null;
 
-    await readZipFile(buffer, async (zipfile, entry) => {
+    await readZipFile(bufferOrPath, async (zipfile, entry) => {
         const filePath = normalizeFilePath(entry.fileName);
 
         if (filePath === "!!!meta.json") {
