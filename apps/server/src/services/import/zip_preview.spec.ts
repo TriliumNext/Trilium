@@ -37,6 +37,8 @@ describe("Preview meta", () => {
             ]
         });
         const result = previewMeta(meta);
+        expect(result.numNotes).toBe(3);
+        expect(result.isDangerous).toBe(true);
         expect(result.dangerousAttributes).toContain("widget");
         expect(result.dangerousAttributes).toContain("customRequestHandler");
         expect(result.dangerousAttributes).toContain("runOnBranchCreation");

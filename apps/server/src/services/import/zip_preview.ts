@@ -28,28 +28,31 @@ export default async function previewZipForImport(buffer: Buffer) {
 
 interface PreviewContext {
     dangerousAttributes: Set<string>;
-    dangerousAttributeCategories: Set<string>;
+    dangerousAttributeCategories: Set<DangerousAttributeCategory>;
+    numNotes: number;
 }
 
 export function previewMeta(meta: NoteMetaFile) {
-    const dangerousAttributes = new Set<string>;
-    const dangerousAttributeCategories = new Set<DangerousAttributeCategory>();
-
-    previewMetaInternal(meta.files, {
-        dangerousAttributes,
-        dangerousAttributeCategories,
-    });
+    const context: PreviewContext = {
+        dangerousAttributes: new Set<string>(),
+        dangerousAttributeCategories: new Set<DangerousAttributeCategory>(),
+        numNotes: 0
+    };
+    previewMetaInternal(meta.files, context);
 
     return {
-        isDangerous: dangerousAttributes.size > 0,
-        dangerousAttributes: Array.from(dangerousAttributes),
-        dangerousAttributeCategories: Array.from(dangerousAttributeCategories)
+        isDangerous: context.dangerousAttributes.size > 0,
+        dangerousAttributes: Array.from(context.dangerousAttributes),
+        dangerousAttributeCategories: Array.from(context.dangerousAttributeCategories),
+        numNotes: context.numNotes
     };
 }
 
 
 function previewMetaInternal(metaFiles: NoteMeta[], context: PreviewContext) {
     for (const metaFile of metaFiles) {
+        context.numNotes++;
+
         // Look through the attributes for dangerous ones.
         if (metaFile.attributes) {
             for (const { name, type } of metaFile.attributes) {
