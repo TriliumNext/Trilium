@@ -35,7 +35,7 @@
     "sucrase": "3.35.1"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "0.72.1",
+    "@anthropic-ai/sdk": "0.74.0",
     "@braintree/sanitize-url": "7.1.2",
     "@electron/remote": "2.1.3",
     "@triliumnext/commons": "workspace:*",
