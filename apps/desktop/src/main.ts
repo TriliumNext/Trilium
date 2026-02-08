@@ -1,19 +1,19 @@
 import { initializeTranslations } from "@triliumnext/server/src/services/i18n.js";
-import { t } from "i18next";
-
-import { app, globalShortcut, BrowserWindow } from "electron";
-import sqlInit from "@triliumnext/server/src/services/sql_init.js";
-import windowService from "@triliumnext/server/src/services/window.js";
-import tray from "@triliumnext/server/src/services/tray.js";
+import previewZipForImport from "@triliumnext/server/src/services/import/zip_preview";
 import options from "@triliumnext/server/src/services/options.js";
+import port from "@triliumnext/server/src/services/port.js";
+import sqlInit from "@triliumnext/server/src/services/sql_init.js";
+import tray from "@triliumnext/server/src/services/tray.js";
+import windowService from "@triliumnext/server/src/services/window.js";
+import { app, BrowserWindow,globalShortcut } from "electron";
+import { ipcMain } from "electron/main";
 import electronDebug from "electron-debug";
 import electronDl from "electron-dl";
-import { PRODUCT_NAME } from "./app-info";
-import port from "@triliumnext/server/src/services/port.js";
+import { t } from "i18next";
 import { join } from "path";
+
 import { deferred, LOCALES } from "../../../packages/commons/src";
-import previewZipForImport from "@triliumnext/server/src/services/import/zip_preview";
-import { ipcMain } from "electron/main";
+import { PRODUCT_NAME } from "./app-info";
 
 async function main() {
     const userDataPath = getUserData();
@@ -141,9 +141,7 @@ async function handleImportArguments(args: string[], window: BrowserWindow) {
     if (filesToImport.length === 0) return;
 
     const previews = await Promise.all(filesToImport.map(file => previewZipForImport(file)));
-    console.log("Sendimg import preview data to window", window);
-    ipcMain.on("initial-render-complete", () => {
-        console.log("READYYY!!!");
+    ipcMain.on("import-preview-ready", () => {
         window.webContents.send("show-import-preview-dialog", {
             previews
         });
@@ -158,7 +156,7 @@ function getElectronLocale() {
     // For RTL, we have to force the UI locale to align the window buttons properly.
     if (formattingLocale && !correspondingLocale?.rtl) return formattingLocale;
 
-    return uiLocale || "en"
+    return uiLocale || "en";
 }
 
 main();

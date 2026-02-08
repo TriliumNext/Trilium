@@ -114,10 +114,11 @@ export default function ImportPreviewDialog() {
             setImportButtonTimeout(IMPORT_BUTTON_TIMEOUT);
             hasSubmittedRef.current = false;
         };
+        ipcRenderer.send("import-preview-ready");
         ipcRenderer.on("show-import-preview-dialog", onShow);
         return () => {
             ipcRenderer.removeListener("show-import-preview-dialog", onShow);
-        }
+        };
     }, []);
 
     return (
