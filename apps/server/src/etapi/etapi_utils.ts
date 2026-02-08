@@ -123,6 +123,16 @@ function getAndCheckAttribute(attributeId: string) {
     
 }
 
+function getAndCheckRevision(revisionId: string) {
+    const revision = becca.getRevision(revisionId);
+
+    if (revision) {
+        return revision;
+    } else {
+        throw new EtapiError(404, "REVISION_NOT_FOUND", `Revision '${revisionId}' not found.`);
+    }
+}
+
 function validateAndPatch(target: any, source: any, allowedProperties: ValidatorMap) {
     for (const key of Object.keys(source)) {
         if (!(key in allowedProperties)) {
@@ -154,5 +164,6 @@ export default {
     getAndCheckNote,
     getAndCheckBranch,
     getAndCheckAttribute,
-    getAndCheckAttachment
+    getAndCheckAttachment,
+    getAndCheckRevision
 };

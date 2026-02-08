@@ -1,20 +1,23 @@
-import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
-import { ViewModeProps } from "../interface";
 import "./index.css";
-import { ColumnMap, getBoardData } from "./data";
+
+import { createContext, TargetedKeyboardEvent } from "preact";
+import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
+
+import FNote from "../../../entities/fnote";
+import { t } from "../../../services/i18n";
+import toast from "../../../services/toast";
+import CollectionProperties from "../../note_bars/CollectionProperties";
+import FormTextArea from "../../react/FormTextArea";
+import FormTextBox from "../../react/FormTextBox";
 import { useNoteLabelBoolean, useNoteLabelWithDefault, useTriliumEvent } from "../../react/hooks";
 import Icon from "../../react/Icon";
-import { t } from "../../../services/i18n";
-import Api from "./api";
-import FormTextBox from "../../react/FormTextBox";
-import { createContext, TargetedKeyboardEvent } from "preact";
-import { onWheelHorizontalScroll } from "../../widget_utils";
-import Column from "./column";
-import BoardApi from "./api";
-import FormTextArea from "../../react/FormTextArea";
-import FNote from "../../../entities/fnote";
 import NoteAutocomplete from "../../react/NoteAutocomplete";
-import toast from "../../../services/toast";
+import { onWheelHorizontalScroll } from "../../widget_utils";
+import { ViewModeProps } from "../interface";
+import Api from "./api";
+import BoardApi from "./api";
+import Column from "./column";
+import { ColumnMap, getBoardData } from "./data";
 
 export interface BoardViewData {
     columns?: BoardColumnData[];
@@ -145,7 +148,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
         const insertBefore = mouseX < columnMiddle;
 
         // Calculate the target position
-        let targetIndex = insertBefore ? index : index + 1;
+        const targetIndex = insertBefore ? index : index + 1;
 
         setColumnDropPosition(targetIndex);
     }, [draggedColumn]);
@@ -159,15 +162,14 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
     }, [draggedColumn, columnDropPosition, handleColumnDrop]);
 
     return (
-        <div
-            className="board-view"
-            onWheel={onWheelHorizontalScroll}
-        >
+        <div className="board-view">
+            <CollectionProperties note={parentNote} />
             <BoardViewContext.Provider value={boardViewContext}>
                 {byColumn && columns && <div
                     className="board-view-container"
                     onDragOver={handleColumnDragOver}
                     onDrop={handleContainerDrop}
+                    onWheel={onWheelHorizontalScroll}
                 >
                     {columns.map((column, index) => (
                         <>
@@ -194,7 +196,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
                 </div>}
             </BoardViewContext.Provider>
         </div>
-    )
+    );
 }
 
 function AddNewColumn({ api, isInRelationMode }: { api: BoardApi, isInRelationMode: boolean }) {
@@ -218,26 +220,26 @@ function AddNewColumn({ api, isInRelationMode }: { api: BoardApi, isInRelationMo
             tabIndex={300}
         >
             {!isCreatingNewColumn
-            ? <>
-                <Icon icon="bx bx-plus" />{" "}
-                {t("board_view.add-column")}
-            </>
-            : (
-                <TitleEditor
-                    placeholder={t("board_view.add-column-placeholder")}
-                    save={async (columnName) => {
-                        const created = await api.addNewColumn(columnName);
-                        if (!created) {
-                            toast.showMessage(t("board_view.column-already-exists"), undefined, "bx bx-duplicate");
-                        }
-                    }}
-                    dismiss={() => setIsCreatingNewColumn(false)}
-                    isNewItem
-                    mode={isInRelationMode ? "relation" : "normal"}
-                />
-            )}
+                ? <>
+                    <Icon icon="bx bx-plus" />{" "}
+                    {t("board_view.add-column")}
+                </>
+                : (
+                    <TitleEditor
+                        placeholder={t("board_view.add-column-placeholder")}
+                        save={async (columnName) => {
+                            const created = await api.addNewColumn(columnName);
+                            if (!created) {
+                                toast.showMessage(t("board_view.column-already-exists"), undefined, "bx bx-duplicate");
+                            }
+                        }}
+                        dismiss={() => setIsCreatingNewColumn(false)}
+                        isNewItem
+                        mode={isInRelationMode ? "relation" : "normal"}
+                    />
+                )}
         </div>
-    )
+    );
 }
 
 export function TitleEditor({ currentValue, placeholder, save, dismiss, mode, isNewItem }: {
@@ -302,26 +304,26 @@ export function TitleEditor({ currentValue, placeholder, save, dismiss, mode, is
                 onBlur={onBlur}
             />
         );
-    } else {
-        return (
-            <NoteAutocomplete
-                inputRef={inputRef}
-                noteId={currentValue ?? ""}
-                opts={{
-                    hideAllButtons: true,
-                    allowCreatingNotes: true
-                }}
-                onKeyDown={(e) => {
-                    if (e.key === "Escape") {
-                        dismiss();
-                    }
-                }}
-                onBlur={() => dismiss()}
-                noteIdChanged={(newValue) => {
-                    save(newValue);
-                    dismiss();
-                }}
-            />
-        );
     }
+    return (
+        <NoteAutocomplete
+            inputRef={inputRef}
+            noteId={currentValue ?? ""}
+            opts={{
+                hideAllButtons: true,
+                allowCreatingNotes: true
+            }}
+            onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                    dismiss();
+                }
+            }}
+            onBlur={() => dismiss()}
+            noteIdChanged={(newValue) => {
+                save(newValue);
+                dismiss();
+            }}
+        />
+    );
+
 }

@@ -29,7 +29,6 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
     const isVerticalLayout = !isHorizontalLayout;
     const parentComponent = useContext(ParentComponent);
     const { isUpdateAvailable, latestVersion } = useTriliumUpdateStatus();
-    const isMobileLocal = isMobile();
     const logoRef = useRef<SVGSVGElement>(null);
     useStaticTooltip(logoRef);
 
@@ -44,9 +43,12 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
                 </div>}
             </>}
             noDropdownListStyle
-            onShown={isMobileLocal ? () => document.getElementById("context-menu-cover")?.classList.add("show", "global-menu-cover") : undefined}
-            onHidden={isMobileLocal ? () => document.getElementById("context-menu-cover")?.classList.remove("show", "global-menu-cover") : undefined}
+            mobileBackdrop
         >
+            {isMobile() && <>
+                <MenuItem command="searchNotes" icon="bx bx-search" text={t("global_menu.search_notes")} />
+                <FormDropdownDivider />
+            </>}
 
             <MenuItem command="openNewWindow" icon="bx bx-window-open" text={t("global_menu.open_new_window")} />
             <MenuItem command="showShareSubtree" icon="bx bx-share-alt" text={t("global_menu.show_shared_notes_subtree")} />
@@ -107,8 +109,7 @@ function BrowserOnlyOptions() {
 
 function DevelopmentOptions({ dropStart }: { dropStart: boolean }) {
     return <>
-        <FormDropdownDivider />
-        <FormListItem disabled>Development Options</FormListItem>
+        <FormListHeader text="Development Options" />
         <FormDropdownSubmenu icon="bx bx-test-tube" title="Experimental features" dropStart={dropStart}>
             {experimentalFeatures.map((feature) => (
                 <ExperimentalFeatureToggle key={feature.id} experimentalFeature={feature as ExperimentalFeature} />

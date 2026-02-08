@@ -1,6 +1,6 @@
 {
   "about": {
-    "title": "Über Trilium Notizen",
+    "title": "Über Trilium Notes",
     "homepage": "Startseite:",
     "app_version": "App-Version:",
     "db_version": "DB-Version:",
@@ -662,7 +662,8 @@
     "show-cheatsheet": "Cheatsheet anzeigen",
     "toggle-zen-mode": "Zen Modus",
     "new-version-available": "Neues Update verfügbar",
-    "download-update": "Version {{latestVersion}} herunterladen"
+    "download-update": "Version {{latestVersion}} herunterladen",
+    "search_notes": "Notizen durchsuchen"
   },
   "sync_status": {
     "unknown": "<p>Der Synchronisations-Status wird bekannt, sobald der nächste Synchronisierungsversuch gestartet wird.</p><p>Klicke, um eine Synchronisierung jetzt auszulösen.</p>",
@@ -742,7 +743,7 @@
     "button_title": "Diagramm als SVG exportieren"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Erstelle eine neue untergeordnete Notiz und füge sie dieser Beziehungskarte hinzu",
+    "create_child_note_title": "Erstelle eine untergeordnete Notiz und füge sie dieser Karte hinzu",
     "reset_pan_zoom_title": "Schwenken und Zoomen auf die ursprünglichen Koordinaten und Vergrößerung zurücksetzen",
     "zoom_in_title": "Hineinzoom",
     "zoom_out_title": "Herauszoomen"
@@ -757,7 +758,9 @@
     "delete_this_note": "Diese Notiz löschen",
     "error_cannot_get_branch_id": "BranchId für notePath „{{notePath}}“ kann nicht abgerufen werden",
     "error_unrecognized_command": "Unbekannter Befehl {{command}}",
-    "note_revisions": "Notiz Revisionen"
+    "note_revisions": "Notiz Revisionen",
+    "backlinks": "Rücklinks",
+    "content_language_switcher": "Inhaltssprache: {{language}}"
   },
   "note_icon": {
     "change_note_icon": "Notiz-Icon ändern",
@@ -909,7 +912,8 @@
     "unknown_search_option": "Unbekannte Suchoption {{searchOptionName}}",
     "search_note_saved": "Suchnotiz wurde in {{-notePathTitle}} gespeichert",
     "actions_executed": "Aktionen wurden ausgeführt.",
-    "view_options": "Optionen anzeigen:"
+    "view_options": "Optionen anzeigen:",
+    "option": "Option"
   },
   "similar_notes": {
     "title": "Ähnliche Notizen",
@@ -1751,8 +1755,8 @@
     "desktop-application": "Desktop Anwendung",
     "native-title-bar": "Native Anwendungsleiste",
     "native-title-bar-description": "In Windows und macOS, sorgt das Deaktivieren der nativen Anwendungsleiste für ein kompakteres Aussehen. Unter Linux, sorgt das Aktivieren der nativen Anwendungsleiste für eine bessere Integration mit anderen Teilen des Systems.",
-    "background-effects": "Hintergrundeffekte aktivieren (nur Windows 11)",
-    "background-effects-description": "Der Mica Effekt fügt einen unscharfen, stylischen Hintergrund in Anwendungsfenstern ein. Dieser erzeugt Tiefe und ein modernes Auftreten. \"Native Titelleiste\" muss deaktiviert sein.",
+    "background-effects": "Hintergrundeffekte aktivieren",
+    "background-effects-description": "Fügt einen unscharfen, stylischen Hintergrund in das Anwendungsfenstern ein. Dies erzeugt Tiefe und ein modernes Auftreten. \"Native Titelleiste\" muss deaktiviert sein.",
     "restart-app-button": "Anwendung neustarten um Änderungen anzuwenden",
     "zoom-factor": "Zoomfaktor"
   },
@@ -1771,7 +1775,8 @@
   "geo-map": {
     "create-child-note-title": "Neue Unternotiz anlegen und zur Karte hinzufügen",
     "create-child-note-instruction": "Auf die Karte klicken, um eine neue Notiz an der Stelle zu erstellen oder Escape drücken um abzubrechen.",
-    "unable-to-load-map": "Karte konnte nicht geladen werden."
+    "unable-to-load-map": "Karte konnte nicht geladen werden.",
+    "create-child-note-text": "Marker hinzufügen"
   },
   "geo-map-context": {
     "open-location": "Ort öffnen",
@@ -2133,7 +2138,7 @@
     "next_theme_message": "Es wird aktuell das alte Design verwendet. Möchten Sie das neue Design ausprobieren?",
     "next_theme_button": "Teste das neue Design",
     "background_effects_title": "Hintergrundeffekte sind jetzt zuverlässig nutzbar",
-    "background_effects_message": "Auf Windows-Geräten sind die Hintergrundeffekte nun vollständig stabil. Die Hintergrundeffekte verleihen der Benutzeroberfläche einen Farbakzent, indem der Hintergrund dahinter weichgezeichnet wird. Diese Technik wird auch in anderen Anwendungen wie dem Windows-Explorer eingesetzt.",
+    "background_effects_message": "Auf Windows- und macOS-Geräten sind die Hintergrundeffekte nun stabil. Die Hintergrundeffekte verleihen der Benutzeroberfläche einen Farbakzent, indem der Hintergrund dahinter weichgezeichnet wird.",
     "background_effects_button": "Aktiviere Hintergrundeffekte",
     "dismiss": "Ablehnen",
     "new_layout_title": "Neues Layout",
@@ -2267,5 +2272,16 @@
     "pages_other": "{{count}} Seiten",
     "pages_alt": "Seite {{pageNumber}}",
     "pages_loading": "Lädt..."
+  },
+  "platform_indicator": {
+    "available_on": "Verfügbar auf {{platform}}"
+  },
+  "mobile_tab_switcher": {
+    "title_one": "{{count}} Tab",
+    "title_other": "{{count}} Tabs",
+    "more_options": "Weitere Optionen"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "Lesezeichen"
   }
 }

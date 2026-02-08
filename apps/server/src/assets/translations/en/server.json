@@ -356,7 +356,8 @@
     "visible-launchers-title": "Visible Launchers",
     "user-guide": "User Guide",
     "localization": "Language & Region",
-    "inbox-title": "Inbox"
+    "inbox-title": "Inbox",
+    "tab-switcher-title": "Tab Switcher"
   },
   "notes": {
     "new-note": "New note",

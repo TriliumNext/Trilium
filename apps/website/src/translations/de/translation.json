@@ -154,7 +154,8 @@
     "header": {
         "get-started": "Loslegen",
         "documentation": "Dokumentation",
-        "support-us": "Unterstützt uns"
+        "support-us": "Unterstützt uns",
+        "resources": "Ressourcen"
     },
     "footer": {
         "copyright_and_the": " und die ",
@@ -196,5 +197,12 @@
         "download_exe": "Installationsdatei herunterladen (.exe)",
         "download_zip": "Portable (.zip)",
         "download_scoop": "Scoop"
+    },
+    "resources": {
+        "icon_packs": "Symbolpakete",
+        "download": "Herunterladen",
+        "website": "Webseite",
+        "title": "Ressourcen",
+        "icon_packs_intro": "Erweitere die Auswahl an verfügbaren Symbolen für deine Notizen, indem du ein Symbolpaket verwendest. Für weitere Informationen zu Symbolpaketen, schaue in die <DocumentationLink>offizielle Dokumentation</DocumentationLink>."
     }
 }

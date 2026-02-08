@@ -10,6 +10,12 @@
     display: flex;
     justify-content: space-between;
     align-items: baseline;
+
+    @media (max-width: 991px) {
+        margin-block: 1em;
+        flex-direction: column;
+        gap: 0.5em;
+    }
 }
 /* #endregion */
 
@@ -42,6 +48,12 @@
     display: flex;
     align-items: center;
     gap: 1em;
+
+    @media (max-width: 991px) {
+        gap: 0.5em;
+        flex-wrap: wrap;
+        .attachment-title { flex-grow: 1; }
+    }
 }
 
 .attachment-details {
@@ -126,10 +138,6 @@
 /* #endregion */
 
 /* #region Attachment actions */
-
-.attachment-actions .dropdown-menu {
-    width: 20em;
-}
 
 .attachment-actions .dropdown-item .tn-icon {
     position: relative;

@@ -7,7 +7,8 @@ import attribute_renderer from "../../../services/attribute_renderer";
 import content_renderer from "../../../services/content_renderer";
 import { t } from "../../../services/i18n";
 import link from "../../../services/link";
-import { useImperativeSearchHighlighlighting, useNoteLabel, useNoteLabelBoolean } from "../../react/hooks";
+import CollectionProperties from "../../note_bars/CollectionProperties";
+import { useImperativeSearchHighlighlighting, useNoteLabel, useNoteLabelBoolean, useNoteProperty } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import NoteLink from "../../react/NoteLink";
 import { ViewModeProps } from "../interface";
@@ -19,11 +20,18 @@ export function ListView({ note, noteIds: unfilteredNoteIds, highlightedTokens }
     const noteIds = useFilteredNoteIds(note, unfilteredNoteIds);
     const { pageNotes, ...pagination } = usePagination(note, noteIds);
     const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
+    const noteType = useNoteProperty(note, "type");
+    const hasCollectionProperties = [ "book", "search" ].includes(noteType ?? "");
 
     return (
         <div class="note-list list-view">
+            <CollectionProperties
+                note={note}
+                centerChildren={<Pager {...pagination} />}
+            />
+
             { noteIds.length > 0 && <div class="note-list-wrapper">
-                <Pager {...pagination} />
+                {!hasCollectionProperties && <Pager {...pagination} />}
 
                 <div class="note-list-container use-tn-links">
                     {pageNotes?.map(childNote => (
@@ -45,11 +53,18 @@ export function GridView({ note, noteIds: unfilteredNoteIds, highlightedTokens }
     const noteIds = useFilteredNoteIds(note, unfilteredNoteIds);
     const { pageNotes, ...pagination } = usePagination(note, noteIds);
     const [ includeArchived ] = useNoteLabelBoolean(note, "includeArchived");
+    const noteType = useNoteProperty(note, "type");
+    const hasCollectionProperties = [ "book", "search" ].includes(noteType ?? "");
 
     return (
         <div class="note-list grid-view">
+            <CollectionProperties
+                note={note}
+                centerChildren={<Pager {...pagination} />}
+            />
+
             <div class="note-list-wrapper">
-                <Pager {...pagination} />
+                {!hasCollectionProperties && <Pager {...pagination} />}
 
                 <div class="note-list-container use-tn-links">
                     {pageNotes?.map(childNote => (
@@ -140,7 +155,7 @@ function NoteAttributes({ note }: { note: FNote }) {
     return <span className="note-list-attributes" ref={ref} />;
 }
 
-function NoteContent({ note, trim, noChildrenList, highlightedTokens, includeArchivedNotes }: {
+export function NoteContent({ note, trim, noChildrenList, highlightedTokens, includeArchivedNotes }: {
     note: FNote;
     trim?: boolean;
     noChildrenList?: boolean;

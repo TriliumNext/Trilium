@@ -2,25 +2,28 @@
   position: relative;
   height: 100%;
   user-select: none;
-  overflow-x: auto;
+  display: flex;
+  flex-direction: column;
 
   --card-font-size: 0.9em;
   --card-line-height: 1.2;
   --card-padding: 0.6em;
 }
 
-body.mobile .board-view {
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-}
-
 .board-view-container {
   height: 100%;
   display: flex;
   gap: 1em;
-  padding: 1em;
+  padding-inline: 12px;
+  padding-block: 4px;
   align-items: flex-start;
+  overflow-x: auto;
+}
+
+body.mobile .board-view-container {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 .board-view-container .board-column {

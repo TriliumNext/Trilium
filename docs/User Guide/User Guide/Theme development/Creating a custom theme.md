@@ -41,6 +41,6 @@ Do note that the theme will be based off of the legacy theme. To override that a
 
 ## Step 5. Making changes
 
-Simply go back to the note and change according to needs. To apply the changes to the current window, press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R </kbd> to refresh.
+Simply go back to the note and change according to needs. To apply the changes to the current window, press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>R</kbd> to refresh.
 
 It's a good idea to keep two windows, one for editing and the other one for previewing the changes.

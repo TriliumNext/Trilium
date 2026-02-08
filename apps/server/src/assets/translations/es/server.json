@@ -259,7 +259,8 @@
     "inbox-title": "Bandeja",
     "jump-to-note-title": "Saltar a...",
     "command-palette": "Abrir paleta de comandos",
-    "zen-mode": "Modo Zen"
+    "zen-mode": "Modo Zen",
+    "tab-switcher-title": "Conmutador de pestañas"
   },
   "notes": {
     "new-note": "Nueva nota",

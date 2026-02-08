@@ -5,7 +5,9 @@ import { IconPackData } from "../provider";
 import { getModulePath } from "../utils";
 
 export default function buildIcons(packName: "regular" | "fill"): IconPackData {
-    const baseDir = join(getModulePath("@phosphor-icons/web"), "src", packName);
+    const moduleDir = getModulePath("@phosphor-icons/web");
+    const baseDir = join(moduleDir, "src", packName);
+    const packageJson = JSON.parse(readFileSync(join(moduleDir, "package.json"), "utf-8"));
     const iconIndex = JSON.parse(readFileSync(join(baseDir, "selection.json"), "utf-8"));
     const icons: IconPackData["manifest"]["icons"] = {};
 
@@ -41,6 +43,13 @@ export default function buildIcons(packName: "regular" | "fill"): IconPackData {
             name: fontFile!,
             mime: "font/woff2",
             content: readFileSync(join(baseDir, fontFile!))
+        },
+        meta: {
+            version: packageJson.version,
+            website: "https://phosphoricons.com/",
+            description: packName === "regular"
+                ? "The regular weight version of Phosphor Icons."
+                : "The filled version of Phosphor Icons."
         }
     };
 }

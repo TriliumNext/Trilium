@@ -1,5 +1,5 @@
 .collection-properties {
-    padding: 0;
+    padding: 0.55em 12px;
     display: flex;
     gap: 0.25em;
     align-items: center;
@@ -14,7 +14,31 @@
         }
     }
 
-    .spacer {
+    >div {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5em;
+    }
+
+    .center-container {
         flex-grow: 1;
+        justify-content: center;
+    }
+
+    .right-container {
+        justify-content: flex-end;
+    }
+
+    button.btn {
+        min-width: 0;
+    }
+
+    @media (max-width: 991px) {
+        flex-wrap: wrap;
+        padding: 0.55em 1em;
+
+        >div {
+            flex-grow: 1;
+        }
     }
 }

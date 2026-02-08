@@ -1,20 +1,22 @@
+import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
+import { useMemo } from "preact/hooks";
+import type React from "react";
 import { Trans } from "react-i18next";
+
 import { t } from "../../../services/i18n";
+import search from "../../../services/search";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
+import { isElectron } from "../../../services/utils";
 import Button from "../../react/Button";
-import FormText from "../../react/FormText";
-import OptionsSection from "./components/OptionsSection";
-import TimeSelector from "./components/TimeSelector";
-import { useMemo } from "preact/hooks";
-import { useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
-import { SANITIZER_DEFAULT_ALLOWED_TAGS } from "@triliumnext/commons";
 import FormCheckbox from "../../react/FormCheckbox";
 import FormGroup from "../../react/FormGroup";
-import search from "../../../services/search";
-import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormSelect from "../../react/FormSelect";
-import { isElectron } from "../../../services/utils";
+import FormText from "../../react/FormText";
+import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
+import { useTriliumOption, useTriliumOptionBool, useTriliumOptionJson } from "../../react/hooks";
+import OptionsSection from "./components/OptionsSection";
+import TimeSelector from "./components/TimeSelector";
 
 export default function OtherSettings() {
     return (
@@ -31,7 +33,7 @@ export default function OtherSettings() {
             <ShareSettings />
             <NetworkSettings />
         </>
-    )
+    );
 }
 
 function SearchEngineSettings() {
@@ -82,7 +84,7 @@ function SearchEngineSettings() {
                 />
             </FormGroup>
         </OptionsSection>
-    )
+    );
 }
 
 function TrayOptionsSettings() {
@@ -97,7 +99,7 @@ function TrayOptionsSettings() {
                 onChange={trayEnabled => setDisableTray(!trayEnabled)}
             />
         </OptionsSection>
-    )
+    );
 }
 
 function NoteErasureTimeout() {
@@ -105,13 +107,13 @@ function NoteErasureTimeout() {
         <OptionsSection title={t("note_erasure_timeout.note_erasure_timeout_title")}>
             <FormText>{t("note_erasure_timeout.note_erasure_description")}</FormText>
             <FormGroup name="erase-entities-after" label={t("note_erasure_timeout.erase_notes_after")}>
-                <TimeSelector           
-                    name="erase-entities-after"         
+                <TimeSelector
+                    name="erase-entities-after"
                     optionValueId="eraseEntitiesAfterTimeInSeconds" optionTimeScaleId="eraseEntitiesAfterTimeScale"
                 />
             </FormGroup>
             <FormText>{t("note_erasure_timeout.manual_erasing_description")}</FormText>
-            
+
             <Button
                 text={t("note_erasure_timeout.erase_deleted_notes_now")}
                 onClick={() => {
@@ -121,7 +123,7 @@ function NoteErasureTimeout() {
                 }}
             />
         </OptionsSection>
-    )
+    );
 }
 
 function AttachmentErasureTimeout() {
@@ -145,7 +147,7 @@ function AttachmentErasureTimeout() {
                 }}
             />
         </OptionsSection>
-    )
+    );
 }
 
 function RevisionSnapshotInterval() {
@@ -165,7 +167,7 @@ function RevisionSnapshotInterval() {
                 />
             </FormGroup>
         </OptionsSection>
-    )
+    );
 }
 
 function RevisionSnapshotLimit() {
@@ -176,7 +178,7 @@ function RevisionSnapshotLimit() {
             <FormText>{t("revisions_snapshot_limit.note_revisions_snapshot_limit_description")}</FormText>
 
             <FormGroup name="revision-snapshot-number-limit">
-                <FormTextBoxWithUnit                    
+                <FormTextBoxWithUnit
                     type="number" min={-1}
                     currentValue={revisionSnapshotNumberLimit}
                     unit={t("revisions_snapshot_limit.snapshot_number_limit_unit")}
@@ -197,7 +199,7 @@ function RevisionSnapshotLimit() {
                 }}
             />
         </OptionsSection>
-    )
+    );
 }
 
 function HtmlImportTags() {
@@ -236,7 +238,7 @@ function HtmlImportTags() {
                 onClick={() => setAllowedHtmlTags(SANITIZER_DEFAULT_ALLOWED_TAGS)}
             />
         </OptionsSection>
-    )
+    );
 }
 
 function ShareSettings() {
@@ -246,8 +248,8 @@ function ShareSettings() {
     return (
         <OptionsSection title={t("share.title")}>
             <FormGroup name="redirectBareDomain" description={t("share.redirect_bare_domain_description")}>
-                <FormCheckbox                    
-                    label={t(t("share.redirect_bare_domain"))}   
+                <FormCheckbox
+                    label={t(t("share.redirect_bare_domain"))}
                     currentValue={redirectBareDomain}
                     onChange={async value => {
                         if (value) {
@@ -264,17 +266,17 @@ function ShareSettings() {
                         }
                         setRedirectBareDomain(value);
                     }}
-                /> 
+                />
             </FormGroup>
 
             <FormGroup name="showLoginInShareTheme" description={t("share.show_login_link_description")}>
-                <FormCheckbox                    
+                <FormCheckbox
                     label={t("share.show_login_link")}
                     currentValue={showLogInShareTheme} onChange={setShowLogInShareTheme}
                 />
             </FormGroup>
         </OptionsSection>
-    )
+    );
 }
 
 function NetworkSettings() {
@@ -288,5 +290,5 @@ function NetworkSettings() {
                 currentValue={checkForUpdates} onChange={setCheckForUpdates}
             />
         </OptionsSection>
-    )
+    );
 }

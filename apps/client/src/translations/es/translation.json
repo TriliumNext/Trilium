@@ -662,7 +662,8 @@
     "show-cheatsheet": "Mostrar hoja de trucos",
     "toggle-zen-mode": "Modo Zen",
     "new-version-available": "Nueva actualización disponible",
-    "download-update": "Obtener versión {{latestVersion}}"
+    "download-update": "Obtener versión {{latestVersion}}",
+    "search_notes": "Buscar notas"
   },
   "zen_mode": {
     "button_exit": "Salir del modo Zen"
@@ -745,7 +746,7 @@
     "button_title": "Exportar diagrama como SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Crear una nueva subnota y agregarla a este mapa de relaciones",
+    "create_child_note_title": "Crear una subnota y agregarla al mapa",
     "reset_pan_zoom_title": "Restablecer la panorámica y el zoom a las coordenadas y ampliación iniciales",
     "zoom_in_title": "Acercar",
     "zoom_out_title": "Alejar"
@@ -754,14 +755,16 @@
     "relation": "relación",
     "backlink_one": "{{count}} Vínculo de retroceso",
     "backlink_many": "{{count}} Vínculos de retroceso",
-    "backlink_other": "{{count}} vínculos de retroceso"
+    "backlink_other": "{{count}} Vínculos de retroceso"
   },
   "mobile_detail_menu": {
     "insert_child_note": "Insertar subnota",
     "delete_this_note": "Eliminar esta nota",
     "error_cannot_get_branch_id": "No se puede obtener el branchID del notePath '{{notePath}}'",
     "error_unrecognized_command": "Comando no reconocido {{command}}",
-    "note_revisions": "Revisiones de notas"
+    "note_revisions": "Revisiones de notas",
+    "backlinks": "Vínculos de retroceso",
+    "content_language_switcher": "Idioma de contenido: {{language}}"
   },
   "note_icon": {
     "change_note_icon": "Cambiar icono de nota",
@@ -914,7 +917,8 @@
     "unknown_search_option": "Opción de búsqueda desconocida {{searchOptionName}}",
     "search_note_saved": "La nota de búsqueda se ha guardado en {{- notePathTitle}}",
     "actions_executed": "Las acciones han sido ejecutadas.",
-    "view_options": "Ver opciones:"
+    "view_options": "Ver opciones:",
+    "option": "opción"
   },
   "similar_notes": {
     "title": "Notas similares",
@@ -1614,7 +1618,7 @@
   },
   "bookmark_switch": {
     "bookmark": "Marcador",
-    "bookmark_this_note": "Añadir esta nota a marcadores en el panel lateral izquierdo",
+    "bookmark_this_note": "Agregar esta nota a marcadores en el panel lateral izquierdo",
     "remove_bookmark": "Eliminar marcador"
   },
   "editability_select": {
@@ -1944,8 +1948,8 @@
     "desktop-application": "Aplicación de escritorio",
     "native-title-bar": "Barra de título nativa",
     "native-title-bar-description": "Para Windows y macOS, quitar la barra de título nativa hace que la aplicación se vea más compacta. En Linux, mantener la barra de título nativa hace que se integre mejor con el resto del sistema.",
-    "background-effects": "Habilitar efectos de fondo (sólo en Windows 11)",
-    "background-effects-description": "El efecto Mica agrega un fondo borroso y elegante a las ventanas de la aplicación, creando profundidad y un aspecto moderno. \"Título nativo de la barra\" debe deshabilitarse.",
+    "background-effects": "Habilitar efectos de fondo",
+    "background-effects-description": "Agrega un fondo borroso y elegante a las ventanas de la aplicación, creando profundidad y un aspecto moderno. \"Título nativo de la barra\" debe deshabilitarse.",
     "restart-app-button": "Reiniciar la aplicación para ver los cambios",
     "zoom-factor": "Factor de zoom"
   },
@@ -1964,7 +1968,8 @@
   "geo-map": {
     "create-child-note-title": "Crear una nueva subnota y agregarla al mapa",
     "create-child-note-instruction": "Dé clic en el mapa para crear una nueva nota en esa ubicación o presione Escape para cancelar.",
-    "unable-to-load-map": "No se puede cargar el mapa."
+    "unable-to-load-map": "No se puede cargar el mapa.",
+    "create-child-note-text": "Agregar marcador"
   },
   "geo-map-context": {
     "open-location": "Abrir ubicación",
@@ -2130,7 +2135,7 @@
     "next_theme_message": "Estás usando actualmente el tema heredado. ¿Te gustaría probar el nuevo tema?",
     "next_theme_button": "Prueba el nuevo tema",
     "background_effects_title": "Los efectos de fondo son ahora estables",
-    "background_effects_message": "En los dispositivos Windows, los efectos de fondo ya son totalmente estables. Los efectos de fondo añaden un toque de color a la interfaz de usuario difuminando el fondo que hay detrás. Esta técnica también se utiliza en otras aplicaciones como el Explorador de Windows.",
+    "background_effects_message": "En los dispositivos Windows y macOS, los efectos de fondo ya son estables. Los efectos de fondo añaden un toque de color a la interfaz de usuario difuminando el fondo que hay detrás.",
     "background_effects_button": "Activar efectos de fondo",
     "dismiss": "Desestimar",
     "new_layout_title": "Nuevo diseño",
@@ -2281,5 +2286,17 @@
     "empty_button": "Ocultar el panel",
     "toggle": "Alternar panel derecho",
     "custom_widget_go_to_source": "Ir al código fuente"
+  },
+  "platform_indicator": {
+    "available_on": "Disponible en {{platform}}"
+  },
+  "mobile_tab_switcher": {
+    "title_one": "{{count}} pestaña",
+    "title_many": "{{count}} pestañas",
+    "title_other": "{{count}} pestañas",
+    "more_options": "Más opciones"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "Marcadores"
   }
 }

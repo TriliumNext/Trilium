@@ -2,6 +2,7 @@ import type BAttachment from "../becca/entities/battachment.js";
 import type BAttribute from "../becca/entities/battribute.js";
 import type BBranch from "../becca/entities/bbranch.js";
 import type BNote from "../becca/entities/bnote.js";
+import type BRevision from "../becca/entities/brevision.js";
 
 function mapNoteToPojo(note: BNote) {
     return {
@@ -64,9 +65,28 @@ function mapAttachmentToPojo(attachment: BAttachment) {
     };
 }
 
+function mapRevisionToPojo(revision: BRevision) {
+    return {
+        revisionId: revision.revisionId,
+        noteId: revision.noteId,
+        type: revision.type,
+        mime: revision.mime,
+        isProtected: revision.isProtected,
+        title: revision.title,
+        blobId: revision.blobId,
+        dateLastEdited: revision.dateLastEdited,
+        dateCreated: revision.dateCreated,
+        utcDateLastEdited: revision.utcDateLastEdited,
+        utcDateCreated: revision.utcDateCreated,
+        utcDateModified: revision.utcDateModified,
+        contentLength: revision.contentLength
+    };
+}
+
 export default {
     mapNoteToPojo,
     mapBranchToPojo,
     mapAttributeToPojo,
-    mapAttachmentToPojo
+    mapAttachmentToPojo,
+    mapRevisionToPojo
 };

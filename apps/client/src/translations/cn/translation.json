@@ -662,7 +662,8 @@
     "show-cheatsheet": "显示快捷帮助",
     "toggle-zen-mode": "禅模式",
     "new-version-available": "新更新可用",
-    "download-update": "取得版本 {{latestVersion}}"
+    "download-update": "取得版本 {{latestVersion}}",
+    "search_notes": "搜索笔记"
   },
   "zen_mode": {
     "button_exit": "退出禅模式"
@@ -745,7 +746,7 @@
     "button_title": "导出SVG格式图片"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "创建新的子笔记并添加到关系图",
+    "create_child_note_title": "创建子笔记并添加到图",
     "reset_pan_zoom_title": "重置平移和缩放到初始坐标和放大倍率",
     "zoom_in_title": "放大",
     "zoom_out_title": "缩小"
@@ -759,7 +760,9 @@
     "delete_this_note": "删除此笔记",
     "error_cannot_get_branch_id": "无法获取 notePath '{{notePath}}' 的 branchId",
     "error_unrecognized_command": "无法识别的命令 {{command}}",
-    "note_revisions": "笔记历史版本"
+    "note_revisions": "笔记历史版本",
+    "backlinks": "反链",
+    "content_language_switcher": "内容语言: {{language}}"
   },
   "note_icon": {
     "change_note_icon": "更改笔记图标",
@@ -910,7 +913,8 @@
     "unknown_search_option": "未知的搜索选项 {{searchOptionName}}",
     "search_note_saved": "搜索笔记已保存到 {{- notePathTitle}}",
     "actions_executed": "操作已执行。",
-    "view_options": "查看选项："
+    "view_options": "查看选项：",
+    "option": "选项"
   },
   "similar_notes": {
     "title": "相似笔记",
@@ -1782,8 +1786,8 @@
     "desktop-application": "桌面应用程序",
     "native-title-bar": "原生标题栏",
     "native-title-bar-description": "对于 Windows 和 macOS，关闭原生标题栏可使应用程序看起来更紧凑。在 Linux 上，保留原生标题栏可以更好地与系统集成。",
-    "background-effects": "启用背景效果（仅适用于 Windows 11）",
-    "background-effects-description": "Mica 效果为应用窗口添加模糊且时尚的背景，营造出深度感和现代外观。「原生标题栏」必須被禁用。",
+    "background-effects": "启用背景效果",
+    "background-effects-description": "为应用窗口添加模糊且时尚的背景，营造出深度感和现代外观。「原生标题栏」必須被禁用。",
     "restart-app-button": "重启应用程序以查看更改",
     "zoom-factor": "缩放系数"
   },
@@ -1802,7 +1806,8 @@
   "geo-map": {
     "create-child-note-title": "创建一个新的子笔记并将其添加到地图中",
     "create-child-note-instruction": "单击地图以在该位置创建新笔记，或按 Escape 以取消。",
-    "unable-to-load-map": "无法加载地图。"
+    "unable-to-load-map": "无法加载地图。",
+    "create-child-note-text": "添加标记"
   },
   "geo-map-context": {
     "open-location": "打开位置",
@@ -2117,7 +2122,7 @@
   },
   "call_to_action": {
     "background_effects_title": "背景效果现已推出稳定版本",
-    "background_effects_message": "在 Windows 装置上，背景效果现在已完全稳定。背景效果通过模糊背后的背景，为使用者界面增添一抹色彩。此技术也用于其他应用程序，例如 Windows 资源管理器。",
+    "background_effects_message": "在 Windows 和 macOS 设备上，背景效果现在已稳定。背景效果通过模糊背后的背景，为使用者界面增添一抹色彩。",
     "background_effects_button": "启用背景效果",
     "next_theme_title": "试用新 Trilium 主题",
     "next_theme_message": "当前使用旧版主题，要试用新主题吗？",
@@ -2253,5 +2258,15 @@
     "pages_alt": "第{{pageNumber}}页",
     "pages_loading": "加载中...",
     "layers_other": "{{count}} 层"
+  },
+  "platform_indicator": {
+    "available_on": "在 {{platform}} 上可用"
+  },
+  "mobile_tab_switcher": {
+    "title_other": "{{count}} 选项卡",
+    "more_options": "更多选项"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "书签"
   }
 }

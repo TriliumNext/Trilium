@@ -18,6 +18,7 @@ import FormTextBox, { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
 import Icon from "../../react/Icon";
 import OptionsSection from "./components/OptionsSection";
+import PlatformIndicator from "./components/PlatformIndicator";
 import RadioWithIllustration from "./components/RadioWithIllustration";
 import RelatedSettings from "./components/RelatedSettings";
 
@@ -174,13 +175,13 @@ function LayoutIllustration({ isNewLayout }: { isNewLayout?: boolean }) {
                             </div>
                         </div>
                     ) : (
-                    <div>
-                        <div className="title-bar">
-                            <Icon icon="bx bx-leaf" />
-                            <span className="title">Title</span>
-                            <Icon icon="bx bx-dock-right" />
+                        <div>
+                            <div className="title-bar">
+                                <Icon icon="bx bx-leaf" />
+                                <span className="title">Title</span>
+                                <Icon icon="bx bx-dock-right" />
+                            </div>
                         </div>
-                    </div>
                     )}
 
                     {!isNewLayout && <div className="ribbon">
@@ -192,7 +193,7 @@ function LayoutIllustration({ isNewLayout }: { isNewLayout?: boolean }) {
                         </div>
 
                         <div className="ribbon-body">
-                            <div className="ribbon-body-content"></div>
+                            <div className="ribbon-body-content" />
                         </div>
                     </div>}
 
@@ -356,7 +357,11 @@ function ElectronIntegration() {
 
             <FormGroup name="background-effects" description={t("electron_integration.background-effects-description")}>
                 <FormCheckbox
-                    label={t("electron_integration.background-effects")}
+                    label={<>
+                        {t("electron_integration.background-effects")}
+                        {" "}
+                        <PlatformIndicator windows="11" mac />
+                    </>}
                     currentValue={backgroundEffects} onChange={setBackgroundEffects}
                     disabled={nativeTitleBarVisible}
                 />
@@ -383,10 +388,10 @@ function Performance() {
             currentValue={shadowsEnabled} onChange={setShadowsEnabled}
         />
 
-        <FormCheckbox
+        {!isMobile() && <FormCheckbox
             label={t("ui-performance.enable-backdrop-effects")}
             currentValue={backdropEffectsEnabled} onChange={setBackdropEffectsEnabled}
-        />
+        />}
 
         {isElectron() && <SmoothScrollEnabledOption />}
 

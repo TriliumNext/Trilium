@@ -1,5 +1,5 @@
 import { BootstrapDefinition } from "@triliumnext/commons";
-import { getSharedBootstrapItems, icon_packs as iconPackService } from "@triliumnext/core";
+import { getSharedBootstrapItems, getSql, icon_packs as iconPackService } from "@triliumnext/core";
 import type { Request, Response } from "express";
 
 import packageJson from "../../package.json" with { type: "json" };
@@ -10,7 +10,7 @@ import attributeService from "../services/attributes.js";
 import config from "../services/config.js";
 import log from "../services/log.js";
 import optionService from "../services/options.js";
-import { isDev, isElectron, isWindows11 } from "../services/utils.js";
+import { isDev, isElectron, isMac, isWindows11 } from "../services/utils.js";
 import { generateToken as generateCsrfToken } from "./csrf_protection.js";
 
 
@@ -29,6 +29,7 @@ export function bootstrap(req: Request, res: Response) {
     const themeNote = attributeService.getNoteWithLabel("appTheme", theme);
     const nativeTitleBarVisible = options.nativeTitleBarVisible === "true";
     const iconPacks = iconPackService.getIconPacks();
+    const sql = getSql();
 
     res.send({
         ...getSharedBootstrapItems(assetPath),
@@ -39,7 +40,12 @@ export function bootstrap(req: Request, res: Response) {
         platform: process.platform,
         isElectron,
         hasNativeTitleBar: isElectron && nativeTitleBarVisible,
-        hasBackgroundEffects: isElectron && isWindows11 && !nativeTitleBarVisible && options.backgroundEffects === "true",
+        hasBackgroundEffects: options.backgroundEffects === "true"
+            && isElectron
+            && (isWindows11 || isMac)
+            && !nativeTitleBarVisible,
+        maxEntityChangeIdAtLoad: sql.getValue("SELECT COALESCE(MAX(id), 0) FROM entity_changes"),
+        maxEntityChangeSyncIdAtLoad: sql.getValue("SELECT COALESCE(MAX(id), 0) FROM entity_changes WHERE isSynced = 1"),
         instanceName: config.General ? config.General.instanceName : null,
         appCssNoteIds: getAppCssNoteIds(),
         isDev,

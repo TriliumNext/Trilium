@@ -21,7 +21,16 @@
     outline: 0;
     height: 100%;
     user-select: none;
-    padding: 10px;
+    padding: 0;
+
+    @media (max-width: 991px) {
+        padding: 0;
+
+        th {
+            font-weight: normal;
+            font-size: 0.9em;
+        }
+    }
 }
 
 .calendar-view a,
@@ -43,6 +52,7 @@
     --fc-border-color: var(--main-border-color);
     --fc-neutral-bg-color: var(--launcher-pane-background-color);
     --fc-list-event-hover-bg-color: var(--left-pane-item-hover-background);
+    padding: 0 12px;
 }
 
 .calendar-container .fc-list-sticky .fc-list-day > * {
@@ -59,33 +69,35 @@
     overflow: hidden;
 }
 
-/* #region Header */
-.calendar-view .calendar-header {
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+.calendar-view .collection-properties {
+    .center-container {
+        justify-content: center;
 
-.calendar-view .calendar-header .btn {
-    min-width: unset !important;
-}
+        .title {
+            min-width: 150px;
+            font-size: 1.2em;
+            text-align: center;
+        }
+    }
 
-.calendar-view .calendar-header > .title {
-    flex-grow: 1;
-    font-size: 1.3rem;
-    font-weight: normal;
-}
+    @media (max-width: 991px) {
+        >div {
+            justify-content: flex-start;
+        }
 
-body.desktop:not(.zen):not(.experimental-feature-new-layout) .calendar-view .calendar-header {
-    padding-block-start: 4px;
-    padding-inline-end: 5em;
-}
+        .right-container {
+            flex-grow: 0;
+        }
 
-.search-result-widget-content .calendar-view .calendar-header {
-    padding-inline-end: unset !important;
+        .center-container {
+            .title {
+                flex-grow: 1;
+                min-width: 110px;
+                font-size: 0.95em;
+            }
+        }
+    }
 }
-/* #endregion */
 
 /* #region Events */
 
@@ -93,7 +105,7 @@ body.desktop:not(.zen):not(.experimental-feature-new-layout) .calendar-view .cal
  * week, month, year views
  */
 
- .calendar-container a.fc-event {
+.calendar-container a.fc-event {
     text-decoration: none;
 }
 

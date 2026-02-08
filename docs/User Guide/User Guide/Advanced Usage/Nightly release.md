@@ -21,9 +21,9 @@ Depending on your use case, you can either test the portable version or even use
 
 This is pretty useful if you are a beta tester that wants to periodically update their version:
 
-On Ubuntu:
+## On Ubuntu (Bash)
 
-```
+```sh
 #!/usr/bin/env bash
 
 name=TriliumNotes-linux-x64-nightly.deb
@@ -31,4 +31,34 @@ rm -f $name*
 wget https://github.com/TriliumNext/Trilium/releases/download/nightly/$name
 sudo apt-get install ./$name
 rm $name
+```
+
+## On Windows (PowerShell)
+
+```powershell
+if ($env:PROCESSOR_ARCHITECTURE -eq "ARM64") {
+  $arch = "arm64";
+} else {
+  $arch = "x64";
+}
+
+$exeUrl = "https://github.com/TriliumNext/Trilium/releases/download/nightly/TriliumNotes-main-windows-$($arch).exe";
+Write-Host "Downloading $($exeUrl)"
+
+# Generate a unique path in the temp dir
+$guid = [guid]::NewGuid().ToString()
+$destination = Join-Path -Path $env:TEMP -ChildPath "$guid.exe"
+
+try {
+    $ProgressPreference = 'SilentlyContinue'
+    Invoke-WebRequest -Uri $exeUrl -OutFile $destination
+    $process = Start-Process -FilePath $destination
+} catch {
+    Write-Error "An error occurred: $_"
+} finally {
+    # Clean up
+    if (Test-Path $destination) {
+        Remove-Item -Path $destination -Force
+    }
+}
 ```

@@ -27,3 +27,13 @@
         }
     }
 }
+
+.form-list-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1em;
+
+    .form-list-col {
+        flex-grow: 1;
+    }
+}

@@ -1,6 +1,8 @@
-import { ComponentChildren } from "preact";
-import Icon from "./Icon.js";
 import "./Button.css";
+
+import { ComponentChildren } from "preact";
+
+import Icon from "./Icon.js";
 
 interface LinkProps {
     className?: string;
@@ -9,6 +11,7 @@ interface LinkProps {
     children?: ComponentChildren;
     title?: string;
     onClick?: (e: MouseEvent) => void;
+    download?: boolean;
 }
 
 interface ButtonProps extends Omit<LinkProps, "children"> {
@@ -16,6 +19,7 @@ interface ButtonProps extends Omit<LinkProps, "children"> {
     iconSvg?: string;
     text: ComponentChildren;
     openExternally?: boolean;
+    download?: boolean;
     outline?: boolean;
 }
 
@@ -28,17 +32,18 @@ export default function Button({ iconSvg, text, className, outline, ...restProps
             {iconSvg && <><Icon svg={iconSvg} />{" "}</>}
             <span class="text">{text}</span>
         </Link>
-    )
+    );
 }
 
-export function Link({ openExternally, children, ...restProps }: LinkProps) {
+export function Link({ openExternally, children, download, ...restProps }: LinkProps) {
     return (
         <a
             {...restProps}
-            target={openExternally ? "_blank" : undefined}
-            rel={openExternally ? "noopener noreferrer" : undefined}
+            target={openExternally || download ? "_blank" : undefined}
+            download={download}
+            rel={openExternally || download ? "noopener noreferrer" : undefined}
         >
             {children}
         </a>
-    )
+    );
 }

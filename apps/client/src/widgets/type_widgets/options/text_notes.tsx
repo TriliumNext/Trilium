@@ -2,6 +2,7 @@ import { normalizeMimeTypeForCKEditor, type OptionNames } from "@triliumnext/com
 import { Themes } from "@triliumnext/highlightjs";
 import type { CSSProperties } from "preact/compat";
 import { useEffect, useMemo, useState } from "preact/hooks";
+import type React from "react";
 import { Trans } from "react-i18next";
 
 import { isExperimentalFeatureEnabled } from "../../../services/experimental_features";

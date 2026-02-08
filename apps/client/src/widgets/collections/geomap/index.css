@@ -2,6 +2,13 @@
   overflow: hidden;
   position: relative;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  > .collection-properties {
+    position: relative;
+    z-index: 2000;
+  }
 }
 
 .geo-map-container {

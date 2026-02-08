@@ -1,0 +1,3 @@
+body.mobile .note-actions-custom:not(:empty) {
+    margin-bottom: calc(var(--bs-dropdown-divider-margin-y) * 2);
+}

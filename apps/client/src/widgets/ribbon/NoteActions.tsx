@@ -1,6 +1,6 @@
 import { ConvertToAttachmentResponse } from "@triliumnext/commons";
 import { Dropdown as BootstrapDropdown } from "bootstrap";
-import { RefObject } from "preact";
+import { ComponentChildren, RefObject } from "preact";
 import { useContext, useEffect, useRef } from "preact/hooks";
 
 import appContext, { CommandNames } from "../../components/app_context";
@@ -22,7 +22,7 @@ import MovePaneButton from "../buttons/move_pane_button";
 import ActionButton from "../react/ActionButton";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem } from "../react/FormList";
-import { useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumOption } from "../react/hooks";
+import { useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption } from "../react/hooks";
 import { ParentComponent } from "../react/react_utils";
 import { NoteTypeDropdownContent, useNoteBookmarkState, useShareState } from "./BasicPropertiesTab";
 import NoteActionsCustom from "./NoteActionsCustom";
@@ -63,8 +63,14 @@ function RevisionsButton({ note }: { note: FNote }) {
 
 type ItemToFocus = "basic-properties";
 
-function NoteContextMenu({ note, noteContext }: { note: FNote, noteContext?: NoteContext }) {
-    const dropdownRef = useRef<BootstrapDropdown>(null);
+export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNoteSettings, dropdownRef: externalDropdownRef }: {
+    note: FNote,
+    noteContext?: NoteContext,
+    itemsAtStart?: ComponentChildren;
+    itemsNearNoteSettings?: ComponentChildren;
+    dropdownRef?: RefObject<BootstrapDropdown>;
+}) {
+    const dropdownRef = useSyncedRef<BootstrapDropdown>(externalDropdownRef, null);
     const parentComponent = useContext(ParentComponent);
     const noteType = useNoteProperty(note, "type") ?? "";
     const [viewType] = useNoteLabel(note, "viewType");
@@ -99,12 +105,15 @@ function NoteContextMenu({ note, noteContext }: { note: FNote, noteContext?: Not
             dropdownRef={dropdownRef}
             buttonClassName={ isNewLayout ? "bx bx-dots-horizontal-rounded" : "bx bx-dots-vertical-rounded" }
             className="note-actions"
+            dropdownContainerClassName="mobile-bottom-menu"
             hideToggleArrow
             noSelectButtonStyle
             noDropdownListStyle
             iconAction
             onHidden={() => itemToFocusRef.current = null }
+            mobileBackdrop
         >
+            {itemsAtStart}
 
             {isReadOnly && <>
                 <CommandItem icon="bx bx-pencil" text={t("read-only-info.edit-note")}
@@ -122,6 +131,8 @@ function NoteContextMenu({ note, noteContext }: { note: FNote, noteContext?: Not
                 <NoteBasicProperties note={note} focus={itemToFocusRef} />
                 <FormDropdownDivider />
             </>}
+
+            {itemsNearNoteSettings}
 
             <CommandItem icon="bx bx-import" text={t("note_actions.import_files")}
                 disabled={isInOptionsOrHelp || note.type === "search"}
@@ -277,7 +288,7 @@ function DevelopmentActions({ note, noteContext }: { note: FNote, noteContext?: 
     );
 }
 
-function CommandItem({ icon, text, title, command, disabled }: { icon: string, text: string, title?: string, command: CommandNames | (() => void), disabled?: boolean, destructive?: boolean }) {
+export function CommandItem({ icon, text, title, command, disabled }: { icon: string, text: string, title?: string, command: CommandNames | (() => void), disabled?: boolean, destructive?: boolean }) {
     return <FormListItem
         icon={icon}
         title={title}

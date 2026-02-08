@@ -57,12 +57,12 @@
     height: 18px;
 }
 
-/* 
+/*
  * SEARCH PAGE
  */
 
  /* Button bar */
- .search-definition-widget .search-setting-table tbody:last-child div {
+ .search-definition-widget .search-setting-table .search-actions-container {
     justify-content: flex-end;
     gap: 8px;
  }
@@ -143,7 +143,7 @@
 /*
  * OPTIONS PAGES
  */
- 
+
  :root {
     --options-card-min-width: 500px;
     --options-card-max-width: 900px;
@@ -154,6 +154,10 @@
 
 .note-split.options {
     --preferred-max-content-width: var(--options-card-max-width);
+}
+
+.note-split.options .collection-properties {
+    visibility: hidden;
 }
 
 /* Create a gap at the top of the option pages */

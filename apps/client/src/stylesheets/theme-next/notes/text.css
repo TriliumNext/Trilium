@@ -47,9 +47,14 @@
 }
 
 /* The toolbar show / hide button for the current text block */
-.ck.ck-block-toolbar-button {
+:root .ck.ck-block-toolbar-button {
+    --ck-color-block-toolbar-button: var(--muted-text-color);
     --ck-color-button-on-background: transparent;
-    --ck-color-button-on-color: currentColor;
+    --ck-color-button-on-color: var(--ck-editor-toolbar-button-on-color);
+    translate: -40% 0;
+    min-width: 0;
+    padding: 0;
+    z-index: 1600;
 }
 
 :root .ck.ck-toolbar .ck-button:not(.ck-disabled):active,
@@ -516,6 +521,10 @@ button.ck.ck-button:is(.ck-button-action, .ck-button-save, .ck-button-cancel).ck
 /*
  * EDITOR'S CONTENT
  */
+
+.note-detail-editable-text-editor > .ck-placeholder {
+    opacity: .5;
+}
 
 /*
  * Code Blocks

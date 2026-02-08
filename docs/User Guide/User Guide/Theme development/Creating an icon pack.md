@@ -1,6 +1,6 @@
 # Creating an icon pack
 > [!NOTE]
-> e This page describes how to create custom icon packs. For a general description of how to use already existing icon packs, see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Themes/Icon%20Packs.md">Icon Packs</a>.
+> This page describes how to create custom icon packs. For a general description of how to use already existing icon packs, see <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Themes/Icon%20Packs.md">Icon Packs</a>.
 
 ## Supported formats
 
@@ -49,9 +49,9 @@ The icon pack manifest is a JSON file with the following structure:
 		"bx-ball": {
 			"glyph": "\ue9c2",
 			"terms": [ "ball" ]
-		},		
+		},
 		"bxs-party": {
-			"glyph": "\uec92"
+			"glyph": "\uec92",
 			"terms": [ "party" ]
 		}
 	}

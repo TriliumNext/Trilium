@@ -17,17 +17,17 @@ test("Can drag tabs around", async ({ page, context }) => {
     await app.addNewTab();
     await app.addNewTab();
 
-    let tab = app.getTab(0);
+    let tab = await app.getTab(0);
 
     // Drag the first tab at the end
-    await tab.dragTo(app.getTab(2), { targetPosition: { x: 50, y: 0 } });
+    await tab.dragTo(await app.getTab(2), { targetPosition: { x: 50, y: 0 } });
 
-    tab = app.getTab(2);
+    tab = await app.getTab(2);
     await expect(tab).toContainText(NOTE_TITLE);
 
     // Drag the tab to the left
-    await tab.dragTo(app.getTab(0), { targetPosition: { x: 50, y: 0 } });
-    await expect(app.getTab(0)).toContainText(NOTE_TITLE);
+    await tab.dragTo(await app.getTab(0), { targetPosition: { x: 50, y: 0 } });
+    await expect(await app.getTab(0)).toContainText(NOTE_TITLE);
 });
 
 test("Can drag tab to new window", async ({ page, context }) => {
@@ -36,7 +36,7 @@ test("Can drag tab to new window", async ({ page, context }) => {
 
     await app.closeAllTabs();
     await app.clickNoteOnNoteTreeByTitle(NOTE_TITLE);
-    const tab = app.getTab(0);
+    const tab = await app.getTab(0);
     await expect(tab).toContainText(NOTE_TITLE);
 
     const popupPromise = page.waitForEvent("popup");
@@ -75,14 +75,14 @@ test("Tabs are restored in right order", async ({ page, context }) => {
     await expect(app.getActiveTab()).toContainText("Mermaid");
 
     // Select the mid one.
-    await app.getTab(1).click();
+    await (await app.getTab(1)).click();
     await expect(app.noteTreeActiveNote).toContainText("Text notes");
 
     // Refresh the page and check the order.
     await app.goto( { preserveTabs: true });
-    await expect(app.getTab(0)).toContainText("Code notes");
-    await expect(app.getTab(1)).toContainText("Text notes");
-    await expect(app.getTab(2)).toContainText("Mermaid");
+    await expect(await app.getTab(0)).toContainText("Code notes");
+    await expect(await app.getTab(1)).toContainText("Text notes");
+    await expect(await app.getTab(2)).toContainText("Mermaid");
 
     // Check the note tree has the right active node.
     await expect(app.noteTreeActiveNote).toContainText("Text notes");
@@ -118,7 +118,7 @@ test("Search works when dismissing a tab", async ({ page, context }) => {
     await app.addNewTab();
     await app.goToNoteInNewTab("Sample mindmap");
 
-    await app.getTab(0).click();
+    await (await app.getTab(0)).click();
     await app.openAndClickNoteActionMenu("Search in note");
     await expect(app.findAndReplaceWidget.first()).toBeVisible();
 });

@@ -5,13 +5,15 @@ import { useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../components/app_context";
 import NoteContext from "../../components/note_context";
+import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import tree from "../../services/tree";
 import utils from "../../services/utils";
 import NoteList from "../collections/NoteList";
 import FloatingButtons from "../FloatingButtons";
-import { DESKTOP_FLOATING_BUTTONS, MOBILE_FLOATING_BUTTONS, POPUP_HIDDEN_FLOATING_BUTTONS } from "../FloatingButtonsDefinitions";
+import { DESKTOP_FLOATING_BUTTONS, POPUP_HIDDEN_FLOATING_BUTTONS } from "../FloatingButtonsDefinitions";
+import NoteBadges from "../layout/NoteBadges";
 import NoteIcon from "../note_icon";
 import NoteTitleWidget from "../note_title";
 import NoteDetail from "../NoteDetail";
@@ -23,8 +25,6 @@ import ReadOnlyNoteInfoBar from "../ReadOnlyNoteInfoBar";
 import StandaloneRibbonAdapter from "../ribbon/components/StandaloneRibbonAdapter";
 import FormattingToolbar from "../ribbon/FormattingToolbar";
 import MobileEditorToolbar from "../type_widgets/text/mobile_editor_toolbar";
-import NoteBadges from "../layout/NoteBadges";
-import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 
 const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
@@ -34,7 +34,7 @@ export default function PopupEditor() {
     const [ noteContext, setNoteContext ] = useState(new NoteContext("_popup-editor"));
     const isMobile = utils.isMobile();
     const items = useMemo(() => {
-        const baseItems = isMobile ? MOBILE_FLOATING_BUTTONS : DESKTOP_FLOATING_BUTTONS;
+        const baseItems = isMobile ? [] : DESKTOP_FLOATING_BUTTONS;
         return baseItems.filter(item => !POPUP_HIDDEN_FLOATING_BUTTONS.includes(item));
     }, [ isMobile ]);
 

@@ -81,7 +81,8 @@
     "configure_launchbar": "ランチャーバーの設定",
     "show_shared_notes_subtree": "共有ノートのサブツリーを表示",
     "new-version-available": "新しいアップデートが利用可能",
-    "download-update": "{{latestVersion}} をバージョンを入手"
+    "download-update": "{{latestVersion}} をバージョンを入手",
+    "search_notes": "検索ノート"
   },
   "left_pane_toggle": {
     "show_panel": "パネルを表示",
@@ -234,7 +235,8 @@
     "search_note_saved": "検索ノートが {{- notePathTitle}} に保存されました",
     "actions_executed": "アクションが実行されました。",
     "ancestor": "祖先:",
-    "view_options": "表示オプション:"
+    "view_options": "表示オプション:",
+    "option": "オプション"
   },
   "shortcuts": {
     "multiple_shortcuts": "同じアクションに対して複数のショートカットを設定する場合、カンマで区切ることができます。",
@@ -407,7 +409,7 @@
   "relation_map_buttons": {
     "zoom_out_title": "ズームアウト",
     "zoom_in_title": "ズームイン",
-    "create_child_note_title": "新しい子ノートを作成し、関連マップに追加",
+    "create_child_note_title": "子ノートを作成し、マップに追加",
     "reset_pan_zoom_title": "パンとズームを初期座標と倍率にリセット"
   },
   "tree-context-menu": {
@@ -1648,7 +1650,9 @@
     "error_unrecognized_command": "認識されないコマンド {{command}}",
     "insert_child_note": "子ノートを挿入",
     "error_cannot_get_branch_id": "ノートパス 「{{notePath}} のbranchIdを取得できません",
-    "note_revisions": "ノートの変更履歴"
+    "note_revisions": "ノートの変更履歴",
+    "backlinks": "バックリンク",
+    "content_language_switcher": "コンテンツの言語: {{language}}"
   },
   "inherited_attribute_list": {
     "title": "継承属性",
@@ -1757,8 +1761,8 @@
     "desktop-application": "デスクトップアプリケーション",
     "native-title-bar": "ネイティブタイトルバー",
     "native-title-bar-description": "WindowsとmacOSでは、ネイティブタイトルバーをオフにしておくと、アプリケーションがよりコンパクトに見えます。Linuxでは、ネイティブタイトルバーを表示したままの方が、他のシステムとの統一性が高まります。",
-    "background-effects": "背景効果を有効化（Windows 11のみ）",
-    "background-effects-description": "Mica効果は、アプリのウィンドウにぼかされたスタイリッシュな背景を追加し、奥行きとモダンな外観を演出します。「ネイティブタイトルバー」を無効にする必要があります。",
+    "background-effects": "背景効果を有効化",
+    "background-effects-description": "アプリウィンドウにぼかしの効いたスタイリッシュな背景を追加し、奥行きとモダンな外観を演出します。「ネイティブタイトルバー」を無効にする必要があります。",
     "restart-app-button": "アプリケーションを再起動して変更を反映",
     "zoom-factor": "ズーム倍率"
   },
@@ -2008,7 +2012,8 @@
   "geo-map": {
     "create-child-note-title": "新しい子ノートを作成し、マップに追加する",
     "create-child-note-instruction": "地図をクリックしてその場所に新しいノートを作成するか、Esc キーを押して閉じます。",
-    "unable-to-load-map": "マップを読み込めません。"
+    "unable-to-load-map": "マップを読み込めません。",
+    "create-child-note-text": "マーカーを追加"
   },
   "geo-map-context": {
     "open-location": "現在位置を表示",
@@ -2044,7 +2049,7 @@
     "next_theme_message": "現在、レガシーテーマを使用しています。新しいテーマを試してみませんか?",
     "next_theme_button": "新しいテーマを試す",
     "background_effects_title": "背景効果が安定しました",
-    "background_effects_message": "Windowsデバイスでは、背景効果が完全に安定しました。背景効果は、背景をぼかすことでユーザーインターフェースに彩りを添えます。この技術は、Windowsエクスプローラーなどの他のアプリケーションでも使用されています。",
+    "background_effects_message": "WindowsおよびmacOSデバイスで、背景効果が安定しました。背景効果は、背景をぼかすことでユーザーインターフェースに彩りを添えます。",
     "background_effects_button": "背景効果を有効にする",
     "dismiss": "却下",
     "new_layout_title": "新しいレイアウト",
@@ -2253,5 +2258,15 @@
     "pages_other": "{{count}} ページ",
     "pages_alt": "ページ {{pageNumber}}",
     "pages_loading": "読み込み中..."
+  },
+  "platform_indicator": {
+    "available_on": "{{platform}} で利用可能"
+  },
+  "mobile_tab_switcher": {
+    "title_other": "{{count}} タブ",
+    "more_options": "その他のオプション"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "ブックマーク"
   }
 }

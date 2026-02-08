@@ -257,7 +257,8 @@
     "localization": "Sprache & Region",
     "inbox-title": "Posteingang",
     "zen-mode": "Zen-Modus",
-    "command-palette": "Befehlspalette öffnen"
+    "command-palette": "Befehlspalette öffnen",
+    "tab-switcher-title": "Tabauswahl"
   },
   "notes": {
     "new-note": "Neue Notiz",

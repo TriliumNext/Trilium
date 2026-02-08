@@ -1,34 +1,29 @@
 import "./NoteTitleActions.css";
 
-import clsx from "clsx";
 import { useEffect, useState } from "preact/hooks";
 
 import NoteContext from "../../components/note_context";
 import FNote from "../../entities/fnote";
 import { t } from "../../services/i18n";
-import CollectionProperties from "../note_bars/CollectionProperties";
 import { checkFullHeight, getExtendedWidgetType } from "../NoteDetail";
 import { PromotedAttributesContent, usePromotedAttributeData } from "../PromotedAttributes";
-import SimpleBadge from "../react/Badge";
 import Collapsible, { ExternallyControlledCollapsible } from "../react/Collapsible";
 import { useNoteContext, useNoteLabel, useNoteProperty, useTriliumEvent, useTriliumOptionBool } from "../react/hooks";
-import NoteLink, { NewNoteLink } from "../react/NoteLink";
+import { NewNoteLink } from "../react/NoteLink";
 import { useEditedNotes } from "../ribbon/EditedNotesTab";
 import SearchDefinitionTab from "../ribbon/SearchDefinitionTab";
 import NoteTypeSwitcher from "./NoteTypeSwitcher";
 
 export default function NoteTitleActions() {
-    const { note, ntxId, componentId, noteContext } = useNoteContext();
-    const isHiddenNote = note && note.noteId !== "_search" && note.noteId.startsWith("_");
+    const { note, ntxId, componentId, noteContext, viewScope } = useNoteContext();
     const noteType = useNoteProperty(note, "type");
 
     return (
         <div className="title-actions">
             <PromotedAttributes note={note} componentId={componentId} noteContext={noteContext} />
             {noteType === "search" && <SearchProperties note={note} ntxId={ntxId} />}
-            {!isHiddenNote && note && noteType === "book" && <CollectionProperties note={note} />}
             <EditedNotes />
-            <NoteTypeSwitcher />
+            {(!viewScope?.viewMode || viewScope.viewMode === "default") && <NoteTypeSwitcher />}
         </div>
     );
 }
@@ -49,7 +44,7 @@ function PromotedAttributes({ note, componentId, noteContext }: {
     componentId: string,
     noteContext: NoteContext | undefined
 }) {
-    const [ cells, setCells ] = usePromotedAttributeData(note, componentId);
+    const [ cells, setCells ] = usePromotedAttributeData(note, componentId, noteContext);
     const [ expanded, setExpanded ] = useState(false);
 
     useEffect(() => {

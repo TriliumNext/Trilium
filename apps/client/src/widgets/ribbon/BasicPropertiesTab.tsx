@@ -1,5 +1,4 @@
 import { MimeType, NoteType, ToggleInParentResponse } from "@triliumnext/commons";
-import { ComponentChildren } from "preact";
 import { createPortal } from "preact/compat";
 import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
@@ -117,19 +116,18 @@ export function NoteTypeDropdownContent({ currentNoteType, currentNoteMime, note
                             onClick={() => changeNoteType(type, mime)}
                         >{title}</FormListItem>
                     );
-                } else {
-                    return (
-                        <>
-                            <FormDropdownDivider />
-                            <FormListItem
-                                checked={checked}
-                                disabled
-                            >
-                                <strong>{title}</strong>
-                            </FormListItem>
-                        </>
-                    );
                 }
+                return (
+                    <>
+                        <FormDropdownDivider />
+                        <FormListItem
+                            checked={checked}
+                            disabled
+                        >
+                            <strong>{title}</strong>
+                        </FormListItem>
+                    </>
+                );
             })}
 
             {!noCodeNotes && <NoteTypeCodeNoteList mimeTypes={mimeTypes} changeNoteType={changeNoteType} setModalShown={setModalShown} />}
@@ -141,7 +139,7 @@ export function NoteTypeCodeNoteList({ currentMimeType, mimeTypes, changeNoteTyp
     currentMimeType?: string;
     mimeTypes: MimeType[];
     changeNoteType(type: NoteType, mime: string): void;
-    setModalShown(shown: boolean): void;
+    setModalShown?(shown: boolean): void;
 }) {
     return (
         <>
@@ -155,8 +153,10 @@ export function NoteTypeCodeNoteList({ currentMimeType, mimeTypes, changeNoteTyp
                 </FormListItem>
             ))}
 
-            <FormDropdownDivider />
-            <FormListItem icon="bx bx-cog" onClick={() => setModalShown(true)}>{t("basic_properties.configure_code_notes")}</FormListItem>
+            {setModalShown && <>
+                <FormDropdownDivider />
+                <FormListItem icon="bx bx-cog" onClick={() => setModalShown(true)}>{t("basic_properties.configure_code_notes")}</FormListItem>
+            </>}
         </>
     );
 }
@@ -195,7 +195,7 @@ function ProtectedNoteSwitch({ note }: { note?: FNote | null }) {
                 onChange={(shouldProtect) => note && protected_session.protectNote(note.noteId, shouldProtect, false)}
             />
         </div>
-    )
+    );
 }
 
 function EditabilitySelect({ note }: { note?: FNote | null }) {
@@ -417,9 +417,9 @@ function findTypeTitle(type?: NoteType, mime?: string | null) {
         const found = mimeTypes.find((mt) => mt.mime === mime);
 
         return found ? found.title : mime;
-    } else {
-        const noteType = NOTE_TYPES.find((nt) => nt.type === type);
-
-        return noteType ? noteType.title : type;
     }
+    const noteType = NOTE_TYPES.find((nt) => nt.type === type);
+
+    return noteType ? noteType.title : type;
+
 }

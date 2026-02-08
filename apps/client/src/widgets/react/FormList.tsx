@@ -78,7 +78,7 @@ export interface FormListBadge {
     text: string;
 }
 
-interface FormListItemOpts {
+export interface FormListItemOpts {
     children: ComponentChildren;
     icon?: string;
     value?: string;

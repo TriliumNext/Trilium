@@ -1,0 +1,208 @@
+{
+    "get-started": {
+        "title": "Tosaigh",
+        "desktop_title": "Íoslódáil an feidhmchlár deisce (v{{version}})",
+        "architecture": "Ailtireacht:",
+        "older_releases": "Féach ar eisiúintí níos sine",
+        "server_title": "Socraigh freastalaí le haghaidh rochtana ar ilghléasanna"
+    },
+    "hero_section": {
+        "title": "Eagraigh do chuid smaointe. Tóg do bhunachar eolais pearsanta.",
+        "subtitle": "Is réiteach foinse oscailte é Trilium chun nótaí a thógáil agus bunachar eolais pearsanta a eagrú. Bain úsáid as go háitiúil ar do dheasc, nó sioncrónaigh é le do fhreastalaí féinóstáilte chun do nótaí a choinneáil cibé áit a théann tú.",
+        "get_started": "Tosaigh",
+        "github": "GitHub",
+        "dockerhub": "Docker Hub",
+        "screenshot_alt": "Scáileán den fheidhmchlár deisce Trilium Notes"
+    },
+    "organization_benefits": {
+        "title": "Eagraíocht",
+        "note_structure_title": "Struchtúr nótaí",
+        "note_structure_description": "Is féidir nótaí a shocrú go hiarlathach. Níl aon ghá le fillteáin, ós rud é gur féidir fo-nótaí a bheith i ngach nóta. Is féidir nóta aonair a chur leis i roinnt áiteanna san ordlathas.",
+        "attributes_title": "Lipéid nótaí agus caidrimh",
+        "attributes_description": "Bain úsáid as caidrimh idir nótaí nó cuir lipéid leis le haghaidh catagóiriú éasca. Bain úsáid as tréithe ardaithe chun faisnéis struchtúrtha a iontráil ar féidir a úsáid i dtáblaí agus i gcláir.",
+        "hoisting_title": "Spásanna oibre agus ardaitheoir",
+        "hoisting_description": "Deighil do nótaí pearsanta agus oibre go héasca trí iad a ghrúpáil faoi spás oibre, rud a dhíríonn ar do chrann nótaí chun sraith nótaí ar leith amháin a thaispeáint."
+    },
+    "productivity_benefits": {
+        "title": "Táirgiúlacht agus sábháilteacht",
+        "revisions_title": "Athbhreithnithe nóta",
+        "revisions_content": "Sábháiltear nótaí go tréimhsiúil sa chúlra agus is féidir athbhreithnithe a úsáid le haghaidh athbhreithnithe nó chun athruithe de thaisme a chealú. Is féidir athbhreithnithe a chruthú ar éileamh freisin.",
+        "sync_title": "Sioncrónú",
+        "sync_content": "Bain úsáid as cás féinóstáilte nó scamall chun do nótaí a shioncrónú go héasca ar fud ilghléasanna, agus chun rochtain a fháil orthu ó do ghuthán póca ag baint úsáide as PWA.",
+        "protected_notes_title": "Nótaí faoi chosaint",
+        "protected_notes_content": "Cosain faisnéis phearsanta íogair trí na nótaí a chriptiú agus iad a ghlasáil taobh thiar de sheisiún atá cosanta ag pasfhocal.",
+        "jump_to_title": "Cuardach tapa agus orduithe",
+        "jump_to_content": "Léim go tapa chuig nótaí nó orduithe UI ar fud an ordlathais trí chuardach a dhéanamh ar a dteideal, le meaitseáil doiléir chun clóscríobh nó difríochtaí beaga a chur san áireamh.",
+        "search_title": "Cuardach cumhachtach",
+        "search_content": "Nó déan cuardach ar théacs laistigh de nótaí agus caolaigh an cuardach trí scagadh a dhéanamh de réir an nóta tuismitheora, nó de réir doimhneachta.",
+        "web_clipper_title": "Gearrthóir gréasáin",
+        "web_clipper_content": "Gabh leathanaigh ghréasáin (nó scáileáin) agus cuir iad go díreach i Trilium ag baint úsáide as síneadh brabhsálaí an ghearrthóra gréasáin."
+    },
+    "note_types": {
+        "title": "Ilbhealaí chun d’fhaisnéis a léiriú",
+        "text_title": "Nótaí téacs",
+        "text_description": "Déantar na nótaí a chur in eagar ag baint úsáide as eagarthóir amhairc (WYSIWYG), a thacaíonn le táblaí, íomhánna, nathanna matamaitice, bloic chóid le haibhsiú comhréire. Formáidigh an téacs go tapa ag baint úsáide as comhréir cosúil le Markdown nó ag baint úsáide as orduithe slaise.",
+        "code_title": "Nótaí cóid",
+        "code_description": "Úsáideann samplaí móra de chód foinse nó scripteanna eagarthóir tiomnaithe, le haibhsiú comhréire do go leor teangacha ríomhchlárúcháin agus le téamaí dathanna éagsúla.",
+        "file_title": "Nótaí comhaid",
+        "file_description": "Cuir comhaid ilmheán ar nós PDFanna, íomhánna, físeáin le chéile le réamhamharc san fheidhmchlár.",
+        "canvas_title": "Canbhás",
+        "canvas_description": "Socraigh cruthanna, íomhánna agus téacs ar chanbhás gan teorainn, ag baint úsáide as an teicneolaíocht chéanna atá taobh thiar de excalidraw.com. Oiriúnach do léaráidí, sceitsí agus pleanáil amhairc.",
+        "mermaid_title": "Léaráidí maighdeana mara",
+        "mermaid_description": "Cruthaigh léaráidí ar nós cairteacha sreafa, léaráidí ranga agus seicheamhacha, cairteacha Gantt agus go leor eile, ag baint úsáide as comhréir Mermaid.",
+        "mindmap_title": "Léarscáil intinne",
+        "mindmap_description": "Eagraigh do chuid smaointe go hamhairc nó déan seisiún smaointeoireachta.",
+        "others_list": "agus cinn eile: <0>léarscáil nótaí</0>, <1>léarscáil gaoil</1>, <2>cuardaigh shábháilte</2>, <3>nóta rindreála</3>, agus <4>radhairc ghréasáin</4>."
+    },
+    "extensibility_benefits": {
+        "title": "Comhroinnt & inleathnú",
+        "import_export_title": "Iompórtáil/onnmhairiú",
+        "import_export_description": "Idirghníomhaigh go héasca le feidhmchláir eile ag baint úsáide as formáidí Markdown, ENEX, OML.",
+        "share_title": "Comhroinn nótaí ar an ngréasán",
+        "share_description": "Má tá freastalaí agat, is féidir é a úsáid chun fo-thacar de do nótaí a roinnt le daoine eile.",
+        "scripting_title": "Scriptiú ardleibhéil",
+        "scripting_description": "Tóg do chomhtháthú féin laistigh de Trilium le giuirléidí saincheaptha, nó loighic taobh an fhreastalaí.",
+        "api_title": "REST API",
+        "api_description": "Idirghníomhaigh le Trilium go ríomhchláraitheach ag baint úsáide as a REST API ionsuite."
+    },
+    "collections": {
+        "title": "Bailiúcháin",
+        "calendar_title": "Féilire",
+        "calendar_description": "Eagraigh d’imeachtaí pearsanta nó gairmiúla ag baint úsáide as féilire, le tacaíocht d’imeachtaí uile-lae agus il-lae. Féach ar d’imeachtaí go tapa leis na radhairc seachtaine, míosa agus bliana. Idirghníomhaíocht éasca chun imeachtaí a chur leis nó a tharraingt.",
+        "table_title": "Tábla",
+        "table_description": "Taispeáin agus cuir in eagar faisnéis faoi nótaí i struchtúr táblach, le cineálacha éagsúla colún amhail téacs, uimhir, boscaí seiceála, dáta & am, naisc agus dathanna agus tacaíocht do chaidrimh. De rogha air sin, taispeáin na nótaí laistigh de ordlathas crainn taobh istigh den tábla.",
+        "board_title": "Bord Kanban",
+        "board_description": "Eagraigh stádas do thascanna nó do thionscadail i mbord Kanban le bealach éasca chun míreanna agus colúin nua a chruthú agus a stádas a athrú go simplí trí tharraingt trasna an chláir.",
+        "geomap_title": "Geo-léarscáil",
+        "geomap_description": "Pleanáil do laethanta saoire nó marcáil do phointí spéise go díreach ar léarscáil gheografach ag baint úsáide as marcóirí saincheaptha. Taispeáin rianta GPX taifeadta chun bealaí taistil a rianú.",
+        "presentation_title": "Cur i Láthair",
+        "presentation_description": "Eagraigh faisnéis i sleamhnáin agus cuir i láthair iad i lánscáileán le haistrithe réidhe. Is féidir na sleamhnáin a onnmhairiú go PDF freisin le go mbeidh sé éasca iad a roinnt."
+    },
+    "faq": {
+        "title": "Ceisteanna Coitianta",
+        "mobile_question": "An bhfuil feidhmchlár soghluaiste ann?",
+        "mobile_answer": "Faoi láthair níl aon aip shoghluaiste oifigiúil ann. Mar sin féin, má tá freastalaí agat is féidir leat rochtain a fháil air trí bhrabhsálaí gréasáin a úsáid agus fiú é a shuiteáil mar PWA. I gcás Android, tá aip neamhoifigiúil ann ar a dtugtar TriliumDroid a oibríonn as líne fiú (cosúil le cliant deisce).",
+        "database_question": "Cá bhfuil na sonraí stóráilte?",
+        "database_answer": "Stórálfar do nótaí go léir i mbunachar sonraí SQLite i bhfillteán feidhmchláir. Is é an chúis a n-úsáideann Trilium bunachar sonraí in ionad comhaid téacs simplí ná feidhmíocht agus go mbeadh roinnt gnéithe i bhfad níos deacra a chur i bhfeidhm amhail clóin (an nóta céanna in áiteanna éagsúla sa chrann). Chun an fillteán feidhmchláir a aimsiú, téigh go dtí an fhuinneog Maidir Linn.",
+        "server_question": "An bhfuil freastalaí ag teastáil uaim le Trilium a úsáid?",
+        "server_answer": "Ní hea, ceadaíonn an freastalaí rochtain trí bhrabhsálaí gréasáin agus bainistíonn sé an sioncrónú má tá ilghléasanna agat. Chun tús a chur leis, is leor an feidhmchlár deisce a íoslódáil agus tosú ag baint úsáide as.",
+        "scaling_question": "Cé chomh maith agus a scálaíonn an feidhmchlár le líon mór nótaí?",
+        "scaling_answer": "Ag brath ar úsáid, ba cheart go mbeadh an feidhmchlár in ann 100,000 nóta ar a laghad a láimhseáil gan fadhb. Tabhair faoi deara go bhféadfadh teip a bheith ar an bpróiseas sioncrónaithe uaireanta má tá go leor comhad mór á uaslódáil (1 GB in aghaidh an chomhaid) ós rud é go bhfuil Trilium beartaithe níos mó mar fheidhmchlár bonn eolais seachas stór comhad (cosúil le NextCloud, mar shampla).",
+        "network_share_question": "An féidir liom mo bhunachar sonraí a roinnt thar thiomántán líonra?",
+        "network_share_answer": "Ní hea, ní smaoineamh maith é bunachar sonraí SQLite a roinnt thar thiomántán líonra i gcoitinne. Cé go bhféadfadh sé oibriú uaireanta, tá seans ann go ndéanfar an bunachar sonraí a thruailliú mar gheall ar ghlasanna comhad neamhfhoirfe thar líonra.",
+        "security_question": "Conas a chosnaítear mo chuid sonraí?",
+        "security_answer": "De réir réamhshocraithe, ní chriptítear nótaí agus is féidir iad a léamh go díreach ón mbunachar sonraí. Nuair a mharcáiltear nóta mar chriptithe, déantar an nóta a chriptiú ag baint úsáide as AES-128-CBC."
+    },
+    "final_cta": {
+        "title": "Réidh le tosú le Trilium Notes?",
+        "description": "Tóg do bhunachar eolais pearsanta le gnéithe cumhachtacha agus príobháideacht iomlán.",
+        "get_started": "Tosaigh"
+    },
+    "components": {
+        "link_learn_more": "Foghlaim níos mó..."
+    },
+    "download_now": {
+        "text": "Íoslódáil anois ",
+        "platform_big": "v{{version}} do {{platform}}",
+        "platform_small": "do {{platform}}",
+        "linux_big": "v{{version}} do Linux",
+        "linux_small": "do Linux",
+        "more_platforms": "Tuilleadh ardán & socrú freastalaí"
+    },
+    "header": {
+        "get-started": "Tosaigh",
+        "documentation": "Doiciméadú",
+        "support-us": "Tacaigh linn",
+        "resources": "Acmhainní"
+    },
+    "footer": {
+        "copyright_and_the": " agus an ",
+        "copyright_community": "pobal"
+    },
+    "social_buttons": {
+        "github": "GitHub",
+        "github_discussions": "Pléanna GitHub",
+        "matrix": "Maitrís",
+        "reddit": "Reddit"
+    },
+    "support_us": {
+        "title": "Tacaigh linn",
+        "financial_donations_title": "Síntiúis airgeadais",
+        "financial_donations_description": "Tógtar agus cothaítear Trilium le <Link>na céadta uair an chloig oibre</Link>. Coinníonn do thacaíocht é foinse oscailte, feabhsaíonn sé gnéithe, agus clúdaíonn sé costais amhail óstáil.",
+        "financial_donations_cta": "Smaoinigh ar thacaíocht a thabhairt don phríomhfhorbróir (<Link>eliandoran</Link>) den fheidhmchlár trí:",
+        "github_sponsors": "Urraitheoirí GitHub",
+        "paypal": "PayPal",
+        "buy_me_a_coffee": "Ceannaigh Caife Dom"
+    },
+    "contribute": {
+        "title": "Bealaí eile chun ranníocaíocht a dhéanamh",
+        "way_translate": "Aistrigh an feidhmchlár go do theanga dhúchais trí <Link>Weblate</Link>.",
+        "way_community": "Déan idirghníomhú leis an bpobal ar <Discussions>GitHub Discussions</Discussions> nó ar <Matrix>Matrix</Matrix>.",
+        "way_reports": "Tuairiscigh fabhtanna trí <Link>Fadhbanna GitHub</Link>.",
+        "way_document": "Feabhas a chur ar an doiciméadacht trí eolas a thabhairt dúinn faoi bhearnaí sa doiciméadacht nó trí threoracha, Ceisteanna Coitianta nó ranganna teagaisc a chur ar fáil.",
+        "way_market": "Scaip an scéal: Roinn Nótaí Trilium le cairde, nó ar bhlaganna agus ar na meáin shóisialta."
+    },
+    "404": {
+        "title": "404: Níor aimsíodh",
+        "description": "Níorbh fhéidir an leathanach a bhí á lorg agat a aimsiú. B’fhéidir gur scriosadh é nó go bhfuil an URL mícheart."
+    },
+    "download_helper_desktop_windows": {
+        "title_x64": "Windows 64-bit",
+        "title_arm64": "Windows ar ARM",
+        "description_x64": "Ag luí le gléasanna Intel nó AMD a bhfuil Windows 10 agus 11 á rith acu.",
+        "description_arm64": "Ag luí le gléasanna ARM (m.sh. le Qualcomm Snapdragon).",
+        "quick_start": "Chun a shuiteáil trí Winget:",
+        "download_exe": "Íoslódáil an Suiteálaí (.exe)",
+        "download_zip": "Iniompartha (.zip)",
+        "download_scoop": "Scúp"
+    },
+    "download_helper_desktop_linux": {
+        "title_x64": "Linux 64-bit",
+        "title_arm64": "Linux ar ARM",
+        "description_x64": "Don chuid is mó de na dáiltí Linux, comhoiriúnach le hailtireacht x86_64.",
+        "description_arm64": "I gcás dáiltí Linux bunaithe ar ARM, comhoiriúnach le hailtireacht aarch64.",
+        "quick_start": "Roghnaigh formáid phacáiste chuí, ag brath ar do dháileadh:",
+        "download_deb": ".deb",
+        "download_rpm": ".rpm",
+        "download_flatpak": ".flatpak",
+        "download_zip": "Iniompartha (.zip)",
+        "download_nixpkgs": "nixpkgs",
+        "download_aur": "AUR"
+    },
+    "download_helper_desktop_macos": {
+        "title_x64": "macOS do Intel",
+        "title_arm64": "macOS do Apple Silicon",
+        "description_x64": "Do Macs bunaithe ar Intel a bhfuil macOS Monterey nó níos déanaí á rith acu.",
+        "description_arm64": "Do ríomhairí Mac Apple Silicon ar nós iad siúd a bhfuil sceallóga M1 agus M2 acu.",
+        "quick_start": "Chun a shuiteáil trí Homebrew:",
+        "download_dmg": "Íoslódáil an Suiteálaí (.dmg)",
+        "download_homebrew_cask": "Homebrew Cask",
+        "download_zip": "Iniompartha (.zip)"
+    },
+    "download_helper_server_docker": {
+        "title": "Féinóstáilte ag baint úsáide as Docker",
+        "description": "Imscaradh go héasca ar Windows, Linux nó macOS ag baint úsáide as coimeádán Docker.",
+        "download_dockerhub": "Docker Hub",
+        "download_ghcr": "ghcr.io"
+    },
+    "download_helper_server_linux": {
+        "title": "Féinóstáilte ar Linux",
+        "description": "Imscar Trilium Notes ar do fhreastalaí nó VPS féin, atá comhoiriúnach leis an gcuid is mó de na dáileacháin.",
+        "download_tar_x64": "x64 (.tar.xz)",
+        "download_tar_arm64": "ARM (.tar.xz)",
+        "download_nixos": "Modúl NixOS"
+    },
+    "download_helper_server_hosted": {
+        "title": "Óstáil íoctha",
+        "description": "Nótaí Trilium atá á n-óstáil ar PikaPods, seirbhís íoctha le haghaidh rochtana agus bainistíochta éasca. Níl baint dhíreach aige le foireann Trilium.",
+        "download_pikapod": "Socraigh ar PikaPods",
+        "download_triliumcc": "Nó féach ar trilium.cc"
+    },
+    "resources": {
+        "title": "Acmhainní",
+        "icon_packs": "Pacáistí deilbhín",
+        "icon_packs_intro": "Leathnaigh rogha na ndeilbhíní atá ar fáil le do nótaí trí phacáiste deilbhíní a úsáid. Le haghaidh tuilleadh eolais faoi phacáistí deilbhíní, féach ar an <DocumentationLink>dhoiciméadú oifigiúil</DocumentationLink>.",
+        "download": "Íoslódáil",
+        "website": "Suíomh Gréasáin"
+    }
+}

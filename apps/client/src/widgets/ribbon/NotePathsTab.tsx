@@ -1,15 +1,16 @@
-import { useEffect, useMemo, useState } from "preact/hooks";
+import "./NotePathsTab.css";
+
+import clsx from "clsx";
+import { useContext, useEffect, useMemo, useState } from "preact/hooks";
 
 import FNote, { NotePathRecord } from "../../entities/fnote";
 import { t } from "../../services/i18n";
 import { NOTE_PATH_TITLE_SEPARATOR } from "../../services/tree";
 import { useTriliumEvent } from "../react/hooks";
-import NoteLink from "../react/NoteLink";
-import { joinElements } from "../react/react_utils";
-import { TabContext } from "./ribbon-interface";
 import LinkButton from "../react/LinkButton";
-import clsx from "clsx";
-
+import NoteLink from "../react/NoteLink";
+import { joinElements, ParentComponent } from "../react/react_utils";
+import { TabContext } from "./ribbon-interface";
 
 export default function NotePathsTab({ note, hoistedNoteId, notePath }: TabContext) {
     const sortedNotePaths = useSortedNotePaths(note, hoistedNoteId);
@@ -20,6 +21,7 @@ export function NotePathsWidget({ sortedNotePaths, currentNotePath }: {
     sortedNotePaths: NotePathRecord[] | undefined;
     currentNotePath?: string | null | undefined;
 }) {
+    const parentComponent = useContext(ParentComponent);
     return (
         <div class="note-paths-widget">
             <>
@@ -39,7 +41,7 @@ export function NotePathsWidget({ sortedNotePaths, currentNotePath }: {
 
                 <LinkButton
                     text={t("note_paths.clone_button")}
-                    triggerCommand="cloneNoteIdsTo"
+                    onClick={() => parentComponent?.triggerCommand("cloneNoteIdsTo")}
                 />
             </>
         </div>
@@ -112,9 +114,9 @@ function NotePath({ currentNotePath, notePathRecord }: { currentNotePath?: strin
         <li class={classes}>
             {joinElements(fullNotePaths.map((notePath, index, arr) => (
                 <NoteLink key={notePath}
-                          className={clsx({"basename": (index === arr.length - 1)})}
-                          notePath={notePath}
-                          noPreview />
+                    className={clsx({"basename": (index === arr.length - 1)})}
+                    notePath={notePath}
+                    noPreview />
             )), NOTE_PATH_TITLE_SEPARATOR)}
 
             {icons.map(({ icon, title }) => (

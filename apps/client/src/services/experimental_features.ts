@@ -1,5 +1,6 @@
 import { t } from "./i18n";
 import options from "./options";
+import { isMobile } from "./utils";
 
 export interface ExperimentalFeature {
     id: string;
@@ -21,7 +22,7 @@ let enabledFeatures: Set<ExperimentalFeatureId> | null = null;
 
 export function isExperimentalFeatureEnabled(featureId: ExperimentalFeatureId): boolean {
     if (featureId === "new-layout") {
-        return options.is("newLayout");
+        return (isMobile() || options.is("newLayout"));
     }
 
     return getEnabledFeatures().has(featureId);
@@ -29,7 +30,7 @@ export function isExperimentalFeatureEnabled(featureId: ExperimentalFeatureId): 
 
 export function getEnabledExperimentalFeatureIds() {
     const values = [ ...getEnabledFeatures().values() ];
-    if (options.is("newLayout")) {
+    if (isMobile() || options.is("newLayout")) {
         values.push("new-layout");
     }
     return values;

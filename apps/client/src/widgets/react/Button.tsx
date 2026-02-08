@@ -1,8 +1,11 @@
 import type { ComponentChildren, RefObject } from "preact";
 import type { CSSProperties } from "preact/compat";
-import { useMemo } from "preact/hooks";
 import { memo } from "preact/compat";
+import { useMemo } from "preact/hooks";
+
 import { CommandNames } from "../../components/app_context";
+import { isDesktop } from "../../services/utils";
+import ActionButton from "./ActionButton";
 import Icon from "./Icon";
 
 export interface ButtonProps {
@@ -78,7 +81,7 @@ export function ButtonGroup({ children }: { children: ComponentChildren }) {
         <div className="btn-group" role="group">
             {children}
         </div>
-    )
+    );
 }
 
 export function SplitButton({ text, icon, children, ...restProps }: {
@@ -103,7 +106,17 @@ export function SplitButton({ text, icon, children, ...restProps }: {
                 {children}
             </ul>
         </ButtonGroup>
-    )
+    );
+}
+
+export function ButtonOrActionButton(props: {
+    text: string;
+    icon: string;
+} & Pick<ButtonProps, "onClick" | "triggerCommand" | "disabled" | "title">) {
+    if (isDesktop()) {
+        return <Button {...props} />;
+    }
+    return <ActionButton {...props} />;
 }
 
 export default Button;

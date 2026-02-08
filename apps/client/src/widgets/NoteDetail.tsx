@@ -1,5 +1,6 @@
 import "./NoteDetail.css";
 
+import clsx from "clsx";
 import { isValidElement, VNode } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -12,8 +13,9 @@ import { t } from "../services/i18n";
 import protected_session_holder from "../services/protected_session_holder";
 import toast from "../services/toast.js";
 import { dynamicRequire, isElectron, isMobile } from "../services/utils";
+import NoteTreeWidget from "./note_tree";
 import { ExtendedNoteType, TYPE_MAPPINGS, TypeWidget } from "./note_types";
-import { useNoteContext, useTriliumEvent } from "./react/hooks";
+import { useLegacyWidget, useNoteContext, useTriliumEvent } from "./react/hooks";
 import { NoteListWithLinks } from "./react/NoteList";
 import { TypeWidgetProps } from "./type_widgets/type_widget";
 
@@ -36,6 +38,7 @@ export default function NoteDetail() {
     const [ noteTypesToRender, setNoteTypesToRender ] = useState<{ [ key in ExtendedNoteType ]?: (props: TypeWidgetProps) => VNode }>({});
     const [ activeNoteType, setActiveNoteType ] = useState<ExtendedNoteType>();
     const widgetRequestId = useRef(0);
+    const hasFixedTree = note && noteContext?.hoistedNoteId === "_lbMobileRoot" && isMobile() && note.noteId.startsWith("_lbMobile");
 
     const props: TypeWidgetProps = {
         note: note!,
@@ -118,13 +121,6 @@ export default function NoteDetail() {
             parentComponent.triggerCommand("focusOnDetail", { ntxId });
         }
     });
-
-    // Fixed tree for launch bar config on mobile.
-    useEffect(() => {
-        if (!isMobile) return;
-        const hasFixedTree = noteContext?.hoistedNoteId === "_lbMobileRoot";
-        document.body.classList.toggle("force-fixed-tree", hasFixedTree);
-    }, [ note ]);
 
     // Handle toast notifications.
     useEffect(() => {
@@ -215,8 +211,13 @@ export default function NoteDetail() {
     return (
         <div
             ref={containerRef}
-            class={`component note-detail ${isFullHeight ? "full-height" : ""}`}
+            class={clsx("component note-detail", {
+                "full-height": isFullHeight,
+                "fixed-tree": hasFixedTree
+            })}
         >
+            {hasFixedTree && <FixedTree noteContext={noteContext} />}
+
             {Object.entries(noteTypesToRender).map(([ itemType, Element ]) => {
                 return <NoteDetailWrapper
                     Element={Element}
@@ -229,6 +230,11 @@ export default function NoteDetail() {
             })}
         </div>
     );
+}
+
+function FixedTree({ noteContext }: { noteContext: NoteContext }) {
+    const [ treeEl ] = useLegacyWidget(() => new NoteTreeWidget(), { noteContext });
+    return <div class="fixed-note-tree-container">{treeEl}</div>;
 }
 
 /**

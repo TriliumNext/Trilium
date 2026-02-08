@@ -757,7 +757,8 @@
     "delete_this_note": "刪除此筆記",
     "error_cannot_get_branch_id": "無法獲取 notePath '{{notePath}}' 的 branchId",
     "error_unrecognized_command": "無法識別的命令 {{command}}",
-    "note_revisions": "筆記歷史版本"
+    "note_revisions": "筆記歷史版本",
+    "backlinks": "反向連結"
   },
   "note_icon": {
     "change_note_icon": "更改筆記圖標",
@@ -1939,8 +1940,8 @@
     "desktop-application": "桌面版應用程式",
     "native-title-bar": "原生標題列",
     "native-title-bar-description": "對於 Windows 和 macOS，關閉原生標題列會讓應用程式看起來更緊湊。在 Linux 上，開啟原生標題列可以與系統的其他部分整合得更好。",
-    "background-effects": "啟用背景效果（僅適用於 Windows 11）",
-    "background-effects-description": "Mica 效果為程式視窗新增模糊且時尚的背景，營造出深度感和現代化外觀。「原生標題列」必須被禁用。",
+    "background-effects": "啟用背景效果",
+    "background-effects-description": "為程式視窗新增模糊且時尚的背景，營造立體感和現代化外觀。「原生標題列」必須被禁用。",
     "restart-app-button": "重新啟動應用程式以查看更改",
     "zoom-factor": "縮放係數"
   },
@@ -1959,7 +1960,8 @@
   "geo-map": {
     "create-child-note-title": "建立一個新的子筆記並將其加至地圖中",
     "create-child-note-instruction": "點擊地圖以在該位置建立新筆記，或按 Escape 以取消。",
-    "unable-to-load-map": "無法載入地圖。"
+    "unable-to-load-map": "無法載入地圖。",
+    "create-child-note-text": "新增地圖標記"
   },
   "geo-map-context": {
     "open-location": "打開位置",
@@ -2122,7 +2124,7 @@
   },
   "call_to_action": {
     "background_effects_title": "背景特效已推出穩定版本",
-    "background_effects_message": "在 Windows 裝置上，背景特效現在已完全穩定。背景特效透過模糊背後的背景，為使用者介面增添一抹色彩。此技術也用於其他應用程式，例如 Windows 檔案總管。",
+    "background_effects_message": "在 Windows 和macOS裝置上，背景特效現在已穩定。背景特效透過模糊背後的背景，為使用者介面增添一抹色彩。",
     "background_effects_button": "啟用背景特效",
     "next_theme_title": "試用新 Trilium 主題",
     "next_theme_message": "您正在使用舊版主題，要試用新主題嗎？",
@@ -2267,5 +2269,12 @@
     "pages_other": "",
     "pages_alt": "第 {{pageNumber}} 頁",
     "pages_loading": "正在載入…"
+  },
+  "mobile_tab_switcher": {
+    "more_options": "更多選項",
+    "title_one": "{{count}} 個分頁"
+  },
+  "platform_indicator": {
+    "available_on": "可於 {{platform}} 使用"
   }
 }

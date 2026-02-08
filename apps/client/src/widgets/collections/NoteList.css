@@ -1,7 +1,7 @@
 .note-list-widget {
     min-height: 0;
     max-width: var(--max-content-width); /* Inherited from .note-split */
- 
+
     overflow: auto;
     contain: none !important;
 }
@@ -9,10 +9,6 @@
 body.prefers-centered-content .note-list-widget:not(.full-height) {
     /* Horizontally center the widget in its parent when the "Keep content centered" option is on */
     margin-inline: auto;
-}
-
-.note-list-widget .note-list {
-    padding-block: 10px;
 }
 
 .note-list-widget.full-height,
@@ -25,8 +21,12 @@ body.prefers-centered-content .note-list-widget:not(.full-height) {
 }
 
 /* #region Pagination */
-.note-list-pager span.current-page {
-    text-decoration: underline;
-    font-weight: bold;
+.note-list-pager {
+    font-size: 1rem;
+
+    span.current-page {
+        text-decoration: underline;
+        font-weight: bold;
+    }
 }
 /* #endregion */

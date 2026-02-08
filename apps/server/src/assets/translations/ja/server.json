@@ -344,7 +344,8 @@
     "inbox-title": "Inbox",
     "base-abstract-launcher-title": "ベース アブストラクトランチャー",
     "command-palette": "コマンドパレットを開く",
-    "zen-mode": "禅モード"
+    "zen-mode": "禅モード",
+    "tab-switcher-title": "タブ切り替え"
   },
   "notes": {
     "new-note": "新しいノート",

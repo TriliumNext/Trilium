@@ -109,4 +109,29 @@ body.experimental-feature-new-layout {
             --input-focus-color: initial;
         }
     }
+
+    &.mobile .title-row {
+        .icon-action:not(.note-icon) {
+            --icon-button-size: 45px;
+            --icon-button-icon-ratio: 0.5;
+            flex-shrink: 0;
+        }
+
+        .note-actions {
+            width: auto;
+        }
+
+        .note-badges {
+            margin-inline: 0.5em;
+            flex-shrink: 0;
+        }
+
+        .note-icon-widget {
+            margin-inline: 0.5em;
+
+            .note-icon {
+                --icon-button-size: 24px;
+            }
+        }
+    }
 }

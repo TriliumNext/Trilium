@@ -1,8 +1,10 @@
-import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
-import { useNoteContext, useTriliumEvent } from "../../react/hooks";
 import "./mobile_editor_toolbar.css";
-import { isIOS } from "../../../services/utils";
+
 import { CKTextEditor, ClassicEditor } from "@triliumnext/ckeditor5";
+import { MutableRef, useCallback, useEffect, useRef, useState } from "preact/hooks";
+
+import { isIOS } from "../../../services/utils";
+import { useIsNoteReadOnly, useNoteContext, useNoteProperty, useTriliumEvent } from "../../react/hooks";
 
 interface MobileEditorToolbarProps {
     inPopupEditor?: boolean;
@@ -17,16 +19,12 @@ interface MobileEditorToolbarProps {
 export default function MobileEditorToolbar({ inPopupEditor }: MobileEditorToolbarProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const { note, noteContext, ntxId } = useNoteContext();
-    const [ shouldDisplay, setShouldDisplay ] = useState(false);
+    const noteType = useNoteProperty(note, "type");
+    const { isReadOnly } = useIsNoteReadOnly(note, noteContext);
+    const shouldDisplay = noteType === "text" && isReadOnly === false;
     const [ dropdownActive, setDropdownActive ] = useState(false);
 
     usePositioningOniOS(!inPopupEditor, containerRef);
-
-    useEffect(() => {
-        noteContext?.isReadOnly().then(isReadOnly => {
-            setShouldDisplay(note?.type === "text" && !isReadOnly);
-        });
-    }, [ note ]);
 
     // Attach the toolbar from the CKEditor.
     useTriliumEvent("textEditorRefreshed", ({ ntxId: eventNtxId, editor }) => {
@@ -62,15 +60,15 @@ export default function MobileEditorToolbar({ inPopupEditor }: MobileEditorToolb
 
     return (
         <div className={`classic-toolbar-outer-container ${!shouldDisplay ? "hidden-ext" : "visible"} ${isIOS() ? "ios" : ""}`}>
-            <div ref={containerRef} className={`classic-toolbar-widget ${dropdownActive ? "dropdown-active" : ""}`}></div>
+            <div ref={containerRef} className={`classic-toolbar-widget ${dropdownActive ? "dropdown-active" : ""}`} />
         </div>
-    )
+    );
 }
 
 function usePositioningOniOS(enabled: boolean, wrapperRef: MutableRef<HTMLDivElement | null>) {
     const adjustPosition = useCallback(() => {
         if (!wrapperRef.current) return;
-        let bottom = window.innerHeight - (window.visualViewport?.height || 0);
+        const bottom = window.innerHeight - (window.visualViewport?.height || 0);
         wrapperRef.current.style.bottom = `${bottom}px`;
     }, []);
 

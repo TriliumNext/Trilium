@@ -1,35 +1,135 @@
-<p>Trilium (<a href="#root/_help_WOcw2SLH6tbX">server edition</a>) has a mobile
-  web frontend which is optimized for touch based devices - smartphones and
-  tablets. It is activated automatically during login process based on browser
-  detection.</p>
-<p>Mobile frontend is limited in features compared to full desktop frontend.
+<figure class="image image_resized image-style-align-right" style="width:33.52%;">
+  <img style="aspect-ratio:1242/2688;" src="Mobile Frontend_IMG_1765.PNG"
+  width="1242" height="2688">
+</figure>
+<p>Trilium has a mobile web frontend which is optimized for touch based devices
+  - smartphones and tablets. It is activated automatically during login process
+  based on browser detection.</p>
+<p>Mobile frontend is limited in features compared to the full desktop version.
   See below for more details on this.</p>
-<p>Note that this is not an Android/iOS app, this is just mobile friendly
-  web page served on the <a href="#root/_help_WOcw2SLH6tbX">server edition</a>.</p>
+<h2>Layout basics</h2>
+<p>Unlike the desktop version, the mobile version has a slightly different
+  UI meant to better fit the constrained screens of a mobile phone.</p>
+<p>Here is a non-exhaustive list of differences between the desktop version
+  and the mobile one:</p>
+<ul>
+  <li>
+    <p>The&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>&nbsp;is
+      displayed as a sidebar. To display the sidebar, press the button in the
+      top-left of the screen.</p>
+    <ul>
+      <li>There is also a swipe gesture that can be done from the left of the screen,
+        but the browser's navigation gesture interferes with it most of the time
+        (depending on the platform).</li>
+      <li>Press and hold a note to display the&nbsp;<a class="reference-link" href="#root/_help_YtSN43OrfzaA">Note tree contextual menu</a>.</li>
+    </ul>
+  </li>
+  <li>
+    <p>The&nbsp;<a class="reference-link" href="#root/_help_Ms1nauBra7gq">Quick search</a>&nbsp;bar
+      is also displayed at the top of the note tree.</p>
+  </li>
+  <li>
+    <p>The full&nbsp;<a class="reference-link" href="#root/_help_eIg8jdvaoNNd">Search</a>&nbsp;function
+      can be triggered either from either the&nbsp;<a class="reference-link"
+      href="#root/_help_x3i7MxGccDuM">Global menu</a>&nbsp;or from the&nbsp;<a class="reference-link"
+      href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>, if configured.</p>
+  </li>
+  <li>
+    <p>The&nbsp;<a class="reference-link" href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>&nbsp;is
+      displayed at the bottom of the screen.</p>
+    <ul>
+      <li>The launch bar uses a different configuration for icons than the desktop
+        version. See the dedicated page for more information on how to configure
+        it.</li>
+    </ul>
+  </li>
+  <li>
+    <p>Most of the note-related actions are grouped in the horizontal dots icon
+      on the top-right of the note.</p>
+  </li>
+  <li>
+    <p>The&nbsp;<a class="reference-link" href="#root/_help_3seOhtN8uLIY">Tabs</a>&nbsp;are
+      grouped under a tab switcher in the&nbsp;<a class="reference-link" href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>,
+      where the tabs are displayed in a full-screen grid with preview for easy
+      switching, as well as additional options such as reopening closed tabs.</p>
+  </li>
+  <li>
+    <p>Since v0.100.0,&nbsp;<a class="reference-link" href="#root/_help_luNhaphA37EO">Split View</a>&nbsp;can
+      also be used in mobile view, but with a maximum of two panes at once. The
+      splits are displayed vertically instead of horizontally.</p>
+  </li>
+  <li>
+    <p>Starting with v0.102.0, the&nbsp;<a class="reference-link" href="#root/_help_IjZS7iK5EXtb">New Layout</a>&nbsp;is
+      enforced on mobile. This brings features such as the note badges, note
+      type switcher or collection properties which would otherwise not be available.</p>
+  </li>
+</ul>
+<h2>Installing as a PWA</h2>
+<p>The mobile view can be set up as a PWA. While this does not offer any
+  offline capabilities, it will display the application in full-screen and
+  makes it easy to access via your mobile phone's home screen.</p>
+<h3>On iOS with Safari</h3>
+<ol>
+  <li>Open your default web browser and access your Trilium instance.</li>
+  <li>Login.</li>
+  <li>Press the […] button in the bottom-right of the screen and select Share.</li>
+  <li>Scroll down to reveal the full list of items and choose “Add to Home Screen”.</li>
+  <li>Press “Add” and the web app will be available.</li>
+</ol>
+<h3>On Android with Google Chrome</h3>
+<aside class="admonition important">
+  <p>Google Chrome requires the server to be served over HTTPS in order to
+    display in full-screen. If using HTTP, the app will appear like a normal
+    web page (similar to a bookmark).</p>
+</aside>
+<ol>
+  <li>Open your default web browser and access your Trilium instance.</li>
+  <li>Login.</li>
+  <li>Press the three vertical dots icon in the top-right of the screen and
+    select <em>Add to Home screen.</em>
+  </li>
+  <li>Select the <em>Install</em> option.</li>
+  <li>Select an appropriate name.</li>
+  <li>The web app will appear as an application, not on the home screen.</li>
+</ol>
+<h3>On Android with Brave</h3>
+<aside class="admonition important">
+  <p>Brave requires the server to be served over HTTPS in order to display
+    in full-screen. If using HTTP, the app will appear like a normal web page
+    (similar to a bookmark).</p>
+</aside>
+<ol>
+  <li>Open your default web browser and access your Trilium instance.</li>
+  <li>Login.</li>
+  <li>Press the three vertical dots icon in the bottom-right of the screen and
+    select <em>Add to Home screen</em>.</li>
+  <li>Press the <em>Install</em> option.</li>
+  <li>The web app will appear as an application, not on the home screen.</li>
+</ol>
+<h3>On Samsung Browser</h3>
+<ol>
+  <li>Open your default web browser and access your Trilium instance.</li>
+  <li>Login.</li>
+  <li>Press the hamburger menu in the bottom-right of the screen.</li>
+  <li>Select <em>Add to</em>, followed by <em>Home screen</em>.</li>
+  <li>Press <em>Add</em> and the web app will appear on the home page.</li>
+</ol>
 <h2>Testing via the desktop application</h2>
 <p>If you are running Trilium without a dedicated <a href="#root/_help_WOcw2SLH6tbX">server installation</a>,
   you can still test the mobile application using the desktop application.
   For more information, see&nbsp;<a class="reference-link" href="#root/_help_nRqcgfTb97uV">Using the desktop application as a server</a>.
   To access it go to <code spellcheck="false">http://&lt;ip&gt;:37840/login?mobile</code> .</p>
-<h2>Limitations</h2>
-<p>Mobile frontend provides only some of the features of the full desktop
-  frontend:</p>
-<ul>
-  <li>it is possible to browse the whole note tree, read and edit all types
-    of notes, but you can create only text notes</li>
-  <li>reading and editing <a href="#root/_help_bwg0e8ewQMak">protected notes</a> is
-    possible, but creating them is not supported</li>
-  <li>editing options is not supported</li>
-  <li>cloning notes is not supported</li>
-  <li>uploading file attachments is not supported</li>
-</ul>
 <h2>Forcing mobile/desktop frontend</h2>
-<p>Trilium decides automatically whether to use mobile or desktop frontend.
+<p>Trilium decides automatically whether to use mobile or desktop front-end.
   If this is not appropriate, you can use <code spellcheck="false">?mobile</code> or
   <code
   spellcheck="false">?desktop</code>query param on <strong>login</strong> page (Note: you might
     need to log out).</p>
+<p>Alternatively, simply select <em>Switch to Mobile/Desktop Version</em> in
+  the&nbsp;<a class="reference-link" href="#root/_help_x3i7MxGccDuM">Global menu</a>.</p>
 <h2>Scripting</h2>
-<p>You can alter the behavior with <a href="#root/_help_CdNpE2pqjmI6">scripts</a> just
-  like for normal frontend. For script notes to be executed, they need to
-  have labeled <code spellcheck="false">#run=mobileStartup</code>.</p>
+<p>You can alter the behavior with&nbsp;<a class="reference-link" href="#root/_help_CdNpE2pqjmI6">Scripting</a>,
+  just like for normal frontend. For script notes to be executed, they need
+  to have labeled <code spellcheck="false">#run=mobileStartup</code>.</p>
+<p>Custom&nbsp;<a class="reference-link" href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>&nbsp;widgets
+  are also supported.</p>
