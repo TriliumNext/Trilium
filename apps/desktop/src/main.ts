@@ -12,6 +12,8 @@ import { PRODUCT_NAME } from "./app-info";
 import port from "@triliumnext/server/src/services/port.js";
 import { join } from "path";
 import { deferred, LOCALES } from "../../../packages/commons/src";
+import previewZipForImport from "@triliumnext/server/src/services/import/zip_preview";
+import { ipcMain } from "electron/main";
 
 async function main() {
     const userDataPath = getUserData();
@@ -115,7 +117,8 @@ async function onReady() {
     if (sqlInit.isDbInitialized()) {
         await sqlInit.dbReady;
 
-        await windowService.createMainWindow(app);
+        const mainWindow = await windowService.createMainWindow(app);
+        handleImportArguments(process.argv, mainWindow);
 
         if (process.platform === "darwin") {
             app.on("activate", async () => {
@@ -131,6 +134,20 @@ async function onReady() {
     }
 
     await windowService.registerGlobalShortcuts();
+}
+
+async function handleImportArguments(args: string[], window: BrowserWindow) {
+    const filesToImport = args.filter(arg => !arg.startsWith("-") && arg.endsWith(".trilium"));
+    if (filesToImport.length === 0) return;
+
+    const previews = await Promise.all(filesToImport.map(file => previewZipForImport(file)));
+    console.log("Sendimg import preview data to window", window);
+    ipcMain.on("initial-render-complete", () => {
+        console.log("READYYY!!!");
+        window.webContents.send("show-import-preview-dialog", {
+            previews
+        });
+    });
 }
 
 function getElectronLocale() {

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
 import { cancelUploadWithPreview, executeUploadWithPreview } from "../../services/import";
-import { boolToString } from "../../services/utils";
+import { boolToString, dynamicRequire, isElectron } from "../../services/utils";
 import { Badge } from "../react/Badge";
 import Button from "../react/Button";
 import { Card } from "../react/Card";
@@ -16,7 +16,7 @@ import Modal from "../react/Modal";
 import NoteAutocomplete from "../react/NoteAutocomplete";
 
 export interface ImportPreviewData {
-    parentNoteId: string;
+    parentNoteId?: string;
     previews: ImportPreviewResponse[];
 }
 
@@ -104,6 +104,21 @@ export default function ImportPreviewDialog() {
         setImportButtonTimeout(IMPORT_BUTTON_TIMEOUT);
         hasSubmittedRef.current = false;
     });
+
+    useEffect(() => {
+        if (!isElectron()) return;
+        const { ipcRenderer } = dynamicRequire("electron");
+        const onShow = (_event: any, data: ImportPreviewData) => {
+            setData(data);
+            setShown(true);
+            setImportButtonTimeout(IMPORT_BUTTON_TIMEOUT);
+            hasSubmittedRef.current = false;
+        };
+        ipcRenderer.on("show-import-preview-dialog", onShow);
+        return () => {
+            ipcRenderer.removeListener("show-import-preview-dialog", onShow);
+        }
+    }, []);
 
     return (
         <Modal
