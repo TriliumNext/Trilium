@@ -1,10 +1,10 @@
 import "./import_preview.css";
 
 import { DangerousAttributeCategory, ImportPreviewResponse } from "@triliumnext/commons";
-import { useEffect, useState } from "preact/hooks";
+import { useEffect, useRef, useState } from "preact/hooks";
 
 import { t } from "../../services/i18n";
-import { executeUploadWithPreview } from "../../services/import";
+import { cancelUploadWithPreview, executeUploadWithPreview } from "../../services/import";
 import { boolToString } from "../../services/utils";
 import { Badge } from "../react/Badge";
 import Button from "../react/Button";
@@ -73,6 +73,7 @@ export default function ImportPreviewDialog() {
     const isDangerousImport = data?.previews.some(preview => preview.isDangerous);
     const [ importButtonTimeout, setImportButtonTimeout ] = useState(0);
     const [ compressImages ] = useTriliumOptionBool("compressImages");
+    const hasSubmittedRef = useRef(false);
 
     useEffect(() => {
         // If safe → reset and do nothing
@@ -101,6 +102,7 @@ export default function ImportPreviewDialog() {
         setData(data);
         setShown(true);
         setImportButtonTimeout(IMPORT_BUTTON_TIMEOUT);
+        hasSubmittedRef.current = false;
     });
 
     return (
@@ -121,6 +123,7 @@ export default function ImportPreviewDialog() {
             show={shown}
             onSubmit={() => {
                 if (!data) return;
+                hasSubmittedRef.current = true;
                 executeUploadWithPreview(data.parentNoteId, data.previews, {
                     shrinkImages: boolToString(compressImages),
                     safeImport: boolToString(importMethod === "safe")
@@ -131,6 +134,12 @@ export default function ImportPreviewDialog() {
                 setShown(false);
                 setData(null);
                 setImportButtonTimeout(3);
+                if (!hasSubmittedRef.current) {
+                    hasSubmittedRef.current = true;
+                    if (data?.previews) {
+                        cancelUploadWithPreview(data.previews);
+                    }
+                }
             }}
         >
             <p>{isDangerousImport

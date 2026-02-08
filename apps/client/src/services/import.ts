@@ -58,7 +58,7 @@ export async function uploadFiles(entityType: string, parentNoteId: string, file
     }
 }
 
-export async function uploadFilesWithPreview(parentNoteId: string, files: string[] | File[]) {
+export async function uploadFilesWithPreview(files: string[] | File[]) {
     if (files.length === 0) {
         return;
     }
@@ -71,7 +71,7 @@ export async function uploadFilesWithPreview(parentNoteId: string, files: string
         formData.append("taskId", taskId);
 
         results.push(await $.ajax({
-            url: `${window.glob.baseApiUrl}notes/${parentNoteId}/preview-import`,
+            url: `${window.glob.baseApiUrl}notes/preview-import`,
             headers: await server.getHeaders(),
             data: formData,
             dataType: "json",
@@ -107,6 +107,12 @@ export async function executeUploadWithPreview(parentNoteId: string, files: Impo
                 last: counter === files.length ? "true" : "false"
             }
         );
+    }
+}
+
+export function cancelUploadWithPreview(files: ImportPreviewResponse[]) {
+    for (const file of files) {
+        server.remove(`notes/preview-import/${file.id}`);
     }
 }
 

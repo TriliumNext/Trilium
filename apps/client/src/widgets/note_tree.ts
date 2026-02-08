@@ -539,7 +539,7 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                                 replaceUnderscoresWithSpaces: true
                             });
                         } else {
-                            importService.uploadFilesWithPreview(parentNoteId, files).then((previews) => {
+                            importService.uploadFilesWithPreview(files).then((previews) => {
                                 if (!previews) return;
                                 this.triggerCommand("showImportPreviewDialog", {
                                     parentNoteId,

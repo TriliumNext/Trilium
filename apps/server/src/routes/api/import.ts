@@ -212,9 +212,17 @@ async function importExecute(req: Request) {
     return importRecord;
 }
 
+async function importCancel(req: Request) {
+    const { id } = req.params;
+    if (!id) throw new ValidationError("Missing ID to cancel.");
+
+    importStore.remove(id);
+}
+
 export default {
     importNotesToBranch,
     importAttachmentsToNote,
     importPreview,
-    importExecute
+    importExecute,
+    importCancel
 };
