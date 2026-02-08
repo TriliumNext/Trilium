@@ -6,6 +6,7 @@ import dataDirs from "../data_dir";
 export interface ImportRecord {
     path: string;
     created: number;
+    external?: boolean;
 }
 
 const MAX_AGE = 30 * 60_000;
@@ -29,7 +30,9 @@ abstract class ImportStoreBase {
         const record = this.get(id);
         if (!record) return;
 
-        this.onRecordRemoved(record);
+        if (!record.external) {
+            this.onRecordRemoved(record);
+        }
         this.importStore.delete(id);
     }
 

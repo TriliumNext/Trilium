@@ -1,18 +1,20 @@
 import { initializeTranslations } from "@triliumnext/server/src/services/i18n.js";
+import importStore from "@triliumnext/server/src/services/import/import_store";
 import previewZipForImport from "@triliumnext/server/src/services/import/zip_preview";
 import options from "@triliumnext/server/src/services/options.js";
 import port from "@triliumnext/server/src/services/port.js";
 import sqlInit from "@triliumnext/server/src/services/sql_init.js";
 import tray from "@triliumnext/server/src/services/tray.js";
+import { randomString } from "@triliumnext/server/src/services/utils";
 import windowService from "@triliumnext/server/src/services/window.js";
 import { app, BrowserWindow,globalShortcut } from "electron";
 import { ipcMain } from "electron/main";
 import electronDebug from "electron-debug";
 import electronDl from "electron-dl";
 import { t } from "i18next";
-import { join } from "path";
+import { basename, join, resolve } from "path";
 
-import { deferred, LOCALES } from "../../../packages/commons/src";
+import { deferred, ImportPreviewResponse, LOCALES } from "../../../packages/commons/src";
 import { PRODUCT_NAME } from "./app-info";
 
 async function main() {
@@ -140,7 +142,22 @@ async function handleImportArguments(args: string[], window: BrowserWindow) {
     const filesToImport = args.filter(arg => !arg.startsWith("-") && arg.endsWith(".trilium"));
     if (filesToImport.length === 0) return;
 
-    const previews = await Promise.all(filesToImport.map(file => previewZipForImport(file)));
+    const previews = await Promise.all(filesToImport.map(async file => {
+        const id = randomString(10);
+        const preview = await previewZipForImport(file);
+
+        importStore.set(id, {
+            path: resolve(file),
+            external: true
+        });
+
+        return {
+            ...preview,
+            id,
+            fileName: basename(file)
+        } satisfies ImportPreviewResponse;
+    }));
+
     ipcMain.on("import-preview-ready", () => {
         window.webContents.send("show-import-preview-dialog", {
             previews
