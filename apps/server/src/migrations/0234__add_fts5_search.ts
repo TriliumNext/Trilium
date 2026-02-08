@@ -55,6 +55,12 @@ function populateNotesFtsIndex(): void {
     log.info(`Indexing ${eligibleCount} notes into FTS5 (this may take a moment for large databases)...`);
     const startTime = Date.now();
 
+    // Disable automerge to prevent incremental b-tree merging during bulk insert.
+    // Raise crisismerge threshold to prevent blocking merges.
+    // This is the recommended approach from SQLite FTS5 docs for bulk operations.
+    sql.execute(`INSERT INTO notes_fts(notes_fts, rank) VALUES('automerge', 0)`);
+    sql.execute(`INSERT INTO notes_fts(notes_fts, rank) VALUES('crisismerge', 64)`);
+
     sql.execute(`
         INSERT INTO notes_fts (noteId, title, content)
         SELECT n.noteId, n.title, COALESCE(b.content, '')
@@ -63,6 +69,11 @@ function populateNotesFtsIndex(): void {
         WHERE n.type IN ('text','code','mermaid','canvas','mindMap')
             AND n.isDeleted = 0 AND n.isProtected = 0
     `);
+
+    // Restore defaults and optimize: merge all b-trees into one for optimal query performance.
+    sql.execute(`INSERT INTO notes_fts(notes_fts, rank) VALUES('automerge', 4)`);
+    sql.execute(`INSERT INTO notes_fts(notes_fts, rank) VALUES('crisismerge', 16)`);
+    sql.execute(`INSERT INTO notes_fts(notes_fts) VALUES('optimize')`);
 
     log.info(`Completed FTS indexing of ${eligibleCount} notes in ${Date.now() - startTime}ms`);
 }
@@ -422,7 +433,6 @@ function createPerformanceIndexes(): void {
         ANALYZE revisions;
         ANALYZE entity_changes;
         ANALYZE recent_notes;
-        ANALYZE notes_fts;
     `);
 
     const duration = Date.now() - startTime;
@@ -451,6 +461,12 @@ function setupAttributesFts(): void {
 
     // Populate FTS table with existing attributes (non-deleted only)
     const attrStartTime = Date.now();
+
+    // Disable automerge to prevent incremental b-tree merging during bulk insert.
+    // Raise crisismerge threshold to prevent blocking merges.
+    sql.execute(`INSERT INTO attributes_fts(attributes_fts, rank) VALUES('automerge', 0)`);
+    sql.execute(`INSERT INTO attributes_fts(attributes_fts, rank) VALUES('crisismerge', 64)`);
+
     sql.execute(`
         INSERT INTO attributes_fts (attributeId, noteId, name, value)
         SELECT
@@ -461,6 +477,11 @@ function setupAttributesFts(): void {
         FROM attributes
         WHERE isDeleted = 0
     `);
+
+    // Restore defaults and optimize: merge all b-trees into one for optimal query performance.
+    sql.execute(`INSERT INTO attributes_fts(attributes_fts, rank) VALUES('automerge', 4)`);
+    sql.execute(`INSERT INTO attributes_fts(attributes_fts, rank) VALUES('crisismerge', 16)`);
+    sql.execute(`INSERT INTO attributes_fts(attributes_fts) VALUES('optimize')`);
 
     const populateTime = Date.now() - attrStartTime;
     const attrCount = sql.getValue<number>(`SELECT COUNT(*) FROM attributes_fts`) || 0;
@@ -512,10 +533,6 @@ function setupAttributesFts(): void {
             DELETE FROM attributes_fts WHERE attributeId = NEW.attributeId;
         END
     `);
-
-    // Run ANALYZE to update query planner statistics
-    log.info("Running ANALYZE on attributes_fts...");
-    sql.execute(`ANALYZE attributes_fts`);
 
     log.info("Attributes FTS5 setup completed successfully");
 }
