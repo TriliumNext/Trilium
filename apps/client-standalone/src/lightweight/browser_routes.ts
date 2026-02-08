@@ -77,7 +77,7 @@ function bootstrapRoute() {
         isElectron: false,
         isStandalone: true,
         hasNativeTitleBar: false,
-        hasBackgroundEffects: true,
+        hasBackgroundEffects: false,
 
         // TODO: Fill properly
         currentLocale: { id: "en", name: "English", rtl: false },
