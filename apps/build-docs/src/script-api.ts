@@ -1,6 +1,7 @@
 import { execSync } from "child_process";
-import BuildContext from "./context";
 import { join } from "path";
+
+import BuildContext from "./context";
 
 export default function buildScriptApi({ baseDir, gitRootDir }: BuildContext) {
     // Generate types

@@ -164,6 +164,9 @@ importers:
       fs-extra:
         specifier: 11.3.3
         version: 11.3.3
+      js-yaml:
+        specifier: 4.1.1
+        version: 4.1.1
       react:
         specifier: 19.2.4
         version: 19.2.4
@@ -16494,8 +16497,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.4.0
       '@ckeditor/ckeditor5-utils': 47.4.0
       ckeditor5: 47.4.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-markdown-gfm@47.4.0':
     dependencies:
@@ -16906,6 +16907,7 @@ snapshots:
       ckeditor5: 47.4.0
     transitivePeerDependencies:
       - bufferutil
+      - supports-color
       - utf-8-validate
 
   '@ckeditor/ckeditor5-utils@47.4.0':

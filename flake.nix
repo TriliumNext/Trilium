@@ -113,7 +113,7 @@
               [
                 moreutils # sponge
                 nodejs.python
-                removeReferencesTo                
+                removeReferencesTo
               ]
               ++ lib.optionals (app == "desktop" || app == "edit-docs") [
                 copyDesktopItems
@@ -126,7 +126,7 @@
                 which
                 electron
               ]
-              ++ lib.optionals (app == "server") [
+              ++ lib.optionals (app == "server" || app == "build-docs") [
                 makeBinaryWrapper
               ]
               ++ lib.optionals stdenv.hostPlatform.isDarwin [
@@ -153,7 +153,7 @@
 
             # This file is a symlink into /build which is not allowed.
             postFixup = ''
-              rm $out/opt/trilium*/node_modules/better-sqlite3/node_modules/.bin/prebuild-install || true
+              find $out/opt -name prebuild-install -path "*/better-sqlite3/node_modules/.bin/*" -delete || true
             '';
 
             components = [
@@ -169,6 +169,7 @@
               "packages/highlightjs"
               "packages/turndown-plugin-gfm"
 
+              "apps/build-docs"
               "apps/client"
               "apps/db-compare"
               "apps/desktop"
@@ -277,11 +278,46 @@
           '';
         };
 
+        build-docs = makeApp {
+          app = "build-docs";
+          preBuildCommands = ''
+            pushd apps/server
+            pnpm rebuild || true
+            popd
+          '';
+          buildTask = "client:build && pnpm run server:build && pnpm run --filter build-docs build";
+          mainProgram = "trilium-build-docs";
+          installCommands = ''
+            mkdir -p $out/{bin,opt/trilium-build-docs}
+
+            # Copy build-docs dist
+            cp --archive apps/build-docs/dist/* $out/opt/trilium-build-docs
+
+            # Copy server dist (needed for runtime)
+            mkdir -p $out/opt/trilium-build-docs/server
+            cp --archive apps/server/dist/* $out/opt/trilium-build-docs/server/
+
+            # Copy client dist (needed for runtime)
+            mkdir -p $out/opt/trilium-build-docs/client
+            cp --archive apps/client/dist/* $out/opt/trilium-build-docs/client/
+
+            # Copy share-theme (needed for exports)
+            mkdir -p $out/opt/trilium-build-docs/packages/share-theme
+            cp --archive packages/share-theme/dist/* $out/opt/trilium-build-docs/packages/share-theme/
+
+            # Create wrapper script
+            makeWrapper ${lib.getExe nodejs} $out/bin/trilium-build-docs \
+              --add-flags $out/opt/trilium-build-docs/cli.cjs \
+              --set TRILIUM_RESOURCE_DIR $out/opt/trilium-build-docs/server
+          '';
+        };
+
       in
       {
         packages.desktop = desktop;
         packages.server = server;
         packages.edit-docs = edit-docs;
+        packages.build-docs = build-docs;
 
         packages.default = desktop;
 

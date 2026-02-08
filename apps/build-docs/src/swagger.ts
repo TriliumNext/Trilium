@@ -1,7 +1,8 @@
-import BuildContext from "./context";
-import { join } from "path";
 import { execSync } from "child_process";
 import { mkdirSync } from "fs";
+import { join } from "path";
+
+import BuildContext from "./context";
 
 interface BuildInfo {
     specPath: string;
@@ -27,6 +28,9 @@ export default function buildSwagger({ baseDir, gitRootDir }: BuildContext) {
         const absSpecPath = join(gitRootDir, specPath);
         const targetDir = join(baseDir, outDir);
         mkdirSync(targetDir, { recursive: true });
-        execSync(`pnpm redocly build-docs ${absSpecPath} -o ${targetDir}/index.html`, { stdio: "inherit" });
+        execSync(
+            `pnpm redocly build-docs ${absSpecPath} -o ${targetDir}/index.html`,
+            { stdio: "inherit" }
+        );
     }
 }
