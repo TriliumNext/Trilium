@@ -962,11 +962,11 @@ importers:
         specifier: 16.2.7
         version: 16.2.7
       stylelint:
-        specifier: 17.1.0
-        version: 17.1.0(typescript@5.9.3)
+        specifier: 17.1.1
+        version: 17.1.1(typescript@5.9.3)
       stylelint-config-ckeditor5:
         specifier: '>=9.1.0'
-        version: 13.0.0(stylelint@17.1.0(typescript@5.9.3))
+        version: 13.0.0(stylelint@17.1.1(typescript@5.9.3))
       ts-node:
         specifier: 10.9.2
         version: 10.9.2(@swc/core@1.11.29(@swc/helpers@0.5.17))(@types/node@24.10.10)(typescript@5.9.3)
@@ -1022,11 +1022,11 @@ importers:
         specifier: 16.2.7
         version: 16.2.7
       stylelint:
-        specifier: 17.1.0
-        version: 17.1.0(typescript@5.9.3)
+        specifier: 17.1.1
+        version: 17.1.1(typescript@5.9.3)
       stylelint-config-ckeditor5:
         specifier: '>=9.1.0'
-        version: 13.0.0(stylelint@17.1.0(typescript@5.9.3))
+        version: 13.0.0(stylelint@17.1.1(typescript@5.9.3))
       ts-node:
         specifier: 10.9.2
         version: 10.9.2(@swc/core@1.11.29(@swc/helpers@0.5.17))(@types/node@24.10.10)(typescript@5.9.3)
@@ -1082,11 +1082,11 @@ importers:
         specifier: 16.2.7
         version: 16.2.7
       stylelint:
-        specifier: 17.1.0
-        version: 17.1.0(typescript@5.9.3)
+        specifier: 17.1.1
+        version: 17.1.1(typescript@5.9.3)
       stylelint-config-ckeditor5:
         specifier: '>=9.1.0'
-        version: 13.0.0(stylelint@17.1.0(typescript@5.9.3))
+        version: 13.0.0(stylelint@17.1.1(typescript@5.9.3))
       ts-node:
         specifier: 10.9.2
         version: 10.9.2(@swc/core@1.11.29(@swc/helpers@0.5.17))(@types/node@24.10.10)(typescript@5.9.3)
@@ -1149,11 +1149,11 @@ importers:
         specifier: 16.2.7
         version: 16.2.7
       stylelint:
-        specifier: 17.1.0
-        version: 17.1.0(typescript@5.9.3)
+        specifier: 17.1.1
+        version: 17.1.1(typescript@5.9.3)
       stylelint-config-ckeditor5:
         specifier: '>=9.1.0'
-        version: 13.0.0(stylelint@17.1.0(typescript@5.9.3))
+        version: 13.0.0(stylelint@17.1.1(typescript@5.9.3))
       ts-node:
         specifier: 10.9.2
         version: 10.9.2(@swc/core@1.11.29(@swc/helpers@0.5.17))(@types/node@24.10.10)(typescript@5.9.3)
@@ -1216,11 +1216,11 @@ importers:
         specifier: 16.2.7
         version: 16.2.7
       stylelint:
-        specifier: 17.1.0
-        version: 17.1.0(typescript@5.9.3)
+        specifier: 17.1.1
+        version: 17.1.1(typescript@5.9.3)
       stylelint-config-ckeditor5:
         specifier: '>=9.1.0'
-        version: 13.0.0(stylelint@17.1.0(typescript@5.9.3))
+        version: 13.0.0(stylelint@17.1.1(typescript@5.9.3))
       ts-node:
         specifier: 10.9.2
         version: 10.9.2(@swc/core@1.11.29(@swc/helpers@0.5.17))(@types/node@24.10.10)(typescript@5.9.3)
@@ -9189,10 +9189,6 @@ packages:
     resolution: {integrity: sha512-qdSAmqLF6209RFj4VVItywPMbm3vWylknmB3nvNiUIs72xAimcM8nVYxYr7ncvZq5qzk9MKIZR8ijqD/1QuYjQ==}
     engines: {node: '>= 0.4.0'}
 
-  hashery@1.2.0:
-    resolution: {integrity: sha512-43XJKpwle72Ik5Zpam7MuzRWyNdwwdf6XHlh8wCj2PggvWf+v/Dm5B0dxGZOmddidgeO6Ofu9As/o231Ti/9PA==}
-    engines: {node: '>=20'}
-
   hashery@1.4.0:
     resolution: {integrity: sha512-Wn2i1In6XFxl8Az55kkgnFRiAlIAushzh26PTjL2AKtQcEfXrcLa7Hn5QOWGZEf3LU057P9TwwZjFyxfS1VuvQ==}
     engines: {node: '>=20'}
@@ -13754,8 +13750,8 @@ packages:
     engines: {node: '>=18.12.0'}
     hasBin: true
 
-  stylelint@17.1.0:
-    resolution: {integrity: sha512-+cUX1FxkkbLX5qJRAPapUv/+v+YU3pGbWu+pHVqTXpiY0mYh3Dxfxa0bLBtVtYgOC8hIWIyX2H/3Y3LWlAevDg==}
+  stylelint@17.1.1:
+    resolution: {integrity: sha512-SBHVcLEcRF1M9OkD3oT0hT2PayDNLw2hd+aovmzfNQ2ys4Xd3oS9ZNizILWqhQvW802AqKN/vUTMwJqQYMBlWw==}
     engines: {node: '>=20.19.0'}
     hasBin: true
 
@@ -18747,7 +18743,7 @@ snapshots:
 
   '@keyv/bigmap@1.3.0(keyv@5.6.0)':
     dependencies:
-      hashery: 1.2.0
+      hashery: 1.4.0
       hookified: 1.15.0
       keyv: 5.6.0
 
@@ -20478,7 +20474,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@stylistic/stylelint-plugin@3.1.3(stylelint@17.1.0(typescript@5.9.3))':
+  '@stylistic/stylelint-plugin@3.1.3(stylelint@17.1.1(typescript@5.9.3))':
     dependencies:
       '@csstools/css-parser-algorithms': 3.0.5(@csstools/css-tokenizer@3.0.4)
       '@csstools/css-tokenizer': 3.0.4
@@ -20488,7 +20484,7 @@ snapshots:
       postcss-selector-parser: 6.1.2
       postcss-value-parser: 4.2.0
       style-search: 0.1.0
-      stylelint: 17.1.0(typescript@5.9.3)
+      stylelint: 17.1.1(typescript@5.9.3)
 
   '@swc/core-darwin-arm64@1.11.29':
     optional: true
@@ -25502,10 +25498,6 @@ snapshots:
     optional: true
 
   has@1.0.4: {}
-
-  hashery@1.2.0:
-    dependencies:
-      hookified: 1.15.0
 
   hashery@1.4.0:
     dependencies:
@@ -30823,29 +30815,29 @@ snapshots:
       postcss: 8.5.6
       postcss-selector-parser: 7.1.1
 
-  stylelint-config-ckeditor5@13.0.0(stylelint@17.1.0(typescript@5.9.3)):
+  stylelint-config-ckeditor5@13.0.0(stylelint@17.1.1(typescript@5.9.3)):
     dependencies:
-      '@stylistic/stylelint-plugin': 3.1.3(stylelint@17.1.0(typescript@5.9.3))
-      stylelint: 17.1.0(typescript@5.9.3)
-      stylelint-config-recommended: 16.0.0(stylelint@17.1.0(typescript@5.9.3))
-      stylelint-plugin-ckeditor5-rules: 13.0.0(stylelint@17.1.0(typescript@5.9.3))
+      '@stylistic/stylelint-plugin': 3.1.3(stylelint@17.1.1(typescript@5.9.3))
+      stylelint: 17.1.1(typescript@5.9.3)
+      stylelint-config-recommended: 16.0.0(stylelint@17.1.1(typescript@5.9.3))
+      stylelint-plugin-ckeditor5-rules: 13.0.0(stylelint@17.1.1(typescript@5.9.3))
 
   stylelint-config-ckeditor5@2.0.1(stylelint@16.26.1(typescript@5.0.4)):
     dependencies:
       stylelint: 16.26.1(typescript@5.0.4)
       stylelint-config-recommended: 3.0.0(stylelint@16.26.1(typescript@5.0.4))
 
-  stylelint-config-recommended@16.0.0(stylelint@17.1.0(typescript@5.9.3)):
+  stylelint-config-recommended@16.0.0(stylelint@17.1.1(typescript@5.9.3)):
     dependencies:
-      stylelint: 17.1.0(typescript@5.9.3)
+      stylelint: 17.1.1(typescript@5.9.3)
 
   stylelint-config-recommended@3.0.0(stylelint@16.26.1(typescript@5.0.4)):
     dependencies:
       stylelint: 16.26.1(typescript@5.0.4)
 
-  stylelint-plugin-ckeditor5-rules@13.0.0(stylelint@17.1.0(typescript@5.9.3)):
+  stylelint-plugin-ckeditor5-rules@13.0.0(stylelint@17.1.1(typescript@5.9.3)):
     dependencies:
-      stylelint: 17.1.0(typescript@5.9.3)
+      stylelint: 17.1.1(typescript@5.9.3)
 
   stylelint@16.26.1(typescript@5.0.4):
     dependencies:
@@ -30892,7 +30884,7 @@ snapshots:
       - supports-color
       - typescript
 
-  stylelint@17.1.0(typescript@5.9.3):
+  stylelint@17.1.1(typescript@5.9.3):
     dependencies:
       '@csstools/css-parser-algorithms': 4.0.0(@csstools/css-tokenizer@4.0.0)
       '@csstools/css-syntax-patches-for-csstree': 1.0.25
