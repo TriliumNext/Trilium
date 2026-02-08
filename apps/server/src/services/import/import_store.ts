@@ -1,4 +1,4 @@
-import { mkdir, readdir, rm } from "fs/promises";
+import { mkdir, readdir, rm,  } from "fs/promises";
 import { join } from "path";
 
 import dataDirs from "../data_dir";
@@ -7,7 +7,7 @@ export interface ImportRecord {
     path: string;
 }
 
-class ImportStoreBase {
+abstract class ImportStoreBase {
 
     private importStore: Record<string, ImportRecord> = {};
 
@@ -18,6 +18,8 @@ class ImportStoreBase {
     set(id: string, record: ImportRecord) {
         this.importStore[id] = record;
     }
+
+    public abstract remove(id: string): Promise<void>;
 
 }
 
@@ -43,6 +45,17 @@ class DiskImportStore extends ImportStoreBase {
                 console.error(`Error while deleting import: ${file}`, e);
             }
         }));
+    }
+
+    public async remove(id: string): Promise<void> {
+        const record = this.get(id);
+        if (!record) return;
+
+        try {
+            await rm(record.path);
+        } catch (e) {
+            console.error(`Unable to delete file from import store: ${id}.`, e);
+        }
     }
 
 }

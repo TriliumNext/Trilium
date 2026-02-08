@@ -188,22 +188,26 @@ async function importExecute(req: Request) {
     const importRecord = importStore.get(id);
     if (!importRecord) throw new ValidationError("Unable to find a record of the upload, maybe it expired or the ID is missing or incorrect.");
 
-    const { taskId, last } = req.body;
-    const options = {
-        safeImport: req.body.safeImport !== "false",
-        shrinkImages: req.body.shrinkImages !== "false",
-        textImportedAsText: req.body.textImportedAsText !== "false",
-        codeImportedAsCode: req.body.codeImportedAsCode !== "false",
-        explodeArchives: req.body.explodeArchives !== "false",
-        replaceUnderscoresWithSpaces: req.body.replaceUnderscoresWithSpaces !== "false"
-    };
+    try {
+        const { taskId, last } = req.body;
+        const options = {
+            safeImport: req.body.safeImport !== "false",
+            shrinkImages: req.body.shrinkImages !== "false",
+            textImportedAsText: req.body.textImportedAsText !== "false",
+            codeImportedAsCode: req.body.codeImportedAsCode !== "false",
+            explodeArchives: req.body.explodeArchives !== "false",
+            replaceUnderscoresWithSpaces: req.body.replaceUnderscoresWithSpaces !== "false"
+        };
 
-    const taskContext = TaskContext.getInstance(taskId, "importNotes", options);
-    const { parentNoteId } = req.params;
-    const parentNote = becca.getNoteOrThrow(parentNoteId);
+        const taskContext = TaskContext.getInstance(taskId, "importNotes", options);
+        const { parentNoteId } = req.params;
+        const parentNote = becca.getNoteOrThrow(parentNoteId);
 
-    const note = await zipImportService.importZip(taskContext, importRecord.path, parentNote);
-    onImportDone(note, last, taskContext, parentNoteId);
+        const note = await zipImportService.importZip(taskContext, importRecord.path, parentNote);
+        onImportDone(note, last, taskContext, parentNoteId);
+    } finally {
+        importStore.remove(id);
+    }
 
     return importRecord;
 }
