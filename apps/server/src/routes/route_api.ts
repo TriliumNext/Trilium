@@ -10,6 +10,7 @@ import auth from "../services/auth.js";
 import cls from "../services/cls.js";
 import dataDirs from "../services/data_dir.js";
 import entityChangesService from "../services/entity_changes.js";
+import import_store from "../services/import/import_store.js";
 import log from "../services/log.js";
 import sql from "../services/sql.js";
 import { randomString, safeExtractMessageAndStackFromError } from "../services/utils.js";
@@ -195,19 +196,17 @@ export function createUploadMiddleware(): RequestHandler {
 }
 
 export function createImportUploadMiddleware(): RequestHandler {
-    const outDir = join(dataDirs.TMP_DIR, "upload");
-    mkdirSync(outDir, { recursive: true });
-
+    const uploadDir = import_store.uploadDir;
     const multerOptions: multer.Options = {
         storage: multer.diskStorage({
             destination(req, file, cb) {
-                cb(null, outDir);
+                cb(null, uploadDir);
             },
             filename(req, file, cb) {
                 cb(null, `${randomString(13)}.trilium`);
             }
         }),
-        fileFilter: (req: express.Request, file, cb) => {
+        fileFilter: (_req: express.Request, file, cb) => {
             // UTF-8 file names are not well decoded by multer/busboy, so we handle the conversion on our side.
             // See https://github.com/expressjs/multer/pull/1102.
             file.originalname = Buffer.from(file.originalname, "latin1").toString("utf-8");

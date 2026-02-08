@@ -2,7 +2,6 @@
 
 import { ImportPreviewResponse } from "@triliumnext/commons";
 import type { Request } from "express";
-import { readFileSync } from "fs";
 import path from "path";
 
 import becca from "../../becca/becca.js";
@@ -11,6 +10,7 @@ import type BNote from "../../becca/entities/bnote.js";
 import ValidationError from "../../errors/validation_error.js";
 import cls from "../../services/cls.js";
 import enexImportService from "../../services/import/enex.js";
+import importStore from "../../services/import/import_store.js";
 import opmlImportService from "../../services/import/opml.js";
 import singleImportService from "../../services/import/single.js";
 import zipImportService from "../../services/import/zip.js";
@@ -153,12 +153,6 @@ function importAttachmentsToNote(req: Request) {
     }
 }
 
-interface ImportRecord {
-    path: string;
-}
-
-const importStore: Record<string, ImportRecord> = {};
-
 async function importPreview(req: Request) {
     const file = req.file;
     if (!file) {
@@ -173,9 +167,9 @@ async function importPreview(req: Request) {
         const previewInfo = await previewZipForImport(file.path);
         const id = file.filename;
 
-        importStore[id] = {
+        importStore.set(id, {
             path: file.path
-        };
+        });
 
         return {
             ...previewInfo,
@@ -191,7 +185,7 @@ async function importPreview(req: Request) {
 async function importExecute(req: Request) {
     const { id } = req.body;
 
-    const importRecord = importStore[id];
+    const importRecord = importStore.get(id);
     if (!importRecord) throw new ValidationError("Unable to find a record of the upload, maybe it expired or the ID is missing or incorrect.");
 
     const { taskId, last } = req.body;
