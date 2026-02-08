@@ -5,7 +5,7 @@
   "type": "module",
   "main": "./src/index.ts",
   "dependencies": {
-    "@codemirror/commands": "6.10.1",
+    "@codemirror/commands": "6.10.2",
     "@codemirror/lang-css": "6.3.1",
     "@codemirror/lang-html": "6.4.11",
     "@codemirror/lang-javascript": "6.2.4",
@@ -16,7 +16,7 @@
     "@codemirror/lang-xml": "6.1.0",
     "@codemirror/legacy-modes": "6.5.2",
     "@codemirror/search": "6.6.0",
-    "@codemirror/view": "6.39.12",
+    "@codemirror/view": "6.39.13",
     "@fsegurai/codemirror-theme-abcdef": "6.2.3",
     "@fsegurai/codemirror-theme-abyss": "6.2.3",
     "@fsegurai/codemirror-theme-android-studio": "6.2.3",
