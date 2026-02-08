@@ -34,7 +34,7 @@
     "@typescript-eslint/eslint-plugin": "8.54.0",
     "@typescript-eslint/parser": "8.54.0",
     "dotenv": "17.2.3",
-    "esbuild": "0.27.2",
+    "esbuild": "0.27.3",
     "eslint": "10.0.0",
     "highlight.js": "11.11.1",
     "typescript": "5.9.3"
