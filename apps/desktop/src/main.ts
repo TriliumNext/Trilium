@@ -78,6 +78,8 @@ async function main() {
         if (commandLine.includes("--new-window")) {
             windowService.createExtraWindow("");
         } else if (lastFocusedWindow) {
+            handleImportArguments(commandLine, lastFocusedWindow);
+
             if (lastFocusedWindow.isMinimized()) {
                 lastFocusedWindow.restore();
             }
