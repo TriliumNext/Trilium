@@ -4,12 +4,12 @@ import options from "./options";
 import i18next from "i18next";
 import hidden_subtree from "./hidden_subtree";
 
-export type TranslationProvider = (locale: LOCALE_IDS) => Promise<void>;
+export type TranslationProvider = (i18nextInstance: typeof i18next, locale: LOCALE_IDS) => Promise<void>;
 
 export async function initTranslations(translationProvider: TranslationProvider) {
     const locale = getCurrentLanguage();
 
-    await translationProvider(locale);
+    await translationProvider(i18next, locale);
 
     // Initialize dayjs locale.
     await setDayjsLocale(locale);

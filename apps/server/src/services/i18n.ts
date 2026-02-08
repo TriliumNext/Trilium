@@ -1,15 +1,15 @@
 import { LOCALE_IDS, setDayjsLocale } from "@triliumnext/commons";
-import i18next from "i18next";
+import type i18next from "i18next";
 import { join } from "path";
 
 import { getResourceDir } from "./utils";
 
-export async function initializeTranslations(locale: LOCALE_IDS) {
+export async function initializeTranslations(i18nextInstance: typeof i18next, locale: LOCALE_IDS) {
     const resourceDir = getResourceDir();
     const Backend = (await import("i18next-fs-backend/cjs")).default;
 
     // Initialize translations
-    await i18next.use(Backend).init({
+    await i18nextInstance.use(Backend).init({
         lng: locale,
         fallbackLng: "en",
         ns: "server",
