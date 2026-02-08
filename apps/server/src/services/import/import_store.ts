@@ -5,18 +5,24 @@ import dataDirs from "../data_dir";
 
 export interface ImportRecord {
     path: string;
+    created: number;
 }
+
+const MAX_AGE = 30 * 60_000;
 
 abstract class ImportStoreBase {
 
-    private importStore: Record<string, ImportRecord> = {};
+    private importStore: Map<string, ImportRecord> = new Map();
 
     get(id: string) {
-        return this.importStore[id];
+        return this.importStore.get(id);
     }
 
-    set(id: string, record: ImportRecord) {
-        this.importStore[id] = record;
+    set(id: string, record: Omit<ImportRecord, "created">) {
+        this.importStore.set(id, {
+            ...record,
+            created: Date.now()
+        });
     }
 
     async remove(id: string) {
@@ -24,7 +30,19 @@ abstract class ImportStoreBase {
         if (!record) return;
 
         this.onRecordRemoved(record);
-        delete this.importStore[id];
+        this.importStore.delete(id);
+    }
+
+    startCleanupTimer() {
+        setInterval(async () => {
+            const now = Date.now();
+
+            for (const [id, record] of this.importStore.entries()) {
+                if (now - record.created > MAX_AGE) {
+                    await this.remove(id);
+                }
+            }
+        }, 5 * 60_000);
     }
 
     public abstract onRecordRemoved(record: ImportRecord): Promise<void>;
@@ -45,6 +63,7 @@ class DiskImportStore extends ImportStoreBase {
         // Ensure the import directory exists.
         await mkdir(this._uploadDir, { recursive: true });
 
+        // Delete all files at start-up.
         const files = await readdir(this._uploadDir);
         await Promise.all(files.map(async file => {
             try {
@@ -67,4 +86,5 @@ class DiskImportStore extends ImportStoreBase {
 
 const store = new DiskImportStore(join(dataDirs.TMP_DIR, "upload"));
 store.init();
+store.startCleanupTimer();
 export default store;
