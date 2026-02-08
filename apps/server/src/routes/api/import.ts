@@ -1,18 +1,22 @@
-"use strict";
 
-import enexImportService from "../../services/import/enex.js";
-import opmlImportService from "../../services/import/opml.js";
-import zipImportService from "../../services/import/zip.js";
-import singleImportService from "../../services/import/single.js";
-import cls from "../../services/cls.js";
+
+import { ImportPreviewResponse } from "@triliumnext/commons";
+import type { Request } from "express";
 import path from "path";
+
 import becca from "../../becca/becca.js";
 import beccaLoader from "../../becca/becca_loader.js";
+import type BNote from "../../becca/entities/bnote.js";
+import ValidationError from "../../errors/validation_error.js";
+import cls from "../../services/cls.js";
+import enexImportService from "../../services/import/enex.js";
+import importStore from "../../services/import/import_store.js";
+import opmlImportService from "../../services/import/opml.js";
+import singleImportService from "../../services/import/single.js";
+import zipImportService from "../../services/import/zip.js";
+import previewZipForImport from "../../services/import/zip_preview.js";
 import log from "../../services/log.js";
 import TaskContext from "../../services/task_context.js";
-import ValidationError from "../../errors/validation_error.js";
-import type { Request } from "express";
-import type BNote from "../../becca/entities/bnote.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
 
 async function importNotesToBranch(req: Request) {
@@ -79,6 +83,10 @@ async function importNotesToBranch(req: Request) {
         return [500, message];
     }
 
+    onImportDone(note, last, taskContext, parentNoteId);
+}
+
+function onImportDone(note: BNote | null, last: "true" | "false", taskContext: TaskContext<"importNotes">, parentNoteId: string) {
     if (!note) {
         return [500, "No note was generated as a result of the import."];
     }
@@ -88,7 +96,7 @@ async function importNotesToBranch(req: Request) {
         setTimeout(
             () =>
                 taskContext.taskSucceeded({
-                    parentNoteId: parentNoteId,
+                    parentNoteId,
                     importedNoteId: note?.noteId
                 }),
             1000
@@ -138,14 +146,83 @@ function importAttachmentsToNote(req: Request) {
         setTimeout(
             () =>
                 taskContext.taskSucceeded({
-                    parentNoteId: parentNoteId
+                    parentNoteId
                 }),
             1000
         );
     }
 }
 
+async function importPreview(req: Request) {
+    const file = req.file;
+    if (!file) {
+        throw new ValidationError("No file has been uploaded");
+    }
+
+    if (!file.originalname.endsWith(".trilium")) {
+        throw new ValidationError("Preview supports only .trilium files.");
+    }
+
+    try {
+        const previewInfo = await previewZipForImport(file.path);
+        const id = file.filename;
+
+        importStore.set(id, {
+            path: file.path
+        });
+
+        return {
+            ...previewInfo,
+            fileName: file.originalname,
+            id
+        } satisfies ImportPreviewResponse;
+    } catch (e) {
+        console.warn(e);
+        throw new ValidationError("Error while generating the preview.");
+    }
+}
+
+async function importExecute(req: Request) {
+    const { id } = req.body;
+
+    const importRecord = importStore.get(id);
+    if (!importRecord) throw new ValidationError("Unable to find a record of the upload, maybe it expired or the ID is missing or incorrect.");
+
+    try {
+        const { taskId, last } = req.body;
+        const options = {
+            safeImport: req.body.safeImport !== "false",
+            shrinkImages: req.body.shrinkImages !== "false",
+            textImportedAsText: req.body.textImportedAsText !== "false",
+            codeImportedAsCode: req.body.codeImportedAsCode !== "false",
+            explodeArchives: req.body.explodeArchives !== "false",
+            replaceUnderscoresWithSpaces: req.body.replaceUnderscoresWithSpaces !== "false"
+        };
+
+        const taskContext = TaskContext.getInstance(taskId, "importNotes", options);
+        const { parentNoteId } = req.params;
+        const parentNote = becca.getNoteOrThrow(parentNoteId);
+
+        const note = await zipImportService.importZip(taskContext, importRecord.path, parentNote);
+        onImportDone(note, last, taskContext, parentNoteId);
+    } finally {
+        importStore.remove(id);
+    }
+
+    return importRecord;
+}
+
+async function importCancel(req: Request) {
+    const { id } = req.params;
+    if (!id) throw new ValidationError("Missing ID to cancel.");
+
+    importStore.remove(id);
+}
+
 export default {
     importNotesToBranch,
-    importAttachmentsToNote
+    importAttachmentsToNote,
+    importPreview,
+    importExecute,
+    importCancel
 };

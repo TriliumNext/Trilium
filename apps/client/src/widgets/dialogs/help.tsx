@@ -1,11 +1,12 @@
-import Modal from "../react/Modal.jsx";
-import { t } from "../../services/i18n.js";
-import { ComponentChildren } from "preact";
-import appContext, { CommandNames } from "../../components/app_context.js";
-import RawHtml from "../react/RawHtml.jsx";
 import { useEffect, useState } from "preact/hooks";
+
+import appContext, { CommandNames } from "../../components/app_context.js";
+import { t } from "../../services/i18n.js";
 import keyboard_actions from "../../services/keyboard_actions.js";
+import { Card } from "../react/Card.jsx";
 import { useTriliumEvent } from "../react/hooks.jsx";
+import Modal from "../react/Modal.jsx";
+import RawHtml from "../react/RawHtml.jsx";
 
 export default function HelpDialog() {
     const [ shown, setShown ] = useState(false);
@@ -110,7 +111,7 @@ export default function HelpDialog() {
 
 function KeyboardShortcut({ commands, description }: { commands: CommandNames | CommandNames[], description: string }) {
     const [ shortcuts, setShortcuts ] = useState<string[]>([]);
-    
+
     useEffect(() => {
         (async () => {
             const shortcuts: string[] = [];
@@ -146,20 +147,6 @@ function FixedKeyboardShortcut({ keys, description }: { keys?: string[], descrip
             )} - <RawHtml html={description} />
         </li>
     );
-}
-
-function Card({ title, children }: { title: string, children: ComponentChildren }) {
-    return (
-        <div className="card">
-            <div className="card-body">
-                <h5 className="card-title">{title}</h5>
-
-                <p className="card-text">
-                    {children}
-                </p>
-            </div>
-        </div>
-    )
 }
 
 function editShortcuts() {

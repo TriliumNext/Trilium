@@ -1,14 +1,16 @@
 import { useState } from "preact/hooks";
+
 import { t } from "../../services/i18n";
+import importService, { UploadFilesOptions } from "../../services/import";
 import tree from "../../services/tree";
+import { boolToString } from "../../services/utils";
 import Button from "../react/Button";
 import FormCheckbox from "../react/FormCheckbox";
 import FormFileUpload from "../react/FormFileUpload";
 import FormGroup, { FormMultiGroup } from "../react/FormGroup";
+import { useTriliumEvent, useTriliumOptionBool } from "../react/hooks";
 import Modal from "../react/Modal";
 import RawHtml from "../react/RawHtml";
-import importService, { UploadFilesOptions } from "../../services/import";
-import { useTriliumEvent, useTriliumOptionBool } from "../react/hooks";
 
 export default function ImportDialog() {
     const [ compressImages ] = useTriliumOptionBool("compressImages");
@@ -98,6 +100,4 @@ export default function ImportDialog() {
     );
 }
 
-function boolToString(value: boolean) {
-    return value ? "true" : "false";
-}
+

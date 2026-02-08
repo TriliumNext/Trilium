@@ -298,3 +298,16 @@ export interface IconRegistry {
         }[]
     }[];
 }
+
+export type DangerousAttributeCategory = "codeExecution" | "serverSideScripting" | "clientSideScripting" | "iconPack" | "webview";
+
+export interface ImportPreviewResponse {
+    id: string;
+    fileName: string;
+    numNotes: number;
+    numAttributes: number;
+    numAttachments: number;
+    isDangerous: boolean;
+    dangerousAttributeCategories: string[];
+    dangerousAttributes: string[];
+}

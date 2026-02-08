@@ -1,4 +1,19 @@
-export default [
+import type { DangerousAttributeCategory } from "@triliumnext/commons";
+
+type AttributeInfo = {
+    type: "label" | "relation";
+    name: string;
+    isDangerous?: false;
+} | DangerousAttributeInfo;
+
+export type DangerousAttributeInfo = {
+    type: "label" | "relation";
+    name: string;
+    isDangerous: true;
+    dangerCategory: DangerousAttributeCategory;
+};
+
+const builtinAttributes: AttributeInfo[] = [
     // label names
     { type: "label", name: "inbox" },
     { type: "label", name: "disableVersioning" },
@@ -15,12 +30,12 @@ export default [
     { type: "label", name: "cssClass" },
     { type: "label", name: "iconClass" },
     { type: "label", name: "keyboardShortcut" },
-    { type: "label", name: "run", isDangerous: true },
+    { type: "label", name: "run", isDangerous: true, dangerCategory: "codeExecution" },
     { type: "label", name: "runOnInstance", isDangerous: false },
     { type: "label", name: "runAtHour", isDangerous: false },
-    { type: "label", name: "customRequestHandler", isDangerous: true },
-    { type: "label", name: "customResourceProvider", isDangerous: true },
-    { type: "label", name: "widget", isDangerous: true },
+    { type: "label", name: "customRequestHandler", isDangerous: true, dangerCategory: "serverSideScripting" },
+    { type: "label", name: "customResourceProvider", isDangerous: true, dangerCategory: "serverSideScripting" },
+    { type: "label", name: "widget", isDangerous: true, dangerCategory: "clientSideScripting" },
     { type: "label", name: "noteInfoWidgetDisabled" },
     { type: "label", name: "linkMapWidgetDisabled" },
     { type: "label", name: "revisionsWidgetDisabled" },
@@ -69,7 +84,7 @@ export default [
     { type: "label", name: "shareHtmlLocation" },
     { type: "label", name: "displayRelations" },
     { type: "label", name: "hideRelations" },
-    { type: "label", name: "titleTemplate", isDangerous: true },
+    { type: "label", name: "titleTemplate", isDangerous: true, dangerCategory: "serverSideScripting" },
     { type: "label", name: "template" },
     { type: "label", name: "toc" },
     { type: "label", name: "color" },
@@ -78,9 +93,9 @@ export default [
     { type: "label", name: "executeDescription" },
     { type: "label", name: "newNotesOnTop" },
     { type: "label", name: "clipperInbox" },
-    { type: "label", name: "webViewSrc", isDangerous: true },
+    { type: "label", name: "webViewSrc", isDangerous: true, dangerCategory: "webview" },
     { type: "label", name: "hideHighlightWidget" },
-    { type: "label", name: "iconPack", isDangerous: true },
+    { type: "label", name: "iconPack", isDangerous: true, dangerCategory: "iconPack" },
 
     { type: "label", name: "printLandscape" },
     { type: "label", name: "printPageSize" },
@@ -90,24 +105,26 @@ export default [
     { type: "relation", name: "imageLink" },
     { type: "relation", name: "relationMapLink" },
     { type: "relation", name: "includeMapLink" },
-    { type: "relation", name: "runOnNoteCreation", isDangerous: true },
-    { type: "relation", name: "runOnNoteTitleChange", isDangerous: true },
-    { type: "relation", name: "runOnNoteChange", isDangerous: true },
-    { type: "relation", name: "runOnNoteContentChange", isDangerous: true },
-    { type: "relation", name: "runOnNoteDeletion", isDangerous: true },
-    { type: "relation", name: "runOnBranchCreation", isDangerous: true },
-    { type: "relation", name: "runOnBranchChange", isDangerous: true },
-    { type: "relation", name: "runOnBranchDeletion", isDangerous: true },
-    { type: "relation", name: "runOnChildNoteCreation", isDangerous: true },
-    { type: "relation", name: "runOnAttributeCreation", isDangerous: true },
-    { type: "relation", name: "runOnAttributeChange", isDangerous: true },
+    { type: "relation", name: "runOnNoteCreation", isDangerous: true, dangerCategory: "serverSideScripting" },
+    { type: "relation", name: "runOnNoteTitleChange", isDangerous: true, dangerCategory: "serverSideScripting" },
+    { type: "relation", name: "runOnNoteChange", isDangerous: true, dangerCategory: "serverSideScripting" },
+    { type: "relation", name: "runOnNoteContentChange", isDangerous: true, dangerCategory: "serverSideScripting" },
+    { type: "relation", name: "runOnNoteDeletion", isDangerous: true, dangerCategory: "serverSideScripting" },
+    { type: "relation", name: "runOnBranchCreation", isDangerous: true, dangerCategory: "serverSideScripting" },
+    { type: "relation", name: "runOnBranchChange", isDangerous: true, dangerCategory: "serverSideScripting" },
+    { type: "relation", name: "runOnBranchDeletion", isDangerous: true, dangerCategory: "serverSideScripting" },
+    { type: "relation", name: "runOnChildNoteCreation", isDangerous: true, dangerCategory: "serverSideScripting" },
+    { type: "relation", name: "runOnAttributeCreation", isDangerous: true, dangerCategory: "serverSideScripting" },
+    { type: "relation", name: "runOnAttributeChange", isDangerous: true, dangerCategory: "serverSideScripting" },
     { type: "relation", name: "template" },
     { type: "relation", name: "inherit" },
-    { type: "relation", name: "widget", isDangerous: true },
-    { type: "relation", name: "renderNote", isDangerous: true },
+    { type: "relation", name: "widget", isDangerous: true, dangerCategory: "clientSideScripting" },
+    { type: "relation", name: "renderNote", isDangerous: true, dangerCategory: "clientSideScripting" },
     { type: "relation", name: "shareCss" },
     { type: "relation", name: "shareJs" },
     { type: "relation", name: "shareHtml" },
     { type: "relation", name: "shareTemplate" },
     { type: "relation", name: "shareFavicon" }
 ];
+
+export default builtinAttributes;

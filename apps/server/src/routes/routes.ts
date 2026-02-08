@@ -10,9 +10,9 @@ import etapiBackupRoute from "../etapi/backup.js";
 import etapiBranchRoutes from "../etapi/branches.js";
 import etapiMetricsRoute from "../etapi/metrics.js";
 import etapiNoteRoutes from "../etapi/notes.js";
+import etapiRevisionsRoutes from "../etapi/revisions.js";
 import etapiSpecRoute from "../etapi/spec.js";
 import etapiSpecialNoteRoutes from "../etapi/special_notes.js";
-import etapiRevisionsRoutes from "../etapi/revisions.js";
 import auth from "../services/auth.js";
 import openID from '../services/open_id.js';
 import { isElectron } from "../services/utils.js";
@@ -66,7 +66,7 @@ import treeApiRoute from "./api/tree.js";
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute from "./login.js";
-import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, route, router, uploadMiddlewareWithErrorHandling } from "./route_api.js";
+import { apiResultHandler, apiRoute, asyncApiRoute, asyncRoute, importMiddlewareWithErrorHandling, route, router, uploadMiddlewareWithErrorHandling } from "./route_api.js";
 // page routes
 import setupRoute from "./setup.js";
 
@@ -195,7 +195,11 @@ function register(app: express.Application) {
 
     route(GET, "/api/branches/:branchId/export/:type/:format/:version/:taskId", [auth.checkApiAuthOrElectron], exportRoute.exportBranch);
     asyncRoute(PST, "/api/notes/:parentNoteId/notes-import", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importNotesToBranch, apiResultHandler);
-    route(PST, "/api/notes/:parentNoteId/attachments-import", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importAttachmentsToNote, apiResultHandler);
+    route(PST, "/api/notes/:parentNoteId/attachments-import", [auth.checkApiAuthOrElectron,
+        uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importAttachmentsToNote, apiResultHandler);
+    asyncRoute(PST, "/api/notes/:parentNoteId/execute-import", [auth.checkApiAuthOrElectron, csrfMiddleware], importRoute.importExecute, apiResultHandler);
+    asyncRoute(PST, "/api/notes/preview-import", [auth.checkApiAuthOrElectron, importMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importPreview, apiResultHandler);
+    asyncRoute(DEL, "/api/notes/preview-import/:id", [auth.checkApiAuthOrElectron, csrfMiddleware], importRoute.importCancel, apiResultHandler);
 
     apiRoute(GET, "/api/notes/:noteId/attributes", attributesRoute.getEffectiveNoteAttributes);
     apiRoute(PST, "/api/notes/:noteId/attributes", attributesRoute.addNoteAttribute);
