@@ -31,7 +31,7 @@ interface ImportZipOpts {
     preserveIds?: boolean;
 }
 
-async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Buffer, importRootNote: BNote, opts?: ImportZipOpts): Promise<BNote> {
+async function importZip(taskContext: TaskContext<"importNotes">, bufferOrPath: string | Buffer, importRootNote: BNote, opts?: ImportZipOpts): Promise<BNote> {
     /** maps from original noteId (in ZIP file) to newly generated noteId */
     const noteIdMap: Record<string, string> = {};
     /** type maps from original attachmentId (in ZIP file) to newly generated attachmentId */
@@ -559,7 +559,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
 
     // we're running two passes in order to obtain critical information first (meta file and root)
     const topLevelItems = new Set<string>();
-    await readZipFile(fileBuffer, async (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => {
+    await readZipFile(bufferOrPath, async (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => {
         const filePath = normalizeFilePath(entry.fileName);
 
         // make sure that the meta file is loaded before the rest of the files is processed.
@@ -579,7 +579,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
 
     topLevelPath = (topLevelItems.size > 1 ? "" : topLevelItems.values().next().value ?? "");
 
-    await readZipFile(fileBuffer, async (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => {
+    await readZipFile(bufferOrPath, async (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => {
         const filePath = normalizeFilePath(entry.fileName);
 
         if (/\/$/.test(entry.fileName)) {

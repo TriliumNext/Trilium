@@ -208,8 +208,7 @@ async function importExecute(req: Request) {
     const { parentNoteId } = req.params;
     const parentNote = becca.getNoteOrThrow(parentNoteId);
 
-    const buffer = readFileSync(importRecord.path);
-    const note = await zipImportService.importZip(taskContext, buffer, parentNote);
+    const note = await zipImportService.importZip(taskContext, importRecord.path, parentNote);
     onImportDone(note, last, taskContext, parentNoteId);
 
     return importRecord;
