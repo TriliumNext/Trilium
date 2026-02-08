@@ -264,8 +264,8 @@ importers:
         specifier: 17.3.0
         version: 17.3.0
       i18next:
-        specifier: 25.8.0
-        version: 25.8.0(typescript@5.9.3)
+        specifier: 25.8.4
+        version: 25.8.4(typescript@5.9.3)
       i18next-http-backend:
         specifier: 3.0.2
         version: 3.0.2(encoding@0.1.13)
@@ -313,7 +313,7 @@ importers:
         version: 10.28.3
       react-i18next:
         specifier: 16.5.4
-        version: 16.5.4(i18next@25.8.0(typescript@5.9.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+        version: 16.5.4(i18next@25.8.4(typescript@5.9.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
       react-window:
         specifier: 2.2.6
         version: 2.2.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -728,8 +728,8 @@ importers:
         specifier: 7.0.6
         version: 7.0.6
       i18next:
-        specifier: 25.8.0
-        version: 25.8.0(typescript@5.9.3)
+        specifier: 25.8.4
+        version: 25.8.4(typescript@5.9.3)
       i18next-fs-backend:
         specifier: 2.6.1
         version: 2.6.1
@@ -849,8 +849,8 @@ importers:
   apps/website:
     dependencies:
       i18next:
-        specifier: 25.8.0
-        version: 25.8.0(typescript@5.9.3)
+        specifier: 25.8.4
+        version: 25.8.4(typescript@5.9.3)
       i18next-http-backend:
         specifier: 3.0.2
         version: 3.0.2(encoding@0.1.13)
@@ -865,7 +865,7 @@ importers:
         version: 6.6.5(preact@10.28.3)
       react-i18next:
         specifier: 16.5.4
-        version: 16.5.4(i18next@25.8.0(typescript@5.9.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
+        version: 16.5.4(i18next@25.8.4(typescript@5.9.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)
     devDependencies:
       '@preact/preset-vite':
         specifier: 2.10.3
@@ -9438,8 +9438,8 @@ packages:
   i18next-http-backend@3.0.2:
     resolution: {integrity: sha512-PdlvPnvIp4E1sYi46Ik4tBYh/v/NbYfFFgTjkwFl0is8A18s7/bx9aXqsrOax9WUbeNS6mD2oix7Z0yGGf6m5g==}
 
-  i18next@25.8.0:
-    resolution: {integrity: sha512-urrg4HMFFMQZ2bbKRK7IZ8/CTE7D8H4JRlAwqA2ZwDRFfdd0K/4cdbNNLgfn9mo+I/h9wJu61qJzH7jCFAhUZQ==}
+  i18next@25.8.4:
+    resolution: {integrity: sha512-a9A0MnUjKvzjEN/26ZY1okpra9kA8MEwzYEz1BNm+IyxUKPRH6ihf0p7vj8YvULwZHKHl3zkJ6KOt4hewxBecQ==}
     peerDependencies:
       typescript: ^5
     peerDependenciesMeta:
@@ -25879,7 +25879,7 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  i18next@25.8.0(typescript@5.9.3):
+  i18next@25.8.4(typescript@5.9.3):
     dependencies:
       '@babel/runtime': 7.28.4
     optionalDependencies:
@@ -29321,11 +29321,11 @@ snapshots:
       react: 19.2.4
       scheduler: 0.27.0
 
-  react-i18next@16.5.4(i18next@25.8.0(typescript@5.9.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3):
+  react-i18next@16.5.4(i18next@25.8.4(typescript@5.9.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3):
     dependencies:
       '@babel/runtime': 7.28.4
       html-parse-stringify: 3.0.1
-      i18next: 25.8.0(typescript@5.9.3)
+      i18next: 25.8.4(typescript@5.9.3)
       react: 19.2.4
       use-sync-external-store: 1.6.0(react@19.2.4)
     optionalDependencies:
