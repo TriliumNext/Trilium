@@ -19,7 +19,15 @@ abstract class ImportStoreBase {
         this.importStore[id] = record;
     }
 
-    public abstract remove(id: string): Promise<void>;
+    async remove(id: string) {
+        const record = this.get(id);
+        if (!record) return;
+
+        this.onRecordRemoved(record);
+        delete this.importStore[id];
+    }
+
+    public abstract onRecordRemoved(record: ImportRecord): Promise<void>;
 
 }
 
@@ -47,14 +55,11 @@ class DiskImportStore extends ImportStoreBase {
         }));
     }
 
-    public async remove(id: string): Promise<void> {
-        const record = this.get(id);
-        if (!record) return;
-
+    public async onRecordRemoved(record: ImportRecord): Promise<void> {
         try {
             await rm(record.path);
         } catch (e) {
-            console.error(`Unable to delete file from import store: ${id}.`, e);
+            console.error(`Unable to delete file from import store: ${record.path}.`, e);
         }
     }
 
