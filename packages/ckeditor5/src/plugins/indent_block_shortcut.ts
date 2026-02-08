@@ -8,21 +8,33 @@ export default class IndentBlockShortcutPlugin extends Plugin {
 
     init() {
         this.editor.keystrokes.set( 'Tab', ( _, cancel ) => {
-            const command = this.editor.commands.get( 'indentBlock' );
-
-            if (command && command.isEnabled && !this.isInTable() ) {
-                command.execute();
-                cancel();
+            // In tables, allow default Tab behavior for cell navigation
+            if (this.isInTable()) {
+                return;
             }
+
+            const command = this.editor.commands.get( 'indentBlock' );
+            if (command?.isEnabled) {
+                command.execute();
+            }
+
+            // Always cancel in non-table contexts to prevent widget navigation
+            cancel();
         } );
 
         this.editor.keystrokes.set( 'Shift+Tab', ( _, cancel ) => {
-            const command = this.editor.commands.get( 'outdentBlock' );
-
-            if (command && command.isEnabled && !this.isInTable() ) {
-                command.execute();
-                cancel();
+            // In tables, allow default Shift+Tab behavior for cell navigation
+            if (this.isInTable()) {
+                return;
             }
+
+            const command = this.editor.commands.get( 'outdentBlock' );
+            if (command?.isEnabled) {
+                command.execute();
+            }
+
+            // Always cancel in non-table contexts to prevent widget navigation
+            cancel();
         } );
     }
 
