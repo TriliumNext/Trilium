@@ -1,12 +1,12 @@
 import { UpdateAttributeResponse } from "@triliumnext/commons";
-import { ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 
 import becca from "../../becca/becca.js";
 import BAttribute from "../../becca/entities/battribute.js";
 import attributeService from "../../services/attributes.js";
-import log from "../../services/log.js";
-import sql from "../../services/sql.js";
+import { getLog } from "../../services/log.js";
+import { ValidationError } from "../../errors.js";
+import { getSql } from "../../services/sql/index.js";
 
 function getEffectiveNoteAttributes(req: Request) {
     const note = becca.getNote(req.params.noteId);
@@ -71,7 +71,7 @@ function setNoteAttribute(req: Request) {
     const noteId = req.params.noteId;
     const body = req.body;
 
-    const attributeId = sql.getValue<string | null>(/*sql*/`SELECT attributeId FROM attributes WHERE isDeleted = 0 AND noteId = ? AND type = ? AND name = ?`, [noteId, body.type, body.name]);
+    const attributeId = getSql().getValue<string | null>(/*sql*/`SELECT attributeId FROM attributes WHERE isDeleted = 0 AND noteId = ? AND type = ? AND name = ?`, [noteId, body.type, body.name]);
 
     if (attributeId) {
         const attr = becca.getAttribute(attributeId);
@@ -145,7 +145,7 @@ function updateNoteAttributes(req: Request) {
             const targetNote = becca.getNote(incAttr.value);
 
             if (!targetNote) {
-                log.error(`Target note of relation ${JSON.stringify(incAttr)} does not exist or is deleted`);
+                getLog().error(`Target note of relation ${JSON.stringify(incAttr)} does not exist or is deleted`);
                 continue;
             }
         }
@@ -189,7 +189,7 @@ function getAttributeNames(req: Request) {
 function getValuesForAttribute(req: Request) {
     const attributeName = req.params.attributeName;
 
-    return sql.getColumn("SELECT DISTINCT value FROM attributes WHERE isDeleted = 0 AND name = ? AND type = 'label' AND value != '' ORDER BY value", [attributeName]);
+    return getSql().getColumn("SELECT DISTINCT value FROM attributes WHERE isDeleted = 0 AND name = ? AND type = 'label' AND value != '' ORDER BY value", [attributeName]);
 }
 
 function createRelation(req: Request) {
@@ -197,7 +197,7 @@ function createRelation(req: Request) {
     const targetNoteId = req.params.targetNoteId;
     const name = req.params.name;
 
-    const attributeId = sql.getValue<string>(/*sql*/`SELECT attributeId FROM attributes WHERE isDeleted = 0 AND noteId = ? AND type = 'relation' AND name = ? AND value = ?`, [
+    const attributeId = getSql().getValue<string>(/*sql*/`SELECT attributeId FROM attributes WHERE isDeleted = 0 AND noteId = ? AND type = 'relation' AND name = ? AND value = ?`, [
         sourceNoteId,
         name,
         targetNoteId
@@ -221,7 +221,7 @@ function deleteRelation(req: Request) {
     const targetNoteId = req.params.targetNoteId;
     const name = req.params.name;
 
-    const attributeId = sql.getValue<string | null>(/*sql*/`SELECT attributeId FROM attributes WHERE isDeleted = 0 AND noteId = ? AND type = 'relation' AND name = ? AND value = ?`, [
+    const attributeId = getSql().getValue<string | null>(/*sql*/`SELECT attributeId FROM attributes WHERE isDeleted = 0 AND noteId = ? AND type = 'relation' AND name = ? AND value = ?`, [
         sourceNoteId,
         name,
         targetNoteId

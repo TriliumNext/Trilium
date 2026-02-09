@@ -19,7 +19,6 @@ import openID from '../services/open_id.js';
 import { isElectron } from "../services/utils.js";
 import shareRoutes from "../share/routes.js";
 import anthropicRoute from "./api/anthropic.js";
-import attributesRoute from "./api/attributes.js";
 import autocompleteApiRoute from "./api/autocomplete.js";
 import backendLogRoute from "./api/backend_log.js";
 import bulkActionRoute from "./api/bulk_action.js";
@@ -151,17 +150,6 @@ function register(app: express.Application) {
     route(GET, "/api/branches/:branchId/export/:type/:format/:version/:taskId", [auth.checkApiAuthOrElectron], exportRoute.exportBranch);
     asyncRoute(PST, "/api/notes/:parentNoteId/notes-import", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importNotesToBranch, apiResultHandler);
     route(PST, "/api/notes/:parentNoteId/attachments-import", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importAttachmentsToNote, apiResultHandler);
-
-    apiRoute(GET, "/api/notes/:noteId/attributes", attributesRoute.getEffectiveNoteAttributes);
-    apiRoute(PST, "/api/notes/:noteId/attributes", attributesRoute.addNoteAttribute);
-    apiRoute(PUT, "/api/notes/:noteId/attributes", attributesRoute.updateNoteAttributes);
-    apiRoute(PUT, "/api/notes/:noteId/attribute", attributesRoute.updateNoteAttribute);
-    apiRoute(PUT, "/api/notes/:noteId/set-attribute", attributesRoute.setNoteAttribute);
-    apiRoute(PUT, "/api/notes/:noteId/relations/:name/to/:targetNoteId", attributesRoute.createRelation);
-    apiRoute(DEL, "/api/notes/:noteId/relations/:name/to/:targetNoteId", attributesRoute.deleteRelation);
-    apiRoute(DEL, "/api/notes/:noteId/attributes/:attributeId", attributesRoute.deleteNoteAttribute);
-    apiRoute(GET, "/api/attribute-names", attributesRoute.getAttributeNames);
-    apiRoute(GET, "/api/attribute-values/:attributeName", attributesRoute.getValuesForAttribute);
 
     // :filename is not used by trilium, but instead used for "save as" to assign a human-readable filename
     route(GET, "/api/images/:noteId/:filename", [auth.checkApiAuthOrElectron], imageRoute.returnImageFromNote);

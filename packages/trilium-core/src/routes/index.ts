@@ -12,6 +12,7 @@ import statsRoute from "./api/stats";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 import cloningApiRoute from "./api/cloning";
 import sqlRoute from "./api/sql";
+import attributesRoute from "./api/attributes";
 
 // TODO: Deduplicate with routes.ts
 const GET = "get",
@@ -57,6 +58,17 @@ export function buildSharedApiRoutes(apiRoute: any) {
     apiRoute(DEL, "/api/attachments/:attachmentId", attachmentsApiRoute.deleteAttachment);
     apiRoute(PUT, "/api/attachments/:attachmentId/rename", attachmentsApiRoute.renameAttachment);
     apiRoute(GET, "/api/attachments/:attachmentId/blob", attachmentsApiRoute.getAttachmentBlob);
+
+    apiRoute(GET, "/api/notes/:noteId/attributes", attributesRoute.getEffectiveNoteAttributes);
+    apiRoute(PST, "/api/notes/:noteId/attributes", attributesRoute.addNoteAttribute);
+    apiRoute(PUT, "/api/notes/:noteId/attributes", attributesRoute.updateNoteAttributes);
+    apiRoute(PUT, "/api/notes/:noteId/attribute", attributesRoute.updateNoteAttribute);
+    apiRoute(PUT, "/api/notes/:noteId/set-attribute", attributesRoute.setNoteAttribute);
+    apiRoute(PUT, "/api/notes/:noteId/relations/:name/to/:targetNoteId", attributesRoute.createRelation);
+    apiRoute(DEL, "/api/notes/:noteId/relations/:name/to/:targetNoteId", attributesRoute.deleteRelation);
+    apiRoute(DEL, "/api/notes/:noteId/attributes/:attributeId", attributesRoute.deleteNoteAttribute);
+    apiRoute(GET, "/api/attribute-names/", attributesRoute.getAttributeNames);
+    apiRoute(GET, "/api/attribute-values/:attributeName", attributesRoute.getValuesForAttribute);
 
     apiRoute(PUT, "/api/branches/:branchId/move-to/:parentBranchId", branchesApiRoute.moveBranchToParent);
     apiRoute(PUT, "/api/branches/:branchId/move-before/:beforeBranchId", branchesApiRoute.moveBranchBeforeNote);

@@ -1,13 +1,13 @@
 "use strict";
 
 import searchService from "./search/services/search.js";
-import sql from "./sql.js";
 import becca from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
 import attributeFormatter from "./attribute_formatter.js";
 import BUILTIN_ATTRIBUTES from "./builtin_attributes.js";
 import type BNote from "../becca/entities/bnote.js";
 import type { AttributeRow } from "@triliumnext/commons";
+import { getSql } from "./sql/index.js";
 
 const ATTRIBUTE_TYPES = new Set(["label", "relation"]);
 
@@ -64,7 +64,7 @@ function createAttribute(attribute: AttributeRow) {
 function getAttributeNames(type: string, nameLike: string) {
     nameLike = nameLike.toLowerCase();
 
-    let names = sql.getColumn<string>(
+    let names = getSql().getColumn<string>(
         /*sql*/`SELECT DISTINCT name
             FROM attributes
             WHERE isDeleted = 0
