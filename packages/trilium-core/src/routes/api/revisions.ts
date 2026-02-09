@@ -1,14 +1,15 @@
 import { EditedNotesResponse, RevisionItem, RevisionPojo } from "@triliumnext/commons";
-import { becca_service, binary_utils, blob as blobService, erase as eraseService, NotePojo } from "@triliumnext/core";
 import type { Request, Response } from "express";
 import path from "path";
 
 import becca from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
 import type BRevision from "../../becca/entities/brevision.js";
-import cls from "../../services/cls.js";
-import sql from "../../services/sql.js";
-import utils from "../../services/utils.js";
+import blobService from "../../services/blob.js";
+import eraseService from "../../services/erase.js";
+import { NotePojo } from "../../becca/becca-interface.js";
+import { becca_service, binary_utils, cls, getSql } from "../../index.js";
+import { formatDownloadTitle, getContentDisposition } from "../../services/utils/index.js";
 
 interface NotePath {
     noteId: string;
@@ -60,7 +61,7 @@ function getRevision(req: Request) {
 }
 
 function getRevisionFilename(revision: BRevision) {
-    let filename = utils.formatDownloadTitle(revision.title, revision.type, revision.mime);
+    let filename = formatDownloadTitle(revision.title, revision.type, revision.mime);
 
     if (!revision.dateCreated) {
         throw new Error("Missing creation date for revision.");
@@ -90,14 +91,14 @@ function downloadRevision(req: Request, res: Response) {
 
     const filename = getRevisionFilename(revision);
 
-    res.setHeader("Content-Disposition", utils.getContentDisposition(filename));
+    res.setHeader("Content-Disposition", getContentDisposition(filename));
     res.setHeader("Content-Type", revision.mime);
 
     res.send(revision.getContent());
 }
 
 function eraseAllRevisions(req: Request) {
-    const revisionIdsToErase = sql.getColumn<string>("SELECT revisionId FROM revisions WHERE noteId = ?", [req.params.noteId]);
+    const revisionIdsToErase = getSql().getColumn<string>("SELECT revisionId FROM revisions WHERE noteId = ?", [req.params.noteId]);
 
     eraseService.eraseRevisions(revisionIdsToErase);
 }
@@ -107,7 +108,7 @@ function eraseRevision(req: Request) {
 }
 
 function eraseAllExcessRevisions() {
-    const allNoteIds = sql.getRows("SELECT noteId FROM notes WHERE SUBSTRING(noteId, 1, 1) != '_'") as { noteId: string }[];
+    const allNoteIds = getSql().getRows("SELECT noteId FROM notes WHERE SUBSTRING(noteId, 1, 1) != '_'") as { noteId: string }[];
     allNoteIds.forEach((row) => {
         becca.getNote(row.noteId)?.eraseExcessRevisionSnapshots();
     });
@@ -119,7 +120,7 @@ function restoreRevision(req: Request) {
     if (revision) {
         const note = revision.getNote();
 
-        sql.transactional(() => {
+        getSql().transactional(() => {
             note.saveRevision();
 
             for (const oldNoteAttachment of note.getAttachments()) {
@@ -148,7 +149,7 @@ function restoreRevision(req: Request) {
 }
 
 function getEditedNotesOnDate(req: Request) {
-    const noteIds = sql.getColumn<string>(/*sql*/`\
+    const noteIds = getSql().getColumn<string>(/*sql*/`\
         SELECT notes.*
         FROM notes
         WHERE noteId IN (

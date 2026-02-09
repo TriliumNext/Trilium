@@ -41,7 +41,6 @@ import passwordApiRoute from "./api/password.js";
 import recentChangesApiRoute from "./api/recent_changes.js";
 import recoveryCodes from './api/recovery_codes.js';
 import relationMapApiRoute from "./api/relation-map.js";
-import revisionsApiRoute from "./api/revisions.js";
 import scriptRoute from "./api/script.js";
 import searchRoute from "./api/search.js";
 import senderRoute from "./api/sender.js";
@@ -136,16 +135,10 @@ function register(app: express.Application) {
     apiRoute(PST, "/api/attachments/:attachmentId/upload-modified-file", filesRoute.uploadModifiedFileToAttachment);
     route(PUT, "/api/attachments/:attachmentId/file", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], filesRoute.updateAttachment, apiResultHandler);
 
-    apiRoute(GET, "/api/notes/:noteId/revisions", revisionsApiRoute.getRevisions);
-    apiRoute(DEL, "/api/notes/:noteId/revisions", revisionsApiRoute.eraseAllRevisions);
-    apiRoute(PST, "/api/revisions/erase-all-excess-revisions", revisionsApiRoute.eraseAllExcessRevisions);
-    apiRoute(GET, "/api/revisions/:revisionId", revisionsApiRoute.getRevision);
-    apiRoute(GET, "/api/revisions/:revisionId/blob", revisionsApiRoute.getRevisionBlob);
-    apiRoute(DEL, "/api/revisions/:revisionId", revisionsApiRoute.eraseRevision);
-    apiRoute(PST, "/api/revisions/:revisionId/restore", revisionsApiRoute.restoreRevision);
     route(GET, "/api/revisions/:revisionId/image/:filename", [auth.checkApiAuthOrElectron], imageRoute.returnImageFromRevision);
 
-    route(GET, "/api/revisions/:revisionId/download", [auth.checkApiAuthOrElectron], revisionsApiRoute.downloadRevision);
+    // TODO: Re-enable once we suppourt route()
+    // route(GET, "/api/revisions/:revisionId/download", [auth.checkApiAuthOrElectron], revisionsApiRoute.downloadRevision);
 
     route(GET, "/api/branches/:branchId/export/:type/:format/:version/:taskId", [auth.checkApiAuthOrElectron], exportRoute.exportBranch);
     asyncRoute(PST, "/api/notes/:parentNoteId/notes-import", [auth.checkApiAuthOrElectron, uploadMiddlewareWithErrorHandling, csrfMiddleware], importRoute.importNotesToBranch, apiResultHandler);
@@ -271,7 +264,6 @@ function register(app: express.Application) {
     apiRoute(PST, "/api/other/render-markdown", otherRoute.renderMarkdown);
     apiRoute(PST, "/api/other/to-markdown", otherRoute.toMarkdown);
     apiRoute(GET, "/api/recent-changes/:ancestorNoteId", recentChangesApiRoute.getRecentChanges);
-    apiRoute(GET, "/api/edited-notes/:date", revisionsApiRoute.getEditedNotesOnDate);
 
     apiRoute(PST, "/api/note-map/:noteId/tree", noteMapRoute.getTreeMap);
     apiRoute(PST, "/api/note-map/:noteId/link", noteMapRoute.getLinkMap);

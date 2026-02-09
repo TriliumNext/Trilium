@@ -13,6 +13,7 @@ import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 import cloningApiRoute from "./api/cloning";
 import sqlRoute from "./api/sql";
 import attributesRoute from "./api/attributes";
+import revisionsApiRoute from "./api/revisions";
 
 // TODO: Deduplicate with routes.ts
 const GET = "get",
@@ -69,6 +70,15 @@ export function buildSharedApiRoutes(apiRoute: any) {
     apiRoute(DEL, "/api/notes/:noteId/attributes/:attributeId", attributesRoute.deleteNoteAttribute);
     apiRoute(GET, "/api/attribute-names/", attributesRoute.getAttributeNames);
     apiRoute(GET, "/api/attribute-values/:attributeName", attributesRoute.getValuesForAttribute);
+
+    apiRoute(GET, "/api/notes/:noteId/revisions", revisionsApiRoute.getRevisions);
+    apiRoute(DEL, "/api/notes/:noteId/revisions", revisionsApiRoute.eraseAllRevisions);
+    apiRoute(PST, "/api/revisions/erase-all-excess-revisions", revisionsApiRoute.eraseAllExcessRevisions);
+    apiRoute(GET, "/api/revisions/:revisionId", revisionsApiRoute.getRevision);
+    apiRoute(GET, "/api/revisions/:revisionId/blob", revisionsApiRoute.getRevisionBlob);
+    apiRoute(DEL, "/api/revisions/:revisionId", revisionsApiRoute.eraseRevision);
+    apiRoute(PST, "/api/revisions/:revisionId/restore", revisionsApiRoute.restoreRevision);
+    apiRoute(GET, "/api/edited-notes/:date", revisionsApiRoute.getEditedNotesOnDate);
 
     apiRoute(PUT, "/api/branches/:branchId/move-to/:parentBranchId", branchesApiRoute.moveBranchToParent);
     apiRoute(PUT, "/api/branches/:branchId/move-before/:beforeBranchId", branchesApiRoute.moveBranchBeforeNote);
