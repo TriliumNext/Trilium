@@ -30,6 +30,7 @@ import SpacerWidget from "../widgets/launch_bar/SpacerWidget.jsx";
 import InlineTitle from "../widgets/layout/InlineTitle.jsx";
 import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
+import StandaloneWarningBar from "../widgets/layout/StandaloneWarningBar.jsx";
 import StatusBar from "../widgets/layout/StatusBar.jsx";
 import NoteIconWidget from "../widgets/note_icon.jsx";
 import NoteTitleWidget from "../widgets/note_title.jsx";
@@ -186,6 +187,7 @@ export default class DesktopLayout {
                     )
             )
             .optChild(launcherPaneIsHorizontal && isNewLayout, <StatusBar />)
+            .optChild(glob.isStandalone, <StandaloneWarningBar />)
             .child(<CloseZenModeButton />)
 
             // Desktop-specific dialogs.

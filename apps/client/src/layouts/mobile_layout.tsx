@@ -13,6 +13,7 @@ import LauncherContainer from "../widgets/launch_bar/LauncherContainer.jsx";
 import InlineTitle from "../widgets/layout/InlineTitle.jsx";
 import NoteBadges from "../widgets/layout/NoteBadges.jsx";
 import NoteTitleActions from "../widgets/layout/NoteTitleActions.jsx";
+import StandaloneWarningBar from "../widgets/layout/StandaloneWarningBar";
 import MobileDetailMenu from "../widgets/mobile_widgets/mobile_detail_menu.js";
 import ScreenContainer from "../widgets/mobile_widgets/screen_container.js";
 import SidebarContainer from "../widgets/mobile_widgets/sidebar_container.js";
@@ -24,9 +25,7 @@ import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.jsx";
 import QuickSearchWidget from "../widgets/quick_search.js";
 import { useNoteContext } from "../widgets/react/hooks.jsx";
-import StandaloneRibbonAdapter from "../widgets/ribbon/components/StandaloneRibbonAdapter.jsx";
 import FilePropertiesTab from "../widgets/ribbon/FilePropertiesTab.jsx";
-import SearchDefinitionTab from "../widgets/ribbon/SearchDefinitionTab.jsx";
 import SearchResult from "../widgets/search_result.jsx";
 import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.jsx";
 import { applyModals } from "./layout_commons.js";
@@ -58,6 +57,7 @@ export default class MobileLayout {
                             .child(
                                 new SplitNoteContainer(() =>
                                     new NoteWrapperWidget()
+                                        .optChild(glob.isStandalone, <StandaloneWarningBar />)
                                         .child(
                                             new FlexContainer("row")
                                                 .class("title-row note-split-title")
