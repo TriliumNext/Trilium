@@ -39,6 +39,7 @@ export { default as revisions } from "./services/revisions";
 export { default as erase } from "./services/erase";
 export { default as getSharedBootstrapItems } from "./services/bootstrap_utils";
 export { default as branches } from "./services/branches";
+export { default as bulk_actions } from "./services/bulk_actions";
 
 export { default as attribute_formatter} from "./services/attribute_formatter";
 export { default as BUILTIN_ATTRIBUTES } from "./services/builtin_attributes";
