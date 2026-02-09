@@ -15,6 +15,7 @@ import sqlRoute from "./api/sql";
 import attributesRoute from "./api/attributes";
 import revisionsApiRoute from "./api/revisions";
 import relationMapApiRoute from "./api/relation-map";
+import recentChangesApiRoute from "./api/recent_changes";
 
 // TODO: Deduplicate with routes.ts
 const GET = "get",
@@ -111,6 +112,7 @@ export function buildSharedApiRoutes(apiRoute: any) {
     apiRoute(GET, "/api/app-info", appInfoRoute.getAppInfo);
     apiRoute(GET, "/api/other/icon-usage", otherRoute.getIconUsage);
     apiRoute(PST, "/api/relation-map", relationMapApiRoute.getRelationMap);
+    apiRoute(GET, "/api/recent-changes/:ancestorNoteId", recentChangesApiRoute.getRecentChanges);
 }
 
 /** Handling common patterns. If entity is not caught, serialization to JSON will fail */

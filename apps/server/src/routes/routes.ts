@@ -38,7 +38,6 @@ import ollamaRoute from "./api/ollama.js";
 import openaiRoute from "./api/openai.js";
 import otherRoute from "./api/other.js";
 import passwordApiRoute from "./api/password.js";
-import recentChangesApiRoute from "./api/recent_changes.js";
 import recoveryCodes from './api/recovery_codes.js';
 import scriptRoute from "./api/script.js";
 import searchRoute from "./api/search.js";
@@ -261,7 +260,6 @@ function register(app: express.Application) {
     route(GET, "/api/fonts", [auth.checkApiAuthOrElectron], fontsRoute.getFontCss);
     apiRoute(PST, "/api/other/render-markdown", otherRoute.renderMarkdown);
     apiRoute(PST, "/api/other/to-markdown", otherRoute.toMarkdown);
-    apiRoute(GET, "/api/recent-changes/:ancestorNoteId", recentChangesApiRoute.getRecentChanges);
 
     apiRoute(PST, "/api/note-map/:noteId/tree", noteMapRoute.getTreeMap);
     apiRoute(PST, "/api/note-map/:noteId/link", noteMapRoute.getLinkMap);

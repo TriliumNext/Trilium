@@ -1,17 +1,18 @@
 "use strict";
 
-import sql from "../../services/sql.js";
 import protectedSessionService from "../../services/protected_session.js";
 import noteService from "../../services/notes.js";
 import becca from "../../becca/becca.js";
 import type { Request } from "express";
 import type { RecentChangeRow } from "@triliumnext/commons";
+import { getSql } from "../../services/sql/index.js";
 
 function getRecentChanges(req: Request) {
     const { ancestorNoteId } = req.params;
 
     let recentChanges: RecentChangeRow[] = [];
 
+    const sql = getSql();
     const revisionRows = sql.getRows<RecentChangeRow>(`
         SELECT
             notes.noteId,
