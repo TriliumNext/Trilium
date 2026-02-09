@@ -16,6 +16,7 @@ import attributesRoute from "./api/attributes";
 import revisionsApiRoute from "./api/revisions";
 import relationMapApiRoute from "./api/relation-map";
 import recentChangesApiRoute from "./api/recent_changes";
+import bulkActionRoute from "./api/bulk_action";
 
 // TODO: Deduplicate with routes.ts
 const GET = "get",
@@ -108,6 +109,9 @@ export function buildSharedApiRoutes(apiRoute: any) {
 
     apiRoute(GET, "/api/sql/schema", sqlRoute.getSchema);
     apiRoute(PST, "/api/sql/execute/:noteId", sqlRoute.execute);
+
+    apiRoute(PST, "/api/bulk-action/execute", bulkActionRoute.execute);
+    apiRoute(PST, "/api/bulk-action/affected-notes", bulkActionRoute.getAffectedNoteCount);
 
     apiRoute(GET, "/api/app-info", appInfoRoute.getAppInfo);
     apiRoute(GET, "/api/other/icon-usage", otherRoute.getIconUsage);

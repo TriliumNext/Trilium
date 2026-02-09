@@ -21,7 +21,6 @@ import shareRoutes from "../share/routes.js";
 import anthropicRoute from "./api/anthropic.js";
 import autocompleteApiRoute from "./api/autocomplete.js";
 import backendLogRoute from "./api/backend_log.js";
-import bulkActionRoute from "./api/bulk_action.js";
 import clipperRoute from "./api/clipper.js";
 import databaseRoute from "./api/database.js";
 import etapiTokensApiRoutes from "./api/etapi_tokens.js";
@@ -182,9 +181,6 @@ function register(app: express.Application) {
     apiRoute(PST, "/api/search-related", searchRoute.getRelatedNotes);
     apiRoute(GET, "/api/search/:searchString", searchRoute.search);
     apiRoute(GET, "/api/search-templates", searchRoute.searchTemplates);
-
-    apiRoute(PST, "/api/bulk-action/execute", bulkActionRoute.execute);
-    apiRoute(PST, "/api/bulk-action/affected-notes", bulkActionRoute.getAffectedNoteCount);
 
     route(PST, "/api/login/sync", [loginRateLimiter], loginApiRoute.loginSync, apiResultHandler);
     // this is for entering protected mode so user has to be already logged-in (that's the reason we don't require username)
