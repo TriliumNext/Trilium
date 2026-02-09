@@ -19,6 +19,7 @@ import sql from "../../sql.js";
 import scriptService from "../../script.js";
 import striptags from "striptags";
 import protectedSessionService from "../../protected_session.js";
+import { ftsSearchService } from "../fts/index.js";
 
 export interface SearchNoteResult {
     searchResultNoteIds: string[];
@@ -422,9 +423,84 @@ function findResultsWithQuery(query: string, searchContext: SearchContext): Sear
     // ordering or other logic that shouldn't be interfered with.
     const isPureExpressionQuery = query.trim().startsWith('#');
 
-    const results = isPureExpressionQuery
-        ? performSearch(expression, searchContext, searchContext.enableFuzzyMatching)
-        : findResultsWithExpression(expression, searchContext);
+    // Performance comparison for quick-search (fastSearch === false)
+    const isQuickSearch = searchContext.fastSearch === false;
+    let results: SearchResult[];
+    let ftsTime = 0;
+    let traditionalTime = 0;
+
+    if (isPureExpressionQuery) {
+        // For pure expression queries, use standard search without progressive phases
+        results = performSearch(expression, searchContext, searchContext.enableFuzzyMatching);
+    } else {
+        // For quick-search, run both FTS5 and traditional search to compare
+        if (isQuickSearch) {
+            log.info(`[QUICK-SEARCH-COMPARISON] Starting comparison for query: "${query}"`);
+
+            // Time FTS5 search (normal path)
+            const ftsStartTime = Date.now();
+            results = findResultsWithExpression(expression, searchContext);
+            ftsTime = Date.now() - ftsStartTime;
+
+            // Time traditional search (with FTS5 disabled)
+            const traditionalStartTime = Date.now();
+
+            // Create a new search context with FTS5 disabled
+            const traditionalContext = new SearchContext({
+                fastSearch: false,
+                includeArchivedNotes: false,
+                includeHiddenNotes: true,
+                fuzzyAttributeSearch: true,
+                ignoreInternalAttributes: true,
+                ancestorNoteId: searchContext.ancestorNoteId
+            });
+
+            // Temporarily disable FTS5 to force traditional search
+            const originalFtsAvailable = (ftsSearchService as any).isFTS5Available;
+            (ftsSearchService as any).isFTS5Available = false;
+
+            const traditionalResults = findResultsWithExpression(expression, traditionalContext);
+            traditionalTime = Date.now() - traditionalStartTime;
+
+            // Restore FTS5 availability
+            (ftsSearchService as any).isFTS5Available = originalFtsAvailable;
+
+            // Log performance comparison
+            // Use internal FTS search time (excluding diagnostics) if available
+            const ftsInternalTime = searchContext.ftsInternalSearchTime ?? ftsTime;
+            const speedup = traditionalTime > 0 ? (traditionalTime / ftsInternalTime).toFixed(2) : "N/A";
+            log.info(`[QUICK-SEARCH-COMPARISON] ===== Results for query: "${query}" =====`);
+            log.info(`[QUICK-SEARCH-COMPARISON] FTS5 search: ${ftsInternalTime}ms (excluding diagnostics), found ${results.length} results`);
+            log.info(`[QUICK-SEARCH-COMPARISON] Traditional search: ${traditionalTime}ms, found ${traditionalResults.length} results`);
+            log.info(`[QUICK-SEARCH-COMPARISON] FTS5 is ${speedup}x faster (saved ${traditionalTime - ftsInternalTime}ms)`);
+
+            // Check if results match
+            const ftsNoteIds = new Set(results.map(r => r.noteId));
+            const traditionalNoteIds = new Set(traditionalResults.map(r => r.noteId));
+            const matchingResults = ftsNoteIds.size === traditionalNoteIds.size &&
+                                  Array.from(ftsNoteIds).every(id => traditionalNoteIds.has(id));
+
+            if (!matchingResults) {
+                log.info(`[QUICK-SEARCH-COMPARISON] Results differ! FTS5: ${ftsNoteIds.size} notes, Traditional: ${traditionalNoteIds.size} notes`);
+
+                // Find differences
+                const onlyInFTS = Array.from(ftsNoteIds).filter(id => !traditionalNoteIds.has(id));
+                const onlyInTraditional = Array.from(traditionalNoteIds).filter(id => !ftsNoteIds.has(id));
+
+                if (onlyInFTS.length > 0) {
+                    log.info(`[QUICK-SEARCH-COMPARISON] Only in FTS5: ${onlyInFTS.slice(0, 5).join(", ")}${onlyInFTS.length > 5 ? "..." : ""}`);
+                }
+                if (onlyInTraditional.length > 0) {
+                    log.info(`[QUICK-SEARCH-COMPARISON] Only in Traditional: ${onlyInTraditional.slice(0, 5).join(", ")}${onlyInTraditional.length > 5 ? "..." : ""}`);
+                }
+            } else {
+                log.info(`[QUICK-SEARCH-COMPARISON] Results match perfectly! ✓`);
+            }
+            log.info(`[QUICK-SEARCH-COMPARISON] ========================================`);
+        } else {
+            results = findResultsWithExpression(expression, searchContext);
+        }
+    }
 
     return results;
 }

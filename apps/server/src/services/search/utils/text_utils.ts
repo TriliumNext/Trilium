@@ -332,25 +332,3 @@ export function fuzzyMatchWordWithResult(token: string, text: string, maxDistanc
 export function fuzzyMatchWord(token: string, text: string, maxDistance: number = FUZZY_SEARCH_CONFIG.MAX_EDIT_DISTANCE): boolean {
     return fuzzyMatchWordWithResult(token, text, maxDistance) !== null;
 }
-
-/**
- * Cache for compiled regular expressions.
- * Avoids recompiling the same regex pattern multiple times for better performance.
- */
-const cachedRegexes: Record<string, RegExp> = {};
-
-/**
- * Gets a cached RegExp for the given pattern, or creates and caches a new one.
- * This function provides a centralized regex cache for search operations.
- *
- * @param pattern The regex pattern string
- * @param flags Optional regex flags (default: '' for build_comparator, 'ms' for content search)
- * @returns A cached or newly created RegExp
- */
-export function getRegex(pattern: string, flags: string = ''): RegExp {
-    const key = `${pattern}:${flags}`;
-    if (!(key in cachedRegexes)) {
-        cachedRegexes[key] = new RegExp(pattern, flags);
-    }
-    return cachedRegexes[key];
-}

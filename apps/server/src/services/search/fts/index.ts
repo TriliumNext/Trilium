@@ -6,7 +6,7 @@
  */
 
 // Error classes
-export { FTSError, FTSQueryError } from "./errors.js";
+export { FTSError, FTSNotAvailableError, FTSQueryError } from "./errors.js";
 
 // Types and configuration
 export {
@@ -49,7 +49,7 @@ export {
 // Legacy class-based API for backward compatibility
 import {
     assertFTS5Available,
-    checkFTS5Availability,
+    checkFTS5Availability as checkFTS5AvailabilityFn,
     updateNoteIndex,
     removeNoteFromIndex,
     syncMissingNotes,
@@ -71,8 +71,16 @@ import { convertToFTS5Query } from "./query_builder.js";
  * New code should prefer the individual exported functions.
  */
 class FTSSearchService {
+    /** Allows overriding FTS5 availability (used by comparison code in search.ts) */
+    isFTS5Available: boolean | null = null;
+
     assertFTS5Available = assertFTS5Available;
-    checkFTS5Availability = checkFTS5Availability;
+    checkFTS5Availability = (): boolean => {
+        if (this.isFTS5Available !== null) {
+            return this.isFTS5Available;
+        }
+        return checkFTS5AvailabilityFn();
+    };
     convertToFTS5Query = convertToFTS5Query;
     searchWithLike = searchWithLike;
     searchSync = searchSync;

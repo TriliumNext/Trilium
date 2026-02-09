@@ -20,6 +20,16 @@ export class FTSError extends Error {
 }
 
 /**
+ * Error thrown when FTS5 is not available
+ */
+export class FTSNotAvailableError extends FTSError {
+    constructor(message: string = "FTS5 is not available") {
+        super(message, 'FTS_NOT_AVAILABLE', true);
+        this.name = 'FTSNotAvailableError';
+    }
+}
+
+/**
  * Error thrown when an FTS query is malformed or invalid
  */
 export class FTSQueryError extends FTSError {

@@ -1,4 +1,14 @@
-import { normalizeSearchText, fuzzyMatchWord, getRegex, FUZZY_SEARCH_CONFIG } from "../utils/text_utils.js";
+import { normalizeSearchText, fuzzyMatchWord, FUZZY_SEARCH_CONFIG } from "../utils/text_utils.js";
+
+const cachedRegexes: Record<string, RegExp> = {};
+
+function getRegex(str: string) {
+    if (!(str in cachedRegexes)) {
+        cachedRegexes[str] = new RegExp(str);
+    }
+
+    return cachedRegexes[str];
+}
 
 type Comparator<T> = (comparedValue: T) => (val: string) => boolean;
 
