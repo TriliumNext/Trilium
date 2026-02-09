@@ -40,7 +40,6 @@ import otherRoute from "./api/other.js";
 import passwordApiRoute from "./api/password.js";
 import recentChangesApiRoute from "./api/recent_changes.js";
 import recoveryCodes from './api/recovery_codes.js';
-import relationMapApiRoute from "./api/relation-map.js";
 import scriptRoute from "./api/script.js";
 import searchRoute from "./api/search.js";
 import senderRoute from "./api/sender.js";
@@ -257,7 +256,6 @@ function register(app: express.Application) {
     asyncRoute(PST, "/api/sender/image", [auth.checkEtapiToken, uploadMiddlewareWithErrorHandling], senderRoute.uploadImage, apiResultHandler);
     asyncRoute(PST, "/api/sender/note", [auth.checkEtapiToken], senderRoute.saveNote, apiResultHandler);
 
-    apiRoute(PST, "/api/relation-map", relationMapApiRoute.getRelationMap);
     asyncApiRoute(GET, "/api/similar-notes/:noteId", similarNotesRoute.getSimilarNotes);
     asyncApiRoute(GET, "/api/backend-log", backendLogRoute.getBackendLog);
     route(GET, "/api/fonts", [auth.checkApiAuthOrElectron], fontsRoute.getFontCss);

@@ -1,7 +1,7 @@
 import type { Request } from "express";
 import becca from "../../becca/becca.js";
-import sql from "../../services/sql.js";
 import { RelationMapPostResponse } from "@triliumnext/commons";
+import { getSql } from "../../services/sql/index.js";
 
 function getRelationMap(req: Request) {
     const { relationMapNoteId, noteIds } = req.body;
@@ -30,7 +30,7 @@ function getRelationMap(req: Request) {
     const hideRelationsVal = relationMapNote.getLabelValue("hideRelations");
     const hideRelations = !hideRelationsVal ? [] : hideRelationsVal.split(",").map((token) => token.trim());
 
-    const foundNoteIds = sql.getColumn<string>(/*sql*/`SELECT noteId FROM notes WHERE isDeleted = 0 AND noteId IN (${questionMarks})`, noteIds);
+    const foundNoteIds = getSql().getColumn<string>(/*sql*/`SELECT noteId FROM notes WHERE isDeleted = 0 AND noteId IN (${questionMarks})`, noteIds);
     const notes = becca.getNotes(foundNoteIds);
 
     for (const note of notes) {
