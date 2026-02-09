@@ -11,6 +11,7 @@ import appInfoRoute from "./api/app_info";
 import statsRoute from "./api/stats";
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity";
 import cloningApiRoute from "./api/cloning";
+import sqlRoute from "./api/sql";
 
 // TODO: Deduplicate with routes.ts
 const GET = "get",
@@ -80,6 +81,9 @@ export function buildSharedApiRoutes(apiRoute: any) {
 
     apiRoute(GET, "/api/stats/note-size/:noteId", statsRoute.getNoteSize);
     apiRoute(GET, "/api/stats/subtree-size/:noteId", statsRoute.getSubtreeSize);
+
+    apiRoute(GET, "/api/sql/schema", sqlRoute.getSchema);
+    apiRoute(PST, "/api/sql/execute/:noteId", sqlRoute.execute);
 
     apiRoute(GET, "/api/app-info", appInfoRoute.getAppInfo);
     apiRoute(GET, "/api/other/icon-usage", otherRoute.getIconUsage);

@@ -1,9 +1,9 @@
-import { ValidationError } from "@triliumnext/core";
 import type { Request } from "express";
 
 import becca from "../../becca/becca.js";
-import sql from "../../services/sql.js";
-import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
+import { getSql } from "../../services/sql/index.js";
+import { ValidationError } from "../../errors.js";
+import { safeExtractMessageAndStackFromError } from "../../services/utils/index.js";
 
 interface Table {
     name: string;
@@ -11,6 +11,7 @@ interface Table {
 }
 
 function getSchema() {
+    const sql = getSql();
     const tableNames = sql.getColumn<string>(/*sql*/`SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name`);
     const tables: Table[] = [];
 
@@ -25,6 +26,7 @@ function getSchema() {
 }
 
 function execute(req: Request) {
+    const sql = getSql();
     const note = becca.getNoteOrThrow(req.params.noteId);
 
     const content = note.getContent();
