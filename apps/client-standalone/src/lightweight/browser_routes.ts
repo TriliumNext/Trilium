@@ -4,7 +4,7 @@
  */
 
 import { BootstrapDefinition } from '@triliumnext/commons';
-import { getSharedBootstrapItems, routes } from '@triliumnext/core';
+import { getSharedBootstrapItems, getSql, routes } from '@triliumnext/core';
 
 import packageJson from '../../package.json' with { type: 'json' };
 import { type BrowserRequest,BrowserRouter } from './browser_router';
@@ -15,7 +15,7 @@ type HttpMethod = 'get' | 'post' | 'put' | 'patch' | 'delete';
  * Wraps a core route handler to work with the BrowserRouter.
  * Core handlers expect an Express-like request object with params, query, and body.
  */
-function wrapHandler(handler: (req: any) => unknown) {
+function wrapHandler(handler: (req: any) => unknown, transactional: boolean) {
     return (req: BrowserRequest) => {
         // Create an Express-like request object
         const expressLikeReq = {
@@ -23,6 +23,9 @@ function wrapHandler(handler: (req: any) => unknown) {
             query: req.query,
             body: req.body
         };
+        if (transactional) {
+            return getSql().transactional(() => handler(expressLikeReq));
+        }
         return handler(expressLikeReq);
     };
 }
@@ -33,7 +36,7 @@ function wrapHandler(handler: (req: any) => unknown) {
  */
 function createApiRoute(router: BrowserRouter) {
     return (method: HttpMethod, path: string, handler: (req: any) => unknown) => {
-        router.register(method, path, wrapHandler(handler));
+        router.register(method, path, wrapHandler(handler, true));
     };
 }
 
