@@ -6,7 +6,6 @@ enum Command {
     createNoteIntoInbox,
     showRecentChanges,
     showOptions,
-    createAiChat,
     commandPalette,
     toggleZenMode
 }
@@ -43,7 +42,6 @@ export interface HiddenSubtreeItem {
         | "protectedSession"
         | "calendar"
         | "quickSearch"
-        | "aiChatLauncher"
         | "commandPalette"
         | "toggleZenMode"
         | "mobileTabSwitcher";

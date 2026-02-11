@@ -103,20 +103,6 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "seenCallToActions",
     "experimentalFeatures",
     "newLayout",
-
-    // AI/LLM integration options
-    "aiEnabled",
-    "aiTemperature",
-    "aiSystemPrompt",
-    "aiSelectedProvider",
-    "openaiApiKey",
-    "openaiBaseUrl",
-    "openaiDefaultModel",
-    "anthropicApiKey",
-    "anthropicBaseUrl",
-    "anthropicDefaultModel",
-    "ollamaBaseUrl",
-    "ollamaDefaultModel",
     "mfaEnabled",
     "mfaMethod"
 ]);

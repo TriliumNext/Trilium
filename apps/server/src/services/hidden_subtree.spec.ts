@@ -114,7 +114,7 @@ describe("Hidden Subtree", () => {
         });
 
         it("maintains launchers hidden, if they were shown by default but moved by the user", () => {
-            const launcher = becca.getNote("_lbLlmChat");
+            const launcher = becca.getNote("_lbCalendar");
             const branch = launcher?.getParentBranches()[0];
             expect(branch).toBeDefined();
             expect(branch!.parentNoteId).toBe("_lbVisibleLaunchers");

@@ -140,19 +140,4 @@ export type WebSocketMessage = AllTaskDefinitions | {
     lastSyncedPush: number;
 } | {
     type: "consistency-checks-failed"
-} | {
-    type: "llm-stream",
-    chatNoteId: string;
-    done?: boolean;
-    error?: string;
-    thinking?: string;
-    content?: string;
-    toolExecution?: {
-        action?: string;
-        tool?: string;
-        toolCallId?: string;
-        result?: string | Record<string, any>;
-        error?: string;
-        args?: Record<string, unknown>;
-    }
 }

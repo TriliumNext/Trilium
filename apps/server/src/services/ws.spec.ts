@@ -75,21 +75,6 @@ describe('WebSocket Service', () => {
             expect(typeof wsService.sendMessageToAllClients).toBe('function');
         });
 
-        it('should handle LLM stream messages', () => {
-            const message = {
-                type: 'llm-stream' as const,
-                chatNoteId: 'test-chat-123',
-                content: 'Hello world',
-                done: false
-            };
-
-            // Since WebSocket server is not initialized in test environment,
-            // this should not throw an error
-            expect(() => {
-                wsService.sendMessageToAllClients(message);
-            }).not.toThrow();
-        });
-
         it('should handle regular messages', () => {
             const message = {
                 type: 'frontend-update' as const,
@@ -157,67 +142,7 @@ describe('WebSocket Service', () => {
         });
     });
 
-    describe('LLM Stream Message Handling', () => {
-        it('should handle streaming with content', () => {
-            const message = {
-                type: 'llm-stream' as const,
-                chatNoteId: 'chat-456',
-                content: 'Streaming content here',
-                done: false
-            };
-
-            expect(() => wsService.sendMessageToAllClients(message)).not.toThrow();
-        });
-
-        it('should handle streaming with thinking', () => {
-            const message = {
-                type: 'llm-stream' as const,
-                chatNoteId: 'chat-789',
-                thinking: 'AI is thinking...',
-                done: false
-            };
-
-            expect(() => wsService.sendMessageToAllClients(message)).not.toThrow();
-        });
-
-        it('should handle streaming with tool execution', () => {
-            const message = {
-                type: 'llm-stream' as const,
-                chatNoteId: 'chat-012',
-                toolExecution: {
-                    action: 'executing',
-                    tool: 'test-tool',
-                    toolCallId: 'tc-123'
-                },
-                done: false
-            };
-
-            expect(() => wsService.sendMessageToAllClients(message)).not.toThrow();
-        });
-
-        it('should handle streaming completion', () => {
-            const message = {
-                type: 'llm-stream' as const,
-                chatNoteId: 'chat-345',
-                done: true
-            };
-
-            expect(() => wsService.sendMessageToAllClients(message)).not.toThrow();
-        });
-
-        it('should handle streaming with error', () => {
-            const message = {
-                type: 'llm-stream' as const,
-                chatNoteId: 'chat-678',
-                error: 'Something went wrong',
-                done: true
-            };
-
-            expect(() => wsService.sendMessageToAllClients(message)).not.toThrow();
-        });
-    });
-
-    describe('Non-LLM Message Types', () => {
+    describe('Other Message Types', () => {
         it('should handle frontend-update messages', () => {
             const message = {
                 type: 'frontend-update' as const,

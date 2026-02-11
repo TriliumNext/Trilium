@@ -10,7 +10,7 @@ import BookmarkButtons from "./BookmarkButtons";
 import CalendarWidget from "./CalendarWidget";
 import HistoryNavigationButton from "./HistoryNavigation";
 import { LaunchBarContext } from "./launch_bar_widgets";
-import { AiChatButton, CommandButton, CustomWidget, NoteLauncher, QuickSearchLauncherWidget, ScriptLauncher, TodayLauncher } from "./LauncherDefinitions";
+import { CommandButton, CustomWidget, NoteLauncher, QuickSearchLauncherWidget, ScriptLauncher, TodayLauncher } from "./LauncherDefinitions";
 import ProtectedSessionStatusWidget from "./ProtectedSessionStatusWidget";
 import SpacerWidget from "./SpacerWidget";
 import SyncStatus from "./SyncStatus";
@@ -96,8 +96,6 @@ function initBuiltinWidget(note: FNote, isHorizontalLayout: boolean) {
             return <TodayLauncher launcherNote={note} />;
         case "quickSearch":
             return <QuickSearchLauncherWidget />;
-        case "aiChatLauncher":
-            return <AiChatButton launcherNote={note} />;
         case "mobileTabSwitcher":
             return <TabSwitcher />;
         default:

@@ -83,25 +83,6 @@ function setOption<T extends OptionNames>(name: T, value: string | OptionDefinit
         createOption(name, value, false);
     }
 
-    // Clear current AI provider when AI-related options change
-    const aiOptions = [
-        'aiSelectedProvider', 'openaiApiKey', 'openaiBaseUrl', 'openaiDefaultModel',
-        'anthropicApiKey', 'anthropicBaseUrl', 'anthropicDefaultModel',
-        'ollamaBaseUrl', 'ollamaDefaultModel'
-    ];
-
-    if (aiOptions.includes(name)) {
-        // Import dynamically to avoid circular dependencies
-        setImmediate(async () => {
-            try {
-                const aiServiceManager = (await import('./llm/ai_service_manager.js')).default;
-                aiServiceManager.getInstance().clearCurrentProvider();
-                console.log(`Cleared AI provider after ${name} option changed`);
-            } catch (error) {
-                console.log(`Could not clear AI provider: ${error}`);
-            }
-        });
-    }
 }
 
 /**

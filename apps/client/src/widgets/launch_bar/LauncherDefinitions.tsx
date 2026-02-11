@@ -11,7 +11,7 @@ import { getErrorMessage, isMobile } from "../../services/utils";
 import BasicWidget from "../basic_widget";
 import NoteContextAwareWidget from "../note_context_aware_widget";
 import QuickSearchWidget from "../quick_search";
-import { useGlobalShortcut, useLegacyWidget, useNoteLabel, useNoteRelationTarget, useTriliumOptionBool } from "../react/hooks";
+import { useGlobalShortcut, useLegacyWidget, useNoteLabel, useNoteRelationTarget } from "../react/hooks";
 import { ParentComponent } from "../react/react_utils";
 import { CustomNoteLauncher } from "./GenericButtons";
 import { LaunchBarActionButton, LaunchBarContext, LauncherNoteProps, useLauncherIconAndTitle } from "./launch_bar_widgets";
@@ -77,19 +77,6 @@ export function ScriptLauncher({ launcherNote }: LauncherNoteProps) {
             icon={icon}
             text={title}
             onClick={launch}
-        />
-    );
-}
-
-export function AiChatButton({ launcherNote }: LauncherNoteProps) {
-    const [ aiEnabled ] = useTriliumOptionBool("aiEnabled");
-    const { icon, title } = useLauncherIconAndTitle(launcherNote);
-
-    return aiEnabled && (
-        <LaunchBarActionButton
-            icon={icon}
-            text={title}
-            triggerCommand="createAiChat"
         />
     );
 }

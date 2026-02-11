@@ -20,8 +20,7 @@ export const NOTE_TYPE_ICONS = {
     launcher: "bx bx-link",
     doc: "bx bxs-file-doc",
     contentWidget: "bx bxs-widget",
-    mindMap: "bx bx-sitemap",
-    aiChat: "bx bx-bot"
+    mindMap: "bx bx-sitemap"
 };
 
 const FILE_MIME_MAPPINGS = {

@@ -85,7 +85,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
     );
     const isElectron = getIsElectron();
     const isMac = getIsMac();
-    const hasSource = ["text", "code", "relationMap", "mermaid", "canvas", "mindMap", "aiChat"].includes(noteType);
+    const hasSource = ["text", "code", "relationMap", "mermaid", "canvas", "mindMap"].includes(noteType);
     const isSearchOrBook = ["search", "book"].includes(noteType);
     const isHelpPage = note.noteId.startsWith("_help");
     const [syncServerHost] = useTriliumOption("syncServerHost");

@@ -202,22 +202,6 @@ const defaultOptions: DefaultOption[] = [
     { name: "redirectBareDomain", value: "false", isSynced: true },
     { name: "showLoginInShareTheme", value: "false", isSynced: true },
 
-    // AI Options
-    { name: "aiEnabled", value: "false", isSynced: true },
-    { name: "openaiApiKey", value: "", isSynced: false },
-    { name: "openaiDefaultModel", value: "", isSynced: true },
-    { name: "openaiBaseUrl", value: "https://api.openai.com/v1", isSynced: true },
-    { name: "anthropicApiKey", value: "", isSynced: false },
-    { name: "anthropicDefaultModel", value: "", isSynced: true },
-    { name: "voyageApiKey", value: "", isSynced: false },
-    { name: "anthropicBaseUrl", value: "https://api.anthropic.com/v1", isSynced: true },
-    { name: "ollamaEnabled", value: "false", isSynced: true },
-    { name: "ollamaDefaultModel", value: "", isSynced: true },
-    { name: "ollamaBaseUrl", value: "http://localhost:11434", isSynced: true },
-    { name: "aiTemperature", value: "0.7", isSynced: true },
-    { name: "aiSystemPrompt", value: "", isSynced: true },
-    { name: "aiSelectedProvider", value: "openai", isSynced: true },
-
     {
         name: "seenCallToActions",
         value: JSON.stringify([

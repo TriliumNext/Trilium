@@ -138,24 +138,6 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     redirectBareDomain: boolean;
     showLoginInShareTheme: boolean;
 
-    // AI/LLM integration options
-    aiEnabled: boolean;
-    aiProvider: string;
-    aiProviderPrecedence: string; // TODO: Is this still supported?
-    aiSystemPrompt: string;
-    aiTemperature: string;
-    openaiApiKey: string;
-    openaiDefaultModel: string;
-    openaiBaseUrl: string;
-    anthropicApiKey: string;
-    anthropicDefaultModel: string;
-    voyageApiKey: string;
-    anthropicBaseUrl: string;
-    ollamaEnabled: boolean;
-    ollamaBaseUrl: string;
-    ollamaDefaultModel: string;
-    codeOpenAiModel: string;
-    aiSelectedProvider: string;
     seenCallToActions: string;
     experimentalFeatures: string;
 }

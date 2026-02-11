@@ -35,7 +35,6 @@
     "sucrase": "3.35.1"
   },
   "devDependencies": {
-    "@anthropic-ai/sdk": "0.74.0",
     "@braintree/sanitize-url": "7.1.2",
     "@electron/remote": "2.1.3",
     "@triliumnext/commons": "workspace:*",
@@ -111,8 +110,6 @@
     "mime-types": "3.0.2",
     "multer": "2.0.2",
     "normalize-strings": "1.1.1",
-    "ollama": "0.6.3",
-    "openai": "6.21.0",
     "rand-token": "1.0.1",
     "safe-compare": "1.1.4",
     "sanitize-filename": "1.6.3",

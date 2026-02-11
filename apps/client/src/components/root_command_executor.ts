@@ -1,10 +1,8 @@
 import dateNoteService from "../services/date_notes.js";
 import froca from "../services/froca.js";
-import noteCreateService from "../services/note_create.js";
 import openService from "../services/open.js";
 import options from "../services/options.js";
 import protectedSessionService from "../services/protected_session.js";
-import toastService from "../services/toast.js";
 import treeService from "../services/tree.js";
 import utils, { openInReusableSplit } from "../services/utils.js";
 import appContext, { type CommandListenerData } from "./app_context.js";
@@ -248,34 +246,4 @@ export default class RootCommandExecutor extends Component {
         }
     }
 
-    async createAiChatCommand() {
-        try {
-            // Create a new AI Chat note at the root level
-            const rootNoteId = "root";
-
-            const result = await noteCreateService.createNote(rootNoteId, {
-                title: "New AI Chat",
-                type: "aiChat",
-                content: JSON.stringify({
-                    messages: [],
-                    title: "New AI Chat"
-                })
-            });
-
-            if (!result.note) {
-                toastService.showError("Failed to create AI Chat note");
-                return;
-            }
-
-            await appContext.tabManager.openTabWithNoteWithHoisting(result.note.noteId, {
-                activate: true
-            });
-
-            toastService.showMessage("Created new AI Chat note");
-        }
-        catch (e) {
-            console.error("Error creating AI Chat note:", e);
-            toastService.showError(`Failed to create AI Chat note: ${(e as Error).message}`);
-        }
-    }
 }

@@ -17,8 +17,7 @@ export const byNoteType: Record<Exclude<NoteType, "book">, string | null> = {
     render: null,
     search: null,
     text: null,
-    webView: null,
-    aiChat: null
+    webView: null
 };
 
 export const byBookType: Record<ViewTypeOptions, string | null> = {

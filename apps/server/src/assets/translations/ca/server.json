@@ -1,108 +1,107 @@
 {
-  "keyboard_actions": {
-    "back-in-note-history": "Navega a la nota previa a l'historial",
-    "forward-in-note-history": "Navega a la següent nota a l'historial",
-    "dialogs": "Diàlegs",
-    "other": "Altres",
-    "open-jump-to-note-dialog": "Obre \"Salta a la nota\"",
-    "open-command-palette": "Obre el panell de comandes"
-  },
-  "login": {
-    "title": "Inicia sessió",
-    "password": "Contrasenya",
-    "button": "Inicia sessió"
-  },
-  "set_password": {
-    "password": "Contrasenya"
-  },
-  "setup": {
-    "next": "Següent",
-    "title": "Configuració"
-  },
-  "setup_sync-from-desktop": {
-    "step6-here": "aquí"
-  },
-  "setup_sync-from-server": {
-    "server-host-placeholder": "https://<hostname>:<port>",
-    "proxy-server-placeholder": "https://<hostname>:<port>",
-    "note": "Nota:",
-    "password": "Contrasenya",
-    "password-placeholder": "Contrasenya",
-    "back": "Torna"
-  },
-  "setup_sync-in-progress": {
-    "outstanding-items-default": "N/A"
-  },
-  "share_page": {
-    "parent": "pare:"
-  },
-  "weekdays": {
-    "monday": "Dilluns",
-    "tuesday": "Dimarts",
-    "wednesday": "Dimecres",
-    "thursday": "Dijous",
-    "friday": "Divendres",
-    "saturday": "Dissabte",
-    "sunday": "Diumenge"
-  },
-  "months": {
-    "january": "Gener",
-    "february": "Febrer",
-    "march": "Març",
-    "april": "Abril",
-    "may": "Maig",
-    "june": "Juny",
-    "july": "Juliol",
-    "august": "Agost",
-    "september": "Setembre",
-    "october": "Octubre",
-    "november": "Novembre",
-    "december": "Desembre"
-  },
-  "special_notes": {
-    "search_prefix": "Cerca:"
-  },
-  "hidden-subtree": {
-    "spacer-title": "Espaiador",
-    "calendar-title": "Calendari",
-    "bookmarks-title": "Marcadors",
-    "settings-title": "Ajustos",
-    "options-title": "Opcions",
-    "appearance-title": "Aparença",
-    "shortcuts-title": "Dreceres",
-    "images-title": "Imatges",
-    "spellcheck-title": "Correció ortogràfica",
-    "password-title": "Contrasenya",
-    "multi-factor-authentication-title": "MFA",
-    "etapi-title": "ETAPI",
-    "backup-title": "Còpia de seguretat",
-    "sync-title": "Sincronització",
-    "ai-llm-title": "AI/LLM",
-    "other": "Altres",
-    "advanced-title": "Avançat",
-    "inbox-title": "Safata d'entrada"
-  },
-  "notes": {
-    "duplicate-note-suffix": "(dup)"
-  },
-  "tray": {
-    "bookmarks": "Marcadors"
-  },
-  "modals": {
-    "error_title": "Error"
-  },
-  "share_theme": {
-    "search_placeholder": "Cerca...",
-    "subpages": "Subpàgines:",
-    "expand": "Expandeix"
-  },
-  "hidden_subtree_templates": {
-    "description": "Descripció",
-    "calendar": "Calendari",
-    "table": "Taula",
-    "geolocation": "Geolocalització",
-    "board": "Tauler",
-    "status": "Estat",
-    "board_status_done": "Fet"
-  }
+    "keyboard_actions": {
+        "back-in-note-history": "Navega a la nota previa a l'historial",
+        "forward-in-note-history": "Navega a la següent nota a l'historial",
+        "dialogs": "Diàlegs",
+        "other": "Altres",
+        "open-jump-to-note-dialog": "Obre \"Salta a la nota\"",
+        "open-command-palette": "Obre el panell de comandes"
+    },
+    "login": {
+        "title": "Inicia sessió",
+        "password": "Contrasenya",
+        "button": "Inicia sessió"
+    },
+    "set_password": {
+        "password": "Contrasenya"
+    },
+    "setup": {
+        "next": "Següent",
+        "title": "Configuració"
+    },
+    "setup_sync-from-desktop": {
+        "step6-here": "aquí"
+    },
+    "setup_sync-from-server": {
+        "server-host-placeholder": "https://<hostname>:<port>",
+        "proxy-server-placeholder": "https://<hostname>:<port>",
+        "note": "Nota:",
+        "password": "Contrasenya",
+        "password-placeholder": "Contrasenya",
+        "back": "Torna"
+    },
+    "setup_sync-in-progress": {
+        "outstanding-items-default": "N/A"
+    },
+    "share_page": {
+        "parent": "pare:"
+    },
+    "weekdays": {
+        "monday": "Dilluns",
+        "tuesday": "Dimarts",
+        "wednesday": "Dimecres",
+        "thursday": "Dijous",
+        "friday": "Divendres",
+        "saturday": "Dissabte",
+        "sunday": "Diumenge"
+    },
+    "months": {
+        "january": "Gener",
+        "february": "Febrer",
+        "march": "Març",
+        "april": "Abril",
+        "may": "Maig",
+        "june": "Juny",
+        "july": "Juliol",
+        "august": "Agost",
+        "september": "Setembre",
+        "october": "Octubre",
+        "november": "Novembre",
+        "december": "Desembre"
+    },
+    "special_notes": {
+        "search_prefix": "Cerca:"
+    },
+    "hidden-subtree": {
+        "spacer-title": "Espaiador",
+        "calendar-title": "Calendari",
+        "bookmarks-title": "Marcadors",
+        "settings-title": "Ajustos",
+        "options-title": "Opcions",
+        "appearance-title": "Aparença",
+        "shortcuts-title": "Dreceres",
+        "images-title": "Imatges",
+        "spellcheck-title": "Correció ortogràfica",
+        "password-title": "Contrasenya",
+        "multi-factor-authentication-title": "MFA",
+        "etapi-title": "ETAPI",
+        "backup-title": "Còpia de seguretat",
+        "sync-title": "Sincronització",
+        "other": "Altres",
+        "advanced-title": "Avançat",
+        "inbox-title": "Safata d'entrada"
+    },
+    "notes": {
+        "duplicate-note-suffix": "(dup)"
+    },
+    "tray": {
+        "bookmarks": "Marcadors"
+    },
+    "modals": {
+        "error_title": "Error"
+    },
+    "share_theme": {
+        "search_placeholder": "Cerca...",
+        "subpages": "Subpàgines:",
+        "expand": "Expandeix"
+    },
+    "hidden_subtree_templates": {
+        "description": "Descripció",
+        "calendar": "Calendari",
+        "table": "Taula",
+        "geolocation": "Geolocalització",
+        "board": "Tauler",
+        "status": "Estat",
+        "board_status_done": "Fet"
+    }
 }

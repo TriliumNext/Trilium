@@ -105,16 +105,6 @@ export default function buildLaunchBarConfig() {
             icon: "bx bxs-network-chart"
         },
         {
-            id: "_lbLlmChat",
-            title: t("hidden-subtree.llm-chat-title"),
-            type: "launcher",
-            builtinWidget: "aiChatLauncher",
-            icon: "bx bx-bot",
-            attributes: [
-                { type: "label", name: "desktopOnly" }
-            ]
-        },
-        {
             id: "_lbCalendar",
             ...sharedLaunchers.calendar
         },

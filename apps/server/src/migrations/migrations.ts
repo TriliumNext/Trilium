@@ -6,6 +6,11 @@
 
 // Migrations should be kept in descending order, so the latest migration is first.
 const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Migrate aiChat notes to code notes since LLM integration has been removed
+    {
+        version: 234,
+        module: async () => import("./0234__migrate_ai_chat_to_code.js")
+    },
     // Migrate geo map to collection
     {
         version: 233,

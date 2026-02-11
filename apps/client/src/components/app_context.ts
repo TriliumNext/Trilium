@@ -101,8 +101,6 @@ export type CommandMappings = {
     showRevisions: CommandData & {
         noteId?: string | null;
     };
-    showLlmChat: CommandData;
-    createAiChat: CommandData;
     showOptions: CommandData & {
         section: string;
     };
