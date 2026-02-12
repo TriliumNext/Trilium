@@ -32,26 +32,6 @@ declare module "katex/contrib/auto-render" {
     export default renderMathInElement;
 }
 
-import * as L from "leaflet";
-
-declare module "leaflet" {
-    interface GPXMarker {
-        startIcon?: DivIcon | Icon | string | undefined;
-        endIcon?: DivIcon | Icon | string | undefined;
-        wptIcons?: {
-            [key: string]: DivIcon | Icon | string;
-        };
-        wptTypeIcons?: {
-            [key: string]: DivIcon | Icon | string;
-        };
-        pointMatchers?: Array<{ regex: RegExp; icon: DivIcon | Icon | string}>;
-    }
-
-    interface GPXOptions {
-        markers?: GPXMarker | undefined;
-    }
-}
-
 declare global {
     interface Navigator {
         /** Returns a boolean indicating whether the browser is running in standalone mode. Available on Apple's iOS Safari only. */

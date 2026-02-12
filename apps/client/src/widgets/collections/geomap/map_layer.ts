@@ -5,7 +5,8 @@ export interface MapLayer {
 
 interface VectorLayer extends MapLayer {
     type: "vector";
-    style: string | (() => Promise<{}>)
+    style: string | (() => Promise<{}>);
+    styleFallback: {};
 }
 
 interface RasterLayer extends MapLayer {
@@ -13,6 +14,9 @@ interface RasterLayer extends MapLayer {
     url: string;
     attribution: string;
 }
+
+// Minimal empty style used as a placeholder while the real style loads asynchronously.
+const EMPTY_STYLE = { version: 8, sources: {}, layers: [] };
 
 export const MAP_LAYERS: Record<string, VectorLayer | RasterLayer> = {
     "openstreetmap": {
@@ -24,28 +28,33 @@ export const MAP_LAYERS: Record<string, VectorLayer | RasterLayer> = {
     "versatiles-colorful": {
         name: "VersaTiles Colorful",
         type: "vector",
-        style: async () => (await import("./styles/colorful/en.json")).default
+        style: async () => (await import("./styles/colorful/en.json")).default,
+        styleFallback: EMPTY_STYLE
     },
     "versatiles-eclipse": {
         name: "VersaTiles Eclipse",
         type: "vector",
         style: async () => (await import("./styles/eclipse/en.json")).default,
+        styleFallback: EMPTY_STYLE,
         isDarkTheme: true
     },
     "versatiles-graybeard": {
         name: "VersaTiles Graybeard",
         type: "vector",
-        style: async () => (await import("./styles/graybeard/en.json")).default
+        style: async () => (await import("./styles/graybeard/en.json")).default,
+        styleFallback: EMPTY_STYLE
     },
     "versatiles-neutrino": {
         name: "VersaTiles Neutrino",
         type: "vector",
-        style: async () => (await import("./styles/neutrino/en.json")).default
+        style: async () => (await import("./styles/neutrino/en.json")).default,
+        styleFallback: EMPTY_STYLE
     },
     "versatiles-shadow": {
         name: "VersaTiles Shadow",
         type: "vector",
         style: async () => (await import("./styles/shadow/en.json")).default,
+        styleFallback: EMPTY_STYLE,
         isDarkTheme: true
     }
 };

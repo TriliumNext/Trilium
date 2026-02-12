@@ -1,4 +1,4 @@
-import type { LeafletMouseEvent } from "leaflet";
+import type { GeoMouseEvent } from "../widgets/collections/geomap/map.js";
 
 import appContext, { type CommandNames } from "../components/app_context.js";
 import { t } from "../services/i18n.js";
@@ -16,7 +16,7 @@ function openContextMenu(notePath: string, e: ContextMenuEvent, viewScope: ViewS
     });
 }
 
-function getItems(e: ContextMenuEvent | LeafletMouseEvent): MenuItem<CommandNames>[] {
+function getItems(e: ContextMenuEvent | GeoMouseEvent): MenuItem<CommandNames>[] {
     const ntxId = getNtxId(e);
     const isMobileSplitOpen = isMobile() && appContext.tabManager.getNoteContextById(ntxId).getMainContext().getSubContexts().length > 1;
 
@@ -28,7 +28,7 @@ function getItems(e: ContextMenuEvent | LeafletMouseEvent): MenuItem<CommandName
     ];
 }
 
-function handleLinkContextMenuItem(command: string | undefined, e: ContextMenuEvent | LeafletMouseEvent, notePath: string, viewScope = {}, hoistedNoteId: string | null = null) {
+function handleLinkContextMenuItem(command: string | undefined, e: ContextMenuEvent | GeoMouseEvent, notePath: string, viewScope = {}, hoistedNoteId: string | null = null) {
     if (!hoistedNoteId) {
         hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId ?? null;
     }
@@ -52,7 +52,7 @@ function handleLinkContextMenuItem(command: string | undefined, e: ContextMenuEv
     return false;
 }
 
-function getNtxId(e: ContextMenuEvent | LeafletMouseEvent) {
+function getNtxId(e: ContextMenuEvent | GeoMouseEvent) {
     if (utils.isDesktop()) {
         const subContexts = appContext.tabManager.getActiveContext()?.getSubContexts();
         if (!subContexts) return null;
