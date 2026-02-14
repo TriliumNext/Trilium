@@ -14,7 +14,7 @@ beforeEach(() => {
     vi.resetAllMocks();
 });
 
-test("should find inherites attributes", () => {
+test("should find inherited attributes", () => {
     // Consider following search string:
     // `~template.title = "Task template" AND #is_done = false`.
     // This query narrows notes to task template instances and then filters by
