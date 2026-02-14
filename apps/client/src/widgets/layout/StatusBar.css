@@ -37,6 +37,10 @@
                 &:hover {
                     background: var(--input-background-color);
                 }
+
+                .text {
+                    white-space: nowrap;
+                }
             }
 
             .status-bar-dropdown-button {

@@ -265,13 +265,6 @@ body.desktop .options-section:not(.tn-no-card) {
     margin-bottom: 6px;
 }
 
-.options-section .alert {
-    margin-bottom: 8px;
-    background: var(--alert-bar-background) !important;
-    border-radius: 8px;
-    font-size: .85em;
-}
-
 nav.options-section-tabs {
     min-width: var(--options-card-min-width);
     max-width: var(--options-card-max-width);

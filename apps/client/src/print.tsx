@@ -18,6 +18,10 @@ export type PrintReport = {
 } | {
     type: "collection";
     ignoredNoteIds: string[];
+} | {
+    type: "error";
+    message: string;
+    stack?: string;
 };
 
 async function main() {

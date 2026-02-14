@@ -6,7 +6,7 @@
 
 .attachment-list .links-wrapper {
     font-size: larger;
-    margin-bottom: 15px;
+    margin-block: 12px;
     display: flex;
     justify-content: space-between;
     align-items: baseline;

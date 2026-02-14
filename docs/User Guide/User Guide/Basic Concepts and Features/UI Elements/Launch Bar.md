@@ -57,11 +57,13 @@ Right click either the _Available launchers_ or _Visible launchers_ sections and
 
 1.  **Note Launcher**  
     A note launcher will simply navigate to a specified note.
+    
     1.  Set the `target` promoted attribute to the note to navigate to.
     2.  Optionally, set `hoistedNote` to hoist a particular note. See <a class="reference-link" href="../Navigation/Note%20Hoisting.md">Note Hoisting</a> for more information.
     3.  Optionally, set a `keyboardShortcut` to trigger the launcher.
 2.  **Script Launcher**  
     An advanced launcher which will run a script upon pressing. See <a class="reference-link" href="../../Scripting.md">Scripting</a> for more information.
+    
     1.  Set `script` to point to the desired script to run.
     2.  Optionally, set a `keyboardShortcut` to trigger the launcher.
 3.  **Custom Widget**

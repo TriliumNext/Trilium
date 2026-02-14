@@ -1180,9 +1180,6 @@
     "note_not_found": "الملاحظة {{noteId}} غير موجودة!",
     "cannot_match_transform": "تعذر مطابقة التحويل: {{transform}}"
   },
-  "web_view": {
-    "web_view": "عرض الويب"
-  },
   "consistency_checks": {
     "title": "فحوصات التناسق"
   },

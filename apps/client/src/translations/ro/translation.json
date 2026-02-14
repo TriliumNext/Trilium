@@ -1376,11 +1376,6 @@
     "enable_vim_keybindings": "Permite utilizarea combinațiilor de taste în stil Vim pentru notițele de tip cod (fără modul ex)",
     "use_vim_keybindings_in_code_notes": "Combinații de taste Vim"
   },
-  "web_view": {
-    "create_label": "Pentru a începe, creați o etichetă cu adresa URL de încorporat, e.g. #webViewSrc=\"https://www.google.com\"",
-    "embed_websites": "Notițele de tip „Vizualizare web” permit încorporarea site-urilor web în Trilium.",
-    "web_view": "Vizualizare web"
-  },
   "wrap_lines": {
     "enable_line_wrap": "Activează trecerea automată pe rândul următor (poate necesita o reîncărcare a interfeței pentru a avea efect)",
     "wrap_lines_in_code_notes": "Trecerea automată pe rândul următor în notițe de cod"

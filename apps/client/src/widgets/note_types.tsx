@@ -43,7 +43,8 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
     },
     protectedSession: {
         view: () => import("./type_widgets/ProtectedSession"),
-        className: "protected-session-password-component"
+        className: "protected-session-password-component",
+        isFullHeight: true
     },
     book: {
         view: () => import("./type_widgets/Book"),

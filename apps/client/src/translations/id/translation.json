@@ -50,7 +50,8 @@
     "save": "Simpan",
     "branch_prefix_saved": "Prefiks cabang telah disimpan.",
     "branch_prefix_saved_multiple": "Prefix cabang telah disimpan pada {{count}} cabang.",
-    "affected_branches": "Cabang terdampak ({{count}}):"
+    "affected_branches": "Cabang terdampak ({{count}}):",
+    "edit_branch_prefix": "Sunting awalan cabang"
   },
   "bulk_actions": {
     "bulk_actions": "Aksi borongan",
@@ -61,7 +62,10 @@
     "execute_bulk_actions": "Eksekusi aksi borongan",
     "bulk_actions_executed": "Aksi borongan telah di eksekusi dengan sukses.",
     "none_yet": "Belum ada... tambahkan aksi dengan memilih salah satu dari aksi di atas.",
-    "labels": "Label-label"
+    "labels": "Label-label",
+    "relations": "Hubungan",
+    "notes": "Catatan",
+    "other": "Lainnya"
   },
   "confirm": {
     "cancel": "Batal",
@@ -80,6 +84,8 @@
     "no_note_to_delete": "Tidak ada Catatan yang akan dihapus (hanya duplikat)."
   },
   "clone_to": {
-    "clone_notes_to": "Duplikat catatan ke…"
+    "clone_notes_to": "Duplikat catatan ke…",
+    "help_on_links": "Bantuan pada tautan",
+    "notes_to_clone": "Catatan untuk kloning"
   }
 }

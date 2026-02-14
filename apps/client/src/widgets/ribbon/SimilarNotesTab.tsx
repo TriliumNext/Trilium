@@ -1,3 +1,5 @@
+import "./SimilarNotesTab.css";
+
 import { SimilarNoteResponse } from "@triliumnext/commons";
 import { useEffect, useState } from "preact/hooks";
 
@@ -33,7 +35,7 @@ export default function SimilarNotesTab({ note }: Pick<TabContext, "note">) {
                                 notePath={notePath}
                                 noTnLink
                                 style={{
-                                    "font-size": 20 * (1 - 1 / (1 + score))
+                                    "font-size": (1 - 1 / (1 + score)) + "em"
                                 }}
                             />
                         ))}

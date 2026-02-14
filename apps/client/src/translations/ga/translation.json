@@ -27,7 +27,8 @@
     "show-cheatsheet": "Taispeáin Bileog leideanna",
     "toggle-zen-mode": "Mód Zen",
     "new-version-available": "Nuashonrú Nua ar Fáil",
-    "download-update": "Faigh Leagan {{latestVersion}}"
+    "download-update": "Faigh Leagan {{latestVersion}}",
+    "search_notes": "Cuardaigh nótaí"
   },
   "about": {
     "title": "Maidir le Trilium Notes",
@@ -764,7 +765,8 @@
     "note_revisions": "Athbhreithnithe nóta",
     "error_cannot_get_branch_id": "Ní féidir aitheantas brainse a fháil do NotePad '{{notePath}}'",
     "error_unrecognized_command": "Ordú gan aitheantas {{command}}",
-    "backlinks": "Naisc ar ais"
+    "backlinks": "Naisc ar ais",
+    "content_language_switcher": "Teanga an ábhair: {{language}}"
   },
   "note_icon": {
     "change_note_icon": "Deilbhín nóta athraithe",
@@ -919,7 +921,8 @@
     "unknown_search_option": "Rogha cuardaigh anaithnid {{searchOptionName}}",
     "search_note_saved": "Tá an nóta cuardaigh sábháilte i {{- notePathTitle}}",
     "actions_executed": "Tá gníomhartha curtha i gcrích.",
-    "view_options": "Roghanna féachana:"
+    "view_options": "Roghanna féachana:",
+    "option": "rogha"
   },
   "similar_notes": {
     "title": "Nótaí Comhchosúla",
@@ -1072,11 +1075,6 @@
   "render": {
     "note_detail_render_help_1": "Taispeántar an nóta cabhrach seo mar nach bhfuil aon ghaol riachtanach ag an nóta seo den chineál Render HTML le go bhfeidhmeoidh sé i gceart.",
     "note_detail_render_help_2": "Úsáidtear cineál nóta HTML rindreála le haghaidh <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">scriptithe</a>. Go hachomair, tá nóta cóid HTML agat (le roinnt JavaScript más féidir) agus déanfaidh an nóta seo é a rindreáil. Chun go n-oibreoidh sé, ní mór duit <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">gaol</a> ar a dtugtar \"renderNote\" a shainiú ag pointeáil chuig an nóta HTML atá le rindreáil."
-  },
-  "web_view": {
-    "web_view": "Radharc Gréasáin",
-    "embed_websites": "Nóta den chineál Gréasáin a ligeann duit suíomhanna gréasáin a leabú i Trilium.",
-    "create_label": "Chun tús a chur leis, cruthaigh lipéad le seoladh URL ar mhaith leat a leabú, m.sh. #webViewSrc=\"https://www.google.com\""
   },
   "backend_log": {
     "refresh": "Athnuachan"
@@ -2322,5 +2320,15 @@
     "title_many": "{{count}} cluaisíní",
     "title_other": "{{count}} cluaisíní",
     "more_options": "Tuilleadh roghanna"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "Leabharmharcanna"
+  },
+  "web_view_setup": {
+    "title": "Cruthaigh radharc beo de leathanach gréasáin go díreach isteach i Trilium",
+    "url_placeholder": "Cuir isteach nó greamaigh seoladh an tsuímh ghréasáin, mar shampla https://triliumnotes.org",
+    "create_button": "Cruthaigh Radharc Gréasáin",
+    "invalid_url_title": "Seoladh neamhbhailí",
+    "invalid_url_message": "Cuir isteach seoladh gréasáin bailí, mar shampla https://triliumnotes.org."
   }
 }

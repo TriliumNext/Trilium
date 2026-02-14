@@ -57,7 +57,7 @@ export function ExternallyControlledCollapsible({ title, children, className, ex
             "with-transition": transitionEnabled
         })}>
             <button
-                className="collapsible-title"
+                className="collapsible-title tn-low-profile"
                 onClick={() => setExpanded(!expanded)}
                 aria-expanded={expanded}
                 aria-controls={contentId}

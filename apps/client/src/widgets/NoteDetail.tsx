@@ -370,7 +370,33 @@ function showToast(type: "printing" | "exporting_pdf", progress: number = 0) {
 }
 
 function handlePrintReport(printReport?: PrintReport) {
-    if (printReport?.type === "collection" && printReport.ignoredNoteIds.length > 0) {
+    if (!printReport) return;
+
+    if (printReport.type === "error") {
+        toast.showPersistent({
+            id: "print-error",
+            icon: "bx bx-error-circle",
+            title: t("note_detail.print_report_error_title"),
+            message: printReport.message,
+            buttons: printReport.stack ? [
+                {
+                    text: t("note_detail.print_report_collection_details_button"),
+                    onClick(api) {
+                        api.dismissToast();
+                        dialog.info(<>
+                            <p>{printReport.message}</p>
+                            <details>
+                                <summary>{t("note_detail.print_report_stack_trace")}</summary>
+                                <pre style="font-size: 0.85em; overflow-x: auto;">{printReport.stack}</pre>
+                            </details>
+                        </>, {
+                            title: t("note_detail.print_report_error_title")
+                        });
+                    }
+                }
+            ] : undefined
+        });
+    } else if (printReport.type === "collection" && printReport.ignoredNoteIds.length > 0) {
         toast.showPersistent({
             id: "print-report",
             icon: "bx bx-collection",

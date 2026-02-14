@@ -9,7 +9,7 @@
 		"preview": "pnpm build && vite preview"
 	},
 	"dependencies": {
-		"i18next": "25.8.0",
+		"i18next": "25.8.6",
 		"i18next-http-backend": "3.0.2",
 		"preact": "10.28.3",
 		"preact-iso": "2.11.1",
@@ -18,7 +18,7 @@
 	},
 	"devDependencies": {
 		"@preact/preset-vite": "2.10.3",
-		"eslint": "9.39.2",
+		"eslint": "10.0.0",
 		"eslint-config-preact": "2.0.0",
 		"typescript": "5.9.3",
 		"user-agent-data-types": "0.4.2",

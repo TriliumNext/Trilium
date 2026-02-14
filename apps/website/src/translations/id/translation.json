@@ -61,7 +61,8 @@
         "geomap_title": "Peta Geo",
         "geomap_description": "Rencanakan liburan Anda atau tandai titik minat langsung pada peta geografis menggunakan penanda titik yang dapat disesuaikan. Tampilkan rekaman jalur GPX untuk melacak rencana perjalanan.",
         "presentation_title": "Presentasi",
-        "presentation_description": "Atur informasi ke dalam slide dan presentasikan dalam layar penuh dengan transisi yang mulus. Slide juga dapat diekspor ke PDF agar mudah dibagikan."
+        "presentation_description": "Atur informasi ke dalam slide dan presentasikan dalam layar penuh dengan transisi yang mulus. Slide juga dapat diekspor ke PDF agar mudah dibagikan.",
+        "calendar_description": "Kelola acara pribadi atau profesional Anda menggunakan kalender, dengan dukungan untuk acara sepanjang hari dan beberapa hari. Lihat acara Anda sekilas dengan tampilan mingguan, bulanan, dan tahunan. Interaksi mudah untuk menambahkan atau menyeret acara."
     },
     "faq": {
         "title": "Tanya Jawab",
@@ -72,6 +73,11 @@
         "server_question": "Apakah saya butuh server untuk menjalankan Trilium?"
     },
     "extensibility_benefits": {
-        "share_title": "Bagikan catatan di web"
+        "share_title": "Bagikan catatan di web",
+        "title": "Berbagi & perluasan",
+        "import_export_title": "Impor/ekspor",
+        "import_export_description": "Berinteraksi dengan mudah dengan aplikasi lain menggunakan format Markdown, ENEX, dan OML.",
+        "share_description": "Jika Anda memiliki server, server tersebut dapat digunakan untuk berbagi sebagian catatan Anda dengan orang lain.",
+        "scripting_title": "Pembuatan skrip tingkat lanjut"
     }
 }

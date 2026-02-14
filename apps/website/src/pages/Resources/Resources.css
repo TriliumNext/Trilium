@@ -1,0 +1,24 @@
+.icon-packs .card-content {
+    .card-content-inner {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+    }
+
+    .description {
+        font-size: 0.8em;
+        margin: 0;
+        flex-grow: 1;
+        height: 100%;
+    }
+
+    footer {
+        padding: 0;
+        border: 0;
+        display: flex;
+        align-items: center;
+        margin-top: 1em;
+        justify-content: space-between;
+        flex-grow: 1;
+    }
+}

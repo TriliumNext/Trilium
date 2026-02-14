@@ -285,10 +285,11 @@ function getRenderingType(entity: FNote | FAttachment) {
     }
 
     const mime = "mime" in entity && entity.mime;
+    const isIconPack = entity instanceof FNote && entity.hasLabel("iconPack");
 
     if (type === "file" && mime === "application/pdf") {
         type = "pdf";
-    } else if ((type === "file" || type === "viewConfig") && mime && CODE_MIME_TYPES.has(mime)) {
+    } else if ((type === "file" || type === "viewConfig") && mime && CODE_MIME_TYPES.has(mime) && !isIconPack) {
         type = "code";
     } else if (type === "file" && mime && mime.startsWith("audio/")) {
         type = "audio";

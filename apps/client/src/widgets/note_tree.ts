@@ -1992,7 +1992,7 @@ function buildEnhanceTitle() {
         if (isSubtreeHidden && count > 0) {
             const $badge = $(`<span class="note-indicator-icon subtree-hidden-badge">${count}</span>`);
             $badge.attr("title", t("note_tree.subtree-hidden-tooltip", { count }));
-            $span.find(".fancytree-title").append($badge);
+            $span.append($badge);
         }
     };
 }

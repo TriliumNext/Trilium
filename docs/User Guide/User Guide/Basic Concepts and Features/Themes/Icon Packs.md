@@ -1,12 +1,23 @@
 # Icon Packs
-## Importing an existing icon pack
+> [!IMPORTANT]
+> This feature is still in preview and is available only in the [nightly release](https://docs.triliumnotes.org/user-guide/advanced-usage/nightly-release).
+
+<figure class="image image-style-align-right image_resized" style="width:45.14%;"><img style="aspect-ratio:854/649;" src="Icon Packs_image.png" width="854" height="649"></figure>
+
+By default, Trilium comes with a set of icons called Boxicons v2. Since v0.102.0, custom icon packs allow a wider selection of icons for notes.
 
 Icon packs are specific to Trilium, so they must either be created from scratch (see below) or imported from a ZIP file from a third-party developer.
+
+## Sample icon packs
+
+The Trilium team maintains a few icon packs that are not shipped with Trilium. These icon packs can be found on the official website on the [Resources page](https://triliumnotes.org/resources).
+
+## Importing an existing icon pack
 
 > [!NOTE]
 > **Icon packs are third-party content**
 > 
-> The Trilium maintainers are not responsible for keeping these icon packs up to date. If you have an issue with a specific icon pack, then the issue must be reported to the third-party developer responsible for it, not the Trilium team.
+> Apart from the [sample icon packs](https://triliumnotes.org/resources), the Trilium maintainers are not responsible for keeping icon packs up to date. If you have an issue with a specific icon pack, then the issue must be reported to the third-party developer responsible for it, not the Trilium team.
 
 To import an icon pack:
 

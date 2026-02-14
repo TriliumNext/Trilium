@@ -4,7 +4,7 @@ header {
     top: 0;
     background: var(--header-background-color);
     box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(20px);    
+    backdrop-filter: blur(20px);
     z-index: 1000;
     --gap: 1.25em;
     font-size: 0.8em;
@@ -23,7 +23,7 @@ header {
         justify-items: center;
         text-decoration: none;
         color: inherit;
-        
+
         &:hover { text-decoration: none;}
     }
 
@@ -67,7 +67,7 @@ header {
     }
 }
 
-@media (max-width: 719px) {
+@media (max-width: 719.99px) {
     :root {
         --header-height: 60px;
     }
@@ -87,9 +87,17 @@ header {
 
         .first-row {
             display: flex;
-            justify-content: space-between;
             align-items: center;
             width: 100%;
+            gap: 2em;
+
+            .banner {
+                flex-grow: 1;
+            }
+
+            .social-button {
+                align-items: center;
+            }
         }
 
         .menu-toggle {
@@ -100,7 +108,7 @@ header {
             flex-direction: column;
             max-height: 0;
             overflow: hidden;
-            transition: max-height 200ms ease-in;        
+            transition: max-height 200ms ease-in;
 
             &.mobile-shown {
                 display: flex;
@@ -113,7 +121,7 @@ header {
     header + main {
         margin-top: var(--header-height);
     }
-    
+
     header nav a {
         font-size: 1.25em;
         padding: 0.5em 0;
@@ -142,6 +150,39 @@ header {
         img {
             width: 48px;
             height: 48px;
+        }
+    }
+}
+
+@media ((min-width: 720px) and (max-width: 1115px)) {
+    header {
+        .banner span {
+            display: none;
+        }
+
+        .content-wrapper {
+            width: 100%;
+        }
+
+        .repository-button .social-button {
+            flex-direction: column;
+            align-items: center;
+            font-size: 0.6em;
+        }
+
+        nav {
+            font-size: 0.9em;
+            justify-content: center;
+        }
+
+        .download-button {
+            font-size: 0.8em;
+            padding: 0.5em;
+
+            .text {
+                display: flex;
+                flex-direction: column;
+            }
         }
     }
 }

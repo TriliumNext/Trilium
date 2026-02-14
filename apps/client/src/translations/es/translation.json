@@ -662,7 +662,8 @@
     "show-cheatsheet": "Mostrar hoja de trucos",
     "toggle-zen-mode": "Modo Zen",
     "new-version-available": "Nueva actualización disponible",
-    "download-update": "Obtener versión {{latestVersion}}"
+    "download-update": "Obtener versión {{latestVersion}}",
+    "search_notes": "Buscar notas"
   },
   "zen_mode": {
     "button_exit": "Salir del modo Zen"
@@ -762,7 +763,8 @@
     "error_cannot_get_branch_id": "No se puede obtener el branchID del notePath '{{notePath}}'",
     "error_unrecognized_command": "Comando no reconocido {{command}}",
     "note_revisions": "Revisiones de notas",
-    "backlinks": "Vínculos de retroceso"
+    "backlinks": "Vínculos de retroceso",
+    "content_language_switcher": "Idioma de contenido: {{language}}"
   },
   "note_icon": {
     "change_note_icon": "Cambiar icono de nota",
@@ -915,7 +917,8 @@
     "unknown_search_option": "Opción de búsqueda desconocida {{searchOptionName}}",
     "search_note_saved": "La nota de búsqueda se ha guardado en {{- notePathTitle}}",
     "actions_executed": "Las acciones han sido ejecutadas.",
-    "view_options": "Ver opciones:"
+    "view_options": "Ver opciones:",
+    "option": "opción"
   },
   "similar_notes": {
     "title": "Notas similares",
@@ -1068,11 +1071,6 @@
   "render": {
     "note_detail_render_help_1": "Esta nota de ayuda se muestra porque esta nota de tipo Renderizar HTML no tiene la relación requerida para funcionar correctamente.",
     "note_detail_render_help_2": "El tipo de nota Render HTML es usado para <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">scripting</a>. De forma resumida, tiene una nota con código HTML (opcionalmente con algo de JavaScript) y esta nota la renderizará. Para que funcione, es necesario definir una <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">relación</a> llamada \"renderNote\" apuntando a la nota HTML nota a renderizar."
-  },
-  "web_view": {
-    "web_view": "Vista web",
-    "embed_websites": "La nota de tipo Web View le permite insertar sitios web en Trilium.",
-    "create_label": "Para comenzar, por favor cree una etiqueta con una dirección URL que desee empotrar, e.g. #webViewSrc=\"https://www.google.com\""
   },
   "backend_log": {
     "refresh": "Refrescar"
@@ -1574,7 +1572,8 @@
     "description": "Descripción",
     "reload_app": "Vuelva a cargar la aplicación para aplicar los cambios",
     "set_all_to_default": "Establecer todos los accesos directos al valor predeterminado",
-    "confirm_reset": "¿Realmente desea restablecer todos los atajos de teclado a sus valores predeterminados?"
+    "confirm_reset": "¿Realmente desea restablecer todos los atajos de teclado a sus valores predeterminados?",
+    "no_results": "No se encontraron atajos que coincidan con '{{filter}} '"
   },
   "spellcheck": {
     "title": "Revisión ortográfica",
@@ -1781,7 +1780,9 @@
     "print_report_collection_content_other": "{{count}} notas en la colección no se pueden imprimir porque no son compatibles o están protegidas.",
     "print_report_title": "Imprimir informe",
     "print_report_collection_details_button": "Ver detalles",
-    "print_report_collection_details_ignored_notes": "Notas ignoradas"
+    "print_report_collection_details_ignored_notes": "Notas ignoradas",
+    "print_report_stack_trace": "Rastreo de pila",
+    "print_report_error_title": "Fallo al imprimir"
   },
   "note_title": {
     "placeholder": "escriba el título de la nota aquí...",
@@ -2292,5 +2293,15 @@
     "title_many": "{{count}} pestañas",
     "title_other": "{{count}} pestañas",
     "more_options": "Más opciones"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "Marcadores"
+  },
+  "web_view_setup": {
+    "title": "Crear una vista en vivo de una página web directamente en Trilium",
+    "url_placeholder": "Ingresar o pegar la dirección del sitio web, por ejemplo https://triliumnotes.org",
+    "create_button": "Crear Vista Web",
+    "invalid_url_title": "Dirección inválida",
+    "invalid_url_message": "Ingrese una dirección web válida, por ejemplo https://triliumnotes.org."
   }
 }

@@ -95,7 +95,7 @@ export default defineConfig(() => ({
             output: {
                 entryFileNames: (chunk) => {
                     // We enforce a hash in the main index file to avoid caching issues, this only works because we have the HTML entry point.
-                    if (chunk.name === "index") {
+                    if (chunk.name === "index" || chunk.name === "print") {
                         return "src/[name]-[hash].js";
                     }
 

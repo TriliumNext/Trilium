@@ -800,3 +800,18 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
     background: var(--hover-item-background-color);
     color: var(--hover-item-text-color);
 }
+
+/*
+ * Alert bars
+ */
+
+div.alert {
+    margin-bottom: 8px;
+    background: var(--alert-bar-background) !important;
+    border-radius: 8px;
+    font-size: .85em;
+}
+
+div.alert p + p {
+    margin-block: 1em 0;
+}

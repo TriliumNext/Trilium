@@ -186,7 +186,8 @@
   "geo-map": {
     "create-child-note-title": "Crea una nota figlia e aggiungila alla mappa",
     "create-child-note-instruction": "Clicca sulla mappa per creare una nuova nota qui o premi Escape per uscire.",
-    "unable-to-load-map": "Impossibile caricare la mappa."
+    "unable-to-load-map": "Impossibile caricare la mappa.",
+    "create-child-note-text": "Aggiungi indicatore"
   },
   "geo-map-context": {
     "open-location": "Apri la posizione",
@@ -422,7 +423,8 @@
     "unknown_search_option": "Opzione di ricerca sconosciuta {{searchOptionName}}",
     "search_note_saved": "La nota di ricerca è stata salvata in {{- notePathTitle}}",
     "actions_executed": "Le azioni sono state eseguite.",
-    "view_options": "Opzioni di visualizzazione:"
+    "view_options": "Opzioni di visualizzazione:",
+    "option": "opzione"
   },
   "modal": {
     "close": "Chiudi",
@@ -1241,7 +1243,8 @@
     "show-cheatsheet": "Mostra il foglietto illustrativo",
     "toggle-zen-mode": "Modalità Zen",
     "new-version-available": "Nuovo aggiornamento disponibile",
-    "download-update": "Ottieni la versione {{latestVersion}}"
+    "download-update": "Ottieni la versione {{latestVersion}}",
+    "search_notes": "Cerca note"
   },
   "zen_mode": {
     "button_exit": "Esci dalla modalità Zen"
@@ -1340,7 +1343,9 @@
     "delete_this_note": "Elimina questa nota",
     "note_revisions": "Revisioni delle note",
     "error_cannot_get_branch_id": "Impossibile ottenere branchId per notePath '{{notePath}}'",
-    "error_unrecognized_command": "Comando non riconosciuto {{command}}"
+    "error_unrecognized_command": "Comando non riconosciuto {{command}}",
+    "backlinks": "Backlinks",
+    "content_language_switcher": "Lingua dei contenuti: {{language}}"
   },
   "note_icon": {
     "change_note_icon": "Cambia icona nota",
@@ -1580,11 +1585,6 @@
   "render": {
     "note_detail_render_help_1": "Questa nota di aiuto viene visualizzata perché questa nota di tipo Render HTML non ha la relazione richiesta per funzionare correttamente.",
     "note_detail_render_help_2": "Il tipo di nota HTML Render viene utilizzato per lo <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">scripting</a>. In breve, si ottiene una nota in codice HTML (opzionalmente con un po' di JavaScript) che verrà visualizzata. Per farla funzionare, è necessario definire una <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">relazione</a> denominata \"renderNote\" che punti alla nota HTML da visualizzare."
-  },
-  "web_view": {
-    "web_view": "Visualizzazione Web",
-    "embed_websites": "La nota di tipo Web View consente di incorporare siti web in Trilium.",
-    "create_label": "Per iniziare, crea un'etichetta con l'indirizzo URL che desideri incorporare, ad esempio #webViewSrc=\"https://www.google.com\""
   },
   "vacuum_database": {
     "title": "Pulizia del database",
@@ -2145,7 +2145,7 @@
     "background_effects_title": "Gli effetti di sfondo sono ora stabili",
     "background_effects_message": "Sui dispositivi Windows, gli effetti di sfondo sono ora completamente stabili. Gli effetti di sfondo aggiungono un tocco di colore all'interfaccia utente sfocando lo sfondo retrostante. Questa tecnica è utilizzata anche in altre applicazioni come Esplora risorse di Windows.",
     "background_effects_button": "Abilita gli effetti di sfondo",
-    "dismiss": "Congedare",
+    "dismiss": "Chiudi",
     "new_layout_title": "Nuovo layout",
     "new_layout_message": "Abbiamo introdotto un layout modernizzato per Trilium. La barra multifunzione è stata rimossa e integrata perfettamente nell'interfaccia principale, con una nuova barra di stato e sezioni espandibili (come gli attributi promossi) che assumono le funzioni chiave.\n\nIl nuovo layout è abilitato di default e può essere temporaneamente disabilitato tramite Opzioni → Aspetto.",
     "new_layout_button": "Maggiori informazioni"
@@ -2281,5 +2281,24 @@
     "pages_other": "{{count}} pagine",
     "pages_alt": "Pagina {{pageNumber}}",
     "pages_loading": "Caricamento in corso..."
+  },
+  "web_view_setup": {
+    "title": "Crea una visualizzazione live di una pagina web direttamente in Trilium",
+    "url_placeholder": "Inserisci o incolla l'indirizzo del sito web, ad esempio https://triliumnotes.org",
+    "create_button": "Crea vista Web",
+    "invalid_url_title": "Indirizzo non valido",
+    "invalid_url_message": "Inserisci un indirizzo web valido, ad esempio https://triliumnotes.org."
+  },
+  "platform_indicator": {
+    "available_on": "Disponibile su {{platform}}"
+  },
+  "mobile_tab_switcher": {
+    "title_one": "Scheda {{count}}",
+    "title_many": "Schede {{count}}",
+    "title_other": "Schede {{count}}",
+    "more_options": "Altre opzioni"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "Segnalibri"
   }
 }

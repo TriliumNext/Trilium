@@ -662,7 +662,8 @@
     "show-cheatsheet": "顯示快捷鍵說明",
     "toggle-zen-mode": "禪模式",
     "new-version-available": "發現新更新",
-    "download-update": "取得版本 {{latestVersion}}"
+    "download-update": "取得版本 {{latestVersion}}",
+    "search_notes": "搜尋筆記"
   },
   "sync_status": {
     "unknown": "<p>同步狀態將在下一次同步嘗試開始後顯示。</p><p>點擊以立即觸發同步。</p>",
@@ -758,7 +759,8 @@
     "error_cannot_get_branch_id": "無法獲取 notePath '{{notePath}}' 的 branchId",
     "error_unrecognized_command": "無法識別的命令 {{command}}",
     "note_revisions": "筆記歷史版本",
-    "backlinks": "反向連結"
+    "backlinks": "反向連結",
+    "content_language_switcher": "內文語言：{{language}}"
   },
   "note_icon": {
     "change_note_icon": "更改筆記圖標",
@@ -910,7 +912,8 @@
     "unknown_search_option": "未知的搜尋選項 {{searchOptionName}}",
     "search_note_saved": "搜尋筆記已儲存至 {{- notePathTitle}}",
     "actions_executed": "已執行操作。",
-    "view_options": "查看選項："
+    "view_options": "查看選項：",
+    "option": "選項"
   },
   "similar_notes": {
     "title": "相似筆記",
@@ -1063,11 +1066,6 @@
   "render": {
     "note_detail_render_help_1": "之所以顯示此說明筆記，是因為該類型的渲染 HTML 沒有設定好必須的關聯。",
     "note_detail_render_help_2": "渲染筆記類型用於編寫 <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">腳本</a>。簡單說就是您可以寫HTML程式碼（或者加上一些JavaScript程式碼）， 然後這個筆記會把頁面渲染出來。要使其正常工作，您需要定義一個名為 \"renderNote\" 的 <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">關聯</a> 指向要呈現的 HTML 筆記。"
-  },
-  "web_view": {
-    "web_view": "網頁顯示",
-    "embed_websites": "網頁顯示類型的筆記允許您將網站嵌入至 Trilium 中。",
-    "create_label": "首先，請新增一個帶有您要嵌入的 URL 地址的標籤，例如 #webViewSrc=\"https://www.bing.com\""
   },
   "backend_log": {
     "refresh": "重新整理"
@@ -2272,9 +2270,13 @@
   },
   "mobile_tab_switcher": {
     "more_options": "更多選項",
-    "title_one": "{{count}} 個分頁"
+    "title_one": "{{count}} 個分頁",
+    "title_other": ""
   },
   "platform_indicator": {
     "available_on": "可於 {{platform}} 使用"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "書籤"
   }
 }

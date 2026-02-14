@@ -1271,11 +1271,6 @@
     "start_dragging_relations": "Comece arrastando as relações daqui e solte-as em outra nota.",
     "cannot_match_transform": "Não foi possível combinar a transformação: {{transform}}"
   },
-  "web_view": {
-    "web_view": "Web View",
-    "embed_websites": "Nota do tipo Visualização Web permite que você incorpore sites dentro do Trilium.",
-    "create_label": "Para começar, crie uma etiqueta com um endereço URL que deseja incorporar, por exemplo, #webViewSrc=\"https://www.google.com\""
-  },
   "backend_log": {
     "refresh": "Recarregar"
   },

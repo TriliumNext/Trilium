@@ -1068,11 +1068,6 @@
     "note_detail_render_help_1": "Esta nota de ajuda é mostrada porque esta nota do tipo Renderizar HTML não possui a relação necessária para funcionar corretamente.",
     "note_detail_render_help_2": "O tipo de nota Renderizar HTML é usado para <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">automação</a>. Em suma, tem uma nota de código HTML (opcionalmente com algum JavaScript) e esta nota irá renderizá-la. Para fazê-lo funcionar, deve definir uma <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">relação</a> chamada \"renderNote\" que aponta para a nota HTML a ser renderizada."
   },
-  "web_view": {
-    "web_view": "Web View",
-    "embed_websites": "Nota do tipo Visualização Web permite que incorpore sites no Trilium.",
-    "create_label": "Para começar, crie uma etiqueta com um endereço URL que deseja incorporar, por exemplo, #webViewSrc=\"https://www.google.com\""
-  },
   "backend_log": {
     "refresh": "Recarregar"
   },

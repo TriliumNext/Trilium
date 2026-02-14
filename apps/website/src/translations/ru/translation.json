@@ -70,7 +70,8 @@
     "header": {
         "get-started": "Начало работы",
         "support-us": "Поддержите нас",
-        "documentation": "Документация"
+        "documentation": "Документация",
+        "resources": "Ресурсы"
     },
     "social_buttons": {
         "github": "GitHub",
@@ -196,5 +197,11 @@
     "404": {
         "title": "404: Не найдено",
         "description": "Страница, которую вы искали, не найдена. Возможно, она была удалена или URL-адрес указан неверно."
+    },
+    "resources": {
+        "title": "Ресурсы",
+        "icon_packs": "Наборы иконок",
+        "download": "Скачать",
+        "website": "Сайт"
     }
 }

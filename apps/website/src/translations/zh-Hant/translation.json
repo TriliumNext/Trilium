@@ -195,6 +195,14 @@
     "header": {
         "get-started": "開始使用",
         "documentation": "文件",
-        "support-us": "支持我們"
+        "support-us": "支持我們",
+        "resources": "資源"
+    },
+    "resources": {
+        "title": "資源",
+        "icon_packs": "圖示包",
+        "icon_packs_intro": "使用圖示包以擴充筆記的可用圖示選擇。有關圖示包的詳細資訊，請參閱<DocumentationLink>官方文件</DocumentationLink>。",
+        "download": "下載",
+        "website": "網站"
     }
 }

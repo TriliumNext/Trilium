@@ -1072,10 +1072,12 @@
     "note_detail_render_help_1": "This help note is shown because this note of type Render HTML doesn't have required relation to function properly.",
     "note_detail_render_help_2": "Render HTML note type is used for <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">scripting</a>. In short, you have a HTML code note (optionally with some JavaScript) and this note will render it. To make it work, you need to define a <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">relation</a> called \"renderNote\" pointing to the HTML note to render."
   },
-  "web_view": {
-    "web_view": "Web View",
-    "embed_websites": "Note of type Web View allows you to embed websites into Trilium.",
-    "create_label": "To start, please create a label with a URL address you want to embed, e.g. #webViewSrc=\"https://www.google.com\""
+  "web_view_setup": {
+    "title": "Create a live view of a webpage directly into Trilium",
+    "url_placeholder": "Enter or paste the website address, for example https://triliumnotes.org",
+    "create_button": "Create Web View",
+    "invalid_url_title": "Invalid address",
+    "invalid_url_message": "Insert a valid web address, for example https://triliumnotes.org."
   },
   "backend_log": {
     "refresh": "Refresh"
@@ -1591,7 +1593,8 @@
     "description": "Description",
     "reload_app": "Reload app to apply changes",
     "set_all_to_default": "Set all shortcuts to the default",
-    "confirm_reset": "Do you really want to reset all keyboard shortcuts to the default?"
+    "confirm_reset": "Do you really want to reset all keyboard shortcuts to the default?",
+    "no_results": "No shortcuts found matching '{{filter}}'"
   },
   "spellcheck": {
     "title": "Spell Check",
@@ -1797,6 +1800,8 @@
     "printing": "Printing in progress...",
     "printing_pdf": "Exporting to PDF in progress...",
     "print_report_title": "Print report",
+    "print_report_error_title": "Failed to print",
+    "print_report_stack_trace": "Stack trace",
     "print_report_collection_content_one": "{{count}} note in the collection could not be printed because they are not supported or they are protected.",
     "print_report_collection_content_other": "{{count}} notes in the collection could not be printed because they are not supported or they are protected.",
     "print_report_collection_details_button": "See details",

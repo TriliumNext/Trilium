@@ -195,6 +195,14 @@
     "header": {
         "get-started": "Comencemos",
         "documentation": "Documentación",
-        "support-us": "Apóyanos"
+        "support-us": "Apóyanos",
+        "resources": "Recursos"
+    },
+    "resources": {
+        "title": "Recursos",
+        "icon_packs": "Paquetes de iconos",
+        "icon_packs_intro": "Ampliar la selección de iconos disponibles para sus notas utilizando un paquete de iconos. Para más información acerca de paquetes de icono, vea la <DocumentationLink>documentación oficial</DocumentationLink>.",
+        "download": "Descargar",
+        "website": "Sitio web"
     }
 }

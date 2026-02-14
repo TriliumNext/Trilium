@@ -1,43 +1,45 @@
-import { ComponentChildren } from 'preact';
-import Card from '../../components/Card.js';
-import Section from '../../components/Section.js';
-import DownloadButton from '../../components/DownloadButton.js';
 import "./index.css";
-import { useColorScheme, usePageTitle } from '../../hooks.js';
-import Button, { Link } from '../../components/Button.js';
-import gitHubIcon from "../../assets/boxicons/bx-github.svg?raw";
-import dockerIcon from "../../assets/boxicons/bx-docker.svg?raw";
-import noteStructureIcon from "../../assets/boxicons/bx-folder.svg?raw";
-import attributesIcon from "../../assets/boxicons/bx-tag.svg?raw";
-import hoistingIcon from "../../assets/boxicons/bx-chevrons-up.svg?raw";
-import revisionsIcon from "../../assets/boxicons/bx-history.svg?raw";
-import syncIcon from "../../assets/boxicons/bx-refresh-cw.svg?raw";
-import protectedNotesIcon from "../../assets/boxicons/bx-shield.svg?raw";
-import jumpToIcon from "../../assets/boxicons/bx-send-alt.svg?raw";
-import searchIcon from "../../assets/boxicons/bx-search.svg?raw";
-import webClipperIcon from "../../assets/boxicons/bx-paperclip.svg?raw";
-import importExportIcon from "../../assets/boxicons/bx-swap-horizontal.svg?raw";
-import shareIcon from "../../assets/boxicons/bx-globe.svg?raw";
-import codeIcon from "../../assets/boxicons/bx-code.svg?raw";
-import restApiIcon from "../../assets/boxicons/bx-extension.svg?raw";
-import textNoteIcon from "../../assets/boxicons/bx-note.svg?raw";
-import fileIcon from "../../assets/boxicons/bx-file.svg?raw";
-import canvasIcon from "../../assets/boxicons/bx-pen.svg?raw";
-import mermaidIcon from "../../assets/boxicons/bx-vector-square.svg?raw";
-import mindmapIcon from "../../assets/boxicons/bx-network-chart.svg?raw";
-import calendarIcon from "../../assets/boxicons/bx-calendar.svg?raw";
-import tableIcon from "../../assets/boxicons/bx-table.svg?raw";
-import boardIcon from "../../assets/boxicons/bx-columns-3.svg?raw";
-import geomapIcon from "../../assets/boxicons/bx-map.svg?raw";
-import presentationIcon from "../../assets/boxicons/bx-slideshow.svg?raw";
-import { getPlatform } from '../../download-helper.js';
+
+import { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { Trans, useTranslation } from 'react-i18next';
+
+import calendarIcon from "../../assets/boxicons/bx-calendar.svg?raw";
+import hoistingIcon from "../../assets/boxicons/bx-chevrons-up.svg?raw";
+import codeIcon from "../../assets/boxicons/bx-code.svg?raw";
+import boardIcon from "../../assets/boxicons/bx-columns-3.svg?raw";
+import dockerIcon from "../../assets/boxicons/bx-docker.svg?raw";
+import restApiIcon from "../../assets/boxicons/bx-extension.svg?raw";
+import fileIcon from "../../assets/boxicons/bx-file.svg?raw";
+import noteStructureIcon from "../../assets/boxicons/bx-folder.svg?raw";
+import gitHubIcon from "../../assets/boxicons/bx-github.svg?raw";
+import shareIcon from "../../assets/boxicons/bx-globe.svg?raw";
+import revisionsIcon from "../../assets/boxicons/bx-history.svg?raw";
+import geomapIcon from "../../assets/boxicons/bx-map.svg?raw";
+import mindmapIcon from "../../assets/boxicons/bx-network-chart.svg?raw";
+import textNoteIcon from "../../assets/boxicons/bx-note.svg?raw";
+import webClipperIcon from "../../assets/boxicons/bx-paperclip.svg?raw";
+import canvasIcon from "../../assets/boxicons/bx-pen.svg?raw";
+import syncIcon from "../../assets/boxicons/bx-refresh-cw.svg?raw";
+import searchIcon from "../../assets/boxicons/bx-search.svg?raw";
+import jumpToIcon from "../../assets/boxicons/bx-send-alt.svg?raw";
+import protectedNotesIcon from "../../assets/boxicons/bx-shield.svg?raw";
+import presentationIcon from "../../assets/boxicons/bx-slideshow.svg?raw";
+import importExportIcon from "../../assets/boxicons/bx-swap-horizontal.svg?raw";
+import tableIcon from "../../assets/boxicons/bx-table.svg?raw";
+import attributesIcon from "../../assets/boxicons/bx-tag.svg?raw";
+import mermaidIcon from "../../assets/boxicons/bx-vector-square.svg?raw";
+import Button, { Link } from '../../components/Button.js';
+import Card from '../../components/Card.js';
+import DownloadButton from '../../components/DownloadButton.js';
+import Section from '../../components/Section.js';
+import { getPlatform } from '../../download-helper.js';
+import { useColorScheme, usePageTitle } from '../../hooks.js';
 
 export function Home() {
     usePageTitle("");
 
-	return (
+    return (
         <>
             <HeroSection />
             <OrganizationBenefitsSection />
@@ -48,7 +50,7 @@ export function Home() {
             <FaqSection />
             <FinalCta />
         </>
-	);
+    );
 }
 
 function HeroSection() {
@@ -93,7 +95,7 @@ function HeroSection() {
                 {screenshotUrl && <img class="screenshot" src={screenshotUrl} alt={t("hero_section.screenshot_alt")} />}
             </div>
         </Section>
-    )
+    );
 }
 
 function OrganizationBenefitsSection() {
@@ -122,7 +124,7 @@ function ProductivityBenefitsSection() {
                     <Card iconSvg={protectedNotesIcon} title={t("productivity_benefits.protected_notes_title")} moreInfoUrl="https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes">{t("productivity_benefits.protected_notes_content")}</Card>
                     <Card iconSvg={jumpToIcon} title={t("productivity_benefits.jump_to_title")} moreInfoUrl="https://docs.triliumnotes.org/user-guide/concepts/navigation/jump-to">{t("productivity_benefits.jump_to_content")}</Card>
                     <Card iconSvg={searchIcon} title={t("productivity_benefits.search_title")} moreInfoUrl="https://docs.triliumnotes.org/user-guide/concepts/navigation/search">{t("productivity_benefits.search_content")}</Card>
-                    <Card iconSvg={webClipperIcon} title={t("productivity_benefits.web_clipper_title")} moreInfoUrl="docs.triliumnotes.org/user-guide/setup/web-clipper">{t("productivity_benefits.web_clipper_content")}</Card>
+                    <Card iconSvg={webClipperIcon} title={t("productivity_benefits.web_clipper_title")} moreInfoUrl="https://docs.triliumnotes.org/user-guide/setup/web-clipper">{t("productivity_benefits.web_clipper_content")}</Card>
                 </div>
             </Section>
         </>
@@ -275,7 +277,7 @@ function ListWithScreenshot({ items, cardExtra }: {
                 ))}
             </ul>
         </div>
-    )
+    );
 }
 
 function FaqSection() {
@@ -299,7 +301,7 @@ function FaqItem({ question, children }: { question: string; children: Component
         <Card title={question}>
             {children}
         </Card>
-    )
+    );
 }
 
 function FinalCta() {
@@ -312,5 +314,5 @@ function FinalCta() {
                 <Button href="./get-started/" text={t("final_cta.get_started")} />
             </div>
         </Section>
-    )
+    );
 }

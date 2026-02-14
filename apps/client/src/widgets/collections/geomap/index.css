@@ -7,7 +7,7 @@
 
   > .collection-properties {
     position: relative;
-    z-index: 2000;
+    z-index: 998;
   }
 }
 
@@ -22,7 +22,7 @@
 
 .leaflet-top,
 .leaflet-bottom {
-  z-index: 997;
+  z-index: 997 !important;
 }
 
 .geo-view.placing-note .geo-map-container {
