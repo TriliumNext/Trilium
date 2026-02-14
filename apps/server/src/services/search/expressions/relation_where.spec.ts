@@ -66,7 +66,7 @@ describe("relation name wildcard search", () => {
 });
 
 describe("single relation search", () => {
-    test("both internal link and explicit relation are returned", () => {
+    test("only explicit links_to relation is returned", () => {
         const result = new RelationWhereExp("links_to", new TrueExp()).execute(
             new NoteSet([n1, n2]),
             {},
