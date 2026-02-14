@@ -1,0 +1,47 @@
+.modal.import-preview-dialog {
+    .stats {
+        color: var(--muted-text-color);
+        font-size: 0.9em;
+
+        span:after {
+            content: " • "
+        }
+
+        span:last-of-type:after {
+            content: unset;
+        }
+    }
+
+
+    .critical { --color: #ff7979; }
+    .warning { --color: #e2b11d; }
+    .safe { --color: var(--admonition-tip-accent-color); }
+
+    .card {
+        margin-bottom: 1em;
+        position: relative;
+        overflow: hidden;
+        padding-inline: 0.75em;
+
+        &:after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--color);
+        }
+    }
+
+    .dangerous-categories {
+        display: flex;
+        gap: 0.5em;
+        margin-top: 0.5em;
+        --badge-radius: 1000px;
+
+        .ext-badge {
+            color: black;
+        }
+    }
+}

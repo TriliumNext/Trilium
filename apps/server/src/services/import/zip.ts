@@ -31,7 +31,7 @@ interface ImportZipOpts {
     preserveIds?: boolean;
 }
 
-async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Buffer, importRootNote: BNote, opts?: ImportZipOpts): Promise<BNote> {
+async function importZip(taskContext: TaskContext<"importNotes">, bufferOrPath: string | Buffer, importRootNote: BNote, opts?: ImportZipOpts): Promise<BNote> {
     /** maps from original noteId (in ZIP file) to newly generated noteId */
     const noteIdMap: Record<string, string> = {};
     /** type maps from original attachmentId (in ZIP file) to newly generated attachmentId */
@@ -295,12 +295,12 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
                 attachmentId: getNewAttachmentId(attachmentMeta.attachmentId),
                 noteId: getNewNoteId(noteMeta.noteId)
             };
-        } 
+        }
         // don't check for noteMeta since it's not mandatory for notes
         return {
             noteId: getNoteId(noteMeta, absUrl)
         };
-        
+
     }
 
     function processTextNoteContent(content: string, noteTitle: string, filePath: string, noteMeta?: NoteMeta) {
@@ -313,9 +313,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
         content = content.replace(/<h1>([^<]*)<\/h1>/gi, (match, text) => {
             if (noteTitle.trim() === text.trim()) {
                 return ""; // remove whole H1 tag
-            } 
+            }
             return `<h2>${text}</h2>`;
-            
+
         });
 
         if (taskContext.data?.safeImport) {
@@ -348,9 +348,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
                 return `src="api/attachments/${target.attachmentId}/image/${path.basename(url)}"`;
             } else if (target.noteId) {
                 return `src="api/images/${target.noteId}/${path.basename(url)}"`;
-            } 
+            }
             return match;
-            
+
         });
 
         content = content.replace(/href="([^"]*)"/g, (match, url) => {
@@ -374,9 +374,9 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
                 return `href="#root/${target.noteId}?viewMode=attachments&attachmentId=${target.attachmentId}"`;
             } else if (target.noteId) {
                 return `href="#root/${target.noteId}"`;
-            } 
+            }
             return match;
-            
+
         });
 
         if (noteMeta) {
@@ -559,7 +559,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
 
     // we're running two passes in order to obtain critical information first (meta file and root)
     const topLevelItems = new Set<string>();
-    await readZipFile(fileBuffer, async (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => {
+    await readZipFile(bufferOrPath, async (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => {
         const filePath = normalizeFilePath(entry.fileName);
 
         // make sure that the meta file is loaded before the rest of the files is processed.
@@ -579,7 +579,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
 
     topLevelPath = (topLevelItems.size > 1 ? "" : topLevelItems.values().next().value ?? "");
 
-    await readZipFile(fileBuffer, async (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => {
+    await readZipFile(bufferOrPath, async (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => {
         const filePath = normalizeFilePath(entry.fileName);
 
         if (/\/$/.test(entry.fileName)) {
@@ -626,7 +626,7 @@ async function importZip(taskContext: TaskContext<"importNotes">, fileBuffer: Bu
 }
 
 /** @returns path without leading or trailing slash and backslashes converted to forward ones */
-function normalizeFilePath(filePath: string): string {
+export function normalizeFilePath(filePath: string): string {
     filePath = filePath.replace(/\\/g, "/");
 
     if (filePath.startsWith("/")) {
@@ -658,22 +658,41 @@ export function readContent(zipfile: yauzl.ZipFile, entry: yauzl.Entry): Promise
     });
 }
 
-export function readZipFile(buffer: Buffer, processEntryCallback: (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => Promise<void>) {
+export function readZipFile(bufferOrPath: Buffer | string, processEntryCallback: (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => Promise<void>) {
     return new Promise<void>((res, rej) => {
-        yauzl.fromBuffer(buffer, { lazyEntries: true, validateEntrySizes: false }, (err, zipfile) => {
-            if (err) rej(err);
-            if (!zipfile) throw new Error("Unable to read zip file.");
+        const options: yauzl.Options = { lazyEntries: true, validateEntrySizes: false };
+        const callback = (err, zipfile) => {
+            if (err) {
+                rej(err);
+                return;
+            }
+            if (!zipfile) {
+                rej("Unable to read zip file.");
+                return;
+            }
 
-            zipfile.readEntry();
+            try {
+                zipfile.readEntry();
+            } catch (err) {
+                rej(err);
+                return;
+            }
             zipfile.on("entry", async (entry) => {
                 try {
                     await processEntryCallback(zipfile, entry);
                 } catch (e) {
                     rej(e);
+                    return;
                 }
             });
             zipfile.on("end", res);
-        });
+        };
+
+        if (typeof bufferOrPath === "string") {
+            yauzl.open(bufferOrPath, options, callback);
+        } else {
+            yauzl.fromBuffer(bufferOrPath, options, callback);
+        }
     });
 }
 
@@ -692,9 +711,9 @@ function resolveNoteType(type: string | undefined): NoteType {
 
     if (type && (ALLOWED_NOTE_TYPES as readonly string[]).includes(type)) {
         return type as NoteType;
-    } 
+    }
     return "text";
-    
+
 }
 
 export function removeTriliumTags(content: string) {

@@ -13,12 +13,13 @@ import type LoadResults from "../services/load_results.js";
 import type { CreateNoteOpts } from "../services/note_create.js";
 import options from "../services/options.js";
 import toast from "../services/toast.js";
-import utils, { hasTouchBar } from "../services/utils.js";
+import utils, { dynamicRequire, hasTouchBar } from "../services/utils.js";
 import { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import type RootContainer from "../widgets/containers/root_container.js";
 import { AddLinkOpts } from "../widgets/dialogs/add_link.jsx";
 import type { ConfirmWithMessageOptions, ConfirmWithTitleOptions } from "../widgets/dialogs/confirm.js";
 import type { ResolveOptions } from "../widgets/dialogs/delete_notes.js";
+import { ImportPreviewData } from "../widgets/dialogs/import_preview.jsx";
 import { IncludeNoteOpts } from "../widgets/dialogs/include_note.jsx";
 import type { InfoProps } from "../widgets/dialogs/info.jsx";
 import type { MarkdownImportOpts } from "../widgets/dialogs/markdown_import.jsx";
@@ -130,6 +131,7 @@ export type CommandMappings = {
     showConfirmDialog: ConfirmWithMessageOptions;
     showRecentChanges: CommandData & { ancestorNoteId: string };
     showImportDialog: CommandData & { noteId: string };
+    showImportPreviewDialog: CommandData & ImportPreviewData;
     openNewNoteSplit: NoteCommandData;
     openInWindow: NoteCommandData;
     openInPopup: CommandData & { noteIdOrPath: string; };
@@ -639,6 +641,10 @@ export class AppContext extends Component {
         this.child(rootWidget as Component);
 
         this.triggerEvent("initialRenderComplete", {});
+        if (utils.isElectron()) {
+            const { ipcRenderer } = dynamicRequire('electron');
+            ipcRenderer.send("initial-render-complete");
+        }
     }
 
     triggerEvent<K extends EventNames>(name: K, data: EventData<K>) {

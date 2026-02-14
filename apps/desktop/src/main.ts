@@ -1,17 +1,21 @@
 import { initializeTranslations } from "@triliumnext/server/src/services/i18n.js";
-import { t } from "i18next";
-
-import { app, globalShortcut, BrowserWindow } from "electron";
-import sqlInit from "@triliumnext/server/src/services/sql_init.js";
-import windowService from "@triliumnext/server/src/services/window.js";
-import tray from "@triliumnext/server/src/services/tray.js";
+import importStore from "@triliumnext/server/src/services/import/import_store";
+import previewZipForImport from "@triliumnext/server/src/services/import/zip_preview";
 import options from "@triliumnext/server/src/services/options.js";
+import port from "@triliumnext/server/src/services/port.js";
+import sqlInit from "@triliumnext/server/src/services/sql_init.js";
+import tray from "@triliumnext/server/src/services/tray.js";
+import { randomString } from "@triliumnext/server/src/services/utils";
+import windowService from "@triliumnext/server/src/services/window.js";
+import { app, BrowserWindow,globalShortcut } from "electron";
+import { ipcMain } from "electron/main";
 import electronDebug from "electron-debug";
 import electronDl from "electron-dl";
+import { t } from "i18next";
+import { basename, join, resolve } from "path";
+
+import { deferred, ImportPreviewResponse, LOCALES } from "../../../packages/commons/src";
 import { PRODUCT_NAME } from "./app-info";
-import port from "@triliumnext/server/src/services/port.js";
-import { join } from "path";
-import { deferred, LOCALES } from "../../../packages/commons/src";
 
 async function main() {
     const userDataPath = getUserData();
@@ -74,6 +78,8 @@ async function main() {
         if (commandLine.includes("--new-window")) {
             windowService.createExtraWindow("");
         } else if (lastFocusedWindow) {
+            handleImportArguments(commandLine, lastFocusedWindow);
+
             if (lastFocusedWindow.isMinimized()) {
                 lastFocusedWindow.restore();
             }
@@ -115,7 +121,8 @@ async function onReady() {
     if (sqlInit.isDbInitialized()) {
         await sqlInit.dbReady;
 
-        await windowService.createMainWindow(app);
+        const mainWindow = await windowService.createMainWindow(app);
+        handleImportArguments(process.argv, mainWindow);
 
         if (process.platform === "darwin") {
             app.on("activate", async () => {
@@ -133,6 +140,33 @@ async function onReady() {
     await windowService.registerGlobalShortcuts();
 }
 
+async function handleImportArguments(args: string[], window: BrowserWindow) {
+    const filesToImport = args.filter(arg => !arg.startsWith("-") && arg.endsWith(".trilium"));
+    if (filesToImport.length === 0) return;
+
+    const previews = await Promise.all(filesToImport.map(async file => {
+        const id = randomString(10);
+        const preview = await previewZipForImport(file);
+
+        importStore.set(id, {
+            path: resolve(file),
+            external: true
+        });
+
+        return {
+            ...preview,
+            id,
+            fileName: basename(file)
+        } satisfies ImportPreviewResponse;
+    }));
+
+    ipcMain.on("import-preview-ready", () => {
+        window.webContents.send("show-import-preview-dialog", {
+            previews
+        });
+    });
+}
+
 function getElectronLocale() {
     const uiLocale = options.getOptionOrNull("locale");
     const formattingLocale = options.getOptionOrNull("formattingLocale");
@@ -141,7 +175,7 @@ function getElectronLocale() {
     // For RTL, we have to force the UI locale to align the window buttons properly.
     if (formattingLocale && !correspondingLocale?.rtl) return formattingLocale;
 
-    return uiLocale || "en"
+    return uiLocale || "en";
 }
 
 main();

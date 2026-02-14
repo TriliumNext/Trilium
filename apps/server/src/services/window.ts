@@ -303,6 +303,7 @@ async function createMainWindow(app: App) {
 
     configureWebContents(mainWindow.webContents, spellcheckEnabled);
     trackWindowFocus(mainWindow);
+    return mainWindow;
 }
 
 function getWindowExtraOpts() {

@@ -523,46 +523,59 @@ export default class NoteTreeWidget extends NoteContextAwareWidget {
                     const dataTransfer = data.dataTransfer;
 
                     if (dataTransfer && dataTransfer.files && dataTransfer.files.length > 0) {
-                        const files = [...dataTransfer.files]; // chrome has issue that dataTransfer.files empties after async operation
+                        const files: File[] = [...dataTransfer.files]; // chrome has issue that dataTransfer.files empties after async operation
 
                         const importService = await import("../services/import.js");
+                        const isTriliumImport = files.every(f => f.name.endsWith(".trilium"));
+                        const parentNoteId = node.data.noteId;
 
-                        importService.uploadFiles("notes", node.data.noteId, files, {
-                            safeImport: true,
-                            shrinkImages: true,
-                            textImportedAsText: true,
-                            codeImportedAsCode: true,
-                            explodeArchives: true,
-                            replaceUnderscoresWithSpaces: true
-                        });
-                    } else {
-                        const jsonStr = dataTransfer.getData("text");
-                        let notes: BranchRow[];
-
-                        try {
-                            notes = JSON.parse(jsonStr);
-                        } catch (e) {
-                            logError(`Cannot parse JSON '${jsonStr}' into notes for drop`);
+                        if (!isTriliumImport) {
+                            importService.uploadFiles("notes", parentNoteId, files, {
+                                safeImport: true,
+                                shrinkImages: true,
+                                textImportedAsText: true,
+                                codeImportedAsCode: true,
+                                explodeArchives: true,
+                                replaceUnderscoresWithSpaces: true
+                            });
+                        } else {
+                            importService.uploadFilesWithPreview(files).then((previews) => {
+                                if (!previews) return;
+                                this.triggerCommand("showImportPreviewDialog", {
+                                    parentNoteId,
+                                    previews
+                                });
+                            });
                             return;
                         }
-
-                        // This function MUST be defined to enable dropping of items on the tree.
-                        // data.hitMode is 'before', 'after', or 'over'.
-
-                        const selectedBranchIds = notes
-                            .map((note) => note.branchId)
-                            .filter((branchId) => branchId) as string[];
-
-                        if (data.hitMode === "before") {
-                            branchService.moveBeforeBranch(selectedBranchIds, node.data.branchId);
-                        } else if (data.hitMode === "after") {
-                            branchService.moveAfterBranch(selectedBranchIds, node.data.branchId);
-                        } else if (data.hitMode === "over") {
-                            branchService.moveToParentNote(selectedBranchIds, node.data.branchId, this.componentId);
-                        } else {
-                            throw new Error(`Unknown hitMode '${data.hitMode}'`);
-                        }
                     }
+                    const jsonStr = dataTransfer.getData("text");
+                    let notes: BranchRow[];
+
+                    try {
+                        notes = JSON.parse(jsonStr);
+                    } catch (e) {
+                        logError(`Cannot parse JSON '${jsonStr}' into notes for drop`);
+                        return;
+                    }
+
+                    // This function MUST be defined to enable dropping of items on the tree.
+                    // data.hitMode is 'before', 'after', or 'over'.
+
+                    const selectedBranchIds = notes
+                        .map((note) => note.branchId)
+                        .filter((branchId) => branchId) as string[];
+
+                    if (data.hitMode === "before") {
+                        branchService.moveBeforeBranch(selectedBranchIds, node.data.branchId);
+                    } else if (data.hitMode === "after") {
+                        branchService.moveAfterBranch(selectedBranchIds, node.data.branchId);
+                    } else if (data.hitMode === "over") {
+                        branchService.moveToParentNote(selectedBranchIds, node.data.branchId, this.componentId);
+                    } else {
+                        throw new Error(`Unknown hitMode '${data.hitMode}'`);
+                    }
+
                 }
             },
             lazyLoad: (event, data) => {
