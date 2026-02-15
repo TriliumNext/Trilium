@@ -66,6 +66,13 @@
             isStatic: <%= !!isStatic %>,
             theme
         };
+
+        (function() {
+            const leftCollapsed = localStorage.getItem("left-pane-collapsed") === "true";
+            const tocCollapsed = localStorage.getItem("toc-pane-collapsed") === "true";
+            if (leftCollapsed) document.documentElement.classList.add("left-pane-collapsed");
+            if (tocCollapsed) document.documentElement.classList.add("toc-pane-collapsed");
+        })();
     </script>
     <!-- HTML Meta Tags -->
     <meta name="description" content="<%= note.getLabelValue("shareDescription") %>">
@@ -104,21 +111,22 @@ content = content.replaceAll(headingRe, (...match) => {
 %>
 <body data-note-id="<%= note.noteId %>" class="type-<%= note.type %>" data-ancestor-note-id="<%= subRoot.note.noteId %>">
 <%- renderSnippets("body:start") %>
-<div id="mobile-header">
-    <a href="<%= shareRootLink %>">
+<div id="header">
+    <button aria-label="Toggle Navigation" id="left-pane-toggle-button" class="header-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"></path></svg></button>
+    <a href="<%= shareRootLink %>" id="header-logo">
             <img src="<%= logoUrl %>" width="32" height="<%= mobileLogoHeight %>" alt="Logo" />
         <%= subRoot.note.title %>
     </a>
-    <button aria-label="Show Mobile Menu" id="show-menu-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"></path></svg></button>
+    <% if (headingMatches.length > 1) { %>
+        <button aria-label="Toggle Table of Contents" id="toc-pane-toggle-button" class="header-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9h14V7H3v2zm0 4h14v-2H3v2zm0 4h14v-2H3v2zm16 0h2v-2h-2v2zm0-10V7h2v2h-2zm0 6h2v-2h-2v2z"></path></svg></button>
+    <% } else { %>
+        <div class="header-button-placeholder"></div>
+    <% } %>
 </div>
 <div id="split-pane">
     <div id="left-pane">
         <div id="navigation">
             <div id="site-header">
-                <a href="<%= shareRootLink %>">
-                    <img src="<%= logoUrl %>" width="<%= logoWidth %>" height="<%= logoHeight %>" alt="Logo" />
-                    <%= subRoot.note.title %>
-                </a>
                 <div class="theme-selection">
                     <span id="sitetheme"><%= t("share_theme.site-theme") %></span>
                     <label class="switch">

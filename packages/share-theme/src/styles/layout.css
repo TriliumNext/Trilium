@@ -2,45 +2,67 @@ html,
 body {
     width: 100vw;
     height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 #split-pane {
     display: flex;
     flex-direction: row;
     width: 100vw;
-    height: 100vh;
+    flex: 1;
     overflow: hidden;
 }
 
 #left-pane {
     display: flex;
-    min-width: fit-content;
-    max-width: 20vw;
-    height: calc(100vh);
+    flex-direction: column;
+    min-width: 0;
+    width: 20vw;
+    height: 100%;
     background: var(--background-secondary);
     border-right: 5px solid var(--background-highlight);
-    justify-content: flex-end;
+    justify-content: flex-start;
     position: sticky;
     top: 0;
     overflow-y: auto;
     flex-shrink: 0;
+    transition: width 0.3s ease, margin-left 0.3s ease;
+}
+
+.left-pane-collapsed #left-pane {
+    width: 0;
+    min-width: 0;
+    margin-left: -5px; /* offset the border */
+    overflow: hidden;
+    border-right-width: 0;
 }
 
 #right-pane {
-    display: flex;
-    margin: 0 auto;
     flex: 1;
     overflow: auto;
+    position: relative;
+    min-height: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
 }
 
 #main {
     order: 2;
-    max-width: 900px;
+    max-width: 1600px;
     flex: 1;
-    padding: 0 20px;
+    min-width: 0;
+    overflow-x: auto;
+    margin: 0 auto;
+    padding: 20px;
     box-sizing: border-box;
     width: 100%;
+    transition: max-width 0.3s ease, margin 0.3s ease;
 }
+
+/* #main always has max-width: 1600px and margin: 0 auto for stability */
 
 @media (min-width: 1200px) {
     #main {
