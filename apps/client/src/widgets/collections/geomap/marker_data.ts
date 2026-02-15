@@ -1,4 +1,3 @@
-import { snapdom } from "@zumer/snapdom";
 import { MutableRef, useEffect } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
@@ -22,32 +21,82 @@ async function buildMarkerIcon(color = DEFAULT_MARKER_COLOR, iconClass: string) 
 }
 
 async function snapshotIcon(iconClass: string) {
-    const wrapper = document.createElement("div");
-
-    wrapper.style.width = "20px";
-    wrapper.style.height = "20px";
-    wrapper.style.display = "flex";
-    wrapper.style.alignItems = "center";
-    wrapper.style.justifyContent = "center";
-
-    const iconEl = document.createElement("span");
-    iconEl.className = iconClass;
-    iconEl.style.fontSize = "20px";
-    iconEl.style.lineHeight = "1";
-    iconEl.style.display = "inline-block";
-    iconEl.style.color = "black";
-
-    wrapper.appendChild(iconEl);
-
-    // Important: attach to DOM
-    document.body.appendChild(wrapper);
-
-    const icon = await snapdom(wrapper, {
-        backgroundColor: "transparent"
+    await document.fonts.ready;
+    const glyph = getGlyphFromClass(iconClass);
+    const rendered = renderMarkerCanvas({
+        color: "black",
+        glyph,
+        size: 16
     });
+    return rendered?.toDataURL();
+}
 
-    document.body.removeChild(wrapper);
-    return icon.url;
+function renderMarkerCanvas({
+    color,
+    glyph,   // e.g. "\uf123"
+    size = 32,
+    scale = window.devicePixelRatio || 1
+}) {
+    const canvas = document.createElement("canvas");
+
+    // High-DPI canvas
+    canvas.width = size * scale;
+    canvas.height = size * scale;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    // Scale for retina
+    ctx.scale(scale, scale);
+
+    ctx.clearRect(0, 0, size, size);
+
+    // Set font
+    ctx.font = `${size}px ${glyph.fontFamily}`;
+    ctx.fillStyle = color;
+
+    // Measure glyph
+    const metrics = ctx.measureText(glyph.content);
+
+    const glyphWidth =
+    metrics.actualBoundingBoxLeft +
+    metrics.actualBoundingBoxRight;
+
+    const glyphHeight =
+    metrics.actualBoundingBoxAscent +
+    metrics.actualBoundingBoxDescent;
+
+    // Center position
+    const x = (size - glyphWidth) / 2 + metrics.actualBoundingBoxLeft;
+    const y = (size - glyphHeight) / 2 + metrics.actualBoundingBoxAscent;
+
+    // Draw
+    ctx.fillText(glyph.content, x, y);
+
+    return canvas;
+}
+
+function getGlyphFromClass(iconClass: string) {
+    const el = document.createElement("span");
+    el.className = iconClass;
+
+    document.body.appendChild(el);
+
+    const style = window.getComputedStyle(el, "::before");
+    const content = style.getPropertyValue("content");
+    const fontFamily = style.getPropertyValue("font-family");
+
+    document.body.removeChild(el);
+
+    if (!content || content === "none") {
+        return null;
+    }
+
+    // content is usually quoted like: '"\f123"'
+    return {
+        fontFamily,
+        content: content.replace(/^["']|["']$/g, "")
+    };
 }
 
 export function useMarkerData(note: FNote | null | undefined, apiRef: MutableRef<maplibregl.Map>) {
