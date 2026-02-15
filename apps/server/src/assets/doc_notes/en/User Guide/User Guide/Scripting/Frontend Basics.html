@@ -1,48 +1,47 @@
 <p>Front-end scripts are custom JavaScript notes that are run on the client
   (browser environment)</p>
 <p>There are four flavors of front-end scripts:</p>
-<figure class="table"
-style="width:100%;">
-  <table class="ck-table-resized">
-    <colgroup>
-      <col style="width:21.82%;">
-        <col style="width:78.18%;">
-    </colgroup>
-    <tbody>
-      <tr>
-        <th>Regular scripts</th>
-        <td>These are run with the current app and note context. These can be run
-          either manually or automatically on start-up.</td>
-      </tr>
-      <tr>
-        <th><a class="reference-link" href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/yIhgI5H7A2Sm/_help_MgibgPcfeuGz">Custom Widgets</a>
-        </th>
-        <td>These can introduce new UI elements in various positions, such as near
-          the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_oPVyFC7WL2Lp">Note Tree</a>,
-          content area or even the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_RnaPdbciOfeq">Right Sidebar</a>.</td>
-      </tr>
-      <tr>
-        <th><a class="reference-link" href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/yIhgI5H7A2Sm/_help_4Gn3psZKsfSm">Launch Bar Widgets</a>
-        </th>
-        <td>Similar to&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/yIhgI5H7A2Sm/_help_MgibgPcfeuGz">Custom Widgets</a>,
-          but dedicated to the&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/gh7bpGYxajRS/Vc8PjrjAGuOp/_help_xYmIYSP6wE3F">Launch Bar</a>.
-          These can simply introduce new buttons or graphical elements to the bar.</td>
-      </tr>
-      <tr>
-        <th><a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_HcABDtFCkbFN">Render Note</a>
-        </th>
-        <td>This allows rendering custom content inside a note, using either HTML
-          or Preact JSX.</td>
-      </tr>
-    </tbody>
-  </table>
-</figure>
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Regular scripts</td>
+      <td>These are run with the current app and note context. These can be run
+        either manually or automatically on start-up.</td>
+    </tr>
+    <tr>
+      <td><a class="reference-link" href="#root/_help_MgibgPcfeuGz">Custom Widgets</a>
+      </td>
+      <td>These can introduce new UI elements in various positions, such as near
+        the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>,
+        content area or even the&nbsp;<a class="reference-link" href="#root/_help_RnaPdbciOfeq">Right Sidebar</a>.</td>
+    </tr>
+    <tr>
+      <td><a class="reference-link" href="#root/_help_4Gn3psZKsfSm">Launch Bar Widgets</a>
+      </td>
+      <td>Similar to&nbsp;<a class="reference-link" href="#root/_help_MgibgPcfeuGz">Custom Widgets</a>,
+        but dedicated to the&nbsp;<a class="reference-link" href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>.
+        These can simply introduce new buttons or graphical elements to the bar.</td>
+    </tr>
+    <tr>
+      <td><a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>
+      </td>
+      <td>This allows rendering custom content inside a note, using either HTML
+        or Preact JSX.</td>
+    </tr>
+  </tbody>
+</table>
 <p>For more advanced behaviors that do not require a user interface (e.g.
-  batch modifying notes), see&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/_help_SPirpZypehBG">Backend scripts</a>.</p>
+  batch modifying notes), see&nbsp;<a class="reference-link" href="#root/_help_SPirpZypehBG">Backend scripts</a>.</p>
 <h2>Scripts</h2>
 <p>Scripts don't have any special requirements. They can be run manually
   using the <em>Execute</em> button on the code note or they can be run automatically;
-  to do so, set the <code spellcheck="false">run</code>  <a href="#root/pOsGYCXsbNQG/tC7s2alapj8V/zEY4DaJG4YT5/_help_HI6GBBIduIgv">label</a> to
+  to do so, set the <code spellcheck="false">run</code>  <a href="#root/_help_HI6GBBIduIgv">label</a> to
   either:</p>
 <ul>
   <li><code spellcheck="false">frontendStartup</code> - when Trilium frontend
@@ -55,23 +54,23 @@ style="width:100%;">
     they can run automatically on a hourly or daily basis, but also on events
     such as when a note is created or an attribute is modified. See the server-side&nbsp;
     <a
-    class="reference-link" href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/SPirpZypehBG/_help_GPERMystNGTB">Events</a>&nbsp;for more information.</p>
+    class="reference-link" href="#root/_help_GPERMystNGTB">Events</a>&nbsp;for more information.</p>
 </aside>
 <h2>Widgets</h2>
 <p>Widgets require a certain format in order for Trilium to be able to integrate
   them into the UI.</p>
 <ul>
   <li>For legacy widgets, the script note must export a <code spellcheck="false">BasicWidget</code> or
-    a derived one (see&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/yIhgI5H7A2Sm/MgibgPcfeuGz/_help_GhurYZjh8e1V">Note context aware widget</a>&nbsp;or&nbsp;
+    a derived one (see&nbsp;<a class="reference-link" href="#root/_help_GhurYZjh8e1V">Note context aware widget</a>&nbsp;or&nbsp;
     <a
-    class="reference-link" href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/yIhgI5H7A2Sm/MgibgPcfeuGz/_help_M8IppdwVHSjG">Right pane widget</a>).</li>
+    class="reference-link" href="#root/_help_M8IppdwVHSjG">Right pane widget</a>).</li>
   <li>For Preact widgets, a built-in helper called <code spellcheck="false">defineWidget</code> needs
     to be used.</li>
 </ul>
-<p>For more information, see&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/yIhgI5H7A2Sm/_help_MgibgPcfeuGz">Custom Widgets</a>.</p>
+<p>For more information, see&nbsp;<a class="reference-link" href="#root/_help_MgibgPcfeuGz">Custom Widgets</a>.</p>
 <h2>Script API</h2>
 <p>The front-end API of Trilium is available to all scripts running in the
   front-end context as global variable <code spellcheck="false">api</code>.
-  For a reference of the API, see&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/GLks18SNjxmC/_help_Q2z6av6JZVWm">Frontend API</a>.</p>
+  For a reference of the API, see&nbsp;<a class="reference-link" href="#root/_help_Q2z6av6JZVWm">Frontend API</a>.</p>
 <h3>Tutorial</h3>
 <p>For more information on building widgets, take a look at <a href="#root/_help_SynTBQiBsdYJ">Widget Basics</a>.</p>

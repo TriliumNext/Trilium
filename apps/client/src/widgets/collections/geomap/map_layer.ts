@@ -1,24 +1,23 @@
-export interface MapLayer {
-    name: string;
-    isDarkTheme?: boolean;
-}
+import { type StyleSpecification } from "maplibre-gl";
 
-interface VectorLayer extends MapLayer {
+export type MapLayer = ({
     type: "vector";
-    style: string | (() => Promise<{}>);
-    styleFallback: {};
-}
-
-interface RasterLayer extends MapLayer {
+    style: string | (() => Promise<StyleSpecification>);
+    styleFallback: StyleSpecification;
+} | {
     type: "raster";
     url: string;
     attribution: string;
-}
+}) & {
+    // Common properties
+    name: string;
+    isDarkTheme?: boolean;
+};
 
 // Minimal empty style used as a placeholder while the real style loads asynchronously.
-const EMPTY_STYLE = { version: 8, sources: {}, layers: [] };
+const EMPTY_STYLE: StyleSpecification = { version: 8, sources: {}, layers: [] };
 
-export const MAP_LAYERS: Record<string, VectorLayer | RasterLayer> = {
+export const MAP_LAYERS: Record<string, MapLayer> = {
     "openstreetmap": {
         name: "OpenStreetMap",
         type: "raster",
@@ -28,32 +27,32 @@ export const MAP_LAYERS: Record<string, VectorLayer | RasterLayer> = {
     "versatiles-colorful": {
         name: "VersaTiles Colorful",
         type: "vector",
-        style: async () => (await import("./styles/colorful/en.json")).default,
+        style: async () => (await import("./styles/colorful/en.json")).default as unknown as StyleSpecification,
         styleFallback: EMPTY_STYLE
     },
     "versatiles-eclipse": {
         name: "VersaTiles Eclipse",
         type: "vector",
-        style: async () => (await import("./styles/eclipse/en.json")).default,
+        style: async () => (await import("./styles/eclipse/en.json")).default as unknown as StyleSpecification,
         styleFallback: EMPTY_STYLE,
         isDarkTheme: true
     },
     "versatiles-graybeard": {
         name: "VersaTiles Graybeard",
         type: "vector",
-        style: async () => (await import("./styles/graybeard/en.json")).default,
-        styleFallback: EMPTY_STYLE
+        style: async () => (await import("./styles/graybeard/en.json")).default as unknown as StyleSpecification,
+        styleFallback: EMPTY_STYLE,
     },
     "versatiles-neutrino": {
         name: "VersaTiles Neutrino",
         type: "vector",
-        style: async () => (await import("./styles/neutrino/en.json")).default,
-        styleFallback: EMPTY_STYLE
+        style: async () => (await import("./styles/neutrino/en.json")).default as unknown as StyleSpecification,
+        styleFallback: EMPTY_STYLE,
     },
     "versatiles-shadow": {
         name: "VersaTiles Shadow",
         type: "vector",
-        style: async () => (await import("./styles/shadow/en.json")).default,
+        style: async () => (await import("./styles/shadow/en.json")).default as unknown as StyleSpecification,
         styleFallback: EMPTY_STYLE,
         isDarkTheme: true
     }

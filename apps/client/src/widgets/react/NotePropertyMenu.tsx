@@ -7,7 +7,7 @@ import FNote from "../../entities/fnote";
 import NoteContextAwareWidget from "../note_context_aware_widget";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListItem, FormListToggleableItem } from "./FormList";
 import FormTextBox from "./FormTextBox";
-import { useNoteLabel, useNoteLabelBoolean, useNoteLabelWithDefault } from "./hooks";
+import { useNoteLabel, useNoteLabelBoolean } from "./hooks";
 import { ParentComponent } from "./react_utils";
 
 export interface ClickContext {
@@ -20,6 +20,8 @@ export interface CheckBoxProperty {
     label: string;
     bindToLabel: FilterLabelsByType<boolean>;
     icon?: string;
+    /** When true, the checkbox will be checked when the label value is false. Useful when the label represents a "hide" action, without exposing double negatives to the user. */
+    reverseValue?: boolean;
 }
 
 export interface ButtonProperty {
@@ -203,8 +205,8 @@ function CheckBoxPropertyView({ note, property }: { note: FNote, property: Check
         <FormListToggleableItem
             icon={property.icon}
             title={property.label}
-            currentValue={value}
-            onChange={setValue}
+            currentValue={ property.reverseValue ? !value : value }
+            onChange={newValue => setValue(property.reverseValue ? !newValue : newValue)}
         />
     );
 }

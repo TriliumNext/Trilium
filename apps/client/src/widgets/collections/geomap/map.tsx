@@ -5,7 +5,7 @@ import { ComponentChildren, createContext, RefObject } from "preact";
 import { useEffect, useImperativeHandle, useRef } from "preact/hooks";
 
 import { useElementSize, useSyncedRef } from "../../react/hooks";
-import { MAP_LAYERS } from "./map_layer";
+import { MapLayer } from "./map_layer";
 
 export interface GeoMouseEvent {
     latlng: { lat: number; lng: number };
@@ -19,7 +19,7 @@ interface MapProps {
     containerRef?: RefObject<HTMLDivElement>;
     coordinates: { lat: number; lng: number } | [number, number];
     zoom: number;
-    layerName: string;
+    layerData: MapLayer;
     viewportChanged: (coordinates: { lat: number; lng: number }, zoom: number) => void;
     children: ComponentChildren;
     onClick?: (e: GeoMouseEvent) => void;
@@ -35,7 +35,7 @@ function toMapLibreEvent(e: maplibregl.MapMouseEvent): GeoMouseEvent {
     };
 }
 
-export default function Map({ coordinates, zoom, layerName, viewportChanged, children, onClick, onContextMenu, scale, apiRef, containerRef: _containerRef, onZoom }: MapProps) {
+export default function Map({ coordinates, zoom, layerData, viewportChanged, children, onClick, onContextMenu, scale, apiRef, containerRef: _containerRef, onZoom }: MapProps) {
     const mapRef = useRef<maplibregl.Map>(null);
     const containerRef = useSyncedRef<HTMLDivElement>(_containerRef);
 
@@ -45,7 +45,6 @@ export default function Map({ coordinates, zoom, layerName, viewportChanged, chi
     useEffect(() => {
         if (!containerRef.current) return;
 
-        const layerData = MAP_LAYERS[layerName];
         let style: maplibregl.StyleSpecification | string;
 
         if (layerData.type === "vector") {
@@ -106,7 +105,6 @@ export default function Map({ coordinates, zoom, layerName, viewportChanged, chi
         const map = mapRef.current;
         if (!map) return;
 
-        const layerData = MAP_LAYERS[layerName];
         if (layerData.type === "vector") {
             if (typeof layerData.style === "string") {
                 map.setStyle(layerData.style);
@@ -135,7 +133,7 @@ export default function Map({ coordinates, zoom, layerName, viewportChanged, chi
                 ]
             });
         }
-    }, [ layerName ]);
+    }, [ layerData ]);
 
     // React to coordinate changes.
     useEffect(() => {
@@ -212,7 +210,7 @@ export default function Map({ coordinates, zoom, layerName, viewportChanged, chi
     return (
         <div
             ref={containerRef}
-            className={`geo-map-container ${MAP_LAYERS[layerName].isDarkTheme ? "dark" : ""}`}
+            className={`geo-map-container ${layerData.isDarkTheme ? "dark" : ""}`}
         >
             <ParentMap.Provider value={mapRef.current}>
                 {children}

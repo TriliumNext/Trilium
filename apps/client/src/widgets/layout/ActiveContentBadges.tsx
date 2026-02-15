@@ -251,10 +251,13 @@ function useActiveContentInfo(note: FNote | null | undefined) {
         for (const labelToCheck of activeContentLabels) {
             if (note.hasLabel(labelToCheck)) {
                 type = labelToCheck;
+                isEnabled = true;
+                canToggleEnabled = true;
                 break;
             } else if (note.hasLabel(`disabled:${labelToCheck}`)) {
                 type = labelToCheck;
                 isEnabled = false;
+                canToggleEnabled = true;
                 break;
             }
         }

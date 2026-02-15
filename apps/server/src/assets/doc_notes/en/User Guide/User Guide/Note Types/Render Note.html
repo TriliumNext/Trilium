@@ -2,7 +2,7 @@
   <img style="aspect-ratio:601/216;" src="Render Note_image.png"
   width="601" height="216">
 </figure>
-<p>Render Note is a special case of <a href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/_help_yIhgI5H7A2Sm">front-end scripting</a> which
+<p>Render Note is a special case of <a href="#root/_help_yIhgI5H7A2Sm">front-end scripting</a> which
   allows rendering custom content inside a note. This makes it possible to
   create custom dashboards, or to use a custom note editor.</p>
 <p>The content can either be a vanilla HTML, or Preact JSX.</p>
@@ -13,13 +13,11 @@
     <ol>
       <li>HTML language for the legacy/vanilla method, with what needs to be displayed
         (for example <code spellcheck="false">&lt;p&gt;Hello world.&lt;/p&gt;</code>).</li>
-      <li
-     >JSX for the Preact-based approach (see below).</li>
-  </ol>
+      <li>JSX for the Preact-based approach (see below).</li>
+    </ol>
   </li>
   <li>Create a&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>.</li>
-  <li
- >Assign the <code spellcheck="false">renderNote</code>  <a href="#root/_help_zEY4DaJG4YT5">relation</a> to
+  <li>Assign the <code spellcheck="false">renderNote</code>  <a href="#root/_help_zEY4DaJG4YT5">relation</a> to
     point at the previously created code note.</li>
 </ol>
 <h2>Legacy scripting using jQuery</h2>
@@ -48,9 +46,10 @@ $dateEl.text(new Date());</code></pre>
   need to provide a HTML anymore.</p>
 <p>Here are the steps to creating a simple render note:</p>
 <ol>
-  <li>Create a note of type&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>.</li>
-  <li
- >
+  <li>
+    <p>Create a note of type&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>.</p>
+  </li>
+  <li>
     <p>Create a child&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note
       with JSX as the language.
       <br>As an example, use the following content:</p><pre><code class="language-text-x-trilium-auto">export default function() {
@@ -60,17 +59,20 @@ $dateEl.text(new Date());</code></pre>
         &lt;/&gt;
     );
 }</code></pre>
-    </li>
-    <li>In the parent render note, define a <code spellcheck="false">~renderNote</code> relation
-      pointing to the newly created child.</li>
-    <li>Refresh the render note and it should display a “Hello world” message.</li>
+  </li>
+  <li>
+    <p>In the parent render note, define a <code spellcheck="false">~renderNote</code> relation
+      pointing to the newly created child.</p>
+  </li>
+  <li>
+    <p>Refresh the render note and it should display a “Hello world” message.</p>
+  </li>
 </ol>
 <h2>Refreshing the note</h2>
 <p>It's possible to refresh the note via:</p>
 <ul>
   <li>The corresponding button in&nbsp;<a class="reference-link" href="#root/_help_XpOYSgsLkTJy">Floating buttons</a>.</li>
-  <li
- >The “Render active note” <a href="#root/_help_A9Oc6YKKc65v">keyboard shortcut</a> (not
+  <li>The “Render active note” <a href="#root/_help_A9Oc6YKKc65v">keyboard shortcut</a> (not
     assigned by default).</li>
 </ul>
 <h2>Examples</h2>

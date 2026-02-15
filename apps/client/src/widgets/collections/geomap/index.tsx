@@ -1,5 +1,6 @@
 import "./index.css";
 
+import type maplibregl from "maplibre-gl";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
@@ -19,9 +20,8 @@ import { ViewModeProps } from "../interface";
 import { createNewNote, moveMarker } from "./api";
 import openContextMenu, { openMapContextMenu } from "./context_menu";
 import Map, { GeoMouseEvent } from "./map";
-import { DEFAULT_MAP_LAYER_NAME } from "./map_layer";
+import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, MapLayer } from "./map_layer";
 import Marker, { GpxTrack } from "./marker";
-import type maplibregl from "maplibre-gl";
 
 const DEFAULT_COORDINATES: [number, number] = [3.878638227135724, 446.6630455551659];
 const DEFAULT_ZOOM = 2;
@@ -43,10 +43,11 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     const [ state, setState ] = useState(State.Normal);
     const [ coordinates, setCoordinates ] = useState(viewConfig?.view?.center);
     const [ zoom, setZoom ] = useState(viewConfig?.view?.zoom);
-    const [ layerName ] = useNoteLabel(note, "map:style");
     const [ hasScale ] = useNoteLabelBoolean(note, "map:scale");
+    const [ hideLabels ] = useNoteLabelBoolean(note, "map:hideLabels");
     const [ isReadOnly ] = useNoteLabelBoolean(note, "readOnly");
     const [ notes, setNotes ] = useState<FNote[]>([]);
+    const layerData = useLayerData(note);
     const spacedUpdate = useSpacedUpdate(() => {
         if (viewConfig) {
             saveConfig(viewConfig);
@@ -150,7 +151,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                 apiRef={apiRef} containerRef={containerRef}
                 coordinates={coordinates}
                 zoom={zoom}
-                layerName={layerName ?? DEFAULT_MAP_LAYER_NAME}
+                layerData={layerData}
                 viewportChanged={(coordinates, zoom) => {
                     if (!viewConfig) viewConfig = {};
                     viewConfig.view = { center: coordinates, zoom };
@@ -160,11 +161,33 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                 onContextMenu={onContextMenu}
                 scale={hasScale}
             >
-                {notes.map(note => <NoteWrapper note={note} isReadOnly={isReadOnly} />)}
+                {notes.map(note => <NoteWrapper note={note} isReadOnly={isReadOnly} hideLabels={hideLabels} />)}
             </Map>}
             <GeoMapTouchBar state={state} map={apiRef.current} />
         </div>
     );
+}
+
+function useLayerData(note: FNote) {
+    const [ layerName ] = useNoteLabel(note, "map:style");
+    // Memo is needed because it would generate unnecessary reloads due to layer change.
+    const layerData = useMemo(() => {
+        // Custom layers.
+        if (layerName?.startsWith("http")) {
+            return {
+                name: "Custom",
+                type: "raster",
+                url: layerName,
+                attribution: ""
+            } satisfies MapLayer;
+        }
+
+        // Built-in layers.
+        const layerData = MAP_LAYERS[layerName ?? ""] ?? MAP_LAYERS[DEFAULT_MAP_LAYER_NAME];
+        return layerData;
+    }, [ layerName ]);
+
+    return layerData;
 }
 
 function ToggleReadOnlyButton({ note }: { note: FNote }) {
@@ -177,22 +200,26 @@ function ToggleReadOnlyButton({ note }: { note: FNote }) {
     />;
 }
 
-function NoteWrapper({ note, isReadOnly }: { note: FNote, isReadOnly: boolean }) {
+function NoteWrapper({ note, isReadOnly, hideLabels }: {
+    note: FNote,
+    isReadOnly: boolean,
+    hideLabels: boolean
+}) {
     const mime = useNoteProperty(note, "mime");
     const [ location ] = useNoteLabel(note, LOCATION_ATTRIBUTE);
 
     if (mime === "application/gpx+xml") {
-        return <NoteGpxTrack note={note} />;
+        return <NoteGpxTrack note={note} hideLabels={hideLabels} />;
     }
 
     if (location) {
         const latLng = location?.split(",", 2).map((el) => parseFloat(el)) as [ number, number ] | undefined;
         if (!latLng) return;
-        return <NoteMarker note={note} editable={!isReadOnly} latLng={latLng} />;
+        return <NoteMarker note={note} editable={!isReadOnly} latLng={latLng} hideLabels={hideLabels} />;
     }
 }
 
-function NoteMarker({ note, editable, latLng }: { note: FNote, editable: boolean, latLng: [number, number] }) {
+function NoteMarker({ note, editable, latLng, hideLabels }: { note: FNote, editable: boolean, latLng: [number, number], hideLabels: boolean }) {
     // React to changes
     const [ color ] = useNoteLabel(note, "color");
     const [ iconClass ] = useNoteLabel(note, "iconClass");
@@ -200,8 +227,9 @@ function NoteMarker({ note, editable, latLng }: { note: FNote, editable: boolean
 
     const title = useNoteProperty(note, "title");
     const iconHtml = useMemo(() => {
-        return buildIconHtml(note.getIcon(), note.getColorClass() ?? undefined, title, note.noteId, archived);
-    }, [ iconClass, color, title, note.noteId, archived]);
+        const titleOrNone = hideLabels ? undefined : title;
+        return buildIconHtml(note.getIcon(), note.getColorClass() ?? undefined, titleOrNone, note.noteId, archived);
+    }, [ note, iconClass, color, title, archived, hideLabels ]);
 
     const onClick = useCallback(() => {
         appContext.triggerCommand("openInPopup", { noteIdOrPath: note.noteId });
@@ -235,7 +263,7 @@ function NoteMarker({ note, editable, latLng }: { note: FNote, editable: boolean
     />;
 }
 
-function NoteGpxTrack({ note }: { note: FNote }) {
+function NoteGpxTrack({ note, hideLabels }: { note: FNote, hideLabels?: boolean }) {
     const [ xmlString, setXmlString ] = useState<string>();
     const blob = useNoteBlob(note);
 

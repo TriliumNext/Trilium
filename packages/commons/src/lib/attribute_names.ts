@@ -53,6 +53,7 @@ type Labels = {
     "calendar:initialDate": string;
     "map:style": string;
     "map:scale": boolean;
+    "map:hideLabels": boolean;
     "board:groupBy": string;
     maxNestingDepth: number;
     includeArchived: boolean;

@@ -153,6 +153,11 @@ textarea,
     background: var(--input-background-color);
 }
 
+.form-control:disabled {
+    background-color: var(--input-background-color);
+    opacity: 0.6;
+}
+
 .form-control:focus {
     color: var(--input-text-color);
     background: var(--input-background-color);

@@ -2110,7 +2110,8 @@
     "raster": "Raster",
     "vector_light": "Vector (Light)",
     "vector_dark": "Vector (Dark)",
-    "show-scale": "Show scale"
+    "show-scale": "Show scale",
+    "show-labels": "Show marker names"
   },
   "table_context_menu": {
     "delete_row": "Delete row"

@@ -96,6 +96,13 @@ export const bookPropertiesConfig: Record<ViewTypeOptions, BookConfig> = {
                 icon: "bx bx-ruler",
                 type: "checkbox",
                 bindToLabel: "map:scale"
+            },
+            {
+                label: t("book_properties_config.show-labels"),
+                icon: "bx bx-label",
+                type: "checkbox",
+                bindToLabel: "map:hideLabels",
+                reverseValue: true
             }
         ]
     },
