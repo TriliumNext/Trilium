@@ -249,7 +249,8 @@
     "reload_app": "リロードして変更を適用する",
     "set_all_to_default": "すべてのショートカットをデフォルトに戻す",
     "confirm_reset": "キーボードショートカットをすべてデフォルトにリセットしますか？",
-    "keyboard_shortcuts": "キーボードショートカット"
+    "keyboard_shortcuts": "キーボードショートカット",
+    "no_results": "'{{filter}}' に一致するショートカットが見つかりません"
   },
   "confirm": {
     "confirmation": "確認",

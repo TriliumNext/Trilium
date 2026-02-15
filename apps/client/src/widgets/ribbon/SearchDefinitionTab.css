@@ -4,6 +4,12 @@
     width: 100%;
     border-collapse: separate;
     border-spacing: 10px;
+
+    .admonition {
+        margin-top: 0.25em;
+        margin-bottom: 1em;
+        text-wrap: wrap;
+    }
 }
 
 .search-setting-table div {
@@ -141,20 +147,26 @@ body.mobile .search-definition-widget {
         gap: 0.5em;
     }
 
-    .search-setting-table tr.searchString td:nth-of-type(2) {
-        flex-grow: 1;
-    }
+    .search-setting-table tr.searchString {
+        td:nth-of-type(2) {
+            flex-grow: 1;
+        }
 
-    .search-setting-table tr.searchString .button-column {
-        flex-grow: 0;
-        flex-shrink: 0;
-        width: 64px;
+        .button-column {
+            flex-grow: 0;
+            flex-shrink: 0;
+            width: 64px;
+        }
+
+        &.has-error {
+            border-bottom: 0;
+        }
     }
 
     .search-setting-table tr.ancestor > td > div {
         flex-direction: column;
         align-items: flex-start !important;
-    } 
+    }
 
     .search-actions tr {
         border-bottom: 0;

@@ -1067,15 +1067,21 @@
     "click_on_canvas_to_place_new_note": "Click on canvas to place new note"
   },
   "render": {
-    "note_detail_render_help_1": "This help note is shown because this note of type Render HTML doesn't have required relation to function properly.",
-    "note_detail_render_help_2": "Render HTML note type is used for <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">scripting</a>. In short, you have a HTML code note (optionally with some JavaScript) and this note will render it. To make it work, you need to define a <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">relation</a> called \"renderNote\" pointing to the HTML note to render."
+    "setup_title": "Display custom HTML or Preact JSX inside this note",
+    "setup_create_sample_preact": "Create sample note with Preact",
+    "setup_create_sample_html": "Create sample note with HTML",
+    "setup_sample_created": "A sample note was created as a child note.",
+    "disabled_description": "This render notes comes from an external source. To protect you from malicious content, it is not enabled by default. Make sure you trust the source before enabling it.",
+    "disabled_button_enable": "Enable render note"
   },
   "web_view_setup": {
     "title": "Create a live view of a webpage directly into Trilium",
     "url_placeholder": "Enter or paste the website address, for example https://triliumnotes.org",
     "create_button": "Create Web View",
     "invalid_url_title": "Invalid address",
-    "invalid_url_message": "Insert a valid web address, for example https://triliumnotes.org."
+    "invalid_url_message": "Insert a valid web address, for example https://triliumnotes.org.",
+    "disabled_description": "This web view was imported from an external source. To help protect you from phishing or malicious content, it isn’t loading automatically. You can enable it if you trust the source.",
+    "disabled_button_enable": "Enable web view"
   },
   "backend_log": {
     "refresh": "Refresh"
@@ -2288,5 +2294,32 @@
   },
   "bookmark_buttons": {
     "bookmarks": "Bookmarks"
+  },
+  "active_content_badges": {
+    "type_icon_pack": "Icon pack",
+    "type_backend_script": "Backend script",
+    "type_frontend_script": "Frontend script",
+    "type_widget": "Widget",
+    "type_app_css": "Custom CSS",
+    "type_render_note": "Render note",
+    "type_web_view": "Web view",
+    "type_app_theme": "Custom theme",
+    "toggle_tooltip_enable_tooltip": "Click to enable this {{type}}.",
+    "toggle_tooltip_disable_tooltip": "Click to disable this {{type}}.",
+    "menu_docs": "Open documentation",
+    "menu_execute_now": "Execute script now",
+    "menu_run": "Run automatically",
+    "menu_run_disabled": "Manually",
+    "menu_run_backend_startup": "When the backend starts up",
+    "menu_run_hourly": "Hourly",
+    "menu_run_daily": "Daily",
+    "menu_run_frontend_startup": "When the desktop frontend starts up",
+    "menu_run_mobile_startup": "When the mobile frontend starts up",
+    "menu_change_to_widget": "Change to widget",
+    "menu_change_to_frontend_script": "Change to frontend script",
+    "menu_theme_base": "Theme base"
+  },
+  "setup_form": {
+    "more_info": "Learn more"
   }
 }

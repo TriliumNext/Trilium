@@ -35,7 +35,7 @@
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/server": "workspace:*",
     "copy-webpack-plugin": "13.0.1",
-    "electron": "40.4.0",
+    "electron": "40.4.1",
     "@electron-forge/cli": "7.11.1",
     "@electron-forge/maker-deb": "7.11.1",
     "@electron-forge/maker-dmg": "7.11.1",

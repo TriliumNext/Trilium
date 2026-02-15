@@ -168,6 +168,49 @@ function isAffecting(attrRow: AttributeRow, affectedNote: FNote | null | undefin
     return false;
 }
 
+/**
+ * Toggles whether a dangerous attribute is enabled or not. When an attribute is disabled, its name is prefixed with `disabled:`.
+ *
+ * Note that this work for non-dangerous attributes as well.
+ *
+ * If there are multiple attributes with the same name, all of them will be toggled at the same time.
+ *
+ * @param note the note whose attribute to change.
+ * @param type the type of dangerous attribute (label or relation).
+ * @param name the name of the dangerous attribute.
+ * @param willEnable whether to enable or disable the attribute.
+ * @returns a promise that will resolve when the request to the server completes.
+ */
+async function toggleDangerousAttribute(note: FNote, type: "label" | "relation", name: string, willEnable: boolean) {
+    const attrs = [
+        ...note.getOwnedAttributes(type, name),
+        ...note.getOwnedAttributes(type, `disabled:${name}`)
+    ];
+
+    for (const attr of attrs) {
+        const baseName = getNameWithoutDangerousPrefix(attr.name);
+        const newName = willEnable ? baseName : `disabled:${baseName}`;
+        if (newName === attr.name) continue;
+
+        // We are adding and removing afterwards to avoid a flicker (because for a moment there would be no active content attribute anymore) because the operations are done in sequence and not atomically.
+        if (attr.type === "label") {
+            await setLabel(note.noteId, newName, attr.value);
+        } else {
+            await setRelation(note.noteId, newName, attr.value);
+        }
+        await removeAttributeById(note.noteId, attr.attributeId);
+    }
+}
+
+/**
+ * Returns the name of an attribute without the `disabled:` prefix, or the same name if it's not disabled.
+ * @param name the name of an attribute.
+ * @returns the name without the `disabled:` prefix.
+ */
+function getNameWithoutDangerousPrefix(name: string) {
+    return name.startsWith("disabled:") ? name.substring(9) : name;
+}
+
 export default {
     addLabel,
     setLabel,
@@ -177,5 +220,7 @@ export default {
     removeAttributeById,
     removeOwnedLabelByName,
     removeOwnedRelationByName,
-    isAffecting
+    isAffecting,
+    toggleDangerousAttribute,
+    getNameWithoutDangerousPrefix
 };

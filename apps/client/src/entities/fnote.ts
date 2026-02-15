@@ -701,6 +701,15 @@ export default class FNote {
     }
 
     /**
+     * Returns `true` if the note has a label with the given name (same as {@link hasOwnedLabel}), or it has a label with the `disabled:` prefix (for example due to a safe import).
+     * @param name the name of the label to look for.
+     * @returns `true` if the label exists, or its version with the `disabled:` prefix.
+     */
+    hasLabelOrDisabled(name: string) {
+        return this.hasLabel(name) || this.hasLabel(`disabled:${name}`);
+    }
+
+    /**
      * @param name - label name
      * @returns true if label exists (including inherited) and does not have "false" value.
      */

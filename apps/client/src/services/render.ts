@@ -6,7 +6,7 @@ import bundleService, { type Bundle } from "./bundle.js";
 import froca from "./froca.js";
 import server from "./server.js";
 
-async function render(note: FNote, $el: JQuery<HTMLElement>) {
+async function render(note: FNote, $el: JQuery<HTMLElement>, onError?: (e: unknown) => void) {
     const relations = note.getRelations("renderNote");
     const renderNoteIds = relations.map((rel) => rel.value).filter((noteId) => noteId);
 
@@ -21,12 +21,14 @@ async function render(note: FNote, $el: JQuery<HTMLElement>) {
         $scriptContainer.append(bundle.html);
 
         // async so that scripts cannot block trilium execution
-        bundleService.executeBundle(bundle, note, $scriptContainer).then(result => {
-            // Render JSX
-            if (bundle.html === "") {
-                renderIfJsx(bundle, result, $el);
-            }
-        });
+        bundleService.executeBundle(bundle, note, $scriptContainer)
+            .catch(onError)
+            .then(result => {
+                // Render JSX
+                if (bundle.html === "") {
+                    renderIfJsx(bundle, result, $el).catch(onError);
+                }
+            });
     }
 
     return renderNoteIds.length > 0;

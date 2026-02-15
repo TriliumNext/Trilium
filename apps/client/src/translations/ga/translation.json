@@ -1590,7 +1590,8 @@
     "description": "Cur síos",
     "reload_app": "Athlódáil an aip chun na hathruithe a chur i bhfeidhm",
     "set_all_to_default": "Socraigh gach aicearra go dtí an réamhshocrú",
-    "confirm_reset": "An bhfuil tú cinnte gur mhaith leat na haicearraí méarchláir go léir a athshocrú go dtí an rogha réamhshocraithe?"
+    "confirm_reset": "An bhfuil tú cinnte gur mhaith leat na haicearraí méarchláir go léir a athshocrú go dtí an rogha réamhshocraithe?",
+    "no_results": "Níor aimsíodh aon aicearraí a mheaitseálann '{{filter}}'"
   },
   "spellcheck": {
     "title": "Seiceáil Litrithe",
@@ -1808,7 +1809,9 @@
     "print_report_collection_content_many": "Níorbh fhéidir {{count}} nótaí sa bhailiúchán a phriontáil mar nach dtacaítear leo nó mar go bhfuil siad faoi chosaint.",
     "print_report_collection_content_other": "Níorbh fhéidir {{count}} nótaí sa bhailiúchán a phriontáil mar nach dtacaítear leo nó mar go bhfuil siad faoi chosaint.",
     "print_report_collection_details_button": "Féach sonraí",
-    "print_report_collection_details_ignored_notes": "Nótaí neamhairdithe"
+    "print_report_collection_details_ignored_notes": "Nótaí neamhairdithe",
+    "print_report_error_title": "Theip ar phriontáil",
+    "print_report_stack_trace": "Rian cruachta"
   },
   "note_title": {
     "placeholder": "clóscríobh teideal an nóta anseo...",

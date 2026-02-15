@@ -13,3 +13,4 @@ export * from "./lib/attribute_names.js";
 export * from "./lib/utils.js";
 export * from "./lib/dayjs.js";
 export * from "./lib/notes.js";
+export { default as BUILTIN_ATTRIBUTES } from "./lib/builtin_attributes.js";

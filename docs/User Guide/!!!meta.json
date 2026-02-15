@@ -6443,6 +6443,131 @@
                                     "dataFileName": "3_Zen mode_image.png"
                                 }
                             ]
+                        },
+                        {
+                            "isClone": false,
+                            "noteId": "YzMcWlCVeW09",
+                            "notePath": [
+                                "pOsGYCXsbNQG",
+                                "gh7bpGYxajRS",
+                                "YzMcWlCVeW09"
+                            ],
+                            "title": "Active content",
+                            "notePosition": 110,
+                            "prefix": null,
+                            "isExpanded": false,
+                            "type": "text",
+                            "mime": "text/html",
+                            "attributes": [
+                                {
+                                    "type": "label",
+                                    "name": "iconClass",
+                                    "value": "bx bxs-widget",
+                                    "isInheritable": false,
+                                    "position": 30
+                                },
+                                {
+                                    "type": "label",
+                                    "name": "shareAlias",
+                                    "value": "active-content",
+                                    "isInheritable": false,
+                                    "position": 40
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "MgibgPcfeuGz",
+                                    "isInheritable": false,
+                                    "position": 50
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "1vHRoWCEjj0L",
+                                    "isInheritable": false,
+                                    "position": 70
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "yIhgI5H7A2Sm",
+                                    "isInheritable": false,
+                                    "position": 100
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "HcABDtFCkbFN",
+                                    "isInheritable": false,
+                                    "position": 110
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "RnaPdbciOfeq",
+                                    "isInheritable": false,
+                                    "position": 120
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "SPirpZypehBG",
+                                    "isInheritable": false,
+                                    "position": 130
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "mHbBMPDPkVV5",
+                                    "isInheritable": false,
+                                    "position": 150
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "AlhDUqhENtH7",
+                                    "isInheritable": false,
+                                    "position": 160
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "pKK96zzmvBGf",
+                                    "isInheritable": false,
+                                    "position": 170
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "gOKqSJgXLcIj",
+                                    "isInheritable": false,
+                                    "position": 180
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "64ZTlUPgEPtW",
+                                    "isInheritable": false,
+                                    "position": 190
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "HI6GBBIduIgv",
+                                    "isInheritable": false,
+                                    "position": 200
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "IjZS7iK5EXtb",
+                                    "isInheritable": false,
+                                    "position": 210
+                                }
+                            ],
+                            "format": "markdown",
+                            "dataFileName": "Active content.md",
+                            "attachments": []
                         }
                     ]
                 },
@@ -9884,6 +10009,13 @@
                                     "value": "render-note",
                                     "isInheritable": false,
                                     "position": 70
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "yIhgI5H7A2Sm",
+                                    "isInheritable": false,
+                                    "position": 90
                                 }
                             ],
                             "format": "markdown",
@@ -16116,20 +16248,6 @@
                                 {
                                     "type": "relation",
                                     "name": "internalLink",
-                                    "value": "GLks18SNjxmC",
-                                    "isInheritable": false,
-                                    "position": 10
-                                },
-                                {
-                                    "type": "relation",
-                                    "name": "internalLink",
-                                    "value": "zEY4DaJG4YT5",
-                                    "isInheritable": false,
-                                    "position": 20
-                                },
-                                {
-                                    "type": "relation",
-                                    "name": "internalLink",
                                     "value": "SynTBQiBsdYJ",
                                     "isInheritable": false,
                                     "position": 30
@@ -16147,6 +16265,90 @@
                                     "value": "bx bx-window",
                                     "isInheritable": false,
                                     "position": 40
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "Q2z6av6JZVWm",
+                                    "isInheritable": false,
+                                    "position": 50
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "GhurYZjh8e1V",
+                                    "isInheritable": false,
+                                    "position": 60
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "M8IppdwVHSjG",
+                                    "isInheritable": false,
+                                    "position": 70
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "MgibgPcfeuGz",
+                                    "isInheritable": false,
+                                    "position": 80
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "SPirpZypehBG",
+                                    "isInheritable": false,
+                                    "position": 90
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "RnaPdbciOfeq",
+                                    "isInheritable": false,
+                                    "position": 100
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "oPVyFC7WL2Lp",
+                                    "isInheritable": false,
+                                    "position": 110
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "4Gn3psZKsfSm",
+                                    "isInheritable": false,
+                                    "position": 120
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "xYmIYSP6wE3F",
+                                    "isInheritable": false,
+                                    "position": 130
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "HcABDtFCkbFN",
+                                    "isInheritable": false,
+                                    "position": 140
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "HI6GBBIduIgv",
+                                    "isInheritable": false,
+                                    "position": 150
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "GPERMystNGTB",
+                                    "isInheritable": false,
+                                    "position": 160
                                 }
                             ],
                             "format": "markdown",
@@ -16791,6 +16993,13 @@
                                             "value": "launch-bar-widgets",
                                             "isInheritable": false,
                                             "position": 40
+                                        },
+                                        {
+                                            "type": "relation",
+                                            "name": "internalLink",
+                                            "value": "s8alTXmpFR61",
+                                            "isInheritable": false,
+                                            "position": 70
                                         }
                                     ],
                                     "format": "markdown",
@@ -17248,9 +17457,52 @@
                                     "value": "bx bx-server",
                                     "isInheritable": false,
                                     "position": 40
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "yIhgI5H7A2Sm",
+                                    "isInheritable": false,
+                                    "position": 50
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "WOcw2SLH6tbX",
+                                    "isInheritable": false,
+                                    "position": 60
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "poXkQfguuA0U",
+                                    "isInheritable": false,
+                                    "position": 70
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "MEtfsqa5VwNi",
+                                    "isInheritable": false,
+                                    "position": 80
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "6f9hih2hXXZk",
+                                    "isInheritable": false,
+                                    "position": 90
+                                },
+                                {
+                                    "type": "relation",
+                                    "name": "internalLink",
+                                    "value": "GPERMystNGTB",
+                                    "isInheritable": false,
+                                    "position": 100
                                 }
                             ],
                             "format": "markdown",
+                            "dataFileName": "Backend scripts.md",
                             "attachments": [],
                             "dirFileName": "Backend scripts",
                             "children": [

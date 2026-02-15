@@ -210,6 +210,7 @@
     --badge-share-background-color: #4d4d4d;
     --badge-clipped-note-background-color: #295773;
     --badge-execute-background-color: #604180;
+    --badge-active-content-background-color: rgb(12, 68, 70);
 
     --note-icon-background-color: #444444;
     --note-icon-color: #d4d4d4;
@@ -238,9 +239,9 @@
 
     --bottom-panel-background-color: #11111180;
     --bottom-panel-title-bar-background-color: #3F3F3F80;
-    
+
     --status-bar-border-color: var(--main-border-color);
-    
+
     --scrollbar-thumb-color: #fdfdfd5c;
     --scrollbar-thumb-hover-color: #ffffff7d;
     --scrollbar-background-color: transparent;
@@ -336,6 +337,17 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
     --modal-border-color: hsl(var(--custom-color-hue), 9.4%, 25.1%);
     --promoted-attribute-card-background-color: hsl(var(--custom-color-hue), 13.2%, 20.8%);
 }
+
+.modal.tab-bar-modal .tabs .tab-card.with-hue {
+    background-color: hsl(var(--bg-hue), 8.8%, 11.2%);
+    border-color: hsl(var(--bg-hue), 9.4%, 25.1%);
+}
+
+.modal.tab-bar-modal .tabs .tab-card.active.with-hue {
+    background-color: hsl(var(--bg-hue), 8.8%, 16.2%);
+    border-color: hsl(var(--bg-hue), 9.4%, 25.1%);
+}
+
 
 .use-note-color {
     --custom-color: var(--dark-theme-custom-color);

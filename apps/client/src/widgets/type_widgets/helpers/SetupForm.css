@@ -1,0 +1,22 @@
+.setup-form {
+    height: 100%;
+    display: flex;
+    max-width: 600px;
+    margin: auto;
+    flex-direction: column;
+    justify-content: center;
+    padding-inline: 40px;
+
+    .form-icon {
+        margin-bottom: 12px;
+    }
+
+    .form-group {
+        width: 100%;
+        max-width: 600px;
+    }
+
+    .tn-link {
+        margin-top: 1em;
+    }
+}

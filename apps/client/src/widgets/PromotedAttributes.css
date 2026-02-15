@@ -16,6 +16,10 @@ body.mobile .promoted-attributes-widget {
     display: table;
 }
 
+body.experimental-feature-new-layout .promoted-attributes-container {
+    max-height: unset;
+}
+
 .promoted-attribute-cell {
     display: flex;
     align-items: center;

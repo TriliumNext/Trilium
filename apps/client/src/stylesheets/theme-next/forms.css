@@ -838,7 +838,7 @@ input[type="range"] {
     text-align: center;
 }
 
-.tn-centered-form input,
+.tn-centered-form .input-group,
 .tn-centered-form button {
     margin-top: 12px;
 }

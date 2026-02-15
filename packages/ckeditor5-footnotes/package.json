@@ -34,7 +34,7 @@
     "eslint-config-ckeditor5": ">=9.1.0",
     "http-server": "14.1.1",
     "lint-staged": "16.2.7",
-    "stylelint": "17.2.0",
+    "stylelint": "17.3.0",
     "stylelint-config-ckeditor5": ">=9.1.0",
     "ts-node": "10.9.2",
     "typescript": "5.9.3",

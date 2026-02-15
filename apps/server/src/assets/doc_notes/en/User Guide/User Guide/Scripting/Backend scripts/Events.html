@@ -5,139 +5,139 @@
 <p>Global events are attached to the script note via label. Simply create
   e.g. "run" label with some of these values and script note will be executed
   once the event occurs.</p>
-<table>
-  <thead>
-    <tr>
-      <th>Label</th>
-      <th>Description</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code>run</code>
-      </td>
-      <td>
-        <p>Defines on which events script should run. Possible values are:</p>
-        <ul>
-          <li><code>frontendStartup</code> - when Trilium frontend starts up (or is refreshed),
-            but not on mobile.</li>
-          <li><code>mobileStartup</code> - when Trilium frontend starts up (or is refreshed),
-            on mobile.</li>
-          <li><code>backendStartup</code> - when Trilium backend starts up</li>
-          <li><code>hourly</code> - run once an hour. You can use additional label <code>runAtHour</code> to
-            specify at which hour, on the back-end.</li>
-          <li><code>daily</code> - run once a day, on the back-end</li>
-        </ul>
-      </td>
-    </tr>
-    <tr>
-      <td><code>runOnInstance</code>
-      </td>
-      <td>Specifies that the script should only run on a particular&nbsp;<a class="reference-link"
-        href="#root/_help_c5xB8m4g2IY6">Trilium instance</a>.</td>
-    </tr>
-    <tr>
-      <td><code>runAtHour</code>
-      </td>
-      <td>On which hour should this run. Should be used together with <code>#run=hourly</code>.
-        Can be defined multiple times for more runs during the day.</td>
-    </tr>
-  </tbody>
-</table>
-
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Label</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">run</code>
+        </td>
+        <td>
+          <p>Defines on which events script should run. Possible values are:</p>
+          <ul>
+            <li><code spellcheck="false">backendStartup</code> - when Trilium backend starts
+              up</li>
+            <li><code spellcheck="false">hourly</code> - run once an hour. You can use
+              additional label <code spellcheck="false">runAtHour</code> to specify at
+              which hour, on the back-end.</li>
+            <li><code spellcheck="false">daily</code> - run once a day, on the back-end</li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">runOnInstance</code>
+        </td>
+        <td>Specifies that the script should only run on a particular&nbsp;<a class="reference-link"
+          href="#root/_help_c5xB8m4g2IY6">Trilium instance</a>.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">runAtHour</code>
+        </td>
+        <td>On which hour should this run. Should be used together with <code spellcheck="false">#run=hourly</code>.
+          Can be defined multiple times for more runs during the day.</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
 <h2>Entity events</h2>
 <p>Other events are bound to some entity, these are defined as <a href="#root/_help_zEY4DaJG4YT5">relations</a> -
   meaning that script is triggered only if note has this script attached
   to it through relations (or it can inherit it).</p>
-<table>
-  <thead>
-    <tr>
-      <th>Relation</th>
-      <th>Trigger condition</th>
-      <th>Origin entity (see below)</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><code spellcheck="false">runOnNoteCreation</code>
-      </td>
-      <td>executes when note is created on backend. Use this relation if you want
-        to run the script for all notes created under a specific subtree. In that
-        case, create it on the subtree root note and make it inheritable. A new
-        note created within the subtree (any depth) will trigger the script.</td>
-      <td>The <code spellcheck="false">BNote</code> that got created.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">runOnChildNoteCreation</code>
-      </td>
-      <td>executes when new note is created under the note where this relation is
-        defined</td>
-      <td>The <code spellcheck="false">BNote</code> of the child that got created.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">runOnNoteTitleChange</code>
-      </td>
-      <td>executes when note title is changed (includes note creation as well)</td>
-      <td>The <code spellcheck="false">BNote</code> of the note whose title got changed.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">runOnNoteContentChange</code>
-      </td>
-      <td>executes when note content is changed (includes note creation as well).</td>
-      <td>The <code spellcheck="false">BNote</code> of the note whose content got
-        changed.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">runOnNoteChange</code>
-      </td>
-      <td>executes when note is changed (includes note creation as well). Does not
-        include content changes</td>
-      <td>The <code spellcheck="false">BNote</code> of the note that got changed.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">runOnNoteDeletion</code>
-      </td>
-      <td>executes when note is being deleted</td>
-      <td>The <code spellcheck="false">BNote</code> of the note that got (soft) deleted.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">runOnBranchCreation</code>
-      </td>
-      <td>executes when a branch is created. Branch is a link between parent note
-        and child note and is created e.g. when cloning or moving note.</td>
-      <td>The <code spellcheck="false">BBranch</code> that got created.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">runOnBranchChange</code>
-      </td>
-      <td>executes when a branch is updated. (since v0.62)</td>
-      <td>The <code spellcheck="false">BBranch</code> that got changed.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">runOnBranchDeletion</code>
-      </td>
-      <td>executes when a branch is deleted. Branch is a link between parent note
-        and child note and is deleted e.g. when moving note (old branch/link is
-        deleted).</td>
-      <td>The <code spellcheck="false">BBranch</code> that got (soft) deleted.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">runOnAttributeCreation</code>
-      </td>
-      <td>executes when new attribute is created for the note which defines this
-        relation</td>
-      <td>The <code spellcheck="false">BAttribute</code> that got created.</td>
-    </tr>
-    <tr>
-      <td><code spellcheck="false">runOnAttributeChange</code>
-      </td>
-      <td>executes when the attribute is changed of a note which defines this relation.
-        This is triggered also when the attribute is deleted</td>
-      <td>The <code spellcheck="false">BAttribute</code> that got changed.</td>
-    </tr>
-  </tbody>
-</table>
-
+<figure class="table">
+  <table>
+    <thead>
+      <tr>
+        <th>Relation</th>
+        <th>Trigger condition</th>
+        <th>Origin entity (see below)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code spellcheck="false">runOnNoteCreation</code>
+        </td>
+        <td>executes when note is created on backend. Use this relation if you want
+          to run the script for all notes created under a specific subtree. In that
+          case, create it on the subtree root note and make it inheritable. A new
+          note created within the subtree (any depth) will trigger the script.</td>
+        <td>The <code spellcheck="false">BNote</code> that got created.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">runOnChildNoteCreation</code>
+        </td>
+        <td>executes when new note is created under the note where this relation is
+          defined</td>
+        <td>The <code spellcheck="false">BNote</code> of the child that got created.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">runOnNoteTitleChange</code>
+        </td>
+        <td>executes when note title is changed (includes note creation as well)</td>
+        <td>The <code spellcheck="false">BNote</code> of the note whose title got changed.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">runOnNoteContentChange</code>
+        </td>
+        <td>executes when note content is changed (includes note creation as well).</td>
+        <td>The <code spellcheck="false">BNote</code> of the note whose content got
+          changed.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">runOnNoteChange</code>
+        </td>
+        <td>executes when note is changed (includes note creation as well). Does not
+          include content changes</td>
+        <td>The <code spellcheck="false">BNote</code> of the note that got changed.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">runOnNoteDeletion</code>
+        </td>
+        <td>executes when note is being deleted</td>
+        <td>The <code spellcheck="false">BNote</code> of the note that got (soft) deleted.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">runOnBranchCreation</code>
+        </td>
+        <td>executes when a branch is created. Branch is a link between parent note
+          and child note and is created e.g. when cloning or moving note.</td>
+        <td>The <code spellcheck="false">BBranch</code> that got created.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">runOnBranchChange</code>
+        </td>
+        <td>executes when a branch is updated. (since v0.62)</td>
+        <td>The <code spellcheck="false">BBranch</code> that got changed.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">runOnBranchDeletion</code>
+        </td>
+        <td>executes when a branch is deleted. Branch is a link between parent note
+          and child note and is deleted e.g. when moving note (old branch/link is
+          deleted).</td>
+        <td>The <code spellcheck="false">BBranch</code> that got (soft) deleted.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">runOnAttributeCreation</code>
+        </td>
+        <td>executes when new attribute is created for the note which defines this
+          relation</td>
+        <td>The <code spellcheck="false">BAttribute</code> that got created.</td>
+      </tr>
+      <tr>
+        <td><code spellcheck="false">runOnAttributeChange</code>
+        </td>
+        <td>executes when the attribute is changed of a note which defines this relation.
+          This is triggered also when the attribute is deleted</td>
+        <td>The <code spellcheck="false">BAttribute</code> that got changed.</td>
+      </tr>
+    </tbody>
+  </table>
+</figure>
 <h2>Origin entity</h2>
 <p>When a script is run by an event such as the ones described above,
   <code

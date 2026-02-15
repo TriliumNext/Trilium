@@ -50,7 +50,7 @@
     "@triliumnext/server": "workspace:*",
     "@types/express": "5.0.6",
     "@types/js-yaml": "4.0.9",
-    "@types/node": "24.10.10",
+    "@types/node": "24.10.13",
     "@vitest/browser-webdriverio": "4.0.18",
     "@vitest/coverage-v8": "4.0.18",
     "@vitest/ui": "4.0.18",
@@ -93,7 +93,7 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@10.29.2",
+  "packageManager": "pnpm@10.29.3",
   "pnpm": {
     "patchedDependencies": {
       "@ckeditor/ckeditor5-mention": "patches/@ckeditor__ckeditor5-mention.patch",

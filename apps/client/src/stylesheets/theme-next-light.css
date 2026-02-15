@@ -202,6 +202,7 @@
     --badge-share-background-color: #6b6b6b;
     --badge-clipped-note-background-color: #2284c0;
     --badge-execute-background-color: #7b47af;
+    --badge-active-content-background-color: rgb(27, 164, 168);
 
     --note-icon-background-color: #4f4f4f;
     --note-icon-color: white;
@@ -310,6 +311,16 @@
     --modal-background-color: hsl(var(--custom-color-hue), 56%, 96%);
     --modal-border-color: hsl(var(--custom-color-hue), 33%, 41%);
     --promoted-attribute-card-background-color: hsl(var(--custom-color-hue), 40%, 88%);
+}
+
+.modal.tab-bar-modal .tabs .tab-card.with-hue {
+    background-color: hsl(var(--bg-hue), 56%, 96%);
+    border-color: hsl(var(--bg-hue), 33%, 41%);
+}
+
+.modal.tab-bar-modal .tabs .tab-card.active.with-hue {
+    background-color: hsl(var(--bg-hue), 86%, 96%);
+    border-color: hsl(var(--bg-hue), 33%, 41%);
 }
 
 .note-split.with-hue,

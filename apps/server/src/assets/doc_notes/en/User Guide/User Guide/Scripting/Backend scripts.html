@@ -1,0 +1,29 @@
+<p>Unlike <a href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/_help_yIhgI5H7A2Sm">front-end scripts</a> which
+  run on the client / browser-side, back-end scripts run directly on the
+  Node.js environment of the Trilium server.</p>
+<p>Back-end scripts can be used both on a&nbsp;<a class="reference-link"
+  href="#root/pOsGYCXsbNQG/Otzi9La2YAUX/_help_WOcw2SLH6tbX">Server Installation</a>&nbsp;(where
+  it will run on the device the server is running on), or on the&nbsp;
+  <a
+  class="reference-link" href="#root/pOsGYCXsbNQG/Otzi9La2YAUX/_help_poXkQfguuA0U">Desktop Installation</a>&nbsp;(where it will run on the PC).</p>
+<h2>Advantages of backend scripts</h2>
+<p>The benefit of backend scripts is that they can be pretty powerful, for
+  example to have access to the underlying system, for example it can read
+  files or execute processes.</p>
+<p>However, the main benefit of backend scripts is that they have easier
+  access to the notes since the information about them is already loaded
+  in memory. Whereas on the client, notes have to be manually loaded first.</p>
+<h2>Creating a backend script</h2>
+<p>Create a new&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/KSZ04uQ2D1St/_help_6f9hih2hXXZk">Code</a>&nbsp;note
+  and select the language <em>JS backend</em>.</p>
+<h2>Running backend scripts</h2>
+<p>Backend scripts can be either run manually (via the Execute button on
+  the script page), or they can be triggered on certain events.</p>
+<p>In addition, scripts can be run automatically when the server starts up,
+  on a fixed time interval or when a certain event occurs (such as an attribute
+  being modified). For more information, see the dedicated&nbsp;<a class="reference-link"
+  href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/SPirpZypehBG/_help_GPERMystNGTB">Events</a>&nbsp;page.</p>
+<h2>Script API</h2>
+<p>Trilium exposes a set of APIs that can be directly consumed by scripts,
+  under the <code spellcheck="false">api</code> object. For a reference of
+  this API, see&nbsp;<a class="reference-link" href="#root/pOsGYCXsbNQG/CdNpE2pqjmI6/GLks18SNjxmC/_help_MEtfsqa5VwNi">Backend API</a>.</p>

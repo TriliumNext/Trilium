@@ -1,13 +1,11 @@
-"use strict";
+import { type AttributeRow, BUILTIN_ATTRIBUTES } from "@triliumnext/commons";
 
-import searchService from "./search/services/search.js";
-import sql from "./sql.js";
 import becca from "../becca/becca.js";
 import BAttribute from "../becca/entities/battribute.js";
-import attributeFormatter from "./attribute_formatter.js";
-import BUILTIN_ATTRIBUTES from "./builtin_attributes.js";
 import type BNote from "../becca/entities/bnote.js";
-import type { AttributeRow } from "@triliumnext/commons";
+import attributeFormatter from "./attribute_formatter.js";
+import searchService from "./search/services/search.js";
+import sql from "./sql.js";
 
 const ATTRIBUTE_TYPES = new Set(["label", "relation"]);
 
@@ -41,18 +39,18 @@ function getNoteWithLabel(name: string, value?: string): BNote | null {
 
 function createLabel(noteId: string, name: string, value: string = "") {
     return createAttribute({
-        noteId: noteId,
+        noteId,
         type: "label",
-        name: name,
-        value: value
+        name,
+        value
     });
 }
 
 function createRelation(noteId: string, name: string, targetNoteId: string) {
     return createAttribute({
-        noteId: noteId,
+        noteId,
         type: "relation",
-        name: name,
+        name,
         value: targetNoteId
     });
 }

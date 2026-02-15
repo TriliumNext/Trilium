@@ -97,8 +97,8 @@ script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
   ασφαλή σύνδεση
 * [Συγχρονισμός](https://docs.triliumnotes.org/user-guide/setup/synchronization)
   με self-hosted διακομιστή συγχρονισμού
-  * there are [3rd party services for hosting synchronisation
-    server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+  * Υπάρχουν [υπηρεσίες τρίτων για φιλοξενία διακομιστή
+    συγχρονισμού](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [Κοινή χρήση](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
   (δημοσίευση) σημειώσεων στο δημόσιο διαδίκτυο
 * Ισχυρή [κρυπτογράφηση
@@ -106,10 +106,11 @@ script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
   με υποδιαίρεση ανά σημείωση
 * Σχεδίαση διαγραμμάτων, με βάση το [Excalidraw](https://excalidraw.com/) (τύπος
   σημείωσης "καμβάς")
-* [Relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
-  for visualizing notes and their relations
+* [Χάρτες
+  συσχετίσεων](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
+  και [χάρτες
+  σημειώσεων/συνδέσμων](https://docs.triliumnotes.org/user-guide/note-types/note-map)
+  για την οπτικοποίηση σημειώσεων και των συσχετίσεών τους
 * Νοητικοί χάρτες, βασισμένοι στο [Mind Elixir](https://docs.mind-elixir.com/)
 * [Γεωγραφικοί
   χάρτες](https://docs.triliumnotes.org/user-guide/collections/geomap) με
@@ -134,8 +135,8 @@ script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
   εύκολη αποθήκευση περιεχομένου ιστού
 * Προσαρμόσιμο UI (κουμπιά πλαϊνής γραμμής, γραφικά στοιχεία που ορίζονται από
   το χρήστη,...)
-* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
-  along with a Grafana Dashboard.
+* [Μετρικές](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
+  μαζί με ένα Grafana Dashboard.
 
 ✨ Ρίξτε μια ματιά στους ακόλουθους πόρους/κοινότητες τρίτων για περισσότερες
 δυνατότητες που σχετίζονται με το TriliumNext:

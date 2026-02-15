@@ -1,18 +1,20 @@
-.note-detail-empty {
-    container-type: size;
-    padding-top: 50px;
-    min-width: 350px;
-}
+body.desktop {
+    .note-detail-empty {
+        container-type: size;
+        padding-top: 50px;
+        min-width: 350px;
+    }
 
-.note-detail-empty > * {
-    margin-inline: auto;
-    max-width: 850px;
-    padding-inline: 50px;
-}
-
-@container (max-width: 600px) {
     .note-detail-empty > * {
-        padding-inline: 20px;
+        margin-inline: auto;
+        max-width: 850px;
+        padding-inline: 50px;
+    }
+
+    @container (max-width: 600px) {
+        .note-detail-empty > * {
+            padding-inline: 20px;
+        }
     }
 }
 
@@ -24,10 +26,22 @@
 }
 
 .workspace-notes .workspace-note {
-    width: 130px;
     text-align: center;
     margin: 10px;
     border: 1px transparent solid;
+
+    .workspace-icon {
+        text-align: center;
+        font-size: 250%;
+    }
+
+    @media (min-width: 992px) {
+        width: 130px;
+
+        .workspace-icon {
+            font-size: 500%;
+        }
+    }
 }
 
 .workspace-notes .workspace-note:hover {
@@ -37,8 +51,6 @@
 }
 
 .note-detail-empty-results .aa-dropdown-menu {
-    max-height: 50vh;
-    overflow: scroll;
     border: var(--bs-border-width) solid var(--bs-border-color);
     border-top: 0;
 }
@@ -54,9 +66,4 @@
 
 .empty-tab-search .input-clearer-button {
     border-bottom-right-radius: 0;
-}
-
-.workspace-icon {
-    text-align: center;
-    font-size: 500%;
 }
