@@ -1,5 +1,4 @@
 
-
 import chardet from "chardet";
 import crypto from "crypto";
 import escape from "escape-html";
@@ -516,6 +515,13 @@ function slugify(text: string) {
         .replace(/(^-|-$)+/g, ""); // trim dashes
 }
 
+export function waitForStreamToFinish(stream: any): Promise<void> {
+    return new Promise((resolve, reject) => {
+        stream.on("finish", () => resolve());
+        stream.on("error", (err) => reject(err));
+    });
+}
+
 export default {
     compareVersions,
     constantTimeCompare,
@@ -556,5 +562,6 @@ export default {
     toBase64,
     toMap,
     toObject,
-    unescapeHtml
+    unescapeHtml,
+    waitForStreamToFinish
 };

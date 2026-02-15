@@ -1,9 +1,10 @@
-import { join } from "path";
-import BuildContext from "./context";
-import buildSwagger from "./swagger";
 import { cpSync, existsSync, mkdirSync, rmSync } from "fs";
+import { join } from "path";
+
 import buildDocs from "./build-docs";
+import BuildContext from "./context";
 import buildScriptApi from "./script-api";
+import buildSwagger from "./swagger";
 
 const context: BuildContext = {
     gitRootDir: join(__dirname, "../../../"),
