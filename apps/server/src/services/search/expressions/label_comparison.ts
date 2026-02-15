@@ -27,8 +27,15 @@ class LabelComparisonExp extends Expression {
         for (const attr of attrs) {
             const note = attr.note;
             const value = attr.value?.toLowerCase();
-
-            if (inputNoteSet.hasNoteId(note.noteId) && this.comparator(value)) {
+            // Make sure to first apply attribute inheritance before filtering notes,
+            // in order to let LabelComparisonExp support inherited attributes. This
+            // also makes operands of AND and other operators commutative. For example:
+            // #task_is_done = false ~template.title = "Task template"
+            // should return same note result as
+            // ~template.title = "Task template" #task_is_done = false
+            // , provided task_is_done is inherited label. With eager filtering on
+            // note.noteId, this would not be the case. See also test case.
+            if (this.comparator(value)) {
                 if (attr.isInheritable) {
                     resultNoteSet.addAll(note.getSubtreeNotesIncludingTemplated());
                 } else if (note.isInherited()) {
@@ -39,7 +46,7 @@ class LabelComparisonExp extends Expression {
             }
         }
 
-        return resultNoteSet;
+        return resultNoteSet.intersection(inputNoteSet);
     }
 }
 
