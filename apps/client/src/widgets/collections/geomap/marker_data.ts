@@ -9,6 +9,7 @@ const DEFAULT_MARKER_COLOR = "#2A81CB";
 
 // SVG marker pin shape (replaces the Leaflet marker PNG).
 export const MARKER_SVG = "foo"; // TODO: Fix
+const iconSvgCache = new Map<string, string>();
 
 export function useMarkerData(note: FNote | null | undefined, apiRef: MutableRef<maplibregl.Map>) {
     const childNotes = useChildNotes(note?.noteId);
@@ -17,7 +18,6 @@ export function useMarkerData(note: FNote | null | undefined, apiRef: MutableRef
         const map = apiRef.current as maplibregl.Map | undefined;
         if (!map) return;
 
-        const iconSvgCache = new Map<string, string>();
 
         async function ensureIcon(color: string, iconClass: string) {
             const key = `marker-${color}-${iconClass}`;

@@ -1,5 +1,7 @@
+const iconClassToBitmapCache = new Map<string, string | undefined>();
+
 export async function buildMarkerIcon(color: string, iconClass: string, scale = window.devicePixelRatio || 1) {
-    const iconUrl = await snapshotIcon(iconClass, 16 * scale);
+    const iconUrl = iconClassToBitmapCache.get(iconClass) ?? await snapshotIcon(iconClass, 16 * scale);
     return `\
 <svg width="${25 * scale}" height="${41 * scale}" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
 <path d="M12.5 0C5.6 0 0 5.6 0 12.5C0 21.9 12.5 41 12.5 41S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0Z" fill="${color}" />
@@ -10,6 +12,9 @@ export async function buildMarkerIcon(color: string, iconClass: string, scale = 
 }
 
 async function snapshotIcon(iconClass: string, size: number) {
+    const cachedIcon = iconClassToBitmapCache.get(iconClass);
+    if (cachedIcon) return cachedIcon;
+
     await document.fonts.ready;
     const glyph = getGlyphFromClass(iconClass);
     const rendered = renderMarkerCanvas({
@@ -17,7 +22,9 @@ async function snapshotIcon(iconClass: string, size: number) {
         glyph,
         size
     });
-    return rendered?.toDataURL();
+    const dataUrl = rendered?.toDataURL();
+    iconClassToBitmapCache.set(iconClass, dataUrl);
+    return dataUrl;
 }
 
 function renderMarkerCanvas({
@@ -88,7 +95,7 @@ function getGlyphFromClass(iconClass: string) {
     };
 }
 
-export function svgToImage(svgString){
+export function svgToImage(svgString: string){
     return new Promise<HTMLImageElement>(resolve => {
         const svgBlob = new Blob([svgString], { type: "image/svg+xml" });
         const url = URL.createObjectURL(svgBlob);
@@ -101,6 +108,5 @@ export function svgToImage(svgString){
         };
 
         img.src = url;
-        document.body.appendChild(img);
     });
 }
