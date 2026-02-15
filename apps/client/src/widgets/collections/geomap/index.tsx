@@ -1,7 +1,6 @@
 import "./index.css";
 
 import type maplibregl from "maplibre-gl";
-import { RefObject } from "preact";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
@@ -14,7 +13,7 @@ import toast from "../../../services/toast";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
 import { ButtonOrActionButton } from "../../react/Button";
-import { useChildNotes, useNoteBlob, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useNoteTreeDrag, useSpacedUpdate, useTriliumEvent } from "../../react/hooks";
+import { useNoteBlob, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useNoteTreeDrag, useSpacedUpdate, useTriliumEvent } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
 import TouchBar, { TouchBarButton, TouchBarSlider } from "../../react/TouchBar";
 import { ViewModeProps } from "../interface";
@@ -23,6 +22,7 @@ import openContextMenu, { openMapContextMenu } from "./context_menu";
 import Map, { GeoMouseEvent } from "./map";
 import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, MapLayer } from "./map_layer";
 import Marker, { GpxTrack } from "./marker";
+import { MARKER_SVG, useMarkerData } from "./marker_data";
 
 const DEFAULT_COORDINATES: [number, number] = [3.878638227135724, 446.6630455551659];
 const DEFAULT_ZOOM = 2;
@@ -171,80 +171,6 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     );
 }
 
-function useMarkerData(note: FNote | null | undefined, apiRef: RefObject<maplibregl.Map>) {
-    const childNotes = useChildNotes(note?.noteId);
-
-    useEffect(() => {
-        const map = apiRef.current as maplibregl.Map | undefined;
-        if (!map) return;
-
-        svgToImage(MARKER_SVG, (img) => {
-            map.addImage("custom-marker", img, {
-                pixelRatio: window.devicePixelRatio
-            });
-        });
-
-        const features: maplibregl.GeoJSONFeature[] = [];
-        for (const childNote of childNotes) {
-            const location = childNote.getLabelValue(LOCATION_ATTRIBUTE);
-            const latLng = location?.split(",", 2).map((el) => parseFloat(el)) as [ number, number ] | undefined;
-            if (!latLng) continue;
-            latLng.reverse();
-
-            features.push({
-                type: "Feature",
-                geometry: {
-                    type: "Point",
-                    coordinates: latLng
-                },
-                properties: {
-                    id: childNote.noteId,
-                    name: childNote.title,
-                }
-            });
-        }
-
-        map.addSource("points", {
-            type: "geojson",
-            data: {
-                type: "FeatureCollection",
-                features
-            }
-        });
-        map.addLayer({
-            id: "points-layer",
-            type: "symbol",
-            source: "points",
-            layout: {
-                "icon-image": "custom-marker",
-                "icon-size": 1,
-                "icon-anchor": "bottom",
-                "icon-allow-overlap": true
-            }
-        });
-
-        return () => {
-            map.removeLayer("points-layer");
-            map.removeSource("points");
-        };
-    }, [ apiRef, childNotes ]);
-}
-
-function svgToImage(svgString, callback) {
-    const svgBlob = new Blob([svgString], { type: "image/svg+xml" });
-    const url = URL.createObjectURL(svgBlob);
-
-    const img = new Image();
-
-    img.onload = () => {
-        URL.revokeObjectURL(url);
-        callback(img);
-    };
-
-    img.src = url;
-}
-
-
 function useLayerData(note: FNote) {
     const [ layerName ] = useNoteLabel(note, "map:style");
     // Memo is needed because it would generate unnecessary reloads due to layer change.
@@ -372,12 +298,6 @@ function NoteGpxTrack({ note, hideLabels }: { note: FNote, hideLabels?: boolean 
         waypointIconHtml={waypointIconHtml}
     />;
 }
-
-// SVG marker pin shape (replaces the Leaflet marker PNG).
-const MARKER_SVG = `<svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">` +
-    `<path d="M12.5 0C5.6 0 0 5.6 0 12.5C0 21.9 12.5 41 12.5 41S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0Z" fill="#2A81CB" />` +
-    `<circle cx="12.5" cy="12.5" r="8" fill="white" />` +
-    `</svg>`;
 
 function buildIconHtml(bxIconClass: string, colorClass?: string, title?: string, noteIdLink?: string, archived?: boolean) {
     let html = /*html*/`\
