@@ -1,5 +1,5 @@
 .note-list {
-    overflow: hidden;
+    overflow: visible;
     position: relative;
     height: 100%;
 }
