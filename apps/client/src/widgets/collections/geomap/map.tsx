@@ -1,9 +1,11 @@
-import { useEffect, useImperativeHandle, useRef } from "preact/hooks";
-import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { MAP_LAYERS } from "./map_layer";
+
+import maplibregl from "maplibre-gl";
 import { ComponentChildren, createContext, RefObject } from "preact";
+import { useEffect, useImperativeHandle, useRef } from "preact/hooks";
+
 import { useElementSize, useSyncedRef } from "../../react/hooks";
+import { MAP_LAYERS } from "./map_layer";
 
 export interface GeoMouseEvent {
     latlng: { lat: number; lng: number };
@@ -80,8 +82,8 @@ export default function Map({ coordinates, zoom, layerName, viewportChanged, chi
             style,
             center,
             zoom,
-            minZoom: 2,
-            maxBounds: [[-180, -90], [180, 90]]
+            minZoom: 1,
+            renderWorldCopies: false
         });
 
         mapRef.current = mapInstance;
