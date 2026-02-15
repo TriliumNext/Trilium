@@ -178,6 +178,12 @@ function useMarkerData(note: FNote | null | undefined, apiRef: RefObject<maplibr
         const map = apiRef.current as maplibregl.Map | undefined;
         if (!map) return;
 
+        svgToImage(MARKER_SVG, (img) => {
+            map.addImage("custom-marker", img, {
+                pixelRatio: window.devicePixelRatio
+            });
+        });
+
         const features: maplibregl.GeoJSONFeature[] = [];
         for (const childNote of childNotes) {
             const location = childNote.getLabelValue(LOCATION_ATTRIBUTE);
@@ -207,11 +213,13 @@ function useMarkerData(note: FNote | null | undefined, apiRef: RefObject<maplibr
         });
         map.addLayer({
             id: "points-layer",
-            type: "circle",
+            type: "symbol",
             source: "points",
-            paint: {
-                "circle-radius": 6,
-                "circle-color": "#ff0000"
+            layout: {
+                "icon-image": "custom-marker",
+                "icon-size": 1,
+                "icon-anchor": "bottom",
+                "icon-allow-overlap": true
             }
         });
 
@@ -221,6 +229,21 @@ function useMarkerData(note: FNote | null | undefined, apiRef: RefObject<maplibr
         };
     }, [ apiRef, childNotes ]);
 }
+
+function svgToImage(svgString, callback) {
+    const svgBlob = new Blob([svgString], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(svgBlob);
+
+    const img = new Image();
+
+    img.onload = () => {
+        URL.revokeObjectURL(url);
+        callback(img);
+    };
+
+    img.src = url;
+}
+
 
 function useLayerData(note: FNote) {
     const [ layerName ] = useNoteLabel(note, "map:style");
