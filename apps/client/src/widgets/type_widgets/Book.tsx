@@ -1,11 +1,14 @@
+import "./Book.css";
+
+import { useEffect, useState } from "preact/hooks";
+
 import { t } from "../../services/i18n";
+import { ViewTypeOptions } from "../collections/interface";
+import CollectionProperties from "../note_bars/CollectionProperties";
 import Alert from "../react/Alert";
 import { useNoteLabelWithDefault, useTriliumEvent } from "../react/hooks";
 import RawHtml from "../react/RawHtml";
 import { TypeWidgetProps } from "./type_widget";
-import "./Book.css";
-import { useEffect, useState } from "preact/hooks";
-import { ViewTypeOptions } from "../collections/interface";
 
 const VIEW_TYPES: ViewTypeOptions[] = [ "list", "grid", "presentation" ];
 
@@ -27,10 +30,14 @@ export default function Book({ note }: TypeWidgetProps) {
     return (
         <>
             {shouldDisplayNoChildrenWarning && (
-                <Alert type="warning" className="note-detail-book-empty-help">
-                    <RawHtml html={t("book.no_children_help")} />
-                </Alert>
+                <>
+                    <CollectionProperties note={note} />
+
+                    <Alert type="warning" className="note-detail-book-empty-help">
+                        <RawHtml html={t("book.no_children_help")} />
+                    </Alert>
+                </>
             )}
         </>
-    )
+    );
 }

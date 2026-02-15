@@ -5,7 +5,7 @@
     align-items: center;
     width: 100%;
     max-width: unset;
-    font-size: 0.8em;
+    font-size: 0.8rem;
 
     .dropdown-menu {
         input.form-control {
