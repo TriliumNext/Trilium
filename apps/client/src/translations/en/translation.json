@@ -1010,7 +1010,7 @@
     "no_attachments": "This note has no attachments."
   },
   "book": {
-    "no_children_help": "This collection doesn't have any child notes so there's nothing to display. See <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> for details.",
+    "no_children_help": "This collection doesn't have any child notes so there's nothing to display.",
     "drag_locked_title": "Locked for editing",
     "drag_locked_message": "Dragging not allowed since the collection is locked for editing."
   },

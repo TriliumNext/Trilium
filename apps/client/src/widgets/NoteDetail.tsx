@@ -1,6 +1,7 @@
 import "./NoteDetail.css";
 
 import clsx from "clsx";
+import { note } from "mermaid/dist/rendering-util/rendering-elements/shapes/note.js";
 import { isValidElement, VNode } from "preact";
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -355,6 +356,14 @@ export function checkFullHeight(noteContext: NoteContext | undefined, type: Exte
     // https://github.com/zadam/trilium/issues/2522
     const isBackendNote = noteContext?.noteId === "_backendLog";
     const isFullHeightNoteType = type && TYPE_MAPPINGS[type].isFullHeight;
+
+    // Allow vertical centering when there are no results.
+    if (type === "book" &&
+        [ "grid", "list" ].includes(noteContext.note?.getLabelValue("viewType") ?? "grid") &&
+        !noteContext.note?.hasChildren()) {
+        return true;
+    }
+
     return (!noteContext?.hasNoteList() && isFullHeightNoteType)
         || noteContext?.viewScope?.viewMode === "attachments"
         || isBackendNote;

@@ -5,9 +5,8 @@ import { useEffect, useState } from "preact/hooks";
 import { t } from "../../services/i18n";
 import { ViewTypeOptions } from "../collections/interface";
 import CollectionProperties from "../note_bars/CollectionProperties";
-import Alert from "../react/Alert";
 import { useNoteLabelWithDefault, useTriliumEvent } from "../react/hooks";
-import RawHtml from "../react/RawHtml";
+import NoItems from "../react/NoItems";
 import { TypeWidgetProps } from "./type_widget";
 
 const VIEW_TYPES: ViewTypeOptions[] = [ "list", "grid", "presentation" ];
@@ -33,9 +32,7 @@ export default function Book({ note }: TypeWidgetProps) {
                 <>
                     <CollectionProperties note={note} />
 
-                    <Alert type="warning" className="note-detail-book-empty-help">
-                        <RawHtml html={t("book.no_children_help")} />
-                    </Alert>
+                    <NoItems icon="bx bx-collection" text={t("book.no_children_help")} />
                 </>
             )}
         </>
