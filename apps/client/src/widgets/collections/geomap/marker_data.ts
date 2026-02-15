@@ -9,10 +9,10 @@ const DEFAULT_MARKER_COLOR = "#2A81CB";
 // SVG marker pin shape (replaces the Leaflet marker PNG).
 export const MARKER_SVG = "foo"; // TODO: Fix
 
-async function buildMarkerIcon(color = DEFAULT_MARKER_COLOR, iconClass: string) {
-    const iconUrl = await snapshotIcon(iconClass);
+async function buildMarkerIcon(color = DEFAULT_MARKER_COLOR, iconClass: string, scale = window.devicePixelRatio || 1) {
+    const iconUrl = await snapshotIcon(iconClass, 16 * scale);
     return `\
-<svg width="25" height="41" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+<svg width="${25 * scale}" height="${41 * scale}" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
 <path d="M12.5 0C5.6 0 0 5.6 0 12.5C0 21.9 12.5 41 12.5 41S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0Z" fill="${color}" />
 <circle cx="12.5" cy="12.5" r="8" fill="white" />
 <image href="${iconUrl}" x="4.5" y="4.5" width="16" height="16" preserveAspectRatio="xMidYMid meet" />
@@ -20,13 +20,13 @@ async function buildMarkerIcon(color = DEFAULT_MARKER_COLOR, iconClass: string) 
     `;
 }
 
-async function snapshotIcon(iconClass: string) {
+async function snapshotIcon(iconClass: string, size: number) {
     await document.fonts.ready;
     const glyph = getGlyphFromClass(iconClass);
     const rendered = renderMarkerCanvas({
         color: "black",
         glyph,
-        size: 16
+        size
     });
     return rendered?.toDataURL();
 }
@@ -144,7 +144,9 @@ export function useMarkerData(note: FNote | null | undefined, apiRef: MutableRef
         // Build all the icons.
         await Promise.all(iconSvgCache.entries().map(async ([ key, svg ]) => {
             const image = await svgToImage(svg);
-            map.addImage(key, image);
+            map.addImage(key, image, {
+                pixelRatio: window.devicePixelRatio
+            });
         }));
 
         map.addSource("points", {
