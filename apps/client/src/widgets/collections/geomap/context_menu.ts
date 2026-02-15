@@ -1,4 +1,4 @@
-import type { LatLng, LeafletMouseEvent } from "leaflet";
+import type { GeoMouseEvent } from "./map.js";
 import appContext, { type CommandMappings } from "../../../components/app_context.js";
 import contextMenu, { type MenuItem } from "../../../menus/context_menu.js";
 import linkContextMenu from "../../../menus/link_context_menu.js";
@@ -8,7 +8,7 @@ import { createNewNote } from "./api.js";
 import { copyTextWithToast } from "../../../services/clipboard_ext.js";
 import link from "../../../services/link.js";
 
-export default function openContextMenu(noteId: string, e: LeafletMouseEvent, isEditable: boolean) {
+export default function openContextMenu(noteId: string, e: GeoMouseEvent, isEditable: boolean) {
     let items: MenuItem<keyof CommandMappings>[] = [
         ...buildGeoLocationItem(e),
         { kind: "separator" },
@@ -44,7 +44,7 @@ export default function openContextMenu(noteId: string, e: LeafletMouseEvent, is
     });
 }
 
-export function openMapContextMenu(noteId: string, e: LeafletMouseEvent, isEditable: boolean) {
+export function openMapContextMenu(noteId: string, e: GeoMouseEvent, isEditable: boolean) {
     let items: MenuItem<keyof CommandMappings>[] = [
         ...buildGeoLocationItem(e)
     ];
@@ -71,8 +71,8 @@ export function openMapContextMenu(noteId: string, e: LeafletMouseEvent, isEdita
     });
 }
 
-function buildGeoLocationItem(e: LeafletMouseEvent) {
-    function formatGeoLocation(latlng: LatLng, precision: number = 6) {
+function buildGeoLocationItem(e: GeoMouseEvent) {
+    function formatGeoLocation(latlng: { lat: number; lng: number }, precision: number = 6) {
         return `${latlng.lat.toFixed(precision)}, ${latlng.lng.toFixed(precision)}`;
     }
 

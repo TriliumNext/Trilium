@@ -1,4 +1,4 @@
-import type { LatLng, LeafletMouseEvent } from "leaflet";
+import type { GeoMouseEvent } from "./map";
 import { LOCATION_ATTRIBUTE } from ".";
 import attributes from "../../../services/attributes";
 import { prompt } from "../../../services/dialog";
@@ -8,12 +8,12 @@ import { CreateChildrenResponse } from "@triliumnext/commons";
 
 const CHILD_NOTE_ICON = "bx bx-pin";
 
-export async function moveMarker(noteId: string, latLng: LatLng | null) {
+export async function moveMarker(noteId: string, latLng: { lat: number; lng: number } | null) {
     const value = latLng ? [latLng.lat, latLng.lng].join(",") : "";
     await attributes.setLabel(noteId, LOCATION_ATTRIBUTE, value);
 }
 
-export async function createNewNote(noteId: string, e: LeafletMouseEvent) {
+export async function createNewNote(noteId: string, e: GeoMouseEvent) {
     const title = await prompt({ message: t("relation_map.enter_title_of_new_note"), defaultValue: t("relation_map.default_new_note_title") });
 
     if (title?.trim()) {

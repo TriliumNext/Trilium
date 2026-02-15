@@ -89,7 +89,7 @@
 /* #endregion */
 
 /* #region Geo map buttons */
-.leaflet-pane {
+.maplibregl-canvas-container {
     z-index: 50;
 }
 /* #endregion */

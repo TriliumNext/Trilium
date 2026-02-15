@@ -1,137 +1,210 @@
-import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
-import L, { control, LatLng, Layer, LeafletMouseEvent } from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { MAP_LAYERS, type MapLayer } from "./map_layer";
-import { ComponentChildren, createContext, RefObject } from "preact";
-import { useElementSize, useSyncedRef } from "../../react/hooks";
+import "maplibre-gl/dist/maplibre-gl.css";
 
-export const ParentMap = createContext<L.Map | null>(null);
+import maplibregl from "maplibre-gl";
+import { ComponentChildren, createContext, RefObject } from "preact";
+import { useEffect, useImperativeHandle, useRef } from "preact/hooks";
+
+import { useElementSize, useSyncedRef } from "../../react/hooks";
+import { MapLayer } from "./map_layer";
+
+export interface GeoMouseEvent {
+    latlng: { lat: number; lng: number };
+    originalEvent: MouseEvent;
+}
+
+export const ParentMap = createContext<maplibregl.Map | null>(null);
 
 interface MapProps {
-    apiRef?: RefObject<L.Map | null>;
+    apiRef?: RefObject<maplibregl.Map | null>;
     containerRef?: RefObject<HTMLDivElement>;
-    coordinates: LatLng | [number, number];
+    coordinates: { lat: number; lng: number } | [number, number];
     zoom: number;
     layerData: MapLayer;
-    viewportChanged: (coordinates: LatLng, zoom: number) => void;
+    viewportChanged: (coordinates: { lat: number; lng: number }, zoom: number) => void;
     children: ComponentChildren;
-    onClick?: (e: LeafletMouseEvent) => void;
-    onContextMenu?: (e: LeafletMouseEvent) => void;
+    onClick?: (e: GeoMouseEvent) => void;
+    onContextMenu?: (e: GeoMouseEvent) => void;
     onZoom?: () => void;
     scale: boolean;
 }
 
+function toMapLibreEvent(e: maplibregl.MapMouseEvent): GeoMouseEvent {
+    return {
+        latlng: { lat: e.lngLat.lat, lng: e.lngLat.lng },
+        originalEvent: e.originalEvent
+    };
+}
+
 export default function Map({ coordinates, zoom, layerData, viewportChanged, children, onClick, onContextMenu, scale, apiRef, containerRef: _containerRef, onZoom }: MapProps) {
-    const mapRef = useRef<L.Map>(null);
+    const mapRef = useRef<maplibregl.Map>(null);
     const containerRef = useSyncedRef<HTMLDivElement>(_containerRef);
 
     useImperativeHandle(apiRef ?? null, () => mapRef.current);
 
+    // Initialize the map.
     useEffect(() => {
         if (!containerRef.current) return;
-        const mapInstance = L.map(containerRef.current, {
-            worldCopyJump: false,
-            maxBounds: [
-                [-90, -180],
-                [90, 180]
-            ],
-            minZoom: 2
+
+        let style: maplibregl.StyleSpecification | string;
+
+        if (layerData.type === "vector") {
+            style = typeof layerData.style === "string"
+                ? layerData.style
+                : layerData.styleFallback;
+        } else {
+            style = {
+                version: 8,
+                sources: {
+                    "raster-tiles": {
+                        type: "raster",
+                        tiles: [layerData.url],
+                        tileSize: 256,
+                        attribution: layerData.attribution
+                    }
+                },
+                layers: [
+                    {
+                        id: "raster-layer",
+                        type: "raster",
+                        source: "raster-tiles"
+                    }
+                ]
+            };
+        }
+
+        const center = Array.isArray(coordinates)
+            ? [coordinates[1], coordinates[0]] as [number, number]
+            : [coordinates.lng, coordinates.lat] as [number, number];
+
+        const mapInstance = new maplibregl.Map({
+            container: containerRef.current,
+            style,
+            center,
+            zoom,
+            minZoom: 1,
+            renderWorldCopies: false
         });
 
         mapRef.current = mapInstance;
+
+        // Load async vector style if needed.
+        if (layerData.type === "vector" && typeof layerData.style !== "string") {
+            layerData.style().then(asyncStyle => {
+                mapInstance.setStyle(asyncStyle as maplibregl.StyleSpecification);
+            });
+        }
+
         return () => {
-            mapInstance.off();
             mapInstance.remove();
+            mapRef.current = null;
         };
     }, []);
 
-    // Load the layer asynchronously.
-    const [ layer, setLayer ] = useState<Layer>();
-    useEffect(() => {
-        async function load() {
-            if (layerData.type === "vector") {
-                const style = (typeof layerData.style === "string" ? layerData.style : await layerData.style());
-                await import("@maplibre/maplibre-gl-leaflet");
-
-                setLayer(L.maplibreGL({
-                    style: style as any
-                }));
-            } else {
-                setLayer(L.tileLayer(layerData.url, {
-                    attribution: layerData.attribution,
-                    detectRetina: true,
-                    noWrap: true
-                }));
-            }
-        }
-
-        load();
-    }, [ layerData ]);
-
-    // Attach layer to the map.
+    // React to layer changes.
     useEffect(() => {
         const map = mapRef.current;
-        const layerToAdd = layer;
-        if (!map || !layerToAdd) return;
-        layerToAdd.addTo(map);
-        return () => layerToAdd.removeFrom(map);
-    }, [ mapRef, layer ]);
+        if (!map) return;
+
+        if (layerData.type === "vector") {
+            if (typeof layerData.style === "string") {
+                map.setStyle(layerData.style);
+            } else {
+                layerData.style().then(asyncStyle => {
+                    map.setStyle(asyncStyle as maplibregl.StyleSpecification);
+                });
+            }
+        } else {
+            map.setStyle({
+                version: 8,
+                sources: {
+                    "raster-tiles": {
+                        type: "raster",
+                        tiles: [layerData.url],
+                        tileSize: 256,
+                        attribution: layerData.attribution
+                    }
+                },
+                layers: [
+                    {
+                        id: "raster-layer",
+                        type: "raster",
+                        source: "raster-tiles"
+                    }
+                ]
+            });
+        }
+    }, [ layerData ]);
 
     // React to coordinate changes.
     useEffect(() => {
         if (!mapRef.current) return;
-        mapRef.current.setView(coordinates, zoom);
-    }, [ mapRef, coordinates, zoom ]);
+
+        const center = Array.isArray(coordinates)
+            ? [coordinates[1], coordinates[0]] as [number, number]
+            : [coordinates.lng, coordinates.lat] as [number, number];
+
+        mapRef.current.setCenter(center);
+        mapRef.current.setZoom(zoom);
+    }, [ coordinates, zoom ]);
 
     // Viewport callback.
     useEffect(() => {
         const map = mapRef.current;
         if (!map) return;
 
-        const updateFn = () => viewportChanged(map.getBounds().getCenter(), map.getZoom());
+        const updateFn = () => {
+            const center = map.getCenter();
+            viewportChanged({ lat: center.lat, lng: center.lng }, map.getZoom());
+        };
         map.on("moveend", updateFn);
-        map.on("zoomend", updateFn);
 
         return () => {
             map.off("moveend", updateFn);
-            map.off("zoomend", updateFn);
         };
-    }, [ mapRef, viewportChanged ]);
+    }, [ viewportChanged ]);
 
     useEffect(() => {
-        if (onClick && mapRef.current) {
-            mapRef.current.on("click", onClick);
-            return () => mapRef.current?.off("click", onClick);
-        }
-    }, [ mapRef, onClick ]);
+        const map = mapRef.current;
+        if (!onClick || !map) return;
+
+        const handler = (e: maplibregl.MapMouseEvent) => onClick(toMapLibreEvent(e));
+        map.on("click", handler);
+        return () => { map.off("click", handler); };
+    }, [ onClick ]);
 
     useEffect(() => {
-        if (onContextMenu && mapRef.current) {
-            mapRef.current.on("contextmenu", onContextMenu);
-            return () => mapRef.current?.off("contextmenu", onContextMenu);
-        }
-    }, [ mapRef, onContextMenu ]);
+        const map = mapRef.current;
+        if (!onContextMenu || !map) return;
+
+        const handler = (e: maplibregl.MapMouseEvent) => {
+            e.preventDefault();
+            onContextMenu(toMapLibreEvent(e));
+        };
+        map.on("contextmenu", handler);
+        return () => { map.off("contextmenu", handler); };
+    }, [ onContextMenu ]);
 
     useEffect(() => {
-        if (onZoom && mapRef.current) {
-            mapRef.current.on("zoom", onZoom);
-            return () => mapRef.current?.off("zoom", onZoom);
-        }
-    }, [ mapRef, onZoom ]);
+        const map = mapRef.current;
+        if (!onZoom || !map) return;
+
+        map.on("zoom", onZoom);
+        return () => { map.off("zoom", onZoom); };
+    }, [ onZoom ]);
 
     // Scale
     useEffect(() => {
         const map = mapRef.current;
         if (!scale || !map) return;
-        const scaleControl  = control.scale();
-        scaleControl.addTo(map);
-        return () => scaleControl.remove();
-    }, [ mapRef, scale ]);
+        const scaleControl = new maplibregl.ScaleControl();
+        map.addControl(scaleControl);
+        return () => { map.removeControl(scaleControl); };
+    }, [ scale ]);
 
     // Adapt to container size changes.
     const size = useElementSize(containerRef);
     useEffect(() => {
-        mapRef.current?.invalidateSize();
+        mapRef.current?.resize();
     }, [ size?.width, size?.height ]);
 
     return (

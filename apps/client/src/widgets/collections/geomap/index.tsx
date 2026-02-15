@@ -1,8 +1,6 @@
 import "./index.css";
 
-import { divIcon, GPXOptions, LatLng, LeafletMouseEvent } from "leaflet";
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerIconShadow from "leaflet/dist/images/marker-shadow.png";
+import type maplibregl from "maplibre-gl";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
@@ -21,9 +19,10 @@ import TouchBar, { TouchBarButton, TouchBarSlider } from "../../react/TouchBar";
 import { ViewModeProps } from "../interface";
 import { createNewNote, moveMarker } from "./api";
 import openContextMenu, { openMapContextMenu } from "./context_menu";
-import Map from "./map";
+import Map, { GeoMouseEvent } from "./map";
 import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, MapLayer } from "./map_layer";
 import Marker, { GpxTrack } from "./marker";
+import { MARKER_SVG, useMarkerData } from "./marker_data";
 
 const DEFAULT_COORDINATES: [number, number] = [3.878638227135724, 446.6630455551659];
 const DEFAULT_ZOOM = 2;
@@ -31,7 +30,7 @@ export const LOCATION_ATTRIBUTE = "geolocation";
 
 interface MapData {
     view?: {
-        center?: LatLng | [number, number];
+        center?: { lat: number; lng: number } | [number, number];
         zoom?: number;
     };
 }
@@ -90,7 +89,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
         moveMarker(noteId, null);
     });
 
-    const onClick = useCallback(async (e: LeafletMouseEvent) => {
+    const onClick = useCallback(async (e: GeoMouseEvent) => {
         if (state === State.NewNote) {
             toast.closePersistent("geo-new-note");
             await createNewNote(note.noteId, e);
@@ -98,13 +97,15 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
         }
     }, [ state ]);
 
-    const onContextMenu = useCallback((e: LeafletMouseEvent) => {
+    const onContextMenu = useCallback((e: GeoMouseEvent) => {
         openMapContextMenu(note.noteId, e, !isReadOnly);
     }, [ note.noteId, isReadOnly ]);
 
     // Dragging
     const containerRef = useRef<HTMLDivElement>(null);
-    const apiRef = useRef<L.Map>(null);
+    const apiRef = useRef<maplibregl.Map>(null);
+    useMarkerData(note, apiRef);
+
     useNoteTreeDrag(containerRef, {
         dragEnabled: !isReadOnly,
         dragNotEnabledMessage: {
@@ -121,15 +122,15 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
             const offset = containerRef.current?.getBoundingClientRect();
             const x = e.clientX - (offset?.left ?? 0);
             const y = e.clientY - (offset?.top ?? 0);
-            const latlng = api.containerPointToLatLng([ x, y ]);
+            const lngLat = api.unproject([x, y]);
 
             const targetNote = await froca.getNote(noteId, true);
             const parents = targetNote?.getParentNoteIds();
             if (parents?.includes(note.noteId)) {
-                await moveMarker(noteId, latlng);
+                await moveMarker(noteId, { lat: lngLat.lat, lng: lngLat.lng });
             } else {
                 await branches.cloneNoteToParentNote(noteId, noteId);
-                await moveMarker(noteId, latlng);
+                await moveMarker(noteId, { lat: lngLat.lat, lng: lngLat.lng });
             }
         }
     });
@@ -163,7 +164,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                 onContextMenu={onContextMenu}
                 scale={hasScale}
             >
-                {notes.map(note => <NoteWrapper note={note} isReadOnly={isReadOnly} hideLabels={hideLabels} />)}
+                {/* {notes.map(note => <NoteWrapper note={note} isReadOnly={isReadOnly} hideLabels={hideLabels} />)} */}
             </Map>}
             <GeoMapTouchBar state={state} map={apiRef.current} />
         </div>
@@ -228,10 +229,10 @@ function NoteMarker({ note, editable, latLng, hideLabels }: { note: FNote, edita
     const [ archived ] = useNoteLabelBoolean(note, "archived");
 
     const title = useNoteProperty(note, "title");
-    const icon = useMemo(() => {
+    const iconHtml = useMemo(() => {
         const titleOrNone = hideLabels ? undefined : title;
-        return buildIcon(note.getIcon(), note.getColorClass() ?? undefined, titleOrNone, note.noteId, archived);
-    }, [ iconClass, color, title, note.noteId, archived, hideLabels ]);
+        return buildIconHtml(note.getIcon(), note.getColorClass() ?? undefined, titleOrNone, note.noteId, archived);
+    }, [ note, iconClass, color, title, archived, hideLabels ]);
 
     const onClick = useCallback(() => {
         appContext.triggerCommand("openInPopup", { noteIdOrPath: note.noteId });
@@ -246,15 +247,17 @@ function NoteMarker({ note, editable, latLng, hideLabels }: { note: FNote, edita
         }
     }, [ note.noteId ]);
 
-    const onDragged = useCallback((newCoordinates: LatLng) => {
+    const onDragged = useCallback((newCoordinates: { lat: number; lng: number }) => {
         moveMarker(note.noteId, newCoordinates);
     }, [ note.noteId ]);
 
-    const onContextMenu = useCallback((e: LeafletMouseEvent) => openContextMenu(note.noteId, e, editable), [ note.noteId, editable ]);
+    const onContextMenu = useCallback((e: GeoMouseEvent) => openContextMenu(note.noteId, e, editable), [ note.noteId, editable ]);
 
     return latLng && <Marker
         coordinates={latLng}
-        icon={icon}
+        iconHtml={iconHtml}
+        iconSize={[25, 41]}
+        iconAnchor={[12, 41]}
         draggable={editable}
         onMouseDown={onMouseDown}
         onDragged={editable ? onDragged : undefined}
@@ -282,40 +285,34 @@ function NoteGpxTrack({ note, hideLabels }: { note: FNote, hideLabels?: boolean 
     const color = useNoteLabel(note, "color");
     const iconClass = useNoteLabel(note, "iconClass");
 
-    const options = useMemo<GPXOptions>(() => ({
-        markers: {
-            startIcon: buildIcon(note.getIcon(), note.getColorClass(), hideLabels ? undefined : note.title),
-            endIcon: buildIcon("bxs-flag-checkered"),
-            wptIcons: {
-                "": buildIcon("bx bx-pin")
-            }
-        },
-        polyline_options: {
-            color: note.getLabelValue("color") ?? "blue"
-        }
-    }), [ color, iconClass, hideLabels ]);
-    return xmlString && <GpxTrack gpxXmlString={xmlString} options={options} />;
+    const trackColor = useMemo(() => note.getLabelValue("color") ?? "blue", [ color ]);
+    const startIconHtml = useMemo(() => buildIconHtml(note.getIcon(), note.getColorClass() ?? undefined, note.title), [ iconClass, color ]);
+    const endIconHtml = useMemo(() => buildIconHtml("bxs-flag-checkered"), [ ]);
+    const waypointIconHtml = useMemo(() => buildIconHtml("bx bx-pin"), [ ]);
+
+    return xmlString && <GpxTrack
+        gpxXmlString={xmlString}
+        trackColor={trackColor}
+        startIconHtml={startIconHtml}
+        endIconHtml={endIconHtml}
+        waypointIconHtml={waypointIconHtml}
+    />;
 }
 
-function buildIcon(bxIconClass: string, colorClass?: string, title?: string, noteIdLink?: string, archived?: boolean) {
+function buildIconHtml(bxIconClass: string, colorClass?: string, title?: string, noteIdLink?: string, archived?: boolean) {
     let html = /*html*/`\
-        <img class="icon" src="${markerIcon}" />
-        <img class="icon-shadow" src="${markerIconShadow}" />
-        <span class="bx ${bxIconClass} ${colorClass ?? ""}"></span>
+        <div class="marker-pin">${MARKER_SVG}</div>
+        <span class="bx ${bxIconClass} tn-icon ${colorClass ?? ""}"></span>
         <span class="title-label">${title ?? ""}</span>`;
 
     if (noteIdLink) {
         html = `<div data-href="#root/${noteIdLink}" class="${archived ? "archived" : ""}">${html}</div>`;
     }
 
-    return divIcon({
-        html,
-        iconSize: [25, 41],
-        iconAnchor: [12, 41]
-    });
+    return html;
 }
 
-function GeoMapTouchBar({ state, map }: { state: State, map: L.Map | null | undefined }) {
+function GeoMapTouchBar({ state, map }: { state: State, map: maplibregl.Map | null | undefined }) {
     const [ currentZoom, setCurrentZoom ] = useState<number>();
     const parentComponent = useContext(ParentComponent);
 
@@ -327,7 +324,7 @@ function GeoMapTouchBar({ state, map }: { state: State, map: L.Map | null | unde
         }
 
         map.on("zoom", onZoomChanged);
-        return () => map.off("zoom", onZoomChanged);
+        return () => { map.off("zoom", onZoomChanged); };
     }, [ map ]);
 
     return map && currentZoom && (
