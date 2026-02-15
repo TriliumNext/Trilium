@@ -234,6 +234,32 @@ describe("Parser", () => {
         expect(rootExp.limit).toBe(2);
         expect(rootExp.subExpression).toBeInstanceOf(AndExp);
     });
+
+    describe("orderBy with level > 0", () => {
+        it("and grouping parentheses should parse without error", () => {
+            const searchContext = new SearchContext();
+            const rootExp = parseInternal(
+                {
+                    fulltextTokens: [],
+                    expressionTokens: tokens(["#foo", "and" , ["#bar", "or", "#baz",  ], "orderby", "#priority", "desc"]),
+                    searchContext
+                }
+            );
+            expect(searchContext.error).toBeNull();
+        });
+
+        it("and not() should parse without error", () => {
+            const searchContext = new SearchContext();
+            const rootExp = parseInternal(
+                {
+                    fulltextTokens: [],
+                    expressionTokens: tokens(["#foo", "and" , "not", [ "#bar", "=", "baz" ], "orderby", "#priority", "desc"]) ,
+                    searchContext
+                }
+            );
+            expect(searchContext.error).toBeNull();
+        });
+    });
 });
 
 describe("Invalid expressions", () => {

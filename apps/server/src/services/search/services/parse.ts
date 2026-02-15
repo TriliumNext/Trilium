@@ -361,7 +361,7 @@ function getExpression(tokens: TokenData[], searchContext: SearchContext, level 
 
     for (i = 0; i < tokens.length; i++) {
         if (Array.isArray(tokens[i])) {
-            const expression = getExpression(tokens[i] as unknown as TokenData[], searchContext, level++);
+            const expression = getExpression(tokens[i] as unknown as TokenData[], searchContext, level + 1);
             if (expression) {
                 expressions.push(expression);
             }
@@ -402,7 +402,7 @@ function getExpression(tokens: TokenData[], searchContext: SearchContext, level 
             }
 
             const tokenArray = tokens[i] as unknown as TokenData[];
-            const expression = getExpression(tokenArray, searchContext, level++);
+            const expression = getExpression(tokenArray, searchContext, level + 1);
             if (!expression) {
                 return;
             }
