@@ -2,8 +2,12 @@
     min-height: 0;
     max-width: var(--max-content-width); /* Inherited from .note-split */
 
-    overflow: auto;
+    overflow: visible;
     contain: none !important;
+
+    &.full-height {
+        overflow: auto;
+    }
 }
 
 body.prefers-centered-content .note-list-widget:not(.full-height) {
