@@ -1,6 +1,7 @@
 import "./index.css";
 
 import type maplibregl from "maplibre-gl";
+import { RefObject } from "preact";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
@@ -13,7 +14,7 @@ import toast from "../../../services/toast";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
 import { ButtonOrActionButton } from "../../react/Button";
-import { useNoteBlob, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useNoteTreeDrag, useSpacedUpdate, useTriliumEvent } from "../../react/hooks";
+import { useChildNotes, useNoteBlob, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useNoteTreeDrag, useSpacedUpdate, useTriliumEvent } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
 import TouchBar, { TouchBarButton, TouchBarSlider } from "../../react/TouchBar";
 import { ViewModeProps } from "../interface";
@@ -103,6 +104,8 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     // Dragging
     const containerRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<maplibregl.Map>(null);
+    useMarkerData(note, apiRef);
+
     useNoteTreeDrag(containerRef, {
         dragEnabled: !isReadOnly,
         dragNotEnabledMessage: {
@@ -161,11 +164,62 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                 onContextMenu={onContextMenu}
                 scale={hasScale}
             >
-                {notes.map(note => <NoteWrapper note={note} isReadOnly={isReadOnly} hideLabels={hideLabels} />)}
+                {/* {notes.map(note => <NoteWrapper note={note} isReadOnly={isReadOnly} hideLabels={hideLabels} />)} */}
             </Map>}
             <GeoMapTouchBar state={state} map={apiRef.current} />
         </div>
     );
+}
+
+function useMarkerData(note: FNote | null | undefined, apiRef: RefObject<maplibregl.Map>) {
+    const childNotes = useChildNotes(note?.noteId);
+
+    useEffect(() => {
+        const map = apiRef.current as maplibregl.Map | undefined;
+        if (!map) return;
+
+        const features: maplibregl.GeoJSONFeature[] = [];
+        for (const childNote of childNotes) {
+            const location = childNote.getLabelValue(LOCATION_ATTRIBUTE);
+            const latLng = location?.split(",", 2).map((el) => parseFloat(el)) as [ number, number ] | undefined;
+            if (!latLng) continue;
+            latLng.reverse();
+
+            features.push({
+                type: "Feature",
+                geometry: {
+                    type: "Point",
+                    coordinates: latLng
+                },
+                properties: {
+                    id: childNote.noteId,
+                    name: childNote.title,
+                }
+            });
+        }
+
+        map.addSource("points", {
+            type: "geojson",
+            data: {
+                type: "FeatureCollection",
+                features
+            }
+        });
+        map.addLayer({
+            id: "points-layer",
+            type: "circle",
+            source: "points",
+            paint: {
+                "circle-radius": 6,
+                "circle-color": "#ff0000"
+            }
+        });
+
+        return () => {
+            map.removeLayer("points-layer");
+            map.removeSource("points");
+        };
+    }, [ apiRef, childNotes ]);
 }
 
 function useLayerData(note: FNote) {
