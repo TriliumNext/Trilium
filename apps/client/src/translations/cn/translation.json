@@ -1008,7 +1008,7 @@
     "no_attachments": "此笔记没有附件。"
   },
   "book": {
-    "no_children_help": "此类型为书籍的笔记没有任何子笔记，因此没有内容显示。请参阅 <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> 了解详情。",
+    "no_children_help": "此集合没有任何子笔记，因此没有内容显示。",
     "drag_locked_title": "锁定编辑",
     "drag_locked_message": "无法拖拽，因为集合已被锁定编辑。"
   },
@@ -2069,7 +2069,8 @@
     "raster": "栅格",
     "vector_light": "矢量（浅色）",
     "vector_dark": "矢量（深色）",
-    "show-scale": "显示比例尺"
+    "show-scale": "显示比例尺",
+    "show-labels": "显示标记名称"
   },
   "table_context_menu": {
     "delete_row": "删除行"
@@ -2268,6 +2269,43 @@
     "url_placeholder": "输入或粘贴网站地址，例如 https://triliumnotes.org",
     "create_button": "创建网页视图",
     "invalid_url_title": "无效的地址",
-    "invalid_url_message": "请输入有效的网址，例如 https://triliumnotes.org。"
+    "invalid_url_message": "请输入有效的网址，例如 https://triliumnotes.org。",
+    "disabled_description": "此网页视图来自外部来源。为保护您免受网络钓鱼或恶意内容侵害，该视图不会自动加载。若您信任该来源，可手动启用加载功能。",
+    "disabled_button_enable": "启用网页视图"
+  },
+  "render": {
+    "setup_title": "在此笔记中显示自定义 HTML 或 Preact JSX",
+    "setup_create_sample_preact": "使用 Preact 建立范例笔记",
+    "setup_create_sample_html": "使用 HTML 建立范例笔记",
+    "setup_sample_created": "已建立一个范例笔记作为子笔记。",
+    "disabled_description": "此渲染笔记来自外部来源。为保护您免受恶意内容侵害，该功能默认处于禁用状态。启用前请确保您信任该来源。",
+    "disabled_button_enable": "启用渲染笔记"
+  },
+  "active_content_badges": {
+    "type_icon_pack": "图标包",
+    "type_backend_script": "后端脚本",
+    "type_frontend_script": "前端脚本",
+    "type_widget": "小部件",
+    "type_app_css": "自定义 CSS",
+    "type_render_note": "渲染笔记",
+    "type_web_view": "网页视图",
+    "type_app_theme": "自定义主题",
+    "toggle_tooltip_enable_tooltip": "点击以启用此 {{type}}。",
+    "toggle_tooltip_disable_tooltip": "点击以禁用此 {{type}}。",
+    "menu_docs": "打开文档",
+    "menu_execute_now": "立即执行脚本",
+    "menu_run": "自动执行",
+    "menu_run_disabled": "手动",
+    "menu_run_backend_startup": "当后端启动时",
+    "menu_run_hourly": "每小时",
+    "menu_run_daily": "每日",
+    "menu_run_frontend_startup": "当桌面前端启动时",
+    "menu_run_mobile_startup": "当移动前端启动时",
+    "menu_change_to_widget": "更改为小部件",
+    "menu_change_to_frontend_script": "更改为前端脚本",
+    "menu_theme_base": "主题基底"
+  },
+  "setup_form": {
+    "more_info": "了解更多"
   }
 }
