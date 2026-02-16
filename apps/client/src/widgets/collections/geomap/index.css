@@ -24,12 +24,10 @@ body.mobile .geo-view > .collection-properties {
   }
 }
 
-.leaflet-pane {
-  z-index: 1;
-}
-
-.leaflet-top,
-.leaflet-bottom {
+.maplibregl-ctrl-top-left,
+.maplibregl-ctrl-top-right,
+.maplibregl-ctrl-bottom-left,
+.maplibregl-ctrl-bottom-right {
   z-index: 997 !important;
 }
 
@@ -37,28 +35,25 @@ body.mobile .geo-view > .collection-properties {
   cursor: crosshair;
 }
 
-.geo-map-container .marker-pin {
+.geo-map-container .geo-marker {
   position: relative;
-}
-
-.geo-map-container .leaflet-div-icon {
-  position: relative;
-  background: transparent;
-  border: 0;
+  cursor: pointer;
   overflow: visible;
 }
 
-.geo-map-container .leaflet-div-icon .icon-shadow {
-  position: absolute;
-  top: 0;
-  inset-inline-start: 0;
-  z-index: -1;
+.geo-map-container .geo-marker .marker-pin {
+  position: relative;
 }
 
-.geo-map-container .leaflet-div-icon .tn-icon {
+.geo-map-container .geo-marker .marker-pin svg {
+  display: block;
+  filter: drop-shadow(2px 2px 2px rgba(0, 0, 0, 0.3));
+}
+
+.geo-map-container .geo-marker .tn-icon {
   position: absolute;
   top: 3px;
-  inset-inline-start: 2px;
+  inset-inline-start: 4px;
   background-color: white;
   color: var(--light-theme-custom-color, black);
   padding: 2px;
@@ -66,7 +61,7 @@ body.mobile .geo-view > .collection-properties {
   font-size: 17px;
 }
 
-.geo-map-container .leaflet-div-icon .title-label {
+.geo-map-container .geo-marker .title-label {
   display: block;
   position: absolute;
   top: 100%;
@@ -79,19 +74,19 @@ body.mobile .geo-view > .collection-properties {
   text-align: center;
   text-overflow: ellipsis;
   text-shadow: -1px -1px 0 white, 1px -1px 0 white, -1px 1px 0 white, 1px 1px 0 white;
-  white-space: no-wrap;
+  white-space: nowrap;
   overflow: hidden;
 }
 
-body[dir=rtl] .geo-map-container .leaflet-div-icon .title-label {
+body[dir=rtl] .geo-map-container .geo-marker .title-label {
   transform: translateX(50%);
 }
 
-.geo-map-container .leaflet-div-icon .archived {
+.geo-map-container .geo-marker .archived {
   opacity: 0.5;
 }
 
-.geo-map-container.dark .leaflet-div-icon .title-label {
+.geo-map-container.dark .geo-marker .title-label {
   color: white;
   text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
 }
