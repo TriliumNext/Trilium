@@ -1,4 +1,4 @@
-import { GeoJSONSource } from "maplibre-gl";
+import { type GeoJSONSource } from "maplibre-gl";
 import { useCallback, useContext, useEffect } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
@@ -63,7 +63,7 @@ export default function Markers({ note }: { note: FNote }) {
             return key;
         }
 
-        const features: maplibregl.GeoJSONFeature[] = [];
+        const features: GeoJSON.Feature[] = [];
         for (const childNote of childNotes) {
             const location = childNote.getLabelValue(LOCATION_ATTRIBUTE);
             const latLng = location?.split(",", 2).map((el) => parseFloat(el)) as [ number, number ] | undefined;

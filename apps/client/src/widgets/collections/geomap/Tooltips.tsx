@@ -1,4 +1,4 @@
-import { MapMouseEvent, Popup } from "maplibre-gl";
+import { type MapGeoJSONFeature, MapMouseEvent, Popup } from "maplibre-gl";
 import { useContext, useEffect } from "preact/hooks";
 
 import { ParentMap } from "./map";
@@ -17,10 +17,12 @@ export default function Tooltips() {
             className: "marker-tooltip"
         });
 
-        function onMouseEnter(e: MapMouseEvent) {
-            const feature = e.features[0];
+        function onMouseEnter(e: MapMouseEvent & { features?: MapGeoJSONFeature[]; }) {
+            const feature = e.features?.[0];
+            if (!feature || !map || feature.geometry.type !== "Point") return;
+
             tooltip
-                .setLngLat(feature.geometry.coordinates)
+                .setLngLat(feature.geometry.coordinates as [ number, number ])
                 .setHTML(`<strong>${feature.properties.name}</strong>`)
                 .addTo(map);
         }
