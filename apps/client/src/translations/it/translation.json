@@ -167,8 +167,8 @@
     "desktop-application": "Applicazione Desktop",
     "native-title-bar": "Barra del titolo nativa",
     "native-title-bar-description": "Su Windows e macOS, disattivare la barra del titolo nativa rende l'applicazione più compatta. Su Linux, attivarla si integra meglio con il resto del sistema.",
-    "background-effects": "Abilita effetti di sfondo (solo Windows 11)",
-    "background-effects-description": "L'effetto Mica aggiunge uno sfondo sfocato ed elegante alle finestre delle app, creando profondità e un aspetto moderno. La \"Barra del titolo nativa\" deve essere disattivata.",
+    "background-effects": "Abilita effetti di sfondo",
+    "background-effects-description": "Aggiunge uno sfondo sfocato ed elegante alle finestre dell'app, creando profondità e un look moderno. La \"barra del titolo nativa\" deve essere disabilitata.",
     "restart-app-button": "Riavviare l'applicazione per visualizzare le modifiche"
   },
   "note_autocomplete": {
@@ -369,7 +369,8 @@
     "description": "Descrizione",
     "reload_app": "Ricarica l'app per applicare le modifiche",
     "set_all_to_default": "Imposta tutte le scorciatoie sui valori predefiniti",
-    "confirm_reset": "Vuoi davvero ripristinare tutte le scorciatoie da tastiera ai valori predefiniti?"
+    "confirm_reset": "Vuoi davvero ripristinare tutte le scorciatoie da tastiera ai valori predefiniti?",
+    "no_results": "Nessuna scorciatoia trovata corrispondente '{{filter}}'"
   },
   "shared_switch": {
     "toggle-on-title": "Condividi la nota",
@@ -1327,7 +1328,7 @@
     "button_title": "Esporta diagramma come SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Crea una nuova nota secondaria e aggiungila a questa mappa delle relazioni",
+    "create_child_note_title": "Crea una nota secondaria e aggiungila alla mappa",
     "reset_pan_zoom_title": "Ripristina panoramica e zoom alle coordinate e all'ingrandimento iniziali",
     "zoom_in_title": "Ingrandisci",
     "zoom_out_title": "Rimpicciolisci"
@@ -1526,7 +1527,7 @@
     "no_attachments": "Questa nota non ha allegati."
   },
   "book": {
-    "no_children_help": "Questa raccolta non ha note secondarie, quindi non c'è nulla da visualizzare. Consulta la <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> per i dettagli.",
+    "no_children_help": "Questa raccolta non ha note secondarie, quindi non c'è nulla da visualizzare.",
     "drag_locked_title": "Bloccato per la modifica",
     "drag_locked_message": "Trascinamento non consentito poiché la raccolta è bloccata per la modifica."
   },
@@ -1919,7 +1920,9 @@
     "print_report_collection_content_many": "{{count}} le note nella raccolta non possono essere stampate perché non sono supportate o sono protette.",
     "print_report_collection_content_other": "{{count}} le note nella raccolta non possono essere stampate perché non sono supportate o sono protette.",
     "print_report_collection_details_button": "Vedi dettagli",
-    "print_report_collection_details_ignored_notes": "Note ignorate"
+    "print_report_collection_details_ignored_notes": "Note ignorate",
+    "print_report_error_title": "Impossibile stampare",
+    "print_report_stack_trace": "Traccia dello stack"
   },
   "note_title": {
     "placeholder": "scrivi qui il titolo della nota...",
@@ -2106,7 +2109,8 @@
     "raster": "Trama",
     "vector_light": "Vettore (Luce)",
     "vector_dark": "Vettore (scuro)",
-    "show-scale": "Mostra scala"
+    "show-scale": "Mostra scala",
+    "show-labels": "Mostra nomi dei marcatori"
   },
   "table_context_menu": {
     "delete_row": "Elimina riga"
@@ -2139,7 +2143,7 @@
     "next_theme_message": "Al momento stai utilizzando il tema legacy. Vuoi provare il nuovo tema?",
     "next_theme_button": "Prova il nuovo tema",
     "background_effects_title": "Gli effetti di sfondo sono ora stabili",
-    "background_effects_message": "Sui dispositivi Windows, gli effetti di sfondo sono ora completamente stabili. Gli effetti di sfondo aggiungono un tocco di colore all'interfaccia utente sfocando lo sfondo retrostante. Questa tecnica è utilizzata anche in altre applicazioni come Esplora risorse di Windows.",
+    "background_effects_message": "Su dispositivi Windows e macOS, gli effetti di sfondo sono ora stabili. Gli effetti di sfondo aggiungono un tocco di colore all'interfaccia utente sfocando lo sfondo dietro di essa.",
     "background_effects_button": "Abilita gli effetti di sfondo",
     "dismiss": "Chiudi",
     "new_layout_title": "Nuovo layout",
@@ -2283,7 +2287,9 @@
     "url_placeholder": "Inserisci o incolla l'indirizzo del sito web, ad esempio https://triliumnotes.org",
     "create_button": "Crea vista Web",
     "invalid_url_title": "Indirizzo non valido",
-    "invalid_url_message": "Inserisci un indirizzo web valido, ad esempio https://triliumnotes.org."
+    "invalid_url_message": "Inserisci un indirizzo web valido, ad esempio https://triliumnotes.org.",
+    "disabled_description": "Questa visualizzazione web è stata importata da una fonte esterna. Per proteggerti dal phishing o da contenuti dannosi, non viene caricata automaticamente. Puoi abilitarla se ritieni che la fonte sia affidabile.",
+    "disabled_button_enable": "Abilita visualizzazione web"
   },
   "platform_indicator": {
     "available_on": "Disponibile su {{platform}}"
@@ -2296,5 +2302,40 @@
   },
   "bookmark_buttons": {
     "bookmarks": "Segnalibri"
+  },
+  "render": {
+    "setup_title": "Visualizza HTML personalizzato o Preact JSX all'interno di questa nota",
+    "setup_create_sample_preact": "Crea una nota di esempio con Preact",
+    "setup_create_sample_html": "Crea una nota di esempio con HTML",
+    "setup_sample_created": "È stata creata una nota di esempio come nota secondaria.",
+    "disabled_description": "Queste note di rendering provengono da una fonte esterna. Per proteggerti da contenuti dannosi, non sono abilitate per impostazione predefinita. Assicurati di fidarti della fonte prima di abilitarle.",
+    "disabled_button_enable": "Abilita nota di rendering"
+  },
+  "active_content_badges": {
+    "type_icon_pack": "Pacchetto icone",
+    "type_backend_script": "Script di backend",
+    "type_frontend_script": "Script frontend",
+    "type_widget": "Widget",
+    "type_app_css": "CSS personalizzato",
+    "type_render_note": "Nota di rendering",
+    "type_web_view": "Visualizzazione web",
+    "type_app_theme": "Tema personalizzato",
+    "toggle_tooltip_enable_tooltip": "Clicca per abilitare questa funzione {{type}}.",
+    "toggle_tooltip_disable_tooltip": "Clicca per disattivare questa funzione {{type}}.",
+    "menu_docs": "Documentazione aperta",
+    "menu_execute_now": "Esegui lo script ora",
+    "menu_run": "Esegui automaticamente",
+    "menu_run_disabled": "Manualmente",
+    "menu_run_backend_startup": "Quando il backend si avvia",
+    "menu_run_hourly": "Ogni ora",
+    "menu_run_daily": "Giornaliero",
+    "menu_run_frontend_startup": "Quando si avvia il frontend desktop",
+    "menu_run_mobile_startup": "Quando si avvia il frontend mobile",
+    "menu_change_to_widget": "Passa al widget",
+    "menu_change_to_frontend_script": "Modifica allo script frontend",
+    "menu_theme_base": "Tema base"
+  },
+  "setup_form": {
+    "more_info": "Per saperne di più"
   }
 }
