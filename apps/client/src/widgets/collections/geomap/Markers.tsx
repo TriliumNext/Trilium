@@ -134,7 +134,6 @@ async function buildMarkerIcon(color: string, iconClass: string, scale = window.
     return `\
 <svg width="${25 * scale}" height="${41 * scale}" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
 <path d="M12.5 0C5.6 0 0 5.6 0 12.5C0 21.9 12.5 41 12.5 41S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0Z" fill="${color}" />
-<circle cx="12.5" cy="12.5" r="8" fill="white" />
 <image href="${iconUrl}" x="4.5" y="4.5" width="16" height="16" preserveAspectRatio="xMidYMid meet" />
 </svg>
     `;
