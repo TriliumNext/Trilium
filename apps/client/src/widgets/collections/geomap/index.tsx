@@ -1,6 +1,8 @@
 import "./index.css";
 
 import type maplibregl from "maplibre-gl";
+import { MapMouseEvent, Popup } from "maplibre-gl";
+import { RefObject } from "preact";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
@@ -13,7 +15,7 @@ import toast from "../../../services/toast";
 import CollectionProperties from "../../note_bars/CollectionProperties";
 import ActionButton from "../../react/ActionButton";
 import { ButtonOrActionButton } from "../../react/Button";
-import { useNoteBlob, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useNoteTreeDrag, useSpacedUpdate, useTriliumEvent } from "../../react/hooks";
+import { useNoteBlob, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useNoteTreeDrag, useSpacedUpdate, useTooltip, useTriliumEvent } from "../../react/hooks";
 import { ParentComponent } from "../../react/react_utils";
 import TouchBar, { TouchBarButton, TouchBarSlider } from "../../react/TouchBar";
 import { ViewModeProps } from "../interface";
@@ -117,7 +119,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     const containerRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<maplibregl.Map | null>(null);
     useMarkerData(note, apiRef);
-
+    useHoverTooltip(containerRef, apiRef);
     useNoteTreeDrag(containerRef, {
         dragEnabled: !isReadOnly,
         dragNotEnabledMessage: {
@@ -203,6 +205,40 @@ function useLayerData(note: FNote) {
     }, [ layerName ]);
 
     return layerData;
+}
+
+function useHoverTooltip(containerRef: RefObject<HTMLDivElement>, mapRef: RefObject<maplibregl.Map | null>) {
+    useEffect(() => {
+        const map = mapRef.current;
+        if (!map) return;
+
+        const tooltip = new Popup({
+            closeButton: false,
+            closeOnClick: false,
+            offset: 12,
+            className: "marker-tooltip"
+        });
+
+        function onMouseEnter(e: MapMouseEvent) {
+            const feature = e.features[0];
+            tooltip
+                .setLngLat(feature.geometry.coordinates)
+                .setHTML(`<strong>${feature.properties.name}</strong>`)
+                .addTo(map);
+        }
+
+        function onMouseLeave() {
+            tooltip.remove();
+        }
+
+        map.on("mouseenter", MARKER_LAYER, onMouseEnter);
+        map.on("mouseleave", MARKER_LAYER, onMouseLeave);
+
+        return () => {
+            map.off("mouseenter", MARKER_LAYER, onMouseEnter);
+            map.off("mouseleave", MARKER_LAYER, onMouseLeave);
+        };
+    }, [ mapRef ]);
 }
 
 function ToggleReadOnlyButton({ note }: { note: FNote }) {

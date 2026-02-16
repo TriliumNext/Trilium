@@ -7,12 +7,7 @@
 
   > .collection-properties {
     position: relative;
-    z-index: 998;
   }
-}
-
-body.mobile .geo-view > .collection-properties {
-    z-index: 2500;
 }
 
 .geo-map-container {
@@ -22,13 +17,6 @@ body.mobile .geo-view > .collection-properties {
   .maplibregl-canvas-container {
     position: relative;
   }
-}
-
-.maplibregl-ctrl-top-left,
-.maplibregl-ctrl-top-right,
-.maplibregl-ctrl-bottom-left,
-.maplibregl-ctrl-bottom-right {
-  z-index: 997 !important;
 }
 
 .geo-view.placing-note .geo-map-container {
