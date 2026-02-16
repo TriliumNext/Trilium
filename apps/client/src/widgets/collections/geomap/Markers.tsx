@@ -1,5 +1,5 @@
 import { type GeoJSONSource } from "maplibre-gl";
-import { useCallback, useContext, useEffect } from "preact/hooks";
+import { useCallback, useContext, useEffect, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
 import { useChildNotes } from "../../react/hooks";
@@ -17,6 +17,7 @@ const iconClassToBitmapCache = new Map<string, string | undefined>();
 
 
 export default function Markers({ note }: { note: FNote }) {
+    const [ stylesLoaded, setStylesLoaded ] = useState(false);
     const map = useContext(ParentMap);
     const childNotes = useChildNotes(note?.noteId);
 
@@ -24,28 +25,35 @@ export default function Markers({ note }: { note: FNote }) {
     useEffect(() => {
         if (!map) return;
 
-        map.addSource(MARKER_SOURCE, {
-            type: "geojson",
-            data: {
-                type: "FeatureCollection",
-                features: []
-            }
-        });
-        map.addLayer({
-            id: MARKER_LAYER,
-            type: "symbol",
-            source: MARKER_SOURCE,
-            layout: {
-                "icon-image": [ "get", "icon" ],
-                "icon-size": 1,
-                "icon-anchor": "bottom",
-                "icon-allow-overlap": true
-            }
+        // Wait for styles to be loaded.
+        map.on("style.load", () => {
+            map.addSource(MARKER_SOURCE, {
+                type: "geojson",
+                data: {
+                    type: "FeatureCollection",
+                    features: []
+                }
+            });
+            map.addLayer({
+                id: MARKER_LAYER,
+                type: "symbol",
+                source: MARKER_SOURCE,
+                layout: {
+                    "icon-image": [ "get", "icon" ],
+                    "icon-size": 1,
+                    "icon-anchor": "bottom",
+                    "icon-allow-overlap": true
+                }
+            });
         });
 
         return () => {
-            map.removeLayer(MARKER_LAYER);
-            map.removeSource(MARKER_SOURCE);
+            if (map.getLayer(MARKER_LAYER)) {
+                map.removeLayer(MARKER_LAYER);
+            }
+            if (map.getSource(MARKER_SOURCE)) {
+                map.removeSource(MARKER_SOURCE);
+            }
         };
     }, [ map ]);
 
