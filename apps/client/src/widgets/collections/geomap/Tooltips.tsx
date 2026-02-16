@@ -2,7 +2,7 @@ import { MapMouseEvent, Popup } from "maplibre-gl";
 import { useContext, useEffect } from "preact/hooks";
 
 import { ParentMap } from "./map";
-import { MARKER_LAYER } from "./marker_data";
+import { MARKER_LAYER } from "./Markers";
 
 export default function Tooltips() {
     const map = useContext(ParentMap);

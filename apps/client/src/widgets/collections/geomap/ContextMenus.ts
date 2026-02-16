@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect } from "preact/hooks";
 
 import appContext, { type CommandMappings } from "../../../components/app_context.js";
+import FNote from "../../../entities/fnote.js";
 import contextMenu, { type MenuItem } from "../../../menus/context_menu.js";
 import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker.jsx";
 import linkContextMenu from "../../../menus/link_context_menu.js";
@@ -9,7 +10,7 @@ import { t } from "../../../services/i18n.js";
 import link from "../../../services/link.js";
 import { createNewNote } from "./api.js";
 import { type GeoMouseEvent,ParentMap, toMapLibreEvent } from "./map.js";
-import { MARKER_LAYER } from "./marker_data.js";
+import { MARKER_LAYER } from "./Markers.js";
 
 export default function ContextMenus({ note, isReadOnly }: { note: FNote, isReadOnly }) {
     const map = useContext(ParentMap);

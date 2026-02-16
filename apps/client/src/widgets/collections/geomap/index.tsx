@@ -22,12 +22,11 @@ import ContextMenus from "./ContextMenus";
 import Map, { GeoMouseEvent } from "./map";
 import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, MapLayer } from "./map_layer";
 import Marker, { GpxTrack } from "./marker";
-import { MARKER_SVG, useMarkerData } from "./marker_data";
+import Markers, { LOCATION_ATTRIBUTE } from "./Markers";
 import Tooltips from "./Tooltips";
 
 const DEFAULT_COORDINATES: [number, number] = [3.878638227135724, 446.6630455551659];
 const DEFAULT_ZOOM = 2;
-export const LOCATION_ATTRIBUTE = "geolocation";
 
 interface MapData {
     view?: {
@@ -101,7 +100,6 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     // Dragging
     const containerRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<maplibregl.Map | null>(null);
-    useMarkerData(note, apiRef);
     useNoteTreeDrag(containerRef, {
         dragEnabled: !isReadOnly,
         dragNotEnabledMessage: {
@@ -161,6 +159,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
             >
                 <Tooltips />
                 <ContextMenus note={note} isReadOnly={isReadOnly} />
+                <Markers note={note} />
             </Map>}
             <GeoMapTouchBar state={state} map={apiRef.current} />
         </div>

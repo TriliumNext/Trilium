@@ -1,10 +1,11 @@
-import type { GeoMouseEvent } from "./map";
-import { LOCATION_ATTRIBUTE } from ".";
+import { CreateChildrenResponse } from "@triliumnext/commons";
+
 import attributes from "../../../services/attributes";
 import { prompt } from "../../../services/dialog";
-import server from "../../../services/server";
 import { t } from "../../../services/i18n";
-import { CreateChildrenResponse } from "@triliumnext/commons";
+import server from "../../../services/server";
+import type { GeoMouseEvent } from "./map";
+import { LOCATION_ATTRIBUTE } from "./Markers";
 
 const CHILD_NOTE_ICON = "bx bx-pin";
 

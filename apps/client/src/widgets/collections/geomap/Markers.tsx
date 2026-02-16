@@ -1,6 +1,95 @@
+import { useContext, useEffect } from "preact/hooks";
+
+import FNote from "../../../entities/fnote";
+import { useChildNotes } from "../../react/hooks";
+import { ParentMap } from "./map";
+
+export const LOCATION_ATTRIBUTE = "geolocation";
+export const MARKER_LAYER = "points-layer";
+const DEFAULT_MARKER_COLOR = "#2A81CB";
+
+// SVG marker pin shape (replaces the Leaflet marker PNG).
+export const MARKER_SVG = "foo"; // TODO: Fix
+const iconSvgCache = new Map<string, string>();
 const iconClassToBitmapCache = new Map<string, string | undefined>();
 
-export async function buildMarkerIcon(color: string, iconClass: string, scale = window.devicePixelRatio || 1) {
+
+export default function Markers({ note }: { note: FNote }) {
+    const map = useContext(ParentMap);
+    const childNotes = useChildNotes(note?.noteId);
+
+    async function refresh() {
+        if (!map) return;
+
+        async function ensureIcon(color: string, iconClass: string) {
+            const key = `marker-${color}-${iconClass}`;
+
+            if (!iconSvgCache.has(key)) {
+                const svg = await buildMarkerIcon(color, iconClass);
+                iconSvgCache.set(key, svg);
+            }
+
+            return key;
+        }
+
+        const features: maplibregl.GeoJSONFeature[] = [];
+        for (const childNote of childNotes) {
+            const location = childNote.getLabelValue(LOCATION_ATTRIBUTE);
+            const latLng = location?.split(",", 2).map((el) => parseFloat(el)) as [ number, number ] | undefined;
+            if (!latLng) continue;
+            latLng.reverse();
+
+            const color = childNote.getLabelValue("color") ?? DEFAULT_MARKER_COLOR;
+            features.push({
+                type: "Feature",
+                geometry: {
+                    type: "Point",
+                    coordinates: latLng
+                },
+                properties: {
+                    id: childNote.noteId,
+                    name: childNote.title,
+                    icon: await ensureIcon(color, childNote.getIcon())
+                }
+            });
+        }
+
+        // Build all the icons.
+        await Promise.all(iconSvgCache.entries().map(async ([ key, svg ]) => {
+            const image = await svgToImage(svg);
+            map.addImage(key, image, {
+                pixelRatio: window.devicePixelRatio
+            });
+        }));
+
+        map.addSource("points", {
+            type: "geojson",
+            data: {
+                type: "FeatureCollection",
+                features
+            }
+        });
+        map.addLayer({
+            id: MARKER_LAYER,
+            type: "symbol",
+            source: "points",
+            layout: {
+                "icon-image": [ "get", "icon" ],
+                "icon-size": 1,
+                "icon-anchor": "bottom",
+                "icon-allow-overlap": true
+            }
+        });
+    }
+
+    useEffect(() => {
+        refresh();
+    }, [ map, childNotes ]);
+    return null;
+}
+
+//#region Renderer
+async function buildMarkerIcon(color: string, iconClass: string, scale = window.devicePixelRatio || 1) {
     const iconUrl = iconClassToBitmapCache.get(iconClass) ?? await snapshotIcon(iconClass, 16 * scale);
     return `\
 <svg width="${25 * scale}" height="${41 * scale}" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
@@ -95,7 +184,7 @@ function getGlyphFromClass(iconClass: string) {
     };
 }
 
-export function svgToImage(svgString: string){
+function svgToImage(svgString: string){
     return new Promise<HTMLImageElement>(resolve => {
         const svgBlob = new Blob([svgString], { type: "image/svg+xml" });
         const url = URL.createObjectURL(svgBlob);
@@ -110,3 +199,4 @@ export function svgToImage(svgString: string){
         img.src = url;
     });
 }
+//#endregion
