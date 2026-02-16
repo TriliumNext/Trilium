@@ -23,14 +23,3 @@ body.prefers-centered-content .note-list-widget:not(.full-height) {
 .note-list-widget video {
     height: 100%;
 }
-
-/* #region Pagination */
-.note-list-pager {
-    font-size: 1rem;
-
-    span.current-page {
-        text-decoration: underline;
-        font-weight: bold;
-    }
-}
-/* #endregion */

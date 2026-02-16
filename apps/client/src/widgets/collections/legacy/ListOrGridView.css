@@ -100,10 +100,6 @@
     overflow: auto;
 }
 
-.note-list-pager {
-    text-align: center;
-}
-
 /* #region List view */
 
 @keyframes note-preview-show {

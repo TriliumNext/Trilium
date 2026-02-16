@@ -4,6 +4,8 @@ import FNote from "../../entities/fnote";
 import froca from "../../services/froca";
 import { useNoteLabelInt } from "../react/hooks";
 import { t } from "../../services/i18n";
+import ActionButton from "../react/ActionButton";
+import Button from "../react/Button";
 
 interface PaginationContext {
     page: number;
@@ -17,44 +19,77 @@ interface PaginationContext {
 export function Pager({ page, pageSize, setPage, pageCount, totalNotes }: Omit<PaginationContext, "pageNotes">) {
     if (pageCount < 2) return;
 
-    let lastPrinted = false;
-    let children: ComponentChildren[] = [];
-    for (let i = 1; i <= pageCount; i++) {
-        if (pageCount < 20 || i <= 5 || pageCount - i <= 5 || Math.abs(page - i) <= 2) {
-            lastPrinted = true;
-
-            const startIndex = (i - 1) * pageSize + 1;
-            const endIndex = Math.min(totalNotes, i * pageSize);
-
-            if (i !== page) {
-                children.push((
-                    <a
-                        href="javascript:"
-                        title={t("pagination.page_title", { startIndex, endIndex })}
-                        onClick={() => setPage(i)}
-                    >
-                    {i}
-                    </a>
-                ))
-            } else {
-                // Current page
-                children.push(<span className="current-page">{i}</span>)
-            }
-
-            children.push(<>{" "}&nbsp;{" "}</>);
-        } else if (lastPrinted) {
-            children.push(<>{"... "}&nbsp;{" "}</>);
-            lastPrinted = false;
-        }
-    }
+    const children = createPageButtons(page, setPage, pageCount);
 
     return (
         <div class="note-list-pager">
-            {children}
+            <ActionButton
+                icon="bx bx-caret-left"
+                disabled={(page === 1)}
+                text={t("pagination.prev_page")}
+                onClick={() => {setPage(page - 1)}}
+            />
 
+            {children}
+            
+            <ActionButton
+                icon="bx bx-caret-right"
+                disabled={(page === pageCount)}
+                text={t("pagination.next_page")}
+                onClick={() => {setPage(page + 1)}}
+            />
             <span className="note-list-pager-total-count">({t("pagination.total_notes", { count: totalNotes })})</span>
         </div>
     )
+}
+
+function createPageButtons(page: number, setPage: Dispatch<StateUpdater<number>>, pageCount: number): ComponentChildren[] {
+    const maxButtonCount = 9;
+    const maxLeftRightSegmentLength = 2;
+    
+    // The left-side segment
+    const leftLength = Math.min(pageCount, maxLeftRightSegmentLength);
+    const leftStart = 1;
+
+    // The middle segment
+    const middleMaxLength = maxButtonCount - maxLeftRightSegmentLength * 2;
+    const middleLength = Math.min(pageCount - leftLength, middleMaxLength);
+    let middleStart = page - Math.floor(middleLength / 2);
+    middleStart = Math.max(middleStart, leftLength + 1);
+
+    // The right-side segment
+    const rightLength = Math.min(pageCount - (middleLength + leftLength), maxLeftRightSegmentLength);
+    const rightStart = pageCount - rightLength + 1;
+    middleStart = Math.min(middleStart, rightStart - middleLength);
+
+    return [
+        ...createSegment(leftStart, leftLength, page, setPage, false),
+        ...createSegment(middleStart, middleLength, page, setPage, (middleStart - leftLength > 1)),
+        ...createSegment(rightStart, rightLength, page, setPage, (rightStart - (middleStart + middleLength - 1) > 1)),
+    ];
+
+}
+
+function createSegment(start: number, length: number, currentPage: number, setPage: Dispatch<StateUpdater<number>>, prependEllipsis: boolean): ComponentChildren[] {
+    const children: ComponentChildren[] = [];
+    
+    if (prependEllipsis) {
+        children.push("...");
+    }
+
+    for (let i = 0; i < length; i++) {
+        const pageNum = start + i;
+
+        children.push((
+            <Button
+                text={pageNum.toString()}
+                disabled={(pageNum === currentPage)}
+                onClick={() => setPage(pageNum)}
+            />
+        ));
+    }
+
+    return children;
 }
 
 export function usePagination(note: FNote, noteIds: string[]): PaginationContext {

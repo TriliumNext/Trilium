@@ -2190,8 +2190,9 @@
     "percentage": "%"
   },
   "pagination": {
-    "page_title": "Page of {{startIndex}} - {{endIndex}}",
-    "total_notes": "{{count}} notes"
+    "total_notes": "{{count}} notes",
+    "prev_page": "Previous page",
+    "next_page": "Next page"
   },
   "collections": {
     "rendering_error": "Unable to show content due to an error."
