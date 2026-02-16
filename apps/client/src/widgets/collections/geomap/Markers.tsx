@@ -23,6 +23,10 @@ const LABEL_LAYOUT: Extract<AddLayerObject, { type: "symbol"}>["layout"] = {
     "text-allow-overlap": true,
 };
 
+const MARKER_WIDTH = 25;
+const MARKER_ICON_SIZE = 20;
+const MARKER_ICON_X = (MARKER_WIDTH / 2) - (MARKER_ICON_SIZE / 2);
+
 export default function Markers({ note, hideLabels }: { note: FNote, hideLabels: boolean }) {
     const map = useContext(ParentMap);
     const childNotes = useChildNotes(note?.noteId);
@@ -130,16 +134,16 @@ export default function Markers({ note, hideLabels }: { note: FNote, hideLabels:
 
 //#region Renderer
 async function buildMarkerIcon(color: string, iconClass: string, scale = window.devicePixelRatio || 1) {
-    const iconUrl = iconClassToBitmapCache.get(iconClass) ?? await snapshotIcon(iconClass, 16 * scale);
+    const iconUrl = iconClassToBitmapCache.get(iconClass) ?? await snapshotIcon(iconClass, MARKER_ICON_SIZE * scale);
     return `\
-<svg width="${25 * scale}" height="${41 * scale}" viewBox="0 0 25 41" xmlns="http://www.w3.org/2000/svg">
+<svg width="${MARKER_WIDTH * scale}" height="${41 * scale}" viewBox="0 0 ${MARKER_WIDTH} 41" xmlns="http://www.w3.org/2000/svg">
 <defs>
   <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
     <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="black" flood-opacity="0.4" />
   </filter>
 </defs>
 <path d="M12.5 0C5.6 0 0 5.6 0 12.5C0 21.9 12.5 41 12.5 41S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0Z" filter="url(#shadow)" fill="${color}" />
-<image href="${iconUrl}" x="4.5" y="4.5" width="16" height="16" preserveAspectRatio="xMidYMid meet" />
+<image href="${iconUrl}" x="${MARKER_ICON_X}" y="4" width="${MARKER_ICON_SIZE}" height="${MARKER_ICON_SIZE}" preserveAspectRatio="xMidYMid meet" />
 </svg>
     `;
 }
