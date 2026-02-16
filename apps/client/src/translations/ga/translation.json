@@ -1016,7 +1016,7 @@
     "no_attachments": "Níl aon cheangaltáin leis an nóta seo."
   },
   "book": {
-    "no_children_help": "Níl aon nótaí faoi mhíbhuntáiste sa bhailiúchán seo mar sin níl aon rud le taispeáint. Féach ar an <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">vicí</a> le haghaidh tuilleadh sonraí.",
+    "no_children_help": "Níl aon nótaí faoi mhíbhuntáiste sa bhailiúchán seo mar sin níl aon rud le taispeáint.",
     "drag_locked_title": "Glasáilte le haghaidh eagarthóireachta",
     "drag_locked_message": "Ní cheadaítear tarraingt ós rud é go bhfuil an bailiúchán faoi ghlas le haghaidh eagarthóireachta."
   },
