@@ -1,3 +1,4 @@
+import { MapMouseEvent } from "maplibre-gl";
 import { useCallback, useContext, useEffect } from "preact/hooks";
 
 import appContext, { type CommandMappings } from "../../../components/app_context.js";
@@ -33,7 +34,7 @@ export default function ContextMenus({ note, isReadOnly }: { note: FNote, isRead
     useEffect(() => {
         if (!onContextMenu || !map) return;
 
-        const handler = (e: maplibregl.MapMouseEvent) => {
+        const handler = (e: MapMouseEvent) => {
             e.preventDefault();
             onContextMenu(toMapLibreEvent(e));
         };

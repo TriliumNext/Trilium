@@ -1,6 +1,7 @@
+import { Marker as MapLibreMarker } from "maplibre-gl";
 import { useContext, useEffect, useRef } from "preact/hooks";
-import { ParentMap, GeoMouseEvent } from "./map";
-import maplibregl from "maplibre-gl";
+
+import { GeoMouseEvent,ParentMap } from "./map";
 
 export interface MarkerProps {
     coordinates: [ number, number ];
@@ -16,7 +17,7 @@ export interface MarkerProps {
 
 export default function Marker({ coordinates, iconHtml, iconSize, iconAnchor, draggable, onClick, onDragged, onMouseDown, onContextMenu }: MarkerProps) {
     const parentMap = useContext(ParentMap);
-    const markerRef = useRef<maplibregl.Marker>(null);
+    const markerRef = useRef<MapLibreMarker>(null);
 
     useEffect(() => {
         if (!parentMap) return;
@@ -31,13 +32,13 @@ export default function Marker({ coordinates, iconHtml, iconSize, iconAnchor, dr
             el.style.height = `${iconSize[1]}px`;
         }
 
-        const newMarker = new maplibregl.Marker({
+        const newMarker = new MapLibreMarker({
             element: el,
             draggable: !!draggable,
             anchor: "bottom"
         })
-        .setLngLat([coordinates[1], coordinates[0]])
-        .addTo(parentMap);
+            .setLngLat([coordinates[1], coordinates[0]])
+            .addTo(parentMap);
 
         markerRef.current = newMarker;
 
@@ -99,7 +100,7 @@ export function GpxTrack({ gpxXmlString, trackColor, startIconHtml, endIconHtml,
     useEffect(() => {
         if (!parentMap) return;
 
-        const markers: maplibregl.Marker[] = [];
+        const markers: MapLibreMarker[] = [];
         const sourceId = `gpx-source-${Math.random().toString(36).slice(2)}`;
         const layerId = `gpx-layer-${sourceId}`;
 
@@ -145,7 +146,7 @@ export function GpxTrack({ gpxXmlString, trackColor, startIconHtml, endIconHtml,
                     const startEl = document.createElement("div");
                     startEl.className = "geo-marker";
                     startEl.innerHTML = startIconHtml;
-                    const startMarker = new maplibregl.Marker({ element: startEl, anchor: "bottom" })
+                    const startMarker = new MapLibreMarker({ element: startEl, anchor: "bottom" })
                         .setLngLat(coordinates[0])
                         .addTo(parentMap);
                     markers.push(startMarker);
@@ -156,7 +157,7 @@ export function GpxTrack({ gpxXmlString, trackColor, startIconHtml, endIconHtml,
                     const endEl = document.createElement("div");
                     endEl.className = "geo-marker";
                     endEl.innerHTML = endIconHtml;
-                    const endMarker = new maplibregl.Marker({ element: endEl, anchor: "bottom" })
+                    const endMarker = new MapLibreMarker({ element: endEl, anchor: "bottom" })
                         .setLngLat(coordinates[coordinates.length - 1])
                         .addTo(parentMap);
                     markers.push(endMarker);
@@ -172,7 +173,7 @@ export function GpxTrack({ gpxXmlString, trackColor, startIconHtml, endIconHtml,
                     const wptEl = document.createElement("div");
                     wptEl.className = "geo-marker";
                     wptEl.innerHTML = waypointIconHtml;
-                    const wptMarker = new maplibregl.Marker({ element: wptEl, anchor: "bottom" })
+                    const wptMarker = new MapLibreMarker({ element: wptEl, anchor: "bottom" })
                         .setLngLat([lon, lat])
                         .addTo(parentMap);
                     markers.push(wptMarker);

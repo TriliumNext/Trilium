@@ -1,6 +1,6 @@
 import "./index.css";
 
-import type maplibregl from "maplibre-gl";
+import type { Map as MapLibreGL } from "maplibre-gl";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
@@ -99,7 +99,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
 
     // Dragging
     const containerRef = useRef<HTMLDivElement>(null);
-    const apiRef = useRef<maplibregl.Map | null>(null);
+    const apiRef = useRef<MapLibreGL | null>(null);
     useNoteTreeDrag(containerRef, {
         dragEnabled: !isReadOnly,
         dragNotEnabledMessage: {
@@ -307,7 +307,7 @@ function buildIconHtml(bxIconClass: string, colorClass?: string, title?: string,
     return html;
 }
 
-function GeoMapTouchBar({ state, map }: { state: State, map: maplibregl.Map | null | undefined }) {
+function GeoMapTouchBar({ state, map }: { state: State, map: MapLibreGL | null | undefined }) {
     const [ currentZoom, setCurrentZoom ] = useState<number>();
     const parentComponent = useContext(ParentComponent);
 
