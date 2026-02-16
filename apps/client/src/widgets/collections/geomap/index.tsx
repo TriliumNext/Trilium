@@ -22,7 +22,7 @@ import openContextMenu, { openMapContextMenu } from "./context_menu";
 import Map, { GeoMouseEvent } from "./map";
 import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, MapLayer } from "./map_layer";
 import Marker, { GpxTrack } from "./marker";
-import { MARKER_SVG, useMarkerData } from "./marker_data";
+import { MARKER_LAYER, MARKER_SVG, useMarkerData } from "./marker_data";
 
 const DEFAULT_COORDINATES: [number, number] = [3.878638227135724, 446.6630455551659];
 const DEFAULT_ZOOM = 2;
@@ -98,12 +98,24 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     }, [ state ]);
 
     const onContextMenu = useCallback((e: GeoMouseEvent) => {
-        openMapContextMenu(note.noteId, e, !isReadOnly);
+        const map = apiRef.current;
+        if (!map) return;
+        const features = map.queryRenderedFeatures(e.point, {
+            layers: [ MARKER_LAYER ]
+        });
+
+        if (features.length > 0) {
+            // Marker context menu.
+            openContextMenu(features[0].properties.id, e, !isReadOnly);
+        } else {
+            // Empty area context menu.
+            openMapContextMenu(note.noteId, e, !isReadOnly);
+        }
     }, [ note.noteId, isReadOnly ]);
 
     // Dragging
     const containerRef = useRef<HTMLDivElement>(null);
-    const apiRef = useRef<maplibregl.Map>(null);
+    const apiRef = useRef<maplibregl.Map | null>(null);
     useMarkerData(note, apiRef);
 
     useNoteTreeDrag(containerRef, {

@@ -11,7 +11,9 @@ const DEFAULT_MARKER_COLOR = "#2A81CB";
 export const MARKER_SVG = "foo"; // TODO: Fix
 const iconSvgCache = new Map<string, string>();
 
-export function useMarkerData(note: FNote | null | undefined, apiRef: MutableRef<maplibregl.Map>) {
+export const MARKER_LAYER = "points-layer";
+
+export function useMarkerData(note: FNote | null | undefined, apiRef: MutableRef<maplibregl.Map | null>) {
     const childNotes = useChildNotes(note?.noteId);
 
     async function refresh() {
@@ -68,7 +70,7 @@ export function useMarkerData(note: FNote | null | undefined, apiRef: MutableRef
             }
         });
         map.addLayer({
-            id: "points-layer",
+            id: MARKER_LAYER,
             type: "symbol",
             source: "points",
             layout: {

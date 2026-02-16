@@ -1,6 +1,6 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import maplibregl, { NavigationControl } from "maplibre-gl";
+import maplibregl, { NavigationControl, type Point } from "maplibre-gl";
 import { ComponentChildren, createContext, RefObject } from "preact";
 import { useEffect, useImperativeHandle, useRef } from "preact/hooks";
 
@@ -10,6 +10,7 @@ import { MapLayer } from "./map_layer";
 export interface GeoMouseEvent {
     latlng: { lat: number; lng: number };
     originalEvent: MouseEvent;
+    point: Point;
 }
 
 export const ParentMap = createContext<maplibregl.Map | null>(null);
@@ -31,7 +32,8 @@ interface MapProps {
 function toMapLibreEvent(e: maplibregl.MapMouseEvent): GeoMouseEvent {
     return {
         latlng: { lat: e.lngLat.lat, lng: e.lngLat.lng },
-        originalEvent: e.originalEvent
+        originalEvent: e.originalEvent,
+        point: e.point
     };
 }
 
