@@ -1007,7 +1007,7 @@
     "no_attachments": "Diese Notiz enthält keine Anhänge."
   },
   "book": {
-    "no_children_help": "Diese Notiz mit dem Notiztyp Buch besitzt keine Unternotizen, deshalb ist nichts zum Anzeigen vorhanden. Siehe <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">Wiki</a> für mehr Details.",
+    "no_children_help": "Diese Sammlung enthält keineUnternotizen, daher gibt es nichts anzuzeigen.",
     "drag_locked_title": "Für Bearbeitung gesperrt",
     "drag_locked_message": "Das Ziehen ist nicht möglich, da die Sammlung für die Bearbeitung gesperrt ist."
   },
@@ -2086,7 +2086,8 @@
     "raster": "Raster",
     "vector_light": "Vektor (Hell)",
     "vector_dark": "Vektor (Dunkel)",
-    "show-scale": "Zeige Skalierung"
+    "show-scale": "Zeige Skalierung",
+    "show-labels": "Zeige Markierungsnamen"
   },
   "table_context_menu": {
     "delete_row": "Zeile entfernen"
@@ -2283,6 +2284,25 @@
     "url_placeholder": "Gib oder füge die Adresse der Webseite ein, zum Beispiel https://triliumnotes.org",
     "create_button": "Erstelle Web Ansicht",
     "invalid_url_title": "Ungültige Adresse",
-    "invalid_url_message": "Füge eine valide Webadresse ein, zum Beispiel https://triliumnotes.org."
+    "invalid_url_message": "Füge eine valide Webadresse ein, zum Beispiel https://triliumnotes.org.",
+    "disabled_description": "Diese Webansicht wurde von einer externen Quelle importiert. Um Sie vor Phishing oder schädlichen Inhalten zu schützen, wird sie nicht automatisch geladen. Sie können sie aktivieren, wenn Sie der Quelle vertrauen.",
+    "disabled_button_enable": "Webansicht aktivieren"
+  },
+  "render": {
+    "setup_create_sample_html": "Eine Beispielnotiz mit HTML erstellen",
+    "setup_create_sample_preact": "Eine Beispielnotiz mit Preact erstellen",
+    "setup_title": "Benutzerdefiniertes HTML oder Preact JSX in dieser Notiz anzeigen",
+    "setup_sample_created": "Eine Beispielnotiz wurde als untergeordnete Notiz erstellt.",
+    "disabled_description": "Diese Rendering-Notizen stammen aus einer externen Quelle. Um Sie vor schädlichen Inhalten zu schützen, ist diese Funktion standardmäßig deaktiviert. Stellen Sie sicher, dass Sie der Quelle vertrauen, bevor Sie sie aktivieren.",
+    "disabled_button_enable": "Rendering-Notiz aktivieren"
+  },
+  "active_content_badges": {
+    "type_icon_pack": "Icon-Paket",
+    "type_backend_script": "Backend-Skript",
+    "type_frontend_script": "Frontend-Skript",
+    "type_widget": "Widget",
+    "type_app_css": "Benutzerdefiniertes CSS",
+    "type_render_note": "Rendering-Notiz",
+    "type_web_view": "Webansicht"
   }
 }
