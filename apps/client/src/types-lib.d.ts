@@ -1,3 +1,5 @@
+export {};
+
 // TODO: Use real @types/ but that one generates a lot of errors.
 declare module "draggabilly" {
     type DraggabillyEventData = {};
