@@ -1,14 +1,49 @@
-import type { GeoMouseEvent } from "./map.js";
+import { useCallback, useContext, useEffect } from "preact/hooks";
+
 import appContext, { type CommandMappings } from "../../../components/app_context.js";
 import contextMenu, { type MenuItem } from "../../../menus/context_menu.js";
-import linkContextMenu from "../../../menus/link_context_menu.js";
 import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker.jsx";
-import { t } from "../../../services/i18n.js";
-import { createNewNote } from "./api.js";
+import linkContextMenu from "../../../menus/link_context_menu.js";
 import { copyTextWithToast } from "../../../services/clipboard_ext.js";
+import { t } from "../../../services/i18n.js";
 import link from "../../../services/link.js";
+import { createNewNote } from "./api.js";
+import { type GeoMouseEvent,ParentMap, toMapLibreEvent } from "./map.js";
+import { MARKER_LAYER } from "./marker_data.js";
 
-export default function openContextMenu(noteId: string, e: GeoMouseEvent, isEditable: boolean) {
+export default function ContextMenus({ note, isReadOnly }: { note: FNote, isReadOnly }) {
+    const map = useContext(ParentMap);
+
+    const onContextMenu = useCallback((e: GeoMouseEvent) => {
+        if (!map) return;
+        const features = map.queryRenderedFeatures(e.point, {
+            layers: [ MARKER_LAYER ]
+        });
+
+        if (features.length > 0) {
+            // Marker context menu.
+            openContextMenu(features[0].properties.id, e, !isReadOnly);
+        } else {
+            // Empty area context menu.
+            openMapContextMenu(note.noteId, e, !isReadOnly);
+        }
+    }, [ map, note.noteId, isReadOnly ]);
+
+    useEffect(() => {
+        if (!onContextMenu || !map) return;
+
+        const handler = (e: maplibregl.MapMouseEvent) => {
+            e.preventDefault();
+            onContextMenu(toMapLibreEvent(e));
+        };
+        map.on("contextmenu", handler);
+        return () => { map.off("contextmenu", handler); };
+    }, [ map, onContextMenu ]);
+
+    return null;
+}
+
+export function openContextMenu(noteId: string, e: GeoMouseEvent, isEditable: boolean) {
     let items: MenuItem<keyof CommandMappings>[] = [
         ...buildGeoLocationItem(e),
         { kind: "separator" },
@@ -58,7 +93,7 @@ export function openMapContextMenu(noteId: string, e: GeoMouseEvent, isEditable:
                 handler: () => createNewNote(noteId, e),
                 uiIcon: "bx bx-plus"
             }
-        ]
+        ];
     }
 
     contextMenu.show({

@@ -1,8 +1,6 @@
 import "./index.css";
 
 import type maplibregl from "maplibre-gl";
-import { MapMouseEvent, Popup } from "maplibre-gl";
-import { RefObject } from "preact";
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import appContext from "../../../components/app_context";
@@ -20,11 +18,11 @@ import { ParentComponent } from "../../react/react_utils";
 import TouchBar, { TouchBarButton, TouchBarSlider } from "../../react/TouchBar";
 import { ViewModeProps } from "../interface";
 import { createNewNote, moveMarker } from "./api";
-import openContextMenu, { openMapContextMenu } from "./context_menu";
+import ContextMenus from "./ContextMenus";
 import Map, { GeoMouseEvent } from "./map";
 import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, MapLayer } from "./map_layer";
 import Marker, { GpxTrack } from "./marker";
-import { MARKER_LAYER, MARKER_SVG, useMarkerData } from "./marker_data";
+import { MARKER_SVG, useMarkerData } from "./marker_data";
 import Tooltips from "./Tooltips";
 
 const DEFAULT_COORDINATES: [number, number] = [3.878638227135724, 446.6630455551659];
@@ -100,22 +98,6 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
         }
     }, [ state ]);
 
-    const onContextMenu = useCallback((e: GeoMouseEvent) => {
-        const map = apiRef.current;
-        if (!map) return;
-        const features = map.queryRenderedFeatures(e.point, {
-            layers: [ MARKER_LAYER ]
-        });
-
-        if (features.length > 0) {
-            // Marker context menu.
-            openContextMenu(features[0].properties.id, e, !isReadOnly);
-        } else {
-            // Empty area context menu.
-            openMapContextMenu(note.noteId, e, !isReadOnly);
-        }
-    }, [ note.noteId, isReadOnly ]);
-
     // Dragging
     const containerRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<maplibregl.Map | null>(null);
@@ -175,10 +157,10 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                     spacedUpdate.scheduleUpdate();
                 }}
                 onClick={onClick}
-                onContextMenu={onContextMenu}
                 scale={hasScale}
             >
                 <Tooltips />
+                <ContextMenus note={note} isReadOnly={isReadOnly} />
             </Map>}
             <GeoMapTouchBar state={state} map={apiRef.current} />
         </div>

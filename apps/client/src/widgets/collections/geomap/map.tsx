@@ -29,7 +29,7 @@ interface MapProps {
     scale: boolean;
 }
 
-function toMapLibreEvent(e: maplibregl.MapMouseEvent): GeoMouseEvent {
+export function toMapLibreEvent(e: maplibregl.MapMouseEvent): GeoMouseEvent {
     return {
         latlng: { lat: e.lngLat.lat, lng: e.lngLat.lng },
         originalEvent: e.originalEvent,
@@ -175,17 +175,6 @@ export default function Map({ coordinates, zoom, layerData, viewportChanged, chi
         map.on("click", handler);
         return () => { map.off("click", handler); };
     }, [ map, onClick ]);
-
-    useEffect(() => {
-        if (!onContextMenu || !map) return;
-
-        const handler = (e: maplibregl.MapMouseEvent) => {
-            e.preventDefault();
-            onContextMenu(toMapLibreEvent(e));
-        };
-        map.on("contextmenu", handler);
-        return () => { map.off("contextmenu", handler); };
-    }, [ map, onContextMenu ]);
 
     useEffect(() => {
         if (!onZoom || !map) return;
