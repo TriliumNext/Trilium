@@ -159,7 +159,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
             >
                 <Tooltips />
                 <ContextMenus note={note} isReadOnly={isReadOnly} />
-                <Markers note={note} />
+                <Markers note={note} hideLabels={hideLabels} />
             </Map>}
             <GeoMapTouchBar state={state} map={apiRef.current} />
         </div>

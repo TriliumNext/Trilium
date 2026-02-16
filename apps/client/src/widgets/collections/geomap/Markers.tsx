@@ -1,4 +1,4 @@
-import { type GeoJSONSource } from "maplibre-gl";
+import { AddLayerObject, type GeoJSONSource } from "maplibre-gl";
 import { useCallback, useContext, useEffect, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
@@ -15,9 +15,15 @@ export const MARKER_SVG = "foo"; // TODO: Fix
 const iconSvgCache = new Map<string, string>();
 const iconClassToBitmapCache = new Map<string, string | undefined>();
 
+const LABEL_LAYOUT: Extract<AddLayerObject, { type: "symbol"}>["layout"] = {
+    "text-field": ["get", "name"],
+    "text-font": ["Open Sans Regular"],
+    "text-size": 12,
+    "text-anchor": "top",
+    "text-allow-overlap": true,
+};
 
-export default function Markers({ note }: { note: FNote }) {
-    const [ stylesLoaded, setStylesLoaded ] = useState(false);
+export default function Markers({ note, hideLabels }: { note: FNote, hideLabels: boolean }) {
     const map = useContext(ParentMap);
     const childNotes = useChildNotes(note?.noteId);
 
@@ -42,7 +48,13 @@ export default function Markers({ note }: { note: FNote }) {
                     "icon-image": [ "get", "icon" ],
                     "icon-size": 1,
                     "icon-anchor": "bottom",
-                    "icon-allow-overlap": true
+                    "icon-allow-overlap": true,
+                    ...hideLabels ? [] : LABEL_LAYOUT
+                },
+                paint: {
+                    "text-color": "#333",
+                    "text-halo-color": "#fff",
+                    "text-halo-width": 1,
                 }
             });
         });
