@@ -1,6 +1,6 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import maplibregl from "maplibre-gl";
+import maplibregl, { NavigationControl } from "maplibre-gl";
 import { ComponentChildren, createContext, RefObject } from "preact";
 import { useEffect, useImperativeHandle, useRef } from "preact/hooks";
 
@@ -84,6 +84,12 @@ export default function Map({ coordinates, zoom, layerData, viewportChanged, chi
             minZoom: 1,
             renderWorldCopies: false
         });
+
+        // Add navigation buttons.
+        mapInstance.addControl(new NavigationControl({
+            showCompass: false,
+            showZoom: true
+        }), "top-left");
 
         mapRef.current = mapInstance;
 
