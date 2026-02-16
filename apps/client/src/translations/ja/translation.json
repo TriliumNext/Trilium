@@ -2292,6 +2292,20 @@
     "type_app_theme": "カスタムテーマ",
     "toggle_tooltip_enable_tooltip": "この {{type}} を有効にするにはクリックしてください。",
     "toggle_tooltip_disable_tooltip": "この {{type}} を無効にするにはクリックしてください。",
-    "menu_docs": "ドキュメントを開く"
+    "menu_docs": "ドキュメントを開く",
+    "menu_execute_now": "今すぐスクリプトを実行",
+    "menu_run": "自動で実行",
+    "menu_run_disabled": "手動で実行",
+    "menu_run_backend_startup": "バックエンドの起動時",
+    "menu_run_hourly": "毎時",
+    "menu_run_daily": "毎日",
+    "menu_run_frontend_startup": "デスクトップ フロントエンドの起動時",
+    "menu_run_mobile_startup": "モバイル フロントエンドの起動時",
+    "menu_change_to_widget": "ウィジェットの変更",
+    "menu_change_to_frontend_script": "フロントエンドスクリプトの変更",
+    "menu_theme_base": "テーマベース"
+  },
+  "setup_form": {
+    "more_info": "さらに詳しく"
   }
 }
