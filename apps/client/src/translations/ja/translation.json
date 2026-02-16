@@ -2036,7 +2036,8 @@
     "show-scale": "スケールを表示",
     "raster": "Raster",
     "vector_light": "Vector（ライト）",
-    "vector_dark": "Vector （ダーク）"
+    "vector_dark": "Vector （ダーク）",
+    "show-labels": "マーカー名を表示"
   },
   "call_to_action": {
     "next_theme_title": "新しいTriliumテーマをお試しください",
@@ -2093,7 +2094,7 @@
     "no_attachments": "このノートには添付ファイルはありません。"
   },
   "book": {
-    "no_children_help": "このコレクションには子ノートがないため、表示するものがありません。詳細は<a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a>をご覧ください。",
+    "no_children_help": "このコレクションには子ノートがないため、表示するものがありません。",
     "drag_locked_title": "編集をロック中",
     "drag_locked_message": "コレクションは編集がロックされているため、ドラッグは許可されていません。"
   },
@@ -2268,6 +2269,29 @@
     "url_placeholder": "Web サイトのアドレスを入力または貼り付けて下さい。 例: https://triliumnotes.org",
     "create_button": "Web ビューを作成",
     "invalid_url_title": "無効なアドレス",
-    "invalid_url_message": "有効な Web アドレスを入力してください。 例: https://triliumnotes.org"
+    "invalid_url_message": "有効な Web アドレスを入力してください。 例: https://triliumnotes.org",
+    "disabled_description": "この Web ビューは外部ソースからインポートされました。フィッシングや悪意のあるコンテンツから保護するため、自動的には読み込まれません。ソースを信頼できる場合は、有効にすることができます。",
+    "disabled_button_enable": "Web ビューを有効"
+  },
+  "render": {
+    "setup_title": "このノート内にカスタム HTML または Preact JSX を表示",
+    "setup_create_sample_preact": "Preact でサンプルノートを作成",
+    "setup_create_sample_html": "HTML でサンプルノートを作成",
+    "setup_sample_created": "子ノートとしてサンプルノートが作成されました。",
+    "disabled_description": "このレンダリングノートは外部ソースから提供されています。悪意のあるコンテンツからユーザーを保護するため、デフォルトでは有効になっていません。有効にする前に、ソースが信頼できるかどうかをご確認ください。",
+    "disabled_button_enable": "レンダリングノートを有効"
+  },
+  "active_content_badges": {
+    "type_icon_pack": "アイコンパック",
+    "type_backend_script": "バックエンドスクリプト",
+    "type_frontend_script": "フロントエンドスクリプト",
+    "type_widget": "ウィジェット",
+    "type_app_css": "カスタム CSS",
+    "type_render_note": "レンダリングノート",
+    "type_web_view": "Web ビュー",
+    "type_app_theme": "カスタムテーマ",
+    "toggle_tooltip_enable_tooltip": "この {{type}} を有効にするにはクリックしてください。",
+    "toggle_tooltip_disable_tooltip": "この {{type}} を無効にするにはクリックしてください。",
+    "menu_docs": "ドキュメントを開く"
   }
 }
