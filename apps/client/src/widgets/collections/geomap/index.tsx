@@ -25,6 +25,7 @@ import Map, { GeoMouseEvent } from "./map";
 import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, MapLayer } from "./map_layer";
 import Marker, { GpxTrack } from "./marker";
 import { MARKER_LAYER, MARKER_SVG, useMarkerData } from "./marker_data";
+import Tooltips from "./Tooltips";
 
 const DEFAULT_COORDINATES: [number, number] = [3.878638227135724, 446.6630455551659];
 const DEFAULT_ZOOM = 2;
@@ -119,7 +120,6 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     const containerRef = useRef<HTMLDivElement>(null);
     const apiRef = useRef<maplibregl.Map | null>(null);
     useMarkerData(note, apiRef);
-    useHoverTooltip(containerRef, apiRef);
     useNoteTreeDrag(containerRef, {
         dragEnabled: !isReadOnly,
         dragNotEnabledMessage: {
@@ -178,7 +178,7 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
                 onContextMenu={onContextMenu}
                 scale={hasScale}
             >
-                {/* {notes.map(note => <NoteWrapper note={note} isReadOnly={isReadOnly} hideLabels={hideLabels} />)} */}
+                <Tooltips />
             </Map>}
             <GeoMapTouchBar state={state} map={apiRef.current} />
         </div>
@@ -205,40 +205,6 @@ function useLayerData(note: FNote) {
     }, [ layerName ]);
 
     return layerData;
-}
-
-function useHoverTooltip(containerRef: RefObject<HTMLDivElement>, mapRef: RefObject<maplibregl.Map | null>) {
-    useEffect(() => {
-        const map = mapRef.current;
-        if (!map) return;
-
-        const tooltip = new Popup({
-            closeButton: false,
-            closeOnClick: false,
-            offset: 12,
-            className: "marker-tooltip"
-        });
-
-        function onMouseEnter(e: MapMouseEvent) {
-            const feature = e.features[0];
-            tooltip
-                .setLngLat(feature.geometry.coordinates)
-                .setHTML(`<strong>${feature.properties.name}</strong>`)
-                .addTo(map);
-        }
-
-        function onMouseLeave() {
-            tooltip.remove();
-        }
-
-        map.on("mouseenter", MARKER_LAYER, onMouseEnter);
-        map.on("mouseleave", MARKER_LAYER, onMouseLeave);
-
-        return () => {
-            map.off("mouseenter", MARKER_LAYER, onMouseEnter);
-            map.off("mouseleave", MARKER_LAYER, onMouseLeave);
-        };
-    }, [ mapRef ]);
 }
 
 function ToggleReadOnlyButton({ note }: { note: FNote }) {

@@ -2,7 +2,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import maplibregl, { NavigationControl, type Point } from "maplibre-gl";
 import { ComponentChildren, createContext, RefObject } from "preact";
-import { useEffect, useImperativeHandle, useRef } from "preact/hooks";
+import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
 
 import { useElementSize, useSyncedRef } from "../../react/hooks";
 import { MapLayer } from "./map_layer";
@@ -38,10 +38,10 @@ function toMapLibreEvent(e: maplibregl.MapMouseEvent): GeoMouseEvent {
 }
 
 export default function Map({ coordinates, zoom, layerData, viewportChanged, children, onClick, onContextMenu, scale, apiRef, containerRef: _containerRef, onZoom }: MapProps) {
-    const mapRef = useRef<maplibregl.Map>(null);
+    const [ map, setMap ] = useState<maplibregl.Map | null>(null);
     const containerRef = useSyncedRef<HTMLDivElement>(_containerRef);
 
-    useImperativeHandle(apiRef ?? null, () => mapRef.current);
+    useImperativeHandle(apiRef ?? null, () => map);
 
     // Initialize the map.
     useEffect(() => {
@@ -93,7 +93,7 @@ export default function Map({ coordinates, zoom, layerData, viewportChanged, chi
             showZoom: true
         }), "top-left");
 
-        mapRef.current = mapInstance;
+        setMap(mapInstance);
 
         // Load async vector style if needed.
         if (layerData.type === "vector" && typeof layerData.style !== "string") {
@@ -104,13 +104,12 @@ export default function Map({ coordinates, zoom, layerData, viewportChanged, chi
 
         return () => {
             mapInstance.remove();
-            mapRef.current = null;
+            setMap(null);
         };
     }, []);
 
     // React to layer changes.
     useEffect(() => {
-        const map = mapRef.current;
         if (!map) return;
 
         if (layerData.type === "vector") {
@@ -141,23 +140,21 @@ export default function Map({ coordinates, zoom, layerData, viewportChanged, chi
                 ]
             });
         }
-    }, [ layerData ]);
+    }, [ map, layerData ]);
 
     // React to coordinate changes.
     useEffect(() => {
-        if (!mapRef.current) return;
-
+        if (!map) return;
         const center = Array.isArray(coordinates)
             ? [coordinates[1], coordinates[0]] as [number, number]
             : [coordinates.lng, coordinates.lat] as [number, number];
 
-        mapRef.current.setCenter(center);
-        mapRef.current.setZoom(zoom);
-    }, [ coordinates, zoom ]);
+        map.setCenter(center);
+        map.setZoom(zoom);
+    }, [ map, coordinates, zoom ]);
 
     // Viewport callback.
     useEffect(() => {
-        const map = mapRef.current;
         if (!map) return;
 
         const updateFn = () => {
@@ -169,19 +166,17 @@ export default function Map({ coordinates, zoom, layerData, viewportChanged, chi
         return () => {
             map.off("moveend", updateFn);
         };
-    }, [ viewportChanged ]);
+    }, [ map, viewportChanged ]);
 
     useEffect(() => {
-        const map = mapRef.current;
         if (!onClick || !map) return;
 
         const handler = (e: maplibregl.MapMouseEvent) => onClick(toMapLibreEvent(e));
         map.on("click", handler);
         return () => { map.off("click", handler); };
-    }, [ onClick ]);
+    }, [ map, onClick ]);
 
     useEffect(() => {
-        const map = mapRef.current;
         if (!onContextMenu || !map) return;
 
         const handler = (e: maplibregl.MapMouseEvent) => {
@@ -190,37 +185,35 @@ export default function Map({ coordinates, zoom, layerData, viewportChanged, chi
         };
         map.on("contextmenu", handler);
         return () => { map.off("contextmenu", handler); };
-    }, [ onContextMenu ]);
+    }, [ map, onContextMenu ]);
 
     useEffect(() => {
-        const map = mapRef.current;
         if (!onZoom || !map) return;
 
         map.on("zoom", onZoom);
         return () => { map.off("zoom", onZoom); };
-    }, [ onZoom ]);
+    }, [ map, onZoom ]);
 
     // Scale
     useEffect(() => {
-        const map = mapRef.current;
         if (!scale || !map) return;
         const scaleControl = new maplibregl.ScaleControl();
         map.addControl(scaleControl);
         return () => { map.removeControl(scaleControl); };
-    }, [ scale ]);
+    }, [ map, scale ]);
 
     // Adapt to container size changes.
     const size = useElementSize(containerRef);
     useEffect(() => {
-        mapRef.current?.resize();
-    }, [ size?.width, size?.height ]);
+        map?.resize();
+    }, [ map, size?.width, size?.height ]);
 
     return (
         <div
             ref={containerRef}
             className={`geo-map-container ${layerData.isDarkTheme ? "dark" : ""}`}
         >
-            <ParentMap.Provider value={mapRef.current}>
+            <ParentMap.Provider value={map}>
                 {children}
             </ParentMap.Provider>
         </div>
