@@ -1,4 +1,5 @@
-import { useContext, useEffect } from "preact/hooks";
+import { GeoJSONSource } from "maplibre-gl";
+import { useCallback, useContext, useEffect } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
 import { useChildNotes } from "../../react/hooks";
@@ -6,6 +7,7 @@ import { ParentMap } from "./map";
 
 export const LOCATION_ATTRIBUTE = "geolocation";
 export const MARKER_LAYER = "points-layer";
+const MARKER_SOURCE = "points";
 const DEFAULT_MARKER_COLOR = "#2A81CB";
 
 // SVG marker pin shape (replaces the Leaflet marker PNG).
@@ -18,7 +20,36 @@ export default function Markers({ note }: { note: FNote }) {
     const map = useContext(ParentMap);
     const childNotes = useChildNotes(note?.noteId);
 
-    async function refresh() {
+    // Add the source and layer.
+    useEffect(() => {
+        if (!map) return;
+
+        map.addSource(MARKER_SOURCE, {
+            type: "geojson",
+            data: {
+                type: "FeatureCollection",
+                features: []
+            }
+        });
+        map.addLayer({
+            id: MARKER_LAYER,
+            type: "symbol",
+            source: MARKER_SOURCE,
+            layout: {
+                "icon-image": [ "get", "icon" ],
+                "icon-size": 1,
+                "icon-anchor": "bottom",
+                "icon-allow-overlap": true
+            }
+        });
+
+        return () => {
+            map.removeLayer(MARKER_LAYER);
+            map.removeSource(MARKER_SOURCE);
+        };
+    }, [ map ]);
+
+    const refresh = useCallback(async () => {
         if (!map) return;
 
         async function ensureIcon(color: string, iconClass: string) {
@@ -62,29 +93,18 @@ export default function Markers({ note }: { note: FNote }) {
             });
         }));
 
-        map.addSource("points", {
-            type: "geojson",
-            data: {
-                type: "FeatureCollection",
-                features
-            }
+        // Update the source
+        const source = map.getSource<GeoJSONSource>(MARKER_SOURCE);
+        source?.setData({
+            type: "FeatureCollection",
+            features
         });
-        map.addLayer({
-            id: MARKER_LAYER,
-            type: "symbol",
-            source: "points",
-            layout: {
-                "icon-image": [ "get", "icon" ],
-                "icon-size": 1,
-                "icon-anchor": "bottom",
-                "icon-allow-overlap": true
-            }
-        });
-    }
+    }, [ childNotes, map ]);
 
+    // Refresh the data.
     useEffect(() => {
         refresh();
-    }, [ map, childNotes ]);
+    }, [ refresh ]);
     return null;
 }
 
