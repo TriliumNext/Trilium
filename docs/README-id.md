@@ -153,26 +153,26 @@ Tidak ada langkah migrasi khusus untuk bermigrasi dari zadam/Trilium ke
 TriliumNext/Trilium. Cukup [instal TriliumNext/Trilium](#-installation) seperti
 biasa dan akan menggunakan basis data yang sudah ada.
 
-Versions up to and including
-[v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4) are
-compatible with the latest zadam/trilium version of
-[v0.63.7](https://github.com/zadam/trilium/releases/tag/v0.63.7). Any later
-versions of TriliumNext/Trilium have their sync versions incremented which
-prevents direct migration.
+Versi hingga
+[v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4)
+kompatibel dengan versi Zadam/Trilium terbaru yaitu
+[v0.63.7](https://github.com/zadam/trilium/releases/tag/v0.63.7). Versi
+TriliumNext/Trilium yang lebih baru memiliki versi sinkronisasi yang
+ditingkatkan sehingga mencegah migrasi langsung.
 
-## 💬 Discuss with us
+## 💬 Mari berdiskusi dengan kami
 
-Feel free to join our official conversations. We would love to hear what
-features, suggestions, or issues you may have!
+Jangan ragu untuk bergabung dalam percakapan resmi kami. Kami ingin sekali
+mendengar fitur, saran, atau masalah apa pun yang mungkin Anda miliki!
 
-- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (For synchronous
-  discussions.)
-  - The `General` Matrix room is also bridged to
+- [Matriks](https://matrix.to/#/#triliumnext:matrix.org) (Untuk diskusi
+  sinkron.)
+  - Ruang Matriks `Umum` juga terhubung ke
     [XMPP](xmpp:discuss@trilium.thisgreat.party?join)
 - [Diskusi Github](https://github.com/TriliumNext/Trilium/discussions) (Untuk
   diskusi asinkron.)
-- [Github Issues](https://github.com/TriliumNext/Trilium/issues) (For bug
-  reports and feature requests.)
+- [Masalah GitHub](https://github.com/TriliumNext/Trilium/issues) (Untuk laporan
+  bug dan permintaan fitur.)
 
 ## 🏗 Instalasi
 
@@ -206,8 +206,9 @@ Saat ini hanya Chrome & Firefox versi terbaru yang didukung (dan telah diuji).
 
 ### Ponsel
 
-To use TriliumNext on a mobile device, you can use a mobile web browser to
-access the mobile interface of a server installation (see below).
+Untuk menggunakan TriliumNext pada perangkat seluler, Anda dapat menggunakan
+peramban web seluler untuk mengakses antarmuka seluler dari instalasi server
+(lihat di bawah).
 
 See issue https://github.com/TriliumNext/Trilium/issues/4962 for more
 information on mobile app support.
