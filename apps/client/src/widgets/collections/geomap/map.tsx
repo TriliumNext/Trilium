@@ -1,8 +1,8 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import maplibregl, { NavigationControl, type Point } from "maplibre-gl";
+import { Map as MapLibreGLMap, MapMouseEvent, NavigationControl, type Point, ScaleControl, StyleSpecification } from "maplibre-gl";
 import { ComponentChildren, createContext, RefObject } from "preact";
-import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
+import { useEffect, useImperativeHandle, useState } from "preact/hooks";
 
 import { useElementSize, useSyncedRef } from "../../react/hooks";
 import { MapLayer } from "./map_layer";
@@ -13,10 +13,10 @@ export interface GeoMouseEvent {
     point: Point;
 }
 
-export const ParentMap = createContext<maplibregl.Map | null>(null);
+export const ParentMap = createContext<MapLibreGLMap | null>(null);
 
 interface MapProps {
-    apiRef?: RefObject<maplibregl.Map | null>;
+    apiRef?: RefObject<MapLibreGLMap | null>;
     containerRef?: RefObject<HTMLDivElement>;
     coordinates: { lat: number; lng: number } | [number, number];
     zoom: number;
@@ -29,7 +29,7 @@ interface MapProps {
     scale: boolean;
 }
 
-export function toMapLibreEvent(e: maplibregl.MapMouseEvent): GeoMouseEvent {
+export function toMapLibreEvent(e: MapMouseEvent): GeoMouseEvent {
     return {
         latlng: { lat: e.lngLat.lat, lng: e.lngLat.lng },
         originalEvent: e.originalEvent,
@@ -38,7 +38,7 @@ export function toMapLibreEvent(e: maplibregl.MapMouseEvent): GeoMouseEvent {
 }
 
 export default function Map({ coordinates, zoom, layerData, viewportChanged, children, onClick, onContextMenu, scale, apiRef, containerRef: _containerRef, onZoom }: MapProps) {
-    const [ map, setMap ] = useState<maplibregl.Map | null>(null);
+    const [ map, setMap ] = useState<MapLibreGLMap | null>(null);
     const containerRef = useSyncedRef<HTMLDivElement>(_containerRef);
 
     useImperativeHandle(apiRef ?? null, () => map);
@@ -47,7 +47,7 @@ export default function Map({ coordinates, zoom, layerData, viewportChanged, chi
     useEffect(() => {
         if (!containerRef.current) return;
 
-        let style: maplibregl.StyleSpecification | string;
+        let style: StyleSpecification | string;
 
         if (layerData.type === "vector") {
             style = typeof layerData.style === "string"
@@ -78,7 +78,7 @@ export default function Map({ coordinates, zoom, layerData, viewportChanged, chi
             ? [coordinates[1], coordinates[0]] as [number, number]
             : [coordinates.lng, coordinates.lat] as [number, number];
 
-        const mapInstance = new maplibregl.Map({
+        const mapInstance = new MapLibreGLMap({
             container: containerRef.current,
             style,
             center,
@@ -98,7 +98,7 @@ export default function Map({ coordinates, zoom, layerData, viewportChanged, chi
         // Load async vector style if needed.
         if (layerData.type === "vector" && typeof layerData.style !== "string") {
             layerData.style().then(asyncStyle => {
-                mapInstance.setStyle(asyncStyle as maplibregl.StyleSpecification);
+                mapInstance.setStyle(asyncStyle as StyleSpecification);
             });
         }
 
@@ -117,7 +117,7 @@ export default function Map({ coordinates, zoom, layerData, viewportChanged, chi
                 map.setStyle(layerData.style);
             } else {
                 layerData.style().then(asyncStyle => {
-                    map.setStyle(asyncStyle as maplibregl.StyleSpecification);
+                    map.setStyle(asyncStyle as StyleSpecification);
                 });
             }
         } else {
@@ -171,7 +171,7 @@ export default function Map({ coordinates, zoom, layerData, viewportChanged, chi
     useEffect(() => {
         if (!onClick || !map) return;
 
-        const handler = (e: maplibregl.MapMouseEvent) => onClick(toMapLibreEvent(e));
+        const handler = (e: MapMouseEvent) => onClick(toMapLibreEvent(e));
         map.on("click", handler);
         return () => { map.off("click", handler); };
     }, [ map, onClick ]);
@@ -186,7 +186,7 @@ export default function Map({ coordinates, zoom, layerData, viewportChanged, chi
     // Scale
     useEffect(() => {
         if (!scale || !map) return;
-        const scaleControl = new maplibregl.ScaleControl();
+        const scaleControl = new ScaleControl();
         map.addControl(scaleControl);
         return () => { map.removeControl(scaleControl); };
     }, [ map, scale ]);
