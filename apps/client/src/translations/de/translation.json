@@ -2303,6 +2303,13 @@
     "type_widget": "Widget",
     "type_app_css": "Benutzerdefiniertes CSS",
     "type_render_note": "Rendering-Notiz",
-    "type_web_view": "Webansicht"
+    "type_web_view": "Webansicht",
+    "type_app_theme": "Benutzerdefiniertes Thema",
+    "toggle_tooltip_enable_tooltip": "Klicken, um diesen {{type}} zu aktivieren.",
+    "toggle_tooltip_disable_tooltip": "Klicken, um diesen {{type}} zu deaktivieren.",
+    "menu_docs": "Dokumentation öffnen",
+    "menu_execute_now": "Skript jetzt ausführen",
+    "menu_run": "Automatisch ausführen",
+    "menu_run_disabled": "Manuell"
   }
 }
