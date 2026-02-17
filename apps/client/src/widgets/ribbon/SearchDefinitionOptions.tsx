@@ -169,8 +169,8 @@ function SearchStringOption({ note, refreshResults, error, ...restProps }: Searc
                 <ul style="marigin-bottom: 0;">
                     <li>{t("search_string.full_text_search")}</li>
                     <li><code>#abc</code> - {t("search_string.label_abc")}</li>
-                    <li><code>#abc</code> - {t("search_string.label_abc")}</li>
                     <li><code>~xyz</code> - {t("search_string.relation_xyz")}</li>
+                    <li><code>~?</code> - {t("search_string.relation_wildcard")}</li>
                     <li><code>#year = 2019</code> - {t("search_string.label_year")}</li>
                     <li><code>#rock #pop</code> - {t("search_string.label_rock_pop")}</li>
                     <li><code>#rock or #pop</code> - {t("search_string.label_rock_or_pop")}</li>
