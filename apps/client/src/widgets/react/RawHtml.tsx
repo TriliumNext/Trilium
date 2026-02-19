@@ -1,5 +1,7 @@
 import type { CSSProperties, HTMLProps, RefObject } from "preact/compat";
 
+import { sanitizeNoteContentHtml } from "../../services/sanitize_content.js";
+
 type HTMLElementLike = string | HTMLElement | JQuery<HTMLElement>;
 
 interface RawHtmlProps extends Pick<HTMLProps<HTMLElement>, "tabindex" | "dir"> {
@@ -36,6 +38,6 @@ export function getHtml(html: string | HTMLElement | JQuery<HTMLElement>) {
     }
 
     return {
-        __html: html as string
+        __html: sanitizeNoteContentHtml(html as string)
     };
 }

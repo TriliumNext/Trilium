@@ -4,6 +4,7 @@ import type FNote from "../../../entities/fnote";
 import type { PrintReport } from "../../../print";
 import content_renderer from "../../../services/content_renderer";
 import froca from "../../../services/froca";
+import { sanitizeNoteContentHtml } from "../../../services/sanitize_content";
 import type { ViewModeProps } from "../interface";
 import { filterChildNotes, useFilteredNoteIds } from "./utils";
 
@@ -87,7 +88,7 @@ export function ListPrintView({ note, noteIds: unfilteredNoteIds, onReady, onPro
                 <h1>{note.title}</h1>
 
                 {state.notesWithContent?.map(({ note: childNote, contentEl }) => (
-                    <section id={`note-${childNote.noteId}`} class="note" dangerouslySetInnerHTML={{ __html: contentEl.innerHTML }} />
+                    <section id={`note-${childNote.noteId}`} class="note" dangerouslySetInnerHTML={{ __html: sanitizeNoteContentHtml(contentEl.innerHTML) }} />
                 ))}
             </div>
         </div>

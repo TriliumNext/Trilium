@@ -5,6 +5,7 @@ import froca from "./froca.js";
 import link from "./link.js";
 import { renderMathInElement } from "./math.js";
 import { getMermaidConfig } from "./mermaid.js";
+import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 import { formatCodeBlocks } from "./syntax_highlight.js";
 import tree from "./tree.js";
 import { isHtmlEmpty } from "./utils.js";
@@ -14,7 +15,7 @@ export default async function renderText(note: FNote | FAttachment, $renderedCon
     const blob = await note.getBlob();
 
     if (blob && !isHtmlEmpty(blob.content)) {
-        $renderedContent.append($('<div class="ck-content">').html(blob.content));
+        $renderedContent.append($('<div class="ck-content">').html(sanitizeNoteContentHtml(blob.content)));
 
         const seenNoteIds = options.seenNoteIds ?? new Set<string>();
         seenNoteIds.add("noteId" in note ? note.noteId : note.attachmentId);

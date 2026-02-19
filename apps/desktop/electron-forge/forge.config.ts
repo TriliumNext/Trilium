@@ -1,4 +1,6 @@
+import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import type { ForgeConfig } from "@electron-forge/shared-types";
+import { FuseV1Options, FuseVersion } from "@electron/fuses";
 import { LOCALES } from "@triliumnext/commons";
 import { existsSync } from "fs";
 import fs from "fs-extra";
@@ -166,7 +168,24 @@ const config: ForgeConfig = {
         {
             name: "@electron-forge/plugin-auto-unpack-natives",
             config: {}
-        }
+        },
+        new FusesPlugin({
+            version: FuseVersion.V1,
+            // Security: Disable RunAsNode to prevent local attackers from launching
+            // the Electron app in Node.js mode via ELECTRON_RUN_AS_NODE env variable.
+            // This prevents TCC bypass / prompt spoofing attacks on macOS and
+            // "living off the land" privilege escalation on all platforms.
+            [FuseV1Options.RunAsNode]: false,
+            // Security: Disable NODE_OPTIONS and NODE_EXTRA_CA_CERTS environment
+            // variables to prevent injection of arbitrary Node.js runtime options.
+            [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
+            // Security: Disable --inspect and --inspect-brk CLI arguments to prevent
+            // debugger protocol exposure that could enable remote code execution.
+            [FuseV1Options.EnableNodeCliInspectArguments]: false,
+            // Security: Only allow loading the app from the ASAR archive to prevent
+            // loading of unverified code from alternative file paths.
+            [FuseV1Options.OnlyLoadAppFromAsar]: true,
+        }),
     ],
     hooks: {
         // Remove unused locales from the packaged app to save some space.

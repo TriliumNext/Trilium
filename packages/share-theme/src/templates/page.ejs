@@ -93,7 +93,7 @@
 const logoWidth = subRoot.note.getLabelValue("shareLogoWidth") ?? 53;
 const logoHeight = subRoot.note.getLabelValue("shareLogoHeight") ?? 40;
 const mobileLogoHeight = logoHeight && logoWidth ? 32 / (logoWidth / logoHeight) : "";
-const shareRootLink = subRoot.note.hasLabel("shareRootLink") ? subRoot.note.getLabelValue("shareRootLink") : `./${subRoot.note.noteId}`;
+const shareRootLink = subRoot.note.hasLabel("shareRootLink") ? sanitizeUrl(subRoot.note.getLabelValue("shareRootLink") ?? "") : `./${subRoot.note.noteId}`;
 const headingRe = /(<h[1-6]>)(.+?)(<\/h[1-6]>)/g;
 const headingMatches = [...content.matchAll(headingRe)];
 content = content.replaceAll(headingRe, (...match) => {
@@ -173,7 +173,8 @@ content = content.replaceAll(headingRe, (...match) => {
                         const action = note.type === "book" ? "getChildNotes" : "getVisibleChildNotes";
                         for (const childNote of note[action]()) {
                             const isExternalLink = childNote.hasLabel("shareExternal") || childNote.hasLabel("shareExternalLink");
-                            const linkHref = isExternalLink ? childNote.getLabelValue("shareExternal") ?? childNote.getLabelValue("shareExternalLink") : `./${childNote.shareId}`;
+                            const rawHref = isExternalLink ? childNote.getLabelValue("shareExternal") ?? childNote.getLabelValue("shareExternalLink") : `./${childNote.shareId}`;
+                            const linkHref = isExternalLink ? sanitizeUrl(rawHref ?? "") : rawHref;
                             const target = isExternalLink ? ` target="_blank" rel="noopener noreferrer"` : "";
                         %>
                             <li>

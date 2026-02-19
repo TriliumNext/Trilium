@@ -82,10 +82,8 @@ export class AnthropicService extends BaseAIService {
                 providerOptions.betaVersion
             );
 
-            // Log API key format (without revealing the actual key)
-            const apiKeyPrefix = providerOptions.apiKey?.substring(0, 7) || 'undefined';
-            const apiKeyLength = providerOptions.apiKey?.length || 0;
-            log.info(`[DEBUG] Using Anthropic API key with prefix '${apiKeyPrefix}...' and length ${apiKeyLength}`);
+            // Confirm API key is configured without logging any part of the key
+            log.info(`[DEBUG] Anthropic API key is ${providerOptions.apiKey ? 'configured' : 'not configured'}`);
 
             log.info(`Using Anthropic API with model: ${providerOptions.model}`);
 

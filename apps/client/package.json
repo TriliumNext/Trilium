@@ -41,6 +41,7 @@
     "clsx": "2.1.1",
     "color": "5.0.3",
     "debounce": "3.0.0",
+    "dompurify": "3.2.5",
     "draggabilly": "3.0.0",
     "force-graph": "1.51.1",
     "globals": "17.3.0",

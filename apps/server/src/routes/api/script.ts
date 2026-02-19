@@ -7,6 +7,7 @@ import syncService from "../../services/sync.js";
 import sql from "../../services/sql.js";
 import type { Request } from "express";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
+import { assertScriptingEnabled, isScriptingEnabled } from "../../services/scripting_guard.js";
 
 interface ScriptBody {
     script: string;
@@ -22,6 +23,7 @@ interface ScriptBody {
 // need to await it and make the complete response including metadata available in a Promise, so that the route detects
 // this and does result.then().
 async function exec(req: Request) {
+    assertScriptingEnabled();
     try {
         const body = req.body as ScriptBody;
 
@@ -44,6 +46,7 @@ async function exec(req: Request) {
 }
 
 function run(req: Request) {
+    assertScriptingEnabled();
     const note = becca.getNoteOrThrow(req.params.noteId);
 
     const result = scriptService.executeNote(note, { originEntity: note });
@@ -68,6 +71,10 @@ function getBundlesWithLabel(label: string, value?: string) {
 }
 
 function getStartupBundles(req: Request) {
+    if (!isScriptingEnabled()) {
+        return [];
+    }
+
     if (!process.env.TRILIUM_SAFE_MODE) {
         if (req.query.mobile === "true") {
             return getBundlesWithLabel("run", "mobileStartup");
@@ -80,6 +87,10 @@ function getStartupBundles(req: Request) {
 }
 
 function getWidgetBundles() {
+    if (!isScriptingEnabled()) {
+        return [];
+    }
+
     if (!process.env.TRILIUM_SAFE_MODE) {
         return getBundlesWithLabel("widget");
     } else {
@@ -88,6 +99,10 @@ function getWidgetBundles() {
 }
 
 function getRelationBundles(req: Request) {
+    if (!isScriptingEnabled()) {
+        return [];
+    }
+
     const noteId = req.params.noteId;
     const note = becca.getNoteOrThrow(noteId);
     const relationName = req.params.relationName;
@@ -117,6 +132,8 @@ function getRelationBundles(req: Request) {
 }
 
 function getBundle(req: Request) {
+    assertScriptingEnabled();
+
     const note = becca.getNoteOrThrow(req.params.noteId);
     const { script, params } = req.body ?? {};
 

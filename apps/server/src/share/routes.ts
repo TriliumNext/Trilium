@@ -10,6 +10,7 @@ import type SNote from "./shaca/entities/snote.js";
 import type SAttachment from "./shaca/entities/sattachment.js";
 import { getDefaultTemplatePath, renderNoteContent } from "./content_renderer.js";
 import utils from "../services/utils.js";
+import { sanitizeSvg, setSvgHeaders } from "../services/svg_sanitizer.js";
 
 function addNoIndexHeader(note: SNote, res: Response) {
     if (note.isLabelTruthy("shareDisallowRobotIndexing")) {
@@ -102,10 +103,9 @@ function renderImageAttachment(image: SNote, res: Response, attachmentName: stri
         }
     }
 
-    const svg = svgString;
-    res.set("Content-Type", "image/svg+xml");
-    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.send(svg);
+    const sanitized = sanitizeSvg(svgString);
+    setSvgHeaders(res);
+    res.send(sanitized);
 }
 
 function render404(res: Response) {
@@ -133,6 +133,13 @@ function register(router: Router) {
         addNoIndexHeader(note, res);
 
         if (note.isLabelTruthy("shareRaw") || typeof req.query.raw !== "undefined") {
+            // For HTML and SVG content, add restrictive Content-Security-Policy
+            // to prevent stored XSS via script execution (CWE-79).
+            if (note.mime === "text/html" || note.mime === "image/svg+xml") {
+                res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src * data:; font-src * data:");
+                res.setHeader("X-Content-Type-Options", "nosniff");
+            }
+
             res.setHeader("Content-Type", note.mime).send(note.getContent());
 
             return;
@@ -212,10 +219,17 @@ function register(router: Router) {
         }
 
         if (image.type === "image") {
-            // normal image
-            res.set("Content-Type", image.mime);
             addNoIndexHeader(image, res);
-            res.send(image.getContent());
+            if (image.mime === "image/svg+xml") {
+                // SVG images require sanitization to prevent stored XSS
+                const content = image.getContent();
+                const sanitized = sanitizeSvg(typeof content === "string" ? content : content?.toString("utf-8") ?? "");
+                setSvgHeaders(res);
+                res.send(sanitized);
+            } else {
+                res.set("Content-Type", image.mime);
+                res.send(image.getContent());
+            }
         } else if (image.type === "canvas") {
             renderImageAttachment(image, res, "canvas-export.svg");
         } else if (image.type === "mermaid") {
@@ -238,9 +252,17 @@ function register(router: Router) {
         }
 
         if (attachment.role === "image") {
-            res.set("Content-Type", attachment.mime);
             addNoIndexHeader(attachment.note, res);
-            res.send(attachment.getContent());
+            if (attachment.mime === "image/svg+xml") {
+                // SVG attachments require sanitization to prevent stored XSS
+                const content = attachment.getContent();
+                const sanitized = sanitizeSvg(typeof content === "string" ? content : content?.toString("utf-8") ?? "");
+                setSvgHeaders(res);
+                res.send(sanitized);
+            } else {
+                res.set("Content-Type", attachment.mime);
+                res.send(attachment.getContent());
+            }
         } else {
             res.status(400).json({ message: "Requested attachment is not a shareable image" });
         }

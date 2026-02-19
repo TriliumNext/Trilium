@@ -13,6 +13,27 @@ import katex from "../services/math.js";
 import options from "../services/options.js";
 import OnClickButtonWidget from "./buttons/onclick_button.js";
 import RightPanelWidget from "./right_panel_widget.js";
+import DOMPurify from "dompurify";
+
+/**
+ * DOMPurify configuration for highlight list items. Only allows inline
+ * formatting tags that appear in highlighted text (bold, italic, underline,
+ * colored/background-colored spans, KaTeX math output).
+ */
+const HIGHLIGHT_PURIFY_CONFIG: DOMPurify.Config = {
+    ALLOWED_TAGS: [
+        "b", "i", "em", "strong", "u", "s", "del", "sub", "sup",
+        "code", "mark", "span", "abbr", "small", "a",
+        // KaTeX rendering output elements
+        "math", "semantics", "mrow", "mi", "mo", "mn", "msup",
+        "msub", "mfrac", "mover", "munder", "munderover",
+        "msqrt", "mroot", "mtable", "mtr", "mtd", "mtext",
+        "mspace", "annotation"
+    ],
+    ALLOWED_ATTR: ["class", "style", "href", "aria-hidden", "encoding", "xmlns"],
+    RETURN_DOM: false,
+    RETURN_DOM_FRAGMENT: false
+};
 
 const TPL = /*html*/`<div class="highlights-list-widget">
     <style>
@@ -255,7 +276,7 @@ export default class HighlightsListWidget extends RightPanelWidget {
 
             if (prevEndIndex !== -1 && startIndex === prevEndIndex) {
                 // If the previous element is connected to this element in HTML, then concatenate them into one.
-                $highlightsList.children().last().append(subHtml);
+                $highlightsList.children().last().append(DOMPurify.sanitize(subHtml, HIGHLIGHT_PURIFY_CONFIG));
             } else {
                 // TODO: can't be done with $(subHtml).text()?
                 //Can’t remember why regular expressions are used here, but modified to $(subHtml).text() works as expected
@@ -267,12 +288,12 @@ export default class HighlightsListWidget extends RightPanelWidget {
                     //If the two elements have the same style and there are only formulas in between, append the formulas and the current element to the end of the previous element.
                     if (this.areOuterTagsConsistent(prevSubHtml, subHtml) && onlyMathRegex.test(substring)) {
                         const $lastLi = $highlightsList.children("li").last();
-                        $lastLi.append(await this.replaceMathTextWithKatax(substring));
-                        $lastLi.append(subHtml);
+                        $lastLi.append(DOMPurify.sanitize(await this.replaceMathTextWithKatax(substring), HIGHLIGHT_PURIFY_CONFIG));
+                        $lastLi.append(DOMPurify.sanitize(subHtml, HIGHLIGHT_PURIFY_CONFIG));
                     } else {
                         $highlightsList.append(
                             $("<li>")
-                                .html(subHtml)
+                                .html(DOMPurify.sanitize(subHtml, HIGHLIGHT_PURIFY_CONFIG))
                                 .on("click", () => this.jumpToHighlightsList(findSubStr, hltIndex))
                         );
                     }

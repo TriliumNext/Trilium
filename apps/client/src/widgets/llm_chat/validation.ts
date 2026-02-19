@@ -1,6 +1,7 @@
 /**
  * Validation functions for LLM Chat
  */
+import type { OptionNames } from "@triliumnext/commons";
 import options from "../../services/options.js";
 import { t } from "../../services/i18n.js";
 
@@ -44,15 +45,15 @@ export async function validateProviders(validationWarning: HTMLElement): Promise
         // Check each provider in the precedence list for proper configuration
         for (const provider of precedenceList) {
             if (provider === 'openai') {
-                // Check OpenAI configuration
-                const apiKey = options.get('openaiApiKey');
-                if (!apiKey) {
+                // Check OpenAI configuration via server-provided boolean flag
+                const isKeySet = options.is('isOpenaiApiKeySet' as OptionNames);
+                if (!isKeySet) {
                     configIssues.push(`OpenAI API key is missing (optional for OpenAI-compatible endpoints)`);
                 }
             } else if (provider === 'anthropic') {
-                // Check Anthropic configuration
-                const apiKey = options.get('anthropicApiKey');
-                if (!apiKey) {
+                // Check Anthropic configuration via server-provided boolean flag
+                const isKeySet = options.is('isAnthropicApiKeySet' as OptionNames);
+                if (!isKeySet) {
                     configIssues.push(`Anthropic API key is missing`);
                 }
             } else if (provider === 'ollama') {

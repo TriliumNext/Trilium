@@ -21,6 +21,27 @@ import OnClickButtonWidget from "./buttons/onclick_button.js";
 import appContext, { type EventData } from "../components/app_context.js";
 import katex from "../services/math.js";
 import type FNote from "../entities/fnote.js";
+import DOMPurify from "dompurify";
+
+/**
+ * DOMPurify configuration for ToC headings. Only allows inline formatting
+ * tags that legitimately appear in headings (bold, italic, KaTeX math output).
+ * Blocks all event handlers, script tags, and dangerous attributes.
+ */
+const TOC_PURIFY_CONFIG: DOMPurify.Config = {
+    ALLOWED_TAGS: [
+        "b", "i", "em", "strong", "s", "del", "sub", "sup",
+        "code", "mark", "span", "abbr", "small",
+        // KaTeX rendering output elements
+        "math", "semantics", "mrow", "mi", "mo", "mn", "msup",
+        "msub", "mfrac", "mover", "munder", "munderover",
+        "msqrt", "mroot", "mtable", "mtr", "mtd", "mtext",
+        "mspace", "annotation"
+    ],
+    ALLOWED_ATTR: ["class", "style", "aria-hidden", "encoding", "xmlns"],
+    RETURN_DOM: false,
+    RETURN_DOM_FRAGMENT: false
+};
 
 const TPL = /*html*/`<div class="toc-widget">
     <style>
@@ -337,7 +358,7 @@ export default class TocWidget extends RightPanelWidget {
             //
 
             const headingText = await this.replaceMathTextWithKatax(m[2]);
-            const $itemContent = $('<div class="item-content">').html(headingText);
+            const $itemContent = $('<div class="item-content">').html(DOMPurify.sanitize(headingText, TOC_PURIFY_CONFIG));
             const $li = $("<li>").append($itemContent)
                 .on("click", () => this.jumpToHeading(headingIndex));
             $ols[$ols.length - 1].append($li);

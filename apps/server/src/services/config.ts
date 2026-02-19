@@ -136,7 +136,14 @@ export interface TriliumConfig {
          * log files created by Trilium older than the specified amount of time will be deleted.
          */
         retentionDays: number;
-    }
+    };
+    /** Scripting and code execution configuration */
+    Scripting: {
+        /** Whether backend/frontend script execution is enabled (default: false for server, true for desktop) */
+        enabled: boolean;
+        /** Whether the SQL console is accessible (default: false) */
+        sqlConsoleEnabled: boolean;
+    };
 }
 
 /**
@@ -458,6 +465,21 @@ const configMapping = {
             defaultValue: LOGGING_DEFAULT_RETENTION_DAYS,
             transformer: (value: unknown) => stringToInt(String(value)) ?? LOGGING_DEFAULT_RETENTION_DAYS
         }
+    },
+    Scripting: {
+        enabled: {
+            standardEnvVar: 'TRILIUM_SCRIPTING_ENABLED',
+            iniGetter: () => getIniSection("Scripting")?.enabled,
+            defaultValue: false,
+            transformer: transformBoolean
+        },
+        sqlConsoleEnabled: {
+            standardEnvVar: 'TRILIUM_SCRIPTING_SQLCONSOLEENABLED',
+            aliasEnvVars: ['TRILIUM_SCRIPTING_SQL_CONSOLE_ENABLED'],
+            iniGetter: () => getIniSection("Scripting")?.sqlConsoleEnabled,
+            defaultValue: false,
+            transformer: transformBoolean
+        }
     }
 };
 
@@ -511,8 +533,18 @@ const config: TriliumConfig = {
     },
     Logging: {
         retentionDays: getConfigValue(configMapping.Logging.retentionDays)
+    },
+    Scripting: {
+        enabled: getConfigValue(configMapping.Scripting.enabled),
+        sqlConsoleEnabled: getConfigValue(configMapping.Scripting.sqlConsoleEnabled)
     }
 };
+
+// Desktop builds always have scripting enabled (single-user trusted environment)
+if (process.versions["electron"]) {
+    config.Scripting.enabled = true;
+    config.Scripting.sqlConsoleEnabled = true;
+}
 
 /**
  * =====================================================================

@@ -3,7 +3,8 @@
  */
 import { t } from "../../services/i18n.js";
 import type { ToolExecutionStep } from "./types.js";
-import { formatMarkdown, applyHighlighting } from "./utils.js";
+import { escapeHtml, formatMarkdown, applyHighlighting } from "./utils.js";
+import DOMPurify from "dompurify";
 
 // Template for the chat widget
 export const TPL = `
@@ -109,8 +110,8 @@ export function addMessageToChat(messagesContainer: HTMLElement, chatContainer: 
         contentElement.classList.add('assistant-content');
     }
 
-    // Format the content with markdown
-    contentElement.innerHTML = formatMarkdown(content);
+    // Format the content with markdown and sanitize to prevent XSS
+    contentElement.innerHTML = DOMPurify.sanitize(formatMarkdown(content));
 
     messageElement.appendChild(avatarElement);
     messageElement.appendChild(contentElement);
@@ -141,20 +142,30 @@ export function showSources(
         const sourceElement = document.createElement('div');
         sourceElement.className = 'source-item p-2 mb-1 border rounded d-flex align-items-center';
 
-        // Create the direct link to the note
-        sourceElement.innerHTML = `
-            <div class="d-flex align-items-center w-100">
-                <a href="#root/${source.noteId}"
-                   data-note-id="${source.noteId}"
-                   class="source-link text-truncate d-flex align-items-center"
-                   title="Open note: ${source.title}">
-                    <i class="bx bx-file-blank me-1"></i>
-                    <span class="source-title">${source.title}</span>
-                </a>
-            </div>`;
+        // Build the link safely using DOM APIs to prevent XSS via note titles
+        const wrapper = document.createElement('div');
+        wrapper.className = 'd-flex align-items-center w-100';
+
+        const link = document.createElement('a');
+        link.href = `#root/${source.noteId}`;
+        link.setAttribute('data-note-id', source.noteId);
+        link.className = 'source-link text-truncate d-flex align-items-center';
+        link.title = `Open note: ${source.title}`;
+
+        const icon = document.createElement('i');
+        icon.className = 'bx bx-file-blank me-1';
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'source-title';
+        titleSpan.textContent = source.title;
+
+        link.appendChild(icon);
+        link.appendChild(titleSpan);
+        wrapper.appendChild(link);
+        sourceElement.appendChild(wrapper);
 
         // Add click handler
-        sourceElement.querySelector('.source-link')?.addEventListener('click', (e) => {
+        link.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             onSourceClick(source.noteId);
@@ -216,6 +227,8 @@ export function renderToolStepsHtml(steps: ToolExecutionStep[]): string {
 
     steps.forEach(step => {
         let icon, labelClass, content;
+        const safeContent = escapeHtml(step.content || '');
+        const safeName = escapeHtml(step.name || 'unknown');
 
         switch (step.type) {
             case 'executing':
@@ -223,7 +236,7 @@ export function renderToolStepsHtml(steps: ToolExecutionStep[]): string {
                 labelClass = '';
                 content = `<div class="d-flex align-items-center">
                     <i class="bx ${icon} me-1"></i>
-                    <span>${step.content}</span>
+                    <span>${safeContent}</span>
                 </div>`;
                 break;
 
@@ -232,9 +245,9 @@ export function renderToolStepsHtml(steps: ToolExecutionStep[]): string {
                 labelClass = 'fw-bold';
                 content = `<div class="d-flex align-items-center">
                     <i class="bx ${icon} me-1"></i>
-                    <span class="${labelClass}">Tool: ${step.name || 'unknown'}</span>
+                    <span class="${labelClass}">Tool: ${safeName}</span>
                 </div>
-                <div class="mt-1 ps-3">${step.content}</div>`;
+                <div class="mt-1 ps-3">${safeContent}</div>`;
                 break;
 
             case 'error':
@@ -242,9 +255,9 @@ export function renderToolStepsHtml(steps: ToolExecutionStep[]): string {
                 labelClass = 'fw-bold text-danger';
                 content = `<div class="d-flex align-items-center">
                     <i class="bx ${icon} me-1"></i>
-                    <span class="${labelClass}">Tool: ${step.name || 'unknown'}</span>
+                    <span class="${labelClass}">Tool: ${safeName}</span>
                 </div>
-                <div class="mt-1 ps-3 text-danger">${step.content}</div>`;
+                <div class="mt-1 ps-3 text-danger">${safeContent}</div>`;
                 break;
 
             case 'generating':
@@ -252,7 +265,7 @@ export function renderToolStepsHtml(steps: ToolExecutionStep[]): string {
                 labelClass = '';
                 content = `<div class="d-flex align-items-center">
                     <i class="bx ${icon} me-1"></i>
-                    <span>${step.content}</span>
+                    <span>${safeContent}</span>
                 </div>`;
                 break;
 
@@ -261,7 +274,7 @@ export function renderToolStepsHtml(steps: ToolExecutionStep[]): string {
                 labelClass = '';
                 content = `<div class="d-flex align-items-center">
                     <i class="bx ${icon} me-1"></i>
-                    <span>${step.content}</span>
+                    <span>${safeContent}</span>
                 </div>`;
         }
 

@@ -57,6 +57,6 @@
 %>
 
 <div class="navigation">
-    <% if (previousNote) { %><a class="previous" href="./<%- previousNote.shareId %>"><%- previousNote.title %></a><% } %>
-    <% if (nextNote) { %><a class="next" href="./<%- nextNote.shareId %>"><%- nextNote.title %></a><% } %>
+    <% if (previousNote) { %><a class="previous" href="./<%= previousNote.shareId %>"><%= previousNote.title %></a><% } %>
+    <% if (nextNote) { %><a class="next" href="./<%= nextNote.shareId %>"><%= nextNote.title %></a><% } %>
 </div>

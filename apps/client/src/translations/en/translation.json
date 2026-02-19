@@ -1232,6 +1232,7 @@
     "openai_configuration": "OpenAI Configuration",
     "openai_settings": "OpenAI Settings",
     "api_key": "API Key",
+    "api_key_placeholder": "API key is configured (enter a new value to replace it)",
     "url": "Base URL",
     "model": "Model",
     "openai_api_key_description": "Your OpenAI API key for accessing their AI services",

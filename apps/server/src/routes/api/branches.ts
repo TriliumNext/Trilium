@@ -172,7 +172,8 @@ function setExpandedForSubtree(req: Request) {
     // root is always expanded
     branchIds = branchIds.filter((branchId) => branchId !== "none_root");
 
-    sql.executeMany(/*sql*/`UPDATE branches SET isExpanded = ${expanded} WHERE branchId IN (???)`, branchIds);
+    const expandedValue = expanded ? 1 : 0;
+    sql.executeMany(/*sql*/`UPDATE branches SET isExpanded = ${expandedValue} WHERE branchId IN (???)`, branchIds);
 
     for (const branchId of branchIds) {
         const branch = becca.branches[branchId];

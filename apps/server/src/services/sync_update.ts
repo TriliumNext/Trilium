@@ -5,6 +5,8 @@ import eventService from "./events.js";
 import entityConstructor from "../becca/entity_constructor.js";
 import ws from "./ws.js";
 import type { EntityChange, EntityChangeRecord, EntityRow } from "@triliumnext/commons";
+import attributeService from "./attributes.js";
+import { isScriptingEnabled } from "./scripting_guard.js";
 
 interface UpdateContext {
     alreadyErased: number;
@@ -90,6 +92,18 @@ function updateNormalEntity(remoteEC: EntityChange, remoteEntityRow: EntityRow |
             }
 
             preProcessContent(remoteEC, remoteEntityRow);
+
+            // When scripting is disabled, prefix dangerous attributes with 'disabled:'
+            // Same pattern as safeImport in attributes.ts
+            if (remoteEC.entityName === "attributes" && !isScriptingEnabled()) {
+                const attrRow = remoteEntityRow as Record<string, unknown>;
+                if (typeof attrRow.type === "string" && typeof attrRow.name === "string"
+                    && !attrRow.isDeleted
+                    && attributeService.isAttributeDangerous(attrRow.type, attrRow.name)) {
+                    log.info(`Sync: disabling dangerous attribute '${attrRow.name}' (scripting is disabled)`);
+                    attrRow.name = `disabled:${attrRow.name}`;
+                }
+            }
 
             sql.replace(remoteEC.entityName, remoteEntityRow);
 

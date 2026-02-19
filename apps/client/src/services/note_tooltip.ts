@@ -7,6 +7,7 @@ import contentRenderer from "./content_renderer.js";
 import appContext from "../components/app_context.js";
 import type FNote from "../entities/fnote.js";
 import { t } from "./i18n.js";
+import { sanitizeNoteContentHtml } from "./sanitize_content.js";
 
 // Track all elements that open tooltips
 let openTooltipElements: JQuery<HTMLElement>[] = [];
@@ -90,7 +91,8 @@ async function mouseEnterHandler(this: HTMLElement) {
         return;
     }
 
-    const html = `<div class="note-tooltip-content">${content}</div>`;
+    const sanitizedContent = sanitizeNoteContentHtml(content);
+    const html = `<div class="note-tooltip-content">${sanitizedContent}</div>`;
     const tooltipClass = "tooltip-" + Math.floor(Math.random() * 999_999_999);
 
     // we need to check if we're still hovering over the element
@@ -108,6 +110,8 @@ async function mouseEnterHandler(this: HTMLElement) {
             title: html,
             html: true,
             template: `<div class="tooltip note-tooltip ${tooltipClass}" role="tooltip"><div class="arrow"></div><div class="tooltip-inner"></div></div>`,
+            // Content is pre-sanitized via DOMPurify so Bootstrap's built-in sanitizer
+            // (which is too aggressive for our rich-text content) can be disabled.
             sanitize: false,
             customClass: linkId
         });

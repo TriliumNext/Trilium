@@ -14,6 +14,7 @@ import BNote from "../becca/entities/bnote.js";
 import assetPath, { assetUrlFragment } from "../services/asset_path.js";
 import { generateCss, getIconPacks, MIME_TO_EXTENSION_MAPPINGS, ProcessedIconPack } from "../services/icon_packs.js";
 import log from "../services/log.js";
+import { isScriptingEnabled } from "../services/scripting_guard.js";
 import options from "../services/options.js";
 import utils, { getResourceDir, isDev, safeExtractMessageAndStackFromError } from "../services/utils.js";
 import SAttachment from "./shaca/entities/sattachment.js";
@@ -193,11 +194,13 @@ function renderNoteContentInternal(note: SNote | BNote, renderArgs: RenderArgs) 
         t,
         isDev,
         utils,
+        sanitizeUrl,
         ...renderArgs,
     };
 
     // Check if the user has their own template.
-    if (note.hasRelation("shareTemplate")) {
+    // Skip user-provided EJS templates when scripting is disabled since EJS can execute arbitrary JS.
+    if (note.hasRelation("shareTemplate") && isScriptingEnabled()) {
         // Get the template note and content
         const templateId = note.getRelation("shareTemplate")?.value;
         const templateNote = templateId && shaca.getNote(templateId);
@@ -300,7 +303,9 @@ function renderIndex(result: Result) {
 
     for (const childNote of rootNote.getChildNotes()) {
         const isExternalLink = childNote.hasLabel("shareExternalLink");
-        const href = isExternalLink ? childNote.getLabelValue("shareExternalLink") : `./${childNote.shareId}`;
+        const rawHref = isExternalLink ? childNote.getLabelValue("shareExternalLink") : `./${childNote.shareId}`;
+        // Sanitize href to prevent javascript: / data: URI injection (CWE-79).
+        const href = isExternalLink ? escapeHtml(sanitizeUrl(rawHref ?? "")) : escapeHtml(rawHref ?? "");
         const target = isExternalLink ? `target="_blank" rel="noopener noreferrer"` : "";
         result.content += `<li><a class="${childNote.type}" href="${href}" ${target}>${childNote.escapedTitle}</a></li>`;
     }
@@ -404,7 +409,10 @@ function handleAttachmentLink(linkEl: HTMLElement, href: string, getNote: GetNot
         const linkedNote = getNote(noteId);
         if (linkedNote) {
             const isExternalLink = linkedNote.hasLabel("shareExternalLink");
-            const href = isExternalLink ? linkedNote.getLabelValue("shareExternalLink") : `./${linkedNote.shareId}`;
+            // Sanitize external links to prevent javascript: / data: URI injection (CWE-79).
+            const href = isExternalLink
+                ? sanitizeUrl(linkedNote.getLabelValue("shareExternalLink") ?? "")
+                : `./${linkedNote.shareId}`;
             if (href) {
                 linkEl.setAttribute("href", href);
             }

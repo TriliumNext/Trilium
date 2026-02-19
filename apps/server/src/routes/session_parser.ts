@@ -107,6 +107,8 @@ const sessionParser: express.RequestHandler = session({
     cookie: {
         path: "/",
         httpOnly: true,
+        secure: config.Network.https,
+        sameSite: "lax",
         maxAge: config.Session.cookieMaxAge * 1000 // needs value in milliseconds
     },
     name: "trilium.sid",

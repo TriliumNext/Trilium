@@ -27,15 +27,10 @@
     "electron-debug": "4.1.0",
     "electron-dl": "4.0.0",
     "electron-squirrel-startup": "1.0.1",
-    "jquery.fancytree": "2.38.5",
-    "jquery-hotkeys": "0.2.2"
+    "jquery-hotkeys": "0.2.2",
+    "jquery.fancytree": "2.38.5"
   },
   "devDependencies": {
-    "@types/electron-squirrel-startup": "1.0.2",
-    "@triliumnext/commons": "workspace:*",
-    "@triliumnext/server": "workspace:*",
-    "copy-webpack-plugin": "13.0.1",
-    "electron": "40.4.1",
     "@electron-forge/cli": "7.11.1",
     "@electron-forge/maker-deb": "7.11.1",
     "@electron-forge/maker-dmg": "7.11.1",
@@ -44,6 +39,13 @@
     "@electron-forge/maker-squirrel": "7.11.1",
     "@electron-forge/maker-zip": "7.11.1",
     "@electron-forge/plugin-auto-unpack-natives": "7.11.1",
+    "@electron-forge/plugin-fuses": "7.11.1",
+    "@electron/fuses": "1.8.0",
+    "@triliumnext/commons": "workspace:*",
+    "@triliumnext/server": "workspace:*",
+    "@types/electron-squirrel-startup": "1.0.2",
+    "copy-webpack-plugin": "13.0.1",
+    "electron": "40.4.1",
     "prebuild-install": "7.1.3"
   }
 }

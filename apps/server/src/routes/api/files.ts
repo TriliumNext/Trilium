@@ -3,6 +3,7 @@
 import chokidar from "chokidar";
 import type { Request, Response } from "express";
 import fs from "fs";
+import path from "path";
 import { Readable } from "stream";
 import tmp from "tmp";
 
@@ -205,13 +206,36 @@ function saveToTmpDir(fileName: string, content: string | Buffer, entityType: st
     };
 }
 
+/**
+ * Validates that the given file path is a known temporary file created by this server
+ * and resides within the expected temporary directory. This prevents path traversal
+ * attacks (CWE-22) where an attacker could read arbitrary files from the filesystem.
+ */
+function validateTemporaryFilePath(filePath: string): void {
+    if (!filePath || typeof filePath !== "string") {
+        throw new ValidationError("Missing or invalid file path.");
+    }
+
+    // Check 1: The file must be in our set of known temporary files created by saveToTmpDir().
+    if (!createdTemporaryFiles.has(filePath)) {
+        throw new ValidationError(`File '${filePath}' is not a tracked temporary file.`);
+    }
+
+    // Check 2 (defense-in-depth): Resolve to an absolute path and verify it is within TMP_DIR.
+    // This guards against any future bugs where a non-temp path could end up in the set.
+    const resolvedPath = path.resolve(filePath);
+    const resolvedTmpDir = path.resolve(dataDirs.TMP_DIR);
+
+    if (!resolvedPath.startsWith(resolvedTmpDir + path.sep) && resolvedPath !== resolvedTmpDir) {
+        throw new ValidationError(`File path '${filePath}' is outside the temporary directory.`);
+    }
+}
+
 function uploadModifiedFileToNote(req: Request) {
     const noteId = req.params.noteId;
     const { filePath } = req.body;
 
-    if (!createdTemporaryFiles.has(filePath)) {
-        throw new ValidationError(`File '${filePath}' is not a temporary file.`);
-    }
+    validateTemporaryFilePath(filePath);
 
     const note = becca.getNoteOrThrow(noteId);
 
@@ -231,6 +255,8 @@ function uploadModifiedFileToNote(req: Request) {
 function uploadModifiedFileToAttachment(req: Request) {
     const { attachmentId } = req.params;
     const { filePath } = req.body;
+
+    validateTemporaryFilePath(filePath);
 
     const attachment = becca.getAttachmentOrThrow(attachmentId);
 

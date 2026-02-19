@@ -4,7 +4,7 @@ const isExternalLink = note.hasLabel("shareExternal");
 let linkHref;
 
 if (isExternalLink) {
-    linkHref = note.getLabelValue("shareExternal");
+    linkHref = sanitizeUrl(note.getLabelValue("shareExternal") ?? "");
 } else if (note.shareId) {
     linkHref = `./${note.shareId}`;
 }

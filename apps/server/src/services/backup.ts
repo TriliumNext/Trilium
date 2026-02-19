@@ -72,9 +72,16 @@ function periodBackup(optionName: "lastDailyBackupDate" | "lastWeeklyBackupDate"
 }
 
 async function backupNow(name: string) {
+    // Sanitize backup name to prevent path traversal (CWE-22).
+    // Only allow alphanumeric characters, hyphens, and underscores.
+    const sanitizedName = name.replace(/[^a-zA-Z0-9_-]/g, "");
+    if (!sanitizedName) {
+        throw new Error("Invalid backup name: must contain at least one alphanumeric character, hyphen, or underscore.");
+    }
+
     // we don't want to back up DB in the middle of sync with potentially inconsistent DB state
     return await syncMutexService.doExclusively(async () => {
-        const backupFile = path.resolve(`${dataDir.BACKUP_DIR}/backup-${name}.db`);
+        const backupFile = path.resolve(`${dataDir.BACKUP_DIR}/backup-${sanitizedName}.db`);
 
         if (!fs.existsSync(dataDir.BACKUP_DIR)) {
             fs.mkdirSync(dataDir.BACKUP_DIR, 0o700);

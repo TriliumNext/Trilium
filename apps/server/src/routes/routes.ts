@@ -15,7 +15,7 @@ import etapiSpecialNoteRoutes from "../etapi/special_notes.js";
 import etapiRevisionsRoutes from "../etapi/revisions.js";
 import auth from "../services/auth.js";
 import openID from '../services/open_id.js';
-import { isElectron } from "../services/utils.js";
+
 import shareRoutes from "../share/routes.js";
 import anthropicRoute from "./api/anthropic.js";
 import appInfoRoute from "./api/app_info.js";
@@ -261,7 +261,7 @@ function register(app: express.Application) {
     apiRoute(PST, "/api/bulk-action/execute", bulkActionRoute.execute);
     apiRoute(PST, "/api/bulk-action/affected-notes", bulkActionRoute.getAffectedNoteCount);
 
-    route(PST, "/api/login/sync", [loginRateLimiter], loginApiRoute.loginSync, apiResultHandler);
+    asyncRoute(PST, "/api/login/sync", [loginRateLimiter], loginApiRoute.loginSync, apiResultHandler);
     // this is for entering protected mode so user has to be already logged-in (that's the reason we don't require username)
     apiRoute(PST, "/api/login/protected", loginApiRoute.loginToProtectedSession);
     apiRoute(PST, "/api/login/protected/touch", loginApiRoute.touchProtectedSession);
@@ -274,8 +274,10 @@ function register(app: express.Application) {
     apiRoute(PATCH, "/api/etapi-tokens/:etapiTokenId", etapiTokensApiRoutes.patchToken);
     apiRoute(DEL, "/api/etapi-tokens/:etapiTokenId", etapiTokensApiRoutes.deleteToken);
 
-    // in case of local electron, local calls are allowed unauthenticated, for server they need auth
-    const clipperMiddleware = isElectron ? [] : [auth.checkEtapiToken];
+    // clipper API always requires ETAPI token authentication, regardless of environment.
+    // Previously, Electron builds skipped auth entirely, which exposed these endpoints
+    // to unauthenticated network access (content injection, information disclosure).
+    const clipperMiddleware = [auth.checkEtapiToken];
 
     route(GET, "/api/clipper/handshake", clipperMiddleware, clipperRoute.handshake, apiResultHandler);
     asyncRoute(PST, "/api/clipper/clippings", clipperMiddleware, clipperRoute.addClipping, apiResultHandler);

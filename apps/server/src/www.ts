@@ -12,6 +12,7 @@ import host from "./services/host.js";
 import buildApp from "./app.js";
 import type { Express } from "express";
 import { getDbSize } from "./services/sql_init.js";
+import { isScriptingEnabled } from "./services/scripting_guard.js";
 
 const MINIMUM_NODE_VERSION = "20.0.0";
 
@@ -81,6 +82,14 @@ async function displayStartupMessage() {
         log.info(`💻 CPU:         ${cpuModel} (${cpuInfos.length}-core @ ${cpuInfos[0].speed} Mhz)`);
     }
     log.info(`💾 DB size:     ${formatSize(getDbSize() * 1024)}`);
+
+    if (isScriptingEnabled()) {
+        log.info("WARNING: Script execution is ENABLED. Scripts have full server access including " +
+                 "filesystem, network, and OS commands. Only enable in trusted environments.");
+    } else {
+        log.info("Script execution is DISABLED. Set [Scripting] enabled=true in config.ini to enable.");
+    }
+
     log.info("");
 }
 

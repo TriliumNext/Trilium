@@ -6,6 +6,9 @@ import { randomString } from "./utils.js";
 import eraseService from "./erase.js";
 import type BNote from "../becca/entities/bnote.js";
 import { ActionHandlers, BulkAction, BulkActionData } from "@triliumnext/commons";
+import { evaluateTemplate } from "./safe_template.js";
+import { executeBundle } from "./script.js";
+import { assertScriptingEnabled } from "./scripting_guard.js";
 
 type ActionHandler<T> = (action: T, note: BNote) => void;
 
@@ -44,9 +47,8 @@ const ACTION_HANDLERS: ActionHandlerMap = {
     },
     renameNote: (action, note) => {
         // "officially" injected value:
-        // - note
-
-        const newTitle = eval(`\`${action.newTitle}\``);
+        // - note (the note being renamed)
+        const newTitle = evaluateTemplate(action.newTitle, { note });
 
         if (note.title !== newTitle) {
             note.title = newTitle;
@@ -105,15 +107,26 @@ const ACTION_HANDLERS: ActionHandlerMap = {
         }
     },
     executeScript: (action, note) => {
+        assertScriptingEnabled();
         if (!action.script || !action.script.trim()) {
             log.info("Ignoring executeScript since the script is empty.");
             return;
         }
 
-        const scriptFunc = new Function("note", action.script);
-        scriptFunc(note);
+        // Route through the script service's executeBundle instead of raw
+        // new Function() to get proper CLS context, logging, and error handling.
+        // The preamble provides access to `note` and `api` as the UI documents.
+        const noteId = note.noteId.replace(/[^a-zA-Z0-9_]/g, "");
+        const preamble = `const api = apiContext.apis["${noteId}"] || {};\n` +
+            `const note = apiContext.notes["${noteId}"];\n`;
+        const scriptBody = `${preamble}${action.script}\nnote.save();`;
 
-        note.save();
+        executeBundle({
+            note: note,
+            script: scriptBody,
+            html: "",
+            allNotes: [note]
+        });
     }
 } as const;
 

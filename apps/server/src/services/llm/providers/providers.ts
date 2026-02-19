@@ -10,6 +10,7 @@ import {
 } from './provider_options.js';
 import { PROVIDER_CONSTANTS } from '../constants/provider_constants.js';
 import { SEARCH_CONSTANTS, MODEL_CAPABILITIES } from '../constants/search_constants.js';
+import { isSafeProviderBaseUrl } from '../../url_validator.js';
 
 /**
  * Get OpenAI provider options from chat options and configuration
@@ -26,6 +27,11 @@ export function getOpenAIOptions(
         }
 
         const baseUrl = options.getOption('openaiBaseUrl') || PROVIDER_CONSTANTS.OPENAI.BASE_URL;
+
+        if (!isSafeProviderBaseUrl(baseUrl)) {
+            throw new Error(`OpenAI base URL uses a disallowed scheme. Only http: and https: are permitted.`);
+        }
+
         const modelName = opts.model || options.getOption('openaiDefaultModel');
 
         if (!modelName) {
@@ -91,6 +97,11 @@ export function getAnthropicOptions(
         }
 
         const baseUrl = options.getOption('anthropicBaseUrl') || PROVIDER_CONSTANTS.ANTHROPIC.BASE_URL;
+
+        if (!isSafeProviderBaseUrl(baseUrl)) {
+            throw new Error(`Anthropic base URL uses a disallowed scheme. Only http: and https: are permitted.`);
+        }
+
         const modelName = opts.model || options.getOption('anthropicDefaultModel');
 
         if (!modelName) {
@@ -156,6 +167,10 @@ export async function getOllamaOptions(
         const baseUrl = options.getOption('ollamaBaseUrl');
         if (!baseUrl) {
             throw new Error('Ollama API URL is not configured');
+        }
+
+        if (!isSafeProviderBaseUrl(baseUrl)) {
+            throw new Error(`Ollama base URL uses a disallowed scheme. Only http: and https: are permitted.`);
         }
 
         // Get the model name - no defaults, must be configured by user
@@ -227,6 +242,10 @@ async function getOllamaModelContextWindow(modelName: string): Promise<number> {
 
         if (!baseUrl) {
             throw new Error('Ollama base URL is not configured');
+        }
+
+        if (!isSafeProviderBaseUrl(baseUrl)) {
+            throw new Error('Ollama base URL uses a disallowed scheme. Only http: and https: are permitted.');
         }
 
         // Use the official Ollama client

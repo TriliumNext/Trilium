@@ -19,6 +19,7 @@ export default [
     { type: "label", name: "runOnInstance", isDangerous: false },
     { type: "label", name: "runAtHour", isDangerous: false },
     { type: "label", name: "customRequestHandler", isDangerous: true },
+    { type: "label", name: "customRequestHandlerPublic", isDangerous: true },
     { type: "label", name: "customResourceProvider", isDangerous: true },
     { type: "label", name: "widget", isDangerous: true },
     { type: "label", name: "noteInfoWidgetDisabled" },
@@ -81,6 +82,7 @@ export default [
     { type: "label", name: "webViewSrc", isDangerous: true },
     { type: "label", name: "hideHighlightWidget" },
     { type: "label", name: "iconPack", isDangerous: true },
+    { type: "label", name: "docName", isDangerous: true },
 
     { type: "label", name: "printLandscape" },
     { type: "label", name: "printPageSize" },
@@ -106,8 +108,8 @@ export default [
     { type: "relation", name: "widget", isDangerous: true },
     { type: "relation", name: "renderNote", isDangerous: true },
     { type: "relation", name: "shareCss" },
-    { type: "relation", name: "shareJs" },
+    { type: "relation", name: "shareJs", isDangerous: true },
     { type: "relation", name: "shareHtml" },
-    { type: "relation", name: "shareTemplate" },
+    { type: "relation", name: "shareTemplate", isDangerous: true },
     { type: "relation", name: "shareFavicon" }
 ];

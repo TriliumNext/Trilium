@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import crypto from "crypto";
 import openIDEncryption from "./encryption/open_id_encryption.js";
 import sqlInit from "./sql_init.js";
 import options from "./options.js";
@@ -121,7 +122,7 @@ function generateOAuthConfig() {
             scope: "openid profile email",
             access_type: "offline",
             prompt: "consent",
-            state: "random_state_" + Math.random().toString(36).substring(2)
+            state: crypto.randomBytes(32).toString("hex")
         },
         routes: authRoutes,
         idpLogout: true,

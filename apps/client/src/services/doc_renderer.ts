@@ -9,6 +9,15 @@ export default function renderDoc(note: FNote) {
         const $content = $("<div>");
 
         if (docName) {
+            // Sanitize docName to prevent path traversal attacks (e.g.,
+            // "../../../../api/notes/_malicious/open?x=" escaping doc_notes).
+            docName = sanitizeDocName(docName);
+            if (!docName) {
+                console.warn("Blocked potentially malicious docName attribute value.");
+                resolve($content);
+                return;
+            }
+
             // find doc based on language
             const url = getUrl(docName, getCurrentLanguage());
             $content.load(url, async (response, status) => {
@@ -46,6 +55,31 @@ async function processContent(url: string, $content: JQuery<HTMLElement>) {
 
     // Apply reference links.
     await applyReferenceLinks($content[0]);
+}
+
+function sanitizeDocName(docNameValue: string): string | null {
+    // Strip any path traversal sequences and dangerous URL characters.
+    // Legitimate docName values are simple paths like "User Guide/Topic" or
+    // "launchbar_intro" — they only contain alphanumeric chars, underscores,
+    // hyphens, spaces, and forward slashes for subdirectories.
+    // Reject values containing path traversal (../, ..\) or URL control
+    // characters (?, #, :, @) that could be used to escape the doc_notes
+    // directory or manipulate the resulting URL.
+    if (/\.\.|[?#:@\\]/.test(docNameValue)) {
+        return null;
+    }
+
+    // Remove any leading slashes to prevent absolute path construction.
+    docNameValue = docNameValue.replace(/^\/+/, "");
+
+    // After stripping, ensure only safe characters remain:
+    // alphanumeric, spaces, underscores, hyphens, forward slashes, and periods
+    // (periods are allowed for filenames but .. was already rejected above).
+    if (!/^[a-zA-Z0-9 _\-/.']+$/.test(docNameValue)) {
+        return null;
+    }
+
+    return docNameValue;
 }
 
 function getUrl(docNameValue: string, language: string) {

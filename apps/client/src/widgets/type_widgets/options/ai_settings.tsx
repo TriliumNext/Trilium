@@ -10,6 +10,7 @@ import FormSelect from "../../react/FormSelect";
 import FormTextBox from "../../react/FormTextBox";
 import type { OllamaModelResponse, OpenAiOrAnthropicModelResponse, OptionNames } from "@triliumnext/commons";
 import server from "../../../services/server";
+import options from "../../../services/options";
 import Button from "../../react/Button";
 import FormTextArea from "../../react/FormTextArea";
 
@@ -121,7 +122,7 @@ function ProviderSettings() {
 
 interface SingleProviderSettingsProps {
     provider: string;
-    title: string;    
+    title: string;
     apiKeyDescription?: string;
     baseUrlDescription: string;
     modelDescription: string;
@@ -132,9 +133,26 @@ interface SingleProviderSettingsProps {
 }
 
 function SingleProviderSettings({ provider, title, apiKeyDescription, baseUrlDescription, modelDescription, validationErrorMessage, apiKeyOption, baseUrlOption, modelOption }: SingleProviderSettingsProps) {
-    const [ apiKey, setApiKey ] = useTriliumOption(apiKeyOption ?? baseUrlOption);
     const [ baseUrl, setBaseUrl ] = useTriliumOption(baseUrlOption);
-    const isValid = (apiKeyOption ? !!apiKey : !!baseUrl);
+
+    // API keys are write-only: the server never sends their values.
+    // Instead, a boolean flag indicates whether the key is configured.
+    const apiKeySetFlag = apiKeyOption
+        ? `is${apiKeyOption.charAt(0).toUpperCase()}${apiKeyOption.slice(1)}Set` as OptionNames
+        : undefined;
+    const isApiKeySet = apiKeySetFlag ? options.is(apiKeySetFlag) : false;
+    const [ apiKeyInput, setApiKeyInput ] = useState("");
+
+    const saveApiKey = useCallback(async (value: string) => {
+        setApiKeyInput(value);
+        if (apiKeyOption && value) {
+            await options.save(apiKeyOption, value);
+            // Update the local boolean flag so the UI reflects the change immediately
+            options.set(apiKeySetFlag!, "true");
+        }
+    }, [apiKeyOption, apiKeySetFlag]);
+
+    const isValid = apiKeyOption ? (isApiKeySet || !!apiKeyInput) : !!baseUrl;
 
     return (
         <div class="provider-settings">
@@ -150,7 +168,8 @@ function SingleProviderSettings({ provider, title, apiKeyDescription, baseUrlDes
                         <FormGroup name="api-key" label={t("ai_llm.api_key")} description={apiKeyDescription}>
                             <FormTextBox
                                 type="password" autoComplete="off"
-                                currentValue={apiKey} onChange={setApiKey}
+                                placeholder={isApiKeySet ? t("ai_llm.api_key_placeholder") : ""}
+                                currentValue={apiKeyInput} onChange={saveApiKey}
                             />
                         </FormGroup>
                     )}
@@ -161,7 +180,7 @@ function SingleProviderSettings({ provider, title, apiKeyDescription, baseUrlDes
                         />
                     </FormGroup>
 
-                    {isValid && 
+                    {isValid &&
                         <FormGroup name="model" label={t("ai_llm.model")} description={modelDescription}>
                             <ModelSelector provider={provider} baseUrl={baseUrl} modelOption={modelOption} />
                         </FormGroup>

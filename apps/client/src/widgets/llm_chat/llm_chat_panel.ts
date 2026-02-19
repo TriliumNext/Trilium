@@ -8,7 +8,7 @@ import server from "../../services/server.js";
 import noteAutocompleteService from "../../services/note_autocomplete.js";
 
 import { TPL, addMessageToChat, showSources, hideSources, showLoadingIndicator, hideLoadingIndicator } from "./ui.js";
-import { formatMarkdown } from "./utils.js";
+import { escapeHtml, formatMarkdown } from "./utils.js";
 import { createChatSession, checkSessionExists, setupStreamingResponse, getDirectResponse } from "./communication.js";
 import { extractInChatToolSteps } from "./message_processor.js";
 import { validateProviders } from "./validation.js";
@@ -683,29 +683,31 @@ export default class LlmChatPanel extends BasicWidget {
             let icon = 'bx-info-circle';
             let className = 'info';
             let content = '';
+            const safeContent = escapeHtml(step.content || '');
+            const safeName = escapeHtml(step.name || 'unknown');
 
             if (step.type === 'executing') {
                 icon = 'bx-code-block';
                 className = 'executing';
-                content = `<div>${step.content || 'Executing tools...'}</div>`;
+                content = `<div>${safeContent || 'Executing tools...'}</div>`;
             } else if (step.type === 'result') {
                 icon = 'bx-terminal';
                 className = 'result';
                 content = `
-                    <div>Tool: <strong>${step.name || 'unknown'}</strong></div>
-                    <div class="mt-1 ps-3">${step.content || ''}</div>
+                    <div>Tool: <strong>${safeName}</strong></div>
+                    <div class="mt-1 ps-3">${safeContent}</div>
                 `;
             } else if (step.type === 'error') {
                 icon = 'bx-error-circle';
                 className = 'error';
                 content = `
-                    <div>Tool: <strong>${step.name || 'unknown'}</strong></div>
-                    <div class="mt-1 ps-3 text-danger">${step.content || 'Error occurred'}</div>
+                    <div>Tool: <strong>${safeName}</strong></div>
+                    <div class="mt-1 ps-3 text-danger">${safeContent || 'Error occurred'}</div>
                 `;
             } else if (step.type === 'generating') {
                 icon = 'bx-message-dots';
                 className = 'generating';
-                content = `<div>${step.content || 'Generating response...'}</div>`;
+                content = `<div>${safeContent || 'Generating response...'}</div>`;
             }
 
             return `
@@ -1369,11 +1371,11 @@ export default class LlmChatPanel extends BasicWidget {
             step.innerHTML = `
                 <div class="d-flex align-items-center">
                     <i class="bx bx-code-block me-2"></i>
-                    <span>Executing tool: <strong>${toolExecutionData.tool || 'unknown'}</strong></span>
+                    <span>Executing tool: <strong>${escapeHtml(toolExecutionData.tool || 'unknown')}</strong></span>
                 </div>
                 ${toolExecutionData.args ? `
                 <div class="tool-args mt-1 ps-3">
-                    <code>Args: ${JSON.stringify(toolExecutionData.args || {}, null, 2)}</code>
+                    <code>Args: ${escapeHtml(JSON.stringify(toolExecutionData.args || {}, null, 2))}</code>
                 </div>` : ''}
             `;
             stepsContainer.appendChild(step);
@@ -1401,7 +1403,7 @@ export default class LlmChatPanel extends BasicWidget {
                             <ul class="list-unstyled ps-1">
                                 ${results.map((note: any) => `
                                     <li class="mb-1">
-                                        <a href="#" class="note-link" data-note-id="${note.noteId}">${note.title}</a>
+                                        <a href="#" class="note-link" data-note-id="${escapeHtml(note.noteId || '')}">${escapeHtml(note.title || '')}</a>
                                         ${note.similarity < 1 ? `<span class="text-muted small ms-1">(similarity: ${(note.similarity * 100).toFixed(0)}%)</span>` : ''}
                                     </li>
                                 `).join('')}
@@ -1412,17 +1414,17 @@ export default class LlmChatPanel extends BasicWidget {
             }
             // Format the result based on type for other tools
             else if (typeof toolExecutionData.result === 'object') {
-                // For objects, format as pretty JSON
-                resultDisplay = `<pre class="mb-0"><code>${JSON.stringify(toolExecutionData.result, null, 2)}</code></pre>`;
+                // For objects, format as pretty JSON (escape HTML to prevent injection via JSON values)
+                resultDisplay = `<pre class="mb-0"><code>${escapeHtml(JSON.stringify(toolExecutionData.result, null, 2))}</code></pre>`;
             } else {
-                // For simple values, display as text
-                resultDisplay = `<div>${String(toolExecutionData.result)}</div>`;
+                // For simple values, display as escaped text
+                resultDisplay = `<div>${escapeHtml(String(toolExecutionData.result))}</div>`;
             }
 
             step.innerHTML = `
                 <div class="d-flex align-items-center">
                     <i class="bx bx-terminal me-2"></i>
-                    <span>Tool: <strong>${toolExecutionData.tool || 'unknown'}</strong></span>
+                    <span>Tool: <strong>${escapeHtml(toolExecutionData.tool || 'unknown')}</strong></span>
                 </div>
                 <div class="tool-result mt-1 ps-3">
                     ${resultDisplay}
@@ -1452,10 +1454,10 @@ export default class LlmChatPanel extends BasicWidget {
             step.innerHTML = `
                 <div class="d-flex align-items-center">
                     <i class="bx bx-error-circle me-2"></i>
-                    <span>Error in tool: <strong>${toolExecutionData.tool || 'unknown'}</strong></span>
+                    <span>Error in tool: <strong>${escapeHtml(toolExecutionData.tool || 'unknown')}</strong></span>
                 </div>
                 <div class="tool-error mt-1 ps-3 text-danger">
-                    ${toolExecutionData.error || 'Unknown error'}
+                    ${escapeHtml(toolExecutionData.error || 'Unknown error')}
                 </div>
             `;
             stepsContainer.appendChild(step);

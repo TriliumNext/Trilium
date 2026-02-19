@@ -1,6 +1,7 @@
 import { NoteType } from "@triliumnext/commons";
 import FNote from "../../../entities/fnote";
 import contentRenderer from "../../../services/content_renderer";
+import { sanitizeNoteContentHtml } from "../../../services/sanitize_content";
 import { ProgressChangedFn } from "../interface";
 
 type DangerouslySetInnerHTML = { __html: string; };
@@ -72,7 +73,7 @@ async function processContent(note: FNote): Promise<DangerouslySetInnerHTML> {
     const { $renderedContent } = await contentRenderer.getRenderedContent(note, {
         noChildrenList: true
     });
-    return { __html: $renderedContent.html() };
+    return { __html: sanitizeNoteContentHtml($renderedContent.html()) };
 }
 
 async function postProcessSlides(slides: (PresentationSlideModel | PresentationSlideBaseModel)[]) {

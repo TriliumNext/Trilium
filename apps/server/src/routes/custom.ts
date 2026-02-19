@@ -6,8 +6,14 @@ import sql from "../services/sql.js";
 import becca from "../becca/becca.js";
 import type { Request, Response, Router } from "express";
 import { safeExtractMessageAndStackFromError, normalizeCustomHandlerPattern } from "../services/utils.js";
+import { isScriptingEnabled } from "../services/scripting_guard.js";
 
 function handleRequest(req: Request, res: Response) {
+
+    if (!isScriptingEnabled()) {
+        res.status(403).send("Script execution is disabled on this server.");
+        return;
+    }
 
     // handle path from "*path" route wildcard
     // in express v4, you could just add
@@ -63,6 +69,14 @@ function handleRequest(req: Request, res: Response) {
 
         if (attr.name === "customRequestHandler") {
             const note = attr.getNote();
+
+            // Require authentication unless note has #customRequestHandlerPublic label
+            if (!note.hasLabel("customRequestHandlerPublic")) {
+                if (!req.session?.loggedIn) {
+                    res.status(401).send("Authentication required for this endpoint.");
+                    return;
+                }
+            }
 
             log.info(`Handling custom request '${path}' with note '${note.noteId}'`);
 

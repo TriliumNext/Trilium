@@ -5,6 +5,7 @@ import becca from "../../becca/becca.js";
 import type { Request } from "express";
 import ValidationError from "../../errors/validation_error.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
+import { assertSqlConsoleEnabled } from "../../services/scripting_guard.js";
 
 interface Table {
     name: string;
@@ -26,6 +27,7 @@ function getSchema() {
 }
 
 function execute(req: Request) {
+    assertSqlConsoleEnabled();
     const note = becca.getNoteOrThrow(req.params.noteId);
 
     const content = note.getContent();

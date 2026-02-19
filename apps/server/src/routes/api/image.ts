@@ -7,6 +7,7 @@ import type { Request, Response } from "express";
 import type BNote from "../../becca/entities/bnote.js";
 import type BRevision from "../../becca/entities/brevision.js";
 import { RESOURCE_DIR } from "../../services/resource_dir.js";
+import { sanitizeSvg, setSvgHeaders } from "../../services/svg_sanitizer.js";
 
 function returnImageFromNote(req: Request, res: Response) {
     const image = becca.getNote(req.params.noteId);
@@ -34,6 +35,12 @@ function returnImageInt(image: BNote | BRevision | null, res: Response) {
         renderSvgAttachment(image, res, "mermaid-export.svg");
     } else if (image.type === "mindMap") {
         renderSvgAttachment(image, res, "mindmap-export.svg");
+    } else if (image.mime === "image/svg+xml") {
+        // SVG images require sanitization to prevent stored XSS
+        const content = image.getContent();
+        const sanitized = sanitizeSvg(typeof content === "string" ? content : content?.toString("utf-8") ?? "");
+        setSvgHeaders(res);
+        res.send(sanitized);
     } else {
         res.set("Content-Type", image.mime);
         res.set("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -56,9 +63,9 @@ export function renderSvgAttachment(image: BNote | BRevision, res: Response, att
         }
     }
 
-    res.set("Content-Type", "image/svg+xml");
-    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.send(svg);
+    const sanitized = sanitizeSvg(svg);
+    setSvgHeaders(res);
+    res.send(sanitized);
 }
 
 function returnAttachedImage(req: Request, res: Response) {
@@ -73,9 +80,17 @@ function returnAttachedImage(req: Request, res: Response) {
         return res.setHeader("Content-Type", "text/plain").status(400).send(`Attachment '${attachment.attachmentId}' has role '${attachment.role}', but 'image' was expected.`);
     }
 
-    res.set("Content-Type", attachment.mime);
-    res.set("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.send(attachment.getContent());
+    if (attachment.mime === "image/svg+xml") {
+        // SVG attachments require sanitization to prevent stored XSS
+        const content = attachment.getContent();
+        const sanitized = sanitizeSvg(typeof content === "string" ? content : content?.toString("utf-8") ?? "");
+        setSvgHeaders(res);
+        res.send(sanitized);
+    } else {
+        res.set("Content-Type", attachment.mime);
+        res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.send(attachment.getContent());
+    }
 }
 
 function updateImage(req: Request) {

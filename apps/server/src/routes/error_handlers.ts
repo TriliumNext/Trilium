@@ -14,7 +14,7 @@ function register(app: Application) {
             && err.code === "EBADCSRFTOKEN";
 
         if (isCsrfTokenError) {
-            log.error(`Invalid CSRF token: ${req.headers["x-csrf-token"]}, secret: ${req.cookies["_csrf"]}`);
+            log.error(`Invalid CSRF token for ${req.method} ${req.url}`);
             return next(new ForbiddenError("Invalid CSRF token"));
         }
 

@@ -25,8 +25,10 @@ import type { NoteParams } from "./note-interface.js";
 import optionService from "./options.js";
 import request from "./request.js";
 import revisionService from "./revisions.js";
+import { evaluateTemplateSafe } from "./safe_template.js";
 import sql from "./sql.js";
 import type TaskContext from "./task_context.js";
+import { isSafeUrlForFetch } from "./url_validator.js";
 import ws from "./ws.js";
 
 interface FoundLink {
@@ -119,17 +121,17 @@ function getNewNoteTitle(parentNote: BNote) {
     const titleTemplate = parentNote.getLabelValue("titleTemplate");
 
     if (titleTemplate !== null) {
-        try {
-            const now = dayjs(cls.getLocalNowDateTime() || new Date());
+        const now = dayjs(cls.getLocalNowDateTime() || new Date());
 
-            // "officially" injected values:
-            // - now
-            // - parentNote
-
-            title = eval(`\`${titleTemplate}\``);
-        } catch (e: any) {
-            log.error(`Title template of note '${parentNote.noteId}' failed with: ${e.message}`);
-        }
+        // "officially" injected values:
+        // - now
+        // - parentNote
+        title = evaluateTemplateSafe(
+            titleTemplate,
+            { now, parentNote },
+            title,
+            `titleTemplate of note '${parentNote.noteId}'`
+        );
     }
 
     // this isn't in theory a good place to sanitize title, but this will catch a lot of XSS attempts.
@@ -503,24 +505,14 @@ const imageUrlToAttachmentIdMapping: Record<string, string> = {};
 async function downloadImage(noteId: string, imageUrl: string) {
     const unescapedUrl = unescapeHtml(imageUrl);
 
+    // SSRF protection: only allow http(s) URLs and block private/internal IPs.
+    if (!isSafeUrlForFetch(unescapedUrl)) {
+        log.error(`Download of '${imageUrl}' for note '${noteId}' rejected: URL failed SSRF safety check.`);
+        return;
+    }
+
     try {
-        let imageBuffer: Buffer;
-
-        if (imageUrl.toLowerCase().startsWith("file://")) {
-            imageBuffer = await new Promise((res, rej) => {
-                const localFilePath = imageUrl.substring("file://".length);
-
-                return fs.readFile(localFilePath, (err, data) => {
-                    if (err) {
-                        rej(err);
-                    } else {
-                        res(data);
-                    }
-                });
-            });
-        } else {
-            imageBuffer = await request.getImage(unescapedUrl);
-        }
+        const imageBuffer = await request.getImage(unescapedUrl);
 
         const parsedUrl = url.parse(unescapedUrl);
         const title = path.basename(parsedUrl.pathname || "");

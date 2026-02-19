@@ -17,6 +17,7 @@ import type { SearchParams, TokenStructure } from "./types.js";
 import type Expression from "../expressions/expression.js";
 import sql from "../../sql.js";
 import scriptService from "../../script.js";
+import { isScriptingEnabled } from "../../scripting_guard.js";
 import striptags from "striptags";
 import protectedSessionService from "../../protected_session.js";
 
@@ -77,6 +78,11 @@ function searchFromRelation(note: BNote, relationName: string) {
     if (!scriptNote) {
         log.info(`Search note's relation ${relationName} has not been found.`);
 
+        return [];
+    }
+
+    if (!isScriptingEnabled()) {
+        log.info("Script-based search is disabled (scripting is not enabled).");
         return [];
     }
 
