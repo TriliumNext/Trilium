@@ -94,8 +94,8 @@ Dokumentasi kami tersedia dalam berbagai format:
 * Integrasi [OpenID dan TOTP
   langsung](https://docs.triliumnotes.org/user-guide/setup/server/mfa) untuk
   login yang lebih aman
-* [Synchronization](https://docs.triliumnotes.org/user-guide/setup/synchronization)
-  with self-hosted sync server
+* [Sinkronisasi](https://docs.triliumnotes.org/user-guide/setup/synchronization)
+  dengan server hostingan pribadi
   * ada [servis pihak ke-3 untuk server hostingan
     sinkronisasi](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [Bagikan](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
@@ -130,49 +130,49 @@ Dokumentasi kami tersedia dalam berbagai format:
 * [Penyemat Web](https://docs.triliumnotes.org/user-guide/setup/web-clipper)
   untuk memudahkan pencatatan konten web
 * "UI yang dapat dikustomisasi (tombol sidebar, widget kustom, ...)"
-* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
-  along with a Grafana Dashboard.
+* [Berbagai
+  Metrik](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics) yang
+  dipadukan dengan Dashboard Grafana.
 
-✨ Check out the following third-party resources/communities for more TriliumNext
-related goodies:
+✨ Cek lebih lanjut sumber daya/komunitas pihak ke-tiga untuk menikmati lebih
+lanjut TriliumNext:
 
-- [awesome-trilium](https://github.com/Nriver/awesome-trilium) for 3rd party
-  themes, scripts, plugins and more.
-- [TriliumRocks!](https://trilium.rocks/) for tutorials, guides, and much more.
+- [trilium-beken](https://github.com/Nriver/awesome-trilium) untuk banyak tema,
+  skrip, plugin pihak ke-3 dan lain-lain.
+- [TriliumJaya!](https://trilium.rocks/) untuk tutorial, panduan dan lainnya.
 
-## ❓Why TriliumNext?
+## ❓Mengapa TriliumNext?
 
-The original Trilium developer ([Zadam](https://github.com/zadam)) has
-graciously given the Trilium repository to the community project which resides
-at https://github.com/TriliumNext
+Pengembang asli Trilium ([Zadam](https://github.com/zadam)) dengan murah hati
+telah memberikan repositori Trilium kepada proyek komunitas yang berada di
+https://github.com/TriliumNext
 
-### ⬆️Migrating from Zadam/Trilium?
+### ⬆️ Memindahkan dari Zadam/Trilium?
 
-There are no special migration steps to migrate from a zadam/Trilium instance to
-a TriliumNext/Trilium instance. Simply [install
-TriliumNext/Trilium](#-installation) as usual and it will use your existing
-database.
+Tidak ada langkah migrasi khusus untuk bermigrasi dari zadam/Trilium ke
+TriliumNext/Trilium. Cukup [instal TriliumNext/Trilium](#-installation) seperti
+biasa dan akan menggunakan basis data yang sudah ada.
 
-Versions up to and including
-[v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4) are
-compatible with the latest zadam/trilium version of
-[v0.63.7](https://github.com/zadam/trilium/releases/tag/v0.63.7). Any later
-versions of TriliumNext/Trilium have their sync versions incremented which
-prevents direct migration.
+Versi hingga
+[v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4)
+kompatibel dengan versi Zadam/Trilium terbaru yaitu
+[v0.63.7](https://github.com/zadam/trilium/releases/tag/v0.63.7). Versi
+TriliumNext/Trilium yang lebih baru memiliki versi sinkronisasi yang
+ditingkatkan sehingga mencegah migrasi langsung.
 
-## 💬 Discuss with us
+## 💬 Mari berdiskusi dengan kami
 
-Feel free to join our official conversations. We would love to hear what
-features, suggestions, or issues you may have!
+Jangan ragu untuk bergabung dalam percakapan resmi kami. Kami ingin sekali
+mendengar fitur, saran, atau masalah apa pun yang mungkin Anda miliki!
 
-- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (For synchronous
-  discussions.)
-  - The `General` Matrix room is also bridged to
+- [Matriks](https://matrix.to/#/#triliumnext:matrix.org) (Untuk diskusi
+  sinkron.)
+  - Ruang Matriks `Umum` juga terhubung ke
     [XMPP](xmpp:discuss@trilium.thisgreat.party?join)
-- [Github Discussions](https://github.com/TriliumNext/Trilium/discussions) (For
-  asynchronous discussions.)
-- [Github Issues](https://github.com/TriliumNext/Trilium/issues) (For bug
-  reports and feature requests.)
+- [Diskusi Github](https://github.com/TriliumNext/Trilium/discussions) (Untuk
+  diskusi asinkron.)
+- [Masalah GitHub](https://github.com/TriliumNext/Trilium/issues) (Untuk laporan
+  bug dan permintaan fitur.)
 
 ## 🏗 Instalasi
 
@@ -206,8 +206,9 @@ Saat ini hanya Chrome & Firefox versi terbaru yang didukung (dan telah diuji).
 
 ### Ponsel
 
-To use TriliumNext on a mobile device, you can use a mobile web browser to
-access the mobile interface of a server installation (see below).
+Untuk menggunakan TriliumNext pada perangkat seluler, Anda dapat menggunakan
+peramban web seluler untuk mengakses antarmuka seluler dari instalasi server
+(lihat di bawah).
 
 See issue https://github.com/TriliumNext/Trilium/issues/4962 for more
 information on mobile app support.
@@ -294,39 +295,39 @@ described in the "Discuss with us" section above.
   GitHub issues and discussions.
 * [Tabler Icons](https://tabler.io/icons) for the system tray icons.
 
-Trilium would not be possible without the technologies behind it:
+Trilium tidak akan ada tanpa teknologi-teknologi di balik berikut:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes. We are grateful for being offered a set of the premium features.
-* [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with
-  support for huge amount of languages.
-* [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite
-  whiteboard used in Canvas notes.
-* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - providing the
-  mind map functionality.
-* [Leaflet](https://github.com/Leaflet/Leaflet) - for rendering geographical
-  maps.
-* [Tabulator](https://github.com/olifolkerd/tabulator) - for the interactive
-  table used in collections.
-* [FancyTree](https://github.com/mar10/fancytree) - feature-rich tree library
-  without real competition.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - visual connectivity library.
-  Used in [relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [link
-  maps](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - editor visual dibalik
+  catatan teks. Kami sangat berterima kasih diberikan fitur-fitur editor yang
+  premium.
+* [CodeMirror](https://github.com/codemirror/CodeMirror) - editor kode dengan
+  dukungan banyak bahasa pemrograman.
+* [Excalidraw](https://github.com/excalidraw/excalidraw) - area catatan tanpa
+  batas yang dipakai di catatan Kanvas.
+* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - memberikan
+  fungsionalitas peta pikiran(mind map).
+* [Leaflet](https://github.com/Leaflet/Leaflet) - untuk render peta geografikal.
+* [Tabulator](https://github.com/olifolkerd/tabulator) - untuk tabel interaktif
+  yang dipakai di koleksi catatan.
+* [FancyTree](https://github.com/mar10/fancytree) - library pohon yang kaya akan
+  fitur tanpa ada saingan.
+* [jsPlumb](https://github.com/jsplumb/jsplumb) - library konektivitas visual.
+  Dipakai di [peta
+  relasi](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
+  [peta
+  hubungan](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
-## 🤝 Support
+## 🤝 Dukungan
 
-Trilium is built and maintained with [hundreds of hours of
-work](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Your
-support keeps it open-source, improves features, and covers costs such as
-hosting.
+Trilium dibangun dan diperlihara oleh [banyak developer dan
+waktu](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Dukungan
+Anda yang membuat Trilium open-source, menambah dan mengembangkan fitur, juga
+menutupi beban biaya hosting kami.
 
-Consider supporting the main developer
-([eliandoran](https://github.com/eliandoran)) of the application via:
+Berikan dukungan ke developer utama
+([eliandoran](https://github.com/eliandoran)) melalui:
 
-- [GitHub Sponsors](https://github.com/sponsors/eliandoran)
+- [Sponsor-Sponsor GitHub](https://github.com/sponsors/eliandoran)
 - [PayPal](https://paypal.me/eliandoran)
 - [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
 

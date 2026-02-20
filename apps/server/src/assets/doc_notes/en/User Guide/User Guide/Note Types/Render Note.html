@@ -2,15 +2,20 @@
   <img style="aspect-ratio:601/216;" src="Render Note_image.png"
   width="601" height="216">
 </figure>
-<p>Render Note is used in&nbsp;<a class="reference-link" href="#root/_help_CdNpE2pqjmI6">Scripting</a>.
-  It works by displaying the HTML of a&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note,
-  via an attribute.</p>
+<p>Render Note is a special case of <a href="#root/_help_yIhgI5H7A2Sm">front-end scripting</a> which
+  allows rendering custom content inside a note. This makes it possible to
+  create custom dashboards, or to use a custom note editor.</p>
+<p>The content can either be a vanilla HTML, or Preact JSX.</p>
 <h2>Creating a render note</h2>
 <ol>
   <li>Create a&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note
-    with the HTML language, with what needs to be displayed (for example
-    <code
-    spellcheck="false">&lt;p&gt;Hello world.&lt;/p&gt;</code>).</li>
+    with the:
+    <ol>
+      <li>HTML language for the legacy/vanilla method, with what needs to be displayed
+        (for example <code spellcheck="false">&lt;p&gt;Hello world.&lt;/p&gt;</code>).</li>
+      <li>JSX for the Preact-based approach (see below).</li>
+    </ol>
+  </li>
   <li>Create a&nbsp;<a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>.</li>
   <li>Assign the <code spellcheck="false">renderNote</code>  <a href="#root/_help_zEY4DaJG4YT5">relation</a> to
     point at the previously created code note.</li>
@@ -47,7 +52,7 @@ $dateEl.text(new Date());</code></pre>
   <li>
     <p>Create a child&nbsp;<a class="reference-link" href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note
       with JSX as the language.
-      <br>As an example, use the following content:</p><pre><code class="language-text-jsx">export default function() {
+      <br>As an example, use the following content:</p><pre><code class="language-text-x-trilium-auto">export default function() {
     return (
         &lt;&gt;
             &lt;p&gt;Hello world.&lt;/p&gt;

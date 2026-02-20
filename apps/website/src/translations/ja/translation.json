@@ -195,6 +195,14 @@
     "header": {
         "get-started": "はじめる",
         "documentation": "ドキュメント",
-        "support-us": "サポート"
+        "support-us": "サポート",
+        "resources": "リソース"
+    },
+    "resources": {
+        "title": "リソース",
+        "icon_packs": "アイコンパック",
+        "icon_packs_intro": "アイコンパックを使用すると、ノートで使用できるアイコンの選択肢が広がります。アイコンパックの詳細については、<DocumentationLink>公式ドキュメント</DocumentationLink>をご覧ください。",
+        "download": "ダウンロード",
+        "website": "Webサイト"
     }
 }

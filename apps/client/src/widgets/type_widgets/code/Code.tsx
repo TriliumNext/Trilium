@@ -180,7 +180,8 @@ export function CodeEditor({ parentComponent, ntxId, containerRef: externalConta
         resolve(refToJQuerySelector(containerRef));
     });
 
-    useTriliumEvent("scrollToEnd", () => {
+    useTriliumEvent("scrollToEnd", ({ ntxId: eventNtxId }) => {
+        if (eventNtxId !== ntxId) return;
         const editor = codeEditorRef.current;
         if (!editor) return;
         editor.scrollToEnd();

@@ -1,11 +1,11 @@
-import BUILTIN_ATTRIBUTES from "./builtin_attributes.js";
+import { AnonymizedDbResponse, BUILTIN_ATTRIBUTES, DatabaseAnonymizeResponse } from "@triliumnext/commons";
+import Database from "better-sqlite3";
 import fs from "fs";
+import path from "path";
+
 import dataDir from "./data_dir.js";
 import dateUtils from "./date_utils.js";
-import Database from "better-sqlite3";
 import sql from "./sql.js";
-import path from "path";
-import { AnonymizedDbResponse, DatabaseAnonymizeResponse } from "@triliumnext/commons";
 
 function getFullAnonymizationScript() {
     // we want to delete all non-builtin attributes because they can contain sensitive names and values
@@ -86,7 +86,7 @@ function getExistingAnonymizedDatabases() {
         .readdirSync(dataDir.ANONYMIZED_DB_DIR)
         .filter((fileName) => fileName.includes("anonymized"))
         .map((fileName) => ({
-            fileName: fileName,
+            fileName,
             filePath: path.resolve(dataDir.ANONYMIZED_DB_DIR, fileName)
         })) satisfies AnonymizedDbResponse[];
 }

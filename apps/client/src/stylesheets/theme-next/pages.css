@@ -57,12 +57,12 @@
     height: 18px;
 }
 
-/* 
+/*
  * SEARCH PAGE
  */
 
  /* Button bar */
- .search-definition-widget .search-setting-table tbody:last-child div {
+ .search-definition-widget .search-setting-table .search-actions-container {
     justify-content: flex-end;
     gap: 8px;
  }
@@ -143,7 +143,7 @@
 /*
  * OPTIONS PAGES
  */
- 
+
  :root {
     --options-card-min-width: 500px;
     --options-card-max-width: 900px;
@@ -263,13 +263,6 @@ body.desktop .options-section:not(.tn-no-card) {
 
 .options-section label:not(.tn-checkbox):not(.tn-radio) {
     margin-bottom: 6px;
-}
-
-.options-section .alert {
-    margin-bottom: 8px;
-    background: var(--alert-bar-background) !important;
-    border-radius: 8px;
-    font-size: .85em;
 }
 
 nav.options-section-tabs {

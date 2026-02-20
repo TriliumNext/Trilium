@@ -662,7 +662,8 @@
     "show-cheatsheet": "顯示快捷鍵說明",
     "toggle-zen-mode": "禪模式",
     "new-version-available": "發現新更新",
-    "download-update": "取得版本 {{latestVersion}}"
+    "download-update": "取得版本 {{latestVersion}}",
+    "search_notes": "搜尋筆記"
   },
   "sync_status": {
     "unknown": "<p>同步狀態將在下一次同步嘗試開始後顯示。</p><p>點擊以立即觸發同步。</p>",
@@ -757,7 +758,9 @@
     "delete_this_note": "刪除此筆記",
     "error_cannot_get_branch_id": "無法獲取 notePath '{{notePath}}' 的 branchId",
     "error_unrecognized_command": "無法識別的命令 {{command}}",
-    "note_revisions": "筆記歷史版本"
+    "note_revisions": "筆記歷史版本",
+    "backlinks": "反向連結",
+    "content_language_switcher": "內文語言：{{language}}"
   },
   "note_icon": {
     "change_note_icon": "更改筆記圖標",
@@ -909,7 +912,8 @@
     "unknown_search_option": "未知的搜尋選項 {{searchOptionName}}",
     "search_note_saved": "搜尋筆記已儲存至 {{- notePathTitle}}",
     "actions_executed": "已執行操作。",
-    "view_options": "查看選項："
+    "view_options": "查看選項：",
+    "option": "選項"
   },
   "similar_notes": {
     "title": "相似筆記",
@@ -1003,7 +1007,7 @@
     "no_attachments": "此筆記沒有附件。"
   },
   "book": {
-    "no_children_help": "此類型為書籍的筆記沒有任何子筆記，因此沒有內容可顯示。請參閱 <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> 以了解詳情。",
+    "no_children_help": "此集合沒有任何子筆記，因此沒有內容可顯示。",
     "drag_locked_title": "鎖定編輯",
     "drag_locked_message": "無法拖曳，因為此集合已被鎖定編輯。"
   },
@@ -1058,15 +1062,6 @@
     "enter_title_of_new_note": "輸入新筆記的標題",
     "default_new_note_title": "新筆記",
     "click_on_canvas_to_place_new_note": "點擊畫布以放置新筆記"
-  },
-  "render": {
-    "note_detail_render_help_1": "之所以顯示此說明筆記，是因為該類型的渲染 HTML 沒有設定好必須的關聯。",
-    "note_detail_render_help_2": "渲染筆記類型用於編寫 <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">腳本</a>。簡單說就是您可以寫HTML程式碼（或者加上一些JavaScript程式碼）， 然後這個筆記會把頁面渲染出來。要使其正常工作，您需要定義一個名為 \"renderNote\" 的 <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">關聯</a> 指向要呈現的 HTML 筆記。"
-  },
-  "web_view": {
-    "web_view": "網頁顯示",
-    "embed_websites": "網頁顯示類型的筆記允許您將網站嵌入至 Trilium 中。",
-    "create_label": "首先，請新增一個帶有您要嵌入的 URL 地址的標籤，例如 #webViewSrc=\"https://www.bing.com\""
   },
   "backend_log": {
     "refresh": "重新整理"
@@ -1378,7 +1373,8 @@
     "description": "描述",
     "reload_app": "重新載入應用以套用更改",
     "set_all_to_default": "將所有快捷鍵重設為預設值",
-    "confirm_reset": "您確定要將所有鍵盤快捷鍵重設為預設值嗎？"
+    "confirm_reset": "您確定要將所有鍵盤快捷鍵重設為預設值嗎？",
+    "no_results": "未找到符合 '{{filter}}' 的捷徑"
   },
   "spellcheck": {
     "title": "拼寫檢查",
@@ -1582,7 +1578,9 @@
     "print_report_collection_content_one": "集合中的 {{count}} 篇筆記無法列印，因為它們不被支援或受到保護。",
     "print_report_collection_content_other": "",
     "print_report_collection_details_button": "查看詳情",
-    "print_report_collection_details_ignored_notes": "忽略的筆記"
+    "print_report_collection_details_ignored_notes": "忽略的筆記",
+    "print_report_error_title": "列印失敗",
+    "print_report_stack_trace": "堆棧追蹤"
   },
   "note_title": {
     "placeholder": "請輸入筆記標題...",
@@ -1939,8 +1937,8 @@
     "desktop-application": "桌面版應用程式",
     "native-title-bar": "原生標題列",
     "native-title-bar-description": "對於 Windows 和 macOS，關閉原生標題列會讓應用程式看起來更緊湊。在 Linux 上，開啟原生標題列可以與系統的其他部分整合得更好。",
-    "background-effects": "啟用背景效果（僅適用於 Windows 11）",
-    "background-effects-description": "Mica 效果為程式視窗新增模糊且時尚的背景，營造出深度感和現代化外觀。「原生標題列」必須被禁用。",
+    "background-effects": "啟用背景效果",
+    "background-effects-description": "為程式視窗新增模糊且時尚的背景，營造立體感和現代化外觀。「原生標題列」必須被禁用。",
     "restart-app-button": "重新啟動應用程式以查看更改",
     "zoom-factor": "縮放係數"
   },
@@ -1959,7 +1957,8 @@
   "geo-map": {
     "create-child-note-title": "建立一個新的子筆記並將其加至地圖中",
     "create-child-note-instruction": "點擊地圖以在該位置建立新筆記，或按 Escape 以取消。",
-    "unable-to-load-map": "無法載入地圖。"
+    "unable-to-load-map": "無法載入地圖。",
+    "create-child-note-text": "新增地圖標記"
   },
   "geo-map-context": {
     "open-location": "打開位置",
@@ -2075,7 +2074,8 @@
     "raster": "柵格",
     "vector_light": "向量（淺色）",
     "vector_dark": "向量（深色）",
-    "show-scale": "顯示比例尺"
+    "show-scale": "顯示比例尺",
+    "show-labels": "顯示標記名稱"
   },
   "table_context_menu": {
     "delete_row": "刪除列"
@@ -2122,7 +2122,7 @@
   },
   "call_to_action": {
     "background_effects_title": "背景特效已推出穩定版本",
-    "background_effects_message": "在 Windows 裝置上，背景特效現在已完全穩定。背景特效透過模糊背後的背景，為使用者介面增添一抹色彩。此技術也用於其他應用程式，例如 Windows 檔案總管。",
+    "background_effects_message": "在 Windows 和macOS裝置上，背景特效現在已穩定。背景特效透過模糊背後的背景，為使用者介面增添一抹色彩。",
     "background_effects_button": "啟用背景特效",
     "next_theme_title": "試用新 Trilium 主題",
     "next_theme_message": "您正在使用舊版主題，要試用新主題嗎？",
@@ -2154,7 +2154,6 @@
     "app-restart-required": "（需要重啟程式以套用更改）"
   },
   "pagination": {
-    "page_title": "第 {{startIndex}} - {{endIndex}} 頁",
     "total_notes": "{{count}} 筆記"
   },
   "collections": {
@@ -2267,5 +2266,60 @@
     "pages_other": "",
     "pages_alt": "第 {{pageNumber}} 頁",
     "pages_loading": "正在載入…"
+  },
+  "mobile_tab_switcher": {
+    "more_options": "更多選項",
+    "title_one": "{{count}} 個分頁",
+    "title_other": ""
+  },
+  "platform_indicator": {
+    "available_on": "可於 {{platform}} 使用"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "書籤"
+  },
+  "render": {
+    "setup_title": "在此筆記中顯示自訂 HTML 或 Preact JSX",
+    "setup_create_sample_preact": "使用 Preact 建立範例筆記",
+    "setup_create_sample_html": "使用 HTML 建立範例筆記",
+    "setup_sample_created": "已建立一個範例筆記作為子筆記。",
+    "disabled_description": "此渲染筆記來自外部來源。為保護您免受惡意內容侵害，此功能預設為停用狀態。啟用前請務必確認來源可信。",
+    "disabled_button_enable": "啟用渲染筆記"
+  },
+  "web_view_setup": {
+    "title": "將網頁直接匯入 Trilium 建立即時預覽",
+    "url_placeholder": "輸入或貼上網站網址，例如 https://triliumnotes.org",
+    "create_button": "建立網頁檢視",
+    "invalid_url_title": "無效地址",
+    "invalid_url_message": "請輸入有效的網址，例如 https://triliumnotes.org。",
+    "disabled_description": "此網頁檢視來自外部來源。為協助保護您免受網路釣魚或惡意內容侵害，內容不會自動載入。若您信任來源，可手動啟用此功能。",
+    "disabled_button_enable": "啟用網頁檢視"
+  },
+  "active_content_badges": {
+    "type_icon_pack": "圖示包",
+    "type_backend_script": "後端腳本",
+    "type_frontend_script": "前端腳本",
+    "type_widget": "元件",
+    "type_app_css": "自訂 CSS",
+    "type_render_note": "渲染筆記",
+    "type_web_view": "網頁顯示",
+    "type_app_theme": "自訂主題",
+    "toggle_tooltip_enable_tooltip": "點擊以啟用此 {{type}}。",
+    "toggle_tooltip_disable_tooltip": "點擊以停用此 {{type}}。",
+    "menu_docs": "打開文件",
+    "menu_execute_now": "立即執行腳本",
+    "menu_run": "自動執行",
+    "menu_run_disabled": "手動",
+    "menu_run_backend_startup": "當後端啟動時",
+    "menu_run_hourly": "每小時",
+    "menu_run_daily": "每日",
+    "menu_run_frontend_startup": "當桌面前端啟動時",
+    "menu_run_mobile_startup": "當移動前端啟動時",
+    "menu_change_to_widget": "更改為元件",
+    "menu_change_to_frontend_script": "更改為前端腳本",
+    "menu_theme_base": "主題基底"
+  },
+  "setup_form": {
+    "more_info": "了解更多"
   }
 }

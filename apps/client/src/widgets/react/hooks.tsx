@@ -551,7 +551,12 @@ export function useNoteRelation(note: FNote | undefined | null, relationName: Re
     useTriliumEvent("entitiesReloaded", ({ loadResults }) => {
         for (const attr of loadResults.getAttributeRows()) {
             if (attr.type === "relation" && attr.name === relationName && attributes.isAffecting(attr, note)) {
-                setRelationValue(attr.value ?? null);
+                if (!attr.isDeleted) {
+                    setRelationValue(attr.value ?? null);
+                } else {
+                    setRelationValue(null);
+                }
+                break;
             }
         }
     });
@@ -601,6 +606,7 @@ export function useNoteLabel(note: FNote | undefined | null, labelName: FilterLa
                 } else {
                     setLabelValue(null);
                 }
+                break;
             }
         }
     });

@@ -1,7 +1,7 @@
 import "./NotePathsTab.css";
 
 import clsx from "clsx";
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useContext, useEffect, useMemo, useState } from "preact/hooks";
 
 import FNote, { NotePathRecord } from "../../entities/fnote";
 import { t } from "../../services/i18n";
@@ -9,7 +9,7 @@ import { NOTE_PATH_TITLE_SEPARATOR } from "../../services/tree";
 import { useTriliumEvent } from "../react/hooks";
 import LinkButton from "../react/LinkButton";
 import NoteLink from "../react/NoteLink";
-import { joinElements } from "../react/react_utils";
+import { joinElements, ParentComponent } from "../react/react_utils";
 import { TabContext } from "./ribbon-interface";
 
 export default function NotePathsTab({ note, hoistedNoteId, notePath }: TabContext) {
@@ -21,6 +21,7 @@ export function NotePathsWidget({ sortedNotePaths, currentNotePath }: {
     sortedNotePaths: NotePathRecord[] | undefined;
     currentNotePath?: string | null | undefined;
 }) {
+    const parentComponent = useContext(ParentComponent);
     return (
         <div class="note-paths-widget">
             <>
@@ -40,7 +41,7 @@ export function NotePathsWidget({ sortedNotePaths, currentNotePath }: {
 
                 <LinkButton
                     text={t("note_paths.clone_button")}
-                    triggerCommand="cloneNoteIdsTo"
+                    onClick={() => parentComponent?.triggerCommand("cloneNoteIdsTo")}
                 />
             </>
         </div>

@@ -73,6 +73,10 @@ async function post<T>(url: string, data?: unknown, componentId?: string) {
     return await call<T>("POST", url, componentId, { data });
 }
 
+async function postWithSilentInternalServerError<T>(url: string, data?: unknown, componentId?: string) {
+    return await call<T>("POST", url, componentId, { data, silentInternalServerError: true });
+}
+
 async function put<T>(url: string, data?: unknown, componentId?: string) {
     return await call<T>("PUT", url, componentId, { data });
 }
@@ -111,6 +115,7 @@ let maxKnownEntityChangeId = 0;
 interface CallOptions {
     data?: unknown;
     silentNotFound?: boolean;
+    silentInternalServerError?: boolean;
     // If `true`, the value will be returned as a string instead of a JavaScript object if JSON, XMLDocument if XML, etc.
     raw?: boolean;
 }
@@ -143,7 +148,7 @@ async function call<T>(method: string, url: string, componentId?: string, option
             });
         })) as any;
     } else {
-        resp = await ajax(url, method, data, headers, !!options.silentNotFound, options.raw);
+        resp = await ajax(url, method, data, headers, options);
     }
 
     const maxEntityChangeIdStr = resp.headers["trilium-max-entity-change-id"];
@@ -155,10 +160,7 @@ async function call<T>(method: string, url: string, componentId?: string, option
     return resp.body as T;
 }
 
-/**
- * @param raw if `true`, the value will be returned as a string instead of a JavaScript object if JSON, XMLDocument if XML, etc.
- */
-function ajax(url: string, method: string, data: unknown, headers: Headers, silentNotFound: boolean, raw?: boolean): Promise<Response> {
+function ajax(url: string, method: string, data: unknown, headers: Headers, opts: CallOptions): Promise<Response> {
     return new Promise((res, rej) => {
         const options: JQueryAjaxSettings = {
             url: window.glob.baseApiUrl + url,
@@ -190,7 +192,9 @@ function ajax(url: string, method: string, data: unknown, headers: Headers, sile
                     // don't report requests that are rejected by the browser, usually when the user is refreshing or going to a different page.
                     rej("rejected by browser");
                     return;
-                } else if (silentNotFound && jqXhr.status === 404) {
+                } else if (opts.silentNotFound && jqXhr.status === 404) {
+                    // report nothing
+                } else if (opts.silentInternalServerError && jqXhr.status === 500) {
                     // report nothing
                 } else {
                     await reportError(method, url, jqXhr.status, jqXhr.responseText);
@@ -200,7 +204,7 @@ function ajax(url: string, method: string, data: unknown, headers: Headers, sile
             }
         };
 
-        if (raw) {
+        if (opts.raw) {
             options.dataType = "text";
         }
 
@@ -299,6 +303,7 @@ export default {
     get,
     getWithSilentNotFound,
     post,
+    postWithSilentInternalServerError,
     put,
     patch,
     remove,

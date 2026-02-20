@@ -45,6 +45,11 @@ export default function GlobalMenu({ isHorizontalLayout }: { isHorizontalLayout:
             noDropdownListStyle
             mobileBackdrop
         >
+            {isMobile() && <>
+                <MenuItem command="searchNotes" icon="bx bx-search" text={t("global_menu.search_notes")} />
+                <MenuItem command="showRecentChanges" icon="bx bx-history" text={t("recent_changes.title")} />
+                <FormDropdownDivider />
+            </>}
 
             <MenuItem command="openNewWindow" icon="bx bx-window-open" text={t("global_menu.open_new_window")} />
             <MenuItem command="showShareSubtree" icon="bx bx-share-alt" text={t("global_menu.show_shared_notes_subtree")} />
@@ -105,7 +110,7 @@ function BrowserOnlyOptions() {
 
 function DevelopmentOptions({ dropStart }: { dropStart: boolean }) {
     return <>
-        <FormListHeader text="Development Options"></FormListHeader>
+        <FormListHeader text="Development Options" />
         <FormDropdownSubmenu icon="bx bx-test-tube" title="Experimental features" dropStart={dropStart}>
             {experimentalFeatures.map((feature) => (
                 <ExperimentalFeatureToggle key={feature.id} experimentalFeature={feature as ExperimentalFeature} />

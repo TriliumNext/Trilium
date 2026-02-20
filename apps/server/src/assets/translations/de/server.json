@@ -425,7 +425,7 @@
     "error_title": "Fehler"
   },
   "share_theme": {
-    "site-theme": "Webseite Stil",
+    "site-theme": "Webseiten Stil",
     "search_placeholder": "Suche...",
     "image_alt": "Artikel Bild",
     "last-updated": "Zuletzt aktualisiert am {{- date}}",

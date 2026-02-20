@@ -1,5 +1,5 @@
-import { createWriteStream, mkdirSync } from "node:fs";
-import { join } from "node:path";
+import { createWriteStream, mkdirSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
 
 import cls from "@triliumnext/server/src/services/cls.js";
 
@@ -13,7 +13,8 @@ process.env.TRILIUM_RESOURCE_DIR = "../server/src";
 process.env.NODE_ENV = "development";
 
 async function main() {
-    const outputDir = join(__dirname, "output");
+    const outputDir = join(__dirname, "../../website/public/resources/icon-packs");
+    const outputMetaDir = join(__dirname, "../../website/src/resources/icon-packs");
     mkdirSync(outputDir, { recursive: true });
 
     const i18n = await import("@triliumnext/server/src/services/i18n.js");
@@ -49,7 +50,8 @@ async function main() {
         });
 
         // Export to zip.
-        const zipFilePath = join(outputDir, `${iconPack.name}.zip`);
+        const zipFileName = `${iconPack.name}.zip`;
+        const zipFilePath = join(outputDir, zipFileName);
         const fileOutputStream = createWriteStream(zipFilePath);
         const { exportToZip } = (await import("@triliumnext/server/src/services/export/zip.js")).default;
         const taskContext = new (await import("@triliumnext/server/src/services/task_context.js")).default(
@@ -58,7 +60,15 @@ async function main() {
         await exportToZip(taskContext, branch, "html", fileOutputStream, false, { skipExtraFiles: true });
         await new Promise<void>((resolve) => { fileOutputStream.on("finish", resolve); });
 
-        console.log(`Built icon pack: ${iconPack.name} (${zipFilePath})`);
+        // Save meta.
+        const metaFilePath = join(outputMetaDir, `${iconPack.name}.json`);
+        writeFileSync(metaFilePath, JSON.stringify({
+            name: iconPack.name,
+            file: zipFileName,
+            ...iconPack.meta
+        }, null, 2));
+
+        console.log(`Built icon pack ${iconPack.name}.`);
     }
 
     const builtIconPacks = [
@@ -69,6 +79,8 @@ async function main() {
         phosphor("fill")
     ];
     await Promise.all(builtIconPacks.map(buildIconPack));
+
+    console.log(`\n✅ Built icon packs are available at ${resolve(outputDir)}.`);
 }
 
 cls.init(() => {

@@ -1053,15 +1053,6 @@
     "default_new_note_title": "nouvelle note",
     "click_on_canvas_to_place_new_note": "Cliquez sur le canevas pour placer une nouvelle note"
   },
-  "render": {
-    "note_detail_render_help_1": "Cette note d'aide s'affiche car cette note de type Rendu HTML n'a pas la relation requise pour fonctionner correctement.",
-    "note_detail_render_help_2": "Le type de note Rendu HTML est utilisé pour les <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">scripts</a>. En résumé, vous disposez d'une note de code HTML (éventuellement contenant JavaScript) et cette note affichera le rendu. Pour que cela fonctionne, vous devez définir une <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">relation</a> appelée \"renderNote\" pointant vers la note HTML à rendre."
-  },
-  "web_view": {
-    "web_view": "Affichage Web",
-    "embed_websites": "Les notes de type Affichage Web vous permet d'intégrer des sites Web dans Trilium.",
-    "create_label": "Pour commencer, veuillez créer un label avec l'adresse URL que vous souhaitez intégrer, par ex. #webViewSrc=\"https://www.google.com\""
-  },
   "backend_log": {
     "refresh": "Rafraîchir"
   },
@@ -2058,7 +2049,6 @@
     "percentage": "%"
   },
   "pagination": {
-    "page_title": "Page de {{startIndex}} - {{endIndex}}",
     "total_notes": "{{count}} notes"
   },
   "collections": {

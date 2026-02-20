@@ -12,10 +12,10 @@ The `appThemeBase` label can be set to one of the following values:
 
 ## Overrides
 
-Do note that the TriliumNext theme has a few more overrides than the legacy theme, so you might need to suffix `!important` if the style changes are not applied.
+Do note that the TriliumNext theme has a few more overrides than the legacy theme. Due to that, it is recommended to use `#trilium-app` with a next theme instead of the `:root` of a legacy theme.
 
 ```css
-:root {
-	--launcher-pane-background-color: #0d6efd !important;
+#trilium-app {
+	--launcher-pane-background-color: #0d6efd;
 }
 ```

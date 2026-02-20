@@ -2,6 +2,7 @@ import { LOCALES } from "@triliumnext/commons";
 import { readdirSync } from "fs";
 import { join } from "path";
 import { describe, expect, it } from "vitest";
+
 import { LANGUAGE_MAPPINGS } from "./i18n.js";
 
 const localeDir = join(__dirname, "../../../../../../node_modules/@excalidraw/excalidraw/dist/prod/locales");
@@ -21,9 +22,9 @@ describe("Canvas i18n", () => {
         for (const locale of LOCALES) {
             if (locale.contentOnly || locale.devOnly) continue;
             const languageCode = LANGUAGE_MAPPINGS[locale.id];
-            if (!supportedLanguageCodes.has(languageCode)) {
+            if (languageCode && !supportedLanguageCodes.has(languageCode)) {
                 console.log("Supported locales:", Array.from(supportedLanguageCodes.values()).join(", "));
-                expect.fail(`Unable to find locale for ${locale.id} -> ${languageCode}.`)
+                expect.fail(`Unable to find locale for ${locale.id} -> ${languageCode}.`);
             }
         }
     });

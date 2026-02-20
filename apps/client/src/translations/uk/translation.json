@@ -1130,15 +1130,6 @@
     "default_new_note_title": "нова нотатка",
     "click_on_canvas_to_place_new_note": "Натисніть на полотно, щоб розмістити нову нотатку"
   },
-  "render": {
-    "note_detail_render_help_1": "Ця довідка відображається, оскільки ця нотатка типу Render HTML не має необхідного зв'язку для належного функціонування.",
-    "note_detail_render_help_2": "Тип нотатки Render HTML використовується для <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">скриптів</a>. Коротше кажучи, у вас є нотатка з HTML-кодом (за бажанням з деяким JavaScript), і ця нотатка її відобразить. Щоб це запрацювало, вам потрібно визначити <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">відношення</a> під назвою \"renderNote\", яке вказує на нотатку HTML для відображення."
-  },
-  "web_view": {
-    "web_view": "Веб-перегляд",
-    "embed_websites": "Нотатка типу Веб-перегляд дозволяє вбудовувати веб-сайти в Trilium.",
-    "create_label": "Для початку створіть мітку з URL-адресою, яку ви хочете вбудувати, наприклад, #webViewSrc=\"https://www.google.com\""
-  },
   "backend_log": {
     "refresh": "Оновити"
   },
@@ -2072,7 +2063,6 @@
     "app-restart-required": "(щоб зміни набули чинності, потрібен перезапуск програми)"
   },
   "pagination": {
-    "page_title": "Сторінка {{startIndex}} - {{endIndex}}",
     "total_notes": "{{count}} нотаток"
   },
   "collections": {

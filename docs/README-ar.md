@@ -93,24 +93,29 @@ script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
   أكثر أماناً
 * [المزامنة](https://docs.triliumnotes.org/user-guide/setup/synchronization) مع
   خادم مزامنة مُستضاف ذاتيًا
-  * there are [3rd party services for hosting synchronisation
-    server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
-* [Sharing](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
-  (publishing) notes to public internet
-* Strong [note
-  encryption](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
-  with per-note granularity
-* Sketching diagrams, based on [Excalidraw](https://excalidraw.com/) (note type
-  "canvas")
-* [Relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
-  for visualizing notes and their relations
-* Mind maps, based on [Mind Elixir](https://docs.mind-elixir.com/)
-* [Geo maps](https://docs.triliumnotes.org/user-guide/collections/geomap) with
-  location pins and GPX tracks
-* [Scripting](https://docs.triliumnotes.org/user-guide/scripts) - see [Advanced
-  showcases](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
+  * توجد [خدمات خارجية لاستضافة خادم
+    المزامنة](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+* [مشاركة](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
+  الملاحظات (نشرها) على شبكة الإنترنت العامة
+* [تشفير الملاحظات]
+  (https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
+  تشفير قوي مع إمكانية التحكم بكل ملاحظة على حدة
+* رسم المخططات، بالاعتماد على إكسكاليدرا [Excalidraw](https://excalidraw.com/)
+  (نوع الملاحظة "لوحة رسم")
+* [خرائط
+  العلاقات](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
+  و[خرائط الملاحظات
+  والروابط](https://docs.triliumnotes.org/user-guide/note-types/note-map) لتصور
+  الملاحظات وارتباطاتها بصرياً
+* الخرائط الذهنية، بالاعتماد على مايند إليكسر [Mind
+  Elixir](https://docs.mind-elixir.com/)
+* "[الخرائط
+  الجغرافية](https://docs.triliumnotes.org/user-guide/collections/geomap) مع
+  دبابيس الموقع ومسارات GPX (GPX = تنسيق تبادل بيانات نظام تحديد المواقع
+  العالمي)
+* [البرمجة النصية](https://docs.triliumnotes.org/user-guide/scripts) - راجع
+  [نماذج العرض
+  المتقدمة](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
 * [واجهة REST
   API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi) للأتمتة
 * Scales well in both usability and performance upwards of 100 000 notes

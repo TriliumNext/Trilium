@@ -202,6 +202,7 @@
     --badge-share-background-color: #6b6b6b;
     --badge-clipped-note-background-color: #2284c0;
     --badge-execute-background-color: #7b47af;
+    --badge-active-content-background-color: rgb(27, 164, 168);
 
     --note-icon-background-color: #4f4f4f;
     --note-icon-color: white;
@@ -288,6 +289,15 @@
     --ck-editor-toolbar-button-on-shadow: none;
     --ck-editor-toolbar-dropdown-button-open-background: #0000000f;
 
+    --note-list-view-icon-color: var(--left-pane-icon-color);
+    --note-list-view-large-icon-background: var(--note-icon-background-color);
+    --note-list-view-large-icon-color: var(--note-icon-color);
+    --note-list-view-search-result-highlight-background: transparent;
+    --note-list-view-search-result-highlight-color: var(--quick-search-result-highlight-color);
+    --note-list-view-content-background: #b1b1b133;
+    --note-list-view-content-search-result-highlight-background: var(--quick-search-result-highlight-color);
+    --note-list-view-content-search-result-highlight-color: white;
+
     --calendar-coll-event-background-lightness: 95%;
     --calendar-coll-event-background-saturation: 80%;
     --calendar-coll-event-background-color: #eaeaea;
@@ -297,7 +307,8 @@
     --calendar-coll-today-background-color: #00000006;
 }
 
-#left-pane .fancytree-node.tinted {
+#left-pane .fancytree-node.tinted,
+.nested-note-list-item.use-note-color {
     --custom-color: var(--light-theme-custom-color);
 
     /* The background color of the active item in the note tree.
@@ -312,8 +323,19 @@
     --promoted-attribute-card-background-color: hsl(var(--custom-color-hue), 40%, 88%);
 }
 
+.modal.tab-bar-modal .tabs .tab-card.with-hue {
+    background-color: hsl(var(--bg-hue), 56%, 96%);
+    border-color: hsl(var(--bg-hue), 33%, 41%);
+}
+
+.modal.tab-bar-modal .tabs .tab-card.active.with-hue {
+    background-color: hsl(var(--bg-hue), 86%, 96%);
+    border-color: hsl(var(--bg-hue), 33%, 41%);
+}
+
 .note-split.with-hue,
-.quick-edit-dialog-wrapper.with-hue {
+.quick-edit-dialog-wrapper.with-hue,
+.nested-note-list-item.with-hue {
     --note-icon-custom-background-color: hsl(var(--custom-color-hue), 44.5%, 43.1%);
     --note-icon-custom-color: hsl(var(--custom-color-hue), 91.3%, 91%);
     --note-icon-hover-custom-background-color: hsl(var(--custom-color-hue), 55.1%, 50.2%);

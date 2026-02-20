@@ -44,7 +44,7 @@ function hideSidebar() {
         if (spacer instanceof HTMLElement && spacer.classList.contains("toolbarButtonSpacer")) {
             spacer.remove();
         }
-        toggleButtonEl.remove();
+        toggleButtonEl.style.display = "none";
     }
 }
 

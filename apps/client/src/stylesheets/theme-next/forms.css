@@ -85,6 +85,22 @@ button.btn.btn-success kbd {
 }
 
 /*
+ * Low profile buttons
+ */
+
+button.tn-low-profile {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    color: inherit;
+}
+
+button.tn-low-profile:hover {
+    background-color: var(--icon-button-hover-background);
+}
+
+/*
  * Icon buttons
  */
 
@@ -127,6 +143,10 @@ button.btn.btn-success kbd {
     display: block;
     line-height: 1;
     font-size: calc(var(--icon-button-size) * var(--icon-button-icon-ratio));
+}
+
+:root .icon-action.disabled::before {
+    opacity: .5;
 }
 
 :root .icon-action:not(.global-menu-button):hover,
@@ -793,4 +813,36 @@ input[type="range"] {
         scrollbar-color: unset;
         scrollbar-width: unset;
     }
+}
+
+/*
+ * Centered forms
+ */
+
+.tn-centered-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20vh;
+}
+
+.tn-centered-form .form-group {
+    text-align: center;
+    color: var(--muted-text-color);
+}
+
+.tn-centered-form .form-icon {
+    font-size: 140px;
+    color: var(--main-border-color);
+}
+
+.tn-centered-form .protected-session-password {
+    margin-inline: auto;
+    max-width: 350px;
+    text-align: center;
+}
+
+.tn-centered-form .input-group,
+.tn-centered-form button {
+    margin-top: 12px;
 }

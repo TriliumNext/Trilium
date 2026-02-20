@@ -67,10 +67,7 @@ export default function PopupEditor() {
         <NoteContextContext.Provider value={noteContext}>
             <DialogWrapper>
                 <Modal
-                    title={<>
-                        <TitleRow />
-                        {isNewLayout && <NoteBadges />}
-                    </>}
+                    title={<TitleRow />}
                     customTitleBarButtons={[{
                         iconClassName: "bx-expand-alt",
                         title: t("popup-editor.maximize"),
@@ -123,6 +120,7 @@ export function TitleRow() {
         <div className="title-row">
             <NoteIcon />
             <NoteTitleWidget />
+            {isNewLayout && <NoteBadges />}
         </div>
     );
 }

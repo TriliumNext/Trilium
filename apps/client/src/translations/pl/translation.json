@@ -21,7 +21,7 @@
     },
     "bundle-error": {
       "title": "Nie udało się załadować niestandardowego skryptu",
-      "message": "Skrypt z notatki o ID \"{{id}}\", zatytułowany \"{{title}}\", nie mógł zostać wykonany z powodu:\n\n{{message}}"
+      "message": "Skrypt nie mógł zostać wykonany z powodu:\n\n{{message}}"
     },
     "widget-list-error": {
       "title": "Nie udało się pobrać listy widżetów z serwera"
@@ -29,8 +29,9 @@
     "widget-render-error": {
       "title": "Nie udało się wyrenderować niestandardowego widżetu React"
     },
-    "widget-missing-parent": "Niestandardowy widżet nie ma zdefiniowanej obowiązkowej właściwości „{{property}}”.",
-    "open-script-note": "Otwórz notatkę ze skryptem"
+    "widget-missing-parent": "Niestandardowy widżet nie ma zdefiniowanej obowiązkowej właściwości „{{property}}”.\nJeśli skrypt ma działać bez interfejsu użytkownika (UI) wyłącz go:  '#run=frontendStartup'.",
+    "open-script-note": "Otwórz notatkę ze skryptem",
+    "scripting-error": "Błąd skryptu użytkownika: {{title}}"
   },
   "add_link": {
     "add_link": "Dodaj link",
@@ -191,7 +192,8 @@
     "expand_tooltip": "Rozwija bezpośrednie elementy podrzędne tej kolekcji (o jeden poziom). Aby uzyskać więcej opcji, naciśnij strzałkę po prawej.",
     "expand_first_level": "Rozwiń bezpośrednie elementy podrzędne",
     "expand_nth_level": "Rozwiń {{depth}} poziomów",
-    "expand_all_levels": "Rozwiń wszystkie poziomy"
+    "expand_all_levels": "Rozwiń wszystkie poziomy",
+    "hide_child_notes": "Ukryj notatki podrzędne w derzwie"
   },
   "board_view": {
     "move-to": "Przenieś do",
@@ -240,7 +242,7 @@
     "background_effects_title": "Efekty tła są teraz stabilne",
     "dismiss": "Odrzuć",
     "background_effects_button": "Włącz efekty tła",
-    "background_effects_message": "Na urządzeniach z systemem Windows efekty tła są teraz w pełni stabilne. Efekty tła dodają odrobinę koloru do interfejsu użytkownika poprzez rozmycie tła za nim. Ta technika jest również stosowana w innych aplikacjach, takich jak Eksplorator Windows.",
+    "background_effects_message": "Na urządzeniach z systemem Windows i macOS efekty tła są stabilne. Efekty tła dodają odrobinę koloru do interfejsu użytkownika poprzez rozmycie tła za nim.",
     "new_layout_title": "Nowy układ",
     "new_layout_message": "Wprowadziliśmy zmodernizowany układ interfejsu dla Trilium. Wstążka została usunięta i płynnie zintegrowana z głównym interfejsem, a jej kluczowe funkcje przejęły nowy pasek stanu i rozwijane sekcje (takie jak promowane atrybuty).\n\nNowy układ jest domyślnie włączony i można go tymczasowo wyłączyć w Ustawienia → Wygląd.",
     "new_layout_button": "Szczegóły"
@@ -259,7 +261,6 @@
     "percentage": "%"
   },
   "pagination": {
-    "page_title": "Strona {{startIndex}} - {{endIndex}}",
     "total_notes": "{{count}} notatek"
   },
   "collections": {
@@ -520,7 +521,8 @@
     "action": "akcja",
     "search_button": "Szukaj",
     "search_execute": "Szukaj i wykonaj akcje",
-    "view_options": "Ustawienia widoku:"
+    "view_options": "Ustawienia widoku:",
+    "option": "opcja"
   },
   "similar_notes": {
     "title": "Podobne notatki",
@@ -602,8 +604,8 @@
     "desktop-application": "Aplikacja desktopowa",
     "native-title-bar": "Natywny pasek tytułu",
     "native-title-bar-description": "Dla Windows i macOS, wyłączenie natywnego paska tytułu sprawia, że aplikacja wygląda bardziej kompaktowo. Na Linuxie, włączenie natywnego paska tytułu lepiej integruje się z resztą systemu.",
-    "background-effects": "Włącz efekty tła (tylko Windows 11)",
-    "background-effects-description": "Efekt Mica dodaje rozmyte, stylowe tło do okien aplikacji, tworząc głębię i nowoczesny wygląd. \"Natywny pasek tytułu\" musi być wyłączony.",
+    "background-effects": "Włącz efekty tła",
+    "background-effects-description": "Dodaje rozmyte, stylowe tło do okien aplikacji, tworząc głębię i nowoczesny wygląd. \"Natywny pasek tytułu\" musi być wyłączony.",
     "restart-app-button": "Zrestartuj aplikację, aby zobaczyć zmiany",
     "zoom-factor": "Współczynnik powiększenia"
   },
@@ -1182,7 +1184,8 @@
     "show-cheatsheet": "Pokaż ściągawkę",
     "toggle-zen-mode": "Tryb Zen",
     "new-version-available": "Dostępna nowa aktualizacja",
-    "download-update": "Pobierz wersję {{latestVersion}}"
+    "download-update": "Pobierz wersję {{latestVersion}}",
+    "search_notes": "Przeszukaj notatki"
   },
   "zen_mode": {
     "button_exit": "Wyjdź z trybu Zen"
@@ -1265,7 +1268,7 @@
     "button_title": "Eksportuj diagram jako SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Utwórz nową notatkę podrzędną i dodaj ją do tej mapy relacji",
+    "create_child_note_title": "Utwórz notatkę podrzędną i dodaj ją do mapy",
     "reset_pan_zoom_title": "Zresetuj przesunięcie i powiększenie do początkowych współrzędnych i powiększenia",
     "zoom_in_title": "Powiększ",
     "zoom_out_title": "Pomniejsz"
@@ -1281,12 +1284,23 @@
     "delete_this_note": "Usuń tę notatkę",
     "note_revisions": "Wersje notatki",
     "error_cannot_get_branch_id": "Nie można pobrać branchId dla ścieżki notatki '{{notePath}}'",
-    "error_unrecognized_command": "Nierozpoznane polecenie {{command}}"
+    "error_unrecognized_command": "Nierozpoznane polecenie {{command}}",
+    "backlinks": "Linki zwrotne",
+    "content_language_switcher": "Język treści: {{language}}"
   },
   "note_icon": {
     "change_note_icon": "Zmień ikonę notatki",
     "search": "Szukaj:",
-    "reset-default": "Przywróć domyślną ikonę"
+    "reset-default": "Przywróć domyślną ikonę",
+    "search_placeholder_one": "Znaleziono {{number}} ikonę w {{count}} pakietach",
+    "search_placeholder_few": "Znaleziono {{number}} ikon w {{count}} pakietach",
+    "search_placeholder_many": "Znaleziono {{number}} ikon w {{count}} pakietach",
+    "search_placeholder_filtered": "Wyszukaj {{number}} ikon w {{name}}",
+    "filter": "Filtr",
+    "filter-none": "Wszystkie ikony",
+    "filter-default": "Domyślne ikony",
+    "icon_tooltip": "{{name}}\npakiet ikon: {{iconPack}}",
+    "no_results": "Nie znaleziono ikon."
   },
   "basic_properties": {
     "note_type": "Typ notatki",
@@ -1416,15 +1430,6 @@
     "enter_title_of_new_note": "Wprowadź tytuł nowej notatki",
     "default_new_note_title": "nowa notatka",
     "click_on_canvas_to_place_new_note": "Kliknij na płótnie, aby umieścić nową notatkę"
-  },
-  "render": {
-    "note_detail_render_help_1": "Ta notatka pomocy jest wyświetlana, ponieważ ta notatka typu Render HTML nie ma wymaganej relacji do poprawnego działania.",
-    "note_detail_render_help_2": "Typ notatki Render HTML jest używany do <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">skryptowania</a>. W skrócie, masz notatkę kodu HTML (opcjonalnie z JavaScript) i ta notatka ją wyrenderuje. Aby to zadziałało, musisz zdefiniować <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">relację</a> o nazwie \"renderNote\" wskazującą na notatkę HTML do wyrenderowania."
-  },
-  "web_view": {
-    "web_view": "Widok WWW",
-    "embed_websites": "Notatka typu Widok WWW pozwala na osadzanie stron internetowych w Trilium.",
-    "create_label": "Aby rozpocząć, utwórz etykietę z adresem URL, który chcesz osadzić, np. #webViewSrc=\"https://www.google.com\""
   },
   "backend_log": {
     "refresh": "Odśwież"
@@ -1826,7 +1831,7 @@
     "will_be_deleted_in": "Ten załącznik zostanie automatycznie usunięty za {{time}}",
     "will_be_deleted_soon": "Ten załącznik zostanie wkrótce automatycznie usunięty",
     "deletion_reason": ", ponieważ załącznik nie jest podlinkowany w treści notatki. Aby zapobiec usunięciu, dodaj link do załącznika z powrotem do treści lub przekonwertuj załącznik na notatkę.",
-    "role_and_size": "Rola: {{role}}, Rozmiar: {{size}}",
+    "role_and_size": "Rola: {{role}}, Rozmiar: {{size}}, MIME: {{- mimeType}}",
     "link_copied": "Link do załącznika skopiowany do schowka.",
     "unrecognized_role": "Nierozpoznana rola załącznika '{{role}}'."
   },
@@ -1880,7 +1885,10 @@
     "apply-bulk-actions": "Zastosuj akcje masowe",
     "converted-to-attachments": "{{count}} notatek zostało przekonwertowanych na załączniki.",
     "convert-to-attachment-confirm": "Czy na pewno chcesz przekonwertować wybrane notatki na załączniki ich notatek nadrzędnych? Ta operacja dotyczy tylko notatek Obrazów, inne notatki zostaną pominięte.",
-    "open-in-popup": "Szybka edycja"
+    "open-in-popup": "Szybka edycja",
+    "open-in-a-new-window": "Otwórz w nowym oknie",
+    "hide-subtree": "Ukryj gałąź",
+    "show-subtree": "Rozwiń gałąź"
   },
   "shared_info": {
     "shared_publicly": "Ta notatka jest udostępniona publicznie pod adresem {{- link}}.",
@@ -1971,7 +1979,17 @@
     "create-child-note": "Utwórz notatkę podrzędną",
     "unhoist": "Cofnij zawężenie",
     "toggle-sidebar": "Przełącz pasek boczny",
-    "dropping-not-allowed": "Upuszczanie notatek w tej lokalizacji jest niedozwolone."
+    "dropping-not-allowed": "Upuszczanie notatek w tej lokalizacji jest niedozwolone.",
+    "clone-indicator-tooltip": "Ta notatka ma {{- count}} notatek nadrzędnych: {{- parents}}",
+    "clone-indicator-tooltip-single": "Ta notatka jest sklonowana (1 dodatkowa notatka nadrzędna: {{- parent}})",
+    "shared-indicator-tooltip": "Ta notatka jest udostępniona publicznie",
+    "shared-indicator-tooltip-with-url": "Ta notatka jest udostępniana publicznie jako: {{- url}}",
+    "subtree-hidden-tooltip_one": "{{count}} notatka podrzędna ukryta w drzewie",
+    "subtree-hidden-tooltip_few": "{{count}} notatek podrzędnych ukrytych w drzewie",
+    "subtree-hidden-tooltip_many": "{{count}} notatek podrzędnych ukrytych w drzewie",
+    "subtree-hidden-moved-title": "Dodano do {{title}}",
+    "subtree-hidden-moved-description-collection": "Ta kolekcja ukrywa swoje notatki podrzędne w drzewie.",
+    "subtree-hidden-moved-description-other": "Notatki podrzędne są ukryte w drzewie tej notatki."
   },
   "title_bar_buttons": {
     "window-on-top": "Utrzymuj okno na wierzchu"
@@ -1979,7 +1997,13 @@
   "note_detail": {
     "could_not_find_typewidget": "Nie można znaleźć widżetu typu dla typu '{{type}}'",
     "printing": "Drukowanie w toku...",
-    "printing_pdf": "Eksportowanie do PDF w toku..."
+    "printing_pdf": "Eksportowanie do PDF w toku...",
+    "print_report_title": "Wydrukuj raport",
+    "print_report_collection_content_one": "Nie można wydrukować {{count}} notatki w kolekcji, ponieważ nie jest ona obsługiwana lub jest chroniona.",
+    "print_report_collection_content_few": "Nie można wydrukować {{count}} notatek w kolekcji, ponieważ nie są one obsługiwane lub są chronione.",
+    "print_report_collection_content_many": "Nie można wydrukować {{count}} notatek w kolekcji, ponieważ nie są one obsługiwane lub są chronione.",
+    "print_report_collection_details_button": "Zobacz szczegóły",
+    "print_report_collection_details_ignored_notes": "Zignorowane notatki"
   },
   "note_title": {
     "placeholder": "wpisz tytuł notatki tutaj...",
@@ -1989,7 +2013,8 @@
     "note_type_switcher_others": "Inny typ notatki",
     "note_type_switcher_templates": "Szablon",
     "note_type_switcher_collection": "Kolekcja",
-    "edited_notes": "Edytowane notatki"
+    "edited_notes": "Notatki edytowane dzisiaj",
+    "promoted_attributes": "Sugerowane atrybuty"
   },
   "search_result": {
     "no_notes_found": "Nie znaleziono notatek dla podanych parametrów wyszukiwania.",
@@ -1999,7 +2024,11 @@
     "configure_launchbar": "Konfiguruj pasek szybkiego dostępu"
   },
   "sql_result": {
-    "no_rows": "Dla tego zapytania nie zwrócono żadnych wierszy"
+    "no_rows": "Dla tego zapytania nie zwrócono żadnych wierszy",
+    "not_executed": "Zapytanie nie zostało jeszcze wykonane.",
+    "failed": "Wykonanie zapytania SQL nie powiodło się",
+    "statement_result": "Wynik wyrażenia",
+    "execute_now": "Wykonaj teraz"
   },
   "sql_table_schemas": {
     "tables": "Tabele"
@@ -2116,7 +2145,8 @@
   "geo-map": {
     "create-child-note-title": "Utwórz nową notatkę podrzędną i dodaj ją do mapy",
     "create-child-note-instruction": "Kliknij na mapie, aby utworzyć nową notatkę w tej lokalizacji lub naciśnij Escape, aby anulować.",
-    "unable-to-load-map": "Nie można załadować mapy."
+    "unable-to-load-map": "Nie można załadować mapy.",
+    "create-child-note-text": "Dodaj zaznaczenie"
   },
   "geo-map-context": {
     "open-location": "Otwórz lokalizację",
@@ -2183,7 +2213,14 @@
     "execute_sql_description": "Ta notatka jest notatką SQL. Kliknij, aby wykonać zapytanie SQL.",
     "shared_copy_to_clipboard": "Kopiuj link do schowka",
     "shared_open_in_browser": "Otwórz link w przeglądarce",
-    "shared_unshare": "Usuń udostępnienie"
+    "shared_unshare": "Usuń udostępnienie",
+    "save_status_saved": "Zapisane",
+    "save_status_saving": "Zapisywanie...",
+    "save_status_unsaved": "Niezapisane",
+    "save_status_error": "Zapis nie powiódł się",
+    "save_status_saving_tooltip": "Zmiany zostały zapisane.",
+    "save_status_unsaved_tooltip": "Są niezapisane zmiany. Zostaną one zapisane automatycznie za chwilę.",
+    "save_status_error_tooltip": "Wystąpił błąd podczas zapisywania notatki. Spróbuj skopiować treść notatki w inne miejsce i ponownie załadować aplikację."
   },
   "status_bar": {
     "language_title": "Zmień język treści",
@@ -2226,5 +2263,30 @@
     "empty_button": "Ukryj panel",
     "toggle": "Pokaż/ukryj prawy panel",
     "custom_widget_go_to_source": "Przejdź do kodu źródłowego"
+  },
+  "pdf": {
+    "attachments_one": "{{count}} załącznik",
+    "attachments_few": "{{count}} załączniki",
+    "attachments_many": "{{count}} załączników",
+    "layers_one": "{{count}} warstwa",
+    "layers_few": "{{count}} warstw",
+    "layers_many": "{{count}} warstw",
+    "pages_one": "{{count}} strona",
+    "pages_few": "{{count}} stron",
+    "pages_many": "{{count}} stron",
+    "pages_alt": "Strona {{pageNumber}}",
+    "pages_loading": "Wczytuję..."
+  },
+  "platform_indicator": {
+    "available_on": "Dostępne na {{platform}}"
+  },
+  "mobile_tab_switcher": {
+    "title_one": "{{count}} zakładka",
+    "title_few": "{{count}} zakładki",
+    "title_many": "{{count}} zakładek",
+    "more_options": "Więcej opcji"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "Zakładki"
   }
 }

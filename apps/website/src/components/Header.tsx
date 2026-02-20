@@ -1,16 +1,18 @@
 import "./Header.css";
-import { Link } from "./Button.js";
-import { SocialButtons, SocialButton } from "./Footer.js";
-import { useContext, useEffect, useMemo, useState } from "preact/hooks";
+
+import { useContext, useEffect, useState } from "preact/hooks";
 import { useLocation } from 'preact-iso';
-import DownloadButton from './DownloadButton.js';
-import githubIcon from "../assets/boxicons/bx-github.svg?raw";
-import Icon from "./Icon.js";
-import logoPath from "../assets/icon-color.svg";
-import menuIcon from "../assets/boxicons/bx-menu.svg?raw";
-import { LocaleContext } from "..";
 import { useTranslation } from "react-i18next";
+
+import { LocaleContext } from "..";
+import githubIcon from "../assets/boxicons/bx-github.svg?raw";
+import menuIcon from "../assets/boxicons/bx-menu.svg?raw";
+import logoPath from "../assets/icon-color.svg";
 import { swapLocaleInUrl } from "../i18n";
+import { Link } from "./Button.js";
+import DownloadButton from './DownloadButton.js';
+import { SocialButton,SocialButtons } from "./Footer.js";
+import Icon from "./Icon.js";
 
 interface HeaderLink {
     url: string;
@@ -19,34 +21,34 @@ interface HeaderLink {
 }
 
 export function Header(props: {repoStargazersCount: number}) {
-	const { url } = useLocation();
+    const { url } = useLocation();
     const { t } = useTranslation();
     const locale = useContext(LocaleContext);
     const [ mobileMenuShown, setMobileMenuShown ] = useState(false);
 
-    const [ headerLinks, setHeaderLinks ] = useState<HeaderLink[]>([]);
-    useEffect(() => {
-        setHeaderLinks([
-            { url: "/get-started", text: t("header.get-started") },
-            { url: "https://docs.triliumnotes.org/", text: t("header.documentation"), external: true },
-            { url: "/support-us", text: t("header.support-us") }
-        ]);
-    }, [ locale, t ]);
+    const headerLinks = [
+        { url: "/get-started", text: t("header.get-started") },
+        { url: "/resources", text: t("header.resources") },
+        { url: "https://docs.triliumnotes.org/", text: t("header.documentation"), external: true },
+        { url: "/support-us", text: t("header.support-us") }
+    ];
 
-	return (
-		<header>
+    return (
+        <header>
             <div class="content-wrapper">
                 <div class="first-row">
                     <a class="banner" href={`/${locale}/`}>
                         <img src={logoPath} width="300" height="300" alt="Trilium Notes logo" />&nbsp;<span>Trilium Notes</span>
                     </a>
 
+                    <RepositoryButton repoStargazersCount={props.repoStargazersCount} className="mobile-only" />
+
                     <Link
                         href="#"
                         className="mobile-only menu-toggle"
                         onClick={(e) => {
                             e.preventDefault();
-                            setMobileMenuShown(!mobileMenuShown)
+                            setMobileMenuShown(!mobileMenuShown);
                         }}
                     >
                         <Icon svg={menuIcon} />
@@ -63,24 +65,31 @@ export function Header(props: {repoStargazersCount: number}) {
                             onClick={() => {
                                 setMobileMenuShown(false);
                             }}
-                        >{link.text}</Link>)
+                        >{link.text}</Link>);
                     })}
 
                     <SocialButtons className="mobile-only" withText />
                 </nav>
 
-                <div class="desktop-only repository-button">
-                    <SocialButton
-                        name="GitHub"
-                        iconSvg={githubIcon}
-                        counter={(props.repoStargazersCount / 1000).toFixed(1) + "K+"}
-                        url="https://github.com/TriliumNext/Trilium"
-                    />
-                </div>
-
+                <RepositoryButton repoStargazersCount={props.repoStargazersCount} className="desktop-only" />
                 <DownloadButton />
-
             </div>
-		</header>
-	);
+        </header>
+    );
+}
+
+function RepositoryButton({ repoStargazersCount, className }: {
+    repoStargazersCount: number;
+    className: string
+}){
+    return (
+        <div class={`repository-button ${className}`}>
+            <SocialButton
+                name="GitHub"
+                iconSvg={githubIcon}
+                counter={`${(repoStargazersCount / 1000).toFixed(1)}K+`}
+                url="https://github.com/TriliumNext/Trilium"
+            />
+        </div>
+    );
 }

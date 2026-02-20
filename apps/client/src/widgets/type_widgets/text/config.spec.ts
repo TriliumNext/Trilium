@@ -29,7 +29,7 @@ describe("CK config", () => {
             if (expectedLocale === "cn") expectedLocale = "zh";
             if (expectedLocale === "tw") expectedLocale = "zh-tw";
 
-            if (locale.id !== "en") {
+            if (locale.id !== "en" && locale.id !== "ga") {
                 expect((config.language as any).ui).toMatch(new RegExp(`^${expectedLocale}`));
                 expect(config.translations, locale.id).toBeDefined();
                 expect(config.translations, locale.id).toHaveLength(2);

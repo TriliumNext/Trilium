@@ -37,6 +37,10 @@
                 &:hover {
                     background: var(--input-background-color);
                 }
+
+                .text {
+                    white-space: nowrap;
+                }
             }
 
             .status-bar-dropdown-button {
@@ -58,33 +62,6 @@
 
         .dropdown-note-info {
             padding: 1em !important;
-
-            ul {
-                --row-block-margin: .2em;
-
-                list-style-type: none;
-                padding: 0;
-                margin: 0;
-                margin-top: calc(0px - var(--row-block-margin));
-                margin-bottom: 12px;
-                display: table;
-
-                li {
-                    display: table-row;
-
-                    > strong {
-                        display: table-cell;
-                        padding: var(--row-block-margin) 0;
-                        opacity: .5;
-                    }
-
-                    > span {
-                        display: table-cell;
-                        user-select: text;
-                        padding-left: 2em;
-                    }
-                }
-            }
         }
 
         .dropdown-note-paths {
@@ -144,14 +121,48 @@
 
     }
 
-    div.similar-notes-widget div.similar-notes-wrapper {
-        max-height: unset;
-    }
-
     button.select-button:not(:focus-visible) {
         outline: none;
     }
 
+}
+
+body.experimental-feature-new-layout .note-info-content {
+    ul {
+                --row-block-margin: .2em;
+
+                list-style-type: none;
+                padding: 0;
+                margin: 0;
+                margin-top: calc(0px - var(--row-block-margin));
+                margin-bottom: 12px;
+                display: table;
+
+                li {
+                    display: table-row;
+
+                    > strong {
+                        display: table-cell;
+                        padding: var(--row-block-margin) 0;
+                        opacity: .5;
+                    }
+
+                    > span {
+                        display: table-cell;
+                        user-select: text;
+                        padding-left: 2em;
+                    }
+                }
+            }
+}
+
+body.experimental-feature-new-layout div.similar-notes-widget div.similar-notes-wrapper {
+    max-height: unset;
+}
+
+body.experimental-feature-new-layout.mobile div.similar-notes-widget div.similar-notes-wrapper {
+    max-height: unset;
+    padding: 0;
 }
 
 .bottom-panel {

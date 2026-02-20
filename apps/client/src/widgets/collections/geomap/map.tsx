@@ -1,7 +1,7 @@
 import { useEffect, useImperativeHandle, useRef, useState } from "preact/hooks";
 import L, { control, LatLng, Layer, LeafletMouseEvent } from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MAP_LAYERS } from "./map_layer";
+import { MAP_LAYERS, type MapLayer } from "./map_layer";
 import { ComponentChildren, createContext, RefObject } from "preact";
 import { useElementSize, useSyncedRef } from "../../react/hooks";
 
@@ -12,7 +12,7 @@ interface MapProps {
     containerRef?: RefObject<HTMLDivElement>;
     coordinates: LatLng | [number, number];
     zoom: number;
-    layerName: string;
+    layerData: MapLayer;
     viewportChanged: (coordinates: LatLng, zoom: number) => void;
     children: ComponentChildren;
     onClick?: (e: LeafletMouseEvent) => void;
@@ -21,7 +21,7 @@ interface MapProps {
     scale: boolean;
 }
 
-export default function Map({ coordinates, zoom, layerName, viewportChanged, children, onClick, onContextMenu, scale, apiRef, containerRef: _containerRef, onZoom }: MapProps) {
+export default function Map({ coordinates, zoom, layerData, viewportChanged, children, onClick, onContextMenu, scale, apiRef, containerRef: _containerRef, onZoom }: MapProps) {
     const mapRef = useRef<L.Map>(null);
     const containerRef = useSyncedRef<HTMLDivElement>(_containerRef);
 
@@ -49,8 +49,6 @@ export default function Map({ coordinates, zoom, layerName, viewportChanged, chi
     const [ layer, setLayer ] = useState<Layer>();
     useEffect(() => {
         async function load() {
-            const layerData = MAP_LAYERS[layerName];
-
             if (layerData.type === "vector") {
                 const style = (typeof layerData.style === "string" ? layerData.style : await layerData.style());
                 await import("@maplibre/maplibre-gl-leaflet");
@@ -68,7 +66,7 @@ export default function Map({ coordinates, zoom, layerName, viewportChanged, chi
         }
 
         load();
-    }, [ layerName ]);
+    }, [ layerData ]);
 
     // Attach layer to the map.
     useEffect(() => {
@@ -139,7 +137,7 @@ export default function Map({ coordinates, zoom, layerName, viewportChanged, chi
     return (
         <div
             ref={containerRef}
-            className={`geo-map-container ${MAP_LAYERS[layerName].isDarkTheme ? "dark" : ""}`}
+            className={`geo-map-container ${layerData.isDarkTheme ? "dark" : ""}`}
         >
             <ParentMap.Provider value={mapRef.current}>
                 {children}

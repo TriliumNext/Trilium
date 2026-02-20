@@ -50,7 +50,8 @@
     "save": "Simpan",
     "branch_prefix_saved": "Prefiks cabang telah disimpan.",
     "branch_prefix_saved_multiple": "Prefix cabang telah disimpan pada {{count}} cabang.",
-    "affected_branches": "Cabang terdampak ({{count}}):"
+    "affected_branches": "Cabang terdampak ({{count}}):",
+    "edit_branch_prefix": "Sunting awalan cabang"
   },
   "bulk_actions": {
     "bulk_actions": "Aksi borongan",
@@ -61,14 +62,18 @@
     "execute_bulk_actions": "Eksekusi aksi borongan",
     "bulk_actions_executed": "Aksi borongan telah di eksekusi dengan sukses.",
     "none_yet": "Belum ada... tambahkan aksi dengan memilih salah satu dari aksi di atas.",
-    "labels": "Label-label"
+    "labels": "Label-label",
+    "relations": "Hubungan",
+    "notes": "Catatan",
+    "other": "Lainnya"
   },
   "confirm": {
     "cancel": "Batal",
     "ok": "Oke",
     "are_you_sure_remove_note": "Apakah anda yakin mau membuang catatan \"{{title}}\" dari peta relasi? ",
     "if_you_dont_check": "Jika Anda tidak mencentang ini, catatan hanya akan dihapus dari peta relasi.",
-    "also_delete_note": "Hapus juga catatannya"
+    "also_delete_note": "Hapus juga catatannya",
+    "confirmation": "Konfirmasi"
   },
   "delete_notes": {
     "delete_notes_preview": "Hapus pratinjau catatan",
@@ -77,9 +82,19 @@
     "erase_notes_description": "Penghapusan normal hanya menandai catatan sebagai dihapus dan dapat dipulihkan (melalui dialog versi revisi) dalam jangka waktu tertentu. Mencentang opsi ini akan menghapus catatan secara permanen seketika dan catatan tidak akan bisa dipulihkan kembali.",
     "erase_notes_warning": "Hapus catatan secara permanen (tidak bisa dikembalikan), termasuk semua duplikat. Aksi akan memaksa aplikasi untuk mengulang kembali.",
     "notes_to_be_deleted": "Catatan-catatan berikut akan dihapuskan ({{notesCount}})",
-    "no_note_to_delete": "Tidak ada Catatan yang akan dihapus (hanya duplikat)."
+    "no_note_to_delete": "Tidak ada Catatan yang akan dihapus (hanya duplikat).",
+    "broken_relations_to_be_deleted": "Hubungan berikut akan diputus dan dihapus ({{ relationCount}})"
   },
   "clone_to": {
-    "clone_notes_to": "Duplikat catatan ke…"
+    "clone_notes_to": "Duplikat catatan ke…",
+    "help_on_links": "Bantuan pada tautan",
+    "notes_to_clone": "Catatan untuk kloning",
+    "target_parent_note": "Sasaran catatan utama",
+    "search_for_note_by_its_name": "cari catatan berdasarkan namanya",
+    "cloned_note_prefix_title": "Catatan yang dikloning akan ditampilkan diruntutan catatan dengan awalan yang diberikan",
+    "prefix_optional": "Awalan (opsional)",
+    "clone_to_selected_note": "Salin ke catatan yang dipilih",
+    "no_path_to_clone_to": "Tidak ada jalur untuk digandakan.",
+    "note_cloned": "Catatan \"{{clonedTitle}}\" telah digandakan ke dalam \"{{targetTitle}}\""
   }
 }

@@ -13,7 +13,7 @@ const DRAG_OPEN_THRESHOLD = 10;
 /** The number of pixels the user has to drag across the screen to the right when the sidebar is closed to trigger the drag open animation. */
 const DRAG_CLOSED_START_THRESHOLD = 10;
 /** The number of pixels the user has to drag across the screen to the left when the sidebar is opened to trigger the drag close animation. */
-const DRAG_OPENED_START_THRESHOLD = 80;
+const DRAG_OPENED_START_THRESHOLD = 100;
 
 export default class SidebarContainer extends FlexContainer<BasicWidget> {
     private screenName: Screen;
@@ -54,7 +54,7 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
         this.startX = x;
 
         // Prevent dragging if too far from the edge of the screen and the menu is closed.
-        let dragRefX = glob.isRtl ? this.screenWidth - x : x;
+        const dragRefX = glob.isRtl ? this.screenWidth - x : x;
         if (dragRefX > 30 && this.currentTranslate === -100) {
             return;
         }
@@ -89,7 +89,7 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
             }
         } else if (this.dragState === DRAG_STATE_DRAGGING) {
             const width = this.sidebarEl.offsetWidth;
-            let translatePercentage = Math.min(0, Math.max(this.currentTranslate + (deltaX / width) * 100, -100));
+            const translatePercentage = Math.min(0, Math.max(this.currentTranslate + (deltaX / width) * 100, -100));
             const backdropOpacity = Math.max(0, 1 + translatePercentage / 100);
             this.translatePercentage = translatePercentage;
             if (glob.isRtl) {
@@ -160,12 +160,10 @@ export default class SidebarContainer extends FlexContainer<BasicWidget> {
         this.sidebarEl.classList.toggle("show", isOpen);
         if (isOpen) {
             this.sidebarEl.style.transform = "translateX(0)";
+        } else if (glob.isRtl) {
+            this.sidebarEl.style.transform = "translateX(100%)";
         } else {
-            if (glob.isRtl) {
-                this.sidebarEl.style.transform = "translateX(100%)"
-            } else {
-                this.sidebarEl.style.transform = "translateX(-100%)";
-            }
+            this.sidebarEl.style.transform = "translateX(-100%)";
         }
         this.sidebarEl.style.transition = this.originalSidebarTransition;
 

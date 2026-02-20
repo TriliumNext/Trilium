@@ -50,6 +50,9 @@ body.experimental-feature-new-layout {
             }
         }
 
+    }
+
+    body.desktop .title-actions {
         > .collapsible,
         > .note-type-switcher {
             padding-inline-start: calc(24px - var(--title-actions-padding-start));
@@ -57,3 +60,4 @@ body.experimental-feature-new-layout {
         }
     }
 }
+

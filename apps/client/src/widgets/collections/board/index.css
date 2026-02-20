@@ -10,12 +10,6 @@
   --card-padding: 0.6em;
 }
 
-body.mobile .board-view {
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scroll-behavior: smooth;
-}
-
 .board-view-container {
   height: 100%;
   display: flex;
@@ -24,6 +18,12 @@ body.mobile .board-view {
   padding-block: 4px;
   align-items: flex-start;
   overflow-x: auto;
+}
+
+body.mobile .board-view-container {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 .board-view-container .board-column {

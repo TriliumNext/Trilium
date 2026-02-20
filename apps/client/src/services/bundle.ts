@@ -2,7 +2,6 @@ import { h, VNode } from "preact";
 
 import BasicWidget, { ReactWrappedWidget } from "../widgets/basic_widget.js";
 import RightPanelWidget from "../widgets/right_panel_widget.js";
-import froca from "./froca.js";
 import type { Entity } from "./frontend_script_api.js";
 import { WidgetDefinitionWithType } from "./frontend_script_api_preact.js";
 import { t } from "./i18n.js";
@@ -38,15 +37,18 @@ async function getAndExecuteBundle(noteId: string, originEntity = null, script =
 
 export type ParentName = "left-pane" | "center-pane" | "note-detail-pane" | "right-pane";
 
-export async function executeBundle(bundle: Bundle, originEntity?: Entity | null, $container?: JQuery<HTMLElement>) {
+export async function executeBundleWithoutErrorHandling(bundle: Bundle, originEntity?: Entity | null, $container?: JQuery<HTMLElement>) {
     const apiContext = await ScriptContext(bundle.noteId, bundle.allNoteIds, originEntity, $container);
+    return await function () {
+        return eval(`const apiContext = this; (async function() { ${bundle.script}\r\n})()`);
+    }.call(apiContext);
+}
 
+export async function executeBundle(bundle: Bundle, originEntity?: Entity | null, $container?: JQuery<HTMLElement>) {
     try {
-        return await function () {
-            return eval(`const apiContext = this; (async function() { ${bundle.script}\r\n})()`);
-        }.call(apiContext);
-    } catch (e: any) {
-        showErrorForScriptNote(bundle.noteId, t("toast.bundle-error.message", { message: e.message }));
+        return await executeBundleWithoutErrorHandling(bundle, originEntity, $container);
+    } catch (e: unknown) {
+        showErrorForScriptNote(bundle.noteId, t("toast.bundle-error.message", { message: getErrorMessage(e) }));
         logError("Widget initialization failed: ", e);
     }
 }

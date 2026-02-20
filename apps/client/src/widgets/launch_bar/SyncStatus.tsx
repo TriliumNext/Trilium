@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from "preact/hooks";
 import "./SyncStatus.css";
-import { t } from "../../services/i18n";
-import clsx from "clsx";
-import { escapeQuotes } from "../../services/utils";
-import { useStaticTooltip, useTriliumOption } from "../react/hooks";
-import sync from "../../services/sync";
-import ws, { subscribeToMessages, unsubscribeToMessage } from "../../services/ws";
+
 import { WebSocketMessage } from "@triliumnext/commons";
+import clsx from "clsx";
+import { useEffect, useRef, useState } from "preact/hooks";
+
+import { t } from "../../services/i18n";
+import sync from "../../services/sync";
+import { escapeQuotes } from "../../services/utils";
+import ws, { subscribeToMessages, unsubscribeToMessage } from "../../services/ws";
+import { useStaticTooltip, useTriliumOption } from "../react/hooks";
 
 type SyncState = "unknown" | "in-progress"
     | "connected-with-changes" | "connected-no-changes"
@@ -53,29 +55,29 @@ export default function SyncStatus() {
     const spanRef = useRef<HTMLSpanElement>(null);
     const [ syncServerHost ] = useTriliumOption("syncServerHost");
     useStaticTooltip(spanRef, {
-        html: true
-        // TODO: Placement
+        html: true,
+        title: escapeQuotes(title)
     });
 
     return (syncServerHost &&
         <div class="sync-status-widget launcher-button">
             <div class="sync-status">
                 <span
+                    key={syncState} // Force re-render when state changes to update tooltip content.
                     ref={spanRef}
                     className={clsx("sync-status-icon", `sync-status-${syncState}`, icon)}
-                    title={escapeQuotes(title)}
                     onClick={() => {
                         if (syncState === "in-progress") return;
                         sync.syncNow();
                     }}
                 >
                     {hasChanges && (
-                        <span class="bx bxs-star sync-status-sub-icon"></span>
+                        <span class="bx bxs-star sync-status-sub-icon" />
                     )}
                 </span>
             </div>
         </div>
-    )
+    );
 }
 
 function useSyncStatus() {

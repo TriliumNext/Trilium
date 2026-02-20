@@ -22,6 +22,11 @@ type Labels = {
     pageUrl: string;
     dateNote: string;
 
+    // Scripting
+    run: string;
+    widget: boolean;
+    "disabled:widget": boolean;
+
     // Tree specific
     subtreeHidden: boolean;
 
@@ -48,6 +53,7 @@ type Labels = {
     "calendar:initialDate": string;
     "map:style": string;
     "map:scale": boolean;
+    "map:hideLabels": boolean;
     "board:groupBy": string;
     maxNestingDepth: number;
     includeArchived: boolean;
@@ -56,9 +62,13 @@ type Labels = {
 
     // Note-type specific
     webViewSrc: string;
+    "disabled:webViewSrc": string;
     readOnly: boolean;
     mapType: string;
     mapRootNoteId: string;
+
+    appTheme: string;
+    appThemeBase: string;
 }
 
 /**
@@ -68,6 +78,10 @@ type Labels = {
 type Relations = [
     "searchScript",
     "ancestor",
+
+    // Active content
+    "renderNote",
+    "disabled:renderNote",
 
     // Launcher-specific
     "target",

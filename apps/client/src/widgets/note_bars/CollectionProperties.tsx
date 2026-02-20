@@ -2,18 +2,16 @@ import "./CollectionProperties.css";
 
 import { t } from "i18next";
 import { ComponentChildren } from "preact";
-import { useContext, useRef } from "preact/hooks";
-import { Fragment } from "preact/jsx-runtime";
+import { useRef } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import { ViewTypeOptions } from "../collections/interface";
 import Dropdown from "../react/Dropdown";
-import { FormDropdownDivider, FormDropdownSubmenu, FormListItem, FormListToggleableItem } from "../react/FormList";
-import FormTextBox from "../react/FormTextBox";
-import { useNoteLabel, useNoteLabelBoolean, useNoteLabelWithDefault, useNoteProperty, useTriliumEvent } from "../react/hooks";
+import { FormDropdownDivider, FormListItem } from "../react/FormList";
+import { useNoteProperty, useTriliumEvent } from "../react/hooks";
 import Icon from "../react/Icon";
-import { ParentComponent } from "../react/react_utils";
-import { bookPropertiesConfig, BookProperty, ButtonProperty, CheckBoxProperty, ComboBoxItem, ComboBoxProperty, NumberProperty, SplitButtonProperty } from "../ribbon/collection-properties-config";
+import { CheckBoxProperty, ViewProperty } from "../react/NotePropertyMenu";
+import { bookPropertiesConfig } from "../ribbon/collection-properties-config";
 import { useViewType, VIEW_TYPE_MAPPINGS } from "../ribbon/CollectionPropertiesTab";
 
 export const ICON_MAPPINGS: Record<ViewTypeOptions, string> = {
@@ -85,9 +83,11 @@ function ViewOptions({ note, viewType }: { note: FNote, viewType: ViewTypeOption
         <Dropdown
             buttonClassName="bx bx-cog icon-action"
             hideToggleArrow
+            dropdownContainerClassName="mobile-bottom-menu"
+            mobileBackdrop
         >
-            {properties.map(property => (
-                <ViewProperty key={property.label} note={note} property={property} />
+            {properties.map((property, index) => (
+                <ViewProperty key={index} note={note} property={property} />
             ))}
             {properties.length > 0 && <FormDropdownDivider />}
 
@@ -105,129 +105,5 @@ function ViewOptions({ note, viewType }: { note: FNote, viewType: ViewTypeOption
                 bindToLabel: "includeArchived"
             } as CheckBoxProperty} />
         </Dropdown>
-    );
-}
-
-function ViewProperty({ note, property }: { note: FNote, property: BookProperty }) {
-    switch (property.type) {
-        case "button":
-            return <ButtonPropertyView note={note} property={property} />;
-        case "split-button":
-            return <SplitButtonPropertyView note={note} property={property} />;
-        case "checkbox":
-            return <CheckBoxPropertyView note={note} property={property} />;
-        case "number":
-            return <NumberPropertyView note={note} property={property} />;
-        case "combobox":
-            return <ComboBoxPropertyView note={note} property={property} />;
-    }
-}
-
-function ButtonPropertyView({ note, property }: { note: FNote, property: ButtonProperty }) {
-    const parentComponent = useContext(ParentComponent);
-
-    return (
-        <FormListItem
-            icon={property.icon}
-            title={property.title}
-            onClick={() => {
-                if (!parentComponent) return;
-                property.onClick({
-                    note,
-                    triggerCommand: parentComponent.triggerCommand.bind(parentComponent)
-                });
-            }}
-        >{property.label}</FormListItem>
-    );
-}
-
-function SplitButtonPropertyView({ note, property }: { note: FNote, property: SplitButtonProperty }) {
-    const parentComponent = useContext(ParentComponent);
-    const ItemsComponent = property.items;
-    const clickContext = parentComponent && {
-        note,
-        triggerCommand: parentComponent.triggerCommand.bind(parentComponent)
-    };
-
-    return (parentComponent &&
-        <FormDropdownSubmenu
-            icon={property.icon ?? "bx bx-empty"}
-            title={property.label}
-            onDropdownToggleClicked={() => clickContext && property.onClick(clickContext)}
-        >
-            <ItemsComponent note={note} parentComponent={parentComponent} />
-        </FormDropdownSubmenu>
-    );
-}
-
-function NumberPropertyView({ note, property }: { note: FNote, property: NumberProperty }) {
-    //@ts-expect-error Interop with text box which takes in string values even for numbers.
-    const [ value, setValue ] = useNoteLabel(note, property.bindToLabel);
-    const disabled = property.disabled?.(note);
-
-    return (
-        <FormListItem
-            icon={property.icon}
-            disabled={disabled}
-            onClick={(e) => e.stopPropagation()}
-        >
-            {property.label}
-            <FormTextBox
-                type="number"
-                currentValue={value ?? ""} onChange={setValue}
-                style={{ width: (property.width ?? 100) }}
-                min={property.min ?? 0}
-                disabled={disabled}
-            />
-        </FormListItem>
-    );
-}
-
-function ComboBoxPropertyView({ note, property }: { note: FNote, property: ComboBoxProperty }) {
-    const [ value, setValue ] = useNoteLabelWithDefault(note, property.bindToLabel, property.defaultValue ?? "");
-
-    function renderItem(option: ComboBoxItem) {
-        return (
-            <FormListItem
-                key={option.value}
-                checked={value === option.value}
-                onClick={() => setValue(option.value)}
-            >
-                {option.label}
-            </FormListItem>
-        );
-    }
-
-    return (
-        <FormDropdownSubmenu
-            title={property.label}
-            icon={property.icon ?? "bx bx-empty"}
-        >
-            {(property.options).map((option, index) => {
-                if ("items" in option) {
-                    return (
-                        <Fragment key={option.title}>
-                            <FormListItem key={option.title} disabled>{option.title}</FormListItem>
-                            {option.items.map(renderItem)}
-                            {index < property.options.length - 1 && <FormDropdownDivider />}
-                        </Fragment>
-                    );
-                }
-                return renderItem(option);
-
-            })}
-        </FormDropdownSubmenu>
-    );
-}
-
-function CheckBoxPropertyView({ note, property }: { note: FNote, property: CheckBoxProperty }) {
-    const [ value, setValue ] = useNoteLabelBoolean(note, property.bindToLabel);
-    return (
-        <FormListToggleableItem
-            icon={property.icon}
-            title={property.label}
-            currentValue={value}
-            onChange={setValue}
-        />
     );
 }

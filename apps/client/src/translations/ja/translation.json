@@ -81,7 +81,8 @@
     "configure_launchbar": "ランチャーバーの設定",
     "show_shared_notes_subtree": "共有ノートのサブツリーを表示",
     "new-version-available": "新しいアップデートが利用可能",
-    "download-update": "{{latestVersion}} をバージョンを入手"
+    "download-update": "{{latestVersion}} をバージョンを入手",
+    "search_notes": "検索ノート"
   },
   "left_pane_toggle": {
     "show_panel": "パネルを表示",
@@ -234,7 +235,8 @@
     "search_note_saved": "検索ノートが {{- notePathTitle}} に保存されました",
     "actions_executed": "アクションが実行されました。",
     "ancestor": "祖先:",
-    "view_options": "表示オプション:"
+    "view_options": "表示オプション:",
+    "option": "オプション"
   },
   "shortcuts": {
     "multiple_shortcuts": "同じアクションに対して複数のショートカットを設定する場合、カンマで区切ることができます。",
@@ -247,7 +249,8 @@
     "reload_app": "リロードして変更を適用する",
     "set_all_to_default": "すべてのショートカットをデフォルトに戻す",
     "confirm_reset": "キーボードショートカットをすべてデフォルトにリセットしますか？",
-    "keyboard_shortcuts": "キーボードショートカット"
+    "keyboard_shortcuts": "キーボードショートカット",
+    "no_results": "'{{filter}}' に一致するショートカットが見つかりません"
   },
   "confirm": {
     "confirmation": "確認",
@@ -407,7 +410,7 @@
   "relation_map_buttons": {
     "zoom_out_title": "ズームアウト",
     "zoom_in_title": "ズームイン",
-    "create_child_note_title": "新しい子ノートを作成し、関連マップに追加",
+    "create_child_note_title": "子ノートを作成し、マップに追加",
     "reset_pan_zoom_title": "パンとズームを初期座標と倍率にリセット"
   },
   "tree-context-menu": {
@@ -823,11 +826,6 @@
     "move_button": "選択したノートに移動",
     "error_no_path": "移動するパスがありません。",
     "move_success_message": "選択したノートは以下に移動されました "
-  },
-  "web_view": {
-    "web_view": "Web ビュー",
-    "embed_websites": "Web ビュータイプでは、web サイトを Trilium に埋め込むことができます。",
-    "create_label": "まず始めに、埋め込みたいURLアドレスのラベルを作成してください。例: #webViewSrc=\"https://www.google.com\""
   },
   "backend_log": {
     "refresh": "リフレッシュ"
@@ -1648,7 +1646,9 @@
     "error_unrecognized_command": "認識されないコマンド {{command}}",
     "insert_child_note": "子ノートを挿入",
     "error_cannot_get_branch_id": "ノートパス 「{{notePath}} のbranchIdを取得できません",
-    "note_revisions": "ノートの変更履歴"
+    "note_revisions": "ノートの変更履歴",
+    "backlinks": "バックリンク",
+    "content_language_switcher": "コンテンツの言語: {{language}}"
   },
   "inherited_attribute_list": {
     "title": "継承属性",
@@ -1860,10 +1860,6 @@
     "protecting-title": "保護の状態",
     "unprotecting-title": "保護解除の状態"
   },
-  "render": {
-    "note_detail_render_help_1": "このヘルプノートが表示されるのは、このノートの「HTML のレンダリング」タイプには、正常に機能するために必要なリレーションがないためです。",
-    "note_detail_render_help_2": "レンダリングHTMLノートタイプは、<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">スクリプティング</a>に使用されます。簡単に言うと、HTMLコードノート（オプションでJavaScriptを含む）があり、このノートがそれをレンダリングします。これを動作させるには、レンダリングするHTMLノートを指す「renderNote」という<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">リレーション</a>を定義する必要があります。"
-  },
   "consistency_checks": {
     "find_and_fix_button": "一貫性の問題を見つけて修正する",
     "finding_and_fixing_message": "一貫性の問題を見つけて修正中…",
@@ -1955,7 +1951,9 @@
     "print_report_title": "レポートを印刷",
     "print_report_collection_content_other": "コレクション内の {{count}} 件のノートは、サポートされていないか保護されているため、印刷できませんでした。",
     "print_report_collection_details_button": "詳細を見る",
-    "print_report_collection_details_ignored_notes": "無視されたノート"
+    "print_report_collection_details_ignored_notes": "無視されたノート",
+    "print_report_error_title": "印刷に失敗しました",
+    "print_report_stack_trace": "スタックトレース"
   },
   "watched_file_update_status": {
     "ignore_this_change": "この変更を無視する",
@@ -2038,7 +2036,8 @@
     "show-scale": "スケールを表示",
     "raster": "Raster",
     "vector_light": "Vector（ライト）",
-    "vector_dark": "Vector （ダーク）"
+    "vector_dark": "Vector （ダーク）",
+    "show-labels": "マーカー名を表示"
   },
   "call_to_action": {
     "next_theme_title": "新しいTriliumテーマをお試しください",
@@ -2066,8 +2065,9 @@
     "percentage": "%"
   },
   "pagination": {
-    "page_title": "{{startIndex}} - {{endIndex}} ページ",
-    "total_notes": "{{count}} ノート"
+    "total_notes": "{{count}} ノート",
+    "prev_page": "前のページ",
+    "next_page": "次のページ"
   },
   "collections": {
     "rendering_error": "エラーのためコンテンツを表示できません。"
@@ -2095,7 +2095,7 @@
     "no_attachments": "このノートには添付ファイルはありません。"
   },
   "book": {
-    "no_children_help": "このコレクションには子ノートがないため、表示するものがありません。詳細は<a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a>をご覧ください。",
+    "no_children_help": "このコレクションには子ノートがないため、表示するものがありません。",
     "drag_locked_title": "編集をロック中",
     "drag_locked_message": "コレクションは編集がロックされているため、ドラッグは許可されていません。"
   },
@@ -2261,5 +2261,52 @@
   "mobile_tab_switcher": {
     "title_other": "{{count}} タブ",
     "more_options": "その他のオプション"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "ブックマーク"
+  },
+  "web_view_setup": {
+    "title": "Trilium に直接 Web ページのライブビューを作成",
+    "url_placeholder": "Web サイトのアドレスを入力または貼り付けて下さい。 例: https://triliumnotes.org",
+    "create_button": "Web ビューを作成",
+    "invalid_url_title": "無効なアドレス",
+    "invalid_url_message": "有効な Web アドレスを入力してください。 例: https://triliumnotes.org",
+    "disabled_description": "この Web ビューは外部ソースからインポートされました。フィッシングや悪意のあるコンテンツから保護するため、自動的には読み込まれません。ソースを信頼できる場合は、有効にすることができます。",
+    "disabled_button_enable": "Web ビューを有効"
+  },
+  "render": {
+    "setup_title": "このノート内にカスタム HTML または Preact JSX を表示",
+    "setup_create_sample_preact": "Preact でサンプルノートを作成",
+    "setup_create_sample_html": "HTML でサンプルノートを作成",
+    "setup_sample_created": "子ノートとしてサンプルノートが作成されました。",
+    "disabled_description": "このレンダリングノートは外部ソースから提供されています。悪意のあるコンテンツからユーザーを保護するため、デフォルトでは有効になっていません。有効にする前に、ソースが信頼できるかどうかをご確認ください。",
+    "disabled_button_enable": "レンダリングノートを有効"
+  },
+  "active_content_badges": {
+    "type_icon_pack": "アイコンパック",
+    "type_backend_script": "バックエンドスクリプト",
+    "type_frontend_script": "フロントエンドスクリプト",
+    "type_widget": "ウィジェット",
+    "type_app_css": "カスタム CSS",
+    "type_render_note": "レンダリングノート",
+    "type_web_view": "Web ビュー",
+    "type_app_theme": "カスタムテーマ",
+    "toggle_tooltip_enable_tooltip": "この {{type}} を有効にするにはクリックしてください。",
+    "toggle_tooltip_disable_tooltip": "この {{type}} を無効にするにはクリックしてください。",
+    "menu_docs": "ドキュメントを開く",
+    "menu_execute_now": "今すぐスクリプトを実行",
+    "menu_run": "自動で実行",
+    "menu_run_disabled": "手動で実行",
+    "menu_run_backend_startup": "バックエンドの起動時",
+    "menu_run_hourly": "毎時",
+    "menu_run_daily": "毎日",
+    "menu_run_frontend_startup": "デスクトップ フロントエンドの起動時",
+    "menu_run_mobile_startup": "モバイル フロントエンドの起動時",
+    "menu_change_to_widget": "ウィジェットの変更",
+    "menu_change_to_frontend_script": "フロントエンドスクリプトの変更",
+    "menu_theme_base": "テーマベース"
+  },
+  "setup_form": {
+    "more_info": "さらに詳しく"
   }
 }

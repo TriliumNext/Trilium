@@ -1,8 +1,7 @@
 .note-detail-render {
     position: relative;
-}
 
-.note-detail-render .note-detail-render-help {
-    margin: 50px;
-    padding: 20px;
+    &>.admonition {
+        margin: 1em;
+    }
 }

@@ -3,6 +3,30 @@
     font-family: var(--detail-font-family);
     font-size: var(--detail-font-size);
     contain: none;
+
+    &.fixed-tree {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+
+        .fixed-note-tree-container {
+            height: 60%;
+            border-bottom: 1px solid var(--main-border-color);
+            overflow: auto;
+
+            .tree-wrapper {
+                padding: 0;
+            }
+
+            .tree {
+                padding: 0;
+            }
+
+            ul {
+                margin: 0;
+            }
+        }
+    }
 }
 
 body.prefers-centered-content .note-detail {

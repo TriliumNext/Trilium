@@ -203,7 +203,7 @@ function RevisionPreview({noteContent, revisionItem, showDiff, setShown, onRevis
                                 }} />
                             &nbsp;
                             <Button
-                                primary
+                                kind="primary"
                                 icon="bx bx-download"
                                 text={t("revisions.download_button")}
                                 onClick={() => {

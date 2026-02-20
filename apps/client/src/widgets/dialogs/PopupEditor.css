@@ -32,6 +32,12 @@ body.mobile .modal.popup-editor-dialog .modal-dialog {
     display: flex;
     align-items: center;
     margin-block: 0;
+
+    .note-icon-widget {
+        display: flex;
+        align-items: center;
+        margin-inline-start: 0;
+    }
 }
 
 .modal.popup-editor-dialog .modal-header .note-title-widget {

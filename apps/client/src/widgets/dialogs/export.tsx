@@ -58,7 +58,7 @@ export default function ExportDialog() {
                 setShown(false);
             }}
             onHidden={() => setShown(false)}
-            footer={<Button className="export-button" text={t("export.export")} primary />}
+            footer={<Button className="export-button" text={t("export.export")} kind="primary" />}
             show={shown}
         >
 

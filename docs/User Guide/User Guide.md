@@ -15,7 +15,7 @@ Trilium is an open-source solution for note-taking and organizing a personal kno
 
 *   <a class="reference-link" href="User%20Guide/Installation%20%26%20Setup/Desktop%20Installation.md">Desktop Installation</a>
 *   <a class="reference-link" href="User%20Guide/Installation%20%26%20Setup/Server%20Installation.md">Server Installation</a>
-*   <a class="reference-link" href="User%20Guide/Scripting/Script%20API/Frontend%20API">[missing note]</a> or <a class="reference-link" href="User%20Guide/Scripting/Script%20API/Backend%20API.dat">[missing note]</a>
+*   <a class="reference-link" href="User%20Guide/Scripting/Script%20API/Frontend%20API">Frontend API</a> or <a class="reference-link" href="User%20Guide/Scripting/Script%20API/Backend%20API.dat">[missing note]</a>
 *   [ETAPI reference](User%20Guide/Advanced%20Usage/ETAPI%20\(REST%20API\)/API%20Reference.dat)
 
 ## External links

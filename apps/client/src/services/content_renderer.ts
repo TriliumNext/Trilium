@@ -1,3 +1,5 @@
+import "./content_renderer.css";
+
 import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
 import WheelZoom from 'vanilla-js-wheel-zoom';
 
@@ -13,7 +15,7 @@ import protectedSessionService from "./protected_session.js";
 import protectedSessionHolder from "./protected_session_holder.js";
 import renderService from "./render.js";
 import { applySingleBlockSyntaxHighlight } from "./syntax_highlight.js";
-import utils from "./utils.js";
+import utils, { getErrorMessage } from "./utils.js";
 
 let idCounter = 1;
 
@@ -60,7 +62,10 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
     } else if (type === "render" && entity instanceof FNote) {
         const $content = $("<div>");
 
-        await renderService.render(entity, $content);
+        await renderService.render(entity, $content, (e) => {
+            const $error = $("<div>").addClass("admonition caution").text(typeof e === "string" ? e : getErrorMessage(e));
+            $content.empty().append($error);
+        });
 
         $renderedContent.append($content);
     } else if (type === "doc" && "noteId" in entity) {
@@ -71,18 +76,9 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
 
         $renderedContent.append($("<div>").append("<div>This note is protected and to access it you need to enter password.</div>").append("<br/>").append($button));
     } else if (entity instanceof FNote) {
-        $renderedContent
-            .css("display", "flex")
-            .css("flex-direction", "column");
+        $renderedContent.addClass("no-preview");
         $renderedContent.append(
-            $("<div>")
-                .css("display", "flex")
-                .css("justify-content", "space-around")
-                .css("align-items", "center")
-                .css("height", "100%")
-                .css("font-size", "500%")
-                .css("flex-grow", "1")
-                .append($("<span>").addClass(entity.getIcon()))
+            $("<div>").append($("<span>").addClass(entity.getIcon()))
         );
 
         if (entity.type === "webView" && entity.hasLabel("webViewSrc")) {
@@ -292,10 +288,11 @@ function getRenderingType(entity: FNote | FAttachment) {
     }
 
     const mime = "mime" in entity && entity.mime;
+    const isIconPack = entity instanceof FNote && entity.hasLabel("iconPack");
 
     if (type === "file" && mime === "application/pdf") {
         type = "pdf";
-    } else if ((type === "file" || type === "viewConfig") && mime && CODE_MIME_TYPES.has(mime)) {
+    } else if ((type === "file" || type === "viewConfig") && mime && CODE_MIME_TYPES.has(mime) && !isIconPack) {
         type = "code";
     } else if (type === "file" && mime && mime.startsWith("audio/")) {
         type = "audio";

@@ -112,7 +112,8 @@
     "header": {
         "get-started": "Tosaigh",
         "documentation": "Doiciméadú",
-        "support-us": "Tacaigh linn"
+        "support-us": "Tacaigh linn",
+        "resources": "Acmhainní"
     },
     "footer": {
         "copyright_and_the": " agus an ",
@@ -196,5 +197,12 @@
         "description": "Nótaí Trilium atá á n-óstáil ar PikaPods, seirbhís íoctha le haghaidh rochtana agus bainistíochta éasca. Níl baint dhíreach aige le foireann Trilium.",
         "download_pikapod": "Socraigh ar PikaPods",
         "download_triliumcc": "Nó féach ar trilium.cc"
+    },
+    "resources": {
+        "title": "Acmhainní",
+        "icon_packs": "Pacáistí deilbhín",
+        "icon_packs_intro": "Leathnaigh rogha na ndeilbhíní atá ar fáil le do nótaí trí phacáiste deilbhíní a úsáid. Le haghaidh tuilleadh eolais faoi phacáistí deilbhíní, féach ar an <DocumentationLink>dhoiciméadú oifigiúil</DocumentationLink>.",
+        "download": "Íoslódáil",
+        "website": "Suíomh Gréasáin"
     }
 }

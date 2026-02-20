@@ -1,20 +1,17 @@
-export interface MapLayer {
-    name: string;
-    isDarkTheme?: boolean;
-}
-
-interface VectorLayer extends MapLayer {
+export type MapLayer = ({
     type: "vector";
     style: string | (() => Promise<{}>)
-}
-
-interface RasterLayer extends MapLayer {
+} | {
     type: "raster";
     url: string;
     attribution: string;
-}
+}) & {
+    // Common properties
+    name: string;
+    isDarkTheme?: boolean;
+};
 
-export const MAP_LAYERS: Record<string, VectorLayer | RasterLayer> = {
+export const MAP_LAYERS: Record<string, MapLayer> = {
     "openstreetmap": {
         name: "OpenStreetMap",
         type: "raster",

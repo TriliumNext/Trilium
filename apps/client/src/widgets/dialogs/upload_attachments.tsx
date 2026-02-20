@@ -35,7 +35,7 @@ export default function UploadAttachmentsDialog() {
             className="upload-attachments-dialog"
             size="lg"
             title={t("upload_attachments.upload_attachments_to_note")}
-            footer={<Button text={t("upload_attachments.upload")} primary disabled={!files || isUploading} />}
+            footer={<Button text={t("upload_attachments.upload")} kind="primary" disabled={!files || isUploading} />}
             onSubmit={async () => {
                 if (!files || !parentNoteId) {
                     return;

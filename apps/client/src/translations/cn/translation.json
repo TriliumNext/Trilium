@@ -662,7 +662,8 @@
     "show-cheatsheet": "显示快捷帮助",
     "toggle-zen-mode": "禅模式",
     "new-version-available": "新更新可用",
-    "download-update": "取得版本 {{latestVersion}}"
+    "download-update": "取得版本 {{latestVersion}}",
+    "search_notes": "搜索笔记"
   },
   "zen_mode": {
     "button_exit": "退出禅模式"
@@ -745,7 +746,7 @@
     "button_title": "导出SVG格式图片"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "创建新的子笔记并添加到关系图",
+    "create_child_note_title": "创建子笔记并添加到图",
     "reset_pan_zoom_title": "重置平移和缩放到初始坐标和放大倍率",
     "zoom_in_title": "放大",
     "zoom_out_title": "缩小"
@@ -759,7 +760,9 @@
     "delete_this_note": "删除此笔记",
     "error_cannot_get_branch_id": "无法获取 notePath '{{notePath}}' 的 branchId",
     "error_unrecognized_command": "无法识别的命令 {{command}}",
-    "note_revisions": "笔记历史版本"
+    "note_revisions": "笔记历史版本",
+    "backlinks": "反链",
+    "content_language_switcher": "内容语言: {{language}}"
   },
   "note_icon": {
     "change_note_icon": "更改笔记图标",
@@ -910,7 +913,8 @@
     "unknown_search_option": "未知的搜索选项 {{searchOptionName}}",
     "search_note_saved": "搜索笔记已保存到 {{- notePathTitle}}",
     "actions_executed": "操作已执行。",
-    "view_options": "查看选项："
+    "view_options": "查看选项：",
+    "option": "选项"
   },
   "similar_notes": {
     "title": "相似笔记",
@@ -1004,7 +1008,7 @@
     "no_attachments": "此笔记没有附件。"
   },
   "book": {
-    "no_children_help": "此类型为书籍的笔记没有任何子笔记，因此没有内容显示。请参阅 <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> 了解详情。",
+    "no_children_help": "此集合没有任何子笔记，因此没有内容显示。",
     "drag_locked_title": "锁定编辑",
     "drag_locked_message": "无法拖拽，因为集合已被锁定编辑。"
   },
@@ -1059,15 +1063,6 @@
     "enter_title_of_new_note": "输入新笔记的标题",
     "default_new_note_title": "新笔记",
     "click_on_canvas_to_place_new_note": "点击画布以放置新笔记"
-  },
-  "render": {
-    "note_detail_render_help_1": "之所以显示此帮助说明，是因为这个类型为渲染 HTML 的笔记没有正常工作所需的关系。",
-    "note_detail_render_help_2": "渲染 HTML 笔记类型用于<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">编写脚本</a>。简而言之，您有一份 HTML 代码笔记（可包含一些 JavaScript），然后这个笔记会把页面渲染出来。要使其正常工作，您需要定义一个名为 \"renderNote\" 的<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">关系</a>指向要渲染的 HTML 笔记。"
-  },
-  "web_view": {
-    "web_view": "网页视图",
-    "embed_websites": "网页视图类型的笔记允许您将网站嵌入到 Trilium 中。",
-    "create_label": "首先，请创建一个带有您要嵌入的 URL 地址的标签，例如 #webViewSrc=\"https://www.bing.com\""
   },
   "backend_log": {
     "refresh": "刷新"
@@ -1417,7 +1412,8 @@
     "description": "描述",
     "reload_app": "重载应用以应用更改",
     "set_all_to_default": "将所有快捷键重置为默认值",
-    "confirm_reset": "您确定要将所有键盘快捷键重置为默认值吗？"
+    "confirm_reset": "您确定要将所有键盘快捷键重置为默认值吗？",
+    "no_results": "未找到与“{{filter}}”匹配的快捷方式"
   },
   "spellcheck": {
     "title": "拼写检查",
@@ -1618,7 +1614,9 @@
     "print_report_title": "打印报告",
     "print_report_collection_content_other": "集合中的 {{count}} 篇笔记无法打印，因为它们不受支持或受到保护。",
     "print_report_collection_details_button": "查看详情",
-    "print_report_collection_details_ignored_notes": "忽略的笔记"
+    "print_report_collection_details_ignored_notes": "忽略的笔记",
+    "print_report_error_title": "打印失败",
+    "print_report_stack_trace": "堆栈跟踪"
   },
   "note_title": {
     "placeholder": "请输入笔记标题...",
@@ -2071,7 +2069,8 @@
     "raster": "栅格",
     "vector_light": "矢量（浅色）",
     "vector_dark": "矢量（深色）",
-    "show-scale": "显示比例尺"
+    "show-scale": "显示比例尺",
+    "show-labels": "显示标记名称"
   },
   "table_context_menu": {
     "delete_row": "删除行"
@@ -2150,7 +2149,6 @@
     "app-restart-required": "（需重启程序以应用更改）"
   },
   "pagination": {
-    "page_title": "第 {{startIndex}} 页 - 第 {{endIndex}} 页",
     "total_notes": "{{count}} 篇笔记"
   },
   "collections": {
@@ -2261,5 +2259,52 @@
   "mobile_tab_switcher": {
     "title_other": "{{count}} 选项卡",
     "more_options": "更多选项"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "书签"
+  },
+  "web_view_setup": {
+    "title": "直接在 Trilium 中创建网页的实时视图",
+    "url_placeholder": "输入或粘贴网站地址，例如 https://triliumnotes.org",
+    "create_button": "创建网页视图",
+    "invalid_url_title": "无效的地址",
+    "invalid_url_message": "请输入有效的网址，例如 https://triliumnotes.org。",
+    "disabled_description": "此网页视图来自外部来源。为保护您免受网络钓鱼或恶意内容侵害，该视图不会自动加载。若您信任该来源，可手动启用加载功能。",
+    "disabled_button_enable": "启用网页视图"
+  },
+  "render": {
+    "setup_title": "在此笔记中显示自定义 HTML 或 Preact JSX",
+    "setup_create_sample_preact": "使用 Preact 建立范例笔记",
+    "setup_create_sample_html": "使用 HTML 建立范例笔记",
+    "setup_sample_created": "已建立一个范例笔记作为子笔记。",
+    "disabled_description": "此渲染笔记来自外部来源。为保护您免受恶意内容侵害，该功能默认处于禁用状态。启用前请确保您信任该来源。",
+    "disabled_button_enable": "启用渲染笔记"
+  },
+  "active_content_badges": {
+    "type_icon_pack": "图标包",
+    "type_backend_script": "后端脚本",
+    "type_frontend_script": "前端脚本",
+    "type_widget": "小部件",
+    "type_app_css": "自定义 CSS",
+    "type_render_note": "渲染笔记",
+    "type_web_view": "网页视图",
+    "type_app_theme": "自定义主题",
+    "toggle_tooltip_enable_tooltip": "点击以启用此 {{type}}。",
+    "toggle_tooltip_disable_tooltip": "点击以禁用此 {{type}}。",
+    "menu_docs": "打开文档",
+    "menu_execute_now": "立即执行脚本",
+    "menu_run": "自动执行",
+    "menu_run_disabled": "手动",
+    "menu_run_backend_startup": "当后端启动时",
+    "menu_run_hourly": "每小时",
+    "menu_run_daily": "每日",
+    "menu_run_frontend_startup": "当桌面前端启动时",
+    "menu_run_mobile_startup": "当移动前端启动时",
+    "menu_change_to_widget": "更改为小部件",
+    "menu_change_to_frontend_script": "更改为前端脚本",
+    "menu_theme_base": "主题基底"
+  },
+  "setup_form": {
+    "more_info": "了解更多"
   }
 }

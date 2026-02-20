@@ -1,92 +1,76 @@
-<h2>Frontend API</h2>
-<p>The frontend api supports two styles, regular scripts that are run with
-  the current app and note context, and widgets that export an object to
-  Trilium to be used in the UI. In both cases, the frontend api of Trilium
-  is available to scripts running in the frontend context as global variable
-  <code
-  spellcheck="false">api</code>. The members and methods of the api can be seen on the <a href="#root/_help_GLks18SNjxmC">Script API</a> page.</p>
+<p>Front-end scripts are custom JavaScript notes that are run on the client
+  (browser environment)</p>
+<p>There are four flavors of front-end scripts:</p>
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Regular scripts</td>
+      <td>These are run with the current app and note context. These can be run
+        either manually or automatically on start-up.</td>
+    </tr>
+    <tr>
+      <td><a class="reference-link" href="#root/_help_MgibgPcfeuGz">Custom Widgets</a>
+      </td>
+      <td>These can introduce new UI elements in various positions, such as near
+        the&nbsp;<a class="reference-link" href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>,
+        content area or even the&nbsp;<a class="reference-link" href="#root/_help_RnaPdbciOfeq">Right Sidebar</a>.</td>
+    </tr>
+    <tr>
+      <td><a class="reference-link" href="#root/_help_4Gn3psZKsfSm">Launch Bar Widgets</a>
+      </td>
+      <td>Similar to&nbsp;<a class="reference-link" href="#root/_help_MgibgPcfeuGz">Custom Widgets</a>,
+        but dedicated to the&nbsp;<a class="reference-link" href="#root/_help_xYmIYSP6wE3F">Launch Bar</a>.
+        These can simply introduce new buttons or graphical elements to the bar.</td>
+    </tr>
+    <tr>
+      <td><a class="reference-link" href="#root/_help_HcABDtFCkbFN">Render Note</a>
+      </td>
+      <td>This allows rendering custom content inside a note, using either HTML
+        or Preact JSX.</td>
+    </tr>
+  </tbody>
+</table>
+<p>For more advanced behaviors that do not require a user interface (e.g.
+  batch modifying notes), see&nbsp;<a class="reference-link" href="#root/_help_SPirpZypehBG">Backend scripts</a>.</p>
 <h2>Scripts</h2>
-<p>Scripts don't have any special requirements. They can be run at will using
-  the execute button in the UI or they can be configured to run at certain
-  times using <a href="#root/_help_zEY4DaJG4YT5">Attributes</a> on the note containing
-  the script.</p>
-<h3>Global Events</h3>
-<p>This attribute is called <code spellcheck="false">#run</code> and it can
-  have any of the following values:</p>
+<p>Scripts don't have any special requirements. They can be run manually
+  using the <em>Execute</em> button on the code note or they can be run automatically;
+  to do so, set the <code spellcheck="false">run</code>  <a href="#root/_help_HI6GBBIduIgv">label</a> to
+  either:</p>
 <ul>
-  <li><code spellcheck="false">frontendStartup</code> - executes on frontend
-    upon startup.</li>
-  <li><code spellcheck="false">mobileStartup</code> - executes on mobile frontend
-    upon startup.</li>
-  <li><code spellcheck="false">backendStartup</code> - executes on backend upon
-    startup.</li>
-  <li><code spellcheck="false">hourly</code> - executes once an hour on backend.</li>
-  <li><code spellcheck="false">daily</code> - executes once a day on backend.</li>
+  <li><code spellcheck="false">frontendStartup</code> - when Trilium frontend
+    starts up (or is refreshed), but not on mobile.</li>
+  <li><code spellcheck="false">mobileStartup</code> - when Trilium frontend starts
+    up (or is refreshed), on mobile.</li>
 </ul>
-<h3>Entity Events</h3>
-<p>These events are triggered by certain <a href="#root/_help_zEY4DaJG4YT5">relations</a> to
-  other notes. Meaning that the script is triggered only if the note has
-  this script attached to it through relations (or it can inherit it).</p>
-<ul>
-  <li><code spellcheck="false">runOnNoteCreation</code> - executes when note
-    is created on backend.</li>
-  <li><code spellcheck="false">runOnNoteTitleChange</code> - executes when note
-    title is changed (includes note creation as well).</li>
-  <li><code spellcheck="false">runOnNoteContentChange</code> - executes when
-    note content is changed (includes note creation as well).</li>
-  <li><code spellcheck="false">runOnNoteChange</code> - executes when note is
-    changed (includes note creation as well).</li>
-  <li><code spellcheck="false">runOnNoteDeletion</code> - executes when note
-    is being deleted.</li>
-  <li><code spellcheck="false">runOnBranchCreation</code> - executes when a branch
-    is created. Branch is a link between parent note and child note and is
-    created e.g. when cloning or moving note.</li>
-  <li><code spellcheck="false">runOnBranchDeletion</code> - executes when a branch
-    is delete. Branch is a link between parent note and child note and is deleted
-    e.g. when moving note (old branch/link is deleted).</li>
-  <li><code spellcheck="false">runOnChildNoteCreation</code> - executes when
-    new note is created under this note.</li>
-  <li><code spellcheck="false">runOnAttributeCreation</code> - executes when
-    new attribute is created under this note.</li>
-  <li><code spellcheck="false">runOnAttributeChange</code> - executes when attribute
-    is changed under this note.</li>
-</ul>
+<aside class="admonition note">
+  <p>Backend scripts have more powerful triggering conditions, for example
+    they can run automatically on a hourly or daily basis, but also on events
+    such as when a note is created or an attribute is modified. See the server-side&nbsp;
+    <a
+    class="reference-link" href="#root/_help_GPERMystNGTB">Events</a>&nbsp;for more information.</p>
+</aside>
 <h2>Widgets</h2>
-<p>Conversely to scripts, widgets do have some specific requirements in order
-  to work. A widget must:</p>
+<p>Widgets require a certain format in order for Trilium to be able to integrate
+  them into the UI.</p>
 <ul>
-  <li>Extend <a href="https://triliumnext.github.io/Notes/frontend_api/BasicWidget.html">BasicWidget</a> or
-    one of it's subclasses.</li>
-  <li>Create a new instance and assign it to <code spellcheck="false">module.exports</code>.</li>
-  <li>Define a <code spellcheck="false">parentWidget</code> member to determine
-    where it should be displayed.</li>
-  <li>Define a <code spellcheck="false">position</code> (integer) that determines
-    the location via sort order.</li>
-  <li>Have a <code spellcheck="false">#widget</code> attribute on the containing
-    note.</li>
-  <li>Create, render, and return your element in the render function.
-    <ul>
-      <li>For <a href="https://triliumnext.github.io/Notes/frontend_api/BasicWidget.html">BasicWidget</a> and
-        <a
-        href="https://triliumnext.github.io/Notes/frontend_api/NoteContextAwareWidget.html">NoteContextAwareWidget</a>you should create <code spellcheck="false">this.$widget</code> and
-          render it in <code spellcheck="false">doRender()</code>.</li>
-      <li>For <a href="https://triliumnext.github.io/Notes/frontend_api/RightPanelWidget.html">RightPanelWidget</a> the
-        <code
-        spellcheck="false">this.$widget</code>and <code spellcheck="false">doRender()</code> are already
-          handled and you should instead return the value in <code spellcheck="false">doRenderBody()</code>.</li>
-    </ul>
-  </li>
+  <li>For legacy widgets, the script note must export a <code spellcheck="false">BasicWidget</code> or
+    a derived one (see&nbsp;<a class="reference-link" href="#root/_help_GhurYZjh8e1V">Note context aware widget</a>&nbsp;or&nbsp;
+    <a
+    class="reference-link" href="#root/_help_M8IppdwVHSjG">Right pane widget</a>).</li>
+  <li>For Preact widgets, a built-in helper called <code spellcheck="false">defineWidget</code> needs
+    to be used.</li>
 </ul>
-<h3>parentWidget</h3>
-<ul>
-  <li><code spellcheck="false">left-pane</code> - This renders the widget on
-    the left side of the screen where the note tree lives.</li>
-  <li><code spellcheck="false">center-pane</code> - This renders the widget in
-    the center of the layout in the same location that notes and splits appear.</li>
-  <li><code spellcheck="false">note-detail-pane</code> - This renders the widget <em>with</em> the
-    note in the center pane. This means it can appear multiple times with splits.</li>
-  <li><code spellcheck="false">right-pane</code> - This renders the widget to
-    the right of any opened notes.</li>
-</ul>
+<p>For more information, see&nbsp;<a class="reference-link" href="#root/_help_MgibgPcfeuGz">Custom Widgets</a>.</p>
+<h2>Script API</h2>
+<p>The front-end API of Trilium is available to all scripts running in the
+  front-end context as global variable <code spellcheck="false">api</code>.
+  For a reference of the API, see&nbsp;<a class="reference-link" href="#root/_help_Q2z6av6JZVWm">Frontend API</a>.</p>
 <h3>Tutorial</h3>
 <p>For more information on building widgets, take a look at <a href="#root/_help_SynTBQiBsdYJ">Widget Basics</a>.</p>

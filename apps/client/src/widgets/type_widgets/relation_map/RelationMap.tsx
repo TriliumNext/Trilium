@@ -65,7 +65,7 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
             };
         },
         onContentChange(content) {
-            let newData: MapData | null = null;
+            let newData: Partial<MapData> | null = null;
 
             if (content) {
                 try {
@@ -75,7 +75,7 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
                 }
             }
 
-            if (!newData) {
+            if (!newData || !newData.notes || !newData.transform) {
                 newData = {
                     notes: [],
                     // it is important to have this exact value here so that initial transform is the same as this
@@ -90,8 +90,8 @@ export default function RelationMap({ note, noteContext, ntxId, parentComponent 
                 };
             }
 
-            setData(newData);
-            mapApiRef.current = new RelationMapApi(note, newData, (newData, refreshUi) => {
+            setData(newData as MapData);
+            mapApiRef.current = new RelationMapApi(note, newData as MapData, (newData, refreshUi) => {
                 if (refreshUi) {
                     setData(newData);
                 }

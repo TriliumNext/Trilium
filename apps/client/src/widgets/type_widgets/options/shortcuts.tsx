@@ -2,7 +2,6 @@ import { ActionKeyboardShortcut, KeyboardShortcut, OptionNames } from "@triliumn
 import { t } from "../../../services/i18n";
 import { arrayEqual, reloadFrontendApp } from "../../../services/utils";
 import Button from "../../react/Button";
-import FormGroup from "../../react/FormGroup";
 import FormText from "../../react/FormText";
 import FormTextBox from "../../react/FormTextBox";
 import RawHtml from "../../react/RawHtml";
@@ -12,6 +11,8 @@ import server from "../../../services/server";
 import options from "../../../services/options";
 import dialog from "../../../services/dialog";
 import { useTriliumEvent } from "../../react/hooks";
+import "./shortcuts.css";
+import NoItems from "../../react/NoItems";
 
 export default function ShortcutSettings() {
     const [ keyboardShortcuts, setKeyboardShortcuts ] = useState<KeyboardShortcut[]>([]);
@@ -70,29 +71,29 @@ export default function ShortcutSettings() {
         options.saveMany(optionsToSet);
     }, [ keyboardShortcuts ]);
 
+    const filterLowerCase = filter?.toLowerCase() ?? "";
+    const filteredKeyboardShortcuts = filter ? keyboardShortcuts.filter((action) => filterKeyboardAction(action, filterLowerCase)) : keyboardShortcuts;
+
     return (
         <OptionsSection
             className="shortcuts-options-section"
-            style={{ display: "flex", flexDirection: "column", height: "100%" }}
             noCard
         >
             <FormText>
-                {t("shortcuts.multiple_shortcuts")}
+                {t("shortcuts.multiple_shortcuts")}{" "}
                 <RawHtml html={t("shortcuts.electron_documentation")} />
             </FormText>
 
-            <FormGroup name="keyboard-shortcut-filter">
+            <header>
                 <FormTextBox
                     placeholder={t("shortcuts.type_text_to_filter")}
-                    currentValue={filter} onChange={(value) => setFilter(value.toLowerCase())}
+                    currentValue={filter} onChange={(value) => setFilter(value)}
                 />
-            </FormGroup>
+            </header>
 
-            <div style={{overflow: "auto", flexGrow: 1, flexShrink: 1}}>
-                <KeyboardShortcutTable keyboardShortcuts={keyboardShortcuts} filter={filter} />
-            </div>
+            <KeyboardShortcutTable filteredKeyboardActions={filteredKeyboardShortcuts} filter={filter} />
 
-            <div style={{ display: "flex", justifyContent: "space-between", margin: "15px 15px 0 15px"}}>
+            <footer>
                 <Button
                     text={t("shortcuts.reload_app")}
                     onClick={reloadFrontendApp}
@@ -102,12 +103,17 @@ export default function ShortcutSettings() {
                     text={t("shortcuts.set_all_to_default")}
                     onClick={resetShortcuts}
                 />
-            </div>
+            </footer>
         </OptionsSection>
     )
 }
 
-function filterKeyboardAction(action: ActionKeyboardShortcut, filter: string) {
+function filterKeyboardAction(action: KeyboardShortcut, filter: string) {
+    // Hide separators when filtering is active.
+    if ("separator" in action) {
+        return !filter;
+    }
+
     return action.actionName.toLowerCase().includes(filter) ||
         (action.friendlyName && action.friendlyName.toLowerCase().includes(filter)) ||
         (action.defaultShortcuts ?? []).some((shortcut) => shortcut.toLowerCase().includes(filter)) ||
@@ -115,7 +121,7 @@ function filterKeyboardAction(action: ActionKeyboardShortcut, filter: string) {
         (action.description && action.description.toLowerCase().includes(filter));
 }
 
-function KeyboardShortcutTable({ filter, keyboardShortcuts }: { filter?: string, keyboardShortcuts: KeyboardShortcut[] }) {
+function KeyboardShortcutTable({ filteredKeyboardActions, filter }: { filteredKeyboardActions: KeyboardShortcut[], filter: string | undefined }) {
     return (
         <table class="keyboard-shortcut-table" cellPadding="10">
             <thead>
@@ -127,16 +133,17 @@ function KeyboardShortcutTable({ filter, keyboardShortcuts }: { filter?: string,
                 </tr>
             </thead>
             <tbody>
-                {keyboardShortcuts.map(action => (
+                {filteredKeyboardActions.length > 0
+                 ? filteredKeyboardActions.map(action => (
                     <tr>
-                        {"separator" in action ? ( !filter &&
+                        {"separator" in action ?
                             <td class="separator" colspan={4} style={{
                                 backgroundColor: "var(--accented-background-color)",
                                 fontWeight: "bold"
                             }}>
                                 {action.separator}
                             </td>
-                        ) : ( (!filter || filterKeyboardAction(action, filter)) &&
+                        : (
                             <>
                                 <td>{action.friendlyName}</td>
                                 <td>
@@ -147,7 +154,17 @@ function KeyboardShortcutTable({ filter, keyboardShortcuts }: { filter?: string,
                             </>
                         )}
                     </tr>
-                ))}
+                ))
+                : (
+                    <tr>
+                        <td colspan={4} class="text-center">
+                            <NoItems
+                                icon="bx bx-filter-alt"
+                                text={t("shortcuts.no_results", { filter })}
+                            />
+                        </td>
+                    </tr>
+                )}
             </tbody>
         </table>
     );

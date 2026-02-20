@@ -388,10 +388,10 @@ function Performance() {
             currentValue={shadowsEnabled} onChange={setShadowsEnabled}
         />
 
-        <FormCheckbox
+        {!isMobile() && <FormCheckbox
             label={t("ui-performance.enable-backdrop-effects")}
             currentValue={backdropEffectsEnabled} onChange={setBackdropEffectsEnabled}
-        />
+        />}
 
         {isElectron() && <SmoothScrollEnabledOption />}
 

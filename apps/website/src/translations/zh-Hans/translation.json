@@ -131,7 +131,8 @@
     "header": {
         "get-started": "开始使用",
         "documentation": "文档",
-        "support-us": "支持我们"
+        "support-us": "支持我们",
+        "resources": "资源"
     },
     "footer": {
         "copyright_and_the": " 以及 ",
@@ -196,5 +197,12 @@
         "download_tar_x64": "64 位 (.tar.xz)",
         "download_tar_arm64": "ARM (.tar.xz)",
         "download_nixos": "NixOS 模块"
+    },
+    "resources": {
+        "icon_packs": "图标包",
+        "icon_packs_intro": "使用图标包可以扩展笔记中可用的图标选择。有关图标包的更多信息，请参阅<DocumentationLink>官方文档</DocumentationLink>。",
+        "download": "下载",
+        "website": "网站",
+        "title": "资源"
     }
 }

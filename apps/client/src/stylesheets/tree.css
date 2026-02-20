@@ -206,6 +206,7 @@ span.fancytree-selected .fancytree-title {
 }
 
 span.fancytree-selected .fancytree-custom-icon::before {
+    font-family: "boxicons";
     content: "\eb43";
     border: 1px solid var(--main-border-color);
     border-radius: 3px;

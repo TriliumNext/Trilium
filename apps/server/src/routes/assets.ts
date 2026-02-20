@@ -38,8 +38,8 @@ async function register(app: express.Application) {
             base: `/${assetUrlFragment}/`
         });
         app.use(`/${assetUrlFragment}/`, (req, res, next) => {
-            if (req.url.startsWith("/images/")) {
-                // Images are served as static assets from the server.
+            if (req.url.startsWith("/images/") || req.url.startsWith("/doc_notes/")) {
+                // Images and doc notes are served as static assets from the server.
                 next();
                 return;
             }

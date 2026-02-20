@@ -49,7 +49,8 @@
     "header": {
         "get-started": "시작하기",
         "documentation": "문서",
-        "support-us": "후원하기"
+        "support-us": "후원하기",
+        "resources": "리소스"
     },
     "support_us": {
         "financial_donations_title": "금전적 기부",

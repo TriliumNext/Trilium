@@ -72,7 +72,7 @@ export default function DeleteNotesDialog() {
             footer={<>
                 <Button text={t("delete_notes.cancel")}
                     onClick={() => setShown(false)} />
-                <Button text={t("delete_notes.ok")} primary
+                <Button text={t("delete_notes.ok")} kind="primary"
                     buttonRef={okButtonRef}
                     onClick={() => {
                         opts.callback?.({ proceed: true, deleteAllClones, eraseNotes });

@@ -1,0 +1,88 @@
+:where(.note-list-pager) {
+    --note-list-pager-page-button-width: 40px;
+    --note-list-pager-page-button-gap: 3px;
+    --note-list-pager-ellipsis-width: 20px;
+    --note-list-pager-justify-content: flex-end;
+
+    --note-list-pager-current-page-button-background-color: var(--button-group-active-button-background);
+    --note-list-pager-current-page-button-text-color: var(--button-group-active-button-text-color);
+}
+
+.note-list-pager-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    container: note-list-pager / inline-size;
+}
+
+.note-list-pager {
+    display: flex;
+    align-items: center;
+    font-size: .8rem;
+    align-self: var(--note-list-pager-justify-content);
+
+    .note-list-pager-nav-button {
+        --icon-button-icon-ratio: .75;
+    }
+
+    .note-list-pager-page-button-container {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-around;
+        gap: var(--note-list-pager-page-button-gap);
+
+        &.note-list-pager-ellipsis-present {
+            /* Prevent the prev/next buttons from shifting when ellipses appear or disappear */
+            --_gap-max-width: calc((var(--note-list-pager-page-button-count) + 2) * var(--note-list-pager-page-button-gap));
+            
+            min-width: calc(var(--note-list-pager-page-button-count) * var(--note-list-pager-page-button-width)
+                        + (var(--note-list-pager-ellipsis-width) * 2)
+                        + var(--_gap-max-width));
+        }
+
+        .note-list-pager-page-button {
+            min-width: var(--note-list-pager-page-button-width);
+            padding-inline: 0;
+            padding-block: 4px;
+
+            &.note-list-pager-page-button-current {
+                background: var(--note-list-pager-current-page-button-background-color);
+                color: var(--note-list-pager-current-page-button-text-color);
+                font-weight: bold;
+                opacity: unset;
+            }
+        }
+
+        .note-list-pager-ellipsis {
+            display: inline-block;
+            width: var(--note-list-pager-ellipsis-width);
+            text-align: center;
+            opacity: .5;
+        }
+    }
+
+    .note-list-pager-narrow-counter {
+        display: none;
+        min-width: 60px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .note-list-pager-total-count {
+        margin-inline-start: 8px;
+        opacity: .5;
+        white-space: nowrap;
+    }
+
+    @container note-list-pager (max-width: 550px) {
+        .note-list-pager-page-button-container,
+        .note-list-pager-total-count {
+            display: none;
+        }
+
+        .note-list-pager-narrow-counter {
+            display: block;
+        }
+    }
+}
+

@@ -1,3 +1,5 @@
+import "./mobile_layout.css";
+
 import type AppContext from "../components/app_context.js";
 import GlobalMenuWidget from "../widgets/buttons/global_menu.js";
 import CloseZenModeButton from "../widgets/close_zen_button.js";
@@ -20,108 +22,17 @@ import NoteTitleWidget from "../widgets/note_title.js";
 import NoteTreeWidget from "../widgets/note_tree.js";
 import NoteWrapperWidget from "../widgets/note_wrapper.js";
 import NoteDetail from "../widgets/NoteDetail.jsx";
-import PromotedAttributes from "../widgets/PromotedAttributes.jsx";
 import QuickSearchWidget from "../widgets/quick_search.js";
-import { useNoteContext } from "../widgets/react/hooks.jsx";
-import StandaloneRibbonAdapter from "../widgets/ribbon/components/StandaloneRibbonAdapter.jsx";
-import FilePropertiesTab from "../widgets/ribbon/FilePropertiesTab.jsx";
-import SearchDefinitionTab from "../widgets/ribbon/SearchDefinitionTab.jsx";
+import ScrollPadding from "../widgets/scroll_padding";
 import SearchResult from "../widgets/search_result.jsx";
 import MobileEditorToolbar from "../widgets/type_widgets/text/mobile_editor_toolbar.jsx";
 import { applyModals } from "./layout_commons.js";
-
-const MOBILE_CSS = `
-<style>
-span.keyboard-shortcut,
-kbd {
-    display: none;
-}
-
-.dropdown-menu {
-    font-size: larger;
-}
-
-.action-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.25em;
-    padding-inline-start: 0.5em;
-    padding-inline-end: 0.5em;
-    color: var(--main-text-color);
-}
-.quick-search {
-    margin: 0;
-}
-.quick-search .dropdown-menu {
-    max-width: 350px;
-}
-</style>`;
-
-const FANCYTREE_CSS = `
-<style>
-.tree-wrapper {
-    max-height: 100%;
-    margin-top: 0px;
-    overflow-y: auto;
-    contain: content;
-    padding-inline-start: 10px;
-}
-
-.fancytree-custom-icon {
-    font-size: 2em;
-}
-
-.fancytree-title {
-    font-size: 1.5em;
-    margin-inline-start: 0.6em !important;
-}
-
-.fancytree-node {
-    padding: 5px;
-}
-
-.fancytree-node .fancytree-expander:before {
-    font-size: 2em !important;
-}
-
-span.fancytree-expander {
-    width: 24px !important;
-    margin-inline-end: 5px;
-}
-
-.fancytree-loading span.fancytree-expander {
-    width: 24px;
-    height: 32px;
-}
-
-.fancytree-loading  span.fancytree-expander:after {
-    width: 20px;
-    height: 20px;
-    margin-top: 4px;
-    border-width: 2px;
-    border-style: solid;
-}
-
-.tree-wrapper .collapse-tree-button,
-.tree-wrapper .scroll-to-active-note-button,
-.tree-wrapper .tree-settings-button {
-    position: fixed;
-    margin-inline-end: 16px;
-    display: none;
-}
-
-.tree-wrapper .unhoist-button {
-    font-size: 200%;
-}
-</style>`;
 
 export default class MobileLayout {
     getRootWidget(appContext: typeof AppContext) {
         const rootContainer = new RootContainer(true)
             .setParent(appContext)
             .class("horizontal-layout")
-            .cssBlock(MOBILE_CSS)
             .child(new FlexContainer("column").id("mobile-sidebar-container"))
             .child(
                 new FlexContainer("row")
@@ -135,7 +46,7 @@ export default class MobileLayout {
                             .css("padding-inline-start", "0")
                             .css("padding-inline-end", "0")
                             .css("contain", "content")
-                            .child(new FlexContainer("column").filling().id("mobile-sidebar-wrapper").child(new QuickSearchWidget()).child(new NoteTreeWidget().cssBlock(FANCYTREE_CSS)))
+                            .child(new FlexContainer("column").filling().id("mobile-sidebar-wrapper").child(new QuickSearchWidget()).child(new NoteTreeWidget()))
                     )
                     .child(
                         new ScreenContainer("detail", "row")
@@ -155,7 +66,6 @@ export default class MobileLayout {
                                                 .child(<NoteBadges />)
                                                 .child(<MobileDetailMenu />)
                                         )
-                                        .child(<PromotedAttributes />)
                                         .child(
                                             new ScrollingContainer()
                                                 .filling()
@@ -164,9 +74,8 @@ export default class MobileLayout {
                                                 .child(<NoteTitleActions />)
                                                 .child(<NoteDetail />)
                                                 .child(<NoteList media="screen" />)
-                                                .child(<StandaloneRibbonAdapter component={SearchDefinitionTab} />)
                                                 .child(<SearchResult />)
-                                                .child(<FilePropertiesWrapper />)
+                                                .child(<ScrollPadding />)
                                         )
                                         .child(<MobileEditorToolbar />)
                                         .child(new FindWidget())
@@ -189,14 +98,4 @@ export default class MobileLayout {
         applyModals(rootContainer);
         return rootContainer;
     }
-}
-
-function FilePropertiesWrapper() {
-    const { note, ntxId } = useNoteContext();
-
-    return (
-        <div>
-            {note?.type === "file" && <FilePropertiesTab note={note} ntxId={ntxId} />}
-        </div>
-    );
 }

@@ -662,13 +662,14 @@
     "show-cheatsheet": "Mostrar hoja de trucos",
     "toggle-zen-mode": "Modo Zen",
     "new-version-available": "Nueva actualización disponible",
-    "download-update": "Obtener versión {{latestVersion}}"
+    "download-update": "Obtener versión {{latestVersion}}",
+    "search_notes": "Buscar notas"
   },
   "zen_mode": {
     "button_exit": "Salir del modo Zen"
   },
   "sync_status": {
-    "unknown": "<p>El estado de sincronización será conocido una vez que el siguiente intento de sincronización comience.</p><p>Dé clic para activar la sincronización ahora</p>",
+    "unknown": "<p>El estado de sincronización será conocido una vez que el siguiente intento de sincronización comience.</p><p>Dé clic para activar la sincronización ahora.</p>",
     "connected_with_changes": "<p>Conectado al servidor de sincronización. <br>Hay cambios pendientes que aún no se han sincronizado.</p><p>Dé clic para activar la sincronización.</p>",
     "connected_no_changes": "<p>Conectado al servidor de sincronización.<br>Todos los cambios ya han sido sincronizados.</p><p>Dé clic para activar la sincronización.</p>",
     "disconnected_with_changes": "<p>El establecimiento de la conexión con el servidor de sincronización no ha tenido éxito.<br>Hay algunos cambios pendientes que aún no se han sincronizado.</p><p>Dé clic para activar la sincronización.</p>",
@@ -745,7 +746,7 @@
     "button_title": "Exportar diagrama como SVG"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Crear una nueva subnota y agregarla a este mapa de relaciones",
+    "create_child_note_title": "Crear una subnota y agregarla al mapa",
     "reset_pan_zoom_title": "Restablecer la panorámica y el zoom a las coordenadas y ampliación iniciales",
     "zoom_in_title": "Acercar",
     "zoom_out_title": "Alejar"
@@ -754,14 +755,16 @@
     "relation": "relación",
     "backlink_one": "{{count}} Vínculo de retroceso",
     "backlink_many": "{{count}} Vínculos de retroceso",
-    "backlink_other": "{{count}} vínculos de retroceso"
+    "backlink_other": "{{count}} Vínculos de retroceso"
   },
   "mobile_detail_menu": {
     "insert_child_note": "Insertar subnota",
     "delete_this_note": "Eliminar esta nota",
-    "error_cannot_get_branch_id": "No se puede obtener el branchID del notePath '{{notePath}}'",
+    "error_cannot_get_branch_id": "No se puede obtener el branchId del notePath '{{notePath}}'",
     "error_unrecognized_command": "Comando no reconocido {{command}}",
-    "note_revisions": "Revisiones de notas"
+    "note_revisions": "Revisiones de notas",
+    "backlinks": "Vínculos de retroceso",
+    "content_language_switcher": "Idioma de contenido: {{language}}"
   },
   "note_icon": {
     "change_note_icon": "Cambiar icono de nota",
@@ -914,7 +917,8 @@
     "unknown_search_option": "Opción de búsqueda desconocida {{searchOptionName}}",
     "search_note_saved": "La nota de búsqueda se ha guardado en {{- notePathTitle}}",
     "actions_executed": "Las acciones han sido ejecutadas.",
-    "view_options": "Ver opciones:"
+    "view_options": "Ver opciones:",
+    "option": "opción"
   },
   "similar_notes": {
     "title": "Notas similares",
@@ -1008,7 +1012,7 @@
     "no_attachments": "Esta nota no tiene archivos adjuntos."
   },
   "book": {
-    "no_children_help": "Esta nota de tipo libro no tiene ninguna subnota así que no hay nada que mostrar. Véa la <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a> para más detalles.",
+    "no_children_help": "Esta colección no tiene ninguna subnota así que no hay nada que mostrar.",
     "drag_locked_title": "Bloqueado para edición",
     "drag_locked_message": "No se permite Arrastrar pues la colección está bloqueada para edición."
   },
@@ -1063,15 +1067,6 @@
     "enter_title_of_new_note": "Ingrese el título de la nueva nota",
     "default_new_note_title": "nueva nota",
     "click_on_canvas_to_place_new_note": "Haga clic en el lienzo para colocar una nueva nota"
-  },
-  "render": {
-    "note_detail_render_help_1": "Esta nota de ayuda se muestra porque esta nota de tipo Renderizar HTML no tiene la relación requerida para funcionar correctamente.",
-    "note_detail_render_help_2": "El tipo de nota Render HTML es usado para <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">scripting</a>. De forma resumida, tiene una nota con código HTML (opcionalmente con algo de JavaScript) y esta nota la renderizará. Para que funcione, es necesario definir una <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">relación</a> llamada \"renderNote\" apuntando a la nota HTML nota a renderizar."
-  },
-  "web_view": {
-    "web_view": "Vista web",
-    "embed_websites": "La nota de tipo Web View le permite insertar sitios web en Trilium.",
-    "create_label": "Para comenzar, por favor cree una etiqueta con una dirección URL que desee empotrar, e.g. #webViewSrc=\"https://www.google.com\""
   },
   "backend_log": {
     "refresh": "Refrescar"
@@ -1565,7 +1560,7 @@
   "shortcuts": {
     "keyboard_shortcuts": "Atajos de teclado",
     "multiple_shortcuts": "Varios atajos para la misma acción se pueden separar mediante comas.",
-    "electron_documentation": "Véa la <a href=\"https://www.electronjs.org/docs/latest/api/accelerator\">documentación de Electron </a> para los modificadores y códigos de tecla disponibles.",
+    "electron_documentation": "Consulte la <a href=\"https://www.electronjs.org/docs/latest/api/accelerator\">documentación de Electron</a> para los modificadores y códigos de tecla disponibles.",
     "type_text_to_filter": "Escriba texto para filtrar los accesos directos...",
     "action_name": "Nombre de la acción",
     "shortcuts": "Atajos",
@@ -1573,7 +1568,8 @@
     "description": "Descripción",
     "reload_app": "Vuelva a cargar la aplicación para aplicar los cambios",
     "set_all_to_default": "Establecer todos los accesos directos al valor predeterminado",
-    "confirm_reset": "¿Realmente desea restablecer todos los atajos de teclado a sus valores predeterminados?"
+    "confirm_reset": "¿Realmente desea restablecer todos los atajos de teclado a sus valores predeterminados?",
+    "no_results": "No se encontraron atajos que coincidan con '{{filter}} '"
   },
   "spellcheck": {
     "title": "Revisión ortográfica",
@@ -1780,7 +1776,9 @@
     "print_report_collection_content_other": "{{count}} notas en la colección no se pueden imprimir porque no son compatibles o están protegidas.",
     "print_report_title": "Imprimir informe",
     "print_report_collection_details_button": "Ver detalles",
-    "print_report_collection_details_ignored_notes": "Notas ignoradas"
+    "print_report_collection_details_ignored_notes": "Notas ignoradas",
+    "print_report_stack_trace": "Rastreo de pila",
+    "print_report_error_title": "Fallo al imprimir"
   },
   "note_title": {
     "placeholder": "escriba el título de la nota aquí...",
@@ -1828,7 +1826,7 @@
     "no_headings": "Sin encabezados."
   },
   "watched_file_update_status": {
-    "file_last_modified": "Archivo <code class=\"file-path\"></code> ha sido modificado por última vez en<span class=\"file-last-modified\"></span>.",
+    "file_last_modified": "El archivo <code class=\"file-path\"></code> ha sido modificado por última vez en <span class=\"file-last-modified\"></span>.",
     "upload_modified_file": "Subir archivo modificado",
     "ignore_this_change": "Ignorar este cambio"
   },
@@ -2052,7 +2050,8 @@
     "max-nesting-depth": "Máxima profundidad de anidamiento:",
     "vector_light": "Vector (claro)",
     "vector_dark": "Vector (oscuro)",
-    "raster": "Trama"
+    "raster": "Trama",
+    "show-labels": "Mostrar nombres de marcadores"
   },
   "table_context_menu": {
     "delete_row": "Eliminar fila"
@@ -2161,7 +2160,8 @@
   },
   "pagination": {
     "total_notes": "{{count}} notas",
-    "page_title": "Página de {{startIndex}} - {{endIndex}}"
+    "prev_page": "Página anterior",
+    "next_page": "Página siguiente"
   },
   "presentation_view": {
     "edit-slide": "Editar este slide",
@@ -2291,5 +2291,52 @@
     "title_many": "{{count}} pestañas",
     "title_other": "{{count}} pestañas",
     "more_options": "Más opciones"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "Marcadores"
+  },
+  "web_view_setup": {
+    "title": "Crear una vista en vivo de una página web directamente en Trilium",
+    "url_placeholder": "Ingresar o pegar la dirección del sitio web, por ejemplo https://triliumnotes.org",
+    "create_button": "Crear Vista Web",
+    "invalid_url_title": "Dirección inválida",
+    "invalid_url_message": "Ingrese una dirección web válida, por ejemplo https://triliumnotes.org.",
+    "disabled_description": "Esta vista web fue importada de una fuente externa. Para ayudarlo a protegerse del phishing o el contenido malicioso, no se está cargando automáticamente. Puede activarlo si confía en la fuente.",
+    "disabled_button_enable": "Habilita vista web"
+  },
+  "render": {
+    "setup_title": "Mostrar HTML personalizado o Preact JSX dentro de esta nota",
+    "setup_create_sample_preact": "Crear nota de muestra con Preact",
+    "setup_create_sample_html": "Crear nota de muestra con HTML",
+    "setup_sample_created": "Se creó una nota de muestra como subnota.",
+    "disabled_description": "Esta nota de renderización proviene de una fuente externa. Para protegerlo de contenido malicioso, no está habilitado por defecto. Asegúrese de confiar en la fuente antes de habilitarla.",
+    "disabled_button_enable": "Habilitar nota de renderización"
+  },
+  "active_content_badges": {
+    "type_icon_pack": "Paquete de iconos",
+    "type_backend_script": "Script de backend",
+    "type_frontend_script": "Script de frontend",
+    "type_widget": "Widget",
+    "type_app_css": "CSS personalizado",
+    "type_render_note": "Nota de renderización",
+    "type_web_view": "Vista web",
+    "type_app_theme": "Tema personalizado",
+    "toggle_tooltip_enable_tooltip": "Haga clic para habilitar este {{type}}.",
+    "toggle_tooltip_disable_tooltip": "Haga clic para deshabilitar este {{type}}.",
+    "menu_docs": "Abrir documentación",
+    "menu_execute_now": "Ejecutar script ahora",
+    "menu_run": "Ejecutar automáticamente",
+    "menu_run_disabled": "Manualmente",
+    "menu_run_backend_startup": "Cuando el backend inicia",
+    "menu_run_hourly": "Cada hora",
+    "menu_run_daily": "Diariamente",
+    "menu_run_frontend_startup": "Cuando el frontend de escritorio inicia",
+    "menu_run_mobile_startup": "Cuando el frontend móvil inicia",
+    "menu_change_to_widget": "Cambiar a widget",
+    "menu_change_to_frontend_script": "Cambiar a script de frontend",
+    "menu_theme_base": "Tema base"
+  },
+  "setup_form": {
+    "more_info": "Para saber más"
   }
 }

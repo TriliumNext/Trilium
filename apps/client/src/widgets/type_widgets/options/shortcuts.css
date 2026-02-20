@@ -1,0 +1,40 @@
+.shortcuts-options-section {
+    > header {
+        position: sticky;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: var(--main-background-color);
+        padding-block: 0.5em;
+        border-bottom: 1px solid var(--main-border-color);
+    }
+
+    > footer {
+        position: sticky;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--main-background-color);
+        padding-block: 0.5em;
+        border-top: 1px solid var(--main-border-color);
+        display: flex;
+        justify-content: space-between;
+    }
+
+    table {
+        width: 100%;
+
+        th {
+            width: 25%;
+        }
+
+        .separator {
+            background-color: var(--accented-background-color);
+            font-weight: bold;
+
+            &:first-of-type {
+                padding-top: 1em;
+            }
+        }
+    }
+}

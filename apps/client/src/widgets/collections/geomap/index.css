@@ -7,13 +7,21 @@
 
   > .collection-properties {
     position: relative;
-    z-index: 2000;
+    z-index: 998;
   }
+}
+
+body.mobile .geo-view > .collection-properties {
+    z-index: 2500;
 }
 
 .geo-map-container {
   height: 100%;
   overflow: hidden;
+
+  .maplibregl-canvas-container {
+    position: relative;
+  }
 }
 
 .leaflet-pane {
@@ -22,7 +30,7 @@
 
 .leaflet-top,
 .leaflet-bottom {
-  z-index: 997;
+  z-index: 997 !important;
 }
 
 .geo-view.placing-note .geo-map-container {

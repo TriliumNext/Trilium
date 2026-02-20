@@ -63,11 +63,13 @@ declare global {
 
 declare module "preact" {
     namespace JSX {
+        interface ElectronWebViewElement extends JSX.HTMLAttributes<HTMLElement> {
+            src: string;
+            class: string;
+        }
+
         interface IntrinsicElements {
-            webview: {
-                src: string;
-                class: string;
-            }
+            webview: ElectronWebViewElement;
         }
     }
 }

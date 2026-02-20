@@ -4,6 +4,10 @@ import FNote from "../../entities/fnote";
 import froca from "../../services/froca";
 import { useNoteLabelInt } from "../react/hooks";
 import { t } from "../../services/i18n";
+import ActionButton from "../react/ActionButton";
+import Button from "../react/Button";
+import "./Pagination.css";
+import clsx from "clsx";
 
 interface PaginationContext {
     page: number;
@@ -17,44 +21,104 @@ interface PaginationContext {
 export function Pager({ page, pageSize, setPage, pageCount, totalNotes }: Omit<PaginationContext, "pageNotes">) {
     if (pageCount < 2) return;
 
-    let lastPrinted = false;
-    let children: ComponentChildren[] = [];
-    for (let i = 1; i <= pageCount; i++) {
-        if (pageCount < 20 || i <= 5 || pageCount - i <= 5 || Math.abs(page - i) <= 2) {
-            lastPrinted = true;
-
-            const startIndex = (i - 1) * pageSize + 1;
-            const endIndex = Math.min(totalNotes, i * pageSize);
-
-            if (i !== page) {
-                children.push((
-                    <a
-                        href="javascript:"
-                        title={t("pagination.page_title", { startIndex, endIndex })}
-                        onClick={() => setPage(i)}
-                    >
-                    {i}
-                    </a>
-                ))
-            } else {
-                // Current page
-                children.push(<span className="current-page">{i}</span>)
-            }
-
-            children.push(<>{" "}&nbsp;{" "}</>);
-        } else if (lastPrinted) {
-            children.push(<>{"... "}&nbsp;{" "}</>);
-            lastPrinted = false;
-        }
-    }
-
     return (
-        <div class="note-list-pager">
-            {children}
+        <div className="note-list-pager-container">
+            <div className="note-list-pager">
+                <ActionButton
+                    icon="bx bx-chevron-left"
+                    className="note-list-pager-nav-button"
+                    disabled={(page === 1)}
+                    text={t("pagination.prev_page")}
+                    onClick={() => setPage(page - 1)}
+                />
 
-            <span className="note-list-pager-total-count">({t("pagination.total_notes", { count: totalNotes })})</span>
+                <PageButtons page={page} setPage={setPage} pageCount={pageCount} />
+                <div className="note-list-pager-narrow-counter">
+                    <strong>{page}</strong> / <strong>{pageCount}</strong>
+                </div>
+                            
+                <ActionButton
+                    icon="bx bx-chevron-right"
+                    className="note-list-pager-nav-button"
+                    disabled={(page === pageCount)}
+                    text={t("pagination.next_page")}
+                    onClick={() => setPage(page + 1)}
+                />
+
+                <div className="note-list-pager-total-count">
+                    {t("pagination.total_notes", { count: totalNotes })}
+                </div>
+            </div>
         </div>
     )
+}
+
+interface PageButtonsProps {
+    page: number;
+    setPage: Dispatch<StateUpdater<number>>;
+    pageCount: number;
+}
+
+function PageButtons(props: PageButtonsProps) {
+    const maxButtonCount = 9;
+    const maxLeftRightSegmentLength = 2;
+    
+    // The left-side segment
+    const leftLength = Math.min(props.pageCount, maxLeftRightSegmentLength);
+    const leftStart = 1;
+
+    // The middle segment
+    const middleMaxLength = maxButtonCount - maxLeftRightSegmentLength * 2;
+    const middleLength = Math.min(props.pageCount - leftLength, middleMaxLength);
+    let middleStart = props.page - Math.floor(middleLength / 2);
+    middleStart = Math.max(middleStart, leftLength + 1);
+
+    // The right-side segment
+    const rightLength = Math.min(props.pageCount - (middleLength + leftLength), maxLeftRightSegmentLength);
+    const rightStart = props.pageCount - rightLength + 1;
+    middleStart = Math.min(middleStart, rightStart - middleLength);
+
+    const totalButtonCount = leftLength + middleLength + rightLength;
+    const hasLeadingEllipsis =  (middleStart - leftLength > 1);
+    const hasTrailingEllipsis = (rightStart - (middleStart + middleLength - 1) > 1);
+
+    return <div className={clsx("note-list-pager-page-button-container", {
+                    "note-list-pager-ellipsis-present": (totalButtonCount === maxButtonCount)
+                })}
+                style={{"--note-list-pager-page-button-count": totalButtonCount}}>
+        {[
+            ...createSegment(leftStart, leftLength, props.page, props.setPage, false),
+            ...createSegment(middleStart, middleLength, props.page, props.setPage, hasLeadingEllipsis),
+            ...createSegment(rightStart, rightLength, props.page, props.setPage, hasTrailingEllipsis),
+        ]}
+    </div>;
+}
+
+function createSegment(start: number, length: number, currentPage: number, setPage: Dispatch<StateUpdater<number>>, prependEllipsis: boolean): ComponentChildren[] {
+    const children: ComponentChildren[] = [];
+    
+    if (prependEllipsis) {
+        children.push(<span className="note-list-pager-ellipsis">...</span>);
+    }
+
+    for (let i = 0; i < length; i++) {
+        const pageNum = start + i;
+        const isCurrent = (pageNum === currentPage);
+        children.push((
+            <Button
+                text={pageNum.toString()}
+                kind="lowProfile"
+                className={clsx(
+                    "note-list-pager-page-button",
+                    {"note-list-pager-page-button-current": isCurrent}
+                )}
+                disabled={isCurrent}
+                onClick={() => setPage(pageNum)}
+            />
+        ));
+    }
+
+    return children;
 }
 
 export function usePagination(note: FNote, noteIds: string[]): PaginationContext {

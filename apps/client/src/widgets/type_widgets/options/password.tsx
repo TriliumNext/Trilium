@@ -95,7 +95,7 @@ function ChangePassword() {
 
                 <Button
                     text={t("password.change_password")}
-                    primary
+                    kind="primary"
                 />
             </form>
         </OptionsSection>

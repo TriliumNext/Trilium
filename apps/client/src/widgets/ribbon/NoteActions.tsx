@@ -22,7 +22,7 @@ import MovePaneButton from "../buttons/move_pane_button";
 import ActionButton from "../react/ActionButton";
 import Dropdown from "../react/Dropdown";
 import { FormDropdownDivider, FormDropdownSubmenu, FormListHeader, FormListItem, FormListToggleableItem } from "../react/FormList";
-import { useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useTriliumEvent, useTriliumOption } from "../react/hooks";
+import { useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean, useNoteProperty, useSyncedRef, useTriliumEvent, useTriliumOption } from "../react/hooks";
 import { ParentComponent } from "../react/react_utils";
 import { NoteTypeDropdownContent, useNoteBookmarkState, useShareState } from "./BasicPropertiesTab";
 import NoteActionsCustom from "./NoteActionsCustom";
@@ -63,8 +63,14 @@ function RevisionsButton({ note }: { note: FNote }) {
 
 type ItemToFocus = "basic-properties";
 
-export function NoteContextMenu({ note, noteContext, extraItems }: { note: FNote, noteContext?: NoteContext, extraItems?: ComponentChildren; }) {
-    const dropdownRef = useRef<BootstrapDropdown>(null);
+export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNoteSettings, dropdownRef: externalDropdownRef }: {
+    note: FNote,
+    noteContext?: NoteContext,
+    itemsAtStart?: ComponentChildren;
+    itemsNearNoteSettings?: ComponentChildren;
+    dropdownRef?: RefObject<BootstrapDropdown>;
+}) {
+    const dropdownRef = useSyncedRef<BootstrapDropdown>(externalDropdownRef, null);
     const parentComponent = useContext(ParentComponent);
     const noteType = useNoteProperty(note, "type") ?? "";
     const [viewType] = useNoteLabel(note, "viewType");
@@ -107,7 +113,7 @@ export function NoteContextMenu({ note, noteContext, extraItems }: { note: FNote
             onHidden={() => itemToFocusRef.current = null }
             mobileBackdrop
         >
-            {extraItems}
+            {itemsAtStart}
 
             {isReadOnly && <>
                 <CommandItem icon="bx bx-pencil" text={t("read-only-info.edit-note")}
@@ -125,6 +131,8 @@ export function NoteContextMenu({ note, noteContext, extraItems }: { note: FNote
                 <NoteBasicProperties note={note} focus={itemToFocusRef} />
                 <FormDropdownDivider />
             </>}
+
+            {itemsNearNoteSettings}
 
             <CommandItem icon="bx bx-import" text={t("note_actions.import_files")}
                 disabled={isInOptionsOrHelp || note.type === "search"}

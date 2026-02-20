@@ -70,7 +70,6 @@ export default function NoteActionsCustom(props: NoteActionsCustomProps) {
         >
             <AddChildButton {...innerProps} />
             <RunActiveNoteButton {...innerProps } />
-            <OpenTriliumApiDocsButton {...innerProps} />
             <SwitchSplitOrientationButton {...innerProps} />
             <ToggleReadOnlyButton {...innerProps} />
             <SaveToNoteButton {...innerProps} />
@@ -227,15 +226,6 @@ function SaveToNoteButton({ note, noteMime }: NoteActionsCustomInnerProps) {
         icon="bx bx-save"
         text={t("code_buttons.save_to_note_button_title")}
         onClick={buildSaveSqlToNoteHandler(note)}
-    />;
-}
-
-function OpenTriliumApiDocsButton({ noteMime }: NoteActionsCustomInnerProps) {
-    const isEnabled = noteMime.startsWith("application/javascript;env=");
-    return isEnabled && <NoteAction
-        icon="bx bx-help-circle"
-        text={t("code_buttons.trilium_api_docs_button_title")}
-        onClick={() => openInAppHelpFromUrl(noteMime.endsWith("frontend") ? "Q2z6av6JZVWm" : "MEtfsqa5VwNi")}
     />;
 }
 

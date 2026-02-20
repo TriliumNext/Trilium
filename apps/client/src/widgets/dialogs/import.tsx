@@ -55,7 +55,7 @@ export default function ImportDialog() {
                 setShown(false);
                 setFiles(null);
             }}
-            footer={<Button text={t("import.import")} primary disabled={!files} />}
+            footer={<Button text={t("import.import")} kind="primary" disabled={!files} />}
             show={shown}
         >
             <FormGroup name="files" label={t("import.chooseImportFile")} description={

@@ -210,6 +210,7 @@
     --badge-share-background-color: #4d4d4d;
     --badge-clipped-note-background-color: #295773;
     --badge-execute-background-color: #604180;
+    --badge-active-content-background-color: rgb(12, 68, 70);
 
     --note-icon-background-color: #444444;
     --note-icon-color: #d4d4d4;
@@ -238,9 +239,9 @@
 
     --bottom-panel-background-color: #11111180;
     --bottom-panel-title-bar-background-color: #3F3F3F80;
-    
+
     --status-bar-border-color: var(--main-border-color);
-    
+
     --scrollbar-thumb-color: #fdfdfd5c;
     --scrollbar-thumb-hover-color: #ffffff7d;
     --scrollbar-background-color: transparent;
@@ -290,6 +291,15 @@
     --ck-editor-toolbar-button-on-shadow: 1px 1px 2px rgba(0, 0, 0, .75);
     --ck-editor-toolbar-dropdown-button-open-background: #ffffff14;
 
+    --note-list-view-icon-color: var(--left-pane-icon-color);
+    --note-list-view-large-icon-background: var(--note-icon-background-color);
+    --note-list-view-large-icon-color: var(--note-icon-color);
+    --note-list-view-search-result-highlight-background: transparent;
+    --note-list-view-search-result-highlight-color: var(--quick-search-result-highlight-color);
+    --note-list-view-content-background: rgba(0, 0, 0, .2);
+    --note-list-view-content-search-result-highlight-background: var(--quick-search-result-highlight-color);
+    --note-list-view-content-search-result-highlight-color: black;
+
     --calendar-coll-event-background-saturation: 25%;
     --calendar-coll-event-background-lightness: 20%;
     --calendar-coll-event-background-color: #3c3c3c;
@@ -303,7 +313,8 @@
  * Dark color scheme tweaks
  */
 
-#left-pane .fancytree-node.tinted {
+#left-pane .fancytree-node.tinted,
+.nested-note-list-item.use-note-color {
     --custom-color: var(--dark-theme-custom-color);
 
     /* The background color of the active item in the note tree.
@@ -337,12 +348,24 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
     --promoted-attribute-card-background-color: hsl(var(--custom-color-hue), 13.2%, 20.8%);
 }
 
+.modal.tab-bar-modal .tabs .tab-card.with-hue {
+    background-color: hsl(var(--bg-hue), 8.8%, 11.2%);
+    border-color: hsl(var(--bg-hue), 9.4%, 25.1%);
+}
+
+.modal.tab-bar-modal .tabs .tab-card.active.with-hue {
+    background-color: hsl(var(--bg-hue), 8.8%, 16.2%);
+    border-color: hsl(var(--bg-hue), 9.4%, 25.1%);
+}
+
+
 .use-note-color {
     --custom-color: var(--dark-theme-custom-color);
 }
 
 .note-split.with-hue,
-.quick-edit-dialog-wrapper.with-hue {
+.quick-edit-dialog-wrapper.with-hue,
+.nested-note-list-item.with-hue {
     --note-icon-custom-background-color: hsl(var(--custom-color-hue), 15.8%, 30.9%);
     --note-icon-custom-color: hsl(var(--custom-color-hue), 100%, 76.5%);
     --note-icon-hover-custom-background-color: hsl(var(--custom-color-hue), 28.3%, 36.7%);

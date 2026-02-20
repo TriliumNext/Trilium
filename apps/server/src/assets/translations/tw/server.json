@@ -356,7 +356,8 @@
     "localization": "語言和區域",
     "inbox-title": "收件匣",
     "command-palette": "打開命令面板",
-    "zen-mode": "禪模式"
+    "zen-mode": "禪模式",
+    "tab-switcher-title": "切換分頁"
   },
   "notes": {
     "new-note": "新增筆記",

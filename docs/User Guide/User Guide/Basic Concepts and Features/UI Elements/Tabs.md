@@ -26,5 +26,20 @@ Since tabs are a commonly used feature, there are multiple keyboard shortcuts th
 *   <kbd>Ctrl</kbd>+<kbd>W</kbd> to close the current tab.
 *   <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>T</kbd> to reopen the last closed tab.
 *   <kbd>Ctrl</kbd>+<kbd>Tab</kbd> and <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Tab</kbd> to go to the next or previous tab.
-*   <kbd>Ctrl</kbd>+<kbd>1</kbd>, <kbd>Ctrl</kbd>+<kbd>2</kbd>, up to <kbd>Ctrl</kbd>+<kbd>9</kbd> to activate the first, second and up til ninth tab.
+*   <kbd>Ctrl</kbd>+<kbd>1</kbd>, <kbd>Ctrl</kbd>+<kbd>2</kbd>, up to <kbd>Ctrl</kbd>+<kbd>9</kbd> to activate the first, second and up to ninth tab.
 *   There is also a shortcut to go to the last tab, but it is not assigned a key by default.
+
+## Mobile
+
+<figure class="image image-style-align-right image_resized" style="width:34.12%;"><img style="aspect-ratio:1242/2688;" src="Tabs_IMG_1767.PNG" width="1242" height="2688"></figure>
+
+Tabs are also supported on the <a class="reference-link" href="../../Installation%20%26%20Setup/Mobile%20Frontend.md">Mobile Frontend</a>.
+
+Since v0.102.0, the tabs are displayed by pressing the dedicated tab switcher button in the <a class="reference-link" href="Launch%20Bar.md">Launch Bar</a>. In this view the tabs are laid out on a grid with a preview of the note content.
+
+The context menu button at the top-right of the popup allows creating a new tab, reopening the last closed tab and closing all the tabs.
+
+<a class="reference-link" href="Split%20View.md">Split View</a>s are also indicated in the tab switcher, with two titles displayed in a tab.
+
+> [!NOTE]
+> Versions prior to v0.102.0 also supported tabs, but they were displayed directly above the <a class="reference-link" href="Launch%20Bar.md">Launch Bar</a>. The decision to use a more mobile-like tab switcher was taken because the original tab bar could not support many tabs at once and the new design better aligns with how mobile applications handle tabs.

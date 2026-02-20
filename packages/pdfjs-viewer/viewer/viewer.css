@@ -883,6 +883,9 @@
       }
 
 .textLayer{
+  --csstools-color-scheme--light:initial;
+  color-scheme:only light;
+
   position:absolute;
   text-align:initial;
   inset:0;
@@ -5319,6 +5322,14 @@
       gap:16px;
     }
 
+button.hasPopupMenu[aria-expanded="true"] + menu{
+    visibility:visible;
+  }
+
+button.hasPopupMenu[aria-expanded="false"] + menu{
+    visibility:hidden;
+  }
+
 .popupMenu{
   --menuitem-checkmark-icon:url(images/checkmark.svg);
   --menu-mark-icon-size:0;
@@ -5437,6 +5448,7 @@
   top:1px;
   margin:0;
   padding:5px;
+  box-sizing:border-box;
 
   background:var(--menu-bg);
   background-blend-mode:var(--menu-background-blend-mode);
@@ -5780,25 +5792,35 @@
   --csstools-light-dark-toggle--143:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
   --header-shadow:0 0.25px 0.75px -0.75px var(--csstools-light-dark-toggle--142, rgb(0 0 0 / 0.05)), 0 2px 6px -6px var(--csstools-light-dark-toggle--143, rgb(0 0 0 / 0.1));
   --image-outline:none;
-  --image-border-width:4px;
+  --image-border-width:6px;
   --csstools-light-dark-toggle--144:var(--csstools-color-scheme--light) #3a3944;
   --image-border-color:var(--csstools-light-dark-toggle--144, #cfcfd8);
-  --csstools-light-dark-toggle--145:var(--csstools-color-scheme--light) #3a3944;
-  --image-hover-border-color:var(--csstools-light-dark-toggle--145, #cfcfd8);
+  --image-hover-border-color:#bfbfc9;
   --image-current-border-color:var(--button-focus-outline-color);
   --image-current-focused-outline-color:var(--image-hover-border-color);
-  --csstools-light-dark-toggle--146:var(--csstools-color-scheme--light) #23222b;
-  --image-page-number-bg:var(--csstools-light-dark-toggle--146, #f0f0f4);
+  --csstools-light-dark-toggle--145:var(--csstools-color-scheme--light) #23222b;
+  --image-page-number-bg:var(--csstools-light-dark-toggle--145, #f0f0f4);
   --image-page-number-fg:var(--text-color);
+  --image-current-page-number-bg:var(--image-current-border-color);
+  --csstools-light-dark-toggle--146:var(--csstools-color-scheme--light) #15141a;
+  --image-current-page-number-fg:var(--csstools-light-dark-toggle--146, #fff);
   --csstools-light-dark-toggle--147:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
   --csstools-light-dark-toggle--148:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
   --image-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--147, rgb(0 0 0 / 0.05)), 0 0 0 1px var(--image-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--148, rgb(0 0 0 / 0.1));
   --csstools-light-dark-toggle--149:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
-  --csstools-light-dark-toggle--150:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
-  --image-hover-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--149, rgb(0 0 0 / 0.05)), 0 0 0 var(--image-border-width) var(--image-hover-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--150, rgb(0 0 0 / 0.1));
-  --csstools-light-dark-toggle--151:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
-  --csstools-light-dark-toggle--152:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
-  --image-current-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--151, rgb(0 0 0 / 0.05)), 0 0 0 var(--image-border-width) var(--image-current-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--152, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--150:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.1);
+  --csstools-light-dark-toggle--151:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
+  --image-hover-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--149, rgb(0 0 0 / 0.05)), 0 0 0 1px var(--csstools-light-dark-toggle--150, rgb(21 20 26 / 0.1)), 0 0 0 var(--image-border-width) var(--image-hover-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--151, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--152:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
+  --csstools-light-dark-toggle--153:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
+  --image-current-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--152, rgb(0 0 0 / 0.05)), 0 0 0 var(--image-border-width) var(--image-current-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--153, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--154:var(--csstools-color-scheme--light) rgb(0 202 219 / 0.08);
+  --image-dragging-placeholder-bg:var(--csstools-light-dark-toggle--154, rgb(0 98 250 / 0.08));
+  --multiple-dragging-bg:white;
+  --image-multiple-dragging-shadow:0 0 0 var(--image-border-width) var(--image-current-border-color), var(--image-border-width) var(--image-border-width) 0 calc(var(--image-border-width) / 2) var(--multiple-dragging-bg), var(--image-border-width) var(--image-border-width) 0 calc(3 * var(--image-border-width) / 2) var(--image-current-border-color);
+  --image-dragging-shadow:0 0 0 var(--image-border-width) var(--image-current-border-color);
+  --csstools-light-dark-toggle--155:var(--csstools-color-scheme--light) #15141a;
+  --multiple-dragging-text-color:var(--csstools-light-dark-toggle--155, #fbfbfe);
 }
 
 @supports (color: light-dark(red, red)) and (color: rgb(0 0 0 / 0)){
@@ -5857,16 +5879,26 @@
 @supports (color: light-dark(red, red)){
 #viewsManager{
   --image-border-color:light-dark(#cfcfd8, #3a3944);
-  --image-hover-border-color:light-dark(#cfcfd8, #3a3944);
   --image-page-number-bg:light-dark(#f0f0f4, #23222b);
+  --image-current-page-number-fg:light-dark(#fff, #15141a);
 }
 }
 
 @supports (color: light-dark(red, red)) and (color: rgb(0 0 0 / 0)){
 #viewsManager{
   --image-shadow:0 0.375px 1.5px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)), 0 0 0 1px var(--image-border-color), 0 3px 12px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
-  --image-hover-shadow:0 0.375px 1.5px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)), 0 0 0 var(--image-border-width) var(--image-hover-border-color), 0 3px 12px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+  --image-hover-shadow:0 0.375px 1.5px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)), 0 0 0 1px light-dark(rgb(21 20 26 / 0.1), rgb(251 251 254 / 0.1)), 0 0 0 var(--image-border-width) var(--image-hover-border-color), 0 3px 12px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
   --image-current-shadow:0 0.375px 1.5px 0 light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)), 0 0 0 var(--image-border-width) var(--image-current-border-color), 0 3px 12px 0 light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+  --image-dragging-placeholder-bg:light-dark(
+    rgb(0 98 250 / 0.08),
+    rgb(0 202 219 / 0.08)
+  );
+}
+}
+
+@supports (color: light-dark(red, red)){
+#viewsManager{
+  --multiple-dragging-text-color:light-dark(#fbfbfe, #15141a);
 }
 }
 
@@ -5906,19 +5938,24 @@
   --header-shadow:0 0.25px 0.75px -0.75px var(--csstools-light-dark-toggle--142, rgb(0 0 0 / 0.05)), 0 2px 6px -6px var(--csstools-light-dark-toggle--143, rgb(0 0 0 / 0.1));
   --csstools-light-dark-toggle--144:var(--csstools-color-scheme--light) #3a3944;
   --image-border-color:var(--csstools-light-dark-toggle--144, #cfcfd8);
-  --csstools-light-dark-toggle--145:var(--csstools-color-scheme--light) #3a3944;
-  --image-hover-border-color:var(--csstools-light-dark-toggle--145, #cfcfd8);
-  --csstools-light-dark-toggle--146:var(--csstools-color-scheme--light) #23222b;
-  --image-page-number-bg:var(--csstools-light-dark-toggle--146, #f0f0f4);
+  --csstools-light-dark-toggle--145:var(--csstools-color-scheme--light) #23222b;
+  --image-page-number-bg:var(--csstools-light-dark-toggle--145, #f0f0f4);
+  --csstools-light-dark-toggle--146:var(--csstools-color-scheme--light) #15141a;
+  --image-current-page-number-fg:var(--csstools-light-dark-toggle--146, #fff);
   --csstools-light-dark-toggle--147:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
   --csstools-light-dark-toggle--148:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
   --image-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--147, rgb(0 0 0 / 0.05)), 0 0 0 1px var(--image-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--148, rgb(0 0 0 / 0.1));
   --csstools-light-dark-toggle--149:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
-  --csstools-light-dark-toggle--150:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
-  --image-hover-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--149, rgb(0 0 0 / 0.05)), 0 0 0 var(--image-border-width) var(--image-hover-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--150, rgb(0 0 0 / 0.1));
-  --csstools-light-dark-toggle--151:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
-  --csstools-light-dark-toggle--152:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
-  --image-current-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--151, rgb(0 0 0 / 0.05)), 0 0 0 var(--image-border-width) var(--image-current-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--152, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--150:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.1);
+  --csstools-light-dark-toggle--151:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
+  --image-hover-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--149, rgb(0 0 0 / 0.05)), 0 0 0 1px var(--csstools-light-dark-toggle--150, rgb(21 20 26 / 0.1)), 0 0 0 var(--image-border-width) var(--image-hover-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--151, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--152:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
+  --csstools-light-dark-toggle--153:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
+  --image-current-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--152, rgb(0 0 0 / 0.05)), 0 0 0 var(--image-border-width) var(--image-current-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--153, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--154:var(--csstools-color-scheme--light) rgb(0 202 219 / 0.08);
+  --image-dragging-placeholder-bg:var(--csstools-light-dark-toggle--154, rgb(0 98 250 / 0.08));
+  --csstools-light-dark-toggle--155:var(--csstools-color-scheme--light) #15141a;
+  --multiple-dragging-text-color:var(--csstools-light-dark-toggle--155, #fbfbfe);
   }
 }
 
@@ -5953,6 +5990,7 @@
     --image-current-focused-outline-color:var(--image-hover-border-color);
     --image-page-number-bg:ButtonFace;
     --image-page-number-fg:CanvasText;
+    --multiple-dragging-bg:Canvas;
 }
   }
 
@@ -6225,6 +6263,7 @@
 
 :is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) #viewsManagerStatusAction) #actionSelector{
           height:32px;
+          min-width:115px;
           width:auto;
           display:block;
         }
@@ -6261,8 +6300,9 @@
                 background-color:var(--button-active-fg) !important;
               }
 
-:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) #viewsManagerStatusAction) #actionSelector)  > .contextMenu{
-            min-width:115px;
+:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) #viewsManagerStatusAction) #actionSelector)  > .popupMenu{
+            width:auto;
+            z-index:1;
           }
 
 :is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) #viewsManagerStatusUndo{
@@ -6354,6 +6394,10 @@
     overflow:auto;
   }
 
+:is(#viewsManager #viewsManagerContent):has(#thumbnailsView.isDragging){
+      overflow-x:hidden;
+    }
+
 :is(#viewsManager #viewsManagerContent) #thumbnailsView{
       --thumbnail-width:126px;
 
@@ -6362,10 +6406,35 @@
       align-items:center;
       justify-content:space-evenly;
       padding:20px 32px;
-      gap:16px;
+      gap:20px;
       width:100%;
       box-sizing:border-box;
+      position:relative;
     }
+
+.isDragging:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView){
+        cursor:grabbing;
+      }
+
+:is(.isDragging:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail)  > .thumbnailImage:hover{
+            cursor:grabbing;
+          }
+
+:is(:is(.isDragging:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage:hover):not([aria-current="page"]){
+              box-shadow:var(--image-shadow);
+            }
+
+:is(.isDragging:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail)  > input{
+            pointer-events:none;
+          }
+
+.isDragging:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView)  > .dragMarker{
+          position:absolute;
+          top:0;
+          left:0;
+          border:2px solid var(--indicator-color);
+          contain:strict;
+        }
 
 :is(:is(#viewsManager #viewsManagerContent) #thumbnailsView)  > .thumbnail{
         display:inline-flex;
@@ -6378,38 +6447,56 @@
         scroll-margin-top:20px;
       }
 
-:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail)  > input{
-          display:none;
-        }
-
-:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail)::after{
+:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail):not(.isDragging)::after{
           content:attr(page-number);
           border-radius:8px;
           background-color:var(--image-page-number-bg);
           color:var(--image-page-number-fg);
           position:absolute;
           bottom:5px;
-          right:calc(var(--thumbnail-width) / 2);
+          inset-inline-end:calc(var(--thumbnail-width) / 2);
           min-width:32px;
           height:16px;
           text-align:center;
-          translate:50%;
+          translate:calc(var(--dir-factor) * 50%);
 
           font:menu;
           font-size:13px;
           font-style:normal;
           font-weight:400;
           line-height:normal;
+
           pointer-events:none;
+          -webkit-user-select:none;
+             -moz-user-select:none;
+                  user-select:none;
+        }
+
+:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail):has([aria-current="page"]):not(.isDragging)::after{
+          background-color:var(--image-current-page-number-bg);
+          color:var(--image-current-page-number-fg);
+        }
+
+.isDragging:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > input{
+          visibility:hidden;
+        }
+
+:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail)  > input{
+          margin:0;
         }
 
 :is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail)  > .thumbnailImage{
+          --thumbnail-dragging-scale:1.4;
+
           width:var(--thumbnail-width);
           border:none;
           border-radius:8px;
           box-shadow:var(--image-shadow);
           box-sizing:content-box;
           outline:var(--image-outline);
+          -webkit-user-select:none;
+             -moz-user-select:none;
+                  user-select:none;
         }
 
 .missingThumbnailImage:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage){
@@ -6435,13 +6522,67 @@
             box-shadow:var(--image-current-shadow);
           }
 
+.placeholder:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage){
+            background-color:var(--image-dragging-placeholder-bg);
+            box-shadow:none !important;
+          }
+
+.draggingThumbnail:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage){
+            position:absolute;
+            left:0;
+            top:0;
+            z-index:1;
+            transform-origin:0 0 0;
+            scale:calc(1 / var(--thumbnail-dragging-scale));
+            pointer-events:none;
+            box-shadow:var(--image-dragging-shadow);
+          }
+
+.draggingThumbnail.multiple:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage){
+              box-shadow:var(--image-multiple-dragging-shadow);
+            }
+
+.draggingThumbnail.multiple:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage)  > img{
+                position:absolute;
+                top:0;
+                left:0;
+
+                width:var(--thumbnail-width);
+                border:none;
+                border-radius:8px;
+                box-sizing:content-box;
+                outline:none;
+                -webkit-user-select:none;
+                   -moz-user-select:none;
+                        user-select:none;
+              }
+
+.draggingThumbnail.multiple:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage)::after{
+                content:attr(data-multiple-count);
+                border-radius:calc(8px * var(--thumbnail-dragging-scale));
+                background-color:var(--indicator-color);
+                color:var(--multiple-dragging-text-color);
+                position:absolute;
+                inset-block-end:calc(4px * var(--thumbnail-dragging-scale));
+                inset-inline-start:calc(4px * var(--thumbnail-dragging-scale));
+                min-width:calc(32px * var(--thumbnail-dragging-scale));
+                height:calc(16px * var(--thumbnail-dragging-scale));
+                text-align:center;
+                font:menu;
+                font-size:calc(13px * var(--thumbnail-dragging-scale));
+                font-style:normal;
+                font-weight:400;
+                line-height:normal;
+                contain:strict;
+              }
+
 :is(#viewsManager #viewsManagerContent) #attachmentsView{
-      --csstools-light-dark-toggle--153:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.8);
-      --attachment-color:var(--csstools-light-dark-toggle--153, rgb(0 0 0 / 0.8));
-      --csstools-light-dark-toggle--154:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.15);
-      --attachment-bg-color:var(--csstools-light-dark-toggle--154, rgb(0 0 0 / 0.15));
-      --csstools-light-dark-toggle--155:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.9);
-      --attachment-hover-color:var(--csstools-light-dark-toggle--155, rgb(0 0 0 / 0.9));
+      --csstools-light-dark-toggle--156:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.8);
+      --attachment-color:var(--csstools-light-dark-toggle--156, rgb(0 0 0 / 0.8));
+      --csstools-light-dark-toggle--157:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.15);
+      --attachment-bg-color:var(--csstools-light-dark-toggle--157, rgb(0 0 0 / 0.15));
+      --csstools-light-dark-toggle--158:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.9);
+      --attachment-hover-color:var(--csstools-light-dark-toggle--158, rgb(0 0 0 / 0.9));
     }
 
 @supports (color: light-dark(red, red)) and (color: rgb(0 0 0 / 0)){
@@ -6461,12 +6602,12 @@
 @supports not (color: light-dark(tan, tan)){
 
 :is(:is(#viewsManager #viewsManagerContent) #attachmentsView) *{
-      --csstools-light-dark-toggle--153:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.8);
-      --attachment-color:var(--csstools-light-dark-toggle--153, rgb(0 0 0 / 0.8));
-      --csstools-light-dark-toggle--154:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.15);
-      --attachment-bg-color:var(--csstools-light-dark-toggle--154, rgb(0 0 0 / 0.15));
-      --csstools-light-dark-toggle--155:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.9);
-      --attachment-hover-color:var(--csstools-light-dark-toggle--155, rgb(0 0 0 / 0.9));
+      --csstools-light-dark-toggle--156:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.8);
+      --attachment-color:var(--csstools-light-dark-toggle--156, rgb(0 0 0 / 0.8));
+      --csstools-light-dark-toggle--157:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.15);
+      --attachment-bg-color:var(--csstools-light-dark-toggle--157, rgb(0 0 0 / 0.15));
+      --csstools-light-dark-toggle--158:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.9);
+      --attachment-hover-color:var(--csstools-light-dark-toggle--158, rgb(0 0 0 / 0.9));
   }
 }
 
@@ -6502,13 +6643,13 @@
           }
 
 .sidebar{
-  --csstools-light-dark-toggle--156:var(--csstools-color-scheme--light) #23222b;
-  --sidebar-bg-color:var(--csstools-light-dark-toggle--156, #fff);
-  --csstools-light-dark-toggle--157:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.1);
-  --sidebar-border-color:var(--csstools-light-dark-toggle--157, rgb(21 20 26 / 0.1));
-  --csstools-light-dark-toggle--158:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
-  --csstools-light-dark-toggle--159:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
-  --sidebar-box-shadow:0 0.25px 0.75px var(--csstools-light-dark-toggle--158, rgb(0 0 0 / 0.05)), 0 2px 6px 0 var(--csstools-light-dark-toggle--159, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--159:var(--csstools-color-scheme--light) #23222b;
+  --sidebar-bg-color:var(--csstools-light-dark-toggle--159, #fff);
+  --csstools-light-dark-toggle--160:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.1);
+  --sidebar-border-color:var(--csstools-light-dark-toggle--160, rgb(21 20 26 / 0.1));
+  --csstools-light-dark-toggle--161:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
+  --csstools-light-dark-toggle--162:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
+  --sidebar-box-shadow:0 0.25px 0.75px var(--csstools-light-dark-toggle--161, rgb(0 0 0 / 0.05)), 0 2px 6px 0 var(--csstools-light-dark-toggle--162, rgb(0 0 0 / 0.1));
   --sidebar-backdrop-filter:none;
   --sidebar-border-radius:8px;
   --sidebar-padding:5px;
@@ -6516,8 +6657,8 @@
   --sidebar-max-width:632px;
   --sidebar-width:239px;
   --resizer-width:4px;
-  --csstools-light-dark-toggle--160:var(--csstools-color-scheme--light) #00cadb;
-  --resizer-hover-bg-color:var(--csstools-light-dark-toggle--160, #0062fa);
+  --csstools-light-dark-toggle--163:var(--csstools-color-scheme--light) #00cadb;
+  --resizer-hover-bg-color:var(--csstools-light-dark-toggle--163, #0062fa);
 }
 
 @supports (color: light-dark(red, red)){
@@ -6545,15 +6686,15 @@
 @supports not (color: light-dark(tan, tan)){
 
 .sidebar *{
-  --csstools-light-dark-toggle--156:var(--csstools-color-scheme--light) #23222b;
-  --sidebar-bg-color:var(--csstools-light-dark-toggle--156, #fff);
-  --csstools-light-dark-toggle--157:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.1);
-  --sidebar-border-color:var(--csstools-light-dark-toggle--157, rgb(21 20 26 / 0.1));
-  --csstools-light-dark-toggle--158:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
-  --csstools-light-dark-toggle--159:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
-  --sidebar-box-shadow:0 0.25px 0.75px var(--csstools-light-dark-toggle--158, rgb(0 0 0 / 0.05)), 0 2px 6px 0 var(--csstools-light-dark-toggle--159, rgb(0 0 0 / 0.1));
-  --csstools-light-dark-toggle--160:var(--csstools-color-scheme--light) #00cadb;
-  --resizer-hover-bg-color:var(--csstools-light-dark-toggle--160, #0062fa);
+  --csstools-light-dark-toggle--159:var(--csstools-color-scheme--light) #23222b;
+  --sidebar-bg-color:var(--csstools-light-dark-toggle--159, #fff);
+  --csstools-light-dark-toggle--160:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.1);
+  --sidebar-border-color:var(--csstools-light-dark-toggle--160, rgb(21 20 26 / 0.1));
+  --csstools-light-dark-toggle--161:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
+  --csstools-light-dark-toggle--162:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
+  --sidebar-box-shadow:0 0.25px 0.75px var(--csstools-light-dark-toggle--161, rgb(0 0 0 / 0.05)), 0 2px 6px 0 var(--csstools-light-dark-toggle--162, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--163:var(--csstools-color-scheme--light) #00cadb;
+  --resizer-hover-bg-color:var(--csstools-light-dark-toggle--163, #0062fa);
   }
 }
 
@@ -6580,6 +6721,7 @@
   max-width:var(--sidebar-max-width);
   -webkit-backdrop-filter:var(--sidebar-backdrop-filter);
           backdrop-filter:var(--sidebar-backdrop-filter);
+  box-sizing:border-box;
 }
 
 .sidebar .sidebarResizer{
@@ -6631,8 +6773,8 @@
   --page-border:9px solid transparent;
   --spreadHorizontalWrapped-margin-LR:-3.5px;
   --loading-icon-delay:400ms;
-  --csstools-light-dark-toggle--161:var(--csstools-color-scheme--light) #0df;
-  --focus-ring-color:var(--csstools-light-dark-toggle--161, #0060df);
+  --csstools-light-dark-toggle--164:var(--csstools-color-scheme--light) #0df;
+  --focus-ring-color:var(--csstools-light-dark-toggle--164, #0060df);
   --focus-ring-outline:2px solid var(--focus-ring-color);
 }
 
@@ -6645,8 +6787,8 @@
 @supports not (color: light-dark(tan, tan)){
 
 :root *{
-  --csstools-light-dark-toggle--161:var(--csstools-color-scheme--light) #0df;
-  --focus-ring-color:var(--csstools-light-dark-toggle--161, #0060df);
+  --csstools-light-dark-toggle--164:var(--csstools-color-scheme--light) #0df;
+  --focus-ring-color:var(--csstools-light-dark-toggle--164, #0060df);
   }
 }
 

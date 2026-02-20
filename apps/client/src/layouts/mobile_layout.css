@@ -1,0 +1,76 @@
+#background-color-tracker {
+    color: var(--main-background-color) !important;
+}
+
+span.keyboard-shortcut,
+kbd {
+    display: none;
+}
+
+.dropdown-menu {
+    font-size: larger;
+}
+
+.action-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.25em;
+    padding-inline-start: 0.5em;
+    padding-inline-end: 0.5em;
+    color: var(--main-text-color);
+}
+.quick-search {
+    margin: 0;
+}
+.quick-search .dropdown-menu {
+    max-width: 350px;
+}
+
+/* #region Tree */
+.tree-wrapper {
+    max-height: 100%;
+    margin-top: 0px;
+    overflow-y: auto;
+    contain: content;
+    padding-inline-start: 10px;
+}
+
+.fancytree-title {
+    margin-inline-start: 0.6em !important;
+}
+
+.fancytree-node {
+    padding: 5px;
+}
+
+span.fancytree-expander {
+    width: 24px !important;
+    margin-inline-end: 5px;
+}
+
+.fancytree-loading span.fancytree-expander {
+    width: 24px;
+    height: 32px;
+}
+
+.fancytree-loading  span.fancytree-expander:after {
+    width: 20px;
+    height: 20px;
+    margin-top: 4px;
+    border-width: 2px;
+    border-style: solid;
+}
+
+.tree-wrapper .collapse-tree-button,
+.tree-wrapper .scroll-to-active-note-button,
+.tree-wrapper .tree-settings-button {
+    position: fixed;
+    margin-inline-end: 16px;
+    display: none;
+}
+
+.tree-wrapper .unhoist-button {
+    font-size: 200%;
+}
+/* #endregion */

@@ -188,8 +188,6 @@ export default class CodeMirror extends EditorView {
         const endPos = this.state.doc.length;
         this.dispatch({
             selection: EditorSelection.cursor(endPos),
-            effects: EditorView.scrollIntoView(endPos, { y: "end" }),
-            scrollIntoView: true
         });
     }
 

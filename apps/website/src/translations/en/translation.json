@@ -112,6 +112,7 @@
   "header": {
     "get-started": "Get started",
     "documentation": "Documentation",
+    "resources": "Resources",
     "support-us": "Support us"
   },
   "footer": {
@@ -196,5 +197,12 @@
     "description": "Trilium Notes hosted on PikaPods, a paid service for easy access and management. Not directly affiliated with the Trilium team.",
     "download_pikapod": "Set up on PikaPods",
     "download_triliumcc": "Alternatively see trilium.cc"
+  },
+  "resources": {
+    "title": "Resources",
+    "icon_packs": "Icon packs",
+    "icon_packs_intro": "Expand the selection of available icons for your notes by using an icon pack. For more information about icon packs, see the <DocumentationLink>official documentation</DocumentationLink>.",
+    "download": "Download",
+    "website": "Website"
   }
 }

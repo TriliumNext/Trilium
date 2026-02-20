@@ -21,7 +21,7 @@ export async function lint(mimeType: string) {
     if (mimeType === "application/javascript;env=frontend") {
         globals = { ...globals, ...globalDefinitions.jquery };
     } else if (mimeType === "application/javascript;env=backend") {
-
+        globals = { ...globals, ...globalDefinitions.nodeBuiltin };
     }
 
     const config: (Linter.LegacyConfig | Linter.Config | Linter.Config[]) = [

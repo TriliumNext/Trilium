@@ -1,4 +1,5 @@
 import "./ListOrGridView.css";
+import { Card, CardSection } from "../../react/Card";
 
 import { useEffect, useRef, useState } from "preact/hooks";
 
@@ -14,6 +15,11 @@ import NoteLink from "../../react/NoteLink";
 import { ViewModeProps } from "../interface";
 import { Pager, usePagination } from "../Pagination";
 import { filterChildNotes, useFilteredNoteIds } from "./utils";
+import { JSX } from "preact/jsx-runtime";
+import { clsx } from "clsx";
+import ActionButton from "../../react/ActionButton";
+import linkContextMenuService from "../../../menus/link_context_menu";
+import { TargetedMouseEvent } from "preact";
 
 export function ListView({ note, noteIds: unfilteredNoteIds, highlightedTokens }: ViewModeProps<{}>) {
     const expandDepth = useExpansionDepth(note);
@@ -33,7 +39,7 @@ export function ListView({ note, noteIds: unfilteredNoteIds, highlightedTokens }
             { noteIds.length > 0 && <div class="note-list-wrapper">
                 {!hasCollectionProperties && <Pager {...pagination} />}
 
-                <div class="note-list-container use-tn-links">
+                <Card className={clsx("nested-note-list", {"search-results": (noteType === "search")})}>
                     {pageNotes?.map(childNote => (
                         <ListNoteCard
                             key={childNote.noteId}
@@ -41,7 +47,7 @@ export function ListView({ note, noteIds: unfilteredNoteIds, highlightedTokens }
                             expandDepth={expandDepth} highlightedTokens={highlightedTokens}
                             currentLevel={1} includeArchived={includeArchived} />
                     ))}
-                </div>
+                </Card>
 
                 <Pager {...pagination} />
             </div>}
@@ -93,27 +99,52 @@ function ListNoteCard({ note, parentNote, highlightedTokens, currentLevel, expan
     // Reset expand state if switching to another note, or if user manually toggled expansion state.
     useEffect(() => setExpanded(currentLevel <= expandDepth), [ note, currentLevel, expandDepth ]);
 
+    let subSections: JSX.Element | undefined = undefined;
+    if (isExpanded) {
+        subSections = <>
+            <CardSection className="note-content-preview">
+                <NoteContent note={note}
+                             highlightedTokens={highlightedTokens}
+                             noChildrenList
+                             includeArchivedNotes={includeArchived} />
+            </CardSection>
+
+            <NoteChildren note={note}
+                          parentNote={parentNote}
+                          highlightedTokens={highlightedTokens}
+                          currentLevel={currentLevel}
+                          expandDepth={expandDepth}
+                          includeArchived={includeArchived} />
+        </>
+    }
+    
     return (
-        <div
-            className={`note-book-card no-tooltip-preview ${isExpanded ? "expanded" : ""} ${note.isArchived ? "archived" : ""}`}
+        <CardSection
+            className={clsx("nested-note-list-item", "no-tooltip-preview", note.getColorClass(), {
+                "expanded": isExpanded,
+                "archived": note.isArchived
+            })}
+            subSections={subSections}
+            subSectionsVisible={isExpanded}
+            highlightOnHover
             data-note-id={note.noteId}
         >
-            <h5 className="note-book-header">
-                <span
-                    className={`note-expander ${isExpanded ? "bx bx-chevron-down" : "bx bx-chevron-right"}`}
-                    onClick={() => setExpanded(!isExpanded)}
-                />
-
+            <h5>
+                <span className={`note-expander ${isExpanded ? "bx bx-chevron-down" : "bx bx-chevron-right"}`} 
+                      onClick={() => setExpanded(!isExpanded)}/>
                 <Icon className="note-icon" icon={note.getIcon()} />
-                <NoteLink className="note-book-title" notePath={notePath} noPreview showNotePath={parentNote.type === "search"} highlightedTokens={highlightedTokens} />
+                <NoteLink className="note-book-title"
+                          notePath={notePath}
+                          noPreview
+                          showNotePath={parentNote.type === "search"}
+                          highlightedTokens={highlightedTokens} />
                 <NoteAttributes note={note} />
+                <ActionButton className="nested-note-list-item-menu"
+                              icon="bx bx-dots-vertical-rounded" text=""
+                              onClick={(e) => openNoteMenu(notePath, e)} 
+                />
             </h5>
-
-            {isExpanded && <>
-                <NoteContent note={note} highlightedTokens={highlightedTokens} noChildrenList includeArchivedNotes={includeArchived} />
-                <NoteChildren note={note} parentNote={parentNote} highlightedTokens={highlightedTokens} currentLevel={currentLevel} expandDepth={expandDepth} includeArchived={includeArchived} />
-            </>}
-        </div>
+        </CardSection>
     );
 }
 
@@ -165,6 +196,9 @@ export function NoteContent({ note, trim, noChildrenList, highlightedTokens, inc
     const contentRef = useRef<HTMLDivElement>(null);
     const highlightSearch = useImperativeSearchHighlighlighting(highlightedTokens);
 
+    const [ready, setReady] = useState(false);
+    const [noteType, setNoteType] = useState<string>("none");
+
     useEffect(() => {
         content_renderer.getRenderedContent(note, {
             trim,
@@ -179,17 +213,19 @@ export function NoteContent({ note, trim, noChildrenList, highlightedTokens, inc
                 } else {
                     contentRef.current.replaceChildren();
                 }
-                contentRef.current.classList.add(`type-${type}`);
                 highlightSearch(contentRef.current);
+                setNoteType(type);
+                setReady(true);
             })
             .catch(e => {
                 console.warn(`Caught error while rendering note '${note.noteId}' of type '${note.type}'`);
                 console.error(e);
                 contentRef.current?.replaceChildren(t("collections.rendering_error"));
+                setReady(true);
             });
     }, [ note, highlightedTokens ]);
 
-    return <div ref={contentRef} className="note-book-content" />;
+    return <div ref={contentRef} className={clsx("note-book-content", `type-${noteType}`, {"note-book-content-ready": ready})} />;
 }
 
 function NoteChildren({ note, parentNote, highlightedTokens, currentLevel, expandDepth, includeArchived }: {
@@ -237,4 +273,9 @@ function useExpansionDepth(note: FNote) {
     }
     return parseInt(expandDepth, 10);
 
+}
+
+function openNoteMenu(notePath, e: TargetedMouseEvent<HTMLElement>) {
+    linkContextMenuService.openContextMenu(notePath, e);
+    e.stopPropagation()
 }

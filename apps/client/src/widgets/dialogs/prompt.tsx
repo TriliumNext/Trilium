@@ -69,7 +69,7 @@ export default function PromptDialog() {
                 submitValue.current = null;
                 opts.current = undefined;
             }}
-            footer={<Button text={t("prompt.ok")} keyboardShortcut="Enter" primary />}
+            footer={<Button text={t("prompt.ok")} keyboardShortcut="Enter" kind="primary" />}
             show={shown}
             stackable
         >

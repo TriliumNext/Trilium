@@ -20,7 +20,9 @@ export default function ProtectedSession() {
     }, [ passwordRef ]);
 
     return (
-        <form class="protected-session-password-form" onSubmit={submitCallback}>
+        <form class="protected-session-password-form tn-centered-form" onSubmit={submitCallback}>
+            <span class="form-icon bx bx-key" />
+            
             <FormGroup name="protected-session-password-in-detail" label={t("protected_session.enter_password_instruction")}>
                 <FormTextBox
                     type="password"
@@ -32,7 +34,7 @@ export default function ProtectedSession() {
 
             <Button
                 text={t("protected_session.start_session_button")}
-                primary
+                kind="primary"
                 keyboardShortcut="Enter"
             />
         </form>

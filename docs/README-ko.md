@@ -11,14 +11,14 @@
 
 # 트릴리움 노트
 
-![GitHub Sponsors](https://img.shields.io/github/sponsors/eliandoran)
-![LiberaPay patrons](https://img.shields.io/liberapay/patrons/ElianDoran)\
+![GitHub 스폰서](https://img.shields.io/github/sponsors/eliandoran) ![LiberaPay
+후원자](https://img.shields.io/liberapay/patrons/ElianDoran)\
 ![Docker Pulls](https://img.shields.io/docker/pulls/triliumnext/trilium)
-![GitHub Downloads (all assets, all
-releases)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
+![GitHub Downloads (모든 에셋, 모든
+릴리즈)](https://img.shields.io/github/downloads/triliumnext/trilium/total)\
 [![RelativeCI](https://badges.relative-ci.com/badges/Di5q7dz9daNDZ9UXi0Bp?branch=develop)](https://app.relative-ci.com/projects/Di5q7dz9daNDZ9UXi0Bp)
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
+[![번역
+상태](https://hosted.weblate.org/widget/trilium/svg-badge.svg)](https://hosted.weblate.org/engage/trilium/)
 
 <!-- translate:off -->
 <!-- LANGUAGE SWITCHER -->
@@ -33,7 +33,7 @@ Trilium Notes는 대규모 개인 지식 기반 구축에 중점을 둔 무료 �
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
-## ⏬ 내려받기
+## ⏬ 다운로드
 - [최신 릴리스](https://github.com/TriliumNext/Trilium/releases/latest) – 안정된 버전으로
   대부분의 사용자에게 권장됩니다.
 - [야간 빌드](https://github.com/TriliumNext/Trilium/releases/tag/nightly) – 불안정한 개발
@@ -85,149 +85,133 @@ Trilium Notes는 대규모 개인 지식 기반 구축에 중점을 둔 무료 �
   통합](https://docs.triliumnotes.org/user-guide/setup/server/mfa)
 * self-hosted 동기화 서버를 통한
   [동기화](https://docs.triliumnotes.org/user-guide/setup/synchronization)
-  * there are [3rd party services for hosting synchronisation
-    server](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
+  * 동기화 서버를 호스팅하는 [타사
+    서비스](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)가
+    있습니다
 * 노트의 인터넷 [공유](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
   (퍼블리싱) 기능
 * 노트마다 세분화된 강력한 [노트
   암호화](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
 * [Excalidraw](https://excalidraw.com/) 기반 스케치 다이어그램 (노트 타입 "캔버스")
-* [Relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [note/link maps](https://docs.triliumnotes.org/user-guide/note-types/note-map)
-  for visualizing notes and their relations
+* 노트와 그 관계를 시각화하기 위한 [관계
+  맵](https://docs.triliumnotes.org/user-guide/note-types/relation-map) 및 [노트/링크
+  맵](https://docs.triliumnotes.org/user-guide/note-types/note-map)
 * [Mind Elixir](https://docs.mind-elixir.com/) 기반 마인드맵
-* [Geo maps](https://docs.triliumnotes.org/user-guide/collections/geomap) with
-  location pins and GPX tracks
-* [Scripting](https://docs.triliumnotes.org/user-guide/scripts) - see [Advanced
-  showcases](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
-* [REST API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi) for
-  automation
-* Scales well in both usability and performance upwards of 100 000 notes
-* Touch optimized [mobile
-  frontend](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) for
-  smartphones and tablets
-* Built-in [dark
-  theme](https://docs.triliumnotes.org/user-guide/concepts/themes), support for
-  user themes
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
-  and [Markdown import &
-  export](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
-* [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) for
-  easy saving of web content
-* Customizable UI (sidebar buttons, user-defined widgets, ...)
-* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
-  along with a Grafana Dashboard.
+* 위치 핀과 GPX 트랙이 있는
+  [지오맵](https://docs.triliumnotes.org/user-guide/collections/geomap)
+* [스크립트](https://docs.triliumnotes.org/user-guide/scripts) - [고급
+  쇼케이스](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
+* 자동화를 위한 [REST
+  API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi)
+* 10만 개 이상의 노트를 처리해도 사용성과 성능 면에서 뛰어난 확장성을 실현
+* 스마트폰 및 태블릿용 터치 조작에 최적화된 [모바일
+  프런트엔드](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
+* 기본 제공 [다크 테마](https://docs.triliumnotes.org/user-guide/concepts/themes), 사용자
+  테마 지원
+* [Evernote]
+  (https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote) 및
+  [Markdown 가져오기 및 내보내기]
+  (https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
+* [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) 웹
+  콘텐츠의 쉬운 저장
+* 사용자 정의 가능한 UI(사이드바 버튼, 사용자 정의 위젯 등)
+* [메트릭](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics)과
+  Grafana 대시보드가 함께 제공됩니다.
 
-✨ Check out the following third-party resources/communities for more TriliumNext
-related goodies:
+✨ TriliumNext 관련 유용한 정보를 더 보시려면 아래의 서드파티 리소스/커뮤니티를 확인해 보세요:
 
-- [awesome-trilium](https://github.com/Nriver/awesome-trilium) for 3rd party
-  themes, scripts, plugins and more.
-- [TriliumRocks!](https://trilium.rocks/) for tutorials, guides, and much more.
+- [awesome-trilium](https://github.com/Nriver/awesome-trilium)은 서드파티 테마, 스크립트,
+  플러그인 등을 위한 것입니다.
+- [TriliumRocks!](https://trilium.rocks/) 튜토리얼, 가이드 및 기타 여러 가지를 확인하세요.
 
 ## ❓왜 TriliumNext일까?
 
-The original Trilium developer ([Zadam](https://github.com/zadam)) has
-graciously given the Trilium repository to the community project which resides
-at https://github.com/TriliumNext
+Trilium의 최초 개발자([Zadam](https://github.com/zadam))는 Trilium 저장소를 커뮤니티 프로젝트에 흔쾌히
+제공했으며, 해당 저장소는 https://github.com/TriliumNext에 있습니다.
 
-### ⬆️Migrating from Zadam/Trilium?
+### ⬆️Zadam/Trilium에서 마이그레이션하시나요?
 
-There are no special migration steps to migrate from a zadam/Trilium instance to
-a TriliumNext/Trilium instance. Simply [install
-TriliumNext/Trilium](#-installation) as usual and it will use your existing
-database.
+zadam/Trilium 인스턴스에서 TriliumNext/Trilium 인스턴스로 마이그레이션하는 데 특별한 절차는 없습니다. 평소처럼
+[TriliumNext/Trilium](#-installation)을 설치하면 기존 데이터베이스를 사용하게 됩니다.
 
-Versions up to and including
-[v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4) are
-compatible with the latest zadam/trilium version of
-[v0.63.7](https://github.com/zadam/trilium/releases/tag/v0.63.7). Any later
-versions of TriliumNext/Trilium have their sync versions incremented which
-prevents direct migration.
+[v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4)까지의 버전은
+[v0.63.7](https://github.com/zadam/trilium/releases/tag/v0.63.7)의 최신
+zadam/trilium 버전과 호환됩니다. 이후 버전의 TriliumNext/Trilium은 동기화 버전이 증가되어 직접 마이그레이션이
+불가능합니다.
 
-## 💬 Discuss with us
+## 💬 함께 토론해 보세요
 
-Feel free to join our official conversations. We would love to hear what
-features, suggestions, or issues you may have!
+저희 공식 대화에 자유롭게 참여해 주세요. 어떤 기능, 제안 또는 문제점이 있으시면 언제든지 알려주세요!
 
-- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (For synchronous
-  discussions.)
-  - The `General` Matrix room is also bridged to
-    [XMPP](xmpp:discuss@trilium.thisgreat.party?join)
-- [Github Discussions](https://github.com/TriliumNext/Trilium/discussions) (For
-  asynchronous discussions.)
-- [Github Issues](https://github.com/TriliumNext/Trilium/issues) (For bug
-  reports and feature requests.)
+- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (동기식 토론용)
+  - `General` 매트릭스 룸은 [XMPP](xmpp:discuss@trilium.thisgreat.party?join)에도 브리지되어
+    있습니다
+- [Github Discussions](https://github.com/TriliumNext/Trilium/discussions) (비동기
+  토론용)
+- [Github Issues](https://github.com/TriliumNext/Trilium/issues) (버그 보고 및 기능
+  요청용)
 
-## 🏗 Installation
+## 🏗 설치
 
 ### 윈도우 / 맥OS
 
-Download the binary release for your platform from the [latest release
-page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the package
-and run the `trilium` executable.
+[최신 릴리스 페이지](https://github.com/TriliumNext/Trilium/releases/latest)에서 플랫폼에 해당하는
+바이너리 릴리스를 다운로드한 뒤, 패키지의 압축을 풀고 `trilium` 실행 파일을 실행하세요.
 
 ### Linux
 
-If your distribution is listed in the table below, use your distribution's
-package.
+사용하시는 배포판이 아래 표에 나와 있다면 해당 배포판의 패키지를 사용하십시오.
 
-[![Packaging
-status](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+[![패키징
+상태](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
 
-You may also download the binary release for your platform from the [latest
-release page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the
-package and run the `trilium` executable.
+또한 [최신 릴리스 페이지](https://github.com/TriliumNext/Trilium/releases/latest)에서 해당
+플랫폼용 바이너리 릴리스를 다운로드하고 패키지의 압축을 풀고 `trilium` 실행 파일을 실행할 수도 있습니다.
 
-TriliumNext is also provided as a Flatpak, but not yet published on FlatHub.
+TriliumNext는 Flatpak으로도 제공되지만, 아직 FlatHub에는 게시되지 않았습니다.
 
-### Browser (any OS)
+### 브라우저 (모든 운영체제)
 
-If you use a server installation (see below), you can directly access the web
-interface (which is almost identical to the desktop app).
+서버 설치(아래 참조)를 사용하는 경우 데스크톱 앱과 거의 동일한 웹 인터페이스에 직접 액세스할 수 있습니다.
 
-Currently only the latest versions of Chrome & Firefox are supported (and
-tested).
+현재는 크롬과 파이어폭스의 최신 버전만 지원(및 테스트)됩니다.
 
 ### 모바일
 
-To use TriliumNext on a mobile device, you can use a mobile web browser to
-access the mobile interface of a server installation (see below).
+모바일 기기에서 TriliumNext를 사용하려면, 모바일 웹 브라우저를 사용하여 서버 설치의 모바일 인터페이스에 접속하면 됩니다(아래 참조).
 
-See issue https://github.com/TriliumNext/Trilium/issues/4962 for more
-information on mobile app support.
+모바일 앱 지원에 대한 자세한 내용은 https://github.com/TriliumNext/Trilium/issues/4962 이슈를
+참조하세요.
 
-If you prefer a native Android app, you can use
-[TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
-Report bugs and missing features at [their
-repository](https://github.com/FliegendeWurst/TriliumDroid). Note: It is best to
-disable automatic updates on your server installation (see below) when using
-TriliumDroid since the sync version must match between Trilium and TriliumDroid.
+네이티브 Android 앱을 선호하는 경우
+[TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid)를
+사용할 수 있습니다. 버그 및 누락된 기능은 [해당
+저장소](https://github.com/FliegendeWurst/TriliumDroid)에 보고하십시오. 참고: Trilium과
+TriliumDroid의 동기화 버전이 일치해야 하므로 TriliumDroid를 사용할 때는 서버 설치에서 자동 업데이트를 비활성화하는 것이
+좋습니다(아래 참조).
 
 ### 서버
 
-To install TriliumNext on your own server (including via Docker from
-[Dockerhub](https://hub.docker.com/r/triliumnext/trilium)) follow [the server
-installation docs](https://docs.triliumnotes.org/user-guide/setup/server).
+[Dockerhub](https://hub.docker.com/r/triliumnext/trilium)의 Docker를 통해
+TriliumNext를 자체 서버에 설치하려면 [서버 설치
+문서](https://docs.triliumnotes.org/user-guide/setup/server)를 따르세요.
 
 
-## 💻 Contribute
+## 💻 참여하기
 
-### Translations
+### 번역
 
-If you are a native speaker, help us translate Trilium by heading over to our
-[Weblate page](https://hosted.weblate.org/engage/trilium/).
+원어민이시라면 [Weblate 페이지](https://hosted.weblate.org/engage/trilium/)로 이동하여 Trilium
+번역을 도와주세요.
 
-Here's the language coverage we have so far:
+현재까지 지원되는 언어는 다음과 같습니다:
 
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
+[![번역
+상태](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
 
-### Code
+### 코드
 
-Download the repository, install dependencies using `pnpm` and then run the
-server (available at http://localhost:8080):
+저장소를 다운로드하고 `pnpm`을 사용하여 종속성을 설치한 다음 서버를 실행하세요(http://localhost:8080에서 접속 가능):
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -235,10 +219,9 @@ pnpm install
 pnpm run server:start
 ```
 
-### Documentation
+### 문서
 
-Download the repository, install dependencies using `pnpm` and then run the
-environment required to edit the documentation:
+저장소를 다운로드하고 `pnpm`을 사용하여 종속성을 설치한 다음 문서 편집에 필요한 환경을 실행하세요.
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -246,9 +229,8 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
-### Building the Executable
-Download the repository, install dependencies using `pnpm` and then build the
-desktop app for Windows:
+### 실행 파일 빌드
+저장소를 다운로드하고 `pnpm`을 사용하여 종속성을 설치한 다음 Windows용 데스크톱 앱을 빌드하세요.
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -260,33 +242,27 @@ pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 docs](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide)를
 참고하세요.
 
-### Developer Documentation
+### 개발자 문서
 
-Please view the [documentation
-guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
-for details. If you have more questions, feel free to reach out via the links
-described in the "Discuss with us" section above.
+자세한 내용은 [문서
+가이드](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)를
+참조하십시오. 추가 질문이 있으시면 위의 "문의하기" 섹션에 설명된 링크를 통해 언제든지 문의해 주십시오.
 
 ## 👏 Shoutouts
 
-* [zadam](https://github.com/zadam) for the original concept and implementation
-  of the application.
-* [Sarah Hussein](https://github.com/Sarah-Hussein) for designing the
-  application icon.
-* [nriver](https://github.com/nriver) for his work on internationalization.
-* [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
-* [antoniotejada](https://github.com/nriver) for the original syntax highlight
-  widget.
-* [Dosu](https://dosu.dev/) for providing us with the automated responses to
-  GitHub issues and discussions.
-* [Tabler Icons](https://tabler.io/icons) for the system tray icons.
+* [zadam](https://github.com/zadam)은 애플리케이션의 원래 개념과 구현에 대한 공로를 인정받았습니다.
+* [Sarah Hussein](https://github.com/Sarah-Hussein)은 애플리케이션 아이콘을 디자인했습니다.
+* [nriver](https://github.com/nriver) 국제화에 공헌.
+* [Thomas Frei](https://github.com/thfrei) 캔버스에 대한 독창적인 작업.
+* [antoniotejada](https://github.com/nriver) 구문 강조 위젯의 원본.
+* [Dosu](https://dosu.dev/) GitHub 이슈 및 토론에 대한 자동 응답을 제공.
+* [Tabler Icons](https://tabler.io/icons) 시스템 트레이 아이콘.
 
-Trilium would not be possible without the technologies behind it:
+트릴리움은 다음의 기반 기술들이 없었다면 불가능했을 것입니다:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes. We are grateful for being offered a set of the premium features.
-* [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with
-  support for huge amount of languages.
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - 텍스트 노트의 시각적 편집기입니다. 프리미엄
+  기능을 제공해주셔서 감사합니다.
+* [CodeMirror](https://github.com/codemirror/CodeMirror) - 수많은 언어를 지원하는 코드 편집기.
 * [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite
   whiteboard used in Canvas notes.
 * [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - providing the

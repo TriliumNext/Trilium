@@ -739,30 +739,26 @@ body[dir=rtl] #left-pane span.fancytree-node.protected > span.fancytree-custom-i
     transform: translateX(-25%);
 }
 
-body.mobile .fancytree-expander::before,
-body.mobile .fancytree-title,
-body.mobile .fancytree-node > span {
-    font-size: 1rem !important;
-}
-
 @media (max-width: 991px) {
     body.mobile #mobile-sidebar-container {
         background-color: rgba(0, 0, 0, 0.5);
     }
 
-    body.mobile:not(.force-fixed-tree) #mobile-sidebar-wrapper {
+    body.mobile #mobile-sidebar-wrapper {
         border-top-right-radius: 12px;
         border-bottom-right-radius: 12px;
         border-inline-end: 1px solid var(--subtle-border-color);
     }
 }
 
-#left-pane .fancytree-expander {
+#left-pane .fancytree-expander,
+.nested-note-list-item .note-expander {
     opacity: 0.65;
     transition: opacity 150ms ease-in;
 }
 
-#left-pane .fancytree-expander:hover {
+#left-pane .fancytree-expander:hover,
+.nested-note-list-item .note-expander:hover {
     opacity: 1;
     transition: opacity 300ms ease-out;
 }

@@ -57,7 +57,7 @@ export default function BulkActionsDialog() {
             className="bulk-actions-dialog"
             size="xl"
             title={t("bulk_actions.bulk_actions")}
-            footer={<Button text={t("bulk_actions.execute_bulk_actions")} primary />}
+            footer={<Button text={t("bulk_actions.execute_bulk_actions")} kind="primary" />}
             show={shown}
             onSubmit={async () => {
                 await server.post("bulk-action/execute", {

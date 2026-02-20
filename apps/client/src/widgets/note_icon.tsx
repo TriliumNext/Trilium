@@ -69,7 +69,7 @@ function MobileNoteIconSwitcher({ note, icon }: {
     const [ modalShown, setModalShown ] = useState(false);
     const { windowWidth } = useWindowSize();
 
-    return (note &&
+    return (
         <div className="note-icon-widget">
             <ActionButton
                 className="note-icon"
@@ -86,7 +86,7 @@ function MobileNoteIconSwitcher({ note, icon }: {
                     className="icon-switcher note-icon-widget"
                     scrollable
                 >
-                    <NoteIconList note={note} onHide={() => setModalShown(false)} columnCount={Math.max(1, Math.floor(windowWidth / ICON_SIZE))} />
+                    {note && <NoteIconList note={note} onHide={() => setModalShown(false)} columnCount={Math.max(1, Math.floor(windowWidth / ICON_SIZE))} />}
                 </Modal>
             ), document.body)}
         </div>

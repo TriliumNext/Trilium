@@ -212,8 +212,8 @@ export function getLocaleName(locale: Locale | null | undefined) {
 
 //#region Note info & Similar
 interface NoteInfoContext extends StatusBarContext {
-    similarNotesShown: boolean;
-    setSimilarNotesShown: (value: boolean) => void;
+    similarNotesShown?: boolean;
+    setSimilarNotesShown?: (value: boolean) => void;
 }
 
 export function NoteInfoBadge(context: NoteInfoContext) {
@@ -225,7 +225,7 @@ export function NoteInfoBadge(context: NoteInfoContext) {
 
     // Keyboard shortcut.
     useTriliumEvent("toggleRibbonTabNoteInfo", () => enabled && dropdownRef.current?.show());
-    useTriliumEvent("toggleRibbonTabSimilarNotes", () => setSimilarNotesShown(!similarNotesShown));
+    useTriliumEvent("toggleRibbonTabSimilarNotes", () => setSimilarNotesShown && setSimilarNotesShown(!similarNotesShown));
 
     return (enabled &&
         <StatusBarDropdown
@@ -242,8 +242,8 @@ export function NoteInfoBadge(context: NoteInfoContext) {
     );
 }
 
-function NoteInfoContent({ note, setSimilarNotesShown, noteType, dropdownRef }: NoteInfoContext & {
-    dropdownRef: RefObject<BootstrapDropdown>;
+export function NoteInfoContent({ note, setSimilarNotesShown, noteType, dropdownRef }: Pick<NoteInfoContext, "note" | "setSimilarNotesShown"> & {
+    dropdownRef?: RefObject<BootstrapDropdown>;
     noteType: NoteType;
 }) {
     const { metadata, ...sizeProps } = useNoteMetadata(note);
@@ -251,7 +251,7 @@ function NoteInfoContent({ note, setSimilarNotesShown, noteType, dropdownRef }: 
     const noteTypeMapping = useMemo(() => NOTE_TYPES.find(t => t.type === noteType), [ noteType ]);
 
     return (
-        <>
+        <div className="note-info-content">
             <ul>
                 {originalFileName && <NoteInfoValue text={t("file_properties.original_file_name")} value={originalFileName} />}
                 <NoteInfoValue text={t("note_info_widget.created")} value={formatDateTime(metadata?.dateCreated)} />
@@ -262,14 +262,14 @@ function NoteInfoContent({ note, setSimilarNotesShown, noteType, dropdownRef }: 
                 <NoteInfoValue text={t("note_info_widget.note_size")} title={t("note_info_widget.note_size_info")} value={<NoteSizeWidget {...sizeProps} />} />
             </ul>
 
-            <LinkButton
+            {setSimilarNotesShown && <LinkButton
                 text={t("note_info_widget.show_similar_notes")}
                 onClick={() => {
-                    dropdownRef.current?.hide();
+                    dropdownRef?.current?.hide();
                     setSimilarNotesShown(true);
                 }}
-            />
-        </>
+            />}
+        </div>
     );
 }
 
@@ -414,7 +414,7 @@ function NotePaths({ note, hoistedNoteId, notePath }: StatusBarContext) {
     const dropdownRef = useRef<BootstrapDropdown>(null);
     const sortedNotePaths = useSortedNotePaths(note, hoistedNoteId);
     const count = sortedNotePaths?.length ?? 0;
-    const enabled = count > 1;
+    const enabled = true;
 
     // Keyboard shortcut.
     useTriliumEvent("toggleRibbonTabNotePaths", () => enabled && dropdownRef.current?.show());

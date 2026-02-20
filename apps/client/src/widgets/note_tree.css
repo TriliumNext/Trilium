@@ -1,4 +1,4 @@
-#left-pane .tree-wrapper {
+.tree-wrapper {
     .note-indicator-icon.subtree-hidden-badge {
         font-family: inherit !important;
         margin-inline: 0.5em;
@@ -9,7 +9,6 @@
         border-radius: 0.5em;
         font-size: 0.7rem;
         font-weight: normal;
-        float: right;
         vertical-align: middle;
     }
 

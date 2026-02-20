@@ -71,7 +71,7 @@ class="ck-table-resized">
   </colgroup>
   <thead>
     <tr>
-      <th>Value for <code>parentWidget</code>
+      <th>Value for <code spellcheck="false">parentWidget</code>
       </th>
       <th>Description</th>
       <th>Sample widget</th>
@@ -80,15 +80,15 @@ class="ck-table-resized">
   </thead>
   <tbody>
     <tr>
-      <th><code>left-pane</code>
+      <th><code spellcheck="false">left-pane</code>
       </th>
       <td>Appears within the same pane that holds the&nbsp;<a class="reference-link"
         href="#root/_help_oPVyFC7WL2Lp">Note Tree</a>.</td>
-      <td>Same as above, with only a different <code>parentWidget</code>.</td>
+      <td>Same as above, with only a different <code spellcheck="false">parentWidget</code>.</td>
       <td>None.</td>
     </tr>
     <tr>
-      <th><code>center-pane</code>
+      <th><code spellcheck="false">center-pane</code>
       </th>
       <td>In the content area. If a split is open, the widget will span all of the
         splits.</td>
@@ -96,7 +96,7 @@ class="ck-table-resized">
       <td>None.</td>
     </tr>
     <tr>
-      <th><code>note-detail-pane</code>
+      <th><code spellcheck="false">note-detail-pane</code>
       </th>
       <td>
         <p>In the content area, inside the note detail area. If a split is open,
@@ -107,16 +107,19 @@ class="ck-table-resized">
       </td>
       <td>
         <ul>
-          <li>The widget must export a <code>class</code> and not an instance of the class
-            (e.g. <code>no new</code>) because it needs to be multiplied for each note,
-            so that splits work correctly.</li>
-          <li>Since the <code>class</code> is exported instead of an instance, the <code>parentWidget</code> getter
-            must be <code>static</code>, otherwise the widget is ignored.</li>
+          <li>The widget must export a <code spellcheck="false">class</code> and not an
+            instance of the class (e.g. <code spellcheck="false">no new</code>) because
+            it needs to be multiplied for each note, so that splits work correctly.</li>
+          <li
+         >Since the <code spellcheck="false">class</code> is exported instead of an
+            instance, the <code spellcheck="false">parentWidget</code> getter must be
+            <code
+            spellcheck="false">static</code>, otherwise the widget is ignored.</li>
         </ul>
       </td>
     </tr>
     <tr>
-      <th><code>right-pane</code>
+      <th><code spellcheck="false">right-pane</code>
       </th>
       <td>In the&nbsp;<a class="reference-link" href="#root/_help_RnaPdbciOfeq">Right Sidebar</a>,
         as a dedicated section.</td>
@@ -124,8 +127,8 @@ class="ck-table-resized">
       </td>
       <td>
         <ul>
-          <li>Although not mandatory, it's best to use a <code>RightPanelWidget</code> instead
-            of a <code>BasicWidget</code> or a <code>NoteContextAwareWidget</code>.</li>
+          <li>Although not mandatory, it's best to use a <code spellcheck="false">RightPanelWidget</code> instead
+            of a <code spellcheck="false">BasicWidget</code> or a <code spellcheck="false">NoteContextAwareWidget</code>.</li>
         </ul>
       </td>
     </tr>
@@ -144,3 +147,12 @@ class="ck-table-resized">
     See&nbsp;<a class="reference-link" href="#root/_help_4Gn3psZKsfSm">Launch Bar Widgets</a>&nbsp;for
     more information.</p>
   <h2>Custom position</h2>
+  <p>The position of a custom widget is defined via a <code spellcheck="false">position</code> integer.</p>
+  <p>In legacy widgets:</p><pre><code class="language-text-x-trilium-auto">class MyWidget extends api.BasicWidget {
+	// [..
+	get position() { return 10; }
+}</code></pre>
+  <p>In Preact widgets:</p><pre><code class="language-text-x-trilium-auto">export default defineWidget({
+    // [...]
+    position: 10
+});</code></pre>

@@ -65,7 +65,7 @@ export function SyncConfiguration() {
                 </FormGroup>
 
                 <div style={{ display: "flex", justifyContent: "spaceBetween"}}>
-                    <Button text={t("sync_2.save")} primary />
+                    <Button text={t("sync_2.save")} kind="primary" />
                     <Button text={t("sync_2.help")} onClick={() => openInAppHelpFromUrl("cbkrhQjrkKrh")} />
                 </div>
             </form>

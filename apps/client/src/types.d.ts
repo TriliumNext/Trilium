@@ -119,7 +119,7 @@ declare global {
         setNote(noteId: string);
     }
 
-    var logError: (message: string, e?: Error | string) => void;
+    var logError: (message: string, e?: unknown) => void;
     var logInfo: (message: string) => void;
     var glob: CustomGlobals;
     //@ts-ignore

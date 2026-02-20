@@ -1,11 +1,15 @@
 # Render Note
 <figure class="image"><img style="aspect-ratio:601/216;" src="Render Note_image.png" width="601" height="216"></figure>
 
-Render Note is used in <a class="reference-link" href="../Scripting.md">Scripting</a>. It works by displaying the HTML of a <a class="reference-link" href="Code.md">Code</a> note, via an attribute.
+Render Note is a special case of [front-end scripting](../Scripting/Frontend%20Basics.md) which allows rendering custom content inside a note. This makes it possible to create custom dashboards, or to use a custom note editor.
+
+The content can either be a vanilla HTML, or Preact JSX.
 
 ## Creating a render note
 
-1.  Create a <a class="reference-link" href="Code.md">Code</a> note with the HTML language, with what needs to be displayed (for example `<p>Hello world.</p>`).
+1.  Create a <a class="reference-link" href="Code.md">Code</a> note with the:
+    1.  HTML language for the legacy/vanilla method, with what needs to be displayed (for example `<p>Hello world.</p>`).
+    2.  JSX for the Preact-based approach (see below).
 2.  Create a <a class="reference-link" href="Render%20Note.md">Render Note</a>.
 3.  Assign the `renderNote` [relation](../Advanced%20Usage/Attributes.md) to point at the previously created code note.
 
@@ -44,7 +48,7 @@ Here are the steps to creating a simple render note:
 2.  Create a child <a class="reference-link" href="Code.md">Code</a> note with JSX as the language.  
     As an example, use the following content:
     
-    ```jsx
+    ```
     export default function() {
         return (
             <>

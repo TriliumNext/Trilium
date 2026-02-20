@@ -1,77 +1,17 @@
 import { t } from "i18next";
+
+import Component from "../../components/component";
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
-import NoteContextAwareWidget from "../note_context_aware_widget";
 import { DEFAULT_MAP_LAYER_NAME, MAP_LAYERS, type MapLayer } from "../collections/geomap/map_layer";
 import { ViewTypeOptions } from "../collections/interface";
-import { FilterLabelsByType } from "@triliumnext/commons";
 import { DEFAULT_THEME, getPresentationThemes } from "../collections/presentation/themes";
-import { VNode } from "preact";
-import { useNoteLabel } from "../react/hooks";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
-import Component from "../../components/component";
+import { useNoteLabel } from "../react/hooks";
+import { BookProperty, ClickContext, ComboBoxItem } from "../react/NotePropertyMenu";
 
 interface BookConfig {
     properties: BookProperty[];
-}
-
-export interface CheckBoxProperty {
-    type: "checkbox",
-    label: string;
-    bindToLabel: FilterLabelsByType<boolean>;
-    icon?: string;
-}
-
-export interface ButtonProperty {
-    type: "button",
-    label: string;
-    title?: string;
-    icon?: string;
-    onClick(context: BookContext): void;
-}
-
-export interface SplitButtonProperty extends Omit<ButtonProperty, "type"> {
-    type: "split-button";
-    items({ note, parentComponent }: { note: FNote, parentComponent: Component }): VNode;
-}
-
-export interface NumberProperty {
-    type: "number",
-    label: string;
-    bindToLabel: FilterLabelsByType<number>;
-    width?: number;
-    min?: number;
-    icon?: string;
-    disabled?: (note: FNote) => boolean;
-}
-
-export interface ComboBoxItem {
-    value: string;
-    label: string;
-}
-
-interface ComboBoxGroup {
-    title: string;
-    items: ComboBoxItem[];
-}
-
-export interface ComboBoxProperty {
-    type: "combobox",
-    label: string;
-    icon?: string;
-    bindToLabel: FilterLabelsByType<string>;
-    /**
-     * The default value is used when the label is not set.
-     */
-    defaultValue?: string;
-    options: (ComboBoxItem | ComboBoxGroup)[];
-}
-
-export type BookProperty = CheckBoxProperty | ButtonProperty | NumberProperty | ComboBoxProperty | SplitButtonProperty;
-
-interface BookContext {
-    note: FNote;
-    triggerCommand: NoteContextAwareWidget["triggerCommand"];
 }
 
 export const bookPropertiesConfig: Record<ViewTypeOptions, BookConfig> = {
@@ -156,6 +96,13 @@ export const bookPropertiesConfig: Record<ViewTypeOptions, BookConfig> = {
                 icon: "bx bx-ruler",
                 type: "checkbox",
                 bindToLabel: "map:scale"
+            },
+            {
+                label: t("book_properties_config.show-labels"),
+                icon: "bx bx-label",
+                type: "checkbox",
+                bindToLabel: "map:hideLabels",
+                reverseValue: true
             }
         ]
     },
@@ -211,7 +158,7 @@ function ListExpandDepth(context: { note: FNote, parentComponent: Component }) {
             <FormDropdownDivider />
             <ListExpandDepthButton label={t("book_properties.expand_all_levels")} depth="all" checked={currentDepth === "all"} {...context} />
         </>
-    )
+    );
 }
 
 function ListExpandDepthButton({ label, depth, note, parentComponent, checked }: { label: string, depth: number | "all", note: FNote, parentComponent: Component, checked?: boolean }) {
@@ -226,7 +173,7 @@ function ListExpandDepthButton({ label, depth, note, parentComponent, checked }:
 }
 
 function buildExpandListHandler(depth: number | "all") {
-    return async ({ note, triggerCommand }: BookContext) => {
+    return async ({ note, triggerCommand }: ClickContext) => {
         const { noteId } = note;
 
         const existingValue = note.getLabelValue("expanded");
@@ -236,5 +183,5 @@ function buildExpandListHandler(depth: number | "all") {
 
         await attributes.setLabel(noteId, "expanded", newValue);
         triggerCommand("refreshNoteList", { noteId });
-    }
+    };
 }

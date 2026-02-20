@@ -239,6 +239,8 @@ function AttachmentActions({ attachment, copyAttachmentLinkToClipboard }: { atta
                 text={<Icon icon="bx bx-dots-vertical-rounded" />}
                 buttonClassName="icon-action-always-border"
                 iconAction
+                dropdownContainerClassName="mobile-bottom-menu"
+                mobileBackdrop
             >
                 <FormListItem
                     icon="bx bx-file-find"

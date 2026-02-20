@@ -1,6 +1,6 @@
 {
   "about": {
-    "title": "Über Trilium Notizen",
+    "title": "Über Trilium Notes",
     "homepage": "Startseite:",
     "app_version": "App-Version:",
     "db_version": "DB-Version:",
@@ -662,7 +662,8 @@
     "show-cheatsheet": "Cheatsheet anzeigen",
     "toggle-zen-mode": "Zen Modus",
     "new-version-available": "Neues Update verfügbar",
-    "download-update": "Version {{latestVersion}} herunterladen"
+    "download-update": "Version {{latestVersion}} herunterladen",
+    "search_notes": "Notizen durchsuchen"
   },
   "sync_status": {
     "unknown": "<p>Der Synchronisations-Status wird bekannt, sobald der nächste Synchronisierungsversuch gestartet wird.</p><p>Klicke, um eine Synchronisierung jetzt auszulösen.</p>",
@@ -742,7 +743,7 @@
     "button_title": "Diagramm als SVG exportieren"
   },
   "relation_map_buttons": {
-    "create_child_note_title": "Erstelle eine neue untergeordnete Notiz und füge sie dieser Beziehungskarte hinzu",
+    "create_child_note_title": "Erstelle eine untergeordnete Notiz und füge sie dieser Karte hinzu",
     "reset_pan_zoom_title": "Schwenken und Zoomen auf die ursprünglichen Koordinaten und Vergrößerung zurücksetzen",
     "zoom_in_title": "Hineinzoom",
     "zoom_out_title": "Herauszoomen"
@@ -757,7 +758,9 @@
     "delete_this_note": "Diese Notiz löschen",
     "error_cannot_get_branch_id": "BranchId für notePath „{{notePath}}“ kann nicht abgerufen werden",
     "error_unrecognized_command": "Unbekannter Befehl {{command}}",
-    "note_revisions": "Notiz Revisionen"
+    "note_revisions": "Notiz Revisionen",
+    "backlinks": "Rücklinks",
+    "content_language_switcher": "Inhaltssprache: {{language}}"
   },
   "note_icon": {
     "change_note_icon": "Notiz-Icon ändern",
@@ -909,7 +912,8 @@
     "unknown_search_option": "Unbekannte Suchoption {{searchOptionName}}",
     "search_note_saved": "Suchnotiz wurde in {{-notePathTitle}} gespeichert",
     "actions_executed": "Aktionen wurden ausgeführt.",
-    "view_options": "Optionen anzeigen:"
+    "view_options": "Optionen anzeigen:",
+    "option": "Option"
   },
   "similar_notes": {
     "title": "Ähnliche Notizen",
@@ -1003,7 +1007,7 @@
     "no_attachments": "Diese Notiz enthält keine Anhänge."
   },
   "book": {
-    "no_children_help": "Diese Notiz mit dem Notiztyp Buch besitzt keine Unternotizen, deshalb ist nichts zum Anzeigen vorhanden. Siehe <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">Wiki</a> für mehr Details.",
+    "no_children_help": "Diese Sammlung enthält keineUnternotizen, daher gibt es nichts anzuzeigen.",
     "drag_locked_title": "Für Bearbeitung gesperrt",
     "drag_locked_message": "Das Ziehen ist nicht möglich, da die Sammlung für die Bearbeitung gesperrt ist."
   },
@@ -1058,15 +1062,6 @@
     "enter_title_of_new_note": "Gebe den Titel der neuen Notiz ein",
     "default_new_note_title": "neue Notiz",
     "click_on_canvas_to_place_new_note": "Klicke auf den Canvas, um eine neue Notiz zu platzieren"
-  },
-  "render": {
-    "note_detail_render_help_1": "Diese Hilfesnotiz wird angezeigt, da diese Notiz vom Typ „HTML rendern“ nicht über die erforderliche Beziehung verfügt, um ordnungsgemäß zu funktionieren.",
-    "note_detail_render_help_2": "Render-HTML-Notiztyp wird benutzt für <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/scripts.html\">scripting</a>. Kurzgesagt, du hast ein HTML-Code-Notiz (optional mit JavaScript) und diese Notiz rendert es. Damit es funktioniert, musst du eine a <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/attributes.html\">Beziehung</a> namens \"renderNote\" zeigend auf die HTML-Notiz zum rendern definieren."
-  },
-  "web_view": {
-    "web_view": "Webansicht",
-    "embed_websites": "Notiz vom Typ Web View ermöglicht das Einbetten von Websites in Trilium.",
-    "create_label": "Um zu beginnen, erstelle bitte ein Label mit einer URL-Adresse, die eingebettet werden soll, z. B. #webViewSrc=\"https://www.google.com\""
   },
   "backend_log": {
     "refresh": "Aktualisieren"
@@ -1383,7 +1378,8 @@
     "description": "Beschreibung",
     "reload_app": "Lade die App neu, um die Änderungen zu übernehmen",
     "set_all_to_default": "Setze alle Verknüpfungen auf die Standardeinstellungen",
-    "confirm_reset": "Möchtest du wirklich alle Tastaturkürzel auf die Standardeinstellungen zurücksetzen?"
+    "confirm_reset": "Möchtest du wirklich alle Tastaturkürzel auf die Standardeinstellungen zurücksetzen?",
+    "no_results": "Keine Tastenkürzel für '{{filter}}' gefunden"
   },
   "spellcheck": {
     "title": "Rechtschreibprüfung",
@@ -1587,7 +1583,9 @@
     "print_report_collection_details_button": "Details anzeigen",
     "print_report_collection_details_ignored_notes": "Ignorierte Notizen",
     "print_report_collection_content_one": "{{count}} Notiz in der Sammlung konnte nicht gedruckt werden, weil sie nicht unterstützt oder geschützt ist.",
-    "print_report_collection_content_other": "{{count}} Notizen in der Sammlung konnten nicht gedruckt werden, weil sie nicht unterstützt oder geschützt sind."
+    "print_report_collection_content_other": "{{count}} Notizen in der Sammlung konnten nicht gedruckt werden, weil sie nicht unterstützt oder geschützt sind.",
+    "print_report_error_title": "Druck fehlgeschlagen",
+    "print_report_stack_trace": "Stapelzurückverfolgung"
   },
   "note_title": {
     "placeholder": "Titel der Notiz hier eingeben…",
@@ -2088,7 +2086,8 @@
     "raster": "Raster",
     "vector_light": "Vektor (Hell)",
     "vector_dark": "Vektor (Dunkel)",
-    "show-scale": "Zeige Skalierung"
+    "show-scale": "Zeige Skalierung",
+    "show-labels": "Zeige Markierungsnamen"
   },
   "table_context_menu": {
     "delete_row": "Zeile entfernen"
@@ -2155,7 +2154,6 @@
     "percentage": "%"
   },
   "pagination": {
-    "page_title": "Seite {{startIndex}} von {{endIndex}}",
     "total_notes": "{{count}} Notizen"
   },
   "collections": {
@@ -2276,5 +2274,52 @@
     "title_one": "{{count}} Tab",
     "title_other": "{{count}} Tabs",
     "more_options": "Weitere Optionen"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "Lesezeichen"
+  },
+  "web_view_setup": {
+    "title": "Erstelle eine Live-Ansicht einer Webseite direkt in Trilium",
+    "url_placeholder": "Gib oder füge die Adresse der Webseite ein, zum Beispiel https://triliumnotes.org",
+    "create_button": "Erstelle Web Ansicht",
+    "invalid_url_title": "Ungültige Adresse",
+    "invalid_url_message": "Füge eine valide Webadresse ein, zum Beispiel https://triliumnotes.org.",
+    "disabled_description": "Diese Webansicht wurde von einer externen Quelle importiert. Um Sie vor Phishing oder schädlichen Inhalten zu schützen, wird sie nicht automatisch geladen. Sie können sie aktivieren, wenn Sie der Quelle vertrauen.",
+    "disabled_button_enable": "Webansicht aktivieren"
+  },
+  "render": {
+    "setup_create_sample_html": "Eine Beispielnotiz mit HTML erstellen",
+    "setup_create_sample_preact": "Eine Beispielnotiz mit Preact erstellen",
+    "setup_title": "Benutzerdefiniertes HTML oder Preact JSX in dieser Notiz anzeigen",
+    "setup_sample_created": "Eine Beispielnotiz wurde als untergeordnete Notiz erstellt.",
+    "disabled_description": "Diese Rendering-Notizen stammen aus einer externen Quelle. Um Sie vor schädlichen Inhalten zu schützen, ist diese Funktion standardmäßig deaktiviert. Stellen Sie sicher, dass Sie der Quelle vertrauen, bevor Sie sie aktivieren.",
+    "disabled_button_enable": "Rendering-Notiz aktivieren"
+  },
+  "active_content_badges": {
+    "type_icon_pack": "Icon-Paket",
+    "type_backend_script": "Backend-Skript",
+    "type_frontend_script": "Frontend-Skript",
+    "type_widget": "Widget",
+    "type_app_css": "Benutzerdefiniertes CSS",
+    "type_render_note": "Rendering-Notiz",
+    "type_web_view": "Webansicht",
+    "type_app_theme": "Benutzerdefiniertes Thema",
+    "toggle_tooltip_enable_tooltip": "Klicken, um diesen {{type}} zu aktivieren.",
+    "toggle_tooltip_disable_tooltip": "Klicken, um diesen {{type}} zu deaktivieren.",
+    "menu_docs": "Dokumentation öffnen",
+    "menu_execute_now": "Skript jetzt ausführen",
+    "menu_run": "Automatisch ausführen",
+    "menu_run_disabled": "Manuell",
+    "menu_run_backend_startup": "Wenn das Backend startet",
+    "menu_run_hourly": "Stündlich",
+    "menu_run_daily": "Täglich",
+    "menu_run_frontend_startup": "Wenn das Desktop-Frontend startet",
+    "menu_run_mobile_startup": "Wenn das mobile Frontend startet",
+    "menu_change_to_widget": "Zum Widget wechseln",
+    "menu_change_to_frontend_script": "Zum Frontend-Skript wechseln",
+    "menu_theme_base": "Themenbasis"
+  },
+  "setup_form": {
+    "more_info": "Mehr erfahren"
   }
 }
