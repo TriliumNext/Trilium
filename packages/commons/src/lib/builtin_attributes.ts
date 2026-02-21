@@ -70,6 +70,7 @@ export default [
     { type: "label", name: "displayRelations" },
     { type: "label", name: "hideRelations" },
     { type: "label", name: "titleTemplate", isDangerous: true },
+    { type: "label", name: "childTitleTemplate", isDangerous: true },
     { type: "label", name: "template" },
     { type: "label", name: "toc" },
     { type: "label", name: "color" },
