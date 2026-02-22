@@ -74,8 +74,16 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
 
             // Interaction
             graph
-                .onNodeClick((node) => {
+                .onNodeClick((node, event) => {
                     if (!node.id) return;
+
+                    // Cmd (macOS) / Ctrl (Windows/Linux) + click opens the target note in a split.
+                    if (isSplitModifierClick(event as MouseEvent | undefined)) {
+                        const ntxId = appContext.tabManager.getActiveContext()?.ntxId;
+                        appContext.triggerCommand("openNewNoteSplit", { ntxId, notePath: node.id });
+                        return;
+                    }
+
                     appContext.tabManager.getActiveContext()?.setNote(node.id);
                 })
                 .onNodeRightClick((node, e) => {
@@ -171,4 +179,8 @@ function getCssData(container: HTMLElement, styleResolver: HTMLElement): CssData
         textColor: rgb2hex(containerStyle.color),
         mutedTextColor: rgb2hex(styleResolverStyle.color)
     }
+}
+
+function isSplitModifierClick(event: MouseEvent | undefined) {
+    return !!(event?.metaKey || event?.ctrlKey);
 }
