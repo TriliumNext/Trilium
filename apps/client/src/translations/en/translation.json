@@ -988,6 +988,8 @@
     "complete_help": "complete help on search syntax",
     "full_text_search": "Just enter any text for full text search",
     "label_abc": "returns notes with label abc",
+    "relation_xyz": "returns notes with relation xyz",
+    "relation_wildcard": "returns notes with any relation (incl. internal links)",
     "label_year": "matches notes with label year having value 2019",
     "label_rock_pop": "matches notes which have both rock and pop labels",
     "label_rock_or_pop": "only one of the labels must be present",

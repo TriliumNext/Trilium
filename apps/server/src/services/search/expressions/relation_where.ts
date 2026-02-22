@@ -5,6 +5,12 @@ import NoteSet from "../note_set.js";
 import becca from "../../../becca/becca.js";
 import type SearchContext from "../search_context.js";
 
+// This wildcard should be a symbol/character different from lexer operators.
+// It also should use char(s) not allowed in relation names ([0-9a-zA-Z:_]),
+// to prevent ambiguity. As alternative in future, a more sophisticated lexer
+// might create separate token types, with relation wildcard being one of them.
+const RELATION_NAME_WILDCARD = "?";
+
 class RelationWhereExp extends Expression {
     private relationName: string;
     private subExpression: Expression;
@@ -19,7 +25,9 @@ class RelationWhereExp extends Expression {
     execute(inputNoteSet: NoteSet, executionContext: {}, searchContext: SearchContext) {
         const candidateNoteSet = new NoteSet();
 
-        for (const attr of becca.findAttributes("relation", this.relationName)) {
+        for (const attr of this.relationName === RELATION_NAME_WILDCARD
+            ? Object.values(becca.attributes)
+            : becca.findAttributes("relation", this.relationName)) {
             const note = attr.note;
 
             if (inputNoteSet.hasNoteId(note.noteId) && attr.targetNote) {
@@ -42,4 +50,5 @@ class RelationWhereExp extends Expression {
     }
 }
 
+export { RELATION_NAME_WILDCARD };
 export default RelationWhereExp;
