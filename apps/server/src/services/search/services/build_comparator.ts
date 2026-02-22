@@ -16,7 +16,9 @@ const stringComparators: Record<string, Comparator<string>> = {
     "=": (comparedValue) => (val) => {
         // For the = operator, check if the value contains the exact word or phrase
         // This is case-insensitive
-        if (!val) return false;
+        // Handle empty/falsy values explicitly
+        if (!val && !comparedValue) return true; // Both empty means equal
+        if (!val || !comparedValue) return false; // One empty, one not - not equal
 
         const normalizedVal = normalizeSearchText(val);
         const normalizedCompared = normalizeSearchText(comparedValue);
@@ -33,7 +35,10 @@ const stringComparators: Record<string, Comparator<string>> = {
     },
     "!=": (comparedValue) => (val) => {
         // Negation of exact word/phrase match
-        if (!val) return true;
+        // Handle empty/falsy values explicitly
+        if (!val && !comparedValue) return false; // Both empty means equal, so != returns false
+        if (!val) return true; // val is empty but comparedValue is not, they're not equal
+        if (!comparedValue) return true; // val is not empty but comparedValue is, they're not equal
 
         const normalizedVal = normalizeSearchText(val);
         const normalizedCompared = normalizeSearchText(comparedValue);

@@ -19,6 +19,7 @@ import {
     fuzzyMatchWord,
     FUZZY_SEARCH_CONFIG 
 } from "../utils/text_utils.js";
+import { ftsSearchService, FTSError, FTSNotAvailableError, FTSQueryError } from "../fts/index.js";
 
 const ALLOWED_OPERATORS = new Set(["=", "!=", "*=*", "*=", "=*", "%=", "~=", "~*"]);
 
@@ -84,7 +85,132 @@ class NoteContentFulltextExp extends Expression {
 
         const resultNoteSet = new NoteSet();
 
-        // Search through notes with content
+        // Skip FTS5 for empty token searches - traditional search is more efficient
+        // Empty tokens means we're returning all notes (no filtering), which FTS5 doesn't optimize
+        if (this.tokens.length === 0) {
+            // Fall through to traditional search below
+        }
+        // Try to use FTS5 if available for better performance
+        else if (ftsSearchService.checkFTS5Availability() && this.canUseFTS5()) {
+            try {
+                // Check if we need to search protected notes
+                const searchProtected = protectedSessionService.isProtectedSessionAvailable();
+
+                const noteIdSet = inputNoteSet.getNoteIds();
+
+                // Determine which FTS5 method to use based on operator
+                let ftsResults;
+                if (this.operator === "*=*" || this.operator === "*=" || this.operator === "=*") {
+                    // Substring operators use LIKE queries (optimized by trigram index)
+                    // Do NOT pass a limit - we want all results to match traditional search behavior
+                    ftsResults = ftsSearchService.searchWithLike(
+                        this.tokens,
+                        this.operator,
+                        noteIdSet.size > 0 ? noteIdSet : undefined,
+                        {
+                            includeSnippets: false,
+                            searchProtected: false
+                            // No limit specified - return all results
+                        },
+                        searchContext // Pass context to track internal timing
+                    );
+                } else {
+                    // Other operators use MATCH syntax
+                    ftsResults = ftsSearchService.searchSync(
+                        this.tokens,
+                        this.operator,
+                        noteIdSet.size > 0 ? noteIdSet : undefined,
+                        {
+                            includeSnippets: false,
+                            searchProtected: false // FTS5 doesn't index protected notes
+                        },
+                        searchContext // Pass context to track internal timing
+                    );
+                }
+
+                // Add FTS results to note set
+                for (const result of ftsResults) {
+                    if (becca.notes[result.noteId]) {
+                        resultNoteSet.add(becca.notes[result.noteId]);
+                    }
+                }
+
+                // If we need to search protected notes, use the separate method
+                if (searchProtected) {
+                    const protectedResults = ftsSearchService.searchProtectedNotesSync(
+                        this.tokens,
+                        this.operator,
+                        noteIdSet.size > 0 ? noteIdSet : undefined,
+                        {
+                            includeSnippets: false
+                        }
+                    );
+
+                    // Add protected note results
+                    for (const result of protectedResults) {
+                        if (becca.notes[result.noteId]) {
+                            resultNoteSet.add(becca.notes[result.noteId]);
+                        }
+                    }
+                }
+
+                // Handle special cases that FTS5 doesn't support well
+                if (this.operator === "%=") {
+                    // Fall back to original implementation for regex searches
+                    return this.executeWithFallback(inputNoteSet, resultNoteSet, searchContext);
+                }
+
+                // If flatText search is enabled, also search attributes using FTS5
+                if (this.flatText) {
+                    try {
+                        const attributeNoteIds = ftsSearchService.searchAttributesSync(
+                            this.tokens,
+                            this.operator,
+                            noteIdSet.size > 0 ? noteIdSet : undefined
+                        );
+
+                        // Add notes with matching attributes
+                        for (const noteId of attributeNoteIds) {
+                            if (becca.notes[noteId]) {
+                                resultNoteSet.add(becca.notes[noteId]);
+                            }
+                        }
+                    } catch (error) {
+                        log.error(`FTS5 attribute search failed: ${error}`);
+                        // Fall back to traditional search for attributes only
+                        return this.executeWithFallback(inputNoteSet, resultNoteSet, searchContext);
+                    }
+                }
+
+                return resultNoteSet;
+            } catch (error) {
+                // Handle structured errors from FTS service
+                if (error instanceof FTSError) {
+                    if (error instanceof FTSNotAvailableError) {
+                        log.info("FTS5 not available, using standard search");
+                    } else if (error instanceof FTSQueryError) {
+                        log.error(`FTS5 query error: ${error.message}`);
+                        searchContext.addError(`Search optimization failed: ${error.message}`);
+                    } else {
+                        log.error(`FTS5 error: ${error}`);
+                    }
+
+                    // Use fallback for recoverable errors
+                    if (error.recoverable) {
+                        log.info("Using fallback search implementation");
+                    } else {
+                        // For non-recoverable errors, return empty result
+                        searchContext.addError(`Search failed: ${error.message}`);
+                        return resultNoteSet;
+                    }
+                } else {
+                    log.error(`Unexpected error in FTS5 search: ${error}`);
+                }
+                // Fall back to original implementation
+            }
+        }
+
+        // Original implementation for fallback or when FTS5 is not available
         for (const row of sql.iterateRows<SearchRow>(`
                 SELECT noteId, type, mime, content, isProtected
                 FROM notes JOIN blobs USING (blobId)
@@ -92,6 +218,76 @@ class NoteContentFulltextExp extends Expression {
                   AND isDeleted = 0
                   AND LENGTH(content) < ${MAX_SEARCH_CONTENT_SIZE}`)) {
             this.findInText(row, inputNoteSet, resultNoteSet);
+        }
+
+        // For exact match with flatText, also search notes WITHOUT content (they may have matching attributes)
+        if (this.flatText && (this.operator === "=" || this.operator === "!=")) {
+            for (const note of inputNoteSet.notes) {
+                // Skip if already found or doesn't exist
+                if (resultNoteSet.hasNoteId(note.noteId) || !(note.noteId in becca.notes)) {
+                    continue;
+                }
+
+                const noteFromBecca = becca.notes[note.noteId];
+                const flatText = noteFromBecca.getFlatText();
+
+                // For flatText, only check attribute values (format: #name=value or ~name=value)
+                // Don't match against noteId, type, mime, or title which are also in flatText
+                let matches = false;
+                const phrase = this.tokens.join(" ");
+                const normalizedPhrase = normalizeSearchText(phrase);
+                const normalizedFlatText = normalizeSearchText(flatText);
+
+                // Check if =phrase appears in flatText (indicates attribute value match)
+                // For single words, use word-boundary matching to avoid substring matches
+                if (!normalizedPhrase.includes(' ')) {
+                    // Single word: look for =word with word boundaries
+                    // Split by = to get attribute values, then check each value for exact word match
+                    const parts = normalizedFlatText.split('=');
+                    matches = parts.slice(1).some(part => this.exactWordMatch(normalizedPhrase, part));
+                } else {
+                    // Multi-word phrase: check for substring match
+                    matches = normalizedFlatText.includes(`=${normalizedPhrase}`);
+                }
+
+                if ((this.operator === "=" && matches) || (this.operator === "!=" && !matches)) {
+                    resultNoteSet.add(noteFromBecca);
+                }
+            }
+        }
+
+        return resultNoteSet;
+    }
+
+    /**
+     * Determines if the current search can use FTS5
+     */
+    private canUseFTS5(): boolean {
+        // FTS5 doesn't support regex searches well
+        if (this.operator === "%=") {
+            return false;
+        }
+
+        // FTS5 now supports exact match (=) with post-filtering for word boundaries
+        // The FTS search service will filter results to ensure exact word matches
+        return true;
+    }
+
+    /**
+     * Executes search with fallback for special cases
+     */
+    private executeWithFallback(inputNoteSet: NoteSet, resultNoteSet: NoteSet, searchContext: SearchContext): NoteSet {
+        // Keep existing results from FTS5 and add additional results from fallback
+        for (const row of sql.iterateRows<SearchRow>(`
+                SELECT noteId, type, mime, content, isProtected
+                FROM notes JOIN blobs USING (blobId)
+                WHERE type IN ('text', 'code', 'mermaid', 'canvas', 'mindMap')
+                  AND isDeleted = 0
+                  AND LENGTH(content) < ${MAX_SEARCH_CONTENT_SIZE}`)) {
+            if (this.operator === "%=" || this.flatText) {
+                // Only process for special cases
+                this.findInText(row, inputNoteSet, resultNoteSet);
+            }
         }
 
         // For exact match with flatText, also search notes WITHOUT content (they may have matching attributes)
@@ -178,7 +374,27 @@ class NoteContentFulltextExp extends Expression {
         // e.g., "asd" should not match "asdfasdf"
         if (!phrase.includes(' ')) {
             // Single word: use exact word matching to avoid substring matches
-            return this.exactWordMatch(phrase, normalizedContent);
+            if (this.exactWordMatch(phrase, normalizedContent)) {
+                return true;
+            }
+
+            // For flatText, also check attribute names/values
+            // Attributes in flatText appear as "#name" or "#name=value" or "~name" or "~name=value"
+            if (checkFlatTextAttributes) {
+                // Check for attribute value: #something=phrase or ~something=phrase
+                if (normalizedContent.includes(`=${phrase}`)) {
+                    return true;
+                }
+                // Check for attribute name: #phrase or ~phrase (followed by space or =)
+                if (normalizedContent.includes(`#${phrase} `) ||
+                    normalizedContent.includes(`#${phrase}=`) ||
+                    normalizedContent.includes(`~${phrase} `) ||
+                    normalizedContent.includes(`~${phrase}=`)) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         // For multi-word phrases, check if the phrase appears as consecutive words
@@ -315,16 +531,21 @@ class NoteContentFulltextExp extends Expression {
                 [key: string]: any; // Other properties that may exist
             }
 
-            const canvasContent = JSON.parse(content);
-            const elements = canvasContent.elements;
+            try {
+                const canvasContent = JSON.parse(content);
+                const elements = canvasContent.elements;
 
-            if (Array.isArray(elements)) {
-                const texts = elements
-                    .filter((element: Element) => element.type === "text" && element.text) // Filter for 'text' type elements with a 'text' property
-                    .map((element: Element) => element.text!); // Use `!` to assert `text` is defined after filtering
+                if (Array.isArray(elements)) {
+                    const texts = elements
+                        .filter((element: Element) => element.type === "text" && element.text) // Filter for 'text' type elements with a 'text' property
+                        .map((element: Element) => element.text!); // Use `!` to assert `text` is defined after filtering
 
-                content = normalize(texts.join(" "));
-            } else {
+                    content = normalize(texts.join(" "));
+                } else {
+                    content = "";
+                }
+            } catch (e) {
+                // Handle JSON parse errors or malformed canvas content
                 content = "";
             }
         }

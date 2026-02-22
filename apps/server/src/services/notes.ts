@@ -238,6 +238,14 @@ function createNewNote(params: NoteParams): {
                 prefix: params.prefix || "",
                 isExpanded: !!params.isExpanded
             }).save();
+            
+            // FTS indexing is now handled entirely by database triggers
+            // The improved triggers in schema.sql handle all scenarios including:
+            // - INSERT OR REPLACE operations
+            // - INSERT ... ON CONFLICT ... DO UPDATE (upsert) 
+            // - Cases where notes are created before blobs (common during import)
+            // - All UPDATE scenarios, not just specific column changes
+            // This ensures FTS stays in sync even when entity events are disabled
         } finally {
             if (!isEntityEventsDisabled) {
                 // re-enable entity events only if they were previously enabled
