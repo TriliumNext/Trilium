@@ -308,7 +308,8 @@
 }
 
 #left-pane .fancytree-node.tinted,
-.nested-note-list-item.use-note-color {
+.nested-note-list-item.use-note-color,
+.note-book-card .note-book-header.use-note-color {
     --custom-color: var(--light-theme-custom-color);
 
     /* The background color of the active item in the note tree.
@@ -335,7 +336,8 @@
 
 .note-split.with-hue,
 .quick-edit-dialog-wrapper.with-hue,
-.nested-note-list-item.with-hue {
+.nested-note-list-item.with-hue,
+.note-book-card .note-book-header.with-hue {
     --note-icon-custom-background-color: hsl(var(--custom-color-hue), 44.5%, 43.1%);
     --note-icon-custom-color: hsl(var(--custom-color-hue), 91.3%, 91%);
     --note-icon-hover-custom-background-color: hsl(var(--custom-color-hue), 55.1%, 50.2%);

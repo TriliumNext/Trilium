@@ -1,9 +1,25 @@
-:where(.tn-card) {
+:where(.tn-card, .tn-card-frame) {
     --card-border-radius: 8px;
     --card-padding-block: 8px;
     --card-padding-inline: 16px;
     --card-section-gap: 3px;
     --card-nested-section-indent: 30px;
+}
+
+.tn-card-frame,
+.tn-card-section {
+    padding: var(--card-padding-block) var(--card-padding-inline);
+    border: 1px solid var(--card-border-color, var(--main-border-color));
+    background: var(--card-background-color);
+
+    &.tn-card-highlight-on-hover:hover {
+        background-color: var(--card-background-hover-color);
+        transition: background-color .2s ease-out;
+    }
+}
+
+.tn-card-frame {
+    border-radius: var(--card-border-radius);
 }
 
 .tn-card-heading {
@@ -20,10 +36,6 @@
     gap: var(--card-section-gap);
 
     .tn-card-section {
-        padding: var(--card-padding-block) var(--card-padding-inline);
-        border: 1px solid var(--card-border-color, var(--main-border-color));
-        background: var(--card-background-color);
-
         &:first-of-type {
             border-top-left-radius: var(--card-border-radius);
             border-top-right-radius: var(--card-border-radius);
@@ -37,11 +49,6 @@
         &.tn-card-section-nested {
             padding-left: calc(var(--card-padding-inline) + var(--card-nested-section-indent) * var(--tn-card-section-nesting-level));
             background-color: color-mix(in srgb, var(--card-background-color) calc(100% / (var(--tn-card-section-nesting-level) + 1)) , transparent);
-        }
-
-        &.tn-card-section-highlight-on-hover:hover {
-            background-color: var(--card-background-hover-color);
-            transition: background-color .2s ease-out;
         }
     }
 }

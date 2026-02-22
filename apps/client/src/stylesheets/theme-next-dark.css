@@ -314,7 +314,8 @@
  */
 
 #left-pane .fancytree-node.tinted,
-.nested-note-list-item.use-note-color {
+.nested-note-list-item.use-note-color,
+.note-book-card .note-book-header.use-note-color {
     --custom-color: var(--dark-theme-custom-color);
 
     /* The background color of the active item in the note tree.
@@ -365,7 +366,8 @@ body .todo-list input[type="checkbox"]:not(:checked):before {
 
 .note-split.with-hue,
 .quick-edit-dialog-wrapper.with-hue,
-.nested-note-list-item.with-hue {
+.nested-note-list-item.with-hue,
+.note-book-card .note-book-header.with-hue {
     --note-icon-custom-background-color: hsl(var(--custom-color-hue), 15.8%, 30.9%);
     --note-icon-custom-color: hsl(var(--custom-color-hue), 100%, 76.5%);
     --note-icon-hover-custom-background-color: hsl(var(--custom-color-hue), 28.3%, 36.7%);
