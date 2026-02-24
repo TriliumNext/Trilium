@@ -900,7 +900,7 @@ Migrated issue #2202 - Table with left or right alignment and width != 100% make
 Migrated issue #2203 - When editing table data in a text note, CKEditor 5 suddenly crashes. to https://github.com/TriliumNext/trilium/issues/5792
 Migrated issue #2207 - AI/LLM feature: allow manual input model names to https://github.com/TriliumNext/trilium/issues/5793
 Migrated issue #2221 - Dedicated mobile app with offline mode to https://github.com/TriliumNext/trilium/issues/5794
-Migrated issue #2233 - Allow dropping image attachments in without shrinking them (seperate from the setting) to https://github.com/TriliumNext/trilium/issues/5795
+Migrated issue #2233 - Allow dropping image attachments in without shrinking them (separate from the setting) to https://github.com/TriliumNext/trilium/issues/5795
 Migrated issue #2235 - API Documentation links broken? to https://github.com/TriliumNext/trilium/issues/5796
 Migrated issue #2244 - 0.94.1: HTTP 500 error when opening AI/LLM settings page to https://github.com/TriliumNext/trilium/issues/5797
 Migrated issue #2246 - “Insert note after” long-press dialog doesn’t create Note #2128 to https://github.com/TriliumNext/trilium/issues/5798
