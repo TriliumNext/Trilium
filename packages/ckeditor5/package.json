@@ -17,6 +17,6 @@
   },
   "devDependencies": {
     "@smithy/middleware-retry": "4.4.33",
-    "@types/jquery": "3.5.33"
+    "@types/jquery": "3.5.34"
   }
 }

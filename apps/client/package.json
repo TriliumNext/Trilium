@@ -71,7 +71,7 @@
     "@ckeditor/ckeditor5-inspector": "5.0.0",
     "@prefresh/vite": "2.4.12",
     "@types/bootstrap": "5.2.10",
-    "@types/jquery": "3.5.33",
+    "@types/jquery": "3.5.34",
     "@types/leaflet": "1.9.21",
     "@types/leaflet-gpx": "1.3.8",
     "@types/mark.js": "8.11.12",
