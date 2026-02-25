@@ -13,11 +13,11 @@ describe("Notes Title", () => {
     });
 
     describe("setting titleTemplate label should set the notes title when created from template", () => {
-        const parentNote = buildNote({
-            title: "randomNote"
-        });
-
         it("uses #titleTemplate from the selected template note when creating a note from template", () => {
+            const parentNote = buildNote({
+                title: "randomNote"
+            });
+
             cls.init(() => {
                 const templateNoteId = newEntityId();
 
@@ -45,6 +45,30 @@ describe("Notes Title", () => {
 
                 // sanity: ensure the template note is actually the one we set up
                 expect(becca.getNote(templateNoteId)?.getLabelValue("titleTemplate")).toBe("Hello from template");
+            });
+        });
+
+        it("uses #childTitleTemplate from the parent note when creating a note under a parent with label set", () => {
+            const parentNote = buildNote({
+                title: "randomNote",
+                "#childTitleTemplate": "my child title",
+                children: [
+                    {
+                        title: "childNote",
+                    }
+                ]
+            });
+
+            cls.init(() => {
+
+                const created = notes.createNewNote({
+                    parentNoteId: parentNote.noteId,
+                    title: null as never, // let notes service derive the title from the template label
+                    type: "text",
+                    content: ""
+                }).note;
+
+                expect(created.title).toBe("my child title");
             });
         });
     });
