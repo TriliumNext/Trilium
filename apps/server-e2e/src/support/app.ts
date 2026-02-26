@@ -77,10 +77,9 @@ export default class App {
 
         const resultsSelector = this.currentNoteSplit.locator(".note-detail-empty-results");
         await expect(resultsSelector).toContainText(noteTitle);
-        await resultsSelector.locator(".aa-suggestion", { hasText: noteTitle })
-            // Select the n+1 one, as the first one is "Create a new note"
-            .nth(NUM_OF_CREATE_NOTE_OPTIONS)
-            .click();
+        // The first n are note options.
+        const suggestionSelector = resultsSelector.locator(".aa-suggestion")
+            .nth(NUM_OF_CREATE_NOTE_OPTIONS);
         await expect(suggestionSelector).toContainText(noteTitle);
         await suggestionSelector.click();
     }
