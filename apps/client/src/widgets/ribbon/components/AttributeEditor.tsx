@@ -12,7 +12,7 @@ import attributes from "../../../services/attributes";
 import froca from "../../../services/froca";
 import { t } from "../../../services/i18n";
 import link from "../../../services/link";
-import note_autocomplete, { Suggestion } from "../../../services/note_autocomplete";
+import note_autocomplete, { Suggestion, SuggestionMode } from "../../../services/note_autocomplete";
 import note_create from "../../../services/note_create";
 import server from "../../../services/server";
 import { isIMEComposing } from "../../../services/shortcuts";
