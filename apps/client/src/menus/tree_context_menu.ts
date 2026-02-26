@@ -13,11 +13,9 @@ import noteCreateService from "../services/note_create.js";
 import noteTypesService from "../services/note_types.js";
 import server from "../services/server.js";
 import toastService from "../services/toast.js";
-import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
 import type NoteTreeWidget from "../widgets/note_tree.js";
 import contextMenu, { type MenuCommandItem, type MenuItem } from "./context_menu.js";
-import NoteColorPicker from "./custom-items/NoteColorPicker.jsx";
 
 // TODO: Deduplicate once client/server is well split.
 interface ConvertToAttachmentResponse {

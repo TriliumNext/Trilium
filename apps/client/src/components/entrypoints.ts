@@ -12,7 +12,7 @@ import utils from "../services/utils.js";
 import ws from "../services/ws.js";
 import appContext, { type NoteCommandData } from "./app_context.js";
 import Component from "./component.js";
-import noteCreateService, { CreateNoteIntoInboxOpts, CreateNoteTarget } from "../services/note_create.js";
+import noteCreateService from "../services/note_create.js";
 
 export default class Entrypoints extends Component {
     constructor() {

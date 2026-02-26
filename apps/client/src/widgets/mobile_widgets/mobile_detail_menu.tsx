@@ -5,7 +5,7 @@ import { createPortal, useRef, useState } from "preact/compat";
 
 import FNote, { NotePathRecord } from "../../entities/fnote";
 import { t } from "../../services/i18n";
-import note_create, { CreateNoteIntoUrlOpts, CreateNoteTarget } from "../../services/note_create";
+import note_create from "../../services/note_create";
 import server from "../../services/server";
 import { BacklinksList, useBacklinkCount } from "../FloatingButtonsDefinitions";
 import { getLocaleName, NoteInfoContent } from "../layout/StatusBar";
@@ -67,7 +67,10 @@ export default function MobileDetailMenu() {
 
                         {noteContext && ntxId && <NoteActionsCustom note={note} noteContext={noteContext} ntxId={ntxId} />}
                         <FormListItem
-                            onClick={() => noteContext?.notePath && note_create.createNote(noteContext.notePath)}
+                            onClick={() => noteContext?.notePath && note_create.createNote({
+                                target: "into",
+                                parentNoteLink: noteContext.notePath
+                            })}
                             icon="bx bx-plus"
                         >{t("mobile_detail_menu.insert_child_note")}</FormListItem>
                         {subContexts.length < 2 && <>

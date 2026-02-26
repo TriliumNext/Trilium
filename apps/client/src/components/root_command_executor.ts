@@ -2,12 +2,13 @@ import dateNoteService from "../services/date_notes.js";
 import froca from "../services/froca.js";
 import openService from "../services/open.js";
 import options from "../services/options.js";
-import noteCreateService, { CreateNoteIntoUrlOpts } from "../services/note_create.js";
+import noteCreateService from "../services/note_create.js";
 import protectedSessionService from "../services/protected_session.js";
 import utils, { openInReusableSplit } from "../services/utils.js";
 import appContext, { type CommandListenerData } from "./app_context.js";
 import Component from "./component.js";
 import treeService from "../services/tree.js";
+import toastService from "../services/toast.js";
 
 export default class RootCommandExecutor extends Component {
     editReadOnlyNoteCommand() {

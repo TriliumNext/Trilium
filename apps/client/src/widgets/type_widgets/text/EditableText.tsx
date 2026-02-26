@@ -1,7 +1,7 @@
 import "./EditableText.css";
 
 import { CKTextEditor, EditorWatchdog, TemplateDefinition } from "@triliumnext/ckeditor5";
-import { deferred } from "@triliumnext/commons";
+import { CreateNoteAction, deferred } from "@triliumnext/commons";
 import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
@@ -125,7 +125,7 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         async createNoteFromCkEditor (
             title: string,
             parentNotePath: string | undefined,
-            action: CreateNoteAction
+            action: CreateNoteAction.CreateChildNote
         ): Promise<string> {
             const { note }= await note_create.createNoteFromAction(
                 action,
