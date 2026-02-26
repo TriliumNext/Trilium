@@ -71,6 +71,51 @@ describe("Notes Title", () => {
                 expect(created.title).toBe("my child title");
             });
         });
+
+        it("uses #titleTemplate from the selected template note even if the parent note has #childTitleTemplate set", () => {
+            const templateParentNote = buildNote({
+                title: "randomNote"
+            });
+
+            const parentNote = buildNote({
+                title: "randomNote",
+                "#childTitleTemplate": "my child title",
+                children: [
+                    {
+                        title: "childNote",
+                    }
+                ]
+            });
+
+            cls.init(() => {
+                const templateNoteId = newEntityId();
+
+                const templateNote = notes.createNewNote({
+                    parentNoteId: templateParentNote.noteId,
+                    noteId: templateNoteId,
+                    title: "Test template",
+                    type: "text",
+                    content: ""
+                }).note;
+
+                templateNote.setLabel("titleTemplate", "Hello from template");
+                templateNote.setLabel("template");
+                templateNote.invalidateThisCache(); // ensures getLabelValue sees the new label
+
+                const created = notes.createNewNote({
+                    parentNoteId: parentNote.noteId,
+                    templateNoteId: templateNote.noteId,
+                    title: null as never, // let notes service derive the title from the template label
+                    type: "text",
+                    content: ""
+                }).note;
+
+                expect(created.title).toBe("Hello from template");
+
+                // sanity: ensure the template note is actually the one we set up
+                expect(becca.getNote(templateNoteId)?.getLabelValue("titleTemplate")).toBe("Hello from template");
+            });
+        });
     });
 
 });
