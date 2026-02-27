@@ -5,7 +5,7 @@
 
 class TaskTimeline {
     constructor() {
-        this.tasks = [];
+        // Constructor is empty - no unused properties
     }
 
     /**
@@ -18,24 +18,24 @@ class TaskTimeline {
         const tasks = [];
         let match;
 
+        // Get today's date at midnight for proper comparison
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
         while ((match = dueDateRegex.exec(noteContent)) !== null) {
             const dueDate = match[1] || match[2];
+            const dueDateObj = new Date(dueDate);
+            
             tasks.push({
                 noteId,
                 noteTitle,
                 dueDate,
-                isOverdue: new Date(dueDate) < new Date(),
-                isToday: this.isToday(dueDate)
+                isOverdue: dueDateObj < today,
+                isToday: dueDateObj.getTime() === today.getTime()
             });
         }
 
         return tasks;
-    }
-
-    isToday(dateStr) {
-        const date = new Date(dateStr);
-        const today = new Date();
-        return date.toDateString() === today.toDateString();
     }
 
     /**
@@ -50,12 +50,15 @@ class TaskTimeline {
             future: []
         };
 
+        // Get today's date at midnight
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
         tasks.forEach(task => {
             const dueDate = new Date(task.dueDate);
-            const now = new Date();
-            const diffDays = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+            const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
 
-            if (task.isOverdue && !task.isToday) {
+            if (task.isOverdue) {
                 groups.overdue.push(task);
             } else if (task.isToday) {
                 groups.today.push(task);
@@ -111,9 +114,13 @@ class TaskTimeline {
         `;
     }
 
+    /**
+     * Format date using user's locale
+     */
     formatDate(dateStr) {
         const date = new Date(dateStr);
-        return date.toLocaleDateString('en-US', { 
+        // Use user's locale instead of hardcoded 'en-US'
+        return date.toLocaleDateString(undefined, { 
             month: 'short', 
             day: 'numeric' 
         });

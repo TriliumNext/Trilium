@@ -3,14 +3,9 @@
  * Implements percentage-based progress bar for task notes
  */
 
-// Task Progress Bar Component
-// This component calculates and displays the completion percentage of tasks
-// based on checkboxes in the note content
-
 class TaskProgressBar {
     constructor(noteId) {
         this.noteId = noteId;
-        this.progressElement = null;
     }
 
     /**

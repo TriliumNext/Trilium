@@ -19,22 +19,22 @@ class TaskRepetition {
 
     /**
      * Parse repeat pattern from note content
-     * Expected format: [repeat::daily] or [repeat::weekly] or [repeat::custom:Mon,Wed,Fri]
+     * Supports simple patterns: [repeat::daily], [repeat::weekly], etc.
+     * Note: Custom patterns like [repeat::custom:Mon,Wed,Fri] are not yet implemented
      */
     parseRepeatPattern(content) {
-        const repeatRegex = /\[repeat::(\w+)(?::([^\]]*))?\]/i;
+        const repeatRegex = /\[repeat::(\w+)\]/i;
         const match = content.match(repeatRegex);
         
-        if (!match) return null;
+        if (match) {
+            const pattern = match[1].toLowerCase();
+            return {
+                pattern,
+                isValid: this.patterns.hasOwnProperty(pattern)
+            };
+        }
         
-        const pattern = match[1].toLowerCase();
-        const customConfig = match[2];
-        
-        return {
-            pattern,
-            customConfig,
-            isValid: this.patterns.hasOwnProperty(pattern)
-        };
+        return null;
     }
 
     /**
@@ -97,7 +97,9 @@ class TaskRepetition {
                     <option value="">No Repeat</option>
                     ${options}
                 </select>
-                <div class="repeat-info"></div>
+                <div class="repeat-info">
+                    <small>Supported: daily, weekly, monthly, yearly, weekdays, weekends</small>
+                </div>
             </div>
         `;
     }

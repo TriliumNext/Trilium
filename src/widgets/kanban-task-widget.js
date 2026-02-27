@@ -7,24 +7,33 @@
  * Usage: Add this script to Trilium's widget folder
  */
 
-// Import components (when using ES modules)
-// import { TaskProgressBar } from '../components/task-progress-bar.js';
-// import { TaskTimeline } from '../components/task-timeline.js';
-// import { TaskRepetition } from '../components/task-repetition.js';
-
 class KanbanTaskWidget {
     constructor() {
         this.noteId = null;
         this.container = null;
+        this.eventListeners = []; // Track listeners for cleanup
     }
 
     /**
      * Initialize widget for a specific note
      */
-    async init(noteId) {
+    async init(noteId, container) {
         this.noteId = noteId;
+        this.container = container;
         await this.render();
         this.attachEventListeners();
+    }
+
+    /**
+     * Destroy widget and cleanup
+     */
+    destroy() {
+        // Remove all event listeners
+        this.eventListeners.forEach(({ element, type, handler }) => {
+            element.removeEventListener(type, handler);
+        });
+        this.eventListeners = [];
+        this.container = null;
     }
 
     /**
@@ -53,6 +62,9 @@ class KanbanTaskWidget {
             </div>
         `;
 
+        if (this.container) {
+            this.container.innerHTML = widgetHtml;
+        }
         return widgetHtml;
     }
 
@@ -86,12 +98,15 @@ class KanbanTaskWidget {
         if (match) {
             const dateStr = match[1] || match[2];
             const dueDate = new Date(dateStr);
+            
+            // Get today's date at midnight for proper comparison
             const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
             
             return {
                 date: dateStr,
-                isOverdue: dueDate < now,
-                isToday: dueDate.toDateString() === now.toDateString()
+                isOverdue: dueDate < today,
+                isToday: dueDate.getTime() === today.getTime()
             };
         }
         
@@ -153,8 +168,12 @@ class KanbanTaskWidget {
         const patternNames = {
             daily: 'Daily',
             weekly: 'Weekly',
+            biweekly: 'Bi-weekly',
             monthly: 'Monthly',
-            yearly: 'Yearly'
+            quarterly: 'Quarterly',
+            yearly: 'Yearly',
+            weekdays: 'Weekdays',
+            weekends: 'Weekends'
         };
 
         const name = patternNames[pattern] || pattern;
@@ -170,26 +189,25 @@ class KanbanTaskWidget {
      * Attach event listeners
      */
     attachEventListeners() {
-        // Listen for checkbox changes
-        document.addEventListener('click', (e) => {
+        // Use named handler for proper removal
+        const clickHandler = (e) => {
             if (e.target.matches('input[type="checkbox"]')) {
-                // Debounce the update
                 clearTimeout(this.updateTimeout);
                 this.updateTimeout = setTimeout(() => {
                     this.refresh();
                 }, 300);
             }
-        });
+        };
+
+        document.addEventListener('click', clickHandler);
+        this.eventListeners.push({ element: document, type: 'click', handler: clickHandler });
     }
 
     /**
      * Refresh widget display
      */
     async refresh() {
-        const html = await this.render();
-        if (this.container) {
-            this.container.innerHTML = html;
-        }
+        await this.render();
     }
 }
 
