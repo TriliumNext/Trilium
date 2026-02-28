@@ -1806,6 +1806,27 @@
       "multiline-toolbar": "Display the toolbar on multiple lines if it doesn't fit."
     }
   },
+  "toolbar_customization": {
+    "title": "Toolbar customization",
+    "description": "Show, hide, and reorder toolbar buttons. Drag items using the ⠿ handle. Changes take effect when you open or reload a text note.",
+    "tab_classic": "Classic toolbar",
+    "tab_floating": "Floating toolbar",
+    "tab_block": "Block toolbar (floating mode)",
+    "group": "group",
+    "drag_hint": "Drag to reorder",
+    "hide_item": "Hide this item",
+    "show_item": "Show this item",
+    "more_actions": "More actions",
+    "add_separator_before": "Add separator before",
+    "remove_separator": "Remove separator",
+    "move_into_group": "Move into group",
+    "move_out_of_group": "Move out of group",
+    "create_group": "Wrap in new group (···)",
+    "expand": "Expand group",
+    "collapse": "Collapse group",
+    "reset": "Reset to defaults",
+    "reset_title": "Remove all customizations and restore the built-in toolbar layout"
+  },
   "electron_context_menu": {
     "add-term-to-dictionary": "Add \"{{term}}\" to dictionary",
     "cut": "Cut",
