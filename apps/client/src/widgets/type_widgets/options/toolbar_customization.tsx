@@ -1,17 +1,21 @@
 /**
- * Two-column drag-and-drop toolbar editor.
+ * Toolbar customization – horizontal chip-based drag-and-drop editor.
  *
- * Left  column  – available items (not currently in the toolbar)
- * Right column  – active toolbar (ordered; drag to reorder)
+ * Layout
+ * ──────
+ *  [Classic] [Floating] [Block]
+ *  ┌──────────────────────────────────────────────┐  ← active toolbar bar
+ *  │ [⠿ Heading ×] [⠿ Font ×] │ [⠿ Bold ×] [⠿ ···(7)▼ ×] │          │
+ *  └──────────────────────────────────────────────┘
+ *  (expanded group row when ▼ is open)
+ *  ┌──────────────────────────────────────────────┐  ← available items bar
+ *  │ [⠿ Format Painter] [⠿ Subscript] …                               │
+ *  └──────────────────────────────────────────────┘
+ *  [+ Separator] [+ Group ···]        [↺ Reset]  [▶ Save & Reload]
  *
- * Drag from left  → right : adds item
- * Drag from right → left  : removes item
- * Drag within right        : reorders
- *
- * Changes are saved immediately without a page reload.
- * A small notice asks the user to reopen the note to see the effect.
+ * Changes stay in local state until "Save & Reload" is clicked.
  */
-import { useMemo, useState } from "preact/hooks";
+import { useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
 import { useTriliumOption } from "../../react/hooks";
@@ -22,6 +26,7 @@ import {
     DEFAULT_FLOATING_TOOLBAR,
     getDefaultConfig,
     getItemLabel,
+    TOOLBAR_ITEM_LABELS,
     type ToolbarCustomConfig,
     type ToolbarEntry,
     type ToolbarGroup,
@@ -37,7 +42,13 @@ const DEFAULT_TABS: Record<TabKey, ToolbarEntry[]> = {
     blockToolbar: DEFAULT_BLOCK_TOOLBAR,
 };
 
-// ─── Utility ──────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function parseConfig(raw: string): ToolbarCustomConfig {
+    if (!raw) return getDefaultConfig();
+    try { return JSON.parse(raw) as ToolbarCustomConfig; }
+    catch { return getDefaultConfig(); }
+}
 
 function collectItemIds(entries: ToolbarEntry[]): string[] {
     const ids: string[] = [];
@@ -50,50 +61,45 @@ function collectItemIds(entries: ToolbarEntry[]): string[] {
     return ids;
 }
 
-function parseConfig(raw: string): ToolbarCustomConfig {
-    if (!raw) return getDefaultConfig();
-    try { return JSON.parse(raw) as ToolbarCustomConfig; }
-    catch { return getDefaultConfig(); }
-}
-
-/** Items visible in the active column (visible=true + separators + groups). */
-function activeOnly(entries: ToolbarEntry[]): ToolbarEntry[] {
-    return entries.filter(e =>
-        e.kind === "separator" ||
-        (e as ToolbarItem | ToolbarGroup).visible !== false
-    );
-}
-
-/** Item IDs from allKnownIds that are NOT present in active entries. */
-function availablePool(active: ToolbarEntry[], allKnown: string[]): string[] {
-    const used = new Set(collectItemIds(active));
+/** All item IDs from DEFAULT_TABS[tab] that are not already in activeEntries. */
+function getPool(tab: TabKey, activeEntries: ToolbarEntry[]): string[] {
+    const used = new Set(collectItemIds(activeEntries));
+    const allKnown = Object.keys(TOOLBAR_ITEM_LABELS);
     return allKnown.filter(id => !used.has(id));
 }
 
-function entryKey(e: ToolbarEntry, i: number) {
+function entryKey(e: ToolbarEntry, i: number): string {
     if (e.kind === "separator") return `sep-${i}`;
-    if (e.kind === "group") return `grp-${e.id}`;
+    if (e.kind === "group") return `grp-${e.id}-${i}`;
     return `item-${e.id}`;
+}
+
+/** Where the pointer is relative to the chip mid-point → insert index. */
+function insertIdx(e: DragEvent, chipIdx: number): number {
+    const rect = (e.currentTarget as Element).getBoundingClientRect();
+    return e.clientX < rect.left + rect.width / 2 ? chipIdx : chipIdx + 1;
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ToolbarCustomization() {
-    // No needsRefresh – we handle the "reload note" notice ourselves
-    const [rawConfig, setRawConfig] = useTriliumOption("textNoteToolbarConfig");
+    const [savedRaw, setSavedRaw] = useTriliumOption("textNoteToolbarConfig");
+    const [local, setLocal] = useState<ToolbarCustomConfig>(() => parseConfig(savedRaw));
     const [tab, setTab] = useState<TabKey>("classic");
-    const [dirty, setDirty] = useState(false);
 
-    const config = useMemo(() => parseConfig(rawConfig), [rawConfig]);
+    const isDirty = JSON.stringify(local) !== JSON.stringify(parseConfig(savedRaw));
 
-    function save(newEntries: ToolbarEntry[]) {
-        setRawConfig(JSON.stringify({ ...config, [tab]: newEntries }));
-        setDirty(true);
+    function updateTab(newEntries: ToolbarEntry[]) {
+        setLocal(prev => ({ ...prev, [tab]: newEntries }));
     }
 
     function reset() {
-        setRawConfig("");
-        setDirty(true);
+        setLocal(getDefaultConfig());
+    }
+
+    function saveAndReload() {
+        setSavedRaw(JSON.stringify(local));
+        setTimeout(() => window.location.reload(), 120);
     }
 
     const TAB_LABEL: Record<TabKey, string> = {
@@ -104,15 +110,9 @@ export default function ToolbarCustomization() {
 
     return (
         <OptionsSection title={t("toolbar_customization.title")}>
-            <p className="form-text mb-2" style={{ fontSize: "0.85em" }}>
+            <p className="form-text mb-2" style={{ fontSize: "0.84em" }}>
                 {t("toolbar_customization.description")}
             </p>
-
-            {dirty && (
-                <div className="alert alert-info py-1 px-2 mb-2" style={{ fontSize: "0.82em" }}>
-                    {t("toolbar_customization.reload_note")}
-                </div>
-            )}
 
             {/* Tabs */}
             <ul className="nav nav-tabs mb-0">
@@ -129,50 +129,62 @@ export default function ToolbarCustomization() {
                 ))}
             </ul>
 
-            {/* Two-column editor */}
-            <ToolbarEditor
+            <HorizontalEditor
                 key={tab}
-                tabKey={tab}
-                entries={config[tab]}
-                onChange={save}
+                tab={tab}
+                entries={local[tab]}
+                onChange={updateTab}
             />
 
-            <div className="mt-2">
-                <button type="button" className="btn btn-sm btn-outline-secondary" onClick={reset}>
+            {/* Bottom action bar */}
+            <div className="mt-2 d-flex justify-content-between align-items-center">
+                <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={reset}
+                    title={t("toolbar_customization.reset_title")}
+                >
                     ↺ {t("toolbar_customization.reset")}
+                </button>
+                <button
+                    type="button"
+                    className={`btn btn-sm ${isDirty ? "btn-primary" : "btn-outline-primary"}`}
+                    onClick={saveAndReload}
+                    title={t("toolbar_customization.save_title")}
+                >
+                    ▶ {t("toolbar_customization.save")}
                 </button>
             </div>
         </OptionsSection>
     );
 }
 
-// ─── Two-column editor ────────────────────────────────────────────────────────
+// ─── Horizontal editor (two bars) ─────────────────────────────────────────────
 
-type DragPayload =
-    | { src: "pool"; id: string }
-    | { src: "active"; idx: number };
+type DragSrc =
+    | { from: "pool"; id: string }
+    | { from: "active"; idx: number }
+    | { from: "child"; groupIdx: number; childIdx: number };
 
-const COL_H = "300px";
-
-interface EditorProps {
-    tabKey: TabKey;
+interface HorizEditorProps {
+    tab: TabKey;
     entries: ToolbarEntry[];
     onChange: (e: ToolbarEntry[]) => void;
 }
 
-function ToolbarEditor({ tabKey, entries, onChange }: EditorProps) {
-    const allKnown = useMemo(() => collectItemIds(DEFAULT_TABS[tabKey]), [tabKey]);
-    const active   = useMemo(() => activeOnly(entries), [entries]);
-    const pool     = useMemo(() => availablePool(active, allKnown), [active, allKnown]);
+function HorizontalEditor({ tab, entries, onChange }: HorizEditorProps) {
+    const pool = getPool(tab, entries);
 
     // Drag state
-    const [drag, setDrag]           = useState<DragPayload | null>(null);
-    const [dropIdx, setDropIdx]     = useState<number | null>(null);
-    const [overPool, setOverPool]   = useState(false);
+    const [drag, setDrag]               = useState<DragSrc | null>(null);
+    const [dropIdx, setDropIdx]         = useState<number | null>(null);
+    const [overPool, setOverPool]       = useState(false);
+    const [expandedGroup, setExpanded]  = useState<string | null>(null);
+    const [childDropIdx, setChildDrop]  = useState<number | null>(null);
 
     // ── Mutations ─────────────────────────────────────────────────────────────
 
-    function commitActive(next: ToolbarEntry[]) {
+    function commit(next: ToolbarEntry[]) {
         onChange(next.map(e => {
             if (e.kind === "item")  return { ...e, visible: true };
             if (e.kind === "group") return { ...e, visible: true, items: e.items.map(c => c.kind === "item" ? { ...c, visible: true } : c) };
@@ -180,276 +192,405 @@ function ToolbarEditor({ tabKey, entries, onChange }: EditorProps) {
         }));
     }
 
-    function addItem(id: string, atIdx: number) {
-        const next = [...active];
-        next.splice(atIdx, 0, { kind: "item", id, visible: true } as ToolbarItem);
-        commitActive(next);
+    function addItemAt(id: string, at: number) {
+        const next = [...entries];
+        next.splice(at, 0, { kind: "item", id, visible: true } as ToolbarItem);
+        commit(next);
     }
 
-    function moveItem(from: number, to: number) {
+    function moveActive(from: number, to: number) {
         if (from === to) return;
-        const next = [...active];
-        const [moved] = next.splice(from, 1);
-        next.splice(to > from ? to - 1 : to, 0, moved);
-        commitActive(next);
+        const next = [...entries];
+        const [m] = next.splice(from, 1);
+        next.splice(to > from ? to - 1 : to, 0, m);
+        commit(next);
     }
 
-    function removeIdx(idx: number) {
-        commitActive(active.filter((_, i) => i !== idx));
+    function removeActive(idx: number) {
+        commit(entries.filter((_, i) => i !== idx));
     }
 
     function addSeparator() {
-        commitActive([...active, { kind: "separator" } as ToolbarSeparator]);
+        commit([...entries, { kind: "separator" } as ToolbarSeparator]);
     }
 
-    function reorderChild(groupIdx: number, from: number, to: number) {
+    function addGroup() {
+        const id = `group_${Date.now()}`;
+        const g: ToolbarGroup = { kind: "group", id, label: "Group", icon: "threeVerticalDots", visible: true, items: [] };
+        commit([...entries, g]);
+        setExpanded(id);
+    }
+
+    function addItemToGroup(groupIdx: number, id: string) {
+        const next = [...entries];
+        const g = { ...(next[groupIdx] as ToolbarGroup) };
+        g.items = [...g.items, { kind: "item", id, visible: true } as ToolbarItem];
+        next[groupIdx] = g;
+        commit(next);
+    }
+
+    function removeChildFromGroup(groupIdx: number, childIdx: number) {
+        const next = [...entries];
+        const g = { ...(next[groupIdx] as ToolbarGroup) };
+        g.items = g.items.filter((_, i) => i !== childIdx);
+        next[groupIdx] = g;
+        commit(next);
+    }
+
+    function moveChild(groupIdx: number, from: number, to: number) {
         if (from === to) return;
-        const next = [...active];
+        const next = [...entries];
         const g = { ...(next[groupIdx] as ToolbarGroup) };
         const ch = [...g.items];
         const [m] = ch.splice(from, 1);
         ch.splice(to > from ? to - 1 : to, 0, m);
         g.items = ch;
         next[groupIdx] = g;
-        commitActive(next);
+        commit(next);
     }
 
-    // ── Generic drag handlers ─────────────────────────────────────────────────
+    // ── Drag helpers ──────────────────────────────────────────────────────────
 
-    function startDrag(e: DragEvent, payload: DragPayload) {
-        setDrag(payload);
+    function startDrag(e: DragEvent, src: DragSrc) {
+        setDrag(src);
         e.dataTransfer!.effectAllowed = "move";
-        e.dataTransfer!.setData("text/plain", JSON.stringify(payload));
     }
 
-    function getPayload(e: DragEvent): DragPayload {
-        return drag ?? JSON.parse(e.dataTransfer!.getData("text/plain"));
-    }
+    function clearDrag() { setDrag(null); setDropIdx(null); setOverPool(false); setChildDrop(null); }
 
-    function clearDrag() { setDrag(null); setDropIdx(null); setOverPool(false); }
-
-    // ── Drop into active column at position idx ───────────────────────────────
-
-    function onActiveDrop(e: DragEvent, idx: number) {
+    // Drop on active bar at position idx
+    function onActiveDrop(e: DragEvent, at: number) {
         e.preventDefault();
-        const p = getPayload(e);
-        if (p.src === "pool") addItem(p.id, idx);
-        else moveItem(p.idx, idx);
+        if (!drag) return;
+        if (drag.from === "pool")   addItemAt(drag.id, at);
+        else if (drag.from === "active") moveActive(drag.idx, at);
         clearDrag();
     }
 
-    function onActiveOver(e: DragEvent, idx: number) {
+    function onActiveOver(e: DragEvent, chipIdx: number) {
         e.preventDefault();
-        setDropIdx(idx);
+        setDropIdx(insertIdx(e, chipIdx));
         setOverPool(false);
     }
 
-    // ── Drop into pool column (= remove from active) ──────────────────────────
-
-    function onPoolDrop(e: DragEvent) {
+    // Drop on group chip → add item to that group
+    function onGroupDrop(e: DragEvent, groupIdx: number) {
         e.preventDefault();
-        const p = getPayload(e);
-        if (p.src === "active") removeIdx(p.idx);
+        e.stopPropagation();
+        if (!drag) return;
+        if (drag.from === "pool") addItemToGroup(groupIdx, drag.id);
         clearDrag();
     }
 
-    // ── Render ────────────────────────────────────────────────────────────────
+    // Drop on pool → remove from active
+    function onPoolDrop(e: DragEvent) {
+        e.preventDefault();
+        if (!drag) return;
+        if (drag.from === "active") removeActive(drag.idx);
+        else if (drag.from === "child") removeChildFromGroup(drag.groupIdx, drag.childIdx);
+        clearDrag();
+    }
 
-    const colStyle = (highlight?: boolean): preact.JSX.CSSProperties => ({
-        height: COL_H,
-        overflowY: "auto",
-        border: `1px solid ${highlight ? "var(--bs-danger, #dc3545)" : "var(--bs-border-color, #dee2e6)"}`,
-        borderRadius: "4px",
-        background: highlight ? "var(--bs-danger-bg-subtle, #fff3f3)" : "var(--bs-body-bg, #fff)",
-        padding: "4px 0",
+    // Drop on group child row at position ci
+    function onChildDrop(e: DragEvent, groupIdx: number, ci: number) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!drag) return;
+        if (drag.from === "pool") {
+            addItemToGroup(groupIdx, drag.id);
+        } else if (drag.from === "child" && drag.groupIdx === groupIdx) {
+            moveChild(groupIdx, drag.childIdx, ci);
+        }
+        clearDrag();
+    }
+
+    // ── Styles ────────────────────────────────────────────────────────────────
+
+    const barStyle = (highlight?: boolean): preact.JSX.CSSProperties => ({
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        gap: "3px",
+        minHeight: "44px",
+        padding: "6px 8px",
+        border: `2px ${highlight ? "dashed var(--bs-danger, #dc3545)" : "dashed var(--bs-border-color, #dee2e6)"}`,
+        borderRadius: "5px",
+        background: highlight ? "var(--bs-danger-bg-subtle, #fff3f3)" : "var(--bs-tertiary-bg, #f8f9fa)",
         transition: "border-color 0.15s, background 0.15s",
     });
 
-    const headerStyle: preact.JSX.CSSProperties = {
-        fontSize: "0.78em",
-        fontWeight: 600,
+    const lblStyle: preact.JSX.CSSProperties = {
+        fontSize: "0.76em", fontWeight: 600,
         color: "var(--bs-secondary-color, #6c757d)",
-        marginBottom: "3px",
+        marginBottom: "3px", marginTop: "10px",
     };
 
+    // ── Render ────────────────────────────────────────────────────────────────
+
+    // Which entry is being dragged (for opacity)
+    const draggingIdx = drag?.from === "active" ? drag.idx : null;
+
     return (
-        <div style={{ border: "1px solid var(--bs-border-color, #dee2e6)", borderTop: "none", borderRadius: "0 0 4px 4px", padding: "10px", display: "flex", gap: "10px" }}>
-            {/* ── Left: pool ────────────────────────────────────────────── */}
-            <div style={{ flex: "0 0 180px" }}>
-                <div style={headerStyle}>{t("toolbar_customization.available")}</div>
-                <div
-                    style={colStyle(overPool)}
-                    onDragOver={e => { e.preventDefault(); setOverPool(true); }}
-                    onDragLeave={() => setOverPool(false)}
-                    onDrop={onPoolDrop}
-                >
-                    {pool.length === 0 ? (
-                        <EmptyMsg>{t("toolbar_customization.all_active")}</EmptyMsg>
-                    ) : pool.map(id => (
-                        <div
-                            key={id}
-                            draggable
-                            onDragStart={e => startDrag(e as DragEvent, { src: "pool", id })}
-                            onDragEnd={clearDrag}
-                            style={{ padding: "3px 8px", cursor: "grab", fontSize: "0.83em", display: "flex", gap: "5px", userSelect: "none" }}
-                        >
-                            <Grip />{getItemLabel(id)}
-                        </div>
-                    ))}
-                </div>
-                <Hint>↔ {t("toolbar_customization.drag_hint_pool")}</Hint>
-            </div>
+        <div style={{ border: "1px solid var(--bs-border-color, #dee2e6)", borderTop: "none", borderRadius: "0 0 5px 5px", padding: "10px" }}>
 
-            {/* ── Right: active ─────────────────────────────────────────── */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={headerStyle}>{t("toolbar_customization.active")}</div>
-                <div style={colStyle()}>
-                    {active.length === 0 && <EmptyMsg>{t("toolbar_customization.drag_here")}</EmptyMsg>}
+            {/* ── Active toolbar bar ──────────────────────────────────────── */}
+            <div style={lblStyle}>{t("toolbar_customization.active")}</div>
+            <div
+                style={barStyle()}
+                onDragOver={e => { e.preventDefault(); setDropIdx(entries.length); setOverPool(false); }}
+                onDrop={e => onActiveDrop(e as DragEvent, entries.length)}
+            >
+                {entries.length === 0 && (
+                    <span style={{ color: "var(--bs-secondary-color, #6c757d)", fontSize: "0.82em" }}>
+                        {t("toolbar_customization.drag_here")}
+                    </span>
+                )}
 
-                    {active.map((entry, i) => (
-                        <div key={entryKey(entry, i)}>
-                            {/* Drop zone BEFORE each entry */}
-                            <DropZone
-                                active={dropIdx === i && drag?.src !== "active" || (dropIdx === i && drag?.src === "active" && (drag as any).idx !== i)}
-                                onDragOver={e => onActiveOver(e as DragEvent, i)}
-                                onDrop={e => onActiveDrop(e as DragEvent, i)}
-                            />
-                            <ActiveRow
-                                entry={entry}
-                                index={i}
-                                isDragging={drag?.src === "active" && (drag as any).idx === i}
-                                onDragStart={e => startDrag(e as DragEvent, { src: "active", idx: i })}
+                {entries.map((entry, i) => (
+                    <span key={entryKey(entry, i)} style={{ display: "contents" }}>
+                        {/* Blue drop indicator line before this chip */}
+                        <DropLine active={dropIdx === i} />
+
+                        {entry.kind === "separator" ? (
+                            <SepChip
+                                isDragging={draggingIdx === i}
+                                onDragStart={e => startDrag(e as DragEvent, { from: "active", idx: i })}
                                 onDragEnd={clearDrag}
                                 onDragOver={e => onActiveOver(e as DragEvent, i)}
-                                onDrop={e => onActiveDrop(e as DragEvent, i)}
-                                onRemove={() => removeIdx(i)}
-                                onChildReorder={(f, t2) => reorderChild(i, f, t2)}
+                                onDrop={e => onActiveDrop(e as DragEvent, insertIdx(e as DragEvent, i))}
+                                onRemove={() => removeActive(i)}
                             />
-                        </div>
-                    ))}
-
-                    {/* Drop zone at the very end */}
-                    <DropZone
-                        active={dropIdx === active.length}
-                        onDragOver={e => onActiveOver(e as DragEvent, active.length)}
-                        onDrop={e => onActiveDrop(e as DragEvent, active.length)}
-                    />
-                </div>
-                <div style={{ display: "flex", gap: "8px", marginTop: "4px", alignItems: "center" }}>
-                    <button type="button" className="btn btn-sm btn-outline-secondary" style={{ fontSize: "0.78em" }} onClick={addSeparator}>
-                        + {t("toolbar_customization.add_separator")}
-                    </button>
-                    <Hint>{t("toolbar_customization.drag_hint_active")}</Hint>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ─── Row rendered inside the active column ────────────────────────────────────
-
-interface RowProps {
-    entry: ToolbarEntry;
-    index: number;
-    isDragging: boolean;
-    onDragStart: (e: DragEvent) => void;
-    onDragEnd: () => void;
-    onDragOver: (e: DragEvent) => void;
-    onDrop: (e: DragEvent) => void;
-    onRemove: () => void;
-    onChildReorder: (from: number, to: number) => void;
-}
-
-function ActiveRow({ entry, index, isDragging, onDragStart, onDragEnd, onDragOver, onDrop, onRemove, onChildReorder }: RowProps) {
-    const [expanded, setExpanded] = useState(false);
-    const [childDrag, setChildDrag] = useState<number | null>(null);
-    const [childDrop, setChildDrop] = useState<number | null>(null);
-
-    const base: preact.JSX.CSSProperties = {
-        opacity: isDragging ? 0.35 : 1,
-        transition: "opacity 0.12s",
-    };
-
-    const dragHandlers = {
-        draggable: true as true,
-        onDragStart: onDragStart as any,
-        onDragEnd: onDragEnd,
-        onDragOver: onDragOver as any,
-        onDrop: onDrop as any,
-    };
-
-    if (entry.kind === "separator") {
-        return (
-            <div style={base} {...dragHandlers}>
-                <div style={{ display: "flex", alignItems: "center", padding: "2px 6px", gap: "4px" }}>
-                    <Grip />
-                    <span style={{ flex: 1, borderTop: "1px solid var(--bs-border-color, #dee2e6)" }} />
-                    <Xbtn onClick={onRemove} />
-                </div>
-            </div>
-        );
-    }
-
-    if (entry.kind === "group") {
-        return (
-            <div style={base} {...dragHandlers}>
-                <div style={{ display: "flex", alignItems: "center", padding: "2px 6px", gap: "4px" }}>
-                    <Grip />
-                    <button type="button" className="btn btn-link btn-sm p-0" style={{ fontSize: "0.7em", lineHeight: 1 }} onClick={() => setExpanded(v => !v)}>
-                        {expanded ? "▲" : "▼"}
-                    </button>
-                    <span style={{ flex: 1, fontWeight: 500, fontSize: "0.83em" }}>
-                        {entry.label}
-                        <span style={{ fontWeight: 400, color: "var(--bs-secondary-color, #6c757d)", marginLeft: "4px" }}>(···)</span>
+                        ) : entry.kind === "group" ? (
+                            <GroupChip
+                                group={entry}
+                                isDragging={draggingIdx === i}
+                                expanded={expandedGroup === entry.id}
+                                onToggle={() => setExpanded(prev => prev === entry.id ? null : entry.id)}
+                                onDragStart={e => startDrag(e as DragEvent, { from: "active", idx: i })}
+                                onDragEnd={clearDrag}
+                                onDragOver={e => onActiveOver(e as DragEvent, i)}
+                                onDrop={e => onGroupDrop(e as DragEvent, i)}
+                                onRemove={() => removeActive(i)}
+                            />
+                        ) : (
+                            <ItemChip
+                                label={getItemLabel(entry.id)}
+                                isDragging={draggingIdx === i}
+                                onDragStart={e => startDrag(e as DragEvent, { from: "active", idx: i })}
+                                onDragEnd={clearDrag}
+                                onDragOver={e => onActiveOver(e as DragEvent, i)}
+                                onDrop={e => onActiveDrop(e as DragEvent, insertIdx(e as DragEvent, i))}
+                                onRemove={() => removeActive(i)}
+                            />
+                        )}
                     </span>
-                    <Xbtn onClick={onRemove} />
-                </div>
-                {expanded && (
-                    <div style={{ paddingLeft: "18px", borderLeft: "2px solid var(--bs-border-color, #dee2e6)", marginLeft: "10px", marginBottom: "2px" }}>
-                        {entry.items.map((c, ci) => (
-                            <div
-                                key={c.kind === "item" ? c.id : `sep-${ci}`}
-                                draggable
-                                style={{
-                                    display: "flex", alignItems: "center", gap: "4px",
-                                    padding: "2px 4px", fontSize: "0.8em", cursor: "grab",
-                                    borderTop: childDrop === ci && childDrag !== null && childDrag !== ci ? "2px solid var(--bs-primary, #0d6efd)" : "2px solid transparent",
-                                    opacity: childDrag === ci ? 0.35 : 1,
-                                }}
-                                onDragStart={e => { e.stopPropagation(); setChildDrag(ci); }}
-                                onDragOver={e => { e.preventDefault(); e.stopPropagation(); setChildDrop(ci); }}
-                                onDrop={e => { e.preventDefault(); e.stopPropagation(); if (childDrag !== null) onChildReorder(childDrag, ci); setChildDrag(null); setChildDrop(null); }}
-                                onDragEnd={() => { setChildDrag(null); setChildDrop(null); }}
-                            >
-                                <Grip />
-                                {c.kind === "separator"
-                                    ? <span style={{ flex: 1, borderTop: "1px solid var(--bs-border-color, #dee2e6)" }} />
-                                    : <span style={{ flex: 1 }}>{getItemLabel(c.id)}</span>
-                                }
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-        );
-    }
+                ))}
 
-    // Plain item
-    return (
-        <div style={base} {...dragHandlers}>
-            <div style={{ display: "flex", alignItems: "center", padding: "2px 6px", gap: "4px" }}>
-                <Grip />
-                <span style={{ flex: 1, fontSize: "0.83em" }}>{getItemLabel(entry.id)}</span>
-                <Xbtn onClick={onRemove} />
+                {/* Final drop indicator */}
+                <DropLine active={dropIdx === entries.length} />
+            </div>
+
+            {/* ── Expanded group children row ─────────────────────────────── */}
+            {expandedGroup && (() => {
+                const gi = entries.findIndex(e => e.kind === "group" && (e as ToolbarGroup).id === expandedGroup);
+                if (gi === -1) return null;
+                const g = entries[gi] as ToolbarGroup;
+                return (
+                    <div style={{ marginTop: "4px", paddingLeft: "16px" }}>
+                        <div style={{ ...lblStyle, marginTop: "0" }}>
+                            ↳ {g.label} {t("toolbar_customization.group_contents")}
+                        </div>
+                        <div
+                            style={{ ...barStyle(), background: "var(--bs-secondary-bg, #e9ecef)", minHeight: "38px" }}
+                            onDragOver={e => { e.preventDefault(); setChildDrop(g.items.length); setOverPool(false); }}
+                            onDrop={e => onChildDrop(e as DragEvent, gi, g.items.length)}
+                        >
+                            {g.items.length === 0 && (
+                                <span style={{ color: "var(--bs-secondary-color, #6c757d)", fontSize: "0.82em" }}>
+                                    {t("toolbar_customization.group_empty")}
+                                </span>
+                            )}
+                            {g.items.map((c, ci) => (
+                                <span key={c.kind === "item" ? c.id : `csep-${ci}`} style={{ display: "contents" }}>
+                                    <DropLine active={childDropIdx === ci} />
+                                    {c.kind === "separator" ? (
+                                        <SepChip
+                                            isDragging={drag?.from === "child" && drag.groupIdx === gi && drag.childIdx === ci}
+                                            onDragStart={e => startDrag(e as DragEvent, { from: "child", groupIdx: gi, childIdx: ci })}
+                                            onDragEnd={clearDrag}
+                                            onDragOver={e => { e.preventDefault(); e.stopPropagation(); setChildDrop(insertIdx(e as DragEvent, ci)); }}
+                                            onDrop={e => onChildDrop(e as DragEvent, gi, insertIdx(e as DragEvent, ci))}
+                                            onRemove={() => removeChildFromGroup(gi, ci)}
+                                        />
+                                    ) : (
+                                        <ItemChip
+                                            label={getItemLabel(c.id)}
+                                            isDragging={drag?.from === "child" && drag.groupIdx === gi && drag.childIdx === ci}
+                                            onDragStart={e => startDrag(e as DragEvent, { from: "child", groupIdx: gi, childIdx: ci })}
+                                            onDragEnd={clearDrag}
+                                            onDragOver={e => { e.preventDefault(); e.stopPropagation(); setChildDrop(insertIdx(e as DragEvent, ci)); }}
+                                            onDrop={e => onChildDrop(e as DragEvent, gi, insertIdx(e as DragEvent, ci))}
+                                            onRemove={() => removeChildFromGroup(gi, ci)}
+                                        />
+                                    )}
+                                </span>
+                            ))}
+                            <DropLine active={childDropIdx === g.items.length} />
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {/* ── Toolbar action buttons ──────────────────────────────────── */}
+            <div className="mt-2 d-flex gap-2">
+                <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={addSeparator}
+                    title={t("toolbar_customization.add_separator_hint")}
+                >
+                    + │ {t("toolbar_customization.add_separator")}
+                </button>
+                <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    onClick={addGroup}
+                    title={t("toolbar_customization.add_group_hint")}
+                >
+                    + ··· {t("toolbar_customization.add_group")}
+                </button>
+            </div>
+
+            {/* ── Available items bar ─────────────────────────────────────── */}
+            <div style={lblStyle}>{t("toolbar_customization.available")}</div>
+            <div
+                style={barStyle(overPool)}
+                onDragOver={e => { e.preventDefault(); setOverPool(true); }}
+                onDragLeave={() => setOverPool(false)}
+                onDrop={onPoolDrop}
+            >
+                {pool.length === 0 ? (
+                    <span style={{ color: "var(--bs-secondary-color, #6c757d)", fontSize: "0.82em" }}>
+                        {t("toolbar_customization.all_active")}
+                    </span>
+                ) : pool.map(id => (
+                    <div
+                        key={id}
+                        draggable
+                        onDragStart={e => startDrag(e as DragEvent, { from: "pool", id })}
+                        onDragEnd={clearDrag}
+                        style={{
+                            display: "inline-flex", alignItems: "center", gap: "4px",
+                            padding: "3px 8px", borderRadius: "4px",
+                            border: "1px solid var(--bs-border-color, #dee2e6)",
+                            background: "var(--bs-body-bg, #fff)",
+                            cursor: "grab", fontSize: "0.82em", userSelect: "none",
+                        }}
+                        title={t("toolbar_customization.drag_to_add")}
+                    >
+                        <Grip />{getItemLabel(id)}
+                    </div>
+                ))}
+            </div>
+            <div style={{ fontSize: "0.75em", color: "var(--bs-secondary-color, #6c757d)", marginTop: "3px" }}>
+                ↑ {t("toolbar_customization.drag_hint_pool")} &nbsp;|&nbsp; ↓ {t("toolbar_customization.drag_hint_active")}
             </div>
         </div>
     );
 }
 
-// ─── Tiny helpers ─────────────────────────────────────────────────────────────
+// ─── Chip components ──────────────────────────────────────────────────────────
+
+interface ChipBaseProps {
+    isDragging: boolean;
+    onDragStart: (e: Event) => void;
+    onDragEnd: () => void;
+    onDragOver: (e: Event) => void;
+    onDrop: (e: Event) => void;
+    onRemove: () => void;
+}
+
+const chipBase: preact.JSX.CSSProperties = {
+    display: "inline-flex", alignItems: "center", gap: "3px",
+    padding: "3px 7px", borderRadius: "4px",
+    border: "1px solid var(--bs-border-color, #dee2e6)",
+    background: "var(--bs-body-bg, #fff)",
+    cursor: "grab", fontSize: "0.82em", userSelect: "none",
+    transition: "opacity 0.12s",
+};
+
+function ItemChip({ label, isDragging, onDragStart, onDragEnd, onDragOver, onDrop, onRemove }: ChipBaseProps & { label: string }) {
+    return (
+        <div
+            draggable
+            style={{ ...chipBase, opacity: isDragging ? 0.3 : 1 }}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+        >
+            <Grip />{label}<Xbtn onClick={onRemove} />
+        </div>
+    );
+}
+
+function SepChip({ isDragging, onDragStart, onDragEnd, onDragOver, onDrop, onRemove }: ChipBaseProps) {
+    return (
+        <div
+            draggable
+            style={{ ...chipBase, padding: "3px 6px", opacity: isDragging ? 0.3 : 1, color: "var(--bs-secondary-color, #6c757d)" }}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+            title={t("toolbar_customization.separator")}
+        >
+            <Grip />
+            <span style={{ width: "1px", height: "16px", background: "currentColor", display: "inline-block" }} />
+            <Xbtn onClick={onRemove} />
+        </div>
+    );
+}
+
+interface GroupChipProps extends ChipBaseProps {
+    group: ToolbarGroup;
+    expanded: boolean;
+    onToggle: () => void;
+}
+
+function GroupChip({ group, expanded, isDragging, onToggle, onDragStart, onDragEnd, onDragOver, onDrop, onRemove }: GroupChipProps) {
+    return (
+        <div
+            draggable
+            style={{ ...chipBase, opacity: isDragging ? 0.3 : 1, background: "var(--bs-secondary-bg, #e9ecef)" }}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+            title={t("toolbar_customization.drop_on_group")}
+        >
+            <Grip />
+            <span>···</span>
+            <span style={{ fontStyle: "italic", fontSize: "0.9em" }}>{group.label}</span>
+            <span style={{ fontSize: "0.8em", color: "var(--bs-secondary-color, #6c757d)" }}>({group.items.length})</span>
+            <button
+                type="button"
+                className="btn btn-link btn-sm p-0"
+                style={{ fontSize: "0.7em", lineHeight: 1, color: "inherit" }}
+                onClick={e => { e.stopPropagation(); onToggle(); }}
+                title={expanded ? t("toolbar_customization.collapse") : t("toolbar_customization.expand")}
+            >
+                {expanded ? "▲" : "▼"}
+            </button>
+            <Xbtn onClick={onRemove} />
+        </div>
+    );
+}
+
+// ─── Micro components ─────────────────────────────────────────────────────────
 
 function Grip() {
-    return <span style={{ cursor: "grab", color: "var(--bs-secondary-color, #6c757d)", userSelect: "none", flexShrink: 0 }}>⠿</span>;
+    return <span style={{ cursor: "grab", color: "var(--bs-secondary-color, #6c757d)", userSelect: "none", flexShrink: 0, fontSize: "0.9em" }}>⠿</span>;
 }
 
 function Xbtn({ onClick }: { onClick: () => void }) {
@@ -457,27 +598,22 @@ function Xbtn({ onClick }: { onClick: () => void }) {
         <button
             type="button"
             className="btn btn-link btn-sm p-0"
-            onClick={onClick}
-            style={{ color: "var(--bs-danger, #dc3545)", lineHeight: 1, flexShrink: 0 }}
+            onClick={e => { e.stopPropagation(); onClick(); }}
+            style={{ color: "var(--bs-danger, #dc3545)", lineHeight: 1, flexShrink: 0, marginLeft: "2px" }}
             title={t("toolbar_customization.remove_item")}
         >×</button>
     );
 }
 
-function DropZone({ active, onDragOver, onDrop }: { active: boolean; onDragOver: (e: Event) => void; onDrop: (e: Event) => void }) {
+function DropLine({ active }: { active: boolean }) {
     return (
-        <div
-            style={{ height: "5px", margin: "0 4px", borderRadius: "2px", background: active ? "var(--bs-primary, #0d6efd)" : "transparent", transition: "background 0.1s" }}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
-        />
+        <div style={{
+            width: active ? "3px" : "1px",
+            height: "24px",
+            borderRadius: "2px",
+            background: active ? "var(--bs-primary, #0d6efd)" : "transparent",
+            flexShrink: 0,
+            transition: "width 0.08s, background 0.08s",
+        }} />
     );
-}
-
-function EmptyMsg({ children }: { children: preact.ComponentChildren }) {
-    return <div style={{ padding: "10px", textAlign: "center", fontSize: "0.8em", color: "var(--bs-secondary-color, #6c757d)" }}>{children}</div>;
-}
-
-function Hint({ children }: { children: preact.ComponentChildren }) {
-    return <span style={{ fontSize: "0.74em", color: "var(--bs-secondary-color, #6c757d)" }}>{children}</span>;
 }
