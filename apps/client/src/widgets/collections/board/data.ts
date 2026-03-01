@@ -7,6 +7,36 @@ export type ColumnMap = Map<string, {
     note: FNote;
 }[]>;
 
+export interface BoardProgressData {
+    totalTasks: number;
+    completedTasks: number;
+    completionRatio: number;
+}
+
+const DONE_COLUMN_PATTERN = /^(done|completed?|finished)$/i;
+
+export function computeBoardProgress(byColumn: ColumnMap): BoardProgressData {
+    let totalTasks = 0;
+    let completedTasks = 0;
+
+    for (const [ columnName, items ] of byColumn.entries()) {
+        const itemCount = items.length;
+        totalTasks += itemCount;
+
+        if (DONE_COLUMN_PATTERN.test(columnName.trim())) {
+            completedTasks += itemCount;
+        }
+    }
+
+    const completionRatio = totalTasks > 0 ? completedTasks / totalTasks : 0;
+
+    return {
+        totalTasks,
+        completedTasks,
+        completionRatio
+    };
+}
+
 export async function getBoardData(parentNote: FNote, groupByColumn: string, persistedData: BoardViewData, includeArchived: boolean) {
     const byColumn: ColumnMap = new Map();
 

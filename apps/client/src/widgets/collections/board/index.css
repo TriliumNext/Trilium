@@ -20,6 +20,32 @@
   overflow-x: auto;
 }
 
+.board-progress {
+  margin-inline: var(--content-margin-inline);
+  margin-bottom: 0.5em;
+}
+
+.board-progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85em;
+  color: var(--muted-text-color);
+  margin-bottom: 0.2em;
+}
+
+.board-progress-track {
+  height: 8px;
+  background-color: var(--main-border-color);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.board-progress-fill {
+  height: 100%;
+  background: var(--main-text-color);
+  transition: width 0.2s ease-in-out;
+}
+
 body.mobile .board-view-container {
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
