@@ -1814,6 +1814,7 @@
     "active_section": "Active toolbar items — top = leftmost in editor",
     "available_section": "Available items — click to add",
     "all_active": "All items are already in the toolbar",
+    "drop_to_remove": "Drop here to remove from toolbar",
     "drag_here": "Drag items from below, or click a chip to add",
     "pool_hint": "Click a chip to append it, or drag it into the list above to insert at a specific position",
     "add_separator": "Separator",

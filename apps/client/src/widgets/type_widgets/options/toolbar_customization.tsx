@@ -125,7 +125,8 @@ const COLOR = {
     border:       "var(--bs-border-color, #dee2e6)",
     rowSep:       "var(--bs-border-color-translucent, rgba(0,0,0,0.09))",
     hover:        "var(--bs-tertiary-bg, #f1f3f5)",
-    groupBg:      "var(--bs-primary-bg-subtle, #cfe2ff)",
+    // rgba tint — works in both light AND dark mode (adds blue to whatever bg is there)
+    groupBg:      "rgba(13, 110, 253, 0.13)",
     groupBorder:  "var(--bs-primary, #0d6efd)",
     muted:        "var(--bs-secondary-color, #6c757d)",
     danger:       "var(--bs-danger, #dc3545)",
@@ -222,6 +223,7 @@ function VerticalEditor({ entries, onChange }: VerticalEditorProps) {
     const [activeDropIdx, setActiveDrop] = useState<number | null>(null);
     const [expandedGroup, setExpanded]  = useState<string | null>(null);
     const [childDropIdx, setChildDrop]  = useState<number | null>(null);
+    const [poolOver, setPoolOver]       = useState(false);
 
     // ── Mutations ─────────────────────────────────────────────────────────────
 
@@ -297,7 +299,15 @@ function VerticalEditor({ entries, onChange }: VerticalEditorProps) {
         e.dataTransfer!.effectAllowed = "move";
     }
 
-    function clearDrag() { setDrag(null); setActiveDrop(null); setChildDrop(null); }
+    function clearDrag() { setDrag(null); setActiveDrop(null); setChildDrop(null); setPoolOver(false); }
+
+    function onPoolDrop(e: DragEvent) {
+        e.preventDefault();
+        if (!drag) return clearDrag();
+        if (drag.from === "active") removeAt(drag.idx);
+        else if (drag.from === "child") removeFromGroup(drag.groupIdx, drag.childIdx);
+        clearDrag();
+    }
 
     function onActiveRowOver(e: DragEvent, rowIdx: number) {
         e.preventDefault();
@@ -333,6 +343,8 @@ function VerticalEditor({ entries, onChange }: VerticalEditorProps) {
     }
 
     const draggingIdx = drag?.from === "active" ? drag.idx : null;
+    // True when an active/child item is being dragged — pool becomes a remove zone
+    const isDraggingToPool = drag !== null && (drag.from === "active" || drag.from === "child");
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -475,34 +487,67 @@ function VerticalEditor({ entries, onChange }: VerticalEditorProps) {
             {/* ── Section header: Available ── */}
             <SectionHeader label={t("toolbar_customization.available_section")} />
 
-            {/* ── Pool chips ── */}
-            {pool.length === 0 ? (
-                <p style={{ fontSize: "0.82em", color: COLOR.muted, margin: "4px 0 0" }}>
-                    {t("toolbar_customization.all_active")}
-                </p>
-            ) : (
-                <div style={{
+            {/* ── Pool chips — always rendered so active items can be dragged here to remove ── */}
+            <div
+                style={{
                     display: "flex",
                     flexWrap: "wrap",
                     gap: "5px",
                     padding: "8px",
-                    border: `1px dashed ${COLOR.border}`,
+                    minHeight: isDraggingToPool ? "52px" : "auto",
+                    border: poolOver
+                        ? `2px dashed ${COLOR.danger}`
+                        : isDraggingToPool
+                            ? `2px dashed ${COLOR.muted}`
+                            : `1px dashed ${COLOR.border}`,
                     borderRadius: "5px",
-                    background: COLOR.poolBg,
-                }}>
-                    {pool.map(id => (
-                        <PoolChip
-                            key={id}
-                            id={id}
-                            onAdd={() => appendItem(id)}
-                            onDragStart={e => startDrag(e as DragEvent, { from: "pool", id })}
-                            onDragEnd={clearDrag}
-                        />
-                    ))}
-                </div>
-            )}
+                    background: poolOver ? "rgba(220,53,69,0.07)" : COLOR.poolBg,
+                    transition: "border-color .12s, background .12s",
+                    alignItems: "center",
+                }}
+                onDragOver={e => { e.preventDefault(); setPoolOver(true); }}
+                onDragLeave={e => {
+                    // Only clear when truly leaving the container (not entering a child)
+                    if (!(e.currentTarget as Element).contains(e.relatedTarget as Node)) {
+                        setPoolOver(false);
+                    }
+                }}
+                onDrop={onPoolDrop}
+            >
+                {/* Remove hint — shown while dragging an active item */}
+                {isDraggingToPool && (
+                    <span style={{
+                        fontSize: "0.8em",
+                        color: poolOver ? COLOR.danger : COLOR.muted,
+                        fontStyle: "italic",
+                        transition: "color .12s",
+                        userSelect: "none",
+                        flex: pool.length === 0 ? "1 1 100%" : undefined,
+                        textAlign: pool.length === 0 ? "center" : undefined,
+                    }}>
+                        {poolOver ? "⬇ Release to remove" : t("toolbar_customization.drop_to_remove")}
+                    </span>
+                )}
 
-            {pool.length > 0 && (
+                {/* "All in toolbar" notice when pool is empty and not dragging */}
+                {!isDraggingToPool && pool.length === 0 && (
+                    <span style={{ fontSize: "0.82em", color: COLOR.muted, fontStyle: "italic" }}>
+                        {t("toolbar_customization.all_active")}
+                    </span>
+                )}
+
+                {pool.map(id => (
+                    <PoolChip
+                        key={id}
+                        id={id}
+                        onAdd={() => appendItem(id)}
+                        onDragStart={e => startDrag(e as DragEvent, { from: "pool", id })}
+                        onDragEnd={clearDrag}
+                    />
+                ))}
+            </div>
+
+            {pool.length > 0 && !isDraggingToPool && (
                 <p style={{ fontSize: "0.72em", color: COLOR.muted, margin: "4px 0 0" }}>
                     {t("toolbar_customization.pool_hint")}
                 </p>
@@ -534,6 +579,7 @@ function rowBase(faded: boolean, extra?: preact.JSX.CSSProperties): preact.JSX.C
         cursor: "grab",
         opacity: faded ? 0.3 : 1,
         userSelect: "none",
+        color: "var(--bs-body-color)",   // explicit: prevents dark-mode white-on-light issue
         borderBottom: `1px solid ${COLOR.rowSep}`,
         transition: "background .1s, opacity .1s",
         ...extra,
@@ -657,14 +703,13 @@ function PoolChip({ id, onAdd, onDragStart, onDragEnd }: {
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
             onMouseEnter={e => {
-                const b = e.currentTarget as HTMLElement;
-                b.style.background = COLOR.groupBg;
-                b.style.borderColor = COLOR.groupBorder;
+                // box-shadow ring: no background change → readable in both light & dark mode
+                (e.currentTarget as HTMLElement).style.boxShadow = `0 0 0 2px ${COLOR.groupBorder}`;
+                (e.currentTarget as HTMLElement).style.borderColor = COLOR.groupBorder;
             }}
             onMouseLeave={e => {
-                const b = e.currentTarget as HTMLElement;
-                b.style.background = "var(--bs-body-bg, #fff)";
-                b.style.borderColor = COLOR.border;
+                (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                (e.currentTarget as HTMLElement).style.borderColor = COLOR.border;
             }}
             title={`${getItemLabel(id)} — click to add`}
         >
@@ -762,15 +807,20 @@ function SectionHeader({ label }: { label: string }) {
     );
 }
 
-/** Blue horizontal line shown between rows during drag-over. */
+/**
+ * Drop indicator shown between rows.
+ * Height 0 when inactive → no invisible gap between rows.
+ * Expands to 4px bright blue when the cursor is between these two rows.
+ */
 function DropLine({ active, indent }: { active: boolean; indent?: boolean }) {
     return (
         <div style={{
-            height: "3px",
+            height: active ? "4px" : "0",
             marginLeft: indent ? "28px" : "0",
-            background: active ? COLOR.groupBorder : "transparent",
-            transition: "background .07s",
+            background: COLOR.groupBorder,
             borderRadius: "2px",
+            overflow: "hidden",
+            transition: "height .07s",
         }} />
     );
 }
