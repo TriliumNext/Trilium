@@ -123,8 +123,10 @@ function rowInsertIdx(e: DragEvent, rowIdx: number): number {
 
 const COLOR = {
     border:       "var(--bs-border-color, #dee2e6)",
-    rowSep:       "var(--bs-border-color-translucent, rgba(0,0,0,0.09))",
-    hover:        "var(--bs-tertiary-bg, #f1f3f5)",
+    // Solid border — translucent version is too faint in dark mode
+    rowSep:       "var(--bs-border-color, #dee2e6)",
+    // rgba white overlay: in dark mode adds lightness, in light mode barely visible (fine)
+    hoverOverlay: "rgba(255,255,255,0.06)",
     // rgba tint — works in both light AND dark mode (adds blue to whatever bg is there)
     groupBg:      "rgba(13, 110, 253, 0.18)",
     groupBorder:  "var(--bs-primary, #0d6efd)",
@@ -628,8 +630,8 @@ function ItemRow({ id, faded, indent, onDragStart, onDragEnd, onDragOver, onDrop
             style={rowBase(faded, { paddingLeft: indent ? "28px" : "8px" })}
             onDragStart={onDragStart} onDragEnd={onDragEnd}
             onDragOver={onDragOver} onDrop={onDrop}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = COLOR.hover}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ""}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.boxShadow = `inset 0 0 0 999px ${COLOR.hoverOverlay}`}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.boxShadow = ""}
         >
             <DragDots />
             <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "18px", flexShrink: 0 }}>
@@ -650,26 +652,18 @@ function SepRow({ faded, indent, onDragStart, onDragEnd, onDragOver, onDrop, onR
             style={rowBase(faded, { paddingLeft: indent ? "28px" : "8px", background: "transparent" })}
             onDragStart={onDragStart} onDragEnd={onDragEnd}
             onDragOver={onDragOver} onDrop={onDrop}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = COLOR.hover}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ""}
+            onMouseEnter={e => (e.currentTarget as HTMLElement).style.boxShadow = `inset 0 0 0 999px ${COLOR.hoverOverlay}`}
+            onMouseLeave={e => (e.currentTarget as HTMLElement).style.boxShadow = ""}
         >
             <DragDots />
-            <span style={{ flex: 1, display: "flex", alignItems: "center", gap: "7px" }}>
-                {/* Solid lines — visible in both light and dark mode */}
-                <span style={{ flex: 1, height: "1px", background: "var(--bs-border-color, #dee2e6)" }} />
-                <span style={{
-                    fontSize: "0.71em",
-                    padding: "1px 6px",
-                    borderRadius: "3px",
-                    background: "var(--bs-secondary-bg, #e9ecef)",
-                    border: "1px solid var(--bs-border-color, #dee2e6)",
-                    color: "var(--bs-body-color)",
-                    letterSpacing: ".02em",
-                    whiteSpace: "nowrap",
-                    lineHeight: 1.6,
-                }}>│ {t("toolbar_customization.separator")}</span>
-                <span style={{ flex: 1, height: "1px", background: "var(--bs-border-color, #dee2e6)" }} />
-            </span>
+            {/* currentColor adapts to --bs-body-color in any theme; opacity dims it slightly */}
+            <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "7px", opacity: 0.55 }}>
+                <div style={{ flex: 1, height: "1px", background: "currentColor" }} />
+                <span style={{ fontSize: "0.71em", letterSpacing: ".04em", userSelect: "none", whiteSpace: "nowrap" }}>
+                    │ {t("toolbar_customization.separator")}
+                </span>
+                <div style={{ flex: 1, height: "1px", background: "currentColor" }} />
+            </div>
             <RemoveBtn onClick={onRemove} />
         </div>
     );
@@ -854,7 +848,9 @@ function SectionHeader({ label }: { label: string }) {
             fontWeight: 700,
             letterSpacing: ".07em",
             textTransform: "uppercase",
-            color: COLOR.muted,
+            // Use body color at 65% so it's readable but doesn't compete with content
+            color: "var(--bs-body-color)",
+            opacity: 0.65,
             marginBottom: "5px",
         }}>
             {label}
@@ -863,41 +859,23 @@ function SectionHeader({ label }: { label: string }) {
 }
 
 /**
- * Drop indicator between rows — 0-height when inactive (no gap), 2px blue line
- * with end-cap circles (VS Code style) when the cursor is between two rows.
+ * Drop indicator between rows.
+ * Renders nothing (height 0) when inactive so rows stay flush.
+ * When active: a solid 3px blue line with a bright glow so it's unmissable in any theme.
  */
 function DropLine({ active, indent }: { active: boolean; indent?: boolean }) {
     if (!active) return <div style={{ height: 0 }} />;
     return (
         <div style={{
-            position: "relative",
-            height: "2px",
-            marginLeft: indent ? "28px" : "0",
+            height: "3px",
+            marginLeft: indent ? "28px" : "6px",
+            marginRight: "6px",
+            borderRadius: "2px",
             background: COLOR.groupBorder,
-            zIndex: 5,
-        }}>
-            {/* Left end-cap circle */}
-            <div style={{
-                position: "absolute",
-                left: "-1px",
-                top: "-4px",
-                width: "10px",
-                height: "10px",
-                borderRadius: "50%",
-                border: `2px solid ${COLOR.groupBorder}`,
-                background: "transparent",
-            }} />
-            {/* Right end-cap circle */}
-            <div style={{
-                position: "absolute",
-                right: "-1px",
-                top: "-4px",
-                width: "10px",
-                height: "10px",
-                borderRadius: "50%",
-                border: `2px solid ${COLOR.groupBorder}`,
-                background: "transparent",
-            }} />
-        </div>
+            // Glow ensures visibility in both light and dark mode
+            boxShadow: `0 0 8px 3px ${COLOR.groupBorder}`,
+            pointerEvents: "none",
+            zIndex: 10,
+        }} />
     );
 }
