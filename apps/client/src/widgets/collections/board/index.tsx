@@ -17,7 +17,7 @@ import { ViewModeProps } from "../interface";
 import Api from "./api";
 import BoardApi from "./api";
 import Column from "./column";
-import { ColumnMap, getBoardData } from "./data";
+import { ColumnMap, computeBoardProgress, getBoardData } from "./data";
 
 export interface BoardViewData {
     columns?: BoardColumnData[];
@@ -60,6 +60,7 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
     const [ columnHoverIndex, setColumnHoverIndex ] = useState<number | null>(null);
     const [ branchIdToEdit, setBranchIdToEdit ] = useState<string>();
     const [ columnNameToEdit, setColumnNameToEdit ] = useState<string>();
+    const progress = useMemo(() => byColumn ? computeBoardProgress(byColumn) : null, [byColumn]);
     const api = useMemo(() => {
         return new Api(byColumn, columns ?? [], parentNote, statusAttributeWithPrefix, viewConfig ?? {}, saveConfig, setBranchIdToEdit );
     }, [ byColumn, columns, parentNote, statusAttributeWithPrefix, viewConfig, saveConfig, setBranchIdToEdit ]);
@@ -164,6 +165,17 @@ export default function BoardView({ note: parentNote, noteIds, viewConfig, saveC
     return (
         <div className="board-view">
             <CollectionProperties note={parentNote} />
+            {progress && progress.totalTasks > 0 && (
+                <div className="board-progress" title={`${Math.round(progress.completionRatio * 100)}% (${progress.completedTasks}/${progress.totalTasks})`}>
+                    <div className="board-progress-meta">
+                        <span>{t("board_view.progress")}</span>
+                        <span>{Math.round(progress.completionRatio * 100)}% ({progress.completedTasks}/{progress.totalTasks})</span>
+                    </div>
+                    <div className="board-progress-track">
+                        <div className="board-progress-fill" style={{ width: `${progress.completionRatio * 100}%` }} />
+                    </div>
+                </div>
+            )}
             <BoardViewContext.Provider value={boardViewContext}>
                 {byColumn && columns && <div
                     className="board-view-container"
