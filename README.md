@@ -124,7 +124,8 @@ Currently only the latest versions of Chrome & Firefox are supported (and tested
 
 To use TriliumNext on a mobile device, you can use a mobile web browser to access the mobile interface of a server installation (see below).
 
-See issue https://github.com/TriliumNext/Trilium/issues/4962 for more information on mobile app support.
+See issue https://github.com/TriliumNext/Trilium/issues/4962 for historical context on mobile app support.
+Current official mobile app effort is tracked in https://github.com/TriliumNext/Trilium/issues/7447.
 
 If you prefer a native Android app, you can use [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
 Report bugs and missing features at [their repository](https://github.com/FliegendeWurst/TriliumDroid).
