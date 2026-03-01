@@ -313,6 +313,7 @@ function VerticalEditor({ entries, onChange }: VerticalEditorProps) {
 
     function onActiveRowOver(e: DragEvent, rowIdx: number) {
         e.preventDefault();
+        e.stopPropagation(); // prevent container's onDragOver from overwriting activeDrop
         setActiveDrop(rowInsertIdx(e, rowIdx));
     }
 
