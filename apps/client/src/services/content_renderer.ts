@@ -1,6 +1,7 @@
 import "./content_renderer.css";
 
 import { normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
+import { h, render } from "preact";
 import WheelZoom from 'vanilla-js-wheel-zoom';
 
 import FAttachment from "../entities/fattachment.js";
@@ -16,8 +17,6 @@ import protectedSessionHolder from "./protected_session_holder.js";
 import renderService from "./render.js";
 import { applySingleBlockSyntaxHighlight } from "./syntax_highlight.js";
 import utils, { getErrorMessage } from "./utils.js";
-import PdfViewer from "../widgets/type_widgets/file/PdfViewer";
-import { h, render } from "preact";
 
 let idCounter = 1;
 
@@ -58,7 +57,7 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
     } else if (["image", "canvas", "mindMap"].includes(type)) {
         renderImage(entity, $renderedContent, options);
     } else if (!options.tooltip && ["file", "pdf", "audio", "video"].includes(type)) {
-        renderFile(entity, type, $renderedContent);
+        await renderFile(entity, type, $renderedContent);
     } else if (type === "mermaid") {
         await renderMermaid(entity, $renderedContent);
     } else if (type === "render" && entity instanceof FNote) {
@@ -181,7 +180,7 @@ function renderImage(entity: FNote | FAttachment, $renderedContent: JQuery<HTMLE
     imageContextMenuService.setupContextMenu($img);
 }
 
-function renderFile(entity: FNote | FAttachment, type: string, $renderedContent: JQuery<HTMLElement>) {
+async function renderFile(entity: FNote | FAttachment, type: string, $renderedContent: JQuery<HTMLElement>) {
     let entityType, entityId;
 
     if (entity instanceof FNote) {
@@ -199,6 +198,7 @@ function renderFile(entity: FNote | FAttachment, type: string, $renderedContent:
     if (type === "pdf") {
         const url = `../../api/${entityType}/${entityId}/open`;
         const $viewer = $(`<div style="height: 100%">`);
+        const PdfViewer = (await import("../widgets/type_widgets/file/PdfViewer")).default;
         render(h(PdfViewer, {pdfUrl: url, editable: false}), $viewer.get(0)!);
 
         $content.append($viewer);
