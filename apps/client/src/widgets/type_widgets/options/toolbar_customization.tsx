@@ -126,7 +126,7 @@ const COLOR = {
     rowSep:       "var(--bs-border-color-translucent, rgba(0,0,0,0.09))",
     hover:        "var(--bs-tertiary-bg, #f1f3f5)",
     // rgba tint — works in both light AND dark mode (adds blue to whatever bg is there)
-    groupBg:      "rgba(13, 110, 253, 0.13)",
+    groupBg:      "rgba(13, 110, 253, 0.18)",
     groupBorder:  "var(--bs-primary, #0d6efd)",
     muted:        "var(--bs-secondary-color, #6c757d)",
     danger:       "var(--bs-danger, #dc3545)",
@@ -364,7 +364,9 @@ function VerticalEditor({ entries, onChange }: VerticalEditorProps) {
                 style={{
                     border: `1px solid ${COLOR.border}`,
                     borderRadius: "5px",
-                    overflow: "hidden",
+                    maxHeight: "380px",
+                    overflowY: "auto",
+                    position: "relative",   // needed for sticky delete zone
                     background: COLOR.bodyBg,
                 }}
                 onDragOver={e => { e.preventDefault(); setActiveDrop(entries.length); }}
@@ -460,6 +462,39 @@ function VerticalEditor({ entries, onChange }: VerticalEditorProps) {
                     </div>
                 ))}
                 <DropLine active={activeDropIdx === entries.length} />
+
+                {/* Sticky delete zone — sticks to bottom of scroll area while dragging */}
+                {isDraggingToPool && (
+                    <div
+                        style={{
+                            position: "sticky",
+                            bottom: 0,
+                            margin: "0",
+                            padding: "7px 10px",
+                            background: poolOver ? COLOR.danger : "rgba(220,53,69,0.10)",
+                            borderTop: `2px dashed ${poolOver ? "rgba(255,255,255,0.5)" : COLOR.danger}`,
+                            textAlign: "center",
+                            fontSize: "0.82em",
+                            fontWeight: 500,
+                            color: poolOver ? "#fff" : COLOR.danger,
+                            cursor: "copy",
+                            transition: "background .12s, color .12s",
+                            zIndex: 10,
+                        }}
+                        onDragOver={e => { e.preventDefault(); e.stopPropagation(); setPoolOver(true); setActiveDrop(null); }}
+                        onDragLeave={e => {
+                            if (!(e.currentTarget as Element).contains(e.relatedTarget as Node)) setPoolOver(false);
+                        }}
+                        onDrop={e => {
+                            e.preventDefault(); e.stopPropagation();
+                            if (drag?.from === "active") removeAt(drag.idx);
+                            else if (drag?.from === "child") removeFromGroup(drag.groupIdx, drag.childIdx);
+                            clearDrag();
+                        }}
+                    >
+                        {poolOver ? "⬇ Release to remove from toolbar" : "🗑 Drag here to remove from toolbar"}
+                    </div>
+                )}
             </div>
 
             {/* ── Add buttons ── */}
@@ -619,12 +654,21 @@ function SepRow({ faded, indent, onDragStart, onDragEnd, onDragOver, onDrop, onR
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ""}
         >
             <DragDots />
-            <span style={{ flex: 1, display: "flex", alignItems: "center", gap: "6px", color: COLOR.muted }}>
-                <span style={{ flex: 1, borderTop: "2px dashed currentColor", opacity: 0.35 }} />
-                <span style={{ fontSize: "0.74em", letterSpacing: ".03em", fontStyle: "italic" }}>
-                    {t("toolbar_customization.separator")}
-                </span>
-                <span style={{ flex: 1, borderTop: "2px dashed currentColor", opacity: 0.35 }} />
+            <span style={{ flex: 1, display: "flex", alignItems: "center", gap: "7px" }}>
+                {/* Solid lines — visible in both light and dark mode */}
+                <span style={{ flex: 1, height: "1px", background: "var(--bs-border-color, #dee2e6)" }} />
+                <span style={{
+                    fontSize: "0.71em",
+                    padding: "1px 6px",
+                    borderRadius: "3px",
+                    background: "var(--bs-secondary-bg, #e9ecef)",
+                    border: "1px solid var(--bs-border-color, #dee2e6)",
+                    color: "var(--bs-body-color)",
+                    letterSpacing: ".02em",
+                    whiteSpace: "nowrap",
+                    lineHeight: 1.6,
+                }}>│ {t("toolbar_customization.separator")}</span>
+                <span style={{ flex: 1, height: "1px", background: "var(--bs-border-color, #dee2e6)" }} />
             </span>
             <RemoveBtn onClick={onRemove} />
         </div>
@@ -661,8 +705,17 @@ function GroupRow({ group, faded, expanded, onToggle, onDragStart, onDragEnd, on
             </span>
             <button
                 type="button"
-                className="btn btn-link btn-sm p-0"
-                style={{ fontSize: "0.7em", lineHeight: 1, color: "inherit", flexShrink: 0, opacity: 0.8 }}
+                style={{
+                    background: "none",
+                    border: "none",
+                    padding: "0 2px",
+                    cursor: "pointer",
+                    fontSize: "0.72em",
+                    lineHeight: 1,
+                    color: "inherit",
+                    flexShrink: 0,
+                    opacity: 0.8,
+                }}
                 onClick={e => { e.stopPropagation(); onToggle(); }}
                 title={expanded ? t("toolbar_customization.collapse") : t("toolbar_customization.expand")}
             >
@@ -683,7 +736,6 @@ function PoolChip({ id, onAdd, onDragStart, onDragEnd }: {
         <button
             type="button"
             draggable
-            className="btn btn-sm"
             style={{
                 display: "inline-flex",
                 alignItems: "center",
@@ -766,15 +818,18 @@ function RemoveBtn({ onClick }: { onClick: () => void }) {
     return (
         <button
             type="button"
-            className="btn btn-link btn-sm p-0"
             onClick={e => { e.stopPropagation(); onClick(); }}
             style={{
+                background: "none",
+                border: "none",
+                padding: "0 2px",
+                cursor: "pointer",
                 color: COLOR.muted,
                 lineHeight: 1,
                 flexShrink: 0,
-                fontSize: "12px",
-                marginLeft: "6px",
-                opacity: 0.35,
+                fontSize: "13px",
+                marginLeft: "5px",
+                opacity: 0.4,
                 transition: "opacity .15s, color .15s",
             }}
             onMouseEnter={e => {
@@ -784,7 +839,7 @@ function RemoveBtn({ onClick }: { onClick: () => void }) {
             }}
             onMouseLeave={e => {
                 const b = e.currentTarget as HTMLElement;
-                b.style.opacity = "0.35";
+                b.style.opacity = "0.4";
                 b.style.color = COLOR.muted;
             }}
             title={t("toolbar_customization.remove_item")}
@@ -808,19 +863,41 @@ function SectionHeader({ label }: { label: string }) {
 }
 
 /**
- * Drop indicator shown between rows.
- * Height 0 when inactive → no invisible gap between rows.
- * Expands to 4px bright blue when the cursor is between these two rows.
+ * Drop indicator between rows — 0-height when inactive (no gap), 2px blue line
+ * with end-cap circles (VS Code style) when the cursor is between two rows.
  */
 function DropLine({ active, indent }: { active: boolean; indent?: boolean }) {
+    if (!active) return <div style={{ height: 0 }} />;
     return (
         <div style={{
-            height: active ? "4px" : "0",
+            position: "relative",
+            height: "2px",
             marginLeft: indent ? "28px" : "0",
             background: COLOR.groupBorder,
-            borderRadius: "2px",
-            overflow: "hidden",
-            transition: "height .07s",
-        }} />
+            zIndex: 5,
+        }}>
+            {/* Left end-cap circle */}
+            <div style={{
+                position: "absolute",
+                left: "-1px",
+                top: "-4px",
+                width: "10px",
+                height: "10px",
+                borderRadius: "50%",
+                border: `2px solid ${COLOR.groupBorder}`,
+                background: "transparent",
+            }} />
+            {/* Right end-cap circle */}
+            <div style={{
+                position: "absolute",
+                right: "-1px",
+                top: "-4px",
+                width: "10px",
+                height: "10px",
+                borderRadius: "50%",
+                border: `2px solid ${COLOR.groupBorder}`,
+                background: "transparent",
+            }} />
+        </div>
     );
 }
