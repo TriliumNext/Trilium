@@ -1,12 +1,9 @@
 /**
- * Toolbar customization – two-column list editor.
+ * Toolbar customization – vertical single-column editor.
  *
- * LEFT  column : active toolbar entries (drag to reorder, drag to right to remove)
- * RIGHT column : available items (drag to left to add)
- *
- * Each row shows [⠿ drag handle] [icon] [label]  (plus [×] on the left side).
- * Separators and groups are rendered as special rows.
- * Groups expand inline to let you reorder their children.
+ * The active toolbar is shown as a full-width vertical list where
+ * top → bottom corresponds to left → right in the real editor.
+ * Available items appear below as compact chips (click or drag to add).
  *
  * Changes are kept in local state; only "Save & Reload" persists them.
  */
@@ -22,7 +19,6 @@ import { t } from "../../../services/i18n";
 import { useTriliumOption } from "../../react/hooks";
 import OptionsSection from "./components/OptionsSection";
 import {
-    DEFAULT_BLOCK_TOOLBAR,
     DEFAULT_CLASSIC_TOOLBAR,
     DEFAULT_FLOATING_TOOLBAR,
     getDefaultConfig,
@@ -35,44 +31,44 @@ import {
     type ToolbarSeparator,
 } from "../text/toolbar_config";
 
-type TabKey = "classic" | "floating" | "blockToolbar";
+// Only Classic and Floating — Block toolbar is an internal CKEditor detail
+type TabKey = "classic" | "floating";
 
 const DEFAULT_TABS: Record<TabKey, ToolbarEntry[]> = {
-    classic: DEFAULT_CLASSIC_TOOLBAR,
+    classic:  DEFAULT_CLASSIC_TOOLBAR,
     floating: DEFAULT_FLOATING_TOOLBAR,
-    blockToolbar: DEFAULT_BLOCK_TOOLBAR,
 };
 
-// ─── Icon maps (same as before) ───────────────────────────────────────────────
+// ─── Icon maps ────────────────────────────────────────────────────────────────
 
 const BX_ICON: Record<string, string> = {
-    "kbd":               "bx-chip",
-    "formatPainter":     "bx-copy-alt",
-    "fontColor":         "bx-palette",
+    "kbd":                "bx-chip",
+    "formatPainter":      "bx-copy-alt",
+    "fontColor":          "bx-palette",
     "fontBackgroundColor":"bx-palette",
-    "removeFormat":      "bx-reset",
-    "bulletedList":      "bx-list-ul",
-    "numberedList":      "bx-list-ol",
-    "todoList":          "bx-list-check",
-    "admonition":        "bx-info-circle",
-    "insertTable":       "bx-table",
-    "code":              "bx-code",
-    "codeBlock":         "bx-code-curly",
-    "footnote":          "bx-note",
-    "imageUpload":       "bx-image",
-    "link":              "bx-link",
-    "bookmark":          "bx-bookmark",
-    "internallink":      "bx-link-external",
-    "includeNote":       "bx-file",
-    "mermaid":           "bx-network-chart",
-    "horizontalLine":    "bx-minus",
-    "dateTime":          "bx-calendar",
-    "outdent":           "bx-chevrons-left",
-    "indent":            "bx-chevrons-right",
-    "markdownImport":    "bx-import",
-    "insertTemplate":    "bx-columns",
-    "cuttonote":         "bx-transfer",
-    "specialCharacters": "bx-font",
+    "removeFormat":       "bx-reset",
+    "bulletedList":       "bx-list-ul",
+    "numberedList":       "bx-list-ol",
+    "todoList":           "bx-list-check",
+    "admonition":         "bx-info-circle",
+    "insertTable":        "bx-table",
+    "code":               "bx-code",
+    "codeBlock":          "bx-code-curly",
+    "footnote":           "bx-note",
+    "imageUpload":        "bx-image",
+    "link":               "bx-link",
+    "bookmark":           "bx-bookmark",
+    "internallink":       "bx-link-external",
+    "includeNote":        "bx-file",
+    "mermaid":            "bx-network-chart",
+    "horizontalLine":     "bx-minus",
+    "dateTime":           "bx-calendar",
+    "outdent":            "bx-chevrons-left",
+    "indent":             "bx-chevrons-right",
+    "markdownImport":     "bx-import",
+    "insertTemplate":     "bx-columns",
+    "cuttonote":          "bx-transfer",
+    "specialCharacters":  "bx-font",
 };
 
 const SVG_ICON: Record<string, string> = {
@@ -119,7 +115,7 @@ function collectItemIds(entries: ToolbarEntry[]): string[] {
     return ids;
 }
 
-function getPool(tab: TabKey, entries: ToolbarEntry[]): string[] {
+function getPool(entries: ToolbarEntry[]): string[] {
     const used = new Set(collectItemIds(entries));
     return Object.keys(TOOLBAR_ITEM_LABELS).filter(id => !used.has(id));
 }
@@ -148,43 +144,49 @@ export default function ToolbarCustomization() {
     }
 
     const TAB_LABEL: Record<TabKey, string> = {
-        classic:      t("toolbar_customization.tab_classic"),
-        floating:     t("toolbar_customization.tab_floating"),
-        blockToolbar: t("toolbar_customization.tab_block"),
+        classic:  t("toolbar_customization.tab_classic"),
+        floating: t("toolbar_customization.tab_floating"),
     };
 
     return (
         <OptionsSection title={t("toolbar_customization.title")}>
-            <p className="form-text mb-2" style={{ fontSize: "0.83em" }}>
+            <p className="form-text mb-2" style={{ fontSize: "0.85em" }}>
                 {t("toolbar_customization.description")}
             </p>
 
             {/* Tab bar */}
             <ul className="nav nav-tabs mb-0">
-                {(["classic", "floating", "blockToolbar"] as TabKey[]).map(k => (
+                {(["classic", "floating"] as TabKey[]).map(k => (
                     <li className="nav-item" key={k}>
-                        <a className={`nav-link${tab === k ? " active" : ""}`}
-                            style={{ cursor: "pointer", padding: "5px 12px", fontSize: "0.87em" }}
-                            onClick={() => setTab(k)}>
+                        <a
+                            className={`nav-link${tab === k ? " active" : ""}`}
+                            style={{ cursor: "pointer", padding: "6px 14px", fontSize: "0.88em" }}
+                            onClick={() => setTab(k)}
+                        >
                             {TAB_LABEL[k]}
                         </a>
                     </li>
                 ))}
             </ul>
 
-            <TwoColumnEditor key={tab} tab={tab} entries={local[tab]} onChange={updateTab} />
+            <VerticalEditor key={tab} entries={local[tab]} onChange={updateTab} />
 
             {/* Bottom actions */}
             <div className="mt-2 d-flex justify-content-between align-items-center">
-                <button type="button" className="btn btn-sm btn-outline-secondary"
+                <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
                     onClick={() => setLocal(getDefaultConfig())}
-                    title={t("toolbar_customization.reset_title")}>
+                    title={t("toolbar_customization.reset_title")}
+                >
                     ↺ {t("toolbar_customization.reset")}
                 </button>
-                <button type="button"
+                <button
+                    type="button"
                     className={`btn btn-sm ${isDirty ? "btn-primary" : "btn-outline-primary"}`}
                     onClick={saveAndReload}
-                    title={t("toolbar_customization.save_title")}>
+                    title={t("toolbar_customization.save_title")}
+                >
                     ▶ {t("toolbar_customization.save")}
                 </button>
             </div>
@@ -192,29 +194,25 @@ export default function ToolbarCustomization() {
     );
 }
 
-// ─── Two-column list editor ───────────────────────────────────────────────────
+// ─── Vertical editor ──────────────────────────────────────────────────────────
 
 type DragSrc =
-    | { from: "pool";  id: string }
+    | { from: "pool";   id: string }
     | { from: "active"; idx: number }
-    | { from: "child"; groupIdx: number; childIdx: number };
+    | { from: "child";  groupIdx: number; childIdx: number };
 
-interface ColEditorProps {
-    tab: TabKey;
+interface VerticalEditorProps {
     entries: ToolbarEntry[];
     onChange: (e: ToolbarEntry[]) => void;
 }
 
-const LIST_H = "290px";
+function VerticalEditor({ entries, onChange }: VerticalEditorProps) {
+    const pool = getPool(entries);
 
-function TwoColumnEditor({ tab, entries, onChange }: ColEditorProps) {
-    const pool = getPool(tab, entries);
-
-    const [drag, setDrag]              = useState<DragSrc | null>(null);
+    const [drag, setDrag]               = useState<DragSrc | null>(null);
     const [activeDropIdx, setActiveDrop] = useState<number | null>(null);
-    const [poolOver, setPoolOver]      = useState(false);
-    const [expandedGroup, setExpanded] = useState<string | null>(null);
-    const [childDropIdx, setChildDrop] = useState<number | null>(null);
+    const [expandedGroup, setExpanded]  = useState<string | null>(null);
+    const [childDropIdx, setChildDrop]  = useState<number | null>(null);
 
     // ── Mutations ─────────────────────────────────────────────────────────────
 
@@ -224,6 +222,10 @@ function TwoColumnEditor({ tab, entries, onChange }: ColEditorProps) {
             if (e.kind === "group") return { ...e, visible: true, items: e.items.map(c => c.kind === "item" ? { ...c, visible: true } : c) };
             return e;
         }));
+    }
+
+    function appendItem(id: string) {
+        commit([...entries, { kind: "item", id, visible: true } as ToolbarItem]);
     }
 
     function insertAt(id: string, at: number) {
@@ -287,13 +289,12 @@ function TwoColumnEditor({ tab, entries, onChange }: ColEditorProps) {
     }
 
     function clearDrag() {
-        setDrag(null); setActiveDrop(null); setPoolOver(false); setChildDrop(null);
+        setDrag(null); setActiveDrop(null); setChildDrop(null);
     }
 
     function onActiveRowOver(e: DragEvent, rowIdx: number) {
         e.preventDefault();
         setActiveDrop(rowInsertIdx(e, rowIdx));
-        setPoolOver(false);
     }
 
     function onActiveDrop(e: DragEvent, at: number) {
@@ -311,14 +312,6 @@ function TwoColumnEditor({ tab, entries, onChange }: ColEditorProps) {
         clearDrag();
     }
 
-    function onPoolDrop(e: DragEvent) {
-        e.preventDefault();
-        if (!drag) return;
-        if (drag.from === "active") removeAt(drag.idx);
-        else if (drag.from === "child") removeFromGroup(drag.groupIdx, drag.childIdx);
-        clearDrag();
-    }
-
     function onChildRowOver(e: DragEvent, groupIdx: number, ci: number) {
         e.preventDefault(); e.stopPropagation();
         setChildDrop(rowInsertIdx(e, ci));
@@ -332,73 +325,96 @@ function TwoColumnEditor({ tab, entries, onChange }: ColEditorProps) {
         clearDrag();
     }
 
-    // ── Shared styles ─────────────────────────────────────────────────────────
+    const draggingIdx = drag?.from === "active" ? drag.idx : null;
 
-    const colBox = (danger?: boolean): preact.JSX.CSSProperties => ({
-        height: LIST_H, overflowY: "auto",
-        border: `1px solid ${danger ? "var(--bs-danger, #dc3545)" : "var(--bs-border-color, #dee2e6)"}`,
-        borderRadius: "4px",
-        background: danger ? "var(--bs-danger-bg-subtle, #fff3f3)" : "var(--bs-body-bg, #fff)",
-        transition: "border-color .15s, background .15s",
-    });
+    // ── Styles ────────────────────────────────────────────────────────────────
 
-    const colHdr: preact.JSX.CSSProperties = {
-        fontSize: "0.74em", fontWeight: 600, letterSpacing: ".04em",
-        color: "var(--bs-secondary-color, #6c757d)", marginBottom: "3px",
+    const sectionLabel: preact.JSX.CSSProperties = {
+        fontSize: "0.72em",
+        fontWeight: 700,
+        letterSpacing: ".06em",
+        textTransform: "uppercase",
+        color: "var(--bs-secondary-color, #6c757d)",
+        marginBottom: "5px",
     };
 
-    const draggingIdx = drag?.from === "active" ? drag.idx : null;
+    const activeBox: preact.JSX.CSSProperties = {
+        border: "1px solid var(--bs-border-color, #dee2e6)",
+        borderRadius: "5px",
+        minHeight: "60px",
+        maxHeight: "380px",
+        overflowY: "auto",
+        background: "var(--bs-body-bg, #fff)",
+    };
+
+    const poolBox: preact.JSX.CSSProperties = {
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "5px",
+        padding: "8px",
+        border: "1px dashed var(--bs-border-color, #dee2e6)",
+        borderRadius: "5px",
+        minHeight: "40px",
+        background: "var(--bs-tertiary-bg, #f8f9fa)",
+    };
 
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
-        <div style={{ border: "1px solid var(--bs-border-color, #dee2e6)", borderTop: "none", borderRadius: "0 0 5px 5px", padding: "8px 10px" }}>
-            <div style={{ display: "flex", gap: "10px" }}>
+        <div style={{
+            border: "1px solid var(--bs-border-color, #dee2e6)",
+            borderTop: "none",
+            borderRadius: "0 0 5px 5px",
+            padding: "10px 12px",
+        }}>
 
-                {/* ── LEFT: Active list ── */}
-                <div style={{ flex: "0 0 55%" }}>
-                    <div style={colHdr}>{t("toolbar_customization.active")}</div>
-                    <div
-                        style={colBox()}
-                        onDragOver={e => { e.preventDefault(); setActiveDrop(entries.length); setPoolOver(false); }}
-                        onDrop={e => onActiveDrop(e as DragEvent, entries.length)}
-                    >
-                        {entries.length === 0 && (
-                            <div style={{ padding: "12px 8px", textAlign: "center", fontSize: "0.8em", color: "var(--bs-secondary-color, #6c757d)" }}>
-                                {t("toolbar_customization.drag_here")}
-                            </div>
-                        )}
+            {/* ── Active toolbar ── */}
+            <div style={sectionLabel}>
+                {t("toolbar_customization.active_section")}
+            </div>
 
-                        {entries.map((entry, i) => (
-                            <div key={i === 0 ? "first" : `e-${i}`}>
-                                {/* Horizontal drop indicator before this row */}
-                                <HLine active={activeDropIdx === i} />
+            <div
+                style={activeBox}
+                onDragOver={e => { e.preventDefault(); setActiveDrop(entries.length); }}
+                onDrop={e => onActiveDrop(e as DragEvent, entries.length)}
+            >
+                {entries.length === 0 && (
+                    <div style={{ padding: "16px", textAlign: "center", fontSize: "0.82em", color: "var(--bs-secondary-color, #6c757d)" }}>
+                        {t("toolbar_customization.drag_here")}
+                    </div>
+                )}
 
-                                {entry.kind === "separator" ? (
-                                    <SepRow
-                                        faded={draggingIdx === i}
-                                        onDragStart={e => startDrag(e as DragEvent, { from: "active", idx: i })}
-                                        onDragEnd={clearDrag}
-                                        onDragOver={e => onActiveRowOver(e as DragEvent, i)}
-                                        onDrop={e => onActiveDrop(e as DragEvent, rowInsertIdx(e as DragEvent, i))}
-                                        onRemove={() => removeAt(i)}
-                                    />
-                                ) : entry.kind === "group" ? (
-                                    <>
-                                        <GroupRow
-                                            group={entry}
-                                            faded={draggingIdx === i}
-                                            expanded={expandedGroup === entry.id}
-                                            onToggle={() => setExpanded(v => v === entry.id ? null : entry.id)}
-                                            onDragStart={e => startDrag(e as DragEvent, { from: "active", idx: i })}
-                                            onDragEnd={clearDrag}
-                                            onDragOver={e => onActiveRowOver(e as DragEvent, i)}
-                                            onDrop={e => onGroupRowDrop(e as DragEvent, i)}
-                                            onRemove={() => removeAt(i)}
-                                        />
-                                        {expandedGroup === entry.id && entry.items.map((c, ci) => (
+                {entries.map((entry, i) => (
+                    <div key={entry.kind === "group" ? entry.id : `e-${i}`}>
+                        <HLine active={activeDropIdx === i} />
+
+                        {entry.kind === "separator" ? (
+                            <SepRow
+                                faded={draggingIdx === i}
+                                onDragStart={e => startDrag(e as DragEvent, { from: "active", idx: i })}
+                                onDragEnd={clearDrag}
+                                onDragOver={e => onActiveRowOver(e as DragEvent, i)}
+                                onDrop={e => onActiveDrop(e as DragEvent, rowInsertIdx(e as DragEvent, i))}
+                                onRemove={() => removeAt(i)}
+                            />
+                        ) : entry.kind === "group" ? (
+                            <>
+                                <GroupRow
+                                    group={entry}
+                                    faded={draggingIdx === i}
+                                    expanded={expandedGroup === entry.id}
+                                    onToggle={() => setExpanded(v => v === entry.id ? null : entry.id)}
+                                    onDragStart={e => startDrag(e as DragEvent, { from: "active", idx: i })}
+                                    onDragEnd={clearDrag}
+                                    onDragOver={e => onActiveRowOver(e as DragEvent, i)}
+                                    onDrop={e => onGroupRowDrop(e as DragEvent, i)}
+                                    onRemove={() => removeAt(i)}
+                                />
+                                {expandedGroup === entry.id && (
+                                    <div style={{ borderLeft: "3px solid var(--bs-primary, #0d6efd)", marginLeft: "18px" }}>
+                                        {entry.items.map((c, ci) => (
                                             <div key={c.kind === "item" ? c.id : `csep-${ci}`}>
-                                                <HLine active={childDropIdx === ci} indent />
+                                                <HLine active={childDropIdx === ci} />
                                                 {c.kind === "separator" ? (
                                                     <SepRow
                                                         indent
@@ -423,73 +439,88 @@ function TwoColumnEditor({ tab, entries, onChange }: ColEditorProps) {
                                                 )}
                                             </div>
                                         ))}
-                                        {expandedGroup === entry.id && (
-                                            <HLine active={childDropIdx === entry.items.length} indent />
+                                        <HLine active={childDropIdx === entry.items.length} />
+                                        {entry.items.length === 0 && (
+                                            <div style={{ padding: "6px 8px", fontSize: "0.78em", color: "var(--bs-secondary-color, #6c757d)", fontStyle: "italic" }}>
+                                                {t("toolbar_customization.group_empty")}
+                                            </div>
                                         )}
-                                    </>
-                                ) : (
-                                    <ItemRow
-                                        id={entry.id}
-                                        faded={draggingIdx === i}
-                                        onDragStart={e => startDrag(e as DragEvent, { from: "active", idx: i })}
-                                        onDragEnd={clearDrag}
-                                        onDragOver={e => onActiveRowOver(e as DragEvent, i)}
-                                        onDrop={e => onActiveDrop(e as DragEvent, rowInsertIdx(e as DragEvent, i))}
-                                        onRemove={() => removeAt(i)}
-                                    />
+                                    </div>
                                 )}
-                            </div>
-                        ))}
-                        <HLine active={activeDropIdx === entries.length} />
-                    </div>
-
-                    {/* Add buttons */}
-                    <div className="d-flex gap-2 mt-1">
-                        <button type="button" className="btn btn-sm btn-outline-secondary" style={{ fontSize: "0.76em" }}
-                            onClick={addSeparator} title={t("toolbar_customization.add_separator_hint")}>
-                            + │ {t("toolbar_customization.add_separator")}
-                        </button>
-                        <button type="button" className="btn btn-sm btn-outline-secondary" style={{ fontSize: "0.76em" }}
-                            onClick={addGroup} title={t("toolbar_customization.add_group_hint")}>
-                            + ··· {t("toolbar_customization.add_group")}
-                        </button>
-                    </div>
-                </div>
-
-                {/* ── RIGHT: Pool list ── */}
-                <div style={{ flex: 1 }}>
-                    <div style={colHdr}>{t("toolbar_customization.available")}</div>
-                    <div
-                        style={colBox(poolOver)}
-                        onDragOver={e => { e.preventDefault(); setPoolOver(true); }}
-                        onDragLeave={() => setPoolOver(false)}
-                        onDrop={onPoolDrop}
-                    >
-                        {pool.length === 0 ? (
-                            <div style={{ padding: "12px 8px", textAlign: "center", fontSize: "0.8em", color: "var(--bs-secondary-color, #6c757d)" }}>
-                                {t("toolbar_customization.all_active")}
-                            </div>
-                        ) : pool.map(id => (
-                            <PoolRow
-                                key={id}
-                                id={id}
-                                onDragStart={e => startDrag(e as DragEvent, { from: "pool", id })}
+                            </>
+                        ) : (
+                            <ItemRow
+                                id={entry.id}
+                                faded={draggingIdx === i}
+                                onDragStart={e => startDrag(e as DragEvent, { from: "active", idx: i })}
                                 onDragEnd={clearDrag}
+                                onDragOver={e => onActiveRowOver(e as DragEvent, i)}
+                                onDrop={e => onActiveDrop(e as DragEvent, rowInsertIdx(e as DragEvent, i))}
+                                onRemove={() => removeAt(i)}
                             />
-                        ))}
+                        )}
                     </div>
-                    <div style={{ fontSize: "0.72em", color: "var(--bs-secondary-color, #6c757d)", marginTop: "3px" }}>
-                        ← {t("toolbar_customization.drag_to_add")} &nbsp;│&nbsp; {t("toolbar_customization.drag_hint_pool")} →
-                    </div>
-                </div>
+                ))}
+                <HLine active={activeDropIdx === entries.length} />
             </div>
+
+            {/* Add buttons */}
+            <div className="d-flex gap-2 mt-2 mb-3">
+                <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    style={{ fontSize: "0.78em" }}
+                    onClick={addSeparator}
+                    title={t("toolbar_customization.add_separator_hint")}
+                >
+                    + │ {t("toolbar_customization.add_separator")}
+                </button>
+                <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    style={{ fontSize: "0.78em" }}
+                    onClick={addGroup}
+                    title={t("toolbar_customization.add_group_hint")}
+                >
+                    + ··· {t("toolbar_customization.add_group")}
+                </button>
+            </div>
+
+            {/* ── Available items ── */}
+            <div style={sectionLabel}>
+                {t("toolbar_customization.available_section")}
+            </div>
+
+            {pool.length === 0 ? (
+                <div style={{ fontSize: "0.82em", color: "var(--bs-secondary-color, #6c757d)", padding: "6px 0" }}>
+                    {t("toolbar_customization.all_active")}
+                </div>
+            ) : (
+                <div style={poolBox}>
+                    {pool.map(id => (
+                        <PoolChip
+                            key={id}
+                            id={id}
+                            onAdd={() => appendItem(id)}
+                            onDragStart={e => startDrag(e as DragEvent, { from: "pool", id })}
+                            onDragEnd={clearDrag}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {pool.length > 0 && (
+                <div style={{ fontSize: "0.72em", color: "var(--bs-secondary-color, #6c757d)", marginTop: "4px" }}>
+                    {t("toolbar_customization.pool_hint")}
+                </div>
+            )}
         </div>
     );
 }
 
 // ─── Row components ───────────────────────────────────────────────────────────
 
-const ROW_H = "28px";
+const ROW_H = "30px";
 
 interface RowBase {
     faded: boolean;
@@ -502,9 +533,13 @@ interface RowBase {
 }
 
 const rowStyle = (faded: boolean, indent?: boolean): preact.JSX.CSSProperties => ({
-    display: "flex", alignItems: "center",
-    height: ROW_H, paddingLeft: indent ? "22px" : "4px", paddingRight: "4px",
-    cursor: "grab", opacity: faded ? 0.3 : 1,
+    display: "flex",
+    alignItems: "center",
+    height: ROW_H,
+    paddingLeft: indent ? "10px" : "6px",
+    paddingRight: "6px",
+    cursor: "grab",
+    opacity: faded ? 0.3 : 1,
     transition: "opacity .1s, background .1s",
     userSelect: "none",
 });
@@ -512,17 +547,20 @@ const rowStyle = (faded: boolean, indent?: boolean): preact.JSX.CSSProperties =>
 function ItemRow({ id, faded, indent, onDragStart, onDragEnd, onDragOver, onDrop, onRemove }: RowBase & { id: string }) {
     return (
         <div
-            draggable style={rowStyle(faded, indent)}
-            onDragStart={onDragStart} onDragEnd={onDragEnd}
-            onDragOver={onDragOver} onDrop={onDrop}
+            draggable
+            style={rowStyle(faded, indent)}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "var(--bs-tertiary-bg, #f8f9fa)"}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ""}
         >
             <Grip />
-            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "20px", flexShrink: 0 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "18px", flexShrink: 0 }}>
                 <ToolbarIcon id={id} size={14} />
             </span>
-            <span style={{ marginLeft: "6px", flex: 1, fontSize: "0.83em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span style={{ marginLeft: "7px", flex: 1, fontSize: "0.85em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {getItemLabel(id)}
             </span>
             <Xbtn onClick={onRemove} />
@@ -533,17 +571,20 @@ function ItemRow({ id, faded, indent, onDragStart, onDragEnd, onDragOver, onDrop
 function SepRow({ faded, indent, onDragStart, onDragEnd, onDragOver, onDrop, onRemove }: RowBase) {
     return (
         <div
-            draggable style={rowStyle(faded, indent)}
-            onDragStart={onDragStart} onDragEnd={onDragEnd}
-            onDragOver={onDragOver} onDrop={onDrop}
+            draggable
+            style={rowStyle(faded, indent)}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
             onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "var(--bs-tertiary-bg, #f8f9fa)"}
             onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ""}
         >
             <Grip />
             <span style={{ flex: 1, display: "flex", alignItems: "center", gap: "6px", color: "var(--bs-secondary-color, #6c757d)" }}>
-                <span style={{ flex: 1, borderTop: "1px solid currentColor", opacity: .4 }} />
-                <span style={{ fontSize: "0.72em" }}>│ separator</span>
-                <span style={{ flex: 1, borderTop: "1px solid currentColor", opacity: .4 }} />
+                <span style={{ flex: 1, borderTop: "1px dashed currentColor", opacity: 0.5 }} />
+                <span style={{ fontSize: "0.75em", letterSpacing: ".02em" }}>│ {t("toolbar_customization.separator")}</span>
+                <span style={{ flex: 1, borderTop: "1px dashed currentColor", opacity: 0.5 }} />
             </span>
             <Xbtn onClick={onRemove} />
         </div>
@@ -559,22 +600,33 @@ interface GroupRowProps extends RowBase {
 function GroupRow({ group, faded, expanded, onToggle, onDragStart, onDragEnd, onDragOver, onDrop, onRemove }: GroupRowProps) {
     return (
         <div
-            draggable style={{ ...rowStyle(faded), background: "var(--bs-tertiary-bg, #f8f9fa)" }}
-            onDragStart={onDragStart} onDragEnd={onDragEnd}
-            onDragOver={onDragOver} onDrop={onDrop}
+            draggable
+            style={{
+                ...rowStyle(faded),
+                background: "var(--bs-secondary-bg, #e9ecef)",
+                borderLeft: "3px solid var(--bs-primary, #0d6efd)",
+            }}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
             title={t("toolbar_customization.drop_on_group")}
         >
             <Grip />
-            <span style={{ fontSize: "13px", flexShrink: 0, marginRight: "2px" }}>···</span>
-            <span style={{ flex: 1, fontSize: "0.83em", fontStyle: "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: "12px", flexShrink: 0, marginRight: "5px", color: "var(--bs-secondary-color, #6c757d)" }}>···</span>
+            <span style={{ flex: 1, fontSize: "0.85em", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {group.label}
             </span>
-            <span style={{ fontSize: "0.72em", color: "var(--bs-secondary-color, #6c757d)", marginRight: "2px", flexShrink: 0 }}>
+            <span style={{ fontSize: "0.75em", color: "var(--bs-secondary-color, #6c757d)", marginRight: "4px", flexShrink: 0 }}>
                 ({group.items.length})
             </span>
-            <button type="button" className="btn btn-link btn-sm p-0"
-                style={{ fontSize: "0.68em", lineHeight: 1, color: "inherit", flexShrink: 0 }}
-                onClick={e => { e.stopPropagation(); onToggle(); }}>
+            <button
+                type="button"
+                className="btn btn-link btn-sm p-0"
+                style={{ fontSize: "0.72em", lineHeight: 1, color: "var(--bs-body-color)", flexShrink: 0, opacity: 0.7 }}
+                onClick={e => { e.stopPropagation(); onToggle(); }}
+                title={expanded ? t("toolbar_customization.collapse") : t("toolbar_customization.expand")}
+            >
                 {expanded ? "▲" : "▼"}
             </button>
             <Xbtn onClick={onRemove} />
@@ -582,23 +634,38 @@ function GroupRow({ group, faded, expanded, onToggle, onDragStart, onDragEnd, on
     );
 }
 
-function PoolRow({ id, onDragStart, onDragEnd }: { id: string; onDragStart: (e: Event) => void; onDragEnd: () => void }) {
+function PoolChip({ id, onAdd, onDragStart, onDragEnd }: {
+    id: string;
+    onAdd: () => void;
+    onDragStart: (e: Event) => void;
+    onDragEnd: () => void;
+}) {
     return (
-        <div
+        <button
+            type="button"
             draggable
-            style={{ display: "flex", alignItems: "center", height: ROW_H, paddingLeft: "4px", paddingRight: "4px", cursor: "grab", userSelect: "none", transition: "background .1s" }}
-            onDragStart={onDragStart} onDragEnd={onDragEnd}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "var(--bs-tertiary-bg, #f8f9fa)"}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = ""}
+            className="btn btn-sm btn-outline-secondary"
+            style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                fontSize: "0.78em",
+                padding: "2px 8px",
+                height: "26px",
+                cursor: "grab",
+                userSelect: "none",
+                whiteSpace: "nowrap",
+            }}
+            onClick={onAdd}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
+            title={`${getItemLabel(id)} – click to add`}
         >
-            <Grip />
-            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "20px", flexShrink: 0 }}>
-                <ToolbarIcon id={id} size={14} />
+            <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "13px", flexShrink: 0 }}>
+                <ToolbarIcon id={id} size={12} />
             </span>
-            <span style={{ marginLeft: "6px", flex: 1, fontSize: "0.83em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {getItemLabel(id)}
-            </span>
-        </div>
+            {getItemLabel(id)}
+        </button>
     );
 }
 
@@ -607,14 +674,16 @@ function PoolRow({ id, onDragStart, onDragEnd }: { id: string; onDragStart: (e: 
 function ToolbarIcon({ id, size }: { id: string; size: number }) {
     const svg = SVG_ICON[id];
     if (svg) return (
-        <span style={{ display: "inline-flex", width: size, height: size, flexShrink: 0 }}
-            dangerouslySetInnerHTML={{ __html: svg }} />
+        <span
+            style={{ display: "inline-flex", width: size, height: size, flexShrink: 0 }}
+            dangerouslySetInnerHTML={{ __html: svg }}
+        />
     );
     const bx = BX_ICON[id];
     if (bx) return <i class={`bx ${bx}`} style={{ fontSize: `${size}px`, lineHeight: 1, flexShrink: 0 }} />;
     const { char, css } = textFallback(id);
     return (
-        <span style={{ fontSize: `${size - 1}px`, lineHeight: 1, flexShrink: 0, minWidth: `${size}px`, textAlign: "center", ...css }}>
+        <span style={{ fontSize: `${size - 2}px`, lineHeight: 1, flexShrink: 0, minWidth: `${size}px`, textAlign: "center", ...css }}>
             {char}
         </span>
     );
@@ -623,25 +692,53 @@ function ToolbarIcon({ id, size }: { id: string; size: number }) {
 // ─── Micro helpers ────────────────────────────────────────────────────────────
 
 function Grip() {
-    return <span style={{ color: "var(--bs-secondary-color, #6c757d)", marginRight: "4px", flexShrink: 0, fontSize: "10px", cursor: "grab", opacity: 0.5 }}>⠿</span>;
+    return (
+        <span style={{
+            color: "var(--bs-secondary-color, #6c757d)",
+            marginRight: "5px",
+            flexShrink: 0,
+            fontSize: "11px",
+            cursor: "grab",
+            opacity: 0.45,
+        }}>⠿</span>
+    );
 }
 
 function Xbtn({ onClick }: { onClick: () => void }) {
     return (
-        <button type="button" className="btn btn-link btn-sm p-0 toolbar-remove-btn"
+        <button
+            type="button"
+            className="btn btn-link btn-sm p-0"
             onClick={e => { e.stopPropagation(); onClick(); }}
-            style={{ color: "var(--bs-secondary-color, #aaa)", lineHeight: 1, flexShrink: 0, fontSize: "10px", marginLeft: "3px", opacity: 0.4, transition: "opacity .15s, color .15s" }}
-            onMouseEnter={e => { const b = e.currentTarget as HTMLElement; b.style.opacity = "1"; b.style.color = "var(--bs-danger, #dc3545)"; }}
-            onMouseLeave={e => { const b = e.currentTarget as HTMLElement; b.style.opacity = "0.4"; b.style.color = "var(--bs-secondary-color, #aaa)"; }}
-            title={t("toolbar_customization.remove_item")}>✕</button>
+            style={{
+                color: "var(--bs-secondary-color, #aaa)",
+                lineHeight: 1,
+                flexShrink: 0,
+                fontSize: "11px",
+                marginLeft: "4px",
+                opacity: 0.4,
+                transition: "opacity .15s, color .15s",
+            }}
+            onMouseEnter={e => {
+                const b = e.currentTarget as HTMLElement;
+                b.style.opacity = "1";
+                b.style.color = "var(--bs-danger, #dc3545)";
+            }}
+            onMouseLeave={e => {
+                const b = e.currentTarget as HTMLElement;
+                b.style.opacity = "0.4";
+                b.style.color = "var(--bs-secondary-color, #aaa)";
+            }}
+            title={t("toolbar_customization.remove_item")}
+        >✕</button>
     );
 }
 
 /** Horizontal blue line shown between rows as a drag-drop indicator. */
-function HLine({ active, indent }: { active: boolean; indent?: boolean }) {
+function HLine({ active }: { active: boolean }) {
     return (
         <div style={{
-            height: "2px", marginLeft: indent ? "22px" : "0", marginRight: "0",
+            height: "2px",
             background: active ? "var(--bs-primary, #0d6efd)" : "transparent",
             transition: "background .08s",
         }} />
