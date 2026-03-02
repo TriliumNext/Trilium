@@ -108,6 +108,8 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     const [ weekNumbers ] = useNoteLabelBoolean(note, "calendar:weekNumbers");
     const [ calendarView, setCalendarView ] = useNoteLabel(note, "calendar:view");
     const [ initialDate ] = useNoteLabel(note, "calendar:initialDate");
+    const [ slotDuration ] = useNoteLabel(note, "calendar:slotDuration");
+    const [ slotLabelInterval ] = useNoteLabel(note, "calendar:slotLabelInterval");
     const initialView = useRef(calendarView);
     const viewSpacedUpdate = useSpacedUpdate(() => setCalendarView(initialView.current));
     useResizeObserver(containerRef, () => calendarRef.current?.updateSize());
@@ -159,6 +161,8 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                 firstDay={firstDayOfWeek ?? 0}
                 weekends={!hideWeekends}
                 weekNumbers={weekNumbers}
+                slotDuration={slotDuration ?? "00:30:00"}
+                slotLabelInterval={slotLabelInterval ?? "01:00:00"}
                 height="90%"
                 nowIndicator
                 handleWindowResize={false}

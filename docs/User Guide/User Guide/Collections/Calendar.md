@@ -58,7 +58,55 @@ In the _Collections_ tab in the <a class="reference-link" href="../Basic%20Conc
 
 The following attributes can be added to the Collection type:
 
-<table><thead><tr><th>Name</th><th>Description</th></tr></thead><tbody><tr><td><code spellcheck="false">#calendar:hideWeekends</code></td><td>When present (regardless of value), it will hide Saturday and Sundays from the calendar.</td></tr><tr><td><code spellcheck="false">#calendar:weekNumbers</code></td><td>When present (regardless of value), it will show the number of the week on the calendar.</td></tr><tr><td><code spellcheck="false">#calendar:initialDate</code></td><td>Change the date the calendar opens on. When not present, the calendar opens on the current date.</td></tr><tr><td><code spellcheck="false">#calendar:view</code></td><td><p>Which view to display in the calendar:</p><ul><li data-list-item-id="e2cd230dc41f41fe91ee74d7d1fa87372"><code spellcheck="false">timeGridWeek</code> for the <em>week</em> view;</li><li data-list-item-id="eee1dba4c6cc51ebd53d0a0dd52044cd6"><code spellcheck="false">dayGridMonth</code> for the <em>month</em> view;</li><li data-list-item-id="ed8721a76a1865dac882415f662ed45b9"><code spellcheck="false">multiMonthYear</code> for the <em>year</em> view;</li><li data-list-item-id="edf09a13759102d98dac34c33eb690c05"><code spellcheck="false">listMonth</code> for the <em>list</em> view.</li></ul><p>Any other value will be dismissed and the default view (month) will be used instead.</p><p>The value of this label is automatically updated when changing the view using the UI buttons.</p></td></tr><tr><td><code spellcheck="false">~child:template</code></td><td>Defines the template for newly created notes in the calendar (via dragging or clicking).</td></tr></tbody></table>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code spellcheck="false">#calendar:hideWeekends</code></td>
+            <td>When present (regardless of value), it will hide Saturday and Sundays from the calendar.</td>
+        </tr>
+        <tr>
+            <td><code spellcheck="false">#calendar:weekNumbers</code></td>
+            <td>When present (regardless of value), it will show the number of the week on the calendar.</td>
+        </tr>
+        <tr>
+            <td><code spellcheck="false">#calendar:initialDate</code></td>
+            <td>Change the date the calendar opens on. When not present, the calendar opens on the current date.</td>
+        </tr>
+        <tr>
+            <td><code spellcheck="false">#calendar:view</code></td>
+            <td>
+                <p>Which view to display in the calendar:</p>
+                <ul>
+                    <li data-list-item-id="e2cd230dc41f41fe91ee74d7d1fa87372"><code spellcheck="false">timeGridWeek</code> for the <em>week</em> view;</li>
+                    <li data-list-item-id="eee1dba4c6cc51ebd53d0a0dd52044cd6"><code spellcheck="false">dayGridMonth</code> for the <em>month</em> view;</li>
+                    <li data-list-item-id="ed8721a76a1865dac882415f662ed45b9"><code spellcheck="false">multiMonthYear</code> for the <em>year</em> view;</li>
+                    <li data-list-item-id="edf09a13759102d98dac34c33eb690c05"><code spellcheck="false">listMonth</code> for the <em>list</em> view.</li>
+                </ul>
+                <p>Any other value will be dismissed and the default view (month) will be used instead.</p>
+                <p>The value of this label is automatically updated when changing the view using the UI buttons.</p>
+            </td>
+        </tr>
+        <tr>
+            <td><code spellcheck="false">#calendar:slotDuration</code></td>
+            <td>Sets how long each timeslot is on the calendar. Must have the format "HH:MM:SS". For example, to create timeslots for every 10 minutes, you would set #calendar:slotDuration="00:10:00"</td>
+        </tr>
+        <tr>
+            <td><code spellcheck="false">#calendar:slotLabelInterval</code></td>
+            <td>Sets how often the timeslots on the calendar should be labeled. Must have the format "HH:MM:SS". For example, to label timeslots every 30 minutes, you would set #calendar:slotLabelInterval="00:30:00"</td>
+        </tr>
+        <tr>
+            <td><code spellcheck="false">~child:template</code></td>
+            <td>Defines the template for newly created notes in the calendar (via dragging or clicking).</td>
+        </tr>
+    </tbody>
+</table>
+
 
 In addition, the first day of the week can be either Sunday or Monday and can be adjusted from the application settings.
 
