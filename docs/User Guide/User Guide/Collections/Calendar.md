@@ -94,12 +94,11 @@ The following attributes can be added to the Collection type:
         </tr>
         <tr>
             <td><code spellcheck="false">#calendar:slotDuration</code></td>
-            <td>Sets how long each timeslot is on the calendar. Must have the format "HH:MM:SS". For example, to create timeslots for every 10 minutes, you would set #calendar:slotDuration="00:10:00"</td>
+            <td>Sets how long each timeslot is on the calendar. Defaults to <code>00:30:00</code> (30 minutes). Must have the format "HH:MM:SS". For example, to create timeslots for every 10 minutes, you would set <code spellcheck="false">#calendar:slotDuration="00:10:00"</code>.</td>
         </tr>
         <tr>
             <td><code spellcheck="false">#calendar:slotLabelInterval</code></td>
-            <td>Sets how often the timeslots on the calendar should be labeled. Must have the format "HH:MM:SS". For example, to label timeslots every 30 minutes, you would set #calendar:slotLabelInterval="00:30:00"</td>
-        </tr>
+            <td>Sets how often the timeslots on the calendar should be labeled. Defaults to <code>01:00:00</code> (1 hour). Must have the format "HH:MM:SS". For example, to label timeslots every 30 minutes, you would set <code spellcheck="false">#calendar:slotLabelInterval="00:30:00"</code>.</td>        </tr>
         <tr>
             <td><code spellcheck="false">~child:template</code></td>
             <td>Defines the template for newly created notes in the calendar (via dragging or clicking).</td>
