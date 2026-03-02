@@ -73,6 +73,10 @@ const CALENDAR_VIEWS = [
 
 const SUPPORTED_CALENDAR_VIEW_TYPE = CALENDAR_VIEWS.map(v => v.type);
 
+const DEFAULT_SLOT_DURATION = "00:30:00";
+const DEFAULT_SLOT_LABEL_INTERVAL = "01:00:00";
+
+
 // Here we hard-code the imports in order to ensure that they are embedded by webpack without having to load all the languages.
 export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ default: LocaleInput }>) | null> = {
     de: () => import("@fullcalendar/core/locales/de"),
@@ -161,8 +165,8 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                 firstDay={firstDayOfWeek ?? 0}
                 weekends={!hideWeekends}
                 weekNumbers={weekNumbers}
-                slotDuration={slotDuration ?? "00:30:00"}
-                slotLabelInterval={slotLabelInterval ?? "01:00:00"}
+                slotDuration={slotDuration ?? DEFAULT_SLOT_DURATION}
+                slotLabelInterval={slotLabelInterval ?? DEFAULT_SLOT_LABEL_INTERVAL}
                 height="90%"
                 nowIndicator
                 handleWindowResize={false}
