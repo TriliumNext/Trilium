@@ -32,7 +32,7 @@
     "eslint": "10.0.2",
     "eslint-config-ckeditor5": ">=9.1.0",
     "http-server": "14.1.1",
-    "lint-staged": "16.2.7",
+    "lint-staged": "16.3.1",
     "stylelint": "17.4.0",
     "stylelint-config-ckeditor5": ">=9.1.0",
     "ts-node": "10.9.2",

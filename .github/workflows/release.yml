@@ -17,10 +17,22 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - uses: pnpm/action-setup@v4
+      - name: Set up node & dependencies
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --filter source --frozen-lockfile --ignore-scripts
+
       - name: Check version consistency
         run: pnpm tsx ${{ github.workspace }}/scripts/check-version-consistency.ts ${{ github.ref_name }}
   make-electron:
     name: Make Electron
+    needs:
+      - sanity-check
     strategy:
       fail-fast: false
       matrix:
@@ -78,16 +90,19 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           WINDOWS_SIGN_EXECUTABLE: ${{ vars.WINDOWS_SIGN_EXECUTABLE }}
+          WINDOWS_SIGN_ERROR_LOG: ${{ vars.WINDOWS_SIGN_ERROR_LOG }}
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGN_KEY }}
 
       - name: Upload the artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: release-desktop-${{ matrix.os.name }}-${{ matrix.arch }}
           path: apps/desktop/upload/*.*
 
   build_server:
     name: Build Linux Server
+    needs:
+      - sanity-check
     strategy:
       fail-fast: false
       matrix:
@@ -108,7 +123,7 @@ jobs:
           arch: ${{ matrix.arch }}
 
       - name: Upload the artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: release-server-linux-${{ matrix.arch }}
           path: upload/*.*
@@ -128,7 +143,7 @@ jobs:
             docs/Release Notes
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           merge-multiple: true
           pattern: release-*

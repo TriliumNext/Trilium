@@ -85,6 +85,7 @@ runs:
       APPLE_ID: ${{ env.APPLE_ID }}
       APPLE_ID_PASSWORD: ${{ env.APPLE_ID_PASSWORD }}
       WINDOWS_SIGN_EXECUTABLE: ${{ env.WINDOWS_SIGN_EXECUTABLE }}
+      WINDOWS_SIGN_ERROR_LOG: ${{ env.WINDOWS_SIGN_ERROR_LOG }}
       TRILIUM_ARTIFACT_NAME_HINT: TriliumNotes-${{ github.ref_name }}-${{ inputs.os }}-${{ inputs.arch }}
       TARGET_ARCH: ${{ inputs.arch }}
     run: pnpm run --filter desktop electron-forge:make --arch=${{ inputs.arch }} --platform=${{ inputs.forge_platform }}

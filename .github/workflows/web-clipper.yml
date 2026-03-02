@@ -48,7 +48,7 @@ jobs:
           pnpm --filter web-clipper zip:firefox
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ !startsWith(github.ref, 'refs/tags/web-clipper-v') }}
         with:
           name: web-clipper-extension

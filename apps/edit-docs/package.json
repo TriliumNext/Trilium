@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/edit-docs",
-  "version": "0.101.3",
+  "version": "0.102.0",
   "private": true,
   "description": "Desktop version of Trilium which imports the demo database (presented to new users at start-up) or the user guide and other documentation and saves the modifications for committing.",
   "dependencies": {

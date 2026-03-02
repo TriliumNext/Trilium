@@ -87,6 +87,7 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           WINDOWS_SIGN_EXECUTABLE: ${{ vars.WINDOWS_SIGN_EXECUTABLE }}
+          WINDOWS_SIGN_ERROR_LOG: ${{ vars.WINDOWS_SIGN_ERROR_LOG }}
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGN_KEY }}
 
       - name: Publish release
@@ -102,7 +103,7 @@ jobs:
           name: Nightly Build
 
       - name: Publish artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: ${{ github.event_name == 'pull_request' }}
         with:
           name: TriliumNotes ${{ matrix.os.name }} ${{ matrix.arch }}
