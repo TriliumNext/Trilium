@@ -91,7 +91,7 @@ input[type="number"] {
     --input-horizontal-padding: 8px;
 
     border-radius: 4px !important;
-    font-size: .85rem !important;
+    font-size: .85rem;
 
     &:hover {
         --field-bg-color: var(--tn-input-hover-background);
@@ -135,11 +135,13 @@ input[type="color"] {
 
 /* #region Toolbar */
 
-#toolbarContainer select.scaleSelect,
-#toolbarContainer input.pageNumber {
+#toolbarContainer select#scaleSelect,
+#toolbarContainer input#pageNumber {
     height: calc(var(--toolbar-height) - 8px);
     padding-block: 0;
+    font-size: 13px;
 }
+
 
 #toolbarContainer {
     padding-inline: 12px;
@@ -230,14 +232,19 @@ input[type="color"] {
 }
 
 #toolbarContainer #toolbarViewer #pageNumber {
-    font-size: 12px;
     font-weight: 600;
+}
+
+#numPages {
+    font-size: 13px;
+    line-height: unset;
 }
 
 #scaleSelectContainer {
     --dropdown-btn-bg-color: transparent;
     --button-hover-color: transparent;
     border-radius: 6px;
+    margin-top: 1px;
 
     &:hover,
     &:focus-within{
