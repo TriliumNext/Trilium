@@ -49,6 +49,8 @@ type Labels = {
     expanded: string;
     "calendar:hideWeekends": boolean;
     "calendar:weekNumbers": boolean;
+    "calendar:slotDuration": string;
+    "calendar:slotLabelInterval": string;
     "calendar:view": string;
     "calendar:initialDate": string;
     "map:style": string;
