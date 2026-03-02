@@ -260,7 +260,7 @@ function VerticalEditor({ entries, onChange }: VerticalEditorProps) {
     function addSeparator() { commit([...entries, { kind: "separator" } as ToolbarSeparator]); }
 
     function addGroup() {
-        const id = `group_${Date.now()}`;
+        const id = `group_${crypto.randomUUID()}`;
         const g: ToolbarGroup = { kind: "group", id, label: "Group", icon: "threeVerticalDots", visible: true, items: [] };
         commit([...entries, g]);
         setExpanded(id);
@@ -495,7 +495,7 @@ function VerticalEditor({ entries, onChange }: VerticalEditorProps) {
                             clearDrag();
                         }}
                     >
-                        {poolOver ? "⬇ Release to remove from toolbar" : "🗑 Drag here to remove from toolbar"}
+                        {poolOver ? `⬇ ${t("toolbar_customization.release_to_remove_from_toolbar")}` : `🗑 ${t("toolbar_customization.drag_to_remove_from_toolbar")}`}
                     </div>
                 )}
             </div>
@@ -563,7 +563,7 @@ function VerticalEditor({ entries, onChange }: VerticalEditorProps) {
                         flex: pool.length === 0 ? "1 1 100%" : undefined,
                         textAlign: pool.length === 0 ? "center" : undefined,
                     }}>
-                        {poolOver ? "⬇ Release to remove" : t("toolbar_customization.drop_to_remove")}
+                        {poolOver ? `⬇ ${t("toolbar_customization.release_to_remove")}` : t("toolbar_customization.drop_to_remove")}
                     </span>
                 )}
 
