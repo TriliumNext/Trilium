@@ -128,7 +128,7 @@ function getOptions() {
     return resultMap;
 }
 
-function updateOption(req: Request) {
+function updateOption(req: Request<{ name: string; value: string }>) {
     const { name, value } = req.params;
 
     if (!update(name, value)) {

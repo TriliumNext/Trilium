@@ -1,6 +1,7 @@
-import type { Request } from "express";
-import etapiTokenService from "../../services/etapi_tokens.js";
 import { EtapiToken, PostTokensResponse } from "@triliumnext/commons";
+import type { Request } from "express";
+
+import etapiTokenService from "../../services/etapi_tokens.js";
 
 function getTokens() {
     const tokens = etapiTokenService.getTokens();
@@ -14,11 +15,11 @@ function createToken(req: Request) {
     return etapiTokenService.createToken(req.body.tokenName) satisfies PostTokensResponse;
 }
 
-function patchToken(req: Request) {
+function patchToken(req: Request<{ etapiTokenId: string }>) {
     etapiTokenService.renameToken(req.params.etapiTokenId, req.body.name);
 }
 
-function deleteToken(req: Request) {
+function deleteToken(req: Request<{ etapiTokenId: string }>) {
     etapiTokenService.deleteToken(req.params.etapiTokenId);
 }
 

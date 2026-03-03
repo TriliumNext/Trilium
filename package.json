@@ -103,7 +103,7 @@
       "mermaid": "11.12.3",
       "preact": "10.28.4",
       "roughjs": "4.6.6",
-      "@types/express-serve-static-core": "5.1.0",
+      "@types/express-serve-static-core": "5.1.1",
       "flat@<5.0.1": ">=5.0.1",
       "debug@>=3.2.0 <3.2.7": ">=3.2.7",
       "nanoid@<3.3.8": ">=3.3.8",

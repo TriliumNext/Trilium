@@ -10,14 +10,13 @@ import etapiBackupRoute from "../etapi/backup.js";
 import etapiBranchRoutes from "../etapi/branches.js";
 import etapiMetricsRoute from "../etapi/metrics.js";
 import etapiNoteRoutes from "../etapi/notes.js";
+import etapiRevisionsRoutes from "../etapi/revisions.js";
 import etapiSpecRoute from "../etapi/spec.js";
 import etapiSpecialNoteRoutes from "../etapi/special_notes.js";
-import etapiRevisionsRoutes from "../etapi/revisions.js";
 import auth from "../services/auth.js";
 import openID from '../services/open_id.js';
 import { isElectron } from "../services/utils.js";
 import shareRoutes from "../share/routes.js";
-
 import appInfoRoute from "./api/app_info.js";
 import attachmentsApiRoute from "./api/attachments.js";
 import attributesRoute from "./api/attributes.js";
@@ -35,12 +34,10 @@ import fontsRoute from "./api/fonts.js";
 import imageRoute from "./api/image.js";
 import importRoute from "./api/import.js";
 import keysRoute from "./api/keys.js";
-
 import loginApiRoute from "./api/login.js";
 import metricsRoute from "./api/metrics.js";
 import noteMapRoute from "./api/note_map.js";
 import notesApiRoute from "./api/notes.js";
-
 import optionsApiRoute from "./api/options.js";
 import otherRoute from "./api/other.js";
 import passwordApiRoute from "./api/password.js";

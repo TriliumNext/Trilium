@@ -1,9 +1,8 @@
-"use strict";
-
-import sql from "../../services/sql.js";
-import becca from "../../becca/becca.js";
 import type { Request } from "express";
+
+import becca from "../../becca/becca.js";
 import ValidationError from "../../errors/validation_error.js";
+import sql from "../../services/sql.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
 
 interface Table {
@@ -25,7 +24,7 @@ function getSchema() {
     return tables;
 }
 
-function execute(req: Request) {
+function execute(req: Request<{ noteId: string }>) {
     const note = becca.getNoteOrThrow(req.params.noteId);
 
     const content = note.getContent();

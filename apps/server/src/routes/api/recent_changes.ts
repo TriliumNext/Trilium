@@ -1,13 +1,12 @@
-"use strict";
-
-import sql from "../../services/sql.js";
-import protectedSessionService from "../../services/protected_session.js";
-import noteService from "../../services/notes.js";
-import becca from "../../becca/becca.js";
-import type { Request } from "express";
 import type { RecentChangeRow } from "@triliumnext/commons";
+import type { Request } from "express";
 
-function getRecentChanges(req: Request) {
+import becca from "../../becca/becca.js";
+import noteService from "../../services/notes.js";
+import protectedSessionService from "../../services/protected_session.js";
+import sql from "../../services/sql.js";
+
+function getRecentChanges(req: Request<{ ancestorNoteId: string }>) {
     const { ancestorNoteId } = req.params;
 
     let recentChanges: RecentChangeRow[] = [];

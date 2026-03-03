@@ -1,14 +1,15 @@
+import type { AttachmentRow } from "@triliumnext/commons";
+import type { Router } from "express";
+
 import becca from "../becca/becca.js";
+import utils from "../services/utils.js";
 import eu from "./etapi_utils.js";
+import type { ValidatorMap } from "./etapi-interface.js";
 import mappers from "./mappers.js";
 import v from "./validators.js";
-import utils from "../services/utils.js";
-import type { Router } from "express";
-import type { AttachmentRow } from "@triliumnext/commons";
-import type { ValidatorMap } from "./etapi-interface.js";
 
 function register(router: Router) {
-    eu.route(router, "get", "/etapi/notes/:noteId/attachments", (req, res, next) => {
+    eu.route<{ noteId: string }>(router, "get", "/etapi/notes/:noteId/attachments", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
         const attachments = note.getAttachments();
         res.json(attachments.map((attachment) => mappers.mapAttachmentToPojo(attachment)));
@@ -41,7 +42,7 @@ function register(router: Router) {
         }
     });
 
-    eu.route(router, "get", "/etapi/attachments/:attachmentId", (req, res, next) => {
+    eu.route<{ attachmentId: string }>(router, "get", "/etapi/attachments/:attachmentId", (req, res, next) => {
         const attachment = eu.getAndCheckAttachment(req.params.attachmentId);
 
         res.json(mappers.mapAttachmentToPojo(attachment));
@@ -54,7 +55,7 @@ function register(router: Router) {
         position: [v.notNull, v.isInteger]
     };
 
-    eu.route(router, "patch", "/etapi/attachments/:attachmentId", (req, res, next) => {
+    eu.route<{ attachmentId: string }>(router, "patch", "/etapi/attachments/:attachmentId", (req, res, next) => {
         const attachment = eu.getAndCheckAttachment(req.params.attachmentId);
 
         if (attachment.isProtected) {
@@ -67,7 +68,7 @@ function register(router: Router) {
         res.json(mappers.mapAttachmentToPojo(attachment));
     });
 
-    eu.route(router, "get", "/etapi/attachments/:attachmentId/content", (req, res, next) => {
+    eu.route<{ attachmentId: string }>(router, "get", "/etapi/attachments/:attachmentId/content", (req, res, next) => {
         const attachment = eu.getAndCheckAttachment(req.params.attachmentId);
 
         if (attachment.isProtected) {
@@ -84,7 +85,7 @@ function register(router: Router) {
         res.send(attachment.getContent());
     });
 
-    eu.route(router, "put", "/etapi/attachments/:attachmentId/content", (req, res, next) => {
+    eu.route<{ attachmentId: string }>(router, "put", "/etapi/attachments/:attachmentId/content", (req, res, next) => {
         const attachment = eu.getAndCheckAttachment(req.params.attachmentId);
 
         if (attachment.isProtected) {
@@ -96,7 +97,7 @@ function register(router: Router) {
         return res.sendStatus(204);
     });
 
-    eu.route(router, "delete", "/etapi/attachments/:attachmentId", (req, res, next) => {
+    eu.route<{ attachmentId: string }>(router, "delete", "/etapi/attachments/:attachmentId", (req, res, next) => {
         const attachment = becca.getAttachment(req.params.attachmentId);
 
         if (!attachment) {

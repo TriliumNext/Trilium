@@ -8,7 +8,7 @@ overrides:
   mermaid: 11.12.3
   preact: 10.28.4
   roughjs: 4.6.6
-  '@types/express-serve-static-core': 5.1.0
+  '@types/express-serve-static-core': 5.1.1
   flat@<5.0.1: '>=5.0.1'
   debug@>=3.2.0 <3.2.7: '>=3.2.7'
   nanoid@<3.3.8: '>=3.3.8'
@@ -156,8 +156,8 @@ importers:
   apps/build-docs:
     devDependencies:
       '@redocly/cli':
-        specifier: 2.19.2
-        version: 2.19.2(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(core-js@3.46.0)(encoding@0.1.13)(utf-8-validate@6.0.5)
+        specifier: 2.20.2
+        version: 2.20.2(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(core-js@3.46.0)(encoding@0.1.13)(utf-8-validate@6.0.5)
       archiver:
         specifier: 7.0.1
         version: 7.0.1
@@ -782,8 +782,8 @@ importers:
         specifier: 2.17.1
         version: 2.17.1
       sax:
-        specifier: 1.4.4
-        version: 1.4.4
+        specifier: 1.5.0
+        version: 1.5.0
       serve-favicon:
         specifier: 2.5.1
         version: 2.5.1
@@ -4744,30 +4744,30 @@ packages:
   '@radix-ui/rect@1.1.0':
     resolution: {integrity: sha512-A9+lCBZoaMJlVKcRBz2YByCG+Cp2t6nAnMnNba+XiWxnj6r4JUFqfsgwocMBZU9LPtdxC6wB56ySYpc7LQIoJg==}
 
-  '@redocly/ajv@8.17.4':
-    resolution: {integrity: sha512-BieiCML/IgP6x99HZByJSt7fJE4ipgzO7KAFss92Bs+PEI35BhY7vGIysFXLT+YmS7nHtQjZjhOQyPPEf7xGHA==}
+  '@redocly/ajv@8.18.0':
+    resolution: {integrity: sha512-F+LMD2IDIXuHxgpLJh3nkLj9+tSaEzoUWd+7fONGq5pe2169FUDjpEkOfEpoGLz1sbZni/69p07OsecNfAOpqA==}
 
-  '@redocly/cli@2.19.2':
-    resolution: {integrity: sha512-eT0hDCFwXceOUD7UxMltCk6baE9cOlCJ0LsBWFMHlaUYhkBztts0BoLx+nQTSqDUPCMGg0BKRLuNuHe3CR4HeA==}
+  '@redocly/cli@2.20.2':
+    resolution: {integrity: sha512-wfEoGFoXq1vZjd9uEtTd9mIixF5I5Ci1rusK/9HHcS6UGy3o2kuvrSn1daDHl1T3KcG5YFqQoLzzEgcL4Je7KQ==}
     engines: {node: '>=22.12.0 || >=20.19.0 <21.0.0', npm: '>=10'}
     hasBin: true
 
   '@redocly/config@0.22.2':
     resolution: {integrity: sha512-roRDai8/zr2S9YfmzUfNhKjOF0NdcOIqF7bhf4MVC5UxpjIysDjyudvlAiVbpPHp3eDRWbdzUgtkK1a7YiDNyQ==}
 
-  '@redocly/config@0.43.0':
-    resolution: {integrity: sha512-AbyFKRHKJ2VBmh9nO2lrG9tO2Gu/Lmnfdj4Uwoh7h/a7jWr1104t4fBgQZs/NwgGBAOkGmyQYAvardwyBeRGZA==}
+  '@redocly/config@0.44.0':
+    resolution: {integrity: sha512-UHKkWcCNZrGiKBbrQ1CE08ElrOUGm5H97Zn8+wkp80Uu2AT/go5In1sbqvhHxViPYtu1MLdy7qKiifSyOL3W/A==}
 
   '@redocly/openapi-core@1.34.5':
     resolution: {integrity: sha512-0EbE8LRbkogtcCXU7liAyC00n9uNG9hJ+eMyHFdUsy9lB/WGqnEBgwjA9q2cyzAVcdTkQqTBBU1XePNnN3OijA==}
     engines: {node: '>=18.17.0', npm: '>=9.5.0'}
 
-  '@redocly/openapi-core@2.19.2':
-    resolution: {integrity: sha512-eooTSDKyN0F4YOjLPh/ajcvpzg/Rv7y5+Os/EyyCc2yu+zA+gZhSykQnOAIXcrSzrjn1bNpe4QF9eZNFLX4q0A==}
+  '@redocly/openapi-core@2.20.2':
+    resolution: {integrity: sha512-L3rzEZWMxq9SpAHP8k9C+/Fqxex4vxXgSZ5hQ+dg7++LXre67ZbT3RkhKsmYadJB/EUdbS6Z+h1Ont5TAI6zyQ==}
     engines: {node: '>=22.12.0 || >=20.19.0 <21.0.0', npm: '>=10'}
 
-  '@redocly/respect-core@2.19.2':
-    resolution: {integrity: sha512-Ng5m9Sh+6PNW5rFrGQMucphRK/1EtMwLGeJVZBMDGe7YofiyqziDLQvJbI4aHzN2RKrYA585PKGZOQekWfoaCA==}
+  '@redocly/respect-core@2.20.2':
+    resolution: {integrity: sha512-oUCp+H83py0DEq5DJ+XmGPJQW9Yoq/tgml4OGwQrPEt1sC7QF7GjMRCA1HnRS4/dQ9psWGyFj9FwI1fCupQ8uw==}
     engines: {node: '>=22.12.0 || >=20.19.0 <21.0.0', npm: '>=10'}
 
   '@replit/codemirror-indentation-markers@6.5.3':
@@ -5834,8 +5834,8 @@ packages:
   '@types/express-http-proxy@1.6.7':
     resolution: {integrity: sha512-CEp9pbnwVI1RzN9PXc+KESMxwUW5r1O7tkWb5h7Wg/YAIf+KulD/zKev8fbbn+Ljt0Yvs8MXwV2W6Id+cKxe2Q==}
 
-  '@types/express-serve-static-core@5.1.0':
-    resolution: {integrity: sha512-jnHMsrd0Mwa9Cf4IdOzbz543y4XJepXrbia2T4b6+spXC2We3t1y6K44D3mR8XMFSXMCf3/l7rCgddfx7UNVBA==}
+  '@types/express-serve-static-core@5.1.1':
+    resolution: {integrity: sha512-v4zIMr/cX7/d2BpAEX3KNKL/JrT1s43s96lLvvdTmza1oEvDudCqK9aF/djc/SWgy8Yh0h30TZx5VpzqFCxk5A==}
 
   '@types/express-session@1.18.2':
     resolution: {integrity: sha512-k+I0BxwVXsnEU2hV77cCobC08kIsn4y44C3gC0b46uxZVMaXA04lSPgRLR/bSL2w0t0ShJiG8o4jPzRG/nscFg==}
@@ -13325,8 +13325,8 @@ packages:
     engines: {node: '>=14.0.0'}
     hasBin: true
 
-  sax@1.4.4:
-    resolution: {integrity: sha512-1n3r/tGXO6b6VXMdFT54SHzT9ytu9yr7TaELowdYpMqY/Ao7EnlQGmAQ1+RatX7Tkkdm6hONI2owqNx2aZj5Sw==}
+  sax@1.5.0:
+    resolution: {integrity: sha512-21IYA3Q5cQf089Z6tgaUTr7lDAyzoTPx5HRtbhsME8Udispad8dC/+sziTNugOEx54ilvatQ9YCzl4KQLPcRHA==}
     engines: {node: '>=11.0.0'}
 
   saxes@5.0.1:
@@ -16204,6 +16204,8 @@ snapshots:
       '@ckeditor/ckeditor5-core': 47.4.0
       '@ckeditor/ckeditor5-utils': 47.4.0
       ckeditor5: 47.4.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-code-block@47.4.0(patch_hash=2361d8caad7d6b5bddacc3a3b4aa37dbfba260b1c1b22a450413a79c1bb1ce95)':
     dependencies:
@@ -16310,7 +16312,7 @@ snapshots:
       '@ckeditor/ckeditor5-dev-utils': 54.0.0(@babel/core@7.28.0)(@swc/core@1.11.29(@swc/helpers@0.5.17))(esbuild@0.27.3)(typescript@5.0.4)(webpack@5.101.3(@swc/core@1.11.29(@swc/helpers@0.5.17))(esbuild@0.27.3))
       chalk: 5.6.2
       fs-extra: 11.3.3
-      glob: 13.0.0
+      glob: 13.0.6
       plural-forms: 0.5.5
       pofile: 1.1.4
       rimraf: 6.0.1
@@ -16339,7 +16341,7 @@ snapshots:
       cssnano: 7.1.1(postcss@8.5.6)
       esbuild-loader: 4.3.0(webpack@5.101.3(@swc/core@1.11.29(@swc/helpers@0.5.17))(esbuild@0.27.3))
       fs-extra: 11.3.3
-      glob: 13.0.0
+      glob: 13.0.6
       is-interactive: 2.0.0
       mini-css-extract-plugin: 2.9.4(webpack@5.101.3(@swc/core@1.11.29(@swc/helpers@0.5.17))(esbuild@0.27.3))
       mocha: 11.7.2
@@ -16396,6 +16398,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.4.0
       ckeditor5: 47.4.0
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-editor-classic@47.4.0':
     dependencies:
@@ -16405,6 +16409,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.4.0
       ckeditor5: 47.4.0
       es-toolkit: 1.39.5
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-editor-decoupled@47.4.0':
     dependencies:
@@ -16447,8 +16453,6 @@ snapshots:
       '@ckeditor/ckeditor5-table': 47.4.0
       '@ckeditor/ckeditor5-utils': 47.4.0
       ckeditor5: 47.4.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-emoji@47.4.0':
     dependencies:
@@ -16605,6 +16609,8 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.4.0
       '@ckeditor/ckeditor5-widget': 47.4.0
       ckeditor5: 47.4.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-html-embed@47.4.0':
     dependencies:
@@ -16934,6 +16940,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.4.0
       '@ckeditor/ckeditor5-utils': 47.4.0
       ckeditor5: 47.4.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-restricted-editing@47.4.0':
     dependencies:
@@ -17020,6 +17028,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.4.0
       '@ckeditor/ckeditor5-utils': 47.4.0
       ckeditor5: 47.4.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-special-characters@47.4.0':
     dependencies:
@@ -18322,7 +18332,7 @@ snapshots:
 
   '@file-type/xml@0.4.3':
     dependencies:
-      sax: 1.4.4
+      sax: 1.5.0
       strtok3: 10.2.2
 
   '@floating-ui/core@1.6.9':
@@ -18813,7 +18823,7 @@ snapshots:
 
   '@isaacs/fs-minipass@4.0.1':
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   '@istanbuljs/schema@0.1.3': {}
 
@@ -19427,7 +19437,7 @@ snapshots:
   '@npmcli/package-json@7.0.0':
     dependencies:
       '@npmcli/git': 6.0.3
-      glob: 13.0.0
+      glob: 13.0.6
       hosted-git-info: 9.0.0
       json-parse-even-better-errors: 4.0.0
       proc-log: 5.0.0
@@ -19998,24 +20008,24 @@ snapshots:
 
   '@radix-ui/rect@1.1.0': {}
 
-  '@redocly/ajv@8.17.4':
+  '@redocly/ajv@8.18.0':
     dependencies:
       fast-deep-equal: 3.1.3
       fast-uri: 3.1.0
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
-  '@redocly/cli@2.19.2(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(core-js@3.46.0)(encoding@0.1.13)(utf-8-validate@6.0.5)':
+  '@redocly/cli@2.20.2(@opentelemetry/api@1.9.0)(bufferutil@4.0.9)(core-js@3.46.0)(encoding@0.1.13)(utf-8-validate@6.0.5)':
     dependencies:
       '@opentelemetry/exporter-trace-otlp-http': 0.202.0(@opentelemetry/api@1.9.0)
       '@opentelemetry/resources': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/sdk-trace-node': 2.0.1(@opentelemetry/api@1.9.0)
       '@opentelemetry/semantic-conventions': 1.34.0
-      '@redocly/openapi-core': 2.19.2
-      '@redocly/respect-core': 2.19.2
+      '@redocly/openapi-core': 2.20.2
+      '@redocly/respect-core': 2.20.2
       abort-controller: 3.0.0
-      ajv: '@redocly/ajv@8.17.4'
-      ajv-formats: 3.0.1(@redocly/ajv@8.17.4)
+      ajv: '@redocly/ajv@8.18.0'
+      ajv-formats: 3.0.1(@redocly/ajv@8.18.0)
       colorette: 1.4.0
       cookie: 0.7.2
       dotenv: 16.4.7
@@ -20046,13 +20056,13 @@ snapshots:
 
   '@redocly/config@0.22.2': {}
 
-  '@redocly/config@0.43.0':
+  '@redocly/config@0.44.0':
     dependencies:
       json-schema-to-ts: 2.7.2
 
   '@redocly/openapi-core@1.34.5':
     dependencies:
-      '@redocly/ajv': 8.17.4
+      '@redocly/ajv': 8.18.0
       '@redocly/config': 0.22.2
       colorette: 1.4.0
       https-proxy-agent: 7.0.6
@@ -20064,12 +20074,12 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@redocly/openapi-core@2.19.2':
+  '@redocly/openapi-core@2.20.2':
     dependencies:
-      '@redocly/ajv': 8.17.4
-      '@redocly/config': 0.43.0
-      ajv: '@redocly/ajv@8.17.4'
-      ajv-formats: 3.0.1(@redocly/ajv@8.17.4)
+      '@redocly/ajv': 8.18.0
+      '@redocly/config': 0.44.0
+      ajv: '@redocly/ajv@8.18.0'
+      ajv-formats: 3.0.1(@redocly/ajv@8.18.0)
       colorette: 1.4.0
       js-levenshtein: 1.1.6
       js-yaml: 4.1.1
@@ -20077,14 +20087,14 @@ snapshots:
       pluralize: 8.0.0
       yaml-ast-parser: 0.0.43
 
-  '@redocly/respect-core@2.19.2':
+  '@redocly/respect-core@2.20.2':
     dependencies:
       '@faker-js/faker': 7.6.0
       '@noble/hashes': 1.8.0
-      '@redocly/ajv': 8.17.4
-      '@redocly/openapi-core': 2.19.2
-      ajv: '@redocly/ajv@8.17.4'
-      better-ajv-errors: 1.2.0(@redocly/ajv@8.17.4)
+      '@redocly/ajv': 8.18.0
+      '@redocly/openapi-core': 2.20.2
+      ajv: '@redocly/ajv@8.18.0'
+      better-ajv-errors: 1.2.0(@redocly/ajv@8.18.0)
       colorette: 2.0.20
       json-pointer: 0.6.2
       jsonpath-rfc9535: 1.3.0
@@ -21119,7 +21129,7 @@ snapshots:
 
   '@types/connect-history-api-fallback@1.5.4':
     dependencies:
-      '@types/express-serve-static-core': 5.1.0
+      '@types/express-serve-static-core': 5.1.1
       '@types/node': 24.11.0
 
   '@types/connect@3.4.38':
@@ -21294,7 +21304,7 @@ snapshots:
     dependencies:
       '@types/express': 5.0.3
 
-  '@types/express-serve-static-core@5.1.0':
+  '@types/express-serve-static-core@5.1.1':
     dependencies:
       '@types/node': 24.11.0
       '@types/qs': 6.14.0
@@ -21308,20 +21318,20 @@ snapshots:
   '@types/express@4.17.23':
     dependencies:
       '@types/body-parser': 1.19.6
-      '@types/express-serve-static-core': 5.1.0
+      '@types/express-serve-static-core': 5.1.1
       '@types/qs': 6.14.0
       '@types/serve-static': 2.2.0
 
   '@types/express@5.0.3':
     dependencies:
       '@types/body-parser': 1.19.6
-      '@types/express-serve-static-core': 5.1.0
+      '@types/express-serve-static-core': 5.1.1
       '@types/serve-static': 2.2.0
 
   '@types/express@5.0.6':
     dependencies:
       '@types/body-parser': 1.19.6
-      '@types/express-serve-static-core': 5.1.0
+      '@types/express-serve-static-core': 5.1.1
       '@types/serve-static': 2.2.0
 
   '@types/filesystem@0.0.36':
@@ -22047,7 +22057,7 @@ snapshots:
       '@wdio/types': 9.24.0
       '@wdio/utils': 9.24.0
       deepmerge-ts: 7.1.5
-      glob: 13.0.0
+      glob: 13.0.6
       import-meta-resolve: 4.2.0
       jiti: 2.6.1
     transitivePeerDependencies:
@@ -22294,9 +22304,9 @@ snapshots:
     optionalDependencies:
       ajv: 8.17.1
 
-  ajv-formats@3.0.1(@redocly/ajv@8.17.4):
+  ajv-formats@3.0.1(@redocly/ajv@8.18.0):
     optionalDependencies:
-      ajv: '@redocly/ajv@8.17.4'
+      ajv: '@redocly/ajv@8.18.0'
 
   ajv-formats@3.0.1(ajv@8.13.0):
     optionalDependencies:
@@ -22411,7 +22421,7 @@ snapshots:
 
   archiver-utils@5.0.2:
     dependencies:
-      glob: 13.0.0
+      glob: 13.0.6
       graceful-fs: 4.2.11
       is-stream: 2.0.1
       lazystream: 1.0.1
@@ -22661,11 +22671,11 @@ snapshots:
 
   batch@0.6.1: {}
 
-  better-ajv-errors@1.2.0(@redocly/ajv@8.17.4):
+  better-ajv-errors@1.2.0(@redocly/ajv@8.18.0):
     dependencies:
       '@babel/code-frame': 7.27.1
       '@humanwhocodes/momoa': 2.0.4
-      ajv: '@redocly/ajv@8.17.4'
+      ajv: '@redocly/ajv@8.18.0'
       chalk: 4.1.2
       jsonpointer: 5.0.1
       leven: 3.1.0
@@ -22927,9 +22937,9 @@ snapshots:
     dependencies:
       '@npmcli/fs': 4.0.0
       fs-minipass: 3.0.3
-      glob: 13.0.0
+      glob: 13.0.6
       lru-cache: 10.4.3
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-collect: 2.0.1
       minipass-flush: 1.0.5
       minipass-pipeline: 1.2.4
@@ -22942,9 +22952,9 @@ snapshots:
     dependencies:
       '@npmcli/fs': 4.0.0
       fs-minipass: 3.0.3
-      glob: 13.0.0
+      glob: 13.0.6
       lru-cache: 11.2.4
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-collect: 2.0.1
       minipass-flush: 1.0.5
       minipass-pipeline: 1.2.4
@@ -25601,7 +25611,7 @@ snapshots:
 
   fs-minipass@3.0.3:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   fs-temp@1.2.1:
     dependencies:
@@ -27490,7 +27500,7 @@ snapshots:
       '@npmcli/agent': 3.0.0
       cacache: 19.0.1
       http-cache-semantics: 4.2.0
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-fetch: 4.0.1
       minipass-flush: 1.0.5
       minipass-pipeline: 1.2.4
@@ -27506,7 +27516,7 @@ snapshots:
       '@npmcli/agent': 4.0.0
       cacache: 20.0.1
       http-cache-semantics: 4.2.0
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-fetch: 5.0.0
       minipass-flush: 1.0.5
       minipass-pipeline: 1.2.4
@@ -28076,7 +28086,7 @@ snapshots:
 
   minipass-collect@2.0.1:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   minipass-fetch@1.4.1:
     dependencies:
@@ -28097,7 +28107,7 @@ snapshots:
 
   minipass-fetch@4.0.1:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-sized: 1.0.3
       minizlib: 3.1.0
     optionalDependencies:
@@ -28138,7 +28148,7 @@ snapshots:
 
   minizlib@3.1.0:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   mitt@3.0.1: {}
 
@@ -28190,7 +28200,7 @@ snapshots:
       diff: 8.0.3
       escape-string-regexp: 4.0.0
       find-up: 5.0.0
-      glob: 13.0.0
+      glob: 13.0.6
       he: 1.2.0
       js-yaml: 4.1.1
       log-symbols: 4.1.0
@@ -28314,7 +28324,7 @@ snapshots:
   needle@3.3.1:
     dependencies:
       iconv-lite: 0.6.3
-      sax: 1.4.4
+      sax: 1.5.0
     optional: true
 
   negotiator@0.6.3: {}
@@ -28494,7 +28504,7 @@ snapshots:
       '@npmcli/redact': 3.2.2
       jsonparse: 1.3.1
       make-fetch-happen: 15.0.3
-      minipass: 7.1.2
+      minipass: 7.1.3
       minipass-fetch: 4.0.1
       minizlib: 3.1.0
       npm-package-arg: 13.0.0
@@ -28844,7 +28854,7 @@ snapshots:
       '@npmcli/run-script': 10.0.0
       cacache: 20.0.1
       fs-minipass: 3.0.3
-      minipass: 7.1.2
+      minipass: 7.1.3
       npm-package-arg: 13.0.0
       npm-packlist: 10.0.1
       npm-pick-manifest: 10.0.0
@@ -28960,7 +28970,7 @@ snapshots:
   path-scurry@2.0.0:
     dependencies:
       lru-cache: 11.2.4
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   path-scurry@2.0.2:
     dependencies:
@@ -29685,7 +29695,7 @@ snapshots:
   purgecss@7.0.2:
     dependencies:
       commander: 12.1.0
-      glob: 13.0.0
+      glob: 13.0.6
       postcss: 8.5.6
       postcss-selector-parser: 6.1.2
 
@@ -30181,7 +30191,7 @@ snapshots:
 
   rimraf@6.0.1:
     dependencies:
-      glob: 13.0.0
+      glob: 13.0.6
       package-json-from-dist: 1.0.1
 
   roarr@2.15.4:
@@ -30479,7 +30489,7 @@ snapshots:
       '@parcel/watcher': 2.5.4
     optional: true
 
-  sax@1.4.4: {}
+  sax@1.5.0: {}
 
   saxes@5.0.1:
     dependencies:
@@ -31050,7 +31060,7 @@ snapshots:
 
   ssri@12.0.0:
     dependencies:
-      minipass: 7.1.2
+      minipass: 7.1.3
 
   ssri@13.0.0:
     dependencies:
@@ -31514,7 +31524,7 @@ snapshots:
       css-what: 6.2.2
       csso: 5.0.5
       picocolors: 1.1.1
-      sax: 1.4.4
+      sax: 1.5.0
 
   swagger-jsdoc@6.2.8(openapi-types@12.1.3):
     dependencies:
@@ -32590,7 +32600,7 @@ snapshots:
       '@types/bonjour': 3.5.13
       '@types/connect-history-api-fallback': 1.5.4
       '@types/express': 4.17.23
-      '@types/express-serve-static-core': 5.1.0
+      '@types/express-serve-static-core': 5.1.1
       '@types/serve-index': 1.9.4
       '@types/serve-static': 1.15.10
       '@types/sockjs': 0.3.36
@@ -32971,12 +32981,12 @@ snapshots:
 
   xml2js@0.5.0:
     dependencies:
-      sax: 1.4.4
+      sax: 1.5.0
       xmlbuilder: 11.0.1
 
   xml2js@0.6.2:
     dependencies:
-      sax: 1.4.4
+      sax: 1.5.0
       xmlbuilder: 11.0.1
 
   xmlbuilder@11.0.1: {}

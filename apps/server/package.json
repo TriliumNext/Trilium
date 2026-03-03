@@ -114,7 +114,7 @@
     "safe-compare": "1.1.4",
     "sanitize-filename": "1.6.3",
     "sanitize-html": "2.17.1",
-    "sax": "1.4.4",
+    "sax": "1.5.0",
     "serve-favicon": "2.5.1",
     "stream-throttle": "0.1.3",
     "strip-bom": "5.0.0",

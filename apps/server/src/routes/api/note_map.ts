@@ -1,11 +1,12 @@
-"use strict";
 
-import becca from "../../becca/becca.js";
-import type BNote from "../../becca/entities/bnote.js";
-import type BAttribute from "../../becca/entities/battribute.js";
+
+import { BacklinkCountResponse, BacklinksResponse } from "@triliumnext/commons";
 import type { Request } from "express";
 import { HTMLElement, parse, TextNode } from "node-html-parser";
-import { BacklinkCountResponse, BacklinksResponse } from "@triliumnext/commons";
+
+import becca from "../../becca/becca.js";
+import type BAttribute from "../../becca/entities/battribute.js";
+import type BNote from "../../becca/entities/bnote.js";
 
 interface TreeLink {
     sourceNoteId: string;
@@ -97,7 +98,7 @@ function getNeighbors(note: BNote, depth: number): string[] {
     return retNoteIds;
 }
 
-function getLinkMap(req: Request) {
+function getLinkMap(req: Request<{ noteId: string }>) {
     const mapRootNote = becca.getNoteOrThrow(req.params.noteId);
 
     // if the map root itself has "excludeFromNoteMap" attribute (journal typically) then there wouldn't be anything
@@ -156,9 +157,9 @@ function getLinkMap(req: Request) {
                 return false;
             } else if (excludeRelations.has(rel.name)) {
                 return false;
-            } else {
-                return true;
-            }
+            } 
+            return true;
+            
         })
         .map((rel) => ({
             id: `${rel.noteId}-${rel.name}-${rel.value}`,
@@ -168,13 +169,13 @@ function getLinkMap(req: Request) {
         }));
 
     return {
-        notes: notes,
+        notes,
         noteIdToDescendantCountMap: buildDescendantCountMap(noteIdsArray),
-        links: links
+        links
     };
 }
 
-function getTreeMap(req: Request) {
+function getTreeMap(req: Request<{ noteId: string }>) {
     const mapRootNote = becca.getNoteOrThrow(req.params.noteId);
     // if the map root itself has "excludeFromNoteMap" (journal typically) then there wouldn't be anything to display,
     // so we'll just ignore it
@@ -223,9 +224,9 @@ function getTreeMap(req: Request) {
     updateDescendantCountMapForSearch(noteIdToDescendantCountMap, subtree.relationships);
 
     return {
-        notes: notes,
-        noteIdToDescendantCountMap: noteIdToDescendantCountMap,
-        links: links
+        notes,
+        noteIdToDescendantCountMap,
+        links
     };
 }
 
@@ -350,7 +351,7 @@ function getFilteredBacklinks(note: BNote): BAttribute[] {
     );
 }
 
-function getBacklinkCount(req: Request) {
+function getBacklinkCount(req: Request<{ noteId: string }>) {
     const { noteId } = req.params;
 
     const note = becca.getNoteOrThrow(noteId);
@@ -360,7 +361,7 @@ function getBacklinkCount(req: Request) {
     } satisfies BacklinkCountResponse;
 }
 
-function getBacklinks(req: Request): BacklinksResponse {
+function getBacklinks(req: Request<{ noteId: string }>): BacklinksResponse {
     const { noteId } = req.params;
     const note = becca.getNoteOrThrow(noteId);
 

@@ -1,20 +1,19 @@
-"use strict";
-
-import imageService from "../../services/image.js";
-import becca from "../../becca/becca.js";
-import fs from "fs";
 import type { Request, Response } from "express";
+import fs from "fs";
+
+import becca from "../../becca/becca.js";
 import type BNote from "../../becca/entities/bnote.js";
 import type BRevision from "../../becca/entities/brevision.js";
+import imageService from "../../services/image.js";
 import { RESOURCE_DIR } from "../../services/resource_dir.js";
 
-function returnImageFromNote(req: Request, res: Response) {
+function returnImageFromNote(req: Request<{ noteId: string }>, res: Response) {
     const image = becca.getNote(req.params.noteId);
 
     return returnImageInt(image, res);
 }
 
-function returnImageFromRevision(req: Request, res: Response) {
+function returnImageFromRevision(req: Request<{ revisionId: string }>, res: Response) {
     const image = becca.getRevision(req.params.revisionId);
 
     return returnImageInt(image, res);
@@ -61,7 +60,7 @@ export function renderSvgAttachment(image: BNote | BRevision, res: Response, att
     res.send(svg);
 }
 
-function returnAttachedImage(req: Request, res: Response) {
+function returnAttachedImage(req: Request<{ attachmentId: string }>, res: Response) {
     const attachment = becca.getAttachment(req.params.attachmentId);
 
     if (!attachment) {
@@ -78,7 +77,7 @@ function returnAttachedImage(req: Request, res: Response) {
     res.send(attachment.getContent());
 }
 
-function updateImage(req: Request) {
+function updateImage(req: Request<{ noteId: string }>) {
     const { noteId } = req.params;
     const { file } = req;
 
