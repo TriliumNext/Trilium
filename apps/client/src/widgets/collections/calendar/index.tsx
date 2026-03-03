@@ -165,8 +165,8 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                 firstDay={firstDayOfWeek ?? 0}
                 weekends={!hideWeekends}
                 weekNumbers={weekNumbers}
-                slotDuration={slotDuration ?? DEFAULT_SLOT_DURATION}
-                slotLabelInterval={slotLabelInterval ?? DEFAULT_SLOT_LABEL_INTERVAL}
+                slotDuration={slotDuration || DEFAULT_SLOT_DURATION}
+                slotLabelInterval={slotLabelInterval || DEFAULT_SLOT_LABEL_INTERVAL}
                 height="90%"
                 nowIndicator
                 handleWindowResize={false}
