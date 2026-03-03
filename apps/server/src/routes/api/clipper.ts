@@ -57,11 +57,6 @@ async function addClipping(req: Request) {
 
     clippingNote.setContent(`${existingContent}${existingContent.trim() ? "<br>" : ""}${rewrittenContent}`);
 
-    // TODO: Is parentNoteId ever defined?
-    if ((clippingNote as any).parentNoteId !== clipperInbox.noteId) {
-        cloneService.cloneNoteToParentNote(clippingNote.noteId, clipperInbox.noteId);
-    }
-
     return {
         noteId: clippingNote.noteId
     };
