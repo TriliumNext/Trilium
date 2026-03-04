@@ -168,10 +168,11 @@ function checkCredentials(req: Request, res: Response, next: NextFunction) {
 
     // Verify TOTP if enabled
     if (totp.isTotpEnabled()) {
-        const totpToken = req.headers["trilium-totp"] || "";
+        const totpHeader = req.headers["trilium-totp"];
+        const totpToken = Array.isArray(totpHeader) ? totpHeader[0] : totpHeader;
         if (typeof totpToken !== "string" || !totpToken) {
             res.setHeader("Content-Type", "text/plain").status(401).send("TOTP token is required");
-            log.info(`WARNING: Missing TOTP token from ${req.ip}, rejecting.`);
+            log.info(`WARNING: Missing or invalid TOTP token from ${req.ip}, rejecting.`);
             return;
         }
 

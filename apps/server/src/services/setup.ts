@@ -112,6 +112,11 @@ function getSyncSeedOptions() {
 }
 
 async function checkRemoteTotpStatus(syncServerHost: string): Promise<{ totpEnabled: boolean }> {
+    // Validate URL scheme to mitigate SSRF
+    if (!syncServerHost.startsWith("http://") && !syncServerHost.startsWith("https://")) {
+        return { totpEnabled: false };
+    }
+
     try {
         const resp = await request.exec<{ totpEnabled?: boolean }>({
             method: "get",
