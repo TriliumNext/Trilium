@@ -12,6 +12,7 @@ export default class SpacedUpdate {
     private updateInterval: number;
     private changeForbidden?: boolean;
     private stateCallback?: StateCallback;
+    private lastState: SaveState = "saved";
 
     constructor(updater: Callback, updateInterval = 1000, stateCallback?: StateCallback) {
         this.updater = updater;
@@ -24,7 +25,7 @@ export default class SpacedUpdate {
     scheduleUpdate() {
         if (!this.changeForbidden) {
             this.changed = true;
-            this.stateCallback?.("unsaved");
+            this.onStateChanged("unsaved");
             setTimeout(() => this.triggerUpdate());
         }
     }
@@ -34,12 +35,12 @@ export default class SpacedUpdate {
             this.changed = false; // optimistic...
 
             try {
-                this.stateCallback?.("saving");
+                this.onStateChanged("saving");
                 await this.updater();
-                this.stateCallback?.("saved");
+                this.onStateChanged("saved");
             } catch (e) {
                 this.changed = true;
-                this.stateCallback?.("error");
+                this.onStateChanged("error");
                 logError(getErrorMessage(e));
                 throw e;
             }
@@ -76,13 +77,13 @@ export default class SpacedUpdate {
         }
 
         if (Date.now() - this.lastUpdated > this.updateInterval) {
-            this.stateCallback?.("saving");
+            this.onStateChanged("saving");
             try {
                 await this.updater();
-                this.stateCallback?.("saved");
+                this.onStateChanged("saved");
                 this.changed = false;
             } catch (e) {
-                this.stateCallback?.("error");
+                this.onStateChanged("error");
                 logError(getErrorMessage(e));
             }
             this.lastUpdated = Date.now();
@@ -90,6 +91,13 @@ export default class SpacedUpdate {
             // update isn't triggered but changes are still pending, so we need to schedule another check
             this.scheduleUpdate();
         }
+    }
+
+    onStateChanged(state: SaveState) {
+        if (state === this.lastState) return;
+
+        this.stateCallback?.(state);
+        this.lastState = state;
     }
 
     async allowUpdateWithoutChange(callback: Callback) {

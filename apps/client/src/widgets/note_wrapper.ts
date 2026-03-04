@@ -79,7 +79,7 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
     }
 
     #isFullWidthNote(note: FNote) {
-        if (["code", "image", "mermaid", "book", "render", "canvas", "webView", "mindMap"].includes(note.type)) {
+        if (["code", "image", "mermaid", "book", "render", "canvas", "webView", "mindMap", "spreadsheet"].includes(note.type)) {
             return true;
         }
 
@@ -102,7 +102,7 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
         const COLLECTIONS_WITH_BACKGROUND_EFFECTS = [
             "grid",
             "list"
-        ]
+        ];
 
         if (note.isOptions()) {
             return true;

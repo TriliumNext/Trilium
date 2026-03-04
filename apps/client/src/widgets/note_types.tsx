@@ -141,5 +141,11 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         view: () => import("./type_widgets/SqlConsole"),
         className: "sql-console-widget-container",
         isFullHeight: true
+    },
+    spreadsheet: {
+        view: () => import("./type_widgets/Spreadsheet"),
+        className: "note-detail-spreadsheet",
+        printable: true,
+        isFullHeight: true
     }
 };

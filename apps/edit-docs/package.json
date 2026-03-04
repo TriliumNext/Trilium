@@ -11,7 +11,7 @@
     "@triliumnext/client": "workspace:*",
     "@triliumnext/desktop": "workspace:*",
     "@types/fs-extra": "11.0.4",
-    "copy-webpack-plugin": "13.0.1",
+    "copy-webpack-plugin": "14.0.0",
     "electron": "40.6.1",
     "fs-extra": "11.3.3"
   },

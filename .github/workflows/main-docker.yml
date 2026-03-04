@@ -166,9 +166,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: |
-            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}
-            ${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
             type=ref,event=tag
@@ -189,13 +187,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login to DockerHub
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.DOCKERHUB_REGISTRY }}
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Build and push by digest
         id: build
         uses: docker/build-push-action@v6
@@ -204,9 +195,7 @@ jobs:
           file: apps/server/${{ matrix.dockerfile }}
           platforms: ${{ matrix.platform }}
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: |
-            type=image,name=${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
-            type=image,name=${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
+          outputs: type=image,name=${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
 
       - name: Export digest
         run: |
@@ -239,18 +228,8 @@ jobs:
       - name: Set TEST_TAG to lowercase
         run: echo "TEST_TAG=${TEST_TAG,,}" >> $GITHUB_ENV
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Docker meta
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: |
-            ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}
-            ${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}
-          flavor: |
-            latest=false
+      - name: Set up crane
+        uses: imjasonh/setup-crane@v0.4
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -266,48 +245,69 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Create manifest list and push
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha
+          flavor: |
+            latest=false
+
+      - name: Verify digests exist on GHCR
         working-directory: /tmp/digests
         run: |
-          # Extract the branch or tag name from the ref
-          REF_NAME=$(echo "${GITHUB_REF}" | sed 's/refs\/heads\///' | sed 's/refs\/tags\///')
+          echo "Verifying all digests are available on GHCR..."
+          for DIGEST_FILE in *; do
+            DIGEST="sha256:${DIGEST_FILE}"
+            echo -n "  ${DIGEST}: "
+            crane manifest "${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST}" > /dev/null
+            echo "OK"
+          done
 
-          # Create and push the manifest list with both the branch/tag name and the commit SHA
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            -t ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${REF_NAME} \
-            $(printf '${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+      - name: Create and push multi-arch manifest
+        working-directory: /tmp/digests
+        run: |
+          GHCR_IMAGE="${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}"
+          DOCKERHUB_IMAGE="${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}"
 
-          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-            -t ${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:${REF_NAME} \
-            $(printf '${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+          # Build -m flags for crane index append from digest files
+          MANIFEST_ARGS=""
+          for d in *; do
+            MANIFEST_ARGS="${MANIFEST_ARGS} -m ${GHCR_IMAGE}@sha256:${d}"
+          done
 
-          # If the ref is a tag, also tag the image as stable as this is part of a 'release'
-          # and only go in the `if` if there is NOT a `-` in the tag's name, due to tagging of `-alpha`, `-beta`, etc...
+          # Create multi-arch manifest for each tag from metadata, plus copy to DockerHub
+          while IFS= read -r TAG; do
+            echo "Creating manifest: ${TAG}"
+            crane index append ${MANIFEST_ARGS} -t "${TAG}"
+
+            SUFFIX="${TAG#*:}"
+            echo "Copying to DockerHub: ${DOCKERHUB_IMAGE}:${SUFFIX}"
+            crane copy "${TAG}" "${DOCKERHUB_IMAGE}:${SUFFIX}"
+          done <<< "${{ steps.meta.outputs.tags }}"
+
+          # For stable releases (tags without hyphens), also create stable + latest
+          REF_NAME="${GITHUB_REF#refs/tags/}"
           if [[ "${GITHUB_REF}" == refs/tags/* && ! "${REF_NAME}" =~ - ]]; then
-            # First create stable tags
-            docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-              -t ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:stable \
-              $(printf '${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+            echo "Creating stable tags..."
+            crane index append ${MANIFEST_ARGS} -t "${GHCR_IMAGE}:stable"
+            crane copy "${GHCR_IMAGE}:stable" "${DOCKERHUB_IMAGE}:stable"
 
-            docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
-              -t ${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:stable \
-              $(printf '${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
-
-            # Small delay to ensure stable tag is fully propagated
-            sleep 5
-
-            # Now update latest tags
-            docker buildx imagetools create \
-              -t ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-              ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:stable
-
-            docker buildx imagetools create \
-              -t ${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-              ${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:stable
-
+            echo "Creating latest tags..."
+            crane copy "${GHCR_IMAGE}:stable" "${GHCR_IMAGE}:latest"
+            crane copy "${GHCR_IMAGE}:latest" "${DOCKERHUB_IMAGE}:latest"
           fi
 
-      - name: Inspect image
+      - name: Inspect manifests
         run: |
-          docker buildx imagetools inspect ${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
-          docker buildx imagetools inspect ${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+          REF_NAME="${GITHUB_REF#refs/heads/}"
+          REF_NAME="${REF_NAME#refs/tags/}"
+          echo "=== GHCR ==="
+          crane manifest "${{ env.GHCR_REGISTRY }}/${{ env.IMAGE_NAME }}:${REF_NAME}"
+          echo ""
+          echo "=== DockerHub ==="
+          crane manifest "${{ env.DOCKERHUB_REGISTRY }}/${{ env.IMAGE_NAME }}:${REF_NAME}"

@@ -57,7 +57,7 @@ function importFile(taskContext: TaskContext<"importNotes">, file: File, parentN
     const mime = mimeService.getMime(originalName) || file.mimetype;
     const { note } = noteService.createNewNote({
         parentNoteId: parentNote.noteId,
-        title: getNoteTitle(originalName, mime === "application/pdf"),
+        title: getNoteTitle(originalName, mime === "application/pdf", { mime }),
         content: file.buffer,
         isProtected: parentNote.isProtected && protectedSessionService.isProtectedSessionAvailable(),
         type: "file",
