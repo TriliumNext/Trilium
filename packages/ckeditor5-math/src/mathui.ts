@@ -84,7 +84,7 @@ export default class MathUI extends Plugin {
 			},
 			mathConfig.enablePreview,
 			mathConfig.popupClassName!,
-			mathConfig.disableMathField
+			mathConfig.enableMathField
 		);
 
 		formView.mathInputView.bind( 'value' ).to( mathCommand, 'value' );

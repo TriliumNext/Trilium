@@ -27,7 +27,7 @@ declare module 'ckeditor5' {
 			className?: string | undefined;
 			forceOutputType?: boolean | undefined;
 			enablePreview?: boolean | undefined;
-			disableMathField?: boolean | undefined;
+			enableMathField?: boolean | undefined;
 			previewClassName?: Array<string> | undefined;
 			popupClassName?: Array<string> | undefined;
 			katexRenderOptions?: Partial<KatexOptions> | undefined;
