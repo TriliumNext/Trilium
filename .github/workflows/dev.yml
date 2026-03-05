@@ -37,8 +37,14 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Run the unit tests
-        run: pnpm run test:all
+      - name: Run the client-side tests
+        run: pnpm run --filter=client test
+
+      - name: Run the server-side tests
+        run: pnpm run --filter=server test
+
+      - name: Run the rest of the tests
+        run: "pnpm run --filter=!client --filter=!server test"
 
   build_docker:
     name: Build Docker image
