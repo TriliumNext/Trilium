@@ -3,7 +3,6 @@
 import { View, type Locale, type FocusableView } from 'ckeditor5';
 import 'mathlive/fonts.css'; // Auto-bundles offline fonts
 import 'mathlive/static.css'; // Static styles for mathlive
-import katex from 'katex';
 
 declare global {
 	interface Window {
@@ -15,6 +14,9 @@ declare global {
 			removeEventListener: ( event: string, cb: () => void ) => void;
 		};
 		mathShortcuts?: Record<string, string>;
+		katex?: {
+			renderToString: ( expression: string, options?: { throwOnError?: boolean } ) => string;
+		};
 	}
 }
 
@@ -264,7 +266,10 @@ export default class MathInputView extends View {
 		}
 
 		try {
-			katex.renderToString( trimmed, { throwOnError: true } );
+			if ( !window.katex ) {
+				return true;
+			}
+			window.katex.renderToString( trimmed, { throwOnError: true } );
 			return true;
 		} catch {
 			return false;
