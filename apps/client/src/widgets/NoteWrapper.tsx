@@ -16,6 +16,8 @@ import SpacerWidget from "./launch_bar/SpacerWidget";
 import InlineTitle from "./layout/InlineTitle";
 import NoteBadges from "./layout/NoteBadges";
 import NoteTitleActions from "./layout/NoteTitleActions";
+import MobileDetailMenu from "./mobile_widgets/mobile_detail_menu";
+import ToggleSidebarButton from "./mobile_widgets/toggle_sidebar_button";
 import NoteIcon from "./note_icon";
 import NoteTitleWidget from "./note_title";
 import NoteDetail from "./NoteDetail";
@@ -26,10 +28,12 @@ import Ribbon from "./ribbon/Ribbon";
 import ScrollPadding from "./scroll_padding";
 import SearchResult from "./search_result";
 import SharedInfo from "./shared_info";
+import MobileEditorToolbar from "./type_widgets/text/mobile_editor_toolbar";
 import WatchedFileUpdateStatusWidget from "./watched_file_update_status";
 
 const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 const cachedIsDesktop = isDesktop();
+const cachedIsMobile = !cachedIsDesktop;
 
 export default function NoteWrapper() {
     return (
@@ -57,6 +61,7 @@ export default function NoteWrapper() {
                 <ScrollPadding />
             </ScrollingContainer>
             <ApiLog />
+            {cachedIsMobile && <MobileEditorToolbar />}
             <LegacyWidgetRenderer widget={new FindWidget()} />
         </div>
     );
@@ -65,19 +70,26 @@ export default function NoteWrapper() {
 function TitleRow() {
     return (
         <div className="component title-row note-split-title">
+            {cachedIsMobile && <ToggleSidebarButton />}
             <NoteIcon />
             <NoteTitleWidget />
             {isNewLayout && <NoteBadges />}
-            <SpacerWidget baseSize={0} growthFactor={1} />
-            {!isNewLayout ? (
+            {cachedIsDesktop ? (
                 <>
-                    <MovePaneButton direction="left" />
-                    <MovePaneButton direction="right" />
-                    <ClosePaneButton />
-                    <CreatePaneButton />
+                    <SpacerWidget baseSize={0} growthFactor={1} />
+                    {!isNewLayout ? (
+                        <>
+                            <MovePaneButton direction="left" />
+                            <MovePaneButton direction="right" />
+                            <ClosePaneButton />
+                            <CreatePaneButton />
+                        </>
+                    ) : (
+                        <NoteActions />
+                    )}
                 </>
             ) : (
-                <NoteActions />
+                <MobileDetailMenu />
             )}
         </div>
     );
