@@ -4,6 +4,7 @@
     overflow: auto;
     scroll-behavior: smooth;
     position: relative;
+    flex-grow: 1;
 
     > .note-detail > .note-detail-editable-text > .note-detail-editable-text-editor,
     > .note-list-widget:not(.full-height) .note-list-wrapper {
