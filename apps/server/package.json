@@ -108,7 +108,7 @@
     "lorem-ipsum": "2.0.8",
     "marked": "17.0.3",
     "mime-types": "3.0.2",
-    "multer": "2.1.0",
+    "multer": "2.1.1",
     "normalize-strings": "1.1.1",
     "rand-token": "1.0.1",
     "safe-compare": "1.1.4",
