@@ -23,13 +23,14 @@ export default class MainFormView extends View {
 		locale: Locale,
 		mathViewOptions: MathViewOptions,
 		previewEnabled = false,
-		popupClassName: Array<string> = []
+		popupClassName: Array<string> = [],
+		disableMathField = false
 	) {
 		super( locale );
 		const t = locale.t;
 
 		// Create views
-		this.mathInputView = new MathInputView( locale );
+		this.mathInputView = new MathInputView( locale, disableMathField );
 		this.saveButtonView = this._createButton( t( 'Save' ), IconCheck, 'ck-button-save', 'submit' );
 		this.cancelButtonView = this._createButton( t( 'Cancel' ), IconCancel, 'ck-button-cancel' );
 		this.cancelButtonView.delegate( 'execute' ).to( this, 'cancel' );

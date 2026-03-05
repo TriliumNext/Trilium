@@ -15,7 +15,6 @@ declare global {
 			removeEventListener: ( event: string, cb: () => void ) => void;
 		};
 		mathShortcuts?: Record<string, string>;
-		mathDisableMathField?: boolean;
 	}
 }
 
@@ -67,10 +66,12 @@ export default class MathInputView extends View {
 	private _destroyed = false;
 	private _vkGeometryHandler?: () => void;
 	private _updating = false;
+	private _disableMathField: boolean;
 	private static _configured = false;
 
-	constructor( locale: Locale ) {
+	constructor( locale: Locale, disableMathField = false ) {
 		super( locale );
+		this._disableMathField = disableMathField;
 		this.latexTextAreaView = new LatexTextAreaView( locale );
 		this.mathFieldFocusableView = new MathFieldFocusableView( locale, this );
 		this.set( 'value', null );
@@ -152,7 +153,7 @@ export default class MathInputView extends View {
 		if ( textarea.value !== initial ) {
 			textarea.value = initial;
 		}
-		if ( window.mathDisableMathField ) {
+		if ( this._disableMathField ) {
 			const container = this.element?.querySelector( '.ck-mathlive-container' ) as HTMLElement | null;
 			if ( container ) {
 				container.style.display = 'none';
@@ -191,7 +192,7 @@ export default class MathInputView extends View {
 
 	// Initializes the <math-field> element
 	private _initMathField( shouldFocus: boolean ): void {
-		if ( window.mathDisableMathField ) {
+		if ( this._disableMathField ) {
 			return;
 		}
 		const container = this.element?.querySelector( '.ck-mathlive-container' );
