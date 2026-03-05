@@ -15,6 +15,7 @@ declare global {
 			removeEventListener: ( event: string, cb: () => void ) => void;
 		};
 		mathShortcuts?: Record<string, string>;
+		mathDisableMathField?: boolean;
 	}
 }
 
@@ -151,7 +152,14 @@ export default class MathInputView extends View {
 		if ( textarea.value !== initial ) {
 			textarea.value = initial;
 		}
-		this._loadMathLive();
+		if ( window.mathDisableMathField ) {
+			const container = this.element?.querySelector( '.ck-mathlive-container' ) as HTMLElement | null;
+			if ( container ) {
+				container.style.display = 'none';
+			}
+		} else {
+			this._loadMathLive();
+		}
 	}
 
 	// Loads the MathLive library dynamically
@@ -183,6 +191,9 @@ export default class MathInputView extends View {
 
 	// Initializes the <math-field> element
 	private _initMathField( shouldFocus: boolean ): void {
+		if ( window.mathDisableMathField ) {
+			return;
+		}
 		const container = this.element?.querySelector( '.ck-mathlive-container' );
 		if ( !container ) {
 			return;
@@ -276,7 +287,11 @@ export default class MathInputView extends View {
 	}
 
 	public focus(): void {
-		this.mathfield?.focus();
+		if ( this.mathfield ) {
+			this.mathfield.focus();
+		} else {
+			this.latexTextAreaView.focus();
+		}
 	}
 
 	public override destroy(): void {
