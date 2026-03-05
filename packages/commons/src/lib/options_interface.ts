@@ -131,7 +131,7 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteCompletionEnabled: boolean;
     /** Whether keyboard auto-completion for editing commands is triggered when typing `/`. */
     textNoteSlashCommandsEnabled: boolean;
-    mathDisableMathField: boolean;
+    mathEnableMathField: boolean;
     backgroundEffects: boolean;
     newLayout: boolean;
 

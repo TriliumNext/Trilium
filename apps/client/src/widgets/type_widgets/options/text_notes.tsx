@@ -76,7 +76,7 @@ function FormattingToolbar() {
 function EditorFeatures() {
     return (
         <OptionsSection title={t("editorfeatures.title")}>
-            <EditorFeature name="mathlive-enabled" optionName="mathDisableMathField" label={t("editorfeatures.mathlive_enabled")} description={t("editorfeatures.mathlive_enabled_description")} inverse />
+            <EditorFeature name="mathlive-enabled" optionName="mathEnableMathField" label={t("editorfeatures.mathlive_enabled")} description={t("editorfeatures.mathlive_enabled_description")} />
             <EditorFeature name="emoji-completion-enabled" optionName="textNoteEmojiCompletionEnabled" label={t("editorfeatures.emoji_completion_enabled")} description={t("editorfeatures.emoji_completion_description")} />
             <EditorFeature name="note-completion-enabled" optionName="textNoteCompletionEnabled" label={t("editorfeatures.note_completion_enabled")} description={t("editorfeatures.note_completion_description")} />
             <EditorFeature name="slash-commands-enabled" optionName="textNoteSlashCommandsEnabled" label={t("editorfeatures.slash_commands_enabled")} description={t("editorfeatures.slash_commands_description")} />
@@ -84,14 +84,13 @@ function EditorFeatures() {
     );
 }
 
-function EditorFeature({ optionName, name, label, description, inverse = false }: { optionName: OptionNames, name: string, label: string, description: string, inverse?: boolean }) {
+function EditorFeature({ optionName, name, label, description }: { optionName: OptionNames, name: string, label: string, description: string }) {
     const [ featureEnabled, setFeatureEnabled ] = useTriliumOptionBool(optionName);
 
     return (
         <FormCheckbox
             name={name} label={label}
-            currentValue={inverse ? !featureEnabled : featureEnabled}
-            onChange={value => setFeatureEnabled(inverse ? !value : value)}
+            currentValue={featureEnabled} onChange={setFeatureEnabled}
             hint={description}
         />
     );
