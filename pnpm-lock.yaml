@@ -1132,9 +1132,6 @@ importers:
       '@ckeditor/ckeditor5-icons':
         specifier: 47.4.0
         version: 47.4.0
-      katex:
-        specifier: 0.16.33
-        version: 0.16.33
       mathlive:
         specifier: 0.109.0
         version: 0.109.0
