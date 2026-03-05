@@ -14,6 +14,7 @@ declare global {
 			addEventListener: ( event: string, cb: () => void ) => void;
 			removeEventListener: ( event: string, cb: () => void ) => void;
 		};
+		mathShortcuts?: Record<string, string>;
 	}
 }
 
@@ -199,7 +200,11 @@ export default class MathInputView extends View {
 		// Set shortcuts after mounting (accessing inlineShortcuts requires mounted element)
 		try {
 			if ( mf.inlineShortcuts ) {
-				mf.inlineShortcuts = { ...mf.inlineShortcuts, dx: 'dx', dy: 'dy', dt: 'dt' };
+				mf.inlineShortcuts = {
+					...mf.inlineShortcuts,
+					dx: 'dx', dy: 'dy', dt: 'dt',
+					...( window.mathShortcuts || {} )
+				};
 			}
 		} catch {
 			// Inline shortcut configuration is optional; ignore failures to avoid breaking the math field.
