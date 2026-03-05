@@ -1,0 +1,16 @@
+.component.note-split {
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+    contain: none;
+
+    > .title-row {
+        display: flex;
+        flex-direction: row;
+        contain: none;
+    }
+}
+
+body.desktop .component.note-split > .title-row > * {
+    margin: 5px;
+}

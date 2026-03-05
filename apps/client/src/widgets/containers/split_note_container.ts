@@ -1,9 +1,12 @@
+import { VNode } from "preact";
+
 import appContext, { type CommandData, type CommandListenerData, type EventData, type EventNames, type NoteSwitchedContext } from "../../components/app_context.js";
 import Component from "../../components/component.js";
 import NoteContext from "../../components/note_context.js";
 import splitService from "../../services/resizer.js";
 import { isMobile } from "../../services/utils.js";
 import type BasicWidget from "../basic_widget.js";
+import { wrapReactWidgets } from "../basic_widget.js";
 import NoteContextAwareWidget from "../note_context_aware_widget.js";
 import FlexContainer from "./flex_container.js";
 
@@ -12,7 +15,7 @@ interface SplitNoteWidget extends BasicWidget {
     ntxId?: string;
 }
 
-type WidgetFactory = () => SplitNoteWidget;
+type WidgetFactory = () => (SplitNoteWidget | VNode);
 
 export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
 
@@ -31,7 +34,7 @@ export default class SplitNoteContainer extends FlexContainer<SplitNoteWidget> {
     }
 
     async newNoteContextCreatedEvent({ noteContext }: EventData<"newNoteContextCreated">) {
-        const widget = this.widgetFactory();
+        const widget = wrapReactWidgets([ this.widgetFactory() ])[0];
 
         const $renderedWidget = widget.render();
 
