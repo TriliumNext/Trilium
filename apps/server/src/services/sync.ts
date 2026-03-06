@@ -446,15 +446,17 @@ function getOutstandingPullCount() {
     return outstandingPullCount;
 }
 
-becca_loader.beccaLoaded.then(() => {
-    setInterval(cls.wrap(sync), 60000);
+export function startSyncTimer() {
+    becca_loader.beccaLoaded.then(() => {
+        setInterval(cls.wrap(sync), 60000);
 
-    // kickoff initial sync immediately, but should happen after initial consistency checks
-    setTimeout(cls.wrap(sync), 5000);
+        // kickoff initial sync immediately, but should happen after initial consistency checks
+        setTimeout(cls.wrap(sync), 5000);
 
-    // called just so ws.setLastSyncedPush() is called
-    getLastSyncedPush();
-});
+        // called just so ws.setLastSyncedPush() is called
+        getLastSyncedPush();
+    });
+}
 
 export default {
     sync,

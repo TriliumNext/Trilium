@@ -50,7 +50,7 @@ async function initDbConnection() {
 
     await migrationService.migrateIfNecessary();
 
-    sql.execute('CREATE TEMP TABLE "param_list" (`paramId` TEXT NOT NULL PRIMARY KEY)');
+    sql.execute('CREATE TEMP TABLE IF NOT EXISTS "param_list" (`paramId` TEXT NOT NULL PRIMARY KEY)');
 
     sql.execute(`
     CREATE TABLE IF NOT EXISTS "user_data"

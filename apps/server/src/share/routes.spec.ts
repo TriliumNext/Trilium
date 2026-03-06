@@ -1,6 +1,6 @@
 import type { Application, NextFunction,Request, Response } from "express";
 import supertest from "supertest";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { safeExtractMessageAndStackFromError } from "../services/utils.js";
 
@@ -21,6 +21,10 @@ describe("Share API test", () => {
 
             next();
         });
+    });
+
+    afterAll(() => {
+        vi.useRealTimers();
     });
 
     beforeEach(() => {

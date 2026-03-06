@@ -86,8 +86,9 @@ export default async function buildApp() {
     app.use(`/robots.txt`, express.static(path.join(publicAssetsDir, "robots.txt")));
     app.use(`/icon.png`, express.static(path.join(publicAssetsDir, "icon.png")));
 
-    const sessionParser = (await import("./routes/session_parser.js")).default;
+    const { default: sessionParser, startSessionCleanup } = await import("./routes/session_parser.js");
     app.use(sessionParser);
+    startSessionCleanup();
     app.use(favicon(path.join(assetsDir, isDev ? "icon-dev.ico" : "icon.ico")));
 
     if (openID.isOpenIDEnabled())
@@ -98,16 +99,16 @@ export default async function buildApp() {
     custom.register(app);
     error_handlers.register(app);
 
-    // triggers sync timer
-    await import("./services/sync.js");
+    const { startSyncTimer } = await import("./services/sync.js");
+    startSyncTimer();
 
-    // triggers backup timer
     await import("./services/backup.js");
 
-    // trigger consistency checks timer
-    await import("./services/consistency_checks.js");
+    const { startConsistencyChecks } = await import("./services/consistency_checks.js");
+    startConsistencyChecks();
 
-    await import("./services/scheduler.js");
+    const { startScheduler } = await import("./services/scheduler.js");
+    startScheduler();
 
     startScheduledCleanup();
 
