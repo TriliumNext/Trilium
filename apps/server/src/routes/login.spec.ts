@@ -2,7 +2,7 @@ import { dayjs } from "@triliumnext/commons";
 import type { Application } from "express";
 import { SessionData } from "express-session";
 import supertest, { type Response } from "supertest";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 import cls from "../services/cls.js";
 import { type SQLiteSessionStore } from "./session_parser.js";
@@ -18,6 +18,10 @@ describe("Login Route test", () => {
         const buildApp = (await import("../app.js")).default;
         app = await buildApp();
         ({ sessionStore, CLEAN_UP_INTERVAL } = (await import("./session_parser.js")));
+    });
+
+    afterAll(() => {
+        vi.useRealTimers();
     });
 
     it("should return the login page, when using a GET request", async () => {

@@ -113,11 +113,13 @@ const sessionParser: express.RequestHandler = session({
     store: sessionStore
 });
 
-setInterval(() => {
-    // Clean up expired sesions.
-    const now = Date.now();
-    const result = sql.execute(/*sql*/`DELETE FROM sessions WHERE expires < ?`, now);
-    console.log("Cleaning up expired sessions: ", result.changes);
-}, CLEAN_UP_INTERVAL);
+export function startSessionCleanup() {
+    setInterval(() => {
+        // Clean up expired sessions.
+        const now = Date.now();
+        const result = sql.execute(/*sql*/`DELETE FROM sessions WHERE expires < ?`, now);
+        console.log("Cleaning up expired sessions: ", result.changes);
+    }, CLEAN_UP_INTERVAL);
+}
 
 export default sessionParser;
