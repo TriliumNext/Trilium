@@ -12,7 +12,7 @@
         "get_started": "Начало работы",
         "github": "GitHub",
         "dockerhub": "Docker Hub",
-        "screenshot_alt": "Скриншот приложения Trilium Notes для ПК"
+        "screenshot_alt": "Скриншот приложения Trilium Notes для настольного приложения"
     },
     "organization_benefits": {
         "title": "Структура",
@@ -202,6 +202,7 @@
         "title": "Ресурсы",
         "icon_packs": "Наборы иконок",
         "download": "Скачать",
-        "website": "Сайт"
+        "website": "Сайт",
+        "icon_packs_intro": "Расширьте выбор значков для заметок, используя набор иконок. Подробнее о наборах иконок смотрите в <DocumentationLink>официальной документации</DocumentationLink>."
     }
 }

@@ -600,7 +600,8 @@
     "task-list": "タスクリスト",
     "new-feature": "New",
     "collections": "コレクション",
-    "ai-chat": "AI チャット"
+    "ai-chat": "AI チャット",
+    "spreadsheet": "スプレッドシート"
   },
   "edited_notes": {
     "no_edited_notes_found": "この日の編集されたノートはまだありません...",

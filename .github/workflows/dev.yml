@@ -90,7 +90,7 @@ jobs:
       - name: Trigger server build
         run: pnpm run server:build
       - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: apps/server
           cache-from: type=gha
@@ -127,7 +127,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build and export to Docker
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: apps/server
           file: apps/server/${{ matrix.dockerfile }}
