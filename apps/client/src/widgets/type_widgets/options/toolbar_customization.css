@@ -1,145 +1,208 @@
 .toolbar-editor {
     display: flex;
     flex-direction: column;
+    gap: 10px;
+}
+
+/* ── Two-column layout ────────────────────────────────────────────────── */
+
+.toolbar-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 12px;
+    align-items: start;
 }
 
-/* ── Current toolbar ──────────────────────────────────────────────────── */
-
-.toolbar-current {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 4px;
-    min-height: 48px;
-    padding: 8px;
-    border: 1px solid var(--main-border-color);
-    border-radius: var(--bs-border-radius);
-    background: var(--accented-background-color);
+@media (max-width: 700px) {
+    .toolbar-columns {
+        grid-template-columns: 1fr;
+    }
 }
 
-/* ── Chips ────────────────────────────────────────────────────────────── */
+/* ── Panel (shared by both columns) ──────────────────────────────────── */
 
-.toolbar-chip-wrapper {
-    position: relative;
+.toolbar-panel {
     display: flex;
     flex-direction: column;
-    gap: 2px;
-}
-
-.toolbar-chip-wrapper.drop-before::before {
-    content: "";
-    position: absolute;
-    left: -3px;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    border-radius: 2px;
-    background: var(--main-text-color);
-    pointer-events: none;
-}
-
-.toolbar-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    padding: 3px 6px;
+    gap: 6px;
     border: 1px solid var(--main-border-color);
-    border-radius: var(--bs-border-radius-sm);
-    background: var(--button-background-color);
-    font-size: 0.82rem;
-    cursor: default;
-    user-select: none;
-    white-space: nowrap;
+    border-radius: var(--bs-border-radius);
+    overflow: hidden;
 }
 
-.toolbar-chip[draggable="true"] {
+.toolbar-panel-header {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--accented-background-color);
+    border-bottom: 1px solid var(--main-border-color);
+    color: var(--muted-text-color);
+}
+
+/* ── Vertical item list ───────────────────────────────────────────────── */
+
+.toolbar-list {
+    display: flex;
+    flex-direction: column;
+    min-height: 60px;
+}
+
+.toolbar-list.available-list {
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+/* ── A single row ─────────────────────────────────────────────────────── */
+
+.toolbar-row-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.toolbar-row-wrapper.drop-above > .toolbar-row:first-child {
+    border-top: 2px solid var(--main-text-color);
+}
+
+.toolbar-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--main-border-color);
+    user-select: none;
+    min-height: 32px;
+    cursor: default;
+}
+
+.toolbar-row:last-child {
+    border-bottom: none;
+}
+
+.toolbar-row[draggable="true"] {
     cursor: grab;
 }
 
-.toolbar-chip[draggable="true"]:active {
+.toolbar-row[draggable="true"]:active {
     cursor: grabbing;
 }
 
-.toolbar-chip.separator {
+/* Group header row */
+.toolbar-row.group-header {
+    background: var(--accented-background-color);
+    font-weight: 600;
+}
+
+/* Separator row */
+.toolbar-row.separator {
     color: var(--muted-text-color);
-    padding-inline: 10px;
-    letter-spacing: 2px;
+    font-size: 0.78rem;
+    font-style: italic;
+    justify-content: center;
+    padding-block: 3px;
 }
 
-.toolbar-chip.group {
-    border-style: dashed;
-    font-weight: 500;
+/* Sub-item row (inside an expanded group) */
+.toolbar-row.sub {
+    padding-left: 28px;
+    background: var(--more-accented-background-color);
+    font-size: 0.82rem;
 }
 
-.toolbar-chip.sub {
-    position: relative;
-    font-size: 0.8rem;
+.toolbar-row.sub.drop-above {
+    border-top: 2px solid var(--main-text-color);
 }
+
+/* Available-item row */
+.toolbar-row.available {
+    cursor: pointer;
+}
+
+.toolbar-row.available:hover {
+    background: var(--hover-item-background-color);
+}
+
+/* ── Row internals ────────────────────────────────────────────────────── */
 
 .drag-handle {
     color: var(--muted-text-color);
     font-size: 1rem;
-    cursor: grab;
     flex-shrink: 0;
+    cursor: grab;
 }
 
-.chip-label {
+.row-label {
     flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     pointer-events: none;
 }
 
-.chip-btn {
+.row-add-icon {
+    color: var(--muted-text-color);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.toolbar-row.available:hover .row-add-icon {
+    color: var(--main-text-color);
+}
+
+.row-btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border: none;
     background: transparent;
-    padding: 0 2px;
+    padding: 2px;
     cursor: pointer;
     color: var(--muted-text-color);
     line-height: 1;
     font-size: 1rem;
     border-radius: 2px;
+    flex-shrink: 0;
 }
 
-.chip-btn:hover {
+.row-btn:hover {
     color: var(--main-text-color);
     background: var(--hover-item-background-color);
 }
 
-.chip-remove:hover {
+.row-btn.remove:hover {
     color: var(--danger-text-color, #dc3545);
 }
 
-/* ── Group panel ──────────────────────────────────────────────────────── */
+/* ── Expanded group panel ─────────────────────────────────────────────── */
 
-.toolbar-group-panel {
+.group-expanded {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 8px;
-    border: 1px dashed var(--main-border-color);
-    border-top: none;
-    border-radius: 0 0 var(--bs-border-radius-sm) var(--bs-border-radius-sm);
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+.group-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px 6px 28px;
     background: var(--more-accented-background-color);
-    min-width: 160px;
+    border-bottom: 1px solid var(--main-border-color);
 }
 
-.toolbar-group-panel .form-label {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    font-size: 0.8rem;
+.group-name-label {
+    font-size: 0.78rem;
     font-weight: 500;
-    margin: 0;
+    color: var(--muted-text-color);
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-.toolbar-subchips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    min-height: 28px;
+.group-name-input {
+    flex: 1;
+    max-width: 180px;
 }
 
 /* ── Trash zone ───────────────────────────────────────────────────────── */
@@ -149,43 +212,17 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 8px;
-    border: 2px dashed var(--main-border-color);
-    border-radius: var(--bs-border-radius);
+    padding: 6px 10px;
+    border-top: 1px dashed var(--main-border-color);
     color: var(--muted-text-color);
-    font-size: 0.85rem;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    font-size: 0.82rem;
+    transition: background 0.12s, color 0.12s;
 }
 
 .toolbar-trash.active {
-    border-color: var(--danger-text-color, #dc3545);
-    background: color-mix(in srgb, var(--danger-text-color, #dc3545) 10%, transparent);
+    background: color-mix(in srgb, var(--danger-text-color, #dc3545) 12%, transparent);
     color: var(--danger-text-color, #dc3545);
-}
-
-/* ── Available items pool ─────────────────────────────────────────────── */
-
-.toolbar-pool-section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.toolbar-pool-label {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--muted-text-color);
-}
-
-.toolbar-pool {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-}
-
-.toolbar-pool-btn {
-    font-size: 0.8rem;
-    padding: 2px 8px;
+    border-color: var(--danger-text-color, #dc3545);
 }
 
 /* ── Action bar ───────────────────────────────────────────────────────── */
@@ -194,15 +231,21 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 6px;
-    padding-top: 4px;
+    gap: 5px;
+    padding: 6px 8px;
+    border-top: 1px solid var(--main-border-color);
+    background: var(--accented-background-color);
 }
 
 /* ── Misc ─────────────────────────────────────────────────────────────── */
 
 .toolbar-empty-hint {
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     color: var(--muted-text-color);
-    align-self: center;
-    padding: 4px 8px;
+    padding: 8px 10px;
+    font-style: italic;
+}
+
+.toolbar-empty-hint.indented {
+    padding-left: 28px;
 }
