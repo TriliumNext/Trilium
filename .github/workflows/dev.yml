@@ -41,7 +41,7 @@ jobs:
         run: pnpm run --filter=client test
 
       - name: Upload client test report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: client-test-report
@@ -52,7 +52,7 @@ jobs:
         run: pnpm run --filter=server test
 
       - name: Upload server test report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: server-test-report
