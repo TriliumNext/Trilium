@@ -11311,10 +11311,6 @@ packages:
     engines: {node: '>= 10'}
     hasBin: true
 
-  katex@0.16.33:
-    resolution: {integrity: sha512-q3N5u+1sY9Bu7T4nlXoiRBXWfwSefNGoKeOwekV+gw0cAXQlz2Ww6BLcmBxVDeXBMUDQv6fK5bcNaJLxob3ZQA==}
-    hasBin: true
-
   katex@0.16.38:
     resolution: {integrity: sha512-cjHooZUmIAUmDsHBN+1n8LaZdpmbj03LtYeYPyuYB7OuloiaeaV6N4LcfjcnHVzGWjVQmKrxxTrpDcmSzEZQwQ==}
     hasBin: true
@@ -29860,10 +29856,6 @@ snapshots:
       - debug
       - supports-color
       - utf-8-validate
-
-  katex@0.16.33:
-    dependencies:
-      commander: 8.3.0
 
   katex@0.16.38:
     dependencies:

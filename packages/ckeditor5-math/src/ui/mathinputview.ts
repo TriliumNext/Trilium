@@ -14,9 +14,6 @@ declare global {
 			removeEventListener: ( event: string, cb: () => void ) => void;
 		};
 		mathShortcuts?: Record<string, string>;
-		katex?: {
-			renderToString: ( expression: string, options?: { throwOnError?: boolean } ) => string;
-		};
 	}
 }
 
@@ -105,7 +102,7 @@ export default class MathInputView extends View {
 					this.mathfield.remove();
 					this.mathfield = null;
 					this._initMathField( false );
-				} else if ( this.mathfield.value.trim() !== val.trim() && this._isLatexComplete( val ) ) {
+				} else if ( this.mathfield.value.trim() !== val.trim() ) {
 					this._setMathfieldValue( val );
 				}
 			}
@@ -123,7 +120,7 @@ export default class MathInputView extends View {
 				textarea.value = newVal;
 			}
 			if ( this.mathfield ) {
-				if ( this.mathfield.value.trim() !== newVal.trim() && this._isLatexComplete( newVal ) ) {
+				if ( this.mathfield.value.trim() !== newVal.trim() ) {
 					this._setMathfieldValue( newVal );
 				}
 			} else if ( newVal !== '' ) {
@@ -214,11 +211,9 @@ export default class MathInputView extends View {
 		// Set shortcuts after mounting (accessing inlineShortcuts requires mounted element)
 		try {
 			if ( mf.inlineShortcuts ) {
-				mf.inlineShortcuts = {
-					...mf.inlineShortcuts,
-					dx: 'dx', dy: 'dy', dt: 'dt',
-					...( window.mathShortcuts || {} )
-				};
+				const customShortcuts: Record<string, string> = {};
+				document.dispatchEvent( new CustomEvent( 'mathlive:custom-shortcuts', { detail: customShortcuts } ) );
+				mf.inlineShortcuts = { ...mf.inlineShortcuts, dx: 'dx', dy: 'dy', dt: 'dt', ...customShortcuts };
 			}
 		} catch {
 			// Inline shortcut configuration is optional; ignore failures to avoid breaking the math field.
@@ -251,28 +246,6 @@ export default class MathInputView extends View {
 		this.fire( 'mathfieldReady' );
 		if ( shouldFocus ) {
 			requestAnimationFrame( () => mf.focus() );
-		}
-	}
-
-	// Returns true if LaTeX is syntactically valid and does not contain empty braces.
-	private _isLatexComplete( latex: string ): boolean {
-		const trimmed = latex.trim();
-		if ( trimmed === '' ) {
-			return true;
-		}
-
-		if ( /\{\s*\}/.test( trimmed ) ) {
-			return false;
-		}
-
-		try {
-			if ( !window.katex ) {
-				return true;
-			}
-			window.katex.renderToString( trimmed, { throwOnError: true } );
-			return true;
-		} catch {
-			return false;
 		}
 	}
 

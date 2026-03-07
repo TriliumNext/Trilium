@@ -1,0 +1,67 @@
+diff --git a/mathlive.js b/mathlive.js
+index 2c1c90a0963e0e02d311be907c471a5bb3a171ad..03703507ef82b112b8e133307b7bdfd341d78f41 100644
+--- a/mathlive.js
++++ b/mathlive.js
+@@ -38998,9 +38998,9 @@ data-command='["setEnvironment","pmatrix"]'>
+     if (offset < first || offset > last) return false;
+     if (!atom.hasChildren) return true;
+     const firstChild = includeFirstAtoms ? atom.firstChild : firstNonFirstChild(atom);
+-    if (!firstChild) return false;
++    if (!firstChild) return true;
+     const lastChild = includeFirstAtoms ? atom.lastChild : lastNonFirstChild(atom);
+-    if (!lastChild) return false;
++    if (!lastChild) return true;
+     const firstOffset = model.offsetOf(firstChild);
+     if (firstOffset >= first && firstOffset <= last) {
+       const lastOffset = model.offsetOf(lastChild);
+diff --git a/mathlive.mjs b/mathlive.mjs
+index 16bde454e19b5e83bbc60cd98f0bd1ea5e2359b1..72a64a4f4feb646d89d9b9b2ec331f608a012d20 100644
+--- a/mathlive.mjs
++++ b/mathlive.mjs
+@@ -38958,9 +38958,9 @@ function atomIsInRange(model, atom, first, last, includeFirstAtoms) {
+   if (offset < first || offset > last) return false;
+   if (!atom.hasChildren) return true;
+   const firstChild = includeFirstAtoms ? atom.firstChild : firstNonFirstChild(atom);
+-  if (!firstChild) return false;
++  if (!firstChild) return true;
+   const lastChild = includeFirstAtoms ? atom.lastChild : lastNonFirstChild(atom);
+-  if (!lastChild) return false;
++  if (!lastChild) return true;
+   const firstOffset = model.offsetOf(firstChild);
+   if (firstOffset >= first && firstOffset <= last) {
+     const lastOffset = model.offsetOf(lastChild);
+diff --git a/package.json b/package.json
+index 343841095cbfcb883d0530ae77809db996a206db..a9aee5cf1f66a8504d82b4c66f412742b284b814 100644
+--- a/package.json
++++ b/package.json
+@@ -29,7 +29,7 @@
+     "mathquill"
+   ],
+   "main": "./mathlive.min.js",
+-  "module": "./mathlive.min.mjs",
++  "module": "./mathlive.mjs",
+   "types": "./types/mathlive.d.ts",
+   "exports": {
+     "./vue": "./vue-mathlive.mjs",
+@@ -39,8 +39,8 @@
+       "browser": {
+         "production": {
+           "types": "./types/mathlive.d.ts",
+-          "import": "./mathlive.min.mjs",
+-          "require": "./mathlive.min.js"
++          "import": "./mathlive.mjs",
++          "require": "./mathlive.js"
+         },
+         "development": {
+           "types": "./types/mathlive.d.ts",
+@@ -54,8 +54,8 @@
+       },
+       "default": {
+         "types": "./types/mathlive.d.ts",
+-        "import": "./mathlive.min.mjs",
+-        "require": "./mathlive.min.js"
++        "import": "./mathlive.mjs",
++        "require": "./mathlive.js"
+       }
+     },
+     "./ssr": {
