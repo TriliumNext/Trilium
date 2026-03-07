@@ -24,7 +24,7 @@
     "ckeditor5-metadata.json"
   ],
   "devDependencies": {
-    "@ckeditor/ckeditor5-dev-build-tools": "54.3.3",
+    "@ckeditor/ckeditor5-dev-build-tools": "54.3.4",
     "@ckeditor/ckeditor5-inspector": ">=4.1.0",
     "@ckeditor/ckeditor5-package-tools": "5.0.1",
     "@typescript-eslint/eslint-plugin": "8.56.1",
@@ -70,7 +70,7 @@
     ]
   },
   "dependencies": {
-    "@ckeditor/ckeditor5-icons": "47.4.0",
+    "@ckeditor/ckeditor5-icons": "47.6.0",
     "mathlive": "0.108.3"
   }
 }
