@@ -1955,7 +1955,7 @@
   "editorfeatures": {
     "title": "Features",
     "mathlive_enabled": "Enable MathLive visual editor",
-    "mathlive_enabled_description": "If disabled, math editing uses only the LaTeX text area.",
+    "mathlive_description": "If enabled, math equations can be edited using a visual editor.",
     "emoji_completion_enabled": "Enable Emoji auto-completion",
     "emoji_completion_description": "If enabled, emojis can be easily inserted into text by typing `:`, followed by the name of an emoji.",
     "note_completion_enabled": "Enable note auto-completion",
