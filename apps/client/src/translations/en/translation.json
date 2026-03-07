@@ -1933,6 +1933,24 @@
     "continue_anyway": "Continue Anyway",
     "dont_show_again": "Don't show this warning again"
   },
+  "toolbar_customization": {
+    "title": "Toolbar items",
+    "description": "Customize the classic editor toolbar. Drag items to reorder, click available items to add them, or drag to the trash zone to remove.",
+    "available_items": "Available items — click to add",
+    "add_to_group": "Click an item to add it to the group",
+    "add_separator": "Add separator",
+    "separator_hint": "Adds a visual divider between toolbar items",
+    "add_group": "Add group",
+    "new_group_label": "Group",
+    "group_name": "Group name",
+    "group_empty": "No items — click an available item above to add",
+    "expand_group": "Edit group items",
+    "collapse_group": "Collapse group",
+    "remove_item": "Remove",
+    "drop_to_remove": "Drop here to remove",
+    "empty": "No items — click an available item below to add",
+    "reset_default": "Reset to default"
+  },
   "editorfeatures": {
     "title": "Features",
     "emoji_completion_enabled": "Enable Emoji auto-completion",

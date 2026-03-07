@@ -1,0 +1,208 @@
+.toolbar-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ── Current toolbar ──────────────────────────────────────────────────── */
+
+.toolbar-current {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 4px;
+    min-height: 48px;
+    padding: 8px;
+    border: 1px solid var(--main-border-color);
+    border-radius: var(--bs-border-radius);
+    background: var(--accented-background-color);
+}
+
+/* ── Chips ────────────────────────────────────────────────────────────── */
+
+.toolbar-chip-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.toolbar-chip-wrapper.drop-before::before {
+    content: "";
+    position: absolute;
+    left: -3px;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--main-text-color);
+    pointer-events: none;
+}
+
+.toolbar-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px 6px;
+    border: 1px solid var(--main-border-color);
+    border-radius: var(--bs-border-radius-sm);
+    background: var(--button-background-color);
+    font-size: 0.82rem;
+    cursor: default;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.toolbar-chip[draggable="true"] {
+    cursor: grab;
+}
+
+.toolbar-chip[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+.toolbar-chip.separator {
+    color: var(--muted-text-color);
+    padding-inline: 10px;
+    letter-spacing: 2px;
+}
+
+.toolbar-chip.group {
+    border-style: dashed;
+    font-weight: 500;
+}
+
+.toolbar-chip.sub {
+    position: relative;
+    font-size: 0.8rem;
+}
+
+.drag-handle {
+    color: var(--muted-text-color);
+    font-size: 1rem;
+    cursor: grab;
+    flex-shrink: 0;
+}
+
+.chip-label {
+    flex: 1;
+    pointer-events: none;
+}
+
+.chip-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    padding: 0 2px;
+    cursor: pointer;
+    color: var(--muted-text-color);
+    line-height: 1;
+    font-size: 1rem;
+    border-radius: 2px;
+}
+
+.chip-btn:hover {
+    color: var(--main-text-color);
+    background: var(--hover-item-background-color);
+}
+
+.chip-remove:hover {
+    color: var(--danger-text-color, #dc3545);
+}
+
+/* ── Group panel ──────────────────────────────────────────────────────── */
+
+.toolbar-group-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    border: 1px dashed var(--main-border-color);
+    border-top: none;
+    border-radius: 0 0 var(--bs-border-radius-sm) var(--bs-border-radius-sm);
+    background: var(--more-accented-background-color);
+    min-width: 160px;
+}
+
+.toolbar-group-panel .form-label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.toolbar-subchips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    min-height: 28px;
+}
+
+/* ── Trash zone ───────────────────────────────────────────────────────── */
+
+.toolbar-trash {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px;
+    border: 2px dashed var(--main-border-color);
+    border-radius: var(--bs-border-radius);
+    color: var(--muted-text-color);
+    font-size: 0.85rem;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.toolbar-trash.active {
+    border-color: var(--danger-text-color, #dc3545);
+    background: color-mix(in srgb, var(--danger-text-color, #dc3545) 10%, transparent);
+    color: var(--danger-text-color, #dc3545);
+}
+
+/* ── Available items pool ─────────────────────────────────────────────── */
+
+.toolbar-pool-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.toolbar-pool-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--muted-text-color);
+}
+
+.toolbar-pool {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.toolbar-pool-btn {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+}
+
+/* ── Action bar ───────────────────────────────────────────────────────── */
+
+.toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding-top: 4px;
+}
+
+/* ── Misc ─────────────────────────────────────────────────────────────── */
+
+.toolbar-empty-hint {
+    font-size: 0.82rem;
+    color: var(--muted-text-color);
+    align-self: center;
+    padding: 4px 8px;
+}
