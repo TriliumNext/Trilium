@@ -83,6 +83,7 @@ The following attributes can be added to the Collection type:
             <td>
                 <p>Which view to display in the calendar:</p>
                 <ul>
+                    <li data-list-item-id="e2cd230dc41f41fe91ee74d7d1fa87381"><code spellcheck="false">timeGridDay</code> for the <em>day</em> view;</li>
                     <li data-list-item-id="e2cd230dc41f41fe91ee74d7d1fa87372"><code spellcheck="false">timeGridWeek</code> for the <em>week</em> view;</li>
                     <li data-list-item-id="eee1dba4c6cc51ebd53d0a0dd52044cd6"><code spellcheck="false">dayGridMonth</code> for the <em>month</em> view;</li>
                     <li data-list-item-id="ed8721a76a1865dac882415f662ed45b9"><code spellcheck="false">multiMonthYear</code> for the <em>year</em> view;</li>

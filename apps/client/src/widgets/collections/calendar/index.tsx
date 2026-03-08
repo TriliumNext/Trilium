@@ -42,6 +42,13 @@ interface CalendarViewData {
 
 const CALENDAR_VIEWS = [
     {
+        type: "timeGridDay",
+        name: t("calendar.day"),
+        icon: "bx bx-calendar-event",
+        previousText: t("calendar.day_previous"),
+        nextText: t("calendar.day_next")
+    },
+    {
         type: "timeGridWeek",
         name: t("calendar.week"),
         icon: "bx bx-calendar-week",
