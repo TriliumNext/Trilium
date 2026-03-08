@@ -16,6 +16,7 @@
     "circular-deps": "dpdm -T src/**/*.ts --tree=false --warning=false --skip-dynamic-imports=circular"
   },
   "dependencies": {
+    "@algolia/autocomplete-js": "1.19.6",
     "@excalidraw/excalidraw": "0.18.0",
     "@fullcalendar/core": "6.1.20",
     "@fullcalendar/daygrid": "6.1.20",
