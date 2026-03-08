@@ -7,7 +7,6 @@ import ValidationError from "../../errors/validation_error.js";
 import appInfo from "../../services/app_info.js";
 import attributeFormatter from "../../services/attribute_formatter.js";
 import attributeService from "../../services/attributes.js";
-import cloneService from "../../services/cloning.js";
 import dateNoteService from "../../services/date_notes.js";
 import dateUtils from "../../services/date_utils.js";
 import htmlSanitizer from "../../services/html_sanitizer.js";
