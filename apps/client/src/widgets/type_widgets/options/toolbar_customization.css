@@ -1,0 +1,309 @@
+.toolbar-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ── Two-column layout ────────────────────────────────────────────────── */
+
+.toolbar-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: start;
+}
+
+@media (max-width: 700px) {
+    .toolbar-columns {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ── Panel (shared by both columns) ──────────────────────────────────── */
+
+.toolbar-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid var(--main-border-color);
+    border-radius: var(--bs-border-radius);
+    overflow: hidden;
+}
+
+.toolbar-panel-header {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: var(--accented-background-color);
+    border-bottom: 1px solid var(--main-border-color);
+    color: var(--muted-text-color);
+}
+
+/* ── Vertical item list ───────────────────────────────────────────────── */
+
+.toolbar-list {
+    display: flex;
+    flex-direction: column;
+    min-height: 60px;
+}
+
+.toolbar-list.available-list {
+    max-height: 360px;
+    overflow-y: auto;
+}
+
+/* ── A single row ─────────────────────────────────────────────────────── */
+
+.toolbar-row-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+.toolbar-row-wrapper.drop-above > .toolbar-row:first-child {
+    border-top: 2px solid var(--main-text-color);
+}
+
+.toolbar-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    font-size: 0.85rem;
+    border-bottom: 1px solid var(--main-border-color);
+    user-select: none;
+    min-height: 32px;
+    cursor: default;
+}
+
+.toolbar-row:last-child {
+    border-bottom: none;
+}
+
+.toolbar-row[draggable="true"] {
+    cursor: grab;
+}
+
+.toolbar-row[draggable="true"]:active {
+    cursor: grabbing;
+}
+
+/* Group header row */
+.toolbar-row.group-header {
+    background: var(--accented-background-color);
+    font-weight: 600;
+    transition: background 0.12s, outline 0.12s;
+}
+
+/* Drop-into-group highlight: shown when dragging an item over a group header */
+.toolbar-row.group-header.drop-into-group {
+    outline: 2px solid var(--main-text-color);
+    outline-offset: -2px;
+    background: var(--hover-item-background-color);
+}
+
+/* Separator row */
+.toolbar-row.separator {
+    color: var(--muted-text-color);
+    font-size: 0.78rem;
+    font-style: italic;
+    justify-content: center;
+    padding-block: 3px;
+}
+
+/* Sub-item row (inside an expanded group) */
+.toolbar-row.sub {
+    padding-left: 28px;
+    background: var(--more-accented-background-color);
+    font-size: 0.82rem;
+}
+
+.toolbar-row.sub.drop-above {
+    border-top: 2px solid var(--main-text-color);
+}
+
+/* Available-item row */
+.toolbar-row.available {
+    cursor: pointer;
+}
+
+.toolbar-row.available:hover {
+    background: var(--hover-item-background-color);
+}
+
+/* ── Row internals ────────────────────────────────────────────────────── */
+
+.drag-handle {
+    color: var(--muted-text-color);
+    font-size: 1rem;
+    flex-shrink: 0;
+    cursor: grab;
+}
+
+.row-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.row-add-icon {
+    color: var(--muted-text-color);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.toolbar-row.available:hover .row-add-icon {
+    color: var(--main-text-color);
+}
+
+.row-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    padding: 2px;
+    cursor: pointer;
+    color: var(--muted-text-color);
+    line-height: 1;
+    font-size: 1rem;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.row-btn:hover {
+    color: var(--main-text-color);
+    background: var(--hover-item-background-color);
+}
+
+.row-btn.remove:hover {
+    color: var(--danger-text-color, #dc3545);
+}
+
+/* ── Expanded group panel ─────────────────────────────────────────────── */
+
+.group-expanded {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+.group-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px 6px 28px;
+    background: var(--more-accented-background-color);
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+.group-name-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--muted-text-color);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.group-name-input {
+    flex: 1;
+    max-width: 180px;
+}
+
+/* ── Trash zone ───────────────────────────────────────────────────────── */
+
+.toolbar-trash {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-top: 1px dashed var(--main-border-color);
+    color: var(--muted-text-color);
+    font-size: 0.82rem;
+    transition: background 0.12s, color 0.12s;
+}
+
+.toolbar-trash.active {
+    background: rgba(220, 53, 69, 0.12);
+    background: color-mix(in srgb, var(--danger-text-color, #dc3545) 12%, transparent);
+    color: var(--danger-text-color, #dc3545);
+    border-color: var(--danger-text-color, #dc3545);
+}
+
+/* ── Action bar ───────────────────────────────────────────────────────── */
+
+.toolbar-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 8px;
+    border-top: 1px solid var(--main-border-color);
+    background: var(--accented-background-color);
+}
+
+/* ── Save / Discard bar ───────────────────────────────────────────────── */
+
+.toolbar-save-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid var(--main-border-color);
+    border-radius: var(--bs-border-radius);
+    background: var(--accented-background-color);
+    font-size: 0.82rem;
+    margin-bottom: 8px;
+}
+
+.toolbar-save-bar.has-changes {
+    border-color: var(--bs-warning, #ffc107);
+    background: rgba(255, 193, 7, 0.08);
+    background: color-mix(in srgb, var(--bs-warning, #ffc107) 8%, var(--accented-background-color));
+}
+
+.toolbar-save-status {
+    flex: 1;
+    color: var(--muted-text-color);
+}
+
+.toolbar-save-bar.has-changes .toolbar-save-status {
+    color: var(--main-text-color);
+    font-weight: 500;
+}
+
+/* ── Item icons ───────────────────────────────────────────────────────── */
+
+.toolbar-item-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted-text-color);
+}
+
+.toolbar-item-icon svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+    pointer-events: none;
+}
+
+/* ── Misc ─────────────────────────────────────────────────────────────── */
+
+.toolbar-empty-hint {
+    font-size: 0.8rem;
+    color: var(--muted-text-color);
+    padding: 8px 10px;
+    font-style: italic;
+}
+
+.toolbar-empty-hint.indented {
+    padding-left: 28px;
+}

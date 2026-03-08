@@ -22,6 +22,7 @@ import { getHtml } from "../../react/RawHtml";
 import AutoReadOnlySize from "./components/AutoReadOnlySize";
 import CheckboxList from "./components/CheckboxList";
 import OptionsSection from "./components/OptionsSection";
+import ToolbarCustomization from "./toolbar_customization";
 
 const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
@@ -29,6 +30,7 @@ export default function TextNoteSettings() {
     return (
         <>
             <FormattingToolbar />
+            <ToolbarCustomization />
             <EditorFeatures />
             <HeadingStyle />
             <CodeBlockStyle />

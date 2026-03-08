@@ -91,6 +91,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "languages",
     "textNoteEditorType",
     "textNoteEditorMultilineToolbar",
+    "textNoteToolbarConfig",
     "textNoteEmojiCompletionEnabled",
     "textNoteCompletionEnabled",
     "textNoteSlashCommandsEnabled",
