@@ -30,12 +30,11 @@ async function addClipping(req: Request) {
     const { title, content, images } = req.body;
     const clipType = "clippings";
 
-    const clipperInbox = await getClipperInboxNote();
-
     const pageUrl = htmlSanitizer.sanitizeUrl(req.body.pageUrl);
     let clippingNote = findClippingNote(pageUrl, clipType);
 
     if (!clippingNote) {
+        const clipperInbox = await getClipperInboxNote();
         clippingNote = noteService.createNewNote({
             parentNoteId: clipperInbox.noteId,
             title,
