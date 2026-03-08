@@ -13,6 +13,7 @@ import htmlSanitizer from "../../services/html_sanitizer.js";
 import imageService from "../../services/image.js";
 import log from "../../services/log.js";
 import noteService from "../../services/notes.js";
+import searchService from "../../services/search/services/search.js";
 import utils from "../../services/utils.js";
 import ws from "../../services/ws.js";
 
@@ -32,7 +33,7 @@ async function addClipping(req: Request) {
     const clipperInbox = await getClipperInboxNote();
 
     const pageUrl = htmlSanitizer.sanitizeUrl(req.body.pageUrl);
-    let clippingNote = findClippingNote(clipperInbox, pageUrl, clipType);
+    let clippingNote = findClippingNote(pageUrl, clipType);
 
     if (!clippingNote) {
         clippingNote = noteService.createNewNote({
@@ -61,12 +62,12 @@ async function addClipping(req: Request) {
     };
 }
 
-function findClippingNote(clipperInboxNote: BNote, pageUrl: string, clipType: string | null) {
+function findClippingNote(pageUrl: string, clipType: string | null) {
     if (!pageUrl) {
         return null;
     }
 
-    const notes = clipperInboxNote.searchNotesInSubtree(
+    const notes = searchService.searchNotes(
         attributeFormatter.formatAttrForSearch(
             {
                 type: "label",
@@ -100,7 +101,7 @@ async function createNote(req: Request) {
     const title = trimmedTitle || `Clipped note from ${pageUrl}`;
 
     const clipperInbox = await getClipperInboxNote();
-    let note = findClippingNote(clipperInbox, pageUrl, clipType);
+    let note = findClippingNote(pageUrl, clipType);
 
     if (!note) {
         note = noteService.createNewNote({
@@ -192,11 +193,11 @@ function openNote(req: Request<{ noteId: string }>) {
         return {
             result: "ok"
         };
-    } 
+    }
     return {
         result: "open-in-browser"
     };
-    
+
 }
 
 function handshake() {
@@ -208,8 +209,7 @@ function handshake() {
 
 async function findNotesByUrl(req: Request<{ noteUrl: string }>) {
     const pageUrl = req.params.noteUrl;
-    const clipperInbox = await getClipperInboxNote();
-    const foundPage = findClippingNote(clipperInbox, pageUrl, null);
+    const foundPage = findClippingNote(pageUrl, null);
     return {
         noteId: foundPage ? foundPage.noteId : null
     };
