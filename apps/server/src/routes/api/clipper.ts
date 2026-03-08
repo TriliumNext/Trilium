@@ -23,9 +23,9 @@ interface Image {
 }
 
 async function addClipping(req: Request) {
-    // if a note under the clipperInbox has the same 'pageUrl' attribute,
-    // add the content to that note and clone it under today's inbox
-    // otherwise just create a new note under today's inbox
+    // if a note exists with has the same 'pageUrl' attribute,
+    // add the content to the existing note
+    // otherwise create a new note under today's inbox
     const { title, content, images } = req.body;
     const clipType = "clippings";
 
