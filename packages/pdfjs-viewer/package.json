@@ -10,6 +10,6 @@
     "@triliumnext/commons": "workspace:*"
   },
   "devDependencies": {
-    "pdfjs-dist": "5.4.624"
+    "pdfjs-dist": "5.5.207"
   }
 }
