@@ -71,13 +71,17 @@ function patchCacheBuster(htmlFilePath: string) {
     const version = packageJson.version;
     console.log(`Versioned URLs: ${version}.`)
     let html = readFileSync(htmlFilePath, "utf-8");
-    html = html.replace(
-        `<link rel="stylesheet" href="custom.css" />`,
-        `<link rel="stylesheet" href="custom.css?v=${version}" />`);
-    html = html.replace(
-        `<script src="custom.mjs" type="module"></script>`,
-        `<script src="custom.mjs?v=${version}" type="module"></script>`
-    );
+    for (const file of [ "viewer.css", "custom.css" ]) {
+        html = html.replace(
+            `<link rel="stylesheet" href="${file}" />`,
+            `<link rel="stylesheet" href="${file}?v=${version}" />`);
+    }
+    for (const file of [ "viewer.mjs", "custom.mjs" ]) {
+        html = html.replace(
+            `<script src="${file}" type="module"></script>`,
+            `<script src="${file}?v=${version}" type="module"></script>`
+        );
+    }
 
     writeFileSync(htmlFilePath, html);
 }

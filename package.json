@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/source",
-  "version": "0.102.0",
+  "version": "0.102.1",
   "description": "Build your personal knowledge base with Trilium Notes",
   "directories": {
     "doc": "docs"
@@ -58,7 +58,7 @@
     "cross-env": "10.1.0",
     "dpdm": "4.0.1",
     "esbuild": "0.27.3",
-    "eslint": "10.0.2",
+    "eslint": "10.0.3",
     "eslint-config-preact": "2.0.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-playwright": "2.9.0",
