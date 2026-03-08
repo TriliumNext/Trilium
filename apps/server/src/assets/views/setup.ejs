@@ -129,7 +129,7 @@
 
             <div class="form-group">
                 <label for="sync-server-host"><%= t("setup_sync-from-server.server-host") %></label>
-                <input type="text" id="syncServerHost" class="form-control" data-bind="value: syncServerHost" placeholder="<%= t("setup_sync-from-server.server-host-placeholder") %>">
+                <input type="text" id="syncServerHost" class="form-control" data-bind="value: syncServerHost, event: { blur: checkTotpStatus }" placeholder="<%= t("setup_sync-from-server.server-host-placeholder") %>">
             </div>
             <div class="form-group">
                 <label for="sync-proxy"><%= t("setup_sync-from-server.proxy-server") %></label>
@@ -140,6 +140,10 @@
             <div class="form-group" style="margin-bottom: 8px;">
                 <label for="password"><%= t("setup_sync-from-server.password") %></label>
                 <input type="password" id="password" class="form-control" data-bind="value: password" placeholder="<%= t("setup_sync-from-server.password-placeholder") %>">
+            </div>
+            <div class="form-group" style="margin-bottom: 8px;" data-bind="visible: totpEnabled">
+                <label for="totpToken"><%= t("setup_sync-from-server.totp-token") %></label>
+                <input type="text" id="totpToken" class="form-control" data-bind="value: totpToken" placeholder="<%= t("setup_sync-from-server.totp-token-placeholder") %>" autocomplete="one-time-code">
             </div>
 
             <button type="button" data-bind="click: back" class="btn btn-secondary"><%= t("setup_sync-from-server.back") %></button>

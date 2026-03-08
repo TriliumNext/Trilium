@@ -155,6 +155,8 @@
     "proxy-instruction": "如果您將代理設定留空，將使用系統代理（僅適用於桌面版）",
     "password": "密碼",
     "password-placeholder": "密碼",
+    "totp-token": "TOTP 驗證碼",
+    "totp-token-placeholder": "請輸入 TOTP 驗證碼",
     "back": "返回",
     "finish-setup": "完成設定"
   },

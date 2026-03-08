@@ -6,6 +6,7 @@ import type { OptionRow } from "@triliumnext/commons";
 export interface SetupStatusResponse {
     syncVersion: number;
     schemaExists: boolean;
+    totpEnabled: boolean;
 }
 
 /**

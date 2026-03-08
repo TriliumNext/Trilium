@@ -1,6 +1,8 @@
 import "jquery";
-import utils from "./services/utils.js";
+
 import ko from "knockout";
+
+import utils from "./services/utils.js";
 
 // TriliumNextTODO: properly make use of below types
 // type SetupModelSetupType = "new-document" | "sync-from-desktop" | "sync-from-server" | "";
@@ -16,6 +18,8 @@ class SetupModel {
     syncServerHost: ko.Observable<string | undefined>;
     syncProxy: ko.Observable<string | undefined>;
     password: ko.Observable<string | undefined>;
+    totpToken: ko.Observable<string | undefined>;
+    totpEnabled: ko.Observable<boolean>;
 
     constructor(syncInProgress: boolean) {
         this.syncInProgress = syncInProgress;
@@ -27,6 +31,8 @@ class SetupModel {
         this.syncServerHost = ko.observable();
         this.syncProxy = ko.observable();
         this.password = ko.observable();
+        this.totpToken = ko.observable();
+        this.totpEnabled = ko.observable(false);
 
         if (this.syncInProgress) {
             setInterval(checkOutstandingSyncs, 1000);
@@ -40,7 +46,7 @@ class SetupModel {
         return !!this.setupType();
     }
 
-    selectSetupType() {
+    async selectSetupType() {
         if (this.setupType() === "new-document") {
             this.step("new-document-in-progress");
 
@@ -49,6 +55,24 @@ class SetupModel {
             });
         } else {
             this.step(this.setupType());
+        }
+    }
+
+    async checkTotpStatus() {
+        const syncServerHost = this.syncServerHost();
+        if (!syncServerHost) {
+            this.totpEnabled(false);
+            return;
+        }
+
+        try {
+            const resp = await $.post("api/setup/check-server-totp", {
+                syncServerHost
+            });
+            this.totpEnabled(!!resp.totpEnabled);
+        } catch {
+            // If we can't reach the server, don't show TOTP field yet
+            this.totpEnabled(false);
         }
     }
 
@@ -72,11 +96,22 @@ class SetupModel {
             return;
         }
 
+        // Check TOTP status before submitting (in case it wasn't checked yet)
+        await this.checkTotpStatus();
+
+        const totpToken = this.totpToken();
+
+        if (this.totpEnabled() && !totpToken) {
+            showAlert("TOTP token can't be empty when two-factor authentication is enabled");
+            return;
+        }
+
         // not using server.js because it loads too many dependencies
         const resp = await $.post("api/setup/sync-from-server", {
-            syncServerHost: syncServerHost,
-            syncProxy: syncProxy,
-            password: password
+            syncServerHost,
+            syncProxy,
+            password,
+            totpToken
         });
 
         if (resp.result === "success") {
