@@ -3,6 +3,7 @@ import "./toolbar_customization.css";
 import { useRef, useState } from "preact/hooks";
 
 import { t } from "../../../services/i18n";
+import { reloadFrontendApp } from "../../../services/utils";
 import { useTriliumOption } from "../../react/hooks";
 import { DEFAULT_CLASSIC_TOOLBAR_ITEMS, type ToolbarGroup, type ToolbarItem } from "../text/toolbar";
 import OptionsSection from "./components/OptionsSection";
@@ -62,6 +63,7 @@ type DragSrc =
 
 type DropTarget =
     | { kind: "top"; index: number }
+    | { kind: "group-header"; groupIdx: number }
     | { kind: "group"; groupIdx: number; index: number }
     | { kind: "trash" };
 
@@ -78,13 +80,11 @@ function parseConfig(configStr: string): ToolbarItem[] {
     }
 }
 
-/** Collect all command names (non-separator strings) already present in the toolbar. */
 function collectUsed(items: ToolbarItem[]): Set<string> {
     const used = new Set<string>();
     for (const item of items) {
-        if (typeof item === "string" && item !== "|") {
-            used.add(item);
-        } else if (typeof item === "object") {
+        if (typeof item === "string" && item !== "|") used.add(item);
+        else if (typeof item === "object") {
             for (const sub of (item as ToolbarGroup).items) {
                 if (sub !== "|") used.add(sub);
             }
@@ -95,31 +95,49 @@ function collectUsed(items: ToolbarItem[]): Set<string> {
 
 export default function ToolbarCustomization() {
     const [configStr, setConfigStr] = useTriliumOption("textNoteToolbarConfig");
-    const items = parseConfig(configStr);
+
+    // Local pending state — only pushed to the server when the user clicks "Save & Apply"
+    const [pending, setPending] = useState<ToolbarItem[]>(() => parseConfig(configStr));
+    const [saving, setSaving] = useState(false);
 
     const [expandedGroup, setExpandedGroup] = useState<number | null>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [dropTarget, setDropTarget] = useState<DropTarget | null>(null);
     const dragSrc = useRef<DragSrc | null>(null);
+    const autoExpandTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    const usedCommands = collectUsed(items);
+    const usedCommands = collectUsed(pending);
     const availableCommands = ALL_COMMANDS.filter((cmd) => !usedCommands.has(cmd));
+    const hasChanges = JSON.stringify(pending) !== JSON.stringify(parseConfig(configStr));
 
-    function saveItems(next: ToolbarItem[]) {
-        setConfigStr(JSON.stringify(next));
+    function update(next: ToolbarItem[]) {
+        setPending(next);
     }
 
-    // --- Mutation helpers ---
+    // ── Save / Discard ──────────────────────────────────────────────────
+
+    async function handleSave() {
+        setSaving(true);
+        await setConfigStr(JSON.stringify(pending));
+        reloadFrontendApp("toolbar configuration changed");
+    }
+
+    function handleDiscard() {
+        setPending(parseConfig(configStr));
+        setExpandedGroup(null);
+    }
+
+    // ── Mutations ───────────────────────────────────────────────────────
 
     function removeTopItem(index: number) {
-        const next = items.filter((_, i) => i !== index);
+        const next = pending.filter((_, i) => i !== index);
         if (expandedGroup === index) setExpandedGroup(null);
         else if (expandedGroup !== null && expandedGroup > index) setExpandedGroup(expandedGroup - 1);
-        saveItems(next);
+        update(next);
     }
 
     function removeGroupItem(groupIdx: number, itemIdx: number) {
-        saveItems(items.map((item, i) => {
+        update(pending.map((item, i) => {
             if (i !== groupIdx || typeof item !== "object") return item;
             return { ...(item as ToolbarGroup), items: (item as ToolbarGroup).items.filter((_, j) => j !== itemIdx) };
         }));
@@ -127,23 +145,23 @@ export default function ToolbarCustomization() {
 
     function handleAddItem(cmd: string) {
         if (expandedGroup !== null) {
-            saveItems(items.map((item, i) => {
+            update(pending.map((item, i) => {
                 if (i !== expandedGroup || typeof item !== "object") return item;
                 return { ...(item as ToolbarGroup), items: [...(item as ToolbarGroup).items, cmd] };
             }));
         } else {
-            saveItems([...items, cmd]);
+            update([...pending, cmd]);
         }
     }
 
     function handleAddSeparator() {
         if (expandedGroup !== null) {
-            saveItems(items.map((item, i) => {
+            update(pending.map((item, i) => {
                 if (i !== expandedGroup || typeof item !== "object") return item;
                 return { ...(item as ToolbarGroup), items: [...(item as ToolbarGroup).items, "|"] };
             }));
         } else {
-            saveItems([...items, "|"]);
+            update([...pending, "|"]);
         }
     }
 
@@ -153,24 +171,41 @@ export default function ToolbarCustomization() {
             icon: "threeVerticalDots",
             items: []
         };
-        const next = [...items, newGroup];
-        saveItems(next);
+        const next = [...pending, newGroup];
+        update(next);
         setExpandedGroup(next.length - 1);
     }
 
     function renameGroup(groupIdx: number, label: string) {
-        saveItems(items.map((item, i) => {
+        update(pending.map((item, i) => {
             if (i !== groupIdx || typeof item !== "object") return item;
             return { ...(item as ToolbarGroup), label };
         }));
     }
 
     function handleReset() {
+        setPending([...DEFAULT_CLASSIC_TOOLBAR_ITEMS]);
         setExpandedGroup(null);
-        setConfigStr("");
     }
 
-    // --- Drag & Drop ---
+    // ── Auto-expand on hover ────────────────────────────────────────────
+
+    function scheduleExpand(groupIdx: number) {
+        if (autoExpandTimer.current !== null) return;
+        autoExpandTimer.current = setTimeout(() => {
+            setExpandedGroup(groupIdx);
+            autoExpandTimer.current = null;
+        }, 600);
+    }
+
+    function cancelExpand() {
+        if (autoExpandTimer.current !== null) {
+            clearTimeout(autoExpandTimer.current);
+            autoExpandTimer.current = null;
+        }
+    }
+
+    // ── Drag & Drop ─────────────────────────────────────────────────────
 
     function onDragStart(e: DragEvent, src: DragSrc) {
         dragSrc.current = src;
@@ -182,12 +217,24 @@ export default function ToolbarCustomization() {
         dragSrc.current = null;
         setIsDragging(false);
         setDropTarget(null);
+        cancelExpand();
     }
 
     function onDragOverZone(e: DragEvent, target: DropTarget) {
         e.preventDefault();
         e.stopPropagation();
         setDropTarget(target);
+
+        if (target.kind === "group-header") {
+            // Only allow dropping non-group items into a group
+            const src = dragSrc.current;
+            const srcItem = src?.kind === "top" ? pending[src.index] : null;
+            if (srcItem === null || typeof srcItem === "string") {
+                scheduleExpand(target.groupIdx);
+            }
+        } else {
+            cancelExpand();
+        }
     }
 
     function onDragLeave(e: DragEvent) {
@@ -203,7 +250,7 @@ export default function ToolbarCustomization() {
         dragSrc.current = null;
         setIsDragging(false);
         setDropTarget(null);
-
+        cancelExpand();
         if (!src || !target) return;
 
         if (target.kind === "trash") {
@@ -211,17 +258,26 @@ export default function ToolbarCustomization() {
             else removeGroupItem(src.groupIdx, src.itemIdx);
             return;
         }
-
         if (src.kind === "top" && target.kind === "top") {
             moveTopItem(src.index, target.index);
+        } else if (src.kind === "top" && target.kind === "group-header") {
+            moveTopIntoGroup(src.index, target.groupIdx, undefined);
+        } else if (src.kind === "top" && target.kind === "group") {
+            moveTopIntoGroup(src.index, target.groupIdx, target.index);
+        } else if (src.kind === "group" && target.kind === "top") {
+            moveGroupItemToTop(src.groupIdx, src.itemIdx, target.index);
         } else if (src.kind === "group" && target.kind === "group" && src.groupIdx === target.groupIdx) {
-            moveGroupItem(src.groupIdx, src.itemIdx, target.index);
+            moveWithinGroup(src.groupIdx, src.itemIdx, target.index);
+        } else if (src.kind === "group" && target.kind === "group" && src.groupIdx !== target.groupIdx) {
+            moveCrossGroup(src.groupIdx, src.itemIdx, target.groupIdx, target.index);
+        } else if (src.kind === "group" && target.kind === "group-header" && src.groupIdx !== target.groupIdx) {
+            moveCrossGroup(src.groupIdx, src.itemIdx, target.groupIdx, undefined);
         }
     }
 
     function moveTopItem(from: number, to: number) {
         if (from === to) return;
-        const next = [...items];
+        const next = [...pending];
         const [moved] = next.splice(from, 1);
         const dest = to > from ? to - 1 : to;
         next.splice(dest, 0, moved);
@@ -230,45 +286,125 @@ export default function ToolbarCustomization() {
             if (from < expandedGroup && dest >= expandedGroup) setExpandedGroup(expandedGroup - 1);
             else if (from > expandedGroup && dest <= expandedGroup) setExpandedGroup(expandedGroup + 1);
         }
-        saveItems(next);
+        update(next);
     }
 
-    function moveGroupItem(groupIdx: number, from: number, to: number) {
+    /** Move a top-level string/separator item into a group. Groups cannot be nested. */
+    function moveTopIntoGroup(topIdx: number, groupIdx: number, insertAt: number | undefined) {
+        const item = pending[topIdx];
+        if (typeof item === "object") return; // groups cannot nest
+
+        const withoutItem = pending.filter((_, i) => i !== topIdx);
+        const adjGroup = topIdx < groupIdx ? groupIdx - 1 : groupIdx;
+
+        const result = withoutItem.map((g, i) => {
+            if (i !== adjGroup || typeof g !== "object") return g;
+            const sub = [...(g as ToolbarGroup).items];
+            if (insertAt === undefined) sub.push(item as string);
+            else sub.splice(insertAt, 0, item as string);
+            return { ...(g as ToolbarGroup), items: sub };
+        });
+
+        setExpandedGroup(adjGroup);
+        update(result);
+    }
+
+    /** Pull a group sub-item out to the top level. */
+    function moveGroupItemToTop(groupIdx: number, itemIdx: number, topIdx: number) {
+        const item = (pending[groupIdx] as ToolbarGroup).items[itemIdx];
+
+        const withoutFromGroup = pending.map((g, i) => {
+            if (i !== groupIdx || typeof g !== "object") return g;
+            return { ...(g as ToolbarGroup), items: (g as ToolbarGroup).items.filter((_, j) => j !== itemIdx) };
+        });
+
+        const result = [...withoutFromGroup];
+        result.splice(topIdx, 0, item);
+
+        // The group may have shifted if we inserted before it
+        if (expandedGroup !== null) {
+            setExpandedGroup(topIdx <= groupIdx ? groupIdx + 1 : groupIdx);
+        }
+        update(result);
+    }
+
+    function moveWithinGroup(groupIdx: number, from: number, to: number) {
         if (from === to) return;
-        const group = items[groupIdx] as ToolbarGroup;
+        const group = pending[groupIdx] as ToolbarGroup;
         const sub = [...group.items];
         const [moved] = sub.splice(from, 1);
         sub.splice(to > from ? to - 1 : to, 0, moved);
-        saveItems(items.map((item, i) => i === groupIdx ? { ...(item as ToolbarGroup), items: sub } : item));
+        update(pending.map((item, i) => i === groupIdx ? { ...(item as ToolbarGroup), items: sub } : item));
     }
+
+    function moveCrossGroup(fromGroupIdx: number, itemIdx: number, toGroupIdx: number, insertAt: number | undefined) {
+        const item = (pending[fromGroupIdx] as ToolbarGroup).items[itemIdx];
+        const result = pending.map((g, i) => {
+            if (typeof g !== "object") return g;
+            if (i === fromGroupIdx) return { ...(g as ToolbarGroup), items: (g as ToolbarGroup).items.filter((_, j) => j !== itemIdx) };
+            if (i === toGroupIdx) {
+                const sub = [...(g as ToolbarGroup).items];
+                if (insertAt === undefined) sub.push(item);
+                else sub.splice(insertAt, 0, item);
+                return { ...(g as ToolbarGroup), items: sub };
+            }
+            return g;
+        });
+        setExpandedGroup(toGroupIdx);
+        update(result);
+    }
+
+    // ── Render ──────────────────────────────────────────────────────────
 
     return (
         <OptionsSection title={t("toolbar_customization.title")}>
             <p className="form-text">{t("toolbar_customization.description")}</p>
 
-            <div className="toolbar-editor">
+            {/* Save / Discard bar */}
+            <div className={`toolbar-save-bar ${hasChanges ? "has-changes" : ""}`}>
+                <span className="toolbar-save-status">
+                    {hasChanges ? t("toolbar_customization.unsaved_changes") : t("toolbar_customization.no_changes")}
+                </span>
+                <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    disabled={!hasChanges || saving}
+                    onClick={handleDiscard}
+                >
+                    {t("toolbar_customization.discard")}
+                </button>
+                <button
+                    type="button"
+                    className="btn btn-sm btn-primary"
+                    disabled={!hasChanges || saving}
+                    onClick={handleSave}
+                >
+                    {saving ? t("toolbar_customization.saving") : t("toolbar_customization.save_apply")}
+                </button>
+            </div>
 
-                {/* ── Two-column layout ── */}
+            <div className="toolbar-editor">
                 <div className="toolbar-columns">
 
-                    {/* Left: current toolbar as vertical list */}
+                    {/* Left panel: current toolbar */}
                     <div className="toolbar-panel">
                         <div className="toolbar-panel-header">{t("toolbar_customization.current_toolbar")}</div>
                         <div
                             className="toolbar-list"
-                            onDragOver={(e: DragEvent) => onDragOverZone(e, { kind: "top", index: items.length })}
+                            onDragOver={(e: DragEvent) => onDragOverZone(e, { kind: "top", index: pending.length })}
                             onDragLeave={onDragLeave}
                             onDrop={onDropZone}
                         >
-                            {items.length === 0 && (
+                            {pending.length === 0 && (
                                 <div className="toolbar-empty-hint">{t("toolbar_customization.empty")}</div>
                             )}
-                            {items.map((item, idx) => (
+                            {pending.map((item, idx) => (
                                 <ToolbarRow
                                     key={idx}
                                     item={item}
                                     isExpanded={expandedGroup === idx}
                                     isDropTarget={dropTarget?.kind === "top" && dropTarget.index === idx}
+                                    isGroupDropTarget={dropTarget?.kind === "group-header" && dropTarget.groupIdx === idx}
                                     groupDropTargetIdx={
                                         dropTarget?.kind === "group" && dropTarget.groupIdx === idx
                                             ? dropTarget.index : null
@@ -280,6 +416,7 @@ export default function ToolbarCustomization() {
                                     onDragStart={(e) => onDragStart(e, { kind: "top", index: idx })}
                                     onDragEnd={onDragEnd}
                                     onDragOver={(e: DragEvent) => { e.stopPropagation(); onDragOverZone(e, { kind: "top", index: idx }); }}
+                                    onDragOverGroupHeader={(e: DragEvent) => { e.stopPropagation(); onDragOverZone(e, { kind: "group-header", groupIdx: idx }); }}
                                     onDragLeave={onDragLeave}
                                     onDrop={(e: DragEvent) => { e.stopPropagation(); onDropZone(e); }}
                                     onGroupItemDragStart={(itemIdx, e) => onDragStart(e, { kind: "group", groupIdx: idx, itemIdx })}
@@ -290,7 +427,6 @@ export default function ToolbarCustomization() {
                             ))}
                         </div>
 
-                        {/* Trash zone – visible only while dragging */}
                         {isDragging && (
                             <div
                                 className={`toolbar-trash ${dropTarget?.kind === "trash" ? "active" : ""}`}
@@ -304,35 +440,22 @@ export default function ToolbarCustomization() {
                         )}
 
                         <div className="toolbar-actions">
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-outline-secondary"
-                                onClick={handleAddSeparator}
-                                title={t("toolbar_customization.separator_hint")}
-                            >
+                            <button type="button" className="btn btn-sm btn-outline-secondary" onClick={handleAddSeparator} title={t("toolbar_customization.separator_hint")}>
                                 |&nbsp; {t("toolbar_customization.add_separator")}
                             </button>
                             {expandedGroup === null && (
-                                <button
-                                    type="button"
-                                    className="btn btn-sm btn-outline-secondary"
-                                    onClick={handleAddGroup}
-                                >
+                                <button type="button" className="btn btn-sm btn-outline-secondary" onClick={handleAddGroup}>
                                     <span className="bx bx-folder-plus" />
                                     {" "}{t("toolbar_customization.add_group")}
                                 </button>
                             )}
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-outline-danger ms-auto"
-                                onClick={handleReset}
-                            >
+                            <button type="button" className="btn btn-sm btn-outline-danger ms-auto" onClick={handleReset}>
                                 {t("toolbar_customization.reset_default")}
                             </button>
                         </div>
                     </div>
 
-                    {/* Right: available items (not yet in toolbar) */}
+                    {/* Right panel: available items */}
                     <div className="toolbar-panel">
                         <div className="toolbar-panel-header">
                             {expandedGroup !== null
@@ -350,7 +473,7 @@ export default function ToolbarCustomization() {
                                     onClick={() => handleAddItem(cmd)}
                                     title={t("toolbar_customization.click_to_add")}
                                 >
-                                    <span className="bx bx-plus row-add-icon" aria-hidden="true" />
+                                    <span class="bx bx-plus row-add-icon" aria-hidden="true" />
                                     <span className="row-label">{ITEM_LABELS[cmd]}</span>
                                 </div>
                             ))}
@@ -369,6 +492,7 @@ interface ToolbarRowProps {
     item: ToolbarItem;
     isExpanded: boolean;
     isDropTarget: boolean;
+    isGroupDropTarget: boolean;
     groupDropTargetIdx: number | null;
     onToggleExpand: () => void;
     onRemove: () => void;
@@ -377,6 +501,7 @@ interface ToolbarRowProps {
     onDragStart: (e: DragEvent) => void;
     onDragEnd: () => void;
     onDragOver: (e: DragEvent) => void;
+    onDragOverGroupHeader: (e: DragEvent) => void;
     onDragLeave: (e: DragEvent) => void;
     onDrop: (e: DragEvent) => void;
     onGroupItemDragStart: (itemIdx: number, e: DragEvent) => void;
@@ -389,6 +514,7 @@ function ToolbarRow({
     item,
     isExpanded,
     isDropTarget,
+    isGroupDropTarget,
     groupDropTargetIdx,
     onToggleExpand,
     onRemove,
@@ -397,6 +523,7 @@ function ToolbarRow({
     onDragStart,
     onDragEnd,
     onDragOver,
+    onDragOverGroupHeader,
     onDragLeave,
     onDrop,
     onGroupItemDragStart,
@@ -406,7 +533,6 @@ function ToolbarRow({
 }: ToolbarRowProps) {
     const isGroup = typeof item === "object";
     const isSeparator = item === "|";
-
     const label = isSeparator ? "── separator ──"
         : isGroup ? (item as ToolbarGroup).label
             : itemLabel(item as string);
@@ -418,12 +544,12 @@ function ToolbarRow({
             onDragLeave={onDragLeave}
             onDrop={onDrop}
         >
-            {/* Main row */}
             <div
-                className={`toolbar-row ${isSeparator ? "separator" : ""} ${isGroup ? "group-header" : ""}`}
+                className={`toolbar-row ${isSeparator ? "separator" : ""} ${isGroup ? "group-header" : ""} ${isGroupDropTarget ? "drop-into-group" : ""}`}
                 draggable={true}
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
+                onDragOver={isGroup ? onDragOverGroupHeader : undefined}
             >
                 <span class="bx bx-dots-vertical-rounded drag-handle" aria-hidden="true" />
                 <span className="row-label">{label}</span>
@@ -447,7 +573,6 @@ function ToolbarRow({
                 </button>
             </div>
 
-            {/* Expanded group: name editor + sub-items */}
             {isGroup && isExpanded && (
                 <div className="group-expanded">
                     <div className="group-name-row">
@@ -459,11 +584,9 @@ function ToolbarRow({
                             onInput={(e) => onRenameGroup((e.target as HTMLInputElement).value)}
                         />
                     </div>
-
                     {(item as ToolbarGroup).items.length === 0 && (
                         <div className="toolbar-empty-hint indented">{t("toolbar_customization.group_empty")}</div>
                     )}
-
                     {(item as ToolbarGroup).items.map((sub, subIdx) => (
                         <div
                             key={subIdx}

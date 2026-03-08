@@ -1952,7 +1952,12 @@
     "remove_item": "Remove",
     "drop_to_remove": "Drop here to remove",
     "empty": "No items — click an available item to add",
-    "reset_default": "Reset to default"
+    "reset_default": "Reset to default",
+    "unsaved_changes": "Unsaved changes — click Save & Apply to reload the editor",
+    "no_changes": "No unsaved changes",
+    "discard": "Discard",
+    "save_apply": "Save & Apply",
+    "saving": "Saving…"
   },
   "editorfeatures": {
     "title": "Features",

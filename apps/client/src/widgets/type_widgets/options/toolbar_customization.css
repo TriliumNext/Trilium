@@ -93,6 +93,14 @@
 .toolbar-row.group-header {
     background: var(--accented-background-color);
     font-weight: 600;
+    transition: background 0.12s, outline 0.12s;
+}
+
+/* Drop-into-group highlight: shown when dragging an item over a group header */
+.toolbar-row.group-header.drop-into-group {
+    outline: 2px solid var(--main-text-color);
+    outline-offset: -2px;
+    background: var(--hover-item-background-color);
 }
 
 /* Separator row */
@@ -235,6 +243,35 @@
     padding: 6px 8px;
     border-top: 1px solid var(--main-border-color);
     background: var(--accented-background-color);
+}
+
+/* ── Save / Discard bar ───────────────────────────────────────────────── */
+
+.toolbar-save-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border: 1px solid var(--main-border-color);
+    border-radius: var(--bs-border-radius);
+    background: var(--accented-background-color);
+    font-size: 0.82rem;
+    margin-bottom: 8px;
+}
+
+.toolbar-save-bar.has-changes {
+    border-color: var(--bs-warning, #ffc107);
+    background: color-mix(in srgb, var(--bs-warning, #ffc107) 8%, var(--accented-background-color));
+}
+
+.toolbar-save-status {
+    flex: 1;
+    color: var(--muted-text-color);
+}
+
+.toolbar-save-bar.has-changes .toolbar-save-status {
+    color: var(--main-text-color);
+    font-weight: 500;
 }
 
 /* ── Misc ─────────────────────────────────────────────────────────────── */
