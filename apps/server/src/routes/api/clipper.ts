@@ -1,10 +1,9 @@
-import { app_info as appInfo, attribute_formatter as attributeFormatter, attributes as attributeService, type BNote, cloning as cloneService, date_notes as dateNoteService, date_utils as dateUtils, note_service as noteService, sanitize, ValidationError, ws } from "@triliumnext/core";
+import { app_info as appInfo, attribute_formatter as attributeFormatter, attributes as attributeService, type BNote, cloning as cloneService, date_notes as dateNoteService, date_utils as dateUtils, getLog, note_service as noteService, sanitize, search as searchService, ValidationError, ws } from "@triliumnext/core";
 import type { Request } from "express";
 import { parse } from "node-html-parser";
 import path from "path";
 
 import imageService from "../../services/image.js";
-import { getLog } from "@triliumnext/core";
 import utils from "../../services/utils.js";
 
 interface Image {
@@ -23,7 +22,7 @@ async function addClipping(req: Request) {
     const clipperInbox = await getClipperInboxNote();
 
     const pageUrl = sanitize.sanitizeUrl(req.body.pageUrl);
-    let clippingNote = findClippingNote(clipperInbox, pageUrl, clipType);
+    let clippingNote = findClippingNote(pageUrl, clipType);
 
     if (!clippingNote) {
         clippingNote = noteService.createNewNote({
@@ -52,12 +51,12 @@ async function addClipping(req: Request) {
     };
 }
 
-function findClippingNote(clipperInboxNote: BNote, pageUrl: string, clipType: string | null) {
+function findClippingNote(pageUrl: string, clipType: string | null) {
     if (!pageUrl) {
         return null;
     }
 
-    const notes = clipperInboxNote.searchNotesInSubtree(
+    const notes = searchService.searchNotes(
         attributeFormatter.formatAttrForSearch(
             {
                 type: "label",
@@ -91,7 +90,7 @@ async function createNote(req: Request) {
     const title = trimmedTitle || `Clipped note from ${pageUrl}`;
 
     const clipperInbox = await getClipperInboxNote();
-    let note = findClippingNote(clipperInbox, pageUrl, clipType);
+    let note = findClippingNote(pageUrl, clipType);
 
     if (!note) {
         note = noteService.createNewNote({
@@ -198,8 +197,7 @@ function handshake() {
 
 async function findNotesByUrl(req: Request<{ noteUrl: string }>) {
     const pageUrl = req.params.noteUrl;
-    const clipperInbox = await getClipperInboxNote();
-    const foundPage = findClippingNote(clipperInbox, pageUrl, null);
+    const foundPage = findClippingNote(pageUrl, null);
     return {
         noteId: foundPage ? foundPage.noteId : null
     };
