@@ -254,6 +254,7 @@ const ATTR_HELP: Record<string, Record<string, string>> = {
         displayRelations: t("attribute_detail.display_relations"),
         hideRelations: t("attribute_detail.hide_relations"),
         titleTemplate: t("attribute_detail.title_template"),
+        childTitleTemplate: t("attribute_detail.child_title_template"),
         template: t("attribute_detail.template"),
         toc: t("attribute_detail.toc"),
         color: t("attribute_detail.color"),
