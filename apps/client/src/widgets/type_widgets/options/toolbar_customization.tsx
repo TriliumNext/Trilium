@@ -166,6 +166,22 @@ function SvgIcon({ svg }: { svg: string }) {
     return <span class="toolbar-item-icon" dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
+/** Stable list key for a toolbar item. Commands are unique, so the name alone suffices;
+ *  separators and groups include the index to handle multiples. */
+function itemKey(item: ToolbarItem, idx: number): string {
+    if (item === "|") return `sep_${idx}`;
+    if (typeof item === "object") return `grp_${(item as ToolbarGroup).label}_${idx}`;
+    return item; // command names are guaranteed unique in the toolbar
+}
+
+/** Returns a copy of `group` with `item` inserted at `insertAt`, or appended if undefined. */
+function insertIntoGroup(group: ToolbarGroup, item: string, insertAt: number | undefined): ToolbarGroup {
+    const sub = [...group.items];
+    if (insertAt === undefined) sub.push(item);
+    else sub.splice(insertAt, 0, item);
+    return { ...group, items: sub };
+}
+
 function parseConfig(configStr: string): ToolbarItem[] {
     if (!configStr) return [...DEFAULT_CLASSIC_TOOLBAR_ITEMS];
     try {
@@ -392,13 +408,9 @@ export default function ToolbarCustomization() {
         const withoutItem = pending.filter((_, i) => i !== topIdx);
         const adjGroup = topIdx < groupIdx ? groupIdx - 1 : groupIdx;
 
-        const result = withoutItem.map((g, i) => {
-            if (i !== adjGroup || typeof g !== "object") return g;
-            const sub = [...(g as ToolbarGroup).items];
-            if (insertAt === undefined) sub.push(item as string);
-            else sub.splice(insertAt, 0, item as string);
-            return { ...(g as ToolbarGroup), items: sub };
-        });
+        const result = withoutItem.map((g, i) =>
+            i === adjGroup && typeof g === "object" ? insertIntoGroup(g as ToolbarGroup, item as string, insertAt) : g
+        );
 
         setExpandedGroup(adjGroup);
         update(result);
@@ -437,12 +449,7 @@ export default function ToolbarCustomization() {
         const result = pending.map((g, i) => {
             if (typeof g !== "object") return g;
             if (i === fromGroupIdx) return { ...(g as ToolbarGroup), items: (g as ToolbarGroup).items.filter((_, j) => j !== itemIdx) };
-            if (i === toGroupIdx) {
-                const sub = [...(g as ToolbarGroup).items];
-                if (insertAt === undefined) sub.push(item);
-                else sub.splice(insertAt, 0, item);
-                return { ...(g as ToolbarGroup), items: sub };
-            }
+            if (i === toGroupIdx) return insertIntoGroup(g as ToolbarGroup, item, insertAt);
             return g;
         });
         setExpandedGroup(toGroupIdx);
@@ -495,7 +502,7 @@ export default function ToolbarCustomization() {
                             )}
                             {pending.map((item, idx) => (
                                 <ToolbarRow
-                                    key={idx}
+                                    key={itemKey(item, idx)}
                                     item={item}
                                     isExpanded={expandedGroup === idx}
                                     isDropTarget={dropTarget?.kind === "top" && dropTarget.index === idx}

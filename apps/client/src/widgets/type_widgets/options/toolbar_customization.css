@@ -228,6 +228,7 @@
 }
 
 .toolbar-trash.active {
+    background: rgba(220, 53, 69, 0.12);
     background: color-mix(in srgb, var(--danger-text-color, #dc3545) 12%, transparent);
     color: var(--danger-text-color, #dc3545);
     border-color: var(--danger-text-color, #dc3545);
@@ -261,6 +262,7 @@
 
 .toolbar-save-bar.has-changes {
     border-color: var(--bs-warning, #ffc107);
+    background: rgba(255, 193, 7, 0.08);
     background: color-mix(in srgb, var(--bs-warning, #ffc107) 8%, var(--accented-background-color));
 }
 
