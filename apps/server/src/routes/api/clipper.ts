@@ -7,7 +7,6 @@ import ValidationError from "../../errors/validation_error.js";
 import appInfo from "../../services/app_info.js";
 import attributeFormatter from "../../services/attribute_formatter.js";
 import attributeService from "../../services/attributes.js";
-import cloneService from "../../services/cloning.js";
 import dateNoteService from "../../services/date_notes.js";
 import dateUtils from "../../services/date_utils.js";
 import htmlSanitizer from "../../services/html_sanitizer.js";
@@ -24,9 +23,9 @@ interface Image {
 }
 
 async function addClipping(req: Request) {
-    // if a note under the clipperInbox has the same 'pageUrl' attribute,
-    // add the content to that note and clone it under today's inbox
-    // otherwise just create a new note under today's inbox
+    // if a note exists with has the same 'pageUrl' attribute,
+    // add the content to the existing note
+    // otherwise create a new note under today's inbox
     const { title, content, images } = req.body;
     const clipType = "clippings";
 
@@ -56,11 +55,6 @@ async function addClipping(req: Request) {
     }
 
     clippingNote.setContent(`${existingContent}${existingContent.trim() ? "<br>" : ""}${rewrittenContent}`);
-
-    // TODO: Is parentNoteId ever defined?
-    if ((clippingNote as any).parentNoteId !== clipperInbox.noteId) {
-        cloneService.cloneNoteToParentNote(clippingNote.noteId, clipperInbox.noteId);
-    }
 
     return {
         noteId: clippingNote.noteId
