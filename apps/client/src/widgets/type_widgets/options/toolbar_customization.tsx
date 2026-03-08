@@ -2,6 +2,50 @@ import "./toolbar_customization.css";
 
 import { useRef, useState } from "preact/hooks";
 
+import IconAlignCenter from "@ckeditor/ckeditor5-icons/theme/icons/align-center.svg?raw";
+import IconAlignJustify from "@ckeditor/ckeditor5-icons/theme/icons/align-justify.svg?raw";
+import IconAlignLeft from "@ckeditor/ckeditor5-icons/theme/icons/align-left.svg?raw";
+import IconAlignRight from "@ckeditor/ckeditor5-icons/theme/icons/align-right.svg?raw";
+import IconBold from "@ckeditor/ckeditor5-icons/theme/icons/bold.svg?raw";
+import IconBookmark from "@ckeditor/ckeditor5-icons/theme/icons/bookmark.svg?raw";
+import IconBulletedList from "@ckeditor/ckeditor5-icons/theme/icons/bulleted-list.svg?raw";
+import IconCode from "@ckeditor/ckeditor5-icons/theme/icons/code.svg?raw";
+import IconCodeBlock from "@ckeditor/ckeditor5-icons/theme/icons/code-block.svg?raw";
+import IconEmoji from "@ckeditor/ckeditor5-icons/theme/icons/emoji.svg?raw";
+import IconFontBackground from "@ckeditor/ckeditor5-icons/theme/icons/font-background.svg?raw";
+import IconFontColor from "@ckeditor/ckeditor5-icons/theme/icons/font-color.svg?raw";
+import IconFontSize from "@ckeditor/ckeditor5-icons/theme/icons/font-size.svg?raw";
+import IconFootnote from "@ckeditor/ckeditor5-icons/theme/icons/footnote.svg?raw";
+import IconHeading from "@ckeditor/ckeditor5-icons/theme/icons/heading1.svg?raw";
+import IconHorizontalLine from "@ckeditor/ckeditor5-icons/theme/icons/horizontal-line.svg?raw";
+import IconImageUpload from "@ckeditor/ckeditor5-icons/theme/icons/image-upload.svg?raw";
+import IconIndent from "@ckeditor/ckeditor5-icons/theme/icons/indent.svg?raw";
+import IconItalic from "@ckeditor/ckeditor5-icons/theme/icons/italic.svg?raw";
+import IconLink from "@ckeditor/ckeditor5-icons/theme/icons/link.svg?raw";
+import IconNumberedList from "@ckeditor/ckeditor5-icons/theme/icons/numbered-list.svg?raw";
+import IconOutdent from "@ckeditor/ckeditor5-icons/theme/icons/outdent.svg?raw";
+import IconPageBreak from "@ckeditor/ckeditor5-icons/theme/icons/page-break.svg?raw";
+import IconFormatPainter from "@ckeditor/ckeditor5-icons/theme/icons/paint-roller.svg?raw";
+import IconParagraph from "@ckeditor/ckeditor5-icons/theme/icons/paragraph.svg?raw";
+import IconBlockQuote from "@ckeditor/ckeditor5-icons/theme/icons/quote.svg?raw";
+import IconRemoveFormat from "@ckeditor/ckeditor5-icons/theme/icons/remove-format.svg?raw";
+import IconSpecialCharacters from "@ckeditor/ckeditor5-icons/theme/icons/special-characters.svg?raw";
+import IconStrikethrough from "@ckeditor/ckeditor5-icons/theme/icons/strikethrough.svg?raw";
+import IconSubscript from "@ckeditor/ckeditor5-icons/theme/icons/subscript.svg?raw";
+import IconSuperscript from "@ckeditor/ckeditor5-icons/theme/icons/superscript.svg?raw";
+import IconTable from "@ckeditor/ckeditor5-icons/theme/icons/table.svg?raw";
+import IconTemplate from "@ckeditor/ckeditor5-icons/theme/icons/template.svg?raw";
+import IconTodoList from "@ckeditor/ckeditor5-icons/theme/icons/todo-list.svg?raw";
+import IconUnderline from "@ckeditor/ckeditor5-icons/theme/icons/underline.svg?raw";
+import IconDateTime from "@triliumnext/ckeditor5/src/icons/date-time.svg?raw";
+import IconInternalLink from "@triliumnext/ckeditor5/src/icons/trilium.svg?raw";
+import IconCutToNote from "@triliumnext/ckeditor5/src/icons/scissors.svg?raw";
+import IconIncludeNote from "@triliumnext/ckeditor5/src/icons/note.svg?raw";
+import IconMarkdownImport from "@triliumnext/ckeditor5/src/icons/markdown-mark.svg?raw";
+import IconMath from "../../../../../../packages/ckeditor5-math/theme/icons/math.svg?raw";
+import IconMermaid from "../../../../../../packages/ckeditor5-mermaid/theme/icons/insert.svg?raw";
+import IconKbd from "../../../../../../packages/ckeditor5-keyboard-marker/theme/icons/kbd.svg?raw";
+
 import { t } from "../../../services/i18n";
 import { reloadFrontendApp } from "../../../services/utils";
 import { useTriliumOption } from "../../react/hooks";
@@ -55,6 +99,53 @@ const ITEM_LABELS: Record<string, string> = {
     "cuttonote": "Cut to Note",
 };
 
+/** SVG icon strings for known CKEditor commands (keyed by command name). */
+const ITEM_ICONS: Record<string, string> = {
+    "heading": IconHeading,
+    "fontSize": IconFontSize,
+    "bold": IconBold,
+    "italic": IconItalic,
+    "underline": IconUnderline,
+    "strikethrough": IconStrikethrough,
+    "superscript": IconSuperscript,
+    "subscript": IconSubscript,
+    "kbd": IconKbd,
+    "formatPainter": IconFormatPainter,
+    "fontColor": IconFontColor,
+    "fontBackgroundColor": IconFontBackground,
+    "removeFormat": IconRemoveFormat,
+    "bulletedList": IconBulletedList,
+    "numberedList": IconNumberedList,
+    "todoList": IconTodoList,
+    "blockQuote": IconBlockQuote,
+    "insertTable": IconTable,
+    "code": IconCode,
+    "codeBlock": IconCodeBlock,
+    "footnote": IconFootnote,
+    "imageUpload": IconImageUpload,
+    "link": IconLink,
+    "bookmark": IconBookmark,
+    "internallink": IconInternalLink,
+    "includeNote": IconIncludeNote,
+    "specialCharacters": IconSpecialCharacters,
+    "emoji": IconEmoji,
+    "math": IconMath,
+    "mermaid": IconMermaid,
+    "horizontalLine": IconHorizontalLine,
+    "pageBreak": IconPageBreak,
+    "dateTime": IconDateTime,
+    "alignment:left": IconAlignLeft,
+    "alignment:center": IconAlignCenter,
+    "alignment:right": IconAlignRight,
+    "alignment:justify": IconAlignJustify,
+    "outdent": IconOutdent,
+    "indent": IconIndent,
+    "insertTemplate": IconTemplate,
+    "markdownImport": IconMarkdownImport,
+    "cuttonote": IconCutToNote,
+    "admonition": IconParagraph,
+};
+
 const ALL_COMMANDS = Object.keys(ITEM_LABELS);
 
 type DragSrc =
@@ -69,6 +160,10 @@ type DropTarget =
 
 function itemLabel(cmd: string): string {
     return ITEM_LABELS[cmd] ?? cmd;
+}
+
+function SvgIcon({ svg }: { svg: string }) {
+    return <span class="toolbar-item-icon" dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
 function parseConfig(configStr: string): ToolbarItem[] {
@@ -474,6 +569,7 @@ export default function ToolbarCustomization() {
                                     title={t("toolbar_customization.click_to_add")}
                                 >
                                     <span class="bx bx-plus row-add-icon" aria-hidden="true" />
+                                    {ITEM_ICONS[cmd] && <SvgIcon svg={ITEM_ICONS[cmd]} />}
                                     <span className="row-label">{ITEM_LABELS[cmd]}</span>
                                 </div>
                             ))}
@@ -552,6 +648,7 @@ function ToolbarRow({
                 onDragOver={isGroup ? onDragOverGroupHeader : undefined}
             >
                 <span class="bx bx-dots-vertical-rounded drag-handle" aria-hidden="true" />
+                {!isSeparator && !isGroup && ITEM_ICONS[item as string] && <SvgIcon svg={ITEM_ICONS[item as string]} />}
                 <span className="row-label">{label}</span>
                 {isGroup && (
                     <button
@@ -598,6 +695,7 @@ function ToolbarRow({
                             onDrop={onGroupItemDrop}
                         >
                             <span class="bx bx-dots-vertical-rounded drag-handle" aria-hidden="true" />
+                            {sub !== "|" && ITEM_ICONS[sub] && <SvgIcon svg={ITEM_ICONS[sub]} />}
                             <span className="row-label">{sub === "|" ? "── separator ──" : itemLabel(sub)}</span>
                             <button
                                 type="button"

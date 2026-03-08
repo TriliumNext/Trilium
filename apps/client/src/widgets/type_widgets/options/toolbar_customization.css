@@ -274,6 +274,25 @@
     font-weight: 500;
 }
 
+/* ── Item icons ───────────────────────────────────────────────────────── */
+
+.toolbar-item-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted-text-color);
+}
+
+.toolbar-item-icon svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+    pointer-events: none;
+}
+
 /* ── Misc ─────────────────────────────────────────────────────────────── */
 
 .toolbar-empty-hint {
