@@ -57,6 +57,7 @@ function DesktopWebView({ src, ntxId }: { src: string, ntxId: string | null | un
     return <webview
         ref={webviewRef}
         src={src}
+        key={src}
         class="note-detail-web-view-content"
     />;
 }
@@ -80,6 +81,7 @@ function BrowserWebView({ src, ntxId }: { src: string, ntxId: string | null | un
     return <iframe
         ref={iframeRef}
         src={src}
+        key={src}
         class="note-detail-web-view-content"
         sandbox="allow-same-origin allow-scripts allow-popups" />;
 }
