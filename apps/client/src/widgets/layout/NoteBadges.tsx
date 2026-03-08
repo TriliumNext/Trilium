@@ -7,7 +7,7 @@ import { t } from "../../services/i18n";
 import { goToLinkExt } from "../../services/link";
 import { Badge, BadgeWithDropdown } from "../react/Badge";
 import { FormDropdownDivider, FormListItem } from "../react/FormList";
-import { useGetContextData, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean } from "../react/hooks";
+import { useGetContextDataFrom, useIsNoteReadOnly, useNoteContext, useNoteLabel, useNoteLabelBoolean } from "../react/hooks";
 import { useShareState } from "../ribbon/BasicPropertiesTab";
 import { useShareInfo } from "../shared_info";
 import { ActiveContentBadges } from "./ActiveContentBadges";
@@ -112,7 +112,8 @@ function ExecuteBadge() {
 }
 
 export function SaveStatusBadge() {
-    const saveState = useGetContextData("saveState");
+    const { noteContext} = useNoteContext();
+    const saveState = useGetContextDataFrom(noteContext, "saveState");
     if (!saveState) return;
 
     const stateConfig = {

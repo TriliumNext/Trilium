@@ -35,13 +35,13 @@ script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
 
 <img src="./app.png" alt="Trilium Screenshot" width="1000">
 
-## ⬇️ تنزيل
+## ⬇️ التنزيل
 - [النسخة الأخيرة](https://github.com/TriliumNext/Trilium/releases/latest) –
   نسخة مستقرة، محبذة لأكثر المستخدمين.
 - [الإصدار الليلي](https://github.com/TriliumNext/Trilium/releases/tag/nightly)
   – إصدار تطوير غير مستقر، يتم تحديثه يوميًا بأحدث الميزات والإصلاحات.
 
-## 📚توثيق
+## 📚 الوثائق
 
 **يمكنكم الاطلاع على وثائقنا الشاملة على الرابط التالي:
 [docs.triliumnotes.org](https://docs.triliumnotes.org/)**
@@ -61,33 +61,35 @@ script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
 - [ترقية تريليوم
   للملاحظات](https://docs.triliumnotes.org/user-guide/setup/upgrading)
 - [مفاهيم ومميزات
-  اساسية](https://docs.triliumnotes.org/user-guide/concepts/notes)
+  أساسية](https://docs.triliumnotes.org/user-guide/concepts/notes)
 - [أنماط قاعدة المعرفة
   الشخصية](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
-## 🎁الميزات
+## 🎁 المميزات
 
-* يمكن ترتيب النوتات الموسيقية في شجرة ذات عمق غير محدود. ويمكن وضع نوتة واحدة
-  في أماكن متعددة في الشجرة (انظر
+* يمكن تنظيم الملاحظات في شجرة ذات عمق غير محدود. كما يمكن وضع الملاحظة الواحدة
+  في أماكن متعددة داخل الشجرة (راجع
   [الاستنساخ](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
 * محرر ملاحظات WYSIWYG غني يتضمن على سبيل المثال الجداول والصور
   و[الرياضيات](https://docs.triliumnotes.org/user-guide/note-types/text) مع
-  تنسيق تلقائي لـ Markdown[2]
-* دعم تحرير [الملاحظات التي تحتوي على شفرة
-  المصدر](https://docs.triliumnotes.org/user-guide/note-types/code)، بما في ذلك
-  تمييز بناء الجملة
-* التنقل السريع والسهل بين الملاحظات
-  (https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation)،
-  والبحث في النص الكامل، ورفع الملاحظات
-  (https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
-* سلس [ملاحظة حول إصدار
-  النظام](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
+  Markdown [تنسيق
+  تلقائي](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)
+* دعم تحرير [ملاحظات التعليمات
+  البرمجية](https://docs.triliumnotes.org/user-guide/note-types/code)، بما في
+  ذلك تمييز بناء الجملة
+* [التنقل بين
+  الملاحظات](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-navigation)
+  سهل وسريع، مع دعم البحث في النص الكامل، و[رفع
+  الملاحظات](https://docs.triliumnotes.org/user-guide/concepts/navigation/note-hoisting)
+* نظام [إصدارات
+  الملاحظات](https://docs.triliumnotes.org/user-guide/concepts/notes/note-revisions)
+  السلس
 * يمكن استخدام
   [السمات](https://docs.triliumnotes.org/user-guide/advanced-usage/attributes)
   لتنظيم الملاحظات والاستعلام عنها و[البرمجة
   النصية](https://docs.triliumnotes.org/user-guide/scripts) المتقدمة
-* UI available in English, German, Spanish, French, Romanian, and Chinese
-  (simplified and traditional)
+* واجهة المستخدم متوفرة باللغات الإنجليزية والألمانية والإسبانية والفرنسية
+  والرومانية والصينية (المبسطة والتقليدية)
 * تكامل مباشر مع [أنظمة الهوية المفتوحة OpenID وكلمات المرور المؤقتة
   TOTP](https://docs.triliumnotes.org/user-guide/setup/server/mfa) لتسجيل دخول
   أكثر أماناً
@@ -97,8 +99,8 @@ script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
     المزامنة](https://docs.triliumnotes.org/user-guide/setup/server/cloud-hosting)
 * [مشاركة](https://docs.triliumnotes.org/user-guide/advanced-usage/sharing)
   الملاحظات (نشرها) على شبكة الإنترنت العامة
-* [تشفير الملاحظات]
-  (https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
+* [تشفير
+  الملاحظات](https://docs.triliumnotes.org/user-guide/concepts/notes/protected-notes)
   تشفير قوي مع إمكانية التحكم بكل ملاحظة على حدة
 * رسم المخططات، بالاعتماد على إكسكاليدرا [Excalidraw](https://excalidraw.com/)
   (نوع الملاحظة "لوحة رسم")
@@ -118,131 +120,129 @@ script)](./README-ZH_TW.md) | [English](../README.md) | [French](./README-fr.md)
   المتقدمة](https://docs.triliumnotes.org/user-guide/advanced-usage/advanced-showcases)
 * [واجهة REST
   API](https://docs.triliumnotes.org/user-guide/advanced-usage/etapi) للأتمتة
-* Scales well in both usability and performance upwards of 100 000 notes
-* Touch optimized [mobile
-  frontend](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend) for
-  smartphones and tablets
-* Built-in [dark
-  theme](https://docs.triliumnotes.org/user-guide/concepts/themes), support for
-  user themes
-* [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
-  and [Markdown import &
-  export](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
-* [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) for
-  easy saving of web content
-* Customizable UI (sidebar buttons, user-defined widgets, ...)
-* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
-  along with a Grafana Dashboard.
+* يتميز بسهولة الاستخدام والأداء العاليين، ويستوعب أكثر من 100,000 ملاحظة
+* [واجهة جوال](https://docs.triliumnotes.org/user-guide/setup/mobile-frontend)
+  محسنة للمس، مخصصة للهواتف الذكية والأجهزة اللوحية
+* [الوضع الداكن](https://docs.triliumnotes.org/user-guide/concepts/themes)
+  المدمج، ودعم سمات المستخدم
+* [إيفيرنوت
+  (Evernote)](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
+  و[استيراد وتصدير ملفات
+  Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
+* [أداة قص الويب](https://docs.triliumnotes.org/user-guide/setup/web-clipper)
+  لحفظ محتوى الويب بسهولة
+* واجهة مستخدم قابلة للتخصيص (أزرار الشريط الجانبي، أدوات المستخدم المحددة، ...)
+* [مؤشرات
+  الأداء](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics)، مع
+  لوحة تحكم Grafana.
 
-✨ Check out the following third-party resources/communities for more TriliumNext
-related goodies:
+✨ اطلع على الموارد/المجتمعات الخارجية التالية لمزيد من المعلومات المفيدة
+المتعلقة بـ TriliumNext:
 
-- [awesome-trilium](https://github.com/Nriver/awesome-trilium) for 3rd party
-  themes, scripts, plugins and more.
-- [TriliumRocks!](https://trilium.rocks/) for tutorials, guides, and much more.
+- للقوالب والبرامج النصية والإضافات الخارجية والمزيد
+  [awesome-trillium](https://github.com/Nriver/awesome-trilium).
+- للحصول على دروس تعليمية، وأدلة، وغير ذلك الكثير
+  [TriliumRocks!](https://trilium.rocks/).
 
-## ❓لماذا تريليوم التالي؟
+## ؟لماذا TriliumNext؟
 
-The original Trilium developer ([Zadam](https://github.com/zadam)) has
-graciously given the Trilium repository to the community project which resides
-at https://github.com/TriliumNext
+قام مطور Trilium الأصلي ([Zadam](https://github.com/zadam)) مشكورًا بإهداء
+مستودع Trilium إلى مشروع المجتمع الموجود على الرابط التالي:
+https://github.com/TriliumNext
 
-### ⬆️ الهجرة من Zadam الى تريليوم؟
+### ⬆️الانتقال من Zadam/Trilium؟
 
-There are no special migration steps to migrate from a zadam/Trilium instance to
-a TriliumNext/Trilium instance. Simply [install
-TriliumNext/Trilium](#-installation) as usual and it will use your existing
-database.
+لا توجد خطوات انتقال خاصة للانتقال من نسخة zadam/Trilium إلى نسخة
+TriliumNext/Trilium. ما عليك سوى تثبيت TriliumNext/Trilium كالمعتاد، وسيستخدم
+قاعدة بياناتك الحالية.
 
-Versions up to and including
-[v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4) are
-compatible with the latest zadam/trilium version of
-[v0.63.7](https://github.com/zadam/trilium/releases/tag/v0.63.7). Any later
-versions of TriliumNext/Trilium have their sync versions incremented which
-prevents direct migration.
+الإصدارات حتى الإصدار
+[v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4) متوافقة
+مع أحدث إصدار من zadam/trillium وهو [v0.63.7]{2]. أما الإصدارات اللاحقة من
+TriliumNext/Trilium، فقد تم تحديث أرقام المزامنة الخاصة بها، مما يمنع الترقية
+المباشرة.
 
-## 💬تحدث معنا
+## 💬 ناقش معنا
 
-Feel free to join our official conversations. We would love to hear what
-features, suggestions, or issues you may have!
+لا تترددوا في الانضمام إلى محادثاتنا الرسمية. يسعدنا أن نسمع عن الميزات أو
+الاقتراحات أو المشاكل التي قد تواجهونها!
 
-- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (For synchronous
-  discussions.)
-  - The `General` Matrix room is also bridged to
-    [XMPP](xmpp:discuss@trilium.thisgreat.party?join)
-- [Github Discussions](https://github.com/TriliumNext/Trilium/discussions) (For
-  asynchronous discussions.)
-- [Github Issues](https://github.com/TriliumNext/Trilium/issues) (For bug
-  reports and feature requests.)
+- [ماتريكس (Matrix)](https://matrix.to/#/#triliumnext:matrix.org) (للمناقشات
+  المتزامنة.)
+  - غرفة ماتريكس `العامة` مرتبطة أيضاً بـ
+    [XMPP](xmpp:discuss@trilium.thisgreat.party?join) (Extensible Messaging and
+    Presence Protocol)
+- [مناقشات GitHub](https://github.com/TriliumNext/Trilium/discussions)
+  (للمناقشات غير المتزامنة.)
+- [Github Issues](https://github.com/TriliumNext/Trilium/issues) (لتقديم تقارير
+  الأخطاء وطلبات الميزات.)
 
-## 🏗️ تثبيت
+## 🏗️ التثبيت
 
-### ويندوز / نظام تشغيل ماك
+### ويندوز (Windows) / نظام تشغيل ماك (MacOS)
 
-Download the binary release for your platform from the [latest release
-page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the package
-and run the `trilium` executable.
+نزل الإصدار الثنائي (Binary) المناسب لمنصتك من [صفحة أحدث
+الإصدارات](https://github.com/TriliumNext/Trilium/releases/latest)، ثم فك ضغط
+الحزمة وشغّل ملف `trilium` التنفيذي.
 
-### لينكس
+### لينكس (Linux)
 
-If your distribution is listed in the table below, use your distribution's
-package.
+إذا كانت توزيعتك مدرجة في الجدول أدناه، فاستخدم الحزمة الخاصة بتوزيعتك.
 
-[![Packaging
-status](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+[![حالة
+الحزم](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
 
-You may also download the binary release for your platform from the [latest
-release page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the
-package and run the `trilium` executable.
+يمكنك أيضًا تنزيل الإصدار الثنائي لمنصتك من [صفحة أحدث
+إصدار](https://github.com/TriliumNext/Trilium/releases/latest)، وفك ضغط الحزمة
+وتشغيل الملف التنفيذي `trillium`.
 
-TriliumNext is also provided as a Flatpak, but not yet published on FlatHub.
+يتم توفير TriliumNext أيضًا كـ Flatpak، ولكن لم يتم نشره بعد على FlatHub.
 
-### مستعرض( اي نظام تشغيل)
+### متصفح (أي نظام تشغيل)
 
-If you use a server installation (see below), you can directly access the web
-interface (which is almost identical to the desktop app).
+إذا كنت تستخدم تثبيت الخادم (انظر أدناه)، فيمكنك الوصول مباشرة إلى واجهة الويب
+(وهي مطابقة تقريبًا لتطبيق سطح المكتب).
 
-Currently only the latest versions of Chrome & Firefox are supported (and
-tested).
+حالياً، يتم دعم أحدث إصدارات متصفحي Chrome و Firefox فقط (والتي تم اختبارها).
 
-### هاتف المحمول
+### الهاتف المحمول
 
-To use TriliumNext on a mobile device, you can use a mobile web browser to
-access the mobile interface of a server installation (see below).
+لاستخدام TriliumNext على الأجهزة المحمولة، يمكنك استخدام المتصفح للوصول إلى
+واجهة الجوال الخاصة بنسخة الخادم المثبتة (انظر أدناه).
 
-See issue https://github.com/TriliumNext/Trilium/issues/4962 for more
-information on mobile app support.
+راجع المشكلة رقم https://github.com/TriliumNext/Trilium/issues/4962 لمزيد من
+المعلومات حول دعم إصدار الهاتف المحمول.
 
-If you prefer a native Android app, you can use
+إذا كنت تفضل تطبيقًا أصليًا لنظام Android، يمكنك استخدام
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
-Report bugs and missing features at [their
-repository](https://github.com/FliegendeWurst/TriliumDroid). Note: It is best to
-disable automatic updates on your server installation (see below) when using
-TriliumDroid since the sync version must match between Trilium and TriliumDroid.
+أبلغ عن الأخطاء والميزات المفقودة في
+[مستودعهم](https://github.com/FliegendeWurst/TriliumDroid). ملاحظة: يُفضل تعطيل
+التحديثات التلقائية على تثبيت الخادم الخاص بك (انظر أدناه) عند استخدام
+TriliumDroid، حيث يجب أن تتطابق نسخة المزامنة بين Trilium وTriliumDroid.
 
-### الخادم
+### خادم
 
-To install TriliumNext on your own server (including via Docker from
-[Dockerhub](https://hub.docker.com/r/triliumnext/trilium)) follow [the server
-installation docs](https://docs.triliumnotes.org/user-guide/setup/server).
+لتثبيت TriliumNext على خادمك الخاص (بما في ذلك عبر Docker من
+[Dockerhub](https://hub.docker.com/r/triliumnext/trilium)) اتبع [وثائق تثبيت
+الخادم]{2].
 
 
 ## 💻 المساهمة
 
-### ترجمات
+### الترجمات
 
-If you are a native speaker, help us translate Trilium by heading over to our
-[Weblate page](https://hosted.weblate.org/engage/trilium/).
+إذا كنت متحدثًا أصليًا للغة، فساعدنا في ترجمة Trilium من خلال التوجه إلى [صفحة
+الويب]{1].
 
-Here's the language coverage we have so far:
+إليك قائمة نسبة اكتمال اللغات المدعومة حتى الآن:
 
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
+[![حالة
+الترجمة](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
 
-### كود
+### التعليمات البرمجية
 
-Download the repository, install dependencies using `pnpm` and then run the
-server (available at http://localhost:8080):
+قم بتنزيل المستودع، وقم بتثبيت التبعيات باستخدام `pnpm`، ثم قم بتشغيل الخادم
+(المتاح على http://localhost:8080):
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -252,8 +252,8 @@ pnpm run server:start
 
 ### التوثيق
 
-Download the repository, install dependencies using `pnpm` and then run the
-environment required to edit the documentation:
+قم بتنزيل المستودع، وقم بتثبيت التبعيات باستخدام `pnpm`، ثم قم بتشغيل البيئة
+المطلوبة لتحرير الوثائق:
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -262,8 +262,8 @@ pnpm edit-docs:edit-docs
 ```
 
 ### بناء الملف التنفيذي
-Download the repository, install dependencies using `pnpm` and then build the
-desktop app for Windows:
+قم بتنزيل المستودع، وقم بتثبيت التبعيات باستخدام `pnpm`، ثم قم ببناء تطبيق سطح
+المكتب لنظام التشغيل ويندوز (Windows):
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -271,71 +271,69 @@ pnpm install
 pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 ```
 
-For more details, see the [development
-docs](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
+لمزيد من التفاصيل، راجع [وثائق
+التطوير](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
 
-### توثيق المطور
+### وثائق المطورين
 
-Please view the [documentation
-guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
-for details. If you have more questions, feel free to reach out via the links
-described in the "Discuss with us" section above.
+يرجى الاطلاع على [دليل
+التوثيق](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
+لمزيد من التفاصيل. إذا كانت لديكم أي استفسارات أخرى، فلا تترددوا في التواصل معنا
+عبر الروابط الموضحة في قسم "ناقش معنا" أعلاه.
 
-## 👏 اشادات
+## 👏 شكر خاص
 
-* [zadam](https://github.com/zadam) for the original concept and implementation
-  of the application.
-* [Sarah Hussein](https://github.com/Sarah-Hussein) for designing the
-  application icon.
-* [nriver](https://github.com/nriver) for his work on internationalization.
-* [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
-* [antoniotejada](https://github.com/nriver) for the original syntax highlight
-  widget.
-* [Dosu](https://dosu.dev/) for providing us with the automated responses to
-  GitHub issues and discussions.
-* [Tabler Icons](https://tabler.io/icons) for the system tray icons.
+* لـ [zadam](https://github.com/zadam): للمفهوم الأصلي وتنفيذ التطبيق.
+* لـ [سارة حسين (Sarah Hussein)](https://github.com/Sarah-Hussein): لتصميم
+  أيقونة التطبيق.
+* لـ [nriver](https://github.com/nriver): لعمله على تدويل التطبيق (دعم اللغات).
+* لـ [Thomas Frei](https://github.com/thfrei): لعمله الأصلي على "اللوحة"
+  (Canvas).
+* لـ [antoniotejada](https://github.com/nriver): لأداة تمييز الصيغة البرمجية
+  (Syntax highlight) الأصلية.
+* لـ [Dosu](https://dosu.dev/): لتزويدنا بالردود الآلية على مشكلات ونقاشات
+  GitHub.
+* لـ [Tabler Icons](https://tabler.io/icons): لأيقونات شريط النظام.
 
-Trilium would not be possible without the technologies behind it:
+لم يكن لـ Trilium أن يرى النور لولا التقنيات التي تقف خلفه:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes. We are grateful for being offered a set of the premium features.
-* [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with
-  support for huge amount of languages.
-* [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite
-  whiteboard used in Canvas notes.
-* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - providing the
-  mind map functionality.
-* [Leaflet](https://github.com/Leaflet/Leaflet) - for rendering geographical
-  maps.
-* [Tabulator](https://github.com/olifolkerd/tabulator) - for the interactive
-  table used in collections.
-* [FancyTree](https://github.com/mar10/fancytree) - feature-rich tree library
-  without real competition.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - visual connectivity library.
-  Used in [relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [link
-  maps](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
+* محرر [CKEditor 5](https://github.com/ckeditor/ckeditor5): - المحرر المرئي خلف
+  الملاحظات النصية. نحن ممتنون لحصولنا على مجموعة من الميزات المدفوعة (Premium).
+* محرر [CodeMirror](https://github.com/codemirror/CodeMirror): - محرر أكواد يدعم
+  عدداً هائلاً من اللغات.
+* برنامج [Excalidraw](https://github.com/excalidraw/excalidraw): - السبورة
+  البيضاء اللانهائية المستخدمة في ملاحظات Canvas.
+* برنامج [Mind Elixir](https://github.com/SSShooter/mind-elixir-core): - يوفر
+  وظائف الخرائط الذهنية.
+* برنامج [Leaflet](https://github.com/Leaflet/Leaflet): - لعرض الخرائط
+  الجغرافية.
+* مكتبة [Tabulator](https://github.com/olifolkerd/tabulator): - للجداول
+  التفاعلية المستخدمة في المجموعات.
+* مكتبة [FancyTree](https://github.com/mar10/fancytree): - مكتبة "شجرية" غنية
+  بالميزات ولا يوجد لها منافس حقيقي.
+* مكتبة [jsPlumb](https://github.com/jsplumb/jsplumb): - مكتبة للربط المرئي،
+  تُستخدم في [خرائط
+  العلاقات](https://docs.triliumnotes.org/user-guide/note-types/relation-map)
+  و[خرائط
+  الروابط](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
 ## 🤝 الدعم
 
-Trilium is built and maintained with [hundreds of hours of
-work](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Your
-support keeps it open-source, improves features, and covers costs such as
-hosting.
+تم بناء وصيانة برنامج Trilium بمئات الساعات من العمل. دعمكم يحافظ على كونه مفتوح
+المصدر، ويحسن الميزات، ويغطي التكاليف مثل الاستضافة.
 
-Consider supporting the main developer
-([eliandoran](https://github.com/eliandoran)) of the application via:
+يرجى التفكير في دعم المطور الرئيسي ([eliandoran](https://github.com/eliandoran))
+للتطبيق عبر:
 
-- [GitHub Sponsors](https://github.com/sponsors/eliandoran)
+- [رعاة GitHub](https://github.com/sponsors/eliandoran)
 - [PayPal](https://paypal.me/eliandoran)
-- [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
+- [اشترِ لي قهوة](https://buymeacoffee.com/eliandoran)
 
 ## 🔑 الترخيص
 
-Copyright 2017-2025 zadam, Elian Doran, and other contributors
+جميع الحقوق محفوظة لـ zadam وإليان دوران ومساهمين آخرين، من عام 2017 إلى عام
+2025
 
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU Affero General Public License as published by the Free
-Software Foundation, either version 3 of the License, or (at your option) any
-later version.
+هذا البرنامج هو برنامج مجاني: يمكنك إعادة توزيعه و/أو تعديله بموجب شروط رخصة جنو
+أفيرو (GNU Affero) العامة كما نشرتها مؤسسة البرمجيات الحرة، سواء الإصدار 3 من
+الرخصة، أو (حسب اختيارك) أي إصدار لاحق.

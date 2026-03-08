@@ -204,8 +204,12 @@ export function formatDownloadTitle(fileName: string, type: string | null, mime:
     return `${fileNameBase}${getExtension()}`;
 }
 
-export function removeFileExtension(filePath: string) {
+export function removeFileExtension(filePath: string, mime?: string) {
     const extension = path.extname(filePath).toLowerCase();
+
+    if (mime?.startsWith("video/") || mime?.startsWith("audio/")) {
+        return filePath.substring(0, filePath.length - extension.length);
+    }
 
     switch (extension) {
         case ".md":
@@ -227,7 +231,7 @@ export function getNoteTitle(filePath: string, replaceUnderscoresWithSpaces: boo
     const trimmedNoteMeta = noteMeta?.title?.trim();
     if (trimmedNoteMeta) return trimmedNoteMeta;
 
-    const basename = path.basename(removeFileExtension(filePath));
+    const basename = path.basename(removeFileExtension(filePath, noteMeta?.mime));
     return replaceUnderscoresWithSpaces ? basename.replace(/_/g, " ").trim() : basename;
 }
 

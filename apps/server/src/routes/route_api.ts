@@ -1,15 +1,17 @@
 import express, { type RequestHandler } from "express";
+import type { ParamsDictionary } from "express-serve-static-core";
 import multer from "multer";
-import log from "../services/log.js";
-import cls from "../services/cls.js";
-import sql from "../services/sql.js";
-import entityChangesService from "../services/entity_changes.js";
+
 import AbstractBeccaEntity from "../becca/entities/abstract_becca_entity.js";
 import NotFoundError from "../errors/not_found_error.js";
 import ValidationError from "../errors/validation_error.js";
 import auth from "../services/auth.js";
-import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
+import cls from "../services/cls.js";
+import entityChangesService from "../services/entity_changes.js";
+import log from "../services/log.js";
+import sql from "../services/sql.js";
 import { safeExtractMessageAndStackFromError } from "../services/utils.js";
+import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 
 const MAX_ALLOWED_FILE_SIZE_MB = 250;
 export const router = express.Router();
@@ -20,8 +22,8 @@ type HttpMethod = "all" | "get" | "post" | "put" | "delete" | "patch" | "options
 export type ApiResultHandler = (req: express.Request, res: express.Response, result: unknown) => number;
 
 type NotAPromise<T> = T & { then?: void };
-export type ApiRequestHandler = (req: express.Request, res: express.Response, next: express.NextFunction) => unknown;
-export type SyncRouteRequestHandler = (req: express.Request, res: express.Response, next: express.NextFunction) => NotAPromise<object> | number | string | void | null;
+export type ApiRequestHandler<P extends ParamsDictionary> = (req: express.Request<P>, res: express.Response, next: express.NextFunction) => unknown;
+export type SyncRouteRequestHandler<P extends ParamsDictionary> = (req: express.Request<P>, res: express.Response, next: express.NextFunction) => NotAPromise<object> | number | string | void | null;
 
 /** Handling common patterns. If entity is not caught, serialization to JSON will fail */
 function convertEntitiesToPojo(result: unknown) {
@@ -67,9 +69,9 @@ export function apiResultHandler(req: express.Request, res: express.Response, re
         return send(res, statusCode, response);
     } else if (result === undefined) {
         return send(res, 204, "");
-    } else {
-        return send(res, 200, result);
     }
+    return send(res, 200, result);
+
 }
 
 function send(res: express.Response, statusCode: number, response: unknown) {
@@ -81,34 +83,34 @@ function send(res: express.Response, statusCode: number, response: unknown) {
         res.status(statusCode).send(response);
 
         return response.length;
-    } else {
-        const json = JSON.stringify(response);
-
-        res.setHeader("Content-Type", "application/json");
-        res.status(statusCode).send(json);
-
-        return json.length;
     }
+    const json = JSON.stringify(response);
+
+    res.setHeader("Content-Type", "application/json");
+    res.status(statusCode).send(json);
+
+    return json.length;
+
 }
 
-export function apiRoute(method: HttpMethod, path: string, routeHandler: SyncRouteRequestHandler) {
+export function apiRoute<P extends ParamsDictionary>(method: HttpMethod, path: string, routeHandler: SyncRouteRequestHandler<P>) {
     route(method, path, [auth.checkApiAuth, csrfMiddleware], routeHandler, apiResultHandler);
 }
 
-export function asyncApiRoute(method: HttpMethod, path: string, routeHandler: ApiRequestHandler) {
+export function asyncApiRoute<P extends ParamsDictionary>(method: HttpMethod, path: string, routeHandler: ApiRequestHandler<P>) {
     asyncRoute(method, path, [auth.checkApiAuth, csrfMiddleware], routeHandler, apiResultHandler);
 }
 
-export function route(method: HttpMethod, path: string, middleware: express.Handler[], routeHandler: SyncRouteRequestHandler, resultHandler: ApiResultHandler | null = null) {
+export function route<P extends ParamsDictionary>(method: HttpMethod, path: string, middleware: express.Handler[], routeHandler: SyncRouteRequestHandler<P>, resultHandler: ApiResultHandler | null = null) {
     internalRoute(method, path, middleware, routeHandler, resultHandler, true);
 }
 
-export function asyncRoute(method: HttpMethod, path: string, middleware: express.Handler[], routeHandler: ApiRequestHandler, resultHandler: ApiResultHandler | null = null) {
+export function asyncRoute<P extends ParamsDictionary>(method: HttpMethod, path: string, middleware: express.Handler[], routeHandler: ApiRequestHandler<P>, resultHandler: ApiResultHandler | null = null) {
     internalRoute(method, path, middleware, routeHandler, resultHandler, false);
 }
 
-function internalRoute(method: HttpMethod, path: string, middleware: express.Handler[], routeHandler: ApiRequestHandler, resultHandler: ApiResultHandler | null = null, transactional: boolean) {
-    router[method](path, ...(middleware as express.Handler[]), (req: express.Request, res: express.Response, next: express.NextFunction) => {
+function internalRoute<P extends ParamsDictionary>(method: HttpMethod, path: string, middleware: express.Handler[], routeHandler: ApiRequestHandler<P>, resultHandler: ApiResultHandler | null = null, transactional: boolean) {
+    router[method](path, ...(middleware as express.Handler[]), (req: express.Request<P>, res: express.Response, next: express.NextFunction) => {
         const start = Date.now();
 
         try {
@@ -193,7 +195,7 @@ export function createUploadMiddleware(): RequestHandler {
 const uploadMiddleware = createUploadMiddleware();
 
 export const uploadMiddlewareWithErrorHandling = function (req: express.Request, res: express.Response, next: express.NextFunction) {
-    uploadMiddleware(req, res, function (err) {
+    uploadMiddleware(req, res, (err) => {
         if (err?.code === "LIMIT_FILE_SIZE") {
             res.setHeader("Content-Type", "text/plain").status(400).send(`Cannot upload file because it excceeded max allowed file size of ${MAX_ALLOWED_FILE_SIZE_MB} MiB`);
         } else {

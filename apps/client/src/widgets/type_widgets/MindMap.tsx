@@ -6,7 +6,7 @@ import "./MindMap.css";
 import nodeMenu from "@mind-elixir/node-menu";
 import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { snapdom } from "@zumer/snapdom";
-import { default as VanillaMindElixir,MindElixirData, MindElixirInstance, Operation, Options, THEME as LIGHT_THEME, DARK_THEME } from "mind-elixir";
+import { DARK_THEME, default as VanillaMindElixir, MindElixirData, MindElixirInstance, Operation, Options, THEME as LIGHT_THEME } from "mind-elixir";
 import { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
@@ -154,6 +154,7 @@ function MindElixir({ containerRef: externalContainerRef, containerProps, apiRef
     const apiRef = useRef<MindElixirInstance>(null);
     const [ locale ] = useTriliumOption("locale");
     const colorScheme = useColorScheme();
+    const defaultColorScheme = useRef(colorScheme);
 
     function reinitialize() {
         if (!containerRef.current) return;
@@ -162,7 +163,7 @@ function MindElixir({ containerRef: externalContainerRef, containerProps, apiRef
             el: containerRef.current,
             locale: LOCALE_MAPPINGS[locale as DISPLAYABLE_LOCALE_IDS] ?? undefined,
             editable,
-            theme: LIGHT_THEME
+            theme: defaultColorScheme.current === "dark" ? DARK_THEME : LIGHT_THEME
         });
 
         if (editable) {
@@ -188,7 +189,11 @@ function MindElixir({ containerRef: externalContainerRef, containerProps, apiRef
         if (!apiRef.current) return;
         const newTheme = colorScheme === "dark" ? DARK_THEME : LIGHT_THEME;
         if (apiRef.current.theme === newTheme) return; // Avoid unnecessary theme changes, which can be expensive to render.
-        apiRef.current.changeTheme(newTheme);
+        try {
+            apiRef.current.changeTheme(newTheme);
+        } catch (e) {
+            console.warn("Failed to change mind map theme:", e);
+        }
     }, [ colorScheme ]);
 
     useEffect(() => {

@@ -21,7 +21,7 @@ describe("createPartialContentHandler tests", () => {
     vi.restoreAllMocks();
   });
   it("returns a handler", () => {
-    const contentProvider = vi.fn().mockResolvedValue({}) as ContentProvider;
+    const contentProvider = vi.fn().mockResolvedValue({}) as ContentProvider<{}>;
     const handler = createPartialContentHandler(contentProvider, logger);
     expect(typeof handler === "function");
   });
@@ -45,7 +45,7 @@ describe("createPartialContentHandler tests", () => {
       sendStatusSpy = vi.spyOn(res, "sendStatus");
     });
     it("invokes contentProvider with the specified request", async () => {
-      const contentProvider = vi.fn().mockResolvedValue({}) as ContentProvider;
+      const contentProvider = vi.fn().mockResolvedValue({}) as ContentProvider<{}>;
       const handler = createPartialContentHandler(contentProvider, logger);
       try {
         await handler(req, res);
@@ -54,7 +54,7 @@ describe("createPartialContentHandler tests", () => {
     });
     it("returns 404 if contentProvider throws ContentDoesNotExistError error", async () => {
       const error = new ContentDoesNotExistError("404-File not found!");
-      const contentProvider = vi.fn().mockRejectedValue(error) as ContentProvider;
+      const contentProvider = vi.fn().mockRejectedValue(error) as ContentProvider<{}>;
       const handler = createPartialContentHandler(contentProvider, logger);
       try {
         await handler(req, res);
@@ -66,7 +66,7 @@ describe("createPartialContentHandler tests", () => {
     });
     it("returns 500 if contentProvider throws any other error", async () => {
       const error = new Error("Something went wrong!");
-      const contentProvider = vi.fn().mockRejectedValue(error) as ContentProvider;
+      const contentProvider = vi.fn().mockRejectedValue(error) as ContentProvider<{}>;
       const handler = createPartialContentHandler(contentProvider, logger);
       try {
         await handler(req, res);
@@ -76,7 +76,7 @@ describe("createPartialContentHandler tests", () => {
       }
     });
     it("returns 416 if parseRangeHeader throws RangeParserError error", async () => {
-      const contentProvider = vi.fn().mockResolvedValue({}) as ContentProvider;
+      const contentProvider = vi.fn().mockResolvedValue({}) as ContentProvider<{}>;
       const handler = createPartialContentHandler(contentProvider, logger);
       req.headers = { range: "bytes=30-10" };
       try {
@@ -87,7 +87,7 @@ describe("createPartialContentHandler tests", () => {
       }
     });
     it("returns 500 if parseRangeHeader throws other errors", async () => {
-      const contentProvider = vi.fn().mockResolvedValue({}) as ContentProvider;
+      const contentProvider = vi.fn().mockResolvedValue({}) as ContentProvider<{}>;
       const handler = createPartialContentHandler(contentProvider, logger);
       try {
         await handler(req, res);
@@ -112,7 +112,7 @@ describe("createPartialContentHandler tests", () => {
       };
       const pipeSpy = vi.spyOn(result, "pipe");
       const getStreamSpy = vi.spyOn(content, "getStream");
-      const contentProvider = vi.fn().mockResolvedValue(content) as ContentProvider;
+      const contentProvider = vi.fn().mockResolvedValue(content) as ContentProvider<{}>;
       const handler = createPartialContentHandler(contentProvider, logger);
       const setContentTypeHeaderSpy = vi.spyOn(utils, "setContentTypeHeader");
       const setContentDispositionHeaderSpy = vi.spyOn(utils, "setContentDispositionHeader");
@@ -152,7 +152,7 @@ describe("createPartialContentHandler tests", () => {
       const range = { start: 0, end: 5 };
       const pipeSpy = vi.spyOn(result, "pipe");
       const getStreamSpy = vi.spyOn(content, "getStream");
-      const contentProvider = vi.fn().mockResolvedValue(content) as ContentProvider;
+      const contentProvider = vi.fn().mockResolvedValue(content) as ContentProvider<{}>;
       const handler = createPartialContentHandler(contentProvider, logger);
       const setContentTypeHeaderSpy = vi.spyOn(utils, "setContentTypeHeader");
       const setContentDispositionHeaderSpy = vi.spyOn(utils, "setContentDispositionHeader");

@@ -3,6 +3,7 @@ import { parseRangeHeader } from "./parseRangeHeader.js";
 import { RangeParserError } from "./RangeParserError.js";
 import type { Logger } from "./Logger.js";
 import type { ContentProvider } from "./ContentProvider.js";
+import type { ParamsDictionary } from "express-serve-static-core";
 import { ContentDoesNotExistError } from "./ContentDoesNotExistError.js";
 import {
   getRangeHeader,
@@ -13,8 +14,8 @@ import {
   setContentLengthHeader,
   setCacheControlHeaderNoCache
 } from "./utils.js";
-export function createPartialContentHandler(contentProvider: ContentProvider, logger: Logger) {
-  return async function handler(req: Request, res: Response) {
+export function createPartialContentHandler<P extends ParamsDictionary>(contentProvider: ContentProvider<P>, logger: Logger) {
+  return async function handler(req: Request<P>, res: Response) {
     let content;
     try {
       content = await contentProvider(req);

@@ -50,8 +50,15 @@
     },
     "bundle-error": {
       "title": "Özel bir betik yüklenemedi",
-      "message": "ID'si \"{{id}}\" ve başlığı \"{{title}}\" olan nottan alınan komut dosyası şunun nedeniyle yürütülemedi:\n\n{{message}}"
-    }
+      "message": "Komut şu nedenle yürütülemedi:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "Sunucudan widget listesi alınamadı"
+    },
+    "widget-render-error": {
+      "title": "Özel React widget'ı çizilirken sorun yaşandı"
+    },
+    "scripting-error": "Kullanıcı tanımlı betik hatası: {{title}}"
   },
   "add_link": {
     "add_link": "Bağlantı ekle",

@@ -24,6 +24,7 @@ async function testImport(fileName: string, mimetype: string) {
             const rootNote = becca.getNote("root");
             if (!rootNote) {
                 reject("Missing root note.");
+                return;
             }
 
             const importedNote = single.importSingleFile(

@@ -43,7 +43,7 @@
         "code_title": "Code Notizen",
         "canvas_title": "Leinwand",
         "mermaid_title": "Mermaid Diagramm",
-        "mindmap_title": "Mind Map",
+        "mindmap_title": "Mindmap",
         "text_description": "Die Notizen werden mit einem visuellen Editor (WYSIWYG) bearbeitet, der Tabellen, Bilder, mathematische Ausdrücke und Code-Blöcke mit Syntaxhervorhebung unterstützt. Formatieren Sie den Text schnell mit einer Markdown-ähnlichen Syntax oder mit Slash-Befehlen.",
         "code_description": "Große Quellcode- oder Skriptdateien werden mit einem speziellen Editor bearbeitet, der Syntaxhervorhebung für viele Programmiersprachen und diverse Farbschemata bietet.",
         "title": "Verschiedene Darstellungsformen für Ihre Informationen",

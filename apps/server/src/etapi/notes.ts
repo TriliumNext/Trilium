@@ -1,20 +1,21 @@
-import becca from "../becca/becca.js";
-import utils from "../services/utils.js";
-import eu from "./etapi_utils.js";
-import mappers from "./mappers.js";
-import noteService from "../services/notes.js";
-import TaskContext from "../services/task_context.js";
-import v from "./validators.js";
-import searchService from "../services/search/services/search.js";
-import SearchContext from "../services/search/search_context.js";
-import zipExportService from "../services/export/zip.js";
-import zipImportService from "../services/import/zip.js";
 import type { Request, Router } from "express";
 import type { ParsedQs } from "qs";
-import type { NoteParams } from "../services/note-interface.js";
-import type { SearchParams } from "../services/search/services/types.js";
-import type { ValidatorMap } from "./etapi-interface.js";
+
+import becca from "../becca/becca.js";
+import zipExportService from "../services/export/zip.js";
 import type { ExportFormat } from "../services/export/zip/abstract_provider.js";
+import zipImportService from "../services/import/zip.js";
+import type { NoteParams } from "../services/note-interface.js";
+import noteService from "../services/notes.js";
+import SearchContext from "../services/search/search_context.js";
+import searchService from "../services/search/services/search.js";
+import type { SearchParams } from "../services/search/services/types.js";
+import TaskContext from "../services/task_context.js";
+import utils from "../services/utils.js";
+import eu from "./etapi_utils.js";
+import type { ValidatorMap } from "./etapi-interface.js";
+import mappers from "./mappers.js";
+import v from "./validators.js";
 
 function register(router: Router) {
     eu.route(router, "get", "/etapi/notes", (req, res, next) => {
@@ -41,7 +42,7 @@ function register(router: Router) {
         res.json(resp);
     });
 
-    eu.route(router, "get", "/etapi/notes/:noteId", (req, res, next) => {
+    eu.route<{ noteId: string }>(router, "get", "/etapi/notes/:noteId", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
 
         res.json(mappers.mapNoteToPojo(note));
@@ -86,7 +87,7 @@ function register(router: Router) {
         utcDateCreated: [v.notNull, v.isString, v.isUtcDateTime]
     };
 
-    eu.route(router, "patch", "/etapi/notes/:noteId", (req, res, next) => {
+    eu.route<{ noteId: string }>(router, "patch", "/etapi/notes/:noteId", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
 
         if (note.isProtected) {
@@ -100,7 +101,7 @@ function register(router: Router) {
         res.json(mappers.mapNoteToPojo(note));
     });
 
-    eu.route(router, "delete", "/etapi/notes/:noteId", (req, res, next) => {
+    eu.route<{ noteId: string }>(router, "delete", "/etapi/notes/:noteId", (req, res, next) => {
         const { noteId } = req.params;
 
         const note = becca.getNote(noteId);
@@ -114,7 +115,7 @@ function register(router: Router) {
         res.sendStatus(204);
     });
 
-    eu.route(router, "get", "/etapi/notes/:noteId/content", (req, res, next) => {
+    eu.route<{ noteId: string }>(router, "get", "/etapi/notes/:noteId/content", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
 
         if (note.isProtected) {
@@ -131,7 +132,7 @@ function register(router: Router) {
         res.send(note.getContent());
     });
 
-    eu.route(router, "put", "/etapi/notes/:noteId/content", (req, res, next) => {
+    eu.route<{ noteId: string }>(router, "put", "/etapi/notes/:noteId/content", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
 
         if (note.isProtected) {
@@ -146,7 +147,7 @@ function register(router: Router) {
         return res.sendStatus(204);
     });
 
-    eu.route(router, "get", "/etapi/notes/:noteId/export", (req, res, next) => {
+    eu.route<{ noteId: string }>(router, "get", "/etapi/notes/:noteId/export", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
         const format = req.query.format || "html";
 
@@ -163,7 +164,7 @@ function register(router: Router) {
         zipExportService.exportToZip(taskContext, branch, format as ExportFormat, res);
     });
 
-    eu.route(router, "post", "/etapi/notes/:noteId/import", (req, res, next) => {
+    eu.route<{ noteId: string }>(router, "post", "/etapi/notes/:noteId/import", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
         const taskContext = new TaskContext("no-progress-reporting", "importNotes", null);
 
@@ -175,7 +176,7 @@ function register(router: Router) {
         }); // we need better error handling here, async errors won't be properly processed.
     });
 
-    eu.route(router, "post", "/etapi/notes/:noteId/revision", (req, res, next) => {
+    eu.route<{ noteId: string }>(router, "post", "/etapi/notes/:noteId/revision", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
 
         note.saveRevision();
@@ -183,7 +184,7 @@ function register(router: Router) {
         return res.sendStatus(204);
     });
 
-    eu.route(router, "get", "/etapi/notes/:noteId/attachments", (req, res, next) => {
+    eu.route<{ noteId: string }>(router, "get", "/etapi/notes/:noteId/attachments", (req, res, next) => {
         const note = eu.getAndCheckNote(req.params.noteId);
         const attachments = note.getAttachments();
 

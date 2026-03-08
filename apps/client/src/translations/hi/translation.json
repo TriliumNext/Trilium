@@ -51,7 +51,7 @@
   },
   "add_link": {
     "note": "नोट",
-    "add_link": "लिंक जोड़ें",
+    "add_link": "लिंक ऐड करें",
     "help_on_links": "लिंक्स पर मदद।",
     "search_note": "नोट को नाम से खोजें",
     "link_title_mirrors": "लिंक टाइटल नोट के करंट टाइटल के हिसाब से बदलता है",
@@ -112,7 +112,7 @@
     "help_on_tree_prefix": "ट्री प्रीफ़िक्स पर मदद",
     "prefix": "प्रीफ़िक्स: ",
     "save": "सेव करें",
-    "branch_prefix_saved": "ब्रांच प्रीफ़िक्स सेव कर दिया गया है।",
+    "branch_prefix_saved": "ब्रांच प्रीफ़िक्स सेव हो चुका है।",
     "branch_prefix_saved_multiple": "{{count}} ब्रांचेस के लिए ब्रांच प्रीफ़िक्स सेव कर दिया गया है।",
     "affected_branches": "प्रभावित ब्रांचेस ({{count}}):"
   },

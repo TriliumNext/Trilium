@@ -1,15 +1,15 @@
+import type { BranchRow } from "@triliumnext/commons";
 import type { Router } from "express";
 
 import becca from "../becca/becca.js";
-import eu from "./etapi_utils.js";
-import mappers from "./mappers.js";
 import BBranch from "../becca/entities/bbranch.js";
 import entityChangesService from "../services/entity_changes.js";
+import eu from "./etapi_utils.js";
+import mappers from "./mappers.js";
 import v from "./validators.js";
-import type { BranchRow } from "@triliumnext/commons";
 
 function register(router: Router) {
-    eu.route(router, "get", "/etapi/branches/:branchId", (req, res, next) => {
+    eu.route<{ branchId: string }>(router, "get", "/etapi/branches/:branchId", (req, res, next) => {
         const branch = eu.getAndCheckBranch(req.params.branchId);
 
         res.json(mappers.mapBranchToPojo(branch));
@@ -37,15 +37,15 @@ function register(router: Router) {
             existing.save();
 
             return res.status(200).json(mappers.mapBranchToPojo(existing));
-        } else {
-            try {
-                const branch = new BBranch(params).save();
+        } 
+        try {
+            const branch = new BBranch(params).save();
 
-                res.status(201).json(mappers.mapBranchToPojo(branch));
-            } catch (e: any) {
-                throw new eu.EtapiError(400, eu.GENERIC_CODE, e.message);
-            }
+            res.status(201).json(mappers.mapBranchToPojo(branch));
+        } catch (e: any) {
+            throw new eu.EtapiError(400, eu.GENERIC_CODE, e.message);
         }
+        
     });
 
     const ALLOWED_PROPERTIES_FOR_PATCH = {
@@ -54,7 +54,7 @@ function register(router: Router) {
         isExpanded: [v.notNull, v.isBoolean]
     };
 
-    eu.route(router, "patch", "/etapi/branches/:branchId", (req, res, next) => {
+    eu.route<{ branchId: string }>(router, "patch", "/etapi/branches/:branchId", (req, res, next) => {
         const branch = eu.getAndCheckBranch(req.params.branchId);
 
         eu.validateAndPatch(branch, req.body, ALLOWED_PROPERTIES_FOR_PATCH);
@@ -63,7 +63,7 @@ function register(router: Router) {
         res.json(mappers.mapBranchToPojo(branch));
     });
 
-    eu.route(router, "delete", "/etapi/branches/:branchId", (req, res, next) => {
+    eu.route<{ branchId: string }>(router, "delete", "/etapi/branches/:branchId", (req, res, next) => {
         const branch = becca.getBranch(req.params.branchId);
 
         if (!branch) {
@@ -75,7 +75,7 @@ function register(router: Router) {
         res.sendStatus(204);
     });
 
-    eu.route(router, "post", "/etapi/refresh-note-ordering/:parentNoteId", (req, res, next) => {
+    eu.route<{ parentNoteId: string }>(router, "post", "/etapi/refresh-note-ordering/:parentNoteId", (req, res, next) => {
         eu.getAndCheckNote(req.params.parentNoteId);
 
         entityChangesService.putNoteReorderingEntityChange(req.params.parentNoteId, "etapi");

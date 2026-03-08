@@ -4,6 +4,7 @@
 
     overflow: visible;
     contain: none !important;
+    clear: both;
 
     &.full-height {
         overflow: auto;

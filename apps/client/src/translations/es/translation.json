@@ -1548,7 +1548,8 @@
     "task-list": "Lista de tareas",
     "book": "Colección",
     "new-feature": "Nuevo",
-    "collections": "Colecciones"
+    "collections": "Colecciones",
+    "spreadsheet": "Hoja de cálculo"
   },
   "protect_note": {
     "toggle-on": "Proteger la nota",
@@ -1650,7 +1651,8 @@
   },
   "search_result": {
     "no_notes_found": "No se han encontrado notas para los parámetros de búsqueda dados.",
-    "search_not_executed": "La búsqueda aún no se ha ejecutado. Dé clic en el botón «Buscar» para ver los resultados."
+    "search_not_executed": "La búsqueda aún no se ha ejecutado.",
+    "search_now": "Buscar ahora"
   },
   "spacer": {
     "configure_launchbar": "Configurar barra de lanzamiento"

@@ -37,8 +37,35 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Run the unit tests
-        run: pnpm run test:all
+      - name: Run the client-side tests
+        run: pnpm run --filter=client test
+
+      - name: Upload client test report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: client-test-report
+          path: apps/client/test-output/vitest/html/
+          retention-days: 30
+
+      - name: Run the server-side tests
+        run: pnpm run --filter=server test
+
+      - name: Upload server test report
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: server-test-report
+          path: apps/server/test-output/vitest/html/
+          retention-days: 30
+
+      - name: Run CKEditor e2e tests
+        run: |
+          pnpm run --filter=ckeditor5-mermaid test
+          pnpm run --filter=ckeditor5-math test
+
+      - name: Run the rest of the tests
+        run: pnpm run --filter=\!client --filter=\!server --filter=\!ckeditor5-mermaid --filter=\!ckeditor5-math test
 
   build_docker:
     name: Build Docker image
@@ -63,7 +90,7 @@ jobs:
       - name: Trigger server build
         run: pnpm run server:build
       - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
+      - uses: docker/build-push-action@v7
         with:
           context: apps/server
           cache-from: type=gha
@@ -100,7 +127,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build and export to Docker
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: apps/server
           file: apps/server/${{ matrix.dockerfile }}

@@ -38,7 +38,7 @@ async function addClipping(req: Request) {
     if (!clippingNote) {
         clippingNote = noteService.createNewNote({
             parentNoteId: clipperInbox.noteId,
-            title: title,
+            title,
             content: "",
             type: "text"
         }).note;
@@ -188,7 +188,7 @@ export function processContent(images: Image[], note: BNote, content: string) {
     return rewrittenContent;
 }
 
-function openNote(req: Request) {
+function openNote(req: Request<{ noteId: string }>) {
     if (utils.isElectron) {
         ws.sendMessageToAllClients({
             type: "openNote",
@@ -198,11 +198,11 @@ function openNote(req: Request) {
         return {
             result: "ok"
         };
-    } else {
-        return {
-            result: "open-in-browser"
-        };
-    }
+    } 
+    return {
+        result: "open-in-browser"
+    };
+    
 }
 
 function handshake() {
@@ -212,7 +212,7 @@ function handshake() {
     };
 }
 
-async function findNotesByUrl(req: Request) {
+async function findNotesByUrl(req: Request<{ noteUrl: string }>) {
     const pageUrl = req.params.noteUrl;
     const clipperInbox = await getClipperInboxNote();
     const foundPage = findClippingNote(clipperInbox, pageUrl, null);

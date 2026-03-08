@@ -1,21 +1,22 @@
-"use strict";
 
-import sql from "../../services/sql.js";
-import log from "../../services/log.js";
-import attributeService from "../../services/attributes.js";
-import BAttribute from "../../becca/entities/battribute.js";
-import becca from "../../becca/becca.js";
-import ValidationError from "../../errors/validation_error.js";
-import type { Request } from "express";
+
 import { UpdateAttributeResponse } from "@triliumnext/commons";
+import type { Request } from "express";
 
-function getEffectiveNoteAttributes(req: Request) {
+import becca from "../../becca/becca.js";
+import BAttribute from "../../becca/entities/battribute.js";
+import ValidationError from "../../errors/validation_error.js";
+import attributeService from "../../services/attributes.js";
+import log from "../../services/log.js";
+import sql from "../../services/sql.js";
+
+function getEffectiveNoteAttributes(req: Request<{ noteId: string }>) {
     const note = becca.getNote(req.params.noteId);
 
     return note?.getAttributes();
 }
 
-function updateNoteAttribute(req: Request) {
+function updateNoteAttribute(req: Request<{ noteId: string }>) {
     const noteId = req.params.noteId;
     const body = req.body;
 
@@ -47,7 +48,7 @@ function updateNoteAttribute(req: Request) {
         }
 
         attribute = new BAttribute({
-            noteId: noteId,
+            noteId,
             name: body.name,
             type: body.type,
             isInheritable: body.isInheritable
@@ -96,7 +97,7 @@ function addNoteAttribute(req: Request) {
     new BAttribute({ ...body, noteId }).save();
 }
 
-function deleteNoteAttribute(req: Request) {
+function deleteNoteAttribute(req: Request<{ noteId: string; attributeId: string }>) {
     const noteId = req.params.noteId;
     const attributeId = req.params.attributeId;
 
@@ -111,7 +112,7 @@ function deleteNoteAttribute(req: Request) {
     }
 }
 
-function updateNoteAttributes(req: Request) {
+function updateNoteAttributes(req: Request<{ noteId: string }>) {
     const noteId = req.params.noteId;
     const incomingAttributes = req.body;
 
@@ -193,7 +194,7 @@ function getValuesForAttribute(req: Request) {
     return sql.getColumn("SELECT DISTINCT value FROM attributes WHERE isDeleted = 0 AND name = ? AND type = 'label' AND value != '' ORDER BY value", [attributeName]);
 }
 
-function createRelation(req: Request) {
+function createRelation(req: Request<{ noteId: string; targetNoteId: string; name: string }>) {
     const sourceNoteId = req.params.noteId;
     const targetNoteId = req.params.targetNoteId;
     const name = req.params.name;
@@ -208,7 +209,7 @@ function createRelation(req: Request) {
     if (!attribute) {
         attribute = new BAttribute({
             noteId: sourceNoteId,
-            name: name,
+            name,
             type: "relation",
             value: targetNoteId
         }).save();

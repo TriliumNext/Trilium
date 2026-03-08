@@ -1495,7 +1495,9 @@
     "beta-feature": "Beta",
     "task-list": "任務列表",
     "new-feature": "新增",
-    "collections": "集合"
+    "collections": "集合",
+    "ai-chat": "AI 聊天",
+    "spreadsheet": "試算表"
   },
   "protect_note": {
     "toggle-on": "保護筆記",
@@ -1594,7 +1596,8 @@
   },
   "search_result": {
     "no_notes_found": "沒有找到符合搜尋條件的筆記。",
-    "search_not_executed": "尚未執行搜尋。請點擊上方的「搜尋」按鈕查看結果。"
+    "search_not_executed": "尚未執行搜尋。",
+    "search_now": "立即搜尋"
   },
   "spacer": {
     "configure_launchbar": "設定啟動欄"
@@ -2011,7 +2014,9 @@
     "app-restart-required": "（需要重啟程式以套用更改）"
   },
   "pagination": {
-    "total_notes": "{{count}} 筆記"
+    "total_notes": "{{count}} 筆記",
+    "prev_page": "上一頁",
+    "next_page": "下一頁"
   },
   "collections": {
     "rendering_error": "發現錯誤，無法顯示內容。"

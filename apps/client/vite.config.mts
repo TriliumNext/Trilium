@@ -120,7 +120,11 @@ export default defineConfig(() => ({
         environment: "happy-dom",
         setupFiles: [
             "./src/test/setup.ts"
-        ]
+        ],
+        reporters: [
+            "verbose",
+            ["html", { outputFile: "./test-output/vitest/html/index.html" }]
+        ],
     },
     commonjsOptions: {
         transformMixedEsModules: true,

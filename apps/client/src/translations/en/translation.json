@@ -1585,7 +1585,8 @@
     "ai-chat": "AI Chat",
     "task-list": "Task List",
     "new-feature": "New",
-    "collections": "Collections"
+    "collections": "Collections",
+    "spreadsheet": "Spreadsheet"
   },
   "protect_note": {
     "toggle-on": "Protect the note",

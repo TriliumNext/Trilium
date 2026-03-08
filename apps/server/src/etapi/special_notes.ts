@@ -1,8 +1,9 @@
-import specialNotesService from "../services/special_notes.js";
+import type { Router } from "express";
+
 import dateNotesService from "../services/date_notes.js";
+import specialNotesService from "../services/special_notes.js";
 import eu from "./etapi_utils.js";
 import mappers from "./mappers.js";
-import type { Router } from "express";
 
 const getDateInvalidError = (date: string) => new eu.EtapiError(400, "DATE_INVALID", `Date "${date}" is not valid.`);
 const getWeekInvalidError = (week: string) => new eu.EtapiError(400, "WEEK_INVALID", `Week "${week}" is not valid.`);
@@ -15,7 +16,7 @@ function isValidDate(date: string) {
 }
 
 function register(router: Router) {
-    eu.route(router, "get", "/etapi/inbox/:date", (req, res, next) => {
+    eu.route<{ date: string }>(router, "get", "/etapi/inbox/:date", (req, res, next) => {
         const { date } = req.params;
 
         if (!isValidDate(date)) {
@@ -25,7 +26,7 @@ function register(router: Router) {
         res.json(mappers.mapNoteToPojo(note));
     });
 
-    eu.route(router, "get", "/etapi/calendar/days/:date", (req, res, next) => {
+    eu.route<{ date: string }>(router, "get", "/etapi/calendar/days/:date", (req, res, next) => {
         const { date } = req.params;
 
         if (!isValidDate(date)) {
@@ -36,7 +37,7 @@ function register(router: Router) {
         res.json(mappers.mapNoteToPojo(note));
     });
 
-    eu.route(router, "get", "/etapi/calendar/week-first-day/:date", (req, res, next) => {
+    eu.route<{ date: string }>(router, "get", "/etapi/calendar/week-first-day/:date", (req, res, next) => {
         const { date } = req.params;
 
         if (!isValidDate(date)) {
@@ -47,7 +48,7 @@ function register(router: Router) {
         res.json(mappers.mapNoteToPojo(note));
     });
 
-    eu.route(router, "get", "/etapi/calendar/weeks/:week", (req, res, next) => {
+    eu.route<{ week: string }>(router, "get", "/etapi/calendar/weeks/:week", (req, res, next) => {
         const { week } = req.params;
 
         if (!/[0-9]{4}-W[0-9]{2}/.test(week)) {
@@ -63,7 +64,7 @@ function register(router: Router) {
         res.json(mappers.mapNoteToPojo(note));
     });
 
-    eu.route(router, "get", "/etapi/calendar/months/:month", (req, res, next) => {
+    eu.route<{ month: string }>(router, "get", "/etapi/calendar/months/:month", (req, res, next) => {
         const { month } = req.params;
 
         if (!/[0-9]{4}-[0-9]{2}/.test(month)) {
@@ -74,7 +75,7 @@ function register(router: Router) {
         res.json(mappers.mapNoteToPojo(note));
     });
 
-    eu.route(router, "get", "/etapi/calendar/years/:year", (req, res, next) => {
+    eu.route<{ year: string }>(router, "get", "/etapi/calendar/years/:year", (req, res, next) => {
         const { year } = req.params;
 
         if (!/[0-9]{4}/.test(year)) {

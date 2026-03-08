@@ -16,6 +16,9 @@
     "create-note-into": "Aktif nota bağlı alt not oluştur",
     "create-note-after": "Aktif nottan sonra yeni bir not oluştur",
     "delete-note": "Notu sil",
-    "move-note-down": "Notu aşağıya kaydır"
+    "move-note-down": "Notu aşağıya kaydır",
+    "create-note-into-inbox": "Eğer tanımlandıysa gelen kutusunda bir not veya günlük not oluşturun",
+    "move-note-up-in-hierarchy": "Notu hiyerarşide yukarı taşı",
+    "move-note-down-in-hierarchy": "Notu hiyerarşide aşağı taşı"
   }
 }

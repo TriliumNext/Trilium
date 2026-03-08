@@ -55,7 +55,10 @@
     "show_help": "Показати Довідку",
     "logout": "Вийти",
     "show-cheatsheet": "Показати Шпаргалку",
-    "toggle-zen-mode": "Дзен-режим"
+    "toggle-zen-mode": "Дзен-режим",
+    "new-version-available": "Доступне оновлення",
+    "download-update": "Отримати версію {{latest Version}}",
+    "search_notes": "Пошук нотаток"
   },
   "modal": {
     "help_title": "Показати більше інформації про це вікно",
@@ -293,7 +296,8 @@
     },
     "import-status": "Статус Імпорту",
     "in-progress": "Триває Імпорт: {{progress}}",
-    "successful": "Імпорт успішно завершено."
+    "successful": "Імпорт успішно завершено.",
+    "importZipRecommendation": "Під час імпорту ZIP-файлу ієрархія нотаток відображатиме структуру підкаталогів в архіві."
   },
   "prompt": {
     "title": "Запит(prompt)",
@@ -355,7 +359,8 @@
   "info": {
     "modalTitle": "Інформаційне повідомлення",
     "closeButton": "Закрити",
-    "okButton": "ОК"
+    "okButton": "ОК",
+    "copy_to_clipboard": "Копіювати в буфер обміну"
   },
   "jump_to_note": {
     "search_placeholder": "Пошук нотатки за її назвою або типом > для команд...",
@@ -805,7 +810,14 @@
     "convert_into_attachment_failed": "Не вдалося конвертувати нотатку '{{title}}'.",
     "convert_into_attachment_successful": "Нотатку '{{title}}' перетворено на вкладення.",
     "convert_into_attachment_prompt": "Ви впевнені, що хочете перетворити нотатку '{{title}}' на вкладення батьківської нотатки?",
-    "print_pdf": "Експортувати як PDF..."
+    "print_pdf": "Експортувати як PDF...",
+    "open_note_on_server": "Відкрити нотатку на сервері",
+    "view_revisions": "Ревізії нотатки...",
+    "advanced": "Розширені",
+    "export_as_image": "Експортувати як зображення",
+    "export_as_image_png": "PNG (растровий)",
+    "export_as_image_svg": "SVG (векторний)",
+    "note_map": "Карта нотатки"
   },
   "onclick_button": {
     "no_click_handler": "Віджет кнопки '{{componentId}}' не має визначеного обробника кліків"
@@ -858,7 +870,10 @@
     "insert_child_note": "Вставити дочірню нотатку",
     "delete_this_note": "Видалити цю нотатку",
     "error_cannot_get_branch_id": "Не вдається отримати branchId для notePath '{{notePath}}'",
-    "error_unrecognized_command": "Нерозпізнана команда {{command}}"
+    "error_unrecognized_command": "Нерозпізнана команда {{command}}",
+    "note_revisions": "Ревізії нотатки",
+    "backlinks": "Зворотні посилання",
+    "content_language_switcher": "Мова контенту: {{language}}"
   },
   "note_icon": {
     "change_note_icon": "Змінити значок нотатки",
@@ -866,7 +881,13 @@
     "reset-default": "Скинути значок до стандартного значення",
     "search_placeholder_one": "Пошук {{number}} значка у {{count}} пакеті",
     "search_placeholder_few": "Пошук {{number}} значків у {{count}} пакетах",
-    "search_placeholder_many": "Пошук {{number}} значків у {{count}} пакетах"
+    "search_placeholder_many": "Пошук {{number}} значків у {{count}} пакетах",
+    "search_placeholder_filtered": "Пошук {{number}} іконок у {{name}}",
+    "filter": "Фільтр",
+    "filter-none": "Всі іконки",
+    "filter-default": "Іконки за замовчуванням",
+    "icon_tooltip": "{{name}}\nПакет іконок: {{iconPack}}",
+    "no_results": "Іконки не знайдено"
   },
   "basic_properties": {
     "note_type": "Тип нотатки",
@@ -888,7 +909,13 @@
     "table": "Таблиця",
     "geo-map": "Географічна карта",
     "board": "Дошка",
-    "include_archived_notes": "Показати архівовані нотатки"
+    "include_archived_notes": "Показати архівовані нотатки",
+    "expand_tooltip": "Розгортає безпосередні дочірні елементи цієї колекції (на один рівень у глибину). Щоб переглянути більше параметрів, натисніть стрілку праворуч.",
+    "expand_first_level": "Розгорнути прямі дочірні елементи",
+    "expand_nth_level": "Розгорнути {{depth}} рівнів",
+    "expand_all_levels": "Розгорнути всі рівні",
+    "presentation": "Презентація",
+    "hide_child_notes": "Приховати дочірні нотатки в дереві"
   },
   "edited_notes": {
     "no_edited_notes_found": "Цього дня ще немає редагованих нотаток...",
@@ -921,7 +948,8 @@
   },
   "inherited_attribute_list": {
     "title": "Успадковані Атрибути",
-    "no_inherited_attributes": "Немає успадкованих атрибутів."
+    "no_inherited_attributes": "Немає успадкованих атрибутів.",
+    "none": "пусто"
   },
   "note_info_widget": {
     "note_id": "ID Нотатки",
@@ -932,7 +960,9 @@
     "note_size_info": "Розмір нотатки надає приблизну оцінку вимог до зберігання для цієї нотатки. Він враховує вміст нотатки та вміст її версій.",
     "calculate": "обчислити",
     "subtree_size": "(розмір піддерева: {{size}} у {{count}} нотатках)",
-    "title": "Інформація про нотатку"
+    "title": "Інформація про нотатку",
+    "mime": "Тип MIME",
+    "show_similar_notes": "Показати схожі нотатки"
   },
   "note_map": {
     "open_full": "Розгорнути на повний розмір",
@@ -995,7 +1025,9 @@
     "search_parameters": "Параметри пошуку",
     "unknown_search_option": "Невідомий параметр пошуку {{searchOptionName}}",
     "actions_executed": "Дії виконано.",
-    "search_note_saved": "Нотатка з пошуку збережена у {{- notePathTitle}}"
+    "search_note_saved": "Нотатка з пошуку збережена у {{- notePathTitle}}",
+    "option": "опції",
+    "view_options": "Опції перегляду:"
   },
   "similar_notes": {
     "title": "Схожі нотатки",
@@ -1089,7 +1121,13 @@
   },
   "editable_text": {
     "placeholder": "Введіть тут вміст вашої нотатки...",
-    "auto-detect-language": "Автовизначено"
+    "auto-detect-language": "Автовизначено",
+    "editor_crashed_title": "Збій текстового редактора",
+    "editor_crashed_content": "Ваш контент успішно відновлено, але деякі з ваших останніх змін могли бути не збережені.",
+    "editor_crashed_details_button": "Переглянути більше деталей...",
+    "editor_crashed_details_intro": "Якщо ви стикаєтеся з цією помилкою кілька разів, подумайте про те, щоб повідомити про неї на GitHub, вставивши наведену нижче інформацію.",
+    "editor_crashed_details_title": "Технічна інформація",
+    "keeps-crashing": "Компонент редагування постійно аварійно завершує роботу. Спробуйте перезапустити Trilium. Якщо проблема не зникає, спробуйте створити звіт про помилку."
   },
   "empty": {
     "open_note_instruction": "Відкрийте нотатку, ввівши її заголовок в поле нижче, або виберіть нотатку в дереві.",
@@ -1955,5 +1993,11 @@
     "pages_one": "{{count}} сторінка",
     "pages_few": "{{count}} сторінки",
     "pages_many": "{{count}} сторінок"
+  },
+  "render": {
+    "setup_title": "Відображати власний HTML або Preact JSX у цій нотатці",
+    "setup_create_sample_preact": "Створіть зразок нотатки за допомогою Preact",
+    "setup_create_sample_html": "Створити зразок нотатки за допомогою HTML",
+    "setup_sample_created": "Зразок нотатки було створено як дочірню нотатку."
   }
 }

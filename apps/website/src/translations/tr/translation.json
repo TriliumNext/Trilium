@@ -19,6 +19,11 @@
         "note_structure_title": "Not yapısı",
         "note_structure_description": "Notlar hiyerarşik olarak düzenlenebilir. Her not 'alt notlar' içerebildiği için klasörlere ihtiyaç duyulmaz. Tek bir not, hiyerarşinin birden fazla noktasına eklenebilir.",
         "attributes_description": "Notlar arasında ilişkiler kurun veya kolay kategorizasyon için etiketler ekleyin. Tablolarda ve panolarda kullanılabilen yapılandırılmış bilgileri eklemek için öne çıkan öznitelikleri kullanın.",
-        "hoisting_description": "Kişisel ve iş notlarınızı bir çalışma alanı altında gruplandırarak kolayca ayırın; bu sayede not ağacınız yalnızca belirli bir not kümesini gösterecek şekilde odaklanacaktır."
+        "hoisting_description": "Kişisel ve iş notlarınızı bir çalışma alanı altında gruplandırarak kolayca ayırın; bu sayede not ağacınız yalnızca belirli bir not kümesini gösterecek şekilde odaklanacaktır.",
+        "attributes_title": "Not etiketleri ve ilişkileri"
+    },
+    "productivity_benefits": {
+        "title": "Üretkenlik ve güvenlik",
+        "revisions_title": "Note düzenlemeleri"
     }
 }
