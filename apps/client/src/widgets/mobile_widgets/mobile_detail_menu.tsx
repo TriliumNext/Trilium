@@ -67,7 +67,10 @@ export default function MobileDetailMenu() {
 
                         {noteContext && ntxId && <NoteActionsCustom note={note} noteContext={noteContext} ntxId={ntxId} />}
                         <FormListItem
-                            onClick={() => noteContext?.notePath && note_create.createNote(noteContext.notePath)}
+                            onClick={() => noteContext?.notePath && note_create.createNote({
+                                target: "into",
+                                parentNoteLink: noteContext.notePath
+                            })}
                             icon="bx bx-plus"
                         >{t("mobile_detail_menu.insert_child_note")}</FormListItem>
                         {subContexts.length < 2 && <>

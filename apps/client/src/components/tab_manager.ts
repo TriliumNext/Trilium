@@ -74,10 +74,10 @@ export default class TabManager extends Component {
 
             // preload all notes at once
             await froca.getNotes([...noteContextsToOpen.flatMap((tab: NoteContextState) =>
-                [treeService.getNoteIdFromUrl(tab.notePath), tab.hoistedNoteId])], true);
+                [treeService.getNoteIdFromLink(tab.notePath), tab.hoistedNoteId])], true);
 
             const filteredNoteContexts = noteContextsToOpen.filter((openTab: NoteContextState) => {
-                const noteId = treeService.getNoteIdFromUrl(openTab.notePath);
+                const noteId = treeService.getNoteIdFromLink(openTab.notePath);
                 if (!noteId || !(noteId in froca.notes)) {
                     // note doesn't exist so don't try to open tab for it
                     return false;

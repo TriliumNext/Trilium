@@ -310,8 +310,7 @@ export function TitleEditor({ currentValue, placeholder, save, dismiss, mode, is
             inputRef={inputRef}
             noteId={currentValue ?? ""}
             opts={{
-                hideAllButtons: true,
-                allowCreatingNotes: true
+                hideAllButtons: true
             }}
             onKeyDown={(e) => {
                 if (e.key === "Escape") {

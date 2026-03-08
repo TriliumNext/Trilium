@@ -229,7 +229,12 @@ function BreadcrumbSeparatorDropdownContent({ notePath, noteContext, activeNoteP
             {childNotes.length > 0 && <FormDropdownDivider />}
             <FormListItem
                 icon="bx bx-plus"
-                onClick={() => note_create.createNote(notePath, { activate: true })}
+                onClick={() => note_create.createNote(
+                    {
+                        target: "into",
+                        parentNoteLink: notePath,
+                        activate: true
+                    })}
             >{t("breadcrumb.create_new_note")}</FormListItem>
         </>
     );

@@ -12,6 +12,7 @@ import utils from "../services/utils.js";
 import ws from "../services/ws.js";
 import appContext, { type NoteCommandData } from "./app_context.js";
 import Component from "./component.js";
+import noteCreateService from "../services/note_create.js";
 
 export default class Entrypoints extends Component {
     constructor() {
@@ -25,23 +26,9 @@ export default class Entrypoints extends Component {
     }
 
     async createNoteIntoInboxCommand() {
-        const inboxNote = await dateNoteService.getInboxNote();
-        if (!inboxNote) {
-            console.warn("Missing inbox note.");
-            return;
-        }
-
-        const { note } = await server.post<CreateChildrenResponse>(`notes/${inboxNote.noteId}/children?target=into`, {
-            content: "",
-            type: "text",
-            isProtected: inboxNote.isProtected && protectedSessionHolder.isProtectedSessionAvailable()
-        });
-
-        await ws.waitForMaxKnownEntityChangeId();
-
-        await appContext.tabManager.openTabWithNoteWithHoisting(note.noteId, { activate: true });
-
-        appContext.triggerEvent("focusAndSelectTitle", { isNewNote: true });
+        await noteCreateService.createNote(
+            { target: "default" }
+        );
     }
 
     async toggleNoteHoistingCommand({ noteId = appContext.tabManager.getActiveContextNoteId() }) {

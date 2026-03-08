@@ -145,7 +145,9 @@ async function setRenderNote(note: FNote, targetNoteUrl: string) {
 }
 
 async function setupSampleNote(parentNote: FNote, mime: string, content: string) {
-    const { note: codeNote } = await note_create.createNote(parentNote.noteId, {
+    const { note: codeNote } = await note_create.createNote({
+        target: "into",
+        parentNoteLink: parentNote.noteId,
         type: "code",
         mime,
         content,

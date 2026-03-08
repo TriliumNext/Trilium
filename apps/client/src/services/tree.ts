@@ -94,7 +94,7 @@ async function resolveNotePathToSegments(notePath: string, hoistedNoteId = "root
     if (effectivePathSegments.includes(hoistedNoteId) && effectivePathSegments.includes('root')) {
         return effectivePathSegments;
     } else {
-        const noteId = getNoteIdFromUrl(notePath);
+        const noteId = getNoteIdFromLink(notePath);
         if (!noteId) {
             throw new Error(`Unable to find note with ID: ${noteId}.`);
         }
@@ -131,7 +131,7 @@ function getParentProtectedStatus(node: Fancytree.FancytreeNode) {
     return hoistedNoteService.isHoistedNode(node) ? false : node.getParent().data.isProtected;
 }
 
-function getNoteIdFromUrl(urlOrNotePath: string | null | undefined) {
+function getNoteIdFromLink(urlOrNotePath: string | null | undefined) {
     if (!urlOrNotePath) {
         return null;
     }
@@ -308,7 +308,7 @@ export default {
     getParentProtectedStatus,
     getNotePath,
     getNotePathTitleComponents,
-    getNoteIdFromUrl,
+    getNoteIdFromLink,
     getNoteIdAndParentIdFromUrl,
     getBranchIdFromUrl,
     getNoteTitle,
