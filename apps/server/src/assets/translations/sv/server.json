@@ -17,6 +17,9 @@
     "delete-note": "Radera anteckning",
     "move-note-up": "Flytta anteckning uppåt",
     "move-note-down": "Flytta anteckning nedåt",
-    "scroll-to-active-note": "Bläddra i anteckningshierarkin till aktiv anteckning"
+    "scroll-to-active-note": "Bläddra i anteckningshierarkin till aktiv anteckning",
+    "move-note-up-in-hierarchy": "Flytta anteckning uppåt i hierarkin",
+    "move-note-down-in-hierarchy": "Flytta anteckning neråt i hierarkin",
+    "edit-note-title": "Hoppa från träd till anteckning och redigera titel"
   }
 }

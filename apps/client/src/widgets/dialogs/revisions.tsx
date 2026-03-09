@@ -272,7 +272,8 @@ function RevisionContent({ noteContent, revisionItem, fullRevision, showDiff }: 
             return <FilePreview fullRevision={fullRevision} revisionItem={revisionItem} />;
         case "canvas":
         case "mindMap":
-        case "mermaid": {
+        case "mermaid":
+        case "spreadsheet": {
             const encodedTitle = encodeURIComponent(revisionItem.title);
             return <img
                 src={`api/revisions/${revisionItem.revisionId}/image/${encodedTitle}?${Math.random()}`}

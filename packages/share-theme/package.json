@@ -25,7 +25,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "fuse.js": "7.1.0",
-    "katex": "0.16.37",
+    "katex": "0.16.38",
     "mermaid": "11.12.3"
   },
   "devDependencies": {

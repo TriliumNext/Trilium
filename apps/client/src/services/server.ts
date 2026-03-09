@@ -89,7 +89,7 @@ async function remove<T>(url: string, componentId?: string) {
     return await call<T>("DELETE", url, componentId);
 }
 
-async function upload(url: string, fileToUpload: File, componentId?: string) {
+async function upload(url: string, fileToUpload: File, componentId?: string, method = "PUT") {
     const formData = new FormData();
     formData.append("upload", fileToUpload);
 
@@ -99,7 +99,7 @@ async function upload(url: string, fileToUpload: File, componentId?: string) {
             "trilium-component-id": componentId
         } : undefined),
         data: formData,
-        type: "PUT",
+        type: method,
         timeout: 60 * 60 * 1000,
         contentType: false, // NEEDED, DON'T REMOVE THIS
         processData: false // NEEDED, DON'T REMOVE THIS

@@ -29,6 +29,12 @@
     "widget-render-error": {
       "title": "Misslyckades att renderera en anpassad React-widget"
     },
-    "widget-missing-parent": "Anpassad widget saknar '{{property}}', som måste vara definierad.\n\nOm skriptet är avsett att köras utan gränssnitt, använd '#run-frontendStartup' istället."
+    "widget-missing-parent": "Anpassad widget saknar '{{property}}', som måste vara definierad.\n\nOm skriptet är avsett att köras utan gränssnitt, använd '#run-frontendStartup' istället.",
+    "open-script-note": "Öppna skriptanteckning",
+    "scripting-error": "Fel i anpassat skript: {{title}}"
+  },
+  "add_link": {
+    "add_link": "Infoga länk",
+    "help_on_links": "Hjälp om länkar"
   }
 }

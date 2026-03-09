@@ -143,7 +143,7 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         isFullHeight: true
     },
     spreadsheet: {
-        view: () => import("./type_widgets/Spreadsheet"),
+        view: () => import("./type_widgets/spreadsheet/Spreadsheet"),
         className: "note-detail-spreadsheet",
         printable: true,
         isFullHeight: true

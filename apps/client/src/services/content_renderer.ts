@@ -54,7 +54,7 @@ export async function getRenderedContent(this: {} | { ctx: string }, entity: FNo
         await renderText(entity, $renderedContent, options);
     } else if (type === "code") {
         await renderCode(entity, $renderedContent);
-    } else if (["image", "canvas", "mindMap"].includes(type)) {
+    } else if (["image", "canvas", "mindMap", "spreadsheet"].includes(type)) {
         renderImage(entity, $renderedContent, options);
     } else if (!options.tooltip && ["file", "pdf", "audio", "video"].includes(type)) {
         await renderFile(entity, type, $renderedContent);

@@ -58,18 +58,18 @@ Vår dokumentation är tillgänglig i flera format:
 - [Installationsanvisning](https://docs.triliumnotes.org/user-guide/setup)
 - [Docker
   Setup](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
-- [Upgrading
+- [Uppdaterar
   TriliumNext](https://docs.triliumnotes.org/user-guide/setup/upgrading)
 - [Grundläggande koncept och
   funktioner](https://docs.triliumnotes.org/user-guide/concepts/notes)
-- [Patterns of Personal Knowledge
-  Base](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
+- [Modeller av personlig
+  kunskapsbas](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
-## 🎁 Features
+## 🎁 Funktioner
 
-* Notes can be arranged into arbitrarily deep tree. Single note can be placed
-  into multiple places in the tree (see
-  [cloning](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
+* Anteckningar kan sorteras som en trädstruktur. En enskild anteckning kan
+  placeras på fler än en plats i trädet (se
+  [kloning](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
 * Rich WYSIWYG note editor including e.g. tables, images and
   [math](https://docs.triliumnotes.org/user-guide/note-types/text) with markdown
   [autoformat](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)

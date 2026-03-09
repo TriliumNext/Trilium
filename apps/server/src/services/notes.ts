@@ -772,16 +772,20 @@ function updateNoteData(noteId: string, content: string, attachments: Attachment
     if (attachments?.length > 0) {
         const existingAttachmentsByTitle = toMap(note.getAttachments(), "title");
 
-        for (const { attachmentId, role, mime, title, position, content } of attachments) {
+        for (const { attachmentId, role, mime, title, position, content, encoding } of attachments) {
+            const decodedContent = encoding === "base64" && typeof content === "string"
+                ? Buffer.from(content, "base64")
+                : content;
+
             const existingAttachment = existingAttachmentsByTitle.get(title);
             if (attachmentId || !existingAttachment) {
-                note.saveAttachment({ attachmentId, role, mime, title, content, position });
+                note.saveAttachment({ attachmentId, role, mime, title, content: decodedContent, position });
             } else {
                 existingAttachment.role = role;
                 existingAttachment.mime = mime;
                 existingAttachment.position = position;
-                if (content) {
-                    existingAttachment.setContent(content, { forceSave: true });
+                if (decodedContent) {
+                    existingAttachment.setContent(decodedContent, { forceSave: true });
                 }
             }
         }
