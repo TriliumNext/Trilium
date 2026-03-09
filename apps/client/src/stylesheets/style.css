@@ -998,7 +998,6 @@ table.promoted-attributes-in-tooltip th {
     white-space: normal;
 }
 
-.aa-core-item:hover,
 .aa-core-item--active {
     color: var(--active-item-text-color);
     background-color: var(--active-item-background-color);
