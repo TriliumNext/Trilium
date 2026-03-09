@@ -2,7 +2,7 @@ import type { AutocompleteApi as CoreAutocompleteApi, BaseItem } from "@algolia/
 import { createAutocomplete } from "@algolia/autocomplete-core";
 
 import type { AttributeType } from "../entities/fattribute.js";
-import { withHeadlessSourceDefaults } from "./autocomplete_core.js";
+import { bindAutocompleteInput, createHeadlessPanelController, withHeadlessSourceDefaults } from "./autocomplete_core.js";
 import server from "./server.js";
 
 // ---------------------------------------------------------------------------
@@ -34,18 +34,6 @@ interface ManagedInstance {
 
 const instanceMap = new WeakMap<HTMLElement, ManagedInstance>();
 
-// ---------------------------------------------------------------------------
-// Dropdown panel DOM helpers
-// ---------------------------------------------------------------------------
-
-function createPanelEl(): HTMLElement {
-    const panel = document.createElement("div");
-    panel.className = "aa-core-panel";
-    panel.style.display = "none";
-    document.body.appendChild(panel);
-    return panel;
-}
-
 function renderItems(panelEl: HTMLElement, items: NameItem[], activeItemId: number | null, onSelect: (item: NameItem) => void): void {
     panelEl.innerHTML = "";
     if (items.length === 0) {
@@ -70,19 +58,6 @@ function renderItems(panelEl: HTMLElement, items: NameItem[], activeItemId: numb
     panelEl.appendChild(list);
 }
 
-function positionPanel(panelEl: HTMLElement, inputEl: HTMLElement): void {
-    const rect = inputEl.getBoundingClientRect();
-    const top = `${rect.bottom}px`;
-    const left = `${rect.left}px`;
-    const width = `${rect.width}px`;
-
-    panelEl.style.position = "fixed";
-    if (panelEl.style.top !== top) panelEl.style.top = top;
-    if (panelEl.style.left !== left) panelEl.style.left = left;
-    if (panelEl.style.width !== width) panelEl.style.width = width;
-    if (panelEl.style.display !== "block") panelEl.style.display = "block";
-}
-
 // ---------------------------------------------------------------------------
 // Attribute name autocomplete — new (autocomplete-core, headless)
 // ---------------------------------------------------------------------------
@@ -104,26 +79,11 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
         return;
     }
 
-    const panelEl = createPanelEl();
+    const panelController = createHeadlessPanelController({ inputEl });
+    const { panelEl } = panelController;
 
     let isPanelOpen = false;
     let hasActiveItem = false;
-
-    let rafId: number | null = null;
-    function startPositioning() {
-        if (rafId !== null) return;
-        const update = () => {
-            positionPanel(panelEl, inputEl);
-            rafId = requestAnimationFrame(update);
-        };
-        update();
-    }
-    function stopPositioning() {
-        if (rafId !== null) {
-            cancelAnimationFrame(rafId);
-            rafId = null;
-        }
-    }
 
     const autocomplete = createAutocomplete<NameItem>({
         openOnFocus: true,
@@ -171,62 +131,48 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
                     autocomplete.setIsOpen(false);
                     onValueChange?.(item.name);
                 });
-                startPositioning();
+                panelController.startPositioning();
             } else {
-                panelEl.style.display = "none";
-                stopPositioning();
+                panelController.hide();
             }
 
             if (!state.isOpen) {
-                panelEl.style.display = "none";
-                stopPositioning();
+                panelController.hide();
             }
         },
     });
 
-    // Wire up the input events
-    const handlers = autocomplete.getInputProps({ inputElement: inputEl });
-    const onInput = (e: Event) => {
-        handlers.onChange(e as any);
-    };
-    const onFocus = (e: Event) => {
-        syncQueryFromInputValue(autocomplete);
-        handlers.onFocus(e as any);
-    };
-    const onBlur = () => {
-        // Delay to allow mousedown on panel items
-        setTimeout(() => {
-            autocomplete.setIsOpen(false);
-            panelEl.style.display = "none";
-            stopPositioning();
-            onValueChange?.(inputEl.value);
-        }, 50);
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Enter" && isPanelOpen && hasActiveItem) {
-            // Prevent the enter key from propagating to parent dialogs
-            // (which might interpret it as "submit" or "save and close")
-            e.stopPropagation();
-            // We shouldn't preventDefault here because we want handlers.onKeyDown
-            // to process it properly. OnSelect will correctly close the panel.
+    const cleanupInputBindings = bindAutocompleteInput<NameItem>({
+        inputEl,
+        autocomplete,
+        onInput(e, handlers) {
+            handlers.onChange(e as any);
+        },
+        onFocus(e, handlers) {
+            syncQueryFromInputValue(autocomplete);
+            handlers.onFocus(e as any);
+        },
+        onBlur() {
+            // Delay to allow mousedown on panel items
+            setTimeout(() => {
+                autocomplete.setIsOpen(false);
+                panelController.hide();
+                onValueChange?.(inputEl.value);
+            }, 50);
+        },
+        onKeyDown(e, handlers) {
+            if (e.key === "Enter" && isPanelOpen && hasActiveItem) {
+                // Prevent the enter key from propagating to parent dialogs
+                // (which might interpret it as "submit" or "save and close")
+                e.stopPropagation();
+            }
+            handlers.onKeyDown(e as any);
         }
-        handlers.onKeyDown(e as any);
-    };
-
-    inputEl.addEventListener("input", onInput);
-    inputEl.addEventListener("focus", onFocus);
-    inputEl.addEventListener("blur", onBlur);
-    inputEl.addEventListener("keydown", onKeyDown);
+    });
 
     const cleanup = () => {
-        inputEl.removeEventListener("input", onInput);
-        inputEl.removeEventListener("focus", onFocus);
-        inputEl.removeEventListener("blur", onBlur);
-        inputEl.removeEventListener("keydown", onKeyDown);
-        stopPositioning();
-        if (panelEl.parentElement) {
-            panelEl.parentElement.removeChild(panelEl);
-        }
+        cleanupInputBindings();
+        panelController.destroy();
     };
 
     instanceMap.set(inputEl, { autocomplete, panelEl, cleanup });
@@ -235,7 +181,7 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
         syncQueryFromInputValue(autocomplete);
         autocomplete.setIsOpen(true);
         autocomplete.refresh();
-        startPositioning();
+        panelController.startPositioning();
     }
 }
 
@@ -268,27 +214,12 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
         return;
     }
 
-    const panelEl = createPanelEl();
+    const panelController = createHeadlessPanelController({ inputEl });
+    const { panelEl } = panelController;
 
     let isPanelOpen = false;
     let hasActiveItem = false;
     let isSelecting = false;
-
-    let rafId: number | null = null;
-    function startPositioning() {
-        if (rafId !== null) return;
-        const update = () => {
-            positionPanel(panelEl, inputEl);
-            rafId = requestAnimationFrame(update);
-        };
-        update();
-    }
-    function stopPositioning() {
-        if (rafId !== null) {
-            cancelAnimationFrame(rafId);
-            rafId = null;
-        }
-    }
 
     let cachedAttributeName = "";
     let cachedAttributeValues: NameItem[] = [];
@@ -363,63 +294,52 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
 
             if (state.isOpen && items.length > 0) {
                 renderItems(panelEl, items, activeId, handleSelect);
-                startPositioning();
+                panelController.startPositioning();
             } else {
-                panelEl.style.display = "none";
-                stopPositioning();
+                panelController.hide();
             }
 
             if (!state.isOpen) {
-                panelEl.style.display = "none";
-                stopPositioning();
+                panelController.hide();
             }
         },
     });
 
-    const handlers = autocomplete.getInputProps({ inputElement: inputEl });
-    const onInput = (e: Event) => {
-        if (!isSelecting) {
-            handlers.onChange(e as any);
+    const cleanupInputBindings = bindAutocompleteInput<NameItem>({
+        inputEl,
+        autocomplete,
+        onInput(e, handlers) {
+            if (!isSelecting) {
+                handlers.onChange(e as any);
+            }
+        },
+        onFocus(e, handlers) {
+            const attributeName = nameCallback ? nameCallback() : "";
+            if (attributeName !== cachedAttributeName) {
+                cachedAttributeName = "";
+                cachedAttributeValues = [];
+            }
+            syncQueryFromInputValue(autocomplete);
+            handlers.onFocus(e as any);
+        },
+        onBlur() {
+            setTimeout(() => {
+                autocomplete.setIsOpen(false);
+                panelController.hide();
+                onValueChange?.(inputEl.value);
+            }, 50);
+        },
+        onKeyDown(e, handlers) {
+            if (e.key === "Enter" && isPanelOpen && hasActiveItem) {
+                e.stopPropagation();
+            }
+            handlers.onKeyDown(e as any);
         }
-    };
-    const onFocus = (e: Event) => {
-        const attributeName = nameCallback ? nameCallback() : "";
-        if (attributeName !== cachedAttributeName) {
-            cachedAttributeName = "";
-            cachedAttributeValues = [];
-        }
-        syncQueryFromInputValue(autocomplete);
-        handlers.onFocus(e as any);
-    };
-    const onBlur = () => {
-        setTimeout(() => {
-            autocomplete.setIsOpen(false);
-            panelEl.style.display = "none";
-            stopPositioning();
-            onValueChange?.(inputEl.value);
-        }, 50);
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-        if (e.key === "Enter" && isPanelOpen && hasActiveItem) {
-            e.stopPropagation();
-        }
-        handlers.onKeyDown(e as any);
-    };
-
-    inputEl.addEventListener("input", onInput);
-    inputEl.addEventListener("focus", onFocus);
-    inputEl.addEventListener("blur", onBlur);
-    inputEl.addEventListener("keydown", onKeyDown);
+    });
 
     const cleanup = () => {
-        inputEl.removeEventListener("input", onInput);
-        inputEl.removeEventListener("focus", onFocus);
-        inputEl.removeEventListener("blur", onBlur);
-        inputEl.removeEventListener("keydown", onKeyDown);
-        stopPositioning();
-        if (panelEl.parentElement) {
-            panelEl.parentElement.removeChild(panelEl);
-        }
+        cleanupInputBindings();
+        panelController.destroy();
     };
 
     instanceMap.set(inputEl, { autocomplete, panelEl, cleanup });
@@ -428,7 +348,7 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
         syncQueryFromInputValue(autocomplete);
         autocomplete.setIsOpen(true);
         autocomplete.refresh();
-        startPositioning();
+        panelController.startPositioning();
     }
 }
 

@@ -3,7 +3,7 @@ import { createAutocomplete } from "@algolia/autocomplete-core";
 import type { MentionFeedObjectItem } from "@triliumnext/ckeditor5";
 
 import appContext from "../components/app_context.js";
-import { withHeadlessSourceDefaults } from "./autocomplete_core.js";
+import { bindAutocompleteInput, createHeadlessPanelController, withHeadlessSourceDefaults } from "./autocomplete_core.js";
 import commandRegistry from "./command_registry.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
@@ -71,37 +71,6 @@ interface ManagedInstance {
 }
 
 const instanceMap = new WeakMap<HTMLElement, ManagedInstance>();
-
-function createPanelEl(container?: HTMLElement | null): HTMLElement {
-    const panel = document.createElement("div");
-    panel.className = "aa-core-panel aa-dropdown-menu";
-    if (container) {
-        panel.classList.add("aa-core-panel--contained");
-        container.appendChild(panel);
-    } else {
-        document.body.appendChild(panel);
-    }
-    panel.style.display = "none";
-    return panel;
-}
-
-function positionPanel(panelEl: HTMLElement, inputEl: HTMLElement): void {
-    if (panelEl.classList.contains("aa-core-panel--contained")) {
-        panelEl.style.position = "static";
-        panelEl.style.top = "";
-        panelEl.style.left = "";
-        panelEl.style.width = "100%";
-        panelEl.style.display = "block";
-        return;
-    }
-
-    const rect = inputEl.getBoundingClientRect();
-    panelEl.style.position = "fixed";
-    panelEl.style.top = `${rect.bottom}px`;
-    panelEl.style.left = `${rect.left}px`;
-    panelEl.style.width = `${rect.width}px`;
-    panelEl.style.display = "block";
-}
 
 function escapeHtml(text: string): string {
     return text
@@ -535,8 +504,12 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
     options = options || {};
     let isComposingInput = false;
 
-    const panelEl = createPanelEl(options.container);
-    let rafId: number | null = null;
+    const panelController = createHeadlessPanelController({
+        inputEl,
+        container: options.container,
+        className: "aa-core-panel aa-dropdown-menu"
+    });
+    const { panelEl } = panelController;
     let currentQuery = inputEl.value;
     let shouldAutoselectTopItem = false;
     let shouldMirrorActiveItemToInput = false;
@@ -599,26 +572,6 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
             autocomplete.setIsOpen(items.length > 0);
         });
     };
-
-    function startPositioning() {
-        if (panelEl.classList.contains("aa-core-panel--contained")) {
-            positionPanel(panelEl, inputEl);
-            return;
-        }
-
-        if (rafId !== null) return;
-        const update = () => {
-            positionPanel(panelEl, inputEl);
-            rafId = requestAnimationFrame(update);
-        };
-        update();
-    }
-    function stopPositioning() {
-        if (rafId !== null) {
-            cancelAnimationFrame(rafId);
-            rafId = null;
-        }
-    }
 
     const autocomplete = createAutocomplete<Suggestion>({
         openOnFocus: false, // Wait until we explicitly focus or type
@@ -713,68 +666,14 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                     return;
                 }
 
-                startPositioning();
+                panelController.startPositioning();
             } else {
                 shouldAutoselectTopItem = false;
-                panelEl.style.display = "none";
-                stopPositioning();
+                panelController.hide();
             }
         },
     });
 
-    const handlers = autocomplete.getInputProps({ inputElement: inputEl });
-    const onInput = (e: Event) => {
-        const value = (e.currentTarget as HTMLInputElement).value;
-        if (value.trim().length === 0) {
-            openRecentNotes();
-            return;
-        }
-
-        prepareForQueryChange();
-        handlers.onChange(e as any);
-    };
-    const onFocus = (e: Event) => {
-        if (inputEl.readOnly) {
-            autocomplete.setIsOpen(false);
-            panelEl.style.display = "none";
-            stopPositioning();
-            return;
-        }
-        handlers.onFocus(e as any);
-    };
-    const onBlur = () => {
-        if (options.container) {
-            return;
-        }
-        setTimeout(() => {
-            autocomplete.setIsOpen(false);
-            panelEl.style.display = "none";
-            stopPositioning();
-        }, 50);
-    };
-    const onKeyDown = (e: KeyboardEvent) => {
-        if (options.allowJumpToSearchNotes && e.ctrlKey && e.key === "Enter") {
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            void handleSuggestionSelection($el, autocomplete, inputEl, {
-                action: "search-notes",
-                noteTitle: inputEl.value
-            });
-            return;
-        }
-
-        if (e.shiftKey && e.key === "Enter") {
-            e.stopImmediatePropagation();
-            e.preventDefault();
-            fullTextSearch($el, options);
-            return;
-        }
-
-        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-            shouldMirrorActiveItemToInput = true;
-        }
-        handlers.onKeyDown(e as any);
-    };
     const onCompositionStart = () => {
         isComposingInput = true;
     };
@@ -783,25 +682,69 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         rerunQuery(inputEl.value);
     };
 
-    inputEl.addEventListener("input", onInput);
-    inputEl.addEventListener("focus", onFocus);
-    inputEl.addEventListener("blur", onBlur);
-    inputEl.addEventListener("keydown", onKeyDown);
-    inputEl.addEventListener("compositionstart", onCompositionStart);
-    inputEl.addEventListener("compositionend", onCompositionEnd);
+    const cleanupInputBindings = bindAutocompleteInput<Suggestion>({
+        inputEl,
+        autocomplete,
+        onInput(e, handlers) {
+            const value = (e.currentTarget as HTMLInputElement).value;
+            if (value.trim().length === 0) {
+                openRecentNotes();
+                return;
+            }
+
+            prepareForQueryChange();
+            handlers.onChange(e as any);
+        },
+        onFocus(e, handlers) {
+            if (inputEl.readOnly) {
+                autocomplete.setIsOpen(false);
+                panelController.hide();
+                return;
+            }
+            handlers.onFocus(e as any);
+        },
+        onBlur() {
+            if (options.container) {
+                return;
+            }
+            setTimeout(() => {
+                autocomplete.setIsOpen(false);
+                panelController.hide();
+            }, 50);
+        },
+        onKeyDown(e, handlers) {
+            if (options.allowJumpToSearchNotes && e.ctrlKey && e.key === "Enter") {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                void handleSuggestionSelection($el, autocomplete, inputEl, {
+                    action: "search-notes",
+                    noteTitle: inputEl.value
+                });
+                return;
+            }
+
+            if (e.shiftKey && e.key === "Enter") {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                fullTextSearch($el, options);
+                return;
+            }
+
+            if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                shouldMirrorActiveItemToInput = true;
+            }
+            handlers.onKeyDown(e as any);
+        },
+        extraBindings: [
+            { type: "compositionstart", listener: onCompositionStart },
+            { type: "compositionend", listener: onCompositionEnd }
+        ]
+    });
 
     const cleanup = () => {
-        inputEl.removeEventListener("input", onInput);
-        inputEl.removeEventListener("focus", onFocus);
-        inputEl.removeEventListener("blur", onBlur);
-        inputEl.removeEventListener("keydown", onKeyDown);
-        inputEl.removeEventListener("compositionstart", onCompositionStart);
-        inputEl.removeEventListener("compositionend", onCompositionEnd);
-        stopPositioning();
+        cleanupInputBindings();
         autocomplete.destroy();
-        if (panelEl.parentElement) {
-            panelEl.parentElement.removeChild(panelEl);
-        }
+        panelController.destroy();
     };
 
     instanceMap.set(inputEl, {
