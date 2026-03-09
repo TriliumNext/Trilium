@@ -69,7 +69,7 @@ export default function PromptDialog() {
                 submitValue.current = null;
                 opts.current = undefined;
             }}
-            footer={<Button text={t("prompt.ok")} keyboardShortcut="Enter" kind="primary" />}
+            footer={<Button text={t("prompt.ok")} keyboardShortcut="ctrl+return" kind="primary" />}
             show={shown}
             stackable
         >
@@ -78,6 +78,13 @@ export default function PromptDialog() {
                     inputRef={answerRef}
                     currentValue={value} onChange={setValue}
                     readOnly={opts.current?.readOnly}
+                    onKeyDown={(e: KeyboardEvent) => {
+                        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                            e.preventDefault();
+                            submitValue.current = answerRef.current?.value || value;
+                            setShown(false);
+                        }
+                    }}
                 />
             </FormGroup>
         </Modal>
