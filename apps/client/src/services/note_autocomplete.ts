@@ -3,6 +3,7 @@ import { createAutocomplete } from "@algolia/autocomplete-core";
 import type { MentionFeedObjectItem } from "@triliumnext/ckeditor5";
 
 import appContext from "../components/app_context.js";
+import { withHeadlessSourceDefaults } from "./autocomplete_core.js";
 import commandRegistry from "./command_registry.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
@@ -201,7 +202,7 @@ function renderSuggestion(item: Suggestion): string {
 }
 
 function createSuggestionSource(options: Options, onSelectItem: (item: Suggestion) => void) {
-    return {
+    return withHeadlessSourceDefaults<Suggestion>({
         sourceId: "note-suggestions",
         async getItems({ query }: { query: string }) {
             return await fetchResolvedSuggestions(query, options);
@@ -212,7 +213,7 @@ function createSuggestionSource(options: Options, onSelectItem: (item: Suggestio
         onSelect({ item }: { item: Suggestion }) {
             void onSelectItem(item);
         }
-    };
+    });
 }
 
 function renderItems(

@@ -2,6 +2,7 @@ import type { AutocompleteApi as CoreAutocompleteApi, BaseItem } from "@algolia/
 import { createAutocomplete } from "@algolia/autocomplete-core";
 
 import type { AttributeType } from "../entities/fattribute.js";
+import { withHeadlessSourceDefaults } from "./autocomplete_core.js";
 import server from "./server.js";
 
 // ---------------------------------------------------------------------------
@@ -133,7 +134,7 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
 
         getSources({ query }) {
             return [
-                {
+                withHeadlessSourceDefaults<NameItem>({
                     sourceId: "attribute-names",
                     getItems() {
                         const type = typeof attributeType === "function" ? attributeType() : attributeType;
@@ -150,7 +151,7 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
                         autocomplete.setIsOpen(false);
                         onValueChange?.(item.name);
                     },
-                },
+                }),
             ];
         },
 
@@ -325,7 +326,7 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
 
         getSources({ query }) {
             return [
-                {
+                withHeadlessSourceDefaults<NameItem>({
                     sourceId: "attribute-values",
                     async getItems() {
                         const attributeName = nameCallback ? nameCallback() : "";
@@ -348,7 +349,7 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
                     onSelect({ item }) {
                         handleSelect(item);
                     },
-                },
+                }),
             ];
         },
 
