@@ -432,7 +432,8 @@ function useRelationCreation({ mapApiRef, jsPlumbApiRef }: { mapApiRef: RefObjec
                 attribute_autocomplete.initAttributeNameAutocomplete({
                     $el: $answer,
                     attributeType: "relation",
-                    open: true
+                    open: true,
+                    useNewLib: true
                 });
             }
         });

@@ -11,29 +11,15 @@ interface NameItem extends BaseItem {
     name: string;
 }
 
-/** New API: pass the input element + a container for the dropdown panel */
-interface NewInitOptions {
+interface InitAttributeNameOptions {
     /** The <input> element where the user types */
     $el: JQuery<HTMLElement>;
     attributeType?: AttributeType | (() => AttributeType);
     open: boolean;
     /** Called when the user selects a value or the panel closes */
     onValueChange?: (value: string) => void;
-    /** Use the new autocomplete-core library instead of old autocomplete.js */
-    useNewLib: true;
-}
-
-/** Old API: uses legacy autocomplete.js jQuery plugin */
-interface OldInitOptions {
-    $el: JQuery<HTMLElement>;
-    attributeType?: AttributeType | (() => AttributeType);
-    open: boolean;
-}
-
-type InitAttributeNameOptions = NewInitOptions | OldInitOptions;
-
-function isNewApi(opts: InitAttributeNameOptions): opts is NewInitOptions {
-    return "useNewLib" in opts && opts.useNewLib === true;
+    /** (Deprecated) Kept for compatibility during migration, not used anymore */
+    useNewLib?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -110,7 +96,7 @@ function positionPanel(panelEl: HTMLElement, inputEl: HTMLElement): void {
 // Attribute name autocomplete — new (autocomplete-core, headless)
 // ---------------------------------------------------------------------------
 
-function initAttributeNameNew({ $el, attributeType, open, onValueChange }: NewInitOptions) {
+function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange }: InitAttributeNameOptions) {
     const inputEl = $el[0] as HTMLInputElement;
 
     // Already initialized — just open if requested
@@ -253,57 +239,7 @@ function initAttributeNameNew({ $el, attributeType, open, onValueChange }: NewIn
     }
 }
 
-// ---------------------------------------------------------------------------
-// Attribute name autocomplete — legacy (old autocomplete.js)
-// ---------------------------------------------------------------------------
 
-function initAttributeNameLegacy({ $el, attributeType, open }: OldInitOptions) {
-    if (!$el.hasClass("aa-input")) {
-        $el.autocomplete(
-            {
-                appendTo: document.querySelector("body"),
-                hint: false,
-                openOnFocus: true,
-                minLength: 0,
-                tabAutocomplete: false
-            },
-            [
-                {
-                    displayKey: "name",
-                    cache: false,
-                    source: async (term, cb) => {
-                        const type = typeof attributeType === "function" ? attributeType() : attributeType;
-                        const names = await server.get<string[]>(`attribute-names/?type=${type}&query=${encodeURIComponent(term)}`);
-                        const result = names.map((name) => ({ name }));
-                        cb(result);
-                    }
-                }
-            ]
-        );
-
-        $el.on("autocomplete:opened", () => {
-            if ($el.attr("readonly")) {
-                $el.autocomplete("close");
-            }
-        });
-    }
-
-    if (open) {
-        $el.autocomplete("open");
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Public entry point
-// ---------------------------------------------------------------------------
-
-function initAttributeNameAutocomplete(opts: InitAttributeNameOptions) {
-    if (isNewApi(opts)) {
-        initAttributeNameNew(opts);
-    } else {
-        initAttributeNameLegacy(opts);
-    }
-}
 
 // ---------------------------------------------------------------------------
 // Label value autocomplete (still using old autocomplete.js)
