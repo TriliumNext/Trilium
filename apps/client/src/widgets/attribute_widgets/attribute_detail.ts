@@ -479,7 +479,6 @@ export default class AttributeDetailWidget extends NoteContextAwareWidget {
 
         $(window).on("mousedown", (e) => {
             if (!$(e.target).closest(this.$widget[0]).length
-                && !$(e.target).closest(".algolia-autocomplete").length
                 && !$(e.target).closest(HEADLESS_AUTOCOMPLETE_PANEL_SELECTOR).length
                 && !$(e.target).closest("#context-menu-container").length) {
                 this.hide();

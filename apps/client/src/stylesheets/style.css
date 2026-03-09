@@ -892,33 +892,6 @@ table.promoted-attributes-in-tooltip th {
     opacity: 1;
 }
 
-.algolia-autocomplete {
-    width: calc(100% - 30px);
-    z-index: 2000 !important;
-}
-
-.algolia-autocomplete-container .aa-dropdown-menu {
-    position: inherit !important;
-    overflow: auto;
-}
-
-.algolia-autocomplete .aa-input,
-.algolia-autocomplete .aa-hint {
-    width: 100%;
-}
-
-.algolia-autocomplete .aa-dropdown-menu {
-    width: 100%;
-    background-color: var(--main-background-color);
-    border: 1px solid var(--main-border-color);
-    border-top: none;
-    z-index: 2000 !important;
-    max-height: 500px;
-    overflow: auto;
-    padding: 0;
-    margin: 0;
-}
-
 .aa-dropdown-menu .aa-suggestion {
     cursor: pointer;
     padding: 6px 16px;

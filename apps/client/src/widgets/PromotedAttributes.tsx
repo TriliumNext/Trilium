@@ -38,7 +38,6 @@ interface CellProps {
 }
 
 type OnChangeEventData = TargetedEvent<HTMLInputElement, Event> | InputEvent;
-type OnChangeListener = (e: OnChangeEventData) => void | Promise<void>;
 
 export default function PromotedAttributes() {
     const { note, componentId, noteContext } = useNoteContext();
@@ -255,7 +254,7 @@ function LabelInput(props: CellProps & { inputId: string }) {
                     className="open-external-link-button"
                     icon="bx bx-window-open"
                     title={t("promoted_attributes.open_external_link")}
-                    onClick={(e) => {
+                    onClick={() => {
                         const inputEl = document.getElementById(inputId) as HTMLInputElement | null;
                         const url = inputEl?.value;
                         if (url) {

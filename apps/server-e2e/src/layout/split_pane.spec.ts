@@ -1,4 +1,5 @@
-import { test, expect } from "@playwright/test";
+import { expect,test } from "@playwright/test";
+
 import App from "../support/app";
 
 const TEXT_NOTE_TITLE = "Text notes";
