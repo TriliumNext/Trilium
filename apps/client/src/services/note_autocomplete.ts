@@ -192,8 +192,7 @@ function createSuggestionSource($el: JQuery<HTMLElement>, options: Options, onSe
             return getSuggestionInputValue(item);
         },
         onSelect({ item }: { item: Suggestion }) {
-            onSelectItem(item);
-            $el.trigger("autocomplete:noteselected", [item]);
+            void onSelectItem(item);
         }
     };
 }
@@ -202,7 +201,7 @@ function renderItems(
     panelEl: HTMLElement,
     items: Suggestion[],
     activeId: number | null,
-    onSelect: (item: Suggestion) => void,
+    onSelect: (item: Suggestion) => void | Promise<void>,
     onActivate: (index: number) => void,
     onDeactivate: () => void
 ) {
@@ -250,7 +249,7 @@ function renderItems(
         };
         itemEl.onmousedown = (e) => {
             e.preventDefault();
-            onSelect(item);
+            void onSelect(item);
         };
 
         list.appendChild(itemEl);
@@ -378,6 +377,58 @@ function getManagedInstance($el: JQuery<HTMLElement>): ManagedInstance | null {
     return inputEl ? (instanceMap.get(inputEl) ?? null) : null;
 }
 
+async function handleSuggestionSelection(
+    $el: JQuery<HTMLElement>,
+    autocomplete: CoreAutocompleteApi<Suggestion>,
+    inputEl: HTMLInputElement,
+    suggestion: Suggestion
+) {
+    if (suggestion.action === "command") {
+        autocomplete.setIsOpen(false);
+        $el.trigger("autocomplete:commandselected", [suggestion]);
+        return;
+    }
+
+    if (suggestion.action === "external-link") {
+        $el.setSelectedNotePath(null);
+        $el.setSelectedExternalLink(suggestion.externalLink ?? null);
+        inputEl.value = suggestion.externalLink ?? "";
+        autocomplete.setIsOpen(false);
+        $el.trigger("autocomplete:externallinkselected", [suggestion]);
+        return;
+    }
+
+    if (suggestion.action === "create-note") {
+        const { success, noteType, templateNoteId, notePath } = await noteCreateService.chooseNoteType();
+        if (!success) {
+            return;
+        }
+
+        const { note } = await noteCreateService.createNote(notePath || suggestion.parentNoteId, {
+            title: suggestion.noteTitle,
+            activate: false,
+            type: noteType,
+            templateNoteId
+        });
+
+        const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
+        suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
+    }
+
+    if (suggestion.action === "search-notes") {
+        const searchString = suggestion.noteTitle;
+        autocomplete.setIsOpen(false);
+        await appContext.triggerCommand("searchNotes", { searchString });
+        return;
+    }
+
+    $el.setSelectedNotePath(suggestion.notePath || "");
+    $el.setSelectedExternalLink(null);
+    inputEl.value = suggestion.noteTitle || getSuggestionInputValue(suggestion);
+    autocomplete.setIsOpen(false);
+    $el.trigger("autocomplete:noteselected", [suggestion]);
+}
+
 function clearText($el: JQuery<HTMLElement>) {
     searchDelay = 0;
     resetSelectionState($el);
@@ -389,6 +440,7 @@ function clearText($el: JQuery<HTMLElement>) {
         instance.autocomplete.setQuery("");
         instance.autocomplete.setIsOpen(false);
         instance.autocomplete.refresh();
+        $el.trigger("change");
     }
 }
 
@@ -440,10 +492,15 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
     const inputEl = $el[0] as HTMLInputElement;
 
     if (instanceMap.has(inputEl)) {
+        $el
+            .off("autocomplete:noteselected")
+            .off("autocomplete:externallinkselected")
+            .off("autocomplete:commandselected");
         return $el;
     }
 
     options = options || {};
+    let isComposingInput = false;
 
     const panelEl = createPanelEl(options.container);
     let rafId: number | null = null;
@@ -462,9 +519,8 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         shouldMirrorActiveItemToInput = false;
     };
 
-    const onSelectItem = (item: Suggestion) => {
-        inputEl.value = getSuggestionInputValue(item);
-        autocomplete.setIsOpen(false);
+    const onSelectItem = async (item: Suggestion) => {
+        await handleSuggestionSelection($el, autocomplete, inputEl, item);
     };
 
     const source = createSuggestionSource($el, options, onSelectItem);
@@ -523,6 +579,9 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                 {
                     ...source,
                     async getItems() {
+                        if (isComposingInput) {
+                            return [];
+                        }
                         return await fetchSuggestionsWithDelay(query, options);
                     }
                 },
@@ -580,9 +639,18 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         handlers.onChange(e as any);
     };
     const onFocus = (e: Event) => {
+        if (inputEl.readOnly) {
+            autocomplete.setIsOpen(false);
+            panelEl.style.display = "none";
+            stopPositioning();
+            return;
+        }
         handlers.onFocus(e as any);
     };
     const onBlur = () => {
+        if (options.container) {
+            return;
+        }
         setTimeout(() => {
             autocomplete.setIsOpen(false);
             panelEl.style.display = "none";
@@ -590,22 +658,50 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         }, 50);
     };
     const onKeyDown = (e: KeyboardEvent) => {
+        if (options.allowJumpToSearchNotes && e.ctrlKey && e.key === "Enter") {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            void handleSuggestionSelection($el, autocomplete, inputEl, {
+                action: "search-notes",
+                noteTitle: inputEl.value
+            });
+            return;
+        }
+
+        if (e.shiftKey && e.key === "Enter") {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+            fullTextSearch($el, options);
+            return;
+        }
+
         if (e.key === "ArrowDown" || e.key === "ArrowUp") {
             shouldMirrorActiveItemToInput = true;
         }
         handlers.onKeyDown(e as any);
+    };
+    const onCompositionStart = () => {
+        isComposingInput = true;
+    };
+    const onCompositionEnd = (e: CompositionEvent) => {
+        isComposingInput = false;
+        handlers.onChange(e as any);
     };
 
     inputEl.addEventListener("input", onInput);
     inputEl.addEventListener("focus", onFocus);
     inputEl.addEventListener("blur", onBlur);
     inputEl.addEventListener("keydown", onKeyDown);
+    inputEl.addEventListener("compositionstart", onCompositionStart);
+    inputEl.addEventListener("compositionend", onCompositionEnd);
 
     const cleanup = () => {
         inputEl.removeEventListener("input", onInput);
         inputEl.removeEventListener("focus", onFocus);
         inputEl.removeEventListener("blur", onBlur);
         inputEl.removeEventListener("keydown", onKeyDown);
+        inputEl.removeEventListener("compositionstart", onCompositionStart);
+        inputEl.removeEventListener("compositionend", onCompositionEnd);
         stopPositioning();
         if (panelEl.parentElement) {
             panelEl.parentElement.removeChild(panelEl);
