@@ -82,14 +82,33 @@ function escapeHtml(text: string): string {
 }
 
 function sanitizeHighlightedHtml(text: string, { allowBreaks = false }: { allowBreaks?: boolean } = {}): string {
-    const sanitizedBreaks = allowBreaks
-        ? text.replace(/<br\b[^>]*\/?>/gi, "<br>")
-        : text.replace(/<br\b[^>]*\/?>/gi, "");
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, "text/html");
+    const safeOutput = document.createDocumentFragment();
 
-    return sanitizedBreaks
-        .replace(/<b\b[^>]*>/gi, "<b>")
-        .replace(/<\/b\s*>/gi, "</b>")
-        .replace(/<\/?[^>]+>/g, "");
+    const processNode = (node: Node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            safeOutput.appendChild(document.createTextNode(node.textContent || ""));
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            const el = node as Element;
+            if (el.tagName === "B") {
+                const b = document.createElement("b");
+                b.textContent = el.textContent; // Only extract text, stripping nested potential danger
+                safeOutput.appendChild(b);
+            } else if (el.tagName === "BR" && allowBreaks) {
+                safeOutput.appendChild(document.createElement("br"));
+            } else {
+                // If the tag is not allowed, just extract its text content securely
+                safeOutput.appendChild(document.createTextNode(el.textContent || ""));
+            }
+        }
+    };
+
+    doc.body.childNodes.forEach(processNode);
+
+    const tmpDiv = document.createElement("div");
+    tmpDiv.appendChild(safeOutput);
+    return tmpDiv.innerHTML;
 }
 
 function normalizeAttributeSnippet(snippet: string): string {
@@ -302,7 +321,7 @@ async function fetchResolvedSuggestions(term: string, options: Options = {}): Pr
         return commandSuggestions;
     }
 
-    const fastSearch = options.fastSearch === false ? false : true;
+    const fastSearch = options.fastSearch !== false;
     if (fastSearch === false) {
         if (term.trim().length === 0) {
             return [];
@@ -804,9 +823,9 @@ function init() {
     $.fn.getSelectedNotePath = function () {
         if (!String($(this).val())?.trim()) {
             return "";
-        } else {
-            return $(this).attr(SELECTED_NOTE_PATH_KEY);
         }
+        return $(this).attr(SELECTED_NOTE_PATH_KEY);
+
     };
 
     $.fn.getSelectedNoteId = function () {
@@ -830,9 +849,9 @@ function init() {
     $.fn.getSelectedExternalLink = function () {
         if (!String($(this).val())?.trim()) {
             return "";
-        } else {
-            return $(this).attr(SELECTED_EXTERNAL_LINK_KEY);
         }
+        return $(this).attr(SELECTED_EXTERNAL_LINK_KEY);
+
     };
 
     $.fn.setSelectedExternalLink = function (externalLink: string | null) {

@@ -180,7 +180,7 @@
 
 ---
 
-### Step 6: 迁移"关闭弹窗"逻辑 + `attribute_detail.ts` 引用
+### Step 6: 迁移"关闭弹窗"逻辑 + `attribute_detail.ts` 引用 ✅ 完成
 **文件变更：**
 - `apps/client/src/services/dialog.ts` — 替换 `$(".aa-input").autocomplete("close")`
 - `apps/client/src/components/entrypoints.ts` — 替换 `$(".aa-input").autocomplete("close")`
@@ -188,12 +188,12 @@
 - `apps/client/src/widgets/attribute_widgets/attribute_detail.ts` — 更新 `.algolia-autocomplete` 选择器
 
 **说明：**
-需要一个全局的"关闭所有 autocomplete"机制。方案：维护一个全局 `Set<AutocompleteApi>`，在各处调用时遍历关闭。可以放在 `note_autocomplete.ts` 中导出。
+引入了全局的 "关闭所有 headless autocomplete" 机制（通过 `closeAllHeadlessAutocompletes` 方法）。
 
 **验证方式：**
-- autocomplete 弹窗打开时切换标签页 → 弹窗自动关闭
-- autocomplete 弹窗打开时打开对话框 → 弹窗自动关闭
-- 点击 autocomplete 下拉菜单时属性面板不应关闭
+- ✅ autocomplete 弹窗打开时切换标签页 → 弹窗自动关闭
+- ✅ autocomplete 弹窗打开时打开对话框 → 弹窗自动关闭
+- ✅ 点击 autocomplete 下拉菜单时属性面板不应关闭
 
 ---
 
