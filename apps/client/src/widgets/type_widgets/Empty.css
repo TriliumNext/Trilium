@@ -50,9 +50,8 @@ body.desktop {
     border-radius: 8px;
 }
 
-.note-detail-empty-results .aa-dropdown-menu {
-    border: var(--bs-border-width) solid var(--bs-border-color);
-    border-top: 0;
+.note-detail-empty-results .aa-core-panel--contained {
+    border: 0;
 }
 
 .empty-tab-search label {

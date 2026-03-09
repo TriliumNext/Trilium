@@ -197,23 +197,38 @@
 
 ---
 
-### Step 7: 更新 CSS 样式
+### Step 7: 更新 CSS 样式 ✅ 完成
 **文件变更：**
-- `apps/client/src/stylesheets/style.css`（第 895-961 行）
+- `apps/client/src/stylesheets/style.css` — 旧 `.aa-dropdown-menu` 兼容样式 + headless autocomplete 主样式（`.aa-core-*`、命令面板、Jump to Note contained panel）
+- `apps/client/src/stylesheets/theme-next/base.css` — `Jump to Note` / 空白页结果列表的主题态样式
+- `apps/client/src/stylesheets/theme-next/pages.css` — 空白页 contained panel 的页面级样式
+- `apps/client/src/widgets/type_widgets/Empty.css` — 空白页 autocomplete 结果容器边框样式
 
 **说明：**
-新库使用的 CSS 类名：
-- `.aa-Autocomplete` — 容器
-- `.aa-Form` — 搜索表单（含 input）
-- `.aa-Input` — 输入框
-- `.aa-Panel` — 下拉面板
-- `.aa-List` — 列表
-- `.aa-Item` — 列表项
-- `.aa-Item[aria-selected="true"]` — 选中项
+当前实现并没有使用 `@algolia/autocomplete-js` 的默认 DOM（`aa-Autocomplete` / `aa-Form` / `aa-Input` / `aa-Panel` 等），而是基于 `@algolia/autocomplete-core` 自行渲染 headless 面板，因此这里应以**实际渲染出来的类名**为准：
+- `.aa-core-panel` — headless 下拉面板
+- `.aa-core-panel--contained` — 渲染到外部容器中的 contained 模式面板（如 `Jump to Note`、空白页搜索）
+- `.aa-core-list` — 结果列表
+- `.aa-core-item` — 结果项
+- `.aa-core-item--active` — 当前高亮项
+- `.aa-dropdown-menu` / `.aa-suggestions` / `.aa-suggestion` / `.aa-cursor` — 为复用旧主题样式而保留的兼容类名
+- `.algolia-autocomplete-container` — 业务侧传入的结果容器，不是新库自动生成的 wrapper
+
+需要注意：
+- `NoteAutocomplete.tsx` 仍然渲染原生 `<input class="note-autocomplete form-control">`，并没有 `.aa-Input`
+- `note_autocomplete.ts` 会给面板附加 `aa-core-panel aa-dropdown-menu`，给结果列表附加 `aa-core-list aa-suggestions`，给结果项附加 `aa-core-item aa-suggestion`
+- 因此 Step 7 的重点不是“套用 Algolia 默认主题”，而是维护 Trilium 自己的 headless 渲染样式与兼容类样式
 
 **验证方式：**
 - 下拉菜单样式正常（亮色/暗色模式）
 - 选中项高亮正确
+- `Jump to Note`、空白页搜索等 contained panel 场景样式正常
+- 命令面板（`>`）和普通笔记建议项的布局都正确
+
+**当前完成情况：**
+- ✅ `Step 7` 已从“套用 `autocomplete-js` 默认类名”修正为维护当前 headless DOM 的真实样式体系。
+- ✅ `style.css` / `theme-next/base.css` / `theme-next/pages.css` / `Empty.css` 的职责范围已在文档中对齐当前实现。
+- ✅ 空白页 (`note-detail-empty`) 的 contained panel 已修正为无边框，不再被旧的 `.aa-dropdown-menu` 规则反向覆盖。
 
 ---
 

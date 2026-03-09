@@ -128,8 +128,8 @@
     margin-inline: auto;
 }
 
-/* The search results list */
-.note-detail-empty span.aa-dropdown-menu {
+/* The headless autocomplete panel rendered into the empty-note results container */
+.note-detail-empty .aa-core-panel--contained {
     margin-top: 1em;
     border: unset;
 }
