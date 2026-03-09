@@ -8,17 +8,6 @@ async function loadBootstrap() {
     }
 }
 
-// Polyfill removed jQuery methods for autocomplete.js compatibility
-($ as any).isArray = Array.isArray;
-($ as any).isFunction = function(obj: any) { return typeof obj === 'function'; };
-($ as any).isPlainObject = function(obj: any) {
-    if (obj == null || typeof obj !== 'object') { return false; }
-    const proto = Object.getPrototypeOf(obj);
-    if (proto === null) { return true; }
-    const Ctor = Object.prototype.hasOwnProperty.call(proto, 'constructor') && proto.constructor;
-    return typeof Ctor === 'function' && Ctor === Object;
-};
-
 (window as any).$ = $;
 (window as any).jQuery = $;
 await loadBootstrap();

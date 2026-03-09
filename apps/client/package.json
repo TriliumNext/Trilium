@@ -45,7 +45,6 @@
     "@univerjs/preset-sheets-sort": "0.16.1",
     "@univerjs/presets": "0.16.1",
     "@zumer/snapdom": "2.1.0",
-    "autocomplete.js": "0.38.1",
     "bootstrap": "5.3.8",
     "boxicons": "2.1.4",
     "clsx": "2.1.1",

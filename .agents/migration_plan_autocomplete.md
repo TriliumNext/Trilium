@@ -249,7 +249,7 @@
 
 ---
 
-### Step 9: 移除旧库和 Polyfill
+### Step 9: 移除旧库和 Polyfill ✅ 完成
 **文件变更：**
 - `apps/client/package.json` — 移除 `"autocomplete.js": "0.38.1"`
 - `apps/client/src/desktop.ts` — 移除 `import "autocomplete.js/index_jquery.js";`
@@ -260,6 +260,13 @@
 **验证方式：**
 - 完整回归测试
 - 构建无错误
+
+**当前完成情况：**
+- ✅ 代码中的 `autocomplete.js` 入口 import 与仅为旧库保留的 jQuery 4 polyfill 已移除。
+- ✅ `apps/client/package.json` 已删除 `autocomplete.js` 依赖声明。
+- ✅ `pnpm install` 已执行完成，lockfile / 安装状态已同步。
+- ✅ `pnpm exec tsc -p apps/client/tsconfig.app.json --noEmit` 已通过。
+- ✅ `pnpm run --filter @triliumnext/client build` 已通过。
 
 ---
 
