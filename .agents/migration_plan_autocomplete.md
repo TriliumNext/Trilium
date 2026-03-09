@@ -122,13 +122,19 @@
 - ✅ `Ctrl+J / Jump to Note` 与 `attribute_detail.ts` 的普通 note 选择链路已抽查通过。
 - ⚠️ React 消费方整体仍应放在 **Step 5** 继续验收；`Move to` 等问题不属于 Step 3.3 本身已完成的范围。
 
-#### Step 3.4: 特殊键盘事件拦截与附带按钮包容 (终极打磨)
+#### Step 3.4: 特殊键盘事件拦截与附带按钮包容 (终极打磨) ✅ 基本完成
 **目标：** 解决在旧 jQuery 中强绑定的 IME（中日韩等输入法）防抖问题，并恢复如 `Shift+Enter`、周边附加按钮（清除等）的正常运作。
 **工作内容：**
 - 将旧的输入法合成事件 (`compositionstart` / `compositionend`) 判断逻辑迁移到新的 `onInput` / `onKeyDown` 外围保护之中。
 - 重构对 `Shift+Enter` (唤起全文搜索)、`Ctrl+Enter` 等组合快捷键的劫持处理。
 - 修正周边辅助控件（例如搜索栏自带的 “最近笔记(钟表)”、“清除栏(X)” 按钮）因为 DOM 结构调整可能引发的影响。
 **验证方式：** 中文拼音输入法敲打途中不会错误地发起网络搜索；各种组合回车热键重新生效，整个搜索系统重回巅峰状态。
+**当前验证结果：**
+- ✅ `compositionstart` / `compositionend` 已恢复旧版保护逻辑：合成期间不发起搜索，结束后按“清空再恢复 query”的语义重新跑一次。
+- ✅ `Shift+Enter` 与 `Ctrl+Enter` 的快捷分发仍保留，并已按旧版语义接回全文搜索 / `search-notes`。
+- ✅ `autocomplete:opened` / `autocomplete:closed` 事件已重新补回，`readonly` 与“关闭时空输入框清理”逻辑重新对齐旧版。
+- ✅ 清空按钮、最近笔记按钮、全文搜索按钮都继续走 service 内部统一入口，而不是分散拼状态。
+- ⚠️ 这一步仍以 `note_autocomplete.ts` 核心行为为主；React 消费方的问题继续留在 **Step 5**。
 
 ---
 

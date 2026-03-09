@@ -62,6 +62,9 @@ interface ManagedInstance {
     autocomplete: CoreAutocompleteApi<Suggestion>;
     panelEl: HTMLElement;
     clearCursor: () => void;
+    isPanelOpen: () => boolean;
+    getQuery: () => string;
+    suppressNextClosedReset: () => void;
     showQuery: (query: string) => void;
     openRecentNotes: () => void;
     cleanup: () => void;
@@ -261,7 +264,7 @@ function renderItems(
 }
 
 async function autocompleteSourceForCKEditor(queryText: string) {
-    const rows = await fetchSuggestions(queryText, { allowCreatingNotes: true });
+    const rows = await fetchResolvedSuggestions(queryText, { allowCreatingNotes: true });
     return rows.map((row) => {
         return {
             action: row.action,
@@ -275,7 +278,20 @@ async function autocompleteSourceForCKEditor(queryText: string) {
     });
 }
 
-async function fetchSuggestions(term: string, options: Options = {}): Promise<Suggestion[]> {
+function getSearchingSuggestion(term: string): Suggestion[] {
+    if (term.trim().length === 0) {
+        return [];
+    }
+
+    return [
+        {
+            noteTitle: term,
+            highlightedNotePathTitle: t("quick-search.searching")
+        }
+    ];
+}
+
+async function fetchResolvedSuggestions(term: string, options: Options = {}): Promise<Suggestion[]> {
     // Check if we're in command mode
     if (options.isCommandPalette && term.startsWith(">")) {
         const commandQuery = term.substring(1).trim();
@@ -305,12 +321,6 @@ async function fetchSuggestions(term: string, options: Options = {}): Promise<Su
         if (term.trim().length === 0) {
             return [];
         }
-        return [
-            {
-                noteTitle: term,
-                highlightedNotePathTitle: t("quick-search.searching")
-            }
-        ];
     }
 
     const activeNoteId = appContext.tabManager.getActiveContextNoteId();
@@ -358,7 +368,7 @@ async function fetchSuggestionsWithDelay(term: string, options: Options): Promis
     return await new Promise<Suggestion[]>((resolve) => {
         clearTimeout(debounceTimeoutId);
         debounceTimeoutId = setTimeout(async () => {
-            resolve(await fetchSuggestions(term, options));
+            resolve(await fetchResolvedSuggestions(term, options));
         }, searchDelay);
 
         if (searchDelay === 0) {
@@ -435,6 +445,9 @@ function clearText($el: JQuery<HTMLElement>) {
     const inputEl = $el[0] as HTMLInputElement;
     const instance = getManagedInstance($el);
     if (instance) {
+        if (instance.isPanelOpen()) {
+            instance.suppressNextClosedReset();
+        }
         inputEl.value = "";
         instance.clearCursor();
         instance.autocomplete.setQuery("");
@@ -480,9 +493,13 @@ function fullTextSearch($el: JQuery<HTMLElement>, options: Options) {
     $el.trigger("focus");
     options.fastSearch = false;
     searchDelay = 0;
+    resetSelectionState($el);
 
     const instance = getManagedInstance($el);
     if (instance) {
+        instance.clearCursor();
+        instance.autocomplete.setQuery("");
+        inputEl.value = "";
         instance.showQuery(searchString);
     }
 }
@@ -507,6 +524,9 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
     let currentQuery = inputEl.value;
     let shouldAutoselectTopItem = false;
     let shouldMirrorActiveItemToInput = false;
+    let wasPanelOpen = false;
+    let suppressNextClosedEmptyReset = false;
+    let suggestionRequestId = 0;
 
     const clearCursor = () => {
         shouldMirrorActiveItemToInput = false;
@@ -514,9 +534,26 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         inputEl.value = currentQuery;
     };
 
+    const suppressNextClosedReset = () => {
+        suppressNextClosedEmptyReset = true;
+    };
+
     const prepareForQueryChange = () => {
         shouldAutoselectTopItem = true;
         shouldMirrorActiveItemToInput = false;
+    };
+
+    const rerunQuery = (query: string) => {
+        if (!query.trim().length) {
+            openRecentNotes();
+            return;
+        }
+
+        prepareForQueryChange();
+        currentQuery = "";
+        inputEl.value = "";
+        autocomplete.setQuery("");
+        showQuery(query);
     };
 
     const onSelectItem = async (item: Suggestion) => {
@@ -539,9 +576,8 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         inputEl.value = "";
         autocomplete.setQuery("");
         autocomplete.setActiveItemId(null);
-        autocomplete.setIsOpen(false);
 
-        fetchSuggestions("", options).then((items) => {
+        fetchResolvedSuggestions("", options).then((items) => {
             autocomplete.setCollections([{ source, items }]);
             autocomplete.setIsOpen(items.length > 0);
         });
@@ -582,6 +618,22 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                         if (isComposingInput) {
                             return [];
                         }
+
+                        if (options.fastSearch === false && query.trim().length > 0) {
+                            const requestId = ++suggestionRequestId;
+
+                            void fetchSuggestionsWithDelay(query, options).then((items) => {
+                                if (requestId !== suggestionRequestId || currentQuery !== query) {
+                                    return;
+                                }
+
+                                autocomplete.setCollections([{ source, items }]);
+                                autocomplete.setIsOpen(items.length > 0);
+                            });
+
+                            return getSearchingSuggestion(query);
+                        }
+
                         return await fetchSuggestionsWithDelay(query, options);
                     }
                 },
@@ -594,6 +646,31 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
             const activeId = state.activeItemId ?? null;
             const activeItem = activeId !== null ? items[activeId] : null;
             currentQuery = state.query;
+            const isPanelOpen = state.isOpen && items.length > 0;
+
+            if (isPanelOpen !== wasPanelOpen) {
+                wasPanelOpen = isPanelOpen;
+
+                if (isPanelOpen) {
+                    $el.trigger("autocomplete:opened");
+
+                    if (inputEl.readOnly) {
+                        suppressNextClosedReset();
+                        autocomplete.setIsOpen(false);
+                        return;
+                    }
+                } else {
+                    $el.trigger("autocomplete:closed");
+
+                    if (suppressNextClosedEmptyReset) {
+                        suppressNextClosedEmptyReset = false;
+                    } else if (!String(inputEl.value).trim()) {
+                        searchDelay = 0;
+                        resetSelectionState($el);
+                        $el.trigger("change");
+                    }
+                }
+            }
 
             if (activeItem && shouldMirrorActiveItemToInput) {
                 inputEl.value = getSuggestionInputValue(activeItem);
@@ -601,7 +678,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                 inputEl.value = state.query;
             }
 
-            if (state.isOpen && items.length > 0) {
+            if (isPanelOpen) {
                 renderItems(panelEl, items, activeId, (item) => {
                     void onSelectItem(item);
                 }, (index) => {
@@ -684,7 +761,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
     };
     const onCompositionEnd = (e: CompositionEvent) => {
         isComposingInput = false;
-        handlers.onChange(e as any);
+        rerunQuery(inputEl.value);
     };
 
     inputEl.addEventListener("input", onInput);
@@ -707,7 +784,17 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         }
     };
 
-    instanceMap.set(inputEl, { autocomplete, panelEl, clearCursor, showQuery, openRecentNotes, cleanup });
+    instanceMap.set(inputEl, {
+        autocomplete,
+        panelEl,
+        clearCursor,
+        isPanelOpen: () => wasPanelOpen,
+        getQuery: () => currentQuery,
+        suppressNextClosedReset,
+        showQuery,
+        openRecentNotes,
+        cleanup
+    });
 
     // Buttons UI logic
     const $clearTextButton = $("<a>").addClass("input-group-text input-clearer-button bx bxs-tag-x").prop("title", t("note_autocomplete.clear-text-field"));
