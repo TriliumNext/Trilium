@@ -95,11 +95,15 @@ function renderItems(panelEl: HTMLElement, items: NameItem[], activeItemId: numb
 
 function positionPanel(panelEl: HTMLElement, inputEl: HTMLElement): void {
     const rect = inputEl.getBoundingClientRect();
+    const top = `${rect.bottom}px`;
+    const left = `${rect.left}px`;
+    const width = `${rect.width}px`;
+
     panelEl.style.position = "fixed";
-    panelEl.style.top = `${rect.bottom}px`;
-    panelEl.style.left = `${rect.left}px`;
-    panelEl.style.width = `${rect.width}px`;
-    panelEl.style.display = "block";
+    if (panelEl.style.top !== top) panelEl.style.top = top;
+    if (panelEl.style.left !== left) panelEl.style.left = left;
+    if (panelEl.style.width !== width) panelEl.style.width = width;
+    if (panelEl.style.display !== "block") panelEl.style.display = "block";
 }
 
 // ---------------------------------------------------------------------------
@@ -115,7 +119,6 @@ function initAttributeNameNew({ $el, attributeType, open, onValueChange }: NewIn
             const inst = instanceMap.get(inputEl)!;
             inst.autocomplete.setIsOpen(true);
             inst.autocomplete.refresh();
-            positionPanel(inst.panelEl, inputEl);
         }
         return;
     }
@@ -124,6 +127,22 @@ function initAttributeNameNew({ $el, attributeType, open, onValueChange }: NewIn
 
     let isPanelOpen = false;
     let hasActiveItem = false;
+
+    let rafId: number | null = null;
+    function startPositioning() {
+        if (rafId !== null) return;
+        const update = () => {
+            positionPanel(panelEl, inputEl);
+            rafId = requestAnimationFrame(update);
+        };
+        update();
+    }
+    function stopPositioning() {
+        if (rafId !== null) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+        }
+    }
 
     const autocomplete = createAutocomplete<NameItem>({
         openOnFocus: true,
@@ -171,13 +190,15 @@ function initAttributeNameNew({ $el, attributeType, open, onValueChange }: NewIn
                     autocomplete.setIsOpen(false);
                     onValueChange?.(item.name);
                 });
-                positionPanel(panelEl, inputEl);
+                startPositioning();
             } else {
                 panelEl.style.display = "none";
+                stopPositioning();
             }
 
             if (!state.isOpen) {
                 panelEl.style.display = "none";
+                stopPositioning();
             }
         },
     });
@@ -195,6 +216,7 @@ function initAttributeNameNew({ $el, attributeType, open, onValueChange }: NewIn
         setTimeout(() => {
             autocomplete.setIsOpen(false);
             panelEl.style.display = "none";
+            stopPositioning();
             onValueChange?.(inputEl.value);
         }, 200);
     };
@@ -219,6 +241,7 @@ function initAttributeNameNew({ $el, attributeType, open, onValueChange }: NewIn
         inputEl.removeEventListener("focus", onFocus);
         inputEl.removeEventListener("blur", onBlur);
         inputEl.removeEventListener("keydown", onKeyDown);
+        stopPositioning();
     };
 
     instanceMap.set(inputEl, { autocomplete, panelEl, cleanup });
@@ -226,7 +249,7 @@ function initAttributeNameNew({ $el, attributeType, open, onValueChange }: NewIn
     if (open) {
         autocomplete.setIsOpen(true);
         autocomplete.refresh();
-        positionPanel(panelEl, inputEl);
+        startPositioning();
     }
 }
 
