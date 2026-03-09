@@ -454,7 +454,7 @@ async function handleSuggestionSelection(
     $el.trigger("autocomplete:noteselected", [suggestion]);
 }
 
-function clearText($el: JQuery<HTMLElement>) {
+export function clearText($el: JQuery<HTMLElement>) {
     searchDelay = 0;
     resetSelectionState($el);
     const inputEl = $el[0] as HTMLInputElement;
@@ -594,6 +594,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
 
         fetchResolvedSuggestions("", options).then((items) => {
             autocomplete.setCollections([{ source, items }]);
+            autocomplete.setActiveItemId(items.length > 0 ? 0 : null);
             autocomplete.setIsOpen(items.length > 0);
         });
     };
@@ -620,7 +621,9 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
 
     const autocomplete = createAutocomplete<Suggestion>({
         openOnFocus: false, // Wait until we explicitly focus or type
-        defaultActiveItemId: null,
+        // Old autocomplete.js used `autoselect: true`, so the first item
+        // should be immediately selectable when the panel opens.
+        defaultActiveItemId: 0,
         shouldPanelOpen() {
             return true;
         },
@@ -794,6 +797,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         inputEl.removeEventListener("compositionstart", onCompositionStart);
         inputEl.removeEventListener("compositionend", onCompositionEnd);
         stopPositioning();
+        autocomplete.destroy();
         if (panelEl.parentElement) {
             panelEl.parentElement.removeChild(panelEl);
         }
@@ -834,6 +838,15 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
     });
 
     return $el;
+}
+
+export function destroyAutocomplete($el: JQuery<HTMLElement> | HTMLElement) {
+    const inputEl = $el instanceof HTMLElement ? $el : $el[0] as HTMLInputElement;
+    const instance = instanceMap.get(inputEl);
+    if (instance) {
+        instance.cleanup();
+        instanceMap.delete(inputEl);
+    }
 }
 
 function init() {
@@ -878,10 +891,19 @@ function init() {
 
     $.fn.setNote = async function (noteId) {
         const note = noteId ? await froca.getNote(noteId, true) : null;
+        const $el = $(this as unknown as HTMLElement);
+        const instance = getManagedInstance($el);
+        const noteTitle = note ? note.title : "";
 
-        $(this)
-            .val(note ? note.title : "")
+        $el
+            .val(noteTitle)
             .setSelectedNotePath(noteId);
+
+        if (instance) {
+            instance.clearCursor();
+            instance.autocomplete.setQuery(noteTitle);
+            instance.autocomplete.setIsOpen(false);
+        }
     };
 }
 
@@ -902,6 +924,8 @@ export function triggerRecentNotes(inputElement: HTMLInputElement | null | undef
 
 export default {
     autocompleteSourceForCKEditor,
+    clearText,
+    destroyAutocomplete,
     initNoteAutocomplete,
     showRecentNotes,
     showAllCommands,

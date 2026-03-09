@@ -164,7 +164,7 @@
 
 ---
 
-### Step 5: 迁移 `NoteAutocomplete.tsx` (React/Preact 组件)
+### Step 5: 迁移 `NoteAutocomplete.tsx` (React/Preact 组件) ✅ 基本完成
 **文件变更：**
 - `apps/client/src/widgets/react/NoteAutocomplete.tsx` — 传入容器 `<div>`，管理 `api` 生命周期
 
@@ -173,8 +173,10 @@
 - `noteId` 和 `text` props 的动态更新正确
 
 **当前状态：**
-- ⚠️ 尚未完成。虽然底层 `note_autocomplete.ts` 已经切到新实现，但 React 消费方仍需逐一验收。
-- ⚠️ 已抽查 `Move to`，当前功能不正常，说明 Step 5 仍存在待修复问题。
+- ✅ `NoteAutocomplete.tsx` 已移除残留的旧 `.autocomplete("val")` 调用，改为完全走 `note_autocomplete.ts` 暴露的 helper。
+- ✅ 组件现在会显式管理 headless autocomplete 的初始化/销毁生命周期，并清理 React 侧追加的 DOM / jQuery 监听，避免重复绑定。
+- ✅ `noteId` / `text` prop 同步已切到新状态流，`setNote()` 也会同步内部 query，避免仅改 DOM 值导致的状态漂移。
+- ⚠️ 仍需继续做手动回归验收，重点应覆盖 `Move to`、`Clone to`、`Include note`、`Add link`、bulk actions 等主要 React 消费方。
 
 ---
 
