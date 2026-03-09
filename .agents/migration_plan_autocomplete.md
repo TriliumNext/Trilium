@@ -270,13 +270,20 @@
 
 ---
 
-### Step 10: 更新 E2E 测试
+### Step 10: 更新 E2E 测试 ✅ 完成
 **文件变更：**
 - `apps/server-e2e/src/support/app.ts`
 - `apps/server-e2e/src/layout/split_pane.spec.ts`
 
 **验证方式：**
 - E2E 测试全部通过
+
+**当前完成情况：**
+- ✅ `apps/server-e2e/src/support/app.ts` 已新增基于当前 headless DOM 语义的 note autocomplete suggestion helper，不再依赖旧的“第二项就是目标笔记”顺序假设。
+- ✅ `apps/server-e2e/src/layout/split_pane.spec.ts` 已改为复用该 helper，避免被 `create-note` / `search-notes` 等 action 项扰动。
+- ✅ 定向验证 `pnpm run --filter @triliumnext/server-e2e e2e -- src/layout/split_pane.spec.ts` 已通过（2 passed）。
+- ✅ 全量验证 `pnpm run --filter @triliumnext/server-e2e e2e` 已通过退出码校验。
+- ⚠️ 全量 Playwright 结果为 `41 passed, 9 flaky`；`src/layout/split_pane.spec.ts:40` 在全量并发执行中首跑超时、retry 后通过，另有多条非 autocomplete 相关用例也存在同类 flaky 现象。
 
 ---
 
