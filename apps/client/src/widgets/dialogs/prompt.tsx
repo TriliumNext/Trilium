@@ -1,11 +1,12 @@
 import { useRef, useState } from "preact/hooks";
+
 import { t } from "../../services/i18n";
 import Button from "../react/Button";
-import Modal from "../react/Modal";
-import FormTextBox from "../react/FormTextBox";
 import FormGroup from "../react/FormGroup";
-import { refToJQuerySelector } from "../react/react_utils";
+import FormTextBox from "../react/FormTextBox";
 import { useTriliumEvent } from "../react/hooks";
+import Modal from "../react/Modal";
+import { refToJQuerySelector } from "../react/react_utils";
 
 // JQuery here is maintained for compatibility with existing code.
 interface ShownCallbackData {
@@ -24,7 +25,6 @@ export interface PromptDialogOptions {
     shown?: PromptShownDialogCallback;
     callback?: (value: string | null) => void;
     readOnly?: boolean;
-    submitWithCtrlEnter?: boolean;
 }
 
 export default function PromptDialog() {
@@ -41,7 +41,7 @@ export default function PromptDialog() {
         opts.current = newOpts;
         setValue(newOpts.defaultValue ?? "");
         setShown(true);
-    })
+    });
 
     return (
         <Modal
@@ -61,7 +61,7 @@ export default function PromptDialog() {
                 answerRef.current?.select();
             }}
             onSubmit={() => {
-                submitValue.current = value;
+                submitValue.current = answerRef.current?.value || value;
                 setShown(false);
             }}
             onHidden={() => {
@@ -70,7 +70,7 @@ export default function PromptDialog() {
                 submitValue.current = null;
                 opts.current = undefined;
             }}
-            footer={<Button text={t("prompt.ok")} keyboardShortcut={opts.current?.submitWithCtrlEnter ? "ctrl+return" : "Enter"} kind="primary" />}
+            footer={<Button text={t("prompt.ok")} keyboardShortcut="Enter" kind="primary" />}
             show={shown}
             stackable
         >
@@ -78,14 +78,6 @@ export default function PromptDialog() {
                 <FormTextBox
                     inputRef={answerRef}
                     currentValue={value} onChange={setValue}
-                    readOnly={opts.current?.readOnly}
-                    onKeyDown={(e: KeyboardEvent) => {
-                        if (opts.current?.submitWithCtrlEnter && (e.ctrlKey || e.metaKey) && e.key === "Enter") {
-                            e.preventDefault();
-                            submitValue.current = answerRef.current?.value || value;
-                            setShown(false);
-                        }
-                    }}
                 />
             </FormGroup>
         </Modal>

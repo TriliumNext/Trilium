@@ -416,7 +416,6 @@ function useRelationCreation({ mapApiRef, jsPlumbApiRef }: { mapApiRef: RefObjec
         if (!originalEvent || !mapApiRef.current) return;
 
         const name = await dialog.prompt({
-            submitWithCtrlEnter: true,
             message: t("relation_map.specify_new_relation_name"),
             shown: ({ $answer }) => {
                 if (!$answer) {

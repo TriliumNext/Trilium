@@ -702,7 +702,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
     const onCompositionStart = () => {
         isComposingInput = true;
     };
-    const onCompositionEnd = (e: CompositionEvent) => {
+    const onCompositionEnd = (e: any) => {
         isComposingInput = false;
         rerunQuery(inputEl.value);
     };
@@ -755,14 +755,21 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                 return;
             }
 
+            if (e.key === "Enter" && !wasPanelOpen) {
+                // Do not pass the Enter key to autocomplete-core if the panel is closed.
+                // This prevents `preventDefault()` from being called inappropriately and
+                // allows the native form submission to work.
+                return;
+            }
+
             if (e.key === "ArrowDown" || e.key === "ArrowUp") {
                 shouldMirrorActiveItemToInput = true;
             }
             handlers.onKeyDown(e as any);
         },
         extraBindings: [
-            { type: "compositionstart", listener: onCompositionStart },
-            { type: "compositionend", listener: onCompositionEnd }
+            { type: "compositionstart", listener: onCompositionStart as ((event: Event) => void) },
+            { type: "compositionend", listener: onCompositionEnd as ((event: Event) => void) }
         ]
     });
 

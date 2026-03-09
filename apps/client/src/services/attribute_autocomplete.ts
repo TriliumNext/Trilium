@@ -200,10 +200,16 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
             }, 50);
         },
         onKeyDown(e, handlers) {
-            if (e.key === "Enter" && isPanelOpen && hasActiveItem) {
-                // Prevent the enter key from propagating to parent dialogs
-                // (which might interpret it as "submit" or "save and close")
-                e.stopPropagation();
+            if (e.key === "Enter") {
+                if (isPanelOpen && hasActiveItem) {
+                    // Prevent the enter key from propagating to parent dialogs
+                    // (which might interpret it as "submit" or "save and close")
+                    e.stopPropagation();
+                } else if (!isPanelOpen) {
+                    // Panel is closed. Do not pass Enter to autocomplete-core
+                    // so native HTML form submit handlers can run.
+                    return;
+                }
             }
             handlers.onKeyDown(e as any);
         }
@@ -386,8 +392,12 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
             }, 50);
         },
         onKeyDown(e, handlers) {
-            if (e.key === "Enter" && isPanelOpen && hasActiveItem) {
-                e.stopPropagation();
+            if (e.key === "Enter") {
+                if (isPanelOpen && hasActiveItem) {
+                    e.stopPropagation();
+                } else if (!isPanelOpen) {
+                    return; // Let native submit form bubbling happen
+                }
             }
             handlers.onKeyDown(e as any);
         }
