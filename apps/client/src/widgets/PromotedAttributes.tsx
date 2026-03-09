@@ -8,6 +8,7 @@ import { Dispatch, StateUpdater, useCallback, useEffect, useRef, useState } from
 import NoteContext from "../components/note_context";
 import FAttribute from "../entities/fattribute";
 import FNote from "../entities/fnote";
+import attributeAutocompleteService from "../services/attribute_autocomplete";
 import { Attribute } from "../services/attribute_parser";
 import attributes from "../services/attributes";
 import { t } from "../services/i18n";
@@ -36,7 +37,7 @@ interface CellProps {
     setCellToFocus(cell: Cell): void;
 }
 
-type OnChangeEventData = TargetedEvent<HTMLInputElement, Event> | InputEvent | JQuery.TriggeredEvent<HTMLInputElement, undefined, HTMLInputElement, HTMLInputElement>;
+type OnChangeEventData = TargetedEvent<HTMLInputElement, Event> | InputEvent;
 type OnChangeListener = (e: OnChangeEventData) => void | Promise<void>;
 
 export default function PromotedAttributes() {
@@ -200,11 +201,7 @@ function LabelInput(props: CellProps & { inputId: string }) {
     }, [ cell, componentId, note, setCells ]);
     const extraInputProps: InputHTMLAttributes = {};
 
-    useTextLabelAutocomplete(inputId, valueAttr, definition, (e) => {
-        if (e.currentTarget instanceof HTMLInputElement) {
-            setDraft(e.currentTarget.value);
-        }
-    });
+    useTextLabelAutocomplete(inputId, valueAttr, definition, setDraft);
 
     // React to model changes.
     useEffect(() => {
@@ -413,55 +410,31 @@ function InputButton({ icon, className, title, onClick }: {
     );
 }
 
-function useTextLabelAutocomplete(inputId: string, valueAttr: Attribute, definition: DefinitionObject, onChangeListener: OnChangeListener) {
-    const [ attributeValues, setAttributeValues ] = useState<{ value: string }[] | null>(null);
-
-    // Obtain data.
+function useTextLabelAutocomplete(inputId: string, valueAttr: Attribute, definition: DefinitionObject, onValueChange: (value: string) => void) {
     useEffect(() => {
         if (definition.labelType !== "text") {
             return;
         }
 
-        server.get<string[]>(`attribute-values/${encodeURIComponent(valueAttr.name)}`).then((_attributesValues) => {
-            setAttributeValues(_attributesValues.map((attribute) => ({ value: attribute })));
-        });
-    }, [ definition.labelType, valueAttr.name ]);
-
-    // Initialize autocomplete.
-    useEffect(() => {
-        if (attributeValues?.length === 0) return;
         const el = document.getElementById(inputId) as HTMLInputElement | null;
-        if (!el) return;
+        if (!el) {
+            return;
+        }
 
         const $input = $(el);
-        $input.autocomplete(
-            {
-                appendTo: document.querySelector("body"),
-                hint: false,
-                autoselect: false,
-                openOnFocus: true,
-                minLength: 0,
-                tabAutocomplete: false
-            },
-            [
-                {
-                    displayKey: "value",
-                    source (term, cb) {
-                        term = term.toLowerCase();
+        attributeAutocompleteService.initLabelValueAutocomplete({
+            $el: $input,
+            open: false,
+            nameCallback: () => valueAttr.name,
+            onValueChange: (value) => {
+                onValueChange(value);
+            }
+        });
 
-                        const filtered = (attributeValues ?? []).filter((attr) => attr.value.toLowerCase().includes(term));
-
-                        cb(filtered);
-                    }
-                }
-            ]
-        );
-
-        $input.off("autocomplete:selected");
-        $input.on("autocomplete:selected", onChangeListener);
-
-        return () => $input.autocomplete("destroy");
-    }, [ inputId, attributeValues, onChangeListener ]);
+        return () => {
+            attributeAutocompleteService.destroyAutocomplete($input);
+        };
+    }, [ definition.labelType, inputId, onValueChange, valueAttr.name ]);
 }
 
 async function updateAttribute(note: FNote, cell: Cell, componentId: string, value: string | undefined, setCells: Dispatch<StateUpdater<Cell[] | undefined>>) {

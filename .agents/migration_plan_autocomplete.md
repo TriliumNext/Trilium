@@ -232,12 +232,20 @@
 
 ---
 
-### Step 8: 更新类型声明
+### Step 8: 更新类型声明 ✅ 完成
 **文件变更：**
 - `apps/client/src/types.d.ts` — 移除 `AutoCompleteConfig`、`AutoCompleteArg`、jQuery `.autocomplete()` 方法
+- `apps/client/src/widgets/PromotedAttributes.tsx` — 移除最后残留的 `$input.autocomplete(...)` 调用，改为复用 `attribute_autocomplete.ts` 的 headless label value autocomplete
+- `apps/client/src/services/autocomplete_core.ts` — 收紧 headless source 默认类型，补齐 internal source 所需默认钩子
+- `apps/client/src/services/note_autocomplete.ts` — 移除对不存在的 `autocomplete.destroy()` 调用，清理类型不兼容点
 
 **验证方式：**
 - TypeScript 编译无错误
+
+**当前完成情况：**
+- ✅ `types.d.ts` 中遗留的 `AutoCompleteConfig`、`AutoCompleteArg` 与 jQuery `.autocomplete()` 扩展声明已删除。
+- ✅ `PromotedAttributes.tsx` 不再依赖旧版 `autocomplete.js` 类型或初始化流程，至此 client 代码中已无 `.autocomplete(...)` 调用残留。
+- ✅ 运行 `pnpm exec tsc -p apps/client/tsconfig.app.json --noEmit` 通过。
 
 ---
 

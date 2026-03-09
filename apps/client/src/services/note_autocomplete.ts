@@ -190,7 +190,7 @@ function renderSuggestion(item: Suggestion): string {
 }
 
 function createSuggestionSource(options: Options, onSelectItem: (item: Suggestion) => void) {
-    return withHeadlessSourceDefaults<Suggestion>({
+    return withHeadlessSourceDefaults({
         sourceId: "note-suggestions",
         async getItems({ query }: { query: string }) {
             return await fetchResolvedSuggestions(query, options);
@@ -776,7 +776,6 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
     const cleanup = () => {
         unregisterGlobalCloser();
         cleanupInputBindings();
-        autocomplete.destroy();
         panelController.destroy();
     };
 

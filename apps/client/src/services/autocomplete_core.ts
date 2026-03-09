@@ -2,11 +2,13 @@ import type { AutocompleteApi, AutocompleteSource, BaseItem } from "@algolia/aut
 
 export const HEADLESS_AUTOCOMPLETE_PANEL_SELECTOR = ".aa-core-panel";
 
+type HeadlessSourceDefaults = Required<Pick<AutocompleteSource<any>, "getItemUrl" | "onActive" | "onResolve">>;
+
 const headlessAutocompleteClosers = new Set<() => void>();
 
-export function withHeadlessSourceDefaults<TItem extends BaseItem>(
-    source: AutocompleteSource<TItem>
-): AutocompleteSource<TItem> {
+export function withHeadlessSourceDefaults<TSource extends AutocompleteSource<any>>(
+    source: TSource
+): TSource & HeadlessSourceDefaults {
     return {
         getItemUrl() {
             return undefined;
@@ -14,8 +16,11 @@ export function withHeadlessSourceDefaults<TItem extends BaseItem>(
         onActive() {
             // Headless consumers handle highlight side effects themselves.
         },
+        onResolve() {
+            // Headless consumers resolve and render items manually.
+        },
         ...source
-    };
+    } as TSource & HeadlessSourceDefaults;
 }
 
 export function registerHeadlessAutocompleteCloser(close: () => void) {
@@ -171,8 +176,8 @@ export function bindAutocompleteInput<TItem extends BaseItem>({
         },
         {
             type: "keydown",
-            listener: (event: KeyboardEvent) => {
-                onKeyDown?.(event, handlers);
+            listener: (event: Event) => {
+                onKeyDown?.(event as KeyboardEvent, handlers);
             }
         },
         ...extraBindings

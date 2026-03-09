@@ -117,7 +117,7 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
 
         getSources({ query }) {
             return [
-                withHeadlessSourceDefaults<NameItem>({
+                withHeadlessSourceDefaults({
                     sourceId: "attribute-names",
                     getItems() {
                         const type = typeof attributeType === "function" ? attributeType() : attributeType;
@@ -303,7 +303,7 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
 
         getSources({ query }) {
             return [
-                withHeadlessSourceDefaults<NameItem>({
+                withHeadlessSourceDefaults({
                     sourceId: "attribute-values",
                     async getItems() {
                         const attributeName = nameCallback ? nameCallback() : "";
