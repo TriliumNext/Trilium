@@ -34,7 +34,14 @@ interface ManagedInstance {
 
 const instanceMap = new WeakMap<HTMLElement, ManagedInstance>();
 
-function renderItems(panelEl: HTMLElement, items: NameItem[], activeItemId: number | null, onSelect: (item: NameItem) => void): void {
+function renderItems(
+    panelEl: HTMLElement,
+    items: NameItem[],
+    activeItemId: number | null,
+    onSelect: (item: NameItem) => void,
+    onActivate: (index: number) => void,
+    onDeactivate: () => void
+): void {
     panelEl.innerHTML = "";
     if (items.length === 0) {
         panelEl.style.display = "none";
@@ -49,6 +56,21 @@ function renderItems(panelEl: HTMLElement, items: NameItem[], activeItemId: numb
             li.classList.add("aa-core-item--active");
         }
         li.textContent = item.name;
+        li.addEventListener("mousemove", () => {
+            if (activeItemId === index) {
+                return;
+            }
+
+            onActivate(index);
+        });
+        li.addEventListener("mouseleave", (event) => {
+            const relatedTarget = event.relatedTarget;
+            if (relatedTarget instanceof HTMLElement && li.contains(relatedTarget)) {
+                return;
+            }
+
+            onDeactivate();
+        });
         li.addEventListener("mousedown", (e) => {
             e.preventDefault(); // prevent input blur
             e.stopPropagation();
@@ -126,12 +148,23 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
             const activeId = state.activeItemId ?? null;
 
             if (state.isOpen && items.length > 0) {
-                renderItems(panelEl, items, activeId, (item) => {
-                    inputEl.value = item.name;
-                    autocomplete.setQuery(item.name);
-                    autocomplete.setIsOpen(false);
-                    onValueChange?.(item.name);
-                });
+                renderItems(
+                    panelEl,
+                    items,
+                    activeId,
+                    (item) => {
+                        inputEl.value = item.name;
+                        autocomplete.setQuery(item.name);
+                        autocomplete.setIsOpen(false);
+                        onValueChange?.(item.name);
+                    },
+                    (index) => {
+                        autocomplete.setActiveItemId(index);
+                    },
+                    () => {
+                        autocomplete.setActiveItemId(null);
+                    }
+                );
                 panelController.startPositioning();
             } else {
                 panelController.hide();
@@ -300,7 +333,18 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
             const activeId = state.activeItemId ?? null;
 
             if (state.isOpen && items.length > 0) {
-                renderItems(panelEl, items, activeId, handleSelect);
+                renderItems(
+                    panelEl,
+                    items,
+                    activeId,
+                    handleSelect,
+                    (index) => {
+                        autocomplete.setActiveItemId(index);
+                    },
+                    () => {
+                        autocomplete.setActiveItemId(null);
+                    }
+                );
                 panelController.startPositioning();
             } else {
                 panelController.hide();
