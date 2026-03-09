@@ -234,64 +234,199 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
 
 
 // ---------------------------------------------------------------------------
-// Label value autocomplete (still using old autocomplete.js)
+// Label value autocomplete (headless autocomplete-core)
 // ---------------------------------------------------------------------------
 
 interface LabelValueInitOptions {
     $el: JQuery<HTMLElement>;
     open: boolean;
     nameCallback?: () => string;
+    onValueChange?: (value: string) => void;
 }
 
-async function initLabelValueAutocomplete({ $el, open, nameCallback }: LabelValueInitOptions) {
-    if ($el.hasClass("aa-input")) {
-        $el.autocomplete("destroy");
-    }
+function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: LabelValueInitOptions) {
+    const inputEl = $el[0] as HTMLInputElement;
 
-    let attributeName = "";
-    if (nameCallback) {
-        attributeName = nameCallback();
-    }
-
-    if (attributeName.trim() === "") {
-        return;
-    }
-
-    const attributeValues = (await server.get<string[]>(`attribute-values/${encodeURIComponent(attributeName)}`)).map((attribute) => ({ value: attribute }));
-
-    if (attributeValues.length === 0) {
-        return;
-    }
-
-    $el.autocomplete(
-        {
-            appendTo: document.querySelector("body"),
-            hint: false,
-            openOnFocus: false,
-            minLength: 0,
-            tabAutocomplete: false
-        },
-        [
-            {
-                displayKey: "value",
-                cache: false,
-                source: async function (term, cb) {
-                    term = term.toLowerCase();
-                    const filtered = attributeValues.filter((attr) => attr.value.toLowerCase().includes(term));
-                    cb(filtered);
-                }
-            }
-        ]
-    );
-
-    $el.on("autocomplete:opened", () => {
-        if ($el.attr("readonly")) {
-            $el.autocomplete("close");
+    if (instanceMap.has(inputEl)) {
+        if (open) {
+            const inst = instanceMap.get(inputEl)!;
+            inst.autocomplete.setIsOpen(true);
+            inst.autocomplete.refresh();
         }
+        return;
+    }
+
+    const panelEl = createPanelEl();
+
+    let isPanelOpen = false;
+    let hasActiveItem = false;
+    let isSelecting = false;
+
+    let rafId: number | null = null;
+    function startPositioning() {
+        if (rafId !== null) return;
+        const update = () => {
+            positionPanel(panelEl, inputEl);
+            rafId = requestAnimationFrame(update);
+        };
+        update();
+    }
+    function stopPositioning() {
+        if (rafId !== null) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+        }
+    }
+
+    let cachedAttributeName = "";
+    let cachedAttributeValues: NameItem[] = [];
+
+    const autocomplete = createAutocomplete<NameItem>({
+        openOnFocus: true,
+        defaultActiveItemId: null,
+        shouldPanelOpen() {
+            return true;
+        },
+
+        getSources({ query }) {
+            return [
+                {
+                    sourceId: "attribute-values",
+                    async getItems() {
+                        const attributeName = nameCallback ? nameCallback() : "";
+                        if (!attributeName.trim()) {
+                            return [];
+                        }
+
+                        if (attributeName !== cachedAttributeName || cachedAttributeValues.length === 0) {
+                            cachedAttributeName = attributeName;
+                            const values = await server.get<string[]>(`attribute-values/${encodeURIComponent(attributeName)}`);
+                            cachedAttributeValues = values.map((name) => ({ name }));
+                        }
+
+                        const q = query.toLowerCase();
+                        return cachedAttributeValues.filter((attr) => attr.name.toLowerCase().includes(q));
+                    },
+                    getItemInputValue({ item }) {
+                        return item.name;
+                    },
+                    onSelect({ item }) {
+                        isSelecting = true;
+                        inputEl.value = item.name;
+                        inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+                        autocomplete.setQuery(item.name);
+                        autocomplete.setIsOpen(false);
+                        onValueChange?.(item.name);
+                        isSelecting = false;
+
+                        setTimeout(() => {
+                            inputEl.dispatchEvent(new KeyboardEvent("keydown", {
+                                key: "Enter",
+                                code: "Enter",
+                                keyCode: 13,
+                                which: 13,
+                                bubbles: true,
+                                cancelable: true
+                            }));
+                        }, 0);
+                    },
+                },
+            ];
+        },
+
+        onStateChange({ state }) {
+            isPanelOpen = state.isOpen;
+            hasActiveItem = state.activeItemId !== null;
+
+            const collections = state.collections;
+            const items = collections.length > 0 ? (collections[0].items as NameItem[]) : [];
+            const activeId = state.activeItemId ?? null;
+
+            if (state.isOpen && items.length > 0) {
+                renderItems(panelEl, items, activeId, (item) => {
+                    isSelecting = true;
+                    inputEl.value = item.name;
+                    inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+                    autocomplete.setQuery(item.name);
+                    autocomplete.setIsOpen(false);
+                    onValueChange?.(item.name);
+                    isSelecting = false;
+
+                    setTimeout(() => {
+                        inputEl.dispatchEvent(new KeyboardEvent("keydown", {
+                            key: "Enter",
+                            code: "Enter",
+                            keyCode: 13,
+                            which: 13,
+                            bubbles: true,
+                            cancelable: true
+                        }));
+                    }, 0);
+                });
+                startPositioning();
+            } else {
+                panelEl.style.display = "none";
+                stopPositioning();
+            }
+
+            if (!state.isOpen) {
+                panelEl.style.display = "none";
+                stopPositioning();
+            }
+        },
     });
 
+    const handlers = autocomplete.getInputProps({ inputElement: inputEl });
+    const onInput = (e: Event) => {
+        if (!isSelecting) {
+            handlers.onChange(e as any);
+        }
+    };
+    const onFocus = (e: Event) => {
+        const attributeName = nameCallback ? nameCallback() : "";
+        if (attributeName !== cachedAttributeName) {
+            cachedAttributeName = "";
+            cachedAttributeValues = [];
+        }
+        handlers.onFocus(e as any);
+    };
+    const onBlur = () => {
+        setTimeout(() => {
+            autocomplete.setIsOpen(false);
+            panelEl.style.display = "none";
+            stopPositioning();
+            onValueChange?.(inputEl.value);
+        }, 200);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Enter" && isPanelOpen && hasActiveItem) {
+            e.stopPropagation();
+        }
+        handlers.onKeyDown(e as any);
+    };
+
+    inputEl.addEventListener("input", onInput);
+    inputEl.addEventListener("focus", onFocus);
+    inputEl.addEventListener("blur", onBlur);
+    inputEl.addEventListener("keydown", onKeyDown);
+
+    const cleanup = () => {
+        inputEl.removeEventListener("input", onInput);
+        inputEl.removeEventListener("focus", onFocus);
+        inputEl.removeEventListener("blur", onBlur);
+        inputEl.removeEventListener("keydown", onKeyDown);
+        stopPositioning();
+        if (panelEl.parentElement) {
+            panelEl.parentElement.removeChild(panelEl);
+        }
+    };
+
+    instanceMap.set(inputEl, { autocomplete, panelEl, cleanup });
+
     if (open) {
-        $el.autocomplete("open");
+        autocomplete.setIsOpen(true);
+        autocomplete.refresh();
+        startPositioning();
     }
 }
 

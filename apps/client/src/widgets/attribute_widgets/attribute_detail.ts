@@ -392,12 +392,12 @@ export default class AttributeDetailWidget extends NoteContextAwareWidget {
             }
         });
         this.$inputValue.on("change", () => this.userEditedAttribute());
-        this.$inputValue.on("autocomplete:closed", () => this.userEditedAttribute());
         this.$inputValue.on("focus", () => {
             attributeAutocompleteService.initLabelValueAutocomplete({
                 $el: this.$inputValue,
                 open: true,
-                nameCallback: () => String(this.$inputName.val())
+                nameCallback: () => String(this.$inputName.val()),
+                onValueChange: () => this.userEditedAttribute(),
             });
         });
 

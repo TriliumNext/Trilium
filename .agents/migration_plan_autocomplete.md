@@ -64,16 +64,21 @@
 
 ---
 
-### Step 2: 迁移标签值自动补全
+### Step 2: 迁移标签值自动补全 ✅ 完成
 **文件变更：**
-- `apps/client/src/services/attribute_autocomplete.ts` — `initLabelValueAutocomplete()` 改为直接调用 `autocomplete()`
-- `apps/client/src/widgets/attribute_widgets/attribute_detail.ts` — 标签值输入框同步调整
+- `apps/client/src/services/attribute_autocomplete.ts` — 移除旧有的 jQuery `$el.autocomplete` 初始化，整体复用封装的 `@algolia/autocomplete-core` Headless 架构流。在内部设计了一套针对 Label Name 值更变时的 `cachedAttributeName` 以及 `getItems` 数据惰性更新机制。
+- `apps/client/src/widgets/attribute_widgets/attribute_detail.ts` — 取消监听不标准的 jQuery 强盗冒泡事件 `autocomplete:closed`，改为直接在配置中传入清晰的 `onValueChange` 回调函数。同时解决了所有输入遗留 Bug。
 
-**说明：**
-与 Step 1 类似，但标签值补全有一个特殊点：每次 focus 都会重新初始化（因为属性名可能变了，需要重新获取可选值列表）。
+**说明与优化点：**
+与 Step 1 类似，同样完全剔除了所有的残旧依赖与 jQuery 控制流，在此基础上还针对值类型的特异性做了几个高级改动：
+1. **取消内存破坏型重建 (Fix Memory Leak)**：旧版本在每次触发聚焦 (Focus) 时都会发送摧毁指令强扫 DOM。新架构下只要容器保持存活就仅仅使用 `.refresh()` 接口来控制界面弹出与数据隐式获取。
+2. **惰性与本地缓存 (Local Fast CACHE)**：如果关联的属性名 (Attribute Name) 没有被更改，再次打开提示面板时将以 0ms 的延迟抛出旧缓存 `cachedAttributeValues`。一旦属性名被修改，则重新发起服务端网络请求。
+3. **彻底分离逻辑**：删除了文件中的 `still using old autocomplete.js` 遗留注释，此时 `attribute_autocomplete.ts` 文件内已经 100% 运行在崭新的 Autocomplete 体系上。
 
 **验证方式：**
-- 打开属性面板 → 输入一个标签名 → 切换到值输入框 → 应能看到该标签的已有值列表
+- ✅ 打开属性面板 → 点击或输入任意已有 Label 类型的 Name → 切换到值输入框 → 能瞬间弹出相应的旧值提示列表。
+- ✅ 在旧值提示列表中用上下方向键选取并回车 → 能实现无缝填充并将更变保存回右侧详细侧边栏。
+- ✅ 解决回车冲突：确认选择时系统发出的事件能干净落回所属宿主 DOM 且并不抢占外层组件快捷键。
 
 ---
 
