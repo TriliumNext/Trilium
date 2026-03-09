@@ -2,7 +2,7 @@ import type { AutocompleteApi as CoreAutocompleteApi, BaseItem } from "@algolia/
 import { createAutocomplete } from "@algolia/autocomplete-core";
 
 import type { AttributeType } from "../entities/fattribute.js";
-import { bindAutocompleteInput, createHeadlessPanelController, withHeadlessSourceDefaults } from "./autocomplete_core.js";
+import { bindAutocompleteInput, createHeadlessPanelController, registerHeadlessAutocompleteCloser, withHeadlessSourceDefaults } from "./autocomplete_core.js";
 import server from "./server.js";
 
 // ---------------------------------------------------------------------------
@@ -51,6 +51,7 @@ function renderItems(panelEl: HTMLElement, items: NameItem[], activeItemId: numb
         li.textContent = item.name;
         li.addEventListener("mousedown", (e) => {
             e.preventDefault(); // prevent input blur
+            e.stopPropagation();
             onSelect(item);
         });
         list.appendChild(li);
@@ -142,6 +143,11 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
         },
     });
 
+    const unregisterGlobalCloser = registerHeadlessAutocompleteCloser(() => {
+        autocomplete.setIsOpen(false);
+        panelController.hide();
+    });
+
     const cleanupInputBindings = bindAutocompleteInput<NameItem>({
         inputEl,
         autocomplete,
@@ -171,6 +177,7 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
     });
 
     const cleanup = () => {
+        unregisterGlobalCloser();
         cleanupInputBindings();
         panelController.destroy();
     };
@@ -305,6 +312,11 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
         },
     });
 
+    const unregisterGlobalCloser = registerHeadlessAutocompleteCloser(() => {
+        autocomplete.setIsOpen(false);
+        panelController.hide();
+    });
+
     const cleanupInputBindings = bindAutocompleteInput<NameItem>({
         inputEl,
         autocomplete,
@@ -338,6 +350,7 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
     });
 
     const cleanup = () => {
+        unregisterGlobalCloser();
         cleanupInputBindings();
         panelController.destroy();
     };

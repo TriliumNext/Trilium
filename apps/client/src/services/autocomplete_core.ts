@@ -1,5 +1,9 @@
 import type { AutocompleteApi, AutocompleteSource, BaseItem } from "@algolia/autocomplete-core";
 
+export const HEADLESS_AUTOCOMPLETE_PANEL_SELECTOR = ".aa-core-panel";
+
+const headlessAutocompleteClosers = new Set<() => void>();
+
 export function withHeadlessSourceDefaults<TItem extends BaseItem>(
     source: AutocompleteSource<TItem>
 ): AutocompleteSource<TItem> {
@@ -12,6 +16,20 @@ export function withHeadlessSourceDefaults<TItem extends BaseItem>(
         },
         ...source
     };
+}
+
+export function registerHeadlessAutocompleteCloser(close: () => void) {
+    headlessAutocompleteClosers.add(close);
+
+    return () => {
+        headlessAutocompleteClosers.delete(close);
+    };
+}
+
+export function closeAllHeadlessAutocompletes() {
+    for (const close of Array.from(headlessAutocompleteClosers)) {
+        close();
+    }
 }
 
 interface HeadlessPanelControllerOptions {

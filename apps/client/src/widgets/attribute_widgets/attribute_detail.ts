@@ -1,18 +1,19 @@
-import { t } from "../../services/i18n.js";
-import server from "../../services/server.js";
-import froca from "../../services/froca.js";
-import linkService from "../../services/link.js";
+import appContext from "../../components/app_context.js";
 import attributeAutocompleteService from "../../services/attribute_autocomplete.js";
+import type { Attribute } from "../../services/attribute_parser.js";
+import { HEADLESS_AUTOCOMPLETE_PANEL_SELECTOR } from "../../services/autocomplete_core.js";
+import { isExperimentalFeatureEnabled } from "../../services/experimental_features.js";
+import { focusSavedElement, saveFocusedElement } from "../../services/focus.js";
+import froca from "../../services/froca.js";
+import { t } from "../../services/i18n.js";
+import linkService from "../../services/link.js";
 import noteAutocompleteService from "../../services/note_autocomplete.js";
 import promotedAttributeDefinitionParser from "../../services/promoted_attribute_definition_parser.js";
-import NoteContextAwareWidget from "../note_context_aware_widget.js";
+import server from "../../services/server.js";
+import shortcutService from "../../services/shortcuts.js";
 import SpacedUpdate from "../../services/spaced_update.js";
 import utils from "../../services/utils.js";
-import shortcutService from "../../services/shortcuts.js";
-import appContext from "../../components/app_context.js";
-import type { Attribute } from "../../services/attribute_parser.js";
-import { focusSavedElement, saveFocusedElement } from "../../services/focus.js";
-import { isExperimentalFeatureEnabled } from "../../services/experimental_features.js";
+import NoteContextAwareWidget from "../note_context_aware_widget.js";
 
 const TPL = /*html*/`
 <div class="attr-detail tn-tool-dialog">
@@ -372,7 +373,6 @@ export default class AttributeDetailWidget extends NoteContextAwareWidget {
             }
         });
         this.$inputName.on("change", () => this.userEditedAttribute());
-        this.$inputName.on("autocomplete:closed", () => this.userEditedAttribute());
 
         this.$inputName.on("focus", () => {
             attributeAutocompleteService.initAttributeNameAutocomplete({
@@ -478,7 +478,10 @@ export default class AttributeDetailWidget extends NoteContextAwareWidget {
         this.$relatedNotesMoreNotes = this.$relatedNotesContainer.find(".related-notes-more-notes");
 
         $(window).on("mousedown", (e) => {
-            if (!$(e.target).closest(this.$widget[0]).length && !$(e.target).closest(".algolia-autocomplete").length && !$(e.target).closest("#context-menu-container").length) {
+            if (!$(e.target).closest(this.$widget[0]).length
+                && !$(e.target).closest(".algolia-autocomplete").length
+                && !$(e.target).closest(HEADLESS_AUTOCOMPLETE_PANEL_SELECTOR).length
+                && !$(e.target).closest("#context-menu-container").length) {
                 this.hide();
             }
         });

@@ -3,7 +3,7 @@ import { createAutocomplete } from "@algolia/autocomplete-core";
 import type { MentionFeedObjectItem } from "@triliumnext/ckeditor5";
 
 import appContext from "../components/app_context.js";
-import { bindAutocompleteInput, createHeadlessPanelController, withHeadlessSourceDefaults } from "./autocomplete_core.js";
+import { bindAutocompleteInput, createHeadlessPanelController, registerHeadlessAutocompleteCloser, withHeadlessSourceDefaults } from "./autocomplete_core.js";
 import commandRegistry from "./command_registry.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
@@ -237,6 +237,7 @@ function renderItems(
         };
         itemEl.onmousedown = (e) => {
             e.preventDefault();
+            e.stopPropagation();
             void onSelect(item);
         };
 
@@ -674,6 +675,11 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         },
     });
 
+    const unregisterGlobalCloser = registerHeadlessAutocompleteCloser(() => {
+        autocomplete.setIsOpen(false);
+        panelController.hide();
+    });
+
     const onCompositionStart = () => {
         isComposingInput = true;
     };
@@ -742,6 +748,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
     });
 
     const cleanup = () => {
+        unregisterGlobalCloser();
         cleanupInputBindings();
         autocomplete.destroy();
         panelController.destroy();
