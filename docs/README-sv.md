@@ -63,9 +63,9 @@ Vår dokumentation är tillgänglig i flera format:
 - [Grundläggande koncept och
   funktioner](https://docs.triliumnotes.org/user-guide/concepts/notes)
 - [Modeller av personlig
-  kunskapsbas](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
+  kuskapsbas](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
-## 🎁 Funktioner
+## 🎁Funktioner
 
 * Anteckningar kan sorteras som en trädstruktur. En enskild anteckning kan
   placeras på fler än en plats i trädet (se
