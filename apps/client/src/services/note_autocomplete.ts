@@ -65,15 +65,29 @@ interface ManagedInstance {
 
 const instanceMap = new WeakMap<HTMLElement, ManagedInstance>();
 
-function createPanelEl(): HTMLElement {
+function createPanelEl(container?: HTMLElement | null): HTMLElement {
     const panel = document.createElement("div");
-    panel.className = "aa-core-panel";
+    panel.className = "aa-core-panel aa-dropdown-menu";
+    if (container) {
+        panel.classList.add("aa-core-panel--contained");
+        container.appendChild(panel);
+    } else {
+        document.body.appendChild(panel);
+    }
     panel.style.display = "none";
-    document.body.appendChild(panel);
     return panel;
 }
 
 function positionPanel(panelEl: HTMLElement, inputEl: HTMLElement): void {
+    if (panelEl.classList.contains("aa-core-panel--contained")) {
+        panelEl.style.position = "static";
+        panelEl.style.top = "";
+        panelEl.style.left = "";
+        panelEl.style.width = "100%";
+        panelEl.style.display = "block";
+        return;
+    }
+
     const rect = inputEl.getBoundingClientRect();
     panelEl.style.position = "fixed";
     panelEl.style.top = `${rect.bottom}px`;
@@ -82,25 +96,119 @@ function positionPanel(panelEl: HTMLElement, inputEl: HTMLElement): void {
     panelEl.style.display = "block";
 }
 
+function escapeHtml(text: string): string {
+    return text
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
+function normalizeAttributeSnippet(snippet: string): string {
+    return snippet.replace(/<br\s*\/?>/gi, " <span class=\"aa-core-separator\">&middot;</span> ");
+}
+
+function getSuggestionIconClass(item: Suggestion): string {
+    if (item.action === "search-notes") {
+        return "bx bx-search";
+    }
+    if (item.action === "create-note") {
+        return "bx bx-plus";
+    }
+    if (item.action === "external-link") {
+        return "bx bx-link-external";
+    }
+
+    return item.icon || "bx bx-note";
+}
+
+function renderCommandSuggestion(item: Suggestion): string {
+    const iconClass = escapeHtml(item.icon || "bx bx-terminal");
+    const titleHtml = item.highlightedNotePathTitle || escapeHtml(item.noteTitle || "");
+    const descriptionHtml = item.commandDescription ? `<div class="command-description">${escapeHtml(item.commandDescription)}</div>` : "";
+    const shortcutHtml = item.commandShortcut ? `<kbd class="command-shortcut">${escapeHtml(item.commandShortcut)}</kbd>` : "";
+
+    return `
+        <div class="command-suggestion">
+            <span class="command-icon ${iconClass}"></span>
+            <div class="command-content">
+                <div class="command-name">${titleHtml}</div>
+                ${descriptionHtml}
+            </div>
+            ${shortcutHtml}
+        </div>
+    `;
+}
+
+function renderNoteSuggestion(item: Suggestion): string {
+    const iconClass = escapeHtml(getSuggestionIconClass(item));
+    const titleHtml = item.highlightedNotePathTitle || escapeHtml(item.noteTitle || item.notePathTitle || item.externalLink || "");
+    const shortcutHtml = item.action === "search-notes"
+        ? `<kbd class="aa-core-shortcut">Ctrl+Enter</kbd>`
+        : "";
+    const attributeHtml = item.highlightedAttributeSnippet
+        ? `<div class="search-result-attributes">${normalizeAttributeSnippet(item.highlightedAttributeSnippet)}</div>`
+        : "";
+    const contentClass = item.action === "search-notes" ? "note-suggestion search-notes-action" : "note-suggestion";
+
+    return `
+        <div class="${contentClass}">
+            <span class="icon ${iconClass}"></span>
+            <span class="text">
+                <span class="aa-core-primary-row">
+                    <span class="search-result-title">${titleHtml}</span>
+                    ${shortcutHtml}
+                </span>
+                ${attributeHtml}
+            </span>
+        </div>
+    `;
+}
+
+function renderSuggestion(item: Suggestion): string {
+    if (item.action === "command") {
+        return renderCommandSuggestion(item);
+    }
+
+    return renderNoteSuggestion(item);
+}
+
 function renderItems(panelEl: HTMLElement, items: Suggestion[], activeId: number | null, onSelect: (item: Suggestion) => void) {
     if (items.length === 0) {
         panelEl.style.display = "none";
         return;
     }
-    const list = document.createElement("ul");
-    list.className = "aa-core-list";
+
+    const list = document.createElement("div");
+    list.className = "aa-core-list aa-suggestions";
+    list.setAttribute("role", "listbox");
+
     items.forEach((item, index) => {
-        const li = document.createElement("li");
-        li.className = "aa-core-item";
-        if (index === activeId) li.classList.add("aa-core-item--active");
-        
-        // Very basic simple UI for step 3.1
-        li.textContent = item.highlightedNotePathTitle || item.noteTitle || "";
-        li.onmousedown = (e) => { e.preventDefault(); onSelect(item); };
-        list.appendChild(li);
+        const itemEl = document.createElement("div");
+        itemEl.className = "aa-core-item aa-suggestion";
+        itemEl.setAttribute("role", "option");
+        itemEl.setAttribute("aria-selected", index === activeId ? "true" : "false");
+
+        if (item.action) {
+            itemEl.classList.add(`${item.action}-action`);
+        }
+        if (index === activeId) {
+            itemEl.classList.add("aa-core-item--active", "aa-cursor");
+        }
+
+        itemEl.innerHTML = renderSuggestion(item);
+        itemEl.onmousedown = (e) => {
+            e.preventDefault();
+            onSelect(item);
+        };
+
+        list.appendChild(itemEl);
     });
+
     panelEl.innerHTML = "";
     panelEl.appendChild(list);
+    panelEl.style.display = "block";
 }
 
 async function autocompleteSourceForCKEditor(queryText: string) {
@@ -191,7 +299,7 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
             {
                 action: "search-notes",
                 noteTitle: term,
-                highlightedNotePathTitle: `${t("note_autocomplete.search-for", { term })} <kbd style='color: var(--muted-text-color); background-color: transparent; float: right;'>Ctrl+Enter</kbd>`
+                highlightedNotePathTitle: t("note_autocomplete.search-for", { term })
             }
         ]);
     }
@@ -289,9 +397,14 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
 
     options = options || {};
 
-    const panelEl = createPanelEl();
+    const panelEl = createPanelEl(options.container);
     let rafId: number | null = null;
     function startPositioning() {
+        if (panelEl.classList.contains("aa-core-panel--contained")) {
+            positionPanel(panelEl, inputEl);
+            return;
+        }
+
         if (rafId !== null) return;
         const update = () => {
             positionPanel(panelEl, inputEl);

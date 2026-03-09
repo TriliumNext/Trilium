@@ -974,6 +974,17 @@ table.promoted-attributes-in-tooltip th {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
+.aa-core-panel.aa-dropdown-menu {
+    width: 100%;
+}
+
+.aa-core-panel--contained {
+    position: static !important;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
 .aa-core-list {
     list-style: none;
     padding: 0;
@@ -982,14 +993,119 @@ table.promoted-attributes-in-tooltip th {
 
 .aa-core-item {
     cursor: pointer;
-    padding: 6px 16px;
+    padding: 7px 16px;
     margin: 0;
+    white-space: normal;
 }
 
 .aa-core-item:hover,
 .aa-core-item--active {
     color: var(--active-item-text-color);
     background-color: var(--active-item-background-color);
+}
+
+.aa-core-item .note-suggestion {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+}
+
+.aa-core-item .icon,
+.aa-core-item .command-icon {
+    flex-shrink: 0;
+    line-height: 1.4;
+    margin-top: 1px;
+}
+
+.aa-core-item .text {
+    min-width: 0;
+    flex: 1;
+}
+
+.aa-core-item .aa-core-primary-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.aa-core-item .search-result-title {
+    display: block;
+    min-width: 0;
+    line-height: 1.35;
+    word-break: break-word;
+    font-size: 1.02em;
+}
+
+.aa-core-item .search-result-attributes {
+    display: block;
+    margin-top: 1px;
+    font-size: 0.8em;
+    color: var(--muted-text-color);
+    opacity: 0.65;
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+.aa-core-item .search-result-attributes {
+    padding-inline-start: 14px;
+}
+
+.aa-core-item .aa-core-shortcut,
+.aa-core-item kbd.command-shortcut {
+    flex-shrink: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--muted-text-color);
+    font-family: inherit !important;
+    font-size: 0.8em;
+    opacity: 0.85;
+}
+
+.aa-core-item .command-suggestion {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    font-size: 0.9em;
+}
+
+.aa-core-item .command-content {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.aa-core-item .command-name {
+    font-weight: bold;
+    line-height: 1.35;
+}
+
+.aa-core-item .command-description {
+    font-size: 0.8em;
+    line-height: 1.3;
+    opacity: 0.75;
+}
+
+.aa-core-item .search-result-title b,
+.aa-core-item .search-result-path b,
+.aa-core-item .search-result-attributes b,
+.aa-core-item .command-name b,
+.aa-core-item .command-description b {
+    color: var(--admonition-warning-accent-color);
+    text-decoration: underline;
+}
+
+.aa-core-item .aa-core-separator {
+    padding: 0 2px;
+}
+
+.jump-to-note-results .aa-core-panel--contained {
+    max-height: calc(80vh - 200px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    text-overflow: ellipsis;
 }
 
 .help-button {
