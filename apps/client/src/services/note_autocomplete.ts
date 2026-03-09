@@ -1,3 +1,5 @@
+import { createAutocomplete } from "@algolia/autocomplete-core";
+import type { AutocompleteApi as CoreAutocompleteApi, BaseItem } from "@algolia/autocomplete-core";
 import server from "./server.js";
 import appContext from "../components/app_context.js";
 import noteCreateService from "./note_create.js";
@@ -24,7 +26,7 @@ function getSearchDelay(notesCount: number): number {
 let searchDelay = getSearchDelay(notesCount);
 
 // TODO: Deduplicate with server.
-export interface Suggestion {
+export interface Suggestion extends BaseItem {
     noteTitle?: string;
     externalLink?: string;
     notePathTitle?: string;
@@ -52,6 +54,53 @@ export interface Options {
     hideAllButtons?: boolean;
     /** If set, enables command palette mode */
     isCommandPalette?: boolean;
+}
+
+// --- Headless Autocomplete Helpers ---
+interface ManagedInstance {
+    autocomplete: CoreAutocompleteApi<Suggestion>;
+    panelEl: HTMLElement;
+    cleanup: () => void;
+}
+
+const instanceMap = new WeakMap<HTMLElement, ManagedInstance>();
+
+function createPanelEl(): HTMLElement {
+    const panel = document.createElement("div");
+    panel.className = "aa-core-panel";
+    panel.style.display = "none";
+    document.body.appendChild(panel);
+    return panel;
+}
+
+function positionPanel(panelEl: HTMLElement, inputEl: HTMLElement): void {
+    const rect = inputEl.getBoundingClientRect();
+    panelEl.style.position = "fixed";
+    panelEl.style.top = `${rect.bottom}px`;
+    panelEl.style.left = `${rect.left}px`;
+    panelEl.style.width = `${rect.width}px`;
+    panelEl.style.display = "block";
+}
+
+function renderItems(panelEl: HTMLElement, items: Suggestion[], activeId: number | null, onSelect: (item: Suggestion) => void) {
+    if (items.length === 0) {
+        panelEl.style.display = "none";
+        return;
+    }
+    const list = document.createElement("ul");
+    list.className = "aa-core-list";
+    items.forEach((item, index) => {
+        const li = document.createElement("li");
+        li.className = "aa-core-item";
+        if (index === activeId) li.classList.add("aa-core-item--active");
+        
+        // Very basic simple UI for step 3.1
+        li.textContent = item.highlightedNotePathTitle || item.noteTitle || "";
+        li.onmousedown = (e) => { e.preventDefault(); onSelect(item); };
+        list.appendChild(li);
+    });
+    panelEl.innerHTML = "";
+    panelEl.appendChild(list);
 }
 
 async function autocompleteSourceForCKEditor(queryText: string) {
@@ -163,270 +212,215 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
 function clearText($el: JQuery<HTMLElement>) {
     searchDelay = 0;
     $el.setSelectedNotePath("");
-    $el.autocomplete("val", "").trigger("change");
+    const inputEl = $el[0] as HTMLInputElement;
+    const instance = instanceMap.get(inputEl);
+    if (instance) {
+        inputEl.value = "";
+        instance.autocomplete.setQuery("");
+        instance.autocomplete.setIsOpen(false);
+        instance.autocomplete.refresh();
+    }
 }
 
 function setText($el: JQuery<HTMLElement>, text: string) {
     $el.setSelectedNotePath("");
-    $el.autocomplete("val", text.trim()).autocomplete("open");
+    const inputEl = $el[0] as HTMLInputElement;
+    const instance = instanceMap.get(inputEl);
+    if (instance) {
+        inputEl.value = text.trim();
+        instance.autocomplete.setQuery(text.trim());
+        instance.autocomplete.setIsOpen(true);
+        instance.autocomplete.refresh();
+    }
 }
 
 function showRecentNotes($el: JQuery<HTMLElement>) {
     searchDelay = 0;
     $el.setSelectedNotePath("");
-    $el.autocomplete("val", "");
-    $el.autocomplete("open");
+    const inputEl = $el[0] as HTMLInputElement;
+    const instance = instanceMap.get(inputEl);
+    if (instance) {
+        inputEl.value = "";
+        instance.autocomplete.setQuery("");
+        instance.autocomplete.setIsOpen(true);
+        instance.autocomplete.refresh();
+    }
     $el.trigger("focus");
 }
 
 function showAllCommands($el: JQuery<HTMLElement>) {
     searchDelay = 0;
     $el.setSelectedNotePath("");
-    $el.autocomplete("val", ">").autocomplete("open");
+    const inputEl = $el[0] as HTMLInputElement;
+    const instance = instanceMap.get(inputEl);
+    if (instance) {
+        inputEl.value = ">";
+        instance.autocomplete.setQuery(">");
+        instance.autocomplete.setIsOpen(true);
+        instance.autocomplete.refresh();
+    }
 }
 
 function fullTextSearch($el: JQuery<HTMLElement>, options: Options) {
-    const searchString = $el.autocomplete("val") as unknown as string;
-    if (options.fastSearch === false || searchString?.trim().length === 0) {
+    const inputEl = $el[0] as HTMLInputElement;
+    const searchString = inputEl.value;
+    if (options.fastSearch === false || searchString.trim().length === 0) {
         return;
     }
     $el.trigger("focus");
     options.fastSearch = false;
-    $el.autocomplete("val", "");
-    $el.setSelectedNotePath("");
     searchDelay = 0;
-    $el.autocomplete("val", searchString);
+    
+    const instance = instanceMap.get(inputEl);
+    if (instance) {
+        instance.autocomplete.setQuery(searchString);
+        instance.autocomplete.setIsOpen(true);
+        instance.autocomplete.refresh();
+    }
 }
 
 function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
-    if ($el.hasClass("note-autocomplete-input")) {
-        // clear any event listener added in previous invocation of this function
-        $el.off("autocomplete:noteselected");
+    $el.addClass("note-autocomplete-input");
+    const inputEl = $el[0] as HTMLInputElement;
 
+    if (instanceMap.has(inputEl)) {
         return $el;
     }
 
     options = options || {};
 
-    // Used to track whether the user is performing character composition with an input method (such as Chinese Pinyin, Japanese, Korean, etc.) and to avoid triggering a search during the composition process.
-    let isComposingInput = false;
-    $el.on("compositionstart", () => {
-        isComposingInput = true;
-    });
-    $el.on("compositionend", () => {
-        isComposingInput = false;
-        const searchString = $el.autocomplete("val") as unknown as string;
-        $el.autocomplete("val", "");
-        $el.autocomplete("val", searchString);
+    const panelEl = createPanelEl();
+    let rafId: number | null = null;
+    function startPositioning() {
+        if (rafId !== null) return;
+        const update = () => {
+            positionPanel(panelEl, inputEl);
+            rafId = requestAnimationFrame(update);
+        };
+        update();
+    }
+    function stopPositioning() {
+        if (rafId !== null) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+        }
+    }
+
+    const autocomplete = createAutocomplete<Suggestion>({
+        openOnFocus: false, // Wait until we explicitly focus or type
+        defaultActiveItemId: null,
+        shouldPanelOpen() {
+            return true;
+        },
+
+        getSources({ query }) {
+            return [
+                {
+                    sourceId: "note-suggestions",
+                    async getItems() {
+                        return new Promise<Suggestion[]>((resolve) => {
+                            clearTimeout(debounceTimeoutId);
+                            debounceTimeoutId = setTimeout(() => {
+                                autocompleteSource(query, resolve, options!);
+                            }, searchDelay);
+
+                            if (searchDelay === 0) {
+                                searchDelay = getSearchDelay(notesCount);
+                            }
+                        });
+                    },
+                    getItemInputValue({ item }) {
+                        return item.noteTitle || item.notePathTitle || "";
+                    },
+                    onSelect({ item }) {
+                        inputEl.value = item.noteTitle || item.notePathTitle || "";
+                        autocomplete.setIsOpen(false);
+                        
+                        // Fake selection handler for step 3.1
+                        $el.trigger("autocomplete:noteselected", [item]);
+                    },
+                },
+            ];
+        },
+
+        onStateChange({ state }) {
+            const collections = state.collections;
+            const items = collections.length > 0 ? (collections[0].items as Suggestion[]) : [];
+            const activeId = state.activeItemId ?? null;
+
+            if (state.isOpen && items.length > 0) {
+                renderItems(panelEl, items, activeId, (item) => {
+                    inputEl.value = item.noteTitle || item.notePathTitle || "";
+                    autocomplete.setIsOpen(false);
+                    // Also dispatch selected event
+                    $el.trigger("autocomplete:noteselected", [item]);
+                });
+                startPositioning();
+            } else {
+                panelEl.style.display = "none";
+                stopPositioning();
+            }
+        },
     });
 
-    $el.addClass("note-autocomplete-input");
+    const handlers = autocomplete.getInputProps({ inputElement: inputEl });
+    const onInput = (e: Event) => {
+        handlers.onChange(e as any);
+    };
+    const onFocus = (e: Event) => {
+        handlers.onFocus(e as any);
+    };
+    const onBlur = () => {
+        setTimeout(() => {
+            autocomplete.setIsOpen(false);
+            panelEl.style.display = "none";
+            stopPositioning();
+        }, 50);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+        handlers.onKeyDown(e as any);
+    };
 
+    inputEl.addEventListener("input", onInput);
+    inputEl.addEventListener("focus", onFocus);
+    inputEl.addEventListener("blur", onBlur);
+    inputEl.addEventListener("keydown", onKeyDown);
+
+    const cleanup = () => {
+        inputEl.removeEventListener("input", onInput);
+        inputEl.removeEventListener("focus", onFocus);
+        inputEl.removeEventListener("blur", onBlur);
+        inputEl.removeEventListener("keydown", onKeyDown);
+        stopPositioning();
+        if (panelEl.parentElement) {
+            panelEl.parentElement.removeChild(panelEl);
+        }
+    };
+
+    instanceMap.set(inputEl, { autocomplete, panelEl, cleanup });
+
+    // Buttons UI logic
     const $clearTextButton = $("<a>").addClass("input-group-text input-clearer-button bx bxs-tag-x").prop("title", t("note_autocomplete.clear-text-field"));
-
     const $showRecentNotesButton = $("<a>").addClass("input-group-text show-recent-notes-button bx bx-time").prop("title", t("note_autocomplete.show-recent-notes"));
-
-    const $fullTextSearchButton = $("<a>")
-        .addClass("input-group-text full-text-search-button bx bx-search")
-        .prop("title", `${t("note_autocomplete.full-text-search")} (Shift+Enter)`);
-
+    const $fullTextSearchButton = $("<a>").addClass("input-group-text full-text-search-button bx bx-search").prop("title", `${t("note_autocomplete.full-text-search")} (Shift+Enter)`);
     const $goToSelectedNoteButton = $("<a>").addClass("input-group-text go-to-selected-note-button bx bx-arrow-to-right");
 
     if (!options.hideAllButtons) {
         $el.after($clearTextButton).after($showRecentNotesButton).after($fullTextSearchButton);
     }
-
     if (!options.hideGoToSelectedNoteButton && !options.hideAllButtons) {
         $el.after($goToSelectedNoteButton);
     }
 
     $clearTextButton.on("click", () => clearText($el));
-
     $showRecentNotesButton.on("click", (e) => {
         showRecentNotes($el);
-
-        // this will cause the click not give focus to the "show recent notes" button
-        // this is important because otherwise input will lose focus immediately and not show the results
         return false;
     });
-
     $fullTextSearchButton.on("click", (e) => {
-        fullTextSearch($el, options);
+        fullTextSearch($el, options!);
         return false;
     });
-
-    let autocompleteOptions: AutoCompleteConfig = {};
-    if (options.container) {
-        autocompleteOptions.dropdownMenuContainer = options.container;
-        autocompleteOptions.debug = true; // don't close on blur
-    }
-
-    if (options.allowJumpToSearchNotes) {
-        $el.on("keydown", (event) => {
-            if (event.ctrlKey && event.key === "Enter") {
-                // Prevent Ctrl + Enter from triggering autoComplete.
-                event.stopImmediatePropagation();
-                event.preventDefault();
-                $el.trigger("autocomplete:selected", { action: "search-notes", noteTitle: $el.autocomplete("val") });
-            }
-        });
-    }
-    $el.on("keydown", async (event) => {
-        if (event.shiftKey && event.key === "Enter") {
-            // Prevent Enter from triggering autoComplete.
-            event.stopImmediatePropagation();
-            event.preventDefault();
-            fullTextSearch($el, options);
-        }
-    });
-
-    $el.autocomplete(
-        {
-            ...autocompleteOptions,
-            appendTo: document.querySelector("body"),
-            hint: false,
-            autoselect: true,
-            // openOnFocus has to be false, otherwise re-focus (after return from note type chooser dialog) forces
-            // re-querying of the autocomplete source which then changes the currently selected suggestion
-            openOnFocus: false,
-            minLength: 0,
-            tabAutocomplete: false
-        },
-        [
-            {
-                source: (term, cb) => {
-                    clearTimeout(debounceTimeoutId);
-                    debounceTimeoutId = setTimeout(() => {
-                        if (isComposingInput) {
-                            return;
-                        }
-                        autocompleteSource(term, cb, options);
-                    }, searchDelay);
-
-                    if (searchDelay === 0) {
-                        searchDelay = getSearchDelay(notesCount);
-                    }
-                },
-                displayKey: "notePathTitle",
-                templates: {
-                    suggestion: (suggestion) => {
-                        if (suggestion.action === "command") {
-                            let html = `<div class="command-suggestion">`;
-                            html += `<span class="command-icon ${suggestion.icon || "bx bx-terminal"}"></span>`;
-                            html += `<div class="command-content">`;
-                            html += `<div class="command-name">${suggestion.highlightedNotePathTitle}</div>`;
-                            if (suggestion.commandDescription) {
-                                html += `<div class="command-description">${suggestion.commandDescription}</div>`;
-                            }
-                            html += `</div>`;
-                            if (suggestion.commandShortcut) {
-                                html += `<kbd class="command-shortcut">${suggestion.commandShortcut}</kbd>`;
-                            }
-                            html += '</div>';
-                            return html;
-                        }
-                        // Add special class for search-notes action
-                        const actionClass = suggestion.action === "search-notes" ? "search-notes-action" : "";
-
-                        // Choose appropriate icon based on action
-                        let iconClass = suggestion.icon ?? "bx bx-note";
-                        if (suggestion.action === "search-notes") {
-                            iconClass = "bx bx-search";
-                        } else if (suggestion.action === "create-note") {
-                            iconClass = "bx bx-plus";
-                        } else if (suggestion.action === "external-link") {
-                            iconClass = "bx bx-link-external";
-                        }
-
-                        // Simplified HTML structure without nested divs
-                        let html = `<div class="note-suggestion ${actionClass}">`;
-                        html += `<span class="icon ${iconClass}"></span>`;
-                        html += `<span class="text">`;
-                        html += `<span class="search-result-title">${suggestion.highlightedNotePathTitle}</span>`;
-
-                        // Add attribute snippet inline if available
-                        if (suggestion.highlightedAttributeSnippet) {
-                            html += `<span class="search-result-attributes">${suggestion.highlightedAttributeSnippet}</span>`;
-                        }
-
-                        html += `</span>`;
-                        html += `</div>`;
-                        return html;
-                    }
-                },
-                // we can't cache identical searches because notes can be created / renamed, new recent notes can be added
-                cache: false
-            }
-        ]
-    );
-
-    // TODO: Types fail due to "autocomplete:selected" not being registered in type definitions.
-    ($el as any).on("autocomplete:selected", async (event: Event, suggestion: Suggestion) => {
-        if (suggestion.action === "command") {
-            $el.autocomplete("close");
-            $el.trigger("autocomplete:commandselected", [suggestion]);
-            return;
-        }
-
-        if (suggestion.action === "external-link") {
-            $el.setSelectedNotePath(null);
-            $el.setSelectedExternalLink(suggestion.externalLink);
-
-            $el.autocomplete("val", suggestion.externalLink);
-
-            $el.autocomplete("close");
-
-            $el.trigger("autocomplete:externallinkselected", [suggestion]);
-
-            return;
-        }
-
-        if (suggestion.action === "create-note") {
-            const { success, noteType, templateNoteId, notePath } = await noteCreateService.chooseNoteType();
-            if (!success) {
-                return;
-            }
-            const { note } = await noteCreateService.createNote( notePath || suggestion.parentNoteId, {
-                title: suggestion.noteTitle,
-                activate: false,
-                type: noteType,
-                templateNoteId: templateNoteId
-            });
-
-            const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
-            suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
-        }
-
-        if (suggestion.action === "search-notes") {
-            const searchString = suggestion.noteTitle;
-            appContext.triggerCommand("searchNotes", { searchString });
-            return;
-        }
-
-        $el.setSelectedNotePath(suggestion.notePath);
-        $el.setSelectedExternalLink(null);
-
-        $el.autocomplete("val", suggestion.noteTitle);
-
-        $el.autocomplete("close");
-
-        $el.trigger("autocomplete:noteselected", [suggestion]);
-    });
-
-    $el.on("autocomplete:closed", () => {
-        if (!String($el.val())?.trim()) {
-            clearText($el);
-        }
-    });
-
-    $el.on("autocomplete:opened", () => {
-        if ($el.attr("readonly")) {
-            $el.autocomplete("close");
-        }
-    });
-
-    // clear any event listener added in previous invocation of this function
-    $el.off("autocomplete:noteselected");
 
     return $el;
 }

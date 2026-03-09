@@ -82,26 +82,43 @@
 
 ---
 
-### Step 3: 迁移笔记搜索自动补全核心
-**文件变更：**
-- `apps/client/src/services/note_autocomplete.ts` — `initNoteAutocomplete()` 改为直接调用 `autocomplete()`
+### Step 3: 迁移笔记搜索自动补全核心 (拆分为 4 个增量阶段)
 
-**说明：**
-这是迁移中最复杂的部分，`initNoteAutocomplete()` 包含：
-- 复杂的 source 函数（带防抖、IME 处理）
-- 自定义 suggestion 模板（图标、路径高亮）
-- 多种选择类型分发（笔记、外部链接、命令）
-- `autocomplete("val", ...)` 等操作性 API 调用
-- 附带的辅助按钮（清除、最近笔记、全文搜索、跳转按钮）
+由于搜索自动补全模块（`note_autocomplete.ts`）承载了系统最为复杂的交互、多态分发与 UI，我们将其拆分为 4 个逐步可验证的子阶段：
 
-消费者通过自定义 jQuery 事件（`autocomplete:noteselected` 等）接收结果，需要保持这些事件或改为回调。
+#### Step 3.1: 基础骨架与核心接口联通 (Headless 骨架) ✅ 完成
+**目标：** 用 `@algolia/autocomplete-core` 完全接管旧版的 `$el.autocomplete` 初始化，打通搜索接口。
+**工作内容：**
+- 在 `initNoteAutocomplete()` 中引入基于 `instanceMap` 的单例验证逻辑与 DOM 隔离。
+- 建立 `getSources`，实现调用 `server.get("api/search/autocomplete", ...)`。
+- 只做极其简单的 UI（比如简单的 `ul > li` text）将获取到的 `title` 渲染出来，确保网络流程畅通。
+**完成情况与验证 (**`apps/client/src/services/note_autocomplete.ts`**)：** 
+- ✅ 彻底移除了原依赖于 jQuery `autocomplete.js` 的各种初始化配置与繁复的字符串 DOM 拼接节点。
+- ✅ 实现了对 `Jump to Note (Ctrl+J)` 等真实组件的向下兼容事件 (`autocomplete:noteselected`) 无缝派发反馈。
+- ✅ 在跳往某个具体笔记或在新建 Relation 面板选用特定目标笔记时，基础请求和简装提示版均工作正常。
 
-**验证方式：**
-- 搜索栏 → 输入笔记名称 → 应能看到搜索结果
-- 选择结果 → 应正确跳转到对应笔记
-- 命令面板（`>` 前缀）正常工作
-- 中文输入法不应中途触发搜索
-- Shift+Enter 全文搜索、Ctrl+Enter 搜索笔记
+#### Step 3.2: 复杂 UI 渲染重构与匹配高亮 (模板渲染)
+**目标：** 实现与原版相同级别（甚至更好）的视觉体验（例如笔记图标、上级路径显示、搜索词高亮标红等）。
+**工作内容：**
+- 重写原有的基于字符串或 jQuery 的构建 DOM 模板代码（专门处理带 `notePath` `icon` `isSearch` 判断等数据）。
+- 将 DOM 构建系统集成到 `onStateChange` 的渲染函数里，通过 `innerHTML` 拼装或 DOM 手工建立实现原生高性能面板。
+- 引入对应的样式 (`style.css`) 补全排版缺漏。
+**验证方式：** 下拉出的搜索面板变得非常美观，与系统的 Dark/Light 色调融合；笔记标题对应的图标出现，匹配的字样高亮突出。
+
+#### Step 3.3: 差异化分发逻辑与对外事件抛出 (交互改造)
+**目标：** 支持该组件的多态性。它能在搜笔记之外搜命令（`>` 起手）、甚至是外部链接。同时能够被外部组件监听到选择动作。
+**工作内容：**
+- 在选择项（`onSelect`）的回调中，根据用户选的是“系统命令”、“外部链接”还是“普通笔记”走截然不同的行为逻辑。
+- 对外派发事件：原本通过 `$el.trigger("autocomplete:noteselected")` 的逻辑需要保留，以保证那些使用了搜索框的组件（例如右侧关系面板）依然能顺利收到选中反馈。
+**验证方式：** 选中某个建议项时能够真正实现页面的调转/关系绑定；输入 `>` 开头能够列举出所有快捷命令（如 Toggle Dark mode）。
+
+#### Step 3.4: 特殊键盘事件拦截与附带按钮包容 (终极打磨)
+**目标：** 解决在旧 jQuery 中强绑定的 IME（中日韩等输入法）防抖问题，并恢复如 `Shift+Enter`、周边附加按钮（清除等）的正常运作。
+**工作内容：**
+- 将旧的输入法合成事件 (`compositionstart` / `compositionend`) 判断逻辑迁移到新的 `onInput` / `onKeyDown` 外围保护之中。
+- 重构对 `Shift+Enter` (唤起全文搜索)、`Ctrl+Enter` 等组合快捷键的劫持处理。
+- 修正周边辅助控件（例如搜索栏自带的 “最近笔记(钟表)”、“清除栏(X)” 按钮）因为 DOM 结构调整可能引发的影响。
+**验证方式：** 中文拼音输入法敲打途中不会错误地发起网络搜索；各种组合回车热键重新生效，整个搜索系统重回巅峰状态。
 
 ---
 
