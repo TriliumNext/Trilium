@@ -182,7 +182,7 @@ function renderSuggestion(item: Suggestion): string {
     return renderNoteSuggestion(item);
 }
 
-function createSuggestionSource($el: JQuery<HTMLElement>, options: Options, onSelectItem: (item: Suggestion) => void) {
+function createSuggestionSource(options: Options, onSelectItem: (item: Suggestion) => void) {
     return {
         sourceId: "note-suggestions",
         async getItems({ query }: { query: string }) {
@@ -523,7 +523,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         await handleSuggestionSelection($el, autocomplete, inputEl, item);
     };
 
-    const source = createSuggestionSource($el, options, onSelectItem);
+    const source = createSuggestionSource(options, onSelectItem);
 
     const showQuery = (query: string) => {
         prepareForQueryChange();
@@ -603,8 +603,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
 
             if (state.isOpen && items.length > 0) {
                 renderItems(panelEl, items, activeId, (item) => {
-                    onSelectItem(item);
-                    $el.trigger("autocomplete:noteselected", [item]);
+                    void onSelectItem(item);
                 }, (index) => {
                     autocomplete.setActiveItemId(index);
                 }, () => {

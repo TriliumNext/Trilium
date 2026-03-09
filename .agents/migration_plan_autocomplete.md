@@ -109,12 +109,18 @@
 - ✅ `attribute_detail.ts` 等依赖 jQuery 事件的目标笔记选择入口，抽查结果正常。
 - ⚠️ React 侧消费者尚未完成迁移验收。抽查 `Move to` 时发现功能不正常，这部分应归入 **Step 5** 继续处理，而不是视为 Step 3.2 已全链路完成。
 
-#### Step 3.3: 差异化分发逻辑与对外事件抛出 (交互改造)
+#### Step 3.3: 差异化分发逻辑与对外事件抛出 (交互改造) ✅ 基本完成
 **目标：** 支持该组件的多态性。它能在搜笔记之外搜命令（`>` 起手）、甚至是外部链接。同时能够被外部组件监听到选择动作。
 **工作内容：**
 - 在选择项（`onSelect`）的回调中，根据用户选的是“系统命令”、“外部链接”还是“普通笔记”走截然不同的行为逻辑。
 - 对外派发事件：原本通过 `$el.trigger("autocomplete:noteselected")` 的逻辑需要保留，以保证那些使用了搜索框的组件（例如右侧关系面板）依然能顺利收到选中反馈。
 **验证方式：** 选中某个建议项时能够真正实现页面的调转/关系绑定；输入 `>` 开头能够列举出所有快捷命令（如 Toggle Dark mode）。
+**当前验证结果：**
+- ✅ 选择分发已按旧版语义迁移：`command`、`external-link`、`create-note`、`search-notes` 与普通 note 走独立分支。
+- ✅ `autocomplete:noteselected`、`autocomplete:externallinkselected`、`autocomplete:commandselected` 三类对外事件均已保留。
+- ✅ 鼠标点击和键盘回车现在统一走同一套 `handleSuggestionSelection()` 分发逻辑，不再额外误抛 `autocomplete:noteselected`。
+- ✅ `Ctrl+J / Jump to Note` 与 `attribute_detail.ts` 的普通 note 选择链路已抽查通过。
+- ⚠️ React 消费方整体仍应放在 **Step 5** 继续验收；`Move to` 等问题不属于 Step 3.3 本身已完成的范围。
 
 #### Step 3.4: 特殊键盘事件拦截与附带按钮包容 (终极打磨)
 **目标：** 解决在旧 jQuery 中强绑定的 IME（中日韩等输入法）防抖问题，并恢复如 `Shift+Enter`、周边附加按钮（清除等）的正常运作。
