@@ -22,6 +22,8 @@
 1. **不使用 wrapper/适配层**，直接在各 service 中调用 `autocomplete()` API
 2. 消费者代码需要适配：传入容器 `<div>` 而非 `<input>`，通过 API/回调读写值
 3. 增量迁移：每个使用点独立迁移，逐一验证
+4. **优先保留旧版业务逻辑与交互语义**：迁移时默认以旧版 `autocomplete.js` 行为为准，不主动重设计状态流或交互。
+5. **只有在新旧包能力或生命周期模型存在冲突、无法直接一一映射时，才允许添加补丁逻辑**；这类补丁的目标不是“接近”，而是尽可能恢复与旧版完全相同的 behavior。
 
 ### 涉及的功能区域
 1. **属性名称自动补全** — `attribute_autocomplete.ts` → `attribute_detail.ts`、`RelationMap.tsx`
@@ -138,12 +140,22 @@
 
 ---
 
-### Step 4: 迁移辅助函数
+### Step 4: 迁移辅助函数 ✅ 完成
 **文件变更：**
 - `apps/client/src/services/note_autocomplete.ts` — `clearText`, `setText`, `showRecentNotes` 等函数
 
 **说明：**
 这些函数使用旧库的操作 API（`$el.autocomplete("val", value)` 等），需要改为新库的 `api.setQuery()` / `api.setIsOpen()` / `api.refresh()`。
+这一步与 **Step 3.4** 有交叉，但并不重复：
+- **Step 3.4** 关注的是 IME、快捷键、按钮点击后的交互语义是否与旧版一致
+- **Step 4** 关注的是 helper 函数本身是否已经彻底切到新 API，而不再依赖旧版 `.autocomplete("...")`
+
+**当前完成情况：**
+- ✅ `clearText()` 已改为通过 headless instance 清空 query、关闭面板并触发 `change`
+- ✅ `setText()` 已改为通过 `showQuery()` 驱动 `setQuery()` / `refresh()`
+- ✅ `showRecentNotes()` 已改为走 `openRecentNotes()`，不再依赖旧版 `.autocomplete("open")`
+- ✅ `showAllCommands()` 已改为直接设置 `">"` query 打开命令面板
+- ✅ `fullTextSearch()` 已改为使用新状态流重跑全文搜索
 
 **验证方式：**
 - 最近笔记按钮 → 下拉菜单正常打开

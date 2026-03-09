@@ -63,7 +63,6 @@ interface ManagedInstance {
     panelEl: HTMLElement;
     clearCursor: () => void;
     isPanelOpen: () => boolean;
-    getQuery: () => string;
     suppressNextClosedReset: () => void;
     showQuery: (query: string) => void;
     openRecentNotes: () => void;
@@ -189,7 +188,7 @@ function createSuggestionSource(options: Options, onSelectItem: (item: Suggestio
     return {
         sourceId: "note-suggestions",
         async getItems({ query }: { query: string }) {
-            return await fetchSuggestions(query, options);
+            return await fetchResolvedSuggestions(query, options);
         },
         getItemInputValue({ item }: { item: Suggestion }) {
             return getSuggestionInputValue(item);
@@ -789,7 +788,6 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
         panelEl,
         clearCursor,
         isPanelOpen: () => wasPanelOpen,
-        getQuery: () => currentQuery,
         suppressNextClosedReset,
         showQuery,
         openRecentNotes,
