@@ -45,6 +45,9 @@ patchedDependencies:
   '@ckeditor/ckeditor5-mention':
     hash: 5981fb59ba35829e4dff1d39cf771000f8a8fdfa7a34b51d8af9549541f2d62d
     path: patches/@ckeditor__ckeditor5-mention.patch
+  mathlive@0.109.0:
+    hash: 1765c60e029f5b7ebd3150cebbd533ac10ce969088a617a32985670d006549b4
+    path: patches/mathlive@0.109.0.patch
 
 importers:
 
@@ -1134,7 +1137,7 @@ importers:
         version: 47.4.0
       mathlive:
         specifier: 0.109.0
-        version: 0.109.0
+        version: 0.109.0(patch_hash=1765c60e029f5b7ebd3150cebbd533ac10ce969088a617a32985670d006549b4)
     devDependencies:
       '@ckeditor/ckeditor5-dev-build-tools':
         specifier: 54.3.3
@@ -17662,6 +17665,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.4.0
       '@ckeditor/ckeditor5-utils': 47.4.0
       ckeditor5: 47.4.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-export-word@47.4.0':
     dependencies:
@@ -17823,6 +17828,8 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.4.0
       '@ckeditor/ckeditor5-utils': 47.4.0
       ckeditor5: 47.4.0
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-indent@47.4.0':
     dependencies:
@@ -30375,7 +30382,7 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
-  mathlive@0.109.0:
+  mathlive@0.109.0(patch_hash=1765c60e029f5b7ebd3150cebbd533ac10ce969088a617a32985670d006549b4):
     dependencies:
       '@cortex-js/compute-engine': 0.30.2
 

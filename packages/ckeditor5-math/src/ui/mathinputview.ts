@@ -75,13 +75,18 @@ export default class MathInputView extends View {
 		this.mathFieldFocusableView = new MathFieldFocusableView( locale, this );
 		this.set( 'value', null );
 		this.set( 'isReadOnly', false );
+		const children: Array<any> = [];
+		// Only include the MathLive container in the DOM when the feature is enabled
+		if ( this._enableMathField ) {
+			children.push( { tag: 'div', attributes: { class: [ 'ck-mathlive-container' ] } } );
+		}
+		children.push(
+			{ tag: 'label', attributes: { class: [ 'ck-latex-label' ] }, children: [ locale.t( 'LaTeX' ) ] },
+			{ tag: 'div', attributes: { class: [ 'ck-latex-wrapper' ] }, children: [ this.latexTextAreaView ] }
+		);
 		this.setTemplate( {
 			tag: 'div', attributes: { class: [ 'ck', 'ck-math-input' ] },
-			children: [
-				{ tag: 'div', attributes: { class: [ 'ck-mathlive-container' ] } },
-				{ tag: 'label', attributes: { class: [ 'ck-latex-label' ] }, children: [ locale.t( 'LaTeX' ) ] },
-				{ tag: 'div', attributes: { class: [ 'ck-latex-wrapper' ] }, children: [ this.latexTextAreaView ] }
-			]
+			children
 		} );
 	}
 
@@ -152,12 +157,7 @@ export default class MathInputView extends View {
 		if ( textarea.value !== initial ) {
 			textarea.value = initial;
 		}
-		if ( !this._enableMathField ) {
-			const container = this.element?.querySelector( '.ck-mathlive-container' ) as HTMLElement | null;
-			if ( container ) {
-				container.style.display = 'none';
-			}
-		} else {
+		if ( this._enableMathField ) {
 			this._loadMathLive();
 		}
 	}
