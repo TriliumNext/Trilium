@@ -1,5 +1,6 @@
-import { createAutocomplete } from "@algolia/autocomplete-core";
 import type { AutocompleteApi as CoreAutocompleteApi, BaseItem } from "@algolia/autocomplete-core";
+import { createAutocomplete } from "@algolia/autocomplete-core";
+
 import type { AttributeType } from "../entities/fattribute.js";
 import server from "./server.js";
 
@@ -87,11 +88,15 @@ function positionPanel(panelEl: HTMLElement, inputEl: HTMLElement): void {
 
 function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange }: InitAttributeNameOptions) {
     const inputEl = $el[0] as HTMLInputElement;
+    const syncQueryFromInputValue = (autocomplete: CoreAutocompleteApi<NameItem>) => {
+        autocomplete.setQuery(inputEl.value || "");
+    };
 
     // Already initialized — just open if requested
     if (instanceMap.has(inputEl)) {
         if (open) {
             const inst = instanceMap.get(inputEl)!;
+            syncQueryFromInputValue(inst.autocomplete);
             inst.autocomplete.setIsOpen(true);
             inst.autocomplete.refresh();
         }
@@ -152,7 +157,7 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
         onStateChange({ state }) {
             isPanelOpen = state.isOpen;
             hasActiveItem = state.activeItemId !== null;
-            
+
             // Render items
             const collections = state.collections;
             const items = collections.length > 0 ? (collections[0].items as NameItem[]) : [];
@@ -184,6 +189,7 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
         handlers.onChange(e as any);
     };
     const onFocus = (e: Event) => {
+        syncQueryFromInputValue(autocomplete);
         handlers.onFocus(e as any);
     };
     const onBlur = () => {
@@ -225,6 +231,7 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
     instanceMap.set(inputEl, { autocomplete, panelEl, cleanup });
 
     if (open) {
+        syncQueryFromInputValue(autocomplete);
         autocomplete.setIsOpen(true);
         autocomplete.refresh();
         startPositioning();
@@ -246,10 +253,14 @@ interface LabelValueInitOptions {
 
 function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: LabelValueInitOptions) {
     const inputEl = $el[0] as HTMLInputElement;
+    const syncQueryFromInputValue = (autocomplete: CoreAutocompleteApi<NameItem>) => {
+        autocomplete.setQuery(inputEl.value || "");
+    };
 
     if (instanceMap.has(inputEl)) {
         if (open) {
             const inst = instanceMap.get(inputEl)!;
+            syncQueryFromInputValue(inst.autocomplete);
             inst.autocomplete.setIsOpen(true);
             inst.autocomplete.refresh();
         }
@@ -373,6 +384,7 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
             cachedAttributeName = "";
             cachedAttributeValues = [];
         }
+        syncQueryFromInputValue(autocomplete);
         handlers.onFocus(e as any);
     };
     const onBlur = () => {
@@ -409,6 +421,7 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
     instanceMap.set(inputEl, { autocomplete, panelEl, cleanup });
 
     if (open) {
+        syncQueryFromInputValue(autocomplete);
         autocomplete.setIsOpen(true);
         autocomplete.refresh();
         startPositioning();
