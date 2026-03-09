@@ -1,24 +1,7 @@
-import { autocomplete } from "@algolia/autocomplete-js";
-import type { AutocompleteApi } from "@algolia/autocomplete-js";
-import type { BaseItem } from "@algolia/autocomplete-core";
+import { createAutocomplete } from "@algolia/autocomplete-core";
+import type { AutocompleteApi as CoreAutocompleteApi, BaseItem } from "@algolia/autocomplete-core";
 import type { AttributeType } from "../entities/fattribute.js";
 import server from "./server.js";
-
-// ---------------------------------------------------------------------------
-// Global instance registry for "close all" functionality
-// ---------------------------------------------------------------------------
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const activeInstances = new Set<AutocompleteApi<any>>();
-
-export function closeAllAttributeAutocompletes(): void {
-    for (const api of activeInstances) {
-        api.setIsOpen(false);
-    }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const instanceMap = new WeakMap<HTMLElement, AutocompleteApi<any>>();
 
 // ---------------------------------------------------------------------------
 // Types
@@ -28,15 +11,19 @@ interface NameItem extends BaseItem {
     name: string;
 }
 
-/** New API: pass a container div, autocomplete-js creates its own input inside. */
+/** New API: pass the input element + a container for the dropdown panel */
 interface NewInitOptions {
-    container: HTMLElement;
+    /** The <input> element where the user types */
+    $el: JQuery<HTMLElement>;
     attributeType?: AttributeType | (() => AttributeType);
     open: boolean;
+    /** Called when the user selects a value or the panel closes */
     onValueChange?: (value: string) => void;
+    /** Use the new autocomplete-core library instead of old autocomplete.js */
+    useNewLib: true;
 }
 
-/** Old API: pass a jQuery input element, uses legacy autocomplete.js plugin. */
+/** Old API: uses legacy autocomplete.js jQuery plugin */
 interface OldInitOptions {
     $el: JQuery<HTMLElement>;
     attributeType?: AttributeType | (() => AttributeType);
@@ -46,41 +33,103 @@ interface OldInitOptions {
 type InitAttributeNameOptions = NewInitOptions | OldInitOptions;
 
 function isNewApi(opts: InitAttributeNameOptions): opts is NewInitOptions {
-    return "container" in opts;
+    return "useNewLib" in opts && opts.useNewLib === true;
 }
 
 // ---------------------------------------------------------------------------
-// Attribute name autocomplete
+// Instance tracking
 // ---------------------------------------------------------------------------
 
-function initAttributeNameAutocomplete(opts: InitAttributeNameOptions) {
-    if (isNewApi(opts)) {
-        initAttributeNameNew(opts);
-    } else {
-        initAttributeNameLegacy(opts);
+interface ManagedInstance {
+    autocomplete: CoreAutocompleteApi<NameItem>;
+    panelEl: HTMLElement;
+    cleanup: () => void;
+}
+
+const instanceMap = new WeakMap<HTMLElement, ManagedInstance>();
+
+function destroyInstance(el: HTMLElement): void {
+    const inst = instanceMap.get(el);
+    if (inst) {
+        inst.cleanup();
+        inst.panelEl.remove();
+        instanceMap.delete(el);
     }
 }
 
-/** New implementation using @algolia/autocomplete-js */
-function initAttributeNameNew({ container, attributeType, open, onValueChange }: NewInitOptions) {
-    // Only init once per container
-    if (instanceMap.has(container)) {
+// ---------------------------------------------------------------------------
+// Dropdown panel DOM helpers
+// ---------------------------------------------------------------------------
+
+function createPanelEl(): HTMLElement {
+    const panel = document.createElement("div");
+    panel.className = "aa-core-panel";
+    panel.style.display = "none";
+    document.body.appendChild(panel);
+    return panel;
+}
+
+function renderItems(panelEl: HTMLElement, items: NameItem[], activeItemId: number | null, onSelect: (item: NameItem) => void): void {
+    panelEl.innerHTML = "";
+    if (items.length === 0) {
+        panelEl.style.display = "none";
+        return;
+    }
+    const list = document.createElement("ul");
+    list.className = "aa-core-list";
+    items.forEach((item, index) => {
+        const li = document.createElement("li");
+        li.className = "aa-core-item";
+        if (index === activeItemId) {
+            li.classList.add("aa-core-item--active");
+        }
+        li.textContent = item.name;
+        li.addEventListener("mousedown", (e) => {
+            e.preventDefault(); // prevent input blur
+            onSelect(item);
+        });
+        list.appendChild(li);
+    });
+    panelEl.appendChild(list);
+}
+
+function positionPanel(panelEl: HTMLElement, inputEl: HTMLElement): void {
+    const rect = inputEl.getBoundingClientRect();
+    panelEl.style.position = "fixed";
+    panelEl.style.top = `${rect.bottom}px`;
+    panelEl.style.left = `${rect.left}px`;
+    panelEl.style.width = `${rect.width}px`;
+    panelEl.style.display = "block";
+}
+
+// ---------------------------------------------------------------------------
+// Attribute name autocomplete — new (autocomplete-core, headless)
+// ---------------------------------------------------------------------------
+
+function initAttributeNameNew({ $el, attributeType, open, onValueChange }: NewInitOptions) {
+    const inputEl = $el[0] as HTMLInputElement;
+
+    // Already initialized — just open if requested
+    if (instanceMap.has(inputEl)) {
         if (open) {
-            const api = instanceMap.get(container)!;
-            api.setIsOpen(true);
-            api.refresh();
+            const inst = instanceMap.get(inputEl)!;
+            inst.autocomplete.setIsOpen(true);
+            inst.autocomplete.refresh();
+            positionPanel(inst.panelEl, inputEl);
         }
         return;
     }
 
-    const api = autocomplete<NameItem>({
-        container,
-        panelContainer: document.body,
+    const panelEl = createPanelEl();
+
+    let isPanelOpen = false;
+    let hasActiveItem = false;
+
+    const autocomplete = createAutocomplete<NameItem>({
         openOnFocus: true,
-        detachedMediaQuery: "none",
-        placeholder: "",
-        classNames: {
-            input: "form-control",
+        defaultActiveItemId: 0,
+        shouldPanelOpen() {
+            return true;
         },
 
         getSources({ query }) {
@@ -97,38 +146,94 @@ function initAttributeNameNew({ container, attributeType, open, onValueChange }:
                         return item.name;
                     },
                     onSelect({ item }) {
+                        inputEl.value = item.name;
+                        autocomplete.setQuery(item.name);
+                        autocomplete.setIsOpen(false);
                         onValueChange?.(item.name);
-                    },
-                    templates: {
-                        item({ item, html }) {
-                            return html`<div>${item.name}</div>`;
-                        },
                     },
                 },
             ];
         },
 
-        onStateChange({ state, prevState }) {
-            if (!state.isOpen && prevState.isOpen) {
-                onValueChange?.(state.query);
-            }
-        },
+        onStateChange({ state }) {
+            isPanelOpen = state.isOpen;
+            hasActiveItem = state.activeItemId !== null;
+            
+            // Render items
+            const collections = state.collections;
+            const items = collections.length > 0 ? (collections[0].items as NameItem[]) : [];
+            const activeId = state.activeItemId ?? null;
 
-        shouldPanelOpen() {
-            return true;
+            if (state.isOpen && items.length > 0) {
+                renderItems(panelEl, items, activeId, (item) => {
+                    inputEl.value = item.name;
+                    autocomplete.setQuery(item.name);
+                    autocomplete.setIsOpen(false);
+                    onValueChange?.(item.name);
+                });
+                positionPanel(panelEl, inputEl);
+            } else {
+                panelEl.style.display = "none";
+            }
+
+            if (!state.isOpen) {
+                panelEl.style.display = "none";
+            }
         },
     });
 
-    instanceMap.set(container, api);
-    activeInstances.add(api);
+    // Wire up the input events
+    const handlers = autocomplete.getInputProps({ inputElement: inputEl });
+    const onInput = (e: Event) => {
+        handlers.onChange(e as any);
+    };
+    const onFocus = (e: Event) => {
+        handlers.onFocus(e as any);
+    };
+    const onBlur = () => {
+        // Delay to allow mousedown on panel items
+        setTimeout(() => {
+            autocomplete.setIsOpen(false);
+            panelEl.style.display = "none";
+            onValueChange?.(inputEl.value);
+        }, 200);
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Enter" && isPanelOpen && hasActiveItem) {
+            // Prevent the enter key from propagating to parent dialogs
+            // (which might interpret it as "submit" or "save and close")
+            e.stopPropagation();
+            // We shouldn't preventDefault here because we want handlers.onKeyDown
+            // to process it properly. OnSelect will correctly close the panel.
+        }
+        handlers.onKeyDown(e as any);
+    };
+
+    inputEl.addEventListener("input", onInput);
+    inputEl.addEventListener("focus", onFocus);
+    inputEl.addEventListener("blur", onBlur);
+    inputEl.addEventListener("keydown", onKeyDown);
+
+    const cleanup = () => {
+        inputEl.removeEventListener("input", onInput);
+        inputEl.removeEventListener("focus", onFocus);
+        inputEl.removeEventListener("blur", onBlur);
+        inputEl.removeEventListener("keydown", onKeyDown);
+    };
+
+    instanceMap.set(inputEl, { autocomplete, panelEl, cleanup });
 
     if (open) {
-        api.setIsOpen(true);
-        api.refresh();
+        autocomplete.setIsOpen(true);
+        autocomplete.refresh();
+        positionPanel(panelEl, inputEl);
     }
 }
 
-/** Legacy implementation using old autocomplete.js jQuery plugin */
+// ---------------------------------------------------------------------------
+// Attribute name autocomplete — legacy (old autocomplete.js)
+// ---------------------------------------------------------------------------
+
 function initAttributeNameLegacy({ $el, attributeType, open }: OldInitOptions) {
     if (!$el.hasClass("aa-input")) {
         $el.autocomplete(
@@ -162,6 +267,18 @@ function initAttributeNameLegacy({ $el, attributeType, open }: OldInitOptions) {
 
     if (open) {
         $el.autocomplete("open");
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Public entry point
+// ---------------------------------------------------------------------------
+
+function initAttributeNameAutocomplete(opts: InitAttributeNameOptions) {
+    if (isNewApi(opts)) {
+        initAttributeNameNew(opts);
+    } else {
+        initAttributeNameLegacy(opts);
     }
 }
 
@@ -227,35 +344,7 @@ async function initLabelValueAutocomplete({ $el, open, nameCallback }: LabelValu
     }
 }
 
-// ---------------------------------------------------------------------------
-// Utilities for the new autocomplete-js containers
-// ---------------------------------------------------------------------------
-
-function getInput(container: HTMLElement): HTMLInputElement | null {
-    return container.querySelector<HTMLInputElement>(".aa-Input");
-}
-
-function setInputValue(container: HTMLElement, value: string): void {
-    const input = getInput(container);
-    if (input) {
-        input.value = value;
-    }
-    const api = instanceMap.get(container);
-    if (api) {
-        api.setQuery(value);
-    }
-}
-
-function getInputValue(container: HTMLElement): string {
-    const input = getInput(container);
-    return input?.value ?? "";
-}
-
 export default {
     initAttributeNameAutocomplete,
     initLabelValueAutocomplete,
-    closeAllAttributeAutocompletes,
-    getInput,
-    setInputValue,
-    getInputValue,
 };

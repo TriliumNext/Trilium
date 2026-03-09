@@ -43,22 +43,23 @@
 
 ---
 
-### Step 1: 迁移属性名称自动补全
+### Step 1: 迁移属性名称自动补全 ✅ 完成
 **文件变更：**
-- `apps/client/src/services/attribute_autocomplete.ts` — `initAttributeNameAutocomplete()` 改为直接调用 `autocomplete()`
-- `apps/client/src/widgets/attribute_widgets/attribute_detail.ts` — 属性名称输入框从 `<input>` 改为 `<div>` 容器，调整值读写
-- `apps/client/src/widgets/type_widgets/relation_map/RelationMap.tsx` — 关系名输入调整
+- `apps/client/src/services/attribute_autocomplete.ts` — `initAttributeNameAutocomplete()` 支持双 API：传 `container` 走新库，传 `$el` 走旧库
+- `apps/client/src/widgets/attribute_widgets/attribute_detail.ts` — 属性名称输入框从 `<input>` 改为 `<div>` 容器，值读写改用 `getInputValue()/setInputValue()`
+- `apps/client/src/stylesheets/style.css` — 添加新库 CSS（隐藏搜索图标、样式对齐）
+- `RelationMap.tsx` — **不变**，继续用旧 `$el` API
 
 **说明：**
-属性名称补全是最简单的场景。变更模式：
-1. HTML 模板中的 `<input class="attr-input-name">` → `<div class="attr-input-name-container"></div>`
-2. `initAttributeNameAutocomplete()` 接收容器元素，调用 `autocomplete({ container, getSources })`
-3. 消费者通过返回的 `api` 对象（或回调）获取选中的值
-4. 为 `autocomplete-js` 生成的 `<input>` 添加 `form-control` 等样式类
+`initAttributeNameAutocomplete()` 同时支持新旧两种调用方式（overloaded interface），让消费者可以逐步迁移：
+- `attribute_detail.ts` 传 `{ container }` → 使用 `autocomplete-js`
+- `RelationMap.tsx` 传 `{ $el }` → 使用旧 `autocomplete.js`
+- RelationMap 的迁移推迟到后续步骤（因为它的 prompt dialog 由 React 管理 input）
 
 **验证方式：**
-- 打开一个笔记 → 点击属性面板 → 点击属性名称输入框 → 应能看到自动补全的属性名称列表
-- 选择一个名称后，值应正确填入
+- ⬜ 打开一个笔记 → 点击属性面板 → 点击属性名称输入框 → 应能看到自动补全的属性名称列表
+- ⬜ 选择一个名称后，值应正确填入
+- ⬜ 关系图创建关系时，关系名输入框的自动补全仍正常（旧库路径）
 
 ---
 

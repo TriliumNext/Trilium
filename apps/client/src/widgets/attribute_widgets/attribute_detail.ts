@@ -378,7 +378,9 @@ export default class AttributeDetailWidget extends NoteContextAwareWidget {
             attributeAutocompleteService.initAttributeNameAutocomplete({
                 $el: this.$inputName,
                 attributeType: () => (["relation", "relation-definition"].includes(this.attrType || "") ? "relation" : "label"),
-                open: true
+                open: true,
+                useNewLib: true,
+                onValueChange: () => this.userEditedAttribute(),
             });
         });
 

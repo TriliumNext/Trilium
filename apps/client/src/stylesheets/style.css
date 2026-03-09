@@ -960,6 +960,38 @@ table.promoted-attributes-in-tooltip th {
     background-color: var(--active-item-background-color);
 }
 
+/* ===== @algolia/autocomplete-core (headless, custom panel) ===== */
+
+.aa-core-panel {
+    z-index: 10000;
+    background-color: var(--main-background-color);
+    border: 1px solid var(--main-border-color);
+    border-top: none;
+    max-height: 500px;
+    overflow: auto;
+    padding: 0;
+    margin: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.aa-core-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.aa-core-item {
+    cursor: pointer;
+    padding: 6px 16px;
+    margin: 0;
+}
+
+.aa-core-item:hover,
+.aa-core-item--active {
+    color: var(--active-item-text-color);
+    background-color: var(--active-item-background-color);
+}
+
 .help-button {
     float: inline-end;
     background: none;
