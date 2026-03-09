@@ -302,6 +302,9 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
         isSelecting = false;
 
         setTimeout(() => {
+            // Preserve the legacy contract: several consumers still commit the
+            // selected value from their existing Enter key handlers instead of
+            // listening to the autocomplete selection event directly.
             inputEl.dispatchEvent(new KeyboardEvent("keydown", {
                 key: "Enter",
                 code: "Enter",

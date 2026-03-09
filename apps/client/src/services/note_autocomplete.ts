@@ -111,8 +111,20 @@ function escapeHtml(text: string): string {
         .replaceAll("'", "&#39;");
 }
 
+function sanitizeHighlightedHtml(text: string, { allowBreaks = false }: { allowBreaks?: boolean } = {}): string {
+    const sanitizedBreaks = allowBreaks
+        ? text.replace(/<br\b[^>]*\/?>/gi, "<br>")
+        : text.replace(/<br\b[^>]*\/?>/gi, "");
+
+    return sanitizedBreaks
+        .replace(/<b\b[^>]*>/gi, "<b>")
+        .replace(/<\/b\s*>/gi, "</b>")
+        .replace(/<\/?[^>]+>/g, "");
+}
+
 function normalizeAttributeSnippet(snippet: string): string {
-    return snippet.replace(/<br\s*\/?>/gi, " <span class=\"aa-core-separator\">&middot;</span> ");
+    return sanitizeHighlightedHtml(snippet, { allowBreaks: true })
+        .replace(/<br\s*\/?>/gi, " <span class=\"aa-core-separator\">&middot;</span> ");
 }
 
 function getSuggestionIconClass(item: Suggestion): string {
@@ -135,7 +147,9 @@ function getSuggestionInputValue(item: Suggestion): string {
 
 function renderCommandSuggestion(item: Suggestion): string {
     const iconClass = escapeHtml(item.icon || "bx bx-terminal");
-    const titleHtml = item.highlightedNotePathTitle || escapeHtml(item.noteTitle || "");
+    const titleHtml = item.highlightedNotePathTitle
+        ? sanitizeHighlightedHtml(item.highlightedNotePathTitle)
+        : escapeHtml(item.noteTitle || "");
     const descriptionHtml = item.commandDescription ? `<div class="command-description">${escapeHtml(item.commandDescription)}</div>` : "";
     const shortcutHtml = item.commandShortcut ? `<kbd class="command-shortcut">${escapeHtml(item.commandShortcut)}</kbd>` : "";
 
@@ -153,7 +167,9 @@ function renderCommandSuggestion(item: Suggestion): string {
 
 function renderNoteSuggestion(item: Suggestion): string {
     const iconClass = escapeHtml(getSuggestionIconClass(item));
-    const titleHtml = item.highlightedNotePathTitle || escapeHtml(item.noteTitle || item.notePathTitle || item.externalLink || "");
+    const titleHtml = item.highlightedNotePathTitle
+        ? sanitizeHighlightedHtml(item.highlightedNotePathTitle)
+        : escapeHtml(item.noteTitle || item.notePathTitle || item.externalLink || "");
     const shortcutHtml = item.action === "search-notes"
         ? `<kbd class="aa-core-shortcut">Ctrl+Enter</kbd>`
         : "";
