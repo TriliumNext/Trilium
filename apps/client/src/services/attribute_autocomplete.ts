@@ -193,7 +193,7 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
             panelEl.style.display = "none";
             stopPositioning();
             onValueChange?.(inputEl.value);
-        }, 200);
+        }, 50);
     };
     const onKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Enter" && isPanelOpen && hasActiveItem) {
@@ -281,6 +281,27 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
     let cachedAttributeName = "";
     let cachedAttributeValues: NameItem[] = [];
 
+    const handleSelect = (item: NameItem) => {
+        isSelecting = true;
+        inputEl.value = item.name;
+        inputEl.dispatchEvent(new Event("input", { bubbles: true }));
+        autocomplete.setQuery(item.name);
+        autocomplete.setIsOpen(false);
+        onValueChange?.(item.name);
+        isSelecting = false;
+
+        setTimeout(() => {
+            inputEl.dispatchEvent(new KeyboardEvent("keydown", {
+                key: "Enter",
+                code: "Enter",
+                keyCode: 13,
+                which: 13,
+                bubbles: true,
+                cancelable: true
+            }));
+        }, 0);
+    };
+
     const autocomplete = createAutocomplete<NameItem>({
         openOnFocus: true,
         defaultActiveItemId: null,
@@ -311,24 +332,7 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
                         return item.name;
                     },
                     onSelect({ item }) {
-                        isSelecting = true;
-                        inputEl.value = item.name;
-                        inputEl.dispatchEvent(new Event("input", { bubbles: true }));
-                        autocomplete.setQuery(item.name);
-                        autocomplete.setIsOpen(false);
-                        onValueChange?.(item.name);
-                        isSelecting = false;
-
-                        setTimeout(() => {
-                            inputEl.dispatchEvent(new KeyboardEvent("keydown", {
-                                key: "Enter",
-                                code: "Enter",
-                                keyCode: 13,
-                                which: 13,
-                                bubbles: true,
-                                cancelable: true
-                            }));
-                        }, 0);
+                        handleSelect(item);
                     },
                 },
             ];
@@ -343,26 +347,7 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
             const activeId = state.activeItemId ?? null;
 
             if (state.isOpen && items.length > 0) {
-                renderItems(panelEl, items, activeId, (item) => {
-                    isSelecting = true;
-                    inputEl.value = item.name;
-                    inputEl.dispatchEvent(new Event("input", { bubbles: true }));
-                    autocomplete.setQuery(item.name);
-                    autocomplete.setIsOpen(false);
-                    onValueChange?.(item.name);
-                    isSelecting = false;
-
-                    setTimeout(() => {
-                        inputEl.dispatchEvent(new KeyboardEvent("keydown", {
-                            key: "Enter",
-                            code: "Enter",
-                            keyCode: 13,
-                            which: 13,
-                            bubbles: true,
-                            cancelable: true
-                        }));
-                    }, 0);
-                });
+                renderItems(panelEl, items, activeId, handleSelect);
                 startPositioning();
             } else {
                 panelEl.style.display = "none";
@@ -396,7 +381,7 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
             panelEl.style.display = "none";
             stopPositioning();
             onValueChange?.(inputEl.value);
-        }, 200);
+        }, 50);
     };
     const onKeyDown = (e: KeyboardEvent) => {
         if (e.key === "Enter" && isPanelOpen && hasActiveItem) {
@@ -430,7 +415,7 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
     }
 }
 
-export function destroyAttributeNameAutocomplete($el: JQuery<HTMLElement> | HTMLElement) {
+export function destroyAutocomplete($el: JQuery<HTMLElement> | HTMLElement) {
     const inputEl = $el instanceof HTMLElement ? $el : $el[0] as HTMLInputElement;
     const instance = instanceMap.get(inputEl);
     if (instance) {
@@ -441,6 +426,6 @@ export function destroyAttributeNameAutocomplete($el: JQuery<HTMLElement> | HTML
 
 export default {
     initAttributeNameAutocomplete,
-    destroyAttributeNameAutocomplete,
+    destroyAutocomplete,
     initLabelValueAutocomplete,
 };
