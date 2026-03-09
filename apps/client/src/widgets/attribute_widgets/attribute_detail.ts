@@ -379,7 +379,6 @@ export default class AttributeDetailWidget extends NoteContextAwareWidget {
                 $el: this.$inputName,
                 attributeType: () => (["relation", "relation-definition"].includes(this.attrType || "") ? "relation" : "label"),
                 open: true,
-                useNewLib: true,
                 onValueChange: () => this.userEditedAttribute(),
             });
         });

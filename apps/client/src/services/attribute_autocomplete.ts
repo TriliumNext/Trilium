@@ -18,8 +18,6 @@ interface InitAttributeNameOptions {
     open: boolean;
     /** Called when the user selects a value or the panel closes */
     onValueChange?: (value: string) => void;
-    /** (Deprecated) Kept for compatibility during migration, not used anymore */
-    useNewLib?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -33,15 +31,6 @@ interface ManagedInstance {
 }
 
 const instanceMap = new WeakMap<HTMLElement, ManagedInstance>();
-
-function destroyInstance(el: HTMLElement): void {
-    const inst = instanceMap.get(el);
-    if (inst) {
-        inst.cleanup();
-        inst.panelEl.remove();
-        instanceMap.delete(el);
-    }
-}
 
 // ---------------------------------------------------------------------------
 // Dropdown panel DOM helpers

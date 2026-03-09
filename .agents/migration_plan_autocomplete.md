@@ -45,21 +45,22 @@
 
 ### Step 1: 迁移属性名称自动补全 ✅ 完成
 **文件变更：**
-- `apps/client/src/services/attribute_autocomplete.ts` — `initAttributeNameAutocomplete()` 支持双 API：传 `container` 走新库，传 `$el` 走旧库
-- `apps/client/src/widgets/attribute_widgets/attribute_detail.ts` — 属性名称输入框从 `<input>` 改为 `<div>` 容器，值读写改用 `getInputValue()/setInputValue()`
-- `apps/client/src/stylesheets/style.css` — 添加新库 CSS（隐藏搜索图标、样式对齐）
-- `RelationMap.tsx` — **不变**，继续用旧 `$el` API
+- `apps/client/src/services/attribute_autocomplete.ts` — 将 `initAttributeNameAutocomplete()` 完全使用 **Headless API (`@algolia/autocomplete-core`)** 重写，移除遗留的 jQuery autocomplete 调用。
+- `apps/client/src/widgets/attribute_widgets/attribute_detail.ts` — 维持原有 `<input>` 模型不变，仅需增加 `onValueChange` 处理回调。
+- `apps/client/src/widgets/type_widgets/relation_map/RelationMap.tsx` — 维持原有回调逻辑，新旧无感替换。
+- `apps/client/src/stylesheets/style.css` — 增加自定义 Headless 渲染面板样式 (`.aa-core-panel`，`.aa-core-list` 等)。
 
-**说明：**
-`initAttributeNameAutocomplete()` 同时支持新旧两种调用方式（overloaded interface），让消费者可以逐步迁移：
-- `attribute_detail.ts` 传 `{ container }` → 使用 `autocomplete-js`
-- `RelationMap.tsx` 传 `{ $el }` → 使用旧 `autocomplete.js`
-- RelationMap 的迁移推迟到后续步骤（因为它的 prompt dialog 由 React 管理 input）
+**架构说明：**
+由于 Trilium 依赖同一页面同时运行多个 autocomplete 生命周期（边栏属性列表，底部编辑器等），原生 `@algolia/autocomplete-js` 会因为单例 DOM 冲突强行报错 "doesn't support multiple instances running at the same time"。
+解决方案是退化使用纯状态机的 `@algolia/autocomplete-core`，自己进行 DOM 劫持与面板渲染。
+- `requestAnimationFrame`：针对下拉层自动跟踪光标位置，适配面板的高频大小变化
+- 事件阻断：拦截了选择时候的 `Enter` 返回键事件气泡，避免误触外层 Dialog 销毁。
 
 **验证方式：**
-- ⬜ 打开一个笔记 → 点击属性面板 → 点击属性名称输入框 → 应能看到自动补全的属性名称列表
-- ⬜ 选择一个名称后，值应正确填入
-- ⬜ 关系图创建关系时，关系名输入框的自动补全仍正常（旧库路径）
+- ✅ 打开一个笔记 → 点击属性面板弹出 "Label detail" → 输入属性名称时正常显示下拉自动补全框
+- ✅ 放大/缩小/变形整个面板，下拉菜单粘连位置准确
+- ✅ 键盘上下方向键可高亮，按 Enter 可选中当前项填充，且对话框不关闭
+- ✅ 关系图 (Relation map) 创建关系时，关系名输入框的自动补全同样工作正常
 
 ---
 
