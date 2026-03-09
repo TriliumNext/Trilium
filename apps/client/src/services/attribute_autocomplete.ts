@@ -13,6 +13,21 @@ interface NameItem extends BaseItem {
     name: string;
 }
 
+export function shouldAutocompleteHandleEnterKey(
+    event: Pick<KeyboardEvent, "key" | "ctrlKey" | "metaKey">,
+    { isPanelOpen, hasActiveItem }: { isPanelOpen: boolean; hasActiveItem: boolean }
+) {
+    if (event.key !== "Enter") {
+        return true;
+    }
+
+    if (event.ctrlKey || event.metaKey) {
+        return false;
+    }
+
+    return isPanelOpen && hasActiveItem;
+}
+
 interface InitAttributeNameOptions {
     /** The <input> element where the user types */
     $el: JQuery<HTMLElement>;
@@ -200,22 +215,16 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
             }, 50);
         },
         onKeyDown(e, handlers) {
-            if (e.key === "Enter") {
-                if (e.ctrlKey || e.metaKey) {
-                    // Let the outer widget handle save shortcuts such as Ctrl+Enter.
-                    return;
-                }
-
-                if (isPanelOpen && hasActiveItem) {
-                    // Prevent the enter key from propagating to parent dialogs
-                    // (which might interpret it as "submit" or "save and close")
-                    e.stopPropagation();
-                } else {
-                    // No active suggestion means the user is keeping their typed value.
-                    // Let outer shortcuts continue to bubble.
-                    return;
-                }
+            if (!shouldAutocompleteHandleEnterKey(e, { isPanelOpen, hasActiveItem })) {
+                return;
             }
+
+            if (e.key === "Enter") {
+                // Prevent the enter key from propagating to parent dialogs
+                // (which might interpret it as "submit" or "save and close")
+                e.stopPropagation();
+            }
+
             handlers.onKeyDown(e as any);
         }
     });
@@ -397,20 +406,14 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
             }, 50);
         },
         onKeyDown(e, handlers) {
-            if (e.key === "Enter") {
-                if (e.ctrlKey || e.metaKey) {
-                    // Let the outer widget handle save shortcuts such as Ctrl+Enter.
-                    return;
-                }
-
-                if (isPanelOpen && hasActiveItem) {
-                    e.stopPropagation();
-                } else {
-                    // No active suggestion means the user is keeping their typed value.
-                    // Let outer shortcuts such as Ctrl+Enter continue to bubble.
-                    return;
-                }
+            if (!shouldAutocompleteHandleEnterKey(e, { isPanelOpen, hasActiveItem })) {
+                return;
             }
+
+            if (e.key === "Enter") {
+                e.stopPropagation();
+            }
+
             handlers.onKeyDown(e as any);
         }
     });
