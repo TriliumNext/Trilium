@@ -201,13 +201,18 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
         },
         onKeyDown(e, handlers) {
             if (e.key === "Enter") {
+                if (e.ctrlKey || e.metaKey) {
+                    // Let the outer widget handle save shortcuts such as Ctrl+Enter.
+                    return;
+                }
+
                 if (isPanelOpen && hasActiveItem) {
                     // Prevent the enter key from propagating to parent dialogs
                     // (which might interpret it as "submit" or "save and close")
                     e.stopPropagation();
-                } else if (!isPanelOpen) {
-                    // Panel is closed. Do not pass Enter to autocomplete-core
-                    // so native HTML form submit handlers can run.
+                } else {
+                    // No active suggestion means the user is keeping their typed value.
+                    // Let outer shortcuts continue to bubble.
                     return;
                 }
             }
@@ -393,10 +398,17 @@ function initLabelValueAutocomplete({ $el, open, nameCallback, onValueChange }: 
         },
         onKeyDown(e, handlers) {
             if (e.key === "Enter") {
+                if (e.ctrlKey || e.metaKey) {
+                    // Let the outer widget handle save shortcuts such as Ctrl+Enter.
+                    return;
+                }
+
                 if (isPanelOpen && hasActiveItem) {
                     e.stopPropagation();
-                } else if (!isPanelOpen) {
-                    return; // Let native submit form bubbling happen
+                } else {
+                    // No active suggestion means the user is keeping their typed value.
+                    // Let outer shortcuts such as Ctrl+Enter continue to bubble.
+                    return;
                 }
             }
             handlers.onKeyDown(e as any);
