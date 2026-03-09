@@ -24,6 +24,7 @@ export interface PromptDialogOptions {
     shown?: PromptShownDialogCallback;
     callback?: (value: string | null) => void;
     readOnly?: boolean;
+    submitWithCtrlEnter?: boolean;
 }
 
 export default function PromptDialog() {
@@ -69,7 +70,7 @@ export default function PromptDialog() {
                 submitValue.current = null;
                 opts.current = undefined;
             }}
-            footer={<Button text={t("prompt.ok")} keyboardShortcut="ctrl+return" kind="primary" />}
+            footer={<Button text={t("prompt.ok")} keyboardShortcut={opts.current?.submitWithCtrlEnter ? "ctrl+return" : "Enter"} kind="primary" />}
             show={shown}
             stackable
         >
@@ -79,7 +80,7 @@ export default function PromptDialog() {
                     currentValue={value} onChange={setValue}
                     readOnly={opts.current?.readOnly}
                     onKeyDown={(e: KeyboardEvent) => {
-                        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                        if (opts.current?.submitWithCtrlEnter && (e.ctrlKey || e.metaKey) && e.key === "Enter") {
                             e.preventDefault();
                             submitValue.current = answerRef.current?.value || value;
                             setShown(false);
