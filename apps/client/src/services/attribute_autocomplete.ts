@@ -217,6 +217,9 @@ function initAttributeNameAutocomplete({ $el, attributeType, open, onValueChange
         inputEl.removeEventListener("blur", onBlur);
         inputEl.removeEventListener("keydown", onKeyDown);
         stopPositioning();
+        if (panelEl.parentElement) {
+            panelEl.parentElement.removeChild(panelEl);
+        }
     };
 
     instanceMap.set(inputEl, { autocomplete, panelEl, cleanup });
@@ -292,7 +295,17 @@ async function initLabelValueAutocomplete({ $el, open, nameCallback }: LabelValu
     }
 }
 
+export function destroyAttributeNameAutocomplete($el: JQuery<HTMLElement> | HTMLElement) {
+    const inputEl = $el instanceof HTMLElement ? $el : $el[0] as HTMLInputElement;
+    const instance = instanceMap.get(inputEl);
+    if (instance) {
+        instance.cleanup();
+        instanceMap.delete(inputEl);
+    }
+}
+
 export default {
     initAttributeNameAutocomplete,
+    destroyAttributeNameAutocomplete,
     initLabelValueAutocomplete,
 };
