@@ -38,7 +38,7 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
                 (window as any).katex = (await import("../../../services/math.js")).default;
             },
             forceOutputType: false, // forces output to use outputType
-            enableMathField: (options.get("mathFieldEnabled") ?? "true") === "true",
+            enableMathField: options.get("mathFieldEnabled") !== "false",
             enablePreview: true // Enable preview view
         },
         mermaid: {

@@ -13,7 +13,6 @@ declare global {
 			addEventListener: ( event: string, cb: () => void ) => void;
 			removeEventListener: ( event: string, cb: () => void ) => void;
 		};
-		mathShortcuts?: Record<string, string>;
 	}
 }
 
@@ -191,9 +190,6 @@ export default class MathInputView extends View {
 
 	// Initializes the <math-field> element
 	private _initMathField( shouldFocus: boolean ): void {
-		if ( !this._enableMathField ) {
-			return;
-		}
 		const container = this.element?.querySelector( '.ck-mathlive-container' );
 		if ( !container ) {
 			return;
@@ -211,6 +207,7 @@ export default class MathInputView extends View {
 		// Set shortcuts after mounting (accessing inlineShortcuts requires mounted element)
 		try {
 			if ( mf.inlineShortcuts ) {
+				// Allows external listeners to inject custom MathLive shortcuts by mutating event.detail.
 				const customShortcuts: Record<string, string> = {};
 				document.dispatchEvent( new CustomEvent( 'mathlive:custom-shortcuts', { detail: customShortcuts } ) );
 				mf.inlineShortcuts = { ...mf.inlineShortcuts, dx: 'dx', dy: 'dy', dt: 'dt', ...customShortcuts };
