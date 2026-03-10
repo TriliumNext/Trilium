@@ -1,15 +1,17 @@
+import type { JSX } from "preact";
+import { useEffect,useRef, useState } from "preact/hooks";
+
 import { t } from "../../services/i18n";
-import Modal from "../react/Modal";
-import Button from "../react/Button";
-import FormRadioGroup from "../react/FormRadioGroup";
-import NoteAutocomplete from "../react/NoteAutocomplete";
-import { useRef, useState, useEffect } from "preact/hooks";
-import tree from "../../services/tree";
 import note_autocomplete, { Suggestion } from "../../services/note_autocomplete";
+import tree from "../../services/tree";
 import { logError } from "../../services/ws";
+import Button from "../react/Button";
 import FormGroup from "../react/FormGroup.js";
-import { refToJQuerySelector } from "../react/react_utils";
+import FormRadioGroup from "../react/FormRadioGroup";
 import { useTriliumEvent } from "../react/hooks";
+import Modal from "../react/Modal";
+import NoteAutocomplete from "../react/NoteAutocomplete";
+import { refToJQuerySelector } from "../react/react_utils";
 
 type LinkType = "reference-link" | "external-link" | "hyper-link";
 
@@ -26,6 +28,8 @@ export default function AddLinkDialog() {
     const [ suggestion, setSuggestion ] = useState<Suggestion | null>(null);
     const [ shown, setShown ] = useState(false);
     const hasSubmittedRef = useRef(false);
+    const suggestionRef = useRef<Suggestion | null>(null);
+    const submitOnSelectionRef = useRef(false);
 
     useTriliumEvent("showAddLinkDialog", opts => {
         setOpts(opts);
@@ -85,15 +89,44 @@ export default function AddLinkDialog() {
             .trigger("select");
     }
 
-    function onSubmit() {
-        hasSubmittedRef.current = true;
+    function submitSelectedLink(selectedSuggestion: Suggestion | null) {
+        submitOnSelectionRef.current = false;
+        hasSubmittedRef.current = Boolean(selectedSuggestion);
 
-        if (suggestion) {
-            // Insertion logic in onHidden because it needs focus.
-            setShown(false);
-        } else {
+        if (!selectedSuggestion) {
             logError("No link to add.");
+            return;
         }
+
+        // Insertion logic in onHidden because it needs focus.
+        setShown(false);
+    }
+
+    function onSuggestionChange(nextSuggestion: Suggestion | null) {
+        suggestionRef.current = nextSuggestion;
+        setSuggestion(nextSuggestion);
+
+        if (submitOnSelectionRef.current && nextSuggestion) {
+            submitSelectedLink(nextSuggestion);
+        }
+    }
+
+    function onAutocompleteKeyDownCapture(e: JSX.TargetedKeyboardEvent<HTMLInputElement>) {
+        if (e.key !== "Enter" || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey || e.isComposing) {
+            return;
+        }
+
+        submitOnSelectionRef.current = true;
+    }
+
+    function onAutocompleteKeyUpCapture(e: JSX.TargetedKeyboardEvent<HTMLInputElement>) {
+        if (e.key === "Enter") {
+            submitOnSelectionRef.current = false;
+        }
+    }
+
+    function onSubmit() {
+        submitSelectedLink(suggestionRef.current);
     }
 
     const autocompleteRef = useRef<HTMLInputElement>(null);
@@ -109,19 +142,22 @@ export default function AddLinkDialog() {
             onSubmit={onSubmit}
             onShown={onShown}
             onHidden={() => {
+                submitOnSelectionRef.current = false;
+
                 // Insert the link.
-                if (hasSubmittedRef.current && suggestion && opts) {
+                if (hasSubmittedRef.current && suggestionRef.current && opts) {
                     hasSubmittedRef.current = false;
 
-                    if (suggestion.notePath) {
+                    if (suggestionRef.current.notePath) {
                         // Handle note link
-                        opts.addLink(suggestion.notePath, linkType === "reference-link" ? null : linkTitle);
-                    } else if (suggestion.externalLink) {
+                        opts.addLink(suggestionRef.current.notePath, linkType === "reference-link" ? null : linkTitle);
+                    } else if (suggestionRef.current.externalLink) {
                         // Handle external link
-                        opts.addLink(suggestion.externalLink, linkTitle, true);
+                        opts.addLink(suggestionRef.current.externalLink, linkTitle, true);
                     }
                 }
 
+                suggestionRef.current = null;
                 setSuggestion(null);
                 setShown(false);
             }}
@@ -130,7 +166,9 @@ export default function AddLinkDialog() {
             <FormGroup label={t("add_link.note")} name="note">
                 <NoteAutocomplete
                     inputRef={autocompleteRef}
-                    onChange={setSuggestion}
+                    onChange={onSuggestionChange}
+                    onKeyDownCapture={onAutocompleteKeyDownCapture}
+                    onKeyUpCapture={onAutocompleteKeyUpCapture}
                     opts={{
                         allowExternalLinks: true,
                         allowCreatingNotes: true

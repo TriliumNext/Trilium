@@ -1,8 +1,9 @@
-import { t } from "../../services/i18n";
-import { useEffect } from "preact/hooks";
-import note_autocomplete, { Options, type Suggestion } from "../../services/note_autocomplete";
-import type { RefObject } from "preact";
+import type { JSX,RefObject } from "preact";
 import type { CSSProperties } from "preact/compat";
+import { useEffect } from "preact/hooks";
+
+import { t } from "../../services/i18n";
+import note_autocomplete, { Options, type Suggestion } from "../../services/note_autocomplete";
 import { useSyncedRef } from "./hooks";
 
 interface NoteAutocompleteProps {
@@ -16,12 +17,14 @@ interface NoteAutocompleteProps {
     onChange?: (suggestion: Suggestion | null) => void;
     onTextChange?: (text: string) => void;
     onKeyDown?: (e: KeyboardEvent) => void;
+    onKeyDownCapture?: JSX.KeyboardEventHandler<HTMLInputElement>;
+    onKeyUpCapture?: JSX.KeyboardEventHandler<HTMLInputElement>;
     onBlur?: (newValue: string) => void;
     noteIdChanged?: (noteId: string) => void;
     noteId?: string;
 }
 
-export default function NoteAutocomplete({ id, inputRef: externalInputRef, text, placeholder, onChange, onTextChange, container, containerStyle, opts, noteId, noteIdChanged, onKeyDown, onBlur }: NoteAutocompleteProps) {
+export default function NoteAutocomplete({ id, inputRef: externalInputRef, text, placeholder, onChange, onTextChange, container, containerStyle, opts, noteId, noteIdChanged, onKeyDown, onKeyDownCapture, onKeyUpCapture, onBlur }: NoteAutocompleteProps) {
     const ref = useSyncedRef<HTMLInputElement>(externalInputRef);
 
     useEffect(() => {
@@ -127,6 +130,8 @@ export default function NoteAutocomplete({ id, inputRef: externalInputRef, text,
                 id={id}
                 ref={ref}
                 className="note-autocomplete form-control"
+                onKeyDownCapture={onKeyDownCapture}
+                onKeyUpCapture={onKeyUpCapture}
                 placeholder={placeholder ?? t("add_link.search_note")} />
         </div>
     );
