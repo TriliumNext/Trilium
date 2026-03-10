@@ -535,6 +535,7 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
     let shouldMirrorActiveItemToInput = false;
     let wasPanelOpen = false;
     let suppressNextClosedEmptyReset = false;
+    let shouldClearQueryAfterClose = false;
     let suggestionRequestId = 0;
 
     const clearCursor = () => {
@@ -659,12 +660,21 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
                     } else if (!String(inputEl.value).trim()) {
                         searchDelay = 0;
                         resetSelectionState($el);
+                        currentQuery = "";
+                        inputEl.value = "";
+                        shouldClearQueryAfterClose = state.query.length > 0;
                         $el.trigger("change");
                     }
                 }
             }
 
-            if (activeItem && shouldMirrorActiveItemToInput) {
+            if (shouldClearQueryAfterClose) {
+                inputEl.value = "";
+                shouldClearQueryAfterClose = false;
+                queueMicrotask(() => {
+                    autocomplete.setQuery("");
+                });
+            } else if (activeItem && shouldMirrorActiveItemToInput) {
                 inputEl.value = getSuggestionInputValue(activeItem);
             } else {
                 inputEl.value = state.query;
