@@ -78,6 +78,7 @@ export default function PromptDialog() {
                 <FormTextBox
                     inputRef={answerRef}
                     currentValue={value} onChange={setValue}
+                    readOnly={opts.current?.readOnly}
                 />
             </FormGroup>
         </Modal>
