@@ -46,7 +46,7 @@ vi.mock("../../services/note_autocomplete", () => ({
 }));
 
 vi.mock("../react/react_utils", () => ({
-    refToJQuerySelector: (ref: { current: HTMLInputElement | null }) => $(ref.current)
+    refToJQuerySelector: (ref: { current: HTMLInputElement | null }) => ref.current ? $(ref.current) : $()
 }));
 
 vi.mock("../react/hooks", () => ({
