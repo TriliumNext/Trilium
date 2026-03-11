@@ -16599,7 +16599,7 @@ snapshots:
       '@algolia/client-search': 5.49.1
       algoliasearch: 5.49.1
       htm: 3.1.1
-      preact: 10.28.4
+      preact: 10.29.0
     transitivePeerDependencies:
       - search-insights
 
