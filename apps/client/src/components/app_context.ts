@@ -10,7 +10,7 @@ import { initLocale, t } from "../services/i18n.js";
 import keyboardActionsService from "../services/keyboard_actions.js";
 import linkService, { type ViewScope } from "../services/link.js";
 import type LoadResults from "../services/load_results.js";
-import type { CreateNoteOpts } from "../services/note_create.js";
+import type { CreateNoteOpts, CreateNoteWithLinkOpts } from "../services/note_create.js";
 import options from "../services/options.js";
 import toast from "../services/toast.js";
 import utils, { hasTouchBar } from "../services/utils.js";
@@ -360,8 +360,7 @@ export type CommandMappings = {
 
     // Table view
     addNewRow: CommandData & {
-        customOpts: CreateNoteOpts;
-        parentNotePath?: string;
+        customOpts?: CreateNoteWithLinkOpts;
     };
     addNewTableColumn: CommandData & {
         columnToEdit?: ColumnComponent;

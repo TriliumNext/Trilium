@@ -28,7 +28,7 @@ export default async function renderText(note: FNote | FAttachment, $renderedCon
             renderMathInElement($renderedContent[0], { trust: true });
         }
 
-        const getNoteIdFromLink = (el: HTMLElement) => tree.getNoteIdFromUrl($(el).attr("href") || "");
+        const getNoteIdFromLink = (el: HTMLElement) => tree.getNoteIdFromLink($(el).attr("href") || "");
         const referenceLinks = $renderedContent.find<HTMLAnchorElement>("a.reference-link");
         const noteIdsToPrefetch = referenceLinks.map((i, el) => getNoteIdFromLink(el));
         await froca.getNotes(noteIdsToPrefetch);

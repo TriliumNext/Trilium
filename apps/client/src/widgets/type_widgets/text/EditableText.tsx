@@ -1,7 +1,7 @@
 import "./EditableText.css";
 
 import { CKTextEditor, EditorWatchdog, TemplateDefinition } from "@triliumnext/ckeditor5";
-import { deferred } from "@triliumnext/commons";
+import { CreateNoteAction, deferred } from "@triliumnext/commons";
 import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
@@ -122,17 +122,18 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
         },
         loadIncludedNote,
         // Creating notes in @-completion
-        async createNoteForReferenceLink(title: string) {
-            const notePath = noteContext?.notePath;
-            if (!notePath) return;
-
-            const resp = await note_create.createNoteWithTypePrompt(notePath, {
-                activate: false,
-                title
-            });
-
-            if (!resp || !resp.note) return;
-            return resp.note.getBestNotePathString();
+        async createNoteFromCkEditor (
+            title: string,
+            parentNotePath: string | undefined,
+            action: CreateNoteAction.CreateChildNote
+        ): Promise<string> {
+            const { note }= await note_create.createNoteFromAction(
+                action,
+                true,
+                title,
+                parentNotePath,
+            )
+            return note?.getBestNotePathString() ?? "";
         },
         // Keyboard shortcut
         async followLinkUnderCursorCommand() {
@@ -169,7 +170,9 @@ export default function EditableText({ note, parentComponent, ntxId, noteContext
             // without await as this otherwise causes deadlock through component mutex
             const parentNotePath = appContext.tabManager.getActiveContextNotePath();
             if (noteContext && parentNotePath) {
-                note_create.createNote(parentNotePath, {
+                note_create.createNote({
+                    parentNoteLink: parentNotePath,
+                    target: "into",
                     isProtected: note.isProtected,
                     saveSelection: true,
                     textEditor: await noteContext?.getTextEditor()

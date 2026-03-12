@@ -1,3 +1,5 @@
+import NoteColorPicker from "./custom-items/NoteColorPicker.jsx";
+import treeService from "../services/tree.js";
 import appContext, { type ContextMenuCommandData, type FilteredCommandNames } from "../components/app_context.js";
 import type { SelectMenuItemEventListener } from "../components/events.js";
 import type FAttachment from "../entities/fattachment.js";
@@ -11,11 +13,9 @@ import noteCreateService from "../services/note_create.js";
 import noteTypesService from "../services/note_types.js";
 import server from "../services/server.js";
 import toastService from "../services/toast.js";
-import treeService from "../services/tree.js";
 import utils from "../services/utils.js";
 import type NoteTreeWidget from "../widgets/note_tree.js";
 import contextMenu, { type MenuCommandItem, type MenuItem } from "./context_menu.js";
-import NoteColorPicker from "./custom-items/NoteColorPicker.jsx";
 
 // TODO: Deduplicate once client/server is well split.
 interface ConvertToAttachmentResponse {
@@ -301,21 +301,31 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
             const parentNotePath = treeService.getNotePath(this.node.getParent());
             const isProtected = treeService.getParentProtectedStatus(this.node);
 
-            noteCreateService.createNote(parentNotePath, {
-                target: "after",
-                targetBranchId: this.node.data.branchId,
-                type,
-                isProtected,
-                templateNoteId
-            });
+
+            noteCreateService.createNote(
+                {
+                    target: "after",
+                    parentNoteLink: parentNotePath,
+                    targetBranchId: this.node.data.branchId,
+                    type: type,
+                    isProtected: isProtected,
+                    templateNoteId: templateNoteId,
+                    promptForType: false,
+                }
+            );
         } else if (command === "insertChildNote") {
             const parentNotePath = treeService.getNotePath(this.node);
 
-            noteCreateService.createNote(parentNotePath, {
-                type,
-                isProtected: this.node.data.isProtected,
-                templateNoteId
-            });
+            noteCreateService.createNote(
+                {
+                    target: "into",
+                    parentNoteLink: parentNotePath,
+                    type: type,
+                    isProtected: this.node.data.isProtected,
+                    templateNoteId: templateNoteId,
+                    promptForType: false,
+                }
+            );
         } else if (command === "openNoteInSplit") {
             const subContexts = appContext.tabManager.getActiveContext()?.getSubContexts();
             const { ntxId } = subContexts?.[subContexts.length - 1] ?? {};
