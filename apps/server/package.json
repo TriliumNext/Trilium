@@ -89,7 +89,7 @@
     "express": "5.2.1",
     "express-http-proxy": "2.1.2",
     "express-openid-connect": "2.19.4",
-    "express-rate-limit": "8.3.0",
+    "express-rate-limit": "8.3.1",
     "express-session": "1.19.0",
     "file-uri-to-path": "2.0.0",
     "fs-extra": "11.3.4",
@@ -98,7 +98,7 @@
     "html2plaintext": "2.1.4",
     "http-proxy-agent": "7.0.2",
     "https-proxy-agent": "7.0.6",
-    "i18next": "25.8.14",
+    "i18next": "25.8.17",
     "i18next-fs-backend": "2.6.1",
     "image-type": "6.0.0",
     "ini": "6.0.0",
@@ -128,6 +128,6 @@
     "vite": "7.3.1",
     "ws": "8.19.0",
     "xml2js": "0.6.2",
-    "yauzl": "3.2.0"
+    "yauzl": "3.2.1"
   }
 }

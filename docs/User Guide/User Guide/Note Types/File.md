@@ -16,7 +16,7 @@ See <a class="reference-link" href="File/PDFs.md">PDFs</a>.
 
 ### Images
 
-<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:879/766;" src="3_File_image.png" width="879" height="766"></figure>
+<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:879/766;" src="2_File_image.png" width="879" height="766"></figure>
 
 Interaction:
 
@@ -26,16 +26,11 @@ Interaction:
 
 ### Videos
 
-<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:854/700;" src="File_image.png" width="854" height="700"></figure>
-
-Video files can be added in as well. The file is streamed directly, so when accessing the note from a server it doesn't have to download the entire video to start playing it.
-
-> [!CAUTION]
-> Although Trilium offers support for videos, it is generally not meant to be used with very large files. Uploading large videos will cause the <a class="reference-link" href="../Advanced%20Usage/Database.md">Database</a> to balloon as well as the any <a class="reference-link" href="../Installation%20%26%20Setup/Backup.md">Backup</a> of it. In addition to that, there might be slowdowns when first uploading the files. Otherwise, a large database should not impact the general performance of Trilium significantly.
+See <a class="reference-link" href="File/Videos.md">Videos</a>.
 
 ### Audio
 
-<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:850/243;" src="2_File_image.png" width="850" height="243"></figure>
+<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:850/243;" src="1_File_image.png" width="850" height="243"></figure>
 
 Adding a supported audio file will reveal a basic audio player that can be used to play it.
 
@@ -48,7 +43,7 @@ Interactions:
 
 ### Text files
 
-<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:926/347;" src="1_File_image.png" width="926" height="347"></figure>
+<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:926/347;" src="File_image.png" width="926" height="347"></figure>
 
 Files that are identified as containing text will show a preview of their content. One common use case for this type of file is to embed text files whose content is not necessarily of interest to the user, such as third-party libraries or generated content, that can then be downloaded if needed.
 
@@ -58,7 +53,7 @@ Since one of the use cases for having files instead of notes is to display large
 
 ### Unknown file types
 
-<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:532/240;" src="4_File_image.png" width="532" height="240"></figure>
+<figure class="image image-style-align-center image_resized" style="width:50%;"><img style="aspect-ratio:532/240;" src="3_File_image.png" width="532" height="240"></figure>
 
 If the file could not be identified as any of the supported file types from above, it will be treated as an unknown file. In this case, all the default interactions will be available such as downloading or opening the file externally, but there will be no preview of the content.
 
@@ -75,6 +70,6 @@ If the file could not be identified as any of the supported file types from abov
 
 *   Files are also displayed in the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/Notes/Note%20List.md">Note List</a> based on their type:
     
-    <img class="image_resized" style="aspect-ratio:853/315;width:50%;" src="5_File_image.png" width="853" height="315">
+    <img class="image_resized" style="aspect-ratio:853/315;width:50%;" src="4_File_image.png" width="853" height="315">
 *   Non-image files can be embedded into text notes as read-only widgets via the <a class="reference-link" href="Text/Include%20Note.md">Include Note</a> functionality.
 *   Image files can be embedded into text notes like normal images via <a class="reference-link" href="Text/Images/Image%20references.md">Image references</a>.

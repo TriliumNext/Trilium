@@ -73,7 +73,7 @@
     "tslib": "2.8.1",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.56.1",
+    "typescript-eslint": "8.57.0",
     "upath": "2.0.1",
     "vite": "7.3.1",
     "vite-plugin-dts": "4.5.4",
@@ -93,7 +93,7 @@
     "url": "https://github.com/TriliumNext/Trilium/issues"
   },
   "homepage": "https://triliumnotes.org",
-  "packageManager": "pnpm@10.31.0",
+  "packageManager": "pnpm@10.32.0",
   "pnpm": {
     "patchedDependencies": {
       "@ckeditor/ckeditor5-mention": "patches/@ckeditor__ckeditor5-mention.patch",
@@ -101,7 +101,7 @@
     },
     "overrides": {
       "mermaid": "11.12.3",
-      "preact": "10.28.4",
+      "preact": "10.29.0",
       "roughjs": "4.6.6",
       "@types/express-serve-static-core": "5.1.1",
       "flat@<5.0.1": ">=5.0.1",

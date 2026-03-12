@@ -229,9 +229,9 @@ You can open Trilium and automatically trigger a search by including the search 
 
 | Parameter | Value | Description |
 | --- | --- | --- |
-| MIN\_FUZZY\_TOKEN\_LENGTH | 3   | Minimum characters for fuzzy matching |
-| MAX\_EDIT\_DISTANCE | 2   | Maximum character changes allowed |
-| RESULT\_SUFFICIENCY\_THRESHOLD | 5   | Minimum exact results before fuzzy fallback |
+| MIN\_FUZZY\_TOKEN\_LENGTH | 3 | Minimum characters for fuzzy matching |
+| MAX\_EDIT\_DISTANCE | 2 | Maximum character changes allowed |
+| RESULT\_SUFFICIENCY\_THRESHOLD | 5 | Minimum exact results before fuzzy fallback |
 | MAX\_CONTENT\_SIZE | 10MB | Maximum note content size for search processing |
 
 ### Limits

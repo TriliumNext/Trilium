@@ -1,6 +1,6 @@
 import "./TableOfContents.css";
 
-import { CKTextEditor, ModelElement } from "@triliumnext/ckeditor5";
+import { attributeChangeAffectsHeading, CKTextEditor, ModelElement } from "@triliumnext/ckeditor5";
 import clsx from "clsx";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
@@ -170,11 +170,14 @@ function EditableTextTableOfContents() {
 
             const affectsHeadings = changes.some( change => {
                 return (
-                    change.type === 'insert' || change.type === 'remove' || (change.type === 'attribute' && change.attributeKey === 'headingLevel')
+                    change.type === 'insert' || change.type === 'remove' ||
+                    (change.type === 'attribute' && attributeChangeAffectsHeading(change, textEditor))
                 );
             });
             if (affectsHeadings) {
-                setHeadings(extractTocFromTextEditor(textEditor));
+                requestAnimationFrame(() => {
+                    setHeadings(extractTocFromTextEditor(textEditor));
+                });
             }
         };
 

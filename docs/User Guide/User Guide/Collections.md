@@ -3,7 +3,7 @@ Collections are a unique type of note that don't have content, but instead displ
 
 ## Main collections
 
-|     |     |
+|  |  |
 | --- | --- |
 | <figure class="image"><img style="aspect-ratio:1651/810;" src="Collections_collection_ca.webp" width="1651" height="810"></figure> | <a class="reference-link" href="Collections/Calendar.md">Calendar</a>   <br>which displays a week, month or year calendar with the notes being shown as events. New events can be added easily by dragging across the calendar. |
 | <figure class="image"><img style="aspect-ratio:1643/647;" src="Collections_collection_ta.webp" width="1643" height="647"></figure> | <a class="reference-link" href="Collections/Table.md">Table</a>   <br>displays each note as a row in a table, with <a class="reference-link" href="Advanced%20Usage/Attributes/Promoted%20Attributes.md">Promoted Attributes</a> being shown as well. This makes it easy to visualize attributes of notes, as well as making them easily editable. |

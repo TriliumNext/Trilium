@@ -41,7 +41,9 @@ export default function NoteDetail() {
     const hasFixedTree = note && noteContext?.hoistedNoteId === "_lbMobileRoot" && isMobile() && note.noteId.startsWith("_lbMobile");
 
     // Defer loading for tabs that haven't been active yet (e.g. on app refresh).
-    const [ hasTabBeenActive, setHasTabBeenActive ] = useState(() => noteContext?.isActive() ?? false);
+    // Special contexts (ntxId starting with "_", e.g. popup editor) are always considered active.
+    const isSpecialContext = ntxId?.startsWith("_") ?? false;
+    const [ hasTabBeenActive, setHasTabBeenActive ] = useState(() => isSpecialContext || (noteContext?.isActive() ?? false));
     useEffect(() => {
         if (!hasTabBeenActive && noteContext?.isActive()) {
             setHasTabBeenActive(true);

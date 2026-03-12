@@ -50,7 +50,9 @@
         "canvas_description": "Розташовуйте фігури, зображення та текст на нескінченному полотні, використовуючи ту саму технологію, що й excalidraw.com. Ідеально підходить для діаграм, ескізів та візуального планування.",
         "mermaid_description": "Створюйте діаграми, такі як блок-схеми, діаграми класів та послідовностей, діаграми Ганта та багато іншого, використовуючи синтаксис Mermaid.",
         "others_list": "та інші: <0>карта нотаток</0>, <1>карта зв'язків</1>, <2>збережені пошуки</2>, <3>візуалізація нотаток</3> та <4>веб-перегляди</4>.",
-        "mermaid_title": "Mermaid діаграми"
+        "mermaid_title": "Mermaid діаграми",
+        "mindmap_title": "Карта думок",
+        "mindmap_description": "Візуально упорядкуйте свої думки або проведіть мозковий штурм."
     },
     "extensibility_benefits": {
         "title": "Спільне використання та розширюваність",
@@ -59,7 +61,9 @@
         "share_title": "Діліться нотатками в Інтернеті",
         "share_description": "Якщо у Вас є сервер, Ви можете використати його, щоб поділитися частиною своїх нотаток з іншими людьми.",
         "api_title": "REST API",
-        "api_description": "Взаємодійте з Trilium програмно, використовуючи його вбудований REST API."
+        "api_description": "Взаємодійте з Trilium програмно, використовуючи його вбудований REST API.",
+        "scripting_title": "Розширений скриптинг",
+        "scripting_description": "Створюйте власні інтеграції в Trilium за допомогою користувацьких віджетів або серверної логіки."
     },
     "collections": {
         "title": "Колекції",
@@ -108,7 +112,8 @@
     "header": {
         "get-started": "Почати",
         "documentation": "Документація",
-        "support-us": "Підтримайте нас"
+        "support-us": "Підтримайте нас",
+        "resources": "Ресурси"
     },
     "footer": {
         "copyright_and_the": " і ",
@@ -148,7 +153,8 @@
         "description_arm64": "Сумісний з пристроями ARM (наприклад, з Qualcomm Snapdragon).",
         "quick_start": "Щоб встановити через Winget:",
         "download_exe": "Завантажити інсталятор (.exe)",
-        "download_zip": "Портативний (.zip)"
+        "download_zip": "Портативний (.zip)",
+        "download_scoop": "Scoop"
     },
     "download_helper_desktop_linux": {
         "title_x64": "Linux 64-bit",
@@ -159,23 +165,44 @@
         "download_deb": ".deb",
         "download_rpm": ".rpm",
         "download_flatpak": ".flatpak",
-        "download_nixpkgs": "nixpkgs"
+        "download_nixpkgs": "nixpkgs",
+        "download_zip": "Portable (.zip)",
+        "download_aur": "AUR"
     },
     "download_helper_desktop_macos": {
         "title_x64": "macOS для Intel",
         "title_arm64": "macOS для Apple Silicon",
         "quick_start": "Для того, щоб встановити за допомогою Homebrew:",
-        "download_homebrew_cask": "Homebrew Cask"
+        "download_homebrew_cask": "Homebrew Cask",
+        "description_x64": "Для комп’ютерів Mac на базі Intel з macOS Monterey або пізнішої версії.",
+        "description_arm64": "Для комп'ютерів Apple Silicon Mac, таких як ті, що мають чіпи M1 та M2.",
+        "download_dmg": "Завантажити інсталятор (.dmg)",
+        "download_zip": "Portable (.zip)"
     },
     "download_helper_server_docker": {
         "download_dockerhub": "Docker Hub",
-        "download_ghcr": "ghcr.io"
+        "download_ghcr": "ghcr.io",
+        "title": "Self-hosted using Docker",
+        "description": "Легке розгортання на Windows, Linux або macOS за допомогою контейнера Docker."
     },
     "download_helper_server_linux": {
         "download_tar_x64": "x64 (.tar.xz)",
-        "download_tar_arm64": "ARM (.tar.xz)"
+        "download_tar_arm64": "ARM (.tar.xz)",
+        "title": "Self-hosted on Linux",
+        "description": "Розгорніть Trilium Notes на власному сервері або VPS, сумісному з більшістю дистрибутивів.",
+        "download_nixos": "NixOS module"
     },
     "download_helper_server_hosted": {
-        "title": "Платний хостинг"
+        "title": "Платний хостинг",
+        "description": "Нотатки Trilium розміщені на PikaPods, платному сервісі для легкого доступу та керування. Не пов'язаний безпосередньо з командою Trilium.",
+        "download_pikapod": "Налаштування на PikaPods",
+        "download_triliumcc": "Або див. trilium.cc"
+    },
+    "resources": {
+        "title": "Ресурси",
+        "icon_packs": "Пакети піктограм",
+        "icon_packs_intro": "Розширте вибір доступних піктограм для ваших нотаток за допомогою пакету піктограм. Щоб отримати докладнішу інформацію про пакети піктограм, див. <DocumentationLink>офіційну документацію</DocumentationLink>.",
+        "download": "Завантажити",
+        "website": "Вебсайт"
     }
 }
