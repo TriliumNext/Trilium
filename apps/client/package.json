@@ -37,7 +37,7 @@
     "@triliumnext/split.js": "workspace:*",
     "@univerjs/preset-sheets-conditional-formatting": "0.16.1",
     "@univerjs/preset-sheets-core": "0.16.1",
-    "@univerjs/preset-sheets-data-validation": "0.16.1",
+    "@univerjs/preset-sheets-data-validation": "0.17.0",
     "@univerjs/preset-sheets-filter": "0.16.1",
     "@univerjs/preset-sheets-find-replace": "0.16.1",
     "@univerjs/preset-sheets-note": "0.16.1",
