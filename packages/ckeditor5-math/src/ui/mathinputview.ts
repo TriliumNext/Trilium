@@ -4,18 +4,6 @@ import { View, type Locale, type FocusableView } from 'ckeditor5';
 import 'mathlive/fonts.css'; // Auto-bundles offline fonts
 import 'mathlive/static.css'; // Static styles for mathlive
 
-declare global {
-	interface Window {
-		mathVirtualKeyboard?: {
-			visible: boolean;
-			show: () => void;
-			hide: () => void;
-			addEventListener: ( event: string, cb: () => void ) => void;
-			removeEventListener: ( event: string, cb: () => void ) => void;
-		};
-	}
-}
-
 interface MathFieldElement extends HTMLElement {
 	value: string;
 	readOnly: boolean;
@@ -142,7 +130,7 @@ export default class MathInputView extends View {
 		} );
 
 		// Handle virtual keyboard geometry changes
-		const vk = window.mathVirtualKeyboard;
+		const vk = (window as any).mathVirtualKeyboard;
 		if ( vk && !this._vkGeometryHandler ) {
 			this._vkGeometryHandler = () => {
 				if ( vk.visible && this.mathfield ) {
@@ -259,7 +247,7 @@ export default class MathInputView extends View {
 	}
 
 	public hideKeyboard(): void {
-		window.mathVirtualKeyboard?.hide();
+		(window as any).mathVirtualKeyboard?.hide();
 	}
 
 	public focus(): void {
@@ -272,7 +260,7 @@ export default class MathInputView extends View {
 
 	public override destroy(): void {
 		this._destroyed = true;
-		const vk = window.mathVirtualKeyboard;
+		const vk = (window as any).mathVirtualKeyboard;
 		if ( vk && this._vkGeometryHandler ) {
 			vk.removeEventListener( 'geometrychange', this._vkGeometryHandler );
 			this._vkGeometryHandler = undefined;

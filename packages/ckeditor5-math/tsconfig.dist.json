@@ -4,6 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "rootDir": "./src",
+    "outDir": "./dist",
 	"composite": false,
     "types": [
       "../typings/types.d.ts"
