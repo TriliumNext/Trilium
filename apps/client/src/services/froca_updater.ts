@@ -110,7 +110,12 @@ function processNoteChange(loadResults: LoadResults, ec: EntityChange) {
                 }
             }
 
-            if (ec.componentId) {
+            // Only register as a content change if the protection status didn't change.
+            // When isProtected changes, the blobId change is a side effect of re-encryption,
+            // not a content edit. Registering it as content would cause the tree's content-only
+            // filter to incorrectly skip the note update (since both changes share the same
+            // componentId).
+            if (ec.componentId && note.isProtected === (ec.entity as FNoteRow).isProtected) {
                 loadResults.addNoteContent(note.noteId, ec.componentId);
             }
         }

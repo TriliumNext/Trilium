@@ -2198,5 +2198,12 @@
   },
   "setup_form": {
     "more_info": "Para saber más"
+  },
+  "media": {
+    "play": "Reproducir (Espacio)",
+    "pause": "Pausa (Espacio)",
+    "back-10s": "Retroceder 10s (tecla de flecha izquierda)",
+    "forward-30s": "Adelantar 30s",
+    "mute": "Silenciar (M)"
   }
 }

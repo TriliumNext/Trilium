@@ -15,7 +15,7 @@
     "test": "vitest"
   },
   "dependencies": {
-    "dayjs": "1.11.19",
+    "dayjs": "1.11.20",
     "dayjs-plugin-utc": "0.1.2"
   }
 }
