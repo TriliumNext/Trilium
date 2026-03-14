@@ -29,7 +29,7 @@
     "@typescript-eslint/parser": "8.57.0",
     "@vitest/browser": "4.1.0",
     "@vitest/coverage-istanbul": "4.1.0",
-    "ckeditor5": "47.4.0",
+    "ckeditor5": "47.6.0",
     "eslint": "10.0.3",
     "eslint-config-ckeditor5": ">=9.1.0",
     "http-server": "14.1.1",
@@ -43,7 +43,7 @@
     "webdriverio": "9.25.0"
   },
   "peerDependencies": {
-    "ckeditor5": "47.4.0"
+    "ckeditor5": "47.6.0"
   },
   "scripts": {
     "build": "node ./scripts/build-dist.mjs",
