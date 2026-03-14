@@ -7,7 +7,7 @@
     "colors": "1.4.0",
     "diff": "8.0.3",
     "sqlite": "5.1.1",
-    "sqlite3": "5.1.7"
+    "sqlite3": "6.0.1"
   },
   "scripts": {
     "dev": "tsx src/compare.ts",

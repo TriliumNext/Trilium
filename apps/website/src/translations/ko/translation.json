@@ -197,5 +197,12 @@
         "description": "Trilium Notes는 간편한 접근 및 관리를 위해 유료 서비스인 PikaPods에서 호스팅할 수 있습니다. Trilium 팀과 직접 제휴되어있지는 않습니다.",
         "download_pikapod": "PikaPods에서 설치하기",
         "download_triliumcc": "또는 trilium.cc를 참조하세요"
+    },
+    "resources": {
+        "title": "리소스",
+        "icon_packs": "아이콘 팩",
+        "icon_packs_intro": "아이콘 팩을 사용하여 노트에 사용할 수 있는 아이콘 종류를 늘려보세요. 아이콘 팩에 대한 자세한 내용은 <DocumentationLink>공식 문서</DocumentationLink>를 참조하세요.",
+        "download": "다운로드",
+        "website": "웹사이트"
     }
 }

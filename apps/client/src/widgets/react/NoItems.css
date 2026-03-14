@@ -8,6 +8,7 @@
     color: var(--muted-text-color);
     height: 100%;
     text-align: center;
+    white-space: pre-line;
 
     .tn-icon {
         font-size: 4em;

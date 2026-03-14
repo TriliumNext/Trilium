@@ -2,7 +2,7 @@
     width: 100%;
     height: 100%;
     position: relative;
-    background-color: black;
+    background-color: black;    
 
     .video-preview {
         background-color: black;
@@ -13,102 +13,23 @@
     &.controls-hidden {
         cursor: pointer;
 
-        .video-preview-controls {
+        .media-preview-controls {
             opacity: 0;
             pointer-events: none;
         }
     }
 
-    .video-preview-controls {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        padding: 1.25em;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5em;
-        background: rgba(0, 0, 0, 0.5);
-        color: white;
+    .media-preview-controls {
         --icon-button-hover-color: white;
         --icon-button-hover-background: rgba(255, 255, 255, 0.2);
         opacity: 1;
         transition: opacity 300ms ease;
-
-        .video-buttons-row {
-            display: flex;
-
-            > * {
-                flex: 1;
-                align-items: center;
-                gap: 0.5em;
-                display: flex;
-            }
-
-            .spacer {
-                width: var(--icon-button-size, 32px);
-                height: var(--icon-button-size, 32px);
-            }
-
-            .center {
-                justify-content: center;
-            }
-
-            .right {
-                display: flex;
-                justify-content: flex-end;
-            }
-
-            .play-button {
-                --icon-button-size: 48px;
-            }
-        }
-    }
-
-    .video-seekbar-row {
-        display: flex;
-        align-items: center;
-        gap: 0.5em;
-    }
-
-    .video-trackbar {
-        flex: 1;
-        cursor: pointer;
-    }
-
-    .video-time {
-        font-size: 0.85em;
-        font-variant-numeric: tabular-nums;
-        white-space: nowrap;
-    }
-
-    .video-volume-row {
-        display: flex;
-        align-items: center;
-        gap: 0.25em;
-    }
-
-    .video-volume-slider {
-        width: 80px;
-        cursor: pointer;
-    }
-
-    .speed-dropdown {
-        position: relative;
-
-        .tn-icon {
-            transform: translateY(-10%);
-        }
-
-        .video-speed-label {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            transform: translateY(15%);
-            text-align: center;
-            font-size: 0.6rem;
-            font-variant-numeric: tabular-nums;
-        }
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(6px);
+        color: white;
     }
 }

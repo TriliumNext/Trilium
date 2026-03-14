@@ -803,12 +803,13 @@
     "web-view": "عرض الويب",
     "mind-map": "خريطة ذهنية",
     "geo-map": "خريطة جغرافية",
-    "task-list": "قائمة المهام"
+    "task-list": "قائمة المهام",
+    "spreadsheet": "جدول البيانات"
   },
   "shared_switch": {
     "shared": "مشترك",
     "toggle-on-title": "مشاركة الملاحظة",
-    "toggle-off-title": "الغاء مشاركة الملاحظة"
+    "toggle-off-title": "إلغاء مشاركة الملاحظة"
   },
   "template_switch": {
     "template": "قالب"
@@ -1286,8 +1287,10 @@
     "search-for": "بحث ل \"{{term}}\""
   },
   "protect_note": {
-    "toggle-off": "ازالة الحماية عن الملاحظة",
-    "toggle-on": "حماية الملاحظة"
+    "toggle-off": "إزالة الحماية عن الملاحظة",
+    "toggle-on": "حماية الملاحظة",
+    "toggle-on-hint": "الملاحظة غير محمة، انقر لحمايتها",
+    "toggle-off-hint": "الملاحظة محمية، انقر لإزالة الحماية منها"
   },
   "open-help-page": "فتح صفحة المساعدة",
   "empty": {

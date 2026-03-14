@@ -4,7 +4,14 @@
 
 <figure class="image image-style-align-center"><img style="aspect-ratio:886/663;" src="2_Mermaid Diagrams_image.png" width="886" height="663"></figure>
 
+## Types of diagrams
+
 Trilium supports Mermaid, which adds support for various diagrams such as flowchart, sequence diagram, class diagram, state diagram, pie charts, etc., all using a text description of the chart instead of manually drawing the diagram.
+
+Starting with v0.103.0, Mermaid diagrams no longer start with a sample flowchart, but instead a pane at the bottom will show all the supported diagrams with sample code for each:
+
+*   Simply click on any of the samples to apply it.
+*   The pane will disappear as soon as something is typed in the code editor or a sample is selected. To make it appear again, simply remove the content of the note.
 
 ## Layouts
 

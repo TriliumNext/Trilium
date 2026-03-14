@@ -7,9 +7,9 @@ import { setupPdfLayers } from "./layers";
 async function main() {
     const urlParams = new URLSearchParams(window.location.search);
     const isEditable = urlParams.get("editable") === "1";
-    
+
     document.body.classList.toggle("read-only-document", !isEditable);
-    
+
     if (urlParams.get("sidebar") === "0") {
         hideSidebar();
     }
@@ -89,7 +89,7 @@ function manageSave() {
         }
     });
 
-    app.pdfDocument.annotationStorage.onSetModified = () => {
+    (app.pdfDocument.annotationStorage as any).onSetModified = () => {
         onChange();
     };  // works great for most cases, including forms.
     app.eventBus.on("switchannotationeditorparams", () => {

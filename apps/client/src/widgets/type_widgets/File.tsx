@@ -1,10 +1,9 @@
 import "./File.css";
 
-import FNote from "../../entities/fnote";
 import { t } from "../../services/i18n";
-import { getUrlForDownload } from "../../services/open";
 import Alert from "../react/Alert";
 import { useNoteBlob } from "../react/hooks";
+import AudioPreview from "./file/Audio";
 import PdfPreview from "./file/Pdf";
 import VideoPreview from "./file/Video";
 import { TypeWidgetProps } from "./type_widget";
@@ -40,16 +39,6 @@ function TextPreview({ content }: { content: string }) {
             )}
             <pre class="file-preview-content">{trimmedContent}</pre>
         </>
-    );
-}
-
-function AudioPreview({ note }: { note: FNote }) {
-    return (
-        <audio
-            class="audio-preview"
-            src={getUrlForDownload(`api/notes/${note.noteId}/open-partial`)}
-            controls
-        />
     );
 }
 

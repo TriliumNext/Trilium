@@ -1,15 +1,17 @@
+import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import { AttributeRow } from "@triliumnext/commons";
+
 import appContext from "../components/app_context.js";
+import type FBranch from "../entities/fbranch.js";
+import type FNote from "../entities/fnote.js";
+import type { ChooseNoteTypeResponse } from "../widgets/dialogs/note_type_chooser.js";
+import froca from "./froca.js";
+import { t } from "./i18n.js";
 import protectedSessionHolder from "./protected_session_holder.js";
 import server from "./server.js";
-import ws from "./ws.js";
-import froca from "./froca.js";
-import treeService from "./tree.js";
 import toastService from "./toast.js";
-import { t } from "./i18n.js";
-import type FNote from "../entities/fnote.js";
-import type FBranch from "../entities/fbranch.js";
-import type { ChooseNoteTypeResponse } from "../widgets/dialogs/note_type_chooser.js";
-import type { CKTextEditor } from "@triliumnext/ckeditor5";
+import treeService from "./tree.js";
+import ws from "./ws.js";
 
 export interface CreateNoteOpts {
     isProtected?: boolean;
@@ -24,6 +26,8 @@ export interface CreateNoteOpts {
     target?: string;
     targetBranchId?: string;
     textEditor?: CKTextEditor;
+    /** Attributes to be set on the note. These are set atomically on note creation, so entity changes are not sent for attributes defined here. */
+    attributes?: Omit<AttributeRow, "noteId" | "attributeId">[];
 }
 
 interface Response {
@@ -37,7 +41,7 @@ interface DuplicateResponse {
     note: FNote;
 }
 
-async function createNote(parentNotePath: string | undefined, options: CreateNoteOpts = {}) {
+async function createNote(parentNotePath: string | undefined, options: CreateNoteOpts = {}, componentId?: string) {
     options = Object.assign(
         {
             activate: true,
@@ -63,22 +67,15 @@ async function createNote(parentNotePath: string | undefined, options: CreateNot
 
     const parentNoteId = treeService.getNoteIdFromUrl(parentNotePath);
 
-    if (options.type === "mermaid" && !options.content && !options.templateNoteId) {
-        options.content = `graph TD;
-    A-->B;
-    A-->C;
-    B-->D;
-    C-->D;`;
-    }
-
     const { note, branch } = await server.post<Response>(`notes/${parentNoteId}/children?target=${options.target}&targetBranchId=${options.targetBranchId || ""}`, {
         title: options.title,
         content: options.content || "",
         isProtected: options.isProtected,
         type: options.type,
         mime: options.mime,
-        templateNoteId: options.templateNoteId
-    });
+        templateNoteId: options.templateNoteId,
+        attributes: options.attributes
+    }, componentId);
 
     if (options.saveSelection) {
         // we remove the selection only after it was saved to server to make sure we don't lose anything
@@ -140,9 +137,8 @@ function parseSelectedHtml(selectedHtml: string) {
         const content = selectedHtml.replace(dom[0].outerHTML, "");
 
         return [title, content];
-    } else {
-        return [null, selectedHtml];
     }
+    return [null, selectedHtml];
 }
 
 async function duplicateSubtree(noteId: string, parentNotePath: string) {

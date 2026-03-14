@@ -21,14 +21,14 @@
     "ckeditor5-metadata.json"
   ],
   "devDependencies": {
-    "@ckeditor/ckeditor5-dev-build-tools": "54.3.3",
+    "@ckeditor/ckeditor5-dev-build-tools": "55.0.0",
     "@ckeditor/ckeditor5-inspector": ">=4.1.0",
-    "@ckeditor/ckeditor5-package-tools": "5.0.1",
+    "@ckeditor/ckeditor5-package-tools": "5.1.0",
     "@typescript-eslint/eslint-plugin": "8.57.0",
     "@typescript-eslint/parser": "8.57.0",
-    "@vitest/browser": "4.0.18",
-    "@vitest/coverage-istanbul": "4.0.18",
-    "ckeditor5": "47.4.0",
+    "@vitest/browser": "4.1.0",
+    "@vitest/coverage-istanbul": "4.1.0",
+    "ckeditor5": "47.6.1",
     "eslint": "10.0.3",
     "eslint-config-ckeditor5": ">=9.1.0",
     "http-server": "14.1.1",
@@ -38,11 +38,11 @@
     "ts-node": "10.9.2",
     "typescript": "5.9.3",
     "vite-plugin-svgo": "2.0.0",
-    "vitest": "4.0.18",
+    "vitest": "4.1.0",
     "webdriverio": "9.25.0"
   },
   "peerDependencies": {
-    "ckeditor5": "47.4.0"
+    "ckeditor5": "47.6.1"
   },
   "author": "Elian Doran <contact@eliandoran.me>",
   "license": "GPL-2.0-or-later",

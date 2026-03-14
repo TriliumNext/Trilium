@@ -83,7 +83,7 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
             return true;
         }
 
-        if (note.type === "file" && (note.mime === "application/pdf" || note.mime.startsWith("video/"))) {
+        if (note.type === "file" && (note.mime === "application/pdf" || note.mime.startsWith("video/") || note.mime.startsWith("audio/"))) {
             return true;
         }
 
@@ -108,7 +108,7 @@ export default class NoteWrapperWidget extends FlexContainer<BasicWidget> {
             return true;
         }
 
-        if (note.type === "file" && MIME_TYPES_WITH_BACKGROUND_EFFECTS.includes(note.mime)) {
+        if (note.type === "file" && (MIME_TYPES_WITH_BACKGROUND_EFFECTS.includes(note.mime) || note.mime.startsWith("audio/"))) {
             return true;
         }
 

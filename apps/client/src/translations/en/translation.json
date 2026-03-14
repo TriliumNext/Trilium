@@ -1036,7 +1036,7 @@
     "file_preview_not_available": "File preview is not available for this file format.",
     "too_big": "The preview only shows the first {{maxNumChars}} characters of the file for performance reasons. Download the file and open it externally to be able to see the entire content."
   },
-  "video": {
+  "media": {
     "play": "Play (Space)",
     "pause": "Pause (Space)",
     "back-10s": "Back 10s (Left arrow key)",
@@ -1051,7 +1051,7 @@
     "exit-picture-in-picture": "Exit picture-in-picture",
     "fullscreen": "Fullscreen (F)",
     "exit-fullscreen": "Exit fullscreen",
-    "unsupported-format": "Video preview is not available for this file format.",
+    "unsupported-format": "Media preview is not available for this file format:\n{{mime}}",
     "zoom-to-fit": "Zoom to fill",
     "zoom-reset": "Reset zoom to fill"
   },
@@ -2202,5 +2202,33 @@
   },
   "setup_form": {
     "more_info": "Learn more"
+  },
+  "mermaid": {
+    "placeholder": "Type the content of your Mermaid diagram or use one of the sample diagrams below.",
+    "sample_diagrams": "Sample diagrams:",
+    "sample_flowchart": "Flowchart",
+    "sample_class": "Class",
+    "sample_sequence": "Sequence",
+    "sample_entity_relationship": "Entity Relationship",
+    "sample_state": "State",
+    "sample_mindmap": "Mindmap",
+    "sample_architecture": "Architecture",
+    "sample_block": "Block",
+    "sample_c4": "C4",
+    "sample_gantt": "Gantt",
+    "sample_git": "Git",
+    "sample_kanban": "Kanban",
+    "sample_packet": "Packet",
+    "sample_pie": "Pie",
+    "sample_quadrant": "Quadrant",
+    "sample_radar": "Radar",
+    "sample_requirement": "Requirement",
+    "sample_sankey": "Sankey",
+    "sample_timeline": "Timeline",
+    "sample_treemap": "Treemap",
+    "sample_user_journey": "User Journey",
+    "sample_xy": "XY",
+    "sample_venn": "Venn",
+    "sample_ishikawa": "Ishikawa"
   }
 }
