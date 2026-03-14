@@ -1,6 +1,8 @@
 import "jquery";
-import utils from "./services/utils.js";
+
 import ko from "knockout";
+
+import utils from "./services/utils.js";
 
 // TriliumNextTODO: properly make use of below types
 // type SetupModelSetupType = "new-document" | "sync-from-desktop" | "sync-from-server" | "";
@@ -74,9 +76,9 @@ class SetupModel {
 
         // not using server.js because it loads too many dependencies
         const resp = await $.post("api/setup/sync-from-server", {
-            syncServerHost: syncServerHost,
-            syncProxy: syncProxy,
-            password: password
+            syncServerHost,
+            syncProxy,
+            password
         });
 
         if (resp.result === "success") {
@@ -123,6 +125,8 @@ function getSyncInProgress() {
 }
 
 addEventListener("DOMContentLoaded", (event) => {
-    ko.applyBindings(new SetupModel(getSyncInProgress()), document.getElementById("setup-dialog"));
+    const rootNode = document.getElementById("setup-dialog");
+    if (!rootNode) return;
+    ko.applyBindings(new SetupModel(getSyncInProgress()), rootNode);
     $("#setup-dialog").show();
 });

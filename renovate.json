@@ -31,7 +31,7 @@
     },
     "packageRules": [
         {
-            "matchPackageNames": "@fsegurai/codemirror-theme-**",
+            "matchPackageNames": ["@fsegurai/codemirror-theme-**", "@catppuccin/codemirror"],
             "groupName": "codemirror themes"
         },
         {
@@ -47,13 +47,8 @@
             "groupName": "ckeditor monorepo"
         },
         {
-            "matchPackageNames": [
-                "@sveltejs/**",
-                "svelte",
-                "svelte-check",
-                "eslint-plugin-svelte"
-            ],
-            "groupName": "svelte monorepo"
+            "matchPackageNames": "@univerjs/**",
+            "groupName": "univer monorepo"
         }
     ]
 }

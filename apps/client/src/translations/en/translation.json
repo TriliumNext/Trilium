@@ -2204,5 +2204,33 @@
   },
   "setup_form": {
     "more_info": "Learn more"
+  },
+  "mermaid": {
+    "placeholder": "Type the content of your Mermaid diagram or use one of the sample diagrams below.",
+    "sample_diagrams": "Sample diagrams:",
+    "sample_flowchart": "Flowchart",
+    "sample_class": "Class",
+    "sample_sequence": "Sequence",
+    "sample_entity_relationship": "Entity Relationship",
+    "sample_state": "State",
+    "sample_mindmap": "Mindmap",
+    "sample_architecture": "Architecture",
+    "sample_block": "Block",
+    "sample_c4": "C4",
+    "sample_gantt": "Gantt",
+    "sample_git": "Git",
+    "sample_kanban": "Kanban",
+    "sample_packet": "Packet",
+    "sample_pie": "Pie",
+    "sample_quadrant": "Quadrant",
+    "sample_radar": "Radar",
+    "sample_requirement": "Requirement",
+    "sample_sankey": "Sankey",
+    "sample_timeline": "Timeline",
+    "sample_treemap": "Treemap",
+    "sample_user_journey": "User Journey",
+    "sample_xy": "XY",
+    "sample_venn": "Venn",
+    "sample_ishikawa": "Ishikawa"
   }
 }

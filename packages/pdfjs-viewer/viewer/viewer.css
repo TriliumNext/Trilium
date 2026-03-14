@@ -3344,6 +3344,7 @@
   padding-bottom:16px;
   flex-direction:column;
   align-items:flex-start;
+  overflow-y:visible;
 }
 
 #editorCommentsSidebar #editorCommentsSidebarHeader{
@@ -5293,19 +5294,6 @@
       gap:12px;
     }
 
-:is(:is(#altTextSettingsDialog #altTextSettingsContainer) #aiModelSettings) button{
-        width:-moz-fit-content;
-        width:fit-content;
-      }
-
-.download:is(:is(#altTextSettingsDialog #altTextSettingsContainer) #aiModelSettings) #deleteModelButton{
-          display:none;
-        }
-
-:is(:is(#altTextSettingsDialog #altTextSettingsContainer) #aiModelSettings):not(.download) #downloadModelButton{
-          display:none;
-        }
-
 :is(#altTextSettingsDialog #altTextSettingsContainer) #automaticAltText,:is(#altTextSettingsDialog #altTextSettingsContainer) #altTextEditor{
       display:flex;
       flex-direction:column;
@@ -5642,7 +5630,7 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 .treeView.withNesting .treeItemToggler{
 
       position:relative;
-      float:var(--inline-start);
+      float:inline-start;
       height:0;
       width:0;
       color:rgb(255 255 255 / 0.5);
@@ -5720,7 +5708,7 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 
 #outerContainer.viewsManagerOpen #viewsManager{
       visibility:visible;
-      inset-inline-start:1px;
+      inset-inline-start:8px;
     }
 
 #outerContainer.viewsManagerOpen #viewerContainer:not(.pdfPresentationMode){
@@ -5747,13 +5735,14 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
   --pages-selected-icon:url(images/pages_selected.svg);
   --spinner-icon:url(images/altText_spinner.svg);
 
-  --csstools-light-dark-toggle--130:var(--csstools-color-scheme--light) rgb(35 34 43 / 0.92);
+  --csstools-light-dark-toggle--130:var(--csstools-color-scheme--light) rgb(66 65 77 / 0.92);
 
   --sidebar-bg-color:var(--csstools-light-dark-toggle--130, rgb(255 255 255 / 0.92));
   --sidebar-backdrop-filter:blur(7px);
   --sidebar-width:230px;
   --sidebar-min-width:min-content;
   --sidebar-max-width:50vw;
+  --sidebar-block-padding:8px;
 
   --csstools-light-dark-toggle--131:var(--csstools-color-scheme--light) #fbfbfe;
 
@@ -5791,42 +5780,50 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
   --csstools-light-dark-toggle--142:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
   --csstools-light-dark-toggle--143:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
   --header-shadow:0 0.25px 0.75px -0.75px var(--csstools-light-dark-toggle--142, rgb(0 0 0 / 0.05)), 0 2px 6px -6px var(--csstools-light-dark-toggle--143, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--144:var(--csstools-color-scheme--light) #42414e;
+  --header-bg:var(--csstools-light-dark-toggle--144, rgb(255 255 255 / 0.92));
   --image-outline:none;
   --image-border-width:6px;
-  --csstools-light-dark-toggle--144:var(--csstools-color-scheme--light) #3a3944;
-  --image-border-color:var(--csstools-light-dark-toggle--144, #cfcfd8);
+  --csstools-light-dark-toggle--145:var(--csstools-color-scheme--light) #3a3944;
+  --image-border-color:var(--csstools-light-dark-toggle--145, #cfcfd8);
   --image-hover-border-color:#bfbfc9;
   --image-current-border-color:var(--button-focus-outline-color);
   --image-current-focused-outline-color:var(--image-hover-border-color);
-  --csstools-light-dark-toggle--145:var(--csstools-color-scheme--light) #23222b;
-  --image-page-number-bg:var(--csstools-light-dark-toggle--145, #f0f0f4);
+  --csstools-light-dark-toggle--146:var(--csstools-color-scheme--light) #42414d;
+  --image-page-number-bg:var(--csstools-light-dark-toggle--146, #f0f0f4);
   --image-page-number-fg:var(--text-color);
+  --image-page-number-border-color:transparent;
+  --image-hover-page-number-bg:var(--image-page-number-bg);
+  --image-hover-page-number-fg:var(--image-page-number-fg);
   --image-current-page-number-bg:var(--image-current-border-color);
-  --csstools-light-dark-toggle--146:var(--csstools-color-scheme--light) #15141a;
-  --image-current-page-number-fg:var(--csstools-light-dark-toggle--146, #fff);
-  --csstools-light-dark-toggle--147:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
-  --csstools-light-dark-toggle--148:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
-  --image-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--147, rgb(0 0 0 / 0.05)), 0 0 0 1px var(--image-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--148, rgb(0 0 0 / 0.1));
-  --csstools-light-dark-toggle--149:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
-  --csstools-light-dark-toggle--150:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.1);
-  --csstools-light-dark-toggle--151:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
-  --image-hover-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--149, rgb(0 0 0 / 0.05)), 0 0 0 1px var(--csstools-light-dark-toggle--150, rgb(21 20 26 / 0.1)), 0 0 0 var(--image-border-width) var(--image-hover-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--151, rgb(0 0 0 / 0.1));
-  --csstools-light-dark-toggle--152:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
-  --csstools-light-dark-toggle--153:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
-  --image-current-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--152, rgb(0 0 0 / 0.05)), 0 0 0 var(--image-border-width) var(--image-current-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--153, rgb(0 0 0 / 0.1));
-  --csstools-light-dark-toggle--154:var(--csstools-color-scheme--light) rgb(0 202 219 / 0.08);
-  --image-dragging-placeholder-bg:var(--csstools-light-dark-toggle--154, rgb(0 98 250 / 0.08));
+  --csstools-light-dark-toggle--147:var(--csstools-color-scheme--light) #15141a;
+  --image-current-page-number-fg:var(--csstools-light-dark-toggle--147, #fff);
+  --image-current-hover-page-number-bg:var(--image-current-page-number-bg);
+  --image-current-hover-page-number-fg:var(--image-current-page-number-fg);
+  --csstools-light-dark-toggle--148:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
+  --csstools-light-dark-toggle--149:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
+  --image-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--148, rgb(0 0 0 / 0.05)), 0 0 0 1px var(--image-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--149, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--150:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
+  --csstools-light-dark-toggle--151:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.1);
+  --csstools-light-dark-toggle--152:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
+  --image-hover-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--150, rgb(0 0 0 / 0.05)), 0 0 0 1px var(--csstools-light-dark-toggle--151, rgb(21 20 26 / 0.1)), 0 0 0 var(--image-border-width) var(--image-hover-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--152, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--153:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
+  --csstools-light-dark-toggle--154:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
+  --image-current-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--153, rgb(0 0 0 / 0.05)), 0 0 0 var(--image-border-width) var(--image-current-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--154, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--155:var(--csstools-color-scheme--light) rgb(0 202 219 / 0.08);
+  --image-dragging-placeholder-bg:var(--csstools-light-dark-toggle--155, rgb(0 98 250 / 0.08));
   --multiple-dragging-bg:white;
   --image-multiple-dragging-shadow:0 0 0 var(--image-border-width) var(--image-current-border-color), var(--image-border-width) var(--image-border-width) 0 calc(var(--image-border-width) / 2) var(--multiple-dragging-bg), var(--image-border-width) var(--image-border-width) 0 calc(3 * var(--image-border-width) / 2) var(--image-current-border-color);
   --image-dragging-shadow:0 0 0 var(--image-border-width) var(--image-current-border-color);
-  --csstools-light-dark-toggle--155:var(--csstools-color-scheme--light) #15141a;
-  --multiple-dragging-text-color:var(--csstools-light-dark-toggle--155, #fbfbfe);
+  --multiple-dragging-indicator-bg:var(--indicator-color);
+  --csstools-light-dark-toggle--156:var(--csstools-color-scheme--light) #15141a;
+  --multiple-dragging-text-color:var(--csstools-light-dark-toggle--156, #fbfbfe);
 }
 
 @supports (color: light-dark(red, red)) and (color: rgb(0 0 0 / 0)){
 #viewsManager{
 
-  --sidebar-bg-color:light-dark(rgb(255 255 255 / 0.92), rgb(35 34 43 / 0.92));
+  --sidebar-bg-color:light-dark(rgb(255 255 255 / 0.92), rgb(66 65 77 / 0.92));
 }
 }
 
@@ -5873,13 +5870,14 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 @supports (color: light-dark(red, red)) and (color: rgb(0 0 0 / 0)){
 #viewsManager{
   --header-shadow:0 0.25px 0.75px -0.75px light-dark(rgb(0 0 0 / 0.05), rgb(0 0 0 / 0.2)), 0 2px 6px -6px light-dark(rgb(0 0 0 / 0.1), rgb(0 0 0 / 0.4));
+  --header-bg:light-dark(rgb(255 255 255 / 0.92), #42414e);
 }
 }
 
 @supports (color: light-dark(red, red)){
 #viewsManager{
   --image-border-color:light-dark(#cfcfd8, #3a3944);
-  --image-page-number-bg:light-dark(#f0f0f4, #23222b);
+  --image-page-number-bg:light-dark(#f0f0f4, #42414d);
   --image-current-page-number-fg:light-dark(#fff, #15141a);
 }
 }
@@ -5906,7 +5904,7 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 
 #viewsManager *{
 
-  --csstools-light-dark-toggle--130:var(--csstools-color-scheme--light) rgb(35 34 43 / 0.92);
+  --csstools-light-dark-toggle--130:var(--csstools-color-scheme--light) rgb(66 65 77 / 0.92);
 
   --sidebar-bg-color:var(--csstools-light-dark-toggle--130, rgb(255 255 255 / 0.92));
 
@@ -5936,26 +5934,28 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
   --csstools-light-dark-toggle--142:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
   --csstools-light-dark-toggle--143:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
   --header-shadow:0 0.25px 0.75px -0.75px var(--csstools-light-dark-toggle--142, rgb(0 0 0 / 0.05)), 0 2px 6px -6px var(--csstools-light-dark-toggle--143, rgb(0 0 0 / 0.1));
-  --csstools-light-dark-toggle--144:var(--csstools-color-scheme--light) #3a3944;
-  --image-border-color:var(--csstools-light-dark-toggle--144, #cfcfd8);
-  --csstools-light-dark-toggle--145:var(--csstools-color-scheme--light) #23222b;
-  --image-page-number-bg:var(--csstools-light-dark-toggle--145, #f0f0f4);
-  --csstools-light-dark-toggle--146:var(--csstools-color-scheme--light) #15141a;
-  --image-current-page-number-fg:var(--csstools-light-dark-toggle--146, #fff);
-  --csstools-light-dark-toggle--147:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
-  --csstools-light-dark-toggle--148:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
-  --image-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--147, rgb(0 0 0 / 0.05)), 0 0 0 1px var(--image-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--148, rgb(0 0 0 / 0.1));
-  --csstools-light-dark-toggle--149:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
-  --csstools-light-dark-toggle--150:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.1);
-  --csstools-light-dark-toggle--151:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
-  --image-hover-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--149, rgb(0 0 0 / 0.05)), 0 0 0 1px var(--csstools-light-dark-toggle--150, rgb(21 20 26 / 0.1)), 0 0 0 var(--image-border-width) var(--image-hover-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--151, rgb(0 0 0 / 0.1));
-  --csstools-light-dark-toggle--152:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
-  --csstools-light-dark-toggle--153:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
-  --image-current-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--152, rgb(0 0 0 / 0.05)), 0 0 0 var(--image-border-width) var(--image-current-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--153, rgb(0 0 0 / 0.1));
-  --csstools-light-dark-toggle--154:var(--csstools-color-scheme--light) rgb(0 202 219 / 0.08);
-  --image-dragging-placeholder-bg:var(--csstools-light-dark-toggle--154, rgb(0 98 250 / 0.08));
-  --csstools-light-dark-toggle--155:var(--csstools-color-scheme--light) #15141a;
-  --multiple-dragging-text-color:var(--csstools-light-dark-toggle--155, #fbfbfe);
+  --csstools-light-dark-toggle--144:var(--csstools-color-scheme--light) #42414e;
+  --header-bg:var(--csstools-light-dark-toggle--144, rgb(255 255 255 / 0.92));
+  --csstools-light-dark-toggle--145:var(--csstools-color-scheme--light) #3a3944;
+  --image-border-color:var(--csstools-light-dark-toggle--145, #cfcfd8);
+  --csstools-light-dark-toggle--146:var(--csstools-color-scheme--light) #42414d;
+  --image-page-number-bg:var(--csstools-light-dark-toggle--146, #f0f0f4);
+  --csstools-light-dark-toggle--147:var(--csstools-color-scheme--light) #15141a;
+  --image-current-page-number-fg:var(--csstools-light-dark-toggle--147, #fff);
+  --csstools-light-dark-toggle--148:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
+  --csstools-light-dark-toggle--149:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
+  --image-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--148, rgb(0 0 0 / 0.05)), 0 0 0 1px var(--image-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--149, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--150:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
+  --csstools-light-dark-toggle--151:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.1);
+  --csstools-light-dark-toggle--152:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
+  --image-hover-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--150, rgb(0 0 0 / 0.05)), 0 0 0 1px var(--csstools-light-dark-toggle--151, rgb(21 20 26 / 0.1)), 0 0 0 var(--image-border-width) var(--image-hover-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--152, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--153:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
+  --csstools-light-dark-toggle--154:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
+  --image-current-shadow:0 0.375px 1.5px 0 var(--csstools-light-dark-toggle--153, rgb(0 0 0 / 0.05)), 0 0 0 var(--image-border-width) var(--image-current-border-color), 0 3px 12px 0 var(--csstools-light-dark-toggle--154, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--155:var(--csstools-color-scheme--light) rgb(0 202 219 / 0.08);
+  --image-dragging-placeholder-bg:var(--csstools-light-dark-toggle--155, rgb(0 98 250 / 0.08));
+  --csstools-light-dark-toggle--156:var(--csstools-color-scheme--light) #15141a;
+  --multiple-dragging-text-color:var(--csstools-light-dark-toggle--156, #fbfbfe);
   }
 }
 
@@ -5982,15 +5982,24 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
     --status-warning-bg:none;
     --indicator-warning-color:CanvasText;
     --header-shadow:none;
-    --image-shadow:0 0 0 1px CanvasText;
-    --image-outline:1px solid CanvasText;
-    --image-border-color:CanvasText;
+    --image-shadow:none;
+    --image-outline:1px solid ButtonText;
+    --image-focus-outline-color:CanvasText;
     --image-hover-border-color:SelectedItem;
-    --image-current-border-color:ButtonBorder;
+    --image-hover-page-number-bg:SelectedItemText;
+    --image-hover-page-number-fg:SelectedItem;
+    --image-current-page-number-bg:ButtonText;
+    --image-current-page-number-fg:ButtonFace;
+    --image-current-border-color:ButtonText;
     --image-current-focused-outline-color:var(--image-hover-border-color);
+    --image-current-hover-page-number-bg:SelectedItem;
+    --image-current-hover-page-number-fg:SelectedItemText;
     --image-page-number-bg:ButtonFace;
-    --image-page-number-fg:CanvasText;
+    --image-page-number-fg:ButtonText;
+    --image-page-number-border-color:var(--image-page-number-fg);
     --multiple-dragging-bg:Canvas;
+    --multiple-dragging-indicator-bg:ButtonBorder;
+    --multiple-dragging-text-color:Canvas;
 }
   }
 
@@ -6000,9 +6009,9 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
   padding-bottom:16px;
   flex-direction:column;
   align-items:flex-start;
+  inset-block-start:calc(100% + var(--sidebar-block-padding));
   height:calc(
-    var(--viewer-container-height) - var(--toolbar-height) -
-      var(--doorhanger-height)
+    var(--viewer-container-height) - 2 * var(--sidebar-block-padding)
   );
   position:absolute;
 
@@ -6015,7 +6024,7 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 }
 
 #viewsManager .sidebarResizer{
-    inset-inline-start:100%;
+    inset-inline-start:calc(100% + 4px);
   }
 
 #viewsManager .viewsManagerButton{
@@ -6072,14 +6081,17 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
     width:100%;
     box-shadow:var(--header-shadow);
     flex:0 0 auto;
+    background-color:var(--header-bg);
   }
 
 :is(#viewsManager #viewsManagerHeader) .viewsManagerLabel{
-      flex:1 0 0;
+      flex:0;
       color:var(--text-color);
       text-align:center;
       height:-moz-fit-content;
       height:fit-content;
+      width:-moz-fit-content;
+      width:fit-content;
       -webkit-user-select:none;
          -moz-user-select:none;
               user-select:none;
@@ -6125,14 +6137,6 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
             background-color:var(--button-fg);
           }
 
-:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > button)::before):hover{
-              background-color:var(--button-hover-fg) !important;
-            }
-
-:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > button)::before):active{
-              background-color:var(--button-active-fg) !important;
-            }
-
 :is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > button)::after{
             content:"";
             display:inline-block;
@@ -6148,11 +6152,11 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
             background-color:var(--button-fg);
           }
 
-:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > button)::after):hover{
+:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > button):hover::before,:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > button):hover::after{
               background-color:var(--button-hover-fg) !important;
             }
 
-:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > button)::after):active{
+:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > button):active::before,:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerSelector) > button):active::after{
               background-color:var(--button-active-fg) !important;
             }
 
@@ -6182,6 +6186,8 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
             }
 
 :is(:is(#viewsManager #viewsManagerHeader) #viewsManagerTitle) #viewsManagerAddFileButton{
+        visibility:hidden;
+
         background:var(--button-no-bg);
         width:32px;
         height:32px;
@@ -6292,16 +6298,18 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
               background-color:var(--button-fg);
             }
 
-:is(:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) #viewsManagerStatusAction) #actionSelector) #viewsManagerStatusActionButton)::after):hover{
-                background-color:var(--button-hover-fg) !important;
-              }
+:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) #viewsManagerStatusAction) #actionSelector) #viewsManagerStatusActionButton):hover::after{
+              background-color:var(--button-hover-fg) !important;
+            }
 
-:is(:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) #viewsManagerStatusAction) #actionSelector) #viewsManagerStatusActionButton)::after):active{
-                background-color:var(--button-active-fg) !important;
-              }
+:is(:is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) #viewsManagerStatusAction) #actionSelector) #viewsManagerStatusActionButton):active::after{
+              background-color:var(--button-active-fg) !important;
+            }
 
 :is(:is(:is(:is(#viewsManager #viewsManagerHeader) #viewsManagerStatus) #viewsManagerStatusAction) #actionSelector)  > .popupMenu{
-            width:auto;
+            width:100%;
+            min-width:-moz-fit-content;
+            min-width:fit-content;
             z-index:1;
           }
 
@@ -6406,7 +6414,7 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
       align-items:center;
       justify-content:space-evenly;
       padding:20px 32px;
-      gap:20px;
+      gap:44px;
       width:100%;
       box-sizing:border-box;
       position:relative;
@@ -6416,11 +6424,11 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
         cursor:grabbing;
       }
 
-:is(.isDragging:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail)  > .thumbnailImage:hover{
+:is(.isDragging:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail)  > .thumbnailImageContainer:hover{
             cursor:grabbing;
           }
 
-:is(:is(.isDragging:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage:hover):not([aria-current="page"]){
+:is(:is(.isDragging:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer:hover):not([aria-current="page"]){
               box-shadow:var(--image-shadow);
             }
 
@@ -6436,32 +6444,70 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
           contain:strict;
         }
 
+.pasteMode:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView)  > .thumbnail{
+          flex-direction:column;
+        }
+
+:is(.pasteMode:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail)  > input{
+            display:none;
+          }
+
+:is(.pasteMode:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail)  > .thumbnailPasteButton{
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            border-radius:16px;
+            min-height:24px;
+            padding:4px 16px;
+
+            font:menu;
+            font-size:13px;
+            font-style:normal;
+            font-weight:400;
+            line-height:normal;
+          }
+
+:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView):not(.pasteMode) > .thumbnail > .thumbnailPasteButton{
+        display:none;
+      }
+
 :is(:is(#viewsManager #viewsManagerContent) #thumbnailsView)  > .thumbnail{
+        --input-dim:16px;
+        --gap-between-input-and-thumbnail:16px;
+
         display:inline-flex;
-        justify-content:center;
+        justify-content:flex-end;
         align-items:center;
-        gap:16px;
-        width:auto;
+        flex-direction:row-reverse;
+        gap:var(--gap-between-input-and-thumbnail);
+        width:190px;
         height:auto;
         position:relative;
         scroll-margin-top:20px;
       }
 
-:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail):not(.isDragging)::after{
+:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) .thumbnailPasteButton{
+          padding:8px 0;
+          text-align:center;
+        }
+
+:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail):not(.isDragging) > .thumbnailImageContainer::after{
           content:attr(page-number);
           border-radius:8px;
+          border:1px solid var(--image-page-number-border-color);
           background-color:var(--image-page-number-bg);
           color:var(--image-page-number-fg);
           position:absolute;
           bottom:5px;
-          inset-inline-end:calc(var(--thumbnail-width) / 2);
+          inset-inline-end:50%;
           min-width:32px;
           height:16px;
           text-align:center;
+          box-sizing:content-box;
           translate:calc(var(--dir-factor) * 50%);
 
           font:menu;
-          font-size:13px;
+          font-size:12px;
           font-style:normal;
           font-weight:400;
           line-height:normal;
@@ -6472,9 +6518,10 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
                   user-select:none;
         }
 
-:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail):has([aria-current="page"]):not(.isDragging)::after{
+:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail):has([aria-current="page"]):not(.isDragging) > .thumbnailImageContainer::after{
           background-color:var(--image-current-page-number-bg);
           color:var(--image-current-page-number-fg);
+          outline:1px solid var(--image-current-border-color);
         }
 
 .isDragging:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > input{
@@ -6483,9 +6530,12 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 
 :is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail)  > input{
           margin:0;
+          width:var(--input-dim);
+          height:var(--input-dim);
+          accent-color:var(--indicator-color);
         }
 
-:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail)  > .thumbnailImage{
+:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail)  > .thumbnailImageContainer{
           --thumbnail-dragging-scale:1.4;
 
           width:var(--thumbnail-width);
@@ -6497,37 +6547,116 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
           -webkit-user-select:none;
              -moz-user-select:none;
                   user-select:none;
+          position:relative;
         }
 
-.missingThumbnailImage:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage){
+:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer) img{
+            width:100%;
+            height:100%;
+            border:none;
+            border-radius:8px;
+            outline:none;
+            -webkit-user-select:none;
+               -moz-user-select:none;
+                    user-select:none;
+            pointer-events:none;
+          }
+
+.missingThumbnailImage:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer){
             content-visibility:hidden;
           }
 
-:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage):hover{
+:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer):hover{
             cursor:pointer;
             box-shadow:var(--image-hover-shadow);
           }
 
-:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage):focus-visible:not([aria-current="page"]){
+:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer):hover::after{
+              background-color:var(--image-hover-page-number-bg);
+              color:var(--image-hover-page-number-fg);
+            }
+
+@media screen and (forced-colors: active){
+
+:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer):hover{
+              box-shadow:none;
+              outline:var(--image-border-width) var(--image-hover-border-color) solid;
+          }
+            }
+
+:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer):focus-visible:not([aria-current="page"]){
               box-shadow:var(--image-hover-shadow);
               outline:none;
             }
 
-[aria-current="page"]:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage):focus-visible{
+@media screen and (forced-colors: active){
+
+:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer):focus-visible:not([aria-current="page"]){
+                box-shadow:none;
+                outline:var(--image-border-width) var(--image-focus-outline-color) solid;
+            }
+              }
+
+[aria-current="page"]:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer):focus-visible{
               outline:var(--image-border-width) solid var(--image-current-focused-outline-color);
               outline-offset:var(--image-border-width);
             }
 
-[aria-current="page"]:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage){
+@media screen and (forced-colors: active){
+
+[aria-current="page"]:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer):focus-visible{
+                box-shadow:none;
+                outline:var(--image-border-width) var(--image-current-border-color) solid;
+                outline-offset:0;
+            }
+
+                [aria-current="page"]:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer):focus-visible  > img{
+                  outline:var(--image-border-width) var(--image-focus-outline-color) solid;
+                  outline-offset:var(--image-border-width);
+                }
+              }
+
+@media screen and (forced-colors: active){
+
+:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer):focus-visible{
+              box-shadow:none;
+              outline:var(--image-border-width) var(--image-current-border-color) solid;
+          }
+
+              :is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer):focus-visible:hover > img{
+                outline:var(--image-border-width) var(--image-hover-border-color) solid;
+                outline-offset:var(--image-border-width);
+              }
+            }
+
+[aria-current="page"]:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer){
             box-shadow:var(--image-current-shadow);
           }
 
-.placeholder:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage){
+[aria-current="page"]:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer):hover::after{
+              background-color:var(--image-current-hover-page-number-bg);
+              color:var(--image-current-hover-page-number-fg);
+            }
+
+@media screen and (forced-colors: active){
+
+[aria-current="page"]:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer){
+              box-shadow:none;
+              outline:var(--image-border-width) var(--image-current-border-color) solid;
+          }
+
+              [aria-current="page"]:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer):hover > img{
+                outline:var(--image-border-width) var(--image-hover-border-color) solid;
+                outline-offset:var(--image-border-width);
+              }
+            }
+
+.placeholder:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer){
             background-color:var(--image-dragging-placeholder-bg);
             box-shadow:none !important;
           }
 
-.draggingThumbnail:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage){
+.draggingThumbnail:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer){
             position:absolute;
             left:0;
             top:0;
@@ -6538,11 +6667,19 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
             box-shadow:var(--image-dragging-shadow);
           }
 
-.draggingThumbnail.multiple:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage){
+.draggingThumbnail.multiple:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer){
               box-shadow:var(--image-multiple-dragging-shadow);
             }
 
-.draggingThumbnail.multiple:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage)  > img{
+@media screen and (forced-colors: active){
+
+.draggingThumbnail.multiple:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer){
+                forced-color-adjust:none;
+                box-shadow:var(--image-multiple-dragging-shadow);
+            }
+              }
+
+.draggingThumbnail.multiple:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer)  > .thumbnailImageContainer{
                 position:absolute;
                 top:0;
                 left:0;
@@ -6557,10 +6694,10 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
                         user-select:none;
               }
 
-.draggingThumbnail.multiple:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImage)::after{
+.draggingThumbnail.multiple:is(:is(:is(:is(#viewsManager #viewsManagerContent) #thumbnailsView) > .thumbnail) > .thumbnailImageContainer)::after{
                 content:attr(data-multiple-count);
                 border-radius:calc(8px * var(--thumbnail-dragging-scale));
-                background-color:var(--indicator-color);
+                background-color:var(--multiple-dragging-indicator-bg);
                 color:var(--multiple-dragging-text-color);
                 position:absolute;
                 inset-block-end:calc(4px * var(--thumbnail-dragging-scale));
@@ -6577,12 +6714,12 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
               }
 
 :is(#viewsManager #viewsManagerContent) #attachmentsView{
-      --csstools-light-dark-toggle--156:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.8);
-      --attachment-color:var(--csstools-light-dark-toggle--156, rgb(0 0 0 / 0.8));
-      --csstools-light-dark-toggle--157:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.15);
-      --attachment-bg-color:var(--csstools-light-dark-toggle--157, rgb(0 0 0 / 0.15));
-      --csstools-light-dark-toggle--158:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.9);
-      --attachment-hover-color:var(--csstools-light-dark-toggle--158, rgb(0 0 0 / 0.9));
+      --csstools-light-dark-toggle--157:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.8);
+      --attachment-color:var(--csstools-light-dark-toggle--157, rgb(0 0 0 / 0.8));
+      --csstools-light-dark-toggle--158:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.15);
+      --attachment-bg-color:var(--csstools-light-dark-toggle--158, rgb(0 0 0 / 0.15));
+      --csstools-light-dark-toggle--159:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.9);
+      --attachment-hover-color:var(--csstools-light-dark-toggle--159, rgb(0 0 0 / 0.9));
     }
 
 @supports (color: light-dark(red, red)) and (color: rgb(0 0 0 / 0)){
@@ -6602,12 +6739,12 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 @supports not (color: light-dark(tan, tan)){
 
 :is(:is(#viewsManager #viewsManagerContent) #attachmentsView) *{
-      --csstools-light-dark-toggle--156:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.8);
-      --attachment-color:var(--csstools-light-dark-toggle--156, rgb(0 0 0 / 0.8));
-      --csstools-light-dark-toggle--157:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.15);
-      --attachment-bg-color:var(--csstools-light-dark-toggle--157, rgb(0 0 0 / 0.15));
-      --csstools-light-dark-toggle--158:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.9);
-      --attachment-hover-color:var(--csstools-light-dark-toggle--158, rgb(0 0 0 / 0.9));
+      --csstools-light-dark-toggle--157:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.8);
+      --attachment-color:var(--csstools-light-dark-toggle--157, rgb(0 0 0 / 0.8));
+      --csstools-light-dark-toggle--158:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.15);
+      --attachment-bg-color:var(--csstools-light-dark-toggle--158, rgb(0 0 0 / 0.15));
+      --csstools-light-dark-toggle--159:var(--csstools-color-scheme--light) rgb(255 255 255 / 0.9);
+      --attachment-hover-color:var(--csstools-light-dark-toggle--159, rgb(0 0 0 / 0.9));
   }
 }
 
@@ -6643,13 +6780,13 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
           }
 
 .sidebar{
-  --csstools-light-dark-toggle--159:var(--csstools-color-scheme--light) #23222b;
-  --sidebar-bg-color:var(--csstools-light-dark-toggle--159, #fff);
-  --csstools-light-dark-toggle--160:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.1);
-  --sidebar-border-color:var(--csstools-light-dark-toggle--160, rgb(21 20 26 / 0.1));
-  --csstools-light-dark-toggle--161:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
-  --csstools-light-dark-toggle--162:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
-  --sidebar-box-shadow:0 0.25px 0.75px var(--csstools-light-dark-toggle--161, rgb(0 0 0 / 0.05)), 0 2px 6px 0 var(--csstools-light-dark-toggle--162, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--160:var(--csstools-color-scheme--light) #23222b;
+  --sidebar-bg-color:var(--csstools-light-dark-toggle--160, #fff);
+  --csstools-light-dark-toggle--161:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.1);
+  --sidebar-border-color:var(--csstools-light-dark-toggle--161, rgb(21 20 26 / 0.1));
+  --csstools-light-dark-toggle--162:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
+  --csstools-light-dark-toggle--163:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
+  --sidebar-box-shadow:0 0.25px 0.75px var(--csstools-light-dark-toggle--162, rgb(0 0 0 / 0.05)), 0 2px 6px 0 var(--csstools-light-dark-toggle--163, rgb(0 0 0 / 0.1));
   --sidebar-backdrop-filter:none;
   --sidebar-border-radius:8px;
   --sidebar-padding:5px;
@@ -6657,8 +6794,9 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
   --sidebar-max-width:632px;
   --sidebar-width:239px;
   --resizer-width:4px;
-  --csstools-light-dark-toggle--163:var(--csstools-color-scheme--light) #00cadb;
-  --resizer-hover-bg-color:var(--csstools-light-dark-toggle--163, #0062fa);
+  --resizer-shift:calc(0px - var(--resizer-width) - 2px);
+  --csstools-light-dark-toggle--164:var(--csstools-color-scheme--light) #00cadb;
+  --resizer-hover-bg-color:var(--csstools-light-dark-toggle--164, #0062fa);
 }
 
 @supports (color: light-dark(red, red)){
@@ -6686,15 +6824,15 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 @supports not (color: light-dark(tan, tan)){
 
 .sidebar *{
-  --csstools-light-dark-toggle--159:var(--csstools-color-scheme--light) #23222b;
-  --sidebar-bg-color:var(--csstools-light-dark-toggle--159, #fff);
-  --csstools-light-dark-toggle--160:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.1);
-  --sidebar-border-color:var(--csstools-light-dark-toggle--160, rgb(21 20 26 / 0.1));
-  --csstools-light-dark-toggle--161:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
-  --csstools-light-dark-toggle--162:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
-  --sidebar-box-shadow:0 0.25px 0.75px var(--csstools-light-dark-toggle--161, rgb(0 0 0 / 0.05)), 0 2px 6px 0 var(--csstools-light-dark-toggle--162, rgb(0 0 0 / 0.1));
-  --csstools-light-dark-toggle--163:var(--csstools-color-scheme--light) #00cadb;
-  --resizer-hover-bg-color:var(--csstools-light-dark-toggle--163, #0062fa);
+  --csstools-light-dark-toggle--160:var(--csstools-color-scheme--light) #23222b;
+  --sidebar-bg-color:var(--csstools-light-dark-toggle--160, #fff);
+  --csstools-light-dark-toggle--161:var(--csstools-color-scheme--light) rgb(251 251 254 / 0.1);
+  --sidebar-border-color:var(--csstools-light-dark-toggle--161, rgb(21 20 26 / 0.1));
+  --csstools-light-dark-toggle--162:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.2);
+  --csstools-light-dark-toggle--163:var(--csstools-color-scheme--light) rgb(0 0 0 / 0.4);
+  --sidebar-box-shadow:0 0.25px 0.75px var(--csstools-light-dark-toggle--162, rgb(0 0 0 / 0.05)), 0 2px 6px 0 var(--csstools-light-dark-toggle--163, rgb(0 0 0 / 0.1));
+  --csstools-light-dark-toggle--164:var(--csstools-color-scheme--light) #00cadb;
+  --resizer-hover-bg-color:var(--csstools-light-dark-toggle--164, #0062fa);
   }
 }
 
@@ -6722,6 +6860,7 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
   -webkit-backdrop-filter:var(--sidebar-backdrop-filter);
           backdrop-filter:var(--sidebar-backdrop-filter);
   box-sizing:border-box;
+  position:relative;
 }
 
 .sidebar .sidebarResizer{
@@ -6730,9 +6869,9 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
     forced-color-adjust:none;
     cursor:ew-resize;
     position:absolute;
-    inset-block:calc(var(--sidebar-padding) + var(--sidebar-border-radius));
-    inset-inline-start:calc(0px - var(--resizer-width) / 2);
-    transition:background-color 0.5s ease-in-out;
+    inset-block:0;
+    inset-inline-start:var(--resizer-shift);
+    transition:background-color 0.5s ease-in-out, border-color 0.5s ease-in-out;
     box-sizing:border-box;
     border:1px solid transparent;
     border-block-width:0;
@@ -6741,6 +6880,7 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 
 :is(.sidebar .sidebarResizer):hover{
       background-color:var(--resizer-hover-bg-color);
+      border-color:white;
     }
 
 :is(.sidebar .sidebarResizer):focus-visible{
@@ -6773,8 +6913,8 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
   --page-border:9px solid transparent;
   --spreadHorizontalWrapped-margin-LR:-3.5px;
   --loading-icon-delay:400ms;
-  --csstools-light-dark-toggle--164:var(--csstools-color-scheme--light) #0df;
-  --focus-ring-color:var(--csstools-light-dark-toggle--164, #0060df);
+  --csstools-light-dark-toggle--165:var(--csstools-color-scheme--light) #0df;
+  --focus-ring-color:var(--csstools-light-dark-toggle--165, #0060df);
   --focus-ring-outline:2px solid var(--focus-ring-color);
 }
 
@@ -6787,8 +6927,8 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 @supports not (color: light-dark(tan, tan)){
 
 :root *{
-  --csstools-light-dark-toggle--164:var(--csstools-color-scheme--light) #0df;
-  --focus-ring-color:var(--csstools-light-dark-toggle--164, #0060df);
+  --csstools-light-dark-toggle--165:var(--csstools-color-scheme--light) #0df;
+  --focus-ring-color:var(--csstools-light-dark-toggle--165, #0060df);
   }
 }
 
@@ -6981,8 +7121,6 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 
 :root{
   --dir-factor:1;
-  --inline-start:left;
-  --inline-end:right;
 
   --sidebar-width:200px;
   --sidebar-transition-duration:200ms;
@@ -7205,8 +7343,6 @@ button.hasPopupMenu[aria-expanded="false"] + menu{
 
 [dir="rtl"]:root{
   --dir-factor:-1;
-  --inline-start:right;
-  --inline-end:left;
 }
 
 @media screen and (forced-colors: active){
@@ -7487,7 +7623,7 @@ body.wait::before{
 }
 
 .splitToolbarButtonSeparator{
-  float:var(--inline-start);
+  float:inline-start;
   width:0;
   height:62%;
   border-left:1px solid var(--separator-color);
@@ -8479,10 +8615,14 @@ dialog :link{
       height:1px;
     }
 
-:is(#toolbarContainer #toolbarViewer) #toolbarViewerLeft #numPages.toolbarLabel{
-      padding-inline-start:3px;
-      flex:none;
+:is(#toolbarContainer #toolbarViewer) #toolbarViewerLeft{
+      margin-inline-start:8px;
     }
+
+:is(:is(#toolbarContainer #toolbarViewer) #toolbarViewerLeft) #numPages.toolbarLabel{
+        padding-inline-start:3px;
+        flex:none;
+      }
 
 #toolbarContainer #loadingBar{
     --progressBar-percent:0%;

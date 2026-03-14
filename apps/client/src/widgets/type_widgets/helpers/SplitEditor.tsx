@@ -19,6 +19,7 @@ export interface SplitEditorProps extends EditableCodeProps {
     previewButtons?: ComponentChildren;
     editorBefore?: ComponentChildren;
     forceOrientation?: "horizontal" | "vertical";
+    extraContent?: ComponentChildren;
 }
 
 /**
@@ -41,7 +42,7 @@ export default function SplitEditor(props: SplitEditorProps) {
 
 }
 
-function EditorWithSplit({ note, error, splitOptions, previewContent, previewButtons, className, editorBefore, forceOrientation, ...editorProps }: SplitEditorProps) {
+function EditorWithSplit({ note, error, splitOptions, previewContent, previewButtons, className, editorBefore, forceOrientation, extraContent, ...editorProps }: SplitEditorProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const splitEditorOrientation = useSplitOrientation(forceOrientation);
 
@@ -57,9 +58,12 @@ function EditorWithSplit({ note, error, splitOptions, previewContent, previewBut
                     {...editorProps}
                 />
             </div>
-            {error && <Admonition type="caution" className="note-detail-error-container">
-                {error}
-            </Admonition>}
+            {error && (
+                <Admonition type="caution" className="note-detail-error-container">
+                    {error}
+                </Admonition>
+            )}
+            {extraContent}
         </div>
     );
 

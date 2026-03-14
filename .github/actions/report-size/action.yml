@@ -69,7 +69,7 @@ runs:
 
     # Post github action comment
     - name: Post comment
-      uses: marocchino/sticky-pull-request-comment@v2
+      uses: marocchino/sticky-pull-request-comment@v3
       if: ${{ steps.bundleSize.outputs.hasDifferences == 'true' }} # post only in case of changes
       with:
         number: ${{ github.event.pull_request.number }}

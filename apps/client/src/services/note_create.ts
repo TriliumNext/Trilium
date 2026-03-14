@@ -67,14 +67,6 @@ async function createNote(parentNotePath: string | undefined, options: CreateNot
 
     const parentNoteId = treeService.getNoteIdFromUrl(parentNotePath);
 
-    if (options.type === "mermaid" && !options.content && !options.templateNoteId) {
-        options.content = `graph TD;
-    A-->B;
-    A-->C;
-    B-->D;
-    C-->D;`;
-    }
-
     const { note, branch } = await server.post<Response>(`notes/${parentNoteId}/children?target=${options.target}&targetBranchId=${options.targetBranchId || ""}`, {
         title: options.title,
         content: options.content || "",

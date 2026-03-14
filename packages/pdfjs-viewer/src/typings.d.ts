@@ -46,5 +46,6 @@ declare global {
             };
             store: ViewHistory;
         };
+        PDFViewerApplicationOptions?: { set(name: string, value: any): void; }
     }
 }
