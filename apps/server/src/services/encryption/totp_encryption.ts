@@ -1,8 +1,9 @@
-import optionService from "../options.js";
-import myScryptService from "./my_scrypt.js";
-import { randomSecureToken, toBase64, constantTimeCompare } from "../utils.js";
-import dataEncryptionService from "./data_encryption.js";
 import type { OptionNames } from "@triliumnext/commons";
+
+import optionService from "../options.js";
+import { constantTimeCompare,randomSecureToken, toBase64 } from "../utils.js";
+import dataEncryptionService from "./data_encryption.js";
+import myScryptService from "./my_scrypt.js";
 
 const TOTP_OPTIONS: Record<string, OptionNames> = {
     SALT: "totpEncryptionSalt",

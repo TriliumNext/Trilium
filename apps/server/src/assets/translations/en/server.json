@@ -252,6 +252,8 @@
     "proxy-instruction": "If you leave proxy setting blank, system proxy will be used (applies to the desktop application only)",
     "password": "Password",
     "password-placeholder": "Password",
+    "totp-token": "TOTP Token",
+    "totp-token-placeholder": "Enter your TOTP code",
     "back": "Back",
     "finish-setup": "Finish setup"
   },

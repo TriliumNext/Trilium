@@ -244,6 +244,7 @@ function register(app: express.Application) {
     asyncRoute(PST, "/api/setup/sync-from-server", [auth.checkAppNotInitialized], setupApiRoute.setupSyncFromServer, apiResultHandler);
     route(GET, "/api/setup/sync-seed", [loginRateLimiter, auth.checkCredentials], setupApiRoute.getSyncSeed, apiResultHandler);
     asyncRoute(PST, "/api/setup/sync-seed", [auth.checkAppNotInitialized], setupApiRoute.saveSyncSeed, apiResultHandler);
+    asyncRoute(PST, "/api/setup/check-server-totp", [auth.checkAppNotInitialized], setupApiRoute.checkServerTotpStatus, apiResultHandler);
 
     apiRoute(GET, "/api/autocomplete", autocompleteApiRoute.getAutocomplete);
     apiRoute(GET, "/api/autocomplete/notesCount", autocompleteApiRoute.getNotesCount);

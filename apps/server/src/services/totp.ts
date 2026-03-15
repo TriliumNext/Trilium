@@ -1,6 +1,7 @@
-import { Totp, generateSecret } from 'time2fa';
-import options from './options.js';
+import { generateSecret,Totp } from 'time2fa';
+
 import totpEncryptionService from './encryption/totp_encryption.js';
+import options from './options.js';
 
 function isTotpEnabled(): boolean {
     return options.getOptionOrNull('mfaEnabled') === "true" &&
@@ -10,7 +11,7 @@ function isTotpEnabled(): boolean {
 
 function createSecret(): { success: boolean; message?: string } {
     try {
-        const secret = generateSecret();
+        const secret = generateSecret(20);
 
         totpEncryptionService.setTotpSecret(secret);
 
@@ -43,6 +44,8 @@ function validateTOTP(submittedPasscode: string): boolean {
         return Totp.validate({
             passcode: submittedPasscode,
             secret: secret.trim()
+        }, {
+            secretSize: secret.trim().length === 32 ? 20 : 10
         });
     } catch (e) {
         console.error('Failed to validate TOTP:', e);
