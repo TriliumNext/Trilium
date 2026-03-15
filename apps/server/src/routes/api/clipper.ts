@@ -7,13 +7,13 @@ import ValidationError from "../../errors/validation_error.js";
 import appInfo from "../../services/app_info.js";
 import attributeFormatter from "../../services/attribute_formatter.js";
 import attributeService from "../../services/attributes.js";
-import cloneService from "../../services/cloning.js";
 import dateNoteService from "../../services/date_notes.js";
 import dateUtils from "../../services/date_utils.js";
 import htmlSanitizer from "../../services/html_sanitizer.js";
 import imageService from "../../services/image.js";
 import log from "../../services/log.js";
 import noteService from "../../services/notes.js";
+import searchService from "../../services/search/services/search.js";
 import utils from "../../services/utils.js";
 import ws from "../../services/ws.js";
 
@@ -24,18 +24,17 @@ interface Image {
 }
 
 async function addClipping(req: Request) {
-    // if a note under the clipperInbox has the same 'pageUrl' attribute,
-    // add the content to that note and clone it under today's inbox
-    // otherwise just create a new note under today's inbox
+    // if a #clipType=clippings note exists with the same 'pageUrl' attribute,
+    // append the content to that note
+    // otherwise create a new note under clipperInbox (or today's note)
     const { title, content, images } = req.body;
     const clipType = "clippings";
 
-    const clipperInbox = await getClipperInboxNote();
-
     const pageUrl = htmlSanitizer.sanitizeUrl(req.body.pageUrl);
-    let clippingNote = findClippingNote(clipperInbox, pageUrl, clipType);
+    let clippingNote = findClippingNote(pageUrl, clipType);
 
     if (!clippingNote) {
+        const clipperInbox = await getClipperInboxNote();
         clippingNote = noteService.createNewNote({
             parentNoteId: clipperInbox.noteId,
             title,
@@ -57,22 +56,17 @@ async function addClipping(req: Request) {
 
     clippingNote.setContent(`${existingContent}${existingContent.trim() ? "<br>" : ""}${rewrittenContent}`);
 
-    // TODO: Is parentNoteId ever defined?
-    if ((clippingNote as any).parentNoteId !== clipperInbox.noteId) {
-        cloneService.cloneNoteToParentNote(clippingNote.noteId, clipperInbox.noteId);
-    }
-
     return {
         noteId: clippingNote.noteId
     };
 }
 
-function findClippingNote(clipperInboxNote: BNote, pageUrl: string, clipType: string | null) {
+function findClippingNote(pageUrl: string, clipType: string | null) {
     if (!pageUrl) {
         return null;
     }
 
-    const notes = clipperInboxNote.searchNotesInSubtree(
+    const notes = searchService.searchNotes(
         attributeFormatter.formatAttrForSearch(
             {
                 type: "label",
@@ -106,7 +100,7 @@ async function createNote(req: Request) {
     const title = trimmedTitle || `Clipped note from ${pageUrl}`;
 
     const clipperInbox = await getClipperInboxNote();
-    let note = findClippingNote(clipperInbox, pageUrl, clipType);
+    let note = findClippingNote(pageUrl, clipType);
 
     if (!note) {
         note = noteService.createNewNote({
@@ -198,11 +192,11 @@ function openNote(req: Request<{ noteId: string }>) {
         return {
             result: "ok"
         };
-    } 
+    }
     return {
         result: "open-in-browser"
     };
-    
+
 }
 
 function handshake() {
@@ -214,8 +208,7 @@ function handshake() {
 
 async function findNotesByUrl(req: Request<{ noteUrl: string }>) {
     const pageUrl = req.params.noteUrl;
-    const clipperInbox = await getClipperInboxNote();
-    const foundPage = findClippingNote(clipperInbox, pageUrl, null);
+    const foundPage = findClippingNote(pageUrl, null);
     return {
         noteId: foundPage ? foundPage.noteId : null
     };
