@@ -131,6 +131,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteCompletionEnabled: boolean;
     /** Whether keyboard auto-completion for editing commands is triggered when typing `/`. */
     textNoteSlashCommandsEnabled: boolean;
+    /** Whether the MathLive visual editor is shown when editing math. If false, only the LaTeX textarea is used. */
+    mathFieldEnabled: boolean;
     backgroundEffects: boolean;
     newLayout: boolean;
 

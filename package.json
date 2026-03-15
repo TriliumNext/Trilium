@@ -97,7 +97,8 @@
   "pnpm": {
     "patchedDependencies": {
       "@ckeditor/ckeditor5-mention": "patches/@ckeditor__ckeditor5-mention.patch",
-      "@ckeditor/ckeditor5-code-block": "patches/@ckeditor__ckeditor5-code-block.patch"
+      "@ckeditor/ckeditor5-code-block": "patches/@ckeditor__ckeditor5-code-block.patch",
+      "mathlive@0.109.0": "patches/mathlive@0.109.0.patch"
     },
     "overrides": {
       "@codemirror/language": "6.12.2",

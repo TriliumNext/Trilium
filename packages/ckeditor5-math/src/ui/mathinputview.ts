@@ -4,18 +4,6 @@ import { View, type Locale, type FocusableView } from 'ckeditor5';
 import 'mathlive/fonts.css'; // Auto-bundles offline fonts
 import 'mathlive/static.css'; // Static styles for mathlive
 
-declare global {
-	interface Window {
-		mathVirtualKeyboard?: {
-			visible: boolean;
-			show: () => void;
-			hide: () => void;
-			addEventListener: ( event: string, cb: () => void ) => void;
-			removeEventListener: ( event: string, cb: () => void ) => void;
-		};
-	}
-}
-
 interface MathFieldElement extends HTMLElement {
 	value: string;
 	readOnly: boolean;
@@ -64,21 +52,28 @@ export default class MathInputView extends View {
 	private _destroyed = false;
 	private _vkGeometryHandler?: () => void;
 	private _updating = false;
+	private _enableMathField: boolean;
 	private static _configured = false;
 
-	constructor( locale: Locale ) {
+	constructor( locale: Locale, enableMathField = true ) {
 		super( locale );
+		this._enableMathField = enableMathField;
 		this.latexTextAreaView = new LatexTextAreaView( locale );
 		this.mathFieldFocusableView = new MathFieldFocusableView( locale, this );
 		this.set( 'value', null );
 		this.set( 'isReadOnly', false );
+		const children: Array<any> = [];
+		// Only include the MathLive container in the DOM when the feature is enabled
+		if ( this._enableMathField ) {
+			children.push( { tag: 'div', attributes: { class: [ 'ck-mathlive-container' ] } } );
+		}
+		children.push(
+			{ tag: 'label', attributes: { class: [ 'ck-latex-label' ] }, children: [ locale.t( 'LaTeX' ) ] },
+			{ tag: 'div', attributes: { class: [ 'ck-latex-wrapper' ] }, children: [ this.latexTextAreaView ] }
+		);
 		this.setTemplate( {
 			tag: 'div', attributes: { class: [ 'ck', 'ck-math-input' ] },
-			children: [
-				{ tag: 'div', attributes: { class: [ 'ck-mathlive-container' ] } },
-				{ tag: 'label', attributes: { class: [ 'ck-latex-label' ] }, children: [ locale.t( 'LaTeX' ) ] },
-				{ tag: 'div', attributes: { class: [ 'ck-latex-wrapper' ] }, children: [ this.latexTextAreaView ] }
-			]
+			children
 		} );
 	}
 
@@ -135,7 +130,7 @@ export default class MathInputView extends View {
 		} );
 
 		// Handle virtual keyboard geometry changes
-		const vk = window.mathVirtualKeyboard;
+		const vk = (window as any).mathVirtualKeyboard;
 		if ( vk && !this._vkGeometryHandler ) {
 			this._vkGeometryHandler = () => {
 				if ( vk.visible && this.mathfield ) {
@@ -149,7 +144,9 @@ export default class MathInputView extends View {
 		if ( textarea.value !== initial ) {
 			textarea.value = initial;
 		}
-		this._loadMathLive();
+		if ( this._enableMathField ) {
+			this._loadMathLive();
+		}
 	}
 
 	// Loads the MathLive library dynamically
@@ -198,7 +195,10 @@ export default class MathInputView extends View {
 		// Set shortcuts after mounting (accessing inlineShortcuts requires mounted element)
 		try {
 			if ( mf.inlineShortcuts ) {
-				mf.inlineShortcuts = { ...mf.inlineShortcuts, dx: 'dx', dy: 'dy', dt: 'dt' };
+				// Allows external listeners to inject custom MathLive shortcuts by mutating event.detail.
+				const customShortcuts: Record<string, string> = {};
+				document.dispatchEvent( new CustomEvent( 'mathlive:custom-shortcuts', { detail: customShortcuts } ) );
+				mf.inlineShortcuts = { ...mf.inlineShortcuts, dx: 'dx', dy: 'dy', dt: 'dt', ...customShortcuts };
 			}
 		} catch {
 			// Inline shortcut configuration is optional; ignore failures to avoid breaking the math field.
@@ -247,16 +247,20 @@ export default class MathInputView extends View {
 	}
 
 	public hideKeyboard(): void {
-		window.mathVirtualKeyboard?.hide();
+		(window as any).mathVirtualKeyboard?.hide();
 	}
 
 	public focus(): void {
-		this.mathfield?.focus();
+		if ( this.mathfield ) {
+			this.mathfield.focus();
+		} else {
+			this.latexTextAreaView.focus();
+		}
 	}
 
 	public override destroy(): void {
 		this._destroyed = true;
-		const vk = window.mathVirtualKeyboard;
+		const vk = (window as any).mathVirtualKeyboard;
 		if ( vk && this._vkGeometryHandler ) {
 			vk.removeEventListener( 'geometrychange', this._vkGeometryHandler );
 			this._vkGeometryHandler = undefined;

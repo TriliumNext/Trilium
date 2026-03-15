@@ -48,6 +48,9 @@ patchedDependencies:
   '@ckeditor/ckeditor5-mention':
     hash: 5981fb59ba35829e4dff1d39cf771000f8a8fdfa7a34b51d8af9549541f2d62d
     path: patches/@ckeditor__ckeditor5-mention.patch
+  mathlive@0.109.0:
+    hash: 1765c60e029f5b7ebd3150cebbd533ac10ce969088a617a32985670d006549b4
+    path: patches/mathlive@0.109.0.patch
 
 importers:
 
@@ -1134,7 +1137,7 @@ importers:
         version: 47.6.1
       mathlive:
         specifier: 0.109.0
-        version: 0.109.0
+        version: 0.109.0(patch_hash=1765c60e029f5b7ebd3150cebbd533ac10ce969088a617a32985670d006549b4)
     devDependencies:
       '@ckeditor/ckeditor5-dev-build-tools':
         specifier: 55.0.0
@@ -17253,8 +17256,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.6.1
       '@ckeditor/ckeditor5-utils': 47.6.1
       ckeditor5: 47.6.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-autoformat@47.6.1':
     dependencies:
@@ -17285,8 +17286,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.6.1
       '@ckeditor/ckeditor5-utils': 47.6.1
       ckeditor5: 47.6.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-block-quote@47.6.1':
     dependencies:
@@ -17297,8 +17296,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.6.1
       '@ckeditor/ckeditor5-utils': 47.6.1
       ckeditor5: 47.6.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-bookmark@47.6.1':
     dependencies:
@@ -17536,8 +17533,6 @@ snapshots:
       '@ckeditor/ckeditor5-upload': 47.6.1
       '@ckeditor/ckeditor5-utils': 47.6.1
       ckeditor5: 47.6.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-editor-balloon@47.6.1':
     dependencies:
@@ -17547,8 +17542,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.6.1
       ckeditor5: 47.6.1
       es-toolkit: 1.39.5
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-editor-classic@47.6.1':
     dependencies:
@@ -17610,8 +17603,6 @@ snapshots:
       ckeditor5: 47.6.1
       es-toolkit: 1.39.5
       fuzzysort: 3.1.0
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-engine@47.6.1':
     dependencies:
@@ -17634,8 +17625,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.6.1
       '@ckeditor/ckeditor5-undo': 47.6.1
       ckeditor5: 47.6.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-export-inline-styles@47.6.1':
     dependencies:
@@ -17731,8 +17720,6 @@ snapshots:
       '@ckeditor/ckeditor5-ui': 47.6.1
       '@ckeditor/ckeditor5-utils': 47.6.1
       ckeditor5: 47.6.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-highlight@47.6.1':
     dependencies:
@@ -17762,8 +17749,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.6.1
       '@ckeditor/ckeditor5-widget': 47.6.1
       ckeditor5: 47.6.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-html-support@47.6.1':
     dependencies:
@@ -17924,8 +17909,6 @@ snapshots:
       '@ckeditor/ckeditor5-utils': 47.6.1
       '@ckeditor/ckeditor5-widget': 47.6.1
       ckeditor5: 47.6.1
-    transitivePeerDependencies:
-      - supports-color
 
   '@ckeditor/ckeditor5-mention@47.6.1(patch_hash=5981fb59ba35829e4dff1d39cf771000f8a8fdfa7a34b51d8af9549541f2d62d)':
     dependencies:
@@ -18272,6 +18255,8 @@ snapshots:
       '@ckeditor/ckeditor5-icons': 47.6.1
       '@ckeditor/ckeditor5-ui': 47.6.1
       '@ckeditor/ckeditor5-utils': 47.6.1
+    transitivePeerDependencies:
+      - supports-color
 
   '@ckeditor/ckeditor5-upload@47.6.1':
     dependencies:
@@ -30467,7 +30452,7 @@ snapshots:
 
   math-intrinsics@1.1.0: {}
 
-  mathlive@0.109.0:
+  mathlive@0.109.0(patch_hash=1765c60e029f5b7ebd3150cebbd533ac10ce969088a617a32985670d006549b4):
     dependencies:
       '@cortex-js/compute-engine': 0.30.2
 

@@ -94,6 +94,7 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     "textNoteEmojiCompletionEnabled",
     "textNoteCompletionEnabled",
     "textNoteSlashCommandsEnabled",
+    "mathFieldEnabled",
     "layoutOrientation",
     "backgroundEffects",
     "allowedHtmlTags",
