@@ -1,8 +1,9 @@
-import { t } from "../../services/i18n";
-import { useEffect } from "preact/hooks";
-import note_autocomplete, { Options, type Suggestion } from "../../services/note_autocomplete";
-import type { RefObject } from "preact";
+import type { JSX,RefObject } from "preact";
 import type { CSSProperties } from "preact/compat";
+import { useEffect } from "preact/hooks";
+
+import { t } from "../../services/i18n";
+import note_autocomplete, { Options, type Suggestion } from "../../services/note_autocomplete";
 import { useSyncedRef } from "./hooks";
 
 interface NoteAutocompleteProps {
@@ -16,85 +17,111 @@ interface NoteAutocompleteProps {
     onChange?: (suggestion: Suggestion | null) => void;
     onTextChange?: (text: string) => void;
     onKeyDown?: (e: KeyboardEvent) => void;
+    onKeyDownCapture?: JSX.KeyboardEventHandler<HTMLInputElement>;
+    onKeyUpCapture?: JSX.KeyboardEventHandler<HTMLInputElement>;
     onBlur?: (newValue: string) => void;
     noteIdChanged?: (noteId: string) => void;
     noteId?: string;
 }
 
-export default function NoteAutocomplete({ id, inputRef: externalInputRef, text, placeholder, onChange, onTextChange, container, containerStyle, opts, noteId, noteIdChanged, onKeyDown, onBlur }: NoteAutocompleteProps) {
+export default function NoteAutocomplete({ id, inputRef: externalInputRef, text, placeholder, onChange, onTextChange, container, containerStyle, opts, noteId, noteIdChanged, onKeyDown, onKeyDownCapture, onKeyUpCapture, onBlur }: NoteAutocompleteProps) {
     const ref = useSyncedRef<HTMLInputElement>(externalInputRef);
 
     useEffect(() => {
         if (!ref.current) return;
         const $autoComplete = $(ref.current);
 
-        // clear any event listener added in previous invocation of this function
-        $autoComplete
-            .off("autocomplete:noteselected")
-            .off("autocomplete:commandselected")
-
         note_autocomplete.initNoteAutocomplete($autoComplete, {
             ...opts,
             container: container?.current
         });
-        if (onTextChange) {
-            $autoComplete.on("input", () => onTextChange($autoComplete[0].value));
-        }
-        if (onKeyDown) {
-            $autoComplete.on("keydown", (e) => e.originalEvent && onKeyDown(e.originalEvent));
-        }
-        if (onBlur) {
-            $autoComplete.on("blur", () => onBlur($autoComplete.getSelectedNoteId() ?? ""));
-        }
     }, [opts, container?.current]);
 
-    // On change event handlers.
     useEffect(() => {
         if (!ref.current) return;
         const $autoComplete = $(ref.current);
+        const inputListener = () => onTextChange?.($autoComplete[0].value);
+        const keyDownListener = (e) => e.originalEvent && onKeyDown?.(e.originalEvent);
+        const blurListener = () => onBlur?.($autoComplete.getSelectedNoteId() ?? "");
 
-        if (onChange || noteIdChanged) {
-            const autoCompleteListener = (_e, suggestion) => {
-                onChange?.(suggestion);
-
-                if (noteIdChanged) {
-                    const noteId = suggestion?.notePath?.split("/")?.at(-1);
-                    noteIdChanged(noteId);
-                }
-            };
-            const changeListener = (e) => {
-                if (!ref.current?.value) {
-                    autoCompleteListener(e, null);
-                }
-            };
-            $autoComplete
-                .on("autocomplete:noteselected", autoCompleteListener)
-                .on("autocomplete:externallinkselected", autoCompleteListener)
-                .on("autocomplete:commandselected", autoCompleteListener)
-                .on("change", changeListener);
-            return () => {
-                $autoComplete
-                    .off("autocomplete:noteselected", autoCompleteListener)
-                    .off("autocomplete:externallinkselected", autoCompleteListener)
-                    .off("autocomplete:commandselected", autoCompleteListener)
-                    .off("change", changeListener);
-            };
+        if (onTextChange) {
+            $autoComplete.on("input", inputListener);
         }
-    }, [opts, container?.current, onChange, noteIdChanged])
+        if (onKeyDown) {
+            $autoComplete.on("keydown", keyDownListener);
+        }
+        if (onBlur) {
+            $autoComplete.on("blur", blurListener);
+        }
+
+        return () => {
+            if (onTextChange) {
+                $autoComplete.off("input", inputListener);
+            }
+            if (onKeyDown) {
+                $autoComplete.off("keydown", keyDownListener);
+            }
+            if (onBlur) {
+                $autoComplete.off("blur", blurListener);
+            }
+        };
+    }, [onBlur, onKeyDown, onTextChange]);
+
+    useEffect(() => {
+        if (!ref.current) return;
+        const $autoComplete = $(ref.current);
+        if (!(onChange || noteIdChanged)) {
+            return;
+        }
+
+        const autoCompleteListener = (_e, suggestion) => {
+            onChange?.(suggestion);
+
+            if (noteIdChanged) {
+                const noteId = suggestion?.notePath?.split("/")?.at(-1);
+                noteIdChanged(noteId);
+            }
+        };
+        const changeListener = (e) => {
+            if (!ref.current?.value) {
+                autoCompleteListener(e, null);
+            }
+        };
+
+        $autoComplete
+            .on("autocomplete:noteselected", autoCompleteListener)
+            .on("autocomplete:externallinkselected", autoCompleteListener)
+            .on("autocomplete:commandselected", autoCompleteListener)
+            .on("change", changeListener);
+
+        return () => {
+            $autoComplete
+                .off("autocomplete:noteselected", autoCompleteListener)
+                .off("autocomplete:externallinkselected", autoCompleteListener)
+                .off("autocomplete:commandselected", autoCompleteListener)
+                .off("change", changeListener);
+        };
+    }, [onChange, noteIdChanged]);
 
     useEffect(() => {
         if (!ref.current) return;
         const $autoComplete = $(ref.current);
 
         if (noteId) {
-            $autoComplete.setNote(noteId);
-        } else if (text) {
-            note_autocomplete.setText($autoComplete, text);
-        } else {
-            $autoComplete.setSelectedNotePath("");
-            $autoComplete.autocomplete("val", "");
-            ref.current.value = "";
+            void $autoComplete.setNote(noteId);
+            return;
         }
+
+        if (text !== undefined) {
+            if (text) {
+                note_autocomplete.setText($autoComplete, text);
+            } else {
+                note_autocomplete.clearText($autoComplete);
+            }
+            return;
+        }
+
+        note_autocomplete.clearText($autoComplete);
     }, [text, noteId]);
 
     return (
@@ -103,6 +130,8 @@ export default function NoteAutocomplete({ id, inputRef: externalInputRef, text,
                 id={id}
                 ref={ref}
                 className="note-autocomplete form-control"
+                onKeyDownCapture={onKeyDownCapture}
+                onKeyUpCapture={onKeyUpCapture}
                 placeholder={placeholder ?? t("add_link.search_note")} />
         </div>
     );

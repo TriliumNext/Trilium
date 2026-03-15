@@ -1,5 +1,3 @@
-import "autocomplete.js/index_jquery.js";
-
 import appContext from "./components/app_context.js";
 import glob from "./services/glob.js";
 import noteAutocompleteService from "./services/note_autocomplete.js";

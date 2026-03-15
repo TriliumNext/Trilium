@@ -1,10 +1,14 @@
-import server from "./server.js";
+import type { AutocompleteApi as CoreAutocompleteApi, BaseItem } from "@algolia/autocomplete-core";
+import { createAutocomplete } from "@algolia/autocomplete-core";
+import type { MentionFeedObjectItem } from "@triliumnext/ckeditor5";
+
 import appContext from "../components/app_context.js";
-import noteCreateService from "./note_create.js";
+import { bindAutocompleteInput, createHeadlessPanelController, registerHeadlessAutocompleteCloser, withHeadlessSourceDefaults } from "./autocomplete_core.js";
+import commandRegistry from "./command_registry.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
-import commandRegistry from "./command_registry.js";
-import type { MentionFeedObjectItem } from "@triliumnext/ckeditor5";
+import noteCreateService from "./note_create.js";
+import server from "./server.js";
 
 // this key needs to have this value, so it's hit by the tooltip
 const SELECTED_NOTE_PATH_KEY = "data-note-path";
@@ -24,7 +28,7 @@ function getSearchDelay(notesCount: number): number {
 let searchDelay = getSearchDelay(notesCount);
 
 // TODO: Deduplicate with server.
-export interface Suggestion {
+export interface Suggestion extends BaseItem {
     noteTitle?: string;
     externalLink?: string;
     notePathTitle?: string;
@@ -54,33 +58,245 @@ export interface Options {
     isCommandPalette?: boolean;
 }
 
-async function autocompleteSourceForCKEditor(queryText: string) {
-    return await new Promise<MentionFeedObjectItem[]>((res, rej) => {
-        autocompleteSource(
-            queryText,
-            (rows) => {
-                res(
-                    rows.map((row) => {
-                        return {
-                            action: row.action,
-                            noteTitle: row.noteTitle,
-                            id: `@${row.notePathTitle}`,
-                            name: row.notePathTitle || "",
-                            link: `#${row.notePath}`,
-                            notePath: row.notePath,
-                            highlightedNotePathTitle: row.highlightedNotePathTitle
-                        };
-                    })
-                );
-            },
-            {
-                allowCreatingNotes: true
+// --- Headless Autocomplete Helpers ---
+interface ManagedInstance {
+    autocomplete: CoreAutocompleteApi<Suggestion>;
+    panelEl: HTMLElement;
+    clearCursor: () => void;
+    isPanelOpen: () => boolean;
+    suppressNextClosedReset: () => void;
+    showQuery: (query: string) => void;
+    openRecentNotes: () => void;
+    cleanup: () => void;
+}
+
+const instanceMap = new WeakMap<HTMLElement, ManagedInstance>();
+
+function escapeHtml(text: string): string {
+    return text
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+}
+
+function sanitizeHighlightedHtml(text: string, { allowBreaks = false }: { allowBreaks?: boolean } = {}): string {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(text, "text/html");
+    const safeOutput = document.createDocumentFragment();
+
+    const processNode = (node: Node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            safeOutput.appendChild(document.createTextNode(node.textContent || ""));
+        } else if (node.nodeType === Node.ELEMENT_NODE) {
+            const el = node as Element;
+            if (el.tagName === "B") {
+                const b = document.createElement("b");
+                b.textContent = el.textContent; // Only extract text, stripping nested potential danger
+                safeOutput.appendChild(b);
+            } else if (el.tagName === "BR" && allowBreaks) {
+                safeOutput.appendChild(document.createElement("br"));
+            } else {
+                // If the tag is not allowed, just extract its text content securely
+                safeOutput.appendChild(document.createTextNode(el.textContent || ""));
             }
-        );
+        }
+    };
+
+    doc.body.childNodes.forEach(processNode);
+
+    const tmpDiv = document.createElement("div");
+    tmpDiv.appendChild(safeOutput);
+    return tmpDiv.innerHTML;
+}
+
+function normalizeAttributeSnippet(snippet: string): string {
+    return sanitizeHighlightedHtml(snippet, { allowBreaks: true })
+        .replace(/<br\s*\/?>/gi, " <span class=\"aa-core-separator\">&middot;</span> ");
+}
+
+function getSuggestionIconClass(item: Suggestion): string {
+    if (item.action === "search-notes") {
+        return "bx bx-search";
+    }
+    if (item.action === "create-note") {
+        return "bx bx-plus";
+    }
+    if (item.action === "external-link") {
+        return "bx bx-link-external";
+    }
+
+    return item.icon || "bx bx-note";
+}
+
+function getSuggestionInputValue(item: Suggestion): string {
+    return item.noteTitle || item.notePathTitle || item.externalLink || "";
+}
+
+function renderCommandSuggestion(item: Suggestion): string {
+    const iconClass = escapeHtml(item.icon || "bx bx-terminal");
+    const titleHtml = item.highlightedNotePathTitle
+        ? sanitizeHighlightedHtml(item.highlightedNotePathTitle)
+        : escapeHtml(item.noteTitle || "");
+    const descriptionHtml = item.commandDescription ? `<div class="command-description">${escapeHtml(item.commandDescription)}</div>` : "";
+    const shortcutHtml = item.commandShortcut ? `<kbd class="command-shortcut">${escapeHtml(item.commandShortcut)}</kbd>` : "";
+
+    return `
+        <div class="command-suggestion">
+            <span class="command-icon ${iconClass}"></span>
+            <div class="command-content">
+                <div class="command-name">${titleHtml}</div>
+                ${descriptionHtml}
+            </div>
+            ${shortcutHtml}
+        </div>
+    `;
+}
+
+function renderNoteSuggestion(item: Suggestion): string {
+    const iconClass = escapeHtml(getSuggestionIconClass(item));
+    const titleHtml = item.highlightedNotePathTitle
+        ? sanitizeHighlightedHtml(item.highlightedNotePathTitle)
+        : escapeHtml(item.noteTitle || item.notePathTitle || item.externalLink || "");
+    const shortcutHtml = item.action === "search-notes"
+        ? `<kbd class="aa-core-shortcut">Ctrl+Enter</kbd>`
+        : "";
+    const attributeHtml = item.highlightedAttributeSnippet
+        ? `<div class="search-result-attributes">${normalizeAttributeSnippet(item.highlightedAttributeSnippet)}</div>`
+        : "";
+    const contentClass = item.action === "search-notes" ? "note-suggestion search-notes-action" : "note-suggestion";
+
+    return `
+        <div class="${contentClass}">
+            <span class="icon ${iconClass}"></span>
+            <span class="text">
+                <span class="aa-core-primary-row">
+                    <span class="search-result-title">${titleHtml}</span>
+                    ${shortcutHtml}
+                </span>
+                ${attributeHtml}
+            </span>
+        </div>
+    `;
+}
+
+function renderSuggestion(item: Suggestion): string {
+    if (item.action === "command") {
+        return renderCommandSuggestion(item);
+    }
+
+    return renderNoteSuggestion(item);
+}
+
+function createSuggestionSource(options: Options, onSelectItem: (item: Suggestion) => void) {
+    return withHeadlessSourceDefaults({
+        sourceId: "note-suggestions",
+        async getItems({ query }: { query: string }) {
+            return await fetchResolvedSuggestions(query, options);
+        },
+        getItemInputValue({ item }: { item: Suggestion }) {
+            return getSuggestionInputValue(item);
+        },
+        onSelect({ item }: { item: Suggestion }) {
+            void onSelectItem(item);
+        }
     });
 }
 
-async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void, options: Options = {}) {
+function renderItems(
+    panelEl: HTMLElement,
+    items: Suggestion[],
+    activeId: number | null,
+    onSelect: (item: Suggestion) => void | Promise<void>,
+    onActivate: (index: number) => void,
+    onDeactivate: () => void
+) {
+    if (items.length === 0) {
+        panelEl.style.display = "none";
+        return;
+    }
+
+    const list = document.createElement("div");
+    list.className = "aa-core-list aa-suggestions";
+    list.setAttribute("role", "listbox");
+
+    items.forEach((item, index) => {
+        const itemEl = document.createElement("div");
+        itemEl.className = "aa-core-item aa-suggestion";
+        itemEl.setAttribute("role", "option");
+        itemEl.setAttribute("aria-selected", index === activeId ? "true" : "false");
+        itemEl.dataset.index = String(index);
+
+        if (item.action) {
+            itemEl.classList.add(`${item.action}-action`);
+        }
+        if (index === activeId) {
+            itemEl.classList.add("aa-core-item--active", "aa-cursor");
+        }
+
+        itemEl.innerHTML = renderSuggestion(item);
+        itemEl.onmousemove = () => {
+            if (activeId === index) {
+                return;
+            }
+
+            onDeactivate();
+            window.setTimeout(() => {
+                onActivate(index);
+            }, 0);
+        };
+        itemEl.onmouseleave = (event) => {
+            const relatedTarget = event.relatedTarget;
+            if (relatedTarget instanceof HTMLElement && itemEl.contains(relatedTarget)) {
+                return;
+            }
+
+            onDeactivate();
+        };
+        itemEl.onmousedown = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            void onSelect(item);
+        };
+
+        list.appendChild(itemEl);
+    });
+
+    panelEl.innerHTML = "";
+    panelEl.appendChild(list);
+    panelEl.style.display = "block";
+}
+
+async function autocompleteSourceForCKEditor(queryText: string) {
+    const rows = await fetchResolvedSuggestions(queryText, { allowCreatingNotes: true });
+    return rows.map((row) => {
+        return {
+            action: row.action,
+            noteTitle: row.noteTitle,
+            id: `@${row.notePathTitle}`,
+            name: row.notePathTitle || "",
+            link: `#${row.notePath}`,
+            notePath: row.notePath,
+            highlightedNotePathTitle: row.highlightedNotePathTitle
+        };
+    });
+}
+
+function getSearchingSuggestion(term: string): Suggestion[] {
+    if (term.trim().length === 0) {
+        return [];
+    }
+
+    return [
+        {
+            noteTitle: term,
+            highlightedNotePathTitle: t("quick-search.searching")
+        }
+    ];
+}
+
+async function fetchResolvedSuggestions(term: string, options: Options = {}): Promise<Suggestion[]> {
     // Check if we're in command mode
     if (options.isCommandPalette && term.startsWith(">")) {
         const commandQuery = term.substring(1).trim();
@@ -102,21 +318,14 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
             icon: cmd.icon
         }));
 
-        cb(commandSuggestions);
-        return;
+        return commandSuggestions;
     }
 
-    const fastSearch = options.fastSearch === false ? false : true;
+    const fastSearch = options.fastSearch !== false;
     if (fastSearch === false) {
         if (term.trim().length === 0) {
-            return;
+            return [];
         }
-        cb([
-            {
-                noteTitle: term,
-                highlightedNotePathTitle: t("quick-search.searching")
-            }
-        ]);
     }
 
     const activeNoteId = appContext.tabManager.getActiveContextNoteId();
@@ -142,7 +351,7 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
             {
                 action: "search-notes",
                 noteTitle: term,
-                highlightedNotePathTitle: `${t("note_autocomplete.search-for", { term })} <kbd style='color: var(--muted-text-color); background-color: transparent; float: right;'>Ctrl+Enter</kbd>`
+                highlightedNotePathTitle: t("note_autocomplete.search-for", { term })
             }
         ]);
     }
@@ -157,287 +366,482 @@ async function autocompleteSource(term: string, cb: (rows: Suggestion[]) => void
         ].concat(results);
     }
 
-    cb(results);
+    return results;
 }
 
-function clearText($el: JQuery<HTMLElement>) {
-    searchDelay = 0;
+async function fetchSuggestionsWithDelay(term: string, options: Options): Promise<Suggestion[]> {
+    return await new Promise<Suggestion[]>((resolve) => {
+        clearTimeout(debounceTimeoutId);
+        debounceTimeoutId = setTimeout(async () => {
+            resolve(await fetchResolvedSuggestions(term, options));
+        }, searchDelay);
+
+        if (searchDelay === 0) {
+            searchDelay = getSearchDelay(notesCount);
+        }
+    });
+}
+
+function resetSelectionState($el: JQuery<HTMLElement>) {
     $el.setSelectedNotePath("");
-    $el.autocomplete("val", "").trigger("change");
+    $el.setSelectedExternalLink(null);
+}
+
+function getManagedInstance($el: JQuery<HTMLElement>): ManagedInstance | null {
+    const inputEl = $el[0] as HTMLInputElement | undefined;
+    return inputEl ? (instanceMap.get(inputEl) ?? null) : null;
+}
+
+async function handleSuggestionSelection(
+    $el: JQuery<HTMLElement>,
+    autocomplete: CoreAutocompleteApi<Suggestion>,
+    inputEl: HTMLInputElement,
+    suggestion: Suggestion
+) {
+    if (suggestion.action === "command") {
+        autocomplete.setIsOpen(false);
+        $el.trigger("autocomplete:commandselected", [suggestion]);
+        return;
+    }
+
+    if (suggestion.action === "external-link") {
+        $el.setSelectedNotePath(null);
+        $el.setSelectedExternalLink(suggestion.externalLink ?? null);
+        inputEl.value = suggestion.externalLink ?? "";
+        autocomplete.setIsOpen(false);
+        $el.trigger("autocomplete:externallinkselected", [suggestion]);
+        return;
+    }
+
+    if (suggestion.action === "create-note") {
+        const { success, noteType, templateNoteId, notePath } = await noteCreateService.chooseNoteType();
+        if (!success) {
+            return;
+        }
+
+        const { note } = await noteCreateService.createNote(notePath || suggestion.parentNoteId, {
+            title: suggestion.noteTitle,
+            activate: false,
+            type: noteType,
+            templateNoteId
+        });
+
+        const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
+        suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
+    }
+
+    if (suggestion.action === "search-notes") {
+        const searchString = suggestion.noteTitle;
+        autocomplete.setIsOpen(false);
+        await appContext.triggerCommand("searchNotes", { searchString });
+        return;
+    }
+
+    $el.setSelectedNotePath(suggestion.notePath || "");
+    $el.setSelectedExternalLink(null);
+    inputEl.value = suggestion.noteTitle || getSuggestionInputValue(suggestion);
+    autocomplete.setIsOpen(false);
+    $el.trigger("autocomplete:noteselected", [suggestion]);
+}
+
+export function clearText($el: JQuery<HTMLElement>) {
+    searchDelay = 0;
+    resetSelectionState($el);
+    const inputEl = $el[0] as HTMLInputElement;
+    const instance = getManagedInstance($el);
+    if (instance) {
+        if (instance.isPanelOpen()) {
+            instance.suppressNextClosedReset();
+        }
+        inputEl.value = "";
+        instance.clearCursor();
+        instance.autocomplete.setQuery("");
+        instance.autocomplete.setIsOpen(false);
+        instance.autocomplete.refresh();
+        $el.trigger("change");
+    }
 }
 
 function setText($el: JQuery<HTMLElement>, text: string) {
-    $el.setSelectedNotePath("");
-    $el.autocomplete("val", text.trim()).autocomplete("open");
+    resetSelectionState($el);
+    const instance = getManagedInstance($el);
+    if (instance) {
+        instance.showQuery(text.trim());
+    }
 }
 
 function showRecentNotes($el: JQuery<HTMLElement>) {
     searchDelay = 0;
-    $el.setSelectedNotePath("");
-    $el.autocomplete("val", "");
-    $el.autocomplete("open");
+    resetSelectionState($el);
+    const instance = getManagedInstance($el);
+    if (instance) {
+        instance.openRecentNotes();
+    }
     $el.trigger("focus");
 }
 
 function showAllCommands($el: JQuery<HTMLElement>) {
     searchDelay = 0;
-    $el.setSelectedNotePath("");
-    $el.autocomplete("val", ">").autocomplete("open");
+    resetSelectionState($el);
+    const instance = getManagedInstance($el);
+    if (instance) {
+        instance.showQuery(">");
+    }
 }
 
 function fullTextSearch($el: JQuery<HTMLElement>, options: Options) {
-    const searchString = $el.autocomplete("val") as unknown as string;
-    if (options.fastSearch === false || searchString?.trim().length === 0) {
+    const inputEl = $el[0] as HTMLInputElement;
+    const searchString = inputEl.value;
+    if (options.fastSearch === false || searchString.trim().length === 0) {
         return;
     }
     $el.trigger("focus");
     options.fastSearch = false;
-    $el.autocomplete("val", "");
-    $el.setSelectedNotePath("");
     searchDelay = 0;
-    $el.autocomplete("val", searchString);
+    resetSelectionState($el);
+
+    const instance = getManagedInstance($el);
+    if (instance) {
+        instance.clearCursor();
+        instance.autocomplete.setQuery("");
+        inputEl.value = "";
+        instance.showQuery(searchString);
+    }
 }
 
 function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
-    if ($el.hasClass("note-autocomplete-input")) {
-        // clear any event listener added in previous invocation of this function
-        $el.off("autocomplete:noteselected");
+    $el.addClass("note-autocomplete-input");
+    const inputEl = $el[0] as HTMLInputElement;
 
+    if (instanceMap.has(inputEl)) {
+        $el
+            .off("autocomplete:noteselected")
+            .off("autocomplete:externallinkselected")
+            .off("autocomplete:commandselected");
         return $el;
     }
 
     options = options || {};
-
-    // Used to track whether the user is performing character composition with an input method (such as Chinese Pinyin, Japanese, Korean, etc.) and to avoid triggering a search during the composition process.
     let isComposingInput = false;
-    $el.on("compositionstart", () => {
+
+    const panelController = createHeadlessPanelController({
+        inputEl,
+        container: options.container,
+        className: "aa-core-panel aa-dropdown-menu"
+    });
+    const { panelEl } = panelController;
+    let currentQuery = inputEl.value;
+    let shouldAutoselectTopItem = false;
+    let shouldMirrorActiveItemToInput = false;
+    let wasPanelOpen = false;
+    let suppressNextClosedEmptyReset = false;
+    let shouldClearQueryAfterClose = false;
+    let suggestionRequestId = 0;
+
+    const clearCursor = () => {
+        shouldMirrorActiveItemToInput = false;
+        autocomplete.setActiveItemId(null);
+        inputEl.value = currentQuery;
+    };
+
+    const suppressNextClosedReset = () => {
+        suppressNextClosedEmptyReset = true;
+    };
+
+    const prepareForQueryChange = () => {
+        shouldAutoselectTopItem = true;
+        shouldMirrorActiveItemToInput = false;
+    };
+
+    const rerunQuery = (query: string) => {
+        if (!query.trim().length) {
+            openRecentNotes();
+            return;
+        }
+
+        prepareForQueryChange();
+        currentQuery = "";
+        inputEl.value = "";
+        autocomplete.setQuery("");
+        showQuery(query);
+    };
+
+    const onSelectItem = async (item: Suggestion) => {
+        await handleSuggestionSelection($el, autocomplete, inputEl, item);
+    };
+
+    const source = createSuggestionSource(options, onSelectItem);
+
+    const showQuery = (query: string) => {
+        prepareForQueryChange();
+        inputEl.value = query;
+        autocomplete.setQuery(query);
+        autocomplete.setIsOpen(true);
+        autocomplete.refresh();
+    };
+
+    const openRecentNotes = () => {
+        resetSelectionState($el);
+        prepareForQueryChange();
+        inputEl.value = "";
+        autocomplete.setQuery("");
+        autocomplete.setActiveItemId(null);
+
+        fetchResolvedSuggestions("", options).then((items) => {
+            autocomplete.setCollections([{ source, items }]);
+            autocomplete.setActiveItemId(items.length > 0 ? 0 : null);
+            autocomplete.setIsOpen(items.length > 0);
+        });
+    };
+
+    const autocomplete = createAutocomplete<Suggestion>({
+        openOnFocus: false, // Wait until we explicitly focus or type
+        // Old autocomplete.js used `autoselect: true`, so the first item
+        // should be immediately selectable when the panel opens.
+        defaultActiveItemId: 0,
+        shouldPanelOpen() {
+            return true;
+        },
+
+        getSources({ query }) {
+            return [
+                {
+                    ...source,
+                    async getItems() {
+                        if (isComposingInput) {
+                            return [];
+                        }
+
+                        if (options.fastSearch === false && query.trim().length > 0) {
+                            const requestId = ++suggestionRequestId;
+
+                            void fetchSuggestionsWithDelay(query, options).then((items) => {
+                                if (requestId !== suggestionRequestId || currentQuery !== query) {
+                                    return;
+                                }
+
+                                autocomplete.setCollections([{ source, items }]);
+                                autocomplete.setIsOpen(items.length > 0);
+                            });
+
+                            return getSearchingSuggestion(query);
+                        }
+
+                        return await fetchSuggestionsWithDelay(query, options);
+                    }
+                },
+            ];
+        },
+
+        onStateChange({ state }) {
+            const collections = state.collections;
+            const items = collections.length > 0 ? (collections[0].items as Suggestion[]) : [];
+            const activeId = state.activeItemId ?? null;
+            const activeItem = activeId !== null ? items[activeId] : null;
+            currentQuery = state.query;
+            const isPanelOpen = state.isOpen && items.length > 0;
+
+            if (isPanelOpen !== wasPanelOpen) {
+                wasPanelOpen = isPanelOpen;
+
+                if (isPanelOpen) {
+                    $el.trigger("autocomplete:opened");
+
+                    if (inputEl.readOnly) {
+                        suppressNextClosedReset();
+                        autocomplete.setIsOpen(false);
+                        return;
+                    }
+                } else {
+                    $el.trigger("autocomplete:closed");
+
+                    if (suppressNextClosedEmptyReset) {
+                        suppressNextClosedEmptyReset = false;
+                    } else if (!String(inputEl.value).trim()) {
+                        searchDelay = 0;
+                        resetSelectionState($el);
+                        currentQuery = "";
+                        inputEl.value = "";
+                        shouldClearQueryAfterClose = state.query.length > 0;
+                        $el.trigger("change");
+                    }
+                }
+            }
+
+            if (shouldClearQueryAfterClose) {
+                inputEl.value = "";
+                shouldClearQueryAfterClose = false;
+                queueMicrotask(() => {
+                    autocomplete.setQuery("");
+                });
+            } else if (activeItem && shouldMirrorActiveItemToInput) {
+                inputEl.value = getSuggestionInputValue(activeItem);
+            } else {
+                inputEl.value = state.query;
+            }
+
+            if (isPanelOpen) {
+                renderItems(panelEl, items, activeId, (item) => {
+                    void onSelectItem(item);
+                }, (index) => {
+                    autocomplete.setActiveItemId(index);
+                }, () => {
+                    clearCursor();
+                });
+
+                if (shouldAutoselectTopItem && activeId === null) {
+                    shouldAutoselectTopItem = false;
+                    shouldMirrorActiveItemToInput = false;
+                    autocomplete.setActiveItemId(0);
+                    return;
+                }
+
+                panelController.startPositioning();
+            } else {
+                shouldAutoselectTopItem = false;
+                panelController.hide();
+            }
+        },
+    });
+
+    const unregisterGlobalCloser = registerHeadlessAutocompleteCloser(() => {
+        autocomplete.setIsOpen(false);
+        panelController.hide();
+    });
+
+    const onCompositionStart = () => {
         isComposingInput = true;
-    });
-    $el.on("compositionend", () => {
+    };
+    const onCompositionEnd = (e: any) => {
         isComposingInput = false;
-        const searchString = $el.autocomplete("val") as unknown as string;
-        $el.autocomplete("val", "");
-        $el.autocomplete("val", searchString);
+        rerunQuery(inputEl.value);
+    };
+
+    const cleanupInputBindings = bindAutocompleteInput<Suggestion>({
+        inputEl,
+        autocomplete,
+        onInput(e, handlers) {
+            const value = (e.currentTarget as HTMLInputElement).value;
+            if (value.trim().length === 0) {
+                openRecentNotes();
+                return;
+            }
+
+            prepareForQueryChange();
+            handlers.onChange(e as any);
+        },
+        onFocus(e, handlers) {
+            if (inputEl.readOnly) {
+                autocomplete.setIsOpen(false);
+                panelController.hide();
+                return;
+            }
+            handlers.onFocus(e as any);
+        },
+        onBlur() {
+            if (options.container) {
+                return;
+            }
+            setTimeout(() => {
+                autocomplete.setIsOpen(false);
+                panelController.hide();
+            }, 50);
+        },
+        onKeyDown(e, handlers) {
+            if (options.allowJumpToSearchNotes && e.ctrlKey && e.key === "Enter") {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                void handleSuggestionSelection($el, autocomplete, inputEl, {
+                    action: "search-notes",
+                    noteTitle: inputEl.value
+                });
+                return;
+            }
+
+            if (e.shiftKey && e.key === "Enter") {
+                e.stopImmediatePropagation();
+                e.preventDefault();
+                fullTextSearch($el, options);
+                return;
+            }
+
+            if (e.key === "Enter" && !wasPanelOpen) {
+                // Do not pass the Enter key to autocomplete-core if the panel is closed.
+                // This prevents `preventDefault()` from being called inappropriately and
+                // allows the native form submission to work.
+                return;
+            }
+
+            if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                shouldMirrorActiveItemToInput = true;
+            }
+            handlers.onKeyDown(e as any);
+        },
+        extraBindings: [
+            { type: "compositionstart", listener: onCompositionStart as ((event: Event) => void) },
+            { type: "compositionend", listener: onCompositionEnd as ((event: Event) => void) }
+        ]
     });
 
-    $el.addClass("note-autocomplete-input");
+    const cleanup = () => {
+        unregisterGlobalCloser();
+        cleanupInputBindings();
+        panelController.destroy();
+    };
 
+    instanceMap.set(inputEl, {
+        autocomplete,
+        panelEl,
+        clearCursor,
+        isPanelOpen: () => wasPanelOpen,
+        suppressNextClosedReset,
+        showQuery,
+        openRecentNotes,
+        cleanup
+    });
+
+    // Buttons UI logic
     const $clearTextButton = $("<a>").addClass("input-group-text input-clearer-button bx bxs-tag-x").prop("title", t("note_autocomplete.clear-text-field"));
-
     const $showRecentNotesButton = $("<a>").addClass("input-group-text show-recent-notes-button bx bx-time").prop("title", t("note_autocomplete.show-recent-notes"));
-
-    const $fullTextSearchButton = $("<a>")
-        .addClass("input-group-text full-text-search-button bx bx-search")
-        .prop("title", `${t("note_autocomplete.full-text-search")} (Shift+Enter)`);
-
+    const $fullTextSearchButton = $("<a>").addClass("input-group-text full-text-search-button bx bx-search").prop("title", `${t("note_autocomplete.full-text-search")} (Shift+Enter)`);
     const $goToSelectedNoteButton = $("<a>").addClass("input-group-text go-to-selected-note-button bx bx-arrow-to-right");
 
     if (!options.hideAllButtons) {
         $el.after($clearTextButton).after($showRecentNotesButton).after($fullTextSearchButton);
     }
-
     if (!options.hideGoToSelectedNoteButton && !options.hideAllButtons) {
         $el.after($goToSelectedNoteButton);
     }
 
     $clearTextButton.on("click", () => clearText($el));
-
     $showRecentNotesButton.on("click", (e) => {
         showRecentNotes($el);
-
-        // this will cause the click not give focus to the "show recent notes" button
-        // this is important because otherwise input will lose focus immediately and not show the results
         return false;
     });
-
     $fullTextSearchButton.on("click", (e) => {
-        fullTextSearch($el, options);
+        fullTextSearch($el, options!);
         return false;
     });
-
-    let autocompleteOptions: AutoCompleteConfig = {};
-    if (options.container) {
-        autocompleteOptions.dropdownMenuContainer = options.container;
-        autocompleteOptions.debug = true; // don't close on blur
-    }
-
-    if (options.allowJumpToSearchNotes) {
-        $el.on("keydown", (event) => {
-            if (event.ctrlKey && event.key === "Enter") {
-                // Prevent Ctrl + Enter from triggering autoComplete.
-                event.stopImmediatePropagation();
-                event.preventDefault();
-                $el.trigger("autocomplete:selected", { action: "search-notes", noteTitle: $el.autocomplete("val") });
-            }
-        });
-    }
-    $el.on("keydown", async (event) => {
-        if (event.shiftKey && event.key === "Enter") {
-            // Prevent Enter from triggering autoComplete.
-            event.stopImmediatePropagation();
-            event.preventDefault();
-            fullTextSearch($el, options);
-        }
-    });
-
-    $el.autocomplete(
-        {
-            ...autocompleteOptions,
-            appendTo: document.querySelector("body"),
-            hint: false,
-            autoselect: true,
-            // openOnFocus has to be false, otherwise re-focus (after return from note type chooser dialog) forces
-            // re-querying of the autocomplete source which then changes the currently selected suggestion
-            openOnFocus: false,
-            minLength: 0,
-            tabAutocomplete: false
-        },
-        [
-            {
-                source: (term, cb) => {
-                    clearTimeout(debounceTimeoutId);
-                    debounceTimeoutId = setTimeout(() => {
-                        if (isComposingInput) {
-                            return;
-                        }
-                        autocompleteSource(term, cb, options);
-                    }, searchDelay);
-
-                    if (searchDelay === 0) {
-                        searchDelay = getSearchDelay(notesCount);
-                    }
-                },
-                displayKey: "notePathTitle",
-                templates: {
-                    suggestion: (suggestion) => {
-                        if (suggestion.action === "command") {
-                            let html = `<div class="command-suggestion">`;
-                            html += `<span class="command-icon ${suggestion.icon || "bx bx-terminal"}"></span>`;
-                            html += `<div class="command-content">`;
-                            html += `<div class="command-name">${suggestion.highlightedNotePathTitle}</div>`;
-                            if (suggestion.commandDescription) {
-                                html += `<div class="command-description">${suggestion.commandDescription}</div>`;
-                            }
-                            html += `</div>`;
-                            if (suggestion.commandShortcut) {
-                                html += `<kbd class="command-shortcut">${suggestion.commandShortcut}</kbd>`;
-                            }
-                            html += '</div>';
-                            return html;
-                        }
-                        // Add special class for search-notes action
-                        const actionClass = suggestion.action === "search-notes" ? "search-notes-action" : "";
-
-                        // Choose appropriate icon based on action
-                        let iconClass = suggestion.icon ?? "bx bx-note";
-                        if (suggestion.action === "search-notes") {
-                            iconClass = "bx bx-search";
-                        } else if (suggestion.action === "create-note") {
-                            iconClass = "bx bx-plus";
-                        } else if (suggestion.action === "external-link") {
-                            iconClass = "bx bx-link-external";
-                        }
-
-                        // Simplified HTML structure without nested divs
-                        let html = `<div class="note-suggestion ${actionClass}">`;
-                        html += `<span class="icon ${iconClass}"></span>`;
-                        html += `<span class="text">`;
-                        html += `<span class="search-result-title">${suggestion.highlightedNotePathTitle}</span>`;
-
-                        // Add attribute snippet inline if available
-                        if (suggestion.highlightedAttributeSnippet) {
-                            html += `<span class="search-result-attributes">${suggestion.highlightedAttributeSnippet}</span>`;
-                        }
-
-                        html += `</span>`;
-                        html += `</div>`;
-                        return html;
-                    }
-                },
-                // we can't cache identical searches because notes can be created / renamed, new recent notes can be added
-                cache: false
-            }
-        ]
-    );
-
-    // TODO: Types fail due to "autocomplete:selected" not being registered in type definitions.
-    ($el as any).on("autocomplete:selected", async (event: Event, suggestion: Suggestion) => {
-        if (suggestion.action === "command") {
-            $el.autocomplete("close");
-            $el.trigger("autocomplete:commandselected", [suggestion]);
-            return;
-        }
-
-        if (suggestion.action === "external-link") {
-            $el.setSelectedNotePath(null);
-            $el.setSelectedExternalLink(suggestion.externalLink);
-
-            $el.autocomplete("val", suggestion.externalLink);
-
-            $el.autocomplete("close");
-
-            $el.trigger("autocomplete:externallinkselected", [suggestion]);
-
-            return;
-        }
-
-        if (suggestion.action === "create-note") {
-            const { success, noteType, templateNoteId, notePath } = await noteCreateService.chooseNoteType();
-            if (!success) {
-                return;
-            }
-            const { note } = await noteCreateService.createNote( notePath || suggestion.parentNoteId, {
-                title: suggestion.noteTitle,
-                activate: false,
-                type: noteType,
-                templateNoteId: templateNoteId
-            });
-
-            const hoistedNoteId = appContext.tabManager.getActiveContext()?.hoistedNoteId;
-            suggestion.notePath = note?.getBestNotePathString(hoistedNoteId);
-        }
-
-        if (suggestion.action === "search-notes") {
-            const searchString = suggestion.noteTitle;
-            appContext.triggerCommand("searchNotes", { searchString });
-            return;
-        }
-
-        $el.setSelectedNotePath(suggestion.notePath);
-        $el.setSelectedExternalLink(null);
-
-        $el.autocomplete("val", suggestion.noteTitle);
-
-        $el.autocomplete("close");
-
-        $el.trigger("autocomplete:noteselected", [suggestion]);
-    });
-
-    $el.on("autocomplete:closed", () => {
-        if (!String($el.val())?.trim()) {
-            clearText($el);
-        }
-    });
-
-    $el.on("autocomplete:opened", () => {
-        if ($el.attr("readonly")) {
-            $el.autocomplete("close");
-        }
-    });
-
-    // clear any event listener added in previous invocation of this function
-    $el.off("autocomplete:noteselected");
 
     return $el;
+}
+
+export function destroyAutocomplete($el: JQuery<HTMLElement> | HTMLElement) {
+    const inputEl = $el instanceof HTMLElement ? $el : $el[0] as HTMLInputElement;
+    const instance = instanceMap.get(inputEl);
+    if (instance) {
+        instance.cleanup();
+        instanceMap.delete(inputEl);
+    }
 }
 
 function init() {
     $.fn.getSelectedNotePath = function () {
         if (!String($(this).val())?.trim()) {
             return "";
-        } else {
-            return $(this).attr(SELECTED_NOTE_PATH_KEY);
         }
+        return $(this).attr(SELECTED_NOTE_PATH_KEY);
+
     };
 
     $.fn.getSelectedNoteId = function () {
@@ -461,9 +865,9 @@ function init() {
     $.fn.getSelectedExternalLink = function () {
         if (!String($(this).val())?.trim()) {
             return "";
-        } else {
-            return $(this).attr(SELECTED_EXTERNAL_LINK_KEY);
         }
+        return $(this).attr(SELECTED_EXTERNAL_LINK_KEY);
+
     };
 
     $.fn.setSelectedExternalLink = function (externalLink: string | null) {
@@ -473,10 +877,19 @@ function init() {
 
     $.fn.setNote = async function (noteId) {
         const note = noteId ? await froca.getNote(noteId, true) : null;
+        const $el = $(this as unknown as HTMLElement);
+        const instance = getManagedInstance($el);
+        const noteTitle = note ? note.title : "";
 
-        $(this)
-            .val(note ? note.title : "")
+        $el
+            .val(noteTitle)
             .setSelectedNotePath(noteId);
+
+        if (instance) {
+            instance.clearCursor();
+            instance.autocomplete.setQuery(noteTitle);
+            instance.autocomplete.setIsOpen(false);
+        }
     };
 }
 
@@ -497,6 +910,8 @@ export function triggerRecentNotes(inputElement: HTMLInputElement | null | undef
 
 export default {
     autocompleteSourceForCKEditor,
+    clearText,
+    destroyAutocomplete,
     initNoteAutocomplete,
     showRecentNotes,
     showAllCommands,

@@ -1,15 +1,16 @@
-import Component from "./component.js";
-import SpacedUpdate from "../services/spaced_update.js";
-import server from "../services/server.js";
-import options from "../services/options.js";
-import froca from "../services/froca.js";
-import treeService from "../services/tree.js";
-import NoteContext from "./note_context.js";
-import appContext from "./app_context.js";
-import Mutex from "../utils/mutex.js";
-import linkService from "../services/link.js";
-import type { EventData } from "./app_context.js";
 import type FNote from "../entities/fnote.js";
+import { closeAllHeadlessAutocompletes } from "../services/autocomplete_core.js";
+import froca from "../services/froca.js";
+import linkService from "../services/link.js";
+import options from "../services/options.js";
+import server from "../services/server.js";
+import SpacedUpdate from "../services/spaced_update.js";
+import treeService from "../services/tree.js";
+import Mutex from "../utils/mutex.js";
+import type { EventData } from "./app_context.js";
+import appContext from "./app_context.js";
+import Component from "./component.js";
+import NoteContext from "./note_context.js";
 
 interface TabState {
     contexts: NoteContext[];
@@ -429,10 +430,7 @@ export default class TabManager extends Component {
             }
 
             // close dangling autocompletes after closing the tab
-            const $autocompleteEl = $(".aa-input");
-            if ("autocomplete" in $autocompleteEl) {
-                $autocompleteEl.autocomplete("close");
-            }
+            closeAllHeadlessAutocompletes();
 
             // close dangling tooltips
             $("body > div.tooltip").remove();

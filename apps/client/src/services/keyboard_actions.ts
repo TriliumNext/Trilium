@@ -1,8 +1,9 @@
-import server from "./server.js";
-import appContext from "../components/app_context.js";
-import shortcutService, { ShortcutBinding } from "./shortcuts.js";
-import type Component from "../components/component.js";
 import type { ActionKeyboardShortcut } from "@triliumnext/commons";
+
+import appContext from "../components/app_context.js";
+import type Component from "../components/component.js";
+import server from "./server.js";
+import shortcutService, { ShortcutBinding } from "./shortcuts.js";
 
 const keyboardActionRepo: Record<string, ActionKeyboardShortcut> = {};
 
@@ -51,7 +52,10 @@ async function setupActionsForElement(scope: string, $el: JQuery<HTMLElement>, c
 getActionsForScope("window").then((actions) => {
     for (const action of actions) {
         for (const shortcut of action.effectiveShortcuts ?? []) {
-            shortcutService.bindGlobalShortcut(shortcut, () => appContext.triggerCommand(action.actionName, { ntxId: appContext.tabManager.activeNtxId }));
+            shortcutService.bindGlobalShortcut(shortcut, () => {
+                const ntxId = appContext.tabManager?.activeNtxId ?? null;
+                appContext.triggerCommand(action.actionName, { ntxId });
+            });
         }
     }
 });

@@ -6,7 +6,6 @@ import type { PrintReport } from "./print";
 import type { lint } from "./services/eslint";
 import type { Froca } from "./services/froca-interface";
 import { Library } from "./services/library_loader";
-import { Suggestion } from "./services/note_autocomplete";
 import server from "./services/server";
 import utils from "./services/utils";
 
@@ -83,34 +82,7 @@ declare global {
         "note-load-progress": CustomEvent<{ progress: number }>;
     }
 
-    interface AutoCompleteConfig {
-        appendTo?: HTMLElement | null;
-        hint?: boolean;
-        openOnFocus?: boolean;
-        minLength?: number;
-        tabAutocomplete?: boolean;
-        autoselect?: boolean;
-        dropdownMenuContainer?: HTMLElement;
-        debug?: boolean;
-    }
-
-    type AutoCompleteCallback = (values: AutoCompleteArg[]) => void;
-
-    interface AutoCompleteArg {
-        name?: string;
-        value?: string;
-        notePathTitle?: string;
-        displayKey?: "name" | "value" | "notePathTitle";
-        cache?: boolean;
-        source?: (term: string, cb: AutoCompleteCallback) => void,
-        templates?: {
-            suggestion: (suggestion: Suggestion) => string | undefined
-        }
-    }
-
     interface JQuery {
-        autocomplete: (action?: "close" | "open" | "destroy" | "val" | AutoCompleteConfig, args?: AutoCompleteArg[] | string) => JQuery<HTMLElement>;
-
         getSelectedNotePath(): string | undefined;
         getSelectedNoteId(): string | null;
         setSelectedNotePath(notePath: string | null | undefined);

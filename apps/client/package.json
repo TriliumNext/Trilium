@@ -16,6 +16,7 @@
     "circular-deps": "dpdm -T src/**/*.ts --tree=false --warning=false --skip-dynamic-imports=circular"
   },
   "dependencies": {
+    "@algolia/autocomplete-js": "1.19.6",
     "@excalidraw/excalidraw": "0.18.0",
     "@fullcalendar/core": "6.1.20",
     "@fullcalendar/daygrid": "6.1.20",
@@ -44,7 +45,6 @@
     "@univerjs/preset-sheets-sort": "0.17.0",
     "@univerjs/presets": "0.17.0",
     "@zumer/snapdom": "2.1.0",
-    "autocomplete.js": "0.38.1",
     "bootstrap": "5.3.8",
     "boxicons": "2.1.4",
     "clsx": "2.1.1",

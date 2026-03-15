@@ -1,5 +1,6 @@
 import { CreateChildrenResponse, SqlExecuteResponse } from "@triliumnext/commons";
 
+import { closeAllHeadlessAutocompletes } from "../services/autocomplete_core.js";
 import bundleService from "../services/bundle.js";
 import dateNoteService from "../services/date_notes.js";
 import froca from "../services/froca.js";
@@ -197,7 +198,7 @@ export default class Entrypoints extends Component {
 
     hideAllPopups() {
         if (utils.isDesktop()) {
-            $(".aa-input").autocomplete("close");
+            closeAllHeadlessAutocompletes();
         }
     }
 
