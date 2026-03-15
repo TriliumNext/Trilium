@@ -7,11 +7,61 @@ const TEXT_FORMATTING_GROUP = {
     icon: "text"
 };
 
+export type ToolbarItem = string | ToolbarGroup;
+
+export interface ToolbarGroup {
+    label: string;
+    icon?: string;
+    items: string[];
+}
+
+function getCustomToolbarItems(): ToolbarItem[] | null {
+    const configStr = options.get("textNoteToolbarConfig");
+    if (!configStr) return null;
+    try {
+        return JSON.parse(configStr) as ToolbarItem[];
+    } catch {
+        return null;
+    }
+}
+
+function flattenItems(items: ToolbarItem[]): string[] {
+    const flat: string[] = [];
+    for (const item of items) {
+        if (typeof item === "object" && "items" in item) {
+            for (const sub of item.items) {
+                flat.push(sub);
+            }
+        } else {
+            flat.push(item as string);
+        }
+    }
+    return flat;
+}
+
 export function buildToolbarConfig(isClassicToolbar: boolean) {
+    const customItems = getCustomToolbarItems();
+
     if (utils.isMobile()) {
+        if (customItems) {
+            return {
+                toolbar: {
+                    items: flattenItems(customItems),
+                    shouldNotGroupWhenFull: false
+                }
+            };
+        }
         return buildMobileToolbar();
     } else if (isClassicToolbar) {
         const multilineToolbar = utils.isDesktop() && options.get("textNoteEditorMultilineToolbar") === "true";
+        if (customItems) {
+            return {
+                toolbar: {
+                    items: customItems,
+                    shouldNotGroupWhenFull: multilineToolbar
+                }
+            };
+        }
         return buildClassicToolbar(multilineToolbar);
     } else {
         return buildFloatingToolbar();
@@ -40,6 +90,53 @@ export function buildMobileToolbar() {
         }
     };
 }
+
+export const DEFAULT_CLASSIC_TOOLBAR_ITEMS: ToolbarItem[] = [
+    "heading",
+    "fontSize",
+    "|",
+    "bold",
+    "italic",
+    {
+        ...TEXT_FORMATTING_GROUP,
+        items: ["underline", "strikethrough", "|", "superscript", "subscript", "|", "kbd"]
+    },
+    "formatPainter",
+    "|",
+    "fontColor",
+    "fontBackgroundColor",
+    "removeFormat",
+    "|",
+    "bulletedList",
+    "numberedList",
+    "todoList",
+    "|",
+    "blockQuote",
+    "admonition",
+    "insertTable",
+    "|",
+    "code",
+    "codeBlock",
+    "|",
+    "footnote",
+    {
+        label: "Insert",
+        icon: "plus",
+        items: ["imageUpload", "|", "link", "bookmark", "internallink", "includeNote", "|", "specialCharacters", "emoji", "math", "mermaid", "horizontalLine", "pageBreak", "dateTime"]
+    },
+    "|",
+    {
+        label: "Alignment",
+        icon: "alignLeft",
+        items: ["alignment:left", "alignment:center", "alignment:right", "|", "alignment:justify"]
+    },
+    "outdent",
+    "indent",
+    "|",
+    "insertTemplate",
+    "markdownImport",
+    "cuttonote"
+];
 
 export function buildClassicToolbar(multilineToolbar: boolean) {
     // For nested toolbars, refer to https://ckeditor.com/docs/ckeditor5/latest/getting-started/setup/toolbar.html#grouping-toolbar-items-in-dropdowns-nested-toolbars.

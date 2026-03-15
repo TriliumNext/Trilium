@@ -131,6 +131,8 @@ export interface OptionDefinitions extends KeyboardShortcutsOptions<KeyboardActi
     textNoteCompletionEnabled: boolean;
     /** Whether keyboard auto-completion for editing commands is triggered when typing `/`. */
     textNoteSlashCommandsEnabled: boolean;
+    /** JSON-serialized custom toolbar configuration for the classic text editor. Empty string means use the default. */
+    textNoteToolbarConfig: string;
     backgroundEffects: boolean;
     newLayout: boolean;
 
