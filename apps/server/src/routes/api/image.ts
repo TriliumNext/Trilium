@@ -23,7 +23,7 @@ function returnImageInt(image: BNote | BRevision | null, res: Response) {
     if (!image) {
         res.set("Content-Type", "image/png");
         return res.send(fs.readFileSync(`${RESOURCE_DIR}/db/image-deleted.png`));
-    } else if (!["image", "canvas", "mermaid", "mindMap"].includes(image.type)) {
+    } else if (!["image", "canvas", "mermaid", "mindMap", "spreadsheet"].includes(image.type)) {
         return res.sendStatus(400);
     }
 
@@ -33,6 +33,8 @@ function returnImageInt(image: BNote | BRevision | null, res: Response) {
         renderSvgAttachment(image, res, "mermaid-export.svg");
     } else if (image.type === "mindMap") {
         renderSvgAttachment(image, res, "mindmap-export.svg");
+    } else if (image.type === "spreadsheet") {
+        renderPngAttachment(image, res, "spreadsheet-export.png");
     } else {
         res.set("Content-Type", image.mime);
         res.set("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -58,6 +60,18 @@ export function renderSvgAttachment(image: BNote | BRevision, res: Response, att
     res.set("Content-Type", "image/svg+xml");
     res.set("Cache-Control", "no-cache, no-store, must-revalidate");
     res.send(svg);
+}
+
+export function renderPngAttachment(image: BNote | BRevision, res: Response, attachmentName: string) {
+    const attachment = image.getAttachmentByTitle(attachmentName);
+
+    if (attachment) {
+        res.set("Content-Type", "image/png");
+        res.set("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.send(attachment.getContent());
+    } else {
+        res.sendStatus(404);
+    }
 }
 
 function returnAttachedImage(req: Request<{ attachmentId: string }>, res: Response) {

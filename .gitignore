@@ -46,7 +46,6 @@ upload
 
 /.direnv
 /result
-.svelte-kit
 
 # docs
 site/

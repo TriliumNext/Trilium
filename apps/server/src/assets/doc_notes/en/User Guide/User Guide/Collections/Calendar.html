@@ -209,7 +209,7 @@
     <tr>
       <td><code spellcheck="false">#calendar:color</code>
       </td>
-      <td><strong>❌️ Removed since v0.100.0. Use</strong>  <code spellcheck="false">**#color**</code>  <strong>instead.</strong>&nbsp;
+      <td><strong>❌️ Removed since v0.100.0. Use</strong>  <code spellcheck="false">**#color**</code>  <strong>instead.</strong>&nbsp;&nbsp;
         <br>
         <br>Similar to <code spellcheck="false">#color</code>, but applies the color
         only for the event in the calendar and not for other places such as the
@@ -233,15 +233,15 @@
       <td><code spellcheck="false">#calendar:displayedAttributes</code>
       </td>
       <td>Allows displaying the value of one or more attributes in the calendar
-        like this:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        like this:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         <br>
         <br>
-        <img src="7_Calendar_image.png">&nbsp;&nbsp;&nbsp;&nbsp;
+        <img src="7_Calendar_image.png">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         <br>
-        <br><code spellcheck="false">#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"</code>&nbsp;&nbsp;&nbsp;&nbsp;
+        <br><code spellcheck="false">#weight="70" #Mood="Good" #calendar:displayedAttributes="weight,Mood"</code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         <br>
         <br>It can also be used with relations, case in which it will display the
-        title of the target note:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        title of the target note:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         <br>
         <br><code spellcheck="false">~assignee=@My assignee #calendar:displayedAttributes="assignee"</code>
       </td>
@@ -294,44 +294,27 @@
 <p>When not used in a Journal, the calendar is recursive. That is, it will
   look for events not just in its child notes but also in the children of
   these child notes.</p>
-<p>&nbsp;</p>
 <h2>Recurrence</h2>
 <p>The built in calendar view also supports repeating tasks. If a child note
   of the calendar has a #recurrence label with a valid recurrence, that event
   will repeat on the calendar according to the recurrence string.&nbsp;</p>
 <p>For example, to make a note repeat on the calendar:</p>
 <ul>
-  <li>
-    <p>Every Day - <code spellcheck="false">#recurrence="FREQ=DAILY;INTERVAL=1"</code>
-    </p>
+  <li>Every Day - <code spellcheck="false">#recurrence="FREQ=DAILY;INTERVAL=1"</code>
   </li>
-  <li>
-    <p>Every 3 days - <code spellcheck="false">#recurrence="FREQ=DAILY;INTERVAL=3"</code>
-    </p>
+  <li>Every 3 days - <code spellcheck="false">#recurrence="FREQ=DAILY;INTERVAL=3"</code>
   </li>
-  <li>
-    <p>Every week - <code spellcheck="false">#recurrence="FREQ=WEEKLY;INTERVAL=1"</code>
-    </p>
+  <li>Every week - <code spellcheck="false">#recurrence="FREQ=WEEKLY;INTERVAL=1"</code>
   </li>
-  <li>
-    <p>Every 2 weeks on Monday, Wednesday and Friday - <code spellcheck="false">#recurrence="FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE,FR"</code>
-    </p>
+  <li>Every 2 weeks on Monday, Wednesday and Friday - <code spellcheck="false">#recurrence="FREQ=WEEKLY;INTERVAL=2;BYDAY=MO,WE,FR"</code>
   </li>
-  <li>
-    <p>Every 3 months - <code spellcheck="false">#recurrence="FREQ=MONTHLY;INTERVAL=3"</code>
-    </p>
+  <li>Every 3 months - <code spellcheck="false">#recurrence="FREQ=MONTHLY;INTERVAL=3"</code>
   </li>
-  <li>
-    <p>Every 2 months on the First Sunday - <code spellcheck="false">#recurrence="FREQ=MONTHLY;INTERVAL=2;BYDAY=1SU"</code>
-    </p>
+  <li>Every 2 months on the First Sunday - <code spellcheck="false">#recurrence="FREQ=MONTHLY;INTERVAL=2;BYDAY=1SU"</code>
   </li>
-  <li>
-    <p>Every month on the Last Friday - <code spellcheck="false">#recurrence="FREQ=MONTHLY;INTERVAL=1;BYDAY=-1FR"</code>
-    </p>
+  <li>Every month on the Last Friday - <code spellcheck="false">#recurrence="FREQ=MONTHLY;INTERVAL=1;BYDAY=-1FR"</code>
   </li>
-  <li>
-    <p>And so on.</p>
-  </li>
+  <li>And so on.</li>
 </ul>
 <p>For other examples of valid <code spellcheck="false">RRULE</code> strings
   see <a href="https://icalendar.org/rrule-tool.html">https://icalendar.org/rrule-tool.html</a>
@@ -352,7 +335,6 @@
     note ID and title of the note with the erroneous recurrence message. This
     note will not be added to the calendar</p>
 </aside>
-<p>&nbsp;</p>
 <h2>Use-cases</h2>
 <h3>Using with the Journal / calendar</h3>
 <p>It is possible to integrate the calendar view into the Journal with day

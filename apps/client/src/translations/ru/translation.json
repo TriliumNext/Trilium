@@ -257,7 +257,7 @@
     "collapseExpand": "свернуть/развернуть узел",
     "notSet": "не установлено",
     "goBackForwards": "назад / вперед в истории",
-    "showJumpToNoteDialog": "показать <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">окно \"Перейти к\"</a>",
+    "showJumpToNoteDialog": "Перейти к <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Перейти к\" окно</a>",
     "scrollToActiveNote": "прокрутка к активной заметке",
     "jumpToParentNote": "переход к родительской заметке",
     "collapseWholeTree": "свернуть все дерево заметок",
@@ -471,7 +471,7 @@
     "calendar_root": "отмечает заметку, которая должна использоваться в качестве корневой для заметок дня. Только одна должна быть отмечена как таковая.",
     "archived": "заметки с этой меткой не будут отображаться в результатах поиска по умолчанию (а также в диалоговых окнах «Перейти к», «Добавить ссылку» и т. д.).",
     "exclude_from_export": "заметки (с их поддеревьями) не будут включены ни в один экспорт заметок",
-    "run": "определяет, при каких событиях должен запускаться скрипт. Возможные значения:\n<ul>\n<li>frontendStartup — при запуске (или обновлении) фронтенда Trilium, но не на мобильном устройстве.</li>\n<li>mobileStartup — при запуске (или обновлении) фронтенда Trilium на мобильном устройстве.</li>\n<li>backendStartup — при запуске бэкенда Trilium.</li>\n<li>hourly — запускать каждый час. Для указания времени можно использовать дополнительную метку <code>runAtHour</code>.</li>\n<li>daily — запускать раз в день.</li>\n</ul>",
+    "run": "определяет, при каких событиях должен запускаться скрипт. Возможные значения:<ul>\n<li>frontendStartup — при запуске (или обновлении) фронтенда Trilium, но не на мобильном устройстве.</li>\n<li>mobileStartup — при запуске (или обновлении) фронтенда Trilium на мобильном устройстве.</li>\n<li>backendStartup — при запуске бэкенда Trilium.</li>\n<li>hourly — запускать каждый час. Для указания времени можно использовать дополнительную метку <code>runAtHour</code>.</li>\n<li>daily — запускать раз в день.</li></ul>",
     "run_on_instance": "Определить, на каком экземпляре Trilium это должно выполняться. По умолчанию — для всех экземпляров.",
     "run_at_hour": "В какой час это должно выполняться? Следует использовать вместе с <code>#run=hourly</code>. Можно задать несколько раз для большего количества запусков в течение дня.",
     "disable_inclusion": "скрипты с этой меткой не будут включены в выполнение родительского скрипта.",
@@ -594,7 +594,8 @@
     "display-week-numbers": "Отображать номера недель",
     "hide-weekends": "Скрыть выходные",
     "raster": "Растр",
-    "show-scale": "Показать масштаб"
+    "show-scale": "Показать масштаб",
+    "show-labels": "Показать названия маркеров"
   },
   "editorfeatures": {
     "note_completion_enabled": "Включить автодополнение",
@@ -782,7 +783,13 @@
     "shared-indicator-tooltip": "Эта заметка опубликована",
     "shared-indicator-tooltip-with-url": "Эта заметка доступно публично по адресу: {{- url}}",
     "subtree-hidden-moved-description-other": "В дереве, к которому относится эта заметка, скрыты дочерние заметки.",
-    "subtree-hidden-moved-description-collection": "Эта коллекция скрывает свои дочерние заметки в дереве."
+    "subtree-hidden-moved-description-collection": "Эта коллекция скрывает свои дочерние заметки в дереве.",
+    "clone-indicator-tooltip": "У этой заметки {{- count}} родителей: {{- parents}}",
+    "clone-indicator-tooltip-single": "Эта заметка клонирована (1 дополнительный родитель: {{- parent}})",
+    "subtree-hidden-moved-title": "Добавлено в {{title}}",
+    "subtree-hidden-tooltip_one": "{{count}} дочерняя заметка скрыта",
+    "subtree-hidden-tooltip_few": "Скрыто {{count}} дочерних заметок",
+    "subtree-hidden-tooltip_many": "Скрыто {{count}} дочерних заметок"
   },
   "quick-search": {
     "no-results": "Результаты не найдены",
@@ -826,7 +833,9 @@
     "mind-map": "Mind Map",
     "geo-map": "Географическая карта",
     "task-list": "Список задач",
-    "confirm-change": "Не рекомендуется менять тип заметки, если её содержимое не пустое. Вы всё равно хотите продолжить?"
+    "confirm-change": "Не рекомендуется менять тип заметки, если её содержимое не пустое. Вы всё равно хотите продолжить?",
+    "ai-chat": "Чат с ИИ",
+    "spreadsheet": "Электронная таблица"
   },
   "tree-context-menu": {
     "open-in-popup": "Быстрое редактирование",
@@ -1153,7 +1162,8 @@
     "search_note_saved": "Заметка с настройкой поиска сохранена в {{- notePathTitle}}",
     "unknown_search_option": "Неизвестный параметр поиска {{searchOptionName}}",
     "actions_executed": "Действия выполнены.",
-    "view_options": "Просмотреть опции:"
+    "view_options": "Просмотреть опции:",
+    "option": "опция"
   },
   "ancestor": {
     "depth_label": "глубина",
@@ -1403,7 +1413,8 @@
     "type_text_to_filter": "Введите текст для фильтрации сочетаний клавиш...",
     "reload_app": "Перезагрузить приложение, чтобы применить изменения",
     "confirm_reset": "Вы действительно хотите сбросить все сочетания клавиш до значений по умолчанию?",
-    "set_all_to_default": "Установить все сочетания клавиш по умолчанию"
+    "set_all_to_default": "Установить все сочетания клавиш по умолчанию",
+    "no_results": "Не найдено ярлыков, соответствующих '{{filter}}'"
   },
   "sync_2": {
     "timeout_unit": "миллисекунд",
@@ -1713,7 +1724,8 @@
     "delete_this_note": "Удалить эту заметку",
     "insert_child_note": "Вставить дочернюю заметку",
     "note_revisions": "История изменений",
-    "content_language_switcher": "Язык содержимого: {{language}}"
+    "content_language_switcher": "Язык содержимого: {{language}}",
+    "backlinks": "Ссылки"
   },
   "svg_export_button": {
     "button_title": "Экспортировать диаграмму как SVG"
@@ -1790,7 +1802,8 @@
   },
   "search_result": {
     "no_notes_found": "По заданным параметрам поиска заметки не найдены.",
-    "search_not_executed": "Поиск ещё не выполнен. Нажмите кнопку «Поиск» выше, чтобы увидеть результаты."
+    "search_not_executed": "Поиск ещё не выполнен.",
+    "search_now": "Искать сейчас"
   },
   "empty": {
     "search_placeholder": "поиск заметки по ее названию",
@@ -1988,10 +2001,12 @@
     "print_report_collection_content_few": "{{count}} заметки в коллекции не удалось распечатать, поскольку они не поддерживаются или защищены.",
     "print_report_collection_content_many": "{{count}} заметок в коллекции не удалось распечатать, поскольку они не поддерживаются или защищены.",
     "print_report_collection_details_button": "Подробнее",
-    "print_report_collection_details_ignored_notes": "Пропущенные заметки"
+    "print_report_collection_details_ignored_notes": "Пропущенные заметки",
+    "print_report_error_title": "Не удалось напечатать",
+    "print_report_stack_trace": "Трассировка стека"
   },
   "book": {
-    "no_children_help": "В этой коллекции нет дочерних заметок, поэтому отображать нечего. Подробности см. в <a href=\"https://triliumnext.github.io/Docs/Wiki/book-note.html\">wiki</a>.",
+    "no_children_help": "В этой коллекции нет дочерних заметок, поэтому отображать нечего.",
     "drag_locked_title": "Защищено от изменения",
     "drag_locked_message": "Перетаскивание не допускается, так как коллекция защищена от редактирования."
   },
@@ -2007,7 +2022,9 @@
     "rendering_error": "Невозможно отобразить содержимое из-за ошибки."
   },
   "pagination": {
-    "total_notes": "{{count}} заметок"
+    "total_notes": "{{count}} заметок",
+    "prev_page": "Предыдущая страница",
+    "next_page": "Следующая страница"
   },
   "status_bar": {
     "attributes_one": "{{count}} атрибут",
@@ -2137,5 +2154,49 @@
   },
   "platform_indicator": {
     "available_on": "Доступно для {{platform}}"
+  },
+  "render": {
+    "setup_title": "Отобразить настраиваемый HTML или Preact JSX в этой заметке",
+    "setup_create_sample_preact": "Создать образец заметки с помощью Preact",
+    "setup_create_sample_html": "Создать образец заметки с помощью HTML",
+    "setup_sample_created": "Образец заметки был создан в качестве дочерней записи.",
+    "disabled_description": "Эти заметки для рендера поступают из внешнего источника. Чтобы защитить вас от вредоносного содержимого, они не включены по умолчанию. Убедитесь, что вы доверяете источнику до его включения.",
+    "disabled_button_enable": "Включить заметки для рендера"
+  },
+  "web_view_setup": {
+    "title": "Создайте живой просмотр веб-страницы прямо в Trilium",
+    "url_placeholder": "Введите или вставьте адрес сайта, например https://triliumnotes.org",
+    "create_button": "Создать веб-просмотр",
+    "invalid_url_title": "Неверный адрес",
+    "invalid_url_message": "Введите корректный веб-адрес, например https://triliumnotes.org.",
+    "disabled_description": "Этот веб-просмотр был импортирован из внешнего источника. Чтобы защитить вас от фишинга или вредоносного контента, он не загружается автоматически. Вы можете включить его, если доверяете источнику.",
+    "disabled_button_enable": "Включить просмотр веб-страниц"
+  },
+  "active_content_badges": {
+    "type_icon_pack": "Набор иконок",
+    "type_backend_script": "Бэкенд скрипт",
+    "type_frontend_script": "Фронтенд скрипт",
+    "type_widget": "Виджет",
+    "type_app_css": "Пользовательский CSS",
+    "type_render_note": "Заметка для рендера",
+    "type_web_view": "Просмотр веб-страницы",
+    "type_app_theme": "Пользовательская тема",
+    "toggle_tooltip_enable_tooltip": "Нажмите, чтобы включить этот {{type}}.",
+    "toggle_tooltip_disable_tooltip": "Нажмите, чтобы выключить этот {{type}}.",
+    "menu_docs": "Открытая документация",
+    "menu_execute_now": "Выполнить скрипт сейчас",
+    "menu_run": "Выполнять автоматически",
+    "menu_run_disabled": "Вручную",
+    "menu_run_backend_startup": "При запуске бэкенда",
+    "menu_run_hourly": "Ежечасно",
+    "menu_run_daily": "Ежедневно",
+    "menu_run_frontend_startup": "Когда запускается интерфейс ПК",
+    "menu_run_mobile_startup": "При запуске мобильного интерфейса",
+    "menu_change_to_widget": "Изменить виджет",
+    "menu_change_to_frontend_script": "Перейти к фронтенд скрипту",
+    "menu_theme_base": "Базовая тема"
+  },
+  "setup_form": {
+    "more_info": "Узнать больше"
   }
 }

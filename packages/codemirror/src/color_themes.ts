@@ -38,6 +38,26 @@ const themes: ThemeDefinition[] = [
         load: async () => (await import("@fsegurai/codemirror-theme-basic-light")).basicLight
     },
     {
+        id: "catppuccin-frappe",
+        name: "Catppuccin Frappé",
+        load: async () => (await import("@catppuccin/codemirror")).catppuccinFrappe
+    },
+    {
+        id: "catppuccin-latte",
+        name: "Catppuccin Latte",
+        load: async () => (await import("@catppuccin/codemirror")).catppuccinLatte
+    },
+    {
+        id: "catppuccin-macchiato",
+        name: "Catppuccin Macchiato",
+        load: async () => (await import("@catppuccin/codemirror")).catppuccinMacchiato
+    },
+    {
+        id: "catppuccin-mocha",
+        name: "Catppuccin Mocha",
+        load: async () => (await import("@catppuccin/codemirror")).catppuccinMocha
+    },
+    {
         id: "cobalt2",
         name: "Cobalt2",
         load: async () => (await import("@fsegurai/codemirror-theme-cobalt2")).cobalt2

@@ -40,8 +40,8 @@ pdfjs-print-button =
     .title = Տպել
 pdfjs-print-button-label = Տպել
 pdfjs-save-button =
-    .title = Պահպանել
-pdfjs-save-button-label = Պահպանել
+    .title = Պահել
+pdfjs-save-button-label = Պահել
 # Used in Firefox for Android as a tooltip for the download button (“download” is a verb).
 pdfjs-download-button =
     .title = Ներբեռնել
@@ -357,7 +357,7 @@ pdfjs-editor-free-highlight-thickness-input = Հաստություն
 pdfjs-editor-free-highlight-thickness-title =
     .title = Փոխել հաստությունը տեքստից բացի այլ տարրեր նշելիս
 pdfjs-editor-add-signature-container =
-    .aria-label = Ստորագրության կառավարման տարրեր և պահպանված ստորագրություններ
+    .aria-label = Ստորագրության կառավարման տարրեր և պահված ստորագրություններ
 pdfjs-editor-signature-add-signature-button =
     .title = Ավելացնել նոր ստորագրություն
 pdfjs-editor-signature-add-signature-button-label = Ավելացնել նոր ստորագրություն
@@ -365,7 +365,7 @@ pdfjs-editor-signature-add-signature-button-label = Ավելացնել նոր ս
 # Variables:
 #   $description (String) - a string describing/labeling the signature.
 pdfjs-editor-add-saved-signature-button =
-    .title = Պահպանված ստորագրություն՝ { $description }
+    .title = Պահված ստորագրություն՝ { $description }
 # .default-content is used as a placeholder in an empty text editor.
 pdfjs-free-text2 =
     .aria-label = Գրվածքի խմբագիր
@@ -383,7 +383,7 @@ pdfjs-editor-alt-text-add-description-description = Ձգտեք գրել 1-2 նա
 pdfjs-editor-alt-text-mark-decorative-label = Նշել որպես դեկորատիվ
 pdfjs-editor-alt-text-mark-decorative-description = Սա օգտագործվում է դեկորատիվ պատկերների համար, ինչպիսիք են եզրագծերը կամ ջրանիշերը։
 pdfjs-editor-alt-text-cancel-button = Չեղարկել
-pdfjs-editor-alt-text-save-button = Պահպանել
+pdfjs-editor-alt-text-save-button = Պահել
 pdfjs-editor-alt-text-decorative-tooltip = Նշել որպես դեկորատիվ
 # .placeholder: This is a placeholder for the alt text input area
 pdfjs-editor-alt-text-textarea =
@@ -531,7 +531,7 @@ pdfjs-editor-undo-bar-close-button-label = Փակել
 
 ## Add a signature dialog
 
-pdfjs-editor-add-signature-dialog-label = Այս յուրահատկությունը հնարավորություն է տալիս օգտվողին ստեղծել ստորագրություն՝ PDF փաստաթղթում ավելացնելու համար: Օգտվողը կարող է խմբագրել անունը (որը նաև ծառայում է որպես alt տեքստ) և լրացուցիչ պահպանել այն՝ հետագա օգտագործման համար:
+pdfjs-editor-add-signature-dialog-label = Այս յուրահատկությունը հնարավորություն է տալիս օգտվողին ստեղծել ստորագրություն՝ PDF փաստաթղթում ավելացնելու համար: Օգտվողը կարող է խմբագրել անունը (որը նաև ծառայում է որպես alt տեքստ) և լրացուցիչ պահել այն՝ հետագա օգտագործման համար:
 pdfjs-editor-add-signature-dialog-title = Ավելացնել ստորագրություն
 
 ## Tab names
@@ -572,8 +572,8 @@ pdfjs-editor-add-signature-description-default-when-drawing = Ստորագրու
 pdfjs-editor-add-signature-clear-button-label = Մաքրել ստորագրությունը
 pdfjs-editor-add-signature-clear-button =
     .title = Մաքրել ստորագրությունը
-pdfjs-editor-add-signature-save-checkbox = Պահպանել ստորագրությունը
-pdfjs-editor-add-signature-save-warning-message = Դուք հասել եք պահպանված ստորագրությունների 5 սահմանաչափին։ Հեռացրեք մեկը՝ ավելին պահպանելու համար։
+pdfjs-editor-add-signature-save-checkbox = Պահել ստորագրությունը
+pdfjs-editor-add-signature-save-warning-message = Դուք հասել եք պահպանված ստորագրությունների 5 սահմանաչափին։ Հեռացրեք մեկը՝ ավելին պահելու համար։
 pdfjs-editor-add-signature-image-upload-error-title = Չհաջողվեց վերբեռնել պատկերը
 pdfjs-editor-add-signature-image-upload-error-description = Ստուգեք ձեր ցանցային կապակցումը կամ փորձեք մեկ այլ պատկեր։
 pdfjs-editor-add-signature-image-no-data-error-title = Այս պատկերը հնարավոր չէ վերածել ստորագրության
@@ -589,8 +589,8 @@ pdfjs-editor-edit-signature-update-button = Թարմացնել
 ## Main menu for adding/removing signatures
 
 pdfjs-editor-delete-signature-button1 =
-    .title = Հեռացնել պահպանված ստորագրությունը
-pdfjs-editor-delete-signature-button-label1 = Հեռացնել պահպանված ստորագրությունը
+    .title = Հեռացնել պահված ստորագրությունը
+pdfjs-editor-delete-signature-button-label1 = Հեռացնել պահված ստորագրությունը
 
 ## Editor toolbar
 

@@ -98,6 +98,7 @@ export interface SavedData {
         mime: string;
         content: string;
         position: number;
+        encoding?: "base64";
     }[];
 }
 

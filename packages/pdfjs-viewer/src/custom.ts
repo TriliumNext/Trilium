@@ -7,9 +7,9 @@ import { setupPdfLayers } from "./layers";
 async function main() {
     const urlParams = new URLSearchParams(window.location.search);
     const isEditable = urlParams.get("editable") === "1";
-    
+
     document.body.classList.toggle("read-only-document", !isEditable);
-    
+
     if (urlParams.get("sidebar") === "0") {
         hideSidebar();
     }
@@ -17,6 +17,8 @@ async function main() {
     if (isEditable) {
         interceptPersistence(getCustomAppOptions(urlParams));
     }
+
+    configurePdfViewerOptions();
 
     // Wait for the PDF viewer application to be available.
     while (!window.PDFViewerApplication) {
@@ -38,6 +40,19 @@ async function main() {
     }
     await app.initializedPromise;
 };
+
+function configurePdfViewerOptions() {
+    const pdfOptionsHandler = (event: CustomEvent) => {
+        if (event.detail?.source === window && window.PDFViewerApplicationOptions) {
+            window.PDFViewerApplicationOptions.set("disablePreferences", true);
+            window.PDFViewerApplicationOptions.set("enableHighlightFloatingButton", true);
+        }
+    };
+    if (window.parent && window.parent !== window) {
+        window.parent.addEventListener("webviewerloaded", pdfOptionsHandler, { once: true });
+        window.addEventListener("pagehide", () => window.parent?.removeEventListener("webviewerloaded", pdfOptionsHandler));
+    }
+}
 
 function hideSidebar() {
     window.TRILIUM_HIDE_SIDEBAR = true;
@@ -89,7 +104,7 @@ function manageSave() {
         }
     });
 
-    app.pdfDocument.annotationStorage.onSetModified = () => {
+    (app.pdfDocument.annotationStorage as any).onSetModified = () => {
         onChange();
     };  // works great for most cases, including forms.
     app.eventBus.on("switchannotationeditorparams", () => {

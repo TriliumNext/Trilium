@@ -1548,7 +1548,8 @@
     "task-list": "Lista de tareas",
     "book": "Colección",
     "new-feature": "Nuevo",
-    "collections": "Colecciones"
+    "collections": "Colecciones",
+    "spreadsheet": "Hoja de cálculo"
   },
   "protect_note": {
     "toggle-on": "Proteger la nota",
@@ -1650,7 +1651,8 @@
   },
   "search_result": {
     "no_notes_found": "No se han encontrado notas para los parámetros de búsqueda dados.",
-    "search_not_executed": "La búsqueda aún no se ha ejecutado. Dé clic en el botón «Buscar» para ver los resultados."
+    "search_not_executed": "La búsqueda aún no se ha ejecutado.",
+    "search_now": "Buscar ahora"
   },
   "spacer": {
     "configure_launchbar": "Configurar barra de lanzamiento"
@@ -2196,5 +2198,24 @@
   },
   "setup_form": {
     "more_info": "Para saber más"
+  },
+  "media": {
+    "play": "Reproducir (Espacio)",
+    "pause": "Pausa (Espacio)",
+    "back-10s": "Retroceder 10s (tecla de flecha izquierda)",
+    "forward-30s": "Adelantar 30s",
+    "mute": "Silenciar (M)",
+    "unmute": "Activar sonido (M)",
+    "playback-speed": "Velocidad de reproducción",
+    "loop": "Bucle",
+    "disable-loop": "Deshabilitar bucle",
+    "rotate": "Rotar",
+    "picture-in-picture": "Imagen en imagen",
+    "exit-picture-in-picture": "Salir del modo imagen en imagen",
+    "fullscreen": "Pantalla completa (F)",
+    "exit-fullscreen": "Salir de la pantalla completa",
+    "unsupported-format": "La vista previa del medio no está disponible para este formato de archivo:\n{{mime}}",
+    "zoom-to-fit": "Acercamiento para llenar",
+    "zoom-reset": "Reiniciar acercamiento para llenar"
   }
 }

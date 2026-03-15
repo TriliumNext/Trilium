@@ -30,7 +30,7 @@ Additionally, shorter aliases are available for common configurations (see Alter
 
 | Environment Variable | Type | Default | Description |
 | --- | --- | --- | --- |
-| `TRILIUM_GENERAL_INSTANCENAME` | string | ""  | Instance name for API identification |
+| `TRILIUM_GENERAL_INSTANCENAME` | string | "" | Instance name for API identification |
 | `TRILIUM_GENERAL_NOAUTHENTICATION` | boolean | false | Disable authentication (server only) |
 | `TRILIUM_GENERAL_NOBACKUP` | boolean | false | Disable automatic backups |
 | `TRILIUM_GENERAL_NODESKTOPICON` | boolean | false | Disable desktop icon creation |
@@ -43,12 +43,12 @@ Additionally, shorter aliases are available for common configurations (see Alter
 | `TRILIUM_NETWORK_HOST` | string | "0.0.0.0" | Server host binding |
 | `TRILIUM_NETWORK_PORT` | string | "3000" | Server port |
 | `TRILIUM_NETWORK_HTTPS` | boolean | false | Enable HTTPS |
-| `TRILIUM_NETWORK_CERTPATH` | string | ""  | SSL certificate path |
-| `TRILIUM_NETWORK_KEYPATH` | string | ""  | SSL key path |
+| `TRILIUM_NETWORK_CERTPATH` | string | "" | SSL certificate path |
+| `TRILIUM_NETWORK_KEYPATH` | string | "" | SSL key path |
 | `TRILIUM_NETWORK_TRUSTEDREVERSEPROXY` | boolean/string | false | Reverse proxy trust settings |
-| `TRILIUM_NETWORK_CORSALLOWORIGIN` | string | ""  | CORS allowed origins |
-| `TRILIUM_NETWORK_CORSALLOWMETHODS` | string | ""  | CORS allowed methods |
-| `TRILIUM_NETWORK_CORSALLOWHEADERS` | string | ""  | CORS allowed headers |
+| `TRILIUM_NETWORK_CORSALLOWORIGIN` | string | "" | CORS allowed origins |
+| `TRILIUM_NETWORK_CORSALLOWMETHODS` | string | "" | CORS allowed methods |
+| `TRILIUM_NETWORK_CORSALLOWHEADERS` | string | "" | CORS allowed headers |
 | `TRILIUM_NETWORK_CORSRESOURCEPOLICY` | string | same-origin | CORS Resource Policy allows same-origin/same-site/cross-origin as values, will error if not |
 
 ### Session Section
@@ -61,26 +61,26 @@ Additionally, shorter aliases are available for common configurations (see Alter
 
 | Environment Variable | Type | Default | Description |
 | --- | --- | --- | --- |
-| `TRILIUM_SYNC_SYNCSERVERHOST` | string | ""  | Sync server host URL |
+| `TRILIUM_SYNC_SYNCSERVERHOST` | string | "" | Sync server host URL |
 | `TRILIUM_SYNC_SYNCSERVERTIMEOUT` | string | "120000" | Sync server timeout in milliseconds |
-| `TRILIUM_SYNC_SYNCPROXY` | string | ""  | Sync proxy URL |
+| `TRILIUM_SYNC_SYNCPROXY` | string | "" | Sync proxy URL |
 
 ### MultiFactorAuthentication Section
 
 | Environment Variable | Type | Default | Description |
 | --- | --- | --- | --- |
-| `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL` | string | ""  | OAuth/OpenID base URL |
-| `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID` | string | ""  | OAuth client ID |
-| `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET` | string | ""  | OAuth client secret |
+| `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHBASEURL` | string | "" | OAuth/OpenID base URL |
+| `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTID` | string | "" | OAuth client ID |
+| `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHCLIENTSECRET` | string | "" | OAuth client secret |
 | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERBASEURL` | string | "[https://accounts.google.com](https://accounts.google.com)" | OAuth issuer base URL |
 | `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERNAME` | string | "Google" | OAuth issuer display name |
-| `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON` | string | ""  | OAuth issuer icon URL |
+| `TRILIUM_MULTIFACTORAUTHENTICATION_OAUTHISSUERICON` | string | "" | OAuth issuer icon URL |
 
 ### Logging Section
 
 | Environment Variable | Type | Default | Description |
 | --- | --- | --- | --- |
-| `TRILIUM_LOGGING_RETENTIONDAYS` | integer | 90  | Number of days to retain log files |
+| `TRILIUM_LOGGING_RETENTIONDAYS` | integer | 90 | Number of days to retain log files |
 
 ## Alternative Environment Variables
 

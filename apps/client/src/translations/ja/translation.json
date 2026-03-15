@@ -600,7 +600,8 @@
     "task-list": "タスクリスト",
     "new-feature": "New",
     "collections": "コレクション",
-    "ai-chat": "AI チャット"
+    "ai-chat": "AI チャット",
+    "spreadsheet": "スプレッドシート"
   },
   "edited_notes": {
     "no_edited_notes_found": "この日の編集されたノートはまだありません...",
@@ -2167,5 +2168,24 @@
   },
   "setup_form": {
     "more_info": "さらに詳しく"
+  },
+  "media": {
+    "play": "再生 (スペース)",
+    "pause": "一時停止 (スペース)",
+    "back-10s": "10 秒戻る (左矢印キー)",
+    "forward-30s": "30 秒進む",
+    "mute": "ミュート (M)",
+    "unmute": "ミュート解除 (M)",
+    "playback-speed": "再生速度",
+    "loop": "ループ",
+    "disable-loop": "ループを解除",
+    "rotate": "回転",
+    "picture-in-picture": "ピクチャーインピクチャー",
+    "exit-picture-in-picture": "ピクチャーインピクチャーを終了",
+    "fullscreen": "全画面表示 (F)",
+    "exit-fullscreen": "全画面表示を終了",
+    "unsupported-format": "このファイル形式ではメディアプレビューはご利用いただけません:\n{{mime}}",
+    "zoom-to-fit": "ズームして全体を表示",
+    "zoom-reset": "ズーム設定をリセット"
   }
 }

@@ -11,6 +11,7 @@ export type { EditorConfig, MentionFeed, MentionFeedObjectItem, ModelNode, Model
 export type { TemplateDefinition } from "ckeditor5-premium-features";
 export { default as buildExtraCommands } from "./extra_slash_commands.js";
 export { default as getCkLocale } from "./i18n.js";
+export * from "./utils.js";
 
 // Import with sideffects to ensure that type augmentations are present.
 import "@triliumnext/ckeditor5-math";

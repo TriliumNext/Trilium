@@ -84,7 +84,7 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         printable: true
     },
     mermaid: {
-        view: () => import("./type_widgets/Mermaid"),
+        view: () => import("./type_widgets/mermaid/Mermaid"),
         className: "note-detail-mermaid",
         printable: true,
         isFullHeight: true
@@ -143,7 +143,7 @@ export const TYPE_MAPPINGS: Record<ExtendedNoteType, NoteTypeMapping> = {
         isFullHeight: true
     },
     spreadsheet: {
-        view: () => import("./type_widgets/Spreadsheet"),
+        view: () => import("./type_widgets/spreadsheet/Spreadsheet"),
         className: "note-detail-spreadsheet",
         printable: true,
         isFullHeight: true

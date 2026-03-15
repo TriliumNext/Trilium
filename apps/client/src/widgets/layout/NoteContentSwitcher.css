@@ -1,0 +1,19 @@
+.note-content-switcher {
+    --badge-radius: 12px;
+    position: relative;
+    display: flex;
+    min-height: 35px;
+    gap: 5px;
+    padding: 5px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    align-items: center;
+
+    .ext-badge {
+        --color: var(--input-background-color);
+        color: var(--main-text-color);
+        font-size: 1em;
+        flex-shrink: 0;
+    }
+}

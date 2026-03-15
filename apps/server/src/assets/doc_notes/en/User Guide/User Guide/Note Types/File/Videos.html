@@ -1,0 +1,131 @@
+<figure class="image image-style-align-right image_resized" style="width:61.8%;">
+  <img style="aspect-ratio:953/587;" src="Videos_image.png"
+  width="953" height="587">
+</figure>
+<p>Starting with v0.103.0, Trilium has a custom video player which offers
+  more features than the built-in video player.</p>
+<p>Versions prior to v0.103.0 also support videos, but using the built-in
+  player.</p>
+<p>The file is streamed directly, so when accessing the note from a server
+  it doesn't have to download the entire video to start playing it.</p>
+<h2>Note on large video files</h2>
+<p>Although Trilium offers support for videos, it is generally not meant
+  to be used with very large files. Uploading large videos will cause the&nbsp;
+  <a
+  class="reference-link" href="#root/_help_wX4HbRucYSDD">Database</a>&nbsp;to balloon as well as the any&nbsp;<a class="reference-link"
+    href="#root/_help_ODY7qQn5m2FT">Backup</a>&nbsp;of it. In addition to that, there
+    might be slowdowns when first uploading the files. Otherwise, a large database
+    should not impact the general performance of Trilium significantly.</p>
+<h2>Supported formats</h2>
+<p>Trilium uses the built-in video decoding mechanism of the browser (or
+  Electron/Chromium when running on the desktop). Starting with v0.103.0,
+  a message will be displayed instead when a video format is not supported.</p>
+<h2>Interactions</h2>
+<p>To play/pause the video, simply click anywhere on the video.</p>
+<p>The controls at the bottom will hide automatically after playing, simply
+  move the mouse to show them again.</p>
+<p>The bottom bar has the following features:</p>
+<ul>
+  <li>
+    <p>A track bar to seek across the video.</p>
+  </li>
+  <li>
+    <p>On the left of the track bar, the current time is indicated.</p>
+  </li>
+  <li>
+    <p>On the right of the track bar, the remaining time is indicated.</p>
+  </li>
+  <li>
+    <p>On the left side there are buttons to:</p>
+    <ul>
+      <li>Adjust the playback speed (e.g. 0.5x, 1x).</li>
+      <li>Rotate the video by 90 degrees.</li>
+    </ul>
+  </li>
+  <li>
+    <p>In the center:</p>
+    <ul>
+      <li>Go back by 10s</li>
+      <li>Play/pause</li>
+      <li>Go forward by 30s</li>
+      <li>Loop, which when enabled will restart the video once it reaches the end.</li>
+    </ul>
+  </li>
+  <li>
+    <p>On the right side:</p>
+    <ul>
+      <li>Mute button</li>
+      <li>Volume adjustment</li>
+      <li>Full screen</li>
+      <li>Zoom to fill, which will crop the video so that it fills the entire window.</li>
+      <li>Picture-in-picture (if the browser supports it).</li>
+    </ul>
+  </li>
+</ul>
+<h2>Keyboard shortcuts</h2>
+<p>The following keyboard shortcuts are supported by the video player:</p>
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><kbd>Space</kbd>
+      </td>
+      <td>Play/pause</td>
+    </tr>
+    <tr>
+      <td><kbd>Left arrow key</kbd>
+      </td>
+      <td>Go back by 10s</td>
+    </tr>
+    <tr>
+      <td><kbd>Right arrow key</kbd>
+      </td>
+      <td>Go forward by 10s</td>
+    </tr>
+    <tr>
+      <td><kbd>Ctrl</kbd> + <kbd>Left arrow key</kbd>
+      </td>
+      <td>Go back by 1 min</td>
+    </tr>
+    <tr>
+      <td><kbd>Ctrl</kbd> + <kbd>Right arrow key</kbd>
+      </td>
+      <td>Go right by 1 min</td>
+    </tr>
+    <tr>
+      <td><kbd>F</kbd>
+      </td>
+      <td>Toggle full-screen</td>
+    </tr>
+    <tr>
+      <td><kbd>M</kbd>
+      </td>
+      <td>Mute/unmute</td>
+    </tr>
+    <tr>
+      <td><kbd>Home</kbd>
+      </td>
+      <td>Go to the beginning of the video</td>
+    </tr>
+    <tr>
+      <td><kbd>End</kbd>
+      </td>
+      <td>Go to the end of the video</td>
+    </tr>
+    <tr>
+      <td><kbd>Up</kbd>
+      </td>
+      <td>Increase volume by 5%</td>
+    </tr>
+    <tr>
+      <td><kbd>Down</kbd>
+      </td>
+      <td>Decrease volume by 5%</td>
+    </tr>
+  </tbody>
+</table>

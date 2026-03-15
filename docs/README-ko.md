@@ -263,23 +263,19 @@ docs](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/De
 * [CKEditor 5](https://github.com/ckeditor/ckeditor5) - 텍스트 노트의 시각적 편집기입니다. 프리미엄
   기능을 제공해주셔서 감사합니다.
 * [CodeMirror](https://github.com/codemirror/CodeMirror) - 수많은 언어를 지원하는 코드 편집기.
-* [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite
-  whiteboard used in Canvas notes.
-* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - providing the
-  mind map functionality.
-* [Leaflet](https://github.com/Leaflet/Leaflet) - for rendering geographical
-  maps.
-* [Tabulator](https://github.com/olifolkerd/tabulator) - for the interactive
-  table used in collections.
-* [FancyTree](https://github.com/mar10/fancytree) - feature-rich tree library
-  without real competition.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - visual connectivity library.
-  Used in [relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [link
-  maps](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
+* [Excalidraw](https://github.com/excalidraw/excalidraw) - Canvas 노트에서 사용되는 무한
+  화이트보드입니다.
+* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - 마인드맵 기능을 제공합니다.
+* [Leaflet](https://github.com/Leaflet/Leaflet) - 지리 지도를 렌더링 합니다.
+* [Tabulator](https://github.com/olifolkerd/tabulator) - 컬렉션에서 사용되는 인터랙티브
+  테이블입니다.
+* [FancyTree](https://github.com/mar10/fancytree) - 독보적으로 기능이 풍부한 트리 라이브러리입니다.
+* [jsPlumb](https://github.com/jsplumb/jsplumb) - 시각적 연결 라이브러리입니다. [관계
+  맵](https://docs.triliumnotes.org/user-guide/note-types/relation-map) 과 [링크
+  맵](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)에
+  사용됩니다
 
-## 🤝 Support
+## 🤝 후원
 
 Trilium is built and maintained with [hundreds of hours of
 work](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Your

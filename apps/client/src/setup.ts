@@ -158,6 +158,8 @@ function getSyncInProgress() {
 }
 
 addEventListener("DOMContentLoaded", (event) => {
-    ko.applyBindings(new SetupModel(getSyncInProgress()), document.getElementById("setup-dialog"));
+    const rootNode = document.getElementById("setup-dialog");
+    if (!rootNode) return;
+    ko.applyBindings(new SetupModel(getSyncInProgress()), rootNode);
     $("#setup-dialog").show();
 });

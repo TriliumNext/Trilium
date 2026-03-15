@@ -534,6 +534,7 @@ pdfjs-editor-undo-bar-message-freetext = Szöveg eltávolítva
 pdfjs-editor-undo-bar-message-ink = Rajz eltávolítva
 pdfjs-editor-undo-bar-message-stamp = Kép eltávolítva
 pdfjs-editor-undo-bar-message-signature = Aláírás eltávolítva
+pdfjs-editor-undo-bar-message-comment = Megjegyzés eltávolítva
 # Variables:
 #   $count (Number) - the number of removed annotations.
 pdfjs-editor-undo-bar-message-multiple =
@@ -632,6 +633,79 @@ pdfjs-editor-edit-comment-dialog-cancel-button = Mégse
 
 pdfjs-editor-add-comment-button =
     .title = Megjegyzés hozzáadása
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-toggle-views-manager-button =
+    .title = Oldalsáv be/ki
+pdfjs-toggle-views-manager-notification-button =
+    .title = Oldalsáv be/ki (a dokumentum bélyegképeket/vázlatot/mellékleteket/rétegeket tartalmaz)
+pdfjs-toggle-views-manager-button-label = Oldalsáv be/ki
+pdfjs-views-manager-sidebar =
+    .aria-label = Oldalsáv
+pdfjs-views-manager-view-selector-button =
+    .title = Nézetek
+pdfjs-views-manager-view-selector-button-label = Nézetek
+pdfjs-views-manager-pages-title = Oldalak
+pdfjs-views-manager-outlines-title = Dokumentumvázlat
+pdfjs-views-manager-attachments-title = Mellékletek
+pdfjs-views-manager-layers-title = Rétegek
+pdfjs-views-manager-pages-option-label = Oldalak
+pdfjs-views-manager-outlines-option-label = Dokumentumvázlat
+pdfjs-views-manager-attachments-option-label = Mellékletek
+pdfjs-views-manager-layers-option-label = Rétegek
+pdfjs-views-manager-add-file-button =
+    .title = Fájl hozzáadása
+pdfjs-views-manager-add-file-button-label = Fájl hozzáadása
+# Variables:
+#   $count (Number) - the number of selected pages.
+pdfjs-views-manager-pages-status-action-label =
+    { $count ->
+        [one] { $count } kiválasztva
+       *[other] { $count } kiválasztva
+    }
+pdfjs-views-manager-pages-status-none-action-label = Oldalak kiválasztása
+pdfjs-views-manager-pages-status-action-button-label = Kezelés
+pdfjs-views-manager-pages-status-copy-button-label = Másolás
+pdfjs-views-manager-pages-status-cut-button-label = Kivágás
+pdfjs-views-manager-pages-status-delete-button-label = Törlés
+pdfjs-views-manager-pages-status-save-as-button-label = Mentés másként…
+# Variables:
+#   $count (Number) - the number of selected pages to be cut.
+pdfjs-views-manager-status-undo-cut-label =
+    { $count ->
+        [one] 1 oldal kivágva
+       *[other] { $count } oldal kivágva
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be copied.
+pdfjs-views-manager-pages-status-undo-copy-label =
+    { $count ->
+        [one] 1 oldal másolva
+       *[other] { $count } oldal másolva
+    }
+# Variables:
+#   $count (Number) - the number of selected pages to be deleted.
+pdfjs-views-manager-pages-status-undo-delete-label =
+    { $count ->
+        [one] 1 oldal törölve
+       *[other] { $count } oldal törölve
+    }
+pdfjs-views-manager-pages-status-waiting-ready-label = A fájl előkészítése…
+pdfjs-views-manager-pages-status-waiting-uploading-label = Fájl feltöltése…
+pdfjs-views-manager-status-warning-cut-label = Nem sikerült kivágni. Frissítse az oldalt, és próbálja újra.
+pdfjs-views-manager-status-warning-copy-label = Nem sikerült másolni. Frissítse az oldalt, és próbálja újra.
+pdfjs-views-manager-status-warning-delete-label = Nem sikerült törölni. Frissítse az oldalt, és próbálja újra.
+pdfjs-views-manager-status-warning-save-label = Nem sikerült menteni. Frissítse az oldalt, és próbálja újra.
+pdfjs-views-manager-status-undo-button-label = Visszavonás
+pdfjs-views-manager-status-close-button =
+    .title = Bezárás
+pdfjs-views-manager-status-close-button-label = Bezárás
 
 ## Main menu for adding/removing signatures
 

@@ -45,7 +45,7 @@ When a new promoted attribute definition is created, it creates a corresponding 
 
 The only purpose of the attribute definition is to set up a template. If the attribute was marked as promoted, then it's also displayed to the user for easy editing.
 
-|     |     |
+|  |  |
 | --- | --- |
 | <figure class="image"><img style="aspect-ratio:495/157;" src="2_Promoted Attributes_image.png" width="495" height="157"></figure> | Notice how the promoted attribute definition only creates a “Due date” box above the text content. |
 | <figure class="image"><img style="aspect-ratio:663/160;" src="3_Promoted Attributes_image.png" width="663" height="160"></figure> | Once a value is set by the user, a new label (or relation, depending on the type) is created. The name of the attribute matches one set when creating the promoted attribute. |

@@ -381,6 +381,10 @@ class NoteContext extends Component implements EventListener<"entitiesReloaded">
 
         // Collections must always display a note list, even if no children.
         if (note.type === "book") {
+            if (note.isProtected && !protectedSessionHolder.isProtectedSessionAvailable()) {
+                return false;
+            }
+
             const viewType = note.getLabelValue("viewType") ?? "grid";
             if (!["list", "grid"].includes(viewType)) {
                 return true;

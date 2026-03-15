@@ -36,6 +36,10 @@
                 animation: fadeOut 250ms ease-in 5s forwards;
                 pointer-events: none;
             }
+
+            body#trilium-app.motion-disabled &.saved {
+                animation: fadeOut 0s 5s forwards !important;
+            }
         }
         &.active-content-badge { --color: var(--badge-active-content-background-color); }
         &.active-content-badge.disabled {

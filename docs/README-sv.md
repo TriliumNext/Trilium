@@ -37,40 +37,39 @@ antecknings app med fokus på att bygga en stor personlig kunskapsbas.
 ## Ladda ner
 - [Latest release](https://github.com/TriliumNext/Trilium/releases/latest) –
   stabil version, rekommenderas för dom flesta användare.
-- [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) –
-  unstable development version, updated daily with the latest features and
-  fixes.
+- [Nightly build](https://github.com/TriliumNext/Trilium/releases/tag/nightly) -
+  ostabil utvecklings version, uppdaterad dagligen med de senaste funktionerna
+  och fixarna.
 
-## 📚 Documentation
+## 📚 Dokumentation
 
-**Visit our comprehensive documentation at
+**Läs mer i vår omfattande dokumentation på
 [docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 
-Our documentation is available in multiple formats:
-- **Online Documentation**: Browse the full documentation at
+Vår dokumentation är tillgänglig i flera format:
+- **Webb dokumentation**: Läs hela dokumentationen på
   [docs.triliumnotes.org](https://docs.triliumnotes.org/)
-- **In-App Help**: Press `F1` within Trilium to access the same documentation
-  directly in the application
-- **GitHub**: Navigate through the [User Guide](./User%20Guide/User%20Guide/) in
-  this repository
+- **I-appen-hjälp**: Tryck `F1` i Trilium för att läsa samma dokumentation inuti
+  programmet
+- **GitHub**: Läs [användarhandboken](./User%20Guide/User%20Guide/) i denna repo
 
-### Quick Links
-- [Getting Started Guide](https://docs.triliumnotes.org/)
-- [Installation Instructions](https://docs.triliumnotes.org/user-guide/setup)
+### Snabblänkar
+- [Snabbstartsguide](https://docs.triliumnotes.org/)
+- [Installationsanvisning](https://docs.triliumnotes.org/user-guide/setup)
 - [Docker
   Setup](https://docs.triliumnotes.org/user-guide/setup/server/installation/docker)
-- [Upgrading
+- [Uppdaterar
   TriliumNext](https://docs.triliumnotes.org/user-guide/setup/upgrading)
-- [Basic Concepts and
-  Features](https://docs.triliumnotes.org/user-guide/concepts/notes)
-- [Patterns of Personal Knowledge
-  Base](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
+- [Grundläggande koncept och
+  funktioner](https://docs.triliumnotes.org/user-guide/concepts/notes)
+- [Modeller av personlig
+  kunskapsbas](https://docs.triliumnotes.org/user-guide/misc/patterns-of-personal-knowledge)
 
-## 🎁 Features
+## 🎁 Funktioner
 
-* Notes can be arranged into arbitrarily deep tree. Single note can be placed
-  into multiple places in the tree (see
-  [cloning](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
+* Anteckningar kan sorteras som en trädstruktur. En enskild anteckning kan
+  placeras på fler än en plats i trädet (se
+  [kloning](https://docs.triliumnotes.org/user-guide/concepts/notes/cloning))
 * Rich WYSIWYG note editor including e.g. tables, images and
   [math](https://docs.triliumnotes.org/user-guide/note-types/text) with markdown
   [autoformat](https://docs.triliumnotes.org/user-guide/note-types/text/markdown-formatting)

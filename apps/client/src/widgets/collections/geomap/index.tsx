@@ -93,14 +93,14 @@ export default function GeoView({ note, noteIds, viewConfig, saveConfig }: ViewM
     const onClick = useCallback(async (e: LeafletMouseEvent) => {
         if (state === State.NewNote) {
             toast.closePersistent("geo-new-note");
-            await createNewNote(note.noteId, e);
+            await createNewNote(note, e);
             setState(State.Normal);
         }
-    }, [ state ]);
+    }, [ note, state ]);
 
     const onContextMenu = useCallback((e: LeafletMouseEvent) => {
-        openMapContextMenu(note.noteId, e, !isReadOnly);
-    }, [ note.noteId, isReadOnly ]);
+        openMapContextMenu(note, e, !isReadOnly);
+    }, [ note, isReadOnly ]);
 
     // Dragging
     const containerRef = useRef<HTMLDivElement>(null);

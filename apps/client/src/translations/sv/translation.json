@@ -3,6 +3,38 @@
     "title": "Om Trilium Notes",
     "homepage": "Hemsida:",
     "app_version": "App version:",
-    "db_version": "DB version:"
+    "db_version": "DB version:",
+    "sync_version": "Sync version:",
+    "build_date": "Bygg datum:",
+    "build_revision": "Bygg version:",
+    "data_directory": "Data sökväg:"
+  },
+  "toast": {
+    "critical-error": {
+      "title": "Kritiskt fel",
+      "message": "Ett kritiskt fel har inträffat som förhindrar klientprogrammet från att starta:\n\n{{message}}\n\nDetta beror troligen på att ett skript har misslyckats på ett oväntat sätt. Försök att starta programmet i felsäkert läge och åtgärda problemet."
+    },
+    "widget-error": {
+      "title": "Misslyckades att starta widget",
+      "message-custom": "Anpassad widget från anteckning med ID \"{{id}}\", med rubrik \"{{title}}\" kunde inte startas på grund av:\n\n{{message}}",
+      "message-unknown": "Okänd widget kunde inte startas på grund av:\n\n{{message}}"
+    },
+    "bundle-error": {
+      "title": "Misslyckades att starta ett anpassat skript",
+      "message": "Skript kunde inte startas på grund av:\n\n{{message}}"
+    },
+    "widget-list-error": {
+      "title": "Misslyckades att hämta widget-listan från servern"
+    },
+    "widget-render-error": {
+      "title": "Misslyckades att renderera en anpassad React-widget"
+    },
+    "widget-missing-parent": "Anpassad widget saknar '{{property}}', som måste vara definierad.\n\nOm skriptet är avsett att köras utan gränssnitt, använd '#run-frontendStartup' istället.",
+    "open-script-note": "Öppna skriptanteckning",
+    "scripting-error": "Fel i anpassat skript: {{title}}"
+  },
+  "add_link": {
+    "add_link": "Infoga länk",
+    "help_on_links": "Hjälp om länkar"
   }
 }

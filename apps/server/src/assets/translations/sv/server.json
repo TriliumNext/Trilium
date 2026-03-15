@@ -2,6 +2,24 @@
   "keyboard_actions": {
     "back-in-note-history": "Gå till föregående anteckning i historiken",
     "forward-in-note-history": "Gå till nästa anteckning i historiken",
-    "open-jump-to-note-dialog": "Öppna \"Hoppa till anteckning\" dialog"
+    "open-jump-to-note-dialog": "Öppna \"Hoppa till anteckning\" dialog",
+    "open-command-palette": "Öppna kommandomenyn",
+    "quick-search": "Öppna snabbsökning",
+    "search-in-subtree": "Sök anteckningar nedåt i anteckningshierarkin",
+    "expand-subtree": "Expandera hierarkin under denna anteckning",
+    "collapse-tree": "Stänger anteckningshierarkin",
+    "collapse-subtree": "Stänger hierarkin under aktuell anteckning",
+    "sort-child-notes": "Sortera underordnade anteckningar",
+    "creating-and-moving-notes": "Skapa och flytta anteckningar",
+    "create-note-after": "Skapa ny anteckning efter aktiv anteckning",
+    "create-note-into": "Skapa ny anteckning underordnad aktiv anteckning",
+    "create-note-into-inbox": "Skapa en anteckning i inboxen (om angiven) eller som daganteckning",
+    "delete-note": "Radera anteckning",
+    "move-note-up": "Flytta anteckning uppåt",
+    "move-note-down": "Flytta anteckning nedåt",
+    "scroll-to-active-note": "Bläddra i anteckningshierarkin till aktiv anteckning",
+    "move-note-up-in-hierarchy": "Flytta anteckning uppåt i hierarkin",
+    "move-note-down-in-hierarchy": "Flytta anteckning neråt i hierarkin",
+    "edit-note-title": "Hoppa från träd till anteckning och redigera titel"
   }
 }

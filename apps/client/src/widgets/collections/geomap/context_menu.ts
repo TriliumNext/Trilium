@@ -1,12 +1,14 @@
 import type { LatLng, LeafletMouseEvent } from "leaflet";
+
 import appContext, { type CommandMappings } from "../../../components/app_context.js";
+import FNote from "../../../entities/fnote.js";
 import contextMenu, { type MenuItem } from "../../../menus/context_menu.js";
-import linkContextMenu from "../../../menus/link_context_menu.js";
 import NoteColorPicker from "../../../menus/custom-items/NoteColorPicker.jsx";
-import { t } from "../../../services/i18n.js";
-import { createNewNote } from "./api.js";
+import linkContextMenu from "../../../menus/link_context_menu.js";
 import { copyTextWithToast } from "../../../services/clipboard_ext.js";
+import { t } from "../../../services/i18n.js";
 import link from "../../../services/link.js";
+import { createNewNote } from "./api.js";
 
 export default function openContextMenu(noteId: string, e: LeafletMouseEvent, isEditable: boolean) {
     let items: MenuItem<keyof CommandMappings>[] = [
@@ -44,7 +46,7 @@ export default function openContextMenu(noteId: string, e: LeafletMouseEvent, is
     });
 }
 
-export function openMapContextMenu(noteId: string, e: LeafletMouseEvent, isEditable: boolean) {
+export function openMapContextMenu(note: FNote, e: LeafletMouseEvent, isEditable: boolean) {
     let items: MenuItem<keyof CommandMappings>[] = [
         ...buildGeoLocationItem(e)
     ];
@@ -55,10 +57,10 @@ export function openMapContextMenu(noteId: string, e: LeafletMouseEvent, isEdita
             { kind: "separator" },
             {
                 title: t("geo-map-context.add-note"),
-                handler: () => createNewNote(noteId, e),
+                handler: () => createNewNote(note, e),
                 uiIcon: "bx bx-plus"
             }
-        ]
+        ];
     }
 
     contextMenu.show({

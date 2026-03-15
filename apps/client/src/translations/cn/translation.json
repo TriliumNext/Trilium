@@ -1535,7 +1535,8 @@
     "new-feature": "新建",
     "collections": "集合",
     "book": "集合",
-    "ai-chat": "AI聊天"
+    "ai-chat": "AI聊天",
+    "spreadsheet": "电子表格"
   },
   "protect_note": {
     "toggle-on": "保护笔记",

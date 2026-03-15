@@ -1780,7 +1780,8 @@
     "ai-chat": "Czat AI",
     "task-list": "Lista zadań",
     "new-feature": "Nowość",
-    "collections": "Kolekcje"
+    "collections": "Kolekcje",
+    "spreadsheet": "Arkusz"
   },
   "protect_note": {
     "toggle-on": "Chroń notatkę",

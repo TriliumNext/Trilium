@@ -11,19 +11,28 @@ import { generateCss, generateIconRegistry, getIconPacks, MIME_TO_EXTENSION_MAPP
 import log from "../services/log.js";
 import optionService from "../services/options.js";
 import protectedSessionService from "../services/protected_session.js";
+import { generateCsrfToken } from "./csrf_protection.js";
 import sql from "../services/sql.js";
 import { isDev, isElectron, isMac, isWindows11 } from "../services/utils.js";
-import { generateToken as generateCsrfToken } from "./csrf_protection.js";
-
 
 type View = "desktop" | "mobile" | "print";
 
 export function bootstrap(req: Request, res: Response) {
     const options = optionService.getOptionMap();
 
-    //'overwrite' set to false (default) => the existing token will be re-used and validated
-    //'validateOnReuse' set to false => if validation fails, generate a new token instead of throwing an error
-    const csrfToken = generateCsrfToken(req, res, false, false);
+    // csrf-csrf v4 binds CSRF tokens to the session ID via HMAC. With saveUninitialized: false,
+    // a brand-new session is never persisted unless explicitly modified, so its cookie is never
+    // sent to the browser — meaning every request gets a different ephemeral session ID, and
+    // CSRF validation fails. Setting this flag marks the session as modified, which causes
+    // express-session to persist it and send the session cookie in this response.
+    if (!req.session.csrfInitialized) {
+        req.session.csrfInitialized = true;
+    }
+
+    const csrfToken = generateCsrfToken(req, res, {
+        overwrite: false,
+        validateOnReuse: false      // if validation fails, generate a new token instead of throwing an error
+    });
     log.info(`CSRF token generation: ${csrfToken ? "Successful" : "Failed"}`);
 
     const view = getView(req);

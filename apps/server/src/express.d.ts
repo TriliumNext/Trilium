@@ -27,5 +27,7 @@ export declare module "express-session" {
             totpEnabled: boolean;
             ssoEnabled: boolean;
         };
+        /** Set during /bootstrap to mark the session as modified so express-session persists it and sends the cookie. */
+        csrfInitialized?: true;
     }
 }

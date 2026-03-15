@@ -17,6 +17,8 @@ export interface AttachmentRow {
     deleteId?: string;
     contentLength?: number;
     content?: Buffer | string;
+    /** If set to `"base64"`, the `content` string will be decoded from base64 to binary before storage. */
+    encoding?: "base64";
 }
 
 export interface RevisionRow {

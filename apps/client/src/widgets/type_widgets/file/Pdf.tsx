@@ -184,7 +184,7 @@ export default function PdfPreview({ note, blob, componentId, noteContext }: {
         <PdfViewer
             iframeRef={iframeRef}
             tabIndex={300}
-            pdfUrl={`../../api/notes/${note.noteId}/open`}
+            pdfUrl={new URL(`${window.glob.baseApiUrl}notes/${note.noteId}/open`, window.location.href).pathname}
             onLoad={() => {
                 const win = iframeRef.current?.contentWindow;
                 if (win) {

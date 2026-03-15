@@ -24,8 +24,7 @@
     margin: 10px;
 }
 
-.note-detail-file > .pdf-preview,
-.note-detail-file > .video-preview {
+.note-detail-file > .pdf-preview {
     width: 100%;
     height: 100%;
     flex-grow: 100;

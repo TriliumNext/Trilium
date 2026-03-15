@@ -30,6 +30,7 @@ export interface EditableCodeProps extends TypeWidgetProps, Omit<CodeEditorProps
     onContentChanged?: (content: string) => void;
     /** Invoked after the content of the note has been uploaded to the server, using a spaced update. */
     dataSaved?: () => void;
+    placeholder?: string;
 }
 
 export function ReadOnlyCode({ note, viewScope, ntxId, parentComponent }: TypeWidgetProps) {
@@ -74,7 +75,7 @@ function formatViewSource(note: FNote, content: string) {
     return content;
 }
 
-export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentComponent, updateInterval, noteType = "code", onContentChanged, dataSaved, ...editorProps }: EditableCodeProps) {
+export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentComponent, updateInterval, noteType = "code", onContentChanged, dataSaved, placeholder, ...editorProps }: EditableCodeProps) {
     const editorRef = useRef<VanillaCodeMirror>(null);
     const containerRef = useRef<HTMLPreElement>(null);
     const [ vimKeymapEnabled ] = useTriliumOptionBool("vimKeymapEnabled");
@@ -115,7 +116,7 @@ export function EditableCode({ note, ntxId, noteContext, debounceUpdate, parentC
                 editorRef={editorRef} containerRef={containerRef}
                 mime={mime ?? "text/plain"}
                 className="note-detail-code-editor"
-                placeholder={t("editable_code.placeholder")}
+                placeholder={placeholder ?? t("editable_code.placeholder")}
                 vimKeybindings={vimKeymapEnabled}
                 tabIndex={300}
                 onContentChanged={() => {

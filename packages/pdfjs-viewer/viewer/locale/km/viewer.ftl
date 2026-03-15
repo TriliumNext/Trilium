@@ -196,3 +196,47 @@ pdfjs-password-invalid = ពាក្យសម្ងាត់​មិន​ត�
 pdfjs-password-ok-button = យល់​ព្រម
 pdfjs-password-cancel-button = បោះបង់
 pdfjs-web-fonts-disabled = បាន​បិទ​ពុម្ពអក្សរ​បណ្ដាញ ៖ មិន​អាច​ប្រើ​ពុម្ពអក្សរ PDF ដែល​បាន​បង្កប់​បាន​ទេ ។
+
+## Editing
+
+pdfjs-editor-highlight-button =
+    .title = រំលេច
+pdfjs-editor-highlight-button-label = រំលេច
+pdfjs-highlight-floating-button-label = រំលេច
+
+## Alt-text dialog
+
+pdfjs-editor-alt-text-cancel-button = បោះបង់
+
+## Show all highlights
+## This is a toggle button to show/hide all the highlights.
+
+pdfjs-editor-highlight-show-all-button-label = បង្ហាញ​ទាំងអស់
+pdfjs-editor-highlight-show-all-button =
+    .title = បង្ហាញ​ទាំងអស់
+
+## New alt-text dialog
+## Group note for entire feature: Alternative text (alt text) helps when people can't see the image. This feature includes a tool to create alt text automatically using an AI model that works locally on the user's device to preserve privacy.
+
+pdfjs-editor-new-alt-text-not-now-button = មិន​មែន​ឥឡូវ
+
+## Image alt-text settings
+
+pdfjs-editor-alt-text-settings-delete-model-button = លុប
+
+## Dialog buttons
+
+pdfjs-editor-add-signature-cancel-button = បោះបង់
+
+##  Edit a comment dialog
+
+pdfjs-editor-edit-comment-dialog-cancel-button = បោះបង់
+
+## The view manager is a sidebar displaying different views:
+##  - thumbnails;
+##  - outline;
+##  - attachments;
+##  - layers.
+## The thumbnails view is used to edit the pdf: remove/insert pages, ...
+
+pdfjs-views-manager-pages-status-delete-button-label = លុប

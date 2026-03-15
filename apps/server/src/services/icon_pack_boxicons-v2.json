@@ -10449,6 +10449,12 @@
       "terms": [
         "virus-block"
       ]
+    },
+    "bx-empty": {
+      "glyph": "",
+      "terms": [
+        "empty"
+      ]
     }
   }
 }

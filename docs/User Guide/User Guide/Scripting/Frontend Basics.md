@@ -3,7 +3,7 @@ Front-end scripts are custom JavaScript notes that are run on the client (browse
 
 There are four flavors of front-end scripts:
 
-|     |     |
+|  |  |
 | --- | --- |
 | Regular scripts | These are run with the current app and note context. These can be run either manually or automatically on start-up. |
 | <a class="reference-link" href="Frontend%20Basics/Custom%20Widgets.md">Custom Widgets</a> | These can introduce new UI elements in various positions, such as near the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Note%20Tree.md">Note Tree</a>, content area or even the <a class="reference-link" href="../Basic%20Concepts%20and%20Features/UI%20Elements/Right%20Sidebar.md">Right Sidebar</a>. |

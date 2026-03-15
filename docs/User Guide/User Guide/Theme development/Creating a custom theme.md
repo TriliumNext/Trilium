@@ -9,7 +9,7 @@ As such, the first step is to create a new note to gather all the themes.
 
 ## Step 2. Create the theme
 
-|     |     |
+|  |  |
 | --- | --- |
 | ![](Creating%20a%20custom%20theme_3_.png) | Themes are code notes with a special attribute. Start by creating a new code note. |
 | ![](Creating%20a%20custom%20theme_1_.png) | Then change the note type to a CSS code. |
