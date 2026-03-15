@@ -42,6 +42,13 @@ interface CalendarViewData {
 
 const CALENDAR_VIEWS = [
     {
+        type: "timeGridDay",
+        name: t("calendar.day"),
+        icon: "bx bx-calendar-event",
+        previousText: t("calendar.day_previous"),
+        nextText: t("calendar.day_next")
+    },
+    {
         type: "timeGridWeek",
         name: t("calendar.week"),
         icon: "bx bx-calendar-week",
@@ -72,6 +79,10 @@ const CALENDAR_VIEWS = [
 ];
 
 const SUPPORTED_CALENDAR_VIEW_TYPE = CALENDAR_VIEWS.map(v => v.type);
+
+const DEFAULT_SLOT_DURATION = "00:30:00";
+const DEFAULT_SLOT_LABEL_INTERVAL = "01:00:00";
+
 
 // Here we hard-code the imports in order to ensure that they are embedded by webpack without having to load all the languages.
 export const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, (() => Promise<{ default: LocaleInput }>) | null> = {
@@ -108,6 +119,8 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
     const [ weekNumbers ] = useNoteLabelBoolean(note, "calendar:weekNumbers");
     const [ calendarView, setCalendarView ] = useNoteLabel(note, "calendar:view");
     const [ initialDate ] = useNoteLabel(note, "calendar:initialDate");
+    const [ slotDuration ] = useNoteLabel(note, "calendar:slotDuration");
+    const [ slotLabelInterval ] = useNoteLabel(note, "calendar:slotLabelInterval");
     const initialView = useRef(calendarView);
     const viewSpacedUpdate = useSpacedUpdate(() => setCalendarView(initialView.current));
     useResizeObserver(containerRef, () => calendarRef.current?.updateSize());
@@ -159,6 +172,8 @@ export default function CalendarView({ note, noteIds }: ViewModeProps<CalendarVi
                 firstDay={firstDayOfWeek ?? 0}
                 weekends={!hideWeekends}
                 weekNumbers={weekNumbers}
+                slotDuration={slotDuration || DEFAULT_SLOT_DURATION}
+                slotLabelInterval={slotLabelInterval || DEFAULT_SLOT_LABEL_INTERVAL}
                 height="90%"
                 nowIndicator
                 handleWindowResize={false}
