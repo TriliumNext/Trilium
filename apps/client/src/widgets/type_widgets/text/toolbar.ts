@@ -1,11 +1,12 @@
-import utils from "../../../services/utils.js";
 import options from "../../../services/options.js";
-import IconAlignCenter from "@ckeditor/ckeditor5-icons/theme/icons/align-center.svg?raw";
-
-const TEXT_FORMATTING_GROUP = {
-    label: "Text formatting",
-    icon: "text"
-};
+import utils from "../../../services/utils.js";
+import {
+    DEFAULT_BLOCK_TOOLBAR,
+    DEFAULT_CLASSIC_TOOLBAR,
+    DEFAULT_FLOATING_TOOLBAR,
+    entriesToCKItems,
+    type ToolbarCustomConfig
+} from "./toolbar_config.js";
 
 export function buildToolbarConfig(isClassicToolbar: boolean) {
     if (utils.isMobile()) {
@@ -24,11 +25,11 @@ export function buildMobileToolbar() {
 
     for (const item of classicConfig.toolbar.items) {
         if (typeof item === "object" && "items" in item) {
-            for (const subitem of item.items) {
+            for (const subitem of (item as { items: string[] }).items) {
                 items.push(subitem);
             }
         } else {
-            items.push(item);
+            items.push(item as string);
         }
     }
 
@@ -45,48 +46,7 @@ export function buildClassicToolbar(multilineToolbar: boolean) {
     // For nested toolbars, refer to https://ckeditor.com/docs/ckeditor5/latest/getting-started/setup/toolbar.html#grouping-toolbar-items-in-dropdowns-nested-toolbars.
     return {
         toolbar: {
-            items: [
-                "heading",
-                "fontSize",
-                "|",
-                "bold",
-                "italic",
-                {
-                    ...TEXT_FORMATTING_GROUP,
-                    items: ["underline", "strikethrough", "|", "superscript", "subscript", "|", "kbd"]
-                },
-                "formatPainter",
-                "|",
-                "fontColor",
-                "fontBackgroundColor",
-                "removeFormat",
-                "|",
-                "bulletedList",
-                "numberedList",
-                "todoList",
-                "|",
-                "blockQuote",
-                "admonition",
-                "insertTable",
-                "|",
-                "code",
-                "codeBlock",
-                "|",
-                "footnote",
-                {
-                    label: "Insert",
-                    icon: "plus",
-                    items: ["imageUpload", "|", "link", "bookmark", "internallink", "includeNote", "|", "specialCharacters", "emoji", "math", "mermaid", "horizontalLine", "pageBreak", "dateTime"]
-                },
-                "|",
-                buildAlignmentToolbar(),
-                "outdent",
-                "indent",
-                "|",
-                "insertTemplate",
-                "markdownImport",
-                "cuttonote"
-            ],
+            items: resolveClassicItems(),
             shouldNotGroupWhenFull: multilineToolbar
         }
     };
@@ -95,64 +55,42 @@ export function buildClassicToolbar(multilineToolbar: boolean) {
 export function buildFloatingToolbar() {
     return {
         toolbar: {
-            items: [
-                "fontSize",
-                "bold",
-                "italic",
-                "underline",
-                {
-                    ...TEXT_FORMATTING_GROUP,
-                    items: [ "strikethrough", "|", "superscript", "subscript", "|", "kbd" ]
-                },
-                "formatPainter",
-                "|",
-                "fontColor",
-                "fontBackgroundColor",
-                "|",
-                "code",
-                "link",
-                "bookmark",
-                "removeFormat",
-                "internallink",
-                "cuttonote"
-            ]
+            items: resolveFloatingItems()
         },
 
-        blockToolbar: [
-            "heading",
-            "|",
-            "bulletedList",
-            "numberedList",
-            "todoList",
-            "|",
-            "blockQuote",
-            "admonition",
-            "codeBlock",
-            "insertTable",
-            "footnote",
-            {
-                label: "Insert",
-                icon: "plus",
-                items: ["link", "bookmark", "internallink", "includeNote", "|", "math", "mermaid", "horizontalLine", "pageBreak", "dateTime"]
-            },
-            "|",
-            buildAlignmentToolbar(),
-            "outdent",
-            "indent",
-            "|",
-            "insertTemplate",
-            "imageUpload",
-            "markdownImport",
-            "specialCharacters",
-            "emoji"
-        ]
+        blockToolbar: resolveBlockToolbarItems()
     };
 }
 
-function buildAlignmentToolbar() {
-    return {
-        label: "Alignment",
-        icon: IconAlignCenter,
-        items: ["alignment:left", "alignment:center", "alignment:right", "|", "alignment:justify"]
-    };
+// ─── Private helpers ──────────────────────────────────────────────────────────
+
+/**
+ * Parse the stored toolbar config option.
+ * Returns null when no custom config is set (empty string or invalid JSON).
+ */
+function parseStoredConfig(): ToolbarCustomConfig | null {
+    const raw = options.get("textNoteToolbarConfig");
+    if (!raw) {
+        return null;
+    }
+    try {
+        return JSON.parse(raw) as ToolbarCustomConfig;
+    } catch {
+        return null;
+    }
+}
+
+function resolveClassicItems(): (string | object)[] {
+    const cfg = parseStoredConfig();
+    return entriesToCKItems(cfg?.classic ?? DEFAULT_CLASSIC_TOOLBAR);
+}
+
+function resolveFloatingItems(): (string | object)[] {
+    const cfg = parseStoredConfig();
+    return entriesToCKItems(cfg?.floating ?? DEFAULT_FLOATING_TOOLBAR);
+}
+
+function resolveBlockToolbarItems(): (string | object)[] {
+    const cfg = parseStoredConfig();
+    return entriesToCKItems(cfg?.blockToolbar ?? DEFAULT_BLOCK_TOOLBAR);
 }
