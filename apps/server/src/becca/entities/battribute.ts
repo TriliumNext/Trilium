@@ -6,6 +6,7 @@ import dateUtils from "../../services/date_utils.js";
 import promotedAttributeDefinitionParser from "../../services/promoted_attribute_definition_parser.js";
 import sanitizeAttributeName from "../../services/sanitize_attribute_name.js";
 import type { AttributeRow, AttributeType } from "@triliumnext/commons";
+import { normalize } from "../../services/utils.js";
 
 interface SavingOpts {
     skipValidation?: boolean;
@@ -34,6 +35,11 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
     value!: string;
     isInheritable!: boolean;
 
+    /** Pre-normalized (lowercase, diacritics removed) name for search. */
+    normalizedName!: string;
+    /** Pre-normalized (lowercase, diacritics removed) value for search. */
+    normalizedValue!: string;
+
     constructor(row?: AttributeRow) {
         super();
 
@@ -58,6 +64,10 @@ class BAttribute extends AbstractBeccaEntity<BAttribute> {
         this.value = value || "";
         this.isInheritable = !!isInheritable;
         this.utcDateModified = utcDateModified;
+
+        // Pre-compute normalized forms for search (avoids repeated normalize() calls in hot loops)
+        this.normalizedName = normalize(this.name);
+        this.normalizedValue = normalize(this.value);
 
         return this;
     }
