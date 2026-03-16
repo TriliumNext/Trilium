@@ -5,6 +5,9 @@
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
+  "scripts": {
+    "test": "vitest"
+  },
   "dependencies": {
     "@triliumnext/commons": "workspace:*",
     "@triliumnext/ckeditor5-admonition": "workspace:*",
