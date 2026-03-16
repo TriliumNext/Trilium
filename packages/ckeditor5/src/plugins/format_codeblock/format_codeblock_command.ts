@@ -83,7 +83,6 @@ export class FormatCodeblockCommand extends Command {
     private extractCodeText(codeBlockEl: ModelElement): string {
         return Array.from(codeBlockEl.getChildren())
             .map((child) => ("data" in child ? child.data : "\n"))
-            .join("")
             .join("");
     }
 }
