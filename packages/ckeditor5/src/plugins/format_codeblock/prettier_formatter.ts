@@ -15,10 +15,11 @@ import {
     LANG_MARKDOWN,
     LANG_GRAPHQL,
 } from "./languages";
+import type { Plugin } from "prettier";
 
 interface PrettierParserConfig {
     parser: string;
-    plugins: () => Promise<unknown[]>;
+    plugins: () => Promise<(string | URL | Plugin<any>)[]>;
 }
 
 const babelPlugins = () =>
@@ -90,7 +91,7 @@ export class PrettierFormatter implements CodeFormatter {
 
         const formatted = await prettier.format(code, {
             parser: config.parser,
-            plugins: plugins as any[],
+            plugins: plugins,
             tabWidth: 4,
             printWidth: 120,
         });
