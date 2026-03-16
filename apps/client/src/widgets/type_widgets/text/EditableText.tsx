@@ -1,6 +1,6 @@
 import "./EditableText.css";
 
-import { CKTextEditor, EditorWatchdog, TemplateDefinition } from "@triliumnext/ckeditor5";
+import { CKTextEditor, EditorWatchdog, TemplateDefinition, type EventInfo, type NotificationShowEventData } from "@triliumnext/ckeditor5";
 import { deferred } from "@triliumnext/commons";
 import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
@@ -333,13 +333,13 @@ function useWatchdogCrashHandling() {
     return onWatchdogStateChange;
 }
 
-function onNotificationWarning(data, evt) {
+function onNotificationWarning(evt: EventInfo, data: NotificationShowEventData) {
     const title = data.title;
-    const message = data.message.message;
+    const message = data.message;
 
     if (title && message) {
-        toast.showErrorTitleAndMessage(data.title, data.message.message);
-    } else if (title) {
+        toast.showErrorTitleAndMessage(title, message);
+    } else if (title || message) {
         toast.showError(title || message);
     }
 
