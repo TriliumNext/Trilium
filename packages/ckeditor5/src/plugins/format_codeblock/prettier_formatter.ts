@@ -10,7 +10,6 @@ import {
     LANG_LESS,
     LANG_SCSS,
     LANG_HTML,
-    LANG_XML,
     LANG_YAML,
     LANG_MARKDOWN,
     LANG_GRAPHQL,
@@ -48,10 +47,6 @@ const LANGUAGE_MAP: Record<string, PrettierParserConfig> = {
     [LANG_LESS]: { parser: "less", plugins: postcssPlugins },
     [LANG_SCSS]: { parser: "scss", plugins: postcssPlugins },
     [LANG_HTML]: {
-        parser: "html",
-        plugins: () => import("prettier/plugins/html").then((m) => [m]),
-    },
-    [LANG_XML]: {
         parser: "html",
         plugins: () => import("prettier/plugins/html").then((m) => [m]),
     },
