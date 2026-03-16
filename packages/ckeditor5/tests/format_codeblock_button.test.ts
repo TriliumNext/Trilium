@@ -271,7 +271,12 @@ describe("FormatCodeblockButton", () => {
 
             editor.execute("formatCodeblock");
 
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await vi.waitFor(() => {
+                const modelDataAfter = getModelData(editor.model, {
+                    withoutSelection: true,
+                });
+                expect(modelDataAfter).toBe(modelDataBefore);
+            });
 
             const modelDataAfter = getModelData(editor.model, {
                 withoutSelection: true,
