@@ -1,10 +1,14 @@
-import { ButtonView, Plugin } from "ckeditor5";
+import { ButtonView, Notification, Plugin } from "ckeditor5";
 import formatIcon from "../../icons/format-codeblock.svg?raw";
 import { FormatterRegistry } from "./code_formatter";
 import { FormatCodeblockCommand } from "./format_codeblock_command";
 import { PrettierFormatter } from "./prettier_formatter";
 
 export default class FormatCodeblockButton extends Plugin {
+    static get requires() {
+        return [Notification];
+    }
+
     public init() {
         const editor = this.editor;
 

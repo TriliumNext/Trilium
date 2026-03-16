@@ -1,4 +1,4 @@
-import { Command, ModelElement } from "ckeditor5";
+import { Command, ModelElement, Notification } from "ckeditor5";
 import { FormatterRegistry } from "./code_formatter";
 
 export class FormatCodeblockCommand extends Command {
@@ -25,6 +25,8 @@ export class FormatCodeblockCommand extends Command {
         const editor = this.editor;
         const model = editor.model;
         const selection = model.document.selection;
+        const notification = editor.plugins.get(Notification);
+        const t = editor.locale.t;
 
         const language = this.value;
         if (!language) {
@@ -41,7 +43,12 @@ export class FormatCodeblockCommand extends Command {
             .getFirstPosition()
             ?.findAncestor("codeBlock");
         if (!codeBlockEl) {
-            console.warn("Unable to find code block element to format.");
+            notification.showWarning(
+                t("Unable to find code block element to format."),
+                {
+                    namespace: "formatCodeblock",
+                },
+            );
             return;
         }
 
@@ -73,10 +80,12 @@ export class FormatCodeblockCommand extends Command {
                 });
             })
             .catch((err) => {
-                console.error(
-                    `Failed to format code block with ${formatter.name}:`,
-                    err,
-                );
+                notification.showWarning(err.message || String(err), {
+                    title: t(
+                        `Failed to format code block with ${formatter.name}`,
+                    ),
+                    namespace: "formatCodeblock",
+                });
             });
     }
 

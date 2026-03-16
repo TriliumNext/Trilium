@@ -1,6 +1,7 @@
 import {
     ClassicEditor,
     CodeBlock,
+    Notification,
     Paragraph,
     _setModelData as setModelData,
     _getModelData as getModelData,
@@ -388,6 +389,65 @@ describe("FormatCodeblockButton", () => {
                         withoutSelection: true,
                     });
                     expect(modelData).toEqual("foo: bar\nbaz: qux");
+                },
+                { timeout: 10000 },
+            );
+        });
+    });
+
+    describe("notifications", () => {
+        it("should fire a warning notification when formatting fails", async () => {
+            setCodeBlockContent(
+                editor,
+                LANG_JAVASCRIPT_FRONTEND,
+                'import { getLanguageStats }dfe wae from "./utils";',
+            );
+
+            const notification = editor.plugins.get(Notification);
+            const showWarningSpy = vi.spyOn(notification, "showWarning");
+
+            // Prevent CKEditor's default show:warning handler from calling window.alert.
+            notification.on("show:warning", (evt) => evt.stop(), { priority: "high" });
+
+            editor.execute("formatCodeblock");
+
+            await vi.waitFor(
+                () => {
+                    expect(showWarningSpy).toHaveBeenCalled();
+                    const [message, options] = showWarningSpy.mock.calls[0];
+                    expect(typeof message).toBe("string");
+                    expect((message as string).length).toBeGreaterThan(0);
+                    expect(options).toMatchObject({
+                        namespace: "formatCodeblock",
+                    });
+                    expect(options?.title).toContain("Prettier");
+                },
+                { timeout: 10000 },
+            );
+        });
+
+        it("should fire a show:warning event when formatting fails", async () => {
+            setCodeBlockContent(
+                editor,
+                LANG_JAVASCRIPT_FRONTEND,
+                'import { getLanguageStats }dfe wae from "./utils";',
+            );
+
+            const notification = editor.plugins.get(Notification);
+            const warningHandler = vi.fn();
+            notification.on("show:warning", (evt, data) => {
+                warningHandler(data);
+                evt.stop();
+            });
+
+            editor.execute("formatCodeblock");
+
+            await vi.waitFor(
+                () => {
+                    expect(warningHandler).toHaveBeenCalled();
+                    const data = warningHandler.mock.calls[0][0];
+                    expect(data.message).toBeTruthy();
+                    expect(data.type).toBe("warning");
                 },
                 { timeout: 10000 },
             );

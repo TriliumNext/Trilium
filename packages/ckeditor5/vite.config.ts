@@ -33,4 +33,13 @@ export default defineConfig(() => ({
       }
     },
   },
+  test: {
+    environment: "happy-dom",
+    include: [
+      'tests/**/*.[jt]s'
+    ],
+    globals: true,
+    watch: false,
+    passWithNoTests: true
+  },
 }));
