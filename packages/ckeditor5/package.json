@@ -13,7 +13,8 @@
     "@triliumnext/ckeditor5-math": "workspace:*",
     "@triliumnext/ckeditor5-mermaid": "workspace:*",
     "ckeditor5": "47.6.1",
-    "ckeditor5-premium-features": "47.6.1"
+    "ckeditor5-premium-features": "47.6.1",
+    "prettier": "^3.5.3"
   },
   "devDependencies": {
     "@smithy/middleware-retry": "4.4.42",
