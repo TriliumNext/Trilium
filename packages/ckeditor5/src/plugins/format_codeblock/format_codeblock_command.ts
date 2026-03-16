@@ -1,5 +1,5 @@
 import { Command, ModelElement } from "ckeditor5";
-import { getPrettierConfig, isSupportedLanguage } from "./languages_config";
+import { FormatterRegistry } from "./code_formatter";
 
 export class FormatCodeblockCommand extends Command {
     declare value: string | false;
@@ -7,8 +7,12 @@ export class FormatCodeblockCommand extends Command {
     override refresh() {
         const codeBlockCommand = this.editor.commands.get("codeBlock");
         const language = codeBlockCommand?.value;
+        const registry = FormatterRegistry.getInstance();
 
-        if (typeof language === "string" && isSupportedLanguage(language)) {
+        if (
+            typeof language === "string" &&
+            registry.isLanguageSupported(language)
+        ) {
             this.isEnabled = true;
             this.value = language;
         } else {
@@ -27,8 +31,9 @@ export class FormatCodeblockCommand extends Command {
             return;
         }
 
-        const config = getPrettierConfig(language);
-        if (!config) {
+        const registry = FormatterRegistry.getInstance();
+        const formatter = registry.getFormatterForLanguage(language);
+        if (!formatter) {
             return;
         }
 
@@ -46,25 +51,17 @@ export class FormatCodeblockCommand extends Command {
             return;
         }
 
-        Promise.all([import("prettier/standalone"), config.plugins()])
-            .then(async ([prettier, plugins]) => {
-                const formatted = await prettier.format(codeText, {
-                    parser: config.parser,
-                    plugins: plugins as any[],
-                    tabWidth: 4,
-                    printWidth: 120,
-                });
-
-                const trimmed = this.removeTrailingNewline(formatted);
-
-                if (trimmed === codeText) {
+        formatter
+            .format(codeText, language)
+            .then((formatted) => {
+                if (formatted === codeText) {
                     return;
                 }
 
                 model.change((writer) => {
                     const range = writer.createRangeIn(codeBlockEl);
                     writer.remove(range);
-                    const lines = trimmed.split("\n");
+                    const lines = formatted.split("\n");
                     for (let i = 0; i < lines.length; i++) {
                         if (i > 0) {
                             writer.appendElement("softBreak", codeBlockEl);
@@ -76,12 +73,11 @@ export class FormatCodeblockCommand extends Command {
                 });
             })
             .catch((err) => {
-                console.error("Failed to format code block:", err);
+                console.error(
+                    `Failed to format code block with ${formatter.name}:`,
+                    err,
+                );
             });
-    }
-
-    private removeTrailingNewline(text: string) {
-        return text.replace(/\n$/, "");
     }
 
     private extractCodeText(codeBlockEl: ModelElement): string {

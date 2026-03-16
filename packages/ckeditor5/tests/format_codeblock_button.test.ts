@@ -8,6 +8,28 @@ import {
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import FormatCodeblockButton from "../src/plugins/format_codeblock/format_codeblock_button";
 import { FormatCodeblockCommand } from "../src/plugins/format_codeblock/format_codeblock_command";
+import {
+    FormatterRegistry,
+    type CodeFormatter,
+} from "../src/plugins/format_codeblock/code_formatter";
+import {
+    LANG_JAVASCRIPT_FRONTEND,
+    LANG_TYPESCRIPT,
+    LANG_JSON,
+    LANG_CSS,
+    LANG_SCSS,
+    LANG_LESS,
+    LANG_HTML,
+    LANG_XML,
+    LANG_YAML,
+    LANG_MARKDOWN,
+    LANG_GRAPHQL,
+    LANG_JSX,
+    LANG_TYPESCRIPT_JSX,
+    LANG_PYTHON,
+    LANG_RUST,
+    LANG_C,
+} from "../src/plugins/format_codeblock/languages";
 
 function setCodeBlockContent(
     editor: ClassicEditor,
@@ -49,24 +71,24 @@ describe("FormatCodeblockButton", () => {
             codeBlock: {
                 languages: [
                     {
-                        language: "application-javascript-env-frontend",
+                        language: LANG_JAVASCRIPT_FRONTEND,
                         label: "JavaScript (Frontend)",
                     },
-                    { language: "text-typescript", label: "TypeScript" },
-                    { language: "application-json", label: "JSON" },
-                    { language: "text-css", label: "CSS" },
-                    { language: "text-x-scss", label: "SCSS" },
-                    { language: "text-x-less", label: "LESS" },
-                    { language: "text-html", label: "HTML" },
-                    { language: "text-xml", label: "XML" },
-                    { language: "text-x-yaml", label: "YAML" },
-                    { language: "text-x-markdown", label: "Markdown" },
-                    { language: "text-x-graphql", label: "GraphQL" },
-                    { language: "text-jsx", label: "JSX" },
-                    { language: "text-tsx", label: "TSX" },
-                    { language: "text-x-python", label: "Python" },
-                    { language: "text-x-rustsrc", label: "Rust" },
-                    { language: "text-x-csrc", label: "C" },
+                    { language: LANG_TYPESCRIPT, label: "TypeScript" },
+                    { language: LANG_JSON, label: "JSON" },
+                    { language: LANG_CSS, label: "CSS" },
+                    { language: LANG_SCSS, label: "SCSS" },
+                    { language: LANG_LESS, label: "LESS" },
+                    { language: LANG_HTML, label: "HTML" },
+                    { language: LANG_XML, label: "XML" },
+                    { language: LANG_YAML, label: "YAML" },
+                    { language: LANG_MARKDOWN, label: "Markdown" },
+                    { language: LANG_GRAPHQL, label: "GraphQL" },
+                    { language: LANG_JSX, label: "JSX" },
+                    { language: LANG_TYPESCRIPT_JSX, label: "TSX" },
+                    { language: LANG_PYTHON, label: "Python" },
+                    { language: LANG_RUST, label: "Rust" },
+                    { language: LANG_C, label: "C" },
                 ],
             },
         });
@@ -93,19 +115,19 @@ describe("FormatCodeblockButton", () => {
     describe("FormatCodeblockCommand#refresh", () => {
         describe("should be enabled for supported languages", () => {
             const supportedLanguages = [
-                "application-javascript-env-frontend",
-                "text-typescript",
-                "application-json",
-                "text-css",
-                "text-x-scss",
-                "text-x-less",
-                "text-html",
-                "text-xml",
-                "text-x-yaml",
-                "text-x-markdown",
-                "text-x-graphql",
-                "text-jsx",
-                "text-tsx",
+                LANG_JAVASCRIPT_FRONTEND,
+                LANG_TYPESCRIPT,
+                LANG_JSON,
+                LANG_CSS,
+                LANG_SCSS,
+                LANG_LESS,
+                LANG_HTML,
+                LANG_XML,
+                LANG_YAML,
+                LANG_MARKDOWN,
+                LANG_GRAPHQL,
+                LANG_JSX,
+                LANG_TYPESCRIPT_JSX,
             ];
 
             for (const lang of supportedLanguages) {
@@ -123,11 +145,7 @@ describe("FormatCodeblockButton", () => {
         });
 
         describe("should be disabled for unsupported languages", () => {
-            const unsupportedLanguages = [
-                "text-x-python",
-                "text-x-rustsrc",
-                "text-x-csrc",
-            ];
+            const unsupportedLanguages = [LANG_PYTHON, LANG_RUST, LANG_C];
 
             for (const lang of unsupportedLanguages) {
                 it(`should be disabled for "${lang}"`, () => {
@@ -156,7 +174,7 @@ describe("FormatCodeblockButton", () => {
         it("should format JavaScript code", async () => {
             setModelData(
                 editor.model,
-                '<codeBlock language="application-javascript-env-frontend">const x=1;const y=2;const z=x+y[]</codeBlock>',
+                `<codeBlock language="${LANG_JAVASCRIPT_FRONTEND}">const x=1;const y=2;const z=x+y[]</codeBlock>`,
             );
 
             editor.execute("formatCodeblock");
@@ -177,7 +195,7 @@ describe("FormatCodeblockButton", () => {
         it("should format JSON code", async () => {
             setCodeBlockContent(
                 editor,
-                "application-json",
+                LANG_JSON,
                 '{"a":1,"b":  2,"c":    [1,2,3]}',
             );
 
@@ -199,7 +217,7 @@ describe("FormatCodeblockButton", () => {
         it("should format CSS code", async () => {
             setCodeBlockContent(
                 editor,
-                "text-css",
+                LANG_CSS,
                 "body{color:red;background:blue}",
             );
 
@@ -221,7 +239,7 @@ describe("FormatCodeblockButton", () => {
         it("should format TypeScript code", async () => {
             setCodeBlockContent(
                 editor,
-                "text-typescript",
+                LANG_TYPESCRIPT,
                 "interface Foo{bar:string;baz:number}",
             );
 
@@ -244,7 +262,7 @@ describe("FormatCodeblockButton", () => {
             const formattedCode = "const x = 1;";
             setModelData(
                 editor.model,
-                `<codeBlock language="application-javascript-env-frontend">${formattedCode}[]</codeBlock>`,
+                `<codeBlock language="${LANG_JAVASCRIPT_FRONTEND}">${formattedCode}[]</codeBlock>`,
             );
 
             const modelDataBefore = getModelData(editor.model, {
@@ -264,7 +282,7 @@ describe("FormatCodeblockButton", () => {
         it("should not modify empty code blocks", () => {
             setModelData(
                 editor.model,
-                '<codeBlock language="application-javascript-env-frontend">[]</codeBlock>',
+                `<codeBlock language="${LANG_JAVASCRIPT_FRONTEND}">[]</codeBlock>`,
             );
 
             const modelDataBefore = getModelData(editor.model, {
@@ -282,7 +300,7 @@ describe("FormatCodeblockButton", () => {
         it("should not modify whitespace-only code blocks", () => {
             setModelData(
                 editor.model,
-                '<codeBlock language="application-javascript-env-frontend">   []</codeBlock>',
+                `<codeBlock language="${LANG_JAVASCRIPT_FRONTEND}">   []</codeBlock>`,
             );
 
             const modelDataBefore = getModelData(editor.model, {
@@ -300,7 +318,7 @@ describe("FormatCodeblockButton", () => {
         it("should not execute when language is unsupported", () => {
             setModelData(
                 editor.model,
-                '<codeBlock language="text-x-python">x=1[]</codeBlock>',
+                `<codeBlock language="${LANG_PYTHON}">x=1[]</codeBlock>`,
             );
 
             const modelDataBefore = getModelData(editor.model, {
@@ -327,7 +345,7 @@ describe("FormatCodeblockButton", () => {
                 writer.remove(writer.createRangeIn(root));
 
                 const codeBlock = writer.createElement("codeBlock", {
-                    language: "application-javascript-env-frontend",
+                    language: LANG_JAVASCRIPT_FRONTEND,
                 });
                 writer.appendText("const x=1;", codeBlock);
                 writer.appendElement("softBreak", codeBlock);
@@ -354,7 +372,7 @@ describe("FormatCodeblockButton", () => {
         it("should format YAML code", async () => {
             setModelData(
                 editor.model,
-                '<codeBlock language="text-x-yaml">foo:   bar\nbaz:    qux[]</codeBlock>',
+                `<codeBlock language="${LANG_YAML}">foo:   bar\nbaz:    qux[]</codeBlock>`,
             );
 
             editor.execute("formatCodeblock");
@@ -378,7 +396,7 @@ describe("FormatCodeblockButton", () => {
         });
 
         it("button isEnabled should follow command isEnabled", () => {
-            setCodeBlockContent(editor, "application-json", '{"key": "value"}');
+            setCodeBlockContent(editor, LANG_JSON, '{"key": "value"}');
 
             const button = editor.ui.componentFactory.create("formatCodeblock");
             const command = editor.commands.get("formatCodeblock")!;
@@ -391,5 +409,61 @@ describe("FormatCodeblockButton", () => {
             expect(command.isEnabled).toBe(false);
             expect((button as any).isEnabled).toBe(false);
         });
+    });
+});
+
+describe("FormatterRegistry", () => {
+    let registry: FormatterRegistry;
+
+    beforeEach(() => {
+        registry = new FormatterRegistry();
+    });
+
+    it("should return undefined when no formatters are registered", () => {
+        expect(registry.getFormatterForLanguage(LANG_CSS)).toBeUndefined();
+    });
+
+    it("should report no language as supported when empty", () => {
+        expect(registry.isLanguageSupported(LANG_CSS)).toBe(false);
+    });
+
+    it("should find a registered formatter by language", () => {
+        const mockFormatter: CodeFormatter = {
+            name: "Mock",
+            canFormat: (lang) => lang === LANG_PYTHON,
+            format: async (code) => code,
+        };
+        registry.register(mockFormatter);
+
+        expect(registry.getFormatterForLanguage(LANG_PYTHON)).toBe(
+            mockFormatter,
+        );
+        expect(registry.isLanguageSupported(LANG_PYTHON)).toBe(true);
+        expect(registry.isLanguageSupported(LANG_CSS)).toBe(false);
+    });
+
+    it("should return the first matching formatter when multiple match", () => {
+        const first: CodeFormatter = {
+            name: "First",
+            canFormat: () => true,
+            format: async (code) => code,
+        };
+        const second: CodeFormatter = {
+            name: "Second",
+            canFormat: () => true,
+            format: async (code) => code,
+        };
+        registry.register(first);
+        registry.register(second);
+
+        expect(registry.getFormatterForLanguage("any-lang")?.name).toBe(
+            "First",
+        );
+    });
+
+    it("should maintain singleton identity", () => {
+        const a = FormatterRegistry.getInstance();
+        const b = FormatterRegistry.getInstance();
+        expect(a).toBe(b);
     });
 });
