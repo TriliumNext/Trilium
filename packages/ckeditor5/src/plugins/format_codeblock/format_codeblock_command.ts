@@ -84,6 +84,6 @@ export class FormatCodeblockCommand extends Command {
         return Array.from(codeBlockEl.getChildren())
             .map((child) => ("data" in child ? child.data : "\n"))
             .join("")
-            .trim();
+            .join("");
     }
 }
