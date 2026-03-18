@@ -6,6 +6,7 @@ import { useEffect, useState } from "preact/hooks";
 import { t } from "../services/i18n";
 import { SearchNoteList } from "./collections/NoteList";
 import Button from "./react/Button";
+import appContext from "../services/app_context";
 import { useNoteContext,  useTriliumEvent } from "./react/hooks";
 import NoItems from "./react/NoItems";
 
@@ -34,6 +35,15 @@ export default function SearchResult() {
     }
 
     useEffect(() => refresh(), [ note ]);
+
+    // Auto-execute search when opening a saved search note.
+    // Triggered only when the note ID changes (i.e. the user navigates to a different note),
+    // not on every render. This avoids re-running while the user is editing the query.
+    useEffect(() => {
+        if (note?.type === "search" && !note?.searchResultsLoaded) {
+            appContext.triggerCommand("searchNotes");
+        }
+    }, [ note?.noteId ]); // eslint-disable-line react-hooks/exhaustive-deps
     useTriliumEvent("searchRefreshed", ({ ntxId: eventNtxId }) => {
         if (eventNtxId === ntxId) {
             refresh();
