@@ -675,6 +675,7 @@ li.dropdown-item a.dropdown-item-button:focus-visible {
 div.alert {
     margin-bottom: 8px;
     background: var(--alert-bar-background) !important;
+    color: var(--main-text-color);
     border-radius: 8px;
     font-size: .85em;
 }

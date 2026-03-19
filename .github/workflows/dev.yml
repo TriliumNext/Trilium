@@ -26,7 +26,7 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
       - name: Set up node & dependencies
         uses: actions/setup-node@v6
         with:
@@ -74,7 +74,7 @@ jobs:
       - test_dev
     steps:
       - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Update build info
@@ -109,7 +109,7 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 

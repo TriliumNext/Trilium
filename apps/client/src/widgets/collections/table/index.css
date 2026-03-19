@@ -75,3 +75,9 @@
     font-size: 1.5em;
     transform: translateY(-50%);
 }
+
+.tabulator .tabulator-editable {
+    textarea {
+        padding: 7px !important;
+    }
+}

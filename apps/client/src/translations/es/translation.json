@@ -1051,7 +1051,6 @@
     "unprotecting-title": "Estado de desprotección"
   },
   "relation_map": {
-    "open_in_new_tab": "Abrir en nueva pestaña",
     "remove_note": "Quitar nota",
     "edit_title": "Editar título",
     "rename_note": "Cambiar nombre de nota",
@@ -2217,5 +2216,33 @@
     "unsupported-format": "La vista previa del medio no está disponible para este formato de archivo:\n{{mime}}",
     "zoom-to-fit": "Acercamiento para llenar",
     "zoom-reset": "Reiniciar acercamiento para llenar"
+  },
+  "mermaid": {
+    "placeholder": "Ingrese el contenido de su diagrama Mermaid o utilice uno de los diagramas de muestra a continuación.",
+    "sample_diagrams": "Diagramas de muestra:",
+    "sample_flowchart": "Diagrama de flujo",
+    "sample_class": "Clase",
+    "sample_sequence": "Secuencia",
+    "sample_entity_relationship": "Relación entre entidades",
+    "sample_state": "Estado",
+    "sample_mindmap": "Mapa mental",
+    "sample_architecture": "Arquitectura",
+    "sample_block": "Bloque",
+    "sample_c4": "C4",
+    "sample_gantt": "Gantt",
+    "sample_git": "Git",
+    "sample_kanban": "Kanban",
+    "sample_packet": "Paquete",
+    "sample_pie": "Pastel",
+    "sample_quadrant": "Cuadrante",
+    "sample_radar": "Radar",
+    "sample_requirement": "Requerimiento",
+    "sample_sankey": "Sankey",
+    "sample_timeline": "Línea de tiempo",
+    "sample_user_journey": "Jornada de usuario",
+    "sample_xy": "XY",
+    "sample_venn": "Venn",
+    "sample_ishikawa": "Ishikawa",
+    "sample_treemap": "Mapa de árbol"
   }
 }

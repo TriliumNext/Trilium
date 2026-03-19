@@ -2,7 +2,7 @@ import "./PromotedAttributes.css";
 
 import { UpdateAttributeResponse } from "@triliumnext/commons";
 import clsx from "clsx";
-import { ComponentChild, HTMLInputTypeAttribute, InputHTMLAttributes, MouseEventHandler, TargetedEvent, TargetedInputEvent } from "preact";
+import { ComponentChild, createElement, HTMLInputTypeAttribute, InputHTMLAttributes, MouseEventHandler, TargetedEvent, TargetedInputEvent } from "preact";
 import { Dispatch, StateUpdater, useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import NoteContext from "../components/note_context";
@@ -36,7 +36,7 @@ interface CellProps {
     setCellToFocus(cell: Cell): void;
 }
 
-type OnChangeEventData = TargetedEvent<HTMLInputElement, Event> | InputEvent | JQuery.TriggeredEvent<HTMLInputElement, undefined, HTMLInputElement, HTMLInputElement>;
+type OnChangeEventData = TargetedEvent<HTMLInputElement | HTMLTextAreaElement, Event> | InputEvent | JQuery.TriggeredEvent<HTMLInputElement, undefined, HTMLInputElement, HTMLInputElement>;
 type OnChangeListener = (e: OnChangeEventData) => void | Promise<void>;
 
 export default function PromotedAttributes() {
@@ -171,8 +171,9 @@ function PromotedAttributeCell(props: CellProps) {
     );
 }
 
-const LABEL_MAPPINGS: Record<LabelType, HTMLInputTypeAttribute> = {
+const LABEL_MAPPINGS: Record<LabelType, HTMLInputTypeAttribute | undefined> = {
     text: "text",
+    textarea: undefined,
     number: "number",
     boolean: "checkbox",
     date: "date",
@@ -226,20 +227,21 @@ function LabelInput(props: CellProps & { inputId: string }) {
         }
     }
 
-    const inputNode = <input
-        className="form-control promoted-attribute-input"
-        tabIndex={200 + definitionAttr.position}
-        id={inputId}
-        type={LABEL_MAPPINGS[definition.labelType ?? "text"]}
-        value={valueDraft}
-        checked={definition.labelType === "boolean" ? valueAttr.value === "true" : undefined}
-        placeholder={t("promoted_attributes.unset-field-placeholder")}
-        data-attribute-id={valueAttr.attributeId}
-        data-attribute-type={valueAttr.type}
-        data-attribute-name={valueAttr.name}
-        onBlur={onChangeListener}
-        {...extraInputProps}
-    />;
+
+    const inputNode = createElement(definition.labelType === "textarea" ? "textarea" : "input", {
+        className: "form-control promoted-attribute-input",
+        tabIndex: 200 + definitionAttr.position,
+        id: inputId,
+        type: LABEL_MAPPINGS[definition.labelType ?? "text"],
+        value: valueDraft,
+        checked: definition.labelType === "boolean" ? valueAttr.value === "true" : undefined,
+        placeholder: t("promoted_attributes.unset-field-placeholder"),
+        "data-attribute-id": valueAttr.attributeId,
+        "data-attribute-type": valueAttr.type,
+        "data-attribute-name": valueAttr.name,
+        onBlur: onChangeListener,
+        ...extraInputProps
+    });
 
     if (definition.labelType === "boolean") {
         return <>

@@ -7,7 +7,7 @@ function parse(value: string): DefinitionObject {
     for (const token of tokens) {
         if (token === "promoted") {
             defObj.isPromoted = true;
-        } else if (["text", "number", "boolean", "date", "datetime", "time", "url"].includes(token)) {
+        } else if (["text", "textarea", "number", "boolean", "date", "datetime", "time", "url"].includes(token)) {
             defObj.labelType = token;
         } else if (["single", "multi"].includes(token)) {
             defObj.multiplicity = token;

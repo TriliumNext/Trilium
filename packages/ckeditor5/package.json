@@ -20,7 +20,7 @@
     "prettier": "^3.5.3"
   },
   "devDependencies": {
-    "@smithy/middleware-retry": "4.4.42",
+    "@smithy/middleware-retry": "4.4.43",
     "@types/jquery": "4.0.0"
   }
 }

@@ -137,6 +137,7 @@ const TPL = /*html*/`
             <td>
                 <select class="attr-input-label-type form-control">
                   <option value="text">${t("attribute_detail.text")}</option>
+                  <option value="textarea">${t("attribute_detail.textarea")}</option>
                   <option value="number">${t("attribute_detail.number")}</option>
                   <option value="boolean">${t("attribute_detail.boolean")}</option>
                   <option value="date">${t("attribute_detail.date")}</option>

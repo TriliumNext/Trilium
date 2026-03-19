@@ -343,6 +343,7 @@
     "label_type_title": "Type of the label will help Trilium to choose suitable interface to enter the label value.",
     "label_type": "Type",
     "text": "Text",
+    "textarea": "Multi-line Text",
     "number": "Number",
     "boolean": "Boolean",
     "date": "Date",
@@ -1068,7 +1069,6 @@
     "unprotecting-title": "Unprotecting status"
   },
   "relation_map": {
-    "open_in_new_tab": "Open in new tab",
     "remove_note": "Remove note",
     "edit_title": "Edit title",
     "rename_note": "Rename note",

@@ -58,35 +58,35 @@
         <div class="alert alert-warning" id="alert" style="display: none;">
         </div>
 
-        <div id="setup-type" data-bind="visible: step() == 'setup-type'" style="margin-top: 20px;">
-            <form data-bind="submit: selectSetupType">
+        <div id="setup-type-section" style="margin-top: 20px;">
+            <form id="setup-type-form">
 
             <div class="radio" style="margin-bottom: 15px;">
                 <label class="tn-radio">
-                    <input type="radio" name="setup-type" value="new-document" data-bind="checked: setupType">
+                    <input type="radio" name="setup-type" value="new-document">
                     <%= t("setup.new-document") %>
                 </label>
             </div>
 
             <div class="radio" style="margin-bottom: 15px;">
                 <label class="tn-radio">
-                    <input type="radio" name="setup-type" value="sync-from-desktop" data-bind="checked: setupType">
+                    <input type="radio" name="setup-type" value="sync-from-desktop">
                     <%= t("setup.sync-from-desktop") %>
                 </label>
             </div>
 
             <div class="radio" style="margin-bottom: 15px;">
                 <label class="tn-radio">
-                    <input type="radio" name="setup-type" value="sync-from-server" data-bind="checked: setupType">
+                    <input type="radio" name="setup-type" value="sync-from-server">
                     <%= t("setup.sync-from-server") %>
                 </label>
             </div>
 
-              <button type="submit" data-bind="disable: !setupTypeSelected()" class="btn btn-primary"><%= t("setup.next") %></button>
+              <button type="submit" id="setup-type-next" class="btn btn-primary" disabled><%= t("setup.next") %></button>
             </form>
         </div>
 
-        <div data-bind="visible: step() == 'new-document-in-progress'">
+        <div id="new-document-in-progress-section">
             <h2><%= t("setup.init-in-progress") %></h2>
 
             <div style="display: flex; justify-content: flex-start; margin-top: 20px;">
@@ -103,7 +103,7 @@
             </div>
         </div>
 
-        <div data-bind="visible: step() == 'sync-from-desktop'">
+        <div id="sync-from-desktop-section">
             <h2><%= t("setup_sync-from-desktop.heading") %></h2>
 
             <p><%= t("setup_sync-from-desktop.description") %></p>
@@ -117,11 +117,11 @@
                 <li><%- t("setup_sync-from-desktop.step6", { link: `<a href="/">${t("setup_sync-from-desktop.step6-here")}</a>` }) %></li>
             </ol>
 
-            <button type="button" data-bind="click: back" class="btn btn-secondary">Back</button>
+            <button type="button" data-action="back" class="btn btn-secondary">Back</button>
         </div>
 
-        <div data-bind="visible: step() == 'sync-from-server'">
-          <form data-bind="submit: finish">
+        <div id="sync-from-server-section">
+          <form id="sync-from-server-form">
 
             <h2><%= t("setup_sync-from-server.heading") %></h2>
 
@@ -129,27 +129,27 @@
 
             <div class="form-group">
                 <label for="sync-server-host"><%= t("setup_sync-from-server.server-host") %></label>
-                <input type="text" id="syncServerHost" class="form-control" data-bind="value: syncServerHost" placeholder="<%= t("setup_sync-from-server.server-host-placeholder") %>">
+                <input type="text" id="sync-server-host" class="form-control" placeholder="<%= t("setup_sync-from-server.server-host-placeholder") %>">
             </div>
             <div class="form-group">
                 <label for="sync-proxy"><%= t("setup_sync-from-server.proxy-server") %></label>
-                <input type="text" id="sync-proxy" class="form-control" data-bind="value: syncProxy" placeholder="<%= t("setup_sync-from-server.proxy-server-placeholder") %>">
+                <input type="text" id="sync-proxy" class="form-control" placeholder="<%= t("setup_sync-from-server.proxy-server-placeholder") %>">
 
                 <p><strong><%= t("setup_sync-from-server.note") %></strong> <%= t("setup_sync-from-server.proxy-instruction") %></p>
             </div>
             <div class="form-group" style="margin-bottom: 8px;">
                 <label for="password"><%= t("setup_sync-from-server.password") %></label>
-                <input type="password" id="password" class="form-control" data-bind="value: password" placeholder="<%= t("setup_sync-from-server.password-placeholder") %>">
+                <input type="password" id="password" class="form-control" placeholder="<%= t("setup_sync-from-server.password-placeholder") %>">
             </div>
 
-            <button type="button" data-bind="click: back" class="btn btn-secondary"><%= t("setup_sync-from-server.back") %></button>
+            <button type="button" data-action="back" class="btn btn-secondary"><%= t("setup_sync-from-server.back") %></button>
 
             <button type="submit" class="btn btn-primary"><%= t("setup_sync-from-server.finish-setup") %></button>
           </form>
 
         </div>
 
-        <div data-bind="visible: step() == 'sync-in-progress'">
+        <div id="sync-in-progress-section">
             <h2><%= t("setup_sync-in-progress.heading") %></h2>
 
             <div class="alert alert-success"><%= t("setup_sync-in-progress.successful") %></div>

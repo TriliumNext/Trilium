@@ -1069,7 +1069,6 @@
     "rename_note": "اعادة تسمية الملاحظة",
     "remove_relation": "حذف العلاقة",
     "default_new_note_title": "ملاحظة جديدة",
-    "open_in_new_tab": "فتح في تبويب جديد",
     "enter_new_title": "ادخل عنوان ملاحظة جديدة:",
     "note_not_found": "الملاحظة {{noteId}} غير موجودة!",
     "cannot_match_transform": "تعذر مطابقة التحويل: {{transform}}"

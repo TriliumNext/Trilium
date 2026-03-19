@@ -1537,7 +1537,6 @@
     "url_placeholder": "http://web サイト..."
   },
   "relation_map": {
-    "open_in_new_tab": "新しいタブで開く",
     "remove_note": "ノートを削除",
     "edit_title": "タイトルを編集",
     "rename_note": "ノート名を変更",

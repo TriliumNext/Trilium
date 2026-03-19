@@ -1,68 +1,107 @@
 import "jquery";
 
-import ko from "knockout";
-
 import utils from "./services/utils.js";
 
-// TriliumNextTODO: properly make use of below types
-// type SetupModelSetupType = "new-document" | "sync-from-desktop" | "sync-from-server" | "";
-// type SetupModelStep = "sync-in-progress" | "setup-type" | "new-document-in-progress" | "sync-from-desktop";
+type SetupStep = "sync-in-progress" | "setup-type" | "new-document-in-progress" | "sync-from-desktop" | "sync-from-server";
+type SetupType = "new-document" | "sync-from-desktop" | "sync-from-server" | "";
 
-class SetupModel {
-    syncInProgress: boolean;
-    step: ko.Observable<string>;
-    setupType: ko.Observable<string>;
-    setupNewDocument: ko.Observable<boolean>;
-    setupSyncFromDesktop: ko.Observable<boolean>;
-    setupSyncFromServer: ko.Observable<boolean>;
-    syncServerHost: ko.Observable<string | undefined>;
-    syncProxy: ko.Observable<string | undefined>;
-    password: ko.Observable<string | undefined>;
+class SetupController {
+    private step: SetupStep;
+    private setupType: SetupType = "";
+    private syncPollIntervalId: number | null = null;
+    private rootNode: HTMLElement;
+    private setupTypeForm: HTMLFormElement;
+    private syncFromServerForm: HTMLFormElement;
+    private setupTypeNextButton: HTMLButtonElement;
+    private setupTypeInputs: HTMLInputElement[];
+    private syncServerHostInput: HTMLInputElement;
+    private syncProxyInput: HTMLInputElement;
+    private passwordInput: HTMLInputElement;
+    private sections: Record<SetupStep, HTMLElement>;
 
-    constructor(syncInProgress: boolean) {
-        this.syncInProgress = syncInProgress;
-        this.step = ko.observable(syncInProgress ? "sync-in-progress" : "setup-type");
-        this.setupType = ko.observable("");
-        this.setupNewDocument = ko.observable(false);
-        this.setupSyncFromDesktop = ko.observable(false);
-        this.setupSyncFromServer = ko.observable(false);
-        this.syncServerHost = ko.observable();
-        this.syncProxy = ko.observable();
-        this.password = ko.observable();
+    constructor(rootNode: HTMLElement, syncInProgress: boolean) {
+        this.rootNode = rootNode;
+        this.step = syncInProgress ? "sync-in-progress" : "setup-type";
+        this.setupTypeForm = mustGetElement("setup-type-form", HTMLFormElement);
+        this.syncFromServerForm = mustGetElement("sync-from-server-form", HTMLFormElement);
+        this.setupTypeNextButton = mustGetElement("setup-type-next", HTMLButtonElement);
+        this.setupTypeInputs = Array.from(document.querySelectorAll<HTMLInputElement>("input[name='setup-type']"));
+        this.syncServerHostInput = mustGetElement("sync-server-host", HTMLInputElement);
+        this.syncProxyInput = mustGetElement("sync-proxy", HTMLInputElement);
+        this.passwordInput = mustGetElement("password", HTMLInputElement);
+        this.sections = {
+            "setup-type": mustGetElement("setup-type-section", HTMLElement),
+            "new-document-in-progress": mustGetElement("new-document-in-progress-section", HTMLElement),
+            "sync-from-desktop": mustGetElement("sync-from-desktop-section", HTMLElement),
+            "sync-from-server": mustGetElement("sync-from-server-section", HTMLElement),
+            "sync-in-progress": mustGetElement("sync-in-progress-section", HTMLElement)
+        };
+    }
 
-        if (this.syncInProgress) {
-            setInterval(checkOutstandingSyncs, 1000);
+    init() {
+        this.setupTypeForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+            void this.selectSetupType();
+        });
+
+        this.syncFromServerForm.addEventListener("submit", (event) => {
+            event.preventDefault();
+            void this.finish();
+        });
+
+        for (const input of this.setupTypeInputs) {
+            input.addEventListener("change", () => {
+                this.setupType = input.value as SetupType;
+                this.render();
+            });
         }
+
+        for (const backButton of document.querySelectorAll<HTMLElement>("[data-action='back']")) {
+            backButton.addEventListener("click", () => {
+                this.back();
+            });
+        }
+
         const serverAddress = `${location.protocol}//${location.host}`;
         $("#current-host").html(serverAddress);
+
+        if (this.step === "sync-in-progress") {
+            this.startSyncPolling();
+        }
+
+        this.render();
+        this.rootNode.style.display = "";
     }
 
-    // this is called in setup.ejs
-    setupTypeSelected() {
-        return !!this.setupType();
-    }
+    private async selectSetupType() {
+        if (this.setupType === "new-document") {
+            this.setStep("new-document-in-progress");
 
-    selectSetupType() {
-        if (this.setupType() === "new-document") {
-            this.step("new-document-in-progress");
+            await $.post("api/setup/new-document");
+            window.location.replace("./setup");
+            return;
+        }
 
-            $.post("api/setup/new-document").then(() => {
-                window.location.replace("./setup");
-            });
-        } else {
-            this.step(this.setupType());
+        if (this.setupType) {
+            this.setStep(this.setupType);
         }
     }
 
-    back() {
-        this.step("setup-type");
-        this.setupType("");
+    private back() {
+        this.setStep("setup-type");
+        this.setupType = "";
+
+        for (const input of this.setupTypeInputs) {
+            input.checked = false;
+        }
+
+        this.render();
     }
 
-    async finish() {
-        const syncServerHost = this.syncServerHost();
-        const syncProxy = this.syncProxy();
-        const password = this.password();
+    private async finish() {
+        const syncServerHost = this.syncServerHostInput.value.trim();
+        const syncProxy = this.syncProxyInput.value.trim();
+        const password = this.passwordInput.value;
 
         if (!syncServerHost) {
             showAlert("Trilium server address can't be empty");
@@ -82,14 +121,37 @@ class SetupModel {
         });
 
         if (resp.result === "success") {
-            this.step("sync-in-progress");
-
-            setInterval(checkOutstandingSyncs, 1000);
-
             hideAlert();
+            this.setStep("sync-in-progress");
+            this.startSyncPolling();
         } else {
             showAlert(`Sync setup failed: ${resp.error}`);
         }
+    }
+
+    private setStep(step: SetupStep) {
+        this.step = step;
+        this.render();
+    }
+
+    private render() {
+        for (const [step, section] of Object.entries(this.sections) as [SetupStep, HTMLElement][]) {
+            section.style.display = step === this.step ? "" : "none";
+        }
+
+        this.setupTypeNextButton.disabled = !this.setupType;
+    }
+
+    private getSelectedSetupType(): SetupType {
+        return (this.setupTypeInputs.find((input) => input.checked)?.value ?? "") as SetupType;
+    }
+
+    private startSyncPolling() {
+        if (this.syncPollIntervalId !== null) {
+            return;
+        }
+
+        this.syncPollIntervalId = window.setInterval(checkOutstandingSyncs, 1000);
     }
 }
 
@@ -124,9 +186,19 @@ function getSyncInProgress() {
     return !!parseInt(el.content);
 }
 
+function mustGetElement<T extends typeof HTMLElement>(id: string, ctor: T): InstanceType<T> {
+    const element = document.getElementById(id);
+
+    if (!element || !(element instanceof ctor)) {
+        throw new Error(`Expected element #${id}`);
+    }
+
+    return element as InstanceType<T>;
+}
+
 addEventListener("DOMContentLoaded", (event) => {
     const rootNode = document.getElementById("setup-dialog");
-    if (!rootNode) return;
-    ko.applyBindings(new SetupModel(getSyncInProgress()), rootNode);
-    $("#setup-dialog").show();
+    if (!rootNode || !(rootNode instanceof HTMLElement)) return;
+
+    new SetupController(rootNode, getSyncInProgress()).init();
 });

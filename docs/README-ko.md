@@ -289,7 +289,7 @@ Consider supporting the main developer
 - [PayPal](https://paypal.me/eliandoran)
 - [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
 
-## 🔑 License
+## 🔑라이센스
 
 Copyright 2017-2025 zadam, Elian Doran, and other contributors
 

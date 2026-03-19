@@ -19,6 +19,13 @@ const labelTypeMappings: Record<ColumnType, Partial<ColumnDefinition>> = {
     text: {
         editor: "input"
     },
+    textarea: {
+        editor: "textarea",
+        formatter: "textarea",
+        editorParams: {
+            shiftEnterSubmit: true
+        }
+    },
     boolean: {
         formatter: "tickCross",
         editor: "tickCross"

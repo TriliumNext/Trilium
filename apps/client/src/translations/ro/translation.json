@@ -1054,7 +1054,6 @@
     "enter_title_of_new_note": "Introduceți titlul noii notițe",
     "note_already_in_diagram": "Notița „{{title}}” deja se află pe diagramă.",
     "note_not_found": "Notița „{{noteId}}” nu a putut fi găsită!",
-    "open_in_new_tab": "Deschide într-un tab nou",
     "remove_note": "Șterge notița",
     "remove_relation": "Șterge relația",
     "rename_note": "Redenumește notița",

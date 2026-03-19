@@ -51,7 +51,7 @@
     "branch_prefix_saved": "브랜치 접두사가 저장되었습니다.",
     "edit_branch_prefix_multiple": "{{count}}개의 지점 접두사 편집",
     "branch_prefix_saved_multiple": "{{count}}개의 지점에 대해 지점 접두사가 저장되었습니다.",
-    "affected_branches": "영향을 받는 브랜치 수 ({{count}}):"
+    "affected_branches": "영향을 받은 분기 수({{count}}):"
   },
   "bulk_actions": {
     "bulk_actions": "대량 작업",
@@ -134,6 +134,27 @@
     "notSet": "미설정",
     "goBackForwards": "히스토리에서 뒤로/앞으로 이동",
     "showJumpToNoteDialog": "<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"노트로 이동\" 대화 상자</a> 표시",
-    "scrollToActiveNote": "활성화된 노트로 스크롤 이동"
+    "scrollToActiveNote": "활성화된 노트로 스크롤 이동",
+    "collapseWholeTree": "모든 노트 트리를 접기",
+    "collapseSubTree": "하위 트리 접기",
+    "tabShortcuts": "탭 단축키",
+    "onlyInDesktop": "데스크톱에서만(일렉트론 빌드)",
+    "openEmptyTab": "빈 탭 열기",
+    "closeActiveTab": "활성 탭 닫기",
+    "jumpToParentNote": "부모 노트로 이동하기",
+    "activateNextTab": "다음 탭 활성화",
+    "activatePreviousTab": "이전 탭 활성화",
+    "creatingNotes": "노트 만들기",
+    "createNoteInto": "활성 노트에 새로운 하위 노트 추가",
+    "movingCloningNotes": "노트 이동/복제",
+    "moveNoteUpDown": "노트 목록에서 노트 위/아래 이동",
+    "selectAllNotes": "현재 레벨의 모든 노트 선택",
+    "selectNote": "노트 선택",
+    "deleteNotes": "노트/하위트리 삭제",
+    "editingNotes": "노트 편집",
+    "createEditLink": "외부 링크 생성/편집",
+    "createInternalLink": "내부 링크 생성",
+    "followLink": "커서아래 링크 따라가기",
+    "insertDateTime": "커서위치에 현재 날짜와 시간 삽입"
   }
 }

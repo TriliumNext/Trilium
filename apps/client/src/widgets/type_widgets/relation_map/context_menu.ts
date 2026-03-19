@@ -1,12 +1,14 @@
+import { Connection } from "jsplumb";
 import { RefObject } from "preact";
+
 import appContext from "../../../components/app_context";
 import FNote from "../../../entities/fnote";
 import contextMenu from "../../../menus/context_menu";
+import link_context_menu from "../../../menus/link_context_menu";
 import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import RelationMapApi from "./api";
-import { Connection } from "jsplumb";
 
 export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapApiRef: RefObject<RelationMapApi>) {
     return (e: MouseEvent) => {
@@ -17,22 +19,8 @@ export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapA
             x: e.pageX,
             y: e.pageY,
             items: [
-                {
-                    title: t("relation_map.open_in_new_tab"),
-                    uiIcon: "bx bx-empty",
-                    handler: () => appContext.tabManager.openTabWithNoteWithHoisting(note.noteId)
-                },
-                {
-                    title: t("relation_map.remove_note"),
-                    uiIcon: "bx bx-trash",
-                    handler: async () => {
-                        if (!note) return;
-                        const result = await dialog.confirmDeleteNoteBoxWithNote(note.title);
-                        if (typeof result !== "object" || !result.confirmed) return;
-
-                        mapApiRef.current?.removeItem(note.noteId, result.isDeleteNoteChecked);
-                    }
-                },
+                ...link_context_menu.getItems(e),
+                { kind: "separator" },
                 {
                     title: t("relation_map.edit_title"),
                     uiIcon: "bx bx-pencil",
@@ -49,10 +37,26 @@ export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapA
 
                         await server.put(`notes/${note.noteId}/title`, { title });
                     }
-                }
+                },
+                { kind: "separator" },
+
+                {
+                    title: t("relation_map.remove_note"),
+                    uiIcon: "bx bx-trash",
+                    handler: async () => {
+                        if (!note) return;
+                        const result = await dialog.confirmDeleteNoteBoxWithNote(note.title);
+                        if (typeof result !== "object" || !result.confirmed) return;
+
+                        mapApiRef.current?.removeItem(note.noteId, result.isDeleteNoteChecked);
+                    }
+                },
             ],
-            selectMenuItemHandler() {}
-        })
+            selectMenuItemHandler({ command }) {
+                // Pass the events to the link context menu
+                link_context_menu.handleLinkContextMenuItem(command, e, note.noteId);
+            }
+        });
     };
 }
 
