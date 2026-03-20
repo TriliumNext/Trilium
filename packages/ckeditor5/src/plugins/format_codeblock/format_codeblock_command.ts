@@ -3,7 +3,14 @@ import { Command, ModelElement, Notification } from "ckeditor5";
 export class FormatCodeblockCommand extends Command {
     declare value: string | false;
 
+    private _isFormatting = false;
+
     override refresh() {
+        if (this._isFormatting) {
+            this.isEnabled = false;
+            return;
+        }
+
         const codeBlockCommand = this.editor.commands.get("codeBlock");
         const language = codeBlockCommand?.value;
         const codeFormatter = this.editor.config.get("codeFormatter");
@@ -52,6 +59,9 @@ export class FormatCodeblockCommand extends Command {
             return;
         }
 
+        this._isFormatting = true;
+        this.refresh();
+
         codeFormatter
             .format(codeText, language)
             .then((formatted) => {
@@ -83,6 +93,10 @@ export class FormatCodeblockCommand extends Command {
                 notification.showWarning(message, {
                     namespace: "formatCodeblock",
                 });
+            })
+            .finally(() => {
+                this._isFormatting = false;
+                this.refresh();
             });
     }
 
