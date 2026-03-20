@@ -1,4 +1,4 @@
-import { buildExtraCommands, type EditorConfig, getCkLocale, loadPremiumPlugins, TemplateDefinition } from "@triliumnext/ckeditor5";
+import { buildExtraCommands, type EditorConfig, type FormatterRegistryInterface, getCkLocale, loadPremiumPlugins, TemplateDefinition } from "@triliumnext/ckeditor5";
 import emojiDefinitionsUrl from "@triliumnext/ckeditor5/src/emoji_definitions/en.json?url";
 import { ALLOWED_PROTOCOLS, DISPLAYABLE_LOCALE_IDS, MIME_TYPE_AUTO, normalizeMimeTypeForCKEditor } from "@triliumnext/commons";
 
@@ -9,6 +9,8 @@ import { default as mimeTypesService, getHighlightJsNameForMime } from "../../..
 import noteAutocompleteService, { type Suggestion } from "../../../services/note_autocomplete.js";
 import options from "../../../services/options.js";
 import { ensureMimeTypesForHighlighting, isSyntaxHighlightEnabled } from "../../../services/syntax_highlight.js";
+import { FormatterRegistry } from "../../../services/code_formatter.js";
+import { PrettierFormatter } from "../../../services/prettier_formatter.js";
 import { buildToolbarConfig } from "./toolbar.js";
 
 export const OPEN_SOURCE_LICENSE_KEY = "GPL";
@@ -28,6 +30,9 @@ export async function buildConfig(opts: BuildEditorOptions): Promise<EditorConfi
     const config: EditorConfig = {
         licenseKey,
         placeholder: t("editable_text.placeholder"),
+        codeFormatter: {
+            registry: buildFormatterRegistry(),
+        },
         codeBlock: {
             languages: buildListOfLanguages()
         },
@@ -223,6 +228,12 @@ function buildListOfLanguages() {
     ];
 }
 
+function buildFormatterRegistry(): FormatterRegistryInterface {
+    const registry = new FormatterRegistry();
+    registry.register(new PrettierFormatter());
+    return registry;
+}
+
 function getLicenseKey() {
     const premiumLicenseKey = import.meta.env.VITE_CKEDITOR_KEY;
     if (!premiumLicenseKey) {
@@ -246,3 +257,4 @@ function getDisabledPlugins() {
 
     return disabledPlugins;
 }
+

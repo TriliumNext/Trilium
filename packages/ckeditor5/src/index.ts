@@ -4,11 +4,13 @@ import "ckeditor5/ckeditor5.css";
 import "./theme/code_block_toolbar.css";
 import { COMMON_PLUGINS, CORE_PLUGINS, POPUP_EDITOR_PLUGINS } from "./plugins.js";
 import { BalloonEditor, DecoupledEditor, FindAndReplaceEditing, FindCommand } from "ckeditor5";
+import { FormatterRegistryInterface } from "./plugins/format_codeblock/format_codeblock_command.js";
 import "./translation_overrides.js";
 export { default as EditorWatchdog } from "./custom_watchdog";
 export { loadPremiumPlugins } from "./plugins.js";
 export type { EditorConfig, EventInfo, MentionFeed, MentionFeedObjectItem, ModelNode, ModelPosition, ModelElement, ModelText, NotificationShowEventData, WatchdogConfig, WatchdogState } from "ckeditor5";
 export type { TemplateDefinition } from "ckeditor5-premium-features";
+export type { FormatterRegistryInterface, CodeFormatterInterface } from "./plugins/format_codeblock/format_codeblock_command.js";
 export { default as buildExtraCommands } from "./extra_slash_commands.js";
 export { default as getCkLocale } from "./i18n.js";
 export * from "./utils.js";
@@ -66,6 +68,9 @@ declare module "ckeditor5" {
     }
 
     interface EditorConfig {
+        codeFormatter?: {
+            registry: FormatterRegistryInterface;
+        };
         syntaxHighlighting?: {
             loadHighlightJs: () => Promise<any>;
             mapLanguageName(mimeType: string): string;

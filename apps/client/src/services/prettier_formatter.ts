@@ -1,24 +1,9 @@
-import type { CodeFormatter } from "./code_formatter";
-import {
-    LANG_JAVASCRIPT_FRONTEND,
-    LANG_JAVASCRIPT_BACKEND,
-    LANG_TYPESCRIPT,
-    LANG_TYPESCRIPT_JSX,
-    LANG_JSX,
-    LANG_JSON,
-    LANG_CSS,
-    LANG_LESS,
-    LANG_SCSS,
-    LANG_HTML,
-    LANG_YAML,
-    LANG_MARKDOWN,
-    LANG_GRAPHQL,
-} from "./languages";
+import type { CodeFormatter } from "./code_formatter.js";
 import type { Plugin } from "prettier";
 
 interface PrettierParserConfig {
     parser: string;
-    plugins: () => Promise<(string | URL | Plugin<any>)[]>;
+    plugins: () => Promise<(string | URL | Plugin)[]>;
 }
 
 const babelPlugins = () =>
@@ -37,28 +22,28 @@ const postcssPlugins = () =>
     import("prettier/plugins/postcss").then((m) => [m]);
 
 const LANGUAGE_MAP: Record<string, PrettierParserConfig> = {
-    [LANG_JAVASCRIPT_FRONTEND]: { parser: "babel", plugins: babelPlugins },
-    [LANG_JAVASCRIPT_BACKEND]: { parser: "babel", plugins: babelPlugins },
-    [LANG_JSX]: { parser: "babel", plugins: babelPlugins },
-    [LANG_TYPESCRIPT]: { parser: "typescript", plugins: typescriptPlugins },
-    [LANG_TYPESCRIPT_JSX]: { parser: "typescript", plugins: typescriptPlugins },
-    [LANG_JSON]: { parser: "json", plugins: babelPlugins },
-    [LANG_CSS]: { parser: "css", plugins: postcssPlugins },
-    [LANG_LESS]: { parser: "less", plugins: postcssPlugins },
-    [LANG_SCSS]: { parser: "scss", plugins: postcssPlugins },
-    [LANG_HTML]: {
+    "application-javascript-env-frontend": { parser: "babel", plugins: babelPlugins },
+    "application-javascript-env-backend": { parser: "babel", plugins: babelPlugins },
+    "text-jsx": { parser: "babel", plugins: babelPlugins },
+    "application-typescript": { parser: "typescript", plugins: typescriptPlugins },
+    "text-typescript-jsx": { parser: "typescript", plugins: typescriptPlugins },
+    "application-json": { parser: "json", plugins: babelPlugins },
+    "text-css": { parser: "css", plugins: postcssPlugins },
+    "text-x-less": { parser: "less", plugins: postcssPlugins },
+    "text-x-scss": { parser: "scss", plugins: postcssPlugins },
+    "text-html": {
         parser: "html",
         plugins: () => import("prettier/plugins/html").then((m) => [m]),
     },
-    [LANG_YAML]: {
+    "text-x-yaml": {
         parser: "yaml",
         plugins: () => import("prettier/plugins/yaml").then((m) => [m]),
     },
-    [LANG_MARKDOWN]: {
+    "text-x-markdown": {
         parser: "markdown",
         plugins: () => import("prettier/plugins/markdown").then((m) => [m]),
     },
-    [LANG_GRAPHQL]: {
+    "text-x-graphql": {
         parser: "graphql",
         plugins: () => import("prettier/plugins/graphql").then((m) => [m]),
     },

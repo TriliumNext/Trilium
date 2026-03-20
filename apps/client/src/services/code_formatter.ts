@@ -5,15 +5,7 @@ export interface CodeFormatter {
 }
 
 export class FormatterRegistry {
-    private static instance: FormatterRegistry | null = null;
     private readonly formatters: CodeFormatter[] = [];
-
-    static getInstance(): FormatterRegistry {
-        if (!FormatterRegistry.instance) {
-            FormatterRegistry.instance = new FormatterRegistry();
-        }
-        return FormatterRegistry.instance;
-    }
 
     register(formatter: CodeFormatter): void {
         this.formatters.push(formatter);

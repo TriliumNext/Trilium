@@ -1,17 +1,32 @@
-import { Command, ModelElement, Notification } from "ckeditor5";
-import { FormatterRegistry } from "./code_formatter";
+import { Command, Editor, ModelElement, Notification } from "ckeditor5";
+
+export interface CodeFormatterInterface {
+    readonly name: string;
+    format(code: string, language: string): Promise<string>;
+}
+
+export interface FormatterRegistryInterface {
+    isLanguageSupported(language: string): boolean;
+    getFormatterForLanguage(language: string): CodeFormatterInterface | undefined;
+}
 
 export class FormatCodeblockCommand extends Command {
     declare value: string | false;
 
+    private readonly registry: FormatterRegistryInterface;
+
+    constructor(editor: Editor, registry: FormatterRegistryInterface) {
+        super(editor);
+        this.registry = registry;
+    }
+
     override refresh() {
         const codeBlockCommand = this.editor.commands.get("codeBlock");
         const language = codeBlockCommand?.value;
-        const registry = FormatterRegistry.getInstance();
 
         if (
             typeof language === "string" &&
-            registry.isLanguageSupported(language)
+            this.registry.isLanguageSupported(language)
         ) {
             this.isEnabled = true;
             this.value = language;
@@ -33,8 +48,7 @@ export class FormatCodeblockCommand extends Command {
             return;
         }
 
-        const registry = FormatterRegistry.getInstance();
-        const formatter = registry.getFormatterForLanguage(language);
+        const formatter = this.registry.getFormatterForLanguage(language);
         if (!formatter) {
             return;
         }
