@@ -1,6 +1,6 @@
 import safeCompare from "safe-compare";
 
-import type { Request, Response, Router } from "express";
+import type { NextFunction, Request, Response, Router } from "express";
 
 import shaca from "./shaca/shaca.js";
 import shacaLoader from "./shaca/shaca_loader.js";
@@ -10,6 +10,16 @@ import type SNote from "./shaca/entities/snote.js";
 import type SAttachment from "./shaca/entities/sattachment.js";
 import { getDefaultTemplatePath, renderNoteContent } from "./content_renderer.js";
 import utils from "../services/utils.js";
+import { isShareDbReady } from "./sql.js";
+
+function assertShareDbReady(_req: Request, res: Response, next: NextFunction) {
+    if (!isShareDbReady()) {
+        res.status(503).send("The application is still initializing. Please try again in a moment.");
+        return;
+    }
+
+    next();
+}
 
 function addNoIndexHeader(note: SNote, res: Response) {
     if (note.isLabelTruthy("shareDisallowRobotIndexing")) {
@@ -115,6 +125,8 @@ function render404(res: Response) {
 }
 
 function register(router: Router) {
+    // Guard: if the share DB is not yet initialized, return 503 for all /share routes.
+    router.use("/share", assertShareDbReady);
 
     function renderNote(note: SNote, req: Request, res: Response) {
         if (!note) {
