@@ -22,7 +22,7 @@
 		"eslint-config-preact": "2.0.0",
 		"typescript": "5.9.3",
 		"user-agent-data-types": "0.4.2",
-		"vite": "8.0.0",
+		"vite": "8.0.1",
 		"vitest": "4.1.0"
 	},
 	"eslintConfig": {
