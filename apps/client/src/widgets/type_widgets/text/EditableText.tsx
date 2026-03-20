@@ -334,13 +334,12 @@ function useWatchdogCrashHandling() {
 }
 
 function onNotificationWarning(evt: EventInfo, data: NotificationShowEventData) {
-    const title = data.title;
-    const message = data.message;
+    const { title, message } = data;
 
-    if (title && message) {
+    if (title) {
         toast.showErrorTitleAndMessage(title, message);
-    } else if (title || message) {
-        toast.showError(title || message);
+    } else {
+        toast.showError(message);
     }
 
     evt.stop();
