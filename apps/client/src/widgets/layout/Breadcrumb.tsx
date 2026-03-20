@@ -438,6 +438,15 @@ function buildEmptyAreaContextMenu(parentComponent: Component | null, notePath: 
                     uiIcon: "bx bx-directions",
                     handler: () => copyTextWithToast(`#${notePath}`)
                 },
+                {
+                    title: t("tree-context-menu.copy-note-url-to-clipboard"),
+                    command: "copyNoteUrlToClipboard",
+                    uiIcon: "bx bx-link",
+                    handler: () => {
+                        const baseUrl = window.location.href.replace(/#.*$/, "");
+                        copyTextWithToast(`${baseUrl}#${notePath}`);
+                    }
+                },
             ],
             x: e.pageX,
             y: e.pageY,
