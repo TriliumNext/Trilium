@@ -74,6 +74,9 @@ export class PrettierFormatter implements CodeFormatter {
             plugins: plugins,
             tabWidth: 4,
             printWidth: 120,
+        }).catch((err: unknown) => {
+            const msg = err instanceof Error ? err.message : String(err);
+            throw new Error(`Prettier: ${msg}`);
         });
 
         return formatted;

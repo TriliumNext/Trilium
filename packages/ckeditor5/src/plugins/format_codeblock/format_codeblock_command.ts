@@ -1,32 +1,16 @@
-import { Command, Editor, ModelElement, Notification } from "ckeditor5";
-
-export interface CodeFormatterInterface {
-    readonly name: string;
-    format(code: string, language: string): Promise<string>;
-}
-
-export interface FormatterRegistryInterface {
-    isLanguageSupported(language: string): boolean;
-    getFormatterForLanguage(language: string): CodeFormatterInterface | undefined;
-}
+import { Command, ModelElement, Notification } from "ckeditor5";
 
 export class FormatCodeblockCommand extends Command {
     declare value: string | false;
 
-    private readonly registry: FormatterRegistryInterface;
-
-    constructor(editor: Editor, registry: FormatterRegistryInterface) {
-        super(editor);
-        this.registry = registry;
-    }
-
     override refresh() {
         const codeBlockCommand = this.editor.commands.get("codeBlock");
         const language = codeBlockCommand?.value;
+        const codeFormatter = this.editor.config.get("codeFormatter");
 
         if (
             typeof language === "string" &&
-            this.registry.isLanguageSupported(language)
+            codeFormatter?.isLanguageSupported(language)
         ) {
             this.isEnabled = true;
             this.value = language;
@@ -42,14 +26,10 @@ export class FormatCodeblockCommand extends Command {
         const selection = model.document.selection;
         const notification = editor.plugins.get(Notification);
         const t = editor.locale.t;
+        const codeFormatter = editor.config.get("codeFormatter");
 
         const language = this.value;
-        if (!language) {
-            return;
-        }
-
-        const formatter = this.registry.getFormatterForLanguage(language);
-        if (!formatter) {
+        if (!language || !codeFormatter) {
             return;
         }
 
@@ -68,14 +48,14 @@ export class FormatCodeblockCommand extends Command {
 
         const codeText = this.extractCodeText(codeBlockEl);
 
-        if (!codeText) {
+        if (!codeText.trim()) {
             return;
         }
 
-        formatter
+        codeFormatter
             .format(codeText, language)
             .then((formatted) => {
-                if (formatted === codeText) {
+                if (formatted.trim() === codeText.trim()) {
                     return;
                 }
 
@@ -93,11 +73,10 @@ export class FormatCodeblockCommand extends Command {
                     }
                 });
             })
-            .catch((err) => {
-                notification.showWarning(err.message || String(err), {
-                    title: t(
-                        `Failed to format code block with ${formatter.name}`,
-                    ),
+            .catch((err: unknown) => {
+                const message =
+                    err instanceof Error ? err.message : String(err);
+                notification.showWarning(message, {
                     namespace: "formatCodeblock",
                 });
             });

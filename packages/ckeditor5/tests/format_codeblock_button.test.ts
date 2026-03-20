@@ -1,110 +1,28 @@
 import {
     ClassicEditor,
-    CodeBlock,
     Notification,
-    Paragraph,
     _setModelData as setModelData,
 } from "ckeditor5";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import FormatCodeblockButton from "../src/plugins/format_codeblock/format_codeblock_button";
-import { FormatCodeblockCommand, type CodeFormatterInterface, type FormatterRegistryInterface } from "../src/plugins/format_codeblock/format_codeblock_command";
+import { FormatCodeblockCommand } from "../src/plugins/format_codeblock/format_codeblock_command";
 import {
-    LANG_JAVASCRIPT_FRONTEND,
-    LANG_TYPESCRIPT,
-    LANG_JSON,
-    LANG_CSS,
-    LANG_SCSS,
-    LANG_LESS,
-    LANG_HTML,
-    LANG_XML,
-    LANG_YAML,
-    LANG_MARKDOWN,
-    LANG_GRAPHQL,
-    LANG_JSX,
-    LANG_TYPESCRIPT_JSX,
-    LANG_PYTHON,
-    LANG_RUST,
-    LANG_C,
-} from "../src/plugins/format_codeblock/languages";
-
-// ---------------------------------------------------------------------------
-// Stub helpers
-// ---------------------------------------------------------------------------
-
-const SUPPORTED_LANGUAGES = new Set([
-    LANG_JAVASCRIPT_FRONTEND,
-    LANG_TYPESCRIPT,
-    LANG_JSON,
-    LANG_CSS,
-    LANG_SCSS,
-    LANG_LESS,
-    LANG_HTML,
-    LANG_YAML,
-    LANG_MARKDOWN,
-    LANG_GRAPHQL,
-    LANG_JSX,
-    LANG_TYPESCRIPT_JSX,
-]);
-
-/** A stub formatter that echoes the code unchanged. */
-function makeEchoFormatter(name = "StubFormatter"): CodeFormatterInterface {
-    return {
-        name,
-        format: async (code) => code,
-    };
-}
-
-/** A stub formatter that always rejects with the given error. */
-function makeFailingFormatter(errorMessage: string, name = "FailingFormatter"): CodeFormatterInterface {
-    return {
-        name,
-        format: async () => { throw new Error(errorMessage); },
-    };
-}
-
-function makeRegistry(formatter: CodeFormatterInterface): FormatterRegistryInterface {
-    return {
-        isLanguageSupported: (lang) => SUPPORTED_LANGUAGES.has(lang),
-        getFormatterForLanguage: (lang) => SUPPORTED_LANGUAGES.has(lang) ? formatter : undefined,
-    };
-}
-
+    createEditor,
+    extractCodeBlockText,
+    flushMicrotasks,
+    setCodeFormatter,
+} from "./format_codeblock_helpers";
 
 describe("FormatCodeblockButton", () => {
     let domElement: HTMLDivElement;
     let editor: ClassicEditor;
 
     beforeEach(async () => {
-        domElement = document.createElement("div");
-        document.body.appendChild(domElement);
-
-        editor = await ClassicEditor.create(domElement, {
-            licenseKey: "GPL",
-            plugins: [Paragraph, CodeBlock, FormatCodeblockButton],
-            codeFormatter: {
-                registry: makeRegistry(makeEchoFormatter()),
-            },
-            codeBlock: {
-                languages: [
-                    { language: LANG_JAVASCRIPT_FRONTEND, label: "JavaScript (Frontend)" },
-                    { language: LANG_TYPESCRIPT, label: "TypeScript" },
-                    { language: LANG_JSON, label: "JSON" },
-                    { language: LANG_CSS, label: "CSS" },
-                    { language: LANG_SCSS, label: "SCSS" },
-                    { language: LANG_LESS, label: "LESS" },
-                    { language: LANG_HTML, label: "HTML" },
-                    { language: LANG_XML, label: "XML" },
-                    { language: LANG_YAML, label: "YAML" },
-                    { language: LANG_MARKDOWN, label: "Markdown" },
-                    { language: LANG_GRAPHQL, label: "GraphQL" },
-                    { language: LANG_JSX, label: "JSX" },
-                    { language: LANG_TYPESCRIPT_JSX, label: "TSX" },
-                    { language: LANG_PYTHON, label: "Python" },
-                    { language: LANG_RUST, label: "Rust" },
-                    { language: LANG_C, label: "C" },
-                ],
-            },
+        const result = await createEditor({
+            isLanguageSupported: () => true,
+            format: async (code) => code,
         });
+        editor = result.editor;
+        domElement = result.div;
     });
 
     afterEach(() => {
@@ -124,46 +42,25 @@ describe("FormatCodeblockButton", () => {
         });
     });
 
-    describe("FormatCodeblockCommand#refresh", () => {
-        describe("should be enabled for supported languages", () => {
-            const supportedLanguages = [
-                LANG_JAVASCRIPT_FRONTEND,
-                LANG_TYPESCRIPT,
-                LANG_JSON,
-                LANG_CSS,
-                LANG_SCSS,
-                LANG_LESS,
-                LANG_HTML,
-                LANG_YAML,
-                LANG_MARKDOWN,
-                LANG_GRAPHQL,
-                LANG_JSX,
-                LANG_TYPESCRIPT_JSX,
-            ];
+    describe("refresh", () => {
+        it("should be enabled when isLanguageSupported returns true", () => {
+            setModelData(editor.model, '<codeBlock language="javascript">foo[]</codeBlock>');
 
-            for (const lang of supportedLanguages) {
-                it(`should be enabled for "${lang}"`, () => {
-                    setModelData(editor.model, `<codeBlock language="${lang}">foo[]</codeBlock>`);
-
-                    const command = editor.commands.get("formatCodeblock")!;
-                    expect(command.isEnabled).toBe(true);
-                    expect(command.value).toBe(lang);
-                });
-            }
+            const command = editor.commands.get("formatCodeblock")!;
+            expect(command.isEnabled).toBe(true);
+            expect(command.value).toBe("javascript");
         });
 
-        describe("should be disabled for unsupported languages", () => {
-            const unsupportedLanguages = [LANG_XML, LANG_PYTHON, LANG_RUST, LANG_C];
+        it("should be disabled when isLanguageSupported returns false", () => {
+            setCodeFormatter(editor, {
+                isLanguageSupported: () => false,
+                format: async (code) => code,
+            });
+            setModelData(editor.model, '<codeBlock language="python">foo[]</codeBlock>');
 
-            for (const lang of unsupportedLanguages) {
-                it(`should be disabled for "${lang}"`, () => {
-                    setModelData(editor.model, `<codeBlock language="${lang}">foo[]</codeBlock>`);
-
-                    const command = editor.commands.get("formatCodeblock")!;
-                    expect(command.isEnabled).toBe(false);
-                    expect(command.value).toBe(false);
-                });
-            }
+            const command = editor.commands.get("formatCodeblock")!;
+            expect(command.isEnabled).toBe(false);
+            expect(command.value).toBe(false);
         });
 
         it("should be disabled when not inside a code block", () => {
@@ -175,52 +72,39 @@ describe("FormatCodeblockButton", () => {
         });
     });
 
-    describe("FormatCodeblockCommand#execute", () => {
+    describe("execute", () => {
         it("should not modify the model when the formatter returns the same text", async () => {
-            setModelData(editor.model, `<codeBlock language="${LANG_JAVASCRIPT_FRONTEND}">const x = 1;[]</codeBlock>`);
+            setModelData(editor.model, '<codeBlock language="javascript">const x = 1;[]</codeBlock>');
 
             const modelChangeSpy = vi.spyOn(editor.model, "change");
             editor.execute("formatCodeblock");
 
-            await vi.waitFor(() => expect(modelChangeSpy).not.toHaveBeenCalled());
+            await flushMicrotasks();
+            expect(modelChangeSpy).not.toHaveBeenCalled();
         });
 
         it("should update the model when the formatter returns different text", async () => {
-            // Use a formatter that always returns a predictable transformed value.
-            const transformingFormatter: CodeFormatterInterface = {
-                name: "TransformingFormatter",
+            setCodeFormatter(editor, {
+                isLanguageSupported: () => true,
                 format: async (code) => `formatted:${code}`,
-            };
-            const transformingDiv = document.createElement("div");
-            document.body.appendChild(transformingDiv);
-            const transformingEditor = await ClassicEditor.create(transformingDiv, {
-                licenseKey: "GPL",
-                plugins: [Paragraph, CodeBlock, FormatCodeblockButton],
-                codeFormatter: { registry: makeRegistry(transformingFormatter) },
-                codeBlock: { languages: [{ language: LANG_JAVASCRIPT_FRONTEND, label: "JS" }] },
             });
-
-            setModelData(transformingEditor.model, `<codeBlock language="${LANG_JAVASCRIPT_FRONTEND}">original[]</codeBlock>`);
-
-            transformingEditor.execute("formatCodeblock");
+            setModelData(editor.model, '<codeBlock language="javascript">original[]</codeBlock>');
+            editor.execute("formatCodeblock");
 
             await vi.waitFor(() => {
-                const root = transformingEditor.model.document.getRoot()!;
-                const codeBlock = Array.from(root.getChildren()).find((c) => c.is("element", "codeBlock"));
-                const text = Array.from(codeBlock!.getChildren()).map((c) => (c.is("$text") ? c.data : "\n")).join("");
-                expect(text).toBe("formatted:original");
+                expect(extractCodeBlockText(editor)).toBe("formatted:original");
             }, { timeout: 5000 });
-
-            await transformingEditor.destroy();
-            transformingDiv.remove();
         });
 
         it("should not execute when language is unsupported", () => {
-            setModelData(editor.model, `<codeBlock language="${LANG_PYTHON}">x=1[]</codeBlock>`);
+            setCodeFormatter(editor, {
+                isLanguageSupported: () => false,
+                format: async (code) => code,
+            });
+            setModelData(editor.model, '<codeBlock language="python">x=1[]</codeBlock>');
 
             const modelChangeSpy = vi.spyOn(editor.model, "change");
-            const command = editor.commands.get("formatCodeblock")! as FormatCodeblockCommand;
-            command.execute();
+            (editor.commands.get("formatCodeblock")! as FormatCodeblockCommand).execute();
 
             expect(modelChangeSpy).not.toHaveBeenCalled();
         });
@@ -229,34 +113,24 @@ describe("FormatCodeblockButton", () => {
     describe("notifications", () => {
         it("should show a warning notification when the formatter throws", async () => {
             const errorMessage = "Syntax error on line 1";
-            const formatterName = "MyFormatter";
-            const failingDiv = document.createElement("div");
-            document.body.appendChild(failingDiv);
-            const failingEditor = await ClassicEditor.create(failingDiv, {
-                licenseKey: "GPL",
-                plugins: [Paragraph, CodeBlock, FormatCodeblockButton],
-                codeFormatter: { registry: makeRegistry(makeFailingFormatter(errorMessage, formatterName)) },
-                codeBlock: { languages: [{ language: LANG_JAVASCRIPT_FRONTEND, label: "JS" }] },
+            setCodeFormatter(editor, {
+                isLanguageSupported: () => true,
+                format: async () => { throw new Error(errorMessage); },
             });
+            setModelData(editor.model, '<codeBlock language="javascript">code[]</codeBlock>');
 
-            setModelData(failingEditor.model, `<codeBlock language="${LANG_JAVASCRIPT_FRONTEND}">code[]</codeBlock>`);
-
-            const notification = failingEditor.plugins.get(Notification);
+            const notification = editor.plugins.get(Notification);
             const showWarningSpy = vi.spyOn(notification, "showWarning");
             notification.on("show:warning", (evt) => evt.stop(), { priority: "high" });
 
-            failingEditor.execute("formatCodeblock");
+            editor.execute("formatCodeblock");
 
             await vi.waitFor(() => {
                 expect(showWarningSpy).toHaveBeenCalledOnce();
                 const [message, options] = showWarningSpy.mock.calls[0];
                 expect(message).toBe(errorMessage);
                 expect(options?.namespace).toBe("formatCodeblock");
-                expect(options?.title).toContain(formatterName);
             }, { timeout: 5000 });
-
-            await failingEditor.destroy();
-            failingDiv.remove();
         });
     });
 
@@ -267,7 +141,7 @@ describe("FormatCodeblockButton", () => {
         });
 
         it("button isEnabled should follow command isEnabled", () => {
-            setModelData(editor.model, `<codeBlock language="${LANG_JSON}">foo[]</codeBlock>`);
+            setModelData(editor.model, '<codeBlock language="javascript">foo[]</codeBlock>');
 
             const button = editor.ui.componentFactory.create("formatCodeblock");
             const command = editor.commands.get("formatCodeblock")!;
@@ -281,43 +155,27 @@ describe("FormatCodeblockButton", () => {
             expect((button as any).isEnabled).toBe(false);
         });
     });
-});
 
-describe("FormatCodeblockButton without codeFormatter config", () => {
-    let domElement: HTMLDivElement;
-    let editor: ClassicEditor;
+    describe("without codeFormatter config", () => {
+        it("should still register the command and UI component", async () => {
+            const { editor: noConfigEditor, div } = await createEditor();
 
-    beforeEach(async () => {
-        domElement = document.createElement("div");
-        document.body.appendChild(domElement);
+            expect(noConfigEditor.commands.get("formatCodeblock")).toBeDefined();
+            expect(noConfigEditor.commands.get("formatCodeblock")).toBeInstanceOf(FormatCodeblockCommand);
+            expect(noConfigEditor.ui.componentFactory.has("formatCodeblock")).toBe(true);
 
-        editor = await ClassicEditor.create(domElement, {
-            licenseKey: "GPL",
-            plugins: [Paragraph, CodeBlock, FormatCodeblockButton],
-            codeBlock: {
-                languages: [{ language: LANG_JAVASCRIPT_FRONTEND, label: "JavaScript" }],
-            },
-            // intentionally no codeFormatter config
+            await noConfigEditor.destroy();
+            div.remove();
         });
-    });
 
-    afterEach(() => {
-        domElement.remove();
-        return editor.destroy();
-    });
+        it("command should always be disabled when no formatter config is provided", async () => {
+            const { editor: noConfigEditor, div } = await createEditor();
 
-    it("should still register the command", () => {
-        const command = editor.commands.get("formatCodeblock");
-        expect(command).toBeDefined();
-        expect(command).toBeInstanceOf(FormatCodeblockCommand);
-    });
+            setModelData(noConfigEditor.model, '<codeBlock language="javascript">foo[]</codeBlock>');
+            expect(noConfigEditor.commands.get("formatCodeblock")!.isEnabled).toBe(false);
 
-    it("should still register the UI component", () => {
-        expect(editor.ui.componentFactory.has("formatCodeblock")).toBe(true);
-    });
-
-    it("command should always be disabled when no registry is configured", () => {
-        setModelData(editor.model, `<codeBlock language="${LANG_JAVASCRIPT_FRONTEND}">foo[]</codeBlock>`);
-        expect(editor.commands.get("formatCodeblock")!.isEnabled).toBe(false);
+            await noConfigEditor.destroy();
+            div.remove();
+        });
     });
 });
