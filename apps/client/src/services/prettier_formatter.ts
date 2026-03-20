@@ -43,10 +43,6 @@ const LANGUAGE_MAP: Record<string, PrettierParserConfig> = {
         parser: "markdown",
         plugins: () => import("prettier/plugins/markdown").then((m) => [m]),
     },
-    "text-x-graphql": {
-        parser: "graphql",
-        plugins: () => import("prettier/plugins/graphql").then((m) => [m]),
-    },
 };
 
 export class PrettierFormatter implements CodeFormatter {
@@ -69,16 +65,16 @@ export class PrettierFormatter implements CodeFormatter {
             config.plugins(),
         ]);
 
-        const formatted = await prettier.format(code, {
-            parser: config.parser,
-            plugins: plugins,
-            tabWidth: 4,
-            printWidth: 120,
-        }).catch((err: unknown) => {
+        try {
+            return await prettier.format(code, {
+                parser: config.parser,
+                plugins,
+                tabWidth: 4,
+                printWidth: 120,
+            });
+        } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             throw new Error(`Prettier: ${msg}`);
-        });
-
-        return formatted;
+        }
     }
 }
