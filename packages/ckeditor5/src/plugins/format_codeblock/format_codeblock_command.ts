@@ -55,14 +55,18 @@ export class FormatCodeblockCommand extends Command {
         codeFormatter
             .format(codeText, language)
             .then((formatted) => {
-                if (formatted.trim() === codeText.trim()) {
+                // Strip trailing newline that formatters like Prettier always add,
+                // to avoid accumulating phantom softBreak elements in the model.
+                const normalizedFormatted = formatted.replace(/\n$/, "");
+
+                if (normalizedFormatted === codeText) {
                     return;
                 }
 
                 model.change((writer) => {
                     const range = writer.createRangeIn(codeBlockEl);
                     writer.remove(range);
-                    const lines = formatted.split("\n");
+                    const lines = normalizedFormatted.split("\n");
                     for (let i = 0; i < lines.length; i++) {
                         if (i > 0) {
                             writer.appendElement("softBreak", codeBlockEl);
