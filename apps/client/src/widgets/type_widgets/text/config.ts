@@ -229,10 +229,7 @@ function buildListOfLanguages() {
 function buildCodeFormatterConfig() {
     const registry = new FormatterRegistry();
     registry.register(new PrettierFormatter());
-    return {
-        isLanguageSupported: (language: string) => registry.isLanguageSupported(language),
-        format: (code: string, language: string) => registry.format(code, language),
-    };
+    return registry;
 }
 
 function getLicenseKey() {

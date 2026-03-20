@@ -1,12 +1,10 @@
 import { ClassicEditor, CodeBlock, Paragraph } from "ckeditor5";
 import FormatCodeblockButton from "../src/plugins/format_codeblock/format_codeblock_button";
+import type { CodeFormatterConfig } from "../src/plugins/format_codeblock/types";
 
-export interface CodeFormatter {
-    isLanguageSupported(language: string): boolean;
-    format(code: string, language: string): Promise<string>;
-}
+export type { CodeFormatterConfig as CodeFormatter };
 
-export async function createEditor(codeFormatter?: CodeFormatter) {
+export async function createEditor(codeFormatter?: CodeFormatterConfig) {
     const div = document.createElement("div");
     document.body.appendChild(div);
 
@@ -25,7 +23,7 @@ export async function createEditor(codeFormatter?: CodeFormatter) {
     return { editor, div };
 }
 
-export function setCodeFormatter(editor: ClassicEditor, config: CodeFormatter) {
+export function setCodeFormatter(editor: ClassicEditor, config: CodeFormatterConfig) {
     editor.config.set("codeFormatter", config);
     editor.commands.get("formatCodeblock")!.refresh();
 }
