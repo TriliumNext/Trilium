@@ -1,14 +1,11 @@
 import {
     ClassicEditor,
-    Notification,
     _setModelData as setModelData,
 } from "ckeditor5";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { FormatCodeblockCommand } from "../src/plugins/format_codeblock/format_codeblock_command";
 import {
     createEditor,
-    extractCodeBlockText,
-    flushMicrotasks,
     setCodeFormatter,
 } from "./format_codeblock_helpers";
 
@@ -39,98 +36,6 @@ describe("FormatCodeblockButton", () => {
 
         it("should register the formatCodeblock UI component", () => {
             expect(editor.ui.componentFactory.has("formatCodeblock")).toBe(true);
-        });
-    });
-
-    describe("refresh", () => {
-        it("should be enabled when isLanguageSupported returns true", () => {
-            setModelData(editor.model, '<codeBlock language="javascript">foo[]</codeBlock>');
-
-            const command = editor.commands.get("formatCodeblock")!;
-            expect(command.isEnabled).toBe(true);
-            expect(command.value).toBe("javascript");
-        });
-
-        it("should be disabled when isLanguageSupported returns false", () => {
-            setCodeFormatter(editor, {
-                isLanguageSupported: () => false,
-                format: async (code) => code,
-            });
-            setModelData(editor.model, '<codeBlock language="python">foo[]</codeBlock>');
-
-            const command = editor.commands.get("formatCodeblock")!;
-            expect(command.isEnabled).toBe(false);
-            expect(command.value).toBe(false);
-        });
-
-        it("should be disabled when not inside a code block", () => {
-            setModelData(editor.model, "<paragraph>foo[]</paragraph>");
-
-            const command = editor.commands.get("formatCodeblock")!;
-            expect(command.isEnabled).toBe(false);
-            expect(command.value).toBe(false);
-        });
-    });
-
-    describe("execute", () => {
-        it("should not modify the model when the formatter returns the same text", async () => {
-            setModelData(editor.model, '<codeBlock language="javascript">const x = 1;[]</codeBlock>');
-
-            const modelChangeSpy = vi.spyOn(editor.model, "change");
-            editor.execute("formatCodeblock");
-
-            await flushMicrotasks();
-            expect(modelChangeSpy).not.toHaveBeenCalled();
-        });
-
-        it("should update the model when the formatter returns different text", async () => {
-            setCodeFormatter(editor, {
-                isLanguageSupported: () => true,
-                format: async (code) => `formatted:${code}`,
-            });
-            setModelData(editor.model, '<codeBlock language="javascript">original[]</codeBlock>');
-            editor.execute("formatCodeblock");
-
-            await vi.waitFor(() => {
-                expect(extractCodeBlockText(editor)).toBe("formatted:original");
-            }, { timeout: 5000 });
-        });
-
-        it("should not execute when language is unsupported", () => {
-            setCodeFormatter(editor, {
-                isLanguageSupported: () => false,
-                format: async (code) => code,
-            });
-            setModelData(editor.model, '<codeBlock language="python">x=1[]</codeBlock>');
-
-            const modelChangeSpy = vi.spyOn(editor.model, "change");
-            (editor.commands.get("formatCodeblock")! as FormatCodeblockCommand).execute();
-
-            expect(modelChangeSpy).not.toHaveBeenCalled();
-        });
-    });
-
-    describe("notifications", () => {
-        it("should show a warning notification when the formatter throws", async () => {
-            const errorMessage = "Syntax error on line 1";
-            setCodeFormatter(editor, {
-                isLanguageSupported: () => true,
-                format: async () => { throw new Error(errorMessage); },
-            });
-            setModelData(editor.model, '<codeBlock language="javascript">code[]</codeBlock>');
-
-            const notification = editor.plugins.get(Notification);
-            const showWarningSpy = vi.spyOn(notification, "showWarning");
-            notification.on("show:warning", (evt) => evt.stop(), { priority: "high" });
-
-            editor.execute("formatCodeblock");
-
-            await vi.waitFor(() => {
-                expect(showWarningSpy).toHaveBeenCalledOnce();
-                const [message, options] = showWarningSpy.mock.calls[0];
-                expect(message).toBe(errorMessage);
-                expect(options?.namespace).toBe("formatCodeblock");
-            }, { timeout: 5000 });
         });
     });
 

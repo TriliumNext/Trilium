@@ -141,6 +141,37 @@ describe("FormatterRegistry", () => {
         });
     });
 
+    describe("format", () => {
+        it("should delegate to the matching formatter", async () => {
+            registry.register(makeFormatter("F", ["javascript"]));
+
+            const result = await registry.format("x", "javascript");
+
+            expect(result).toBe("[F] x");
+        });
+
+        it("should delegate to the first matching formatter when multiple match", async () => {
+            registry.register(makeFormatter("First", ["javascript"]));
+            registry.register(makeFormatter("Second", ["javascript"]));
+
+            const result = await registry.format("x", "javascript");
+
+            expect(result).toBe("[First] x");
+        });
+
+        it("should reject with an error for an unsupported language", async () => {
+            await expect(registry.format("x", "rust")).rejects.toThrow(
+                "No formatter available for language: rust",
+            );
+        });
+
+        it("should reject with an error when registry is empty", async () => {
+            await expect(registry.format("x", "javascript")).rejects.toThrow(
+                "No formatter available for language: javascript",
+            );
+        });
+    });
+
     describe("canFormat delegation", () => {
         it("should delegate canFormat to each registered formatter in order", () => {
             const callLog: string[] = [];
