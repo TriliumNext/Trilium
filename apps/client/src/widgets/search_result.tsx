@@ -39,11 +39,14 @@ export default function SearchResult() {
     // Auto-execute search when opening a saved search note.
     // Triggered only when the note ID changes (i.e. the user navigates to a different note),
     // not on every render. This avoids re-running while the user is editing the query.
+    const [lastExecutedNoteId, setLastExecutedNoteId] = useState<string>();
+
     useEffect(() => {
-        if (note?.type === "search" && !note?.searchResultsLoaded) {
+        if (note?.type === "search" && !note?.searchResultsLoaded && note.noteId !== lastExecutedNoteId) {
             appContext.triggerCommand("searchNotes");
+            setLastExecutedNoteId(note.noteId);
         }
-    }, [ note?.noteId ]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [note, lastExecutedNoteId]);
     useTriliumEvent("searchRefreshed", ({ ntxId: eventNtxId }) => {
         if (eventNtxId === ntxId) {
             refresh();
