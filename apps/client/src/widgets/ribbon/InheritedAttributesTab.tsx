@@ -1,3 +1,4 @@
+import { createPortal } from "preact/compat";
 import { useEffect, useState } from "preact/hooks";
 
 import FAttribute from "../../entities/fattribute";
@@ -74,7 +75,7 @@ export default function InheritedAttributesTab({ note, componentId, emptyListStr
                 )}
             </div>
 
-            {attributeDetailWidgetEl}
+            {createPortal(attributeDetailWidgetEl, document.body)}
         </div>
     );
 }

@@ -364,14 +364,10 @@
         mask-repeat: no-repeat;
         mask-size: 100% 100%;
     }
-    
+
     .ck-content p {
         margin-bottom: 0.5em;
         line-height: 1.3;
-    }
-
-    .ck-content figure.image {
-        width: 25%;
     }
 
     .ck-content .table {
@@ -380,7 +376,7 @@
         overflow-x: scroll;
         --scrollbar-thickness: 0;
         scrollbar-width: none;
-        
+
         table {
             width: max-content;
             table-layout: auto;

@@ -1,5 +1,6 @@
 import { AttributeEditor as CKEditorAttributeEditor, MentionFeed, ModelElement, ModelNode, ModelPosition } from "@triliumnext/ckeditor5";
 import { AttributeType } from "@triliumnext/commons";
+import { createPortal } from "preact/compat";
 import { MutableRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from "preact/hooks";
 
 import type { CommandData, FilteredCommandNames } from "../../../components/app_context";
@@ -336,7 +337,8 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                                 let matchedAttr: Attribute | null = null;
 
                                 for (const attr of parsedAttrs) {
-                                    if (attr.startIndex && clickIndex > attr.startIndex && attr.endIndex && clickIndex <= attr.endIndex) {
+                                    if (attr.startIndex !== undefined && clickIndex > attr.startIndex &&
+                                        attr.endIndex !== undefined && clickIndex <= attr.endIndex) {
                                         matchedAttr = attr;
                                         break;
                                     }
@@ -407,7 +409,7 @@ export default function AttributeEditor({ api, note, componentId, notePath, ntxI
                 )}
             </div>}
 
-            {attributeDetailWidgetEl}
+            {createPortal(attributeDetailWidgetEl, document.body)}
         </>
     );
 }

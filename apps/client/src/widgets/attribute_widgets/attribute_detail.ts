@@ -1,18 +1,18 @@
-import { t } from "../../services/i18n.js";
-import server from "../../services/server.js";
-import froca from "../../services/froca.js";
-import linkService from "../../services/link.js";
+import appContext from "../../components/app_context.js";
 import attributeAutocompleteService from "../../services/attribute_autocomplete.js";
+import type { Attribute } from "../../services/attribute_parser.js";
+import { isExperimentalFeatureEnabled } from "../../services/experimental_features.js";
+import { focusSavedElement, saveFocusedElement } from "../../services/focus.js";
+import froca from "../../services/froca.js";
+import { t } from "../../services/i18n.js";
+import linkService from "../../services/link.js";
 import noteAutocompleteService from "../../services/note_autocomplete.js";
 import promotedAttributeDefinitionParser from "../../services/promoted_attribute_definition_parser.js";
-import NoteContextAwareWidget from "../note_context_aware_widget.js";
+import server from "../../services/server.js";
+import shortcutService from "../../services/shortcuts.js";
 import SpacedUpdate from "../../services/spaced_update.js";
 import utils from "../../services/utils.js";
-import shortcutService from "../../services/shortcuts.js";
-import appContext from "../../components/app_context.js";
-import type { Attribute } from "../../services/attribute_parser.js";
-import { focusSavedElement, saveFocusedElement } from "../../services/focus.js";
-import { isExperimentalFeatureEnabled } from "../../services/experimental_features.js";
+import NoteContextAwareWidget from "../note_context_aware_widget.js";
 
 const TPL = /*html*/`
 <div class="attr-detail tn-tool-dialog">
@@ -29,6 +29,7 @@ const TPL = /*html*/`
             max-height: 600px;
             overflow: auto;
             box-shadow: 10px 10px 93px -25px black;
+            contain: none;
         }
 
         .attr-help td {
@@ -343,6 +344,7 @@ export default class AttributeDetailWidget extends NoteContextAwareWidget {
     private $relatedNotesList!: JQuery<HTMLElement>;
     private $relatedNotesMoreNotes!: JQuery<HTMLElement>;
     private $attrHelp!: JQuery<HTMLElement>;
+    private $statusBar?: JQuery<HTMLElement>;
 
     private relatedNotesSpacedUpdate!: SpacedUpdate;
     private attribute!: Attribute;
@@ -577,17 +579,24 @@ export default class AttributeDetailWidget extends NoteContextAwareWidget {
             return;
         }
 
-        this.$widget
-            .css("left", detPosition.left)
-            .css("right", detPosition.right)
-            .css("top", y - offset.top + 70)
-            .css("max-height", outerHeight + y > height - 50 ? height - y - 50 : 10000);
-
         if (isNewLayout) {
+            if (!this.$statusBar) {
+                this.$statusBar = $(document.body).find(".component.status-bar");
+            }
+
+            const statusBarHeight = this.$statusBar.outerHeight() ?? 0;
+            const maxHeight = document.body.clientHeight - statusBarHeight;
             this.$widget
+                .css("left", offset.left + (typeof detPosition.left === "number" ? detPosition.left : 0))
                 .css("top", "unset")
-                .css("bottom", 70)
-                .css("max-height", "80vh");
+                .css("bottom", statusBarHeight ?? 0)
+                .css("max-height", maxHeight);
+        } else {
+            this.$widget
+                .css("left", detPosition.left)
+                .css("right", detPosition.right)
+                .css("top", y - offset.top + 70)
+                .css("max-height", outerHeight + y > height - 50 ? height - y - 50 : 10000);
         }
 
         if (focus === "name") {
@@ -695,14 +704,14 @@ export default class AttributeDetailWidget extends NoteContextAwareWidget {
                 return "label-definition";
             } else if (attribute.name.startsWith("relation:")) {
                 return "relation-definition";
-            } else {
-                return "label";
             }
+            return "label";
+
         } else if (attribute.type === "relation") {
             return "relation";
-        } else {
-            this.$title.text("");
         }
+        this.$title.text("");
+
     }
 
     updateAttributeInEditor() {
