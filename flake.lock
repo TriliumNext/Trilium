@@ -20,11 +20,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1769184885,
-        "narHash": "sha256-wVX5Cqpz66SINNsmt3Bv/Ijzzfl8EPUISq5rKK129K0=",
+        "lastModified": 1774171785,
+        "narHash": "sha256-upDSNdH1WEL2Z0ISvRXTWk7rEndTxUcaTOLY9imJYa8=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "12689597ba7a6d776c3c979f393896be095269d4",
+        "rev": "f8a13215c766347f3da9beef4cfc952eb23fa46e",
         "type": "github"
       },
       "original": {
@@ -43,15 +43,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1749022118,
-        "narHash": "sha256-7Qzmy1snKbxFBKoqUrfyxxmEB8rPxDdV7PQwRiAR01o=",
-        "owner": "FliegendeWurst",
+        "lastModified": 1774171918,
+        "narHash": "sha256-0OBrtBnowvYP/YMKh7GB1GX22ORK+2X771EVgT+1tsk=",
+        "owner": "TriliumNext",
         "repo": "pnpm2nix-nzbr",
-        "rev": "35f88a41d29839b3989f31871263451c8e092cb1",
+        "rev": "536d67261ffe7c91cb286c8581cc799a1b61e969",
         "type": "github"
       },
       "original": {
-        "owner": "FliegendeWurst",
+        "owner": "TriliumNext",
+        "ref": "fix/optional_dependencies_filtering",
         "repo": "pnpm2nix-nzbr",
         "type": "github"
       }

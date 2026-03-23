@@ -446,7 +446,8 @@
     "app_theme_base": "設定為 \"next\"、\"next-light \" 或 \"next-dark\"，以使用相應的 TriliumNext 主題（自動、淺色或深色）作為自訂主題的基礎，而非傳統主題。",
     "print_landscape": "匯出為 PDF 時，將頁面方向更改為橫向而非縱向。",
     "print_page_size": "在匯出 PDF 時更改頁面大小。支援的值：<code>A0</code>、<code>A1</code>、<code>A2</code>、<code>A3</code>、<code>A4</code>、<code>A5</code>、<code>A6</code>、<code>Legal</code>、<code>Letter</code>、<code>Tabloid</code>、<code>Ledger</code>。",
-    "color_type": "顏色"
+    "color_type": "顏色",
+    "textarea": "多行文字"
   },
   "attribute_editor": {
     "help_text_body1": "要新增標籤，只需輸入例如 <code>#rock</code> 或者如果您還想新增值，則例如 <code>#year = 2020</code>",
@@ -2182,5 +2183,52 @@
   },
   "setup_form": {
     "more_info": "了解更多"
+  },
+  "media": {
+    "play": "播放 (空白鍵)",
+    "pause": "暫停 (空白鍵)",
+    "back-10s": "往前 10 秒 (左方向鍵)",
+    "forward-30s": "往後 30 秒",
+    "mute": "靜音 (M)",
+    "unmute": "解除靜音 (M)",
+    "playback-speed": "播放速度",
+    "loop": "循環",
+    "disable-loop": "解除循環",
+    "rotate": "旋轉",
+    "picture-in-picture": "畫中畫",
+    "exit-picture-in-picture": "退出畫中畫",
+    "fullscreen": "全螢幕 (F)",
+    "exit-fullscreen": "退出全螢幕",
+    "unsupported-format": "此檔案格式不支援媒體預覽：\n{{mime}}",
+    "zoom-to-fit": "放大至填滿畫面",
+    "zoom-reset": "重設放大至填滿畫面"
+  },
+  "mermaid": {
+    "placeholder": "請輸入您的美人魚圖表內容，或選用下方其中一個範例圖表。",
+    "sample_diagrams": "範例圖表：",
+    "sample_flowchart": "流程圖",
+    "sample_class": "階層圖",
+    "sample_sequence": "時序圖",
+    "sample_entity_relationship": "實體關係圖",
+    "sample_state": "狀態圖",
+    "sample_mindmap": "心智圖",
+    "sample_architecture": "架構圖",
+    "sample_block": "區塊圖",
+    "sample_c4": "C4 圖",
+    "sample_gantt": "甘特圖",
+    "sample_git": "Git 分支圖",
+    "sample_kanban": "看板圖",
+    "sample_packet": "數據包圖",
+    "sample_pie": "圓餅圖",
+    "sample_quadrant": "象限圖",
+    "sample_radar": "雷達圖",
+    "sample_requirement": "需求圖",
+    "sample_sankey": "桑基圖",
+    "sample_timeline": "時間軸",
+    "sample_treemap": "樹狀圖",
+    "sample_user_journey": "用戶旅程",
+    "sample_xy": "XY 圖表",
+    "sample_venn": "韋恩圖",
+    "sample_ishikawa": "魚骨圖"
   }
 }

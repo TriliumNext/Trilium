@@ -446,7 +446,8 @@
     "and_more": "... und {{count}} mehr.",
     "print_landscape": "Beim Export als PDF, wird die Seitenausrichtung Querformat anstatt Hochformat verwendet.",
     "print_page_size": "Beim Export als PDF, wird die Größe der Seite angepasst. Unterstützte Größen: <code>A0</code>, <code>A1</code>, <code>A2</code>, <code>A3</code>, <code>A4</code>, <code>A5</code>, <code>A6</code>, <code>Legal</code>, <code>Letter</code>, <code>Tabloid</code>, <code>Ledger</code>.",
-    "color_type": "Farbe"
+    "color_type": "Farbe",
+    "textarea": "Mehrzeilen-Text"
   },
   "attribute_editor": {
     "help_text_body1": "Um ein Label hinzuzufügen, gebe einfach z.B. ein. <code>#rock</code> oder wenn du auch einen Wert hinzufügen möchten, dann z.B. <code>#year = 2024</code>",

@@ -5,7 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs";
     flake-utils.url = "github:numtide/flake-utils";
     pnpm2nix = {
-      url = "github:FliegendeWurst/pnpm2nix-nzbr";
+      url = "github:TriliumNext/pnpm2nix-nzbr/fix/optional_dependencies_filtering";
       inputs = {
         flake-utils.follows = "flake-utils";
         nixpkgs.follows = "nixpkgs";
@@ -325,6 +325,8 @@
           buildInputs = [
             nodejs
             pnpm
+            electron
+            nodejs.python
           ];
         };
       }
