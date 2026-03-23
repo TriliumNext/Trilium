@@ -13,6 +13,76 @@ import port from "@triliumnext/server/src/services/port.js";
 import { join } from "path";
 import { deferred, LOCALES } from "../../../packages/commons/src";
 
+/**
+ * Parses a `trilium://` protocol URL and returns the note ID, or null if the
+ * URL cannot be parsed.
+ *
+ * Supported formats:
+ *   trilium://note/<noteId>
+ *   trilium://<noteId>          (legacy / shorthand)
+ */
+function parseTriliumUrl(rawUrl: string): string | null {
+    let parsed: URL;
+    try {
+        parsed = new URL(rawUrl);
+    } catch {
+        return null;
+    }
+
+    if (parsed.protocol !== "trilium:") {
+        return null;
+    }
+
+    // trilium://note/<noteId>  →  hostname = "note", pathname = "/<noteId>"
+    if (parsed.hostname === "note") {
+        const noteId = parsed.pathname.replace(/^\/+/, "").trim();
+        return noteId || null;
+    }
+
+    // trilium://<noteId>  →  hostname = "<noteId>"
+    const noteId = parsed.hostname.trim();
+    return noteId || null;
+}
+
+/**
+ * Extracts a `trilium://` URL from a process argv / commandLine array, or
+ * returns null if none is present.
+ */
+function extractTriliumUrlFromArgs(args: string[]): string | null {
+    for (const arg of args) {
+        if (arg.startsWith("trilium://")) {
+            return arg;
+        }
+        // --open-note=<noteId>  convenience flag
+        const m = arg.match(/^--open-note=(.+)$/);
+        if (m) {
+            return `trilium://note/${m[1]}`;
+        }
+    }
+    return null;
+}
+
+/**
+ * Focuses the main window and navigates to the given note.
+ * Safe to call before the window is created; returns false if navigation was
+ * not possible (e.g. window not yet ready).
+ */
+function navigateToNote(noteId: string): boolean {
+    const win = windowService.getLastFocusedWindow() ?? windowService.getMainWindow();
+    if (!win || win.isDestroyed()) {
+        return false;
+    }
+
+    if (win.isMinimized()) {
+        win.restore();
+    }
+    win.show();
+    win.focus();
+
+    win.webContents.send("openInSameTab", noteId);
+    return true;
+}
+
 async function main() {
     const userDataPath = getUserData();
     app.setPath("userData", userDataPath);
@@ -23,6 +93,11 @@ async function main() {
     if ((require("electron-squirrel-startup")).default) {
         process.exit(0);
     }
+
+    // Register trilium:// as a custom URI scheme so external apps and the OS
+    // can launch Trilium and navigate directly to a note.
+    // Must be called before app.requestSingleInstanceLock().
+    app.setAsDefaultProtocolClient("trilium");
 
     // Adds debug features like hotkeys for triggering dev tools and reload
     electronDebug();
@@ -63,13 +138,49 @@ async function main() {
         await serverInitializedPromise;
         console.log("Starting Electron...");
         await onReady();
+
+        // Handle protocol URL passed when this is the *first* instance
+        // (Windows / Linux deliver the URL as a command-line argument).
+        const protocolUrl = extractTriliumUrlFromArgs(process.argv);
+        if (protocolUrl) {
+            const noteId = parseTriliumUrl(protocolUrl);
+            if (noteId) {
+                // Wait a short moment for the renderer to finish initialising
+                // before sending the navigation request.
+                setTimeout(() => navigateToNote(noteId), 1500);
+            }
+        }
     });
 
     app.on("will-quit", () => {
         globalShortcut.unregisterAll();
     });
 
+    // On macOS, protocol URLs for a *running* instance are delivered via
+    // the "open-url" event instead of "second-instance".
+    app.on("open-url", (event, url) => {
+        event.preventDefault();
+        const noteId = parseTriliumUrl(url);
+        if (noteId) {
+            if (navigateToNote(noteId)) {
+                return;
+            }
+            // Window not ready yet – retry after the ready event fires.
+            app.once("ready", () => setTimeout(() => navigateToNote(noteId), 1500));
+        }
+    });
+
     app.on("second-instance", (event, commandLine) => {
+        // Check if a trilium:// URL or --open-note flag was supplied.
+        const protocolUrl = extractTriliumUrlFromArgs(commandLine);
+        if (protocolUrl) {
+            const noteId = parseTriliumUrl(protocolUrl);
+            if (noteId) {
+                navigateToNote(noteId);
+                return;
+            }
+        }
+
         const lastFocusedWindow = windowService.getLastFocusedWindow();
         if (commandLine.includes("--new-window")) {
             windowService.createExtraWindow("");
