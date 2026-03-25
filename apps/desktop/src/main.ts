@@ -141,13 +141,21 @@ async function main() {
 
         // Handle protocol URL passed when this is the *first* instance
         // (Windows / Linux deliver the URL as a command-line argument).
-        const protocolUrl = extractTriliumUrlFromArgs(process.argv);
-        if (protocolUrl) {
-            const noteId = parseTriliumUrl(protocolUrl);
-            if (noteId) {
-                // Wait a short moment for the renderer to finish initialising
-                // before sending the navigation request.
-                setTimeout(() => navigateToNote(noteId), 1500);
+        // Only handle process.argv on non-macOS; macOS delivers protocol URLs via the open-url event.
+        if (process.platform !== "darwin") {
+            const protocolUrl = extractTriliumUrlFromArgs(process.argv);
+            if (protocolUrl) {
+                const noteId = parseTriliumUrl(protocolUrl);
+                if (noteId) {
+                    const win = windowService.getLastFocusedWindow() ?? windowService.getMainWindow();
+                    if (win && !win.isDestroyed()) {
+                        if (win.webContents.isLoading()) {
+                            win.webContents.once("did-finish-load", () => navigateToNote(noteId));
+                        } else {
+                            navigateToNote(noteId);
+                        }
+                    }
+                }
             }
         }
     });
@@ -165,8 +173,14 @@ async function main() {
             if (navigateToNote(noteId)) {
                 return;
             }
-            // Window not ready yet – retry after the ready event fires.
-            app.once("ready", () => setTimeout(() => navigateToNote(noteId), 1500));
+            // Window not ready yet — wait for it to be created and finish loading.
+            app.once("browser-window-created", (_event, win) => {
+                if (win.webContents.isLoading()) {
+                    win.webContents.once("did-finish-load", () => navigateToNote(noteId));
+                } else {
+                    navigateToNote(noteId);
+                }
+            });
         }
     });
 
