@@ -12,6 +12,7 @@ import { PRODUCT_NAME } from "./app-info";
 import port from "@triliumnext/server/src/services/port.js";
 import { join } from "path";
 import { deferred, LOCALES } from "../../../packages/commons/src";
+import protocolHandler from "./protocol-handler.js";
 
 async function main() {
     const userDataPath = getUserData();
@@ -23,6 +24,11 @@ async function main() {
     if ((require("electron-squirrel-startup")).default) {
         process.exit(0);
     }
+
+    // Register trilium:// as a custom URI scheme so external apps and the OS
+    // can launch Trilium and navigate directly to a note.
+    // Must be called before app.requestSingleInstanceLock().
+    app.setAsDefaultProtocolClient(protocolHandler.PROTOCOL);
 
     // Adds debug features like hotkeys for triggering dev tools and reload
     electronDebug();
@@ -63,13 +69,41 @@ async function main() {
         await serverInitializedPromise;
         console.log("Starting Electron...");
         await onReady();
+
+        // Process protocol URL from first-launch argv (Windows/Linux only;
+        // macOS delivers protocol URLs via the open-url event).
+        if (process.platform !== "darwin") {
+            const noteId = protocolHandler.extractNoteIdFromArgs(process.argv);
+            if (noteId) {
+                protocolHandler.navigateToNote(noteId);
+            }
+        }
+
+        // Handle protocol URL that arrived via open-url before the window was
+        // ready (macOS cold-start from a trilium:// link).
+        protocolHandler.processPendingNavigation();
     });
 
     app.on("will-quit", () => {
         globalShortcut.unregisterAll();
     });
 
+    // macOS delivers protocol URLs for a *running* instance via open-url
+    // instead of second-instance.  When the app is cold-started from a
+    // trilium:// link the event fires before "ready", so we queue the note ID.
+    app.on("open-url", (event, url) => {
+        event.preventDefault();
+        protocolHandler.handleProtocolUrl(url);
+    });
+
     app.on("second-instance", (event, commandLine) => {
+        // Check for a trilium:// URL or --open-note flag first.
+        const noteId = protocolHandler.extractNoteIdFromArgs(commandLine);
+        if (noteId) {
+            protocolHandler.navigateToNote(noteId);
+            return;
+        }
+
         const lastFocusedWindow = windowService.getLastFocusedWindow();
         if (commandLine.includes("--new-window")) {
             windowService.createExtraWindow("");

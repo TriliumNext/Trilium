@@ -173,6 +173,7 @@ export type CommandMappings = {
     collapseSubtree: ContextMenuCommandData;
     sortChildNotes: ContextMenuCommandData;
     copyNotePathToClipboard: ContextMenuCommandData;
+    copyNoteUrlToClipboard: ContextMenuCommandData;
     recentChangesInSubtree: ContextMenuCommandData;
     cutNotesToClipboard: ContextMenuCommandData;
     copyNotesToClipboard: ContextMenuCommandData;

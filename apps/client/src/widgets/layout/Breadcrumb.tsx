@@ -438,6 +438,17 @@ function buildEmptyAreaContextMenu(parentComponent: Component | null, notePath: 
                     uiIcon: "bx bx-directions",
                     handler: () => copyTextWithToast(`#${notePath}`)
                 },
+                {
+                    title: t("tree-context-menu.copy-note-url-to-clipboard"),
+                    command: "copyNoteUrlToClipboard",
+                    uiIcon: "bx bx-link",
+                    handler: () => {
+                        const noteId = notePath?.split("/").pop();
+                        if (noteId) {
+                            copyTextWithToast(`trilium://note/${noteId}`);
+                        }
+                    }
+                },
             ],
             x: e.pageX,
             y: e.pageY,
