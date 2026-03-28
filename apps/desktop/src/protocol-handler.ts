@@ -27,7 +27,9 @@ function parseTriliumUrl(rawUrl: string): string | null {
 
     // trilium://note/<noteId> → hostname = "note", pathname = "/<noteId>"
     if (parsed.hostname === "note") {
-        const noteId = parsed.pathname.replace(/^\/+/, "").trim();
+        // Extract first path segment only, ignoring trailing slashes and extra segments
+        const pathSegments = parsed.pathname.split("/").filter(Boolean);
+        const noteId = pathSegments[0]?.trim();
         return noteId || null;
     }
 
@@ -43,7 +45,12 @@ function parseTriliumUrl(rawUrl: string): string | null {
 function extractNoteIdFromArgs(args: string[]): string | null {
     for (const arg of args) {
         if (arg.startsWith(`${PROTOCOL}://`)) {
-            return parseTriliumUrl(arg);
+            const noteId = parseTriliumUrl(arg);
+            // Only return if we got a valid noteId; otherwise continue scanning
+            if (noteId) {
+                return noteId;
+            }
+            continue;
         }
 
         const match = arg.match(/^--open-note=(.+)$/);
