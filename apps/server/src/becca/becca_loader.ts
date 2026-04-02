@@ -40,7 +40,7 @@ function load() {
         // using a raw query and passing arrays to avoid allocating new objects,
         // this is worth it for the becca load since it happens every run and blocks the app until finished
 
-        for (const row of sql.getRawRows(/*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified FROM notes WHERE isDeleted = 0`)) {
+        for (const row of sql.getRawRows(/*sql*/`SELECT noteId, title, type, mime, isProtected, blobId, ownerId, dateCreated, dateModified, utcDateCreated, utcDateModified FROM notes WHERE isDeleted = 0`)) {
             new BNote().update(row).init();
         }
 
@@ -64,6 +64,28 @@ function load() {
             new BEtapiToken(row);
         }
 
+        const userGroupsRows = sql.getRawRows(/*sql*/`SELECT user_id, group_id FROM user_groups`);
+        for (const row of userGroupsRows) {
+            const userId = row[0] as string;
+            const groupId = row[1] as string;
+            if (!becca.userGroups[userId]) {
+                becca.userGroups[userId] = new Set();
+            }
+            becca.userGroups[userId].add(groupId);
+        }
+
+        const notePermissionsRows = sql.getRawRows(/*sql*/`SELECT note_id, user_id, group_id, permission_level FROM note_permissions`);
+        for (const row of notePermissionsRows) {
+            const noteId = row[0] as string;
+            if (!becca.notePermissions[noteId]) {
+                becca.notePermissions[noteId] = [];
+            }
+            becca.notePermissions[noteId].push({
+                userId: row[1] as string | null,
+                groupId: row[2] as string | null,
+                level: row[3] as string
+            });
+        }
     });
 
     for (const noteId in becca.notes) {

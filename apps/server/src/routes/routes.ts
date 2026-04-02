@@ -60,6 +60,7 @@ import systemInfoRoute from "./api/system_info.js";
 import totp from './api/totp.js';
 // API routes
 import treeApiRoute from "./api/tree.js";
+import usersApiRoute from "./api/users.js";
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 import * as indexRoute from "./index.js";
 import loginRoute from "./login.js";
@@ -375,6 +376,10 @@ function register(app: express.Application) {
     etapiSpecRoute.register(router);
     etapiBackupRoute.register(router);
     etapiMetricsRoute.register(router);
+
+    // multi-user routes
+    apiRoute(GET, "/api/users", usersApiRoute.getUsers);
+    apiRoute(PST, "/api/users", usersApiRoute.createUser);
 
     app.use("", router);
 }

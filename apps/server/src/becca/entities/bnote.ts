@@ -59,13 +59,14 @@ class BNote extends AbstractBeccaEntity<BNote> {
         return "noteId";
     }
     static get hashedProperties() {
-        return ["noteId", "title", "isProtected", "type", "mime", "blobId"];
+        return ["noteId", "title", "isProtected", "type", "mime", "blobId", "ownerId"];
     }
 
     noteId!: string;
     title!: string;
     type!: NoteType;
     mime!: string;
+    ownerId!: string | null;
     /** set during the deletion operation, before it is completed (removed from becca completely). */
     isBeingDeleted!: boolean;
     isDecrypted!: boolean;
@@ -103,11 +104,11 @@ class BNote extends AbstractBeccaEntity<BNote> {
         this.init();
     }
 
-    updateFromRow(row: Partial<NoteRow>) {
-        this.update([row.noteId, row.title, row.type, row.mime, row.isProtected, row.blobId, row.dateCreated, row.dateModified, row.utcDateCreated, row.utcDateModified]);
+    updateFromRow(row: Partial<NoteRow & { ownerId?: string | null }>) {
+        this.update([row.noteId, row.title, row.type, row.mime, row.isProtected, row.blobId, row.dateCreated, row.dateModified, row.utcDateCreated, row.utcDateModified, row.ownerId]);
     }
 
-    update([noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified]: any) {
+    update([noteId, title, type, mime, isProtected, blobId, dateCreated, dateModified, utcDateCreated, utcDateModified, ownerId]: any) {
         // ------ Database persisted attributes ------
 
         this.noteId = noteId;
@@ -116,6 +117,7 @@ class BNote extends AbstractBeccaEntity<BNote> {
         this.mime = mime;
         this.isProtected = !!isProtected;
         this.blobId = blobId;
+        this.ownerId = ownerId || null;
         this.dateCreated = dateCreated || dateUtils.localNowDateTime();
         this.dateModified = dateModified;
         this.utcDateCreated = utcDateCreated || dateUtils.utcNowDateTime();

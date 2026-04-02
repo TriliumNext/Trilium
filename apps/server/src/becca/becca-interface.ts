@@ -29,7 +29,13 @@ export default class Becca {
     options!: Record<string, BOption>;
     etapiTokens!: Record<string, BEtapiToken>;
 
-    allNoteSetCache: NoteSet | null;
+    // Map from userId to Set of groupIds
+    userGroups!: Record<string, Set<string>>;
+    
+    // Map from noteId to list of permissions
+    notePermissions!: Record<string, { userId: string | null, groupId: string | null, level: string }[]>;
+
+    allNoteSetCache: Record<string, NoteSet> | null;
 
     constructor() {
         this.reset();
@@ -44,6 +50,8 @@ export default class Becca {
         this.attributeIndex = {};
         this.options = {};
         this.etapiTokens = {};
+        this.userGroups = {};
+        this.notePermissions = {};
 
         this.dirtyNoteSetCache();
 
@@ -90,13 +98,44 @@ export default class Becca {
     }
 
     getNote(noteId: string): BNote | null {
-        return Object.hasOwn(this.notes, noteId) ? this.notes[noteId] : null;
+        const note = Object.hasOwn(this.notes, noteId) ? this.notes[noteId] : null;
+        if (!note) {
+            return null;
+        }
+
+        // Access control
+        const clsModule = require("../services/cls.js").default;
+        const currentUserId = clsModule.getUserId();
+        
+        if (currentUserId && currentUserId !== "system") {
+            let hasAccess = false;
+            
+            if (!note.ownerId || note.ownerId === currentUserId) {
+                hasAccess = true;
+            } else {
+                const perms = this.notePermissions[note.noteId] || [];
+                const userGroups = this.userGroups[currentUserId] || new Set();
+                
+                for (const p of perms) {
+                    if (p.userId === currentUserId || (p.groupId && userGroups.has(p.groupId))) {
+                        hasAccess = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (!hasAccess) {
+                return null;
+            }
+        }
+
+        return note;
     }
 
     getNoteOrThrow(noteId: string): BNote {
-        const note = Object.hasOwn(this.notes, noteId) ? this.notes[noteId] : null;
+        const note = this.getNote(noteId);
         if (!note) {
-            throw new NotFoundError(`Note '${noteId}' doesn't exist.`);
+            throw new NotFoundError(`Note '${noteId}' doesn't exist or is not accessible.`);
         }
 
         return note;
@@ -106,14 +145,14 @@ export default class Becca {
         const filteredNotes: BNote[] = [];
 
         for (const noteId of noteIds) {
-            const note = Object.hasOwn(this.notes, noteId) ? this.notes[noteId] : null;
+            const note = this.getNote(noteId);
 
             if (!note) {
                 if (ignoreMissing) {
                     continue;
                 }
 
-                throw new Error(`Note '${noteId}' was not found in becca.`);
+                throw new Error(`Note '${noteId}' was not found in becca or is not accessible.`);
             }
 
             filteredNotes.push(note);
@@ -245,8 +284,16 @@ export default class Becca {
     }
 
     getAllNoteSet() {
+        const clsModule = require("../services/cls.js").default;
+        const currentUserId = clsModule.getUserId();
+        const cacheKey = currentUserId || "system";
+
         // caching this since it takes 10s of milliseconds to fill this initial NoteSet for many notes
         if (!this.allNoteSetCache) {
+            this.allNoteSetCache = {};
+        }
+
+        if (!this.allNoteSetCache[cacheKey]) {
             const allNotes: BNote[] = [];
 
             for (const noteId in this.notes) {
@@ -255,14 +302,34 @@ export default class Becca {
                 // in the process of loading data sometimes we create "skeleton" note instances which are expected to be filled later
                 // in case of inconsistent data this might not work and search will then crash on these
                 if (note.type !== undefined) {
+                    if (currentUserId && currentUserId !== "system") {
+                        let hasAccess = false;
+                        if (!note.ownerId || note.ownerId === currentUserId) {
+                            hasAccess = true;
+                        } else {
+                            const perms = this.notePermissions[note.noteId] || [];
+                            const userGroups = this.userGroups[currentUserId] || new Set();
+                            
+                            for (const p of perms) {
+                                if (p.userId === currentUserId || (p.groupId && userGroups.has(p.groupId))) {
+                                    hasAccess = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (!hasAccess) {
+                            continue;
+                        }
+                    }
                     allNotes.push(note);
                 }
             }
 
-            this.allNoteSetCache = new NoteSet(allNotes);
+            this.allNoteSetCache[cacheKey] = new NoteSet(allNotes);
         }
 
-        return this.allNoteSetCache;
+        return this.allNoteSetCache[cacheKey];
     }
 }
 

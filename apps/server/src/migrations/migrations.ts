@@ -6,6 +6,46 @@
 
 // Migrations should be kept in descending order, so the latest migration is first.
 const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Multi-user Support schemas
+    {
+        version: 236,
+        sql: /*sql*/`
+            CREATE TABLE IF NOT EXISTS "users" (
+                "id" TEXT PRIMARY KEY,
+                "username" TEXT NOT NULL UNIQUE,
+                "password_hash" TEXT NOT NULL,
+                "is_admin" INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS "groups" (
+                "id" TEXT PRIMARY KEY,
+                "name" TEXT NOT NULL UNIQUE
+            );
+
+            CREATE TABLE IF NOT EXISTS "user_groups" (
+                "user_id" TEXT NOT NULL,
+                "group_id" TEXT NOT NULL,
+                PRIMARY KEY ("user_id", "group_id")
+            );
+
+            -- Add ownerId to notes
+            ALTER TABLE notes ADD COLUMN ownerId TEXT DEFAULT NULL;
+
+            CREATE TABLE IF NOT EXISTS "note_permissions" (
+                "note_id" TEXT NOT NULL,
+                "user_id" TEXT,
+                "group_id" TEXT,
+                "permission_level" TEXT NOT NULL
+            );
+            
+            -- Set up default admin account and assign existing notes to it
+            INSERT INTO "users" ("id", "username", "password_hash", "is_admin") 
+            VALUES ('admin_user_id', 'admin', 'NOT_YET_SETUP', 1);
+
+            -- Note: We update ownerId for all notes
+            UPDATE notes SET ownerId = 'admin_user_id' WHERE ownerId IS NULL;
+        `
+    },
     // Add missing database indices for query performance
     {
         version: 235,

@@ -30,6 +30,14 @@ function getHoistedNoteId() {
     return namespace.get("hoistedNoteId") || "root";
 }
 
+function getUserId() {
+    return namespace.get("userId");
+}
+
+function setUserId(userId: string) {
+    namespace.set("userId", userId);
+}
+
 function getComponentId() {
     return namespace.get("componentId");
 }
@@ -114,5 +122,7 @@ export default {
     disableSlowQueryLogging,
     isSlowQueryLoggingDisabled,
     setMigrationRunning,
-    isMigrationRunning
+    isMigrationRunning,
+    getUserId,
+    setUserId
 };
