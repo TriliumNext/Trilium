@@ -44,7 +44,7 @@
     "@triliumnext/server": "workspace:*",
     "@types/electron-squirrel-startup": "1.0.2",
     "copy-webpack-plugin": "13.0.1",
-    "electron": "40.6.1",
+    "electron": "40.8.5",
     "prebuild-install": "7.1.3"
   }
 }
