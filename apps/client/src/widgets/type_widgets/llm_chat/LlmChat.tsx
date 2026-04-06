@@ -63,7 +63,12 @@ export default function LlmChat({ note, ntxId, noteContext }: TypeWidgetProps) {
                     />
                 )}
                 {chat.messages.map(msg => (
-                    <ChatMessage key={msg.id} message={msg} />
+                    <ChatMessage
+                        key={msg.id}
+                        message={msg}
+                        onApproveToolCall={chat.approveToolCall}
+                        onRejectToolCall={chat.rejectToolCall}
+                    />
                 ))}
                 {chat.isStreaming && chat.streamingThinking && (
                     <ChatMessage

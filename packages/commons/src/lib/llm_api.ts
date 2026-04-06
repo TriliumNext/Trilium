@@ -43,6 +43,8 @@ export interface LlmChatConfig {
     contextNoteId?: string;
     /** The note ID of the chat note (used for auto-renaming on first message) */
     chatNoteId?: string;
+    /** Note IDs to use as knowledge base sources */
+    sourceNoteIds?: string[];
 }
 
 /**
@@ -97,7 +99,7 @@ export interface LlmUsage {
 export type LlmStreamChunk =
     | { type: "text"; content: string }
     | { type: "thinking"; content: string }
-    | { type: "tool_use"; toolName: string; toolInput: Record<string, unknown> }
+    | { type: "tool_use"; toolName: string; toolInput: Record<string, unknown>; requiresApproval?: boolean }
     | { type: "tool_result"; toolName: string; result: string; isError?: boolean }
     | { type: "citation"; citation: LlmCitation }
     | { type: "usage"; usage: LlmUsage }

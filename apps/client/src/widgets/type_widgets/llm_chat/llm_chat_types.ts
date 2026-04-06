@@ -8,6 +8,10 @@ export interface ToolCall {
     input: Record<string, unknown>;
     result?: string;
     isError?: boolean;
+    /** When true, the tool requires user approval before execution. */
+    requiresApproval?: boolean;
+    /** Whether the user rejected this tool call. */
+    rejected?: boolean;
 }
 
 /** A block of text content (rendered as Markdown for assistant messages). */
@@ -70,4 +74,5 @@ export interface LlmChatContent {
     enableWebSearch?: boolean;
     enableNoteTools?: boolean;
     enableExtendedThinking?: boolean;
+    sourceNoteIds?: string[];
 }
