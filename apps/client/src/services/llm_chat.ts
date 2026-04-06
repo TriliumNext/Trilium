@@ -13,7 +13,7 @@ export async function getAvailableModels(): Promise<LlmModelInfo[]> {
 export interface StreamCallbacks {
     onChunk: (text: string) => void;
     onThinking?: (text: string) => void;
-    onToolUse?: (toolName: string, input: Record<string, unknown>) => void;
+    onToolUse?: (toolName: string, input: Record<string, unknown>, requiresApproval?: boolean) => void;
     onToolResult?: (toolName: string, result: string, isError?: boolean) => void;
     onCitation?: (citation: LlmCitation) => void;
     onUsage?: (usage: LlmUsage) => void;
@@ -22,12 +22,29 @@ export interface StreamCallbacks {
 }
 
 /**
+ * Execute a mutating tool call after user approval.
+ */
+export async function executeToolCall(toolName: string, toolInput: Record<string, unknown>): Promise<{ result: string; isError?: boolean }> {
+    const response = await server.post<{ result?: object; error?: string }>("llm-chat/execute-tool", { toolName, toolInput });
+
+    if (response.error) {
+        return { result: response.error, isError: true };
+    }
+
+    return {
+        result: typeof response.result === "string" ? response.result : JSON.stringify(response.result)
+    };
+}
+
+/**
  * Stream a chat completion from the LLM API using Server-Sent Events.
+ * Returns an AbortController that can be used to cancel the stream.
  */
 export async function streamChatCompletion(
     messages: LlmMessage[],
     config: LlmChatConfig,
-    callbacks: StreamCallbacks
+    callbacks: StreamCallbacks,
+    abortSignal?: AbortSignal
 ): Promise<void> {
     const headers = await server.getHeaders();
 
@@ -37,7 +54,8 @@ export async function streamChatCompletion(
             ...headers,
             "Content-Type": "application/json"
         } as HeadersInit,
-        body: JSON.stringify({ messages, config })
+        body: JSON.stringify({ messages, config }),
+        signal: abortSignal
     });
 
     if (!response.ok) {
@@ -76,7 +94,7 @@ export async function streamChatCompletion(
                                 callbacks.onThinking?.(data.content);
                                 break;
                             case "tool_use":
-                                callbacks.onToolUse?.(data.toolName, data.toolInput);
+                                callbacks.onToolUse?.(data.toolName, data.toolInput, data.requiresApproval);
                                 // Yield to force Preact to commit the pending tool call
                                 // state before we process the result.
                                 await new Promise((r) => setTimeout(r, 1));

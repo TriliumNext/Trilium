@@ -2,7 +2,8 @@ import type { LlmCitation, LlmMessage, LlmModelInfo, LlmUsage } from "@triliumne
 import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import { getAvailableModels, streamChatCompletion } from "../../../services/llm_chat.js";
+import { executeToolCall, getAvailableModels, streamChatCompletion } from "../../../services/llm_chat.js";
+import { t } from "../../../services/i18n.js";
 import { randomString } from "../../../services/utils.js";
 import type { ContentBlock, LlmChatContent, StoredMessage } from "./llm_chat_types.js";
 
@@ -36,6 +37,7 @@ export interface UseLlmChatReturn {
     enableNoteTools: boolean;
     enableExtendedThinking: boolean;
     contextNoteId: string | undefined;
+    sourceNoteIds: string[];
     lastPromptTokens: number;
     messagesEndRef: RefObject<HTMLDivElement>;
     textareaRef: RefObject<HTMLTextAreaElement>;
@@ -53,6 +55,9 @@ export interface UseLlmChatReturn {
     setEnableExtendedThinking: (value: boolean) => void;
     setContextNoteId: (noteId: string | undefined) => void;
     setChatNoteId: (noteId: string | undefined) => void;
+    setSourceNoteIds: (noteIds: string[]) => void;
+    addSourceNote: (noteId: string) => void;
+    removeSourceNote: (noteId: string) => void;
 
     // Actions
     handleSubmit: (e: Event) => Promise<void>;
@@ -62,6 +67,12 @@ export interface UseLlmChatReturn {
     clearMessages: () => void;
     /** Refresh the provider/models list */
     refreshModels: () => void;
+    /** Approve a pending mutating tool call */
+    approveToolCall: (toolCallId: string) => Promise<void>;
+    /** Reject a pending mutating tool call */
+    rejectToolCall: (toolCallId: string) => void;
+    /** Stop the current generation */
+    stopStreaming: () => void;
 }
 
 export function useLlmChat(
@@ -84,11 +95,13 @@ export function useLlmChat(
     const [enableExtendedThinking, setEnableExtendedThinking] = useState(false);
     const [contextNoteId, setContextNoteId] = useState<string | undefined>(initialContextNoteId);
     const [chatNoteId, setChatNoteIdState] = useState<string | undefined>(initialChatNoteId);
+    const [sourceNoteIds, setSourceNoteIds] = useState<string[]>([]);
     const [lastPromptTokens, setLastPromptTokens] = useState<number>(0);
     const [hasProvider, setHasProvider] = useState<boolean>(true); // Assume true initially
     const [isCheckingProvider, setIsCheckingProvider] = useState<boolean>(true);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     // Refs to get fresh values in getContent (avoids stale closures)
     const messagesRef = useRef(messages);
@@ -109,6 +122,16 @@ export function useLlmChat(
     }, []);
     const contextNoteIdRef = useRef(contextNoteId);
     contextNoteIdRef.current = contextNoteId;
+    const sourceNoteIdsRef = useRef(sourceNoteIds);
+    sourceNoteIdsRef.current = sourceNoteIds;
+
+    const addSourceNote = useCallback((noteId: string) => {
+        setSourceNoteIds(prev => prev.includes(noteId) ? prev : [...prev, noteId]);
+    }, []);
+
+    const removeSourceNote = useCallback((noteId: string) => {
+        setSourceNoteIds(prev => prev.filter(id => id !== noteId));
+    }, []);
 
     // Wrapper to call onMessagesChange when messages update
     const setMessages = useCallback((newMessages: StoredMessage[]) => {
@@ -122,7 +145,11 @@ export function useLlmChat(
         getAvailableModels().then(models => {
             const modelsWithDescription = models.map(m => ({
                 ...m,
-                costDescription: m.costMultiplier ? `${m.costMultiplier}x` : undefined
+                costDescription: m.costMultiplier
+                    ? `${m.costMultiplier}x`
+                    : m.pricing.input === 0 && m.pricing.output === 0
+                        ? t("llm_chat.free")
+                        : undefined
             }));
             setAvailableModels(modelsWithDescription);
             setHasProvider(models.length > 0);
@@ -168,6 +195,9 @@ export function useLlmChat(
         if (supportsExtendedThinking && typeof content.enableExtendedThinking === "boolean") {
             setEnableExtendedThinking(content.enableExtendedThinking);
         }
+        if (Array.isArray(content.sourceNoteIds)) {
+            setSourceNoteIds(content.sourceNoteIds);
+        }
         // Restore last prompt tokens from the most recent message with usage
         const lastUsage = [...(content.messages || [])].reverse().find(m => m.usage)?.usage;
         setLastPromptTokens(lastUsage?.promptTokens ?? 0);
@@ -184,6 +214,9 @@ export function useLlmChat(
         };
         if (supportsExtendedThinking) {
             content.enableExtendedThinking = enableExtendedThinkingRef.current;
+        }
+        if (sourceNoteIdsRef.current.length > 0) {
+            content.sourceNoteIds = sourceNoteIdsRef.current;
         }
         return content;
     }, [supportsExtendedThinking]);
@@ -243,13 +276,17 @@ export function useLlmChat(
             model: selectedModel || undefined,
             provider: selectedModelProvider,
             enableWebSearch,
-            enableNoteTools,
+            enableNoteTools: enableNoteTools || sourceNoteIds.length > 0,
             contextNoteId,
-            chatNoteId: chatNoteIdRef.current
+            chatNoteId: chatNoteIdRef.current,
+            sourceNoteIds: sourceNoteIds.length > 0 ? sourceNoteIds : undefined
         };
         if (supportsExtendedThinking) {
             streamOptions.enableExtendedThinking = enableExtendedThinking;
         }
+
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
 
         await streamChatCompletion(
             apiMessages,
@@ -267,13 +304,14 @@ export function useLlmChat(
                     thinkingContent += text;
                     setStreamingThinking(thinkingContent);
                 },
-                onToolUse: (toolName, toolInput) => {
+                onToolUse: (toolName, toolInput, requiresApproval) => {
                     contentBlocks.push({
                         type: "tool_call",
                         toolCall: {
                             id: randomString(),
                             toolName,
-                            input: toolInput
+                            input: toolInput,
+                            requiresApproval
                         }
                     });
                     setStreamingBlocks([...contentBlocks]);
@@ -353,10 +391,45 @@ export function useLlmChat(
                     setStreamingThinking("");
                     setPendingCitations([]);
                     setIsStreaming(false);
+                    abortControllerRef.current = null;
                 }
+            },
+            abortController.signal
+        ).catch((e) => {
+            // AbortError is expected when user stops generation
+            if (e instanceof DOMException && e.name === "AbortError") {
+                // Finalize whatever we have so far
+                const finalNewMessages: StoredMessage[] = [];
+                if (thinkingContent) {
+                    finalNewMessages.push({
+                        id: randomString(),
+                        role: "assistant",
+                        content: thinkingContent,
+                        createdAt: new Date().toISOString(),
+                        type: "thinking"
+                    });
+                }
+                if (contentBlocks.length > 0) {
+                    finalNewMessages.push({
+                        id: randomString(),
+                        role: "assistant",
+                        content: contentBlocks,
+                        createdAt: new Date().toISOString(),
+                        citations: citations.length > 0 ? citations : undefined
+                    });
+                }
+                if (finalNewMessages.length > 0) {
+                    setMessages([...newMessages, ...finalNewMessages]);
+                }
+                setStreamingContent("");
+                setStreamingBlocks([]);
+                setStreamingThinking("");
+                setPendingCitations([]);
+                setIsStreaming(false);
+                abortControllerRef.current = null;
             }
-        );
-    }, [input, isStreaming, messages, selectedModel, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, supportsExtendedThinking, setMessages]);
+        });
+    }, [input, isStreaming, messages, selectedModel, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, sourceNoteIds, supportsExtendedThinking, setMessages]);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -364,6 +437,51 @@ export function useLlmChat(
             handleSubmit(e);
         }
     }, [handleSubmit]);
+
+    /** Stop the current generation by aborting the SSE connection. */
+    const stopStreaming = useCallback(() => {
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+    }, []);
+
+    /** Approve a pending mutating tool call — execute it server-side and update the message. */
+    const approveToolCall = useCallback(async (toolCallId: string) => {
+        // Find the tool call in messages
+        for (const msg of messages) {
+            if (!Array.isArray(msg.content)) continue;
+            for (const block of msg.content) {
+                if (block.type === "tool_call" && block.toolCall.id === toolCallId && block.toolCall.requiresApproval && !block.toolCall.result) {
+                    const { result, isError } = await executeToolCall(block.toolCall.toolName, block.toolCall.input);
+                    // Update the tool call block immutably
+                    const updatedContent = msg.content.map(b =>
+                        b.type === "tool_call" && b.toolCall.id === toolCallId
+                            ? { ...b, toolCall: { ...b.toolCall, result, isError } }
+                            : b
+                    );
+                    const updatedMessages = messages.map(m =>
+                        m.id === msg.id ? { ...m, content: updatedContent } : m
+                    );
+                    setMessages(updatedMessages);
+                    return;
+                }
+            }
+        }
+    }, [messages, setMessages]);
+
+    /** Reject a pending mutating tool call. */
+    const rejectToolCall = useCallback((toolCallId: string) => {
+        const updatedMessages = messages.map(msg => {
+            if (!Array.isArray(msg.content)) return msg;
+            const updatedContent = msg.content.map(b =>
+                b.type === "tool_call" && b.toolCall.id === toolCallId
+                    ? { ...b, toolCall: { ...b.toolCall, rejected: true, result: t("llm_chat.rejected_by_user"), isError: true } }
+                    : b
+            );
+            return { ...msg, content: updatedContent };
+        });
+        setMessages(updatedMessages);
+    }, [messages, setMessages]);
 
     return {
         // State
@@ -380,6 +498,7 @@ export function useLlmChat(
         enableNoteTools,
         enableExtendedThinking,
         contextNoteId,
+        sourceNoteIds,
         lastPromptTokens,
         messagesEndRef,
         textareaRef,
@@ -395,6 +514,9 @@ export function useLlmChat(
         setEnableExtendedThinking,
         setContextNoteId,
         setChatNoteId,
+        setSourceNoteIds,
+        addSourceNote,
+        removeSourceNote,
 
         // Actions
         handleSubmit,
@@ -402,6 +524,9 @@ export function useLlmChat(
         loadFromContent,
         getContent,
         clearMessages,
-        refreshModels
+        refreshModels,
+        approveToolCall,
+        rejectToolCall,
+        stopStreaming
     };
 }
