@@ -1,6 +1,7 @@
 import type { LlmProvider, ModelInfo } from "./types.js";
 import { AnthropicProvider } from "./providers/anthropic.js";
 import { GoogleProvider } from "./providers/google.js";
+import { OllamaProvider } from "./providers/ollama.js";
 import { OpenAiProvider } from "./providers/openai.js";
 import optionService from "../options.js";
 import log from "../log.js";
@@ -14,13 +15,16 @@ export interface LlmProviderSetup {
     name: string;
     provider: string;
     apiKey: string;
+    /** Base URL for self-hosted providers (e.g. Ollama). */
+    baseUrl?: string;
 }
 
 /** Factory functions for creating provider instances */
-const providerFactories: Record<string, (apiKey: string) => LlmProvider> = {
+const providerFactories: Record<string, (apiKey: string, baseUrl?: string) => LlmProvider> = {
     anthropic: (apiKey) => new AnthropicProvider(apiKey),
     openai: (apiKey) => new OpenAiProvider(apiKey),
-    google: (apiKey) => new GoogleProvider(apiKey)
+    google: (apiKey) => new GoogleProvider(apiKey),
+    ollama: (_apiKey, baseUrl) => new OllamaProvider(baseUrl)
 };
 
 /** Cache of instantiated providers by their config ID */
@@ -73,7 +77,7 @@ export function getProvider(providerId?: string): LlmProvider {
         throw new Error(`Unknown LLM provider type: ${config.provider}. Available: ${Object.keys(providerFactories).join(", ")}`);
     }
 
-    const provider = factory(config.apiKey);
+    const provider = factory(config.apiKey, config.baseUrl);
     cachedProviders[config.id] = provider;
     return provider;
 }
@@ -102,7 +106,7 @@ export function hasConfiguredProviders(): boolean {
 /**
  * Get all models from all configured providers, tagged with their provider type.
  */
-export function getAllModels(): ModelInfo[] {
+export async function getAllModels(): Promise<ModelInfo[]> {
     const configs = getConfiguredProviders();
     const seenProviderTypes = new Set<string>();
     const allModels: ModelInfo[] = [];
@@ -116,6 +120,12 @@ export function getAllModels(): ModelInfo[] {
 
         try {
             const provider = getProvider(config.id);
+
+            // Ollama needs to fetch models from the running instance
+            if (provider instanceof OllamaProvider) {
+                await provider.loadModels();
+            }
+
             const models = provider.getAvailableModels();
             for (const model of models) {
                 allModels.push({ ...model, provider: config.provider });
