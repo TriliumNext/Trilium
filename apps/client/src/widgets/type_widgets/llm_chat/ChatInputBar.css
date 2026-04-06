@@ -258,4 +258,8 @@
     max-height: 300px;
     overflow: auto;
     margin-bottom: 2px;
+    background-color: var(--main-background-color);
+    border: 1px solid var(--main-border-color);
+    border-radius: 6px;
+    z-index: 2000;
 }
