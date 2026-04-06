@@ -253,7 +253,12 @@ export const noteTools = defineTools({
                 return { error: "Note is protected and cannot be renamed" };
             }
 
-            note.title = newTitle;
+            const trimmedTitle = newTitle.trim();
+            if (!trimmedTitle) {
+                return { error: "Title cannot be empty" };
+            }
+
+            note.title = trimmedTitle;
             note.save();
 
             return {

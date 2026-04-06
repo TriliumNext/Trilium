@@ -10,7 +10,6 @@ import yaml from "js-yaml";
 
 import becca from "../../../becca/becca.js";
 import optionService from "../../options.js";
-import markdownExport from "../../export/markdown.js";
 import { getSkillsSummary } from "../skills/index.js";
 import { getContentPreview, getNoteMeta, SYSTEM_PROMPT_LIMITS } from "../tools/helpers.js";
 import { allToolRegistries } from "../tools/index.js";
@@ -75,20 +74,21 @@ function buildKnowledgeBaseSources(sourceNoteIds: string[]): string | null {
             entry += `\nChild notes: ${childNotes.map(c => `${c.getTitleOrProtected()} (${c.noteId})`).join(", ")}`;
         }
         if (preview) {
-            // Use a longer preview for KB sources than the default 500 chars
-            const extendedPreview = preview.length >= 490
-                ? (() => {
-                    const full = note.isContentAvailable() ? (() => {
-                        const content = note.getContent();
-                        if (typeof content !== "string") return preview;
-                        if (note.type === "text") {
-                            return markdownExport.toMarkdown(content);
-                        }
-                        return content;
-                    })() : preview;
-                    return full.length > KB_PREVIEW_MAX ? `${full.slice(0, KB_PREVIEW_MAX)}…` : full;
-                })()
-                : preview;
+            // Use a longer preview for KB sources than the default 500 chars.
+            // For text notes, strip HTML tags directly instead of running a full
+            // markdown conversion — this is much cheaper for large documents.
+            let extendedPreview = preview;
+            if (preview.length >= 490 && note.isContentAvailable()) {
+                const content = note.getContent();
+                if (typeof content === "string") {
+                    const plain = note.type === "text"
+                        ? content.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+                        : content;
+                    extendedPreview = plain.length > KB_PREVIEW_MAX
+                        ? `${plain.slice(0, KB_PREVIEW_MAX)}…`
+                        : plain;
+                }
+            }
             entry += `\n\n${extendedPreview}`;
         }
         sources.push(entry);
