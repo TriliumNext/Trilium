@@ -238,11 +238,24 @@
     cursor: not-allowed;
 }
 
-.llm-chat-kb-sources .note-autocomplete-container {
-    margin-top: 0.25rem;
-}
-
 .llm-chat-kb-sources .note-autocomplete-container input {
     font-size: 0.8rem;
     padding: 0.25rem 0.5rem;
+}
+
+/* Position the autocomplete dropdown above the input */
+.llm-chat-kb-autocomplete-wrapper {
+    position: relative;
+    margin-top: 0.25rem;
+}
+
+.llm-chat-kb-autocomplete-wrapper .aa-dropdown-menu {
+    position: absolute !important;
+    bottom: 100% !important;
+    top: auto !important;
+    left: 0;
+    right: 0;
+    max-height: 300px;
+    overflow: auto;
+    margin-bottom: 2px;
 }

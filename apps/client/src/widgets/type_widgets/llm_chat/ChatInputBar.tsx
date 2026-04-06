@@ -1,7 +1,7 @@
 import "./ChatInputBar.css";
 
 import type { RefObject } from "preact";
-import { useState, useCallback, useEffect } from "preact/hooks";
+import { useState, useCallback, useEffect, useRef } from "preact/hooks";
 
 import { t } from "../../../services/i18n.js";
 import ActionButton from "../../react/ActionButton.js";
@@ -100,6 +100,7 @@ export default function ChatInputBar({
 
     const [sourceTitles, setSourceTitles] = useState<Record<string, string>>({});
     const [kbPanelOpen, setKbPanelOpen] = useState(chat.sourceNoteIds.length > 0);
+    const kbContainerRef = useRef<HTMLDivElement>(null);
 
     // Open KB panel when sources are loaded from saved content
     useEffect(() => {
@@ -200,10 +201,13 @@ export default function ChatInputBar({
                             </span>
                         ))}
                     </div>
-                    <NoteAutocomplete
-                        placeholder={t("llm_chat.knowledge_base_add")}
-                        noteIdChanged={handleAddSourceNote}
-                    />
+                    <div className="llm-chat-kb-autocomplete-wrapper" ref={kbContainerRef}>
+                        <NoteAutocomplete
+                            placeholder={t("llm_chat.knowledge_base_add")}
+                            noteIdChanged={handleAddSourceNote}
+                            container={kbContainerRef}
+                        />
+                    </div>
                 </div>
             )}
             <div className="llm-chat-options">
