@@ -9,8 +9,12 @@ import markdownImport from "../../import/markdown.js";
 import noteService from "../../notes.js";
 import SearchContext from "../../search/search_context.js";
 import searchService from "../../search/services/search.js";
+import TaskContext from "../../task_context.js";
 import { TOOL_LIMITS, getContentPreview, getNoteContentForLlm, getNoteMeta, setNoteContentFromLlm } from "./helpers.js";
 import { defineTools } from "./tool_registry.js";
+
+/** Note IDs that must not be deleted or moved by the LLM. */
+const PROTECTED_SYSTEM_NOTES = new Set(["root", "_hidden", "_share", "_lbRoot", "_globalNoteMap"]);
 
 export const noteTools = defineTools({
     search_notes: {
@@ -230,6 +234,64 @@ export const noteTools = defineTools({
             } catch (err) {
                 return { error: err instanceof Error ? err.message : "Failed to create note" };
             }
+        }
+    },
+
+    rename_note: {
+        description: "Change the title of an existing note.",
+        inputSchema: z.object({
+            noteId: z.string().describe("The ID of the note to rename"),
+            newTitle: z.string().describe("The new title for the note")
+        }),
+        mutates: true,
+        execute: ({ noteId, newTitle }) => {
+            const note = becca.getNote(noteId);
+            if (!note) {
+                return { error: "Note not found" };
+            }
+            if (note.isProtected) {
+                return { error: "Note is protected and cannot be renamed" };
+            }
+
+            note.title = newTitle;
+            note.save();
+
+            return {
+                success: true,
+                noteId: note.noteId,
+                title: note.getTitleOrProtected()
+            };
+        }
+    },
+
+    delete_note: {
+        description: "Delete a note and all its branches (parent links). This is irreversible. The note will be marked as deleted. Cannot delete system notes (root, _hidden, etc.).",
+        inputSchema: z.object({
+            noteId: z.string().describe("The ID of the note to delete")
+        }),
+        mutates: true,
+        execute: ({ noteId }) => {
+            if (PROTECTED_SYSTEM_NOTES.has(noteId)) {
+                return { error: "Cannot delete system notes" };
+            }
+
+            const note = becca.getNote(noteId);
+            if (!note) {
+                return { error: "Note not found" };
+            }
+            if (note.isProtected) {
+                return { error: "Note is protected and cannot be deleted" };
+            }
+
+            const title = note.getTitleOrProtected();
+            const taskContext = new TaskContext("no-progress-reporting", "deleteNotes", null);
+            note.deleteNote(null, taskContext);
+
+            return {
+                success: true,
+                noteId,
+                deletedTitle: title
+            };
         }
     }
 });
