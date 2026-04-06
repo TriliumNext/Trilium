@@ -1,24 +1,45 @@
-<p>Starting with version v0.102.0, AI/LLM integration has been removed from
-  the Trilium Notes core.</p>
-<p>While a significant amount of effort went into developing this feature,
-  maintaining and supporting it long-term proved to be unsustainable.</p>
-<p>When upgrading to v0.102.0, your Chat notes will be preserved, but instead
-  of the dedicated chat window they will be turned to a normal&nbsp;<a class="reference-link"
-  href="#root/_help_6f9hih2hXXZk">Code</a>&nbsp;note, revealing the underlying
-  JSON of the conversation.</p>
-<h2>Alternative solutions (MCP)</h2>
-<p>Given the recent advancements of the AI scene, MCP has grown to be more
-  powerful and facilitates easier integrations with various application.</p>
-<p>As such, there are third-party solutions that integrate an MCP server
-  that can be used with Trilium:</p>
+<p>Trilium includes a built-in <strong>AI Chat</strong> that lets you interact
+  with large language models (LLMs) directly within your notes.</p>
+
+<h2>Getting started</h2>
+<ol>
+  <li>Go to <strong>Options → AI / LLM</strong> and add a provider (e.g.
+    OpenAI, Anthropic, Google, Ollama).</li>
+  <li>Create a new note and set its type to <strong>AI Chat</strong>, or open
+    an existing chat from the <strong>AI Chat</strong> section in the note
+    tree.</li>
+  <li>Select a model from the dropdown and start chatting.</li>
+</ol>
+
+<h2>Features</h2>
 <ul>
-  <li><a href="https://github.com/tan-yong-sheng/triliumnext-mcp">tan-yong-sheng/triliumnext-mcp</a>
-  </li>
-  <li><a href="https://github.com/perfectra1n/triliumnext-mcp">perfectra1n/triliumnext-mcp</a>
-  </li>
+  <li><strong>Multiple providers</strong> — OpenAI, Anthropic, Google Gemini,
+    and Ollama (local models) are supported.</li>
+  <li><strong>Streaming responses</strong> — replies appear word by word in
+    real time.</li>
+  <li><strong>Note tools</strong> — the AI can search, read, create, and
+    modify your notes when enabled.</li>
+  <li><strong>Web search</strong> — the AI can search the web for up-to-date
+    information.</li>
+  <li><strong>Extended thinking</strong> — for supported models (Anthropic),
+    enables deeper reasoning with a visible thought process.</li>
+  <li><strong>Knowledge Base</strong> — select notes as primary sources and
+    the AI will answer based on their content. See the
+    <a class="reference-link" href="#root/_help_KBdoc00000001">Knowledge Base</a>
+    page for details.</li>
+  <li><strong>Note context</strong> — attach the currently viewed note as
+    context for more relevant answers.</li>
 </ul>
-<aside class="admonition important">
-  <p>These solutions are third-party and thus not endorsed or supported directly
-    by the Trilium Notes team. Please address questions and issues on their
-    corresponding repository instead.</p>
-</aside>
+
+<h2>Chat options</h2>
+<p>The model selector dropdown includes several toggles:</p>
+<ul>
+  <li><strong>Web search</strong> (globe icon) — enables web search
+    tool.</li>
+  <li><strong>Note access</strong> (note icon) — enables tools for reading
+    and modifying notes.</li>
+  <li><strong>Extended thinking</strong> (brain icon) — enables extended
+    reasoning (Anthropic models only).</li>
+  <li><strong>Knowledge Base</strong> (book icon) — opens the source
+    selection panel for knowledge-base mode.</li>
+</ul>

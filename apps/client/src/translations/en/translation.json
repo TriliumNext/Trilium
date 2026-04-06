@@ -1641,6 +1641,10 @@
     "sources": "Sources",
     "sources_summary": "{{count}} sources from {{sites}} sites",
     "extended_thinking": "Extended thinking",
+    "knowledge_base": "Knowledge base",
+    "knowledge_base_sources": "Knowledge base sources",
+    "knowledge_base_add": "Add a note as source...",
+    "knowledge_base_remove": "Remove source",
     "legacy_models": "Legacy models",
     "thinking": "Thinking...",
     "thought_process": "Thought process",
@@ -1649,6 +1653,11 @@
     "result": "Result",
     "error": "Error",
     "tool_error": "failed",
+    "approve": "Approve",
+    "reject": "Reject",
+    "pending_approval": "This action requires your approval",
+    "rejected_by_user": "Rejected by user",
+    "stop": "Stop",
     "total_tokens": "{{total}} tokens",
     "tokens_detail": "{{prompt}} prompt + {{completion}} completion",
     "tokens_used": "{{prompt}} prompt + {{completion}} completion = {{total}} tokens",
@@ -1660,7 +1669,8 @@
     "note_context_enabled": "Click to disable note context: {{title}}",
     "note_context_disabled": "Click to include current note in context",
     "no_provider_message": "No AI provider configured. Add one to start chatting.",
-    "add_provider": "Add AI Provider"
+    "add_provider": "Add AI Provider",
+    "free": "Free"
   },
   "sidebar_chat": {
     "title": "AI Chat",
@@ -2335,7 +2345,19 @@
     "delete_provider_confirmation": "Are you sure you want to delete the provider \"{{name}}\"?",
     "api_key": "API Key",
     "api_key_placeholder": "Enter your API key",
+    "base_url": "Base URL",
     "cancel": "Cancel",
+    "web_search_title": "Web Search Engine",
+    "web_search_description": "Choose which search engine the AI agent uses for web searches. Provider default uses the built-in search of each LLM provider (Anthropic, OpenAI, Google). Tavily and SearXNG work with all providers including Ollama.",
+    "web_search_engine": "Search engine",
+    "web_search_engine_description": "Select the search engine to use for AI web searches",
+    "web_search_provider_default": "Provider default (built-in)",
+    "tavily_api_key": "Tavily API key",
+    "tavily_api_key_description": "Get a free API key at tavily.com (1,000 searches/month free)",
+    "searxng_url": "SearXNG instance URL",
+    "searxng_url_description": "URL of your self-hosted SearXNG instance",
+    "search_timeout": "Search timeout (seconds)",
+    "search_timeout_description": "Maximum time to wait for web search results before timing out",
     "mcp_title": "MCP (Model Context Protocol)",
     "mcp_enabled": "MCP server",
     "mcp_enabled_description": "Expose a Model Context Protocol (MCP) endpoint so that AI coding assistants (e.g. Claude Code, GitHub Copilot) can read and modify your notes. The endpoint is only accessible from localhost.",
@@ -2358,7 +2380,11 @@
       "web_search": "Web search",
       "note_in_parent": "<Note/> in <Parent/>",
       "get_attachment": "Get attachment",
-      "get_attachment_content": "Read attachment content"
+      "get_attachment_content": "Read attachment content",
+      "rename_note": "Rename note",
+      "delete_note": "Delete note",
+      "move_note": "Move note",
+      "clone_note": "Clone note"
     }
   }
 }
