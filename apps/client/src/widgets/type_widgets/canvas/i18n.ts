@@ -4,6 +4,7 @@ import type { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 export const LANGUAGE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, Language["code"] | null> = {
     ar: "ar-SA",
     cn: "zh-CN",
+    cs: "cs-CZ",
     de: "de-DE",
     en: "en",
     "en-GB": "en",

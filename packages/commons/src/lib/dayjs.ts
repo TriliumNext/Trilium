@@ -34,6 +34,7 @@ dayjs.extend(utc);
 export const DAYJS_LOADER: Record<LOCALE_IDS, () => Promise<typeof import("dayjs/locale/en.js")>> = {
     "ar": () => import("dayjs/locale/ar.js"),
     "cn": () => import("dayjs/locale/zh-cn.js"),
+    "cs": () => import("dayjs/locale/cs.js"),
     "de": () => import("dayjs/locale/de.js"),
     "en": () => import("dayjs/locale/en.js"),
     "en-GB": () => import("dayjs/locale/en-gb.js"),

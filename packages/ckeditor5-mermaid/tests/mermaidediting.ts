@@ -1,8 +1,6 @@
-import { ClassicEditor, Essentials, Paragraph, Heading, CodeBlockEditing, _setModelData as setModelData, _getModelData as getModelData, _getViewData as getViewData } from 'ckeditor5';
+import { ClassicEditor, Essentials, Paragraph, Heading, CodeBlockEditing, ViewElement, _setModelData as setModelData, _getModelData as getModelData, _getViewData as getViewData } from 'ckeditor5';
 import MermaidEditing from '../src/mermaidediting.js';
-import { afterEach, beforeEach, describe, it } from 'vitest';
-import { expect } from 'vitest';
-import { vi } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi, type MockInstance } from 'vitest';
 
 /* global document */
 
@@ -12,7 +10,7 @@ describe( 'MermaidEditing', () => {
 	} );
 
 	describe( 'conversion', () => {
-		let domElement, editor, model;
+		let domElement: HTMLDivElement, editor: ClassicEditor, model: ClassicEditor['model'];
 
 		beforeEach( async () => {
 			domElement = document.createElement( 'div' );
@@ -154,7 +152,7 @@ describe( 'MermaidEditing', () => {
 				} );
 
 				describe( 'textarea value', () => {
-					let domTextarea = null;
+					let domTextarea: HTMLTextAreaElement;
 
 					beforeEach( () => {
 						// Using editor.setData() instead of setModelData helper because of #11365.
@@ -164,8 +162,8 @@ describe( 'MermaidEditing', () => {
 							'</pre>'
 						);
 
-						const textareaView = editor.editing.view.document.getRoot().getChild( 0 ).getChild( 1 );
-						domTextarea = editor.editing.view.domConverter.viewToDom( textareaView );
+						const textareaView = editor.editing.view.document.getRoot()!.getChild( 0 )! as ViewElement;
+						domTextarea = editor.editing.view.domConverter.viewToDom( textareaView.getChild( 1 )! ) as HTMLTextAreaElement;
 					} );
 
 					it( 'is properly set during the initial conversion', () => {
@@ -175,7 +173,7 @@ describe( 'MermaidEditing', () => {
 					it( 'is properly updated after model\'s attribute change', () => {
 						const { model } = editor;
 
-						const mermaidModel = model.document.getRoot().getChild( 0 );
+						const mermaidModel = model.document.getRoot()!.getChild( 0 )!;
 
 						model.change( writer => {
 							writer.setAttribute( 'source', 'abc', mermaidModel );
@@ -187,7 +185,7 @@ describe( 'MermaidEditing', () => {
 					it( 'doesn\'t loop if model attribute changes to the same value', () => {
 						const { model } = editor;
 
-						const mermaidModel = model.document.getRoot().getChild( 0 );
+						const mermaidModel = model.document.getRoot()!.getChild( 0 )!;
 
 						model.change( writer => {
 							writer.setAttribute( 'source', 'flowchart TB\nA --> B\nB --> C', mermaidModel );
@@ -198,9 +196,12 @@ describe( 'MermaidEditing', () => {
 				} );
 
 				describe( 'preview div', () => {
-					let domPreviewContainer, renderMermaidStub;
+					let domPreviewContainer: HTMLElement;
+					let renderMermaidStub: MockInstance;
 
 					beforeEach( () => {
+						renderMermaidStub = vi.spyOn( editor.plugins.get( 'MermaidEditing' ) as unknown as MermaidEditing, '_renderMermaid' );
+
 						// Using editor.setData() instead of setModelData helper because of #11365.
 						editor.setData(
 							'<pre spellcheck="false">' +
@@ -208,42 +209,31 @@ describe( 'MermaidEditing', () => {
 							'</pre>'
 						);
 
-						const previewContainerView = editor.editing.view.document.getRoot().getChild( 0 ).getChild( 2 );
-						domPreviewContainer = editor.editing.view.domConverter.viewToDom( previewContainerView );
-
-						renderMermaidStub = vi.spyOn( editor.plugins.get( 'MermaidEditing' ), '_renderMermaid' );
+						const wrapperView = editor.editing.view.document.getRoot()!.getChild( 0 )! as ViewElement;
+						const previewContainerView = wrapperView.getChild( 2 )!;
+						domPreviewContainer = editor.editing.view.domConverter.viewToDom( previewContainerView ) as HTMLElement;
 					} );
 
 					afterEach( () => {
 						vi.clearAllMocks();
 					} );
 
-					it( 'has proper inner text set during the initial conversion', () => {
-						expect( domPreviewContainer.textContent ).to.equal( 'flowchart TB\nA --> B\nB --> C' );
+					it( 'calls render with source during the initial conversion', () => {
+						expect( renderMermaidStub ).toBeCalledWith( domPreviewContainer, 'flowchart TB\nA --> B\nB --> C' );
 					} );
 
-					it( 'has proper inner text set after a model\'s attribute change', () => {
+					it( 'calls render with updated source after a model\'s attribute change', () => {
 						const { model } = editor;
 
-						const mermaidModel = model.document.getRoot().getChild( 0 );
+						renderMermaidStub.mockClear();
+
+						const mermaidModel = model.document.getRoot()!.getChild( 0 )!;
 
 						model.change( writer => {
 							writer.setAttribute( 'source', 'abc', mermaidModel );
 						} );
 
-						expect( domPreviewContainer.textContent ).to.equal( 'abc' );
-					} );
-
-					it( 'calls mermaid render function after a model\'s attribute change', () => {
-						const { model } = editor;
-
-						const mermaidModel = model.document.getRoot().getChild( 0 );
-
-						model.change( writer => {
-							writer.setAttribute( 'source', 'abc', mermaidModel );
-						} );
-
-						expect(renderMermaidStub).toBeCalledWith(domPreviewContainer);
+						expect( renderMermaidStub ).toBeCalledWith( domPreviewContainer, 'abc' );
 					} );
 				} );
 			} );
@@ -251,7 +241,7 @@ describe( 'MermaidEditing', () => {
 			it( 'adds a editing pipeline converter that has a precedence over code block', () => {
 				setModelData( editor.model, '<mermaid source="foo"></mermaid>' );
 
-				const firstViewChild = editor.editing.view.document.getRoot().getChild( 0 );
+				const firstViewChild = editor.editing.view.document.getRoot()!.getChild( 0 ) as ViewElement;
 
 				expect( firstViewChild.name ).to.equal( 'div' );
 				expect( firstViewChild.hasClass( 'ck-mermaid__wrapper' ), 'has ck-mermaid__wrapper class' ).to.be.true;
@@ -260,7 +250,7 @@ describe( 'MermaidEditing', () => {
 			it( 'does not convert code blocks other than mermaid language', () => {
 				setModelData( editor.model, '<codeBlock language="javascript">foo</codeBlock>' );
 
-				const firstViewChild = editor.editing.view.document.getRoot().getChild( 0 );
+				const firstViewChild = editor.editing.view.document.getRoot()!.getChild( 0 ) as ViewElement;
 
 				expect( firstViewChild.name ).not.to.equal( 'div' );
 				expect( firstViewChild.hasClass( 'ck-mermaid__wrapper' ), 'has ck-mermaid__wrapper class' ).to.be.false;
@@ -269,7 +259,8 @@ describe( 'MermaidEditing', () => {
 			it( 'adds a preview element', () => {
 				setModelData( editor.model, '<mermaid source="foo"></mermaid>' );
 
-				const widgetChildren = [ ...editor.editing.view.document.getRoot().getChild( 0 ).getChildren() ];
+				const widget = editor.editing.view.document.getRoot()!.getChild( 0 ) as ViewElement;
+				const widgetChildren = [ ...widget.getChildren() ] as ViewElement[];
 				const previewView = widgetChildren.filter( item => item.name === 'div' && item.hasClass( 'ck-mermaid__preview' ) );
 
 				expect( previewView.length ).to.equal( 1 );
@@ -278,7 +269,8 @@ describe( 'MermaidEditing', () => {
 			it( 'adds an editing element', () => {
 				setModelData( editor.model, '<mermaid source="foo"></mermaid>' );
 
-				const widgetChildren = [ ...editor.editing.view.document.getRoot().getChild( 0 ).getChildren() ];
+				const widget = editor.editing.view.document.getRoot()!.getChild( 0 ) as ViewElement;
+				const widgetChildren = [ ...widget.getChildren() ] as ViewElement[];
 				const previewView = widgetChildren.filter(
 					item => item.name === 'textarea' && item.hasClass( 'ck-mermaid__editing-view' )
 				);

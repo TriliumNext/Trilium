@@ -2265,7 +2265,8 @@
     "note_context_enabled": "クリックしてノートのコンテキストを無効にする: {{title}}",
     "note_context_disabled": "クリックして現在のノートをコンテキストに含める",
     "no_provider_message": "AI プロバイダーが設定されていません。チャットを開始するには、プロバイダーを追加してください。",
-    "add_provider": "AI プロバイダーを追加"
+    "add_provider": "AI プロバイダーを追加",
+    "sources_summary": "{{count}} 件のソースを {{sites}} サイトから取得"
   },
   "sidebar_chat": {
     "title": "AI チャット",
@@ -2305,7 +2306,32 @@
     "delete_provider_confirmation": "プロバイダー \"{{name}}\" を削除してもよろしいですか？",
     "api_key": "API キー",
     "api_key_placeholder": "API キーを入力してください",
-    "cancel": "キャンセル"
+    "cancel": "キャンセル",
+    "feature_not_enabled": "AI 連携機能を使用するには、「設定」→「高度」→「実験的機能」で LLM 実験的機能を有効にしてください。",
+    "mcp_title": "MCP（モデル コンテキスト プロトコル）",
+    "mcp_enabled": "MCP サーバー",
+    "mcp_enabled_description": "AI コーディングアシスタント（例：Claude Code、GitHub Copilot）がノートを読み取って変更できるように、モデルコンテキストプロトコル（MCP）エンドポイントを公開します。このエンドポイントは localhost からのみアクセス可能です。",
+    "mcp_endpoint_title": "エンドポイント URL",
+    "mcp_endpoint_description": "この URL を AI アシスタントの MCP 設定に追加してください",
+    "tools": {
+      "search_notes": "ノートを検索",
+      "get_note": "ノートを取得",
+      "get_note_content": "ノートの内容を取得",
+      "update_note_content": "ノートの内容を更新",
+      "append_to_note": "ノートに追記",
+      "create_note": "ノートを作成",
+      "get_attributes": "複数の属性を取得",
+      "get_attribute": "属性を取得",
+      "set_attribute": "属性を設定",
+      "delete_attribute": "属性を削除",
+      "get_child_notes": "子ノートを取得",
+      "get_subtree": "サブツリーを取得",
+      "load_skill": "スキルを読み込む",
+      "web_search": "Web 検索",
+      "note_in_parent": "<Note/> を <Parent/>",
+      "get_attachment": "添付ファイルを取得",
+      "get_attachment_content": "添付ファイルの内容を読み取る"
+    }
   },
   "ocr": {
     "extracted_text": "抽出されたテキスト（OCR）",

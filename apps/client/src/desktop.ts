@@ -54,7 +54,7 @@ function initOnElectron() {
     const currentWindow = electronRemote.getCurrentWindow();
     const style = window.getComputedStyle(document.body);
 
-    initDarkOrLightMode(style);
+    initDarkOrLightMode();
     initTransparencyEffects(style, currentWindow);
     initFullScreenDetection(currentWindow);
 
@@ -119,11 +119,11 @@ function initTransparencyEffects(style: CSSStyleDeclaration, currentWindow: Elec
  *
  * @param style the root CSS element to read variables from.
  */
-function initDarkOrLightMode(style: CSSStyleDeclaration) {
+function initDarkOrLightMode() {
     let themeSource: typeof nativeTheme.themeSource = "system";
 
-    const themeStyle = style.getPropertyValue("--theme-style");
-    if (style.getPropertyValue("--theme-style-auto") !== "true" && (themeStyle === "light" || themeStyle === "dark")) {
+    const themeStyle = window.glob.getThemeStyle();
+    if (themeStyle !== "auto") {
         themeSource = themeStyle;
     }
 

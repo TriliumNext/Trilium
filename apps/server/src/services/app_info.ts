@@ -6,7 +6,7 @@ import build from "./build.js";
 import dataDir from "./data_dir.js";
 
 const APP_DB_VERSION = 236;
-const SYNC_VERSION = 37;
+const SYNC_VERSION = 38;
 const CLIPPER_PROTOCOL_VERSION = "1.0";
 
 export default {

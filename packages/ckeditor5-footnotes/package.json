@@ -17,12 +17,7 @@
     "node": ">=18.0.0",
     "npm": ">=5.7.1"
   },
-  "files": [
-    "dist",
-    "ckeditor5-metadata.json"
-  ],
   "devDependencies": {
-    "@ckeditor/ckeditor5-dev-build-tools": "55.3.1",
     "@ckeditor/ckeditor5-inspector": ">=4.1.0",
     "@typescript-eslint/eslint-plugin": "8.58.0",
     "@typescript-eslint/parser": "8.58.0",
@@ -42,9 +37,6 @@
     "ckeditor5": "48.0.0"
   },
   "scripts": {
-    "build": "node ./scripts/build-dist.mjs",
-    "ts:build": "tsc -p ./tsconfig.release.json",
-    "ts:clear": "npx rimraf --glob \"src/**/*.@(js|d.ts)\"",
     "lint": "eslint \"**/*.{js,ts}\" --quiet",
     "stylelint": "stylelint --quiet --allow-empty-input 'theme/**/*.css'",
     "test": "vitest",

@@ -198,7 +198,8 @@
     "december": "十二月"
   },
   "special_notes": {
-    "search_prefix": "搜尋："
+    "search_prefix": "搜尋：",
+    "llm_chat_prefix": "對話："
   },
   "test_sync": {
     "not-configured": "尚未設定同步伺服器主機，請先設定同步。",
@@ -340,7 +341,7 @@
     "shortcuts-title": "快捷鍵",
     "text-notes": "文字筆記",
     "code-notes-title": "程式碼筆記",
-    "images-title": "圖片",
+    "images-title": "媒體",
     "spellcheck-title": "拼寫檢查",
     "password-title": "密碼",
     "multi-factor-authentication-title": "多重身份驗證",
@@ -355,7 +356,10 @@
     "inbox-title": "收件匣",
     "command-palette": "打開命令面板",
     "zen-mode": "禪模式",
-    "tab-switcher-title": "切換分頁"
+    "tab-switcher-title": "切換分頁",
+    "llm-chat-history-title": "AI 對話歷史",
+    "llm-title": "AI / LLM",
+    "sidebar-chat-title": "AI 對話"
   },
   "notes": {
     "new-note": "新增筆記",

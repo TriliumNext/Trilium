@@ -25,6 +25,11 @@ const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, LocaleMapping | null> = {
         coreTranslation: () => import("ckeditor5/translations/zh-cn.js"),
         premiumFeaturesTranslation: () => import("ckeditor5-premium-features/translations/zh-cn.js"),
     },
+    cs: {
+        languageCode: "cs",
+        coreTranslation: () => import("ckeditor5/translations/cs.js"),
+        premiumFeaturesTranslation: () => import("ckeditor5-premium-features/translations/cs.js"),
+    },
     de: {
         languageCode: "de",
         coreTranslation: () => import("ckeditor5/translations/de.js"),

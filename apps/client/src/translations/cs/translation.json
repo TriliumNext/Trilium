@@ -22,7 +22,16 @@
     "bundle-error": {
       "title": "Načtení uživatelského skriptu selhalo",
       "message": "Uživatelský skript z poznámky s ID \"{{id}}\" a názvem \"{{title}}\" nemohl být spuštěn z důvodu: \n\n{{message}}"
-    }
+    },
+    "widget-list-error": {
+      "title": "Nepodařilo se získat seznam widgetů ze serveru"
+    },
+    "widget-render-error": {
+      "title": "Nepodařilo se vykreslit vlastní React widget"
+    },
+    "widget-missing-parent": "Vlastní widget nemá definovanou povinnou vlastnost '{{property}}'.",
+    "open-script-note": "Otevřít poznámku se skriptem",
+    "scripting-error": "Chyba vlastního skriptu: {{title}}"
   },
   "add_link": {
     "add_link": "Přidat odkaz",
@@ -113,6 +122,2215 @@
   "zpetne_odkazy": {
     "backlink_one": "{{count}} zpětný odkaz",
     "backlink_few": "{{count}} zpětné odkazy",
-    "backlink_other": "{{count}} zpětných odkazů"
+    "backlink_other": "{{count}} zpětných odkazů",
+    "relation": "vazba"
+  },
+  "help": {
+    "title": "Rychlý přehled",
+    "editShortcuts": "Upravit klávesové zkratky",
+    "noteNavigation": "Navigace v poznámkách",
+    "goUpDown": "posunout nahoru/dolů v seznamu poznámek",
+    "collapseExpand": "sbalit/rozbalit uzel",
+    "notSet": "nenastaveno",
+    "goBackForwards": "jít zpět / vpřed v historii",
+    "showJumpToNoteDialog": "zobrazit <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">dialog „Přejít na“</a>",
+    "scrollToActiveNote": "posunout na aktivní poznámku",
+    "jumpToParentNote": "přejít na nadřazenou poznámku",
+    "collapseWholeTree": "sbalit celý strom poznámek",
+    "collapseSubTree": "sbalit podstrom",
+    "tabShortcuts": "Klávesové zkratky záložek",
+    "newTabNoteLink": "kliknutí na odkaz na poznámku otevře poznámku v nové záložce",
+    "newTabWithActivationNoteLink": "kliknutí na odkaz na poznámku otevře a aktivuje poznámku v nové záložce",
+    "onlyInDesktop": "Pouze na počítači (Electron build)",
+    "openEmptyTab": "otevřít prázdnou záložku",
+    "closeActiveTab": "zavřít aktivní záložku",
+    "activateNextTab": "aktivovat další záložku",
+    "activatePreviousTab": "aktivovat předchozí záložku",
+    "creatingNotes": "Vytváření poznámek",
+    "createNoteAfter": "vytvořit novou poznámku za aktivní poznámkou",
+    "createNoteInto": "vytvořit novou podpoznámku v aktivní poznámce",
+    "editBranchPrefix": "upravit <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/tree-concepts.html#prefix\">předponu</a> klonu aktivní poznámky",
+    "movingCloningNotes": "Přesouvání / klonování poznámtek",
+    "moveNoteUpDown": "přesunout poznámku nahoru/dolů v seznamu poznámek",
+    "moveNoteUpHierarchy": "přesunout poznámku výše v hierarchii",
+    "multiSelectNote": "vybrat více poznámek nad/pod",
+    "selectAllNotes": "vybrat všechny poznámky v aktuální úrovni",
+    "selectNote": "vybrat poznámku",
+    "copyNotes": "kopírovat aktivní poznámku (nebo aktuální výběr) do schránky (používá se pro <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/cloning-notes.html#cloning-notes\">klonování</a>)",
+    "cutNotes": "vyříznout aktuální poznámky (nebo aktuální výběr) do schránky (používá se pro přesouvání poznámek)",
+    "pasteNotes": "vložit poznámku/poznámky jako podpoznámku do aktivní poznámky (což je buď přesun nebo klonování v závislosti na tom, zda byla do schránky zkopírována nebo vyříznuta)",
+    "deleteNotes": "smazat poznámku / podstrom",
+    "editingNotes": "Upravování poznámek",
+    "editNoteTitle": "V okně stromu přepne z okna stromu do názvu poznámky. Vstup z názvu poznámky přesune fokus do textového editoru. <kbd>Ctrl+.</kbd> přepne z editoru zpět do okna stromu.",
+    "createEditLink": "vytvořit / upravit externí odkaz",
+    "createInternalLink": "vytvořit interní odkaz",
+    "followLink": "sledovat odkaz pod kurzorem",
+    "insertDateTime": "vložit aktuální datum a čas na pozici kurzoru",
+    "jumpToTreePane": "přeskočit do okna stromu a posunout se k aktivní poznámce",
+    "markdownAutoformat": "Automatické formátování podobné ⟨Markdown⟩",
+    "headings": "<code>##</code>, <code>###</code>, <code>####</code>  následované mezerou pro nadpisy",
+    "bulletList": "<code>*</code> nebo <code>-</code> následované mezerou pro odrážky",
+    "numberedList": "<code>1.</code> nebo <code>1)</code> následované mezerou pro číslovaný seznam",
+    "blockQuote": "začněte řádek <code>></code> následovaný mezerou pro blok citace",
+    "troubleshooting": "Řešení problémů",
+    "reloadFrontend": "znovu načíst ⟨Trilium⟩ ⟨frontend⟩",
+    "showDevTools": "zobrazit nástroje pro vývojáře",
+    "showSQLConsole": "zobrazit ⟨SQL⟩ konzoli",
+    "other": "Ostatní",
+    "quickSearch": "zaměřit se na rychlé vyhledávání",
+    "inPageSearch": "vyhledávání na stránce"
+  },
+  "import": {
+    "importIntoNote": "Import do poznámky",
+    "chooseImportFile": "Vyberte soubor k importu",
+    "importDescription": "Obsah vybraných souborů bude importován jako dceřiné poznámky do {{name}}",
+    "importZipRecommendation": "Při importu ZIP souboru bude hierarchie poznámek odrážet strukturu podadresářů v archivu.",
+    "options": "Nastavení",
+    "safeImportTooltip": "Exportované soubory Trilium <code>.zip</code> mohou obsahovat spustitelné skripty, které mohou mít škodlivé chování. Bezpečný import deaktivuje automatické spouštění všech importovaných skriptů. Zrušte zaškrtnutí \"Bezpečný import\" pouze v případě, že importovaný archiv má obsahovat spustitelné skripty a plně důvěřujete obsahu importovaného souboru.",
+    "safeImport": "Bezpečný import",
+    "explodeArchivesTooltip": "Pokud je toto zaškrtnuto, Trilium bude číst <code>.zip</code>, <code>.enex</code> a <code>.opml</code> soubory a vytvářet poznámky ze souborů uvnitř těchto archivů. Pokud není zaškrtnuto, Trilium připojí samotné archivy k poznámce.",
+    "explodeArchives": "Číst obsah archivů <code>.zip</code>, <code>.enex</code> a <code>.opml</code>.",
+    "shrinkImagesTooltip": "<p>Pokud zaškrtnete tuto možnost, Trilium se pokusí zmenšit importované obrázky škálováním a optimalizací, což může ovlivnit vnímanou kvalitu obrazu. Pokud není zaškrtnuto, obrázky budou importovány beze změn.</p><p>To se nevztahuje na importy <code>.zip</code> s metadaty, protože se předpokládá, že tyto soubory jsou již optimalizovány.</p>",
+    "shrinkImages": "Zmenšit obrázky",
+    "textImportedAsText": "Importovat HTML, Markdown a TXT jako textové poznámky, pokud to není z metadat zřejmé",
+    "codeImportedAsCode": "Importovat rozpoznané soubory s kódem (např. <code>.json</code>) jako poznámky s kódem, pokud to není z metadat zřejmé",
+    "replaceUnderscoresWithSpaces": "Nahradit podtržítka mezerami v názvech importovaných poznámek",
+    "import": "Import",
+    "failed": "Import selhal: {{message}}.",
+    "html_import_tags": {
+      "title": "HTML Import Tags",
+      "description": "Konfigurujte, které HTML tagy by měly být zachovány při importu poznámek. Tagy, které nejsou v tomto seznamu, budou během importu odstraněny. Některé tagy (jako 'script') jsou vždy odstraněny z bezpečnostních důvodů.",
+      "placeholder": "Zadejte HTML tagy, jeden na řádek",
+      "reset_button": "Obnovit do výchozího seznamu"
+    },
+    "import-status": "Stav importu",
+    "in-progress": "Import probíhá: {{progress}}",
+    "successful": "Import byl úspěšně dokončen."
+  },
+  "include_note": {
+    "dialog_title": "Zahrnout poznámku",
+    "label_note": "Poznámka",
+    "placeholder_search": "Hledat poznámku podle jejího názvu",
+    "box_size_prompt": "Velikost pole zahrnuté poznámky:",
+    "box_size_small": "Malý (~ 10 řádků)",
+    "box_size_medium": "Střední (~ 30 řádků)",
+    "box_size_full": "Úplný (pole zobrazuje kompletní text)",
+    "button_include": "Zahrnout {{note}}"
+  },
+  "info": {
+    "modalTitle": "Informační zpráva",
+    "closeButton": "Zavřít",
+    "okButton": "OK",
+    "copy_to_clipboard": "Kopírovat do {{clipboard}}"
+  },
+  "jump_to_note": {
+    "search_placeholder": "Hledat {{note}} podle jména nebo typu > pro příkazy...",
+    "search_button": "Hledat v celém textu"
+  },
+  "markdown_import": {
+    "dialog_title": "{{Markdown}} import",
+    "modal_body_text": "Kvůli sandboxu prohlížeče není možné přímo číst z {{clipboard}} z {{JavaScript}}. Vložte prosím {{Markdown}} k importu do textového pole níže a klikněte na tlačítko Import.",
+    "import_button": "Import",
+    "import_success": "{{Markdown}} obsah byl importován do dokumentu."
+  },
+  "move_to": {
+    "dialog_title": "Přesunout {{notes}} do ...",
+    "notes_to_move": "Poznámky k přesunu",
+    "target_parent_note": "Cílová nadřazená poznámka",
+    "search_placeholder": "Hledat poznámku podle názvu",
+    "move_button": "Přesunout do vybrané poznámky",
+    "error_no_path": "Nebyla nalezena cesta pro přesun.",
+    "move_success_message": "Vybrané poznámky byly přesunuty do "
+  },
+  "note_type_chooser": {
+    "change_path_prompt": "Změnit, kam se má nová poznámka vytvořit:",
+    "search_placeholder": "Hledat cestu podle názvu (výchozí, pokud je prázdná)",
+    "modal_title": "Vybrat typ poznámky",
+    "modal_body": "Vybrat typ poznámky / šablonu nové poznámky:",
+    "templates": "Šablony",
+    "builtin_templates": "Vestavěné šablony"
+  },
+  "password_not_set": {
+    "title": "Heslo není nastaveno",
+    "body1": "Chráněné poznámky jsou šifrovány pomocí uživatelského hesla, ale heslo zatím nebylo nastaveno.",
+    "body2": "Pro možnost chránit poznámky klikněte na tlačítko níže a otevřete dialog Nastavení a nastavte své heslo.",
+    "go_to_password_options": "Přejít na možnosti hesla"
+  },
+  "prompt": {
+    "title": "Výzva",
+    "ok": "OK",
+    "defaultTitle": "Výzva"
+  },
+  "protected_session_password": {
+    "modal_title": "Chráněná relace",
+    "help_title": "Nápověda k chráněným poznámkám",
+    "close_label": "Zavřít",
+    "form_label": "Pro pokračování požadovanou akcí je třeba spustit chráněnou relaci zadáním hesla:",
+    "start_button": "Spustit chráněnou relaci"
+  },
+  "recent_changes": {
+    "title": "Nedávné změny",
+    "erase_notes_button": "Vymazat smazané poznámky nyní",
+    "deleted_notes_message": "Smazané poznámky byly vymazány.",
+    "no_changes_message": "Zatím žádné změny...",
+    "undelete_link": "obnovit",
+    "confirm_undelete": "Chcete obnovit tuto poznámku a její podpoznámky?"
+  },
+  "revisions": {
+    "note_revisions": "Revize poznámek",
+    "delete_all_revisions": "Smazat všechny revize této poznámky",
+    "delete_all_button": "Smazat všechny revize",
+    "help_title": "Nápověda k revizím poznámek",
+    "confirm_delete_all": "Chcete smazat všechny revize této poznámky?",
+    "no_revisions": "Ještě nejsou žádné revize pro tuto poznámku...",
+    "restore_button": "Obnovit",
+    "diff_on": "Zobrazit rozdíly",
+    "diff_off": "Zobrazit obsah",
+    "diff_on_hint": "Klikněte pro zobrazení rozdílů zdrojového kódu poznámky",
+    "diff_off_hint": "Klikněte pro zobrazení obsahu poznámky",
+    "diff_not_available": "Rozdíly nejsou dostupné.",
+    "confirm_restore": "Chcete obnovit tuto revizi? Tím se přepíše aktuální název a obsah poznámky s touto revizí.",
+    "delete_button": "Smazat",
+    "confirm_delete": "Chcete smazat tuto revizi?",
+    "revisions_deleted": "Revize poznámky byly smazány.",
+    "revision_restored": "Revize poznámky byla obnovena.",
+    "revision_deleted": "Revize poznámky byla smazána.",
+    "snapshot_interval": "Interval snímků revizí poznámky: {{seconds}}s.",
+    "maximum_revisions": "Limit snímků revizí poznámky: {{number}}.",
+    "settings": "Nastavení revizí poznámky",
+    "download_button": "Stáhnout",
+    "mime": "MIME: ",
+    "file_size": "Velikost souboru:",
+    "preview_not_available": "Náhled není dostupný pro tento typ poznámky."
+  },
+  "sort_child_notes": {
+    "sort_children_by": "Seřadit dceřiné podle...",
+    "sorting_criteria": "Kritéria řazení",
+    "title": "název",
+    "date_created": "datum vytvoření",
+    "date_modified": "datum úpravy",
+    "sorting_direction": "Směr řazení",
+    "ascending": "vzestupně",
+    "descending": "sestupně",
+    "folders": "Složky",
+    "sort_folders_at_top": "řadit složky nahoře",
+    "natural_sort": "Přirozené řazení",
+    "sort_with_respect_to_different_character_sorting": "řadit s ohledem na různá pravidla řazení a kolace v různých jazycích nebo oblastech.",
+    "natural_sort_language": "Jazyk přirozeného řazení",
+    "the_language_code_for_natural_sort": "Jazykový kód pro přirozené řazení, např. \"zh-CN\" pro čínštinu.",
+    "sort": "Řazení"
+  },
+  "upload_attachments": {
+    "upload_attachments_to_note": "Nahrát přílohy do poznámky",
+    "choose_files": "Vybrat soubory",
+    "files_will_be_uploaded": "Soubory budou nahrány jako přílohy do {{noteTitle}}",
+    "options": "Nastavení",
+    "shrink_images": "Zmenšit obrázky",
+    "upload": "Nahrát",
+    "tooltip": "Pokud tuto možnost zaškrtnete, Trilium se pokusí zmenšit nahrané obrázky škálováním a optimalizací, což může ovlivnit vnímanou kvalitu obrazu. Pokud není zaškrtnuta, obrázky budou nahrány beze změn."
+  },
+  "attribute_detail": {
+    "attr_detail_title": "Detail Atributu",
+    "close_button_title": "Zrušit změny a zavřít",
+    "attr_is_owned_by": "Atribut je vlastněn",
+    "attr_name_title": "Název atributu může obsahovat pouze alfanumerické znaky, dvojtečku a podtržítko.",
+    "name": "Název",
+    "value": "Hodnota",
+    "target_note_title": "Vazba je pojmenované spojení mezi zdrojovou {{note}} a cílovou {{note}}.",
+    "target_note": "Cílová {{note}}",
+    "promoted_title": "Propagovaný atribut je zobrazen prominentně na {{note}}.",
+    "promoted": "Propagováno",
+    "promoted_alias_title": "Název, který se má zobrazit v uživatelském rozhraní propagovaných atributů.",
+    "promoted_alias": "Alias",
+    "multiplicity_title": "Multiplicita definuje, kolik atributů se stejným názvem lze vytvořit – maximálně 1 nebo více než 1.",
+    "multiplicity": "Množnost",
+    "single_value": "Jedna hodnota",
+    "multi_value": "Více hodnot",
+    "label_type_title": "Typ štítku pomůže Trilium vybrat vhodné rozhraní pro zadání hodnoty štítku.",
+    "label_type": "Typ",
+    "text": "Text",
+    "textarea": "Víceřádkový text",
+    "number": "Číslo",
+    "boolean": "Boolean",
+    "date": "Datum",
+    "date_time": "Datum & Čas",
+    "time": "Čas",
+    "url": "URL",
+    "precision_title": "Kolik desetinných míst by mělo být k dispozici v rozhraní pro nastavení hodnoty.",
+    "precision": "Přesnost",
+    "digits": "číslice",
+    "inverse_relation_title": "Volitelné nastavení pro definování, ke které vazbě je tato inverzní. Příklad: Otec - Syn jsou inverzní vazby k sobě navzájem.",
+    "inverse_relation": "Inverzní vazba",
+    "inheritable_title": "Dědičný atribut bude zděděn všemi potomky pod tímto stromem.",
+    "inheritable": "Dědičný",
+    "save_and_close": "Uložit & zavřít <kbd>Ctrl+Enter</kbd>",
+    "delete": "Smazat",
+    "related_notes_title": "Další poznámky s tímto štítkem",
+    "more_notes": "Další poznámky",
+    "label": "Detail štítku",
+    "label_definition": "Detail definice štítku",
+    "relation": "Detail vazby",
+    "relation_definition": "Detail definice vazby",
+    "disable_versioning": "zakáže automatické verzování. Užitečné například pro velké, ale nepodstatné poznámky - například velké JavaScript knihovny používané pro scripting",
+    "calendar_root": "označí poznámku, která by měla být použita jako kořen pro denní poznámky. Pouze jedna by měla být takto označena.",
+    "archived": "Poznámky s tímto štítkem nebudou ve výchozím nastavení viditelné ve výsledcích vyhledávání (také v dialogových oknech Přeskočit na, Přidat odkaz atd.).",
+    "exclude_from_export": "Poznámky (včetně jejich podstromu) nebudou zahrnuty do žádného exportu poznámek.",
+    "run": "Definuje, při kterých událostech se má skript spustit. Možné hodnoty jsou: <ul> <li>frontendStartup - když se spustí frontend Trilium (nebo se obnoví), ale ne na mobilních zařízeních.</li> <li>mobileStartup - když se spustí frontend Trilium (nebo se obnoví), na mobilních zařízeních.</li> <li>backendStartup - když se spustí backend Trilium.</li> <li>hourly - spustit jednou za hodinu. Můžete použít další štítek <code>runAtHour</code> pro určení hodiny.</li> <li>daily - spustit jednou denně.</li> </ul>",
+    "run_on_instance": "Definujte, na které instanci Trilium se má toto spustit. Ve výchozím nastavení na všech instancích.",
+    "run_at_hour": "V kterou hodinu se má toto spustit. Mělo by se používat společně s <code>#run=hourly</code>. Lze definovat vícekrát pro více spuštění během dne.",
+    "disable_inclusion": "Skripty s tímto štítkem nebudou zahrnuty do spuštění nadřazeného skriptu.",
+    "sorted": "Udržuje podřízené poznámky seřazené podle názvu abecedně.",
+    "sort_direction": "ASC (výchozí) nebo DESC",
+    "sort_folders_first": "Složky (poznámky s podřízenými položkami) by měly být řazeny nahoře.",
+    "top": "Udržuje danou poznámku nahoře v rámci jejího nadřazeného (platí pouze pro seřazené nadřazené položky).",
+    "hide_promoted_attributes": "Skryje propagované atributy v této poznámce.",
+    "read_only": "Editor je v režimu pouze pro čtení. Funguje pouze pro textové a kódové poznámky.",
+    "auto_read_only_disabled": "Textové/kódové poznámky se mohou automaticky nastavit do režimu pouze pro čtení, pokud jsou příliš velké. Toto chování můžete zakázat pro každou poznámku přidáním tohoto štítku do poznámky.",
+    "app_css": "Označuje CSS poznámky, které jsou načteny do aplikace Trilium a mohou být tak použity k úpravě vzhledu Trilium.",
+    "app_theme": "Označuje CSS poznámky, které jsou kompletními motivy Trilium a jsou tak dostupné v možnostech Trilium.",
+    "app_theme_base": "nastavte na \"next\", \"next-light\" nebo \"next-dark\" pro použití odpovídajícího tématu TriliumNext (auto, světlé nebo tmavé) jako základu pro vlastní téma, namísto staršího.",
+    "css_class": "hodnota tohoto štítku je poté přidána jako CSS třída k uzlu reprezentujícímu danou {{Poznámka}} ve stromu. To může být užitečné pro pokročilé tématizace. Lze použít v šablonových {{Poznámka}}.",
+    "icon_class": "hodnota tohoto štítku je přidána jako CSS třída k ikoně ve stromu, což může pomoci vizuálně odlišit {{Poznámky}} ve stromu. Příkladem může být bx bx-home - ikony jsou převzaty z boxicons. Lze použít v šablonových {{Poznámka}}.",
+    "page_size": "počet položek na stránce v seznamu {{Poznámek}}",
+    "custom_request_handler": "viz <a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">Vlastní zpracovatel požadavků</a>",
+    "custom_resource_provider": "viz <a href=\"javascript:\" data-help-page=\"custom-request-handler.html\">Vlastní zpracovatel požadavků</a>",
+    "widget": "označí tuto {{Poznámka}} jako vlastní widget, který bude přidán do stromu komponent Trilium",
+    "workspace": "označí tuto {{Poznámka}} jako pracovní prostor, který umožňuje snadné zúžení zobrazení",
+    "workspace_icon_class": "definuje CSS třídu ikony box, která bude použita na {{záložce}} při zúžení zobrazení na tuto {{Poznámka}}",
+    "workspace_tab_background_color": "CSS barva použitá na {{záložce}} při zúžení zobrazení na tuto {{Poznámka}}",
+    "workspace_calendar_root": "Definuje kořenový {{Kalendář}} pro pracovní prostor",
+    "workspace_template": "Tato {{Poznámka}} se zobrazí ve výběru dostupných {{šablon}} při vytváření nové {{Poznámky}}, ale pouze pokud je zúžena do pracovního prostoru obsahujícího tuto {{šablonu}}",
+    "search_home": "nové {{Poznámky}} {{Hledání}} budou vytvořeny jako {{Dceřiné}} této {{Poznámky}}",
+    "workspace_search_home": "nové {{Poznámky}} {{Hledání}} budou vytvořeny jako {{Dceřiné}} této {{Poznámky}} při zúžení zobrazení na některého z předků této {{Poznámky}} pracovního prostoru",
+    "inbox": "výchozí složka doručené pošty pro nové {{Poznámky}} - při vytváření {{Poznámky}} pomocí tlačítka \"nová {{Poznámka}}\" na postranním panelu budou {{Poznámky}} vytvořeny jako {{Dceřiné}} {{Poznámky}} označené štítkem <code>#inbox</code>.",
+    "workspace_inbox": "Výchozí umístění pro nové {{Poznámky}} při přesunutí do některého předka této {{Poznámky}} pracovního prostoru",
+    "sql_console_home": "Výchozí umístění {{Poznámky}} konzole {{SQL}}",
+    "bookmark_folder": "{{Poznámka}} s tímto {{štítek}} se zobrazí v {{záložkách}} jako složka (umožňuje přístup k jejím podřízeným {{Poznámky}})",
+    "share_hidden_from_tree": "Tato {{Poznámka}} je skrytá z levého navigačního {{stromu}}, ale je stále přístupná pomocí její {{URL}}",
+    "share_external_link": "{{Poznámka}} bude fungovat jako odkaz na externí webovou stránku ve sdíleném {{stromu}}",
+    "share_alias": "Definujte alias, pod kterým bude {{Poznámka}} dostupná na https://your_trilium_host/share/[your_alias]",
+    "share_omit_default_css": "Výchozí {{CSS}} stránky pro sdílení bude vynechána. Použijte, pokud provedete rozsáhlé změny stylu.",
+    "share_root": "Označuje {{Poznámku}}, která je obsluhována z kořene /share.",
+    "share_description": "Definujte text, který má být přidán do meta tagu {{HTML}} pro popis",
+    "share_raw": "{{Poznámka}} bude obsluhována v surovém formátu, bez obalu {{HTML}}",
+    "share_disallow_robot_indexing": "Zakáže indexování této {{Poznámky}} roboty pomocí hlavičky <code>X-Robots-Tag: noindex</code>",
+    "share_credentials": "Vyžaduje pověření pro přístup k této sdílené {{Poznámce}}. Hodnota se očekává ve formátu 'username:password'. Nezapomeňte ji učinit dědičnou, aby se použila na podřízené {{Poznámky}}/obrázky.",
+    "share_index": "{{Poznámka}} s tímto {{štítek}} zobrazí všechny kořeny sdílených {{Poznámek}}",
+    "display_relations": "Seznam jmen {{vazeb}} oddělených čárkami, které se mají zobrazit. Všechny ostatní budou skryté.",
+    "hide_relations": "Seznam jmen {{vazeb}} oddělených čárkami, které se mají skrýt. Všechny ostatní budou zobrazeny.",
+    "title_template": "Výchozí název poznámek vytvořených jako dceřiné této poznámky. Hodnota se vyhodnocuje jako JavaScript řetězec a může být tak obohacena o dynamický obsah pomocí vložených proměnných <code>now</code> a <code>parentNote</code>. Příklady:                                                  <ul>                             <li><code>${parentNote.getLabelValue('authorName')}'s literary works</code></li>                             <li><code>Log pro ${now.format('YYYY-MM-DD HH:mm:ss')}</code></li>                         </ul>                                                  Viz <a href=\"https://triliumnext.github.io/Docs/Wiki/default-note-title.html\">wiki s detaily</a>, API dokumentace pro <a href=\"https://zadam.github.io/trilium/backend_api/Note.html\">parentNote</a> a <a href=\"https://day.js.org/docs/en/display/format\">now</a> pro detaily.",
+    "template": "Tato poznámka se zobrazí ve výběru dostupných šablon při vytváření nové poznámky",
+    "toc": "<code>#toc</code> nebo <code>#toc=show</code> vynutí zobrazení Obsahu, <code>#toc=hide</code> vynutí jeho skrytí. Pokud štítek neexistuje, je respektováno globální nastavení",
+    "color": "Definuje barvu poznámky ve stromu poznámek, odkazech atd. Použijte jakoukoli platnou hodnotu CSS barvy, například 'red' nebo #a13d5f",
+    "keyboard_shortcut": "Definuje klávesovou zkratku, která okamžitě skočí na tuto poznámku. Příklad: 'ctrl+alt+e'. Pro projev změny je vyžadováno obnovení frontendu.",
+    "keep_current_hoisting": "Otevření tohoto odkazu nezmění zúžení zobrazení, i když poznámka není zobrazitelná v aktuálním zúženém podstromu.",
+    "execute_button": "Název tlačítka, které spustí aktuální poznámku s kódem",
+    "execute_description": "Delší popis aktuální poznámky s kódem zobrazený spolu s tlačítkem pro spuštění",
+    "exclude_from_note_map": "Poznámky s tímto štítkem budou skryté v Mapě poznámek",
+    "new_notes_on_top": "Nové poznámky budou vytvářeny nahoře nadřazené poznámky, nikoli dole.",
+    "hide_highlight_widget": "Skrýt Widget Seznam zvýraznění",
+    "run_on_note_creation": "Spustí se při vytvoření {{name}} na backendu. Použijte tuto vazbu, pokud chcete spustit skript pro všechny {{name}} vytvořené pod určitým podstromem. V takovém případě ji vytvořte na kořenovém {{name}} podstromu a nastavte ji jako dědičnou. Nově vytvořená {{name}} v podstromu (v jakékoli hloubce) spustí skript.",
+    "run_on_child_note_creation": "Spustí se při vytvoření nové {{name}} pod {{name}}, kde je tato vazba definována.",
+    "run_on_note_title_change": "Spustí se při změně názvu {{name}} (zahrnuje i vytvoření {{name}}).",
+    "run_on_note_content_change": "Spustí se při změně obsahu {{name}} (zahrnuje i vytvoření {{name}}).",
+    "run_on_note_change": "Spustí se při změně {{name}} (zahrnuje i vytvoření {{name}}). Nezahrnuje změny obsahu.",
+    "run_on_note_deletion": "Spustí se při mazání {{name}}.",
+    "run_on_branch_creation": "Spustí se při vytvoření větve. Větev je odkaz mezi nadřazenou {{name}} a dceřinou {{name}} a je vytvořena například při klonování nebo přesouvání {{name}}.",
+    "run_on_branch_change": "Spustí se při aktualizaci větve.",
+    "run_on_branch_deletion": "Spustí se při smazání větve. Větev je odkaz mezi nadřazenou {{name}} a dceřinou {{name}} a je smazána například při přesouvání {{name}} (stará větev/odkaz je smazán).",
+    "run_on_attribute_creation": "Spustí se při vytvoření nového atributu pro {{name}}, která definuje tuto vazbu.",
+    "relation_template": "Atributy {{name}} budou zděděny i bez vztahu rodič-dítě, obsah {{name}} a podstrom budou přidány k instančním {{name}}, pokud jsou prázdné. Podrobnosti naleznete v dokumentaci.",
+    "inherit": "Atributy {{name}} budou zděděny i bez vztahu rodič-dítě. Podobný koncept naleznete ve vazbě {{template}}. Viz dědičnost atributů v dokumentaci.",
+    "render_note": "{{name}} typu \"render HTML note\" budou vykresleny pomocí kódové {{name}} (HTML nebo skript) a je nutné pomocí této vazby určit, která {{name}} má být vykreslena.",
+    "widget_relation": "Cíl této vazby bude spuštěn a vykreslen jako widget na postranním panelu.",
+    "share_css": "CSS poznámka, která bude vložena do sdílené stránky. CSS poznámka musí být také v sdíleném podstromu. Zvažte použití 'share_hidden_from_tree' a 'share_omit_default_css'.",
+    "share_js": "JavaScript poznámka, která bude vložena do sdílené stránky. JS poznámka musí být také v sdíleném podstromu. Zvažte použití 'share_hidden_from_tree'.",
+    "share_template": "Vložená JavaScript poznámka, která bude použita jako šablona pro zobrazení sdílené poznámky. Vrací se k výchozí šabloně. Zvažte použití 'share_hidden_from_tree'.",
+    "share_favicon": "Poznámka s favicon, která bude nastavena na sdílené stránce. Obvykle ji chcete nastavit do kořene sdílení a učinit ji dědičnou. Favicon poznámka musí být také v sdíleném podstromu. Zvažte použití 'share_hidden_from_tree'.",
+    "is_owned_by_note": "je vlastněna poznámkou",
+    "other_notes_with_name": "Ostatní poznámky s {{attributeType}} názvem \"{{attributeName}}\"",
+    "and_more": "... a {{count}} dalších.",
+    "print_landscape": "Při exportu do ⟨PDF⟩ změní orientaci stránky na landscape místo portrait.",
+    "print_page_size": "Při exportu do ⟨PDF⟩ změní velikost stránky. Podporované hodnoty: <code>A0</code>, <code>A1</code>, <code>A2</code>, <code>A3</code>, <code>A4</code>, <code>A5</code>, <code>A6</code>, <code>Legal</code>, <code>Letter</code>, <code>Tabloid</code>, <code>Ledger</code>.",
+    "color_type": "Barva"
+  },
+  "attribute_editor": {
+    "help_text_body1": "Pro přidání štítku stačí zadat např. <code>#rock</code> nebo pokud chcete přidat i hodnotu, např. <code>#year = 2020</code>",
+    "help_text_body2": "Pro vazbu zadejte <code>~author = @</code>, což by mělo vyvolat automatické doplňování, kde můžete vyhledat požadovanou poznámku.",
+    "help_text_body3": "Případně můžete štítek a vazbu přidat pomocí tlačítka <code>+</code> na pravé straně.",
+    "save_attributes": "Uložit ⟨Atributy⟩ <enter>",
+    "add_a_new_attribute": "Přidat nový ⟨Atribut⟩",
+    "add_new_label": "Přidat nový štítek <kbd data-command=\"addNewLabel\"></kbd>",
+    "add_new_relation": "Přidat novou vazbu <kbd data-command=\"addNewRelation\"></kbd>",
+    "add_new_label_definition": "Přidat novou definici štítku",
+    "add_new_relation_definition": "Přidat novou definici vazby",
+    "placeholder": "Zadejte štítky a vazby zde"
+  },
+  "abstract_bulk_action": {
+    "remove_this_search_action": "Odebrat tuto akci hledání"
+  },
+  "execute_script": {
+    "execute_script": "Spustit skript",
+    "help_text": "Můžete spustit jednoduché skripty na vybraných poznámkách.",
+    "example_1": "Například pro připojení řetězce k názvu poznámky použijte tento malý skript:",
+    "example_2": "Složitější příklad by bylo smazání všech atributů vybraných poznámek:"
+  },
+  "add_label": {
+    "add_label": "Přidat štítek",
+    "label_name_placeholder": "Název štítku",
+    "label_name_title": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka.",
+    "to_value": "k hodnotě",
+    "new_value_placeholder": "nová hodnota",
+    "help_text": "Na všech odpovídajících {{Note}}:",
+    "help_text_item1": "vytvořit daný {{label}}, pokud {{Note}} jej ještě nemá",
+    "help_text_item2": "nebo změnit hodnotu existujícího {{label}}",
+    "help_text_note": "Můžete také zavolat tuto metodu bez hodnoty, v takovém případě bude {{label}} přiřazen k {{Note}} bez hodnoty."
+  },
+  "delete_label": {
+    "delete_label": "Smazat {{label}}",
+    "label_name_placeholder": "Název {{label}}",
+    "label_name_title": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka."
+  },
+  "rename_label": {
+    "rename_label": "Přejmenovat {{label}}",
+    "rename_label_from": "Přejmenovat {{label}} z",
+    "old_name_placeholder": "starý název",
+    "to": "Na",
+    "new_name_placeholder": "nový název",
+    "name_title": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka."
+  },
+  "update_label_value": {
+    "update_label_value": "Aktualizovat hodnotu {{label}}",
+    "label_name_placeholder": "Název {{label}}",
+    "label_name_title": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka.",
+    "to_value": "na hodnotu",
+    "new_value_placeholder": "nová hodnota",
+    "help_text": "U všech nalezených poznámek změňte hodnotu existujícího štítku.",
+    "help_text_note": "Tuto metodu můžete také zavolat bez hodnoty, v takovém případě bude štítek přiřazen k poznámce bez hodnoty."
+  },
+  "delete_note": {
+    "delete_note": "Smazat poznámku",
+    "delete_matched_notes": "Smazat nalezené poznámky",
+    "delete_matched_notes_description": "Tímto se smažou nalezené poznámky.",
+    "undelete_notes_instruction": "Po smazání je lze obnovit z dialogu Recent Changes.",
+    "erase_notes_instruction": "Pro trvalé vymazání poznámek můžete po smazání přejít do Option -> Other a kliknout na tlačítko \"Vymazat smazané poznámky nyní\"."
+  },
+  "delete_revisions": {
+    "delete_note_revisions": "Smazat revize poznámek",
+    "all_past_note_revisions": "Všechny minulé revize nalezených poznámek budou smazány. Poznámka samotná zůstane plně zachována. Jinými slovy, historie poznámky bude odstraněna."
+  },
+  "move_note": {
+    "move_note": "Přesunout poznámku",
+    "to": "do",
+    "target_parent_note": "cílové nadřazené poznámky",
+    "on_all_matched_notes": "Na všech odpovídajících {{Poznámka}}",
+    "move_note_new_parent": "přesunout {{Poznámka}} do nového nadřazeného, pokud má {{Poznámka}} pouze jednoho nadřazeného (tj. stará větev je odstraněna a nová větev je vytvořena do nového nadřazeného)",
+    "clone_note_new_parent": "klonovat {{Poznámka}} do nového nadřazeného, pokud má {{Poznámka}} více klonů/větví (není jasné, kterou větev by mělo odstranit)",
+    "nothing_will_happen": "nic se nestane, pokud nelze {{Poznámka}} přesunout do cílové {{Poznámka}} (tj. to by vytvořilo cyklus ve stromu)"
+  },
+  "rename_note": {
+    "rename_note": "Přejmenovat {{Poznámka}}",
+    "rename_note_title_to": "Přejmenovat název {{Poznámka}} na",
+    "new_note_title": "nový název {{Poznámka}}",
+    "click_help_icon": "Klikněte na ikonu nápovědy vpravo a zobrazte všechny možnosti",
+    "evaluated_as_js_string": "Zadaná hodnota je vyhodnocena jako JavaScript řetězec a může být tak obohacena o dynamický obsah pomocí vložené proměnné <code>note</code> (přejmenovaná {{Poznámka}}). Příklady:",
+    "example_note": "<code>Poznámka</code> - všechny odpovídající {{Poznámka}} jsou přejmenovány na 'Poznámka'",
+    "example_new_title": "<code>NOVÝ: ${note.title}</code> - názvy odpovídajících {{Poznámka}} jsou předponovány 'NOVÝ: '",
+    "example_date_prefix": "<code>${note.dateCreatedObj.format('MM-DD:')}: ${note.title}</code> - odpovídající {{Poznámka}} jsou předponovány měsícem a dnem vytvoření",
+    "api_docs": "Pro podrobnosti si přečtěte <a>API dokumentaci</a> pro {{note}} a jeho <a>vlastnosti dateCreatedObj / utcDateCreatedObj</a>."
+  },
+  "add_relation": {
+    "add_relation": "Přidat {{Vazba}}",
+    "relation_name": "Název {{Vazba}}",
+    "allowed_characters": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka.",
+    "to": "do",
+    "target_note": "cílová {{name}}",
+    "create_relation_on_all_matched_notes": "Na všechny nalezené {{name}} vytvořte danou vazbu."
+  },
+  "delete_relation": {
+    "delete_relation": "Smazat vazbu",
+    "relation_name": "název vazby",
+    "allowed_characters": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka."
+  },
+  "rename_relation": {
+    "rename_relation": "Přejmenovat vazbu",
+    "rename_relation_from": "Přejmenovat vazbu z",
+    "old_name": "starý název",
+    "to": "Na",
+    "new_name": "nový název",
+    "allowed_characters": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka."
+  },
+  "update_relation_target": {
+    "update_relation": "Aktualizovat vazbu",
+    "relation_name": "název vazby",
+    "allowed_characters": "Povolené znaky jsou alfanumerické znaky, podtržítko a dvojtečka.",
+    "to": "do",
+    "target_note": "cílová {{name}}",
+    "on_all_matched_notes": "Na všech odpovídajících {{name}}",
+    "change_target_note": "změnit cílovou {{name}} existující vazby",
+    "update_relation_target": "Aktualizovat cílovou vazbu"
+  },
+  "attachments_actions": {
+    "open_externally": "Otevřít externě",
+    "open_externally_title": "Soubor bude otevřen v externí aplikaci a sledován na změny. Poté budete moci nahrát upravenou verzi zpět do Trilium.",
+    "open_custom": "Otevřít vlastní",
+    "open_custom_title": "Soubor bude otevřen v externí aplikaci a sledován na změny. Poté budete moci nahrát upravenou verzi zpět do Trilium.",
+    "download": "Stáhnout",
+    "rename_attachment": "Přejmenovat přílohu",
+    "upload_new_revision": "Nahrát novou revizi",
+    "copy_link_to_clipboard": "Kopírovat odkaz do {{clipboard}}",
+    "convert_attachment_into_note": "Převést přílohu na {{Note}}",
+    "delete_attachment": "Smazat přílohu",
+    "upload_success": "Nová revize přílohy byla nahrána.",
+    "upload_failed": "Nahrání nové revize přílohy selhalo.",
+    "open_externally_detail_page": "Otevření přílohy externě je dostupné pouze ze stránky s detaily, nejprve klikněte na detail přílohy a akci opakujte.",
+    "open_custom_client_only": "Vlastní otevření příloh lze provést pouze z desktop klienta.",
+    "delete_confirm": "Jste si jisti, že chcete smazat přílohu '{{title}}'?",
+    "delete_success": "Příloha '{{title}}' byla smazána.",
+    "convert_confirm": "Jste si jisti, že chcete převést přílohu '{{title}}' na samostatnou Poznámku?",
+    "convert_success": "Příloha '{{title}}' byla převedena na Poznámku.",
+    "enter_new_name": "Zadejte nový název přílohy"
+  },
+  "calendar": {
+    "mon": "Po",
+    "tue": "Út",
+    "wed": "St",
+    "thu": "Čt",
+    "fri": "Pá",
+    "sat": "So",
+    "sun": "Ne",
+    "cannot_find_day_note": "Nelze najít denní {{name}}",
+    "cannot_find_week_note": "Nelze najít týdenní {{name}}",
+    "january": "Leden",
+    "february": "Únor",
+    "march": "Březen",
+    "april": "Duben",
+    "may": "Květen",
+    "june": "Červen",
+    "july": "Červenec",
+    "august": "Srpen",
+    "september": "Září",
+    "october": "Říjen",
+    "november": "Listopad",
+    "december": "Prosinec",
+    "week": "Týden",
+    "week_previous": "Předchozí týden",
+    "week_next": "Další týden",
+    "month": "Měsíc",
+    "month_previous": "Předchozí měsíc",
+    "month_next": "Další měsíc",
+    "year": "Rok",
+    "year_previous": "Předchozí rok",
+    "year_next": "Další rok",
+    "list": "Seznam",
+    "today": "Dnes"
+  },
+  "close_pane_button": {
+    "close_this_pane": "Zavřít tento panel"
+  },
+  "create_pane_button": {
+    "create_new_split": "Vytvořit nové rozdělení"
+  },
+  "edit_button": {
+    "edit_this_note": "Upravit tuto {{Note}}"
+  },
+  "show_toc_widget_button": {
+    "show_toc": "Zobrazit Obsah"
+  },
+  "show_highlights_list_widget_button": {
+    "show_highlights_list": "Zobrazit Seznam zvýraznění"
+  },
+  "global_menu": {
+    "menu": "Menu",
+    "options": "Nastavení",
+    "open_new_window": "Otevřít Nové Okno",
+    "switch_to_mobile_version": "Přepnout na Mobilní Verzi",
+    "switch_to_desktop_version": "Přepnout na Počítačovou Verzi",
+    "zoom": "Zoom",
+    "toggle_fullscreen": "Přepnout Celou Obrazovku",
+    "zoom_out": "Oddálit",
+    "reset_zoom_level": "Resetovat Úroveň Zoomu",
+    "zoom_in": "Přiblížit",
+    "configure_launchbar": "Konfigurovat Spouštěcí Lištu",
+    "show_shared_notes_subtree": "Zobrazit Podstrom Sdílených Poznámek",
+    "advanced": "Pokročilé",
+    "open_dev_tools": "Otevřít Nástroje pro vývojáře",
+    "open_sql_console": "Otevřít SQL Konzoli",
+    "open_sql_console_history": "Otevřít Historii SQL Konzole",
+    "open_search_history": "Otevřít Historii Hledání",
+    "show_backend_log": "Zobrazit Log Backendu",
+    "reload_hint": "Obnovení může pomoci s některými vizuálními chybami bez restartování celé aplikace.",
+    "reload_frontend": "Obnovit Frontend",
+    "show_hidden_subtree": "Zobrazit Skrytý Podstrom",
+    "show_help": "Zobrazit Nápovědu",
+    "about": "O Trilium Notes",
+    "logout": "Odhlásit se",
+    "show-cheatsheet": "Zobrazit Cheatsheet",
+    "toggle-zen-mode": "Zen Režim",
+    "new-version-available": "Je k dispozici nová aktualizace",
+    "download-update": "Získat verzi {{latestVersion}}",
+    "search_notes": "Hledání poznámek"
+  },
+  "zen_mode": {
+    "button_exit": "Opustit Zen mód"
+  },
+  "sync_status": {
+    "unknown": "<p>Stav synchronizace bude znám po spuštění dalšího pokusu o synchronizaci.</p><p>Klikněte pro spuštění synchronizace nyní.</p>",
+    "connected_with_changes": "<p>Připojeno k synchronizačnímu serveru. <br>Existují některé nedokončené změny, které je třeba synchronizovat.</p><p>Klikněte pro spuštění synchronizace.</p>",
+    "connected_no_changes": "<p>Připojeno k synchronizačnímu serveru.<br>Všechny změny již byly synchronizovány.</p><p>Klikněte pro spuštění synchronizace.</p>",
+    "disconnected_with_changes": "<p>Nepodařilo se navázat spojení se synchronizačním serverem.<br>Existují některé nedokončené změny, které je třeba synchronizovat.</p><p>Klikněte pro spuštění synchronizace.</p>",
+    "disconnected_no_changes": "<p>Nepodařilo se navázat spojení se synchronizačním serverem.<br>Všechny známé změny byly synchronizovány.</p><p>Klikněte pro spuštění synchronizace.</p>",
+    "in_progress": "Probíhá synchronizace se serverem."
+  },
+  "left_pane_toggle": {
+    "show_panel": "Zobrazit panel",
+    "hide_panel": "Skrýt panel"
+  },
+  "move_pane_button": {
+    "move_left": "Posunout vlevo",
+    "move_right": "Posunout vpravo"
+  },
+  "note_actions": {
+    "convert_into_attachment": "Převést na přílohu",
+    "re_render_note": "Znovu vykreslit poznámku",
+    "search_in_note": "Hledat v poznámce",
+    "note_source": "Zdroj poznámky",
+    "note_attachments": "Přílohy poznámky",
+    "view_ocr_text": "Zobrazit text z OCR",
+    "open_note_externally": "Otevřít poznámku externě",
+    "open_note_externally_title": "Soubor bude otevřen v externí aplikaci a sledován na změny. Poté budete moci nahrát upravenou verzi zpět do Trilium.",
+    "open_note_custom": "Otevřít poznámku vlastním způsobem",
+    "open_note_on_server": "Otevřít poznámku na serveru",
+    "import_files": "Importovat soubory",
+    "export_note": "Exportovat poznámku",
+    "delete_note": "Smazat poznámku",
+    "print_note": "Vytisknout poznámku",
+    "view_revisions": "Revize poznámky...",
+    "save_revision": "Uložit revizi",
+    "advanced": "Pokročilé",
+    "convert_into_attachment_failed": "Konverze poznámky '{{title}}' selhala.",
+    "convert_into_attachment_successful": "Poznámka '{{title}}' byla převedena na přílohu.",
+    "convert_into_attachment_prompt": "Jste si jisti, že chcete převést poznámku '{{title}}' na přílohu nadřazené poznámky?",
+    "print_pdf": "Exportovat jako PDF...",
+    "export_as_image": "Exportovat jako obrázek",
+    "export_as_image_png": "PNG (raster)",
+    "export_as_image_svg": "SVG (vector)",
+    "note_map": "Mapa poznámek"
+  },
+  "onclick_button": {
+    "no_click_handler": "Widget tlačítka '{{componentId}}' nemá definovaný obslužný program kliknutí."
+  },
+  "protected_session_status": {
+    "active": "Chráněná relace je aktivní. Klikněte pro ukončení chráněné relace.",
+    "inactive": "Klikněte pro vstup do chráněné relace"
+  },
+  "revisions_button": {
+    "note_revisions": "Revize poznámek"
+  },
+  "update_available": {
+    "update_available": "Dostupná aktualizace"
+  },
+  "note_launcher": {
+    "this_launcher_doesnt_define_target_note": "Tento spouštěč nedefinuje cílovou poznámku."
+  },
+  "code_buttons": {
+    "execute_button_title": "Spustit skript",
+    "trilium_api_docs_button_title": "Otevřít dokumentaci Trilium API",
+    "save_to_note_button_title": "Uložit do poznámky",
+    "opening_api_docs_message": "Otevírám API dokumentaci...",
+    "sql_console_saved_message": "Poznámka SQL konzole byla uložena do {{note_path}}"
+  },
+  "copy_image_reference_button": {
+    "button_title": "Kopírovat odkaz na obrázek do schránky, lze vložit do textové poznámky."
+  },
+  "hide_floating_buttons_button": {
+    "button_title": "Skrýt tlačítka"
+  },
+  "show_floating_buttons_button": {
+    "button_title": "Zobrazit tlačítka"
+  },
+  "svg_export_button": {
+    "button_title": "Exportovat diagram jako SVG"
+  },
+  "relation_map_buttons": {
+    "create_child_note_title": "Vytvořit dceřinou poznámku a přidat ji na mapu",
+    "reset_pan_zoom_title": "Resetovat posun & zoom na počáteční souřadnice a zvětšení",
+    "zoom_in_title": "Přiblížit",
+    "zoom_out_title": "Oddálit"
+  },
+  "mobile_detail_menu": {
+    "insert_child_note": "Vložit dceřinou poznámku",
+    "delete_this_note": "Smazat tuto poznámku",
+    "note_revisions": "Revize poznámky",
+    "error_cannot_get_branch_id": "Nelze získat branchId pro cestu k poznámce '{{notePath}}'",
+    "error_unrecognized_command": "Nerozpoznaný příkaz {{command}}",
+    "backlinks": "Zpětné odkazy",
+    "content_language_switcher": "Jazyk obsahu: {{language}}"
+  },
+  "note_icon": {
+    "change_note_icon": "Změnit ikonu poznámky",
+    "search": "Hledání:",
+    "search_placeholder_filtered": "Hledání {{number}} ikon v {{name}}",
+    "reset-default": "Obnovit na výchozí ikonu",
+    "filter": "Filtr",
+    "filter-none": "Všechny ikony",
+    "filter-default": "Výchozí ikony",
+    "icon_tooltip": "{{name}} Balíček ikon: {{iconPack}}",
+    "no_results": "Žádné ikony nenalezeny."
+  },
+  "basic_properties": {
+    "note_type": "Typ poznámky",
+    "editable": "Upravitelné",
+    "basic_properties": "Základní vlastnosti",
+    "language": "Jazyk",
+    "configure_code_notes": "Konfigurovat poznámky s kódem..."
+  },
+  "book_properties": {
+    "view_type": "Typ zobrazení",
+    "grid": "Mřížka",
+    "list": "Seznam",
+    "collapse_all_notes": "Sbalit všechny {{Note}}s",
+    "expand_tooltip": "Rozbalí přímé {{Child}} této {{Collection}} (do hloubky jedné úrovně). Pro více možností stiskněte šipku vpravo.",
+    "collapse": "Sbalit",
+    "expand": "Rozbalit",
+    "expand_first_level": "Rozbalit přímé {{Child}}",
+    "expand_nth_level": "Rozbalit {{depth}} úrovně",
+    "expand_all_levels": "Rozbalit všechny úrovně",
+    "book_properties": "Vlastnosti {{Collection}}",
+    "invalid_view_type": "Neplatný typ zobrazení '{{type}}'",
+    "calendar": "Kalendář",
+    "table": "Tabulka",
+    "geo-map": "Geomapa",
+    "board": "Tabule",
+    "presentation": "Prezentace",
+    "include_archived_notes": "Zobrazit archivované Poznámky",
+    "hide_child_notes": "Skrýt dceřiné Poznámky ve Stromu"
+  },
+  "edited_notes": {
+    "no_edited_notes_found": "Zatím nebyly upraveny žádné Poznámky v tento den...",
+    "title": "Upravené Poznámky",
+    "deleted": "(smazáno)"
+  },
+  "file_properties": {
+    "note_id": "ID Poznámky",
+    "original_file_name": "Původní název souboru",
+    "file_type": "Typ souboru",
+    "file_size": "Velikost souboru",
+    "download": "Stáhnout",
+    "open": "Otevřít externě",
+    "upload_new_revision": "Nahrát novou revizi",
+    "upload_success": "Nová revize souboru byla nahrána.",
+    "upload_failed": "Nahrání nové revize souboru selhalo.",
+    "title": "Soubor"
+  },
+  "image_properties": {
+    "original_file_name": "Původní název souboru",
+    "file_type": "Typ souboru",
+    "file_size": "Velikost souboru",
+    "download": "Stáhnout",
+    "open": "Otevřít",
+    "copy_reference_to_clipboard": "Kopírovat odkaz do {{clipboard}}",
+    "upload_new_revision": "Nahrát novou revizi",
+    "upload_success": "Nová revize obrázku byla nahrána.",
+    "upload_failed": "Nahrání nové revize obrázku selhalo: {{message}}",
+    "title": "Obrázek"
+  },
+  "inherited_attribute_list": {
+    "title": "Zděděné atributy",
+    "no_inherited_attributes": "Žádné zděděné atributy.",
+    "none": "žádný"
+  },
+  "note_info_widget": {
+    "note_id": "ID Poznámky",
+    "created": "Vytvořeno",
+    "modified": "Upraveno",
+    "type": "Typ",
+    "mime": "MIME typ",
+    "note_size": "Velikost Poznámky",
+    "note_size_info": "Velikost Poznámky poskytuje hrubý odhad požadavků na úložiště pro tuto poznámku. Bere v úvahu obsah poznámky a obsah jejích revizí.",
+    "calculate": "vypočítat",
+    "subtree_size": "(velikost podstromu: {{size}} v {{count}} poznámkách)",
+    "title": "Informace o Poznámce",
+    "show_similar_notes": "Zobrazit podobné Poznámky"
+  },
+  "note_map": {
+    "open_full": "Rozbalit na plnou velikost",
+    "collapse": "Sbalit na normální velikost",
+    "title": "Mapa poznámek",
+    "fix-nodes": "Opravit uzly",
+    "link-distance": "Vzdálenost propojení"
+  },
+  "note_paths": {
+    "title": "Cesty k poznámkám",
+    "clone_button": "Klonovat poznámku na nové místo...",
+    "intro_placed": "Tato poznámka je umístěna v následujících cestách:",
+    "intro_not_placed": "Tato poznámka ještě nebyla umístěna do stromu poznámek.",
+    "outside_hoisted": "Tato cesta je mimo nadřazenou poznámku a bude nutné ji odnadřazit.",
+    "archived": "Archivováno",
+    "search": "Hledání"
+  },
+  "note_properties": {
+    "this_note_was_originally_taken_from": "Tato poznámka byla původně pořízena z:",
+    "info": "Info"
+  },
+  "owned_attribute_list": {
+    "owned_attributes": "Vlastní atributy"
+  },
+  "promoted_attributes": {
+    "promoted_attributes": "Propagované atributy",
+    "unset-field-placeholder": "není nastaveno",
+    "url_placeholder": "http://website...",
+    "open_external_link": "Otevřít externí odkaz",
+    "unknown_label_type": "Neznámý typ štítku '{{type}}'",
+    "unknown_attribute_type": "Neznámý typ atributu '{{type}}'",
+    "add_new_attribute": "Přidat nový atribut",
+    "remove_this_attribute": "Odebrat tento atribut",
+    "remove_color": "Odebrat barevný štítek"
+  },
+  "script_executor": {
+    "query": "Dotaz",
+    "script": "Skript",
+    "execute_query": "Spustit dotaz",
+    "execute_script": "Spustit skript"
+  },
+  "search_definition": {
+    "add_search_option": "Přidat možnost hledání:",
+    "search_string": "vyhledávací řetězec",
+    "search_script": "skript pro hledání",
+    "ancestor": "předek",
+    "fast_search": "rychlé hledání",
+    "fast_search_description": "Možnost rychlého hledání vypne úplné textové prohledávání obsahu poznámek, což může urychlit hledání ve velkých databázích.",
+    "include_archived": "zahrnout archivované",
+    "include_archived_notes_description": "Archivované poznámky jsou ve výchozím nastavení vyloučeny z výsledků hledání, s touto možností budou zahrnuty.",
+    "order_by": "seřadit podle",
+    "limit": "limit",
+    "limit_description": "Omezit počet výsledků",
+    "debug": "ladění",
+    "debug_description": "Ladění vypíše do konzole další ladicí informace, které pomohou při ladění složitých dotazů.",
+    "action": "akce",
+    "option": "možnost",
+    "search_button": "Hledání",
+    "search_execute": "Hledání & Spuštění akcí",
+    "save_to_note": "Uložit do poznámky",
+    "search_parameters": "Parametry hledání",
+    "unknown_search_option": "Neznámá možnost hledání {{searchOptionName}}",
+    "search_note_saved": "Hledání poznámky bylo uloženo do {{- notePathTitle}}",
+    "actions_executed": "Akce byly provedeny.",
+    "view_options": "Možnosti zobrazení:"
+  },
+  "similar_notes": {
+    "title": "Podobné poznámky",
+    "no_similar_notes_found": "Nebyly nalezeny žádné podobné poznámky."
+  },
+  "abstract_search_option": {
+    "remove_this_search_option": "Odebrat tuto možnost hledání",
+    "failed_rendering": "Selhalo vykreslení možnosti hledání: {{dto}} s chybou: {{error}} {{stack}}"
+  },
+  "ancestor": {
+    "label": "Předek",
+    "placeholder": "hledat poznámku podle jejího názvu",
+    "depth_label": "hloubka",
+    "depth_doesnt_matter": "nezáleží na tom",
+    "depth_eq": "je přesně {{count}}",
+    "direct_children": "přímé děti",
+    "depth_gt": "je větší než {{count}}",
+    "depth_lt": "je menší než {{count}}"
+  },
+  "debug": {
+    "debug": "Ladění",
+    "debug_info": "Ladění vypíše další ladicí informace do konzole, které pomohou při ladění složitých dotazů.",
+    "access_info": "Pro přístup k ladicím informacím spusťte dotaz a klikněte na \"Zobrazit backend log\" v levém horním rohu."
+  },
+  "fast_search": {
+    "fast_search": "Rychlé hledání",
+    "description": "Možnost rychlého hledání vypne úplné prohledávání obsahu poznámek, což může urychlit hledání ve velkých databázích."
+  },
+  "include_archived_notes": {
+    "include_archived_notes": "Zahrnout archivované poznámky"
+  },
+  "limit": {
+    "limit": "Limit",
+    "take_first_x_results": "Zobrazí pouze prvních X zadaných výsledků."
+  },
+  "order_by": {
+    "order_by": "Seřadit podle",
+    "relevancy": "Relevance (výchozí)",
+    "title": "Název",
+    "date_created": "Datum vytvoření",
+    "date_modified": "Datum poslední modifikace",
+    "content_size": "Velikost obsahu Poznámky",
+    "content_and_attachments_size": "Velikost obsahu Poznámky včetně Příloh",
+    "content_and_attachments_and_revisions_size": "Velikost obsahu Poznámky včetně Příloh a Revizí",
+    "revision_count": "Počet Revizí",
+    "children_count": "Počet Dceřiných Poznámek",
+    "parent_count": "Počet Klonů",
+    "owned_label_count": "Počet Štítků",
+    "owned_relation_count": "Počet Vazeb",
+    "target_relation_count": "Počet Vazeb cílených na Poznámku",
+    "random": "Náhodné pořadí",
+    "asc": "Vzestupně (výchozí)",
+    "desc": "Sestupně"
+  },
+  "search_script": {
+    "title": "Skript pro hledání:",
+    "placeholder": "hledat Poznámku podle jejího názvu",
+    "description1": "Skript pro {{search}} umožňuje definovat výsledky {{search}} spuštěním skriptu. To poskytuje maximální flexibilitu, když standardní {{search}} nestačí.",
+    "description2": "Skript pro {{search}} musí být typu \"code\" a podtypu \"JavaScript {{backend}}\". Skript musí vrátit pole ID {{Poznámky}} nebo samotných {{Poznámky}}.",
+    "example_title": "Podívejte se na tento příklad:",
+    "example_code": "// 1. předfiltrování pomocí standardního {{search}} const candidateNotes = api.searchForNotes(\"#journal\");   // 2. použití vlastních kritérií {{search}} const matchedNotes = candidateNotes     .filter(note => note.title.match(/[0-9]{1,2}\\. ?[0-9]{1,2}\\. ?[0-9]{4}/));  return matchedNotes;",
+    "note": "Upozorňujeme, že skript pro {{search}} a {{search}} řetězec nelze kombinovat."
+  },
+  "search_string": {
+    "title_column": "{{Search}} řetězec:",
+    "placeholder": "fulltext klíčová slova, #{{label}} = hodnota...",
+    "search_syntax": "Syntaxe {{search}}",
+    "also_see": "také viz",
+    "complete_help": "kompletní nápověda k syntaxi {{search}}",
+    "full_text_search": "Stačí zadat jakýkoli text pro fulltextové {{search}}.",
+    "label_abc": "vrací {{Poznámky}} se {{štítek}} abc",
+    "label_year": "odpovídá {{Poznámky}} se {{štítek}} year s hodnotou 2019",
+    "label_rock_pop": "odpovídá {{Poznámky}}, které mají {{štítek}} rock i {{štítek}} pop",
+    "label_rock_or_pop": "stačí, aby byl přítomen jeden z {{štítek}}.",
+    "label_year_comparison": "numerické porovnání (také >, >=, <).",
+    "label_date_created": "poznámky vytvořené za poslední měsíc",
+    "error": "Chyba vyhledávání: {{error}}",
+    "search_prefix": "Hledání:"
+  },
+  "attachment_detail": {
+    "open_help_page": "Otevřít nápovědu k přílohám",
+    "owning_note": "Vlastní poznámka: ",
+    "you_can_also_open": ", můžete také otevřít ",
+    "list_of_all_attachments": "Seznam všech příloh",
+    "attachment_deleted": "Tato příloha byla smazána."
+  },
+  "attachment_list": {
+    "open_help_page": "Otevřít nápovědu k přílohám",
+    "owning_note": "Vlastní poznámka: ",
+    "upload_attachments": "Nahrát přílohy",
+    "no_attachments": "Tato poznámka nemá žádné přílohy."
+  },
+  "book": {
+    "no_children_help": "Tato kolekce nemá žádné dceřiné poznámky, takže není co zobrazit.",
+    "drag_locked_title": "Uzamčeno pro úpravy",
+    "drag_locked_message": "Přetahování není povoleno, protože kolekce je uzamčena pro úpravy."
+  },
+  "editable_code": {
+    "placeholder": "Zadejte obsah své poznámky s kódem zde..."
+  },
+  "editable_text": {
+    "placeholder": "Zadejte obsah své poznámky zde...",
+    "editor_crashed_title": "Editor textu havaroval",
+    "editor_crashed_content": "Váš obsah byl úspěšně obnoven, ale několik vašich posledních změn nemuselo být uloženo.",
+    "editor_crashed_details_button": "Zobrazit více detailů...",
+    "editor_crashed_details_intro": "Pokud se tato chyba vyskytne několikrát, zvažte její nahlášení na GitHub vložením informací níže.",
+    "editor_crashed_details_title": "Technické informace",
+    "auto-detect-language": "Automaticky detekováno",
+    "keeps-crashing": "Komponenta pro úpravy opakovaně havaruje. Zkuste restartovat Trilium. Pokud problém přetrvává, zvažte vytvoření hlášení o chybě."
+  },
+  "empty": {
+    "open_note_instruction": "Otevřete poznámku zadáním názvu poznámky do pole níže nebo vyberte poznámku ve stromu.",
+    "search_placeholder": "hledat poznámku podle jejího názvu",
+    "enter_workspace": "Vstup do pracovního prostoru {{title}}"
+  },
+  "file": {
+    "file_preview_not_available": "Náhled souboru není dostupný pro tento formát souboru.",
+    "too_big": "Náhled zobrazuje pouze prvních {{maxNumChars}} znaků souboru z důvodu výkonu. Stáhněte si soubor a otevřete jej externě, abyste mohli zobrazit celý obsah."
+  },
+  "media": {
+    "play": "Přehrát (Space)",
+    "pause": "Pozastavit (Space)",
+    "back-10s": "Zpět o 10s (Šipka doleva)",
+    "forward-30s": "Dopředu o 30s",
+    "mute": "Ztlumit (M)",
+    "unmute": "Zrušit ztlumení (M)",
+    "playback-speed": "Rychlost přehrávání",
+    "loop": "Cyklus",
+    "disable-loop": "Zakázat cyklus",
+    "rotate": "Otočit",
+    "picture-in-picture": "Obraz v obraze",
+    "exit-picture-in-picture": "Ukončit obraz v obraze",
+    "fullscreen": "Celá obrazovka (F)",
+    "exit-fullscreen": "Ukončit celou obrazovku",
+    "unsupported-format": "Náhled médií není dostupný pro tento formát souboru: {{mime}}",
+    "zoom-to-fit": "Přiblížit do šířky",
+    "zoom-reset": "Obnovit přiblížení do šířky"
+  },
+  "protected_session": {
+    "enter_password_instruction": "Zobrazení chráněné {{name}} vyžaduje zadání hesla:",
+    "start_session_button": "Spustit chráněnou relaci",
+    "started": "Chráněná relace byla spuštěna.",
+    "wrong_password": "Nesprávné heslo.",
+    "protecting-finished-successfully": "Ochrana proběhla úspěšně.",
+    "unprotecting-finished-successfully": "Ochrana byla úspěšně zrušena.",
+    "protecting-in-progress": "Probíhá ochrana: {{count}}",
+    "unprotecting-in-progress-count": "Probíhá odchrana: {{count}}",
+    "protecting-title": "Stav ochrany",
+    "unprotecting-title": "Stav odchrany"
+  },
+  "relation_map": {
+    "remove_note": "Odstranit {{name}}",
+    "edit_title": "Upravit název",
+    "rename_note": "Přejmenovat {{name}}",
+    "enter_new_title": "Zadejte nový název poznámky:",
+    "remove_relation": "Odstranit vazbu",
+    "confirm_remove_relation": "Jste si jisti, že chcete odstranit vazbu?",
+    "specify_new_relation_name": "Zadejte nový název vazby (povolené znaky: alfanumerické, dvojtečka a podtržítko):",
+    "connection_exists": "Připojení '{{name}}' mezi těmito poznámkami již existuje.",
+    "start_dragging_relations": "Začněte táhnout vazby odsud a přetáhněte je na jinou poznámku.",
+    "note_not_found": "Poznámka {{noteId}} nebyla nalezena!",
+    "cannot_match_transform": "Nelze porovnat transformaci: {{transform}}",
+    "note_already_in_diagram": "Poznámka \"{{title}}\" je již v diagramu.",
+    "enter_title_of_new_note": "Zadejte název nové poznámky",
+    "default_new_note_title": "nová poznámka",
+    "click_on_canvas_to_place_new_note": "Klikněte na plátno pro umístění nové poznámky"
+  },
+  "render": {
+    "setup_title": "Zobrazit vlastní HTML nebo Preact JSX uvnitř této poznámky",
+    "setup_create_sample_preact": "Vytvořit ukázkovou poznámku s Preact",
+    "setup_create_sample_html": "Vytvořit ukázkovou poznámku s HTML",
+    "setup_sample_created": "Jako dceřiná poznámka byla vytvořena ukázková poznámka.",
+    "disabled_description": "Tato poznámka pro vykreslení pochází z externího zdroje. Abychom vás ochránili před škodlivým obsahem, není ve výchozím nastavení povolena. Ujistěte se, že zdroji důvěřujete, než ji povolíte.",
+    "disabled_button_enable": "Povolit poznámku pro vykreslení"
+  },
+  "web_view_setup": {
+    "title": "Vytvořte živý pohled na webovou stránku přímo v Trilium.",
+    "url_placeholder": "Zadejte nebo vložte webovou adresu, například https://triliumnotes.org",
+    "create_button": "Vytvořit Webový Pohled",
+    "invalid_url_title": "Neplatná adresa",
+    "invalid_url_message": "Vložte platnou webovou adresu, například https://triliumnotes.org.",
+    "disabled_description": "Tento webový pohled byl importován z externího zdroje. Abychom vás ochránili před phishingem nebo škodlivým obsahem, nenačítá se automaticky. Můžete jej povolit, pokud zdroji důvěřujete.",
+    "disabled_button_enable": "Povolit webový pohled"
+  },
+  "backend_log": {
+    "refresh": "Obnovit"
+  },
+  "consistency_checks": {
+    "title": "Kontroly konzistence",
+    "find_and_fix_button": "Najděte a opravte problémy s konzistencí",
+    "finding_and_fixing_message": "Hledání a oprava problémů s konzistencí...",
+    "issues_fixed_message": "Všechny nalezené problémy s konzistencí byly nyní opraveny."
+  },
+  "database_anonymization": {
+    "title": "Anonymizace Databáze",
+    "full_anonymization": "Úplná Anonymizace",
+    "full_anonymization_description": "Tato akce vytvoří novou kopii databáze a anonymizuje ji (odstraní veškerý obsah poznámek a ponechá pouze strukturu a některá nesenzitivní metadata) pro sdílení online pro účely ladění bez obav z úniku vašich osobních údajů.",
+    "save_fully_anonymized_database": "Uložit plně anonymizovanou databázi",
+    "light_anonymization": "Částečná Anonymizace",
+    "light_anonymization_description": "Tato akce vytvoří novou kopii databáze a provede na ní částečnou anonymizaci – konkrétně bude odstraněn obsah všech {{Note}}, ale názvy a {{attributes}} zůstanou zachovány. Navíc zůstanou zachovány poznámky s vlastními skripty {{frontend}}/{{backend}} v {{JavaScript}} a vlastní {{widget}}y. To poskytuje více kontextu pro ladění problémů.",
+    "choose_anonymization": "Můžete se sami rozhodnout, zda chcete poskytnout plně nebo částečně anonymizovanou databázi. I plně anonymizovaná databáze je velmi užitečná, ale v některých případech může částečně anonymizovaná databáze urychlit proces identifikace a opravy chyb.",
+    "save_lightly_anonymized_database": "Uložit částečně anonymizovanou databázi",
+    "existing_anonymized_databases": "Existující anonymizované databáze",
+    "creating_fully_anonymized_database": "Vytváření plně anonymizované databáze...",
+    "creating_lightly_anonymized_database": "Vytváření částečně anonymizované databáze...",
+    "error_creating_anonymized_database": "Nepodařilo se vytvořit anonymizovanou databázi, zkontrolujte protokoly {{backend}} pro podrobnosti",
+    "successfully_created_fully_anonymized_database": "Vytvořena plně anonymizovaná databáze v {{anonymizedFilePath}}",
+    "successfully_created_lightly_anonymized_database": "Vytvořena částečně anonymizovaná databáze v {{anonymizedFilePath}}",
+    "no_anonymized_database_yet": "Zatím žádná anonymizovaná databáze."
+  },
+  "database_integrity_check": {
+    "title": "Kontrola integrity databáze",
+    "description": "Toto zkontroluje, zda databáze není poškozena na úrovni SQLite. Může to chvíli trvat v závislosti na velikosti databáze.",
+    "check_button": "Zkontrolovat integritu databáze",
+    "checking_integrity": "Probíhá kontrola integrity databáze...",
+    "integrity_check_succeeded": "Kontrola integrity proběhla úspěšně - nebyly nalezeny žádné problémy.",
+    "integrity_check_failed": "Kontrola integrity selhala: {{results}}"
+  },
+  "sync": {
+    "title": "Synchronizace",
+    "force_full_sync_button": "Vynutit úplnou synchronizaci",
+    "fill_entity_changes_button": "Naplnit záznamy změn entit",
+    "full_sync_triggered": "Spuštěna úplná synchronizace",
+    "filling_entity_changes": "Probíhá naplňování řádků změn entit...",
+    "sync_rows_filled_successfully": "Řádky synchronizace byly úspěšně naplněny",
+    "finished-successfully": "Synchronizace proběhla úspěšně.",
+    "failed": "Synchronizace selhala: {{message}}"
+  },
+  "vacuum_database": {
+    "title": "Vyčistit databázi (Vacuum)",
+    "description": "Tímto se provede rekonstrukce databáze, což obvykle povede k menšímu souboru databáze. Žádná data nebudou ve skutečnosti změněna.",
+    "button_text": "Vyčistit databázi",
+    "vacuuming_database": "Probíhá čištění databáze...",
+    "database_vacuumed": "Databáze byla vyčištěna"
+  },
+  "experimental_features": {
+    "title": "Experimentální Nastavení",
+    "disclaimer": "Tato nastavení jsou experimentální a mohou způsobit nestabilitu. Používejte s opatrností.",
+    "new_layout_name": "Nové Rozložení",
+    "new_layout_description": "Vyzkoušejte nové rozložení pro modernější vzhled a lepší použitelnost. Podléhá velkým změnám v nadcházejících verzích.",
+    "llm_name": "AI / LLM Chat",
+    "llm_description": "Povolte postranní panel AI chatu a poznámky LLM chatu poháněné velkými jazykovými modely."
+  },
+  "fonts": {
+    "theme_defined": "Definované téma",
+    "fonts": "Písma",
+    "main_font": "Hlavní písmo",
+    "font_family": "Rodina písma",
+    "size": "Velikost",
+    "note_tree_font": "Font stromu poznámek",
+    "note_detail_font": "Font detailu poznámky",
+    "monospace_font": "Monospace (kód) Font",
+    "note_tree_and_detail_font_sizing": "Upozorňujeme, že velikost fontu stromu a detailu je relativní k hlavnímu nastavení velikosti fontu.",
+    "not_all_fonts_available": "Ne všechny uvedené fonty nemusí být dostupné ve vašem systému.",
+    "apply_font_changes": "Pro použití změn fontu klikněte na",
+    "reload_frontend": "obnovení frontendu",
+    "generic-fonts": "Obecné fonty",
+    "sans-serif-system-fonts": "Systémové sans-serif fonty",
+    "serif-system-fonts": "Systémové serif fonty",
+    "monospace-system-fonts": "Systémové monospace fonty",
+    "handwriting-system-fonts": "Systémové fonty pro psaní rukou",
+    "serif": "Serif",
+    "sans-serif": "Sans Serif",
+    "monospace": "Monospace",
+    "system-default": "Výchozí systémové nastavení"
+  },
+  "max_content_width": {
+    "title": "Šířka obsahu",
+    "default_description": "Trilium ve výchozím nastavení omezuje maximální šířku obsahu pro zlepšení čitelnosti na maximalizovaných obrazovkách na širokých monitorech.",
+    "max_width_label": "Maximální šířka obsahu",
+    "max_width_unit": "pixelů",
+    "centerContent": "Udržovat obsah centrováný"
+  },
+  "native_title_bar": {
+    "title": "Nativní panel titulku (vyžaduje restart aplikace)",
+    "enabled": "zapnuto",
+    "disabled": "vypnuto"
+  },
+  "ribbon": {
+    "widgets": "Widgety pásu karet",
+    "promoted_attributes_message": "Záložka Propagované atributy na pásu karet se automaticky otevře, pokud jsou na poznámce přítomny propagované atributy.",
+    "edited_notes_message": "Záložka Upravené poznámky na pásu karet se automaticky otevře u denních poznámek."
+  },
+  "theme": {
+    "title": "Vzhled aplikace",
+    "theme_label": "Vzhled",
+    "override_theme_fonts_label": "Přepsat písma vzhledu",
+    "auto_theme": "Starší (Sledovat barevné schéma systému)",
+    "light_theme": "Starší (Světlé)",
+    "dark_theme": "Starší (Tmavé)",
+    "triliumnext": "Trilium (Sledovat barevné schéma systému)",
+    "triliumnext-light": "Trilium (Světlé)",
+    "triliumnext-dark": "Trilium (Tmavé)",
+    "layout": "Rozložení",
+    "layout-vertical-title": "Vertikální",
+    "layout-horizontal-title": "Horizontální",
+    "layout-vertical-description": "lišta {{launcher}} je vlevo (výchozí)",
+    "layout-horizontal-description": "lišta {{launcher}} je pod záložkou, záložka je nyní celá šířka."
+  },
+  "ui-performance": {
+    "title": "Výkon",
+    "enable-motion": "Povolit přechody a animace",
+    "enable-shadows": "Povolit stíny",
+    "enable-backdrop-effects": "Povolit efekty pozadí pro nabídky, vyskakovací okna a panely",
+    "enable-smooth-scroll": "Povolit plynulé rolování",
+    "app-restart-required": "(restart aplikace je nutný pro projev změny)"
+  },
+  "zoom_factor": {
+    "title": "Faktor zoomu (pouze desktop verze)",
+    "description": "Zoom lze ovládat i pomocí klávesových zkratek CTRL+- a CTRL+=."
+  },
+  "code_auto_read_only_size": {
+    "title": "Automatická velikost pro režim Pouze pro čtení",
+    "description": "Automatická velikost poznámky pro režim Pouze pro čtení určuje velikost, po které se poznámky zobrazí v režimu Pouze pro čtení (z důvodu výkonu).",
+    "label": "Automatická velikost pro režim Pouze pro čtení (kódové poznámky)",
+    "unit": "znaků"
+  },
+  "code-editor-options": {
+    "title": "Editor"
+  },
+  "code_mime_types": {
+    "title": "Dostupné MIME typy v rozbalovací nabídce",
+    "tooltip_syntax_highlighting": "Zvýrazňování syntaxe",
+    "tooltip_code_block_syntax": "Kódové bloky v Textových poznámkách",
+    "tooltip_code_note_syntax": "Kódové poznámky"
+  },
+  "vim_key_bindings": {
+    "use_vim_keybindings_in_code_notes": "Klávesové zkratky Vim",
+    "enable_vim_keybindings": "Povolit klávesové zkratky Vim v kódových poznámkách (bez ex módu)"
+  },
+  "wrap_lines": {
+    "wrap_lines_in_code_notes": "Zabalit řádky v kódových poznámkách",
+    "enable_line_wrap": "Povolit zalomení řádků (změna může vyžadovat obnovení frontendu, aby se projevila)"
+  },
+  "images": {
+    "images_section_title": "Obrázky",
+    "download_images_automatically": "Automaticky stahovat obrázky",
+    "download_images_description": "Automaticky stahovat obrázky odkazované v vloženém HTML, aby byly dostupné offline.",
+    "enable_image_compression": "Komprese obrázků",
+    "enable_image_compression_description": "Komprimovat a změnit velikost obrázků při nahrávání nebo vkládání.",
+    "max_image_dimensions": "Maximální rozměry obrázku",
+    "max_image_dimensions_description": "Obrázky překračující tuto velikost budou automaticky změněny.",
+    "max_image_dimensions_unit": "pixelů",
+    "jpeg_quality": "Kvalita JPEG",
+    "jpeg_quality_description": "Doporučený rozsah je 50–85. Nižší hodnoty snižují velikost souboru, vyšší hodnoty zachovávají detaily.",
+    "ocr_section_title": "Extrakce textu (OCR)",
+    "ocr_related_content_languages": "Jazyky obsahu (používané pro extrakci textu)",
+    "ocr_auto_process": "Automaticky zpracovávat nové soubory",
+    "ocr_auto_process_description": "Automaticky extrahovat text z nově nahraných nebo vložených souborů.",
+    "ocr_min_confidence": "Minimální spolehlivost",
+    "ocr_confidence_description": "Extrahovat pouze text nad touto hranicí spolehlivosti. Nižší hodnoty zahrnují více textu, ale mohou být méně přesné.",
+    "batch_ocr_title": "Zpracovat existující soubory",
+    "batch_ocr_description": "Extrahovat text ze všech existujících obrázků, PDF a Office dokumentů ve vašich {{Notes}}. To může trvat nějaký čas v závislosti na počtu souborů.",
+    "batch_ocr_start": "Spustit dávkové zpracování",
+    "batch_ocr_starting": "Spuštění dávkového zpracování...",
+    "batch_ocr_progress": "Zpracovávám {{processed}} z {{total}} souborů...",
+    "batch_ocr_completed": "Dávkové zpracování dokončeno! Zpracováno {{processed}} souborů.",
+    "batch_ocr_error": "Chyba během dávkového zpracování: {{error}}"
+  },
+  "attachment_erasure_timeout": {
+    "attachment_erasure_timeout": "Časový limit pro vymazání {{attachments}}",
+    "attachment_auto_deletion_description": "{{Attachments}} jsou automaticky smazány (a vymazány), pokud nejsou po definovaném časovém limitu odkazovány jejich {{Note}}.",
+    "erase_attachments_after": "Vymazat nepoužité {{attachments}} po:",
+    "manual_erasing_description": "Můžete také spustit vymazání ručně (bez ohledu na výše definovaný časový limit):",
+    "erase_unused_attachments_now": "Vymazat nepoužité {{attachments}} nyní",
+    "unused_attachments_erased": "Nepoužívané přílohy byly vymazány."
+  },
+  "network_connections": {
+    "network_connections_title": "Síťová připojení",
+    "check_for_updates": "Automaticky kontrolovat aktualizace"
+  },
+  "note_erasure_timeout": {
+    "note_erasure_timeout_title": "Časový limit pro vymazání Poznámky",
+    "note_erasure_description": "Smazané Poznámky (a {{attributes}}, {{revisions}}...) jsou zpočátku pouze označeny jako smazané a lze je obnovit z dialogu Nedávné Poznámky. Po určité době jsou smazané Poznámky \"vymazány\", což znamená, že jejich obsah nelze obnovit. Toto nastavení umožňuje konfigurovat délku doby mezi smazáním a vymazáním Poznámky.",
+    "erase_notes_after": "Vymazat Poznámky po:",
+    "manual_erasing_description": "Můžete také spustit vymazání ručně (bez ohledu na výše uvedený časový limit):",
+    "erase_deleted_notes_now": "Vymazat smazané Poznámky nyní",
+    "deleted_notes_erased": "Smazané Poznámky byly vymazány."
+  },
+  "revisions_snapshot_interval": {
+    "note_revisions_snapshot_interval_title": "Interval snímků revizí Poznámky",
+    "note_revisions_snapshot_description": "Interval snímků revizí Poznámky je doba po které bude vytvořen nový snímek revize Poznámky. Více informací naleznete v <doc>wiki</doc>.",
+    "snapshot_time_interval_label": "Časový interval snímků revizí Poznámky:"
+  },
+  "revisions_snapshot_limit": {
+    "note_revisions_snapshot_limit_title": "Limit snímků revizí Poznámky",
+    "note_revisions_snapshot_limit_description": "Limit počtu snímků revizí Poznámky se týká maximálního počtu revizí, které lze uložit pro každou Poznámku. Hodnota -1 znamená žádný limit, 0 znamená smazat všechny revize. Můžete nastavit maximální počet revizí pro jednu Poznámku pomocí štítku #versioningLimit.",
+    "snapshot_number_limit_label": "Limit počtu snímků revizí Poznámky:",
+    "snapshot_number_limit_unit": "snímky",
+    "erase_excess_revision_snapshots": "Vymazat nadbytečné snímky revizí nyní",
+    "erase_excess_revision_snapshots_prompt": "Nadbytečné snímky revizí byly vymazány."
+  },
+  "search_engine": {
+    "title": "Vyhledávač",
+    "custom_search_engine_info": "Vlastní vyhledávač vyžaduje nastavení jak názvu, tak {{URL}}. Pokud některý z nich není nastaven, bude použit DuckDuckGo jako výchozí vyhledávač.",
+    "predefined_templates_label": "Předdefinované šablony vyhledávačů",
+    "bing": "Bing",
+    "baidu": "Baidu",
+    "duckduckgo": "DuckDuckGo",
+    "google": "Google",
+    "custom_name_label": "Název vlastního vyhledávače",
+    "custom_name_placeholder": "Přizpůsobit název vyhledávače",
+    "custom_url_label": "{{URL}} vlastního vyhledávače by měl obsahovat {keyword} jako zástupný symbol pro vyhledávací výraz.",
+    "custom_url_placeholder": "Přizpůsobit {{URL}} vyhledávače",
+    "save_button": "Uložit"
+  },
+  "tray": {
+    "title": "Systémová informační oblast",
+    "enable_tray": "Povolit informační oblast (pro zavedení této změny je nutné Trilium restartovat)"
+  },
+  "heading_style": {
+    "title": "Styl nadpisu",
+    "plain": "Prostý",
+    "underline": "Podtržení",
+    "markdown": "Ve stylu Markdown"
+  },
+  "highlights_list": {
+    "title": "Seznam zvýraznění",
+    "description": "V pravém panelu můžete upravit seznam zvýraznění:",
+    "bold": "Tučné písmo",
+    "italic": "Kurzíva",
+    "underline": "Podtržený text",
+    "color": "Barevný text",
+    "bg_color": "Text s barvou pozadí",
+    "visibility_title": "Viditelnost seznamu zvýraznění",
+    "visibility_description": "Widget zvýraznění můžete pro jednotlivé poznámky skrýt přidáním štítku #hideHighlightWidget.",
+    "shortcut_info": "Můžete nakonfigurovat klávesovou zkratku pro rychlé přepínání pravého panelu (včetně zvýraznění) v Nastavení -> Zkratky (název 'toggleRightPane')."
+  },
+  "table_of_contents": {
+    "title": "Obsah",
+    "description": "Obsah se zobrazí v textových Poznámkách, pokud Poznámka obsahuje více než definovaný počet nadpisů. Můžete si přizpůsobit tento počet:",
+    "unit": "nadpisů",
+    "disable_info": "Můžete také použít tuto možnost pro efektivní vypnutí TOC nastavením velmi vysokého čísla.",
+    "shortcut_info": "Můžete nakonfigurovat klávesovou zkratku pro rychlé přepínání pravého panelu (včetně TOC) v Nastavení -> Zkratky (název 'toggleRightPane')."
+  },
+  "text_auto_read_only_size": {
+    "title": "Automatická velikost pro Pouze pro čtení",
+    "description": "Automatická velikost Poznámky pro Pouze pro čtení je velikost, po které se Poznámky zobrazí v režimu Pouze pro čtení (z důvodu výkonu).",
+    "label": "Automatická velikost pro Pouze pro čtení (textové Poznámky)",
+    "unit": "znaků"
+  },
+  "custom_date_time_format": {
+    "title": "Vlastní formát data/času",
+    "description": "Přizpůsobte formát data a času vloženého pomocí <shortcut /> nebo panelu nástrojů. Podívejte se na <doc>dokumentaci Day.js</doc> pro dostupné tokeny formátu.",
+    "format_string": "Řetězec formátu:",
+    "formatted_time": "Formátované datum/čas:"
+  },
+  "i18n": {
+    "title": "Lokalizace",
+    "language": "Čeština",
+    "first-day-of-the-week": "První den v týdnu",
+    "monday": "Pondělí",
+    "tuesday": "Úterý",
+    "wednesday": "Středa",
+    "thursday": "Čtvrtek",
+    "friday": "Pátek",
+    "saturday": "Sobota",
+    "sunday": "Neděle",
+    "first-week-of-the-year": "První týden v roce",
+    "first-week-contains-first-day": "První týden obsahuje první den v roce",
+    "first-week-contains-first-thursday": "První týden obsahuje první čtvrtek v roce",
+    "first-week-has-minimum-days": "První týden má minimální počet dní",
+    "min-days-in-first-week": "Minimální počet dní v prvním týdnu",
+    "first-week-info": "První týden obsahuje první čtvrtek v roce je založen na <a href=\"https://en.wikipedia.org/wiki/ISO_week_date#First_week\">ISO 8601</a> standardu.",
+    "first-week-warning": "Změna možností prvního týdne může způsobit duplikaci se stávajícími Týdenními Poznámkami a stávající Týdenní Poznámky nebudou odpovídajícím způsobem aktualizovány.",
+    "formatting-locale": "Formát data & čísel",
+    "formatting-locale-auto": "Na základě jazyka aplikace"
+  },
+  "backup": {
+    "automatic_backup": "Automatické zálohování",
+    "automatic_backup_description": "Trilium může automaticky zálohovat databázi:",
+    "enable_daily_backup": "Povolit denní zálohování",
+    "enable_weekly_backup": "Povolit týdenní zálohování",
+    "enable_monthly_backup": "Povolit měsíční zálohování",
+    "backup_recommendation": "Doporučuje se ponechat zálohování zapnuté, ale to může zpomalit spuštění aplikace s velkými databázemi a/nebo pomalými úložnými zařízeními.",
+    "backup_now": "Zálohovat nyní",
+    "backup_database_now": "Zálohovat databázi nyní",
+    "existing_backups": "Existující zálohy",
+    "date-and-time": "Datum & čas",
+    "path": "Cesta",
+    "database_backed_up_to": "Databáze byla zálohována do {{backupFilePath}}",
+    "no_backup_yet": "Zatím neexistuje žádná záloha"
+  },
+  "etapi": {
+    "title": "ETAPI",
+    "description": "ETAPI je REST API používané pro programatický přístup k instanci Trilium bez uživatelského rozhraní.",
+    "create_token": "Vytvořit nový ETAPI token",
+    "existing_tokens": "Existující tokeny",
+    "no_tokens_yet": "Zatím neexistují žádné tokeny. Klikněte na tlačítko výše a vytvořte jeden.",
+    "token_name": "Název tokenu",
+    "created": "Vytvořeno",
+    "actions": "Akce",
+    "new_token_title": "Nový ETAPI token",
+    "new_token_message": "Zadejte název nového tokenu",
+    "default_token_name": "nový token",
+    "error_empty_name": "Název tokenu nemůže být prázdný",
+    "token_created_title": "ETAPI token vytvořen",
+    "token_created_message": "Zkopírujte vytvořený token do {{clipboard}}. Trilium token ukládá hashovaný a toto je poslední možnost, jak jej uvidíte.",
+    "rename_token": "Přejmenovat tento token",
+    "delete_token": "Smazat / deaktivovat tento token",
+    "rename_token_title": "Přejmenovat token",
+    "rename_token_message": "Zadejte nový název tokenu",
+    "delete_token_confirmation": "Jste si jisti, že chcete smazat ETAPI token \"{{name}}\"?"
+  },
+  "options_widget": {
+    "options_status": "Stav Nastavení",
+    "options_change_saved": "Změny v Nastavení byly uloženy."
+  },
+  "password": {
+    "heading": "Heslo",
+    "alert_message": "Dávejte pozor, abyste si zapamatovali své nové heslo. Heslo se používá pro přihlášení do webového rozhraní a pro šifrování chráněných Poznámek. Pokud heslo zapomenete, všechny vaše chráněné Poznámky budou navždy ztraceny.",
+    "reset_link": "Klikněte zde pro jeho resetování.",
+    "old_password": "Staré heslo",
+    "new_password": "Nové heslo",
+    "new_password_confirmation": "Potvrzení nového hesla",
+    "change_password": "Změnit heslo",
+    "protected_session_timeout": "Časový limit pro Chráněná relace",
+    "protected_session_timeout_description": "Časový limit chráněné relace je doba, po které se chráněná relace vymaže z paměti prohlížeče. Měří se od poslední interakce s chráněnými {{poznámkami}}. Viz",
+    "wiki": "wiki",
+    "for_more_info": "pro více informací.",
+    "protected_session_timeout_label": "Časový limit chráněné relace:",
+    "reset_confirmation": "Resetováním hesla navždy ztratíte přístup ke všem svým existujícím chráněným {{poznámkám}}. Opravdu chcete heslo resetovat?",
+    "reset_success_message": "Heslo bylo resetováno. Nastavte nové heslo",
+    "change_password_heading": "Změnit heslo",
+    "set_password_heading": "Nastavit heslo",
+    "set_password": "Nastavit heslo",
+    "password_mismatch": "Nová hesla se neshodují.",
+    "password_changed_success": "Heslo bylo změněno. Trilium se po stisknutí OK znovu načte."
+  },
+  "multi_factor_authentication": {
+    "title": "Vícefaktorová autentizace",
+    "description": "Vícefaktorová autentizace (MFA) přidává další vrstvu zabezpečení k vašemu účtu. Místo pouhého zadání hesla pro přihlášení MFA vyžaduje, abyste poskytli jeden nebo více dalších důkazů pro ověření vaší identity. Tímto způsobem, i když se někdo dostane k vašemu heslu, nemůže se k vašemu účtu dostat bez druhého kusu informace. Je to jako přidání dalšího zámku ke dveřím, což ztěžuje vniknutí kohokoli jiného.<br><br>Postupujte podle pokynů níže a povolte MFA. Pokud to nenakonfigurujete správně, přihlášení se vrátí pouze k heslu.",
+    "mfa_enabled": "Povolit vícefaktorovou autentizaci",
+    "mfa_method": "Metoda MFA",
+    "electron_disabled": "Multifaktorová autentizace není v {{desktop}} verzi aktuálně podporována.",
+    "totp_title": "Časově založený jednorázový heslo ({{TOTP}})",
+    "totp_description": "{{TOTP}} (Časově založený jednorázový heslo) je bezpečnostní funkce, která generuje jedinečný, dočasný kód, který se mění každých 30 sekund. Tento kód spolu s vaším heslem použijete k přihlášení do svého účtu, což ztěžuje přístup k němu pro kohokoli jiného.",
+    "totp_secret_title": "Generovat {{TOTP}} tajný klíč",
+    "totp_secret_generate": "Generovat {{TOTP}} tajný klíč",
+    "totp_secret_regenerate": "Regenerovat {{TOTP}} tajný klíč",
+    "no_totp_secret_warning": "Pro povolení {{TOTP}} je nejprve nutné vygenerovat {{TOTP}} tajný klíč.",
+    "totp_secret_description_warning": "Po vygenerování nového {{TOTP}} tajného klíče budete muset znovu přihlásit pomocí nového {{TOTP}} tajného klíče.",
+    "totp_secret_generated": "{{TOTP}} tajný klíč vygenerován",
+    "totp_secret_warning": "Uložte vygenerovaný tajný klíč na bezpečném místě. Nebude znovu zobrazen.",
+    "totp_secret_regenerate_confirm": "Jste si jisti, že chcete regenerovat {{TOTP}} tajný klíč? Tím se zneplatní předchozí {{TOTP}} tajný klíč a všechny existující záchranné kódy.",
+    "recovery_keys_title": "Záchranné klíče pro jednotné přihlašování",
+    "recovery_keys_description": "Záchranné klíče pro jednotné přihlašování se používají k přihlášení v případě, že nemáte přístup ke svým autentifikačním kódům.",
+    "recovery_keys_description_warning": "Záchranné klíče nebudou po opuštění stránky znovu zobrazeny, uchovejte je na bezpečném místě. Po použití záchranného klíče jej nelze znovu použít.",
+    "recovery_keys_error": "Chyba při generování záchranných kódů",
+    "recovery_keys_no_key_set": "Nebyly nastaveny žádné záchranné kódy",
+    "recovery_keys_generate": "Generovat záchranné kódy",
+    "recovery_keys_regenerate": "Regenerovat záchranné kódy",
+    "recovery_keys_used": "Použito: {{date}}",
+    "recovery_keys_unused": "Záchranný kód {{index}} nebyl použit",
+    "oauth_title": "OAuth/OpenID",
+    "oauth_description": "OpenID je standardizovaný způsob, jak se přihlásit na webové stránky pomocí účtu z jiné služby, jako je Google, pro ověření vaší identity. Výchozí vydavatel je Google, ale můžete jej změnit na jakéhokoli jiného ⟨OpenID provider⟩. Podrobnosti naleznete <a href=\"#root/_hidden/_help/_help_Otzi9La2YAUX/_help_WOcw2SLH6tbX/_help_7DAiwaf8Z7Rz\">zde</a>. Postupujte podle těchto <a href=\"https://developers.google.com/identity/openid-connect/openid-connect\">instrukcí</a> pro nastavení služby OpenID přes Google.",
+    "oauth_description_warning": "Pro povolení OAuth/OpenID musíte nastavit základní ⟨URL⟩ OAuth/OpenID, ID klienta a tajný klíč klienta v souboru config.ini a restartovat aplikaci. Pokud chcete nastavit z proměnných prostředí, nastavte TRILIUM_OAUTH_BASE_URL, TRILIUM_OAUTH_CLIENT_ID a TRILIUM_OAUTH_CLIENT_SECRET.",
+    "oauth_missing_vars": "Chybějící nastavení: {{-variables}}",
+    "oauth_user_account": "Uživatelský účet: ",
+    "oauth_user_email": "Uživatelský e-mail: ",
+    "oauth_user_not_logged_in": "Není přihlášen!"
+  },
+  "shortcuts": {
+    "keyboard_shortcuts": "Klávesové zkratky",
+    "multiple_shortcuts": "Více zkratek pro stejnou akci lze oddělit čárkou.",
+    "electron_documentation": "Dostupné modifikátory a kódy kláves naleznete v <a href=\"https://www.electronjs.org/docs/latest/api/accelerator\">dokumentaci Electronu</a>.",
+    "type_text_to_filter": "Napište text pro filtrování zkratek...",
+    "action_name": "Název akce",
+    "shortcuts": "Zkratky",
+    "default_shortcuts": "Výchozí zkratky",
+    "description": "Popis",
+    "reload_app": "Načtěte aplikaci pro použití změn",
+    "set_all_to_default": "Nastavte všechny zkratky na výchozí",
+    "confirm_reset": "Opravdu chcete resetovat všechny klávesové zkratky na výchozí?",
+    "no_results": "Nebyly nalezeny žádné zkratky odpovídající '{{filter}}'"
+  },
+  "spellcheck": {
+    "title": "Kontrola pravopisu",
+    "description": "Tato nastavení platí pouze pro ⟨desktop⟩ verze, prohlížeče budou používat vlastní nativní kontrolu pravopisu.",
+    "enable": "Povolit kontrolu pravopisu",
+    "language_code_label": "Kód jazyka(ů)",
+    "language_code_placeholder": "například \"en-US\", \"de-AT\"",
+    "multiple_languages_info": "Více jazyků lze oddělit čárkou, např. \"en-US, de-DE, cs\". ",
+    "available_language_codes_label": "Dostupné jazykové kódy:",
+    "restart-required": "Změny v nastavení kontroly pravopisu se projeví po restartu aplikace."
+  },
+  "sync_2": {
+    "config_title": "Konfigurace Synchronizace",
+    "server_address": "Adresa instance serveru",
+    "timeout": "Časový limit synchronizace",
+    "timeout_unit": "milisekund",
+    "proxy_label": "Proxy server pro synchronizaci (volitelné)",
+    "note": "Poznámka",
+    "note_description": "Pokud ponecháte nastavení proxy prázdné, bude použit systémový proxy (platí pouze pro desktop/electron build).",
+    "special_value_description": "Další speciální hodnota je <code>noproxy</code>, která vynutí ignorování i systémového proxy a respektuje <code>NODE_TLS_REJECT_UNAUTHORIZED</code>.",
+    "save": "Uložit",
+    "help": "Nápověda",
+    "test_title": "Test Synchronizace",
+    "test_description": "Tím se otestuje připojení a handshake se serverem synchronizace. Pokud server synchronizace není inicializován, nastaví se pro synchronizaci s lokálním dokumentem.",
+    "test_button": "Test synchronizace",
+    "handshake_failed": "Selhání handshake se serverem pro synchronizaci, chyba: {{message}}"
+  },
+  "api_log": {
+    "close": "Zavřít"
+  },
+  "attachment_detail_2": {
+    "will_be_deleted_in": "Tato příloha bude automaticky smazána za {{time}}",
+    "will_be_deleted_soon": "Tato příloha bude brzy automaticky smazána",
+    "deletion_reason": ", protože příloha není propojena s obsahem poznámky. Aby se smazání zabránilo, vložte odkaz na přílohu zpět do obsahu nebo převeďte přílohu na poznámku.",
+    "role_and_size": "Role: {{role}}, velikost: {{size}}, MIME: {{- mimeType}}",
+    "link_copied": "Odkaz na přílohu byl zkopírován do schránky.",
+    "unrecognized_role": "Nerozpoznaná role přílohy '{{role}}'."
+  },
+  "bookmark_switch": {
+    "bookmark": "Záložka (oblíbená)",
+    "bookmark_this_note": "Přidejte tuto poznámku do záložek na levém panelu",
+    "remove_bookmark": "Odebrat záložku"
+  },
+  "editability_select": {
+    "auto": "Automaticky",
+    "read_only": "Pouze pro čtení",
+    "always_editable": "Vždy upravitelná",
+    "note_is_editable": "Poznámka je upravitelná, pokud není příliš dlouhá.",
+    "note_is_read_only": "Poznámka je pouze pro čtení, ale lze ji upravit kliknutím na tlačítko.",
+    "note_is_always_editable": "Poznámka je vždy editovatelná, bez ohledu na její délku."
+  },
+  "note-map": {
+    "button-link-map": "Mapa odkazů",
+    "button-tree-map": "Mapa stromu"
+  },
+  "tree-context-menu": {
+    "open-in-a-new-tab": "Otevřít v nové záložce",
+    "open-in-a-new-split": "Otevřít v novém rozdělení",
+    "open-in-a-new-window": "Otevřít v novém okně",
+    "insert-note-after": "Vložit poznámku za",
+    "insert-child-note": "Vložit dceřinou poznámku",
+    "archive": "Archivovat",
+    "unarchive": "Obnovit z archivu",
+    "delete": "Smazat",
+    "search-in-subtree": "Hledat v podstromu",
+    "hoist-note": "Přesunout poznámku nahoru",
+    "unhoist-note": "Přesunout poznámku dolů",
+    "edit-branch-prefix": "Upravit předponu větve",
+    "advanced": "Pokročilé",
+    "expand-subtree": "Rozbalit podstrom",
+    "collapse-subtree": "Sbalit podstrom",
+    "hide-subtree": "Skrýt podstrom",
+    "show-subtree": "Zobrazit podstrom",
+    "sort-by": "Seřadit podle...",
+    "recent-changes-in-subtree": "Nedávné změny v podstromu",
+    "convert-to-attachment": "Převést na přílohu",
+    "copy-note-path-to-clipboard": "Kopírovat cestu poznámky do schránky",
+    "protect-subtree": "Chránit podstrom",
+    "unprotect-subtree": "Zrušit ochranu podstromu",
+    "copy-clone": "Kopírovat / klonovat",
+    "clone-to": "Klonovat do...",
+    "cut": "Vyjmout",
+    "move-to": "Přesunout do...",
+    "paste-into": "Vložit do",
+    "paste-after": "Vložit za",
+    "duplicate": "Duplikovat",
+    "export": "Export",
+    "import-into-note": "Importovat do Poznámky",
+    "apply-bulk-actions": "Použít hromadné akce",
+    "converted-to-attachments": "{{count}} Poznámek bylo převedeno na Přílohy.",
+    "convert-to-attachment-confirm": "Jste si jisti, že chcete převést vybrané Poznámky na Přílohy jejich nadřazených Poznámek? Tato operace se vztahuje pouze na Poznámky typu Obrázek, ostatní Poznámky budou přeskočeny.",
+    "open-in-popup": "Rychlá úprava"
+  },
+  "shared_info": {
+    "shared_publicly": "Tato Poznámka je veřejně Sdílena na {{- link}}.",
+    "shared_locally": "Tato Poznámka je lokálně Sdílena na {{- link}}.",
+    "help_link": "Pro pomoc navštivte <a href=\"https://triliumnext.github.io/Docs/Wiki/sharing.html\">wiki</a>."
+  },
+  "read-only-info": {
+    "read-only-note": "Zobrazujete Poznámku pouze pro čtení.",
+    "auto-read-only-note": "Tato Poznámka je zobrazena v režimu Pouze pro čtení pro rychlejší načítání.",
+    "edit-note": "Upravit Poznámku"
+  },
+  "note_types": {
+    "text": "Text",
+    "code": "Kód",
+    "saved-search": "Uložené vyhledávání",
+    "relation-map": "Mapa Vazeb",
+    "note-map": "Mapa Poznámek",
+    "render-note": "Poznámka pro vykreslení",
+    "book": "Kolekce",
+    "mermaid-diagram": "Mermaid Diagram",
+    "canvas": "Plátno",
+    "web-view": "Webový pohled",
+    "mind-map": "Mentální mapa",
+    "file": "Soubor",
+    "image": "Obrázek",
+    "launcher": "Spouštěč",
+    "doc": "Dokument",
+    "widget": "Widget",
+    "confirm-change": "Nedoporučuje se měnit typ poznámky, pokud není prázdná. Chcete pokračovat?",
+    "geo-map": "Geomapa",
+    "beta-feature": "Beta",
+    "ai-chat": "AI Chat",
+    "llm-chat": "AI Chat",
+    "task-list": "Seznam úkolů",
+    "new-feature": "Nový",
+    "collections": "Kolekce",
+    "spreadsheet": "Tabulka"
+  },
+  "protect_note": {
+    "toggle-on": "Zabezpečit poznámku",
+    "toggle-off": "Zrušit zabezpečení poznámky",
+    "toggle-on-hint": "Poznámka není zabezpečená, klikněte pro její zabezpečení",
+    "toggle-off-hint": "Poznámka je zabezpečená, klikněte pro zrušení zabezpečení"
+  },
+  "llm_chat": {
+    "placeholder": "Napište zprávu...",
+    "send": "Odeslat",
+    "sending": "Odesílání...",
+    "empty_state": "Zahajte konverzaci napsáním zprávy níže.",
+    "searching_web": "Hledání na webu...",
+    "web_search": "Vyhledávání na webu",
+    "note_tools": "Přístup k Poznámce",
+    "sources": "Zdroje",
+    "sources_summary": "{{count}} zdrojů z {{sites}} webů",
+    "extended_thinking": "Rozšířené myšlení",
+    "legacy_models": "Starší modely",
+    "thinking": "Přemýšlím...",
+    "thought_process": "Myšlenkový proces",
+    "tool_calls": "{{count}} volání nástroje(ů)",
+    "input": "Vstup",
+    "result": "Výsledek",
+    "error": "Chyba",
+    "tool_error": "selhalo",
+    "total_tokens": "{{total}} tokenů",
+    "tokens_detail": "{{prompt}} prompt + {{completion}} completion",
+    "tokens_used": "{{prompt}} prompt + {{completion}} completion = {{total}} tokenů",
+    "tokens_used_with_cost": "{{prompt}} prompt + {{completion}} completion = {{total}} tokenů (~${{cost}})",
+    "tokens_used_with_model": "{{model}}: {{prompt}} prompt + {{completion}} completion = {{total}} tokenů",
+    "tokens_used_with_model_and_cost": "{{model}}: {{prompt}} prompt + {{completion}} completion = {{total}} tokenů (~${{cost}})",
+    "tokens": "tokenů",
+    "context_used": "{{percentage}}% použito",
+    "note_context_enabled": "Kliknutím zakažte kontext poznámky: {{title}}",
+    "note_context_disabled": "Kliknutím zahrňte aktuální Poznámku do kontextu",
+    "no_provider_message": "Nebyl nakonfigurován žádný AI poskytovatel. Přidejte jeden pro zahájení chatu.",
+    "add_provider": "Přidat AI Poskytovatele"
+  },
+  "sidebar_chat": {
+    "title": "AI Chat",
+    "launcher_title": "Otevřít AI Chat",
+    "new_chat": "Zahájit nový chat",
+    "save_chat": "Uložit chat do poznámek",
+    "empty_state": "Zahájit konverzaci",
+    "history": "Historie chatu",
+    "recent_chats": "Nedávné chaty",
+    "no_chats": "Žádné předchozí chaty"
+  },
+  "shared_switch": {
+    "shared": "Sdíleno",
+    "toggle-on-title": "Sdílet poznámku",
+    "toggle-off-title": "Zrušit sdílení poznámky",
+    "shared-branch": "Tato poznámka existuje pouze jako sdílená poznámka, zrušení sdílení by ji smazalo. Chcete pokračovat a tímto poznámku smazat?",
+    "inherited": "Poznámku nelze zde zrušit sdílení, protože je sdílena dědičně z nadřazené poznámky."
+  },
+  "template_switch": {
+    "template": "Šablona",
+    "toggle-on-hint": "Udělat z poznámky šablonu",
+    "toggle-off-hint": "Odstranit poznámku jako šablonu"
+  },
+  "open-help-page": "Otevřít stránku nápovědy",
+  "find": {
+    "case_sensitive": "Rozlišovat malá a velká písmena",
+    "match_words": "Shoda slov",
+    "find_placeholder": "Najít v textu...",
+    "replace_placeholder": "Nahradit pomocí...",
+    "replace": "Nahradit",
+    "replace_all": "Nahradit vše"
+  },
+  "highlights_list_2": {
+    "title": "Seznam zvýraznění",
+    "options": "Nastavení",
+    "modal_title": "Konfigurovat seznam zvýraznění",
+    "menu_configure": "Konfigurovat seznam zvýraznění...",
+    "no_highlights": "Nebyla nalezena žádná zvýraznění."
+  },
+  "quick-search": {
+    "placeholder": "Rychlé hledání",
+    "searching": "Hledání...",
+    "no-results": "Nebyla nalezena žádná výsledná",
+    "more-results": "... a dalších {{number}} výsledků.",
+    "show-in-full-search": "Zobrazit v úplném vyhledávání"
+  },
+  "note_tree": {
+    "collapse-title": "Sbalit strom poznámek",
+    "scroll-active-title": "Posunout k aktivní poznámce",
+    "tree-settings-title": "Nastavení stromu",
+    "hide-archived-notes": "Skrýt archivované poznámky",
+    "automatically-collapse-notes": "Automaticky sbalovat poznámky",
+    "automatically-collapse-notes-title": "Poznámky budou po období nečinnosti sbaleny, aby se strom nepřehltil.",
+    "save-changes": "Uložit a použít změny",
+    "auto-collapsing-notes-after-inactivity": "Automatické sbalování poznámek po nečinnosti...",
+    "saved-search-note-refreshed": "Uložené vyhledávání poznámky bylo obnoveno.",
+    "hoist-this-note-workspace": "Vyvýšit tuto poznámku (pracovní plocha)",
+    "refresh-saved-search-results": "Obnovit výsledky uloženého vyhledávání",
+    "create-child-note": "Vytvořit dceřinnou poznámku",
+    "unhoist": "Unhoist",
+    "toggle-sidebar": "Přepnout boční panel",
+    "dropping-not-allowed": "Do této polohy nelze poznámky přesouvat.",
+    "clone-indicator-tooltip": "Tato poznámka má {{- count}} rodičů: {{- parents}}",
+    "clone-indicator-tooltip-single": "Tato poznámka je klonována (1 další rodič: {{- parent}})",
+    "shared-indicator-tooltip": "Tato poznámka je sdílena veřejně",
+    "shared-indicator-tooltip-with-url": "Tato poznámka je sdílena veřejně na: {{- url}}",
+    "subtree-hidden-moved-title": "Přidáno do {{title}}",
+    "subtree-hidden-moved-description-collection": "Tato kolekce skrývá své dceřiné poznámky ve stromu.",
+    "subtree-hidden-moved-description-other": "Dceřiné poznámky jsou pro tuto poznámku skryty ve stromu."
+  },
+  "title_bar_buttons": {
+    "window-on-top": "Připítnout okno na horní část obrazovky"
+  },
+  "note_detail": {
+    "could_not_find_typewidget": "Nebyl nalezen typeWidget pro typ '{{type}}'",
+    "printing": "Tisknutí probíhá...",
+    "printing_pdf": "Exportování do PDF probíhá...",
+    "print_report_title": "Vytisknout sestavu",
+    "print_report_error_title": "Tisk se nezdařil",
+    "print_report_stack_trace": "Stack trace",
+    "print_report_collection_details_button": "Zobrazit podrobnosti",
+    "print_report_collection_details_ignored_notes": "Ignorované poznámky"
+  },
+  "note_title": {
+    "placeholder": "Zde napište název poznámky...",
+    "created_on": "Vytvořeno dne <Value />",
+    "last_modified": "Upraveno dne <Value />",
+    "note_type_switcher_label": "Přepnout z {{type}} na:",
+    "note_type_switcher_others": "Jiný typ poznámky",
+    "note_type_switcher_templates": "Šablona",
+    "note_type_switcher_collection": "Kolekce",
+    "edited_notes": "Poznámky upravené v tento den",
+    "promoted_attributes": "Propagované atributy"
+  },
+  "search_result": {
+    "no_notes_found": "Pro zadané parametry hledání nebyly nalezeny žádné poznámky.",
+    "search_not_executed": "Hledání ještě nebylo provedeno.",
+    "search_now": "Hledat nyní"
+  },
+  "spacer": {
+    "configure_launchbar": "Konfigurovat Launchbar"
+  },
+  "sql_result": {
+    "not_executed": "Dotaz ještě nebyl proveden.",
+    "no_rows": "Pro tento dotaz nebyly vráceny žádné řádky",
+    "failed": "Provádění SQL dotazu selhalo",
+    "statement_result": "Výsledek příkazu",
+    "execute_now": "Spustit nyní"
+  },
+  "sql_table_schemas": {
+    "tables": "Tabulky"
+  },
+  "tab_row": {
+    "close_tab": "Zavřít záložku",
+    "add_new_tab": "Přidat novou záložku",
+    "close": "Zavřít",
+    "close_other_tabs": "Zavřít ostatní záložky",
+    "close_right_tabs": "Zavřít záložky vpravo",
+    "close_all_tabs": "Zavřít všechny záložky",
+    "reopen_last_tab": "Znovu otevřít poslední zavřenou záložku",
+    "move_tab_to_new_window": "Přesunout tuto záložku do nového okna",
+    "copy_tab_to_new_window": "Zkopírovat tuto záložku do nového okna",
+    "new_tab": "Nová záložka"
+  },
+  "toc": {
+    "table_of_contents": "Obsah",
+    "options": "Nastavení",
+    "no_headings": "Žádné nadpisy."
+  },
+  "watched_file_update_status": {
+    "file_last_modified": "Soubor <code class=\"file-path\"></code> byl naposledy upraven <span class=\"file-last-modified\"></span>.",
+    "upload_modified_file": "Nahrát upravený soubor",
+    "ignore_this_change": "Ignorovat tuto změnu"
+  },
+  "app_context": {
+    "please_wait_for_save": "Počkejte prosím několik sekund, dokud se dokončí ukládání, poté můžete zkusit znovu."
+  },
+  "note_create": {
+    "duplicated": "Poznámka \"{{title}}\" byla duplikována."
+  },
+  "image": {
+    "copied-to-clipboard": "Odkaz na obrázek byl zkopírován do schránky. Lze jej vložit do jakékoli textové poznámky.",
+    "cannot-copy": "Odkaz na obrázek nebylo možné zkopírovat do schránky."
+  },
+  "clipboard": {
+    "cut": "Poznámka/poznámky byly vyříznuty do schránky.",
+    "copied": "Poznámka/poznámky byly zkopírovány do schránky.",
+    "copy_failed": "Nelze zkopírovat do schránky kvůli problémům s oprávněním.",
+    "copy_success": "Zkopírováno do schránky."
+  },
+  "entrypoints": {
+    "note-revision-created": "Revize poznámky byla vytvořena.",
+    "note-executed": "Poznámka byla spuštěna.",
+    "sql-error": "Při provádění SQL dotazu došlo k chybě: {{message}}"
+  },
+  "branches": {
+    "cannot-move-notes-here": "Poznámky sem nelze přesunout.",
+    "delete-status": "Stav mazání",
+    "delete-notes-in-progress": "Probíhá mazání poznámek: {{count}}",
+    "delete-finished-successfully": "Mazání proběhlo úspěšně.",
+    "undeleting-notes-in-progress": "Probíhá obnovování poznámek: {{count}}",
+    "undeleting-notes-finished-successfully": "Obnovení poznámek proběhlo úspěšně."
+  },
+  "frontend_script_api": {
+    "async_warning": "Předáváte asynchronní funkci do `api.runOnBackend()`, což pravděpodobně nebude fungovat tak, jak jste zamýšleli.\\nBuď udělejte funkci synchronní (odstraněním klíčového slova `async`), nebo použijte `api.runAsyncOnBackendWithManualTransactionHandling()`.",
+    "sync_warning": "Předáváte synchronní funkci do `api.runAsyncOnBackendWithManualTransactionHandling()`,\\nzatímco byste pravděpodobně měli místo toho použít `api.runOnBackend()`."
+  },
+  "ws": {
+    "sync-check-failed": "Kontrola synchronizace selhala!",
+    "consistency-checks-failed": "Kontroly konzistence selhaly! Podrobnosti najdete v protokolech.",
+    "encountered-error": "Došlo k chybě \"{{message}}\", podívejte se do konzole.",
+    "lost-websocket-connection-title": "Ztraceno připojení ke serveru",
+    "lost-websocket-connection-message": "Zkontrolujte konfiguraci svého reverzního proxy (např. nginx nebo Apache), zda jsou připojení WebSocket správně povolena a nejsou blokována."
+  },
+  "hoisted_note": {
+    "confirm_unhoisting": "Požadovaná poznámka '{{requestedNote}}' se nachází mimo podstrom zúžené poznámky '{{hoistedNote}}' a pro k jejímu přístupu musíte provést zúžení zrušit. Chcete pokračovat v uvolnění zobrazení?"
+  },
+  "launcher_context_menu": {
+    "reset_launcher_confirm": "Opravdu chcete resetovat \"{{title}}\"? Všechna data / nastavení v této poznámce (a jejích dceřiných poznámkách) budou ztracena a spouštěč se vrátí na své původní místo.",
+    "add-note-launcher": "Přidat spouštěč poznámky",
+    "add-script-launcher": "Přidat spouštěč skriptu",
+    "add-custom-widget": "Přidat vlastní widget",
+    "add-spacer": "Přidat oddělovač",
+    "delete": "Smazat <kbd data-command=\"deleteNotes\"></kbd>",
+    "reset": "Resetovat",
+    "move-to-visible-launchers": "Přesunout do viditelných spouštěčů",
+    "move-to-available-launchers": "Přesunout do dostupných spouštěčů",
+    "duplicate-launcher": "Duplikovat spouštěč <kbd data-command=\"duplicateSubtree\">"
+  },
+  "highlighting": {
+    "title": "Bloky kódu",
+    "description": "Ovládá zvýrazňování syntaxe pro bloky kódu v textových poznámkách, poznámky kódu se tím nebudou dotýkat.",
+    "color-scheme": "Barevné schéma"
+  },
+  "code_block": {
+    "word_wrapping": "Zalomování slov",
+    "theme_none": "Žádné zvýrazňování syntaxe",
+    "theme_group_light": "Světlé motivy",
+    "theme_group_dark": "Tmavé motivy",
+    "copy_title": "Kopírovat do schránky"
+  },
+  "classic_editor_toolbar": {
+    "title": "Formátování"
+  },
+  "editor": {
+    "title": "Editor"
+  },
+  "editing": {
+    "editor_type": {
+      "label": "Lišta pro formátování",
+      "floating": {
+        "title": "Plovoucí",
+        "description": "nástroje pro úpravy se zobrazí u kurzoru;"
+      },
+      "fixed": {
+        "title": "Fixní",
+        "description": "nástroje pro úpravu se zobrazují na záložce „Formátování“ v pásu karet."
+      },
+      "multiline-toolbar": "Zobrazit panel nástrojů v několika řádcích, pokud se nevejde."
+    }
+  },
+  "electron_context_menu": {
+    "add-term-to-dictionary": "Přidat „{{term}}“ do slovníku",
+    "cut": "Vyříznout",
+    "copy": "Kopírovat",
+    "copy-as-markdown": "Kopírovat jako Markdown",
+    "copy-link": "Kopírovat odkaz",
+    "paste": "Vložit",
+    "paste-as-plain-text": "Vložit jako prostý text",
+    "search_in_trilium": "Hledat „{{term}}“ v Trilium",
+    "search_online": "Hledat „{{term}}“ pomocí {{searchEngine}}"
+  },
+  "image_context_menu": {
+    "copy_reference_to_clipboard": "Kopírovat odkaz do schránky",
+    "copy_image_to_clipboard": "Kopírovat obrázek do schránky"
+  },
+  "link_context_menu": {
+    "open_note_in_new_tab": "Otevřít poznámku v nové záložce",
+    "open_note_in_new_split": "Otevřít poznámku v novém rozdělení",
+    "open_note_in_other_split": "Otevřít poznámku v druhém rozdělení",
+    "open_note_in_new_window": "Otevřít poznámku v novém okně",
+    "open_note_in_popup": "Rychlá úprava"
+  },
+  "electron_integration": {
+    "desktop-application": "Počítačová aplikace",
+    "native-title-bar": "Nativní názevku okna",
+    "native-title-bar-description": "Pro Windows a macOS vede vypnutí nativního názvu okna k kompaktnějšímu vzhledu aplikace. Na Linuxu lepší integraci s ostatní částí systému zajistí zapnutý nativní název okna.",
+    "background-effects": "Povolit efekty pozadí",
+    "background-effects-description": "Přidává rozmazané, stylové pozadí do oken aplikace, čímž vytváří hloubku a moderní vzhled. Musí být vypnutá funkce „Nativní název okna“.",
+    "restart-app-button": "Restartujte aplikaci pro zobrazení změn",
+    "zoom-factor": "Míra přiblížení"
+  },
+  "note_autocomplete": {
+    "search-for": "Hledat \"{{term}}\"",
+    "create-note": "Vytvořit a propojit dceřinnou poznámku \"{{term}}\"",
+    "insert-external-link": "Vložit externí odkaz na \"{{term}}\"",
+    "clear-text-field": "Vymazat textové pole",
+    "show-recent-notes": "Zobrazit nedávné poznámky",
+    "full-text-search": "Vyhledávání v celém textu"
+  },
+  "note_tooltip": {
+    "note-has-been-deleted": "Poznámka byla smazána.",
+    "quick-edit": "Rychlá úprava"
+  },
+  "geo-map": {
+    "create-child-note-title": "Vytvořit novou dceřinou poznámku a přidat ji do mapy",
+    "create-child-note-text": "Přidat značku",
+    "create-child-note-instruction": "Kliknutím na mapu vytvoříte novou poznámku na daném místě nebo stisknutím klávesy Escape jej zavřete.",
+    "unable-to-load-map": "Nelze načíst mapu."
+  },
+  "geo-map-context": {
+    "open-location": "Otevřít polohu",
+    "remove-from-map": "Odebrat z mapy",
+    "add-note": "Přidat značku na toto místo"
+  },
+  "help-button": {
+    "title": "Otevřít příslušnou nápovědu"
+  },
+  "duration": {
+    "seconds": "Sekundy",
+    "minutes": "Minuty",
+    "hours": "Hodiny",
+    "days": "Dny"
+  },
+  "share": {
+    "title": "Nastavení sdílení",
+    "redirect_bare_domain": "Přesměrovat hlavní doménu na stránku sdílení",
+    "redirect_bare_domain_description": "Přesměrovat anonymní uživatele na stránku sdílení místo zobrazení přihlášení",
+    "show_login_link": "Zobrazit odkaz na přihlášení ve tématu sdílení",
+    "show_login_link_description": "Přidat odkaz na přihlášení do zápatí stránky sdílení",
+    "check_share_root": "Kontrola stavu kořenové poznámky sdílení",
+    "share_root_found": "Kořenová poznámka sdílení '{{noteTitle}}' je připravena",
+    "share_root_not_found": "Nebyla nalezena žádná poznámka se štítkem #shareRoot",
+    "share_root_not_shared": "Poznámka '{{noteTitle}}' má štítek #shareRoot, ale není sdílena"
+  },
+  "time_selector": {
+    "invalid_input": "Zadaná hodnota času není platné číslo.",
+    "minimum_input": "Zadaná hodnota času musí být alespoň {{minimumSeconds}} sekund."
+  },
+  "tasks": {
+    "due": {
+      "today": "Dnes",
+      "tomorrow": "Zítra",
+      "yesterday": "Včera"
+    }
+  },
+  "content_widget": {
+    "unknown_widget": "Neznámý widget pro \"{{id}}\"."
+  },
+  "note_language": {
+    "not_set": "Jazyk není nastaven",
+    "configure-languages": "Konfigurovat jazyky...",
+    "help-on-languages": "Nápověda k jazykům obsahu..."
+  },
+  "content_language": {
+    "title": "Jazyky obsahu",
+    "description": "Vyberte jeden nebo více jazyků, které by měly být zobrazeny v výběru jazyka v části Základní vlastnosti poznámky typu pouze pro čtení nebo k editaci. To umožní funkce jako kontrola pravopisu, podpora písma zprava doleva a extrakce textu (OCR)."
+  },
+  "switch_layout_button": {
+    "title_vertical": "Přesunout panel úprav na dolní část",
+    "title_horizontal": "Přesunout panel úpráv nalevo"
+  },
+  "toggle_read_only_button": {
+    "unlock-editing": "Odemknout úpravy",
+    "lock-editing": "Uzamknout úpravy"
+  },
+  "png_export_button": {
+    "button_title": "Exportovat diagram jako PNG"
+  },
+  "svg": {
+    "export_to_png": "Diagram nebylo možné exportovat do PNG.",
+    "export_to_svg": "Diagram nebylo možné exportovat do SVG."
+  },
+  "code_theme": {
+    "title": "Vzhled",
+    "word_wrapping": "Zalomování textu",
+    "color-scheme": "Barevné schéma"
+  },
+  "cpu_arch_warning": {
+    "title": "Prosím stáhněte si verzi ARM64",
+    "message_macos": "TriliumNext momentálně běží pod překladem Rosetta 2, což znamená, že na Macu s Apple Silicon používáte verzi Intel (x64). To bude mít výrazný dopad na výkon a výdrž baterie.",
+    "message_windows": "TriliumNext momentálně běží v režimu emulace, což znamená, že na zařízení Windows pro ARM používáte verzi Intel (x64). To bude mít výrazný dopad na výkon a výdrž baterie.",
+    "recommendation": "Pro nejlepší zážitek si prosím stáhněte nativní verzi ARM64 aplikace TriliumNext z naší stránky s vydáními.",
+    "download_link": "Stáhnout nativní verzi",
+    "continue_anyway": "Pokračovat i tak",
+    "dont_show_again": "Toto varování již nezobrazovat"
+  },
+  "editorfeatures": {
+    "title": "Funkce",
+    "emoji_completion_enabled": "Povolit automatické doplňování emoji",
+    "emoji_completion_description": "Pokud je tato funkce povolena, do textu lze snadno vkládat emoji napsáním symbolu `:`, následovaného názvem emoji.",
+    "note_completion_enabled": "Povolit automatické doplňování poznámek",
+    "note_completion_description": "Pokud je tato funkce povolena, lze vytvářet odkazy na poznámky napsáním symbolu `@`, následovaného názvem poznámky.",
+    "slash_commands_enabled": "Povolit lomítkové příkazy (slash commands)",
+    "slash_commands_description": "Pokud je tato funkce povolena, lze přepínat editační příkazy, jako je vkládání zalomení řádku nebo nadpisů, napsáním `/`."
+  },
+  "table_view": {
+    "new-row": "Nový řádek",
+    "new-column": "Nový sloupec",
+    "sort-column-by": "Řadit podle \"{{title}}\"",
+    "sort-column-ascending": "Vzestupně",
+    "sort-column-descending": "Sestupně",
+    "sort-column-clear": "Vymazat řazení",
+    "hide-column": "Skrýt sloupec \"{{title}}\"",
+    "show-hide-columns": "Zobrazit/skrýt sloupce",
+    "row-insert-above": "Vložit řádek nad",
+    "row-insert-below": "Vložit řádek pod",
+    "row-insert-child": "Vložit dceřinnou poznámku",
+    "add-column-to-the-left": "Přidat sloupec vlevo",
+    "add-column-to-the-right": "Přidat sloupec vpravo",
+    "edit-column": "Upravit sloupec",
+    "delete_column_confirmation": "Opravdu chcete tento sloupec smazat? Odpovídající atribut bude odstraněn ze všech poznámek.",
+    "delete-column": "Odstranit sloupec",
+    "new-column-label": "Štítek",
+    "new-column-relation": "Vazba"
+  },
+  "book_properties_config": {
+    "hide-weekends": "Skrýt víkendy",
+    "display-week-numbers": "Zobrazovat čísla týdnů",
+    "map-style": "Styl mapy",
+    "max-nesting-depth": "Maximální hloubka vnoření:",
+    "raster": "Raster",
+    "vector_light": "Vektor (Světlý)",
+    "vector_dark": "Vektor (Tmavý)",
+    "show-scale": "Zobrazit měřítko",
+    "show-labels": "Zobrazovat názvy značek"
+  },
+  "table_context_menu": {
+    "delete_row": "Odstranit řádek"
+  },
+  "board_view": {
+    "delete-note": "Odstranit poznámku...",
+    "remove-from-board": "Odebrat z tabule",
+    "archive-note": "Archivovat poznámku",
+    "unarchive-note": "Odarchivovat poznámku",
+    "move-to": "Přesunout do",
+    "insert-above": "Vložit nad",
+    "insert-below": "Vložit pod",
+    "delete-column": "Odstranit sloupec",
+    "delete-column-confirmation": "Opravdu chcete tento sloupec odstranit? Odstraněny budou i odpovídající atributy v poznámkách pod tímto sloupcem.",
+    "new-item": "Nová položka",
+    "new-item-placeholder": "Zadejte název poznámky...",
+    "add-column": "Přidat sloupec",
+    "add-column-placeholder": "Zadejte název sloupce...",
+    "edit-note-title": "Kliknutím upravíte název poznámky",
+    "edit-column-title": "Kliknutím upravíte název sloupce",
+    "column-already-exists": "Tento sloupec již na tabuli existuje."
+  },
+  "presentation_view": {
+    "edit-slide": "Upravit tento snímek",
+    "start-presentation": "Spustit prezentaci",
+    "slide-overview": "Přepnout zobrazení přehledu snímků"
+  },
+  "calendar_view": {
+    "delete_note": "Smazat poznámku..."
+  },
+  "ocr": {
+    "extracted_text": "Extraktovaný text (OCR)",
+    "extracted_text_title": "Extraktovaný text (OCR)",
+    "loading_text": "Načítání OCR textu...",
+    "no_text_available": "Žádný OCR text není k dispozici",
+    "no_text_explanation": "Tato poznámka nebyla zpracována pro extrakci OCR textu, nebo nebyl nalezen žádný text.",
+    "failed_to_load": "Nepodařilo se načíst OCR text",
+    "process_now": "Zpracovat OCR",
+    "processing": "Zpracovávání...",
+    "processing_started": "Zpracování OCR bylo zahájeno. Počkejte chvíli a obnovte stránku.",
+    "processing_failed": "Nepodařilo se zahájit zpracování OCR",
+    "view_extracted_text": "Zobrazit extraktovaný text (OCR)"
+  },
+  "command_palette": {
+    "tree-action-name": "Strom: {{name}}",
+    "export_note_title": "Exportovat poznámku",
+    "export_note_description": "Exportovat aktuální poznámku",
+    "show_attachments_title": "Zobrazit přílohy",
+    "show_attachments_description": "Zobrazit přílohy poznámky",
+    "search_notes_title": "Hledat poznámky",
+    "search_notes_description": "Otevřít pokročilé hledání",
+    "search_subtree_title": "Hledat v podstromu",
+    "search_subtree_description": "Hledat v aktuálním podstromu",
+    "search_history_title": "Zobrazit historii hledání",
+    "search_history_description": "Zobrazit předchozí hledání",
+    "configure_launch_bar_title": "Konfigurovat Launch Bar",
+    "configure_launch_bar_description": "Otevřít konfiguraci Launch Baru pro přidání nebo odebrání položek."
+  },
+  "content_renderer": {
+    "open_externally": "Otevřít externě"
+  },
+  "modal": {
+    "close": "Zavřít",
+    "help_title": "Zobrazit více informací o této obrazovce"
+  },
+  "call_to_action": {
+    "next_theme_title": "Vyzkoušejte nové téma Trilium",
+    "next_theme_message": "Momentálně používáte staré téma, chcete vyzkoušet nové téma?",
+    "next_theme_button": "Vyzkoušet nové téma",
+    "background_effects_title": "Efekty pozadí jsou nyní stabilní",
+    "background_effects_message": "Na zařízeních Windows a macOS jsou efekty pozadí nyní stabilní. Efekty pozadí přidávají uživatelskému rozhraní nádech barvy rozostřením pozadí za ním.",
+    "background_effects_button": "Povolit efekty pozadí",
+    "new_layout_title": "Nové rozvržení",
+    "new_layout_message": "Pro Trilium jsme zavedli modernizované rozvržení. Pás karet byl odstraněn a plynule integrovan do hlavního rozhraní, přičemž nové stavové řádky a rozšiřitelné sekce (jako jsou propagované atributy) převzaly klíčové funkce. Nové rozvržení je padrãoně zapnuté a lze jej dočasně vypnout přes Nastavení → Vzhled.",
+    "new_layout_button": "Více informací",
+    "dismiss": "Zavřít"
+  },
+  "settings": {
+    "related_settings": "Související nastavení"
+  },
+  "settings_appearance": {
+    "related_code_blocks": "Barevné schéma pro bloky kódu v textových poznámkách",
+    "related_code_notes": "Barevné schéma pro poznámky kódu",
+    "ui": "Uživatelské rozhraní",
+    "ui_old_layout": "Staré rozvržení",
+    "ui_new_layout": "Nové rozvržení"
+  },
+  "units": {
+    "percentage": "%"
+  },
+  "pagination": {
+    "total_notes": "{{count}} poznámek",
+    "prev_page": "Předchozí stránka",
+    "next_page": "Další stránka"
+  },
+  "collections": {
+    "rendering_error": "Obsah nelze zobrazit kvůli chybě."
+  },
+  "note-color": {
+    "clear-color": "Odstranit barvu poznámky",
+    "set-color": "Nastavit barvu poznámky",
+    "set-custom-color": "Nastavit vlastní barvu poznámky"
+  },
+  "popup-editor": {
+    "maximize": "Přepnout na plný editor"
+  },
+  "server": {
+    "unknown_http_error_title": "Chyba komunikace se serverem",
+    "unknown_http_error_content": "Stavový kód: {{statusCode}} URL: {{method}} {{url}} Zpráva: {{message}}",
+    "traefik_blocks_requests": "Pokud používáte reverzní proxy Traefik, došlo k wprowadzeniu zásadní změny, která ovlivňuje komunikaci se serverem."
+  },
+  "tab_history_navigation_buttons": {
+    "go-back": "Přejít na předchozí poznámku",
+    "go-forward": "Přejít na další poznámku"
+  },
+  "breadcrumb": {
+    "hoisted_badge": "Vyvýšené",
+    "hoisted_badge_title": "Odstranit z horní části",
+    "workspace_badge": "Pracovní plocha",
+    "scroll_to_top_title": "Skočit na začátek poznámky",
+    "create_new_note": "Vytvořit novou dceřinnou poznámku",
+    "empty_hide_archived_notes": "Skrýt archivované poznámky"
+  },
+  "breadcrumb_badges": {
+    "read_only_explicit": "Pouze pro čtení",
+    "read_only_explicit_description": "Tato poznámka byla ručně nastavena jako pouze pro čtení. Kliknutím ji můžete dočasně upravit.",
+    "read_only_auto": "Automatické pouze pro čtení",
+    "read_only_auto_description": "Tato poznámka byla automaticky nastavena do režimu pouze pro čtení z důvodu výkonu. Toto automatické omezení lze upravit v nastavení. Kliknutím ji můžete dočasně upravit.",
+    "read_only_temporarily_disabled": "Dočasně upravitelné",
+    "read_only_temporarily_disabled_description": "Tato poznámka je nyní upravitelná, ale normálně je pouze pro čtení. Jakmile přejdete na jinou poznámku, vrátí se do režimu pouze pro čtení. Kliknutím znovu aktivujete režim pouze pro čtení.",
+    "shared_publicly": "Veřejně sdílené",
+    "shared_locally": "Lokálně sdílené",
+    "shared_copy_to_clipboard": "Kopírovat odkaz do schránky",
+    "shared_open_in_browser": "Otevřít odkaz v prohlížeči",
+    "shared_unshare": "Zrušit sdílení",
+    "clipped_note": "Webový výřez",
+    "clipped_note_description": "Tato poznámka byla původně převzata z {{url}}. Kliknutím přejdete na zdrojovou webovou stránku.",
+    "execute_script": "Spustit skript",
+    "execute_script_description": "Tato poznámka obsahuje skript. Kliknutím jej spustíte.",
+    "execute_sql": "Spustit SQL",
+    "execute_sql_description": "Tato poznámka obsahuje SQL dotaz. Kliknutím jej spustíte.",
+    "save_status_saved": "Uloženo",
+    "save_status_saving": "Ukládání...",
+    "save_status_unsaved": "Neuloženo",
+    "save_status_error": "Uložení selhalo",
+    "save_status_saving_tooltip": "Změny se ukládají.",
+    "save_status_unsaved_tooltip": "Neexistují uložené změny. Za chvíli budou uloženy automaticky.",
+    "save_status_error_tooltip": "Při ukládání poznámky došlo k chybě. Pokud je to možné, zkuste obsah poznámky zkopírovat jinam a aplikaci znovu načíst."
+  },
+  "status_bar": {
+    "language_title": "Změnit jazyk obsahu",
+    "note_info_title": "Zobrazit informace o poznámce (např. datum, velikost poznámky)",
+    "attributes_title": "Vlastní atributy a zděděné atributy",
+    "note_paths_title": "Cesty poznámky",
+    "code_note_switcher": "Změnit režim jazyka"
+  },
+  "attributes_panel": {
+    "title": "Atributy poznámky"
+  },
+  "right_pane": {
+    "empty_message": "Pro tuto poznámku není nic k zobrazení",
+    "empty_button": "Skrýt panel",
+    "toggle": "Přepnout pravý panel",
+    "custom_widget_go_to_source": "Přejít do zdrojového kódu"
+  },
+  "pdf": {
+    "pages_alt": "Strana {{pageNumber}}",
+    "pages_loading": "Načítání..."
+  },
+  "platform_indicator": {
+    "available_on": "Dostupné na {{platform}}"
+  },
+  "mobile_tab_switcher": {
+    "more_options": "Další nastavení"
+  },
+  "bookmark_buttons": {
+    "bookmarks": "Záložky (oblíbené)"
+  },
+  "active_content_badges": {
+    "type_icon_pack": "Sada ikon",
+    "type_backend_script": "Backend skript",
+    "type_frontend_script": "Frontend skript",
+    "type_widget": "Widget",
+    "type_app_css": "Vlastní CSS",
+    "type_render_note": "Poznámka pro vykreslení",
+    "type_web_view": "Webové zobrazení",
+    "type_app_theme": "Vlastní téma",
+    "toggle_tooltip_enable_tooltip": "Kliknutím tuto {{type}} zapnete.",
+    "toggle_tooltip_disable_tooltip": "Kliknutím tuto {{type}} vypnete.",
+    "menu_docs": "Otevřít dokumentaci",
+    "menu_execute_now": "Spustit skript nyní",
+    "menu_run": "Spustit automaticky",
+    "menu_run_disabled": "Ručně",
+    "menu_run_backend_startup": "Při spuštění backendu",
+    "menu_run_hourly": "Hodinově",
+    "menu_run_daily": "Denně",
+    "menu_run_frontend_startup": "Při spuštění desktop frontend",
+    "menu_run_mobile_startup": "Při spuštění mobilního rozhraní",
+    "menu_change_to_widget": "Změnit na widget",
+    "menu_change_to_frontend_script": "Změnit na frontend skript",
+    "menu_theme_base": "Základ motivu"
+  },
+  "setup_form": {
+    "more_info": "Dozvědět se více"
+  },
+  "mermaid": {
+    "placeholder": "Napište obsah svého Mermaid diagramu nebo použijte jeden z ukázkových diagramů níže.",
+    "sample_diagrams": "Ukázkové diagramy:",
+    "sample_flowchart": "Tokový diagram",
+    "sample_class": "Třída",
+    "sample_sequence": "Sekvence",
+    "sample_entity_relationship": "Relace entit",
+    "sample_state": "Stav",
+    "sample_mindmap": "Myšlenková mapa",
+    "sample_architecture": "Architektura",
+    "sample_block": "Blok",
+    "sample_c4": "C4",
+    "sample_gantt": "Gantt",
+    "sample_git": "Git",
+    "sample_kanban": "Kanban",
+    "sample_packet": "Paket",
+    "sample_pie": "Koláčový graf",
+    "sample_quadrant": "Čtvrrtinový graf",
+    "sample_radar": "Radarový graf",
+    "sample_requirement": "Požadavek",
+    "sample_sankey": "Sankey",
+    "sample_timeline": "Osa času",
+    "sample_treemap": "Stromový graf",
+    "sample_user_journey": "Cesta uživatele",
+    "sample_xy": "XY",
+    "sample_venn": "Vennův diagram",
+    "sample_ishikawa": "Ishikawa"
+  },
+  "mind-map": {
+    "addChild": "Přidat dceřiný",
+    "addParent": "Přidat rodiče",
+    "addSibling": "Přidat sourozence",
+    "removeNode": "Odebrat uzel",
+    "focus": "Režim soustředění",
+    "cancelFocus": "Ukončit režim soustředění",
+    "moveUp": "Posunout nahoru",
+    "moveDown": "Posunout dolů",
+    "link": "Odkaz",
+    "linkBidirectional": "Obousměrný odkaz",
+    "clickTips": "Klikněte prosím na cílový uzel",
+    "summary": "Shrnutí"
+  },
+  "llm": {
+    "settings_title": "AI / LLM",
+    "settings_description": "Konfigurovat integrace AI a Large Language Model.",
+    "feature_not_enabled": "Povolte experimentální funkci LLM v Nastavení → Pokročilé → Experimentální funkce pro použití integrací AI.",
+    "add_provider": "Přidat poskytovatele",
+    "add_provider_title": "Přidat poskytovatele AI",
+    "configured_providers": "Konfigurovaní poskytovatelé",
+    "no_providers_configured": "Ještě nejsou nakonfigurováni žádní poskytovatelé.",
+    "provider_name": "Název",
+    "provider_type": "Poskytovatel",
+    "actions": "Akce",
+    "delete_provider": "Odstranit",
+    "delete_provider_confirmation": "Opravdu chcete odstranit poskytovatele \"{{name}}\"?",
+    "api_key": "API klíč",
+    "api_key_placeholder": "Zadejte svůj API klíč",
+    "cancel": "Zrušit",
+    "mcp_title": "MCP (Model Context Protocol)",
+    "mcp_enabled": "MCP server",
+    "mcp_enabled_description": "Zpřístupněte endpoint Model Context Protocol (MCP), aby si AI asistenti pro kódování (např. Claude Code, GitHub Copilot) mohli číst a upravovat vaše poznámky. Endpoint je přístupný pouze z localhost.",
+    "mcp_endpoint_title": "URL endpointu",
+    "mcp_endpoint_description": "Přidejte tuto URL adresu do konfigurace MCP svého AI asistenta",
+    "tools": {
+      "search_notes": "Hledat poznámky",
+      "get_note": "Získat poznámku",
+      "get_note_content": "Získat obsah poznámky",
+      "update_note_content": "Aktualizovat obsah poznámky",
+      "append_to_note": "Připojit k poznámce",
+      "create_note": "Vytvořit poznámku",
+      "get_attributes": "Získat atributy",
+      "get_attribute": "Získat atribut",
+      "set_attribute": "Nastavit atribut",
+      "delete_attribute": "Odstranit atribut",
+      "get_child_notes": "Získat dceřiné poznámky",
+      "get_subtree": "Získat podstrom",
+      "load_skill": "Načíst dovednost",
+      "web_search": "Webové hledání",
+      "note_in_parent": "<Note/> v <Parent/>",
+      "get_attachment": "Získat přílohu",
+      "get_attachment_content": "Přečíst obsah přílohy"
+    }
   }
 }

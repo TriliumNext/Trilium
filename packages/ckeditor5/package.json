@@ -14,9 +14,5 @@
     "@triliumnext/ckeditor5-mermaid": "workspace:*",
     "ckeditor5": "48.0.0",
     "ckeditor5-premium-features": "48.0.0"
-  },
-  "devDependencies": {
-    "@smithy/middleware-retry": "4.4.46",
-    "@types/jquery": "4.0.0"
   }
 }

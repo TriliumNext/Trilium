@@ -112,7 +112,8 @@
     "header": {
         "get-started": "Začít",
         "documentation": "Dokumentace",
-        "support-us": "Podpořte nás"
+        "support-us": "Podpořte nás",
+        "resources": "Zdroje"
     },
     "footer": {
         "copyright_and_the": " a ",
@@ -134,6 +135,74 @@
         "buy_me_a_coffee": "Buy Me A Coffee"
     },
     "contribute": {
-        "title": "Další způsoby, jak přispět"
+        "title": "Další způsoby, jak přispět",
+        "way_translate": "Přeložte aplikaci do svého rodného jazyka prostřednictvím <Link>Weblate</Link>.",
+        "way_community": "Kontaktujte komunitu na <Discussions>GitHub Discussions</Discussions> nebo na <Matrix>Matrix</Matrix>.",
+        "way_reports": "Nahlaste chyby prostřednictvím <Link>GitHub issues</Link>.",
+        "way_document": "Vylepšujte dokumentaci tím, že nás upozorníte na její nedostatky, nebo přispějte do příruček, FAQ či návodů.",
+        "way_market": "Šířte dobrou věst: Sdílejte Trilium Notes s přáteli, na blogy nebo na sociální sítě."
+    },
+    "404": {
+        "title": "404: Nenalezeno",
+        "description": "Stránka, kterou jste hleděli, nebyla nalezena. Možná byla smazána nebo je URL adresa nesprávná."
+    },
+    "download_helper_desktop_windows": {
+        "title_x64": "Windows 64-bit",
+        "title_arm64": "Windows na ARM",
+        "description_x64": "Kompatibilní s zařízeními Intel nebo AMD s operačním systémem Windows 10 a 11.",
+        "description_arm64": "Kompatibilní s ARM zařízeními (např. s Qualcomm Snapdragon).",
+        "quick_start": "Pro instalaci pomocí Winget:",
+        "download_exe": "Stáhnout instalátor (.exe)",
+        "download_zip": "Přenosná verze (.zip)",
+        "download_scoop": "Scoop"
+    },
+    "download_helper_desktop_linux": {
+        "title_x64": "Linux 64-bit",
+        "title_arm64": "Linux na ARM",
+        "description_x64": "Pro většinu distribucí Linuxu, kompatibilní s architekturou x86_64.",
+        "description_arm64": "Pro distribuce Linuxu založené na ARM, kompatibilní s architekturou aarch64.",
+        "quick_start": "Vyberte vhodný formát balíčku podle vaší distribuce:",
+        "download_deb": ".deb",
+        "download_rpm": ".rpm",
+        "download_flatpak": ".flatpak",
+        "download_zip": "Přenosné (.zip)",
+        "download_nixpkgs": "nixpkgs",
+        "download_aur": "AUR"
+    },
+    "download_helper_desktop_macos": {
+        "title_x64": "macOS pro Intel",
+        "title_arm64": "macOS pro Apple Silicon",
+        "description_x64": "Pro Mac s procesorem Intel běžící pod macOS Monterey nebo novějším.",
+        "description_arm64": "Pro Mac s Apple Silicon, jako jsou modely s čipy M1 a M2.",
+        "quick_start": "Pro instalaci pomocí Homebrew:",
+        "download_dmg": "Stáhnout instalátor (.dmg)",
+        "download_homebrew_cask": "Homebrew Cask",
+        "download_zip": "Přenosná verze (.zip)"
+    },
+    "download_helper_server_docker": {
+        "title": "Vlastní hosting pomocí Docker",
+        "description": "Snadné nasazení na Windows, Linux nebo macOS pomocí Docker kontejneru.",
+        "download_dockerhub": "Docker Hub",
+        "download_ghcr": "ghcr.io"
+    },
+    "download_helper_server_linux": {
+        "title": "Vlastní hosting na Linuxu",
+        "description": "Nasazujte Trilium Notes na vlastním serveru nebo VPS, kompatibilní s většinou distribucí.",
+        "download_tar_x64": "x64 (.tar.xz)",
+        "download_tar_arm64": "ARM (.tar.xz)",
+        "download_nixos": "Modul pro NixOS"
+    },
+    "download_helper_server_hosted": {
+        "title": "Placený hosting",
+        "description": "Trilium Notes hostováno na PikaPods, placené službě pro snadný přístup a správu. Není přímo spojen s týmem Trilium.",
+        "download_pikapod": "Nastaveno na PikaPods",
+        "download_triliumcc": "Případně se podívejte na trilium.cc"
+    },
+    "resources": {
+        "title": "Zdroje",
+        "icon_packs": "Balíčky ikon",
+        "icon_packs_intro": "Rozšiřte výběr dostupných ikon pro své poznámky použitím balíčku ikon. Více informací o balíčcích ikon naleznete v <DocumentationLink>oficiální dokumentaci</DocumentationLink>.",
+        "download": "Stáhnout",
+        "website": "Webová stránka"
     }
 }

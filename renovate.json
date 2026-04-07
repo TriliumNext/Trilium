@@ -50,6 +50,13 @@
         {
             "matchPackageNames": "@univerjs/**",
             "groupName": "univer monorepo"
+        },
+        {
+            "matchPackageNames": [
+                "ai",
+                "@ai-sdk/**"
+            ],
+            "groupName": "ai sdk"
         }
     ]
 }

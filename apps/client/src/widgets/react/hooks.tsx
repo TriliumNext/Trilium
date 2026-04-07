@@ -1385,7 +1385,7 @@ export function useGetContextDataFrom<K extends keyof NoteContextDataMap>(
 }
 
 export function useColorScheme() {
-    const themeStyle = getThemeStyle();
+    const themeStyle = window.glob.getThemeStyle();
     const defaultValue = themeStyle === "auto" ? (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) : themeStyle === "dark";
     const [ prefersDark, setPrefersDark ] = useState(defaultValue);
 
@@ -1399,13 +1399,4 @@ export function useColorScheme() {
     }, [ themeStyle ]);
 
     return prefersDark ? "dark" : "light";
-}
-
-function getThemeStyle() {
-    const style = window.getComputedStyle(document.body);
-    const themeStyle = style.getPropertyValue("--theme-style");
-    if (style.getPropertyValue("--theme-style-auto") !== "true" && (themeStyle === "light" || themeStyle === "dark")) {
-        return themeStyle as "light" | "dark";
-    }
-    return "auto";
 }

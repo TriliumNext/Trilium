@@ -16,12 +16,10 @@
   "license": "AGPL-3.0-only",
   "packageManager": "pnpm@10.33.0",
   "devDependencies": {
-    "@redocly/cli": "2.25.3",
+    "@redocly/cli": "2.25.4",
     "archiver": "7.0.1",
     "fs-extra": "11.3.4",
     "js-yaml": "4.1.1",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
     "typedoc": "0.28.18",
     "typedoc-plugin-missing-exports": "4.1.2"
   }

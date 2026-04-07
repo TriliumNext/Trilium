@@ -28,9 +28,10 @@
     overflow: hidden;
 }
 
-.toast.no-title {
+.toast.no-title .toast-main-row {
     display: flex;
     flex-direction: row;
+    align-items: center;
 }
 
 .toast.no-title .toast-icon {
@@ -40,22 +41,26 @@
 }
 
 .toast.no-title .toast-body {
-    padding-inline-start: 0;
-    padding-inline-end: 0;
+    flex: 1;
+    padding-block: var(--bs-toast-padding-y);
+    padding-inline: 0;
 }
 
-.toast.no-title .toast-header {
-    background-color: unset !important;
+.toast.no-title .toast-close {
+    display: flex;
+    align-items: center;
+    padding: var(--bs-toast-padding-y) var(--bs-toast-padding-x);
 }
 
 .toast {
     .toast-buttons {
-        padding: 0 1em 1em 1em;
+        padding: 0 var(--bs-toast-padding-x) var(--bs-toast-padding-y) var(--bs-toast-padding-x);
         display: flex;
-        gap: 1em;
-        justify-content: space-between;
+        flex-direction: column;
+        gap: 0.5em;
 
         .btn {
+            width: 100%;
             color: var(--bs-toast-color);
             background: var(--modal-control-button-background);
 

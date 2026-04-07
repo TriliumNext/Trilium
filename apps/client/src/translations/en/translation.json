@@ -2103,7 +2103,10 @@
     "process_now": "Process OCR",
     "processing": "Processing...",
     "processing_started": "OCR processing has been started. Please wait a moment and refresh.",
+    "processing_complete": "OCR processing complete.",
     "processing_failed": "Failed to start OCR processing",
+    "text_filtered_low_confidence": "OCR detected text with {{confidence}}% confidence, but it was discarded because your minimum threshold is {{threshold}}%.",
+    "open_media_settings": "Open Settings",
     "view_extracted_text": "View extracted text (OCR)"
   },
   "command_palette": {
@@ -2314,7 +2317,9 @@
     "sample_user_journey": "User Journey",
     "sample_xy": "XY",
     "sample_venn": "Venn",
-    "sample_ishikawa": "Ishikawa"
+    "sample_ishikawa": "Ishikawa",
+    "sample_treeview": "TreeView",
+    "sample_wardley": "Wardley Map"
   },
   "mind-map": {
     "addChild": "Add child",

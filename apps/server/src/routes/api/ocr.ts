@@ -1,9 +1,15 @@
-import { TextRepresentationResponse } from "@triliumnext/commons";
+import type { OCRProcessResponse, TextRepresentationResponse } from "@triliumnext/commons";
 import type { Request } from "express";
 
 import becca from "../../becca/becca.js";
 import ocrService from "../../services/ocr/ocr_service.js";
+import options from "../../services/options.js";
 import sql from "../../services/sql.js";
+
+function getMinConfidenceThreshold(): number {
+    const minConfidence = options.getOption('ocrMinConfidence') ?? 0;
+    return parseFloat(minConfidence);
+}
 
 /**
  * @swagger
@@ -48,7 +54,7 @@ import sql from "../../services/sql.js";
  *       - session: []
  *     tags: ["ocr"]
  */
-async function processNoteOCR(req: Request<{ noteId: string }>) {
+async function processNoteOCR(req: Request<{ noteId: string }>): Promise<OCRProcessResponse | [number, OCRProcessResponse]> {
     const { noteId } = req.params;
     const { language, forceReprocess = false } = req.body || {};
 
@@ -62,7 +68,11 @@ async function processNoteOCR(req: Request<{ noteId: string }>) {
         return [400, { success: false, message: 'Note is not an image or has unsupported format' }];
     }
 
-    return { success: true, result };
+    return {
+        success: true,
+        result,
+        minConfidence: getMinConfidenceThreshold()
+    };
 }
 
 /**
@@ -108,7 +118,7 @@ async function processNoteOCR(req: Request<{ noteId: string }>) {
  *       - session: []
  *     tags: ["ocr"]
  */
-async function processAttachmentOCR(req: Request<{ attachmentId: string }>) {
+async function processAttachmentOCR(req: Request<{ attachmentId: string }>): Promise<OCRProcessResponse | [number, OCRProcessResponse]> {
     const { attachmentId } = req.params;
     const { language, forceReprocess = false } = req.body || {};
 
@@ -122,7 +132,11 @@ async function processAttachmentOCR(req: Request<{ attachmentId: string }>) {
         return [400, { success: false, message: 'Attachment is not an image or has unsupported format' }];
     }
 
-    return { success: true, result };
+    return {
+        success: true,
+        result,
+        minConfidence: getMinConfidenceThreshold()
+    };
 }
 
 /**

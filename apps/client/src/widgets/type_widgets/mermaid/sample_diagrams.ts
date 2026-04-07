@@ -506,6 +506,47 @@ ishikawa-beta
     Subject moved too quickly
     Too dark
 `
+    },
+    {
+        name: t("mermaid.sample_treeview"),
+        content: `\
+treeView-beta
+    "src"
+        "components"
+            "Button.tsx"
+            "Modal.tsx"
+        "services"
+            "api.ts"
+            "utils.ts"
+        "index.ts"
+    "package.json"
+    "README.md"
+`
+    },
+    {
+        name: t("mermaid.sample_wardley"),
+        content: `\
+wardley-beta
+    title Tea Shop
+
+    anchor Customers [0.95, 0.63]
+    anchor Business [0.95, 0.27]
+
+    component Cup of Tea [0.79, 0.61]
+    component Tea [0.63, 0.81]
+    component Cup [0.57, 0.46]
+    component Water [0.52, 0.89]
+    component Kettle [0.47, 0.53]
+    component Power [0.36, 0.72]
+
+    Customers -> Cup of Tea
+    Business -> Cup of Tea
+    Cup of Tea -> Tea
+    Cup of Tea -> Cup
+    Cup of Tea -> Water
+    Water -> Kettle
+    Kettle -> Power
+`
     }
 ];
 

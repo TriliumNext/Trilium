@@ -320,6 +320,7 @@ Trilium provides powerful user scripting capabilities:
 - Use translation system via `t()` function
 - Automatic pluralization: Add `_other` suffix to translation keys (e.g., `item` and `item_other` for singular/plural)
 - When a translated string contains **interpolated components** (e.g. links, note references) whose order may vary across languages, use `<Trans>` from `react-i18next` instead of `t()`. This lets translators reorder components freely (e.g. `"<Note/> in <Parent/>"` vs `"in <Parent/>, <Note/>"`)
+- When adding a new locale, follow the step-by-step guide in `docs/Developer Guide/Developer Guide/Concepts/Internationalisation  Translations/Adding a new locale.md`
 
 ## Testing Conventions
 

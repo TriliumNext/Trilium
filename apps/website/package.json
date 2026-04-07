@@ -10,7 +10,6 @@
 	},
 	"dependencies": {
 		"i18next": "26.0.3",
-		"i18next-http-backend": "3.0.4",
 		"preact": "10.29.0",
 		"preact-iso": "2.11.1",
 		"preact-render-to-string": "6.6.7",
@@ -22,7 +21,7 @@
 		"eslint-config-preact": "2.0.0",
 		"typescript": "6.0.2",
 		"user-agent-data-types": "0.4.3",
-		"vite": "8.0.3",
+		"vite": "8.0.5",
 		"vitest": "4.1.2"
 	},
 	"eslintConfig": {

@@ -69,6 +69,8 @@ jobs:
           cache: 'pnpm'
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        env:
+          npm_config_package_import_method: copy
       - name: Update nightly version
         run: pnpm run chore:ci-update-nightly-version
       - name: Run the build

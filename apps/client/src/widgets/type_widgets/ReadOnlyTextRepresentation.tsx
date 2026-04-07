@@ -1,11 +1,13 @@
 import "./ReadOnlyTextRepresentation.css";
 
-import type { TextRepresentationResponse } from "@triliumnext/commons";
+import type { OCRProcessResponse, TextRepresentationResponse } from "@triliumnext/commons";
 import { useEffect, useState } from "preact/hooks";
 
+import appContext from "../../components/app_context";
 import { t } from "../../services/i18n";
 import server from "../../services/server";
 import toast from "../../services/toast";
+import { randomString } from "../../services/utils";
 import { TypeWidgetProps } from "./type_widget";
 
 type State =
@@ -62,10 +64,35 @@ export function TextRepresentation({ textUrl, processUrl }: TextRepresentationPr
     async function processOCR() {
         setProcessing(true);
         try {
-            const response = await server.post<{ success: boolean; message?: string }>(processUrl, { forceReprocess: true });
+            const response = await server.post<OCRProcessResponse>(processUrl, { forceReprocess: true });
             if (response.success) {
-                toast.showMessage(t("ocr.processing_started"));
-                setTimeout(fetchText, 2000);
+                const result = response.result;
+                const minConfidence = response.minConfidence ?? 0;
+
+                // Check if text was filtered due to low confidence
+                if (result && !result.text && result.confidence > 0 && minConfidence > 0) {
+                    const confidencePercent = Math.round(result.confidence * 100);
+                    const thresholdPercent = Math.round(minConfidence * 100);
+                    toast.showPersistent({
+                        id: `ocr-low-confidence-${randomString(8)}`,
+                        icon: "bx bx-info-circle",
+                        message: t("ocr.text_filtered_low_confidence", {
+                            confidence: confidencePercent,
+                            threshold: thresholdPercent
+                        }),
+                        timeout: 15000,
+                        buttons: [{
+                            text: t("ocr.open_media_settings"),
+                            onClick: ({ dismissToast }) => {
+                                appContext.tabManager.openInNewTab("_optionsMedia", null, true);
+                                dismissToast();
+                            }
+                        }]
+                    });
+                } else {
+                    toast.showMessage(t("ocr.processing_complete"));
+                }
+                setTimeout(fetchText, 500);
             } else {
                 toast.showError(response.message || t("ocr.processing_failed"));
             }

@@ -399,7 +399,7 @@
     "calendar_root": "nóta marcáilte ar cheart a úsáid mar fhréamh do nótaí lae. Níor cheart ach ceann amháin a mharcáil mar sin.",
     "archived": "Ní bheidh nótaí leis an lipéad seo le feiceáil de réir réamhshocraithe i dtorthaí cuardaigh (i ndialóga Léim Chuig, Cuir Nasc Leis srl. chomh maith).",
     "exclude_from_export": "ní chuirfear nótaí (lena bhfo-chrann) san áireamh in aon onnmhairiú nótaí",
-    "run": "Sainmhíníonn sé seo cé na himeachtaí ar cheart don script rith orthu. Is iad seo a leanas na luachanna féideartha:\n<ul>\n<li>frontendStartup - nuair a thosaíonn (nó a athnuachan) tosaigh Trilium, ach ní ar fhóin phóca.</li>\n<li>mobileStartup - nuair a thosaíonn (nó a athnuachan) tosaigh Trilium, ar fhóin phóca.</li>\n<li>backendStartup - nuair a thosaíonn cúltaca Trilium</li>\n<li>uair an chloig - rith uair san uair. Is féidir leat lipéad breise <code>runAtHour</code> a úsáid chun a shonrú cén uair a ritheann sé.</li>\n<li>daily - rith uair sa lá</li>\n</ul>",
+    "run": "Sainmhíníonn sé seo cé na himeachtaí ar cheart don script rith orthu. Is iad seo a leanas na luachanna féideartha:\n<ul>\n<li>frontendStartup - nuair a thosaíonn (nó a athnuachan) tosaigh Trilium, ach ní ar fhóin phóca.</li>\n<li>mobileStartup - nuair a thosaíonn (nó a athnuachan) tosaigh Trilium, ar fhóin phóca.</li>\n<li>backendStartup - nuair a thosaíonn cúltaca Trilium.</li>\n<li>hourly - rith uair san uair. Is féidir leat lipéad breise <code>runAtHour</code> a úsáid chun a shonrú cén uair a ritheann sé.</li>\n<li>daily - rith uair sa lá.</li>\n</ul>",
     "run_on_instance": "Sainmhínigh cén sampla de Trilium ba chóir é seo a rith air. Réamhshocrú do gach sampla.",
     "run_at_hour": "Cén uair ar cheart é seo a rith? Ba cheart é a úsáid i dteannta <code>#run=hourly</code>. Is féidir é seo a shainiú arís agus arís eile le haghaidh níos mó ritheanna i rith an lae.",
     "disable_inclusion": "Ní chuirfear scripteanna leis an lipéad seo san áireamh i bhforghníomhú an scripte tuismitheora.",
@@ -709,7 +709,8 @@
     "export_as_image": "Easpórtáil mar íomhá",
     "export_as_image_png": "PNG (rastar)",
     "export_as_image_svg": "SVG (veicteoir)",
-    "note_map": "Léarscáil nótaí"
+    "note_map": "Léarscáil nótaí",
+    "view_ocr_text": "Féach ar théacs OCR"
   },
   "onclick_button": {
     "no_click_handler": "Níl aon láimhseálaí cliceáil sainithe ag an ngiuirléid cnaipe '{{componentId}}'"
@@ -1224,12 +1225,28 @@
   },
   "images": {
     "images_section_title": "Íomhánna",
-    "download_images_automatically": "Íoslódáil íomhánna go huathoibríoch le húsáid as líne.",
-    "download_images_description": "Is féidir tagairtí d’íomhánna ar líne a bheith i HTML greamaithe, aimseoidh Trilium na tagairtí sin agus íoslódálfaidh sé na híomhánna ionas go mbeidh siad ar fáil as líne.",
-    "enable_image_compression": "Cumasaigh comhbhrú íomhá",
-    "max_image_dimensions": "Uasleithead/airde íomhá (athrófar méid na híomhá má sháraíonn sí an socrú seo).",
+    "download_images_automatically": "Íomhánna a íoslódáil go huathoibríoch",
+    "download_images_description": "Íoslódáil íomhánna tagartha ar líne ó HTML greamaithe ionas go mbeidh siad ar fáil as líne.",
+    "enable_image_compression": "Comhbhrú íomhá",
+    "max_image_dimensions": "Uasmhéid toisí íomhá",
     "max_image_dimensions_unit": "picteilíní",
-    "jpeg_quality_description": "Cáilíocht JPEG (10 - an caighdeán is measa, 100 - an caighdeán is fearr, moltar 50 - 85)"
+    "jpeg_quality_description": "Is é an raon molta ná 50–85. Laghdaíonn luachanna níos ísle méid an chomhaid, agus coinníonn luachanna níos airde sonraí.",
+    "enable_image_compression_description": "Comhbhrúigh agus athraigh méid íomhánna nuair a uaslódálfar nó a ghreamaítear iad.",
+    "max_image_dimensions_description": "Athrófar méid íomhánna a sháraíonn an méid seo go huathoibríoch.",
+    "jpeg_quality": "Cáilíocht JPEG",
+    "ocr_section_title": "Eastóscadh Téacs (OCR)",
+    "ocr_related_content_languages": "Teangacha ábhair (a úsáidtear le haghaidh eastóscadh téacs)",
+    "ocr_auto_process": "Próiseáil comhaid nua go huathoibríoch",
+    "ocr_auto_process_description": "Bain téacs go huathoibríoch as comhaid atá uaslódáilte nó greamaithe le déanaí.",
+    "ocr_min_confidence": "Íosmhuinín",
+    "ocr_confidence_description": "Ná bain ach téacs os cionn an tairsí muiníne seo. Cuimsíonn luachanna níos ísle níos mó téacs ach d'fhéadfadh siad a bheith níos lú cruinn.",
+    "batch_ocr_title": "Próiseáil Comhaid atá ann cheana",
+    "batch_ocr_description": "Bain téacs as na híomhánna, na PDFanna agus na doiciméid Office go léir atá i do nótaí. D’fhéadfadh sé seo roinnt ama a thógáil ag brath ar líon na gcomhad.",
+    "batch_ocr_start": "Tosaigh Próiseáil Bhaisc",
+    "batch_ocr_starting": "Ag tosú próiseáil bhaisc...",
+    "batch_ocr_progress": "Ag próiseáil {{processed}} de {{total}} comhad...",
+    "batch_ocr_completed": "Próiseáil bhaisc críochnaithe! Próiseáladh {{processed}} comhad.",
+    "batch_ocr_error": "Earráid le linn próiseála baisce: {{error}}"
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Am Teorann Scriosadh Ceangaltáin",
@@ -1275,7 +1292,7 @@
     "custom_name_label": "Ainm innill chuardaigh saincheaptha",
     "custom_name_placeholder": "Saincheap ainm an innill chuardaigh",
     "custom_url_label": "Ba chóir go mbeadh {keyword} san áireamh mar áitchoinneálaí don téarma cuardaigh i URL inneall cuardaigh saincheaptha.",
-    "custom_url_placeholder": "Saincheap url an innill chuardaigh",
+    "custom_url_placeholder": "Saincheap URL an innill chuardaigh",
     "save_button": "Sábháil"
   },
   "tray": {
@@ -1903,7 +1920,7 @@
   },
   "content_language": {
     "title": "Teangacha ábhair",
-    "description": "Roghnaigh teanga amháin nó níos mó ar cheart dóibh a bheith le feiceáil sa rogha teanga sa rannán Airíonna Bunúsacha de nóta téacs inléite amháin nó in-eagarthóireachta. Ceadóidh sé seo gnéithe ar nós seiceáil litrithe nó tacaíocht ó dheis go clé."
+    "description": "Roghnaigh teanga amháin nó níos mó ar cheart dóibh a bheith le feiceáil sa rogha teanga sa rannán Airíonna Bunúsacha de nóta téacs inléite amháin nó in-eagarthóireachta. Ceadaíonn sé seo gnéithe ar nós seiceáil litrithe, tacaíocht ó dheis go clé agus eastóscadh téacs (OCR)."
   },
   "switch_layout_button": {
     "title_vertical": "Bog an painéal eagarthóireachta go dtí an bun",
@@ -2308,7 +2325,8 @@
     "note_context_enabled": "Cliceáil chun comhthéacs nótaí a dhíchumasú: {{title}}",
     "note_context_disabled": "Cliceáil chun an nóta reatha a chur san áireamh i gcomhthéacs",
     "no_provider_message": "Níl aon soláthraí AI cumraithe. Cuir ceann leis chun comhrá a thosú.",
-    "add_provider": "Cuir Soláthraí AI leis"
+    "add_provider": "Cuir Soláthraí AI leis",
+    "sources_summary": "{{count}} foinsí ó {{sites}} suíomhanna"
   },
   "sidebar_chat": {
     "title": "Comhrá AI",
@@ -2348,6 +2366,44 @@
     "delete_provider_confirmation": "An bhfuil tú cinnte gur mian leat an soláthraí \"{{name}}\" a scriosadh?",
     "api_key": "Eochair API",
     "api_key_placeholder": "Cuir isteach d'eochair API",
-    "cancel": "Cealaigh"
+    "cancel": "Cealaigh",
+    "feature_not_enabled": "Cumasaigh an ghné turgnamhach LLM i Socruithe → Ardleibhéil → Gnéithe turgnamhacha chun comhtháthú AI a úsáid.",
+    "mcp_title": "MCP (Prótacal Comhthéacs Múnla)",
+    "mcp_enabled": "Freastalaí MCP",
+    "mcp_enabled_description": "Nochtaigh críochphointe Prótacal Comhthéacs Múnla (MCP) ionas gur féidir le cúntóirí códaithe AI (m.sh. Claude Code, GitHub Copilot) do nótaí a léamh agus a mhodhnú. Ní féidir rochtain a fháil ar an gcríochphointe ach ó localhost.",
+    "mcp_endpoint_title": "URL críochphointe",
+    "mcp_endpoint_description": "Cuir an URL seo le cumraíocht MCP do chúntóra AI",
+    "tools": {
+      "search_notes": "Cuardaigh nótaí",
+      "get_note": "Faigh nóta",
+      "get_note_content": "Faigh ábhar nótaí",
+      "update_note_content": "Nuashonraigh ábhar an nóta",
+      "append_to_note": "Cuir leis an nóta",
+      "create_note": "Cruthaigh nóta",
+      "get_attributes": "Faigh tréithe",
+      "get_attribute": "Faigh tréith",
+      "set_attribute": "Socraigh tréith",
+      "delete_attribute": "Scrios tréith",
+      "get_child_notes": "Faigh nótaí leanaí",
+      "get_subtree": "Faigh fo-chrann",
+      "load_skill": "Luchtaigh scileanna",
+      "web_search": "Cuardach gréasáin",
+      "note_in_parent": "<Note/> i <Parent/>",
+      "get_attachment": "Faigh ceangaltán",
+      "get_attachment_content": "Léigh ábhar an cheangail"
+    }
+  },
+  "ocr": {
+    "extracted_text": "Téacs Bainte (OCR)",
+    "extracted_text_title": "Téacs Bainte (OCR)",
+    "loading_text": "Ag lódáil téacs OCR...",
+    "no_text_available": "Níl aon téacs OCR ar fáil",
+    "no_text_explanation": "Níor próiseáladh an nóta seo le haghaidh eastóscadh téacs OCR nó níor aimsíodh aon téacs.",
+    "failed_to_load": "Theip ar lódáil téacs OCR",
+    "process_now": "Próiseas OCR",
+    "processing": "Ag próiseáil...",
+    "processing_started": "Tá próiseáil OCR tosaithe. Fan nóiméad agus athnuachan le do thoil.",
+    "processing_failed": "Theip ar phróiseáil OCR a thosú",
+    "view_extracted_text": "Féach ar théacs eastósctha (OCR)"
   }
 }

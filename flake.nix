@@ -151,9 +151,10 @@
               runHook postInstall
             '';
 
-            # This file is a symlink into /build which is not allowed.
+            # Symlinks pointing to /build directory are not allowed in the Nix store.
+            # This removes all dangling symlinks that point to the temporary build directory.
             postFixup = ''
-              find $out/opt -name prebuild-install -path "*/better-sqlite3/node_modules/.bin/*" -delete || true
+              find $out/opt -type l -lname '/build/*' -delete || true
             '';
 
             components = [

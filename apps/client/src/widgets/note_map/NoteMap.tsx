@@ -1,18 +1,21 @@
-import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import "./NoteMap.css";
-import { getThemeStyle, MapType, NoteMapWidgetMode, rgb2hex } from "./utils";
-import { RefObject } from "preact";
-import FNote from "../../entities/fnote";
-import { useElementSize, useNoteLabel } from "../react/hooks";
+
 import ForceGraph from "force-graph";
+import { RefObject } from "preact";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
+
+import appContext from "../../components/app_context";
+import FNote from "../../entities/fnote";
+import link_context_menu from "../../menus/link_context_menu";
+import hoisted_note from "../../services/hoisted_note";
+import { t } from "../../services/i18n";
+import { getEffectiveThemeStyle } from "../../services/theme";
+import ActionButton from "../react/ActionButton";
+import { useElementSize, useNoteLabel } from "../react/hooks";
+import Slider from "../react/Slider";
 import { loadNotesAndRelations, NoteMapLinkObject, NoteMapNodeObject, NotesAndRelationsData } from "./data";
 import { CssData, setupRendering } from "./rendering";
-import ActionButton from "../react/ActionButton";
-import { t } from "../../services/i18n";
-import link_context_menu from "../../menus/link_context_menu";
-import appContext from "../../components/app_context";
-import Slider from "../react/Slider";
-import hoisted_note from "../../services/hoisted_note";
+import { MapType, NoteMapWidgetMode, rgb2hex } from "./utils";
 
 interface NoteMapProps {
     note: FNote;
@@ -40,9 +43,9 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
             return hoisted_note.getHoistedNoteId();
         } else if (mapRootIdLabel) {
             return mapRootIdLabel;
-        } else {
-            return appContext.tabManager.getActiveContext()?.parentNoteId ?? null;
         }
+        return appContext.tabManager.getActiveContext()?.parentNoteId ?? null;
+
     }, [ note ]);
 
     // Build the note graph instance.
@@ -67,7 +70,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                 noteIdToSizeMap: notesAndRelations.noteIdToSizeMap,
                 cssData,
                 notesAndRelations,
-                themeStyle: getThemeStyle(),
+                themeStyle: getEffectiveThemeStyle(),
                 widgetMode,
                 mapType
             });
@@ -113,7 +116,7 @@ export default function NoteMap({ note, widgetMode, parentRef }: NoteMapProps) {
                 node.fx = undefined;
                 node.fy = undefined;
             }
-        })
+        });
     }, [ fixNodes, mapType ]);
 
     return (
@@ -159,7 +162,7 @@ function MapTypeSwitcher({ icon, text, type, currentMapType, setMapType }: {
             onClick={() => setMapType(type)}
             frame
         />
-    )
+    );
 }
 
 function getCssData(container: HTMLElement, styleResolver: HTMLElement): CssData {
@@ -170,5 +173,5 @@ function getCssData(container: HTMLElement, styleResolver: HTMLElement): CssData
         fontFamily: containerStyle.fontFamily,
         textColor: rgb2hex(containerStyle.color),
         mutedTextColor: rgb2hex(styleResolverStyle.color)
-    }
+    };
 }

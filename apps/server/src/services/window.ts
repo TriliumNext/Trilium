@@ -162,12 +162,24 @@ electron.ipcMain.on("export-as-pdf", async (e, { title, notePath, landscape, pag
 });
 
 async function getBrowserWindowForPrinting(e: IpcMainEvent, notePath: string, action: "printing" | "exporting_pdf") {
+    // Offscreen rendering crashes on Wayland due to a Chromium bug where the OSR surface
+    // lacks a valid xdg_toplevel role, causing a fatal zxdg_exporter_v2 protocol error.
+    // On Linux we work around this by creating a regular window positioned off-screen,
+    // since `show: false` without OSR causes Chromium to skip rendering entirely.
+    const useOffscreen = process.platform !== "linux";
     const browserWindow = new electron.BrowserWindow({
-        show: false,
+        show: !useOffscreen,
+        ...(useOffscreen ? {} : {
+            width: 1,
+            height: 1,
+            frame: false,
+            skipTaskbar: true,
+            focusable: false,
+        }),
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
-            offscreen: true,
+            offscreen: useOffscreen,
             devTools: false,
             session: e.sender.session
         },

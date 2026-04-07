@@ -12,10 +12,10 @@ Trilium Web Clipper officially supports the following web browsers:
 
 ## Obtaining the extension
 
-> [!WARNING]
-> The extension is currently under development. A preview with unsigned extensions is available on [GitHub Actions](https://github.com/TriliumNext/Trilium/actions/runs/21318809414).
-> 
-> We have already submitted the extension to both Chrome and Firefox web stores, but they are pending validation.
+The extension is available from the official browser web stores:
+
+*   **Firefox**: [Trilium Web Clipper on Firefox Add-ons](https://addons.mozilla.org/firefox/addon/trilium-notes-web-clipper/)
+*   **Chrome**: [Trilium Web Clipper on Chrome Web Store](https://chromewebstore.google.com/detail/trilium-web-clipper/ofoiklieachadcaeffficgjaajojpkpi)
 
 ## Functionality
 

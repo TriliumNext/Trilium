@@ -1,4 +1,5 @@
 import type { ForgeConfig } from "@electron-forge/shared-types";
+import { FuseV1Options, FuseVersion } from "@electron/fuses";
 import { LOCALES } from "@triliumnext/commons";
 import { existsSync } from "fs";
 import fs from "fs-extra";
@@ -166,6 +167,19 @@ const config: ForgeConfig = {
         {
             name: "@electron-forge/plugin-auto-unpack-natives",
             config: {}
+        },
+        {
+            name: "@electron-forge/plugin-fuses",
+            config: {
+                version: FuseVersion.V1,
+                [FuseV1Options.RunAsNode]: false,
+                [FuseV1Options.EnableNodeOptionsEnvironmentVariable]: false,
+                [FuseV1Options.EnableNodeCliInspectArguments]: false,
+                [FuseV1Options.EnableCookieEncryption]: true,
+                [FuseV1Options.OnlyLoadAppFromAsar]: true,
+                [FuseV1Options.GrantFileProtocolExtraPrivileges]: false,
+                [FuseV1Options.EnableEmbeddedAsarIntegrityValidation]: true
+            }
         }
     ],
     hooks: {

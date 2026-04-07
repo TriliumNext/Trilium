@@ -4,7 +4,7 @@
 *   There are three themes embedded in the application:
     *   `light`, located in `src\public\stylesheets\theme-light.css`
     *   `dark`, located in `src\public\stylesheets\theme-dark.css`
-    *   `next`, located in `src\public\stylesheets\theme-next.css`.
+    *   `next`, composed from `src\public\stylesheets\theme-next-light.css` and `src\public\stylesheets\theme-next-dark.css`.
 *   The default theme is set only once, when the database is created and is managed by `options_init#initNotSyncedOptions`.
     *   In the original implementation: On Electron, the choice between `light` and `dark` is done based on the OS preference. Otherwise, the theme is always `dark`.
     *   Now, we always choose `next` as the default theme.

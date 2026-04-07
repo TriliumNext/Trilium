@@ -5,7 +5,8 @@ import MermaidUI from './mermaidui.js';
 
 declare global {
 	interface MermaidInstance {
-		init(config: MermaidConfig, element: HTMLElement): void;
+		initialize(config: MermaidConfig): void;
+		render(id: string, source: string): Promise<{ svg: string }>;
 	}
 
 	interface MermaidConfig {
