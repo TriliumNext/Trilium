@@ -113,10 +113,10 @@ function copyAttachments(origNote: BNote, newNote: BNote) {
     }
 }
 
-function getNewNoteTitle(parentNote: BNote) {
+function getNewNoteTitle(parentNote: BNote, params: NoteParams): string {
     let title = t("notes.new-note");
 
-    const titleTemplate = parentNote.getLabelValue("titleTemplate");
+    const titleTemplate = resolveTitleTemplate(parentNote, params);
 
     if (titleTemplate !== null) {
         try {
@@ -138,6 +138,15 @@ function getNewNoteTitle(parentNote: BNote) {
     title = htmlSanitizer.sanitize(title);
 
     return title;
+}
+
+function resolveTitleTemplate(parentNote: BNote, params: NoteParams): string | null {
+    if (params.templateNoteId != null) {
+        const templateNote = becca.getNote(params.templateNoteId);
+        return templateNote ? templateNote.getLabelValue("titleTemplate") : null;
+    }
+
+    return parentNote.getLabelValue("childTitleTemplate");
 }
 
 interface GetValidateParams {
@@ -180,7 +189,7 @@ function createNewNote(params: NoteParams): {
     const parentNote = getAndValidateParent(params);
 
     if (params.title === null || params.title === undefined) {
-        params.title = getNewNoteTitle(parentNote);
+        params.title = getNewNoteTitle(parentNote, params);
     }
 
     if (params.content === null || params.content === undefined) {
