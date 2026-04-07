@@ -10,7 +10,7 @@ import yaml from "js-yaml";
 
 import becca from "../../../becca/becca.js";
 import { getSkillsSummary } from "../skills/index.js";
-import { getNoteMeta,SYSTEM_PROMPT_LIMITS } from "../tools/helpers.js";
+import { getContentPreview, getNoteMeta, SYSTEM_PROMPT_LIMITS } from "../tools/helpers.js";
 import { allToolRegistries } from "../tools/index.js";
 import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
 
@@ -41,6 +41,86 @@ function buildNoteHint(noteId: string): string | null {
         "Use get_note_content only if the preview is insufficient.",
         "",
         metadata
+    ].join("\n");
+}
+
+/** Maximum number of source notes to include in the knowledge base prompt. */
+const KB_MAX_SOURCES = 20;
+/** Maximum characters of content preview per source note in the KB prompt. */
+const KB_PREVIEW_MAX = 1500;
+
+/**
+ * Build the knowledge base section of the system prompt from source note IDs.
+ * Includes note metadata and extended content previews for each source.
+ */
+function buildKnowledgeBaseSources(sourceNoteIds: string[]): string | null {
+    const sources: string[] = [];
+
+    for (const noteId of sourceNoteIds.slice(0, KB_MAX_SOURCES)) {
+        const note = becca.getNote(noteId);
+        if (!note) continue;
+
+        const title = note.getTitleOrProtected();
+        const preview = note.isContentAvailable() ? getContentPreview(note) : null;
+        const childNotes = note.getChildNotes().slice(0, 10);
+
+        let entry = `### ${title} (noteId: ${noteId})`;
+        if (note.type !== "text") {
+            entry += `\nType: ${note.type}`;
+        }
+        if (childNotes.length > 0) {
+            entry += `\nChild notes: ${childNotes.map(c => `${c.getTitleOrProtected()} (${c.noteId})`).join(", ")}`;
+        }
+        if (preview) {
+            let extendedPreview = preview;
+            if (preview.length >= 490 && note.isContentAvailable()) {
+                const content = note.getContent();
+                if (typeof content === "string") {
+                    const plain = note.type === "text"
+                        ? content.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+                        : content;
+                    extendedPreview = plain.length > KB_PREVIEW_MAX
+                        ? `${plain.slice(0, KB_PREVIEW_MAX)}…`
+                        : plain;
+                }
+            }
+            entry += `\n\n${extendedPreview}`;
+        }
+        sources.push(entry);
+    }
+
+    if (sources.length === 0) return null;
+
+    const refList = sourceNoteIds.slice(0, KB_MAX_SOURCES)
+        .map((id, i) => {
+            const note = becca.getNote(id);
+            return note ? `[${i + 1}] ${note.getTitleOrProtected()} [[${id}]]` : null;
+        })
+        .filter(Boolean);
+
+    return [
+        "## Knowledge Base Sources",
+        "",
+        "The following notes are the user's selected knowledge base. " +
+        "Answer questions primarily using information found in these sources. " +
+        "Use `get_note_content` to read the full content of any source when the preview is insufficient. " +
+        "You can also use `search_notes` to find related information within source subtrees.",
+        "",
+        "**Citation rules**: When citing a source, use Harvard-style numbered references inline, e.g. [1], [2]. " +
+        "At the end of your response, include a **References** section listing each cited source " +
+        "with its number and a wiki-link to the note, for example:",
+        "```",
+        "## References",
+        "[1] Note Title [[noteId]]",
+        "[2] Another Note [[noteId]]",
+        "```",
+        "",
+        "Reference list for this conversation:",
+        ...refList,
+        "",
+        "If the user's question cannot be answered from these sources, clearly say so and offer to search the broader note collection.",
+        "",
+        ...sources
     ].join("\n");
 }
 
@@ -97,13 +177,32 @@ export abstract class BaseProvider implements LlmProvider {
             }
         }
 
+        // Knowledge base sources
+        const hasKnowledgeBase = config.sourceNoteIds && config.sourceNoteIds.length > 0;
+        if (hasKnowledgeBase) {
+            const kbSection = buildKnowledgeBaseSources(config.sourceNoteIds!);
+            if (kbSection) {
+                parts.push(kbSection);
+            }
+        }
+
         // Note tools hint
-        if (config.enableNoteTools) {
+        if (config.enableNoteTools || hasKnowledgeBase) {
             parts.push(
                 `You have access to skills that provide specialized instructions. Load a skill with the load_skill tool before performing complex operations.\n\nAvailable skills:\n${getSkillsSummary()}`
             );
             parts.push(
                 `When referring to notes in your responses, use the wiki-link format [[noteId]] to create clickable internal links. Use the note ID (not the title) from tool results. The link will automatically display the note's title and icon, so don't repeat the title in your text. For example: "You can find more details in [[ZjSfLhzlqNY6]]" instead of "You can find more details in the Meeting Notes note ([[ZjSfLhzlqNY6]])".`
+            );
+            parts.push(
+                [
+                    "You can fully manage the user's notes: search, read, create, edit, rename, delete, move, and clone.",
+                    "Trilium uses a tree hierarchy where notes can have multiple parents (via cloning).",
+                    "Workflow: use search_notes or get_child_notes to find notes, get_note/get_note_content to read them,",
+                    "then create_note, update_note_content, append_to_note, rename_note to edit content,",
+                    "and move_note, clone_note, delete_note to organize the tree.",
+                    "Always confirm destructive actions (delete, overwrite) with the user before proceeding."
+                ].join(" ")
             );
         } else if (config.contextNoteId) {
             parts.push(
@@ -160,7 +259,7 @@ export abstract class BaseProvider implements LlmProvider {
             this.addWebSearchTool(tools);
         }
 
-        if (config.enableNoteTools) {
+        if (config.enableNoteTools || (config.sourceNoteIds && config.sourceNoteIds.length > 0)) {
             for (const registry of allToolRegistries) {
                 Object.assign(tools, registry.toToolSet());
             }

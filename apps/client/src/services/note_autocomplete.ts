@@ -52,6 +52,8 @@ export interface Options {
     hideAllButtons?: boolean;
     /** If set, enables command palette mode */
     isCommandPalette?: boolean;
+    /** If true, close the dropdown when the input loses focus (even when using a container). Defaults to false. */
+    closeOnBlur?: boolean;
 }
 
 async function autocompleteSourceForCKEditor(queryText: string) {
@@ -258,7 +260,9 @@ function initNoteAutocomplete($el: JQuery<HTMLElement>, options?: Options) {
     let autocompleteOptions: AutoCompleteConfig = {};
     if (options.container) {
         autocompleteOptions.dropdownMenuContainer = options.container;
-        autocompleteOptions.debug = true; // don't close on blur
+        if (!options.closeOnBlur) {
+            autocompleteOptions.debug = true; // don't close on blur
+        }
     }
 
     if (options.allowJumpToSearchNotes) {

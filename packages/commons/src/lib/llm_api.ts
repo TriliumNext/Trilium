@@ -43,6 +43,8 @@ export interface LlmChatConfig {
     contextNoteId?: string;
     /** The note ID of the chat note (used for auto-renaming on first message) */
     chatNoteId?: string;
+    /** Note IDs to use as knowledge base sources */
+    sourceNoteIds?: string[];
 }
 
 /**
