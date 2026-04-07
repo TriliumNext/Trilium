@@ -206,6 +206,7 @@ export default function ChatInputBar({
                             placeholder={t("llm_chat.knowledge_base_add")}
                             noteIdChanged={handleAddSourceNote}
                             container={kbContainerRef}
+                            opts={{ closeOnBlur: true }}
                         />
                     </div>
                 </div>
