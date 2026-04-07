@@ -108,6 +108,10 @@ const ALLOWED_OPTIONS = new Set<OptionNames>([
     // LLM options
     "llmProviders",
     "mcpEnabled",
+    "llmWebSearchEngine",
+    "llmTavilyApiKey",
+    "llmSearxngUrl",
+    "llmSearchTimeout",
     // OCR options
     "ocrAutoProcessImages",
     "ocrMinConfidence"
