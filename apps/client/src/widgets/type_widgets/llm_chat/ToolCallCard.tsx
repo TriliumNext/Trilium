@@ -53,6 +53,7 @@ function getToolCallContext(toolCall: ToolCall): ToolCallContext {
 
 function toolCallIcon(toolCall: ToolCall): string {
     if (toolCall.isError) return "bx bx-error-circle";
+    if (toolCall.requiresApproval && !toolCall.result) return "bx bx-shield-quarter";
     if (!toolCall.result) return "bx bx-loader-alt bx-spin";
 
     const name = toolCall.toolName;
@@ -178,19 +179,44 @@ function ToolCallLabel({ toolCall }: { toolCall: ToolCall }) {
 }
 
 /** A single tool call section within a ToolCallCard. */
-function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
+function ToolCallSection({ toolCall, onApprove, onReject }: {
+    toolCall: ToolCall;
+    onApprove?: (toolCallId: string) => Promise<void>;
+    onReject?: (toolCallId: string) => void;
+}) {
     const hasError = toolCall.isError;
+    const isPendingApproval = toolCall.requiresApproval && !toolCall.result && !toolCall.rejected;
 
     return (
         <ExpandableSection
             icon={toolCallIcon(toolCall)}
             label={<ToolCallLabel toolCall={toolCall} />}
             className={hasError ? "llm-chat-tool-call-error" : ""}
+            defaultExpanded={isPendingApproval}
         >
             <div className="llm-chat-tool-call-input">
                 <strong>{t("llm_chat.input")}</strong>
                 <KeyValueTable data={toolCall.input} />
             </div>
+            {isPendingApproval && onApprove && onReject && (
+                <div className="llm-chat-tool-call-approval">
+                    <span className="llm-chat-tool-call-approval-label">{t("llm_chat.pending_approval")}</span>
+                    <div className="llm-chat-tool-call-approval-actions">
+                        <button
+                            className="llm-chat-tool-call-approve-btn"
+                            onClick={() => onApprove(toolCall.id)}
+                        >
+                            <span className="bx bx-check" /> {t("llm_chat.approve")}
+                        </button>
+                        <button
+                            className="llm-chat-tool-call-reject-btn"
+                            onClick={() => onReject(toolCall.id)}
+                        >
+                            <span className="bx bx-x" /> {t("llm_chat.reject")}
+                        </button>
+                    </div>
+                </div>
+            )}
             {toolCall.result && (
                 <div className={`llm-chat-tool-call-result ${hasError ? "llm-chat-tool-call-result-error" : ""}`}>
                     <strong>{hasError ? t("llm_chat.error") : t("llm_chat.result")}</strong>
@@ -202,11 +228,15 @@ function ToolCallSection({ toolCall }: { toolCall: ToolCall }) {
 }
 
 /** A card that groups one or more sequential tool calls together. */
-export default function ToolCallCard({ toolCalls }: { toolCalls: ToolCall[] }) {
+export default function ToolCallCard({ toolCalls, onApprove, onReject }: {
+    toolCalls: ToolCall[];
+    onApprove?: (toolCallId: string) => Promise<void>;
+    onReject?: (toolCallId: string) => void;
+}) {
     return (
         <ExpandableCard>
             {toolCalls.map((tc, idx) => (
-                <ToolCallSection key={tc.id ?? idx} toolCall={tc} />
+                <ToolCallSection key={tc.id ?? idx} toolCall={tc} onApprove={onApprove} onReject={onReject} />
             ))}
         </ExpandableCard>
     );

@@ -2,7 +2,8 @@ import type { LlmCitation, LlmMessage, LlmModelInfo, LlmUsage } from "@triliumne
 import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import { getAvailableModels, streamChatCompletion } from "../../../services/llm_chat.js";
+import { executeToolCall, getAvailableModels, streamChatCompletion } from "../../../services/llm_chat.js";
+import { t } from "../../../services/i18n.js";
 import { randomString } from "../../../services/utils.js";
 import type { ContentBlock, LlmChatContent, StoredMessage } from "./llm_chat_types.js";
 
@@ -62,6 +63,10 @@ export interface UseLlmChatReturn {
     clearMessages: () => void;
     /** Refresh the provider/models list */
     refreshModels: () => void;
+    /** Approve a pending mutating tool call */
+    approveToolCall: (toolCallId: string) => Promise<void>;
+    /** Reject a pending mutating tool call */
+    rejectToolCall: (toolCallId: string) => void;
 }
 
 export function useLlmChat(
@@ -267,13 +272,14 @@ export function useLlmChat(
                     thinkingContent += text;
                     setStreamingThinking(thinkingContent);
                 },
-                onToolUse: (toolName, toolInput) => {
+                onToolUse: (toolName, toolInput, requiresApproval) => {
                     contentBlocks.push({
                         type: "tool_call",
                         toolCall: {
                             id: randomString(),
                             toolName,
-                            input: toolInput
+                            input: toolInput,
+                            requiresApproval
                         }
                     });
                     setStreamingBlocks([...contentBlocks]);
@@ -365,6 +371,44 @@ export function useLlmChat(
         }
     }, [handleSubmit]);
 
+    /** Approve a pending mutating tool call — execute it server-side and update the message. */
+    const approveToolCall = useCallback(async (toolCallId: string) => {
+        // Find the tool call in messages
+        for (const msg of messages) {
+            if (!Array.isArray(msg.content)) continue;
+            for (const block of msg.content) {
+                if (block.type === "tool_call" && block.toolCall.id === toolCallId && block.toolCall.requiresApproval && !block.toolCall.result) {
+                    const { result, isError } = await executeToolCall(block.toolCall.toolName, block.toolCall.input);
+                    // Update the tool call block immutably
+                    const updatedContent = msg.content.map(b =>
+                        b.type === "tool_call" && b.toolCall.id === toolCallId
+                            ? { ...b, toolCall: { ...b.toolCall, result, isError } }
+                            : b
+                    );
+                    const updatedMessages = messages.map(m =>
+                        m.id === msg.id ? { ...m, content: updatedContent } : m
+                    );
+                    setMessages(updatedMessages);
+                    return;
+                }
+            }
+        }
+    }, [messages, setMessages]);
+
+    /** Reject a pending mutating tool call. */
+    const rejectToolCall = useCallback((toolCallId: string) => {
+        const updatedMessages = messages.map(msg => {
+            if (!Array.isArray(msg.content)) return msg;
+            const updatedContent = msg.content.map(b =>
+                b.type === "tool_call" && b.toolCall.id === toolCallId
+                    ? { ...b, toolCall: { ...b.toolCall, rejected: true, result: t("llm_chat.rejected_by_user"), isError: true } }
+                    : b
+            );
+            return { ...msg, content: updatedContent };
+        });
+        setMessages(updatedMessages);
+    }, [messages, setMessages]);
+
     return {
         // State
         messages,
@@ -402,6 +446,8 @@ export function useLlmChat(
         loadFromContent,
         getContent,
         clearMessages,
-        refreshModels
+        refreshModels,
+        approveToolCall,
+        rejectToolCall
     };
 }
