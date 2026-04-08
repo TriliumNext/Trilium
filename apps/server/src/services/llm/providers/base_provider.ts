@@ -163,21 +163,22 @@ export abstract class BaseProvider implements LlmProvider {
             const timeoutSec = parseInt(optionService.getOptionOrNull("llmSearchTimeout") || "15", 10);
             const timeoutMs = (timeoutSec > 0 ? timeoutSec : 15) * 1000;
 
+            let customToolAdded = false;
             if (searchEngine === "tavily") {
                 const apiKey = optionService.getOptionOrNull("llmTavilyApiKey");
                 if (apiKey) {
                     addTavilySearchTool(tools, apiKey, timeoutMs);
-                } else {
-                    this.addWebSearchTool(tools);
+                    customToolAdded = true;
                 }
             } else if (searchEngine === "searxng") {
                 const instanceUrl = optionService.getOptionOrNull("llmSearxngUrl");
                 if (instanceUrl) {
                     addSearxngSearchTool(tools, instanceUrl, timeoutMs);
-                } else {
-                    this.addWebSearchTool(tools);
+                    customToolAdded = true;
                 }
-            } else {
+            }
+
+            if (!customToolAdded) {
                 this.addWebSearchTool(tools);
             }
         }
