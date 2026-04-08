@@ -538,12 +538,12 @@
     "new_tab": "Nuova scheda"
   },
   "toc": {
-    "table_of_contents": "Sommario",
+    "table_of_contents": "Tabella dei Contenuti",
     "options": "Opzioni",
     "no_headings": "Nessun titolo."
   },
   "table_of_contents": {
-    "title": "Sommario",
+    "title": "Tabella dei Contenuti",
     "description": "L'indice apparirà nelle note di testo quando la nota contiene più di un numero definito di titoli. È possibile personalizzare questo numero:",
     "unit": "titoli",
     "disable_info": "È anche possibile utilizzare questa opzione per disattivare efficacemente l'indice impostando un numero molto alto.",
@@ -853,7 +853,7 @@
     "archived": "Le note con questa etichetta non saranno visibili per impostazione predefinita nei risultati di ricerca (anche nelle finestre di dialogo Vai a, Aggiungi collegamento ecc.).",
     "run_on_instance": "Definire su quale istanza di Trilium eseguire questa operazione. L'impostazione predefinita è tutte le istanze.",
     "exclude_from_export": "le note (con la loro sottostruttura) non saranno incluse in nessuna esportazione di note",
-    "run": "definisce su quali eventi deve essere eseguito lo script. I valori possibili sono:\n<ul>\n<li>frontendStartup - quando il frontend Trilium viene avviato (o aggiornato), ma non su dispositivi mobili.</li>\n<li>mobileStartup - quando il frontend Trilium viene avviato (o aggiornato) su dispositivi mobili.</li>\n<li>backendStartup - quando viene avviato il backend Trilium</li>\n<li>hourly - eseguire una volta all'ora. È possibile utilizzare l'etichetta aggiuntiva <code>runAtHour</code> per specificare a che ora.</li>\n<li>daily - eseguire una volta al giorno</li>\n</ul>",
+    "run": "definisce su quali eventi deve essere eseguito lo script. I valori possibili sono:\n<ul>\n<li>frontendStartup - quando il frontend Trilium viene avviato (o aggiornato), ma non su dispositivi mobili.</li>\n<li>mobileStartup - quando il frontend Trilium viene avviato (o aggiornato) su dispositivi mobili.</li>\n<li>backendStartup - quando viene avviato il backend Trilium.</li>\n<li>hourly - eseguire una volta all'ora. È possibile utilizzare l'etichetta aggiuntiva <code>runAtHour</code> per specificare a che ora.</li>\n<li>daily - eseguire una volta al giorno.</li>\n</ul>",
     "run_at_hour": "A che ora deve essere eseguito. Deve essere utilizzato insieme a <code>#run=hourly</code>. Può essere definito più volte per più esecuzioni durante il giorno.",
     "disable_inclusion": "gli script con questa etichetta non saranno inclusi nell'esecuzione dello script principale.",
     "sorted": "mantiene le note figlie ordinate alfabeticamente per titolo",
@@ -1149,7 +1149,8 @@
     "export_as_image": "Esporta come immagine",
     "export_as_image_png": "PNG (raster)",
     "export_as_image_svg": "SVG (vector)",
-    "note_map": "Mappa"
+    "note_map": "Mappa",
+    "view_ocr_text": "Visualizza il testo OCR"
   },
   "onclick_button": {
     "no_click_handler": "Il widget pulsante '{{componentId}}' non ha un gestore di clic definito"
@@ -1541,12 +1542,28 @@
   },
   "images": {
     "images_section_title": "Immagini",
-    "download_images_automatically": "Scarica automaticamente le immagini per l'utilizzo offline.",
-    "download_images_description": "L'HTML incollato può contenere riferimenti a immagini online; Trilium troverà tali riferimenti e scaricherà le immagini in modo che siano disponibili offline.",
-    "enable_image_compression": "Abilita la compressione delle immagini",
-    "max_image_dimensions": "Larghezza/altezza massima di un'immagine (l'immagine verrà ridimensionata se supera questa impostazione).",
+    "download_images_automatically": "Scarica automaticamente le immagini",
+    "download_images_description": "Scarica le immagini online a cui si fa riferimento nel codice HTML incollato, in modo che siano disponibili offline.",
+    "enable_image_compression": "Compressione delle immagini",
+    "max_image_dimensions": "Dimensioni massime dell'immagine",
     "max_image_dimensions_unit": "pixel",
-    "jpeg_quality_description": "Qualità JPEG (10 - qualità peggiore, 100 - qualità migliore, 50 - 85 è consigliato)"
+    "jpeg_quality_description": "Il range consigliato è compreso tra 50 e 85. Valori più bassi riducono le dimensioni del file, mentre valori più alti preservano i dettagli.",
+    "enable_image_compression_description": "Comprimi e ridimensiona le immagini al momento del caricamento o dell'inserimento.",
+    "max_image_dimensions_description": "Le immagini che superano queste dimensioni verranno ridimensionate automaticamente.",
+    "jpeg_quality": "Qualità JPEG",
+    "ocr_section_title": "Estrazione di testo (OCR)",
+    "ocr_related_content_languages": "Lingue dei contenuti (utilizzate per l'estrazione del testo)",
+    "ocr_auto_process": "Elaborazione automatica dei nuovi file",
+    "ocr_auto_process_description": "Estrai automaticamente il testo dai file appena caricati o incollati.",
+    "ocr_min_confidence": "Livello minimo di confidenza",
+    "ocr_confidence_description": "Estrai solo il testo che supera questa soglia di affidabilità. Valori inferiori includono più testo, ma potrebbero risultare meno accurati.",
+    "batch_ocr_title": "Elabora i file esistenti",
+    "batch_ocr_description": "Estrai il testo da tutte le immagini, i PDF e i documenti Office presenti nei tuoi appunti. L'operazione potrebbe richiedere un po' di tempo a seconda del numero di file.",
+    "batch_ocr_start": "Avvia l'elaborazione in batch",
+    "batch_ocr_starting": "Avvio dell'elaborazione in batch...",
+    "batch_ocr_progress": "Elaborazione di {{processed}} su {{total}} file...",
+    "batch_ocr_completed": "Elaborazione in batch completata! Sono stati elaborati {{processed}} file.",
+    "batch_ocr_error": "Errore durante l'elaborazione in batch: {{error}}"
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "Timeout cancellazione allegato",
@@ -1656,9 +1673,6 @@
     "description": "Queste opzioni sono valide solo per le versioni desktop; i browser utilizzeranno il proprio controllo ortografico nativo.",
     "enable": "Abilita il controllo ortografico",
     "language_code_label": "Codice/i della lingua",
-    "language_code_placeholder": "ad esempio \"en-US\", \"de-AT\"",
-    "multiple_languages_info": "È possibile separare più lingue con una virgola, ad esempio \"en-US, de-DE, cs\". ",
-    "available_language_codes_label": "Codici lingua disponibili:",
     "restart-required": "Le modifiche alle opzioni di controllo ortografico avranno effetto dopo il riavvio dell'applicazione."
   },
   "api_log": {
@@ -1940,7 +1954,7 @@
   },
   "content_language": {
     "title": "Lingue dei contenuti",
-    "description": "Seleziona una o più lingue che desideri visualizzare nella sezione \"Proprietà di base\" di una nota di testo di sola lettura o modificabile. Ciò consentirà funzionalità come il controllo ortografico o il supporto per la scrittura da destra a sinistra."
+    "description": "Seleziona una o più lingue che devono comparire nell'elenco di selezione delle lingue nella sezione \"Proprietà di base\" di una nota di testo in sola lettura o modificabile. Ciò consentirà di utilizzare funzioni quali il controllo ortografico, il supporto per la scrittura da destra a sinistra e l'estrazione del testo (OCR)."
   },
   "switch_layout_button": {
     "title_vertical": "Sposta il riquadro di modifica in basso",
@@ -2247,7 +2261,9 @@
     "sample_user_journey": "Percorso dell'utente",
     "sample_xy": "XY",
     "sample_venn": "Venn",
-    "sample_ishikawa": "Ishikawa"
+    "sample_ishikawa": "Ishikawa",
+    "sample_treeview": "TreeView",
+    "sample_wardley": "Mappa di Wardley"
   },
   "llm_chat": {
     "placeholder": "Scrivi un messaggio...",
@@ -2278,7 +2294,8 @@
     "note_context_enabled": "Clicca qui per disattivare il contesto della nota: {{title}}",
     "note_context_disabled": "Clicca per includere la nota corrente nel contesto",
     "no_provider_message": "Non è stato configurato alcun fornitore di IA. Aggiungine uno per iniziare a chattare.",
-    "add_provider": "Aggiungi un fornitore di IA"
+    "add_provider": "Aggiungi un fornitore di IA",
+    "sources_summary": "{{count}} fonti provenienti da {{sites}} siti"
   },
   "sidebar_chat": {
     "title": "Chat AI",
@@ -2304,6 +2321,61 @@
     "delete_provider_confirmation": "Sei sicuro di voler eliminare il provider \"{{name}}\"?",
     "api_key": "Chiave API",
     "api_key_placeholder": "Inserisci la tua chiave API",
-    "cancel": "Annulla"
+    "cancel": "Annulla",
+    "feature_not_enabled": "Abilita la funzione sperimentale LLM in Impostazioni → Avanzate → Funzioni sperimentali per utilizzare le integrazioni basate sull'intelligenza artificiale.",
+    "mcp_title": "MCP (Model Context Protocol)",
+    "mcp_enabled": "Server MCP",
+    "mcp_enabled_description": "Rendi pubblico un endpoint MCP (Model Context Protocol) in modo che gli assistenti di programmazione basati sull'intelligenza artificiale (ad esempio Claude Code, GitHub Copilot) possano leggere e modificare le tue note. L'endpoint è accessibile solo da localhost.",
+    "mcp_endpoint_title": "URL dell'endpoint",
+    "mcp_endpoint_description": "Aggiungi questo URL alla configurazione MCP del tuo assistente AI",
+    "tools": {
+      "search_notes": "Cerca nelle note",
+      "get_note": "Prendi nota",
+      "get_note_content": "Visualizza il contenuto della nota",
+      "update_note_content": "Aggiorna il contenuto della nota",
+      "append_to_note": "Aggiungi alla nota",
+      "create_note": "Crea nota",
+      "get_attributes": "Recupera gli attributi",
+      "get_attribute": "Ottieni attributo",
+      "set_attribute": "Imposta attributo",
+      "delete_attribute": "Elimina attributo",
+      "get_child_notes": "Recupera le note relative ai figli",
+      "get_subtree": "Ottieni sottostruttura",
+      "load_skill": "Carica skill",
+      "web_search": "Ricerca sul web",
+      "note_in_parent": "<Note/> in <Parent/>",
+      "get_attachment": "Scarica l'allegato",
+      "get_attachment_content": "Leggi il contenuto dell'allegato"
+    }
+  },
+  "ocr": {
+    "extracted_text": "Testo estratto (OCR)",
+    "extracted_text_title": "Testo estratto (OCR)",
+    "loading_text": "Caricamento del testo OCR in corso...",
+    "no_text_available": "Non è disponibile alcun testo OCR",
+    "no_text_explanation": "Questo documento non è stato sottoposto a elaborazione OCR per l'estrazione del testo oppure non è stato trovato alcun testo.",
+    "failed_to_load": "Impossibile caricare il testo OCR",
+    "process_now": "Elaborazione OCR",
+    "processing": "Elaborazione in corso...",
+    "processing_started": "L'elaborazione OCR è stata avviata. Attendere qualche istante e aggiorna.",
+    "processing_complete": "Elaborazione OCR completata.",
+    "processing_failed": "Impossibile avviare l'elaborazione OCR",
+    "text_filtered_low_confidence": "L'OCR ha rilevato il testo con un livello di affidabilità del {{confidence}}%, ma è stato scartato perché la soglia minima impostata è del {{threshold}}%.",
+    "open_media_settings": "Apri Impostazioni",
+    "view_extracted_text": "Visualizza il testo estratto (OCR)"
+  },
+  "mind-map": {
+    "addChild": "Aggiungi figlio",
+    "addParent": "Aggiungi genitore",
+    "addSibling": "Aggiungi un fratello o una sorella",
+    "removeNode": "Rimuovi nodo",
+    "focus": "Modalità Focus",
+    "cancelFocus": "Annulla modalità Focus",
+    "moveUp": "Sposta su",
+    "moveDown": "Sposta giù",
+    "link": "Collegamento",
+    "linkBidirectional": "Collegamento bidirezionale",
+    "clickTips": "Clicca sul nodo di destinazione",
+    "summary": "Sommario"
   }
 }

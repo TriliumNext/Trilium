@@ -11,7 +11,8 @@ const MIGRATIONS: (SqlMigration | JsMigration)[] = [
         version: 236,
         sql: /*sql*/`\
             ALTER TABLE blobs ADD COLUMN textRepresentation TEXT DEFAULT NULL;
-        `
+        `,
+        ignoreErrors: true
     },
     // Add missing database indices for query performance
     {
@@ -335,6 +336,8 @@ export default MIGRATIONS;
 
 interface Migration {
     version: number;
+    /** If true, errors during this migration are logged but do not halt the migration process. Useful for migrations that may have already been applied (e.g. adding a column that already exists). */
+    ignoreErrors?: boolean;
 }
 
 interface SqlMigration extends Migration {

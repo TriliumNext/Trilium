@@ -1,4 +1,4 @@
-import { type App, type BrowserWindow, type BrowserWindowConstructorOptions, default as electron, ipcMain, type IpcMainEvent, type WebContents } from "electron";
+import { type App, type BrowserWindow, type BrowserWindowConstructorOptions, default as electron, ipcMain, type IpcMainEvent, type Session, type WebContents } from "electron";
 import fs from "fs/promises";
 import { t } from "i18next";
 import path from "path";
@@ -6,6 +6,7 @@ import url from "url";
 
 import app_info from "./app_info.js";
 import cls from "./cls.js";
+import customDictionary from "./custom_dictionary.js";
 import keyboardActionsService from "./keyboard_actions.js";
 import log from "./log.js";
 import optionService from "./options.js";
@@ -18,6 +19,7 @@ import { formatDownloadTitle, isMac, isWindows } from "./utils.js";
 let mainWindow: BrowserWindow | null;
 let setupWindow: BrowserWindow | null;
 let allWindows: BrowserWindow[] = []; // // Used to store all windows, sorted by the order of focus.
+const loadedSpellcheckSessions = new WeakSet<Session>();
 
 function trackWindowFocus(win: BrowserWindow) {
     // We need to get the last focused window from allWindows. If the last window is closed, we return the previous window.
@@ -67,6 +69,11 @@ async function createExtraWindow(extraWindowHash: string) {
 
 electron.ipcMain.on("create-extra-window", (event, arg) => {
     createExtraWindow(arg.extraWindowHash);
+});
+
+electron.ipcMain.on("add-word-to-dictionary", (event, word: string) => {
+    event.sender.session.addWordToSpellCheckerDictionary(word);
+    customDictionary.addWord(word);
 });
 
 interface PrintOpts {
@@ -375,12 +382,22 @@ async function configureWebContents(webContents: WebContents, spellcheckEnabled:
     });
 
     if (spellcheckEnabled) {
+        setupSpellcheckForSession(webContents.session);
+    }
+}
+
+function setupSpellcheckForSession(session: Session) {
+    if (!loadedSpellcheckSessions.has(session)) {
+        loadedSpellcheckSessions.add(session);
+
         const languageCodes = optionService
             .getOption("spellCheckLanguageCode")
             .split(",")
             .map((code) => code.trim());
 
-        webContents.session.setSpellCheckerLanguages(languageCodes);
+        session.setSpellCheckerLanguages(languageCodes);
+        customDictionary.loadForSession(session)
+            .catch(err => log.error(`Failed to load custom dictionary for spellcheck: ${err}`));
     }
 }
 

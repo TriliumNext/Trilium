@@ -313,6 +313,7 @@
     "shared-notes-title": "Shared Notes",
     "bulk-action-title": "Bulk Action",
     "backend-log-title": "Backend Log",
+    "custom-dictionary-title": "Custom Dictionary",
     "user-hidden-title": "User Hidden",
     "launch-bar-templates-title": "Launch Bar Templates",
     "base-abstract-launcher-title": "Base Abstract Launcher",
@@ -405,7 +406,10 @@
     "last-updated": "Last updated on {{- date}}",
     "subpages": "Subpages:",
     "on-this-page": "On This Page",
-    "expand": "Expand"
+    "expand": "Expand",
+    "toggle-navigation": "Toggle Navigation",
+    "toggle-toc": "Toggle Table of Contents",
+    "logo-alt": "Logo"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Text Snippet",

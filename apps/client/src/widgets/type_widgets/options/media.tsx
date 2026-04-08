@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
+import { isElectron } from "../../../services/utils";
 import { FormTextBoxWithUnit } from "../../react/FormTextBox";
 import FormToggle from "../../react/FormToggle";
 import { useTriliumOption, useTriliumOptionBool } from "../../react/hooks";
@@ -93,7 +94,8 @@ function OcrSettings() {
             <RelatedSettings items={[
                 {
                     title: t("images.ocr_related_content_languages"),
-                    targetPage: "_optionsLocalization"
+                    targetPage: "_optionsLocalization",
+                    enabled: isElectron(), // This setting is only relevant for desktop, as web browsers use their own native OCR which doesn't support language selection.
                 }
             ]} />
         </>

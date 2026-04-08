@@ -659,13 +659,20 @@ export function readContent(zipfile: yauzl.ZipFile, entry: yauzl.Entry): Promise
 
 export function readZipFile(buffer: Buffer, processEntryCallback: (zipfile: yauzl.ZipFile, entry: yauzl.Entry) => Promise<void>) {
     return new Promise<void>((res, rej) => {
-        yauzl.fromBuffer(buffer, { lazyEntries: true, validateEntrySizes: false }, (err, zipfile) => {
+        yauzl.fromBuffer(buffer, { lazyEntries: true, validateEntrySizes: false, decodeStrings: false }, (err, zipfile) => {
             if (err) rej(err);
             if (!zipfile) throw new Error("Unable to read zip file.");
 
             zipfile.readEntry();
             zipfile.on("entry", async (entry) => {
                 try {
+                    // yauzl with decodeStrings: false returns fileName as a Buffer.
+                    // We decode as UTF-8 to handle ZIP files that use UTF-8 filenames
+                    // without setting the general purpose bit flag 11 (language encoding flag).
+                    if (Buffer.isBuffer(entry.fileName)) {
+                        entry.fileName = (entry.fileName as Buffer).toString("utf-8");
+                    }
+
                     await processEntryCallback(zipfile, entry);
                 } catch (e) {
                     rej(e);

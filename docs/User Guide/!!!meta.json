@@ -1,6 +1,6 @@
 {
     "formatVersion": 2,
-    "appVersion": "0.102.1",
+    "appVersion": "0.102.2",
     "files": [
         {
             "isClone": false,
@@ -9353,6 +9353,41 @@
                                 },
                                 {
                                     "isClone": false,
+                                    "noteId": "oBo3iHIZnbG2",
+                                    "notePath": [
+                                        "pOsGYCXsbNQG",
+                                        "KSZ04uQ2D1St",
+                                        "iPIMuisry3hd",
+                                        "oBo3iHIZnbG2"
+                                    ],
+                                    "title": "Spell Check",
+                                    "notePosition": 200,
+                                    "prefix": null,
+                                    "isExpanded": false,
+                                    "type": "text",
+                                    "mime": "text/html",
+                                    "attributes": [
+                                        {
+                                            "type": "label",
+                                            "name": "iconClass",
+                                            "value": "bx bx-check-double",
+                                            "isInheritable": false,
+                                            "position": 30
+                                        },
+                                        {
+                                            "type": "label",
+                                            "name": "shareAlias",
+                                            "value": "spellcheck",
+                                            "isInheritable": false,
+                                            "position": 40
+                                        }
+                                    ],
+                                    "format": "markdown",
+                                    "dataFileName": "Spell Check.md",
+                                    "attachments": []
+                                },
+                                {
+                                    "isClone": false,
                                     "noteId": "BFvAtE74rbP6",
                                     "notePath": [
                                         "pOsGYCXsbNQG",
@@ -9361,7 +9396,7 @@
                                         "BFvAtE74rbP6"
                                     ],
                                     "title": "Table of contents",
-                                    "notePosition": 200,
+                                    "notePosition": 210,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",
@@ -9433,7 +9468,7 @@
                                         "NdowYOC1GFKS"
                                     ],
                                     "title": "Tables",
-                                    "notePosition": 210,
+                                    "notePosition": 220,
                                     "prefix": null,
                                     "isExpanded": false,
                                     "type": "text",

@@ -1944,9 +1944,6 @@
     "description": "Estas opções se aplicam apenas às versões desktop; os navegadores usarão sua própria verificação ortográfica nativa.",
     "enable": "Habilitar verificação ortográfica",
     "language_code_label": "Código(s) de idioma",
-    "language_code_placeholder": "por exemplo \"en-US\", \"de-AT\", \"pt-BR\"",
-    "multiple_languages_info": "Múltiplos idiomas podem ser separados por vírgula, por exemplo: \"en-US, de-DE, pt-BR, cs\". ",
-    "available_language_codes_label": "Códigos de idioma disponíveis:",
     "restart-required": "As alterações nas opções de verificação ortográfica terão efeito após reiniciar o aplicativo."
   },
   "sync_2": {

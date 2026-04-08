@@ -122,6 +122,12 @@ Trilium provides powerful user scripting capabilities:
 - Third-party components (e.g., mind-map context menu) should use i18next `t()` for their labels, with the English strings added to `en/translation.json` under a dedicated namespace (e.g., `"mind-map"`)
 - When a translated string contains **interpolated components** (e.g. links, note references) whose order may vary across languages, use `<Trans>` from `react-i18next` instead of `t()`. This lets translators reorder components freely (e.g. `"<Note/> in <Parent/>"` vs `"in <Parent/>, <Note/>"`)
 - When adding a new locale, follow the step-by-step guide in `docs/Developer Guide/Developer Guide/Concepts/Internationalisation  Translations/Adding a new locale.md`
+- **Server-side translations** (e.g. hidden subtree titles) go in `apps/server/src/assets/translations/en/server.json`, not in the client `translation.json`
+
+### Electron Desktop App
+- Desktop entry point: `apps/desktop/src/main.ts`, window management: `apps/server/src/services/window.ts`
+- IPC communication: use `electron.ipcMain.on(channel, handler)` on server side, `electron.ipcRenderer.send(channel, data)` on client side
+- Electron-only features should check `isElectron()` from `apps/client/src/services/utils.ts` (client) or `utils.isElectron` (server)
 
 ### Security Considerations
 - Per-note encryption with granular protected sessions
@@ -152,6 +158,20 @@ Trilium provides powerful user scripting capabilities:
 ### Custom CKEditor Plugins
 - Create new package in `packages/` following existing plugin structure
 - Register in `packages/ckeditor5/src/plugins.ts`
+
+### Adding Hidden System Notes
+The hidden subtree (`_hidden`) contains system notes with predictable IDs (prefixed with `_`). Defined in `apps/server/src/services/hidden_subtree.ts` via the `HiddenSubtreeItem` interface from `@triliumnext/commons`.
+
+1. Add the note definition to `buildHiddenSubtreeDefinition()` in `apps/server/src/services/hidden_subtree.ts`
+2. Add a translation key for the title in `apps/server/src/assets/translations/en/server.json` under `"hidden-subtree"`
+3. The note is auto-created on startup by `checkHiddenSubtree()` — uses deterministic IDs so all sync cluster instances generate the same structure
+4. Key properties: `id` (must start with `_`), `title`, `type`, `icon` (format: `bx-icon-name` without `bx ` prefix), `attributes`, `children`, `content`
+5. Use `enforceAttributes: true` to keep attributes in sync, `enforceBranches: true` for correct placement, `enforceDeleted: true` to remove deprecated notes
+6. For launcher bar entries, see `hidden_subtree_launcherbar.ts`; for templates, see `hidden_subtree_templates.ts`
+
+### Writing to Notes from Server Services
+- `note.setContent()` requires a CLS (Continuation Local Storage) context — wrap calls in `cls.init(() => { ... })` (from `apps/server/src/services/cls.ts`)
+- Operations called from Express routes already have CLS context; standalone services (schedulers, Electron IPC handlers) do not
 
 ### Adding New LLM Tools
 Tools are defined using `defineTools()` in `apps/server/src/services/llm/tools/` and automatically registered for both the LLM chat and MCP server.

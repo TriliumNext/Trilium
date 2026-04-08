@@ -1398,9 +1398,6 @@
     "description": "這些選項僅適用於桌面版，瀏覽器將使用其原生的拼寫檢查功能。",
     "enable": "啟用拼寫檢查",
     "language_code_label": "語言代碼",
-    "language_code_placeholder": "例如 \"en-US\", \"de-AT\"",
-    "multiple_languages_info": "多種語言可以用逗號分隔，例如 \"en-US, de-DE, cs\"。 ",
-    "available_language_codes_label": "可用的語言代碼：",
     "restart-required": "拼寫檢查選項的更改將在應用重啟後生效。"
   },
   "sync_2": {

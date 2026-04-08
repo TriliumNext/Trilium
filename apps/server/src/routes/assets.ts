@@ -9,6 +9,9 @@ import auth from "../services/auth.js";
 import { getResourceDir, isDev } from "../services/utils.js";
 import { doubleCsrfProtection as csrfMiddleware } from "./csrf_protection.js";
 
+// Allow serving assets even if the installation path contains a hidden (dot-prefixed) directory.
+const STATIC_OPTIONS: serveStatic.ServeStaticOptions = { dotfiles: "allow" };
+
 const persistentCacheStatic = (root: string, options?: serveStatic.ServeStaticOptions<express.Response<unknown, Record<string, unknown>>>) => {
     if (!isDev) {
         options = {
@@ -16,7 +19,7 @@ const persistentCacheStatic = (root: string, options?: serveStatic.ServeStaticOp
             ...options
         };
     }
-    return express.static(root, options);
+    return express.static(root, { ...STATIC_OPTIONS, ...options });
 };
 
 async function register(app: express.Application) {
@@ -66,7 +69,7 @@ async function register(app: express.Application) {
             // broken when closing the browser and coming back in to the page.
             // The page is restored from cache, but the API call fail.
             res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-            res.sendFile(path.join(publicDir, "index.html"));
+            res.sendFile(path.join(publicDir, "index.html"), STATIC_OPTIONS);
         });
         app.use("/assets", persistentCacheStatic(path.join(publicDir, "assets")));
         app.use(`/src`, persistentCacheStatic(path.join(publicDir, "src")));
@@ -76,14 +79,14 @@ async function register(app: express.Application) {
         app.use(`/${assetUrlFragment}/translations/`, persistentCacheStatic(path.join(publicDir, "translations")));
         app.use(`/node_modules/`, persistentCacheStatic(path.join(publicDir, "node_modules")));
     }
-    app.use(`/share/assets/fonts/`, express.static(path.join(getClientDir(), "fonts")));
-    app.use(`/share/assets/`, express.static(getShareThemeAssetDir()));
+    app.use(`/share/assets/fonts/`, express.static(path.join(getClientDir(), "fonts"), STATIC_OPTIONS));
+    app.use(`/share/assets/`, express.static(getShareThemeAssetDir(), STATIC_OPTIONS));
     app.use(`/pdfjs/`, persistentCacheStatic(getPdfjsAssetDir()));
     app.use(`/${assetUrlFragment}/images`, persistentCacheStatic(path.join(resourceDir, "assets", "images")));
     app.use(`/${assetUrlFragment}/doc_notes`, persistentCacheStatic(path.join(resourceDir, "assets", "doc_notes")));
-    app.use(`/assets/vX/fonts`, express.static(path.join(srcRoot, "public/fonts")));
-    app.use(`/assets/vX/images`, express.static(path.join(srcRoot, "..", "images")));
-    app.use(`/assets/vX/stylesheets`, express.static(path.join(srcRoot, "public/stylesheets")));
+    app.use(`/assets/vX/fonts`, express.static(path.join(srcRoot, "public/fonts"), STATIC_OPTIONS));
+    app.use(`/assets/vX/images`, express.static(path.join(srcRoot, "..", "images"), STATIC_OPTIONS));
+    app.use(`/assets/vX/stylesheets`, express.static(path.join(srcRoot, "public/stylesheets"), STATIC_OPTIONS));
 }
 
 export function getShareThemeAssetDir() {

@@ -1432,9 +1432,6 @@
     "description": "Estas opciones se aplican sólo para compilaciones de escritorio; los navegadores utilizarán su corrector ortográfico nativo.",
     "enable": "Habilitar corrector ortográfico",
     "language_code_label": "Código(s) de idioma",
-    "language_code_placeholder": "por ejemplo \"en-US\", \"de-AT\"",
-    "multiple_languages_info": "Múltiples idiomas se pueden separar por coma, por ejemplo \"en-US, de-DE, cs\". ",
-    "available_language_codes_label": "Códigos de idioma disponibles:",
     "restart-required": "Los cambios en las opciones de corrección ortográfica entrarán en vigor después del reinicio de la aplicación."
   },
   "sync_2": {

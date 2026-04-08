@@ -1461,9 +1461,6 @@
     "description": "ये विकल्प सिर्फ़ डेस्कटॉप वर्जन के लिए हैं, ब्राउज़र अपना स्पेल चेक इस्तेमाल करेंगे।",
     "enable": "स्पेल चेक चालू करें",
     "language_code_label": "भाषा कोड (Language code)",
-    "language_code_placeholder": "जैसे \"en-US\", \"hi-IN\"",
-    "multiple_languages_info": "कई भाषाओं को कॉमा से अलग किया जा सकता है, जैसे \"en-US, hi-IN\"। ",
-    "available_language_codes_label": "उपलब्ध भाषा कोड:",
     "restart-required": "स्पेल चेक में बदलाव ऐप रीस्टार्ट करने के बाद ही दिखेंगे।"
   },
   "sync_2": {

@@ -1665,9 +1665,6 @@
     "description": "Te opcje dotyczą tylko wersji desktopowych, przeglądarki będą używać własnego natywnego sprawdzania pisowni.",
     "enable": "Włącz sprawdzanie pisowni",
     "language_code_label": "Kod(y) języka",
-    "language_code_placeholder": "na przykład \"pl-PL\", \"en-US\"",
-    "multiple_languages_info": "Wiele języków można oddzielić przecinkiem, np. \"en-US, de-DE, pl\". ",
-    "available_language_codes_label": "Dostępne kody języków:",
     "restart-required": "Zmiany w opcjach sprawdzania pisowni wejdą w życie po ponownym uruchomieniu aplikacji."
   },
   "sync_2": {

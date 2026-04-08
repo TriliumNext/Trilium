@@ -38,7 +38,7 @@ function setupContextMenu() {
             items.push({
                 title: t("electron_context_menu.add-term-to-dictionary", { term: params.misspelledWord }),
                 uiIcon: "bx bx-plus",
-                handler: () => webContents.session.addWordToSpellCheckerDictionary(params.misspelledWord)
+                handler: () => electron.ipcRenderer.send("add-word-to-dictionary", params.misspelledWord)
             });
 
             items.push({ kind: "separator" });

@@ -10,6 +10,7 @@ import helmet from "helmet";
 import { t } from "i18next";
 import path from "path";
 import favicon from "serve-favicon";
+import type serveStatic from "serve-static";
 
 import assets from "./routes/assets.js";
 import custom from "./routes/custom.js";
@@ -23,6 +24,9 @@ import openID from "./services/open_id.js";
 import { RESOURCE_DIR } from "./services/resource_dir.js";
 import sql_init from "./services/sql_init.js";
 import utils, { getResourceDir, isDev } from "./services/utils.js";
+
+// Allow serving assets even if the installation path contains a hidden (dot-prefixed) directory.
+const STATIC_OPTIONS: serveStatic.ServeStaticOptions = { dotfiles: "allow" };
 
 export default async function buildApp() {
     const app = express();
@@ -95,10 +99,10 @@ export default async function buildApp() {
     // localhost-only guard and does not require Trilium authentication.
     mcpRoutes.register(app);
 
-    app.use(express.static(path.join(publicDir, "root")));
-    app.use(`/manifest.webmanifest`, express.static(path.join(publicAssetsDir, "manifest.webmanifest")));
-    app.use(`/robots.txt`, express.static(path.join(publicAssetsDir, "robots.txt")));
-    app.use(`/icon.png`, express.static(path.join(publicAssetsDir, "icon.png")));
+    app.use(express.static(path.join(publicDir, "root"), STATIC_OPTIONS));
+    app.use(`/manifest.webmanifest`, express.static(path.join(publicAssetsDir, "manifest.webmanifest"), STATIC_OPTIONS));
+    app.use(`/robots.txt`, express.static(path.join(publicAssetsDir, "robots.txt"), STATIC_OPTIONS));
+    app.use(`/icon.png`, express.static(path.join(publicAssetsDir, "icon.png"), STATIC_OPTIONS));
 
     const { default: sessionParser, startSessionCleanup } = await import("./routes/session_parser.js");
     app.use(sessionParser);

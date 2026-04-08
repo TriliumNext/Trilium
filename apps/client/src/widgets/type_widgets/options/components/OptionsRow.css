@@ -45,3 +45,15 @@
 .option-row.centered {
     justify-content: center;
 }
+
+.option-row-link.use-tn-links {
+    text-decoration: none;
+    color: inherit;
+    margin-inline: calc(-1 * var(--options-card-padding, 15px));
+    padding-inline: var(--options-card-padding, 15px);
+    transition: background-color 250ms ease-in-out;
+}
+
+.option-row-link:hover {
+    background: var(--hover-item-background-color);
+}

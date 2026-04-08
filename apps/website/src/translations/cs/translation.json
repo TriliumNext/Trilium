@@ -1,13 +1,13 @@
 {
     "get-started": {
-        "title": "Začínáme",
+        "title": "Začít",
         "desktop_title": "Stažení aplikace pro osobní počítače (v{{version}})",
         "architecture": "Architektura:",
         "older_releases": "Starší vydání",
         "server_title": "Nastavte server pro přístup z více zařízení"
     },
     "hero_section": {
-        "get_started": "Start",
+        "get_started": "Začít",
         "github": "GitHub",
         "title": "Uspořádejte si myšlenky. Vytvořte si osobní znalostní bázi.",
         "subtitle": "Trilium je open-source řešení pro pořizování poznámek a organizaci osobní znalostní báze. Používejte jej lokálně na svém počítači nebo jej synchronizujte se svým vlastním serverem, abyste měli své poznámky vždy po ruce, ať jste kdekoli.",

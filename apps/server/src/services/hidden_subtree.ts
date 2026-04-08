@@ -94,6 +94,12 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
                 ]
             },
             {
+                id: "_customDictionary",
+                title: t("hidden-subtree.custom-dictionary-title"),
+                type: "code",
+                icon: "bx-book"
+            },
+            {
                 // place for user scripts hidden stuff (scripts should not create notes directly under hidden root)
                 id: "_userHidden",
                 title: t("hidden-subtree.user-hidden-title"),

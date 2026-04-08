@@ -1,5 +1,7 @@
-import { cloneElement, VNode } from "preact";
 import "./OptionsRow.css";
+
+import { cloneElement, VNode } from "preact";
+
 import { useUniqueName } from "../../../react/hooks";
 
 interface OptionsRowProps {
@@ -24,5 +26,25 @@ export default function OptionsRow({ name, label, description, children, centere
                 {childWithId}
             </div>
         </div>
+    );
+}
+
+interface OptionsRowLinkProps {
+    label: string;
+    description?: string;
+    href: string;
+}
+
+export function OptionsRowLink({ label, description, href }: OptionsRowLinkProps) {
+    return (
+        <a href={href} className="option-row option-row-link use-tn-links no-tooltip-preview">
+            <div className="option-row-label">
+                <label style={{ cursor: "pointer" }}>{label}</label>
+                {description && <small className="option-row-description">{description}</small>}
+            </div>
+            <div className="option-row-input">
+                <span className="bx bx-chevron-right" />
+            </div>
+        </a>
     );
 }
