@@ -10,7 +10,7 @@ import yaml from "js-yaml";
 
 import becca from "../../../becca/becca.js";
 import { getSkillsSummary } from "../skills/index.js";
-import { getContentPreview, getNoteMeta, SYSTEM_PROMPT_LIMITS } from "../tools/helpers.js";
+import { getNoteMeta, SYSTEM_PROMPT_LIMITS } from "../tools/helpers.js";
 import { allToolRegistries } from "../tools/index.js";
 import type { LlmProvider, LlmProviderConfig, ModelInfo, ModelPricing, StreamResult } from "../types.js";
 
@@ -61,7 +61,6 @@ function buildKnowledgeBaseSources(sourceNoteIds: string[]): string | null {
         if (!note) continue;
 
         const title = note.getTitleOrProtected();
-        const preview = note.isContentAvailable() ? getContentPreview(note) : null;
         const childNotes = note.getChildNotes().slice(0, 10);
 
         let entry = `### ${title} (noteId: ${noteId})`;
@@ -71,21 +70,24 @@ function buildKnowledgeBaseSources(sourceNoteIds: string[]): string | null {
         if (childNotes.length > 0) {
             entry += `\nChild notes: ${childNotes.map(c => `${c.getTitleOrProtected()} (${c.noteId})`).join(", ")}`;
         }
-        if (preview) {
-            let extendedPreview = preview;
-            if (preview.length >= 490 && note.isContentAvailable()) {
-                const content = note.getContent();
-                if (typeof content === "string") {
-                    const plain = note.type === "text"
-                        ? content.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
-                        : content;
-                    extendedPreview = plain.length > KB_PREVIEW_MAX
+
+        // Build an extended content preview directly (up to KB_PREVIEW_MAX chars).
+        // For text notes, strip HTML tags cheaply instead of full markdown conversion.
+        if (note.isContentAvailable()) {
+            const content = note.getContent();
+            if (typeof content === "string" && content.length > 0) {
+                const plain = note.type === "text"
+                    ? content.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+                    : content;
+                if (plain.length > 0) {
+                    const preview = plain.length > KB_PREVIEW_MAX
                         ? `${plain.slice(0, KB_PREVIEW_MAX)}…`
                         : plain;
+                    entry += `\n\n${preview}`;
                 }
             }
-            entry += `\n\n${extendedPreview}`;
         }
+
         sources.push(entry);
     }
 
