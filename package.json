@@ -76,7 +76,7 @@
     "tsx": "4.21.0",
     "typescript": "6.0.2",
     "typescript-eslint": "8.58.0",
-    "upath": "2.0.1",
+    "upath": "3.0.5",
     "vite": "8.0.5",
     "vite-plugin-dts": "4.5.4",
     "vitest": "4.1.2"
