@@ -5,7 +5,7 @@
   "description": "Tool to compare content of Trilium databases. Useful for debugging sync problems.",
   "dependencies": {
     "colors": "1.4.0",
-    "diff": "8.0.3",
+    "diff": "8.0.4",
     "sqlite": "5.1.1",
     "sqlite3": "6.0.1"
   },

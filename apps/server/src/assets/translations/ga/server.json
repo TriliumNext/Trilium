@@ -297,7 +297,8 @@
   },
   "quarterNumber": "Ráithe {quarterNumber}",
   "special_notes": {
-    "search_prefix": "Cuardaigh:"
+    "search_prefix": "Cuardaigh:",
+    "llm_chat_prefix": "Comhrá:"
   },
   "test_sync": {
     "not-configured": "Níl an freastalaí sioncrónaithe cumraithe. Cumraigh an sioncrónú ar dtús.",
@@ -342,7 +343,7 @@
     "shortcuts-title": "Aicearraí",
     "text-notes": "Nótaí Téacs",
     "code-notes-title": "Nótaí Cód",
-    "images-title": "Íomhánna",
+    "images-title": "Meáin",
     "spellcheck-title": "Seiceáil litrithe",
     "password-title": "Pasfhocal",
     "multi-factor-authentication-title": "MFA",
@@ -355,7 +356,10 @@
     "user-guide": "Treoir Úsáideora",
     "localization": "Teanga & Réigiún",
     "inbox-title": "Bosca isteach",
-    "tab-switcher-title": "Athraitheoir Cluaisíní"
+    "tab-switcher-title": "Athraitheoir Cluaisíní",
+    "llm-chat-history-title": "Stair Comhrá AI",
+    "llm-title": "AI / LLM",
+    "sidebar-chat-title": "Comhrá AI"
   },
   "notes": {
     "new-note": "Nóta nua",

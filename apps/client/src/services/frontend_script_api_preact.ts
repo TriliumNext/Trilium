@@ -1,4 +1,4 @@
-import { Fragment, h, VNode } from "preact";
+import { createContext, Fragment, h, VNode } from "preact";
 import * as hooks from "preact/hooks";
 
 import ActionButton from "../widgets/react/ActionButton";
@@ -47,6 +47,7 @@ export const preactAPI = Object.freeze({
     // Core
     h,
     Fragment,
+    createContext,
 
     /**
      * Method that must be run for widget scripts that run on Preact, using JSX. The method just returns the same definition, reserved for future typechecking and perhaps validation purposes.

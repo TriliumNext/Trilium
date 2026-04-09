@@ -3,6 +3,7 @@ interface SliderProps {
     onChange(newValue: number);
     min?: number;
     max?: number;
+    step?: number;
     title?: string;
 }
 

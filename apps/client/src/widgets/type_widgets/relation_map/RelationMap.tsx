@@ -8,13 +8,11 @@ import { HTMLProps } from "preact/compat";
 import { useCallback, useEffect, useMemo, useRef, useState } from "preact/hooks";
 
 import FNote from "../../../entities/fnote";
-import attribute_autocomplete from "../../../services/attribute_autocomplete";
 import dialog from "../../../services/dialog";
 import { isExperimentalFeatureEnabled } from "../../../services/experimental_features";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
-import utils from "../../../services/utils";
 import ActionButton from "../../react/ActionButton";
 import { useEditorSpacedUpdate, useTriliumEvent, useTriliumEvents } from "../../react/hooks";
 import { TypeWidgetProps } from "../type_widget";
@@ -23,7 +21,7 @@ import { buildRelationContextMenuHandler } from "./context_menu";
 import { JsPlumb } from "./jsplumb";
 import { NoteBox } from "./NoteBox";
 import setupOverlays, { uniDirectionalOverlays } from "./overlays";
-import { getMousePosition, getZoom, idToNoteId, noteIdToId } from "./utils";
+import { getMousePosition, getZoom, idToNoteId, noteIdToId, promptForRelationName } from "./utils";
 
 const isNewLayout = isExperimentalFeatureEnabled("new-layout");
 
@@ -415,27 +413,7 @@ function useRelationCreation({ mapApiRef, jsPlumbApiRef }: { mapApiRef: RefObjec
         // if there's no event, then this has been triggered programmatically
         if (!originalEvent || !mapApiRef.current) return;
 
-        const name = await dialog.prompt({
-            message: t("relation_map.specify_new_relation_name"),
-            shown: ({ $answer }) => {
-                if (!$answer) {
-                    return;
-                }
-
-                $answer.on("keyup", () => {
-                    // invalid characters are simply ignored (from user perspective they are not even entered)
-                    const attrName = utils.filterAttributeName($answer.val() as string);
-
-                    $answer.val(attrName);
-                });
-
-                attribute_autocomplete.initAttributeNameAutocomplete({
-                    $el: $answer,
-                    attributeType: "relation",
-                    open: true
-                });
-            }
-        });
+        const name = await promptForRelationName();
 
         // Delete the newly created connection if the dialog was dismissed.
         if (!name || !name.trim()) {

@@ -61,7 +61,8 @@ export default class Becca {
             name = name.substr(1);
         }
 
-        return this.attributeIndex[`${type}-${name}`] || [];
+        const key = `${type}-${name}`;
+        return Object.hasOwn(this.attributeIndex, key) ? this.attributeIndex[key] : [];
     }
 
     findAttributesWithPrefix(type: string, name: string): BAttribute[] {
@@ -89,11 +90,11 @@ export default class Becca {
     }
 
     getNote(noteId: string): BNote | null {
-        return this.notes[noteId];
+        return Object.hasOwn(this.notes, noteId) ? this.notes[noteId] : null;
     }
 
     getNoteOrThrow(noteId: string): BNote {
-        const note = this.notes[noteId];
+        const note = Object.hasOwn(this.notes, noteId) ? this.notes[noteId] : null;
         if (!note) {
             throw new NotFoundError(`Note '${noteId}' doesn't exist.`);
         }
@@ -105,7 +106,7 @@ export default class Becca {
         const filteredNotes: BNote[] = [];
 
         for (const noteId of noteIds) {
-            const note = this.notes[noteId];
+            const note = Object.hasOwn(this.notes, noteId) ? this.notes[noteId] : null;
 
             if (!note) {
                 if (ignoreMissing) {
@@ -122,7 +123,7 @@ export default class Becca {
     }
 
     getBranch(branchId: string): BBranch | null {
-        return this.branches[branchId];
+        return Object.hasOwn(this.branches, branchId) ? this.branches[branchId] : null;
     }
 
     getBranchOrThrow(branchId: string): BBranch {
@@ -134,7 +135,7 @@ export default class Becca {
     }
 
     getAttribute(attributeId: string): BAttribute | null {
-        return this.attributes[attributeId];
+        return Object.hasOwn(this.attributes, attributeId) ? this.attributes[attributeId] : null;
     }
 
     getAttributeOrThrow(attributeId: string): BAttribute {
@@ -147,7 +148,8 @@ export default class Becca {
     }
 
     getBranchFromChildAndParent(childNoteId: string, parentNoteId: string): BBranch | null {
-        return this.childParentToBranch[`${childNoteId}-${parentNoteId}`];
+        const key = `${childNoteId}-${parentNoteId}`;
+        return Object.hasOwn(this.childParentToBranch, key) ? this.childParentToBranch[key] : null;
     }
 
     getRevision(revisionId: string): BRevision | null {
@@ -195,7 +197,7 @@ export default class Becca {
     }
 
     getOption(name: string): BOption | null {
-        return this.options[name];
+        return Object.hasOwn(this.options, name) ? this.options[name] : null;
     }
 
     getEtapiTokens(): BEtapiToken[] {
@@ -203,7 +205,7 @@ export default class Becca {
     }
 
     getEtapiToken(etapiTokenId: string): BEtapiToken | null {
-        return this.etapiTokens[etapiTokenId];
+        return Object.hasOwn(this.etapiTokens, etapiTokenId) ? this.etapiTokens[etapiTokenId] : null;
     }
 
     getEntity<T extends AbstractBeccaEntity<T>>(entityName: string, entityId: string): AbstractBeccaEntity<T> | null {
@@ -223,7 +225,8 @@ export default class Becca {
             throw new Error(`Unknown entity name '${camelCaseEntityName}' (original argument '${entityName}')`);
         }
 
-        return (this as any)[camelCaseEntityName][entityId];
+        const collection = (this as any)[camelCaseEntityName];
+        return Object.hasOwn(collection, entityId) ? collection[entityId] : null;
     }
 
     getRecentNotesFromQuery(query: string, params: string[] = []): BRecentNote[] {

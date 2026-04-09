@@ -148,7 +148,10 @@
     "script-launcher-title": "Scorciatoie degli script",
     "command-palette": "Apri tavolozza comandi",
     "zen-mode": "Modalità Zen",
-    "tab-switcher-title": "Selettore scheda"
+    "tab-switcher-title": "Selettore scheda",
+    "llm-chat-history-title": "Cronologia chat IA",
+    "llm-title": "AI / LLM",
+    "sidebar-chat-title": "Chat con IA"
   },
   "notes": {
     "new-note": "Nuova nota",
@@ -400,7 +403,8 @@
   },
   "quarterNumber": "Quadrimestre n. {quarterNumber}",
   "special_notes": {
-    "search_prefix": "Ricerca:"
+    "search_prefix": "Ricerca:",
+    "llm_chat_prefix": "Chat:"
   },
   "test_sync": {
     "not-configured": "L'host del server di sincronizzazione non è impostato. Configurare prima la sincronizzazione.",

@@ -5,6 +5,16 @@
 
 import { Editor } from "ckeditor5";
 
+export function debounce<T extends (...args: any[]) => void>( fn: T, waitMs: number ): T {
+	let timeout: ReturnType<typeof setTimeout> | null = null;
+	return function( this: unknown, ...args: Parameters<T> ) {
+		if ( timeout ) {
+			clearTimeout( timeout );
+		}
+		timeout = setTimeout( () => fn.apply( this, args ), waitMs );
+	} as T;
+}
+
 /**
  * Helper function for setting the `isOn` state of buttons.
  *

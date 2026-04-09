@@ -1,12 +1,13 @@
-import BasicWidget from "./basic_widget.js";
-import server from "../services/server.js";
-import linkService from "../services/link.js";
-import froca from "../services/froca.js";
-import utils, { handleRightToLeftPlacement } from "../services/utils.js";
-import appContext from "../components/app_context.js";
-import shortcutService, { isIMEComposing } from "../services/shortcuts.js";
-import { t } from "../services/i18n.js";
 import { Dropdown, Tooltip } from "bootstrap";
+
+import appContext from "../components/app_context.js";
+import froca from "../services/froca.js";
+import { t } from "../services/i18n.js";
+import linkService from "../services/link.js";
+import server from "../services/server.js";
+import shortcutService, { isIMEComposing } from "../services/shortcuts.js";
+import utils, { handleRightToLeftPlacement } from "../services/utils.js";
+import BasicWidget from "./basic_widget.js";
 
 const TPL = /*html*/`
 <div class="quick-search input-group input-group-sm">
@@ -245,7 +246,7 @@ export default class QuickSearchWidget extends BasicWidget {
         const { searchResultNoteIds, searchResults, error } = await server.get<QuickSearchResponse>(`quick-search/${encodeURIComponent(searchString)}`);
 
         if (error) {
-            let tooltip = new Tooltip(this.$searchString[0], {
+            const tooltip = new Tooltip(this.$searchString[0], {
                 trigger: "manual",
                 title: `Search error: ${error}`,
                 placement: handleRightToLeftPlacement("right")
@@ -289,10 +290,9 @@ export default class QuickSearchWidget extends BasicWidget {
             const resultsToDisplay = this.allSearchResults.slice(startIndex, endIndex);
 
             for (const result of resultsToDisplay) {
-                const noteId = result.notePath.split("/").pop();
-                if (!noteId) continue;
+                if (!result.notePath) continue;
 
-                const $item = $('<a class="dropdown-item" tabindex="0" href="javascript:">');
+                const $item = $(`<a class="dropdown-item" tabindex="0" href="#${result.notePath}">`);
 
                 // Build the display HTML with content snippet below the title
                 let itemHtml = `<div class="quick-search-item">
@@ -317,23 +317,13 @@ export default class QuickSearchWidget extends BasicWidget {
 
                 $item.html(itemHtml);
 
-                $item.on("click", (e) => {
+                $item.on("click auxclick", () => {
                     this.dropdown.hide();
-                    e.preventDefault();
-
-                    const activeContext = appContext.tabManager.getActiveContext();
-                    if (activeContext) {
-                        activeContext.setNote(noteId);
-                    }
                 });
 
                 shortcutService.bindElShortcut($item, "return", () => {
                     this.dropdown.hide();
-
-                    const activeContext = appContext.tabManager.getActiveContext();
-                    if (activeContext) {
-                        activeContext.setNote(noteId);
-                    }
+                    $item[0].click();
                 });
 
                 this.$dropdownMenu.append($item);
@@ -350,24 +340,18 @@ export default class QuickSearchWidget extends BasicWidget {
                 const $link = await linkService.createLink(note.noteId, { showNotePath: true, showNoteIcon: true });
                 $link.addClass("dropdown-item");
                 $link.attr("tabIndex", "0");
-                $link.on("click", (e) => {
+                $link.on("click auxclick", (e) => {
                     this.dropdown.hide();
 
-                    if (!e.target || e.target.nodeName !== "A") {
-                        // click on the link is handled by link handling, but we want the whole item clickable
-                        const activeContext = appContext.tabManager.getActiveContext();
-                        if (activeContext) {
-                            activeContext.setNote(note.noteId);
-                        }
+                    if (!e.target || (e.target as HTMLElement).nodeName !== "A") {
+                        // click on the <a> is handled by the global goToLink handler,
+                        // but we want the whole item clickable
+                        $link.find("a")[0]?.dispatchEvent(new MouseEvent(e.type, e.originalEvent as MouseEventInit));
                     }
                 });
                 shortcutService.bindElShortcut($link, "return", () => {
                     this.dropdown.hide();
-
-                    const activeContext = appContext.tabManager.getActiveContext();
-                    if (activeContext) {
-                        activeContext.setNote(note.noteId);
-                    }
+                    $link.find("a")[0]?.click();
                 });
 
                 this.$dropdownMenu.append($link);

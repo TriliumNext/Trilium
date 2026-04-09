@@ -3,7 +3,6 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "baseUrl": ".",
     "rootDir": "src",
     "outDir": "dist",
     "tsBuildInfoFile": "dist/tsconfig.lib.tsbuildinfo",

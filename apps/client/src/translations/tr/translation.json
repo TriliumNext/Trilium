@@ -23,10 +23,33 @@
     "close": "Kapat",
     "delete_notes_preview": "Not önizlemesini sil",
     "delete_all_clones_description": "Tüm klonları da sil (son değişikliklerden geri alınabilir)",
-    "erase_notes_description": "Normal (yazılımsal) silme işlemi, notları yalnızca silinmiş olarak işaretler ve belirli bir süre içinde (son değişiklikler iletişim kutusunda) geri alınabilir. Bu seçeneği işaretlemek, notları hemen siler ve notların geri alınması mümkün olmaz."
+    "erase_notes_description": "Normal (yazılımsal) silme işlemi, notları yalnızca silinmiş olarak işaretler ve belirli bir süre içinde (son değişiklikler iletişim kutusunda) geri alınabilir. Bu seçeneği işaretlemek, notları hemen siler ve notların geri alınması mümkün olmaz.",
+    "erase_notes_warning": "Notları, tüm kopyaları da dahil olmak üzere kalıcı olarak silin (geri alınamaz). Bu işlem, uygulamanın yeniden yüklenmesine neden olacaktır.",
+    "notes_to_be_deleted": "Aşağıdaki notlar silinecektir. ({{notesCount}})",
+    "no_note_to_delete": "Hiçbir not silinmeyecek (sadece kopyaları silinecek).",
+    "broken_relations_to_be_deleted": "Aşağıdaki ilişkiler koparılacak ve silinecektir ({{ relationCount}})",
+    "cancel": "İptal",
+    "ok": "Tamam",
+    "deleted_relation_text": "{{- note}} (silinecek) notu, {{- source}} kaynağından kaynaklanan {{- relation}} ilişkisi tarafından referans alınmaktadır."
   },
   "export": {
-    "close": "Kapat"
+    "close": "Kapat",
+    "export_note_title": "Notu dışa aktar",
+    "export_type_subtree": "Bu not ve tüm torunları",
+    "format_html": "HTML - tüm biçimlendirmeyi koruduğu için önerilir",
+    "format_html_zip": "ZIP arşivindeki HTML dosyaları - tüm biçimlendirmeyi koruduğu için bu yöntem önerilir.",
+    "format_markdown": "Markdown - bu, biçimlendirmenin büyük kısmını korur.",
+    "format_opml": "OPML - yalnızca metin için anahat değişim biçimi. Biçimlendirme, resimler ve dosyalar dahil edilmez.",
+    "opml_version_1": "OPML v1.0 - yalnızca düz metin",
+    "opml_version_2": "OPML v2.0 - HTML de destekler",
+    "export_type_single": "Yalnızca bu not, alt öğeleri olmadan",
+    "export": "Dışa aktar",
+    "choose_export_type": "Lütfen önce dışa aktarma türünü seçin",
+    "export_status": "Dışa aktarma durumu",
+    "export_in_progress": "Dışa aktarma devam ediyor: {{progressCount}}",
+    "export_finished_successfully": "Dışa aktarma başarıyla tamamlandı.",
+    "format_pdf": "PDF - yazdırma veya paylaşım amaçları için.",
+    "share-format": "Web yayını için HTML - paylaşılan notlarda kullanılan temayı kullanır, ancak statik bir web sitesi olarak yayınlanabilir."
   },
   "import": {
     "chooseImportFile": "İçe aktarım dosyası",
@@ -58,7 +81,9 @@
     "widget-render-error": {
       "title": "Özel React widget'ı çizilirken sorun yaşandı"
     },
-    "scripting-error": "Kullanıcı tanımlı betik hatası: {{title}}"
+    "scripting-error": "Kullanıcı tanımlı betik hatası: {{title}}",
+    "widget-missing-parent": "Özel widget'ın zorunlu '{{property}}' özelliği tanımlanmamıştır.\n\nBu komut dosyasının bir kullanıcı arayüzü öğesi olmadan çalıştırılması gerekiyorsa, bunun yerine '#run=frontendStartup' kullanın.",
+    "open-script-note": "Komut dosyası notunu aç"
   },
   "add_link": {
     "add_link": "Bağlantı ekle",
@@ -103,5 +128,15 @@
     "are_you_sure_remove_note": "\"{{title}}\" notunu ilişki haritasından kaldırmak istediğinize emin misiniz?. ",
     "also_delete_note": "Notu da sil",
     "if_you_dont_check": "Bunu işaretlemezseniz, not yalnızca ilişki haritasından kaldırılacaktır."
+  },
+  "help": {
+    "title": "Özet tablo",
+    "editShortcuts": "Klavye kısayollarını düzenle",
+    "noteNavigation": "Not içinde gezinme",
+    "goUpDown": "Notlar listesinde yukarı/aşağı gitmek",
+    "collapseExpand": "düğümü daralt/genişlet",
+    "notSet": "ayarlanmamış",
+    "goBackForwards": "tarihte geri/ileri git",
+    "showJumpToNoteDialog": "<a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Şuraya Git\" iletişim kutusunu göster</a>"
   }
 }

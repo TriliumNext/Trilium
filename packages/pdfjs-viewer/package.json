@@ -1,6 +1,6 @@
 {
   "name": "@triliumnext/pdfjs-viewer",
-  "version": "0.102.1",
+  "version": "0.102.2",
   "private": true,
   "scripts": {
     "build": "tsx scripts/build.ts",
@@ -10,6 +10,6 @@
     "@triliumnext/commons": "workspace:*"
   },
   "devDependencies": {
-    "pdfjs-dist": "5.5.207"
+    "pdfjs-dist": "5.6.205"
   }
 }

@@ -8,9 +8,7 @@ import dataDir from "./data_dir.js";
 import cls from "./cls.js";
 import config, { LOGGING_DEFAULT_RETENTION_DAYS } from "./config.js";
 
-if (!fs.existsSync(dataDir.LOG_DIR)) {
-    fs.mkdirSync(dataDir.LOG_DIR, 0o700);
-}
+fs.mkdirSync(dataDir.LOG_DIR, { recursive: true, mode: 0o700 });
 
 let logFile: fs.WriteStream | undefined;
 

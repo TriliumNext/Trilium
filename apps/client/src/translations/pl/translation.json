@@ -117,7 +117,7 @@
     "no_path_to_clone_to": "Brak ścieżki do sklonowania.",
     "note_cloned": "Notatka \"{{clonedTitle}}\" została sklonowana do \"{{targetTitle}}\"",
     "help_on_links": "Pomoc dotycząca linków",
-    "target_parent_note": "Docelowa notatka nadrzędna"
+    "target_parent_note": "Docelowa notatka pierwotna"
   },
   "help": {
     "title": "Ściągawka",
@@ -126,7 +126,7 @@
     "collapseExpand": "zwiń/rozwiń węzeł",
     "notSet": "nie ustawiono",
     "goBackForwards": "idź wstecz / do przodu w historii",
-    "showJumpToNoteDialog": "pokaż okno <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Przejdź do\"</a>",
+    "showJumpToNoteDialog": "pokaż <a class=\"external\" href=\"https://triliumnext.github.io/Docs/Wiki/note-navigation.html#jump-to-note\">\"Przejdź do\"</a>",
     "scrollToActiveNote": "przewiń do aktywnej notatki",
     "jumpToParentNote": "przejdź do notatki nadrzędnej",
     "collapseWholeTree": "zwiń całe drzewo notatek",
@@ -402,7 +402,8 @@
     "and_more": "... i {{count}} więcej.",
     "print_landscape": "Podczas eksportowania do PDF zmienia orientację strony na poziomą zamiast pionowej.",
     "print_page_size": "Podczas eksportowania do PDF zmienia rozmiar strony. Obsługiwane wartości: <code>A0</code>, <code>A1</code>, <code>A2</code>, <code>A3</code>, <code>A4</code>, <code>A5</code>, <code>A6</code>, <code>Legal</code>, <code>Letter</code>, <code>Tabloid</code>, <code>Ledger</code>.",
-    "color_type": "Kolor"
+    "color_type": "Kolor",
+    "textarea": "Wiele linii tekstu"
   },
   "import": {
     "importIntoNote": "Importuj do notatki",
@@ -1613,7 +1614,7 @@
     "password_changed_success": "Hasło zostało zmienione. Trilium zostanie przeładowane po naciśnięciu OK."
   },
   "multi_factor_authentication": {
-    "title": "Uwierzytelnianie wieloskładnikowe (MFA)",
+    "title": "Uwierzytelnianie wieloskładnikowe",
     "description": "Uwierzytelnianie wieloskładnikowe (MFA) dodaje dodatkową warstwę zabezpieczeń do Twojego konta. Zamiast tylko wpisywać hasło do logowania, MFA wymaga podania jednego lub więcej dodatkowych dowodów tożsamości. W ten sposób, nawet jeśli ktoś zdobędzie Twoje hasło, nadal nie będzie mógł uzyskać dostępu do Twojego konta bez drugiej informacji. To jak dodanie dodatkowego zamka do drzwi, utrudniającego włamanie.<br><br>Proszę postępować zgodnie z poniższymi instrukcjami, aby włączyć MFA. Jeśli nie skonfigurujesz poprawnie, logowanie powróci do samego hasła.",
     "mfa_enabled": "Włącz uwierzytelnianie wieloskładnikowe",
     "mfa_method": "Metoda MFA",
@@ -1628,7 +1629,7 @@
     "totp_secret_generated": "Sekret TOTP wygenerowany",
     "totp_secret_warning": "Proszę zapisać wygenerowany sekret w bezpiecznym miejscu. Nie zostanie pokazany ponownie.",
     "totp_secret_regenerate_confirm": "Czy na pewno chcesz ponownie wygenerować sekret TOTP? To unieważni poprzedni sekret TOTP i wszystkie istniejące kody odzyskiwania.",
-    "recovery_keys_title": "Klucze odzyskiwania logowania jednokrotnego (SSO)",
+    "recovery_keys_title": "Klucze odzyskiwania logowania jednokrotnego",
     "recovery_keys_description": "Klucze odzyskiwania logowania jednokrotnego służą do logowania w przypadku braku dostępu do kodów Authenticator.",
     "recovery_keys_description_warning": "Klucze odzyskiwania nie zostaną pokazane ponownie po opuszczeniu strony, przechowuj je w bezpiecznym miejscu.<br>Po użyciu klucza odzyskiwania nie można go użyć ponownie.",
     "recovery_keys_error": "Błąd generowania kodów odzyskiwania",
@@ -1664,9 +1665,6 @@
     "description": "Te opcje dotyczą tylko wersji desktopowych, przeglądarki będą używać własnego natywnego sprawdzania pisowni.",
     "enable": "Włącz sprawdzanie pisowni",
     "language_code_label": "Kod(y) języka",
-    "language_code_placeholder": "na przykład \"pl-PL\", \"en-US\"",
-    "multiple_languages_info": "Wiele języków można oddzielić przecinkiem, np. \"en-US, de-DE, pl\". ",
-    "available_language_codes_label": "Dostępne kody języków:",
     "restart-required": "Zmiany w opcjach sprawdzania pisowni wejdą w życie po ponownym uruchomieniu aplikacji."
   },
   "sync_2": {
@@ -1766,7 +1764,7 @@
     "book": "Kolekcja",
     "mermaid-diagram": "Diagram Mermaid",
     "canvas": "Płótno",
-    "web-view": "Widok WWW",
+    "web-view": "Widok strony web",
     "mind-map": "Mapa myśli",
     "file": "Plik",
     "image": "Obraz",
@@ -1815,9 +1813,9 @@
     "modal_title": "Konfiguracja listy wyróżnień",
     "menu_configure": "Konfiguracja listy wyróżnień...",
     "no_highlights": "Nie znaleziono wyróżnień.",
-    "title_with_count_one": "{{count}} podświetlenie",
-    "title_with_count_few": "{{count}} podświetlenia",
-    "title_with_count_many": "{{count}} podświetleń"
+    "title_with_count_one": "{{count}} wyróżnienie",
+    "title_with_count_few": "{{count}} wyróżnienia",
+    "title_with_count_many": "{{count}} wyróżnień"
   },
   "quick-search": {
     "placeholder": "Szybkie wyszukiwanie",
@@ -2070,7 +2068,7 @@
     "read_only_temporarily_disabled_description": "Ta notatka jest obecnie edytowalna, ale normalnie jest tylko do odczytu. Notatka powróci do trybu tylko do odczytu, gdy tylko przejdziesz do innej notatki.\n\nKliknij, aby ponownie włączyć tryb tylko do odczytu.",
     "shared_publicly": "Udostępniona publicznie",
     "shared_locally": "Udostępniona lokalnie",
-    "clipped_note": "Wycinek WWW",
+    "clipped_note": "Wycinek z sieci",
     "clipped_note_description": "Ta notatka została pierwotnie pobrana z {{url}}.\n\nKliknij, aby przejść do źródłowej strony internetowej.",
     "execute_script": "Uruchom skrypt",
     "execute_script_description": "Ta notatka jest notatką skryptową. Kliknij, aby wykonać skrypt.",
@@ -2236,7 +2234,7 @@
     "sample_c4": "C4",
     "sample_gantt": "Wykres Gantta",
     "sample_git": "Diagram Git",
-    "sample_kanban": "Kanban",
+    "sample_kanban": "Tablica Kanban",
     "sample_packet": "Diagram pakietów",
     "sample_pie": "Wykres kołowy",
     "sample_quadrant": "Diagram kwadrantowy",

@@ -124,123 +124,127 @@ Naše dokumenatce je dostupná ve vícero formátech:
   motiv](https://docs.triliumnotes.org/user-guide/concepts/themes), podpora
   uživatelských motivů
 * [Evernote](https://docs.triliumnotes.org/user-guide/concepts/import-export/evernote)
-  and [Markdown import &
-  export](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
-* [Web Clipper](https://docs.triliumnotes.org/user-guide/setup/web-clipper) for
-  easy saving of web content
-* Customizable UI (sidebar buttons, user-defined widgets, ...)
-* [Metrics](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics),
-  along with a Grafana Dashboard.
+  a [import & export
+  Markdown](https://docs.triliumnotes.org/user-guide/concepts/import-export/markdown)
+* [Webový výstřižek](https://docs.triliumnotes.org/user-guide/setup/web-clipper)
+  pro snadné ukládání webového obsahu
+* Přizpůsobitelné UI (tlačítka bočního panelu, uživatelsky definované widgety,
+  ...)
+* [Metriky](https://docs.triliumnotes.org/user-guide/advanced-usage/metrics)
+  spolu s Grafana Dashboard.
 
-✨ Check out the following third-party resources/communities for more TriliumNext
-related goodies:
+✨ Podívejte se na následující externí zdroje/komunity pro další vychytávky
+související s TriliumNext:
 
-- [awesome-trilium](https://github.com/Nriver/awesome-trilium) for 3rd party
-  themes, scripts, plugins and more.
-- [TriliumRocks!](https://trilium.rocks/) for tutorials, guides, and much more.
+- [awesome-trilium](https://github.com/Nriver/awesome-trilium) pro externí
+  motivy, skripty, pluginy a další.
+- [TriliumRocks!](https://trilium.rocks/) pro návody, průvodce a mnohem více.
 
-## ❓Why TriliumNext?
+## ❓Proč TriliumNext?
 
-The original Trilium developer ([Zadam](https://github.com/zadam)) has
-graciously given the Trilium repository to the community project which resides
-at https://github.com/TriliumNext
+Původní vývojář Trilium ([Zadam](https://github.com/zadam)) štědře předal
+repozitář Trilium komunitnímu projektu, který sídlí na
+https://github.com/TriliumNext
 
-### ⬆️Migrating from Zadam/Trilium?
+### ⬆️Migrujete ze Zadam/Trilium?
 
-There are no special migration steps to migrate from a zadam/Trilium instance to
-a TriliumNext/Trilium instance. Simply [install
-TriliumNext/Trilium](#-installation) as usual and it will use your existing
-database.
+Neexistují žádné speciální kroky pro migraci z instance zadam/Trilium na
+instanci TriliumNext/Trilium. Jednoduše si [ nainstalujte
+TriliumNext/Trilium](#-installation) jako obvykle a použije vaši stávající
+databázi.
 
-Versions up to and including
-[v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4) are
-compatible with the latest zadam/trilium version of
-[v0.63.7](https://github.com/zadam/trilium/releases/tag/v0.63.7). Any later
-versions of TriliumNext/Trilium have their sync versions incremented which
-prevents direct migration.
+Verze až do
+[v0.90.4](https://github.com/TriliumNext/Trilium/releases/tag/v0.90.4) včetně
+jsou kompatibilní s nejnovější verzí zadam/trilium
+[v0.63.7](https://github.com/zadam/trilium/releases/tag/v0.63.7). Jakékoli
+pozdější verze TriliumNext/Trilium mají zvýšené verze synchronizace, což brání
+přímé migraci.
 
-## 💬 Discuss with us
+## 💬 Diskutujte s námi
 
-Feel free to join our official conversations. We would love to hear what
-features, suggestions, or issues you may have!
+Nebojte se připojit k našim oficiálním konverzationím. Rádi uslyšíme vaše nápady
+na funkce, návrhy nebo problémy!
 
-- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (For synchronous
-  discussions.)
-  - The `General` Matrix room is also bridged to
+- [Matrix](https://matrix.to/#/#triliumnext:matrix.org) (Pro synchronní
+  diskuse.)
+  - Pokoj Matrix `General` je také propojen s
     [XMPP](xmpp:discuss@trilium.thisgreat.party?join)
-- [Github Discussions](https://github.com/TriliumNext/Trilium/discussions) (For
-  asynchronous discussions.)
-- [Github Issues](https://github.com/TriliumNext/Trilium/issues) (For bug
-  reports and feature requests.)
+- [Github Discussions](https://github.com/TriliumNext/Trilium/discussions) (Pro
+  asynchronní diskuse.)
+- [Github Issues](https://github.com/TriliumNext/Trilium/issues) (Pro hlášení
+  chyb a požadavky na funkce.)
 
-## 🏗 Installation
+## 🏗 Instalace
 
 ### Windows / MacOS
 
-Download the binary release for your platform from the [latest release
-page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the package
-and run the `trilium` executable.
+Stáhněte si binární verzi pro svou platformu z [stránky s nejnovější
+verzí](https://github.com/TriliumNext/Trilium/releases/latest), rozbalte balíček
+a spusťte spustitelný soubor `trilium`.
 
 ### Linux
 
-If your distribution is listed in the table below, use your distribution's
-package.
+Pokud je vaše distribuce uvedena v níže uvedené tabulce, použijte balíček pro
+vaši distribuci.
 
-[![Packaging
-status](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
+[![Stav
+balení](https://repology.org/badge/vertical-allrepos/triliumnext.svg)](https://repology.org/project/triliumnext/versions)
 
-You may also download the binary release for your platform from the [latest
-release page](https://github.com/TriliumNext/Trilium/releases/latest), unzip the
-package and run the `trilium` executable.
+Můžete si také stáhnout binární verzi pro svou platformu ze [stránky s
+nejnovější verzí](https://github.com/TriliumNext/Trilium/releases/latest),
+rozbalit balíček a spustit spustitelný soubor `trilium`.
 
-TriliumNext is also provided as a Flatpak, but not yet published on FlatHub.
+TriliumNext je k dispozici také jako Flatpak, ale ještě není zveřejněn na
+FlatHub.
 
-### Browser (any OS)
+### Prohlížeč (jakýkoli OS)
 
-If you use a server installation (see below), you can directly access the web
-interface (which is almost identical to the desktop app).
+Pokud používáte serverovou instalaci (viz níže), můžete přistupovat přímo k
+webovému rozhraní (které je téměř identické s desktopovou aplikací).
 
-Currently only the latest versions of Chrome & Firefox are supported (and
-tested).
+Momentálně jsou podporovány (a testovány) pouze nejnovější verze Chrome &
+Firefox.
 
-### Mobile
+### Mobilní zařízení
 
-To use TriliumNext on a mobile device, you can use a mobile web browser to
-access the mobile interface of a server installation (see below).
+Chcete-li používat TriliumNext na mobilním zařízení, můžete použít mobilní
+webový prohlížeč k přístupu k mobilnímu rozhraní instalace serveru (viz níže).
 
-See issue https://github.com/TriliumNext/Trilium/issues/4962 for more
-information on mobile app support.
+Více informací o podpoře mobilní aplikace naleznete v issue
+https://github.com/TriliumNext/Trilium/issues/4962.
 
-If you prefer a native Android app, you can use
+Pokud preferujete nativní aplikaci pro Android, můžete použít
 [TriliumDroid](https://apt.izzysoft.de/fdroid/index/apk/eu.fliegendewurst.triliumdroid).
-Report bugs and missing features at [their
-repository](https://github.com/FliegendeWurst/TriliumDroid). Note: It is best to
-disable automatic updates on your server installation (see below) when using
-TriliumDroid since the sync version must match between Trilium and TriliumDroid.
+Chyby a chybějící funkce hlaste v [jejím
+repozitáři](https://github.com/FliegendeWurst/TriliumDroid). Poznámka: Při
+používání TriliumDroid je nejlepší zakázat automatické aktualizace na vaší
+instalaci serveru (viz níže), protože verze pro synchronizaci musí mezi Trilium
+a TriliumDroid souhlasit.
 
 ### Server
 
-To install TriliumNext on your own server (including via Docker from
-[Dockerhub](https://hub.docker.com/r/triliumnext/trilium)) follow [the server
-installation docs](https://docs.triliumnotes.org/user-guide/setup/server).
+Chcete-li nainstalovat TriliumNext na svůj vlastní server (včetně pomocí Docker
+z [Dockerhub](https://hub.docker.com/r/triliumnext/trilium)), postupujte podle
+[dokumentace k instalaci
+serveru](https://docs.triliumnotes.org/user-guide/setup/server).
 
 
-## 💻 Contribute
+## 💻 Přispějte
 
-### Translations
+### Překlady
 
-If you are a native speaker, help us translate Trilium by heading over to our
-[Weblate page](https://hosted.weblate.org/engage/trilium/).
+Pokud jste rodilý mluvčí, pomozte nám s překladem Trilium tím, že navštívíte
+naši [stránku Weblate](https://hosted.weblate.org/engage/trilium/).
 
-Here's the language coverage we have so far:
+Zde je aktuální pokrytí jazyky:
 
-[![Translation
-status](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
+[![Stav
+překladu](https://hosted.weblate.org/widget/trilium/multi-auto.svg)](https://hosted.weblate.org/engage/trilium/)
 
-### Code
+### Kód
 
-Download the repository, install dependencies using `pnpm` and then run the
-server (available at http://localhost:8080):
+Stáhněte si repozitář, nainstalujte závislosti pomocí `pnpm` a poté spusťte
+server (dostupný na http://localhost:8080):
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -248,10 +252,10 @@ pnpm install
 pnpm run server:start
 ```
 
-### Documentation
+### Dokumentace
 
-Download the repository, install dependencies using `pnpm` and then run the
-environment required to edit the documentation:
+Stáhněte si repozitář, nainstalujte závislosti pomocí `pnpm` a poté spusťte
+prostředí vyžadované pro úpravu dokumentace:
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -259,9 +263,9 @@ pnpm install
 pnpm edit-docs:edit-docs
 ```
 
-### Building the Executable
-Download the repository, install dependencies using `pnpm` and then build the
-desktop app for Windows:
+### Kompilace spustitelného souboru
+Stáhněte si repozitář, nainstalujte závislosti pomocí `pnpm` a poté sestavte
+desktopovou aplikaci pro Windows:
 ```shell
 git clone https://github.com/TriliumNext/Trilium.git
 cd Trilium
@@ -269,71 +273,69 @@ pnpm install
 pnpm run --filter desktop electron-forge:make --arch=x64 --platform=win32
 ```
 
-For more details, see the [development
-docs](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
+Pro více podrobností navštivte [vývojovou
+dokumentaci](https://github.com/TriliumNext/Trilium/tree/main/docs/Developer%20Guide/Developer%20Guide).
 
-### Developer Documentation
+### Vývojářská dokumentace
 
-Please view the [documentation
-guide](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md)
-for details. If you have more questions, feel free to reach out via the links
-described in the "Discuss with us" section above.
+Podrobnosti naleznete v [průvodci
+dokumentací](https://github.com/TriliumNext/Trilium/blob/main/docs/Developer%20Guide/Developer%20Guide/Environment%20Setup.md).
+Pokud máte další dotazy, neváhejte nás kontaktovat prostřednictím odkazů
+uvedených v sekci „Diskuse s námi“ výše.
 
-## 👏 Shoutouts
+## 👏 Poděkování
 
-* [zadam](https://github.com/zadam) for the original concept and implementation
-  of the application.
-* [Sarah Hussein](https://github.com/Sarah-Hussein) for designing the
-  application icon.
-* [nriver](https://github.com/nriver) for his work on internationalization.
-* [Thomas Frei](https://github.com/thfrei) for his original work on the Canvas.
-* [antoniotejada](https://github.com/nriver) for the original syntax highlight
-  widget.
-* [Dosu](https://dosu.dev/) for providing us with the automated responses to
-  GitHub issues and discussions.
-* [Tabler Icons](https://tabler.io/icons) for the system tray icons.
+* [zadam](https://github.com/zadam) za původní koncept a implementaci aplikace.
+* [Sarah Hussein](https://github.com/Sarah-Hussein) za návrh ikony aplikace.
+* [nriver](https://github.com/nriver) za jeho práci na internacionalizaci.
+* [Thomas Frei](https://github.com/thfrei) za jeho původní práci na Plátně.
+* [antoniotejada](https://github.com/nriver) za původní widget pro zvýrazňování
+  syntaxe.
+* [Dosu](https://dosu.dev/) za poskytnutí automatických odpovědí na GitHub
+  issues a diskuse.
+* [Tabler Icons](https://tabler.io/icons) za ikony v systémové oblasti.
 
-Trilium would not be possible without the technologies behind it:
+Trilium by nebyl možný bez technologií, které za ním stojí:
 
-* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - the visual editor behind
-  text notes. We are grateful for being offered a set of the premium features.
-* [CodeMirror](https://github.com/codemirror/CodeMirror) - code editor with
-  support for huge amount of languages.
-* [Excalidraw](https://github.com/excalidraw/excalidraw) - the infinite
-  whiteboard used in Canvas notes.
-* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - providing the
-  mind map functionality.
-* [Leaflet](https://github.com/Leaflet/Leaflet) - for rendering geographical
-  maps.
-* [Tabulator](https://github.com/olifolkerd/tabulator) - for the interactive
-  table used in collections.
-* [FancyTree](https://github.com/mar10/fancytree) - feature-rich tree library
-  without real competition.
-* [jsPlumb](https://github.com/jsplumb/jsplumb) - visual connectivity library.
-  Used in [relation
-  maps](https://docs.triliumnotes.org/user-guide/note-types/relation-map) and
-  [link
-  maps](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
+* [CKEditor 5](https://github.com/ckeditor/ckeditor5) - vizuální editor pro
+  textové poznámky. Jsme vděční za nabídku sady prémiových funkcí.
+* [CodeMirror](https://github.com/codemirror/CodeMirror) - editor kódu s
+  podporou obrovského množství jazyků.
+* [Excalidraw](https://github.com/excalidraw/excalidraw) - nekonečná bílá tabule
+  používaná v poznámkách typu Canvas.
+* [Mind Elixir](https://github.com/SSShooter/mind-elixir-core) - poskytuje
+  funkcionalitu myšlenkových map.
+* [Leaflet](https://github.com/Leaflet/Leaflet) - pro vykreslování geografických
+  map.
+* [Tabulator](https://github.com/olifolkerd/tabulator) - pro interaktivní
+  tabulku používanou v kolekcích.
+* [FancyTree](https://github.com/mar10/fancytree) - bohatá knihovna pro stromové
+  struktury bez skutečné konkurence.
+* [jsPlumb](https://github.com/jsplumb/jsplumb) - knihovna pro vizuální
+  propojení. Používá se v [mapách
+  vazeb](https://docs.triliumnotes.org/user-guide/note-types/relation-map) a
+  [mapách
+  odkazů](https://docs.triliumnotes.org/user-guide/advanced-usage/note-map#link-map)
 
-## 🤝 Support
+## 🤝 Podpora
 
-Trilium is built and maintained with [hundreds of hours of
-work](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Your
-support keeps it open-source, improves features, and covers costs such as
-hosting.
+Trilium je vyvíjen a udržován s [úsilím stovek hodin
+práce](https://github.com/TriliumNext/Trilium/graphs/commit-activity). Vaše
+podpora pomáhá udržovat projekt jako open-source, vylepšuje funkce a pokrývá
+náklady, jako je hosting.
 
-Consider supporting the main developer
-([eliandoran](https://github.com/eliandoran)) of the application via:
+Zvažte podporu hlavního vývojáře ([eliandoran](https://github.com/eliandoran))
+aplikace prostřednictvím:
 
 - [GitHub Sponsors](https://github.com/sponsors/eliandoran)
 - [PayPal](https://paypal.me/eliandoran)
 - [Buy Me a Coffee](https://buymeacoffee.com/eliandoran)
 
-## 🔑 License
+## 🔑 Licence
 
-Copyright 2017-2025 zadam, Elian Doran, and other contributors
+Copyright 2017-2025 zadam, Elian Doran a ostatní přispěvatelé
 
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU Affero General Public License as published by the Free
-Software Foundation, either version 3 of the License, or (at your option) any
-later version.
+Tento program je volný software: můžete jej redistribuovat a/nebo upravovat za
+podmínek GNU Affero General Public License, jak jej vydala Free Software
+Foundation, buď ve verzi 3 této licence, nebo (volitelně) jakoukoli pozdější
+verzi.

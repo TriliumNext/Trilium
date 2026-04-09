@@ -67,6 +67,12 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
                 icon: "bx-data"
             },
             {
+                id: "_llmChat",
+                title: t("hidden-subtree.llm-chat-history-title"),
+                type: "doc",
+                icon: "bx-message-square-dots"
+            },
+            {
                 id: "_share",
                 title: t("hidden-subtree.shared-notes-title"),
                 type: "doc",
@@ -86,6 +92,12 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
                     { type: "label", name: "keepCurrentHoisting" },
                     { type: "label", name: "fullContentWidth" }
                 ]
+            },
+            {
+                id: "_customDictionary",
+                title: t("hidden-subtree.custom-dictionary-title"),
+                type: "code",
+                icon: "bx-book"
             },
             {
                 // place for user scripts hidden stuff (scripts should not create notes directly under hidden root)
@@ -240,13 +252,15 @@ function buildHiddenSubtreeDefinition(helpSubtree: HiddenSubtreeItem[]): HiddenS
                     { id: "_optionsShortcuts", title: t("hidden-subtree.shortcuts-title"), type: "contentWidget", icon: "bxs-keyboard" },
                     { id: "_optionsTextNotes", title: t("hidden-subtree.text-notes"), type: "contentWidget", icon: "bx-text" },
                     { id: "_optionsCodeNotes", title: t("hidden-subtree.code-notes-title"), type: "contentWidget", icon: "bx-code" },
-                    { id: "_optionsImages", title: t("hidden-subtree.images-title"), type: "contentWidget", icon: "bx-image" },
+                    { id: "_optionsImages", title: "Images", type: "contentWidget", enforceDeleted: true },
+                    { id: "_optionsMedia", title: t("hidden-subtree.images-title"), type: "contentWidget", icon: "bx-image" },
                     { id: "_optionsSpellcheck", title: t("hidden-subtree.spellcheck-title"), type: "contentWidget", icon: "bx-check-double" },
                     { id: "_optionsPassword", title: t("hidden-subtree.password-title"), type: "contentWidget", icon: "bx-lock" },
                     { id: '_optionsMFA', title: t('hidden-subtree.multi-factor-authentication-title'), type: 'contentWidget', icon: 'bx-lock ' },
                     { id: "_optionsEtapi", title: t("hidden-subtree.etapi-title"), type: "contentWidget", icon: "bx-extension" },
                     { id: "_optionsBackup", title: t("hidden-subtree.backup-title"), type: "contentWidget", icon: "bx-data" },
                     { id: "_optionsSync", title: t("hidden-subtree.sync-title"), type: "contentWidget", icon: "bx-wifi" },
+                    { id: "_optionsLlm", title: t("hidden-subtree.llm-title"), type: "contentWidget", icon: "bx-bot" },
                     { id: "_optionsAi", title: "AI Chat", type: "contentWidget", enforceDeleted: true },
                     { id: "_optionsOther", title: t("hidden-subtree.other"), type: "contentWidget", icon: "bx-dots-horizontal" },
                     { id: "_optionsLocalization", title: t("hidden-subtree.localization"), type: "contentWidget", icon: "bx-world" },

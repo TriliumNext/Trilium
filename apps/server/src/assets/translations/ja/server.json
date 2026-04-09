@@ -285,7 +285,8 @@
     "december": "12月"
   },
   "special_notes": {
-    "search_prefix": "検索:"
+    "search_prefix": "検索:",
+    "llm_chat_prefix": "チャット:"
   },
   "test_sync": {
     "not-configured": "同期サーバーホストが設定されていません。最初に同期を設定してください。",
@@ -298,7 +299,7 @@
     "shortcuts-title": "ショートカット",
     "text-notes": "テキストノート",
     "code-notes-title": "コードノート",
-    "images-title": "画像",
+    "images-title": "メディア",
     "spellcheck-title": "スペルチェック",
     "password-title": "パスワード",
     "backup-title": "バックアップ",
@@ -343,7 +344,10 @@
     "base-abstract-launcher-title": "ベース アブストラクトランチャー",
     "command-palette": "コマンドパレットを開く",
     "zen-mode": "禅モード",
-    "tab-switcher-title": "タブ切り替え"
+    "tab-switcher-title": "タブ切り替え",
+    "llm-chat-history-title": "AI チャット履歴",
+    "llm-title": "AI / LLM",
+    "sidebar-chat-title": "AI チャット"
   },
   "notes": {
     "new-note": "新しいノート",

@@ -28,7 +28,7 @@ async function getLinkIcon(noteId: string, viewMode: ViewMode | undefined) {
     return icon;
 }
 
-export type ViewMode = "default" | "source" | "attachments" | "contextual-help" | "note-map";
+export type ViewMode = "default" | "source" | "attachments" | "contextual-help" | "note-map" | "ocr";
 
 export interface ViewScope {
     /**

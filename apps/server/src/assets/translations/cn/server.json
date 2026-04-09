@@ -200,7 +200,8 @@
   },
   "quarterNumber": "第 {quarterNumber} 季度",
   "special_notes": {
-    "search_prefix": "搜索:"
+    "search_prefix": "搜索:",
+    "llm_chat_prefix": "对话："
   },
   "test_sync": {
     "not-configured": "同步服务器主机未配置。请先配置同步。",
@@ -258,7 +259,9 @@
     "inbox-title": "收件箱",
     "command-palette": "打开命令面板",
     "zen-mode": "禅模式",
-    "tab-switcher-title": "标签切换器"
+    "tab-switcher-title": "标签切换器",
+    "llm-chat-history-title": "AI对话历史",
+    "sidebar-chat-title": "AI对话"
   },
   "notes": {
     "new-note": "新建笔记",

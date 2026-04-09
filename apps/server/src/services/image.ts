@@ -1,17 +1,17 @@
-"use strict";
+import imageType from "image-type";
+import isAnimated from "is-animated";
+import isSvg from "is-svg";
+import { Jimp } from "jimp";
+import sanitizeFilename from "sanitize-filename";
 
 import becca from "../becca/becca.js";
-import log from "./log.js";
-import protectedSessionService from "./protected_session.js";
-import noteService from "./notes.js";
-import optionService from "./options.js";
-import sql from "./sql.js";
-import { Jimp } from "jimp";
-import imageType from "image-type";
-import sanitizeFilename from "sanitize-filename";
-import isSvg from "is-svg";
-import isAnimated from "is-animated";
 import htmlSanitizer from "./html_sanitizer.js";
+import log from "./log.js";
+import noteService from "./notes.js";
+import ocrService from "./ocr/ocr_service.js";
+import optionService from "./options.js";
+import protectedSessionService from "./protected_session.js";
+import sql from "./sql.js";
 
 async function processImage(uploadBuffer: Buffer, originalName: string, shrinkImageSwitch: boolean) {
     const compressImages = optionService.getOptionBool("compressImages");
@@ -46,9 +46,8 @@ async function processImage(uploadBuffer: Buffer, originalName: string, shrinkIm
 async function getImageType(buffer: Buffer) {
     if (isSvg(buffer.toString())) {
         return { ext: "svg" };
-    } else {
-        return (await imageType(buffer)) || { ext: "jpg" }; // optimistic JPG default
     }
+    return (await imageType(buffer)) || { ext: "jpg" }; // optimistic JPG default
 }
 
 function getImageMimeFromExtension(ext: string) {
@@ -79,6 +78,8 @@ function updateImage(noteId: string, uploadBuffer: Buffer, originalName: string)
 
             note.setContent(buffer);
         });
+
+        scheduleOcrForNote(noteId);
     });
 }
 
@@ -121,6 +122,8 @@ function saveImage(parentNoteId: string, uploadBuffer: Buffer, originalName: str
 
             note.setContent(buffer, { forceSave: true });
         });
+
+        scheduleOcrForNote(note.noteId);
     });
 
     return {
@@ -159,13 +162,14 @@ function saveImageToAttachment(noteId: string, uploadBuffer: Buffer, originalNam
     }, 5000);
 
     // resizing images asynchronously since JIMP does not support sync operation
+    const attachmentId = attachment.attachmentId;
     processImage(uploadBuffer, originalName, !!shrinkImageSwitch).then(({ buffer, imageFormat }) => {
         sql.transactional(() => {
             // re-read, might be changed in the meantime
-            if (!attachment.attachmentId) {
+            if (!attachmentId) {
                 throw new Error("Missing attachment ID.");
             }
-            attachment = becca.getAttachmentOrThrow(attachment.attachmentId);
+            attachment = becca.getAttachmentOrThrow(attachmentId);
 
             attachment.mime = getImageMimeFromExtension(imageFormat.ext);
 
@@ -176,9 +180,35 @@ function saveImageToAttachment(noteId: string, uploadBuffer: Buffer, originalNam
 
             attachment.setContent(buffer, { forceSave: true });
         });
+
+        scheduleOcrForAttachment(attachmentId);
     });
 
     return attachment;
+}
+
+function scheduleOcrForNote(noteId: string) {
+    if (optionService.getOptionBool("ocrAutoProcessImages")) {
+        setImmediate(async () => {
+            try {
+                await ocrService.processNoteOCR(noteId);
+            } catch (error) {
+                log.error(`Failed to process OCR for note ${noteId}: ${error}`);
+            }
+        });
+    }
+}
+
+function scheduleOcrForAttachment(attachmentId: string | undefined) {
+    if (attachmentId && optionService.getOptionBool("ocrAutoProcessImages")) {
+        setImmediate(async () => {
+            try {
+                await ocrService.processAttachmentOCR(attachmentId);
+            } catch (error) {
+                log.error(`Failed to process OCR for attachment ${attachmentId}: ${error}`);
+            }
+        });
+    }
 }
 
 async function shrinkImage(buffer: Buffer, originalName: string) {

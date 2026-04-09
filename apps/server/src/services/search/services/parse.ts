@@ -1,28 +1,30 @@
-"use strict";
+
 
 import { dayjs } from "@triliumnext/commons";
+
+import { removeDiacritic } from "../../utils.js";
+import AncestorExp from "../expressions/ancestor.js";
 import AndExp from "../expressions/and.js";
-import OrExp from "../expressions/or.js";
-import NotExp from "../expressions/not.js";
+import AttributeExistsExp from "../expressions/attribute_exists.js";
 import ChildOfExp from "../expressions/child_of.js";
 import DescendantOfExp from "../expressions/descendant_of.js";
-import ParentOfExp from "../expressions/parent_of.js";
-import RelationWhereExp from "../expressions/relation_where.js";
-import PropertyComparisonExp from "../expressions/property_comparison.js";
-import AttributeExistsExp from "../expressions/attribute_exists.js";
-import LabelComparisonExp from "../expressions/label_comparison.js";
-import NoteFlatTextExp from "../expressions/note_flat_text.js";
-import NoteContentFulltextExp from "../expressions/note_content_fulltext.js";
-import OrderByAndLimitExp from "../expressions/order_by_and_limit.js";
-import AncestorExp from "../expressions/ancestor.js";
-import buildComparator from "./build_comparator.js";
-import ValueExtractor from "../value_extractor.js";
-import { removeDiacritic } from "../../utils.js";
-import TrueExp from "../expressions/true.js";
-import IsHiddenExp from "../expressions/is_hidden.js";
-import type SearchContext from "../search_context.js";
-import type { TokenData, TokenStructure } from "./types.js";
 import type Expression from "../expressions/expression.js";
+import IsHiddenExp from "../expressions/is_hidden.js";
+import LabelComparisonExp from "../expressions/label_comparison.js";
+import NotExp from "../expressions/not.js";
+import NoteContentFulltextExp from "../expressions/note_content_fulltext.js";
+import NoteFlatTextExp from "../expressions/note_flat_text.js";
+import OCRContentExpression from "../expressions/ocr_content.js";
+import OrExp from "../expressions/or.js";
+import OrderByAndLimitExp from "../expressions/order_by_and_limit.js";
+import ParentOfExp from "../expressions/parent_of.js";
+import PropertyComparisonExp from "../expressions/property_comparison.js";
+import RelationWhereExp from "../expressions/relation_where.js";
+import TrueExp from "../expressions/true.js";
+import type SearchContext from "../search_context.js";
+import ValueExtractor from "../value_extractor.js";
+import buildComparator from "./build_comparator.js";
+import type { TokenData, TokenStructure } from "./types.js";
 
 function getFulltext(_tokens: TokenData[], searchContext: SearchContext, leadingOperator?: string) {
     const tokens: string[] = _tokens.map((t) => removeDiacritic(t.token));
@@ -42,16 +44,26 @@ function getFulltext(_tokens: TokenData[], searchContext: SearchContext, leading
             // Exact match on title OR exact match on content OR exact match in flat text (includes attributes)
             // For multi-word, join tokens with space to form exact phrase
             const titleSearchValue = tokens.join(" ");
-            return new OrExp([
+            const exactMatchExpressions: Expression[] = [
                 new PropertyComparisonExp(searchContext, "title", "=", titleSearchValue),
                 new NoteContentFulltextExp("=", { tokens, flatText: false }),
                 new NoteContentFulltextExp("=", { tokens, flatText: true })
-            ]);
+            ];
+
+            exactMatchExpressions.push(new OCRContentExpression(tokens));
+
+            return new OrExp(exactMatchExpressions);
         }
-        return new OrExp([new NoteFlatTextExp(tokens), new NoteContentFulltextExp(operator, { tokens, flatText: true })]);
-    } else {
-        return new NoteFlatTextExp(tokens);
+
+        const searchExpressions: Expression[] = [
+            new NoteFlatTextExp(tokens),
+            new NoteContentFulltextExp(operator, { tokens, flatText: true }),
+            new OCRContentExpression(tokens)
+        ];
+
+        return new OrExp(searchExpressions);
     }
+    return new NoteFlatTextExp(tokens);
 }
 
 const OPERATORS = new Set(["=", "!=", "*=*", "*=", "=*", ">", ">=", "<", "<=", "%=", "~=", "~*"]);
@@ -298,9 +310,9 @@ function getExpression(tokens: TokenData[], searchContext: SearchContext, level 
             searchContext.addError(`Relation can be compared only with property, e.g. ~relation.title=hello in ${context(i)}`);
 
             return null;
-        } else {
-            return new AttributeExistsExp("relation", relationName, searchContext.fuzzyAttributeSearch);
         }
+        return new AttributeExistsExp("relation", relationName, searchContext.fuzzyAttributeSearch);
+
     }
 
     function parseOrderByAndLimit() {
@@ -308,7 +320,7 @@ function getExpression(tokens: TokenData[], searchContext: SearchContext, level 
             valueExtractor: ValueExtractor;
             direction: string;
         }[] = [];
-        let limit: number | undefined = undefined;
+        let limit: number | undefined;
 
         if (tokens[i].token === "orderby") {
             do {
@@ -354,9 +366,9 @@ function getExpression(tokens: TokenData[], searchContext: SearchContext, level 
             return AndExp.of(expressions);
         } else if (op === "or") {
             return OrExp.of(expressions);
-        } else {
-            throw new Error(`Unrecognized op=${op}`);
         }
+        throw new Error(`Unrecognized op=${op}`);
+
     }
 
     for (i = 0; i < tokens.length; i++) {
@@ -423,7 +435,7 @@ function getExpression(tokens: TokenData[], searchContext: SearchContext, level 
             } else if (op !== token) {
                 searchContext.addError("Mixed usage of AND/OR - always use parenthesis to group AND/OR expressions.");
             }
-        } else if (isOperator({ token: token })) {
+        } else if (isOperator({ token })) {
             searchContext.addError(`Misplaced or incomplete expression "${token}"`);
         } else {
             searchContext.addError(`Unrecognized expression "${token}"`);
@@ -493,9 +505,9 @@ function getAncestorExp({ ancestorNoteId, ancestorDepth, includeHiddenNotes }: S
         return new AncestorExp(ancestorNoteId, ancestorDepth);
     } else if (!includeHiddenNotes) {
         return new NotExp(new IsHiddenExp());
-    } else {
-        return null;
     }
+    return null;
+
 }
 
 export default parse;

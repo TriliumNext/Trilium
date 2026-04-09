@@ -201,7 +201,7 @@
     "resources": {
         "title": "Zasoby",
         "icon_packs": "Paczki ikon",
-        "icon_packs_intro": "Rozszerz wybór dostępnych ikon dla swoich notatek, korzystając z pakietu ikon. Więcej informacji na temat pakietów ikon znajdziesz w <DocumentationLink> dokumentacji </DocumentationLink>.",
+        "icon_packs_intro": "Rozszerz wybór dostępnych ikon dla swoich notatek, korzystając z pakietu ikon. Więcej informacji na temat pakietów ikon znajdziesz w <DocumentationLink> oficjalnej dokumentacji </DocumentationLink>.",
         "download": "Pobieranie",
         "website": "Strona internetowa"
     }

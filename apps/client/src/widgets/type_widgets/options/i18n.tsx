@@ -5,13 +5,14 @@ import OptionsRow from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 import { useTriliumOption, useTriliumOptionJson } from "../../react/hooks";
 import type { Locale } from "@triliumnext/commons";
-import { restartDesktopApp } from "../../../services/utils";
+import { isElectron, restartDesktopApp } from "../../../services/utils";
 import FormRadioGroup from "../../react/FormRadioGroup";
 import FormText from "../../react/FormText";
 import RawHtml from "../../react/RawHtml";
 import Admonition from "../../react/Admonition";
 import Button from "../../react/Button";
 import CheckboxList from "./components/CheckboxList";
+import RelatedSettings from "./components/RelatedSettings";
 import { LocaleSelector } from "./components/LocaleSelector";
 
 export default function InternationalizationOptions() {
@@ -19,8 +20,17 @@ export default function InternationalizationOptions() {
         <>
             <LocalizationOptions />
             <ContentLanguages />
+            {isElectron() && (
+                <RelatedSettings items={[
+                    {
+                        title: t("spellcheck.title"),
+                        description: t("spellcheck.related_description"),
+                        targetPage: "_optionsSpellcheck"
+                    }
+                ]} />
+            )}
         </>
-    )
+    );
 }
 
 function LocalizationOptions() {

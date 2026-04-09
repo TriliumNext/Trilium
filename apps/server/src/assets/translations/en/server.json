@@ -297,7 +297,8 @@
   },
   "quarterNumber": "Quarter {quarterNumber}",
   "special_notes": {
-    "search_prefix": "Search:"
+    "search_prefix": "Search:",
+    "llm_chat_prefix": "Chat:"
   },
   "test_sync": {
     "not-configured": "Sync server host is not configured. Please configure sync first.",
@@ -308,9 +309,11 @@
     "search-history-title": "Search History",
     "note-map-title": "Note Map",
     "sql-console-history-title": "SQL Console History",
+    "llm-chat-history-title": "AI Chat History",
     "shared-notes-title": "Shared Notes",
     "bulk-action-title": "Bulk Action",
     "backend-log-title": "Backend Log",
+    "custom-dictionary-title": "Custom Dictionary",
     "user-hidden-title": "User Hidden",
     "launch-bar-templates-title": "Launch Bar Templates",
     "base-abstract-launcher-title": "Base Abstract Launcher",
@@ -342,7 +345,7 @@
     "shortcuts-title": "Shortcuts",
     "text-notes": "Text Notes",
     "code-notes-title": "Code Notes",
-    "images-title": "Images",
+    "images-title": "Media",
     "spellcheck-title": "Spellcheck",
     "password-title": "Password",
     "multi-factor-authentication-title": "MFA",
@@ -351,11 +354,13 @@
     "sync-title": "Sync",
     "other": "Other",
     "advanced-title": "Advanced",
+    "llm-title": "AI / LLM",
     "visible-launchers-title": "Visible Launchers",
     "user-guide": "User Guide",
     "localization": "Language & Region",
     "inbox-title": "Inbox",
-    "tab-switcher-title": "Tab Switcher"
+    "tab-switcher-title": "Tab Switcher",
+    "sidebar-chat-title": "AI Chat"
   },
   "notes": {
     "new-note": "New note",
@@ -401,7 +406,10 @@
     "last-updated": "Last updated on {{- date}}",
     "subpages": "Subpages:",
     "on-this-page": "On This Page",
-    "expand": "Expand"
+    "expand": "Expand",
+    "toggle-navigation": "Toggle Navigation",
+    "toggle-toc": "Toggle Table of Contents",
+    "logo-alt": "Logo"
   },
   "hidden_subtree_templates": {
     "text-snippet": "Text Snippet",

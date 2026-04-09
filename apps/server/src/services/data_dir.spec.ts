@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { getTriliumDataDir as getTriliumDataDirType, getDataDirs as getDataDirsType, getPlatformAppDataDir as getPlatformAppDataDirType } from "./data_dir.js";
+import type { getDataDirs as getDataDirsType, getPlatformAppDataDir as getPlatformAppDataDirType,getTriliumDataDir as getTriliumDataDirType } from "./data_dir.js";
 
 describe("data_dir.ts unit tests", async () => {
     let getTriliumDataDir: typeof getTriliumDataDirType;
@@ -277,7 +277,7 @@ describe("data_dir.ts unit tests", async () => {
     });
 
     describe("#getDataDirs()", () => {
-        const envKeys: Omit<keyof ReturnType<typeof getDataDirs>, "TRILIUM_DATA_DIR">[] = [ "DOCUMENT_PATH", "BACKUP_DIR", "LOG_DIR", "ANONYMIZED_DB_DIR", "CONFIG_INI_PATH", "TMP_DIR" ];
+        const envKeys: Omit<keyof ReturnType<typeof getDataDirs>, "TRILIUM_DATA_DIR">[] = [ "DOCUMENT_PATH", "BACKUP_DIR", "LOG_DIR", "ANONYMIZED_DB_DIR", "CONFIG_INI_PATH", "TMP_DIR", "OCR_CACHE_DIR" ];
 
         const setMockedEnv = (prefix: string | null) => {
             envKeys.forEach((key) => {

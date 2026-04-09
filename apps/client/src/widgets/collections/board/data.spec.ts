@@ -1,8 +1,9 @@
-import { it, describe, expect } from "vitest";
-import { buildNote } from "../../../test/easy-froca";
-import { getBoardData } from "./data";
+import { describe, expect,it } from "vitest";
+
 import FBranch from "../../../entities/fbranch";
 import froca from "../../../services/froca";
+import { buildNote } from "../../../test/easy-froca";
+import { getBoardData } from "./data";
 
 describe("Board data", () => {
     it("deduplicates cloned notes", async () => {

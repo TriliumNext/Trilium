@@ -1,6 +1,7 @@
 import type { NoteType } from "../entities/fnote.js";
 import type { MenuCommandItem, MenuItem, MenuItemBadge, MenuSeparatorItem } from "../menus/context_menu.js";
 import type { TreeCommandNames } from "../menus/tree_context_menu.js";
+import { isExperimentalFeatureEnabled } from "./experimental_features.js";
 import froca from "./froca.js";
 import { t } from "./i18n.js";
 import server from "./server.js";
@@ -41,6 +42,7 @@ export const NOTE_TYPES: NoteTypeMapping[] = [
     { type: "relationMap", mime: "application/json", title: t("note_types.relation-map"), icon: "bxs-network-chart" },
 
     // Misc note types
+    { type: "llmChat", mime: "application/json", title: t("note_types.llm-chat"), icon: "bx-message-square-dots", isBeta: true },
     { type: "render", mime: "", title: t("note_types.render-note"), icon: "bx-extension" },
     { type: "search", title: t("note_types.saved-search"), icon: "bx-file-find", static: true },
     { type: "webView", mime: "", title: t("note_types.web-view"), icon: "bx-globe-alt" },
@@ -92,6 +94,7 @@ async function getNoteTypeItems(command?: TreeCommandNames) {
 function getBlankNoteTypes(command?: TreeCommandNames): MenuItem<TreeCommandNames>[] {
     return NOTE_TYPES
         .filter((nt) => !nt.reserved && nt.type !== "book")
+        .filter((nt) => nt.type !== "llmChat" || isExperimentalFeatureEnabled("llm"))
         .map((nt) => {
             const menuItem: MenuCommandItem<TreeCommandNames> = {
                 title: nt.title,

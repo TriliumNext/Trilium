@@ -1129,9 +1129,7 @@
   "spellcheck": {
     "title": "التدقيق الاملائي",
     "enable": "تفعيل التدقيق الاملائي",
-    "language_code_label": "رمز اللغة او رموز اللغات",
-    "available_language_codes_label": "رموز اللغات المتاحة:",
-    "language_code_placeholder": "على سبيل المثال \"en-US\", \"de-AI\""
+    "language_code_label": "رمز اللغة او رموز اللغات"
   },
   "note-map": {
     "button-link-map": "خريطة الروابط",

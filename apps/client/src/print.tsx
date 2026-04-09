@@ -4,6 +4,7 @@ import { useCallback, useLayoutEffect, useRef } from "preact/hooks";
 import FNote from "./entities/fnote";
 import content_renderer from "./services/content_renderer";
 import { applyInlineMermaid } from "./services/content_renderer_text";
+import froca from "./services/froca";
 import { dynamicRequire, isElectron } from "./services/utils";
 import { CustomNoteList, useNoteViewType } from "./widgets/collections/NoteList";
 
@@ -30,7 +31,6 @@ async function main() {
     if (!noteId) return;
 
     await import("./print.css");
-    const froca = (await import("./services/froca")).default;
     const note = await froca.getNote(noteId);
 
     const bodyWrapper = document.createElement("div");

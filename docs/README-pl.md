@@ -48,7 +48,7 @@ wiedzy.
 [docs.triliumnotes.org](https://docs.triliumnotes.org/)**
 
 Nasza dokumentacja jest dostępna w wielu formatach:
-- **Dokumentacja Online**: Pełna dokumentacja dostępna na
+- **Dokumentacja online**: Przeglądaj pełną dokumentację pod linkiem
   [docs.triliumnotes.org](https://docs.triliumnotes.org/)
 - **Pomoc w aplikacji**: Naciśnij `F1` w Trilium, aby uzyskać dostęp do tej
   samej dokumentacji bezpośrednio w aplikacji

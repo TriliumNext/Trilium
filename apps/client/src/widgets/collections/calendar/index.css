@@ -1,20 +1,9 @@
-:root {
-    /* Default values to be overridden by themes */
-    --calendar-coll-event-background-lightness: 95%;
-    --calendar-coll-event-background-saturation: 80%;
-    --calendar-coll-event-background-color: var(--accented-background-color);
-    --calendar-coll-event-text-color: var(--main-text-color);
-    --calendar-coll-event-hover-filter: none;
-    --callendar-coll-event-archived-sripe-color: #00000013;
-    --calendar-coll-today-background-color: var(--more-accented-background-color);
-}
-
 .calendar-view {
-    --fc-event-border-color: var(--calendar-coll-event-text-color);
-    --fc-event-bg-color: var(--calendar-coll-event-background-color);
-    --fc-event-text-color: var(--calendar-coll-event-text-color);
+    --fc-event-border-color: var(--calendar-coll-event-text-color, var(--main-text-color));
+    --fc-event-bg-color: var(--calendar-coll-event-background-color, var(--accented-background-color));
+    --fc-event-text-color: var(--calendar-coll-event-text-color, var(--main-text-color));
     --fc-event-selected-overlay-color: transparent;
-    --fc-today-bg-color: var(--calendar-coll-today-background-color);
+    --fc-today-bg-color: var(--calendar-coll-today-background-color, var(--more-accented-background-color));
 
     overflow: hidden;
     position: relative;
@@ -123,7 +112,7 @@
     z-index: -1;
 
     --c1: transparent;
-    --c2: var(--callendar-coll-event-archived-sripe-color);
+    --c2: var(--callendar-coll-event-archived-sripe-color, #00000013);
 
     background: repeating-linear-gradient(45deg, var(--c1), var(--c1) 8px,
                                           var(--c2) 8px, var(--c2) 16px);
@@ -153,8 +142,8 @@
     --fc-event-text-color: var(--custom-color);
 
     --fc-event-bg-color: hsl(var(--custom-color-hue),
-                    var(--calendar-coll-event-background-saturation),
-                    var(--calendar-coll-event-background-lightness)) !important;
+                    var(--calendar-coll-event-background-saturation, 80%),
+                    var(--calendar-coll-event-background-lightness, 95%)) !important;
 }
 
 .calendar-view a.fc-timegrid-event:focus-visible,
@@ -171,7 +160,7 @@
 
 .calendar-view a.fc-timegrid-event:hover,
 .calendar-view a.fc-daygrid-event:hover {
-    filter: var(--calendar-coll-event-hover-filter);
+    filter: var(--calendar-coll-event-hover-filter, none);
     border-color: var(--fc-event-text-color);
     text-decoration: none;
     color: currentColor;

@@ -66,6 +66,7 @@ declare module "preact" {
         interface ElectronWebViewElement extends JSX.HTMLAttributes<HTMLElement> {
             src: string;
             class: string;
+            key?: string | number;
         }
 
         interface IntrinsicElements {

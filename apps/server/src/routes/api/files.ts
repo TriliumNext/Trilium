@@ -230,6 +230,10 @@ function uploadModifiedFileToAttachment(req: Request<{ attachmentId: string }>) 
     const { attachmentId } = req.params;
     const { filePath } = req.body;
 
+    if (!createdTemporaryFiles.has(filePath)) {
+        throw new ValidationError(`File '${filePath}' is not a temporary file.`);
+    }
+
     const attachment = becca.getAttachmentOrThrow(attachmentId);
 
     log.info(`Updating attachment '${attachmentId}' with content from '${filePath}'`);

@@ -317,6 +317,18 @@ class BNote extends AbstractBeccaEntity<BNote> {
     }
 
     /**
+     * Executes this note as a script. The note must be of type "Code: JS backend".
+     *
+     * @returns the return value of the executed script
+     */
+    executeScript() {
+        // Lazy require to avoid circular dependency (script.ts imports BNote as a type).
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const scriptService = require("../../services/script.js").default;
+        return scriptService.executeNote(this, { originEntity: this });
+    }
+
+    /**
      * Beware that the method must not create a copy of the array, but actually returns its internal array
      * (for performance reasons)
      *

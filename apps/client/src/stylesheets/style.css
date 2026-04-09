@@ -1750,8 +1750,11 @@ body:not(.mobile) #launcher-pane.horizontal .dropdown-submenu > .dropdown-menu {
     justify-content: space-between;
     align-items: baseline;
     font-weight: bold;
-    text-transform: uppercase;
     color: var(--muted-text-color) !important;
+}
+
+#right-pane .card-header-title {
+    text-transform: uppercase;
 }
 
 #right-pane .card-header-buttons {
@@ -2637,4 +2640,27 @@ iframe.print-iframe {
     height: 50px;
     min-height: 50px;
     align-items: center;
+}
+
+.ocr-text-section {
+    padding: 10px;
+    background: var(--accented-background-color);
+    border-left: 3px solid var(--main-border-color);
+    text-align: left;
+    width: 100%;
+}
+
+.ocr-header {
+    font-weight: bold;
+    margin-bottom: 8px;
+    font-size: 0.9em;
+    color: var(--muted-text-color);
+}
+
+.ocr-content {
+    max-height: 150px;
+    overflow-y: auto;
+    font-size: 0.9em;
+    line-height: 1.4;
+    white-space: pre-wrap;
 }

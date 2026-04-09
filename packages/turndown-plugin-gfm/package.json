@@ -21,8 +21,12 @@
     "github-flavored-markdown",
     "gfm"
   ],
+  "scripts": {
+    "test": "vitest run"
+  },
   "devDependencies": {
-    "turndown": "7.2.2",
-    "turndown-attendant": "0.0.3"
+    "happy-dom": "20.8.9",
+    "turndown": "7.2.4",
+    "vitest": "4.1.2"
   }
 }

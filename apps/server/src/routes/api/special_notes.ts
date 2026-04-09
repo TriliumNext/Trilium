@@ -86,6 +86,29 @@ function createSearchNote(req: Request) {
     return specialNotesService.createSearchNote(searchString, ancestorNoteId);
 }
 
+function createLlmChat() {
+    return specialNotesService.createLlmChat();
+}
+
+function getMostRecentLlmChat() {
+    const chat = specialNotesService.getMostRecentLlmChat();
+    // Return null explicitly if no chat found (not undefined)
+    return chat || null;
+}
+
+function getOrCreateLlmChat() {
+    return specialNotesService.getOrCreateLlmChat();
+}
+
+function getRecentLlmChats(req: Request) {
+    const limit = parseInt(req.query.limit as string) || 10;
+    return specialNotesService.getRecentLlmChats(limit);
+}
+
+function saveLlmChat(req: Request) {
+    return specialNotesService.saveLlmChat(req.body.llmChatNoteId);
+}
+
 function getHoistedNote() {
     return becca.getNote(cls.getHoistedNoteId());
 }
@@ -119,6 +142,11 @@ export default {
     saveSqlConsole,
     createSearchNote,
     saveSearchNote,
+    createLlmChat,
+    getMostRecentLlmChat,
+    getOrCreateLlmChat,
+    getRecentLlmChats,
+    saveLlmChat,
     createLauncher,
     resetLauncher,
     createOrUpdateScriptLauncherFromApi

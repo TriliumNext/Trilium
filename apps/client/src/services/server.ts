@@ -1,3 +1,4 @@
+import { t } from "./i18n.js";
 import utils, { isShare } from "./utils.js";
 import ValidationError from "./validation_error.js";
 
@@ -32,8 +33,7 @@ async function getHeaders(headers?: Headers) {
         return {};
     }
 
-    const appContext = (await import("../components/app_context.js")).default;
-    const activeNoteContext = appContext.tabManager ? appContext.tabManager.getActiveContext() : null;
+    const activeNoteContext = glob.appContext?.tabManager ? glob.appContext.tabManager.getActiveContext() : null;
 
     // headers need to be lowercase because node.js automatically converts them to lower case
     // also avoiding using underscores instead of dashes since nginx filters them out by default
@@ -270,7 +270,11 @@ function ajax(url: string, method: string, data: unknown, headers: Headers, opts
                 } else if (opts.silentInternalServerError && jqXhr.status === 500) {
                     // report nothing
                 } else {
-                    await reportError(method, url, jqXhr.status, jqXhr.responseText);
+                    try {
+                        await reportError(method, url, jqXhr.status, jqXhr.responseText);
+                    } catch {
+                        // reportError may throw (e.g. ValidationError); ensure rej() is still called below.
+                    }
                 }
 
                 rej(jqXhr.responseText);
@@ -340,6 +344,7 @@ async function reportError(method: string, url: string, statusCode: number, resp
         } catch (e) {}
     }
 
+    // Dynamic import to avoid circular dependency (toast → app_context → options → server).
     const toastService = (await import("./toast.js")).default;
 
     const messageStr = (typeof message === "string" ? message : JSON.stringify(message)) || "-";
@@ -353,7 +358,6 @@ async function reportError(method: string, url: string, statusCode: number, resp
             ...response
         });
     } else {
-        const { t } = await import("./i18n.js");
         if (statusCode === 400 && (url.includes("%23") || url.includes("%2F"))) {
             toastService.showPersistent({
                 id: "trafik-blocked",
@@ -367,8 +371,7 @@ async function reportError(method: string, url: string, statusCode: number, resp
                 t("server.unknown_http_error_content", { statusCode, method, url, message: messageStr }),
                 15_000);
         }
-        const { logError } = await import("./ws.js");
-        logError(`${statusCode} ${method} ${url} - ${message}`);
+        window.logError(`${statusCode} ${method} ${url} - ${message}`);
     }
 }
 

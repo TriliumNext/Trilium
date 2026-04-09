@@ -1,15 +1,16 @@
 import { AnonymizedDbResponse, DatabaseAnonymizeResponse, DatabaseCheckIntegrityResponse } from "@triliumnext/commons";
-import { useEffect, useMemo, useState } from "preact/hooks";
+import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
-import { experimentalFeatures } from "../../../services/experimental_features";
+import { experimentalFeatures, type ExperimentalFeatureId } from "../../../services/experimental_features";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import toast from "../../../services/toast";
 import Button from "../../react/Button";
 import Column from "../../react/Column";
 import FormText from "../../react/FormText";
+import FormToggle from "../../react/FormToggle";
 import { useTriliumOptionJson } from "../../react/hooks";
-import CheckboxList from "./components/CheckboxList";
+import OptionsRow from "./components/OptionsRow";
 import OptionsSection from "./components/OptionsSection";
 
 export default function AdvancedSettings() {
@@ -180,19 +181,39 @@ function VacuumDatabaseOptions() {
 }
 
 function ExperimentalOptions() {
-    const [ enabledExperimentalFeatures, setEnabledExperimentalFeatures ] = useTriliumOptionJson<string[]>("experimentalFeatures", true);
-    const filteredExperimentalFeatures = useMemo(() =>  experimentalFeatures.filter(e => e.id !== "new-layout"), []);
+    const [enabledFeatures, setEnabledFeatures] = useTriliumOptionJson<ExperimentalFeatureId[]>("experimentalFeatures", true);
+    const filteredFeatures = useMemo(() => experimentalFeatures.filter(e => e.id !== "new-layout"), []);
 
-    return (filteredExperimentalFeatures.length > 0 &&
+    const toggleFeature = useCallback((featureId: ExperimentalFeatureId, enabled: boolean) => {
+        if (enabled) {
+            setEnabledFeatures([...enabledFeatures, featureId]);
+        } else {
+            setEnabledFeatures(enabledFeatures.filter(id => id !== featureId));
+        }
+    }, [enabledFeatures, setEnabledFeatures]);
+
+    if (filteredFeatures.length === 0) {
+        return null;
+    }
+
+    return (
         <OptionsSection title={t("experimental_features.title")}>
             <FormText>{t("experimental_features.disclaimer")}</FormText>
 
-            <CheckboxList
-                values={filteredExperimentalFeatures}
-                keyProperty="id"
-                titleProperty="name"
-                currentValue={enabledExperimentalFeatures} onChange={setEnabledExperimentalFeatures}
-            />
+            {filteredFeatures.map((feature) => (
+                <OptionsRow
+                    key={feature.id}
+                    name={`experimental-${feature.id}`}
+                    label={feature.name}
+                    description={feature.description}
+                >
+                    <FormToggle
+                        switchOnName="" switchOffName=""
+                        currentValue={enabledFeatures.includes(feature.id)}
+                        onChange={(enabled) => toggleFeature(feature.id, enabled)}
+                    />
+                </OptionsRow>
+            ))}
         </OptionsSection>
     );
 }

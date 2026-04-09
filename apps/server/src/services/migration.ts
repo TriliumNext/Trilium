@@ -14,6 +14,7 @@ interface MigrationInfo {
      * If a function, then the migration is a JavaScript/TypeScript module that will be executed.
      */
     migration: string | (() => void);
+    ignoreErrors?: boolean;
 }
 
 async function migrate() {
@@ -56,9 +57,13 @@ async function migrate() {
 
                 log.info(`Migration to version ${mig.dbVersion} has been successful.`);
             } catch (e: any) {
-                console.error(e);
-                crash(t("migration.error_message", { version: mig.dbVersion, stack: e.stack }));
-                break; // crash() is sometimes async
+                if (mig.ignoreErrors) {
+                    log.info(`Migration to version ${mig.dbVersion} failed, but ignoreErrors is set. Continuing. Error: ${e.message}`);
+                } else {
+                    console.error(e);
+                    crash(t("migration.error_message", { version: mig.dbVersion, stack: e.stack }));
+                    break; // crash() is sometimes async
+                }
             }
         }
     });
@@ -79,14 +84,16 @@ async function prepareMigrations(currentDbVersion: number): Promise<MigrationInf
             if ("sql" in migration) {
                 migrations.push({
                     dbVersion,
-                    migration: migration.sql
+                    migration: migration.sql,
+                    ignoreErrors: migration.ignoreErrors
                 });
             } else {
                 // Due to ESM imports, the migration file needs to be imported asynchronously and thus cannot be loaded at migration time (since migration is not asynchronous).
                 // As such we have to preload the ESM.
                 migrations.push({
                     dbVersion,
-                    migration: (await migration.module()).default
+                    migration: (await migration.module()).default,
+                    ignoreErrors: migration.ignoreErrors
                 });
             }
         }

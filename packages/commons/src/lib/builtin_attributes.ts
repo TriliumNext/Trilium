@@ -81,6 +81,7 @@ export default [
     { type: "label", name: "webViewSrc", isDangerous: true },
     { type: "label", name: "hideHighlightWidget" },
     { type: "label", name: "iconPack", isDangerous: true },
+    { type: "label", name: "docName", isDangerous: true },
 
     { type: "label", name: "printLandscape" },
     { type: "label", name: "printPageSize" },

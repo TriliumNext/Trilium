@@ -9,6 +9,7 @@ import dialog from "../../../services/dialog";
 import { t } from "../../../services/i18n";
 import server from "../../../services/server";
 import RelationMapApi from "./api";
+import { promptForRelationName } from "./utils";
 
 export function buildNoteContextMenuHandler(note: FNote | null | undefined, mapApiRef: RefObject<RelationMapApi>) {
     return (e: MouseEvent) => {
@@ -73,9 +74,25 @@ export function buildRelationContextMenuHandler(connection: Connection, mapApiRe
             contextMenu.show({
                 x: event.pageX,
                 y: event.pageY,
-                items: [{ title: t("relation_map.remove_relation"), command: "remove", uiIcon: "bx bx-trash" }],
+                items: [
+                    { title: t("relation_map.rename_relation"), command: "rename", uiIcon: "bx bx-pencil" },
+                    { kind: "separator" },
+                    { title: t("relation_map.remove_relation"), command: "remove", uiIcon: "bx bx-trash" }
+                ],
                 selectMenuItemHandler: async ({ command }) => {
-                    if (command === "remove") {
+                    if (command === "rename") {
+                        const currentName = mapApiRef.current?.getRelationName(connection) ?? "";
+                        const newName = await promptForRelationName(currentName);
+
+                        if (!newName?.trim() || newName === currentName) {
+                            return;
+                        }
+
+                        const result = await mapApiRef.current?.renameRelation(connection, newName);
+                        if (!result) {
+                            await dialog.info(t("relation_map.connection_exists", { name: newName }));
+                        }
+                    } else if (command === "remove") {
                         if (!(await dialog.confirm(t("relation_map.confirm_remove_relation")))) {
                             return;
                         }

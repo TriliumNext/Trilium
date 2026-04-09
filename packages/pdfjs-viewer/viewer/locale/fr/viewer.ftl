@@ -203,8 +203,17 @@ pdfjs-thumb-page-canvas =
     .aria-label = Vignette de la page { $page }
 # Variables:
 #   $page (Number) - the page number
+pdfjs-thumb-page-checkbox1 =
+    .title = Sélectionner la page { $page }
+# Variables:
+#   $page (Number) - the page number
 pdfjs-thumb-page-checkbox =
     .aria-label = Sélectionner la page { $page }
+# Variables:
+#   $page (Number) - the page number
+#   $total (Number) - the number of pages
+pdfjs-thumb-page-title1 =
+    .title = Page { $page } sur { $total }
 
 ## Find panel button title and messages
 
@@ -645,6 +654,7 @@ pdfjs-toggle-views-manager-button =
     .title = Afficher/Masquer le panneau latéral
 pdfjs-toggle-views-manager-notification-button =
     .title = Afficher/Masquer le panneau latéral (le document contient des vignettes/plan/pièces jointes/calques)
+pdfjs-toggle-views-manager-button1-label = Gérer les pages
 pdfjs-toggle-views-manager-button-label = Afficher/Masquer le panneau latéral
 pdfjs-views-manager-sidebar =
     .aria-label = Panneau latéral
@@ -654,8 +664,12 @@ pdfjs-views-manager-view-selector-button =
     .title = Vues
 pdfjs-views-manager-view-selector-button-label = Vues
 pdfjs-views-manager-pages-title = Pages
+pdfjs-views-manager-outlines-title1 = Structure du document
+    .title = Structure du document (double-cliquer pour développer/réduire tous les éléments)
 pdfjs-views-manager-outlines-title = Signets du document
 pdfjs-views-manager-attachments-title = Pièces jointes
+pdfjs-views-manager-layers-title1 = Calques
+    .title = Calques (double-cliquer pour réinitialiser tous les calques à leur état par défaut)
 pdfjs-views-manager-layers-title = Calques
 pdfjs-views-manager-pages-option-label = Pages
 pdfjs-views-manager-outlines-option-label = Signets du document
@@ -676,6 +690,7 @@ pdfjs-views-manager-pages-status-action-button-label = Gérer
 pdfjs-views-manager-pages-status-copy-button-label = Copier
 pdfjs-views-manager-pages-status-cut-button-label = Couper
 pdfjs-views-manager-pages-status-delete-button-label = Supprimer
+pdfjs-views-manager-pages-status-export-selected-button-label = Exporter la sélection…
 pdfjs-views-manager-pages-status-save-as-button-label = Enregistrer sous…
 # Variables:
 #   $count (Number) - the number of selected pages to be cut.
@@ -705,10 +720,22 @@ pdfjs-views-manager-status-warning-copy-label = Copie impossible. Actualisez la 
 pdfjs-views-manager-status-warning-delete-label = Suppression impossible. Actualisez la page et essayez à nouveau.
 pdfjs-views-manager-status-warning-save-label = Enregistrement impossible. Actualisez la page et essayez à nouveau.
 pdfjs-views-manager-status-undo-button-label = Annuler
+pdfjs-views-manager-status-done-button-label = Terminer
 pdfjs-views-manager-status-close-button =
     .title = Fermer
 pdfjs-views-manager-status-close-button-label = Fermer
 pdfjs-views-manager-paste-button-label = Coller
+pdfjs-views-manager-paste-button-before =
+    .title = Coller avant la première page
+# Variables:
+#   $page (Number) - the page number after which the paste button is.
+pdfjs-views-manager-paste-button-after =
+    .title = Coller après la page { $page }
+# Badge used to promote a new feature in the UI, keep it as short as possible.
+# It's spelled uppercase for English, but it can be translated as usual.
+pdfjs-new-badge-content = NOUVEAU
+pdfjs-toggle-views-manager-button1 =
+    .title = Gérer les pages
 
 ## Main menu for adding/removing signatures
 

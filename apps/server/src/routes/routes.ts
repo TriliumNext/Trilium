@@ -34,10 +34,12 @@ import fontsRoute from "./api/fonts.js";
 import imageRoute from "./api/image.js";
 import importRoute from "./api/import.js";
 import keysRoute from "./api/keys.js";
+import llmChatRoute from "./api/llm_chat.js";
 import loginApiRoute from "./api/login.js";
 import metricsRoute from "./api/metrics.js";
 import noteMapRoute from "./api/note_map.js";
 import notesApiRoute from "./api/notes.js";
+import ocrRoute from "./api/ocr.js";
 import optionsApiRoute from "./api/options.js";
 import otherRoute from "./api/other.js";
 import passwordApiRoute from "./api/password.js";
@@ -213,7 +215,6 @@ function register(app: express.Application) {
     apiRoute(PUT, "/api/options/:name/:value", optionsApiRoute.updateOption);
     apiRoute(PUT, "/api/options", optionsApiRoute.updateOptions);
     apiRoute(GET, "/api/options/user-themes", optionsApiRoute.getUserThemes);
-    apiRoute(GET, "/api/options/locales", optionsApiRoute.getSupportedLocales);
 
     apiRoute(PST, "/api/password/change", passwordApiRoute.changePassword);
     apiRoute(PST, "/api/password/reset", passwordApiRoute.resetPassword);
@@ -291,6 +292,11 @@ function register(app: express.Application) {
     asyncApiRoute(PST, "/api/special-notes/save-sql-console", specialNotesRoute.saveSqlConsole);
     apiRoute(PST, "/api/special-notes/search-note", specialNotesRoute.createSearchNote);
     apiRoute(PST, "/api/special-notes/save-search-note", specialNotesRoute.saveSearchNote);
+    apiRoute(PST, "/api/special-notes/llm-chat", specialNotesRoute.createLlmChat);
+    apiRoute(GET, "/api/special-notes/most-recent-llm-chat", specialNotesRoute.getMostRecentLlmChat);
+    apiRoute(GET, "/api/special-notes/get-or-create-llm-chat", specialNotesRoute.getOrCreateLlmChat);
+    apiRoute(GET, "/api/special-notes/recent-llm-chats", specialNotesRoute.getRecentLlmChats);
+    apiRoute(PST, "/api/special-notes/save-llm-chat", specialNotesRoute.saveLlmChat);
     apiRoute(PST, "/api/special-notes/launchers/:noteId/reset", specialNotesRoute.resetLauncher);
     apiRoute(PST, "/api/special-notes/launchers/:parentNoteId/:launcherType", specialNotesRoute.createLauncher);
     apiRoute(PUT, "/api/special-notes/api-script-launcher", specialNotesRoute.createOrUpdateScriptLauncherFromApi);
@@ -322,6 +328,10 @@ function register(app: express.Application) {
     apiRoute(GET, "/api/script/widgets", scriptRoute.getWidgetBundles);
     apiRoute(PST, "/api/script/bundle/:noteId", scriptRoute.getBundle);
     apiRoute(GET, "/api/script/relation/:noteId/:relationName", scriptRoute.getRelationBundles);
+
+    // LLM chat endpoints
+    asyncRoute(PST, "/api/llm-chat/stream", [auth.checkApiAuthOrElectron, csrfMiddleware], llmChatRoute.streamChat, null);
+    apiRoute(GET, "/api/llm-chat/models", llmChatRoute.getModels);
 
     // no CSRF since this is called from android app
     route(PST, "/api/sender/login", [loginRateLimiter], loginApiRoute.token, apiResultHandler);
@@ -365,6 +375,14 @@ function register(app: express.Application) {
     etapiSpecRoute.register(router);
     etapiBackupRoute.register(router);
     etapiMetricsRoute.register(router);
+
+    // OCR API
+    asyncApiRoute(PST, "/api/ocr/process-note/:noteId", ocrRoute.processNoteOCR);
+    asyncApiRoute(PST, "/api/ocr/process-attachment/:attachmentId", ocrRoute.processAttachmentOCR);
+    asyncApiRoute(PST, "/api/ocr/batch-process", ocrRoute.batchProcessOCR);
+    asyncApiRoute(GET, "/api/ocr/batch-progress", ocrRoute.getBatchProgress);
+    asyncApiRoute(GET, "/api/ocr/notes/:noteId/text", ocrRoute.getNoteOCRText);
+    asyncApiRoute(GET, "/api/ocr/attachments/:attachmentId/text", ocrRoute.getAttachmentOCRText);
 
     app.use("", router);
 }

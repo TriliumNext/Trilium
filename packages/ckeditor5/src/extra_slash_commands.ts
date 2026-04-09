@@ -1,11 +1,7 @@
 import type { Editor } from 'ckeditor5';
 import type { SlashCommandEditorConfig  } from 'ckeditor5-premium-features';
 import { icons as footnoteIcons } from '@triliumnext/ckeditor5-footnotes';
-import IconPageBreak from "@ckeditor/ckeditor5-icons/theme/icons/page-break.svg?raw";
-import IconAlignLeft from "@ckeditor/ckeditor5-icons/theme/icons/align-left.svg?raw";
-import IconAlignCenter from "@ckeditor/ckeditor5-icons/theme/icons/align-center.svg?raw";
-import IconAlignRight from "@ckeditor/ckeditor5-icons/theme/icons/align-right.svg?raw";
-import IconAlignJustify from "@ckeditor/ckeditor5-icons/theme/icons/align-justify.svg?raw";
+import { IconPageBreak, IconAlignLeft, IconAlignCenter, IconAlignRight, IconAlignJustify } from "@ckeditor/ckeditor5-icons";
 import bxInfoCircle from "boxicons/svg/regular/bx-info-circle.svg?raw";
 import bxBulb from "boxicons/svg/regular/bx-bulb.svg?raw";
 import bxCommentError from "boxicons/svg/regular/bx-comment-error.svg?raw";

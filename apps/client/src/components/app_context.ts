@@ -1,10 +1,11 @@
 import type { CKTextEditor } from "@triliumnext/ckeditor5";
 import type CodeMirror from "@triliumnext/codemirror";
-import { SqlExecuteResponse } from "@triliumnext/commons";
+import { type LOCALE_IDS, SqlExecuteResponse } from "@triliumnext/commons";
 import type { NativeImage, TouchBar } from "electron";
 import { ColumnComponent } from "tabulator-tables";
 
 import type { Attribute } from "../services/attribute_parser.js";
+import bundleService from "../services/bundle.js";
 import froca from "../services/froca.js";
 import { initLocale, t } from "../services/i18n.js";
 import keyboardActionsService from "../services/keyboard_actions.js";
@@ -302,6 +303,7 @@ export type CommandMappings = {
     ninthTab: CommandData;
     lastTab: CommandData;
     showNoteSource: CommandData;
+    showNoteOCRText: CommandData;
     showSQLConsole: CommandData;
     showBackendLog: CommandData;
     showCheatsheet: CommandData;
@@ -508,7 +510,7 @@ type EventMappings = {
     contentSafeMarginChanged: {
         top: number;
         noteContext: NoteContext;
-    }
+    };
 };
 
 export type EventListener<T extends EventNames> = {
@@ -562,7 +564,7 @@ export class AppContext extends Component {
      */
     async earlyInit() {
         await options.initializedPromise;
-        await initLocale();
+        await initLocale((options.get("locale") || "en") as LOCALE_IDS);
     }
 
     setLayout(layout: Layout) {
@@ -577,7 +579,6 @@ export class AppContext extends Component {
 
         this.tabManager.loadTabs();
 
-        const bundleService = (await import("../services/bundle.js")).default;
         setTimeout(() => bundleService.executeStartupBundles(), 2000);
     }
 

@@ -115,6 +115,7 @@ class FakeResponse extends EventEmitter implements Pick<Response<any, Record<str
     }
 
     json(obj) {
+        this.respHeaders["Content-Type"] = "application/json";
         this.send(JSON.stringify(obj));
         return this as unknown as MockedResponse;
     }

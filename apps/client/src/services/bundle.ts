@@ -26,7 +26,7 @@ type WithNoteId<T> = T & {
 };
 export type Widget = WithNoteId<(LegacyWidget | WidgetDefinitionWithType)>;
 
-async function getAndExecuteBundle(noteId: string, originEntity = null, script = null, params = null) {
+async function getAndExecuteBundle(noteId: string, originEntity: Entity | null = null, script: string | null = null, params: string | null = null) {
     const bundle = await server.post<Bundle>(`script/bundle/${noteId}`, {
         script,
         params

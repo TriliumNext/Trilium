@@ -27,6 +27,7 @@ const VIEW_MODE_ICON_MAPPINGS: Record<Exclude<ViewMode, "default">, string> = {
     "contextual-help": "bx bx-help-circle",
     "note-map": "bx bxs-network-chart",
     attachments: "bx bx-paperclip",
+    ocr: "bx bx-text"
 };
 
 export default function TabSwitcher() {

@@ -336,6 +336,8 @@ export async function getExtendedWidgetType(note: FNote | null | undefined, note
 
     if (noteContext?.viewScope?.viewMode === "source") {
         resultingType = "readOnlyCode";
+    } else if (noteContext.viewScope?.viewMode === "ocr") {
+        resultingType = "readOnlyOCRText";
     } else if (noteContext.viewScope?.viewMode === "attachments") {
         resultingType = noteContext.viewScope.attachmentId ? "attachmentDetail" : "attachmentList";
     } else if (noteContext.viewScope?.viewMode === "note-map") {

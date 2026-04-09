@@ -1,5 +1,6 @@
 import { getNoteIcon } from "@triliumnext/commons";
 
+import bundleService from "../services/bundle.js";
 import cssClassManager from "../services/css_class_manager.js";
 import type { Froca } from "../services/froca-interface.js";
 import noteAttributeCache from "../services/note_attribute_cache.js";
@@ -18,7 +19,7 @@ const RELATION = "relation";
  * end user. Those types should be used only for checking against, they are
  * not for direct use.
  */
-export type NoteType = "file" | "image" | "search" | "noteMap" | "launcher" | "doc" | "contentWidget" | "text" | "relationMap" | "render" | "canvas" | "mermaid" | "book" | "webView" | "code" | "mindMap" | "spreadsheet";
+export type NoteType = "file" | "image" | "search" | "noteMap" | "launcher" | "doc" | "contentWidget" | "text" | "relationMap" | "render" | "canvas" | "mermaid" | "book" | "webView" | "code" | "mindMap" | "spreadsheet" | "llmChat";
 
 export interface NotePathRecord {
     isArchived: boolean;
@@ -1014,7 +1015,6 @@ export default class FNote {
         const env = this.getScriptEnv();
 
         if (env === "frontend") {
-            const bundleService = (await import("../services/bundle.js")).default;
             return await bundleService.getAndExecuteBundle(this.noteId);
         } else if (env === "backend") {
             await server.post(`script/run/${this.noteId}`);

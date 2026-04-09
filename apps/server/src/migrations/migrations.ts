@@ -6,6 +6,35 @@
 
 // Migrations should be kept in descending order, so the latest migration is first.
 const MIGRATIONS: (SqlMigration | JsMigration)[] = [
+    // Add text representation column to blobs table
+    {
+        version: 236,
+        sql: /*sql*/`\
+            ALTER TABLE blobs ADD COLUMN textRepresentation TEXT DEFAULT NULL;
+        `,
+        ignoreErrors: true
+    },
+    // Add missing database indices for query performance
+    {
+        version: 235,
+        sql: /*sql*/`
+            CREATE INDEX IF NOT EXISTS IDX_entity_changes_isSynced_id
+                ON entity_changes (isSynced, id);
+            CREATE INDEX IF NOT EXISTS IDX_entity_changes_isErased_entityName
+                ON entity_changes (isErased, entityName);
+            CREATE INDEX IF NOT EXISTS IDX_notes_isDeleted_utcDateModified
+                ON notes (isDeleted, utcDateModified);
+            CREATE INDEX IF NOT EXISTS IDX_branches_isDeleted_utcDateModified
+                ON branches (isDeleted, utcDateModified);
+            CREATE INDEX IF NOT EXISTS IDX_attributes_isDeleted_utcDateModified
+                ON attributes (isDeleted, utcDateModified);
+            CREATE INDEX IF NOT EXISTS IDX_attachments_isDeleted_utcDateModified
+                ON attachments (isDeleted, utcDateModified);
+            DROP INDEX IF EXISTS IDX_branches_parentNoteId;
+            CREATE INDEX IF NOT EXISTS IDX_branches_parentNoteId_isDeleted_notePosition
+                ON branches (parentNoteId, isDeleted, notePosition);
+        `
+    },
     // Migrate aiChat notes to code notes since LLM integration has been removed
     {
         version: 234,
@@ -307,6 +336,8 @@ export default MIGRATIONS;
 
 interface Migration {
     version: number;
+    /** If true, errors during this migration are logged but do not halt the migration process. Useful for migrations that may have already been applied (e.g. adding a column that already exists). */
+    ignoreErrors?: boolean;
 }
 
 interface SqlMigration extends Migration {

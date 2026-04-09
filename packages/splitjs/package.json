@@ -16,12 +16,10 @@
     "license": "MIT",
     "homepage": "https://split.js.org/",
     "scripts": {
-        "test": "pnpm build && karma start",
+        "test": "vitest run",
         "prepublish": "rollup -c",
-        "build": "rollup -c && npm run size",
-        "watch": "rollup -cw",
-        "size": "echo \"gzip size: $(gzip-size --raw $npm_package_minified_main) bytes\"",
-        "saucelabs": "yarn run test --browsers sl_firefox_latest,sl_chrome_latest,sl_safari,sl_edge,sl_ie_11,sl_ie_10"
+        "build": "rollup -c",
+        "watch": "rollup -cw"
     },
     "files": [
         "index.d.ts",
@@ -40,9 +38,7 @@
     },
     "devDependencies": {
         "@rollup/plugin-buble": "1.0.3",
-        "karma": "6.4.4",
-        "karma-chrome-launcher": "3.2.0",
-        "karma-firefox-launcher": "2.1.3",
-        "karma-jasmine": "5.1.0"
+        "happy-dom": "20.8.9",
+        "vitest": "4.1.2"
     }
 }

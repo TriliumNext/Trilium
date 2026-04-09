@@ -157,7 +157,10 @@
     "open-today-journal-note-title": "Открыть сегодняшнюю заметку в журнале",
     "zen-mode": "Режим \"Дзен\"",
     "command-palette": "Открыть панель команд",
-    "tab-switcher-title": "Переключатель вкладок"
+    "tab-switcher-title": "Переключатель вкладок",
+    "llm-chat-history-title": "История чата с ИИ",
+    "llm-title": "ИИ / LLM",
+    "sidebar-chat-title": "Чат с ИИ"
   },
   "tray": {
     "bookmarks": "Закладки",
@@ -340,7 +343,8 @@
     "outstanding-items": "Оставшиеся элементы синхронизации:"
   },
   "special_notes": {
-    "search_prefix": "Поиск:"
+    "search_prefix": "Поиск:",
+    "llm_chat_prefix": "Чат:"
   },
   "notes": {
     "duplicate-note-suffix": "(дубликат)",
@@ -400,7 +404,7 @@
   "setup_sync-from-desktop": {
     "heading": "Синхронизация с настольной версией",
     "description": "Это настройку нужно выполнить с помощью настольной версии:",
-    "step1": "Откройте приложение Trilium Notes на ПК.",
+    "step1": "Откройте приложение Trilium Notes на компьютере.",
     "step2": "В меню Trilium выберите «Параметры».",
     "step3": "Нажмите на категорию «Синхронизация».",
     "step4": "Измените адрес экземпляра сервера на: {{- host}} и нажмите «Сохранить».",

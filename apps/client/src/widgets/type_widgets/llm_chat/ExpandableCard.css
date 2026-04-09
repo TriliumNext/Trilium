@@ -1,0 +1,57 @@
+/* Expandable card — bordered container for collapsible sections */
+.expandable-card {
+    margin: 0.5rem 0;
+    max-width: 80%;
+    border: 1px solid var(--main-border-color);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    overflow: hidden;
+}
+
+/* Expandable section — collapsible details within a card */
+.expandable-section + .expandable-section {
+    border-top: 1px solid var(--main-border-color);
+}
+
+.expandable-section-summary {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    list-style: none;
+    font-weight: 500;
+    overflow: hidden;
+}
+
+.expandable-section-label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.expandable-section-summary::-webkit-details-marker {
+    display: none;
+}
+
+.expandable-section-summary > .bx {
+    font-size: 1rem;
+    margin-right: 0.15rem;
+}
+
+.expandable-section-chevron {
+    margin-left: auto;
+    transition: transform 0.2s ease;
+}
+
+.expandable-section[open] .expandable-section-chevron {
+    transform: rotate(180deg);
+}
+
+.expandable-section-body {
+    padding: 0;
+}

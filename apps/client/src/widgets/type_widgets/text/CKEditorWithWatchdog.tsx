@@ -205,7 +205,7 @@ export default function CKEditorWithWatchdog({ containerRef: externalContainerRe
                 watchdog.on("stateChange", () => onWatchdogStateChange(watchdog));
             }
 
-            await watchdog.create(container);
+            await watchdog.create(container, {});
         };
 
         init();

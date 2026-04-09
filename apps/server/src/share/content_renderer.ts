@@ -149,8 +149,8 @@ export function renderNoteContent(note: SNote) {
         isStatic: false,
         faviconUrl: note.hasRelation("shareFavicon") ? `api/notes/${note.getRelationValue("shareFavicon")}/download` : `../favicon.ico`,
         iconPackCss: iconPacks.map(p => generateCss(p, p.builtin
-            ? `/share/assets/fonts/${p.fontAttachmentId}.${MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
-            : `/share/api/attachments/${p.fontAttachmentId}/download`
+            ? `assets/fonts/${p.fontAttachmentId}.${MIME_TO_EXTENSION_MAPPINGS[p.fontMime]}`
+            : `api/attachments/${p.fontAttachmentId}/download`
         ))
             .filter(Boolean)
             .join("\n\n"),

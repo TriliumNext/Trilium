@@ -486,7 +486,8 @@
     "advanced": "高度",
     "export_as_image": "画像としてエクスポート",
     "export_as_image_png": "PNG (raster)",
-    "export_as_image_svg": "SVG (vector)"
+    "export_as_image_svg": "SVG (vector)",
+    "view_ocr_text": "OCR テキストを表示"
   },
   "command_palette": {
     "export_note_title": "ノートをエクスポート",
@@ -601,7 +602,8 @@
     "new-feature": "New",
     "collections": "コレクション",
     "ai-chat": "AI チャット",
-    "spreadsheet": "スプレッドシート"
+    "spreadsheet": "スプレッドシート",
+    "llm-chat": "AI チャット"
   },
   "edited_notes": {
     "no_edited_notes_found": "この日の編集されたノートはまだありません...",
@@ -897,12 +899,28 @@
   },
   "images": {
     "images_section_title": "画像",
-    "download_images_automatically": "画像を自動的にダウンロードしてオフラインで使用可能にする。",
-    "download_images_description": "貼り付けられたHTMLにはオンライン画像への参照が含まれていることがありますが、Triliumはそれらの参照を見つけて画像をダウンロードし、オフラインで利用できるようにします。",
-    "enable_image_compression": "画像の圧縮を有効にする",
-    "max_image_dimensions": "画像の最大幅/高さ（この設定を超えると画像はリサイズされます）。",
+    "download_images_automatically": "画像を自動的にダウンロードする。",
+    "download_images_description": "貼り付けた HTML 内の参照画像をダウンロードし、オフラインでも利用できるようにする。",
+    "enable_image_compression": "画像の圧縮",
+    "max_image_dimensions": "画像の最大サイズ",
     "max_image_dimensions_unit": "ピクセル",
-    "jpeg_quality_description": "JPEGの品質（10 - 最低品質、100 - 最高品質、50 - 80を推奨）"
+    "jpeg_quality_description": "推奨範囲は50～85です。値が低いほどファイルサイズが小さくなり、値が高いほどディテールが保持されます。",
+    "enable_image_compression_description": "画像をアップロードまたは貼り付ける際に、画像を圧縮およびサイズ変更します。",
+    "max_image_dimensions_description": "このサイズを超える画像は自動的にサイズ変更されます",
+    "jpeg_quality": "JPEG 画質",
+    "ocr_section_title": "テキスト抽出（OCR）",
+    "ocr_related_content_languages": "コンテンツ言語（テキスト抽出に使用）",
+    "ocr_auto_process": "新しいファイルを自動処理",
+    "ocr_auto_process_description": "新しくアップロードまたは貼り付けられたファイルからテキストを自動的に抽出します。",
+    "ocr_min_confidence": "最低限の信頼度",
+    "ocr_confidence_description": "この信頼度閾値以上のテキストのみを抽出します。信頼度が低いほど抽出されるテキストの量は増えますが、精度が低下する可能性があります。",
+    "batch_ocr_title": "既存ファイルの処理",
+    "batch_ocr_description": "ノート内の既存の画像、PDF、Office 文書からテキストを抽出します。ファイル数によっては時間がかかる場合があります。",
+    "batch_ocr_start": "バッチ処理を開始します",
+    "batch_ocr_starting": "バッチ処理を開始しています...",
+    "batch_ocr_progress": "{{total}} ファイルのうち {{processed}} ファイルを処理中...",
+    "batch_ocr_completed": "バッチ処理が完了しました！{{processed}} ファイルを処理しました。",
+    "batch_ocr_error": "バッチ処理中にエラーが発生しました: {{error}}"
   },
   "search_engine": {
     "title": "検索エンジン",
@@ -915,7 +933,7 @@
     "custom_name_label": "カスタム検索エンジンの名前",
     "custom_name_placeholder": "カスタム検索エンジンの名前",
     "custom_url_label": "カスタム検索エンジンのURLには、検索語句のプレースホルダーとして {keyword} を含める必要があります。",
-    "custom_url_placeholder": "カスタム検索エンジンのurl",
+    "custom_url_placeholder": "検索エンジンの URL をカスタマイズ",
     "save_button": "保存"
   },
   "tray": {
@@ -1011,9 +1029,6 @@
     "description": "これらのオプションはデスクトップビルドにのみ適用され、ブラウザはそれぞれのネイティブスペルチェックを使用します。",
     "enable": "スペルチェックを有効",
     "language_code_label": "言語コード",
-    "language_code_placeholder": "例えば \"en-US\", \"de-AT\"",
-    "multiple_languages_info": "複数の言語はカンマで区切ることができます。例: \"en-US, de-DE, cs\"。 ",
-    "available_language_codes_label": "使用可能な言語コード:",
     "restart-required": "スペルチェックオプションの変更は、アプリケーションの再起動後に有効になります。"
   },
   "sync_2": {
@@ -1102,7 +1117,7 @@
     "calendar_root": "dayノートのルートとして使用するノートをマークします。このようにマークできるのは 1 つだけです。",
     "archived": "このラベルの付いたノートは、デフォルトでは検索結果に表示されません (ジャンプ先、リンクの追加ダイアログなどにも表示されません)。",
     "exclude_from_export": "ノート（サブツリーを含む）はノートのエクスポートには含まれません",
-    "run": "どのイベントでスクリプトを実行するかを定義します。可能な値は次の通り:\n<ul>\n<li>frontendStartup - Trilium フロントエンドが起動（または更新）されたとき。モバイルは除く</li>\n<li>mobileStartup - モバイルで Trilium フロントエンドが起動（または更新）されたとき。</li>\n<li>backendStartup - Trilium バックエンドが起動したとき</li>\n<li>hourly - 1時間に1回実行します。 <code>runAtHour</code> というラベルを追加して、実行時刻を指定できます。</li>\n<li>daily - 1日に1回実行</li>\n</ul>",
+    "run": "スクリプトを実行するイベントを定義します。指定可能な値は以下の通りです:\n<ul>\n<li>frontendStartup - Trilium フロントエンドの起動時（または更新時）に実行されます。モバイルでは実行されません。</li>\n<li>mobileStartup - モバイルでの Trilium フロントエンドの起動時（または更新時）に実行されます。</li>\n<li>backendStartup - Trilium バックエンドの起動時。</li>\n<li>hourly - 1時間ごとに実行。 <code>runAtHour</code> というラベルを追加することで、実行時刻を指定できます。</li>\n<li>daily - 1日に1回実行。</li>\n</ul>",
     "run_on_instance": "どの Trilium インスタンスでこれを実行するかを定義します。デフォルトはすべてのインスタンスです。",
     "run_at_hour": "何時に実行するかを指定します。 <code>#run=hourly</code> と併用してください。1日に複数回実行したい場合は、複数回定義できます。",
     "disable_inclusion": "このラベルが付いたスクリプトは親スクリプトの実行には含まれません。",
@@ -1390,7 +1405,7 @@
   },
   "content_language": {
     "title": "コンテンツの言語",
-    "description": "読み取り専用または編集可能なテキストノートの基本プロパティセクションの言語選択に表示する言語を 1 つ以上選択します。これにより、スペルチェックや右から左へのサポートなどの機能が利用できるようになります。"
+    "description": "読み取り専用または編集可能なテキストノートの基本プロパティセクションの言語選択に表示する言語を 1 つ以上選択してください。これにより、スペルチェック、右から左へのサポート、テキスト抽出（OCR）などの機能が利用できるようになります。"
   },
   "png_export_button": {
     "button_title": "図をPNG形式でエクスポート"
@@ -2050,7 +2065,9 @@
     "title": "実験オプション",
     "disclaimer": "これらのオプションは試験的なもので、動作が不安定になる可能性があります。注意してご使用ください。",
     "new_layout_name": "新しいレイアウト",
-    "new_layout_description": "よりモダンな外観と使いやすさが向上した新しいレイアウトをお試しください。今後のリリースで大幅な変更が加えられる可能性があります。"
+    "new_layout_description": "よりモダンな外観と使いやすさが向上した新しいレイアウトをお試しください。今後のリリースで大幅な変更が加えられる可能性があります。",
+    "llm_name": "AI / LLM チャット",
+    "llm_description": "大規模言語モデルを活用した AI チャットサイドバーと LLM チャットノートを有効にします。"
   },
   "breadcrumb_badges": {
     "read_only_explicit": "読み取り専用",
@@ -2215,5 +2232,115 @@
     "sample_xy": "XY チャート",
     "sample_venn": "ベン図",
     "sample_ishikawa": "石川図"
+  },
+  "llm_chat": {
+    "placeholder": "メッセージを入力してください…",
+    "send": "送信",
+    "sending": "送信中...",
+    "empty_state": "下記にメッセージを入力して会話を始めましょう。",
+    "searching_web": "ウェブ検索中…",
+    "web_search": "ウェブ検索",
+    "note_tools": "ノートへのアクセス",
+    "sources": "ソース",
+    "extended_thinking": "思考を拡張",
+    "legacy_models": "レガシーモデル",
+    "thinking": "思考中...",
+    "thought_process": "思考プロセス",
+    "tool_calls": "{{count}} 回のツール呼び出し",
+    "input": "入力",
+    "result": "結果",
+    "error": "エラー",
+    "tool_error": "失敗",
+    "total_tokens": "{{total}} トークン",
+    "tokens_detail": "{{prompt}} プロンプト + {{completion}} コンプリーション",
+    "tokens_used": "{{prompt}} プロンプト + {{completion}} コンプリーション = {{total}} トークン",
+    "tokens_used_with_cost": "{{prompt}} プロンプト + {{completion}} コンプリーション = {{total}} トークン (~${{cost}})",
+    "tokens_used_with_model": "{{model}}: {{prompt}} プロンプト + {{completion}} コンプリーション = {{total}} トークン",
+    "tokens_used_with_model_and_cost": "{{model}}: {{prompt}} プロンプト + {{completion}} コンプリーション = {{total}} トークン (~${{cost}})",
+    "tokens": "トークン",
+    "context_used": "{{percentage}} % 使用済み",
+    "note_context_enabled": "クリックしてノートのコンテキストを無効にする: {{title}}",
+    "note_context_disabled": "クリックして現在のノートをコンテキストに含める",
+    "no_provider_message": "AI プロバイダーが設定されていません。チャットを開始するには、プロバイダーを追加してください。",
+    "add_provider": "AI プロバイダーを追加",
+    "sources_summary": "{{count}} 件のソースを {{sites}} サイトから取得"
+  },
+  "sidebar_chat": {
+    "title": "AI チャット",
+    "launcher_title": "AI チャットを開く",
+    "new_chat": "新しいチャットを開始",
+    "save_chat": "チャットをノートに保存",
+    "empty_state": "会話を開始",
+    "history": "チャット履歴",
+    "recent_chats": "最近のチャット",
+    "no_chats": "過去のチャットはありません"
+  },
+  "mind-map": {
+    "addChild": "子ノードを追加",
+    "addParent": "親ノードを追加",
+    "addSibling": "兄弟ノードを追加",
+    "removeNode": "ノードを削除",
+    "focus": "フォーカスモード",
+    "cancelFocus": "フォーカスモードを解除",
+    "moveUp": "上に移動",
+    "moveDown": "下に移動",
+    "link": "リンク",
+    "linkBidirectional": "双方向リンク",
+    "clickTips": "対象ノードをクリックしてください",
+    "summary": "概要"
+  },
+  "llm": {
+    "settings_title": "AI / LLM",
+    "settings_description": "AI と大規模言語モデルの連携設定をします。",
+    "add_provider": "プロバイダーを追加",
+    "add_provider_title": "AI プロバイダーを追加",
+    "configured_providers": "設定済みプロバイダー",
+    "no_providers_configured": "まだプロバイダーが設定されていません。",
+    "provider_name": "名前",
+    "provider_type": "プロバイダー",
+    "actions": "アクション",
+    "delete_provider": "削除",
+    "delete_provider_confirmation": "プロバイダー \"{{name}}\" を削除してもよろしいですか？",
+    "api_key": "API キー",
+    "api_key_placeholder": "API キーを入力してください",
+    "cancel": "キャンセル",
+    "feature_not_enabled": "AI 連携機能を使用するには、「設定」→「高度」→「実験的機能」で LLM 実験的機能を有効にしてください。",
+    "mcp_title": "MCP（モデル コンテキスト プロトコル）",
+    "mcp_enabled": "MCP サーバー",
+    "mcp_enabled_description": "AI コーディングアシスタント（例：Claude Code、GitHub Copilot）がノートを読み取って変更できるように、モデルコンテキストプロトコル（MCP）エンドポイントを公開します。このエンドポイントは localhost からのみアクセス可能です。",
+    "mcp_endpoint_title": "エンドポイント URL",
+    "mcp_endpoint_description": "この URL を AI アシスタントの MCP 設定に追加してください",
+    "tools": {
+      "search_notes": "ノートを検索",
+      "get_note": "ノートを取得",
+      "get_note_content": "ノートの内容を取得",
+      "update_note_content": "ノートの内容を更新",
+      "append_to_note": "ノートに追記",
+      "create_note": "ノートを作成",
+      "get_attributes": "複数の属性を取得",
+      "get_attribute": "属性を取得",
+      "set_attribute": "属性を設定",
+      "delete_attribute": "属性を削除",
+      "get_child_notes": "子ノートを取得",
+      "get_subtree": "サブツリーを取得",
+      "load_skill": "スキルを読み込む",
+      "web_search": "Web 検索",
+      "note_in_parent": "<Note/> を <Parent/>",
+      "get_attachment": "添付ファイルを取得",
+      "get_attachment_content": "添付ファイルの内容を読み取る"
+    }
+  },
+  "ocr": {
+    "extracted_text": "抽出されたテキスト（OCR）",
+    "extracted_text_title": "抽出されたテキスト（OCR）",
+    "loading_text": "OCR テキストを読み込んでいます…",
+    "no_text_available": "OCR テキストが見つかりません",
+    "no_text_explanation": "このノートは OCR テキスト抽出処理が行われなかったか、テキストが見つかりませんでした。",
+    "failed_to_load": "OCR テキストの読み込みに失敗しました",
+    "process_now": "OCR 処理",
+    "processing": "処理中…",
+    "processing_started": "OCR 処理が開始されました。しばらくお待ちいただき、ページを更新してください。",
+    "processing_failed": "OCR 処理の開始に失敗しました",
+    "view_extracted_text": "抽出されたテキスト（OCR）を表示"
   }
 }

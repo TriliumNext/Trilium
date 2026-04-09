@@ -27,7 +27,3 @@ export function generateColorFromString(str: string, themeStyle: "light" | "dark
     return color;
 }
 
-export function getThemeStyle() {
-    const documentStyle = window.getComputedStyle(document.documentElement);
-    return documentStyle.getPropertyValue("--theme-style")?.trim() as "light" | "dark";
-}

@@ -85,7 +85,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
     );
     const isElectron = getIsElectron();
     const isMac = getIsMac();
-    const hasSource = ["text", "code", "relationMap", "mermaid", "canvas", "mindMap", "spreadsheet"].includes(noteType);
+    const hasSource = ["text", "code", "relationMap", "mermaid", "canvas", "mindMap", "spreadsheet", "llmChat"].includes(noteType);
     const isSearchOrBook = ["search", "book"].includes(noteType);
     const isHelpPage = note.noteId.startsWith("_help");
     const [syncServerHost] = useTriliumOption("syncServerHost");
@@ -162,6 +162,7 @@ export function NoteContextMenu({ note, noteContext, itemsAtStart, itemsNearNote
                 <CommandItem command="openNoteExternally" icon="bx bx-file-find" disabled={isSearchOrBook || !isElectron} text={t("note_actions.open_note_externally")} title={t("note_actions.open_note_externally_title")} />
                 <CommandItem command="openNoteCustom" icon="bx bx-customize" disabled={isSearchOrBook || isMac || !isElectron} text={t("note_actions.open_note_custom")} />
                 <CommandItem command="showNoteSource" icon="bx bx-code" disabled={!hasSource} text={t("note_actions.note_source")} />
+                <CommandItem command="showNoteOCRText" icon="bx bx-text" disabled={!["image", "file"].includes(noteType)} text={t("note_actions.view_ocr_text")} />
                 {(syncServerHost && isElectron) &&
                     <CommandItem command="openNoteOnServer" icon="bx bx-world" disabled={!syncServerHost} text={t("note_actions.open_note_on_server")} />
                 }

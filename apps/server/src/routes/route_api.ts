@@ -145,7 +145,7 @@ function internalRoute<P extends ParamsDictionary>(method: HttpMethod, path: str
 
 function handleResponse(resultHandler: ApiResultHandler, req: express.Request, res: express.Response, result: unknown, start: number) {
     // Skip result handling if the response has already been handled
-    if ((res as any).triliumResponseHandled) {
+    if (res.triliumResponseHandled) {
         // Just log the request without additional processing
         log.request(req, res, Date.now() - start, 0);
         return;
@@ -161,7 +161,7 @@ function handleException(e: unknown | Error, method: HttpMethod, path: string, r
     log.error(`${method} ${path} threw exception: '${errMessage}', stack: ${errStack}`);
 
     // Skip sending response if it's already been handled by the route handler
-    if ((res as unknown as { triliumResponseHandled?: boolean }).triliumResponseHandled || res.headersSent) {
+    if (res.triliumResponseHandled || res.headersSent) {
         return;
     }
 

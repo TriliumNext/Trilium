@@ -19,15 +19,15 @@ if (isDev) {
     plugins = [
         viteStaticCopy({
             targets: assets.map((asset) => ({
-                src: `src/${asset}/*`,
-                dest: asset
+                src: `src/${asset}/**/*`,
+                dest: asset,
+                rename: { stripBase: 2 }
             }))
         }),
         viteStaticCopy({
-            structured: true,
             targets: [
                 {
-                    src: "../../node_modules/@excalidraw/excalidraw/dist/prod/fonts/*",
+                    src: "../../node_modules/@excalidraw/excalidraw/dist/prod/fonts/**/*",
                     dest: "",
                 }
             ]

@@ -13,6 +13,7 @@
     "prHourlyLimit": 0,
     "prConcurrentLimit": 0,
     "branchConcurrentLimit": 0,
+    "minimumReleaseAge": "3 days",
     "ignorePaths": [
         "**/node_modules/**",
         "apps/edit-docs/demo/**",
@@ -49,6 +50,13 @@
         {
             "matchPackageNames": "@univerjs/**",
             "groupName": "univer monorepo"
+        },
+        {
+            "matchPackageNames": [
+                "ai",
+                "@ai-sdk/**"
+            ],
+            "groupName": "ai sdk"
         }
     ]
 }

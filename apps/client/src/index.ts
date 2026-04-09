@@ -1,3 +1,5 @@
+import { getThemeStyle } from "./services/theme";
+
 async function bootstrap() {
     showSplash();
     await setupGlob();
@@ -38,6 +40,7 @@ async function setupGlob() {
         ...json,
         activeDialog: null
     };
+    window.glob.getThemeStyle = getThemeStyle;
 }
 
 async function loadBootstrapCss() {
@@ -49,31 +52,65 @@ async function loadBootstrapCss() {
     }
 }
 
-function loadStylesheets() {
-    const { device, assetPath, themeCssUrl, themeUseNextAsBase } = window.glob;
+type StylesheetRef = {
+    href: string;
+    media?: string;
+};
 
-    const cssToLoad: string[] = [];
-    if (device !== "print") {
-        cssToLoad.push(`${assetPath}/stylesheets/ckeditor-theme.css`);
-        cssToLoad.push(`api/fonts`);
-        cssToLoad.push(`${assetPath}/stylesheets/theme-light.css`);
-        if (themeCssUrl) {
-            cssToLoad.push(themeCssUrl);
-        }
-        if (themeUseNextAsBase === "next") {
-            cssToLoad.push(`${assetPath}/stylesheets/theme-next.css`);
-        } else if (themeUseNextAsBase === "next-dark") {
-            cssToLoad.push(`${assetPath}/stylesheets/theme-next-dark.css`);
-        } else if (themeUseNextAsBase === "next-light") {
-            cssToLoad.push(`${assetPath}/stylesheets/theme-next-light.css`);
-        }
-        cssToLoad.push(`${assetPath}/stylesheets/style.css`);
+function getConfiguredThemeStylesheets(stylesheetsPath: string, theme: string, customThemeCssUrl?: string) {
+    if (theme === "auto") {
+        return [{ href: `${stylesheetsPath}/theme-dark.css`, media: "(prefers-color-scheme: dark)" }];
     }
 
-    for (const href of cssToLoad) {
+    if (theme === "dark") {
+        return [{ href: `${stylesheetsPath}/theme-dark.css` }];
+    }
+
+    if (theme === "next") {
+        return [
+            { href: `${stylesheetsPath}/theme-next-light.css` },
+            { href: `${stylesheetsPath}/theme-next-dark.css`, media: "(prefers-color-scheme: dark)" }
+        ];
+    }
+
+    if (theme === "next-light") {
+        return [{ href: `${stylesheetsPath}/theme-next-light.css` }];
+    }
+
+    if (theme === "next-dark") {
+        return [{ href: `${stylesheetsPath}/theme-next-dark.css` }];
+    }
+
+    if (theme !== "light" && customThemeCssUrl) {
+        return [{ href: customThemeCssUrl }];
+    }
+
+    return [];
+}
+
+function loadStylesheets() {
+    const { device, assetPath, theme, themeBase, customThemeCssUrl } = window.glob;
+    const stylesheetsPath = `${assetPath}/stylesheets`;
+
+    const cssToLoad: StylesheetRef[] = [];
+    if (device !== "print") {
+        cssToLoad.push({ href: `${stylesheetsPath}/ckeditor-theme.css` });
+        cssToLoad.push({ href: `api/fonts` });
+        cssToLoad.push({ href: `${stylesheetsPath}/theme-light.css` });
+        cssToLoad.push(...getConfiguredThemeStylesheets(stylesheetsPath, theme, customThemeCssUrl));
+        if (themeBase) {
+            cssToLoad.push(...getConfiguredThemeStylesheets(stylesheetsPath, themeBase));
+        }
+        cssToLoad.push({ href: `${stylesheetsPath}/style.css` });
+    }
+
+    for (const { href, media } of cssToLoad) {
         const linkEl = document.createElement("link");
         linkEl.href = href;
         linkEl.rel = "stylesheet";
+        if (media) {
+            linkEl.media = media;
+        }
         document.head.appendChild(linkEl);
     }
 }

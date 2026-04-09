@@ -25,6 +25,7 @@ interface NoteListProps {
     viewType: ViewTypeOptions | undefined;
     onReady?: (data: PrintReport) => void;
     onProgressChanged?(progress: number): void;
+    showTextRepresentation?: boolean;
 }
 
 type LazyLoadedComponent = ((props: ViewModeProps<any>) => VNode<any> | undefined);
@@ -67,7 +68,7 @@ export default function NoteList(props: Pick<NoteListProps, "displayOnlyCollecti
 
 export function SearchNoteList(props: Omit<NoteListProps, "isEnabled" | "viewType">) {
     const viewType = useNoteViewType(props.note);
-    return <CustomNoteList {...props} isEnabled={true} viewType={viewType} />;
+    return <CustomNoteList {...props} isEnabled={true} viewType={viewType} showTextRepresentation />;
 }
 
 export function CustomNoteList({ note, viewType, isEnabled: shouldEnable, notePath, highlightedTokens, displayOnlyCollections, ntxId, onReady, onProgressChanged, ...restProps }: NoteListProps) {

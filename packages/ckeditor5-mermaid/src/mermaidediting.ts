@@ -2,13 +2,13 @@
  * @module mermaid/mermaidediting
  */
 
-import { debounce } from 'lodash-es';
-
 import MermaidPreviewCommand from './commands/mermaidPreviewCommand.js';
 import MermaidSourceViewCommand from './commands/mermaidSourceViewCommand.js';
 import MermaidSplitViewCommand from './commands/mermaidSplitViewCommand.js';
 import InsertMermaidCommand from './commands/insertMermaidCommand.js';
-import { DowncastAttributeEvent, DowncastConversionApi, EditorConfig, ModelElement, EventInfo, ModelItem, ModelNode, Plugin, toWidget, UpcastConversionApi, UpcastConversionData, ViewElement, ViewText, ViewUIElement } from 'ckeditor5';
+import { DowncastAttributeEvent, DowncastConversionApi, EditorConfig, ModelElement, EventInfo, ModelItem, ModelNode, Plugin, toWidget, uid, UpcastConversionApi, UpcastConversionData, ViewElement, ViewText, ViewUIElement } from 'ckeditor5';
+
+import { debounce } from './utils.js';
 
 // Time in milliseconds.
 const DEBOUNCE_TIME = 300;
@@ -20,7 +20,8 @@ type DowncastConversionData = DowncastAttributeEvent["args"][0];
 export default class MermaidEditing extends Plugin {
 
 	private _config!: EditorConfig["mermaid"];
-	private mermaid?: MermaidInstance;
+	private _mermaidPromise?: Promise<MermaidInstance>;
+	private _renderGeneration = 0;
 
 	/**
 	 * @inheritDoc
@@ -179,16 +180,10 @@ export default class MermaidEditing extends Plugin {
 		}
 
 		function createMermaidPreview(this: ViewUIElement,  domDocument: Document ) {
-			// Taking the text from the wrapper container element for now
 			const mermaidSource = data.item.getAttribute( 'source' ) as string;
 			const domElement = this.toDomElement( domDocument );
 
-			domElement.innerHTML = mermaidSource;
-
-			window.setTimeout( () => {
-				// @todo: by the looks of it the domElement needs to be hooked to tree in order to allow for rendering.
-				that._renderMermaid( domElement );
-			}, 100 );
+			that._renderMermaid( domElement, mermaidSource );
 
 			return domElement;
 		}
@@ -219,10 +214,7 @@ export default class MermaidEditing extends Plugin {
 					const domPreviewWrapper = domConverter.viewToDom(child);
 
 					if ( domPreviewWrapper ) {
-						domPreviewWrapper.innerHTML = newSource;
-						domPreviewWrapper.removeAttribute( 'data-processed' );
-
-						this._renderMermaid( domPreviewWrapper );
+						this._renderMermaid( domPreviewWrapper, newSource );
 					}
 				}
 			}
@@ -263,14 +255,36 @@ export default class MermaidEditing extends Plugin {
 	}
 
 	/**
-	 * Renders Mermaid in a given `domElement`. Expect this domElement to have mermaid
-	 * source set as text content.
+	 * Renders Mermaid (a parsed `source`) in a given `domElement`.
 	 */
-	async _renderMermaid( domElement: HTMLElement ) {
-		if (!window.mermaid && typeof this._config?.lazyLoad === "function") {
-			this.mermaid = await this._config.lazyLoad();
+	async _renderMermaid( domElement: HTMLElement, source: string ) {
+		if ( !this._mermaidPromise && typeof this._config?.lazyLoad === 'function' ) {
+			this._mermaidPromise = Promise.resolve( this._config.lazyLoad() ).then( instance => {
+				instance.initialize( this._config?.config ?? {} );
+				return instance;
+			} );
 		}
 
-		this.mermaid?.init( this._config?.config ?? {}, domElement );
+		const mermaid = await this._mermaidPromise;
+
+		if ( !mermaid ) {
+			return;
+		}
+
+		const generation = ++this._renderGeneration;
+		const id = `ck-mermaid-${ uid() }`;
+
+		try {
+			const { svg } = await mermaid.render( id, source );
+
+			if ( generation === this._renderGeneration ) {
+				domElement.innerHTML = svg;
+			}
+		} catch ( err: any ) {
+			if ( generation === this._renderGeneration ) {
+				domElement.innerText = err.message;
+			}
+			document.getElementById( id )?.remove();
+		}
 	}
 }

@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "preact/hooks";
 
 import FNote from "../../entities/fnote";
 import attributes from "../../services/attributes";
+import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import froca from "../../services/froca";
 import { t } from "../../services/i18n";
 import { NOTE_TYPES, NoteTypeMapping } from "../../services/note_types";
@@ -28,6 +29,7 @@ export default function NoteTypeSwitcher() {
         const restNoteTypes: NoteTypeMapping[] = [];
         for (const noteType of NOTE_TYPES) {
             if (noteType.reserved || noteType.static || noteType.type === "book") continue;
+            if (noteType.type === "llmChat" && !isExperimentalFeatureEnabled("llm")) continue;
             if (SWITCHER_PINNED_NOTE_TYPES.has(noteType.type)) {
                 pinnedNoteTypes.push(noteType);
             } else {

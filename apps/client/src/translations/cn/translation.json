@@ -446,7 +446,8 @@
     "and_more": "... 以及另外 {{count}} 个。",
     "print_landscape": "导出为 PDF 时，将页面方向更改为横向而不是纵向。",
     "print_page_size": "导出为 PDF 时，更改页面大小。支持的值：<code>A0</code>、<code>A1</code>、<code>A2</code>、<code>A3</code>、<code>A4</code>、<code>A5</code>、<code>A6</code>、<code>Legal</code>、<code>Letter</code>、<code>Tabloid</code>、<code>Ledger</code>。",
-    "color_type": "颜色"
+    "color_type": "颜色",
+    "textarea": "多行文本"
   },
   "attribute_editor": {
     "help_text_body1": "要添加标签，只需输入例如 <code>#rock</code> 或者如果您还想添加值，则例如 <code>#year = 2020</code>",
@@ -708,7 +709,8 @@
     "advanced": "高级",
     "export_as_image": "导出为图像",
     "export_as_image_png": "PNG（栅格）",
-    "export_as_image_svg": "SVG（矢量图）"
+    "export_as_image_svg": "SVG（矢量图）",
+    "view_ocr_text": "查看 OCR 文本"
   },
   "onclick_button": {
     "no_click_handler": "按钮组件'{{componentId}}'没有定义点击处理程序"
@@ -1196,12 +1198,28 @@
   },
   "images": {
     "images_section_title": "图片",
-    "download_images_automatically": "自动下载图片以供离线使用。",
-    "download_images_description": "粘贴的 HTML 可能包含在线图片的引用，Trilium 会找到这些引用并下载图片，以便它们可以离线使用。",
-    "enable_image_compression": "启用图片压缩",
-    "max_image_dimensions": "图片的最大宽度/高度（超过此限制的图像将会被缩放）。",
-    "jpeg_quality_description": "JPEG 质量（10 - 最差质量，100 最佳质量，建议为 50 - 85）",
-    "max_image_dimensions_unit": "像素"
+    "download_images_automatically": "自动下载图片",
+    "download_images_description": "从粘贴的 HTML 代码中下载引用的在线图片，以便离线使用。",
+    "enable_image_compression": "图片压缩",
+    "max_image_dimensions": "最大图像尺寸",
+    "jpeg_quality_description": "建议范围为 50–85。较低的值可以减小文件大小，较高的值可以保留细节。",
+    "max_image_dimensions_unit": "像素",
+    "enable_image_compression_description": "上传或粘贴图片时，对其进行压缩和调整大小。",
+    "max_image_dimensions_description": "超过此尺寸的图片将自动调整大小。",
+    "jpeg_quality": "JPEG质量",
+    "ocr_section_title": "文本提取（OCR）",
+    "ocr_related_content_languages": "内容语言（用于文本提取）",
+    "ocr_auto_process": "自动处理新文件",
+    "ocr_auto_process_description": "自动从新上传或粘贴的文件中提取文本。",
+    "ocr_min_confidence": "最低置信度",
+    "ocr_confidence_description": "仅提取置信度高于此阈值的文本。较低的置信度阈值会包含更多文本，但可能准确性较低。",
+    "batch_ocr_title": "处理现有文件",
+    "batch_ocr_description": "从笔记中的所有现有图像、PDF 和 Office 文档中提取文本。这可能需要一些时间，具体取决于文件数量。",
+    "batch_ocr_start": "开始批量处理",
+    "batch_ocr_starting": "开始批量处理...",
+    "batch_ocr_progress": "正在处理 {{processed}} 个文件，共 {{total}} 个文件...",
+    "batch_ocr_completed": "批量处理完成！已处理 {{processed}} 个文件。",
+    "batch_ocr_error": "批量处理过程中出错：{{error}}"
   },
   "attachment_erasure_timeout": {
     "attachment_erasure_timeout": "附件清理超时",
@@ -1419,9 +1437,6 @@
     "description": "这些选项仅适用于桌面版本，浏览器将使用其原生的拼写检查功能。",
     "enable": "启用拼写检查",
     "language_code_label": "语言代码",
-    "language_code_placeholder": "例如 \"en-US\", \"de-AT\"",
-    "multiple_languages_info": "多种语言可以用逗号分隔，例如 \"en-US, de-DE, cs\"。 ",
-    "available_language_codes_label": "可用的语言代码：",
     "restart-required": "拼写检查选项的更改将在应用重启后生效。"
   },
   "sync_2": {
@@ -1534,8 +1549,9 @@
     "new-feature": "新建",
     "collections": "集合",
     "book": "集合",
-    "ai-chat": "AI聊天",
-    "spreadsheet": "电子表格"
+    "ai-chat": "AI对话",
+    "spreadsheet": "电子表格",
+    "llm-chat": "AI对话"
   },
   "protect_note": {
     "toggle-on": "保护笔记",
@@ -2045,7 +2061,9 @@
     "title": "实验选项",
     "disclaimer": "这些选项处于实验阶段，可能导致系统不稳定。请谨慎使用。",
     "new_layout_name": "新布局",
-    "new_layout_description": "尝试全新布局，呈现更现代的外观并提升易用性。后续版本将进行重大调整。"
+    "new_layout_description": "尝试全新布局，呈现更现代的外观并提升易用性。后续版本将进行重大调整。",
+    "llm_name": "AI/大语言模型对话",
+    "llm_description": "启用由大语言模型驱动的 AI对话侧边栏和大语言模型对话笔记。"
   },
   "tab_history_navigation_buttons": {
     "go-back": "返回前一笔记",
@@ -2167,5 +2185,124 @@
   },
   "setup_form": {
     "more_info": "了解更多"
+  },
+  "media": {
+    "play": "播放（空格）",
+    "pause": "暂停（空格）",
+    "back-10s": "后退10秒（左箭头键）",
+    "forward-30s": "前进30秒",
+    "mute": "静音（M）",
+    "unmute": "取消静音（M）",
+    "playback-speed": "播放速度",
+    "loop": "循环播放",
+    "disable-loop": "禁用循环播放",
+    "rotate": "旋转",
+    "picture-in-picture": "画中画",
+    "exit-picture-in-picture": "退出画中画",
+    "fullscreen": "全屏（F）",
+    "exit-fullscreen": "退出全屏",
+    "unsupported-format": "此文件格式不支持媒体预览：\n{{mime}}",
+    "zoom-to-fit": "缩放以填充",
+    "zoom-reset": "重置缩放以填充"
+  },
+  "mermaid": {
+    "sample_diagrams": "示例图：",
+    "sample_flowchart": "流程图",
+    "sample_class": "类图",
+    "sample_sequence": "时序图",
+    "sample_entity_relationship": "实体关系图",
+    "sample_state": "状态图",
+    "sample_mindmap": "思维导图",
+    "sample_architecture": "架构图",
+    "sample_block": "模块图",
+    "sample_c4": "C4 图",
+    "sample_gantt": "甘特图",
+    "sample_git": "Git 流程图",
+    "sample_kanban": "看板图",
+    "sample_packet": "数据包图",
+    "sample_pie": "饼图",
+    "sample_quadrant": "象限图",
+    "sample_radar": "雷达图",
+    "sample_requirement": "需求图",
+    "sample_sankey": "桑基图",
+    "sample_timeline": "时间轴图",
+    "sample_treemap": "树形图",
+    "sample_user_journey": "用户旅程图",
+    "sample_xy": "散点图",
+    "sample_venn": "韦恩图",
+    "sample_ishikawa": "鱼骨图",
+    "placeholder": "输入你的美人鱼图的内容，或者使用下面的示例图之一。"
+  },
+  "llm_chat": {
+    "placeholder": "输入消息…",
+    "send": "发送",
+    "sending": "正在发送...",
+    "empty_state": "在下方输入消息，即可开始对话。",
+    "searching_web": "在网上搜索…",
+    "web_search": "联网搜索",
+    "sources": "来源",
+    "extended_thinking": "延伸思考",
+    "legacy_models": "传统模型",
+    "thinking": "正在思考...",
+    "thought_process": "思考过程",
+    "tool_calls": "{{count}} 次工具调用",
+    "input": "输入",
+    "result": "结果",
+    "error": "错误",
+    "tool_error": "失败",
+    "total_tokens": "{{total}} 个词元",
+    "tokens_detail": "{{prompt}} 提示词 + {{completion}} 补全",
+    "tokens_used": "{{prompt}} 提示词 + {{completion}} 补全 = {{total}} 个词元",
+    "tokens_used_with_cost": "{{prompt}} 提示词 + {{completion}} 补全 = {{total}} 个词元（约 ${{cost}}）",
+    "tokens_used_with_model": "{{model}}: {{prompt}} 提示词 + {{completion}} 补全 = {{total}} 个词元",
+    "tokens_used_with_model_and_cost": "{{model}}: {{prompt}} 提示词 + {{completion}} 补全 = {{total}} 个词元（约 ${{cost}}）",
+    "tokens": "词元",
+    "context_used": "{{percentage}}% 使用率",
+    "note_context_enabled": "点击即可禁用笔记上下文：{{title}}",
+    "note_context_disabled": "点击即可将当前注释添加到上下文中",
+    "no_provider_message": "未配置人工智能提供商。添加一个即可开始对话。",
+    "add_provider": "添加人工智能提供商",
+    "note_tools": "笔记访问"
+  },
+  "sidebar_chat": {
+    "title": "AI对话",
+    "launcher_title": "打开AI对话",
+    "new_chat": "开始新对话",
+    "save_chat": "将对话保存到笔记",
+    "empty_state": "开始对话",
+    "history": "对话历史",
+    "recent_chats": "最近对话",
+    "no_chats": "无历史对话"
+  },
+  "ocr": {
+    "extracted_text": "提取文本（OCR）",
+    "extracted_text_title": "提取文本（OCR）",
+    "loading_text": "正在加载OCR文本...",
+    "no_text_available": "暂无OCR文本",
+    "no_text_explanation": "该笔记未进行 OCR 文本提取处理，或未找到文本。",
+    "failed_to_load": "OCR文本加载失败",
+    "process_now": "处理 OCR",
+    "processing": "正在处理...",
+    "processing_started": "OCR识别已开始。请稍候片刻并刷新页面。",
+    "processing_failed": "OCR处理启动失败",
+    "view_extracted_text": "查看提取的文本（OCR）"
+  },
+  "mind-map": {
+    "addChild": "添加子节点",
+    "addParent": "添加父节点",
+    "addSibling": "添加同级节点",
+    "removeNode": "删除节点",
+    "focus": "专注模式",
+    "cancelFocus": "退出专注模式",
+    "moveUp": "上移",
+    "moveDown": "下移",
+    "link": "链接",
+    "linkBidirectional": "双向链接",
+    "clickTips": "请点击目标节点",
+    "summary": "总结"
+  },
+  "llm": {
+    "settings_description": "配置人工智能和大语言模型集成。",
+    "add_provider": "添加提供商"
   }
 }

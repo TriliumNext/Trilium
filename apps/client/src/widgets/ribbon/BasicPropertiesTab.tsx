@@ -7,6 +7,7 @@ import branches from "../../services/branches";
 import dialog from "../../services/dialog";
 import { getAvailableLocales, t } from "../../services/i18n";
 import mime_types from "../../services/mime_types";
+import { isExperimentalFeatureEnabled } from "../../services/experimental_features";
 import { NOTE_TYPES } from "../../services/note_types";
 import protected_session from "../../services/protected_session";
 import server from "../../services/server";
@@ -72,7 +73,7 @@ export function NoteTypeDropdownContent({ currentNoteType, currentNoteMime, note
     noCodeNotes?: boolean;
 }) {
     const mimeTypes = useMimeTypes();
-    const noteTypes = useMemo(() => NOTE_TYPES.filter((nt) => !nt.reserved && !nt.static), []);
+    const noteTypes = useMemo(() => NOTE_TYPES.filter((nt) => !nt.reserved && !nt.static && (nt.type !== "llmChat" || isExperimentalFeatureEnabled("llm"))), []);
     const changeNoteType = useCallback(async (type: NoteType, mime?: string) => {
         if (!note || (type === currentNoteType && mime === currentNoteMime)) {
             return;

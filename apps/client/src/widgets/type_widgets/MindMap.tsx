@@ -4,9 +4,10 @@ import "./MindMap.css";
 
 // allow node-menu plugin css to be bundled by webpack
 import nodeMenu from "@mind-elixir/node-menu";
-import { DISPLAYABLE_LOCALE_IDS } from "@triliumnext/commons";
 import { snapdom } from "@zumer/snapdom";
-import { DARK_THEME, default as VanillaMindElixir, MindElixirData, MindElixirInstance, Operation, Options, THEME as LIGHT_THEME } from "mind-elixir";
+import { t } from "i18next";
+import { DARK_THEME, default as VanillaMindElixir, MindElixirData, MindElixirInstance, Operation, THEME as LIGHT_THEME } from "mind-elixir";
+import type { LangPack } from "mind-elixir/i18n";
 import { HTMLAttributes, RefObject } from "preact";
 import { useCallback, useEffect, useRef } from "preact/hooks";
 
@@ -25,27 +26,22 @@ interface MindElixirProps {
     onChange?: () => void;
 }
 
-const LOCALE_MAPPINGS: Record<DISPLAYABLE_LOCALE_IDS, Options["locale"] | null> = {
-    ar: null,
-    cn: "zh_CN",
-    de: null,
-    en: "en",
-    en_rtl: "en",
-    "en-GB": "en",
-    es: "es",
-    fr: "fr",
-    ga: null,
-    it: "it",
-    hi: null,
-    ja: "ja",
-    pt: "pt",
-    pl: null,
-    pt_br: "pt",
-    ro: "ro",
-    ru: "ru",
-    tw: "zh_TW",
-    uk: null
-};
+function buildMindElixirLangPack(): LangPack {
+    return {
+        addChild: t("mind-map.addChild"),
+        addParent: t("mind-map.addParent"),
+        addSibling: t("mind-map.addSibling"),
+        removeNode: t("mind-map.removeNode"),
+        focus: t("mind-map.focus"),
+        cancelFocus: t("mind-map.cancelFocus"),
+        moveUp: t("mind-map.moveUp"),
+        moveDown: t("mind-map.moveDown"),
+        link: t("mind-map.link"),
+        linkBidirectional: t("mind-map.linkBidirectional"),
+        clickTips: t("mind-map.clickTips"),
+        summary: t("mind-map.summary")
+    };
+}
 
 export default function MindMap({ note, ntxId, noteContext }: TypeWidgetProps) {
     const apiRef = useRef<MindElixirInstance>(null);
@@ -161,8 +157,8 @@ function MindElixir({ containerRef: externalContainerRef, containerProps, apiRef
 
         const mind = new VanillaMindElixir({
             el: containerRef.current,
-            locale: LOCALE_MAPPINGS[locale as DISPLAYABLE_LOCALE_IDS] ?? undefined,
             editable,
+            contextMenu: { locale: buildMindElixirLangPack() },
             theme: defaultColorScheme.current === "dark" ? DARK_THEME : LIGHT_THEME
         });
 

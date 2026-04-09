@@ -21,4 +21,5 @@ export interface ViewModeProps<T extends object> {
     media: ViewModeMedia;
     onReady(data: PrintReport): void;
     onProgressChanged?: ProgressChangedFn;
+    showTextRepresentation?: boolean;
 }
