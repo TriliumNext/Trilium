@@ -23,6 +23,8 @@ export interface StreamOptions {
     model?: string;
     /** Model pricing for cost calculation (from provider) */
     pricing?: ModelPricing;
+    /** Names of mutating tools that require user approval before execution */
+    mutatingToolNames?: Set<string>;
 }
 
 /**
@@ -45,7 +47,8 @@ export async function* streamToChunks(result: StreamResult, options: StreamOptio
                     yield {
                         type: "tool_use",
                         toolName: part.toolName,
-                        toolInput: part.input as Record<string, unknown>
+                        toolInput: part.input as Record<string, unknown>,
+                        ...(options.mutatingToolNames?.has(part.toolName) ? { requiresApproval: true } : {})
                     };
                     break;
 

@@ -4,7 +4,9 @@ import type { Request, Response } from "express";
 import { generateChatTitle } from "../../services/llm/chat_title.js";
 import { getAllModels, getProviderByType, hasConfiguredProviders, type LlmProviderConfig } from "../../services/llm/index.js";
 import { streamToChunks } from "../../services/llm/stream.js";
+import { allToolRegistries } from "../../services/llm/tools/index.js";
 import log from "../../services/log.js";
+import sql from "../../services/sql.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
 
 interface ChatRequest {
@@ -51,6 +53,15 @@ async function streamChat(req: Request, res: Response) {
         }
 
         const provider = getProviderByType(config.provider || "anthropic");
+
+        // Collect names of tools that require human approval
+        const mutatingToolNames = new Set<string>();
+        for (const registry of allToolRegistries) {
+            for (const name of registry.getMutatingToolNames()) {
+                mutatingToolNames.add(name);
+            }
+        }
+
         const result = provider.chat(messages, config);
 
         // Get pricing and display name for the model
@@ -62,7 +73,7 @@ async function streamChat(req: Request, res: Response) {
 
         const pricing = provider.getModelPricing(modelId);
         const modelDisplayName = provider.getAvailableModels().find(m => m.id === modelId)?.name || modelId;
-        for await (const chunk of streamToChunks(result, { model: modelDisplayName, pricing })) {
+        for await (const chunk of streamToChunks(result, { model: modelDisplayName, pricing, mutatingToolNames })) {
             res.write(`data: ${JSON.stringify(chunk)}\n\n`);
             // Flush immediately to ensure real-time streaming
             if (typeof flushableRes.flush === "function") {
@@ -98,7 +109,36 @@ function getModels(_req: Request, _res: Response) {
     return { models: getAllModels() };
 }
 
+/**
+ * Execute a single tool call after user approval.
+ * Used for mutating tools that require human-in-the-loop confirmation.
+ */
+function executeTool(req: Request, _res: Response) {
+    const { toolName, toolInput } = req.body as { toolName: string; toolInput: Record<string, unknown> };
+
+    if (!toolName || typeof toolName !== "string") {
+        return { error: "toolName is required" };
+    }
+
+    // Find the tool definition across all registries
+    for (const registry of allToolRegistries) {
+        for (const [name, def] of registry) {
+            if (name === toolName) {
+                if (!def.mutates) {
+                    return { error: "Only mutating tools can be executed via this endpoint" };
+                }
+
+                const result = sql.transactional(() => def.execute(toolInput));
+                return { result };
+            }
+        }
+    }
+
+    return { error: `Tool '${toolName}' not found` };
+}
+
 export default {
     streamChat,
-    getModels
+    getModels,
+    executeTool
 };

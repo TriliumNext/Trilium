@@ -62,6 +62,8 @@ function MarkdownContent({ html, isStreaming }: { html: string; isStreaming?: bo
 interface Props {
     message: StoredMessage;
     isStreaming?: boolean;
+    onApproveToolCall?: (toolCallId: string) => Promise<void>;
+    onRejectToolCall?: (toolCallId: string) => void;
 }
 
 type ContentGroup =
@@ -127,7 +129,7 @@ function CitationsSection({ citations }: { citations: LlmCitation[] }) {
     );
 }
 
-export default function ChatMessage({ message, isStreaming }: Props) {
+export default function ChatMessage({ message, isStreaming, onApproveToolCall, onRejectToolCall }: Props) {
     const isError = message.type === "error";
     const isThinking = message.type === "thinking";
     const textContent = typeof message.content === "string" ? message.content : getMessageText(message.content);
@@ -172,7 +174,7 @@ export default function ChatMessage({ message, isStreaming }: Props) {
                 <div className="llm-chat-message-content">
                     {message.role === "assistant" && !isError ? (
                         hasBlockContent ? (
-                            renderContentBlocks(message.content as ContentBlock[], isStreaming)
+                            renderContentBlocks(message.content as ContentBlock[], isStreaming, onApproveToolCall, onRejectToolCall)
                         ) : (
                             <MarkdownContent html={renderedContent || ""} isStreaming={isStreaming} />
                         )
@@ -244,7 +246,12 @@ function groupContentBlocks(blocks: ContentBlock[]): ContentGroup[] {
     return groups;
 }
 
-function renderContentBlocks(blocks: ContentBlock[], isStreaming?: boolean) {
+function renderContentBlocks(
+    blocks: ContentBlock[],
+    isStreaming?: boolean,
+    onApproveToolCall?: (toolCallId: string) => Promise<void>,
+    onRejectToolCall?: (toolCallId: string) => void
+) {
     return groupContentBlocks(blocks).map((group) => {
         if (group.type === "text") {
             const html = renderMarkdown(group.block.content);
@@ -256,6 +263,13 @@ function renderContentBlocks(blocks: ContentBlock[], isStreaming?: boolean) {
             );
         }
 
-        return <ToolCallCard key={group.index} toolCalls={group.blocks.map((b) => b.toolCall)} />;
+        return (
+            <ToolCallCard
+                key={group.index}
+                toolCalls={group.blocks.map((b) => b.toolCall)}
+                onApprove={onApproveToolCall}
+                onReject={onRejectToolCall}
+            />
+        );
     });
 }

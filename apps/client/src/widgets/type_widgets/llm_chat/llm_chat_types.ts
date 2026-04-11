@@ -8,6 +8,8 @@ export interface ToolCall {
     input: Record<string, unknown>;
     result?: string;
     isError?: boolean;
+    requiresApproval?: boolean;
+    rejected?: boolean;
 }
 
 /** A block of text content (rendered as Markdown for assistant messages). */

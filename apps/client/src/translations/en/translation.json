@@ -1677,7 +1677,11 @@
     "note_context_enabled": "Click to disable note context: {{title}}",
     "note_context_disabled": "Click to include current note in context",
     "no_provider_message": "No AI provider configured. Add one to start chatting.",
-    "add_provider": "Add AI Provider"
+    "add_provider": "Add AI Provider",
+    "approve": "Approve",
+    "reject": "Reject",
+    "pending_approval": "Pending approval",
+    "rejected_by_user": "Rejected by user"
   },
   "sidebar_chat": {
     "title": "AI Chat",
