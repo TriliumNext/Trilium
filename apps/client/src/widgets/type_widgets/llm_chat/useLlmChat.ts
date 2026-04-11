@@ -36,6 +36,7 @@ export interface UseLlmChatReturn {
     enableNoteTools: boolean;
     enableExtendedThinking: boolean;
     contextNoteId: string | undefined;
+    sourceNoteIds: string[];
     lastPromptTokens: number;
     messagesEndRef: RefObject<HTMLDivElement>;
     textareaRef: RefObject<HTMLTextAreaElement>;
@@ -53,6 +54,9 @@ export interface UseLlmChatReturn {
     setEnableExtendedThinking: (value: boolean) => void;
     setContextNoteId: (noteId: string | undefined) => void;
     setChatNoteId: (noteId: string | undefined) => void;
+    setSourceNoteIds: (noteIds: string[]) => void;
+    addSourceNote: (noteId: string) => void;
+    removeSourceNote: (noteId: string) => void;
 
     // Actions
     handleSubmit: (e: Event) => Promise<void>;
@@ -84,6 +88,7 @@ export function useLlmChat(
     const [enableExtendedThinking, setEnableExtendedThinking] = useState(false);
     const [contextNoteId, setContextNoteId] = useState<string | undefined>(initialContextNoteId);
     const [chatNoteId, setChatNoteIdState] = useState<string | undefined>(initialChatNoteId);
+    const [sourceNoteIds, setSourceNoteIds] = useState<string[]>([]);
     const [lastPromptTokens, setLastPromptTokens] = useState<number>(0);
     const [hasProvider, setHasProvider] = useState<boolean>(true); // Assume true initially
     const [isCheckingProvider, setIsCheckingProvider] = useState<boolean>(true);
@@ -109,6 +114,16 @@ export function useLlmChat(
     }, []);
     const contextNoteIdRef = useRef(contextNoteId);
     contextNoteIdRef.current = contextNoteId;
+    const sourceNoteIdsRef = useRef(sourceNoteIds);
+    sourceNoteIdsRef.current = sourceNoteIds;
+
+    const addSourceNote = useCallback((noteId: string) => {
+        setSourceNoteIds(prev => prev.includes(noteId) ? prev : [...prev, noteId]);
+    }, []);
+
+    const removeSourceNote = useCallback((noteId: string) => {
+        setSourceNoteIds(prev => prev.filter(id => id !== noteId));
+    }, []);
 
     // Wrapper to call onMessagesChange when messages update
     const setMessages = useCallback((newMessages: StoredMessage[]) => {
@@ -168,6 +183,9 @@ export function useLlmChat(
         if (supportsExtendedThinking && typeof content.enableExtendedThinking === "boolean") {
             setEnableExtendedThinking(content.enableExtendedThinking);
         }
+        if (Array.isArray(content.sourceNoteIds)) {
+            setSourceNoteIds(content.sourceNoteIds);
+        }
         // Restore last prompt tokens from the most recent message with usage
         const lastUsage = [...(content.messages || [])].reverse().find(m => m.usage)?.usage;
         setLastPromptTokens(lastUsage?.promptTokens ?? 0);
@@ -184,6 +202,9 @@ export function useLlmChat(
         };
         if (supportsExtendedThinking) {
             content.enableExtendedThinking = enableExtendedThinkingRef.current;
+        }
+        if (sourceNoteIdsRef.current.length > 0) {
+            content.sourceNoteIds = sourceNoteIdsRef.current;
         }
         return content;
     }, [supportsExtendedThinking]);
@@ -243,9 +264,10 @@ export function useLlmChat(
             model: selectedModel || undefined,
             provider: selectedModelProvider,
             enableWebSearch,
-            enableNoteTools,
+            enableNoteTools: enableNoteTools || sourceNoteIds.length > 0,
             contextNoteId,
-            chatNoteId: chatNoteIdRef.current
+            chatNoteId: chatNoteIdRef.current,
+            sourceNoteIds: sourceNoteIds.length > 0 ? sourceNoteIds : undefined
         };
         if (supportsExtendedThinking) {
             streamOptions.enableExtendedThinking = enableExtendedThinking;
@@ -356,7 +378,7 @@ export function useLlmChat(
                 }
             }
         );
-    }, [input, isStreaming, messages, selectedModel, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, supportsExtendedThinking, setMessages]);
+    }, [input, isStreaming, messages, selectedModel, enableWebSearch, enableNoteTools, enableExtendedThinking, contextNoteId, sourceNoteIds, supportsExtendedThinking, setMessages]);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -380,6 +402,7 @@ export function useLlmChat(
         enableNoteTools,
         enableExtendedThinking,
         contextNoteId,
+        sourceNoteIds,
         lastPromptTokens,
         messagesEndRef,
         textareaRef,
@@ -395,6 +418,9 @@ export function useLlmChat(
         setEnableExtendedThinking,
         setContextNoteId,
         setChatNoteId,
+        setSourceNoteIds,
+        addSourceNote,
+        removeSourceNote,
 
         // Actions
         handleSubmit,
