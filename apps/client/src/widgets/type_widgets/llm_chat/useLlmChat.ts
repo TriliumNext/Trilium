@@ -3,6 +3,7 @@ import { RefObject } from "preact";
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { getAvailableModels, streamChatCompletion } from "../../../services/llm_chat.js";
+import { t } from "../../../services/i18n.js";
 import { randomString } from "../../../services/utils.js";
 import type { ContentBlock, LlmChatContent, StoredMessage } from "./llm_chat_types.js";
 
@@ -122,7 +123,11 @@ export function useLlmChat(
         getAvailableModels().then(models => {
             const modelsWithDescription = models.map(m => ({
                 ...m,
-                costDescription: m.costMultiplier ? `${m.costMultiplier}x` : undefined
+                costDescription: m.costMultiplier
+                    ? `${m.costMultiplier}x`
+                    : m.pricing.input === 0 && m.pricing.output === 0
+                        ? t("llm_chat.free")
+                        : undefined
             }));
             setAvailableModels(modelsWithDescription);
             setHasProvider(models.length > 0);

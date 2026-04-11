@@ -1677,7 +1677,8 @@
     "note_context_enabled": "Click to disable note context: {{title}}",
     "note_context_disabled": "Click to include current note in context",
     "no_provider_message": "No AI provider configured. Add one to start chatting.",
-    "add_provider": "Add AI Provider"
+    "add_provider": "Add AI Provider",
+    "free": "Free"
   },
   "sidebar_chat": {
     "title": "AI Chat",
@@ -2358,6 +2359,7 @@
     "delete_provider_confirmation": "Are you sure you want to delete the provider \"{{name}}\"?",
     "api_key": "API Key",
     "api_key_placeholder": "Enter your API key",
+    "base_url": "Base URL",
     "cancel": "Cancel",
     "mcp_title": "MCP (Model Context Protocol)",
     "mcp_enabled": "MCP server",

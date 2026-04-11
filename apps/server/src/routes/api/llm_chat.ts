@@ -3,6 +3,7 @@ import type { Request, Response } from "express";
 
 import { generateChatTitle } from "../../services/llm/chat_title.js";
 import { getAllModels, getProviderByType, hasConfiguredProviders, type LlmProviderConfig } from "../../services/llm/index.js";
+import { OllamaProvider } from "../../services/llm/providers/ollama.js";
 import { streamToChunks } from "../../services/llm/stream.js";
 import log from "../../services/log.js";
 import { safeExtractMessageAndStackFromError } from "../../services/utils.js";
@@ -51,6 +52,12 @@ async function streamChat(req: Request, res: Response) {
         }
 
         const provider = getProviderByType(config.provider || "anthropic");
+
+        // Ensure Ollama models are loaded so defaultModel/titleModel are set
+        if (provider instanceof OllamaProvider) {
+            await provider.loadModels();
+        }
+
         const result = provider.chat(messages, config);
 
         // Get pricing and display name for the model
@@ -90,12 +97,12 @@ async function streamChat(req: Request, res: Response) {
 /**
  * Get available models from all configured providers.
  */
-function getModels(_req: Request, _res: Response) {
+async function getModels(_req: Request, _res: Response) {
     if (!hasConfiguredProviders()) {
         return { models: [] };
     }
 
-    return { models: getAllModels() };
+    return { models: await getAllModels() };
 }
 
 export default {
