@@ -27,9 +27,10 @@ async function migrate() {
 
     // backup before attempting migration
     if (!process.env.TRILIUM_INTEGRATION_TEST) {
+        const dateSuffix = (new Date()).getTime();
         await backupService.backupNow(
             // creating a special backup for version 0.60.4, the changes in 0.61 are major.
-            currentDbVersion === 214 ? `before-migration-v060` : "before-migration"
+            currentDbVersion === 214 ? `before-migration-v060-${dateSuffix}` : `before-migration-${dateSuffix}`
         );
     }
 
