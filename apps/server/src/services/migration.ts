@@ -128,6 +128,13 @@ function isDbUpToDate() {
 }
 
 async function migrateIfNecessary() {
+    if (process.env.NODE_ENV === "development") {
+        MIGRATIONS.sort((a, b) => a.version - b.version);
+        const lastMigrationVersion = MIGRATIONS.at(-1)?.version;
+        if (appInfo.dbVersion !== lastMigrationVersion) {
+            await crash(`appInfo.dbVersion ${appInfo.dbVersion} does not match actual migrations version ${lastMigrationVersion}`);
+        }
+    }
     const currentDbVersion = getDbVersion();
 
     if (currentDbVersion > appInfo.dbVersion && process.env.TRILIUM_IGNORE_DB_VERSION !== "true") {
