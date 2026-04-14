@@ -174,8 +174,12 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
 
                     { kind: "separator" },
 
-                    { title: t("tree-context-menu.copy-note-path-to-clipboard"), command: "copyNotePathToClipboard", uiIcon: "bx bx-directions", enabled: true },
-                    { title: t("tree-context-menu.recent-changes-in-subtree"), command: "recentChangesInSubtree", uiIcon: "bx bx-history", enabled: noSelectedNotes && notOptionsOrHelp }
+        { title: t("tree-context-menu.copy-note-path-to-clipboard"), command: "copyNotePathToClipboard", uiIcon: "bx bx-directions", enabled: true },
+
+{ title: "Copy Note URL", command: "copyNoteUrl", uiIcon: "bx bx-link", enabled: true },
+
+{ title: t("tree-context-menu.recent-changes-in-subtree"), command: "recentChangesInSubtree", uiIcon: "bx bx-history", enabled: noSelectedNotes && notOptionsOrHelp }
+
                 ].filter(Boolean) as MenuItem<TreeCommandNames>[]
             },
 
@@ -348,9 +352,16 @@ export default class TreeContextMenu implements SelectMenuItemEventListener<Tree
             }
 
             toastService.showMessage(t("tree-context-menu.converted-to-attachments", { count: converted }));
-        } else if (command === "copyNotePathToClipboard") {
-            navigator.clipboard.writeText(`#${  notePath}`);
-        } else if (command) {
+        } 
+else if (command === "copyNotePathToClipboard") {
+    clipboard.writeText(`#${notePath}`);
+}
+else if (command === "copyNoteUrl") {
+    const baseUrl = window.location.origin;
+    clipboard.writeText(
+        `${baseUrl}/#root/${this.node.data.noteId}`
+    );
+}else if (command) {
             this.treeWidget.triggerCommand<TreeCommandNames>(command, {
                 node: this.node,
                 notePath,
