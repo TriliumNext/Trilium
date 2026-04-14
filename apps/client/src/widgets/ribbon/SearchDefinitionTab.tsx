@@ -80,7 +80,6 @@ export default function SearchDefinitionTab({ note, ntxId, hidden, noteContext }
     useEffect(() => {
         async function autoExecute() {
             if (!note || note.type !== "search" || !note.hasLabel("autoExecuteSearch")) {
-                executionState.save("");
                 return;
             }
 
