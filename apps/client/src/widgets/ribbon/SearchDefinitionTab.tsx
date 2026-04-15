@@ -88,10 +88,10 @@ export default function SearchDefinitionTab({ note, ntxId, hidden, noteContext }
                 executionState.save(note.noteId);
 
                 await refreshResults();
-
-                if (noteContext?.viewScope?.viewMode === "default" && note.children.length > 0) {
-                    parentComponent?.triggerCommand("toggleRibbonTabBookProperties", {});
-                }
+            }
+            // for old layout on desktop - open Collection Properties tab
+            if (noteContext?.viewScope?.viewMode === "default" && note.children.length > 0) {
+                parentComponent?.triggerCommand("toggleRibbonTabBookProperties", {});
             }
         }
         autoExecute();
