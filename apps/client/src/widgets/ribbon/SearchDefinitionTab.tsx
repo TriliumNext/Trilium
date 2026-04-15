@@ -79,7 +79,7 @@ export default function SearchDefinitionTab({ note, ntxId, hidden, noteContext }
 
     useEffect(() => {
         async function autoExecute() {
-            if (!note || note.type !== "search" || !note.hasLabel("autoExecuteSearch")) {
+            if (glob.TRILIUM_SAFE_MODE || !note || note.type !== "search" || !note.hasLabel("autoExecuteSearch")) {
                 return;
             }
 
