@@ -118,7 +118,7 @@
     "rand-token": "1.0.1",
     "safe-compare": "1.1.4",
     "sanitize-filename": "1.6.4",
-    "sanitize-html": "2.17.2",
+    "sanitize-html": "2.17.3",
     "sax": "1.6.0",
     "serve-favicon": "2.5.1",
     "stream-throttle": "0.1.3",
