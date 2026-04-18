@@ -132,15 +132,24 @@ async function rewriteLinks(contentEl: HTMLElement, noteIdsSet: Set<string>) {
 
             if (!noteId) continue;
 
-            const note = await froca.getNote(noteId);
-            const noteTitle = note?.title || "";
+            let noteTitle = "";
+            if (linkEl.classList.contains("reference-link")) {
+                const note = await froca.getNote(noteId);
+                noteTitle = note?.title || "";
+            }
             if (noteIdsSet.has(noteId)) {
-                linkEl.textContent = noteTitle;
+                if (noteTitle) {
+                    linkEl.textContent = noteTitle;
+                }
                 linkEl.setAttribute("href", `#note-${noteId}`);
             } else {
                 // Link to note not in the print view, remove link but keep text
                 const spanEl = document.createElement("span");
-                spanEl.textContent = noteTitle;
+                if (noteTitle) {
+                    spanEl.textContent = noteTitle;
+                } else {
+                    spanEl.textContent = linkEl.textContent;
+                }
                 linkEl.replaceWith(spanEl);
             }
         }
