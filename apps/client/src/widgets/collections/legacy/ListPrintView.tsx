@@ -62,7 +62,7 @@ export function ListPrintView({ note, noteIds: unfilteredNoteIds, onReady, onPro
 
             // After all notes are processed, rewrite links
             for (const { contentEl } of notesWithContent) {
-                rewriteLinks(contentEl, noteIdsSet);
+                await rewriteLinks(contentEl, noteIdsSet);
             }
 
             setState({
@@ -123,19 +123,23 @@ function rewriteHeadings(contentEl: HTMLElement, depth: number) {
     }
 }
 
-function rewriteLinks(contentEl: HTMLElement, noteIdsSet: Set<string>) {
+async function rewriteLinks(contentEl: HTMLElement, noteIdsSet: Set<string>) {
     const linkEls = contentEl.querySelectorAll("a");
     for (const linkEl of linkEls) {
         const href = linkEl.getAttribute("href");
         if (href && href.startsWith("#root/")) {
             const noteId = href.split("/").at(-1);
 
-            if (noteId && noteIdsSet.has(noteId)) {
+            if (!noteId) continue;
+
+            const note = await froca.getNote(noteId);
+            if (noteIdsSet.has(noteId)) {
+                linkEl.textContent = note?.title || "?";
                 linkEl.setAttribute("href", `#note-${noteId}`);
             } else {
                 // Link to note not in the print view, remove link but keep text
                 const spanEl = document.createElement("span");
-                spanEl.innerHTML = linkEl.innerHTML;
+                spanEl.innerHTML = note?.title || "?";
                 linkEl.replaceWith(spanEl);
             }
         }
