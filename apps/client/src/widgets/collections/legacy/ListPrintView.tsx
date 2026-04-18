@@ -133,13 +133,14 @@ async function rewriteLinks(contentEl: HTMLElement, noteIdsSet: Set<string>) {
             if (!noteId) continue;
 
             const note = await froca.getNote(noteId);
+            const noteTitle = note?.title || "";
             if (noteIdsSet.has(noteId)) {
-                linkEl.textContent = note?.title || "?";
+                linkEl.textContent = noteTitle;
                 linkEl.setAttribute("href", `#note-${noteId}`);
             } else {
                 // Link to note not in the print view, remove link but keep text
                 const spanEl = document.createElement("span");
-                spanEl.innerHTML = note?.title || "?";
+                spanEl.textContent = noteTitle;
                 linkEl.replaceWith(spanEl);
             }
         }
