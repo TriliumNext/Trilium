@@ -106,6 +106,10 @@ function lex(str: string) {
             } else if (["#", "~"].includes(currentWord) && chr === "!") {
                 currentWord += chr;
                 continue;
+            } else if (currentWord === "~" && (chr === "=" || chr === "*")) {
+                // ~= and ~* are fuzzy-match operators, not a relation prefix followed by an operator
+                currentWord += chr;
+                continue;
             } else if (chr === " ") {
                 finishWord(i - 1);
                 continue;

@@ -171,6 +171,18 @@ describe("Lexer expression", () => {
         expect(lex(`#!capital ~!neighbor`).expressionTokens.map((t) => t.token)).toEqual(["#!capital", "~!neighbor"]);
     });
 
+    it("fuzzy operators ~= and ~* are tokenized as single operators", () => {
+        // regression: https://github.com/TriliumNext/Trilium/issues/9426
+        expect(lex(`note.title ~= books`).expressionTokens.map((t) => t.token)).toEqual(["note", ".", "title", "~=", "books"]);
+        expect(lex(`note.title ~* books`).expressionTokens.map((t) => t.token)).toEqual(["note", ".", "title", "~*", "books"]);
+        expect(lex(`#author ~= tolkien`).expressionTokens.map((t) => t.token)).toEqual(["#author", "~=", "tolkien"]);
+        expect(lex(`#author ~*'lord of the rings'`).expressionTokens.map((t) => t.token)).toEqual(["#author", "~*", "lord of the rings"]);
+    });
+
+    it("relation prefix still works when ~ is not followed by = or *", () => {
+        expect(lex(`~author.title = Tolkien`).expressionTokens.map((t) => t.token)).toEqual(["~author", ".", "title", "=", "tolkien"]);
+    });
+
     it("negation of sub-expression", () => {
         expect(lex(`# not(#capital) and note.noteId != "root"`).expressionTokens.map((t) => t.token)).toEqual(["#", "not", "(", "#capital", ")", "and", "note", ".", "noteid", "!=", "root"]);
     });
