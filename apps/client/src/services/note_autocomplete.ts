@@ -1,5 +1,5 @@
-import type { AutocompleteApi as CoreAutocompleteApi, BaseItem } from "@algolia/autocomplete-core";
-import { createAutocomplete } from "@algolia/autocomplete-core";
+import type { AutocompleteApi as CoreAutocompleteApi, BaseItem } from "./autocomplete_core.js";
+import { createAutocomplete } from "./autocomplete_core.js";
 import type { MentionFeedObjectItem } from "@triliumnext/ckeditor5";
 import { type ComponentChild, h, render } from "preact";
 

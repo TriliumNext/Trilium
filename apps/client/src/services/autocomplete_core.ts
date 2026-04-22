@@ -1,4 +1,236 @@
-import type { AutocompleteApi, AutocompleteSource, BaseItem } from "@algolia/autocomplete-core";
+// ---------------------------------------------------------------------------
+// Lightweight autocomplete state machine — replaces @algolia/autocomplete-core
+// ---------------------------------------------------------------------------
+
+// --- Base types (formerly from @algolia/autocomplete-core) ---
+
+/** Minimal item constraint — any plain object qualifies. */
+export type BaseItem = Record<string, unknown>;
+
+export interface AutocompleteSource<TItem extends BaseItem> {
+    sourceId: string;
+    getItems(params: { query: string }): TItem[] | Promise<TItem[]>;
+    getItemInputValue?(params: { item: TItem }): string;
+    onSelect?(params: { item: TItem }): void;
+    getItemUrl?(): string | undefined;
+    onActive?(): void;
+    onResolve?(): void;
+}
+
+export interface AutocompleteCollection<TItem extends BaseItem> {
+    source: AutocompleteSource<TItem>;
+    items: TItem[];
+}
+
+export interface AutocompleteState<TItem extends BaseItem> {
+    query: string;
+    isOpen: boolean;
+    activeItemId: number | null;
+    collections: AutocompleteCollection<TItem>[];
+}
+
+export interface AutocompleteApi<TItem extends BaseItem> {
+    setQuery(query: string): void;
+    setIsOpen(isOpen: boolean): void;
+    setActiveItemId(id: number | null): void;
+    setCollections(collections: AutocompleteCollection<TItem>[]): void;
+    refresh(): void;
+    getInputProps(opts: { inputElement: HTMLElement }): InputProps;
+}
+
+interface InputProps {
+    onChange(event: Event): void;
+    onFocus(event: Event): void;
+    onKeyDown(event: KeyboardEvent): void;
+}
+
+interface CreateAutocompleteOptions<TItem extends BaseItem> {
+    openOnFocus?: boolean;
+    defaultActiveItemId?: number | null;
+    shouldPanelOpen?(): boolean;
+    getSources(params: { query: string }): AutocompleteSource<TItem>[];
+    onStateChange?(params: { state: AutocompleteState<TItem> }): void;
+}
+
+// --- createAutocomplete implementation ---
+
+export function createAutocomplete<TItem extends BaseItem>(
+    options: CreateAutocompleteOptions<TItem>
+): AutocompleteApi<TItem> {
+    const {
+        openOnFocus = false,
+        defaultActiveItemId = null,
+        getSources,
+        onStateChange,
+    } = options;
+
+    const state: AutocompleteState<TItem> = {
+        query: "",
+        isOpen: false,
+        activeItemId: defaultActiveItemId,
+        collections: [],
+    };
+
+    // Batch flag: when true, suppress notifications until the batch ends.
+    let batchDepth = 0;
+
+    function notify() {
+        if (batchDepth > 0) {
+            return;
+        }
+        onStateChange?.({ state: { ...state, collections: [...state.collections] } });
+    }
+
+    function batch(fn: () => void) {
+        batchDepth++;
+        try {
+            fn();
+        } finally {
+            batchDepth--;
+            if (batchDepth === 0) {
+                notify();
+            }
+        }
+    }
+
+    function getItems(): TItem[] {
+        return state.collections.length > 0 ? state.collections[0].items : [];
+    }
+
+    function getSource(): AutocompleteSource<TItem> | null {
+        return state.collections.length > 0 ? state.collections[0].source : null;
+    }
+
+    async function fetchAndUpdate() {
+        const sources = getSources({ query: state.query });
+        if (sources.length === 0) {
+            return;
+        }
+
+        const source = sources[0];
+        const items = await source.getItems({ query: state.query });
+        state.collections = [{ source, items }];
+        if (state.activeItemId !== null && state.activeItemId >= items.length) {
+            state.activeItemId = items.length > 0 ? items.length - 1 : null;
+        }
+        notify();
+    }
+
+    const api: AutocompleteApi<TItem> = {
+        setQuery(query: string) {
+            state.query = query;
+            // Don't notify — callers control when refresh/notify happens.
+        },
+
+        setIsOpen(isOpen: boolean) {
+            state.isOpen = isOpen;
+            notify();
+        },
+
+        setActiveItemId(id: number | null) {
+            state.activeItemId = id;
+            notify();
+        },
+
+        setCollections(collections: AutocompleteCollection<TItem>[]) {
+            state.collections = collections;
+            // Clamp activeItemId
+            const items = getItems();
+            if (state.activeItemId !== null && state.activeItemId >= items.length) {
+                state.activeItemId = items.length > 0 ? items.length - 1 : null;
+            }
+            notify();
+        },
+
+        refresh() {
+            void fetchAndUpdate();
+        },
+
+        getInputProps(_opts: { inputElement: HTMLElement }): InputProps {
+            return {
+                onChange(event: Event) {
+                    const value = (event.target as HTMLInputElement)?.value ?? "";
+                    state.query = value;
+                    state.activeItemId = defaultActiveItemId;
+                    state.isOpen = true;
+                    void fetchAndUpdate();
+                },
+                onFocus(_event: Event) {
+                    if (openOnFocus) {
+                        state.isOpen = true;
+                        void fetchAndUpdate();
+                    }
+                },
+                onKeyDown(event: KeyboardEvent) {
+                    const items = getItems();
+                    const source = getSource();
+
+                    switch (event.key) {
+                        case "ArrowDown": {
+                            event.preventDefault();
+                            if (!state.isOpen) {
+                                state.isOpen = true;
+                                notify();
+                                return;
+                            }
+                            if (items.length === 0) return;
+
+                            batch(() => {
+                                if (state.activeItemId === null) {
+                                    state.activeItemId = 0;
+                                } else if (state.activeItemId < items.length - 1) {
+                                    state.activeItemId++;
+                                } else {
+                                    // Wrap to top
+                                    state.activeItemId = 0;
+                                }
+                            });
+                            break;
+                        }
+                        case "ArrowUp": {
+                            event.preventDefault();
+                            if (items.length === 0) return;
+
+                            batch(() => {
+                                if (state.activeItemId === null) {
+                                    state.activeItemId = items.length - 1;
+                                } else if (state.activeItemId > 0) {
+                                    state.activeItemId--;
+                                } else {
+                                    // Wrap to bottom
+                                    state.activeItemId = items.length - 1;
+                                }
+                            });
+                            break;
+                        }
+                        case "Enter": {
+                            if (state.activeItemId !== null && state.activeItemId < items.length && source) {
+                                event.preventDefault();
+                                const item = items[state.activeItemId];
+                                source.onSelect?.({ item });
+                            }
+                            break;
+                        }
+                        case "Escape": {
+                            if (state.isOpen) {
+                                event.preventDefault();
+                                state.isOpen = false;
+                                notify();
+                            }
+                            break;
+                        }
+                    }
+                },
+            };
+        },
+    };
+
+    return api;
+}
+
+// ---------------------------------------------------------------------------
+// Shared utilities (panel controller, input binding, global close registry)
+// ---------------------------------------------------------------------------
 
 export const HEADLESS_AUTOCOMPLETE_PANEL_SELECTOR = ".aa-core-panel";
 
@@ -127,8 +359,6 @@ export function createHeadlessPanelController({
     };
 }
 
-type InputHandlers<TItem extends BaseItem> = ReturnType<AutocompleteApi<TItem>["getInputProps"]>;
-
 interface InputBinding<TEvent extends Event = Event> {
     type: string;
     listener: (event: TEvent) => void;
@@ -137,10 +367,10 @@ interface InputBinding<TEvent extends Event = Event> {
 interface BindAutocompleteInputOptions<TItem extends BaseItem> {
     inputEl: HTMLInputElement;
     autocomplete: AutocompleteApi<TItem>;
-    onInput?: (event: Event, handlers: InputHandlers<TItem>) => void;
-    onFocus?: (event: Event, handlers: InputHandlers<TItem>) => void;
-    onBlur?: (event: Event, handlers: InputHandlers<TItem>) => void;
-    onKeyDown?: (event: KeyboardEvent, handlers: InputHandlers<TItem>) => void;
+    onInput?: (event: Event, handlers: InputProps) => void;
+    onFocus?: (event: Event, handlers: InputProps) => void;
+    onBlur?: (event: Event, handlers: InputProps) => void;
+    onKeyDown?: (event: KeyboardEvent, handlers: InputProps) => void;
     extraBindings?: InputBinding[];
 }
 

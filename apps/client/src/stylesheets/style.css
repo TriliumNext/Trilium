@@ -934,7 +934,7 @@ table.promoted-attributes-in-tooltip th {
     background-color: var(--active-item-background-color);
 }
 
-/* ===== @algolia/autocomplete-core (headless, custom panel) ===== */
+/* ===== Headless autocomplete (custom panel) ===== */
 
 .aa-core-panel {
     z-index: 10000;
